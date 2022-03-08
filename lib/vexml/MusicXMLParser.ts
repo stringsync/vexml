@@ -1,5 +1,4 @@
-// TODO(jaredjj3/vexml#1): Formalize a node definition.
-type XMLNode = any;
+import { XMLNode } from "./types";
 
 export class MusicXMLParser {
   static parseResult = Symbol('MusicXMLParser.parseResult');

@@ -20,3 +20,6 @@ export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage;
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
 };
+
+// TODO(jaredjj3/vexml#1): Formalize a node definition.
+export type XMLNode = any;
