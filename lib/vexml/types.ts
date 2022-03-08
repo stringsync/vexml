@@ -2,6 +2,7 @@ export type NoteMessage = {
   type: 'note';
   stem: 'up' | 'down';
   pitch: string;
+  duration: '1/16' | '1/8' | '1/4' | '1/2' | '1'
 };
 
 export type ClefMessage = {
