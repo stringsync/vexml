@@ -1,8 +1,16 @@
+export type VoiceStartMessage = {
+  type: 'voiceStart';
+};
+
+export type VoiceEndMessage = {
+  type: 'voiceEnd';
+};
+
 export type NoteMessage = {
   type: 'note';
   stem: 'up' | 'down';
   pitch: string;
-  duration: '1/16' | '1/8' | '1/4' | '1/2' | '1'
+  duration: '1/16' | '1/8' | '1/4' | '1/2' | '1';
 };
 
 export type ClefMessage = {
@@ -16,7 +24,7 @@ export type TimeSignatureMessage = {
   bottom: number;
 };
 
-export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage;
+export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage | VoiceStartMessage | VoiceEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
