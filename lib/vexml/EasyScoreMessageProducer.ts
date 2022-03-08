@@ -38,7 +38,7 @@ export class EasyScoreMessageProducer {
           { type: 'note', stem: 'up', pitch: 'C#5', duration: '1/4' },
           { type: 'note', stem: 'up', pitch: 'B4', duration: '1/4' },
           { type: 'note', stem: 'up', pitch: 'A4', duration: '1/4' },
-          { type: 'note', stem: 'up', pitch: 'G#5', duration: '1/4' },
+          { type: 'note', stem: 'up', pitch: 'G#4', duration: '1/4' },
           { type: 'voiceEnd' },
         ];
       default:

@@ -1,8 +1,6 @@
 import { EasyScore } from "vexflow";
+import { EasyScoreMessageRenderer } from "./EasyScoreMessageRenderer";
 
 export const vexml = (elementId: string) => {
-  const element = document.getElementById(elementId);
-  if (element) {
-    element.innerText = 'TODO';
-  }
+  EasyScoreMessageRenderer.render(elementId, 'see ./example.xml');
 };

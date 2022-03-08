@@ -16,7 +16,7 @@ export class MusicXMLCursor {
   }
 
   private root: XMLNode;
-  private index = 0;
+  private index = -1;
   private nodes = [
     MusicXMLCursor.clefNode,
     MusicXMLCursor.timeSignatureNode,
