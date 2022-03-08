@@ -2,7 +2,9 @@
 type XMLNode = any;
 
 export class MusicXMLParser {
+  static parseResult = Symbol('MusicXMLParser.parseResult');
+
   static parse(xmlStr: string): XMLNode {
-    return {};
+    return MusicXMLParser.parseResult;
   }
 }
