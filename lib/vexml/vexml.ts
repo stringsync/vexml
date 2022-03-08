@@ -1,6 +1,9 @@
-import { EasyScore } from "vexflow";
-import { EasyScoreMessageRenderer } from "./EasyScoreMessageRenderer";
+import { EasyScore } from 'vexflow';
+import { EasyScoreMessageRenderer } from './EasyScoreMessageRenderer';
 
 export const vexml = (elementId: string) => {
-  EasyScoreMessageRenderer.render(elementId, 'see ./example.xml');
+  EasyScoreMessageRenderer.render(
+    elementId,
+    './example.xml is the MusicXML string that would be used here'
+  );
 };
