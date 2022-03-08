@@ -4,7 +4,18 @@ export type NoteMessage = {
   pitch: string;
 };
 
-export type EasyScoreMessage = NoteMessage;
+export type ClefMessage = {
+  type: 'clef';
+  clef: 'treble' | 'bass' | 'alto' | 'tenor';
+};
+
+export type TimeSignatureMessage = {
+  type: 'timeSignature';
+  top: number;
+  bottom: number;
+};
+
+export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
