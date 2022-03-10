@@ -2,7 +2,13 @@
   "name": "typescript",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "serve": "parcel index.html"
+  },
   "dependencies": {
     "vexflow": "^4.0.1-beta.2"
+  },
+  "devDependencies": {
+    "parcel": "^2.3.2"
   }
 }
