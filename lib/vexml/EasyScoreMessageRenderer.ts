@@ -1,16 +1,10 @@
-import Vex from 'vexflow';
-import { Factory } from 'vexflow/build/src/factory';
+import * as VF from 'vexflow';
 import { EasyScoreMessageProducer } from './EasyScoreMessageProducer';
 import { EasyScoreMessage, NoteMessage } from './types';
 
-type Note = {
-  name: string;
-  options: { stem: 'up' | 'down' };
-};
-
 export class EasyScoreMessageRenderer {
   static render(elementId: string, musicXml: string): void {
-    const factory = new Vex.Flow.Factory({
+    const factory = new VF.Factory({
       renderer: { elementId, width: 500, height: 200 },
     });
     const renderer = new EasyScoreMessageRenderer(factory);
@@ -18,11 +12,11 @@ export class EasyScoreMessageRenderer {
     renderer.render();
   }
 
-  private factory: Factory;
+  private factory: VF.Factory;
 
   private messages = new Array<EasyScoreMessage>();
 
-  private constructor(factory: Factory) {
+  private constructor(factory: VF.Factory) {
     this.factory = factory;
   }
 
@@ -36,7 +30,9 @@ export class EasyScoreMessageRenderer {
 
     let timeSignature = '';
     let clef = '';
-    let notes = new Array<Note>();
+    let notes:VF.StemmableNote[] = [];
+    let beams:VF.Beam[] = [];
+    let beamStart: number = -1;
     for (const message of this.messages) {
       switch (message.type) {
         case 'clef':
@@ -44,6 +40,14 @@ export class EasyScoreMessageRenderer {
           break;
         case 'timeSignature':
           timeSignature = `${message.top}/${message.bottom}`;
+          break;
+        case 'beamStart':
+          beamStart = notes.length;
+          break;
+        case 'beamEnd':
+          if (beamStart >= 0) {
+            beams.push(new VF.Beam(notes.slice(beamStart)));
+          }
           break;
         case 'voiceStart':
           notes = [];
@@ -54,16 +58,12 @@ export class EasyScoreMessageRenderer {
           );
           const name = `${message.pitch}/${durationDenominator}`;
           const options = { stem: message.stem };
-          notes.push({ name, options });
+          notes.push(...score.notes(name, options));
           break;
         case 'voiceEnd':
           system.addStave({
             voices: [
-              score.voice(
-                score.notes(notes.map((note) => note.name).join(','), {
-                  stem: this.getStem(notes),
-                })
-              ),
+              score.voice(notes),
             ],
           }).addClef(clef).addTimeSignature(timeSignature);
           break;
@@ -88,16 +88,5 @@ export class EasyScoreMessageRenderer {
       default:
         return '';
     }
-  }
-
-  private getStem(notes: Note[]): string {
-    const stems = new Set<string>();
-    for (const note of notes) {
-      stems.add(note.options.stem);
-    }
-    if (stems.size !== 1) {
-      throw new Error(`got invalid stems: ${JSON.stringify(notes, null, 2)}`);
-    }
-    return Array.from(stems)[0];
   }
 }
