@@ -36,8 +36,12 @@ export class EasyScoreMessageProducer {
         return [
           { type: 'voiceStart' },
           { type: 'note', stem: 'up', pitch: 'C#5', duration: '1/4' },
-          { type: 'note', stem: 'up', pitch: 'B4', duration: '1/4' },
-          { type: 'note', stem: 'up', pitch: 'A4', duration: '1/4' },
+          { type: 'beamStart' },
+          { type: 'note', stem: 'up', pitch: 'B4', duration: '1/8' },
+          { type: 'note', stem: 'up', pitch: 'B4', duration: '1/8' },
+          { type: 'note', stem: 'up', pitch: 'A4', duration: '1/8' },
+          { type: 'note', stem: 'up', pitch: 'A4', duration: '1/8' },
+          { type: 'beamEnd' },
           { type: 'note', stem: 'up', pitch: 'G#4', duration: '1/4' },
           { type: 'voiceEnd' },
         ];
