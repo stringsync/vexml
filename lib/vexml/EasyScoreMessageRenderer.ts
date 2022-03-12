@@ -31,7 +31,6 @@ export class EasyScoreMessageRenderer {
     let timeSignature = '';
     let clef = '';
     let notes:VF.StemmableNote[] = [];
-    let beams:VF.Beam[] = [];
     let beamStart: number = -1;
     for (const message of this.messages) {
       switch (message.type) {
@@ -46,7 +45,8 @@ export class EasyScoreMessageRenderer {
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
-            beams.push(new VF.Beam(notes.slice(beamStart)));
+            this.factory.Beam({ notes: notes.slice(beamStart), options: { autoStem: true } });
+            beamStart = -1;
           }
           break;
         case 'voiceStart':
