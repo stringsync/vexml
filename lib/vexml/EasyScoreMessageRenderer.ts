@@ -41,7 +41,7 @@ export class EasyScoreMessageRenderer {
           timeSignature = `${message.top}/${message.bottom}`;
           break;
         case 'beamStart':
-          beamStart = notes.length;
+          beamStart = notes.length - 1;
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
