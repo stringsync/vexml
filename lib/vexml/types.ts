@@ -6,6 +6,14 @@ export type VoiceEndMessage = {
   type: 'voiceEnd';
 };
 
+export type BeamStartMessage = {
+  type: 'beamStart';
+};
+
+export type BeamEndMessage = {
+  type: 'beamEnd';
+};
+
 export type NoteMessage = {
   type: 'note';
   stem: 'up' | 'down';
@@ -24,7 +32,7 @@ export type TimeSignatureMessage = {
   bottom: number;
 };
 
-export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage | VoiceStartMessage | VoiceEndMessage;
+export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage | VoiceStartMessage | VoiceEndMessage | BeamStartMessage | BeamEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
