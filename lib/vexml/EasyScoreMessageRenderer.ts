@@ -1,9 +1,9 @@
 import * as VF from 'vexflow';
 import { EasyScoreMessageProducer } from './EasyScoreMessageProducer';
-import { EasyScoreMessage, NoteMessage } from './types';
+import { EasyScoreMessage, NoteMessage, ClefMessage } from './types';
 
 export class EasyScoreMessageRenderer {
-  static render(elementId: string, musicXml: string): void {
+  static render(elementId: string, musicXml: Document): void {
     const factory = new VF.Factory({
       renderer: { elementId, width: 500, height: 200 },
     });
@@ -35,7 +35,7 @@ export class EasyScoreMessageRenderer {
     for (const message of this.messages) {
       switch (message.type) {
         case 'clef':
-          clef = message.clef;
+          clef = this.getClef(message.clef);
           break;
         case 'timeSignature':
           timeSignature = `${message.top}/${message.bottom}`;
@@ -58,7 +58,9 @@ export class EasyScoreMessageRenderer {
           );
           const name = `${message.pitch}/${durationDenominator}`;
           const options = { stem: message.stem };
-          notes.push(...score.notes(name, options));
+          const note = score.notes(name, options)[0];
+          if (message.accidental != '') note.addModifier(this.factory.Accidental({type: this.getAccidental(message.accidental)}));
+          notes.push(note);
           break;
         case 'voiceEnd':
           system.addStave({
@@ -75,16 +77,34 @@ export class EasyScoreMessageRenderer {
 
   private getDurationDenominator(duration: NoteMessage['duration']): string {
     switch (duration) {
-      case '1/16':
+      case 'sixteenth':
         return '16';
-      case '1/8':
+      case 'eighth':
         return '8';
-      case '1/4':
+      case 'quarter':
         return '4';
-      case '1/2':
+      case 'half':
         return '2';
-      case '1':
+      case 'full':
         return 'w';
+      default:
+        return '';
+    }
+  }
+  
+  private getAccidental(accidental: NoteMessage['accidental']): string {
+    switch (accidental) {
+      case 'sharp':
+        return '#';
+      default:
+        return '';
+    }
+  }
+
+  private getClef(accidental: ClefMessage['clef']): string {
+    switch (accidental) {
+      case 'G':
+        return 'treble';
       default:
         return '';
     }

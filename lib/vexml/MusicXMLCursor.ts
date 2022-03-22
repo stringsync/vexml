@@ -1,33 +1,30 @@
-import { MusicXMLParser } from './MusicXMLParser';
-import { XMLNode } from './types';
-
 export class MusicXMLCursor {
-  static clefNode = Symbol('MusicXMLCursor.clefNode');
-  static timeSignatureNode = Symbol('MusicXMLCursor.timeSignatureNode');
-  static measureNode = Symbol('MusicXMLCursor.measureNode');
-
-  static from(root: XMLNode) {
-    if (root !== MusicXMLParser.parseResult) {
-      throw new Error(
-        `must use the dummy result from MusicXMLParser.parse, got: ${root}`
-      );
-    }
+  static from(root: Document) {
     return new MusicXMLCursor(root);
   }
 
-  private root: XMLNode;
+  private root: Document;
   private index = -1;
-  private nodes = [
-    MusicXMLCursor.clefNode,
-    MusicXMLCursor.timeSignatureNode,
-    MusicXMLCursor.measureNode,
-  ];
+  private nodes: Node[] = [];
 
-  private constructor(root: XMLNode) {
+  private constructor(root: Document) {
     this.root = root;
+    this.getPath('/score-partwise/part/measure');
   }
 
-  get(): XMLNode {
+  getPath(path: string, origin?: Node): Node[] {
+    var pathResult = this.root.evaluate(path, origin ?? this.root, null, XPathResult.ANY_TYPE, null);
+    var node = pathResult.iterateNext();
+    this.nodes = [];
+    this.index = -1;
+    while (node) {
+        this.nodes.push(node);
+        node = pathResult.iterateNext();
+    } 
+    return this.nodes;
+  }
+  
+  get(): Node {
     if (!this.hasValue()) {
       throw new Error('cursor does not have value');
     }
