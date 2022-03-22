@@ -6,7 +6,7 @@
     "serve": "parcel index.html"
   },
   "dependencies": {
-    "vexflow": "^4.0.1-beta.2"
+    "vexflow": "^4.0.1-rc.0"
   },
   "devDependencies": {
     "parcel": "^2.3.2",
