@@ -1,52 +1,71 @@
 import { MusicXMLCursor } from './MusicXMLCursor';
-import { MusicXMLParser } from './MusicXMLParser';
-import { EasyScoreMessage, EasyScoreMessageReceiver, XMLNode } from './types';
+import { EasyScoreMessage, EasyScoreMessageReceiver} from './types';
 
 export class EasyScoreMessageProducer {
-  static feed(musicXml: string) {
-    const root = MusicXMLParser.parse(musicXml);
-    return new EasyScoreMessageProducer(root);
+  static feed(musicXml: Document) {
+    return new EasyScoreMessageProducer(musicXml);
   }
 
-  private root: XMLNode;
+  private root: Document;
 
-  private constructor(root: XMLNode) {
+  private constructor(root: Document) {
     this.root = root;
   }
 
   message(receiver: EasyScoreMessageReceiver): void {
     const cursor = MusicXMLCursor.from(this.root);
+    receiver.onMessage({ type: 'voiceStart' });
     while (cursor.hasNext()) {
       cursor.next();
       const node = cursor.get();
-      const messages = this.getMessages(node);
+      console.log(node);
+      const messages: EasyScoreMessage[] = [];
+      messages.push(...this.getMessages(node));
       for (const message of messages) {
         receiver.onMessage(message);
       }
     }
+    receiver.onMessage({ type: 'voiceEnd' });
   }
 
-  private getMessages(node: XMLNode): EasyScoreMessage[] {
-    switch (node) {
-      case MusicXMLCursor.clefNode:
-        return [{ type: 'clef', clef: 'treble' }];
-      case MusicXMLCursor.timeSignatureNode:
-        return [{ type: 'timeSignature', top: 4, bottom: 4 }];
-      case MusicXMLCursor.measureNode:
-        return [
-          { type: 'voiceStart' },
-          { type: 'note', stem: 'up', pitch: 'C#5', duration: '1/4' },
-          { type: 'note', stem: 'up', pitch: 'B4', duration: '1/4' },
-          { type: 'note', stem: 'up', pitch: 'B4', duration: '1/8' },
-          { type: 'beamStart' },
-          { type: 'note', stem: 'up', pitch: 'F4', duration: '1/8' },
-          { type: 'note', stem: 'up', pitch: 'G4', duration: '1/8' },
-          { type: 'note', stem: 'up', pitch: 'G#4', duration: '1/8' },
-          { type: 'beamEnd' },
-          { type: 'voiceEnd' },
-        ];
+  private getMessages(node: Node): EasyScoreMessage[] {
+    const messages: EasyScoreMessage[] = [];
+    const nodeElem = node as Element;
+    switch (node.nodeName) {
+      case 'attributes':
+        var children = node.childNodes;
+        for (var i = 0; i < children.length; i++) {
+          const childElem = children[i] as Element;  
+          switch (children[i].nodeName) {
+            case 'clef':
+              const sign = childElem.getElementsByTagName('sign').item(0)?.textContent??'';
+              messages.push({ type: 'clef', clef: sign });
+              break;
+            case 'time':
+              const beats = childElem.getElementsByTagName('beats').item(0)?.textContent??'';
+              const beatType = childElem.getElementsByTagName('beat-type').item(0)?.textContent??'';
+              messages.push({ type: 'timeSignature', top: beats, bottom: beatType });
+            break;
+            default:
+              console.log(`unprocessed node, got: ${children[i]}`);
+          }
+        }
+        break;
+      case 'note':
+        const step = nodeElem.getElementsByTagName('step').item(0)?.textContent??'';
+        const octave = nodeElem.getElementsByTagName('octave').item(0)?.textContent??'';
+        const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent??'';
+        const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent??'';
+        const duration = nodeElem.getElementsByTagName('type').item(0)?.textContent??'';
+        messages.push({type: 'note', stem: stem, pitch: `${step}${octave}`, duration: duration, accidental: accidental});
+        const beam = '' + nodeElem.getElementsByTagName('beam').item(0)?.textContent;
+        console.log(beam);
+        if (beam === 'begin') messages.push({ type: 'beamStart' });
+        if (beam === 'end') messages.push({ type: 'beamEnd' });
+        break;
       default:
-        throw new Error(`unrecognized node, got: ${node}`);
+        console.log(`unprocessed node, got: ${node}`);
     }
+    return messages;
   }
 }
