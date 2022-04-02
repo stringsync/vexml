@@ -1,7 +1,17 @@
-<script src="dist/vexml.js" defer=""></script>
-
-<h2>easyscore</h2>
-<div id="easyscore"></div>
-
-<h2>vexml</h2>
-<div id="vexml"></div>
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="dist/vexml.js"></script>
+    </head>
+    <body>
+        <div><input id="file" type="file" onchange="Load(this.files[0])"></input></div>
+        <h2>vexml</h2>
+        <div id="vexml"></div>
+                
+        <script>
+            function Load(a) {
+                Vexml.load(a,"vexml");
+            }
+        </script>
+    </body>
+</html>

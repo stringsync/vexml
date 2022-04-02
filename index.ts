@@ -1,5 +1,6 @@
-import { easyscore } from './lib/easyscore';
-import { vexml } from './lib/vexml';
+import { load } from './lib/vexml/vexml';
 
-easyscore('easyscore');
-vexml('vexml');
+const Vexml = {
+  load: load,
+};
+export default Vexml;

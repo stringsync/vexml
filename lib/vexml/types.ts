@@ -16,20 +16,21 @@ export type BeamEndMessage = {
 
 export type NoteMessage = {
   type: 'note';
-  stem: 'up' | 'down';
+  stem: string;
   pitch: string;
-  duration: '1/16' | '1/8' | '1/4' | '1/2' | '1';
+  duration: string;
+  accidental: string;
 };
 
 export type ClefMessage = {
   type: 'clef';
-  clef: 'treble' | 'bass' | 'alto' | 'tenor';
+  clef: string;
 };
 
 export type TimeSignatureMessage = {
   type: 'timeSignature';
-  top: number;
-  bottom: number;
+  top: string;
+  bottom: string;
 };
 
 export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage | VoiceStartMessage | VoiceEndMessage | BeamStartMessage | BeamEndMessage;
@@ -37,6 +38,3 @@ export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
 };
-
-// TODO(jaredjj3/vexml#1): Formalize a node definition.
-export type XMLNode = any;
