@@ -1,6 +1,6 @@
 import * as VF from 'vexflow';
 import { EasyScoreMessageProducer } from './EasyScoreMessageProducer';
-import { EasyScoreMessage, NoteMessage, ClefMessage } from './types';
+import { ClefMessage, EasyScoreMessage, NoteMessage } from './types';
 
 export class EasyScoreMessageRenderer {
   static render(elementId: string, musicXml: Document): void {
@@ -30,8 +30,8 @@ export class EasyScoreMessageRenderer {
 
     let timeSignature = '';
     let clef = '';
-    let notes:VF.StemmableNote[] = [];
-    let beamStart: number = -1;
+    let notes: VF.StemmableNote[] = [];
+    let beamStart = -1;
     for (const message of this.messages) {
       switch (message.type) {
         case 'clef':
@@ -53,21 +53,22 @@ export class EasyScoreMessageRenderer {
           notes = [];
           break;
         case 'note':
-          const durationDenominator = this.getDurationDenominator(
-            message.duration
-          );
+          const durationDenominator = this.getDurationDenominator(message.duration);
           const name = `${message.pitch}/${durationDenominator}`;
           const options = { stem: message.stem };
           const note = score.notes(name, options)[0];
-          if (message.accidental != '') note.addModifier(this.factory.Accidental({type: this.getAccidental(message.accidental)}));
+          if (message.accidental != '') {
+            note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
+          }
           notes.push(note);
           break;
         case 'voiceEnd':
-          system.addStave({
-            voices: [
-              score.voice(notes),
-            ],
-          }).addClef(clef).addTimeSignature(timeSignature);
+          system
+            .addStave({
+              voices: [score.voice(notes)],
+            })
+            .addClef(clef)
+            .addTimeSignature(timeSignature);
           break;
       }
     }
@@ -91,7 +92,7 @@ export class EasyScoreMessageRenderer {
         return '';
     }
   }
-  
+
   private getAccidental(accidental: NoteMessage['accidental']): string {
     switch (accidental) {
       case 'sharp':
