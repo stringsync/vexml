@@ -11,9 +11,12 @@ const render = async (example: string): Promise<void> => {
   const content = document.createElement('div');
   content.setAttribute('id', `content-${example}`);
 
+  const separator = document.createElement('hr');
+
   document.body.appendChild(title);
   document.body.appendChild(status);
   document.body.appendChild(content);
+  document.body.appendChild(separator);
 
   const res = await fetch(`examples/${example}`);
   const text = await res.text();
