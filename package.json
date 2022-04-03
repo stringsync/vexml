@@ -53,7 +53,8 @@
     "build": "webpack",
     "prepare": "husky install",
     "watch": "webpack --watch",
-    "dev": "webpack serve --config ./dev/webpack.config.js --open"
+    "dev": "webpack serve --config ./dev/webpack.config.js --open",
+    "test": "jest"
   },
   "lint-staged": {
     "src/**/*": [
