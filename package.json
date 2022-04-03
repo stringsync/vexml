@@ -2,7 +2,7 @@
   "name": "@stringsync/vexml",
   "version": "0.0.0",
   "private": false,
-  "description": "a renderer for Vexflow",
+  "description": "MusicXML to Vexflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
