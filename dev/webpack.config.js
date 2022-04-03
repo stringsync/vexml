@@ -2,7 +2,13 @@
 const path = require('path');
 
 module.exports = {
+  mode: 'development',
   entry: path.resolve(__dirname, 'src', 'index.ts'),
+  devtool: 'inline-source-map',
+  devServer: {
+    static: path.resolve(__dirname, 'public'),
+    hot: true,
+  },
   module: {
     rules: [
       {
@@ -16,7 +22,7 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'vexml.js',
-    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'public'),
   },
 };
