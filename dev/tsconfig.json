@@ -6,7 +6,6 @@
     "declaration": true,
     "sourceMap": true,
     "allowJs": true,
-    "types": ["node", "jest", "jest-extended"],
     "experimentalDecorators": true
   },
   "include": ["src/**/*"],
