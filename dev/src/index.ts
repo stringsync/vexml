@@ -29,6 +29,7 @@ const render = async (example: string): Promise<void> => {
     vexml.EasyScoreMessageRenderer.render(content.id, xml);
     status.innerHTML = '';
   } catch (e) {
+    status.innerHTML = 'error';
     const pre = document.createElement('pre');
     pre.innerHTML = e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`;
     content.innerHTML = '';
@@ -37,7 +38,7 @@ const render = async (example: string): Promise<void> => {
 };
 
 window.addEventListener('load', async () => {
-  const res = await fetch('manifest.json');
+  const res = await fetch('/manifest');
   const manifest = await res.json();
   manifest.examples.forEach(render);
 });

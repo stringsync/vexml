@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
+const fs = require('fs');
+
+const EXAMPLES_DIR = path.join(__dirname, 'public', 'examples');
 
 module.exports = {
   mode: 'development',
@@ -8,6 +11,12 @@ module.exports = {
   devServer: {
     static: path.resolve(__dirname, 'public'),
     hot: true,
+    onAfterSetupMiddleware: (devServer) => {
+      devServer.app.get('/manifest', (req, res) => {
+        const examples = fs.readdirSync(EXAMPLES_DIR);
+        res.json({ examples });
+      });
+    },
   },
   module: {
     rules: [
