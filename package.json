@@ -51,6 +51,7 @@
   },
   "scripts": {
     "build": "webpack",
+    "typecheck": "yarn tsc --noEmit --watch",
     "prepare": "husky install",
     "watch": "webpack --watch",
     "dev": "webpack serve --config ./dev/webpack.config.js --open",
