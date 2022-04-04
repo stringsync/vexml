@@ -44,7 +44,4 @@ yarn test --watchAll
 
 ### MusicXML Examples
 
-In order to add a MusicXML example:
-
-1. Add the xml file to [dev/public/examples](dev/public/examples) directory.
-2. Add the name of the xml file to the [dev/public/manifest.json](dev/public/manifest.json).
+In order to add a MusicXML example, add the xml file to [dev/public/examples](dev/public/examples) directory.
