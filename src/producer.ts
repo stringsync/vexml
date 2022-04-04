@@ -1,23 +1,22 @@
-import { MusicXMLCursor } from './MusicXMLCursor';
+import { Cursor } from './cursor';
 import { EasyScoreMessage, EasyScoreMessageReceiver } from './types';
 
-export class EasyScoreMessageProducer {
-  static feed(musicXml: Document): EasyScoreMessageProducer {
-    return new EasyScoreMessageProducer(musicXml);
+export class Producer {
+  static feed(musicXml: string): Producer {
+    return new Producer(musicXml);
   }
 
-  private root: Document;
+  private musicXml: string;
 
-  private constructor(root: Document) {
-    this.root = root;
+  private constructor(musicXml: string) {
+    this.musicXml = musicXml;
   }
 
   message(receiver: EasyScoreMessageReceiver): void {
-    const cursor = MusicXMLCursor.from(this.root);
+    const cursor = Cursor.fromMusicXml(this.musicXml);
     receiver.onMessage({ type: 'voiceStart' });
     while (cursor.hasNext()) {
-      cursor.next();
-      const node = cursor.get();
+      const node = cursor.next();
       const messages: EasyScoreMessage[] = [];
       messages.push(...this.getMessages(node));
       for (const message of messages) {

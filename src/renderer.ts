@@ -1,14 +1,14 @@
 import * as VF from 'vexflow';
-import { EasyScoreMessageProducer } from './EasyScoreMessageProducer';
+import { Producer } from './producer';
 import { ClefMessage, EasyScoreMessage, NoteMessage } from './types';
 
-export class EasyScoreMessageRenderer {
-  static render(elementId: string, musicXml: Document): void {
+export class Renderer {
+  static render(elementId: string, musicXml: string): void {
     const factory = new VF.Factory({
       renderer: { elementId, width: 500, height: 200 },
     });
-    const renderer = new EasyScoreMessageRenderer(factory);
-    EasyScoreMessageProducer.feed(musicXml).message(renderer);
+    const renderer = new Renderer(factory);
+    Producer.feed(musicXml).message(renderer);
     renderer.render();
   }
 

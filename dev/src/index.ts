@@ -19,17 +19,17 @@ const render = async (example: string): Promise<void> => {
   document.body.appendChild(separator);
 
   const res = await fetch(`examples/${example}`);
-  const text = await res.text();
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(text, 'application/xml');
+  const musicXml = await res.text();
 
+  const start = new Date();
+  const getTimeElapsedMs = () => new Date().getTime() - start.getTime();
   try {
     content.innerHTML = '';
     status.innerHTML = 'rendering';
-    vexml.EasyScoreMessageRenderer.render(content.id, xml);
-    status.innerHTML = '';
+    vexml.Renderer.render(content.id, musicXml);
+    status.innerHTML = `success (${getTimeElapsedMs()} ms)`;
   } catch (e) {
-    status.innerHTML = 'error';
+    status.innerHTML = `error (${getTimeElapsedMs()} ms)`;
     const pre = document.createElement('pre');
     pre.innerHTML = e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`;
     content.innerHTML = '';

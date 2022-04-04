@@ -1,3 +1,3 @@
-export * from './EasyScoreMessageProducer';
-export * from './EasyScoreMessageRenderer';
+export * from './producer';
+export * from './renderer';
 export * from './types';
