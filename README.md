@@ -26,7 +26,7 @@ yarn
 yarn dev
 ```
 
-This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in [dev/public/examples](dev-public/examples). Anytime the `vexml` source code changes or an example changes, the page should automatically reload. You may need to manually reload the page after _adding_ an example.
+This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in [dev/public/examples](dev/public/examples). Anytime the `vexml` source code changes or an example changes, the page should automatically reload. You may need to manually reload the page after _adding_ an example.
 
 ### Running Tests
 
