@@ -26,7 +26,7 @@ yarn
 yarn dev
 ```
 
-This will run `webpack-dev-server` at http://localhost:8080, open a browser, and render all the examples in the [manfiest](dev/public/manifest.json). Anytime the `vexml` source code changes or an example changes, the page will automatically reload.
+This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in the [manfiest](dev/public/manifest.json). Anytime the `vexml` source code changes or an example changes, the page should automatically reload. You may need to manually reload the page after adding an example.
 
 ### Running Tests
 

@@ -51,9 +51,10 @@
   },
   "scripts": {
     "build": "webpack",
+    "typecheck": "yarn tsc --noEmit --watch",
     "prepare": "husky install",
     "watch": "webpack --watch",
-    "dev": "webpack serve --config ./dev/webpack.config.js --open",
+    "dev": "webpack serve --config ./dev/webpack.config.js",
     "test": "jest"
   },
   "lint-staged": {
@@ -61,6 +62,12 @@
       "bash -c \"yarn tsc --noEmit\"",
       "eslint",
       "prettier --write --ignore-unknown"
+    ]
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "jest-extended/all"
     ]
   }
 }
