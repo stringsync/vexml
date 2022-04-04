@@ -33,7 +33,14 @@ export type TimeSignatureMessage = {
   bottom: string;
 };
 
-export type EasyScoreMessage = NoteMessage | ClefMessage | TimeSignatureMessage | VoiceStartMessage | VoiceEndMessage | BeamStartMessage | BeamEndMessage;
+export type EasyScoreMessage =
+  | NoteMessage
+  | ClefMessage
+  | TimeSignatureMessage
+  | VoiceStartMessage
+  | VoiceEndMessage
+  | BeamStartMessage
+  | BeamEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;

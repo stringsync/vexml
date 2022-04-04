@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE score-partwise PUBLIC '-//Recordare//DTD MusicXML 2.0 Partwise//EN' 'http://www.musicxml.org/dtds/2.0/partwise.dtd'>
+<!DOCTYPE score-partwise PUBLIC '-//Recordare//DTD MusicXML 2.0 Partwise//EN'
+  'http://www.musicxml.org/dtds/2.0/partwise.dtd'>
 <score-partwise version="2.0">
  <identification>
   <encoding>
    <encoding-date>2022-03-08</encoding-date>
    <software>Guitar Pro 7.6.0</software>
-   <supports element="print" type="yes" attribute="new-system" value="yes"/>
+   <supports element="print" type="yes" attribute="new-system" value="yes" />
   </encoding>
  </identification>
  <defaults>
@@ -33,7 +34,7 @@
  </part-list>
  <part id="P1">
   <measure number="1">
-   <print new-system="yes"/>
+   <print new-system="yes" />
    <attributes>
     <divisions>1</divisions>
     <key>
@@ -63,12 +64,12 @@
       <per-minute>120</per-minute>
      </metronome>
     </direction-type>
-    <sound tempo="120"/>
+    <sound tempo="120" />
    </direction>
    <direction>
     <direction-type>
      <dynamics>
-      <mf/>
+      <mf />
      </dynamics>
     </direction-type>
    </direction>

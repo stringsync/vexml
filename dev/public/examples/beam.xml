@@ -1,15 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.1">
   <identification>
     <encoding>
       <software>MuseScore 3.6.2</software>
       <encoding-date>2022-03-11</encoding-date>
-      <supports element="accidental" type="yes"/>
-      <supports element="beam" type="yes"/>
-      <supports element="print" attribute="new-page" type="yes" value="yes"/>
-      <supports element="print" attribute="new-system" type="yes" value="yes"/>
-      <supports element="stem" type="yes"/>
+      <supports element="accidental" type="yes" />
+      <supports element="beam" type="yes" />
+      <supports element="print" attribute="new-page" type="yes" value="yes" />
+      <supports element="print" attribute="new-system" type="yes" value="yes" />
+      <supports element="stem" type="yes" />
       </encoding>
     </identification>
   <defaults>
@@ -33,17 +34,17 @@
         <bottom-margin>7.43489e-308</bottom-margin>
         </page-margins>
       </page-layout>
-    <word-font font-family="Edwin" font-size="10"/>
-    <lyric-font font-family="Edwin" font-size="10"/>
+    <word-font font-family="Edwin" font-size="10" />
+    <lyric-font font-family="Edwin" font-size="10" />
     </defaults>
   <part-list>
     <score-part id="P1">
       <part-name>Steel Guitar</part-name>
       <part-abbreviation>s.guit.</part-abbreviation>
       <score-instrument id="P1-I1">
-        <instrument-name></instrument-name>
+        <instrument-name />
         </score-instrument>
-      <midi-device id="P1-I1" port="1"></midi-device>
+      <midi-device id="P1-I1" port="1" />
       <midi-instrument id="P1-I1">
         <midi-channel>1</midi-channel>
         <midi-program>1</midi-program>
@@ -89,15 +90,15 @@
             <per-minute>120</per-minute>
             </metronome>
           </direction-type>
-        <sound tempo="120"/>
+        <sound tempo="120" />
         </direction>
       <direction placement="below">
         <direction-type>
           <dynamics default-x="3.25" default-y="-45.69" relative-y="-25.00">
-            <mf/>
+            <mf />
             </dynamics>
           </direction-type>
-        <sound dynamics="88.89"/>
+        <sound dynamics="88.89" />
         </direction>
       <note default-x="85.98" default-y="-15.00">
         <pitch>

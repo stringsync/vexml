@@ -1,5 +1,5 @@
 export class MusicXMLCursor {
-  static from(root: Document) {
+  static from(root: Document): MusicXMLCursor {
     return new MusicXMLCursor(root);
   }
 
@@ -13,17 +13,17 @@ export class MusicXMLCursor {
   }
 
   getPath(path: string, origin?: Node): Node[] {
-    var pathResult = this.root.evaluate(path, origin ?? this.root, null, XPathResult.ANY_TYPE, null);
-    var node = pathResult.iterateNext();
+    const pathResult = this.root.evaluate(path, origin ?? this.root, null, XPathResult.ANY_TYPE, null);
+    let node = pathResult.iterateNext();
     this.nodes = [];
     this.index = -1;
     while (node) {
-        this.nodes.push(node);
-        node = pathResult.iterateNext();
-    } 
+      this.nodes.push(node);
+      node = pathResult.iterateNext();
+    }
     return this.nodes;
   }
-  
+
   get(): Node {
     if (!this.hasValue()) {
       throw new Error('cursor does not have value');
