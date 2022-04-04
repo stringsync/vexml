@@ -1,3 +1,5 @@
+export class CursorError extends Error {}
+
 export class Cursor {
   static fromMusicXml(musicXml: string): Cursor {
     const parser = new DOMParser();
@@ -23,7 +25,7 @@ export class Cursor {
 
   next(): Node {
     if (!this.hasNext()) {
-      throw new Error('cursor does not have value');
+      throw new CursorError('cursor does not have value');
     }
     const node = this.nodes[this.index];
     this.index++;
