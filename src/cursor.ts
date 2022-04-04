@@ -1,12 +1,16 @@
 export class Cursor {
-  static fromDocument(root: Document): Cursor {
+  static fromMusicXml(musicXml: string): Cursor {
+    const parser = new DOMParser();
+    const root = parser.parseFromString(musicXml, 'application/xml');
     const path = root.evaluate('/score-partwise/part/measure', root, null, XPathResult.ANY_TYPE, null);
+
     const nodes = new Array<Node>();
     let node = path.iterateNext();
     while (node) {
       nodes.push(node);
       node = path.iterateNext();
     }
+
     return new Cursor(nodes);
   }
 

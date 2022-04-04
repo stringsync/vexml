@@ -63,5 +63,11 @@
       "eslint",
       "prettier --write --ignore-unknown"
     ]
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "jest-extended/all"
+    ]
   }
 }

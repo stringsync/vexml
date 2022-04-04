@@ -2,18 +2,18 @@ import { Cursor } from './cursor';
 import { EasyScoreMessage, EasyScoreMessageReceiver } from './types';
 
 export class EasyScoreMessageProducer {
-  static feed(musicXml: Document): EasyScoreMessageProducer {
+  static feed(musicXml: string): EasyScoreMessageProducer {
     return new EasyScoreMessageProducer(musicXml);
   }
 
-  private root: Document;
+  private musicXml: string;
 
-  private constructor(root: Document) {
-    this.root = root;
+  private constructor(musicXml: string) {
+    this.musicXml = musicXml;
   }
 
   message(receiver: EasyScoreMessageReceiver): void {
-    const cursor = Cursor.fromDocument(this.root);
+    const cursor = Cursor.fromMusicXml(this.musicXml);
     receiver.onMessage({ type: 'voiceStart' });
     while (cursor.hasNext()) {
       const node = cursor.next();
