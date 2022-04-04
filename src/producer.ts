@@ -1,9 +1,9 @@
 import { Cursor } from './cursor';
 import { EasyScoreMessage, EasyScoreMessageReceiver } from './types';
 
-export class EasyScoreMessageProducer {
-  static feed(musicXml: string): EasyScoreMessageProducer {
-    return new EasyScoreMessageProducer(musicXml);
+export class Producer {
+  static feed(musicXml: string): Producer {
+    return new Producer(musicXml);
   }
 
   private musicXml: string;

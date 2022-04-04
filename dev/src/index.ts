@@ -24,7 +24,7 @@ const render = async (example: string): Promise<void> => {
   try {
     content.innerHTML = '';
     status.innerHTML = 'rendering';
-    vexml.EasyScoreMessageRenderer.render(content.id, musicXml);
+    vexml.Renderer.render(content.id, musicXml);
     status.innerHTML = '';
   } catch (e) {
     status.innerHTML = 'error';
