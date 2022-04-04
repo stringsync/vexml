@@ -8,13 +8,26 @@ const createMusicXml = (opts: { numMeasures: number }): string => {
 describe('Cursor', () => {
   describe('fromString', () => {
     it('creates a cursor from a musicXml string', () => {
-      const musicXml = createMusicXml({ numMeasures: 5 });
-      expect(() => Cursor.fromMusicXml(musicXml)).not.toThrow();
+      const musicXml = createMusicXml({ numMeasures: 2 });
+      const cursor = Cursor.fromMusicXml(musicXml);
+      expect(cursor).toBeInstanceOf(Cursor);
     });
 
     it('does not throw for invalid strings', () => {
       const musicXml = 'some malformed musicXml string';
-      expect(() => Cursor.fromMusicXml(musicXml)).not.toThrow();
+      const cursor = Cursor.fromMusicXml(musicXml);
+      expect(cursor).toBeInstanceOf(Cursor);
+    });
+  });
+
+  describe('fromRoot', () => {
+    it('creates a cursor from a document', () => {
+      const musicXml = createMusicXml({ numMeasures: 2 });
+      const root = new DOMParser().parseFromString(musicXml, 'application/xml');
+
+      const cursor = Cursor.fromRoot(root);
+
+      expect(cursor).toBeInstanceOf(Cursor);
     });
   });
 
