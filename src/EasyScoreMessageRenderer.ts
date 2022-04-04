@@ -3,7 +3,7 @@ import { EasyScoreMessageProducer } from './EasyScoreMessageProducer';
 import { ClefMessage, EasyScoreMessage, NoteMessage } from './types';
 
 export class EasyScoreMessageRenderer {
-  static render(elementId: string, musicXml: Document): void {
+  static render(elementId: string, musicXml: string): void {
     const factory = new VF.Factory({
       renderer: { elementId, width: 500, height: 200 },
     });

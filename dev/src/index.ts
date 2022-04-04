@@ -19,14 +19,12 @@ const render = async (example: string): Promise<void> => {
   document.body.appendChild(separator);
 
   const res = await fetch(`examples/${example}`);
-  const text = await res.text();
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(text, 'application/xml');
+  const musicXml = await res.text();
 
   try {
     content.innerHTML = '';
     status.innerHTML = 'rendering';
-    vexml.EasyScoreMessageRenderer.render(content.id, xml);
+    vexml.EasyScoreMessageRenderer.render(content.id, musicXml);
     status.innerHTML = '';
   } catch (e) {
     status.innerHTML = 'error';
