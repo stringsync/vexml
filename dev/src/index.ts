@@ -21,13 +21,15 @@ const render = async (example: string): Promise<void> => {
   const res = await fetch(`examples/${example}`);
   const musicXml = await res.text();
 
+  const start = new Date();
+  const getTimeElapsedMs = () => new Date().getTime() - start.getTime();
   try {
     content.innerHTML = '';
     status.innerHTML = 'rendering';
     vexml.Renderer.render(content.id, musicXml);
-    status.innerHTML = '';
+    status.innerHTML = `success (${getTimeElapsedMs()} ms)`;
   } catch (e) {
-    status.innerHTML = 'error';
+    status.innerHTML = `error (${getTimeElapsedMs()} ms)`;
     const pre = document.createElement('pre');
     pre.innerHTML = e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`;
     content.innerHTML = '';
