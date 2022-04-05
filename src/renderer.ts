@@ -1,6 +1,6 @@
 import * as VF from 'vexflow';
 import { Producer } from './producer';
-import { ClefMessage, EasyScoreMessage, NoteMessage } from './types';
+import { EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
 
 export class Renderer {
   static render(elementId: string, musicXml: string): void {
@@ -26,54 +26,89 @@ export class Renderer {
 
   private render() {
     const score = this.factory.EasyScore();
-    const system = this.factory.System();
+    let system: VF.System | undefined = undefined;
 
     let timeSignature = '';
-    let clef = '';
-    let notes: VF.StemmableNote[] = [];
+    let clef: string[] = [];
+    // Map<staff,Map<voice,Notes[]>
+    const notes = new Map<string, Map<string, VF.StemmableNote[]>>([]);
     let beamStart = -1;
+    let curVoice = '0';
+    let curStaff = '0';
+    let curMeasure = 1;
+    let x = 0;
     for (const message of this.messages) {
-      switch (message.type) {
-        case 'clef':
-          clef = this.getClef(message.clef);
-          break;
-        case 'timeSignature':
-          timeSignature = `${message.top}/${message.bottom}`;
-          break;
+      if (curMeasure > 2) break;
+      switch (message.msgType) {
         case 'beamStart':
-          beamStart = notes.length - 1;
+          beamStart = notes.get(curStaff)!.get(curVoice)!.length - 1;
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
-            this.factory.Beam({ notes: notes.slice(beamStart), options: { autoStem: true } });
+            this.factory.Beam({
+              notes: notes.get(curStaff)!.get(curVoice)!.slice(beamStart),
+              options: { autoStem: true },
+            });
             beamStart = -1;
           }
           break;
-        case 'voiceStart':
-          notes = [];
+        case 'measureStart':
+          system = this.factory.System({ x, width: 300 });
+          notes.clear();
+          curVoice = '0';
+          curStaff = '0';
+          clef = message.clef;
+          timeSignature = message.time;
           break;
         case 'note':
-          const durationDenominator = this.getDurationDenominator(message.duration);
-          const name = `${message.pitch}/${durationDenominator}`;
-          const options = { stem: message.stem };
+          const durationDenominator = this.getDurationDenominator(message.type);
+          let name = '';
+          let options = {};
+          if (message.rest) {
+            name = 'B4/w/r';
+          } else {
+            name = `${message.pitch}/${durationDenominator}`;
+            options = { stem: message.stem };
+          }
           const note = score.notes(name, options)[0];
           if (message.accidental != '') {
             note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
           }
-          notes.push(note);
+          // New Staff, add previous to system (TODO function required)
+          if (curStaff !== '0' && curStaff !== message.staff) {
+            const voices: VF.Voice[] = [];
+            notes.get(curStaff)!.forEach((value: VF.StemmableNote[]) => {
+              voices.push(score.voice(value));
+            });
+            if (system) {
+              const stave = system.addStave({ voices: voices });
+              if (this.getClef(clef, curStaff) !== '') stave.addClef(this.getClef(clef, curStaff));
+              if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
+            }
+          }
+          curStaff = message.staff;
+          curVoice = message.voice;
+          if (!notes.get(curStaff)) notes.set(curStaff, new Map<string, VF.StemmableNote[]>([]));
+          if (!notes.get(curStaff)!.get(curVoice)) notes.get(curStaff)!.set(curVoice, []);
+          notes.get(curStaff)!.get(curVoice)!.push(note);
           break;
-        case 'voiceEnd':
-          system
-            .addStave({
-              voices: [score.voice(notes)],
-            })
-            .addClef(clef)
-            .addTimeSignature(timeSignature);
+        case 'measureEnd':
+          curMeasure++;
+          // Add last staff to system (TODO function required)
+          const voices: VF.Voice[] = [];
+          notes.get(curStaff)!.forEach((value: VF.StemmableNote[]) => {
+            voices.push(score.voice(value));
+          });
+          if (system) {
+            const stave = system.addStave({ voices: voices });
+            if (this.getClef(clef, curStaff) !== '') stave.addClef(this.getClef(clef, curStaff));
+            if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
+          }
+          this.factory.draw();
+          x += 300;
           break;
       }
     }
-
-    this.factory.draw();
   }
 
   private getDurationDenominator(duration: NoteMessage['duration']): string {
@@ -102,10 +137,12 @@ export class Renderer {
     }
   }
 
-  private getClef(accidental: ClefMessage['clef']): string {
-    switch (accidental) {
+  private getClef(accidental: MeasureStartMessage['clef'], index: string): string {
+    switch (accidental[parseInt(index) - 1]) {
       case 'G':
         return 'treble';
+      case 'F':
+        return 'bass';
       default:
         return '';
     }
