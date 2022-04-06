@@ -51,7 +51,7 @@ export class Producer {
         const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? '';
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
         const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent ?? '';
-        const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? '';
+        const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'full';
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         messages.push({

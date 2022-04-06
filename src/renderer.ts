@@ -66,7 +66,7 @@ export class Renderer {
           let name = '';
           let options = {};
           if (message.rest) {
-            name = 'B4/w/r';
+            name = `B4/${durationDenominator}/r`;
           } else {
             name = `${message.pitch}/${durationDenominator}`;
             options = { stem: message.stem };
