@@ -5,7 +5,7 @@ import { EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
 export class Renderer {
   static render(elementId: string, musicXml: string): void {
     const factory = new VF.Factory({
-      renderer: { elementId, width: 500, height: 200 },
+      renderer: { elementId, width: 1000, height: 400 },
     });
     const renderer = new Renderer(factory);
     Producer.feed(musicXml).message(renderer);
@@ -29,7 +29,7 @@ export class Renderer {
     let system: VF.System | undefined = undefined;
 
     let timeSignature = '';
-    let clef: string[] = [];
+    let clefs: string[] = [];
     // Map<staff,Map<voice,Notes[]>
     const notes = new Map<string, Map<string, VF.StemmableNote[]>>([]);
     let beamStart = -1;
@@ -57,7 +57,7 @@ export class Renderer {
           notes.clear();
           curVoice = '0';
           curStaff = '0';
-          clef = message.clef;
+          clefs = message.clefs;
           timeSignature = message.time;
           break;
         case 'note':
@@ -82,7 +82,7 @@ export class Renderer {
             });
             if (system) {
               const stave = system.addStave({ voices: voices });
-              if (this.getClef(clef, curStaff) !== '') stave.addClef(this.getClef(clef, curStaff));
+              if (this.getClef(clefs, curStaff) !== '') stave.addClef(this.getClef(clefs, curStaff));
               if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
             }
           }
@@ -101,7 +101,7 @@ export class Renderer {
           });
           if (system) {
             const stave = system.addStave({ voices: voices });
-            if (this.getClef(clef, curStaff) !== '') stave.addClef(this.getClef(clef, curStaff));
+            if (this.getClef(clefs, curStaff) !== '') stave.addClef(this.getClef(clefs, curStaff));
             if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
           }
           this.factory.draw();
@@ -137,7 +137,7 @@ export class Renderer {
     }
   }
 
-  private getClef(accidental: MeasureStartMessage['clef'], index: string): string {
+  private getClef(accidental: MeasureStartMessage['clefs'], index: string): string {
     switch (accidental[parseInt(index) - 1]) {
       case 'G':
         return 'treble';
