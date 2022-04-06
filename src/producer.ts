@@ -29,16 +29,16 @@ export class Producer {
     const nodeElem = node as Element;
     switch (node.nodeName) {
       case 'measure':
-        const width = nodeElem.getAttribute('width') ?? '';
-        const staves = nodeElem.getElementsByTagName('staves').item(0)?.textContent ?? '1';
+        const width = parseFloat(nodeElem.getAttribute('width') ?? '300');
+        const staves = parseFloat(nodeElem.getElementsByTagName('staves').item(0)?.textContent ?? '1');
         const sign: string[] = [];
-        for (let i = 0; i < parseInt(staves); i++) {
+        for (let i = 0; i < staves; i++) {
           sign.push(nodeElem.getElementsByTagName('sign').item(i)?.textContent ?? '');
         }
         const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent ?? '';
         const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent ?? '';
-        messages.push({ msgType: 'measureStart', width, staves, clef: sign, time: `${beats}/${beatType}` });
-        messages.push(...Array.from(node.childNodes).flatMap(this.getMessages));
+        messages.push({ msgType: 'measureStart', width, staves, clefs: sign, time: `${beats}/${beatType}` });
+        messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
         messages.push({ msgType: 'measureEnd' });
         break;
       case 'attributes':
@@ -70,7 +70,7 @@ export class Producer {
         if (beam === 'end') messages.push({ msgType: 'beamEnd' });
         break;
       default:
-        console.log(`unprocessed node, got:`, node);
+      // console.log(`unprocessed node, got:`, node);
     }
     return messages;
   }

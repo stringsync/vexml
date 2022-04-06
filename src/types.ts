@@ -1,8 +1,8 @@
 export type MeasureStartMessage = {
   msgType: 'measureStart';
-  width: string;
-  staves: string;
-  clef: string[];
+  width: number;
+  staves: number;
+  clefs: string[];
   time: string;
 };
 
