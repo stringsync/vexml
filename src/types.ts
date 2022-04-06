@@ -1,44 +1,39 @@
-export type VoiceStartMessage = {
-  type: 'voiceStart';
+export type MeasureStartMessage = {
+  msgType: 'measureStart';
+  width: number;
+  staves: number;
+  clefs: string[];
+  time: string;
 };
 
-export type VoiceEndMessage = {
-  type: 'voiceEnd';
+export type MeasureEndMessage = {
+  msgType: 'measureEnd';
 };
 
 export type BeamStartMessage = {
-  type: 'beamStart';
+  msgType: 'beamStart';
 };
 
 export type BeamEndMessage = {
-  type: 'beamEnd';
+  msgType: 'beamEnd';
 };
 
 export type NoteMessage = {
-  type: 'note';
+  msgType: 'note';
+  rest: boolean;
   stem: string;
   pitch: string;
+  type: string;
   duration: string;
   accidental: string;
-};
-
-export type ClefMessage = {
-  type: 'clef';
-  clef: string;
-};
-
-export type TimeSignatureMessage = {
-  type: 'timeSignature';
-  top: string;
-  bottom: string;
+  voice: string;
+  staff: string;
 };
 
 export type EasyScoreMessage =
   | NoteMessage
-  | ClefMessage
-  | TimeSignatureMessage
-  | VoiceStartMessage
-  | VoiceEndMessage
+  | MeasureStartMessage
+  | MeasureEndMessage
   | BeamStartMessage
   | BeamEndMessage;
 
