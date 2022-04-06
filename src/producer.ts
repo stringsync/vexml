@@ -14,7 +14,6 @@ export class Producer {
 
   message(receiver: EasyScoreMessageReceiver): void {
     const cursor = Cursor.fromMusicXml(this.musicXml);
-    receiver.onMessage({ type: 'voiceStart' });
     while (cursor.hasNext()) {
       const node = cursor.next();
       const messages: EasyScoreMessage[] = [];
@@ -23,7 +22,6 @@ export class Producer {
         receiver.onMessage(message);
       }
     }
-    receiver.onMessage({ type: 'voiceEnd' });
   }
 
   private getMessages(node: Node): EasyScoreMessage[] {
@@ -31,45 +29,48 @@ export class Producer {
     const nodeElem = node as Element;
     switch (node.nodeName) {
       case 'measure':
-        return Array.from(node.childNodes).flatMap(this.getMessages);
-      case 'attributes':
-        const children = node.childNodes;
-        for (let i = 0; i < children.length; i++) {
-          const childElem = children[i] as Element;
-          switch (children[i].nodeName) {
-            case 'clef':
-              const sign = childElem.getElementsByTagName('sign').item(0)?.textContent ?? '';
-              messages.push({ type: 'clef', clef: sign });
-              break;
-            case 'time':
-              const beats = childElem.getElementsByTagName('beats').item(0)?.textContent ?? '';
-              const beatType = childElem.getElementsByTagName('beat-type').item(0)?.textContent ?? '';
-              messages.push({ type: 'timeSignature', top: beats, bottom: beatType });
-              break;
-            default:
-              console.log(`unprocessed node, got: ${children[i]}`);
-          }
+        const width = parseFloat(nodeElem.getAttribute('width') ?? '300');
+        const staves = parseFloat(nodeElem.getElementsByTagName('staves').item(0)?.textContent ?? '1');
+        const sign: string[] = [];
+        for (let i = 0; i < staves; i++) {
+          sign.push(nodeElem.getElementsByTagName('sign').item(i)?.textContent ?? '');
         }
+        const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent ?? '';
+        const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent ?? '';
+        messages.push({ msgType: 'measureStart', width, staves, clefs: sign, time: `${beats}/${beatType}` });
+        messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
+        messages.push({ msgType: 'measureEnd' });
+        break;
+      case 'attributes':
+        // Nothing to do processed in measure
         break;
       case 'note':
+        const rest = nodeElem.getElementsByTagName('rest').item(0) ? true : false;
         const step = nodeElem.getElementsByTagName('step').item(0)?.textContent ?? '';
         const octave = nodeElem.getElementsByTagName('octave').item(0)?.textContent ?? '';
         const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? '';
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
-        const duration = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? '';
+        const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent ?? '';
+        const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? '';
+        const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
+        const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         messages.push({
-          type: 'note',
-          stem: stem,
+          msgType: 'note',
+          rest,
+          stem,
           pitch: `${step}${octave}`,
-          duration: duration,
-          accidental: accidental,
+          duration,
+          type,
+          accidental,
+          voice,
+          staff,
         });
         const beam = '' + nodeElem.getElementsByTagName('beam').item(0)?.textContent;
-        if (beam === 'begin') messages.push({ type: 'beamStart' });
-        if (beam === 'end') messages.push({ type: 'beamEnd' });
+        if (beam === 'begin') messages.push({ msgType: 'beamStart' });
+        if (beam === 'end') messages.push({ msgType: 'beamEnd' });
         break;
       default:
-        console.log(`unprocessed node, got: ${node}`);
+      // console.log(`unprocessed node, got:`, node);
     }
     return messages;
   }
