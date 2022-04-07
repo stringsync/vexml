@@ -45,10 +45,11 @@ export class Producer {
         // Nothing to do processed in measure
         break;
       case 'note':
-        const rest = nodeElem.getElementsByTagName('rest').item(0) ? true : false;
+        const rest = nodeElem.getElementsByTagName('rest').length > 0;
         const step = nodeElem.getElementsByTagName('step').item(0)?.textContent ?? '';
         const octave = nodeElem.getElementsByTagName('octave').item(0)?.textContent ?? '';
         const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? '';
+        const dots = nodeElem.getElementsByTagName('dot').length;
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
         const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent ?? '';
         const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'full';
@@ -58,6 +59,7 @@ export class Producer {
           msgType: 'note',
           rest,
           stem,
+          dots,
           pitch: `${step}${octave}`,
           duration,
           type,

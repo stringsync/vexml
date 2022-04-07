@@ -22,6 +22,7 @@ export type NoteMessage = {
   msgType: 'note';
   rest: boolean;
   stem: string;
+  dots: number;
   pitch: string;
   type: string;
   duration: string;
