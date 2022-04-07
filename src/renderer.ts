@@ -84,8 +84,12 @@ export class Renderer {
             notes = [];
             if (system) {
               const stave = system.addStave({ voices: voices });
-              if (this.getClef(clefs, curStaff) !== '') stave.addClef(this.getClef(clefs, curStaff));
-              if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
+              if (this.getClef(clefs, curStaff) !== '') {
+                stave.addClef(this.getClef(clefs, curStaff));
+              }
+              if (timeSignature !== '/') {
+                stave.addTimeSignature(timeSignature);
+              }
             }
             voices = [];
           } else if (curVoice !== '0' && curVoice !== message.voice) {
@@ -103,8 +107,12 @@ export class Renderer {
           notes = [];
           if (system) {
             const stave = system.addStave({ voices: voices });
-            if (this.getClef(clefs, curStaff) !== '') stave.addClef(this.getClef(clefs, curStaff));
-            if (timeSignature !== '/') stave.addTimeSignature(timeSignature);
+            if (this.getClef(clefs, curStaff) !== '') {
+              stave.addClef(this.getClef(clefs, curStaff));
+            }
+            if (timeSignature !== '/') {
+              stave.addTimeSignature(timeSignature);
+            }
           }
           voices = [];
           this.factory.draw();
