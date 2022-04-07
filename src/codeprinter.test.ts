@@ -169,4 +169,31 @@ describe('CodePrinter', () => {
     expect(codePrinter.size()).toBe(1);
     expect(codePrinter.flush()).toStrictEqual([`caller.call(container);`]);
   });
+
+  it('tracks nested variable usage', () => {
+    const codePrinter = new CodePrinter();
+    const container = codePrinter.watch('container', { value: 'hello' });
+    const call = jest.fn();
+    const caller = codePrinter.watch('caller', { call });
+
+    caller.call({ nested: container.value });
+
+    expect(call).toHaveBeenCalledOnce();
+    expect(codePrinter.size()).toBe(1);
+    expect(codePrinter.flush()).toStrictEqual([`caller.call({ nested: container.value });`]);
+  });
+
+  it('tracks variables that use function args that reference themselves', () => {
+    const codePrinter = new CodePrinter();
+    const bar = jest.fn();
+    const foo = codePrinter.watch('foo', { bar, baz: 'baz' });
+
+    foo.baz = 'boom';
+    foo.bar(foo.baz);
+
+    expect(foo.baz).toBe('boom');
+    expect(bar).toHaveBeenCalledOnce();
+    expect(codePrinter.size()).toBe(2);
+    expect(codePrinter.flush()).toStrictEqual([`foo.baz = 'boom';`, `foo.bar(foo.baz);`]);
+  });
 });
