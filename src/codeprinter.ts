@@ -7,14 +7,21 @@ type Literal = string;
 type AnyResult = any;
 type VariableName = string;
 type AnyTarget = any;
+type AnyObject = Record<any, any>;
 
 export class CodePrinter {
   private literals: Map<AnyResult, Literal> = new Map();
   private variables = BiMap.create<VariableName, AnyTarget>();
+  private proxies = BiMap.create<VariableName, AnyTarget>();
   private buffer = new Array<string>();
 
-  watch<T extends Record<any, any>>(target: T, variableName: string): T {
-    this.registerVariable(variableName, target);
+  watch<T extends AnyObject>(variableName: string, target: T): T {
+    if (typeof target !== 'object') {
+      throw new CodePrinterError(`target must be an object: ${target} ('${typeof target}')`);
+    }
+    if (Array.isArray(target)) {
+      throw new CodePrinterError(`array targets aren't supported yet: ${target}`);
+    }
 
     // Track function calls
     for (const [prop, value] of Object.entries(target)) {
@@ -25,15 +32,15 @@ export class CodePrinter {
             const variableName = this.getVariableName(thisArg);
             const literal = this.getInvokeLiteral(variableName, prop, argumentsList);
             this.registerLiteral(result, literal);
-            this.buffer.push(literal);
+            this.push(literal);
             return result;
           },
-        });
+        }).bind(target);
       }
     }
 
     // Track setter and getter calls
-    return new Proxy(target, {
+    const proxy = new Proxy(target, {
       get: (target, propertyKey, receiver) => {
         const result = Reflect.get(target, propertyKey, receiver);
         const literal = this.getGetterLiteral(variableName, propertyKey);
@@ -43,10 +50,14 @@ export class CodePrinter {
       set: (target, propertyKey, value, receiver) => {
         const result = Reflect.set(target, propertyKey, value, receiver);
         const literal = this.getSetterLiteral(variableName, propertyKey, value);
-        this.buffer.push(literal);
+        this.push(literal);
         return result;
       },
     });
+
+    this.registerVariable(variableName, target);
+    this.registerProxy(variableName, proxy);
+    return proxy;
   }
 
   flush(): string[] {
@@ -55,44 +66,65 @@ export class CodePrinter {
     return buffer;
   }
 
+  size(): number {
+    return this.buffer.length;
+  }
+
+  private push(literal: Literal) {
+    this.buffer.push(`${literal};`);
+  }
+
+  private registerProxy(variableName: VariableName, proxy: AnyTarget) {
+    if (!this.variables.has(variableName)) {
+      throw new CodePrinterError(`variable must be watched before setting a proxy: ${variableName}`);
+    }
+    if (this.proxies.has(variableName)) {
+      throw new CodePrinterError(`variable is already being proxied, something internally went wrong: ${variableName}`);
+    }
+    this.proxies.set(variableName, proxy);
+  }
+
   private registerVariable(variableName: VariableName, target: AnyTarget) {
     if (this.variables.has(variableName)) {
       throw new CodePrinterError(`variable is already being watched, use a different name: ${variableName}`);
     }
+    if (this.proxies.has(variableName)) {
+      throw new CodePrinterError(`variable is already being proxied, something internally went wrong: ${variableName}`);
+    }
     this.variables.set(variableName, target);
   }
 
-  private getVariable(variableName: VariableName): AnyTarget {
-    if (!this.variables.has(variableName)) {
-      throw new CodePrinterError(`not target found for variableName: ${variableName}`);
-    }
-    return this.variables.get(variableName);
-  }
-
   private getVariableName(target: AnyTarget): VariableName {
-    if (!this.variables.invert().has(target)) {
-      throw new CodePrinterError(`target is not being watched, check the \`this\` context: ${target}`);
-    }
+    let variableName: string | undefined = undefined;
 
-    const variableName = this.variables.invert().get(target);
+    variableName = this.variables.invert().get(target);
     if (typeof variableName === 'string') {
       return variableName;
     }
 
-    throw new CodePrinterError(`could not find variable name for target: ${target}`);
+    variableName = this.proxies.invert().get(target);
+    if (typeof variableName === 'string') {
+      return variableName;
+    }
+
+    throw new CodePrinterError(`could not find variable name for \`this\`: ${target}`);
   }
 
   private registerLiteral(result: AnyResult, literal: Literal) {
     this.literals.set(result, literal);
   }
 
-  private getLiteral(result: AnyResult): string | null {
-    return this.literals.get(result) ?? null;
+  private getLiteral(result: AnyResult): string {
+    const literal = this.literals.get(result);
+    if (typeof literal !== 'string') {
+      throw new CodePrinterError(`expected literal to be registered for result: ${result}`);
+    }
+    return literal;
   }
 
   private getGetterLiteral(variableName: VariableName, propertyKey: string | symbol): string {
     if (typeof propertyKey === 'symbol') {
-      throw new CodePrinterError(`cannot handle code printing symbol: ${propertyKey.toString()}`);
+      return `${variableName}[${propertyKey.toString()}]`;
     }
     if (propertyKey.includes('-')) {
       return `${variableName}['${propertyKey.toString()}']`;
@@ -115,9 +147,16 @@ export class CodePrinter {
   }
 
   private toLiteral(value: any): string {
-    const maybeLiteral = this.getLiteral(value);
-    if (maybeLiteral !== null) {
-      return maybeLiteral;
+    try {
+      return this.getVariableName(value);
+    } catch (e) {
+      // noop
+    }
+
+    try {
+      return this.getLiteral(value);
+    } catch (e) {
+      // noop
     }
 
     switch (typeof value) {
@@ -139,7 +178,7 @@ export class CodePrinter {
         const key = prop.includes('-') ? `'${prop}'` : prop;
         pairs.push(`${key}: ${this.toLiteral(v)}`);
       }
-      return `{${pairs.join(', ')}}`;
+      return pairs.length > 0 ? `{ ${pairs.join(', ')} }` : '{}';
     }
 
     throw new CodePrinterError(`cannot change value to literal: ${value}`);
