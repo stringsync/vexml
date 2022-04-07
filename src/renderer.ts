@@ -74,7 +74,6 @@ export class Renderer {
           for (let i = 0; i < message.dots; i++) {
             name += '.';
           }
-          console.log(name, message.dots);
           const note = score.notes(name, options)[0];
           if (message.accidental != '') {
             note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
