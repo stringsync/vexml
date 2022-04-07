@@ -38,7 +38,7 @@ export class Renderer {
     let curMeasure = 1;
     let x = 0;
     for (const message of this.messages) {
-      if (curMeasure > 2) break;
+      if (curMeasure > 3) break;
       switch (message.msgType) {
         case 'beamStart':
           beamStart = notes.length - 1;
@@ -71,13 +71,17 @@ export class Renderer {
             name = `${message.pitch}/${durationDenominator}`;
             options = { stem: message.stem };
           }
+          for (let i = 0; i < message.dots; i++) {
+            name += '.';
+          }
+          console.log(name, message.dots);
           const note = score.notes(name, options)[0];
           if (message.accidental != '') {
             note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
           }
           // New Staff, add previous to system
           if (curStaff !== '0' && curStaff !== message.staff) {
-            voices.push(score.voice(notes));
+            voices.push(score.voice(notes).setMode(2));
             notes = [];
             if (system) {
               const stave = system.addStave({ voices: voices });
@@ -86,7 +90,7 @@ export class Renderer {
             }
             voices = [];
           } else if (curVoice !== '0' && curVoice !== message.voice) {
-            voices.push(score.voice(notes));
+            voices.push(score.voice(notes).setMode(2));
             notes = [];
           }
           curStaff = message.staff;
@@ -96,7 +100,7 @@ export class Renderer {
         case 'measureEnd':
           curMeasure++;
           // Add last staff to system (TODO function required)
-          voices.push(score.voice(notes));
+          voices.push(score.voice(notes).setMode(2));
           notes = [];
           if (system) {
             const stave = system.addStave({ voices: voices });
