@@ -1,4 +1,4 @@
-import { CodePrinter } from './codeprinter';
+import { CodePrinter, CodePrinterError } from './codeprinter';
 import { Expression } from './expression';
 
 describe('CodePrinter', () => {
@@ -14,6 +14,13 @@ describe('CodePrinter', () => {
     expect(codePrinter.flush()).toStrictEqual([`const foo = { bar: 'bar' };`]);
   });
 
+  it('disallows declaring variables with duplicate names', () => {
+    const codePrinter = new CodePrinter();
+    codePrinter.watch('foo', Expression.empty());
+
+    expect(() => codePrinter.watch('foo', Expression.empty())).toThrowError(CodePrinterError);
+  });
+
   it('tracks comments', () => {
     const codePrinter = new CodePrinter();
 
@@ -21,6 +28,49 @@ describe('CodePrinter', () => {
 
     expect(codePrinter.size()).toBe(1);
     expect(codePrinter.flush()).toStrictEqual(['// hello world']);
+  });
+
+  it('tracks comments with other actions', () => {
+    const codePrinter = new CodePrinter();
+    codePrinter.comment('create foo');
+    const foo = codePrinter.watch(
+      'foo',
+      Expression.of(() => ({ foo: 'foo' }))
+    );
+
+    codePrinter.newline();
+    codePrinter.comment('set foo');
+    foo.foo = 'bar';
+
+    expect(codePrinter.size()).toBe(5);
+    expect(codePrinter.flush()).toStrictEqual([
+      '// create foo',
+      `const foo = { foo: 'foo' };`,
+      '\n',
+      `// set foo`,
+      `foo.foo = 'bar';`,
+    ]);
+  });
+
+  it('disallows comments that start with //', () => {
+    const codePrinter = new CodePrinter();
+
+    expect(() => codePrinter.comment('// hello world')).toThrowError(CodePrinterError);
+  });
+
+  it('disallows comments that start with /*', () => {
+    const codePrinter = new CodePrinter();
+
+    expect(() => codePrinter.comment('/* hello world')).toThrowError(CodePrinterError);
+  });
+
+  it('tracks newlines', () => {
+    const codePrinter = new CodePrinter();
+
+    codePrinter.newline();
+
+    expect(codePrinter.size()).toBe(1);
+    expect(codePrinter.flush()).toStrictEqual(['\n']);
   });
 
   it('tracks setting strings', () => {
@@ -263,7 +313,7 @@ describe('CodePrinter', () => {
     ]);
   });
 
-  it('tracks nested variable usage', () => {
+  it('tracks nested variables', () => {
     const codePrinter = new CodePrinter();
     const container = codePrinter.watch(
       'container',
@@ -283,6 +333,39 @@ describe('CodePrinter', () => {
       `const container = { value: 'hello' };`,
       `const caller = { call };`,
       `caller.call({ nested: container.value });`,
+    ]);
+  });
+
+  it('tracks nested objects', () => {
+    const codePrinter = new CodePrinter();
+    const foo = codePrinter.watch(
+      'foo',
+      Expression.of(() => ({ bar: { baz: 'baz' } }))
+    );
+
+    foo.bar.baz = 'bam';
+
+    expect(foo.bar.baz).toBe('bam');
+    expect(codePrinter.size()).toBe(2);
+    expect(codePrinter.flush()).toStrictEqual([`const foo = { bar: { baz: 'baz' } };`, `foo.bar.baz = 'bam';`]);
+  });
+
+  it('tracks setting nested objects', () => {
+    const codePrinter = new CodePrinter();
+    const foo = codePrinter.watch(
+      'foo',
+      Expression.of(() => ({ bar: { baz: 'baz' } }))
+    );
+
+    foo.bar = { baz: 'bam' };
+    foo.bar.baz = 'boom';
+
+    expect(foo.bar.baz).toBe('boom');
+    expect(codePrinter.size()).toBe(3);
+    expect(codePrinter.flush()).toStrictEqual([
+      `const foo = { bar: { baz: 'baz' } };`,
+      `foo.bar = { baz: 'bam' };`,
+      `foo.bar.baz = 'boom';`,
     ]);
   });
 

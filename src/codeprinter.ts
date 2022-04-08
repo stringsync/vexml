@@ -24,6 +24,10 @@ export class CodePrinter {
     return proxy;
   }
 
+  newline(): void {
+    this.record('\n');
+  }
+
   comment(comment: string): void {
     if (comment.startsWith('//') || comment.startsWith('/*')) {
       throw new CodePrinterError('do not add comment symbols');
@@ -96,7 +100,30 @@ export class CodePrinter {
     const result = Reflect.set(target, key, value, receiver);
     const literal = this.computeSetterLiteral(variableName, key, value);
     this.record(`${literal};`);
+
+    // If we're setting an object, we need to reproxy the structure.
+    if (typeof value === 'object') {
+      const proxy = this.createProxy(variableName, target);
+      this.reregisterVariable(variableName, target);
+      this.reregisterProxy(variableName, proxy);
+    }
+
     return result;
+  }
+
+  private registerVariable(variableName: VariableName, target: AnyObject) {
+    if (this.variables.has(variableName)) {
+      throw new CodePrinterError(`variable is already being watched, use a different name: ${variableName}`);
+    }
+    if (this.proxies.has(variableName)) {
+      throw new CodePrinterError(`variable is already being proxied, something internally went wrong: ${variableName}`);
+    }
+    this.variables.set(variableName, target);
+  }
+
+  private reregisterVariable(variableName: VariableName, target: AnyObject) {
+    this.variables.delete(variableName);
+    this.variables.set(variableName, target);
   }
 
   private registerProxy(variableName: VariableName, proxy: AnyObject) {
@@ -109,14 +136,9 @@ export class CodePrinter {
     this.proxies.set(variableName, proxy);
   }
 
-  private registerVariable(variableName: VariableName, target: AnyObject) {
-    if (this.variables.has(variableName)) {
-      throw new CodePrinterError(`variable is already being watched, use a different name: ${variableName}`);
-    }
-    if (this.proxies.has(variableName)) {
-      throw new CodePrinterError(`variable is already being proxied, something internally went wrong: ${variableName}`);
-    }
-    this.variables.set(variableName, target);
+  private reregisterProxy(variableName: VariableName, proxy: AnyObject) {
+    this.proxies.delete(variableName);
+    this.proxies.set(variableName, proxy);
   }
 
   private registerLiteral(result: AnyResult, literal: Literal) {
