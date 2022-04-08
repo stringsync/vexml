@@ -24,6 +24,13 @@ export class CodePrinter {
     return proxy;
   }
 
+  comment(comment: string): void {
+    if (comment.startsWith('//') || comment.startsWith('/*')) {
+      throw new CodePrinterError('do not add comment symbols //');
+    }
+    this.record(`// ${comment}`);
+  }
+
   flush(): string[] {
     const buffer = this.buffer;
     this.buffer = [];
