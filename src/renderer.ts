@@ -53,7 +53,7 @@ export class Renderer {
           }
           break;
         case 'measureStart':
-          system = this.factory.System({ x, width: 300 });
+          system = this.factory.System({ x, width: 300, formatOptions: { align_rests: true } });
           notes = [];
           voices = [];
           curVoice = '0';
@@ -65,19 +65,6 @@ export class Renderer {
           const durationDenominator = this.getDurationDenominator(message.type);
           let name = '';
           let options = {};
-          if (message.rest) {
-            name = `B4/${durationDenominator}/r`;
-          } else {
-            name = `${message.pitch}/${durationDenominator}`;
-            options = { stem: message.stem };
-          }
-          for (let i = 0; i < message.dots; i++) {
-            name += '.';
-          }
-          const note = score.notes(name, options)[0];
-          if (message.accidental != '') {
-            note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
-          }
           // New Staff, add previous to system
           if (curStaff !== '0' && curStaff !== message.staff) {
             voices.push(score.voice(notes).setMode(2));
@@ -98,6 +85,30 @@ export class Renderer {
           }
           curStaff = message.staff;
           curVoice = message.voice;
+
+          options = { stem: message.stem };
+          // no pitch, rest
+          if (message.pitch.length == 0) {
+            name = `B4/${durationDenominator}/r`;
+            options = {};
+            // single pitch
+          } else if (message.pitch.length == 1) name = `${message.pitch}/${durationDenominator}`;
+          // multiple pitches, chords
+          else if (message.pitch.length > 1) {
+            name = '(';
+            for (const pitch of message.pitch) {
+              name += ` ${pitch}`;
+            }
+            name += ` )/${durationDenominator}`;
+          }
+
+          for (let i = 0; i < message.dots; i++) {
+            name += '.';
+          }
+          const note = score.notes(name, options)[0];
+          if (message.accidental != '') {
+            note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
+          }
           notes.push(note);
           break;
         case 'measureEnd':
