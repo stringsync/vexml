@@ -1,5 +1,5 @@
 import { Cursor } from './cursor';
-import { EasyScoreMessage, EasyScoreMessageReceiver } from './types';
+import { EasyScoreMessage, EasyScoreMessageReceiver, NoteMessage } from './types';
 
 export class Producer {
   static feed(musicXml: string): Producer {
@@ -7,6 +7,7 @@ export class Producer {
   }
 
   private musicXml: string;
+  private lastNoteMessage?: NoteMessage;
 
   private constructor(musicXml: string) {
     this.musicXml = musicXml;
@@ -55,18 +56,23 @@ export class Producer {
         const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'full';
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
-        messages.push({
-          msgType: 'note',
-          rest,
-          stem,
-          dots,
-          pitch: `${step}${octave}`,
-          duration,
-          type,
-          accidental,
-          voice,
-          staff,
-        });
+        const chord = nodeElem.getElementsByTagName('chord').length > 0;
+        if (chord && this.lastNoteMessage) {
+          this.lastNoteMessage.pitch.push(`${step}${octave}`);
+        } else {
+          this.lastNoteMessage = {
+            msgType: 'note',
+            stem,
+            dots,
+            pitch: rest ? [] : [`${step}${octave}`],
+            duration,
+            type,
+            accidental,
+            voice,
+            staff,
+          };
+          messages.push(this.lastNoteMessage);
+        }
         const beam = '' + nodeElem.getElementsByTagName('beam').item(0)?.textContent;
         if (beam === 'begin') messages.push({ msgType: 'beamStart' });
         if (beam === 'end') messages.push({ msgType: 'beamEnd' });

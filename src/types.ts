@@ -20,10 +20,9 @@ export type BeamEndMessage = {
 
 export type NoteMessage = {
   msgType: 'note';
-  rest: boolean;
   stem: string;
   dots: number;
-  pitch: string;
+  pitch: string[];
   type: string;
   duration: string;
   accidental: string;
