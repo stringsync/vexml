@@ -38,6 +38,7 @@ export class Renderer {
     let curStaff = '0';
     let curMeasure = 1;
     let x = 0;
+    let stave: VF.Stave | undefined = undefined;
     for (const message of this.messages) {
       if (curMeasure > 3) break;
       switch (message.msgType) {
@@ -54,7 +55,7 @@ export class Renderer {
           }
           break;
         case 'measureStart':
-          system = this.factory.System({ x, width: 300, formatOptions: { align_rests: true } });
+          system = this.factory.System({ x, width: message.width, formatOptions: { align_rests: true } });
           notes = [];
           voices = [];
           curVoice = '0';
@@ -72,7 +73,7 @@ export class Renderer {
             voices.push(score.voice(notes).setMode(2));
             notes = [];
             if (system) {
-              const stave = system.addStave({ voices: voices });
+              stave = system.addStave({ voices: voices });
               if (this.getClef(clefs, curStaff) !== '') {
                 stave.addClef(this.getClef(clefs, curStaff));
               }
@@ -119,7 +120,7 @@ export class Renderer {
           voices.push(score.voice(notes).setMode(2));
           notes = [];
           if (system) {
-            const stave = system.addStave({ voices: voices });
+            stave = system.addStave({ voices: voices });
             if (this.getClef(clefs, curStaff) !== '') {
               stave.addClef(this.getClef(clefs, curStaff));
             }
@@ -129,7 +130,7 @@ export class Renderer {
           }
           voices = [];
           this.factory.draw();
-          x += 300;
+          x += stave!.getWidth();
           break;
       }
     }
