@@ -1,13 +1,14 @@
 import { BiMap } from './bimap';
+import { Expression } from './expression';
 
 class CodePrinterError extends Error {}
 
-// These aliases are used to self-document the Map<K, V> types.
+// These aliases are used to help self-document some ambiguous types.
 type Literal = string;
 type AnyResult = any;
 type VariableName = string;
-type AnyTarget = any;
 type AnyObject = Record<any, any>;
+type AnyTarget = AnyObject;
 
 export class CodePrinter {
   private literals: Map<AnyResult, Literal> = new Map();
@@ -15,14 +16,26 @@ export class CodePrinter {
   private proxies = BiMap.create<VariableName, AnyTarget>();
   private buffer = new Array<string>();
 
-  watch<T extends AnyObject>(variableName: string, target: T): T {
-    if (typeof target !== 'object') {
-      throw new CodePrinterError(`target must be an object: ${target} ('${typeof target}')`);
-    }
-    if (Array.isArray(target)) {
-      throw new CodePrinterError(`array targets aren't supported yet: ${target}`);
-    }
+  watch<T extends AnyObject>(variableName: string, expression: Expression<T>): T {
+    const target = expression.value;
+    const proxy = this.createProxy(variableName, target);
+    this.declare(variableName, expression);
+    this.registerVariable(variableName, target);
+    this.registerProxy(variableName, proxy);
+    return proxy;
+  }
 
+  flush(): string[] {
+    const buffer = this.buffer;
+    this.buffer = [];
+    return buffer;
+  }
+
+  size(): number {
+    return this.buffer.length;
+  }
+
+  private createProxy<T extends AnyObject>(variableName: VariableName, target: T): T {
     // Track function calls
     for (const [prop, value] of Object.entries(target)) {
       if (typeof value === 'function') {
@@ -55,23 +68,15 @@ export class CodePrinter {
       },
     });
 
-    this.registerVariable(variableName, target);
-    this.registerProxy(variableName, proxy);
     return proxy;
-  }
-
-  flush(): string[] {
-    const buffer = this.buffer;
-    this.buffer = [];
-    return buffer;
-  }
-
-  size(): number {
-    return this.buffer.length;
   }
 
   private push(literal: Literal) {
     this.buffer.push(`${literal};`);
+  }
+
+  private declare(variableName: VariableName, expression: Expression<any>) {
+    this.push(this.getDeclarationLiteral(variableName, expression));
   }
 
   private registerProxy(variableName: VariableName, proxy: AnyTarget) {
@@ -112,6 +117,10 @@ export class CodePrinter {
 
   private registerLiteral(result: AnyResult, literal: Literal) {
     this.literals.set(result, literal);
+  }
+
+  private getDeclarationLiteral(variableName: VariableName, expression: Expression<any>): string {
+    return `const ${variableName} = ${expression.toString()}`;
   }
 
   private getLiteral(result: AnyResult): string {
