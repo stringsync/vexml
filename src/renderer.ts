@@ -30,6 +30,7 @@ export class Renderer {
 
     let timeSignature = '';
     let clefs: string[] = [];
+    let curClefs: string[] = [];
     let voices: VF.Voice[] = [];
     let notes: VF.StemmableNote[] = [];
     let beamStart = -1;
@@ -59,6 +60,7 @@ export class Renderer {
           curVoice = '0';
           curStaff = '0';
           clefs = message.clefs;
+          if (clefs.length > 0) curClefs = clefs;
           timeSignature = message.time;
           break;
         case 'note':
@@ -86,7 +88,7 @@ export class Renderer {
           curStaff = message.staff;
           curVoice = message.voice;
 
-          options = { stem: message.stem };
+          options = { stem: message.stem, clef: this.getClef(curClefs, curStaff, 'treble') };
           // no pitch, rest
           if (message.pitch.length == 0) {
             name = `B4/${durationDenominator}/r`;
@@ -159,14 +161,14 @@ export class Renderer {
     }
   }
 
-  private getClef(accidental: MeasureStartMessage['clefs'], index: string): string {
+  private getClef(accidental: MeasureStartMessage['clefs'], index: string, defect = ''): string {
     switch (accidental[parseInt(index) - 1]) {
       case 'G':
         return 'treble';
       case 'F':
         return 'bass';
       default:
-        return '';
+        return defect;
     }
   }
 }
