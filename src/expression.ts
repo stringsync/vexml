@@ -11,6 +11,10 @@ export class Expression<T> {
     return new Expression(src, value, expression);
   }
 
+  static empty(): Expression<Record<any, any>> {
+    return Expression.of(() => ({}));
+  }
+
   readonly src: string;
   readonly value: T;
   private expression: string;

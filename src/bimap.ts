@@ -27,6 +27,16 @@ export class BiMap<K, V> {
     return this.forward.get(key);
   }
 
+  delete(key: K): boolean {
+    if (!this.has(key)) {
+      return false;
+    }
+    const value = this.get(key)!;
+    this.forward.delete(key);
+    this.backward.delete(value);
+    return true;
+  }
+
   has(key: K): boolean {
     return this.forward.has(key);
   }
