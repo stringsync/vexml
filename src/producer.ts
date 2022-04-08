@@ -32,13 +32,14 @@ export class Producer {
       case 'measure':
         const width = parseFloat(nodeElem.getAttribute('width') ?? '300');
         const staves = parseFloat(nodeElem.getElementsByTagName('staves').item(0)?.textContent ?? '1');
-        const sign: string[] = [];
+        const signs: string[] = [];
         for (let i = 0; i < staves; i++) {
-          sign.push(nodeElem.getElementsByTagName('sign').item(i)?.textContent ?? '');
+          const sign = nodeElem.getElementsByTagName('sign').item(i)?.textContent;
+          if (sign) signs.push(sign);
         }
         const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent ?? '';
         const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent ?? '';
-        messages.push({ msgType: 'measureStart', width, staves, clefs: sign, time: `${beats}/${beatType}` });
+        messages.push({ msgType: 'measureStart', width, staves, clefs: signs, time: `${beats}/${beatType}` });
         messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
         messages.push({ msgType: 'measureEnd' });
         break;
