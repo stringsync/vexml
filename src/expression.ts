@@ -71,7 +71,7 @@ const getReturnedExpressionLiteral = (src: string): string => {
   }
 
   const tokens = program
-    .tokens!.filter((token) => isWithinScope(token, scope))
+    .tokens!.filter(isWithinScope(scope))
     .map((token) => token.value)
     .join('')
     .split('');
@@ -99,20 +99,22 @@ const getReturnedExpressionLiteral = (src: string): string => {
   return chars.join('');
 };
 
-const isWithinScope = (token: esprima.Token, scope: estree.SourceLocation): boolean => {
-  // The esprima.Token type definition is missing loc, so we hack it.
-  const loc = (token as any).loc as estree.SourceLocation;
-  if (loc.start.line < scope.start.line) {
-    return false;
-  }
-  if (loc.end.line > scope.end.line) {
-    return false;
-  }
-  if (loc.start.line === scope.start.line && loc.start.column < scope.start.column) {
-    return false;
-  }
-  if (loc.end.line === scope.end.line && loc.end.column > scope.end.column) {
-    return false;
-  }
-  return true;
-};
+const isWithinScope =
+  (scope: estree.SourceLocation) =>
+  (token: esprima.Token): boolean => {
+    // The esprima.Token type definition is missing loc, so we hack it.
+    const loc = (token as any).loc as estree.SourceLocation;
+    if (loc.start.line < scope.start.line) {
+      return false;
+    }
+    if (loc.end.line > scope.end.line) {
+      return false;
+    }
+    if (loc.start.line === scope.start.line && loc.start.column < scope.start.column) {
+      return false;
+    }
+    if (loc.end.line === scope.end.line && loc.end.column > scope.end.column) {
+      return false;
+    }
+    return true;
+  };
