@@ -63,7 +63,9 @@ describe('BiMap', () => {
 
     it('returns undefined when the key does not exist', () => {
       const map = BiMap.create();
+
       expect(map.get({})).toBeUndefined();
+      expect(map.invert().has(undefined)).toBeFalse();
     });
 
     it('can return undefined if the key was explicitly set to it', () => {
@@ -72,6 +74,7 @@ describe('BiMap', () => {
       map.set(key, undefined);
 
       expect(map.get(key)).toBeUndefined();
+      expect(map.invert().has(undefined)).toBeTrue();
       expect(map.invert().get(undefined)).toBe(key);
     });
   });
