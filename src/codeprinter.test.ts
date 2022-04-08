@@ -18,7 +18,7 @@ describe('CodePrinter', () => {
     const codePrinter = new CodePrinter();
     codePrinter.watch('foo', Expression.empty());
 
-    expect(() => codePrinter.watch('foo', Expression.empty())).toThrowError(CodePrinterError);
+    expect(() => codePrinter.watch('foo', Expression.empty())).toThrow(CodePrinterError);
   });
 
   it('tracks comments', () => {
@@ -55,13 +55,13 @@ describe('CodePrinter', () => {
   it('disallows comments that start with //', () => {
     const codePrinter = new CodePrinter();
 
-    expect(() => codePrinter.comment('// hello world')).toThrowError(CodePrinterError);
+    expect(() => codePrinter.comment('// hello world')).toThrow(CodePrinterError);
   });
 
   it('disallows comments that start with /*', () => {
     const codePrinter = new CodePrinter();
 
-    expect(() => codePrinter.comment('/* hello world')).toThrowError(CodePrinterError);
+    expect(() => codePrinter.comment('/* hello world')).toThrow(CodePrinterError);
   });
 
   it('tracks newlines', () => {

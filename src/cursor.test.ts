@@ -45,7 +45,7 @@ describe('Cursor', () => {
       const musicXml = createMusicXml({ numMeasures: 0 });
       const cursor = Cursor.fromMusicXml(musicXml);
 
-      expect(() => cursor.next()).toThrowError(CursorError);
+      expect(() => cursor.next()).toThrow(CursorError);
     });
 
     it('returns multiple next nodes, then throws when done', () => {
@@ -58,14 +58,14 @@ describe('Cursor', () => {
       expect(node1).not.toBeNull();
       expect(node2).not.toBeNull();
       expect(node1).not.toBe(node2);
-      expect(() => cursor.next()).toThrowError(CursorError);
+      expect(() => cursor.next()).toThrow(CursorError);
     });
 
     it('does not have a next for invalid musicXml strings', () => {
       const musicXml = 'some malformed musicXml string';
       const cursor = Cursor.fromMusicXml(musicXml);
 
-      expect(() => cursor.next()).toThrowError(CursorError);
+      expect(() => cursor.next()).toThrow(CursorError);
     });
   });
 
