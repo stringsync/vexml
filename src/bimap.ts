@@ -1,3 +1,5 @@
+export class BiMapError extends Error {}
+
 export class BiMap<K, V> {
   static create<K, V>(): BiMap<K, V> {
     return new BiMap<K, V>(new Map(), new Map());
@@ -14,6 +16,9 @@ export class BiMap<K, V> {
   }
 
   set(key: K, value: V): void {
+    if (this.inverse.has(value)) {
+      throw new BiMapError(`value already present, cannot set: ${key}, ${value}`);
+    }
     this.forward.set(key, value);
     this.backward.set(value, key);
   }
