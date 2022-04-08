@@ -26,7 +26,7 @@ export class CodePrinter {
 
   comment(comment: string): void {
     if (comment.startsWith('//') || comment.startsWith('/*')) {
-      throw new CodePrinterError('do not add comment symbols //');
+      throw new CodePrinterError('do not add comment symbols');
     }
     this.record(`// ${comment}`);
   }
@@ -68,12 +68,12 @@ export class CodePrinter {
   }
 
   private record(literal: Literal) {
-    this.buffer.push(`${literal};`);
+    this.buffer.push(literal);
   }
 
   private declare(variableName: VariableName, expression: Expression<any>) {
     const literal = this.computeDeclarationLiteral(variableName, expression);
-    this.record(literal);
+    this.record(`${literal};`);
   }
 
   private recordedApply(target: CallableFunction, prop: string, thisArg: any, argumentsList: any[]) {
@@ -81,7 +81,7 @@ export class CodePrinter {
     const variableName = this.fetchVariableName(thisArg);
     const literal = this.computeInvokeLiteral(variableName, prop, argumentsList);
     this.registerLiteral(result, literal);
-    this.record(literal);
+    this.record(`${literal};`);
     return result;
   }
 
@@ -95,7 +95,7 @@ export class CodePrinter {
   private recordedSet(variableName: VariableName, target: AnyObject, key: string | symbol, value: any, receiver: any) {
     const result = Reflect.set(target, key, value, receiver);
     const literal = this.computeSetterLiteral(variableName, key, value);
-    this.record(literal);
+    this.record(`${literal};`);
     return result;
   }
 
