@@ -19,6 +19,9 @@ export class BiMap<K, V> {
     if (this.inverse.has(value)) {
       throw new BiMapError(`value already present, cannot set: ${key}, ${value}`);
     }
+    if (this.has(key)) {
+      this.delete(key);
+    }
     this.forward.set(key, value);
     this.backward.set(value, key);
   }
