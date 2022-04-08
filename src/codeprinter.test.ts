@@ -14,6 +14,15 @@ describe('CodePrinter', () => {
     expect(codePrinter.flush()).toStrictEqual([`const foo = { bar: 'bar' };`]);
   });
 
+  it('tracks comments', () => {
+    const codePrinter = new CodePrinter();
+
+    codePrinter.comment('hello world');
+
+    expect(codePrinter.size()).toBe(1);
+    expect(codePrinter.flush()).toStrictEqual(['// hello world']);
+  });
+
   it('tracks setting strings', () => {
     const codePrinter = new CodePrinter();
     const foo = codePrinter.watch(
