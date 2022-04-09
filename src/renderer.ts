@@ -49,8 +49,6 @@ export class Renderer {
     let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.StemmableNote>());
     let beamStart = -1;
-    let curVoice = '0';
-    let curStaff = '0';
     let curMeasure = 1;
     let accidental = t.let('accidental', () => '');
     let x = t.let('x', () => 0);
@@ -81,38 +79,32 @@ export class Renderer {
           );
           t.expression(() => (notes = []));
           t.expression(() => (voices = []));
-          curVoice = '0';
-          curStaff = '0';
           clefs = message.clefs;
           if (clefs.length > 0) curClefs = clefs;
           timeSignature = message.time;
+          break;
+        case 'voiceEnd':
+          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+          t.expression(() => (notes = []));
+          break;
+        case 'staffEnd':
+          if (system) {
+            t.expression(() => (stave = system!.addStave({ voices: voices })));
+            if (this.getClef(clefs, message.staff) !== '') {
+              t.expression(() => stave!.addClef(this.getClef(clefs, message.staff)));
+            }
+            if (timeSignature !== '/') {
+              t.expression(() => stave!.addTimeSignature(timeSignature));
+            }
+          }
+          t.expression(() => (voices = []));
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
           let name = '';
           let options = {};
-          // New Staff, add previous to system
-          if (curStaff !== '0' && curStaff !== message.staff) {
-            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-            t.expression(() => (notes = []));
-            if (system) {
-              t.expression(() => (stave = system!.addStave({ voices: voices })));
-              if (this.getClef(clefs, curStaff) !== '') {
-                t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
-              }
-              if (timeSignature !== '/') {
-                t.expression(() => stave!.addTimeSignature(timeSignature));
-              }
-            }
-            t.expression(() => (voices = []));
-          } else if (curVoice !== '0' && curVoice !== message.voice) {
-            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-            t.expression(() => (notes = []));
-          }
-          curStaff = message.staff;
-          curVoice = message.voice;
 
-          options = { stem: message.stem, clef: this.getClef(curClefs, curStaff, 'treble') };
+          options = { stem: message.stem, clef: this.getClef(curClefs, message.staff, 'treble') };
           // no pitch, rest
           if (message.head.length == 0) {
             name = `B4/${durationDenominator}/r`;
@@ -144,19 +136,6 @@ export class Renderer {
           break;
         case 'measureEnd':
           curMeasure++;
-          // Add last staff to system (TODO function required)
-          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-          t.expression(() => (notes = []));
-          if (system) {
-            t.expression(() => (stave = system!.addStave({ voices: voices })));
-            if (this.getClef(clefs, curStaff) !== '') {
-              t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
-            }
-            if (timeSignature !== '/') {
-              t.expression(() => stave!.addTimeSignature(timeSignature));
-            }
-          }
-          t.expression(() => (voices = []));
           t.expression(() => factory.draw());
           t.expression(() => (x += stave!.getWidth()));
           break;

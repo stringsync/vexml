@@ -39,8 +39,11 @@ export class Producer {
         }
         const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent ?? '';
         const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent ?? '';
+        this.lastNoteMessage = undefined;
         messages.push({ msgType: 'measureStart', width, staves, clefs: signs, time: `${beats}/${beatType}` });
         messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
+        messages.push({ msgType: 'voiceEnd' });
+        messages.push({ msgType: 'staffEnd', staff: this.lastNoteMessage!.staff });
         messages.push({ msgType: 'measureEnd' });
         break;
       case 'attributes':
@@ -58,6 +61,12 @@ export class Producer {
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         const chord = nodeElem.getElementsByTagName('chord').length > 0;
+        if (this.lastNoteMessage && this.lastNoteMessage.voice !== voice) {
+          messages.push({ msgType: 'voiceEnd' });
+        }
+        if (this.lastNoteMessage && this.lastNoteMessage.staff !== staff) {
+          messages.push({ msgType: 'staffEnd', staff: this.lastNoteMessage.staff });
+        }
         if (chord && this.lastNoteMessage) {
           this.lastNoteMessage.head.push({ pitch: `${step}${octave}`, accidental: `${accidental}` });
           // chords need to be sorted.
