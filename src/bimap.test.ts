@@ -119,4 +119,38 @@ describe('BiMap', () => {
       expect(map.invert().has(val)).toBeTrue();
     });
   });
+
+  describe('has', () => {
+    it('returns true when the map has the key', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      expect(map.has(key)).toBeTrue();
+      expect(map.invert().has(val)).toBeTrue();
+    });
+
+    it('returns false when the map does not have the key', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      expect(map.has(val)).toBeFalse();
+      expect(map.invert().has(key)).toBeFalse();
+    });
+  });
+
+  describe('invert', () => {
+    it('returns the inverse map', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      expect(map.invert().has(val)).toBeTrue();
+      expect(map.invert().get(val)).toBe(key);
+    });
+  });
 });
