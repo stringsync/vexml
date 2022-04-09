@@ -78,4 +78,45 @@ describe('BiMap', () => {
       expect(map.invert().get(undefined)).toBe(key);
     });
   });
+
+  describe('delete', () => {
+    it('deletes entries from both maps when using key', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      const result = map.delete(key);
+
+      expect(result).toBeTrue();
+      expect(map.has(key)).toBeFalse();
+      expect(map.invert().has(val)).toBeFalse();
+    });
+
+    it('deletes entries from both maps when using val', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      const result = map.invert().delete(val);
+
+      expect(result).toBeTrue();
+      expect(map.has(key)).toBeFalse();
+      expect(map.invert().has(val)).toBeFalse();
+    });
+
+    it('does not delete when using val on forward map', () => {
+      const map = BiMap.create();
+      const key = {};
+      const val = {};
+      map.set(key, val);
+
+      const result = map.delete(val);
+
+      expect(result).toBeFalse();
+      expect(map.has(key)).toBeTrue();
+      expect(map.invert().has(val)).toBeTrue();
+    });
+  });
 });
