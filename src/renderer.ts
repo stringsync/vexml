@@ -70,7 +70,7 @@ export class Renderer {
           let options = {};
           // New Staff, add previous to system
           if (curStaff !== '0' && curStaff !== message.staff) {
-            voices.push(score.voice(notes).setMode(2));
+            voices.push(this.factory.Voice().setMode(2).addTickables(notes));
             notes = [];
             if (system) {
               stave = system.addStave({ voices: voices });
@@ -83,7 +83,7 @@ export class Renderer {
             }
             voices = [];
           } else if (curVoice !== '0' && curVoice !== message.voice) {
-            voices.push(score.voice(notes).setMode(2));
+            voices.push(this.factory.Voice().setMode(2).addTickables(notes));
             notes = [];
           }
           curStaff = message.staff;
@@ -91,33 +91,35 @@ export class Renderer {
 
           options = { stem: message.stem, clef: this.getClef(curClefs, curStaff, 'treble') };
           // no pitch, rest
-          if (message.pitch.length == 0) {
+          if (message.head.length == 0) {
             name = `B4/${durationDenominator}/r`;
             options = {};
             // single pitch
-          } else if (message.pitch.length == 1) name = `${message.pitch}/${durationDenominator}`;
+          } else if (message.head.length == 1) name = `${message.head[0].pitch}/${durationDenominator}`;
           // multiple pitches, chords
-          else if (message.pitch.length > 1) {
-            name = '(';
-            for (const pitch of message.pitch) {
-              name += ` ${pitch}`;
+          else if (message.head.length > 1) {
+            for (const head of message.head) {
+              name += ` ${head.pitch}`;
             }
-            name += ` )/${durationDenominator}`;
+            name = name.replace(/ /, '(');
+            name += `)/${durationDenominator}`;
           }
 
           for (let i = 0; i < message.dots; i++) {
             name += '.';
           }
           const note = score.notes(name, options)[0];
-          if (message.accidental != '') {
-            note.addModifier(this.factory.Accidental({ type: this.getAccidental(message.accidental) }));
-          }
+          message.head.forEach((head, index) => {
+            if (head.accidental != '') {
+              note.addModifier(this.factory.Accidental({ type: this.getAccidental(head.accidental) }), index);
+            }
+          });
           notes.push(note);
           break;
         case 'measureEnd':
           curMeasure++;
           // Add last staff to system (TODO function required)
-          voices.push(score.voice(notes).setMode(2));
+          voices.push(this.factory.Voice().setMode(2).addTickables(notes));
           notes = [];
           if (system) {
             stave = system.addStave({ voices: voices });
@@ -138,7 +140,19 @@ export class Renderer {
 
   private getDurationDenominator(duration: NoteMessage['duration']): string {
     switch (duration) {
-      case 'sixteenth':
+      case '1024th':
+        return '1024';
+      case '512th':
+        return '512';
+      case '256th':
+        return '256';
+      case '128th':
+        return '128';
+      case '64th':
+        return '64';
+      case '32nd':
+        return '32';
+      case '16th':
         return '16';
       case 'eighth':
         return '8';
@@ -146,14 +160,14 @@ export class Renderer {
         return '4';
       case 'half':
         return '2';
-      case 'full':
+      case 'whole':
         return 'w';
       default:
         return '';
     }
   }
 
-  private getAccidental(accidental: NoteMessage['accidental']): string {
+  private getAccidental(accidental: string): string {
     switch (accidental) {
       case 'sharp':
         return '#';
