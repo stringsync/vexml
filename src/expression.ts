@@ -1,7 +1,7 @@
 import * as esprima from 'esprima';
 import * as estree from 'estree';
 
-class ExpressionError extends Error {}
+const DOUBLE_SPACE = '  ';
 
 export class Expression<T> {
   static of<T>(getter: () => T): Expression<T> {
@@ -34,21 +34,21 @@ const getReturnedExpressionLiteral = (src: string): string => {
   const program = esprima.parseScript(src, { loc: true, tokens: true });
 
   if (program.body.length !== 1) {
-    throw new ExpressionError('invalid expression, please use a simple arrow function');
+    throw new Error('invalid expression, please use a simple arrow function');
   }
 
   if (program.body[0].type !== 'ExpressionStatement') {
-    throw new ExpressionError(`expected expression, got: ${program.body[0].type}`);
+    throw new Error(`expected expression, got: ${program.body[0].type}`);
   }
 
   const expression = program.body[0].expression;
   if (expression.type !== 'ArrowFunctionExpression') {
-    throw new ExpressionError(`expected arrow function, got: ${expression.type}`);
+    throw new Error(`expected arrow function, got: ${expression.type}`);
   }
 
   const params = expression.params;
   if (params.length > 0) {
-    throw new ExpressionError(`expected zero function params, got: ${params.length}`);
+    throw new Error(`expected zero function params, got: ${params.length}`);
   }
 
   let scope: estree.SourceLocation;
@@ -56,13 +56,13 @@ const getReturnedExpressionLiteral = (src: string): string => {
     // explicit return
     const blockStatement = expression.body;
     if (blockStatement.body.length !== 1) {
-      throw new ExpressionError('invalid expression, please use a simple arrow function');
+      throw new Error('invalid expression, please use a simple arrow function');
     }
     if (blockStatement.body[0].type !== 'ReturnStatement') {
-      throw new ExpressionError(`expected return statement, got: ${blockStatement.body[0].type}`);
+      throw new Error(`expected return statement, got: ${blockStatement.body[0].type}`);
     }
     if (!blockStatement.body[0].argument) {
-      throw new ExpressionError('expected return statement to have argument');
+      throw new Error('expected return statement to have argument');
     }
     scope = blockStatement.body[0].argument.loc!;
   } else {
@@ -96,7 +96,7 @@ const getReturnedExpressionLiteral = (src: string): string => {
         chars.push(token);
     }
   }
-  return chars.join('');
+  return chars.join('').replace(DOUBLE_SPACE, '');
 };
 
 const isWithinScope =
