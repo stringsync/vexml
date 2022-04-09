@@ -59,21 +59,31 @@ export class Producer {
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         const chord = nodeElem.getElementsByTagName('chord').length > 0;
         if (chord && this.lastNoteMessage) {
-          this.lastNoteMessage.pitch.push(`${step}${octave}`);
+          this.lastNoteMessage.head.push({ pitch: `${step}${octave}`, accidental: `${accidental}` });
+          // chords need to be sorted.
+          this.lastNoteMessage.head.sort((a, b) =>
+            a.pitch
+              .replace(/A/, 'H')
+              .replace(/B/, 'I')
+              .split('')
+              .reverse()
+              .join('')
+              .localeCompare(b.pitch.replace(/A/, 'H').replace(/B/, 'I').split('').reverse().join(''))
+          );
         } else {
           this.lastNoteMessage = {
             msgType: 'note',
             stem,
             dots,
-            pitch: rest ? [] : [`${step}${octave}`],
+            head: rest ? [] : [{ pitch: `${step}${octave}`, accidental: `${accidental}` }],
             duration,
             type,
-            accidental,
             voice,
             staff,
           };
           messages.push(this.lastNoteMessage);
         }
+        // only the beam number 1 is processed, vexflow calculated the number of bars
         const beam = '' + nodeElem.getElementsByTagName('beam').item(0)?.textContent;
         if (beam === 'begin') messages.push({ msgType: 'beamStart' });
         if (beam === 'end') messages.push({ msgType: 'beamEnd' });
