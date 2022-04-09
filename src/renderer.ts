@@ -138,7 +138,19 @@ export class Renderer {
 
   private getDurationDenominator(duration: NoteMessage['duration']): string {
     switch (duration) {
-      case 'sixteenth':
+      case '1024th':
+        return '1024';
+      case '512th':
+        return '512';
+      case '256th':
+        return '256';
+      case '128th':
+        return '128';
+      case '64th':
+        return '64';
+      case '32nd':
+        return '32';
+      case '16th':
         return '16';
       case 'eighth':
         return '8';
@@ -146,7 +158,7 @@ export class Renderer {
         return '4';
       case 'half':
         return '2';
-      case 'full':
+      case 'whole':
         return 'w';
       default:
         return '';

@@ -54,7 +54,7 @@ export class Producer {
         const dots = nodeElem.getElementsByTagName('dot').length;
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
         const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent ?? '';
-        const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'full';
+        const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'whole';
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         const chord = nodeElem.getElementsByTagName('chord').length > 0;
