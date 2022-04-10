@@ -1,8 +1,6 @@
 import * as esprima from 'esprima';
 import * as estree from 'estree';
 
-const DOUBLE_SPACE = '  ';
-
 export class Expression<T> {
   static of<T>(getter: () => T): Expression<T> {
     const src = getter.toString();
@@ -69,15 +67,7 @@ const getReturnedExpressionLiteral = (src: string): string => {
   return program
     .tokens!.filter(isWithinScope(scope))
     .map((token) => token.value)
-    .join('')
-    .split('')
-    .join('')
-    .replaceAll('new', 'new ')
-    .replaceAll(':', ': ')
-    .replaceAll('{', '{ ')
-    .replaceAll('}', ' }')
-    .replaceAll(',', ', ')
-    .replaceAll(DOUBLE_SPACE, '');
+    .join(' ');
 };
 
 const isWithinScope =
