@@ -1,6 +1,6 @@
 import { Layout } from 'antd';
 import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import styled from 'styled-components';
 import './App.less';
 import { Breadcrumbs } from './components/Breadcrumbs';
@@ -25,7 +25,9 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <Layout>
         <Header>
-          <Wordmark>vexml</Wordmark>
+          <Link to="/">
+            <Wordmark>vexml</Wordmark>
+          </Link>
         </Header>
         <StyledContent>
           <Breadcrumbs />

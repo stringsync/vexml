@@ -1,23 +1,65 @@
 import * as VF from 'vexflow';
+import { CodePrinter } from './codeprinter';
+import { Expression } from './expression';
 import { Producer } from './producer';
 import { EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
 
+interface CodeTracker {
+  watch<T extends Record<any, any>>(variableName: string, expression: Expression<T>): T;
+  comment(comment: string): void;
+  newline(): void;
+}
+
+class NoopCodeTracker implements CodeTracker {
+  watch<T extends Record<any, any>>(variableName: string, expression: Expression<T>) {
+    return expression.value;
+  }
+
+  comment(comment: string) {
+    // noop
+  }
+
+  newline() {
+    // noop
+  }
+}
+
 export class Renderer {
   static render(elementId: string, musicXml: string): void {
-    const factory = new VF.Factory({
-      renderer: { elementId, width: 1000, height: 400 },
-    });
-    const renderer = new Renderer(factory);
+    const factory = new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } });
+    const renderer = new Renderer(factory, new NoopCodeTracker());
     Producer.feed(musicXml).message(renderer);
     renderer.render();
+  }
+
+  static renderReturningCode(elementId: string, musicXml: string): string[] {
+    const codePrinter = new CodePrinter();
+
+    codePrinter.comment('CodePrinter code START');
+    codePrinter.newline();
+
+    const factory = codePrinter.watch(
+      'factory',
+      Expression.of(() => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }))
+    );
+    const renderer = new Renderer(factory, codePrinter);
+    Producer.feed(musicXml).message(renderer);
+    renderer.render();
+
+    codePrinter.newline();
+    codePrinter.comment('CodePrinter code END');
+
+    return codePrinter.flush();
   }
 
   private factory: VF.Factory;
 
   private messages = new Array<EasyScoreMessage>();
+  private tracker: CodeTracker;
 
-  private constructor(factory: VF.Factory) {
+  private constructor(factory: VF.Factory, tracker: CodeTracker) {
     this.factory = factory;
+    this.tracker = tracker;
   }
 
   onMessage(message: EasyScoreMessage): void {
