@@ -1,60 +1,62 @@
+import { Alert } from 'antd';
 import React, { useEffect, useId, useState } from 'react';
 import { vexml } from '../lib/vexml';
-import { CodeBlock } from './CodeBlock';
 
-type RenderStatus =
+export type VexmlStatus =
   | {
       type: 'rendering';
+      exampleId: string;
     }
   | {
       type: 'success';
+      exampleId: string;
       elapsedMs: number;
+      codePrinter: vexml.CodePrinter;
     }
   | {
       type: 'error';
+      exampleId: string;
       error: any;
+      codePrinter: vexml.CodePrinter;
     };
 
 const getErrorMessage = (e: any) => (e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`);
 
 export type VexmlProps = {
+  exampleId: string;
   xml: string;
-  onCode?: (code: string) => void;
+  onUpdate?: (status: VexmlStatus) => void;
 };
 
 export const Vexml: React.FC<VexmlProps> = (props) => {
-  const { xml, onCode } = props;
+  const { xml, exampleId, onUpdate: onStateChange } = props;
 
   const id = useId();
 
-  const [status, setStatus] = useState<RenderStatus>({ type: 'rendering' });
-  const success = (elapsedMs: number) => setStatus({ type: 'success', elapsedMs });
-  const error = (e: any) => setStatus({ type: 'error', error: getErrorMessage(e) });
+  const [status, setStatus] = useState<VexmlStatus>({ type: 'rendering', exampleId });
+  const [codePrinter] = useState(() => new vexml.CodePrinter());
+  const success = (elapsedMs: number) => setStatus({ type: 'success', exampleId, elapsedMs, codePrinter });
+  const error = (e: any) => setStatus({ type: 'error', exampleId, error: getErrorMessage(e), codePrinter });
 
   useEffect(() => {
     const start = new Date().getTime();
     try {
-      const codePrinter = new vexml.CodePrinter();
       vexml.Renderer.render(id, xml, { codeTracker: codePrinter });
       const stop = new Date().getTime();
       success(stop - start);
-      onCode && onCode(codePrinter.print());
     } catch (e) {
       error(e);
     }
-  }, [id, xml, onCode]);
+  }, [id, xml, codePrinter]);
+
+  useEffect(() => {
+    onStateChange && onStateChange(status);
+  }, [status, onStateChange]);
 
   return (
     <>
-      <small>
-        {status.type} {status.type === 'success' && `(${status.elapsedMs} ms)`}
-      </small>
-
-      <br />
-      <br />
-
       {status.type !== 'error' && <div id={id} />}
-      {status.type === 'error' && <CodeBlock>{status.error}</CodeBlock>}
+      {status.type === 'error' && <Alert type="error" message={<pre>{status.error}</pre>} />}
     </>
   );
 };
