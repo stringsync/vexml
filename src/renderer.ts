@@ -1,7 +1,7 @@
 import * as VF from 'vexflow';
 import { CodePrinter } from './codeprinter';
 import { Producer } from './producer';
-import { CodeTracker, EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
+import { CodeTracker, EasyScoreMessage, NoteMessage } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -38,18 +38,18 @@ export class Renderer {
   private render() {
     const { t, factory } = this;
 
-    const score = t.const('score', () => factory.EasyScore());
     t.newline();
 
     let system = t.let<VF.System | undefined>('system', () => undefined);
     let timeSignature = t.let('timeSignature', () => '');
-    let clefs = t.let('clefs', () => new Array<string>());
+    const clefs = t.let('clefs', () => new Map<number, string>());
     let clef = t.let('clef', () => '');
-    let curClefs: string[] = [];
+    const curClefs: Map<number, string> = new Map<number, string>();
     let voices = t.let('voices', () => new Array<VF.Voice>());
     let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.StemmableNote>());
     let beamStart = t.let('beamStart', () => -1);
+    let graceStart = t.let('graceStart', () => -1);
     let curMeasure = 1;
     let accidental = t.let('accidental', () => '');
     let accNdx = t.let('accNdx', () => 0);
@@ -83,9 +83,20 @@ export class Renderer {
           t.expression(() => (system = factory.System({ x, width: width, formatOptions: { align_rests: true } })));
           t.expression(() => (notes = []));
           t.expression(() => (voices = []));
-          clefs = message.clefs;
-          if (clefs.length > 0) curClefs = clefs;
-          timeSignature = message.time;
+          timeSignature = '';
+          clefs.clear();
+          break;
+        case 'attributes':
+          if (notes.length == 0) {
+            message.clefs.forEach((value, key) => {
+              clefs.set(key, value);
+            });
+          }
+          message.clefs.forEach((value, key) => {
+            curClefs.set(key, value);
+          });
+
+          if (message.time) timeSignature = message.time;
           break;
         case 'voiceEnd':
           t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
@@ -99,7 +110,7 @@ export class Renderer {
             if (clef !== '') {
               t.expression(() => stave!.addClef(clef));
             }
-            if (timeSignature !== '/') {
+            if (timeSignature !== '') {
               t.literal(`timeSignature = '${timeSignature}'`);
               t.expression(() => stave!.addTimeSignature(timeSignature));
             }
@@ -108,30 +119,32 @@ export class Renderer {
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
-          let name = '';
-          let options = {};
+          const noteStruct: VF.GraceNoteStruct = {};
 
-          options = { stem: message.stem, clef: this.getClef(curClefs, message.staff, 'treble') };
+          noteStruct.stem_direction = message.stem == 'UP' ? 1 : -1;
+          noteStruct.clef = this.getClef(curClefs, message.staff, 'treble');
           // no pitch, rest
           if (message.head.length == 0) {
-            name = `B4/${durationDenominator}/r`;
-            options = {};
-            // single pitch
-          } else if (message.head.length == 1) name = `${message.head[0].pitch}/${durationDenominator}`;
-          // multiple pitches, chords
-          else if (message.head.length > 1) {
+            noteStruct.keys = ['B/4'];
+            noteStruct.duration = `${durationDenominator}r`;
+          } else {
+            noteStruct.keys = [];
             for (const head of message.head) {
-              name += ` ${head.pitch}`;
+              noteStruct.keys.push(`${head.pitch}`);
             }
-            name = name.replace(/ /, '(');
-            name += `)/${durationDenominator}`;
+            noteStruct.duration = `${durationDenominator}`;
           }
 
-          for (let i = 0; i < message.dots; i++) {
-            name += '.';
+          if (message.grace) {
+            note = this.factory.GraceNote(noteStruct);
+            t.literal(`note = factory.GraceNote(${JSON.stringify(noteStruct)})`);
+          } else {
+            note = this.factory.StaveNote(noteStruct);
+            t.literal(`note = factory.StaveNote(${JSON.stringify(noteStruct)})`);
           }
-          note = score.notes(name, options)[0];
-          t.literal(`note = score.notes('${name}', ${JSON.stringify(options)})[0]`);
+          for (let i = 0; i < message.dots; i++) {
+            VF.Dot.buildAndAttach([note], { all: true });
+          }
           message.head.forEach((head, index) => {
             if (head.accidental != '') {
               accidental = this.getAccidental(head.accidental);
@@ -141,7 +154,12 @@ export class Renderer {
               t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), accNdx));
             }
           });
+          if (!message.grace && graceStart >= 0) {
+            t.expression(() => note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) })));
+            t.expression(() => (graceStart = -1));
+          }
           t.expression(() => notes.push(note!));
+          if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
         case 'measureEnd':
           curMeasure++;
@@ -185,13 +203,17 @@ export class Renderer {
     switch (accidental) {
       case 'sharp':
         return '#';
+      case 'flat':
+        return 'b';
+      case 'natural':
+        return 'n';
       default:
         return '';
     }
   }
 
-  private getClef(accidental: MeasureStartMessage['clefs'], index: string, defect = ''): string {
-    switch (accidental[parseInt(index) - 1]) {
+  private getClef(clefs: Map<number, string>, index: string, defect = ''): string {
+    switch (clefs.get(parseInt(index))) {
       case 'G':
         return 'treble';
       case 'F':

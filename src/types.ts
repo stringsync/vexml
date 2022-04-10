@@ -2,8 +2,12 @@ export type MeasureStartMessage = {
   msgType: 'measureStart';
   width: number;
   staves: number;
-  clefs: string[];
-  time: string;
+};
+
+export type AttributesMessage = {
+  msgType: 'attributes';
+  clefs: Map<number, string>;
+  time?: string;
 };
 
 export type MeasureEndMessage = {
@@ -34,12 +38,14 @@ export type NoteMessage = {
   head: { pitch: string; accidental: string }[];
   type: string;
   duration: string;
+  grace: boolean;
   voice: string;
   staff: string;
 };
 
 export type EasyScoreMessage =
   | NoteMessage
+  | AttributesMessage
   | MeasureStartMessage
   | MeasureEndMessage
   | BeamStartMessage
