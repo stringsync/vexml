@@ -46,7 +46,7 @@ export class Renderer {
     let clefs = t.let('clefs', () => new Array<string>());
     let curClefs: string[] = [];
     let voices = t.let('voices', () => new Array<VF.Voice>());
-    const note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
+    let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.StemmableNote>());
     let beamStart = -1;
     let curVoice = '0';
@@ -93,7 +93,7 @@ export class Renderer {
           let options = {};
           // New Staff, add previous to system
           if (curStaff !== '0' && curStaff !== message.staff) {
-            t.expression(() => factory.Voice().setMode(2).addTickables(notes));
+            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
             t.expression(() => (notes = []));
             if (system) {
               t.expression(() => (stave = system!.addStave({ voices: voices })));
@@ -106,7 +106,7 @@ export class Renderer {
             }
             t.expression(() => (voices = []));
           } else if (curVoice !== '0' && curVoice !== message.voice) {
-            t.expression(() => factory.Voice().setMode(2).addTickables(notes));
+            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
             t.expression(() => (notes = []));
           }
           curStaff = message.staff;
@@ -131,23 +131,21 @@ export class Renderer {
           for (let i = 0; i < message.dots; i++) {
             name += '.';
           }
-          const note = score.notes(name, options)[0];
+          note = score.notes(name, options)[0];
           t.literal(`note = score.notes('${name}', ${JSON.stringify(options)})[0]`);
           message.head.forEach((head, index) => {
             if (head.accidental != '') {
               accidental = this.getAccidental(head.accidental);
               t.literal(`accidental = '${accidental}'`);
-              t.expression(() => note.addModifier(this.factory.Accidental({ type: accidental }), index));
+              t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), index));
             }
           });
-          notes.push(note);
           t.expression(() => notes.push(note!));
-
           break;
         case 'measureEnd':
           curMeasure++;
           // Add last staff to system (TODO function required)
-          t.expression(() => factory.Voice().setMode(2).addTickables(notes));
+          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
           t.expression(() => (notes = []));
           if (system) {
             t.expression(() => (stave = system!.addStave({ voices: voices })));
@@ -158,7 +156,7 @@ export class Renderer {
               t.expression(() => stave!.addTimeSignature(timeSignature));
             }
           }
-          voices = [];
+          t.expression(() => (voices = []));
           t.expression(() => factory.draw());
           t.expression(() => (x += stave!.getWidth()));
           break;
