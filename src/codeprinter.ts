@@ -1,5 +1,9 @@
+import * as babel from 'prettier/parser-babel';
+import * as prettier from 'prettier/standalone';
 import { Expression } from './expression';
 import { CodeTracker, Getter } from './types';
+
+type Primitive = string | number | boolean;
 
 export class CodePrinter implements CodeTracker {
   static noop(): CodeTracker {
@@ -32,7 +36,7 @@ export class CodePrinter implements CodeTracker {
   expression<T>(getter: Getter<T>): T {
     const expression = Expression.of(getter);
     const literal = expression.toString();
-    this.record(`${literal};`);
+    this.record(literal);
     return expression.value;
   }
 
@@ -41,18 +45,37 @@ export class CodePrinter implements CodeTracker {
   }
 
   comment(comment: string): void {
-    if (comment.startsWith('//') || comment.startsWith('/*')) {
-      throw new Error('do not add comment symbols');
+    const trimmed = comment.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('/*')) {
+      throw new Error('unexpected comment symbol');
     }
     this.record(`// ${comment}`);
   }
 
   print(): string {
-    return this.lines.join('\n');
+    const src = this.lines.join('\n');
+    return prettier.format(src, {
+      parser: 'babel',
+      semi: true,
+      singleQuote: true,
+      plugins: [babel],
+    });
   }
 
   private record(literal: string) {
     this.lines.push(literal);
+  }
+
+  private toLiteral(value: Primitive): string {
+    switch (typeof value) {
+      case 'number':
+      case 'boolean':
+        return value.toString();
+      case 'string':
+        return `'${value}'`;
+      default:
+        throw new Error(`cannot convert to literal: ${value}`);
+    }
   }
 }
 
