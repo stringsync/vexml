@@ -1,4 +1,4 @@
-import { Anchor, Typography } from 'antd';
+import { Anchor, BackTop, Typography } from 'antd';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Format, useFetch } from '../hooks/useFetch';
@@ -9,6 +9,8 @@ export const Examples: React.FC = () => {
 
   return (
     <>
+      <BackTop />
+
       {result.type === 'success' && (
         <>
           <Anchor affix={false}>
@@ -21,7 +23,7 @@ export const Examples: React.FC = () => {
           <br />
 
           {result.data.examples.map((exampleId: string) => (
-            <>
+            <div key={exampleId}>
               <Typography.Title id={exampleId} level={3}>
                 {exampleId}
               </Typography.Title>
@@ -34,7 +36,7 @@ export const Examples: React.FC = () => {
 
               <br />
               <br />
-            </>
+            </div>
           ))}
         </>
       )}
