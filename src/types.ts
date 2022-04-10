@@ -39,3 +39,14 @@ export type EasyScoreMessage =
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
 };
+
+export type Getter<T> = () => T;
+
+export interface CodeTracker {
+  let<T>(variableName: string, getter: Getter<T>): T;
+  const<T>(variableName: string, getter: Getter<T>): T;
+  expression<T>(getter: Getter<T>): T;
+  comment(comment: string): void;
+  newline(): void;
+  literal(literal: string): void;
+}

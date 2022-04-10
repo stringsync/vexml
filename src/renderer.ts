@@ -1,13 +1,22 @@
 import * as VF from 'vexflow';
+import { CodePrinter } from './codeprinter';
 import { Producer } from './producer';
-import { EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
+import { CodeTracker, EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
+
+export type RendererOptions = {
+  codeTracker?: CodeTracker;
+};
 
 export class Renderer {
-  static render(elementId: string, musicXml: string): void {
-    const factory = new VF.Factory({
-      renderer: { elementId, width: 1000, height: 400 },
-    });
-    const renderer = new Renderer(factory);
+  static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
+    const t = opts.codeTracker || CodePrinter.noop();
+
+    t.literal(`import * as VF from 'vexflow';`);
+    t.newline();
+    t.literal(`const elementId = 'vexflow'`);
+
+    const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }));
+    const renderer = new Renderer(factory, t);
     Producer.feed(musicXml).message(renderer);
     renderer.render();
   }
@@ -15,9 +24,11 @@ export class Renderer {
   private factory: VF.Factory;
 
   private messages = new Array<EasyScoreMessage>();
+  private t: CodeTracker;
 
-  private constructor(factory: VF.Factory) {
+  private constructor(factory: VF.Factory, codeTracker: CodeTracker) {
     this.factory = factory;
+    this.t = codeTracker;
   }
 
   onMessage(message: EasyScoreMessage): void {
@@ -25,20 +36,26 @@ export class Renderer {
   }
 
   private render() {
-    const score = this.factory.EasyScore();
-    let system: VF.System | undefined = undefined;
+    const { t, factory } = this;
 
-    let timeSignature = '';
-    let clefs: string[] = [];
+    const score = t.const('score', () => this.factory.EasyScore());
+    t.newline();
+
+    let system = t.let<VF.System | undefined>('system', () => undefined);
+    let timeSignature = t.let('timeSignature', () => '');
+    let clefs = t.let('clefs', () => new Array<string>());
     let curClefs: string[] = [];
-    let voices: VF.Voice[] = [];
-    let notes: VF.StemmableNote[] = [];
+    let voices = t.let('voices', () => new Array<VF.Voice>());
+    let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
+    let notes = t.let('notes', () => new Array<VF.StemmableNote>());
     let beamStart = -1;
     let curVoice = '0';
     let curStaff = '0';
     let curMeasure = 1;
-    let x = 0;
-    let stave: VF.Stave | undefined = undefined;
+    let accidental = t.let('accidental', () => '');
+    let x = t.let('x', () => 0);
+    let stave = t.let<VF.Stave | undefined>('stave', () => undefined);
+
     for (const message of this.messages) {
       if (curMeasure > 3) break;
       switch (message.msgType) {
@@ -47,17 +64,23 @@ export class Renderer {
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
-            this.factory.Beam({
-              notes: notes.slice(beamStart),
-              options: { autoStem: true },
-            });
+            t.expression(() =>
+              factory.Beam({
+                notes: notes.slice(beamStart),
+                options: { autoStem: true },
+              })
+            );
             beamStart = -1;
           }
           break;
         case 'measureStart':
-          system = this.factory.System({ x, width: message.width, formatOptions: { align_rests: true } });
-          notes = [];
-          voices = [];
+          t.newline();
+          t.comment(`measure ${curMeasure}`);
+          system = t.expression(() =>
+            factory.System({ x, width: message.width, formatOptions: { align_rests: true } })
+          );
+          t.expression(() => (notes = []));
+          t.expression(() => (voices = []));
           curVoice = '0';
           curStaff = '0';
           clefs = message.clefs;
@@ -70,21 +93,21 @@ export class Renderer {
           let options = {};
           // New Staff, add previous to system
           if (curStaff !== '0' && curStaff !== message.staff) {
-            voices.push(this.factory.Voice().setMode(2).addTickables(notes));
-            notes = [];
+            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+            t.expression(() => (notes = []));
             if (system) {
-              stave = system.addStave({ voices: voices });
+              t.expression(() => (stave = system!.addStave({ voices: voices })));
               if (this.getClef(clefs, curStaff) !== '') {
-                stave.addClef(this.getClef(clefs, curStaff));
+                t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
               }
               if (timeSignature !== '/') {
-                stave.addTimeSignature(timeSignature);
+                t.expression(() => stave!.addTimeSignature(timeSignature));
               }
             }
-            voices = [];
+            t.expression(() => (voices = []));
           } else if (curVoice !== '0' && curVoice !== message.voice) {
-            voices.push(this.factory.Voice().setMode(2).addTickables(notes));
-            notes = [];
+            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+            t.expression(() => (notes = []));
           }
           curStaff = message.staff;
           curVoice = message.voice;
@@ -108,31 +131,34 @@ export class Renderer {
           for (let i = 0; i < message.dots; i++) {
             name += '.';
           }
-          const note = score.notes(name, options)[0];
+          note = score.notes(name, options)[0];
+          t.literal(`note = score.notes('${name}', ${JSON.stringify(options)})[0]`);
           message.head.forEach((head, index) => {
             if (head.accidental != '') {
-              note.addModifier(this.factory.Accidental({ type: this.getAccidental(head.accidental) }), index);
+              accidental = this.getAccidental(head.accidental);
+              t.literal(`accidental = '${accidental}'`);
+              t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), index));
             }
           });
-          notes.push(note);
+          t.expression(() => notes.push(note!));
           break;
         case 'measureEnd':
           curMeasure++;
           // Add last staff to system (TODO function required)
-          voices.push(this.factory.Voice().setMode(2).addTickables(notes));
-          notes = [];
+          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+          t.expression(() => (notes = []));
           if (system) {
-            stave = system.addStave({ voices: voices });
+            t.expression(() => (stave = system!.addStave({ voices: voices })));
             if (this.getClef(clefs, curStaff) !== '') {
-              stave.addClef(this.getClef(clefs, curStaff));
+              t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
             }
             if (timeSignature !== '/') {
-              stave.addTimeSignature(timeSignature);
+              t.expression(() => stave!.addTimeSignature(timeSignature));
             }
           }
-          voices = [];
-          this.factory.draw();
-          x += stave!.getWidth();
+          t.expression(() => (voices = []));
+          t.expression(() => factory.draw());
+          t.expression(() => (x += stave!.getWidth()));
           break;
       }
     }
