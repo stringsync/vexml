@@ -25,9 +25,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
         <Tabs defaultActiveKey="1">
           <TabPane tab="result" key="1">
             <Vexml xml={result.data} onCode={setCode} />
+          </TabPane>
+          <TabPane tab="code" key="2">
             {code && <CodeBlock>{code}</CodeBlock>}
           </TabPane>
-          <TabPane tab="source" key="2">
+          <TabPane tab="source" key="3">
             <CodeBlock>{result.data}</CodeBlock>
           </TabPane>
         </Tabs>

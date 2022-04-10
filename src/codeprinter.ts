@@ -3,8 +3,6 @@ import * as prettier from 'prettier/standalone';
 import { Expression } from './expression';
 import { CodeTracker, Getter } from './types';
 
-type Primitive = string | number | boolean;
-
 export class CodePrinter implements CodeTracker {
   static noop(): CodeTracker {
     return new NoopCodePrinter();
@@ -64,18 +62,6 @@ export class CodePrinter implements CodeTracker {
 
   private record(literal: string) {
     this.lines.push(literal);
-  }
-
-  private toLiteral(value: Primitive): string {
-    switch (typeof value) {
-      case 'number':
-      case 'boolean':
-        return value.toString();
-      case 'string':
-        return `'${value}'`;
-      default:
-        throw new Error(`cannot convert to literal: ${value}`);
-    }
   }
 }
 
