@@ -1,11 +1,22 @@
-import { Anchor, BackTop, Typography } from 'antd';
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Anchor, BackTop } from 'antd';
+import React, { useCallback, useState } from 'react';
+import styled from 'styled-components';
 import { Format, useFetch } from '../hooks/useFetch';
 import { Example } from './Example';
+import { RenderStatus } from './RenderStatus';
+import { VexmlStatus } from './Vexml';
+
+const ExampleContainer = styled.div`
+  padding-bottom: 24px;
+`;
 
 export const Examples: React.FC = () => {
   const result = useFetch('/manifest', Format.Json);
+
+  const [states, setStates] = useState<Record<string, VexmlStatus>>({});
+  const onUpdate = useCallback((state: VexmlStatus) => {
+    setStates((statuses) => ({ ...statuses, [state.exampleId]: state }));
+  }, []);
 
   return (
     <>
@@ -14,29 +25,24 @@ export const Examples: React.FC = () => {
       {result.type === 'success' && (
         <>
           <Anchor affix={false}>
-            {result.data.examples.map((exampleId: string) => (
-              <Anchor.Link key={exampleId} href={`#${exampleId}`} title={exampleId} />
-            ))}
+            {result.data.examples.map((exampleId: string) => {
+              return (
+                <Anchor.Link
+                  key={exampleId}
+                  href={`#${exampleId}`}
+                  title={<RenderStatus exampleId={exampleId} status={states[exampleId]} />}
+                />
+              );
+            })}
           </Anchor>
 
           <br />
           <br />
 
           {result.data.examples.map((exampleId: string) => (
-            <div key={exampleId}>
-              <Typography.Title id={exampleId} level={3}>
-                {exampleId}
-              </Typography.Title>
-
-              <Link to={`/${exampleId}`}>show</Link>
-
-              <br />
-
-              <Example exampleId={exampleId} />
-
-              <br />
-              <br />
-            </div>
+            <ExampleContainer key={exampleId}>
+              <Example exampleId={exampleId} onUpdate={onUpdate} />
+            </ExampleContainer>
           ))}
         </>
       )}
