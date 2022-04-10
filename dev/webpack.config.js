@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 const INDEX_HTML = path.join(__dirname, 'public', 'index.html');
-const EXAMPLES_DIR = path.join(__dirname, 'public', 'examples');
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const EXAMPLES_DIR = path.join(PUBLIC_DIR, 'examples');
 
 module.exports = {
   mode: 'development',
@@ -11,19 +12,24 @@ module.exports = {
   devtool: 'inline-source-map',
   devServer: {
     static: {
-      directory: path.resolve(__dirname, 'public'),
+      directory: PUBLIC_DIR,
       publicPath: '/public',
     },
     hot: true,
-    onAfterSetupMiddleware: (devServer) => {
-      devServer.app.get('/manifest', async (req, res) => {
-        const examples = fs.readdirSync(EXAMPLES_DIR).sort();
-        res.json({ examples });
+    setupMiddlewares: (middlewares) => {
+      middlewares.push({
+        path: '/manifest',
+        middleware: (req, res) => {
+          const examples = fs.readdirSync(EXAMPLES_DIR).sort();
+          res.json({ examples });
+        },
       });
 
-      devServer.app.get('*', async (req, res) => {
+      middlewares.push((req, res) => {
         res.sendFile(INDEX_HTML);
       });
+
+      return middlewares;
     },
   },
   module: {
@@ -48,6 +54,6 @@ module.exports = {
   },
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'public'),
+    path: PUBLIC_DIR,
   },
 };

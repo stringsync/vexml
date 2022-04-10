@@ -1,4 +1,3 @@
-import * as VF from 'vexflow';
 import { Expression } from './expression';
 
 describe('Expression', () => {
@@ -36,11 +35,6 @@ describe('Expression', () => {
   it('computes mixed array literals', () => {
     const expression = Expression.of(() => ['foo', 42, false]);
     expect(expression.toString()).toBe(`['foo', 42, false]`);
-  });
-
-  it('computes empty object literals', () => {
-    const expression = Expression.empty();
-    expect(expression.toString()).toBe('{}');
   });
 
   it('computes non-empty object literals', () => {
@@ -90,16 +84,6 @@ describe('Expression', () => {
       };
     });
     expect(expression.toString()).toBe(`{ foo: 'foo', bar: 'bar' }`);
-  });
-
-  it('allows VF factory constructor expressions', () => {
-    const div = document.createElement('div');
-    div.setAttribute('id', 'foo');
-    document.body.appendChild(div);
-
-    expect(() =>
-      Expression.of(() => new VF.Factory({ renderer: { elementId: 'foo', width: 1000, height: 400 } }))
-    ).not.toThrow();
   });
 
   it('allows arrow functions with implicit returns', () => {

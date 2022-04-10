@@ -23,13 +23,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
     <>
       {result.type === 'success' && (
         <Tabs defaultActiveKey="1">
-          <TabPane tab="render" key="1">
+          <TabPane tab="result" key="1">
             <Vexml xml={result.data} onCode={setCode} />
+            {code && <CodeBlock>{code}</CodeBlock>}
           </TabPane>
-          <TabPane tab="code" key="2">
-            <CodeBlock>{code}</CodeBlock>
-          </TabPane>
-          <TabPane tab="source" key="3">
+          <TabPane tab="source" key="2">
             <CodeBlock>{result.data}</CodeBlock>
           </TabPane>
         </Tabs>

@@ -1,65 +1,33 @@
 import * as VF from 'vexflow';
 import { CodePrinter } from './codeprinter';
-import { Expression } from './expression';
 import { Producer } from './producer';
-import { EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
+import { CodeTracker, EasyScoreMessage, MeasureStartMessage, NoteMessage } from './types';
 
-interface CodeTracker {
-  watch<T extends Record<any, any>>(variableName: string, expression: Expression<T>): T;
-  comment(comment: string): void;
-  newline(): void;
-}
-
-class NoopCodeTracker implements CodeTracker {
-  watch<T extends Record<any, any>>(variableName: string, expression: Expression<T>) {
-    return expression.value;
-  }
-
-  comment(comment: string) {
-    // noop
-  }
-
-  newline() {
-    // noop
-  }
-}
+export type RendererOptions = {
+  codeTracker?: CodeTracker;
+};
 
 export class Renderer {
-  static render(elementId: string, musicXml: string): void {
-    const factory = new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } });
-    const renderer = new Renderer(factory, new NoopCodeTracker());
+  static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
+    const t = opts.codeTracker || CodePrinter.noop();
+
+    t.literal(`import * as VF from 'vexflow';`);
+    t.newline();
+
+    const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }));
+    const renderer = new Renderer(factory, t);
     Producer.feed(musicXml).message(renderer);
     renderer.render();
-  }
-
-  static renderReturningCode(elementId: string, musicXml: string): string[] {
-    const codePrinter = new CodePrinter();
-
-    codePrinter.comment('CodePrinter code START');
-    codePrinter.newline();
-
-    const factory = codePrinter.watch(
-      'factory',
-      Expression.of(() => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }))
-    );
-    const renderer = new Renderer(factory, codePrinter);
-    Producer.feed(musicXml).message(renderer);
-    renderer.render();
-
-    codePrinter.newline();
-    codePrinter.comment('CodePrinter code END');
-
-    return codePrinter.flush();
   }
 
   private factory: VF.Factory;
 
   private messages = new Array<EasyScoreMessage>();
-  private tracker: CodeTracker;
+  private t: CodeTracker;
 
-  private constructor(factory: VF.Factory, tracker: CodeTracker) {
+  private constructor(factory: VF.Factory, codeTracker: CodeTracker) {
     this.factory = factory;
-    this.tracker = tracker;
+    this.t = codeTracker;
   }
 
   onMessage(message: EasyScoreMessage): void {
@@ -67,20 +35,27 @@ export class Renderer {
   }
 
   private render() {
-    const score = this.factory.EasyScore();
+    const t = this.t;
+
+    const score = t.const('score', () => this.factory.EasyScore());
+    t.newline();
+
     let system: VF.System | undefined = undefined;
 
     let timeSignature = '';
     let clefs: string[] = [];
     let curClefs: string[] = [];
-    let voices: VF.Voice[] = [];
-    let notes: VF.StemmableNote[] = [];
     let beamStart = -1;
     let curVoice = '0';
     let curStaff = '0';
     let curMeasure = 1;
     let x = 0;
-    let stave: VF.Stave | undefined = undefined;
+
+    let voices = t.let('voices', () => new Array<VF.Voice>());
+    let notes = t.let('notes', () => new Array<VF.StemmableNote>());
+    let stave = t.let<VF.Stave | undefined>('stave', () => undefined);
+    t.newline();
+
     for (const message of this.messages) {
       if (curMeasure > 3) break;
       switch (message.msgType) {
@@ -89,10 +64,12 @@ export class Renderer {
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
-            this.factory.Beam({
-              notes: notes.slice(beamStart),
-              options: { autoStem: true },
-            });
+            t.expression(() =>
+              this.factory.Beam({
+                notes: notes.slice(beamStart),
+                options: { autoStem: true },
+              })
+            );
             beamStart = -1;
           }
           break;
