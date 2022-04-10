@@ -1,3 +1,4 @@
+import * as VF from 'vexflow';
 import { Expression } from './expression';
 
 describe('Expression', () => {
@@ -75,6 +76,12 @@ describe('Expression', () => {
     expect(expression.toString()).toBe('{ foo }');
   });
 
+  it('computes constructor expressions', () => {
+    class Foo {}
+    const expression = Expression.of(() => new Foo());
+    expect(expression.value).toBeInstanceOf(Foo);
+  });
+
   it('removes new lines in expressions', () => {
     const expression = Expression.of(() => {
       return {
@@ -83,6 +90,16 @@ describe('Expression', () => {
       };
     });
     expect(expression.toString()).toBe(`{ foo: 'foo', bar: 'bar' }`);
+  });
+
+  it('allows VF factory constructor expressions', () => {
+    const div = document.createElement('div');
+    div.setAttribute('id', 'foo');
+    document.body.appendChild(div);
+
+    expect(() =>
+      Expression.of(() => new VF.Factory({ renderer: { elementId: 'foo', width: 1000, height: 400 } }))
+    ).not.toThrow();
   });
 
   it('allows arrow functions with implicit returns', () => {
