@@ -4,9 +4,6 @@ import { CodeBlock } from './CodeBlock';
 
 type RenderStatus =
   | {
-      type: 'idle';
-    }
-  | {
       type: 'rendering';
     }
   | {
@@ -30,19 +27,18 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
 
   const id = useId();
 
-  const [status, setStatus] = useState<RenderStatus>({ type: 'idle' });
-  const rendering = () => setStatus({ type: 'rendering' });
+  const [status, setStatus] = useState<RenderStatus>({ type: 'rendering' });
   const success = (elapsedMs: number) => setStatus({ type: 'success', elapsedMs });
   const error = (e: any) => setStatus({ type: 'error', error: getErrorMessage(e) });
 
   useEffect(() => {
-    rendering();
     const start = new Date().getTime();
     try {
-      const code = vexml.Renderer.renderReturningCode(id, xml);
+      const codePrinter = new vexml.CodePrinter();
+      vexml.Renderer.render(id, xml, { codeTracker: codePrinter });
       const stop = new Date().getTime();
       success(stop - start);
-      onCode && onCode(code.join('\n'));
+      onCode && onCode(codePrinter.print());
     } catch (e) {
       error(e);
     }

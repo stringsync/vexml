@@ -11,10 +11,6 @@ export class Expression<T> {
     return new Expression(src, value, expression);
   }
 
-  static empty(): Expression<Record<any, any>> {
-    return Expression.of(() => ({}));
-  }
-
   readonly src: string;
   readonly value: T;
   private expression: string;
@@ -70,33 +66,18 @@ const getReturnedExpressionLiteral = (src: string): string => {
     scope = expression.body.loc!;
   }
 
-  const tokens = program
+  return program
     .tokens!.filter(isWithinScope(scope))
     .map((token) => token.value)
     .join('')
-    .split('');
-
-  const chars = [];
-  for (const token of tokens) {
-    switch (token) {
-      case ':':
-      case '{':
-        chars.push(token);
-        chars.push(' ');
-        break;
-      case '}':
-        chars.push(' ');
-        chars.push(token);
-        break;
-      case ',':
-        chars.push(token);
-        chars.push(' ');
-        break;
-      default:
-        chars.push(token);
-    }
-  }
-  return chars.join('').replace(DOUBLE_SPACE, '');
+    .split('')
+    .join('')
+    .replaceAll('new', 'new ')
+    .replaceAll(':', ': ')
+    .replaceAll('{', '{ ')
+    .replaceAll('}', ' }')
+    .replaceAll(',', ', ')
+    .replaceAll(DOUBLE_SPACE, '');
 };
 
 const isWithinScope =
