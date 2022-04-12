@@ -11,9 +11,9 @@ export class Renderer {
   static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
     const t = opts.codeTracker || CodePrinter.noop();
 
-    t.literal(`import * as VF from 'vexflow';`);
+    t.literal(`let VF = Vex.Flow;`);
     t.newline();
-    t.literal(`const elementId = 'vexflow'`);
+    t.literal(`const elementId = 'score'`);
 
     const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }));
     const renderer = new Renderer(factory, t);
@@ -38,22 +38,23 @@ export class Renderer {
   private render() {
     const { t, factory } = this;
 
-    const score = t.const('score', () => this.factory.EasyScore());
+    const score = t.const('score', () => factory.EasyScore());
     t.newline();
 
     let system = t.let<VF.System | undefined>('system', () => undefined);
     let timeSignature = t.let('timeSignature', () => '');
     let clefs = t.let('clefs', () => new Array<string>());
+    let clef = t.let('clef', () => '');
     let curClefs: string[] = [];
     let voices = t.let('voices', () => new Array<VF.Voice>());
     let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.StemmableNote>());
-    let beamStart = -1;
-    let curVoice = '0';
-    let curStaff = '0';
+    let beamStart = t.let('beamStart', () => -1);
     let curMeasure = 1;
     let accidental = t.let('accidental', () => '');
+    let accNdx = t.let('accNdx', () => 0);
     let x = t.let('x', () => 0);
+    let width = t.let('width', () => 0);
     let stave = t.let<VF.Stave | undefined>('stave', () => undefined);
 
     for (const message of this.messages) {
@@ -64,6 +65,7 @@ export class Renderer {
           break;
         case 'beamEnd':
           if (beamStart >= 0) {
+            t.literal(`beamStart = ${beamStart}`);
             t.expression(() =>
               factory.Beam({
                 notes: notes.slice(beamStart),
@@ -76,43 +78,40 @@ export class Renderer {
         case 'measureStart':
           t.newline();
           t.comment(`measure ${curMeasure}`);
-          system = t.expression(() =>
-            factory.System({ x, width: message.width, formatOptions: { align_rests: true } })
-          );
+          t.literal(`width = ${message.width}`);
+          width = message.width;
+          t.expression(() => (system = factory.System({ x, width: width, formatOptions: { align_rests: true } })));
           t.expression(() => (notes = []));
           t.expression(() => (voices = []));
-          curVoice = '0';
-          curStaff = '0';
           clefs = message.clefs;
           if (clefs.length > 0) curClefs = clefs;
           timeSignature = message.time;
+          break;
+        case 'voiceEnd':
+          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+          t.expression(() => (notes = []));
+          break;
+        case 'staffEnd':
+          if (system) {
+            t.expression(() => (stave = system!.addStave({ voices: voices })));
+            clef = this.getClef(clefs, message.staff);
+            t.literal(`clef = '${clef}'`);
+            if (clef !== '') {
+              t.expression(() => stave!.addClef(clef));
+            }
+            if (timeSignature !== '/') {
+              t.literal(`timeSignature = '${timeSignature}'`);
+              t.expression(() => stave!.addTimeSignature(timeSignature));
+            }
+          }
+          t.expression(() => (voices = []));
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
           let name = '';
           let options = {};
-          // New Staff, add previous to system
-          if (curStaff !== '0' && curStaff !== message.staff) {
-            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-            t.expression(() => (notes = []));
-            if (system) {
-              t.expression(() => (stave = system!.addStave({ voices: voices })));
-              if (this.getClef(clefs, curStaff) !== '') {
-                t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
-              }
-              if (timeSignature !== '/') {
-                t.expression(() => stave!.addTimeSignature(timeSignature));
-              }
-            }
-            t.expression(() => (voices = []));
-          } else if (curVoice !== '0' && curVoice !== message.voice) {
-            t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-            t.expression(() => (notes = []));
-          }
-          curStaff = message.staff;
-          curVoice = message.voice;
 
-          options = { stem: message.stem, clef: this.getClef(curClefs, curStaff, 'treble') };
+          options = { stem: message.stem, clef: this.getClef(curClefs, message.staff, 'treble') };
           // no pitch, rest
           if (message.head.length == 0) {
             name = `B4/${durationDenominator}/r`;
@@ -137,26 +136,15 @@ export class Renderer {
             if (head.accidental != '') {
               accidental = this.getAccidental(head.accidental);
               t.literal(`accidental = '${accidental}'`);
-              t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), index));
+              accNdx = index;
+              t.literal(`accNdx = ${index}`);
+              t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), accNdx));
             }
           });
           t.expression(() => notes.push(note!));
           break;
         case 'measureEnd':
           curMeasure++;
-          // Add last staff to system (TODO function required)
-          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
-          t.expression(() => (notes = []));
-          if (system) {
-            t.expression(() => (stave = system!.addStave({ voices: voices })));
-            if (this.getClef(clefs, curStaff) !== '') {
-              t.expression(() => stave!.addClef(this.getClef(clefs, curStaff)));
-            }
-            if (timeSignature !== '/') {
-              t.expression(() => stave!.addTimeSignature(timeSignature));
-            }
-          }
-          t.expression(() => (voices = []));
           t.expression(() => factory.draw());
           t.expression(() => (x += stave!.getWidth()));
           break;
