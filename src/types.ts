@@ -18,6 +18,15 @@ export type BeamEndMessage = {
   msgType: 'beamEnd';
 };
 
+export type VoiceEndMessage = {
+  msgType: 'voiceEnd';
+};
+
+export type StaffEndMessage = {
+  msgType: 'staffEnd';
+  staff: string;
+};
+
 export type NoteMessage = {
   msgType: 'note';
   stem: string;
@@ -34,7 +43,9 @@ export type EasyScoreMessage =
   | MeasureStartMessage
   | MeasureEndMessage
   | BeamStartMessage
-  | BeamEndMessage;
+  | BeamEndMessage
+  | VoiceEndMessage
+  | StaffEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
