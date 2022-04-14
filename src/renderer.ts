@@ -22,6 +22,10 @@ export class Renderer {
   }
 
   private factory: VF.Factory;
+  private clefs: Map<number, { duration: number; clef: string }[]> = new Map<
+    number,
+    { duration: number; clef: string }[]
+  >();
 
   private messages = new Array<EasyScoreMessage>();
   private t: CodeTracker;
@@ -40,25 +44,28 @@ export class Renderer {
 
     t.newline();
 
-    let system = t.let<VF.System | undefined>('system', () => undefined);
     let timeSignature = t.let('timeSignature', () => '');
-    const clefs = t.let('clefs', () => new Map<number, string>());
     let clef = t.let('clef', () => '');
-    const curClefs: Map<number, string> = new Map<number, string>();
-    let voices = t.let('voices', () => new Array<VF.Voice>());
-    let note = t.let<VF.StemmableNote | undefined>('note', () => undefined);
-    let notes = t.let('notes', () => new Array<VF.StemmableNote>());
+    let stave: VF.Stave | undefined = t.let('stave', () => undefined);
+    const staves: Map<number, VF.Stave> = t.let('staves', () => new Map<number, VF.Stave>());
+    const voices: Map<number, VF.Voice> = t.let('voices', () => new Map<number, VF.Voice>());
+    let note = t.let<VF.Note | undefined>('note', () => undefined);
+    let notes = t.let('notes', () => new Array<VF.Note>());
     let beamStart = t.let('beamStart', () => -1);
     let graceStart = t.let('graceStart', () => -1);
     let curMeasure = 1;
     let accidental = t.let('accidental', () => '');
     let accNdx = t.let('accNdx', () => 0);
+    let voice = t.let('voice', () => 0);
     let x = t.let('x', () => 0);
-    let width = t.let('width', () => 0);
-    let stave = t.let<VF.Stave | undefined>('stave', () => undefined);
+    let y = t.let('y', () => 0);
+    let width: number | undefined = t.let('width', () => undefined);
+    let staveWidth: number = t.let('staveWidth', () => 0);
+    let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
+    let numStaves = 1;
+    let duration = 0;
 
     for (const message of this.messages) {
-      if (curMeasure > 3) break;
       switch (message.msgType) {
         case 'beamStart':
           beamStart = notes.length - 1;
@@ -68,7 +75,7 @@ export class Renderer {
             t.literal(`beamStart = ${beamStart}`);
             t.expression(() =>
               factory.Beam({
-                notes: notes.slice(beamStart),
+                notes: notes.slice(beamStart) as VF.StemmableNote[],
                 options: { autoStem: true },
               })
             );
@@ -80,52 +87,59 @@ export class Renderer {
           t.comment(`measure ${curMeasure}`);
           t.literal(`width = ${message.width}`);
           width = message.width;
-          t.expression(() => (system = factory.System({ x, width: width, formatOptions: { align_rests: true } })));
+          t.expression(() => (y = 0));
+          if (message.staves) {
+            numStaves = message.staves;
+          }
+          for (let staff = 1; staff <= numStaves; staff++) {
+            t.literal(`staff = ${staff}`);
+            t.expression(() => staves.set(staff, factory.Stave({ x, y, width })));
+            t.expression(() => (y += 115));
+          }
           t.expression(() => (notes = []));
-          t.expression(() => (voices = []));
-          timeSignature = '';
-          clefs.clear();
+          duration = 0;
+          this.clefMeasureStart();
           break;
         case 'attributes':
-          if (notes.length == 0) {
-            message.clefs.forEach((value, key) => {
-              clefs.set(key, value);
-            });
-          }
-          message.clefs.forEach((value, key) => {
-            curClefs.set(key, value);
+          message.clefs.forEach((value, staff) => {
+            this.clefSet(staff, duration, value);
+            clef = this.clefTranslate(value);
+            t.literal(`clef = '${clef}'`);
+            if (duration == 0) {
+              t.literal(`staff = ${staff}`);
+              t.expression(() => staves.get(staff)!.addClef(clef));
+            } else {
+              t.expression(() => notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } })));
+            }
           });
 
-          if (message.time) timeSignature = message.time;
+          timeSignature = message.time!;
+          t.literal(`timeSignature = '${timeSignature}'`);
+          if (timeSignature)
+            t.expression(() =>
+              staves.forEach((stave) => {
+                stave.addTimeSignature(timeSignature);
+              })
+            );
           break;
         case 'voiceEnd':
-          t.expression(() => voices.push(factory.Voice().setMode(2).addTickables(notes)));
+          voice = parseInt(message.voice);
+          t.literal(`voice = ${voice}`);
+          t.expression(() => voices.set(voice, factory.Voice().setMode(2).addTickables(notes)));
           t.expression(() => (notes = []));
-          break;
-        case 'staffEnd':
-          if (system) {
-            t.expression(() => (stave = system!.addStave({ voices: voices })));
-            clef = this.getClef(clefs, message.staff);
-            t.literal(`clef = '${clef}'`);
-            if (clef !== '') {
-              t.expression(() => stave!.addClef(clef));
-            }
-            if (timeSignature !== '') {
-              t.literal(`timeSignature = '${timeSignature}'`);
-              t.expression(() => stave!.addTimeSignature(timeSignature));
-            }
-          }
-          t.expression(() => (voices = []));
+          duration = 0;
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
           const noteStruct: VF.GraceNoteStruct = {};
 
           noteStruct.stem_direction = message.stem == 'UP' ? 1 : -1;
-          noteStruct.clef = this.getClef(curClefs, message.staff, 'treble');
+          noteStruct.clef = this.clefGet(message.staff, duration);
+          if (message.duration) duration += message.duration;
           // no pitch, rest
           if (message.head.length == 0) {
-            noteStruct.keys = ['B/4'];
+            if (noteStruct.clef == 'bass') noteStruct.keys = ['D/2'];
+            else noteStruct.keys = ['B/4'];
             noteStruct.duration = `${durationDenominator}r`;
           } else {
             noteStruct.keys = [];
@@ -143,7 +157,7 @@ export class Renderer {
             t.literal(`note = factory.StaveNote(${JSON.stringify(noteStruct)})`);
           }
           for (let i = 0; i < message.dots; i++) {
-            VF.Dot.buildAndAttach([note], { all: true });
+            t.expression(() => VF.Dot.buildAndAttach([note!], { all: true }));
           }
           message.head.forEach((head, index) => {
             if (head.accidental != '') {
@@ -155,22 +169,57 @@ export class Renderer {
             }
           });
           if (!message.grace && graceStart >= 0) {
-            t.expression(() => note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) })));
+            t.expression(() =>
+              note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[] }))
+            );
             t.expression(() => (graceStart = -1));
           }
+          stave = staves.get(message.staff);
+          t.literal(`staff = ${message.staff}`);
+          t.literal(`stave = staves.get(staff)`);
+          if (stave) t.expression(() => note!.setStave(stave!));
           t.expression(() => notes.push(note!));
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
         case 'measureEnd':
           curMeasure++;
+          t.expression(() => (voicesArr = []));
+          t.expression(() =>
+            voices.forEach((voice) => {
+              voicesArr.push(voice);
+            })
+          );
+          t.expression(
+            () =>
+              (staveWidth = width
+                ? width
+                : factory.Formatter().preCalculateMinTotalWidth(voicesArr) +
+                  staves.get(1)!.getNoteStartX() -
+                  staves.get(1)!.getX() +
+                  100)
+          );
+          t.expression(() =>
+            staves.forEach((stave) => {
+              stave.setWidth(staveWidth);
+            })
+          );
+          t.expression(() =>
+            factory
+              .Formatter()
+              .joinVoices(voicesArr)
+              .format(
+                voicesArr,
+                staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding
+              )
+          );
           t.expression(() => factory.draw());
-          t.expression(() => (x += stave!.getWidth()));
+          t.expression(() => (x += staves.get(1)!.getWidth()));
           break;
       }
     }
   }
 
-  private getDurationDenominator(duration: NoteMessage['duration']): string {
+  private getDurationDenominator(duration: NoteMessage['type']): string {
     switch (duration) {
       case '1024th':
         return '1024';
@@ -207,19 +256,50 @@ export class Renderer {
         return 'b';
       case 'natural':
         return 'n';
+      case 'double-sharp':
+        return '##';
+      case 'double-flat':
+      case 'flat-flat':
+        return 'bb';
       default:
         return '';
     }
   }
 
-  private getClef(clefs: Map<number, string>, index: string, defect = ''): string {
-    switch (clefs.get(parseInt(index))) {
+  private clefMeasureStart() {
+    this.clefs.forEach((value, key) => this.clefs.set(key, [{ duration: 0, clef: value.pop()!.clef }]));
+  }
+
+  private clefSet(staff: number, duration: number, clef: string): void {
+    let current = this.clefs.get(staff);
+    if (!current) current = [];
+    current.push({ duration, clef });
+    this.clefs.set(staff, current);
+  }
+
+  private clefGet(staff: number, duration: number): string {
+    const current = this.clefs.get(staff);
+    let clef = '';
+    if (current) {
+      for (let i = current.length - 1; i >= 0; i--) {
+        const value = current[i];
+        if (duration >= value.duration) {
+          clef = value.clef;
+          break;
+        }
+      }
+    }
+    return this.clefTranslate(clef);
+  }
+
+  private clefTranslate(messageClef: string): string {
+    switch (messageClef) {
       case 'G':
         return 'treble';
       case 'F':
         return 'bass';
       default:
-        return defect;
+        return '';
     }
   }
 }

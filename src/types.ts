@@ -1,13 +1,14 @@
 export type MeasureStartMessage = {
   msgType: 'measureStart';
-  width: number;
-  staves: number;
+  width?: number;
+  staves?: number;
 };
 
 export type AttributesMessage = {
   msgType: 'attributes';
   clefs: Map<number, string>;
   time?: string;
+  key?: number;
 };
 
 export type MeasureEndMessage = {
@@ -24,11 +25,7 @@ export type BeamEndMessage = {
 
 export type VoiceEndMessage = {
   msgType: 'voiceEnd';
-};
-
-export type StaffEndMessage = {
-  msgType: 'staffEnd';
-  staff: string;
+  voice: string;
 };
 
 export type NoteMessage = {
@@ -37,10 +34,10 @@ export type NoteMessage = {
   dots: number;
   head: { pitch: string; accidental: string }[];
   type: string;
-  duration: string;
+  duration?: number;
   grace: boolean;
   voice: string;
-  staff: string;
+  staff: number;
 };
 
 export type EasyScoreMessage =
@@ -50,8 +47,7 @@ export type EasyScoreMessage =
   | MeasureEndMessage
   | BeamStartMessage
   | BeamEndMessage
-  | VoiceEndMessage
-  | StaffEndMessage;
+  | VoiceEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
