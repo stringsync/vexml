@@ -1,5 +1,11 @@
 import { Cursor } from './cursor';
-import { EasyScoreMessage, EasyScoreMessageReceiver, NoteMessage } from './types';
+import {
+  AttributesMessage,
+  EasyScoreMessage,
+  EasyScoreMessageReceiver,
+  MeasureStartMessage,
+  NoteMessage,
+} from './types';
 
 export class Producer {
   static feed(musicXml: string): Producer {
@@ -30,27 +36,35 @@ export class Producer {
     const nodeElem = node as Element;
     switch (node.nodeName) {
       case 'measure':
-        const width = parseFloat(nodeElem.getAttribute('width') ?? '300');
-        const staves = parseFloat(nodeElem.getElementsByTagName('staves').item(0)?.textContent ?? '1');
-        this.lastNoteMessage = undefined;
-        messages.push({ msgType: 'measureStart', width, staves });
-        messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
-        messages.push({ msgType: 'voiceEnd' });
-        messages.push({ msgType: 'staffEnd', staff: this.lastNoteMessage!.staff });
-        messages.push({ msgType: 'measureEnd' });
+        {
+          const message: MeasureStartMessage = { msgType: 'measureStart' };
+          const width = nodeElem.getAttribute('width');
+          if (width) message.width = parseInt(width);
+          const staves = nodeElem.getElementsByTagName('staves').item(0)?.textContent;
+          if (staves) message.staves = parseInt(staves);
+          this.lastNoteMessage = undefined;
+          messages.push(message);
+          messages.push(...Array.from(node.childNodes).flatMap(this.getMessages.bind(this)));
+          messages.push({ msgType: 'voiceEnd', voice: this.lastNoteMessage!.voice });
+          messages.push({ msgType: 'measureEnd' });
+        }
         break;
       case 'attributes':
-        const clefs: Map<number, string> = new Map();
-        const clefElems = nodeElem.getElementsByTagName('clef');
-        for (let i = 0; i < clefElems.length; i++) {
-          const number = parseInt(clefElems.item(i)!.getAttribute('number') ?? '1');
-          const sign = clefElems.item(i)!.getElementsByTagName('sign').item(0)?.textContent;
-          if (sign) clefs.set(number, sign);
+        {
+          const message: AttributesMessage = { msgType: 'attributes', clefs: new Map() };
+          const clefElems = nodeElem.getElementsByTagName('clef');
+          for (let i = 0; i < clefElems.length; i++) {
+            const number = parseInt(clefElems.item(i)!.getAttribute('number') ?? '1');
+            const sign = clefElems.item(i)!.getElementsByTagName('sign').item(0)?.textContent;
+            if (sign) message.clefs.set(number, sign);
+          }
+          const fifths = nodeElem.getElementsByTagName('fifth').item(0)?.textContent;
+          if (fifths) message.key = parseInt(fifths);
+          const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent;
+          const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent;
+          if (beats && beatType) message.time = `${beats}/${beatType}`;
+          messages.push(message);
         }
-        const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent;
-        const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent;
-        if (beats && beatType) messages.push({ msgType: 'attributes', clefs, time: `${beats}/${beatType}` });
-        else messages.push({ msgType: 'attributes', clefs });
         break;
       case 'note':
         const rest = nodeElem.getElementsByTagName('rest').length > 0;
@@ -60,16 +74,13 @@ export class Producer {
         const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? '';
         const dots = nodeElem.getElementsByTagName('dot').length;
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
-        const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent ?? '';
+        const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent;
         const type = nodeElem.getElementsByTagName('type').item(0)?.textContent ?? 'whole';
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         const chord = nodeElem.getElementsByTagName('chord').length > 0;
-        if (this.lastNoteMessage && this.lastNoteMessage.staff !== staff) {
-          messages.push({ msgType: 'voiceEnd' });
-          messages.push({ msgType: 'staffEnd', staff: this.lastNoteMessage.staff });
-        } else if (this.lastNoteMessage && this.lastNoteMessage.voice !== voice) {
-          messages.push({ msgType: 'voiceEnd' });
+        if (this.lastNoteMessage && this.lastNoteMessage.voice !== voice) {
+          messages.push({ msgType: 'voiceEnd', voice: this.lastNoteMessage.voice });
         }
         if (chord && this.lastNoteMessage) {
           this.lastNoteMessage.head.push({ pitch: `${step}/${octave}`, accidental: `${accidental}` });
@@ -89,11 +100,11 @@ export class Producer {
             stem,
             dots,
             head: rest ? [] : [{ pitch: `${step}/${octave}`, accidental: `${accidental}` }],
-            duration,
+            duration: duration ? parseInt(duration) : undefined,
             grace,
             type,
             voice,
-            staff,
+            staff: parseInt(staff),
           };
           messages.push(this.lastNoteMessage);
         }
