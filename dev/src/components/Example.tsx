@@ -1,6 +1,6 @@
 import { Alert, Tabs, Typography } from 'antd';
 import React, { useCallback, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Format, useFetch } from '../hooks/useFetch';
 import { RenderStatus } from './RenderStatus';
 import { Vexml, VexmlStatus } from './Vexml';
@@ -8,14 +8,15 @@ import { Vexml, VexmlStatus } from './Vexml';
 const { TabPane } = Tabs;
 
 export type ExampleProps = {
+  title?: boolean;
   exampleId?: string;
   onUpdate?: (status: VexmlStatus) => void;
 };
 
 export const Example: React.FC<ExampleProps> = (props) => {
   const params = useParams();
+  const title = props.title ?? true;
   const exampleId = props.exampleId || params.exampleId || '';
-  const shouldShowDetailsLink = exampleId !== params.exampleId;
 
   const result = useFetch(`/public/examples/${exampleId}`, Format.Text);
 
@@ -36,13 +37,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
 
   return (
     <>
-      <Typography.Title id={exampleId} level={2}>
-        <RenderStatus exampleId={exampleId} status={status} />
-      </Typography.Title>
-
-      {shouldShowDetailsLink && <Link to={`/${exampleId}`}>show</Link>}
-
-      <br />
+      {title && (
+        <Typography.Title id={exampleId} level={2}>
+          <RenderStatus exampleId={exampleId} status={status} />
+        </Typography.Title>
+      )}
 
       {result.type === 'success' && (
         <Tabs defaultActiveKey="1">

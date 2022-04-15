@@ -1,7 +1,9 @@
-import { Anchor, BackTop } from 'antd';
+import { Divider, Typography } from 'antd';
 import React, { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { Format, useFetch } from '../hooks/useFetch';
+import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { Example } from './Example';
 import { RenderStatus } from './RenderStatus';
 import { VexmlStatus } from './Vexml';
@@ -13,35 +15,51 @@ const ExampleContainer = styled.div`
 export const Examples: React.FC = () => {
   const result = useFetch('/manifest', Format.Json);
 
-  const [states, setStates] = useState<Record<string, VexmlStatus>>({});
+  const [statuses, setStatuses] = useState<Record<string, VexmlStatus>>({});
   const onUpdate = useCallback((state: VexmlStatus) => {
-    setStates((statuses) => ({ ...statuses, [state.exampleId]: state }));
+    setStatuses((statuses) => ({ ...statuses, [state.exampleId]: state }));
   }, []);
+
+  const renderExampleStatus = useCallback(
+    (exampleId: string) => {
+      return (
+        <>
+          <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
+          <Divider type="vertical" />
+          <a href={`#${exampleId}`}>go</a>
+        </>
+      );
+    },
+    [statuses]
+  );
 
   return (
     <>
-      <BackTop />
-
       {result.type === 'success' && (
         <>
-          <Anchor affix={false}>
-            {result.data.examples.map((exampleId: string) => {
-              return (
-                <Anchor.Link
-                  key={exampleId}
-                  href={`#${exampleId}`}
-                  title={<RenderStatus exampleId={exampleId} status={states[exampleId]} />}
-                />
-              );
-            })}
-          </Anchor>
+          <Typography.Title id="index" level={2}>
+            index
+          </Typography.Title>
+          <AlphabeticalIndex keys={result.data.examples} renderKey={renderExampleStatus} />
 
-          <br />
-          <br />
+          <Divider />
 
+          <Typography.Title id="examples" level={2}>
+            examples
+          </Typography.Title>
           {result.data.examples.map((exampleId: string) => (
             <ExampleContainer key={exampleId}>
-              <Example exampleId={exampleId} onUpdate={onUpdate} />
+              <Typography.Title id={exampleId} level={3}>
+                <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
+              </Typography.Title>
+
+              <a href="#index">top</a>
+              <Divider type="vertical" />
+              <Link to={`/${exampleId}`}>show</Link>
+
+              <br />
+
+              <Example title={false} exampleId={exampleId} onUpdate={onUpdate} />
             </ExampleContainer>
           ))}
         </>
