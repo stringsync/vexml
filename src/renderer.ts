@@ -48,7 +48,7 @@ export class Renderer {
     let timeSignature = t.let('timeSignature', () => '');
     let clef = t.let('clef', () => '');
     let stave: VF.Stave | undefined = t.let('stave', () => undefined);
-    const staves: Map<number, VF.Stave> = t.let('staves', () => new Map<number, VF.Stave>());
+    const staves: Map<number, VF.Stave> = t.const('staves', () => new Map<number, VF.Stave>());
     const voices: Map<number, VF.Voice> = t.let('voices', () => new Map<number, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
