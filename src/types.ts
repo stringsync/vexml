@@ -1,9 +1,15 @@
 export type MeasureStartMessage = {
   msgType: 'measureStart';
-  width: number;
-  staves: number;
-  clefs: string[];
-  time: string;
+  width?: number;
+  staves?: number;
+};
+
+// see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
+export type AttributesMessage = {
+  msgType: 'attributes';
+  clefs: Map<number, string>;
+  time?: string;
+  key?: number;
 };
 
 export type MeasureEndMessage = {
@@ -18,34 +24,42 @@ export type BeamEndMessage = {
   msgType: 'beamEnd';
 };
 
-export type VoiceEndMessage = {
-  msgType: 'voiceEnd';
+export type SlurStartMessage = {
+  msgType: 'slurStart';
 };
 
-export type StaffEndMessage = {
-  msgType: 'staffEnd';
-  staff: string;
+export type SlurEndMessage = {
+  msgType: 'slurEnd';
+};
+
+export type VoiceEndMessage = {
+  msgType: 'voiceEnd';
+  voice: string;
 };
 
 export type NoteMessage = {
   msgType: 'note';
-  stem: string;
+  stem?: string;
   dots: number;
   head: { pitch: string; accidental: string }[];
   type: string;
-  duration: string;
+  duration?: number;
+  grace: boolean;
+  graceSlash: boolean;
   voice: string;
-  staff: string;
+  staff: number;
 };
 
 export type EasyScoreMessage =
   | NoteMessage
+  | AttributesMessage
   | MeasureStartMessage
   | MeasureEndMessage
   | BeamStartMessage
   | BeamEndMessage
-  | VoiceEndMessage
-  | StaffEndMessage;
+  | SlurStartMessage
+  | SlurEndMessage
+  | VoiceEndMessage;
 
 export type EasyScoreMessageReceiver = {
   onMessage(message: EasyScoreMessage): void;
