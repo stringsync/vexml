@@ -145,7 +145,7 @@ export class Renderer {
           const durationDenominator = this.getDurationDenominator(message.type);
           const noteStruct: VF.GraceNoteStruct = {};
 
-          if (message.stem) noteStruct.stem_direction = message.stem == 'UP' ? 1 : -1;
+          if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           noteStruct.clef = this.clefGet(message.staff, duration);
           if (message.duration) duration += message.duration;
           // no pitch, rest
