@@ -16,7 +16,7 @@ export class Renderer {
     t.newline();
     t.literal(`const elementId = 'score'`);
 
-    const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 1000, height: 400 } }));
+    const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } }));
     const renderer = new Renderer(factory, t);
     Producer.feed(musicXml).message(renderer);
     renderer.render();
@@ -52,6 +52,7 @@ export class Renderer {
     const voices: Map<number, VF.Voice> = t.let('voices', () => new Map<number, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
+    let formatter: VF.Formatter | undefined = t.let('formatter', () => undefined);
     let beamStart = t.let('beamStart', () => -1);
     let slurStart = t.let('slurStart', () => -1);
     let graceStart = t.let('graceStart', () => -1);
@@ -211,14 +212,15 @@ export class Renderer {
               voicesArr.push(voice);
             })
           );
+          t.expression(() => (formatter = factory.Formatter().joinVoices(voicesArr)));
           t.expression(
             () =>
               (staveWidth = width
                 ? width
-                : factory.Formatter().preCalculateMinTotalWidth(voicesArr) +
+                : formatter!.preCalculateMinTotalWidth(voicesArr) +
                   staves.get(1)!.getNoteStartX() -
                   staves.get(1)!.getX() +
-                  100)
+                  VF.Stave.defaultPadding)
           );
           t.expression(() =>
             staves.forEach((stave) => {
@@ -226,13 +228,10 @@ export class Renderer {
             })
           );
           t.expression(() =>
-            factory
-              .Formatter()
-              .joinVoices(voicesArr)
-              .format(
-                voicesArr,
-                staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding
-              )
+            formatter!.format(
+              voicesArr,
+              staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding
+            )
           );
           t.expression(() => factory.draw());
           t.expression(() => (x += staves.get(1)!.getWidth()));
