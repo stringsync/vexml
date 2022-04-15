@@ -26,7 +26,9 @@ export const Examples: React.FC = () => {
         <>
           <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
           <Divider type="vertical" />
-          <a href={`#${exampleId}`}>go</a>
+          <a href={`#${exampleId}`}>jump</a>
+          <Divider type="vertical" />
+          <Link to={`/${exampleId}`}>show</Link>
         </>
       );
     },

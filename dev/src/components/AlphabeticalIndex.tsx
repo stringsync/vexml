@@ -19,13 +19,21 @@ const NewspaperColumns = styled.div`
     column-count: 3;
   }
 
-  @media (min-width: 1200px) {
+  @media (min-width: 1500px) {
     column-count: 4;
   }
 `;
 
 const StyledList = styled.ul`
   list-style-type: none;
+`;
+
+const StyledListItem = styled.li`
+  border-radius: 4px;
+
+  :hover {
+    background-color: #eee;
+  }
 `;
 
 type IndexEntry = {
@@ -47,7 +55,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = (props) => {
     const strsByFirstChar = groupByFirstChar(keys);
     const nextEntries = Object.keys(strsByFirstChar)
       .sort()
-      .map((letter) => ({ letter, items: strsByFirstChar[letter] }));
+      .map((letter) => ({ letter, items: strsByFirstChar[letter].sort() }));
     setEntries(nextEntries);
   }, [keys]);
 
@@ -61,7 +69,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = (props) => {
 
           <StyledList>
             {entry.items.map((item) => (
-              <li key={item}>{renderKey(item)}</li>
+              <StyledListItem key={item}>{renderKey(item)}</StyledListItem>
             ))}
           </StyledList>
         </div>
