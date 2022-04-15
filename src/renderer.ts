@@ -1,4 +1,5 @@
 import * as VF from 'vexflow';
+import { GraceNote } from 'vexflow';
 import { CodePrinter } from './codeprinter';
 import { Producer } from './producer';
 import { CodeTracker, EasyScoreMessage, NoteMessage } from './types';
@@ -52,6 +53,7 @@ export class Renderer {
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
     let beamStart = t.let('beamStart', () => -1);
+    let slurStart = t.let('slurStart', () => -1);
     let graceStart = t.let('graceStart', () => -1);
     let curMeasure = 1;
     let accidental = t.let('accidental', () => '');
@@ -80,6 +82,16 @@ export class Renderer {
               })
             );
             beamStart = -1;
+          }
+          break;
+        case 'slurStart':
+          slurStart = notes.length - 1;
+          break;
+        case 'slurEnd':
+          if (slurStart >= 0) {
+            t.literal(`slurStart = ${slurStart}`);
+            t.expression(() => factory.Curve({ from: notes[slurStart], to: notes[notes.length - 1], options: {} }));
+            slurStart = -1;
           }
           break;
         case 'measureStart':
@@ -133,7 +145,7 @@ export class Renderer {
           const durationDenominator = this.getDurationDenominator(message.type);
           const noteStruct: VF.GraceNoteStruct = {};
 
-          noteStruct.stem_direction = message.stem == 'UP' ? 1 : -1;
+          if (message.stem) noteStruct.stem_direction = message.stem == 'UP' ? 1 : -1;
           noteStruct.clef = this.clefGet(message.staff, duration);
           if (message.duration) duration += message.duration;
           // no pitch, rest
@@ -150,6 +162,7 @@ export class Renderer {
           }
 
           if (message.grace) {
+            noteStruct.slash = message.graceSlash;
             note = this.factory.GraceNote(noteStruct);
             t.literal(`note = factory.GraceNote(${JSON.stringify(noteStruct)})`);
           } else {
@@ -169,9 +182,18 @@ export class Renderer {
             }
           });
           if (!message.grace && graceStart >= 0) {
-            t.expression(() =>
-              note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[] }))
-            );
+            if (slurStart >= 0 && notes[slurStart] instanceof GraceNote) {
+              t.expression(() =>
+                note!.addModifier(
+                  factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[], slur: true })
+                )
+              );
+              slurStart = -1;
+            } else {
+              t.expression(() =>
+                note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[] }))
+              );
+            }
             t.expression(() => (graceStart = -1));
           }
           stave = staves.get(message.staff);
