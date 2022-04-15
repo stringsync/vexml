@@ -23,6 +23,14 @@ export type BeamEndMessage = {
   msgType: 'beamEnd';
 };
 
+export type SlurStartMessage = {
+  msgType: 'slurStart';
+};
+
+export type SlurEndMessage = {
+  msgType: 'slurEnd';
+};
+
 export type VoiceEndMessage = {
   msgType: 'voiceEnd';
   voice: string;
@@ -30,12 +38,13 @@ export type VoiceEndMessage = {
 
 export type NoteMessage = {
   msgType: 'note';
-  stem: string;
+  stem?: string;
   dots: number;
   head: { pitch: string; accidental: string }[];
   type: string;
   duration?: number;
   grace: boolean;
+  graceSlash: boolean;
   voice: string;
   staff: number;
 };
@@ -47,6 +56,8 @@ export type EasyScoreMessage =
   | MeasureEndMessage
   | BeamStartMessage
   | BeamEndMessage
+  | SlurStartMessage
+  | SlurEndMessage
   | VoiceEndMessage;
 
 export type EasyScoreMessageReceiver = {

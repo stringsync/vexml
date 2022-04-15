@@ -69,9 +69,10 @@ export class Producer {
       case 'note':
         const rest = nodeElem.getElementsByTagName('rest').length > 0;
         const grace = nodeElem.getElementsByTagName('grace').length > 0;
+        const graceSlash = nodeElem.getElementsByTagName('grace').item(0)?.getAttribute('slash') == 'yes' ?? false;
         const step = nodeElem.getElementsByTagName('step').item(0)?.textContent ?? '';
         const octave = nodeElem.getElementsByTagName('octave').item(0)?.textContent ?? '';
-        const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? '';
+        const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? undefined;
         const dots = nodeElem.getElementsByTagName('dot').length;
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
         const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent;
@@ -102,6 +103,7 @@ export class Producer {
             head: rest ? [] : [{ pitch: `${step}/${octave}`, accidental: `${accidental}` }],
             duration: duration ? parseInt(duration) : undefined,
             grace,
+            graceSlash,
             type,
             voice,
             staff: parseInt(staff),
@@ -109,9 +111,13 @@ export class Producer {
           messages.push(this.lastNoteMessage);
         }
         // only the beam number 1 is processed, vexflow calculated the number of bars
-        const beam = '' + nodeElem.getElementsByTagName('beam').item(0)?.textContent;
+        const beam = nodeElem.getElementsByTagName('beam').item(0)?.textContent;
         if (beam === 'begin') messages.push({ msgType: 'beamStart' });
         if (beam === 'end') messages.push({ msgType: 'beamEnd' });
+        // only the beam number 1 is processed, vexflow calculated the number of bars
+        const slur = nodeElem.getElementsByTagName('slur').item(0)?.getAttribute('type');
+        if (slur === 'start') messages.push({ msgType: 'slurStart' });
+        if (slur === 'stop') messages.push({ msgType: 'slurEnd' });
         break;
       default:
       // console.log(`unprocessed node, got:`, node);
