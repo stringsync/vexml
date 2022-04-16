@@ -31,7 +31,7 @@ export const RenderStatus: React.FC<RenderStatusProps> = (props) => {
       <StatusIcon status={state} />
       <Divider type="vertical" />
       {exampleId}
-      {state && state.type === 'success' && (
+      {state && (state.type === 'success' || state.type === 'error') && (
         <>
           <Divider type="vertical" />
           {`(${state.elapsedMs} ms)`}
