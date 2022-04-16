@@ -179,7 +179,13 @@ export class Renderer {
               t.literal(`accidental = '${accidental}'`);
               accNdx = index;
               t.literal(`accNdx = ${index}`);
-              t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), accNdx));
+              if (head.accidentalCautionary) {
+                t.expression(() =>
+                  note!.addModifier(factory.Accidental({ type: accidental }).setAsCautionary(), accNdx)
+                );
+              } else {
+                t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), accNdx));
+              }
             }
           });
           if (!message.grace && graceStart >= 0) {
@@ -282,6 +288,14 @@ export class Renderer {
       case 'double-flat':
       case 'flat-flat':
         return 'bb';
+      case 'quarter-flat':
+        return 'd';
+      case 'quarter-sharp':
+        return '+';
+      case 'three-quarters-flat':
+        return 'db';
+      case 'three-quarters-sharp':
+        return '++';
       default:
         return '';
     }
