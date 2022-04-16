@@ -15,6 +15,7 @@ export type VexmlStatus =
     }
   | {
       type: 'error';
+      elapsedMs: number;
       exampleId: string;
       error: any;
       codePrinter: vexml.CodePrinter;
@@ -36,7 +37,8 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
   const [status, setStatus] = useState<VexmlStatus>({ type: 'rendering', exampleId });
   const [codePrinter] = useState(() => new vexml.CodePrinter());
   const success = (elapsedMs: number) => setStatus({ type: 'success', exampleId, elapsedMs, codePrinter });
-  const error = (e: any) => setStatus({ type: 'error', exampleId, error: getErrorMessage(e), codePrinter });
+  const error = (e: any, elapsedMs: number) =>
+    setStatus({ type: 'error', exampleId, error: getErrorMessage(e), codePrinter, elapsedMs });
 
   useEffect(() => {
     const start = new Date().getTime();
@@ -45,7 +47,8 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
       const stop = new Date().getTime();
       success(stop - start);
     } catch (e) {
-      error(e);
+      const stop = new Date().getTime();
+      error(e, stop - start);
     }
   }, [id, xml, codePrinter]);
 
