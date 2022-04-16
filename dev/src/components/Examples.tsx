@@ -70,8 +70,7 @@ export const Examples: React.FC = () => {
       {
         label: 'success',
         value: 'success',
-        disabled:
-          settings.slowestVisible || (settings.successVisible && settings.successVisible !== settings.failVisible),
+        disabled: settings.successVisible && settings.successVisible !== settings.failVisible,
       },
       {
         label: 'failed',
@@ -113,25 +112,30 @@ export const Examples: React.FC = () => {
     if (result.type !== 'success') {
       return [];
     }
-    const examples: string[] = settings.slowestVisible
-      ? result.data.examples
-          .slice()
-          .sort((a: string, b: string) => {
-            const aStatus = statuses[a];
-            const bStatus = statuses[b];
-            const aMs = aStatus && aStatus.type === 'success' ? aStatus.elapsedMs : Number.NEGATIVE_INFINITY;
-            const bMs = bStatus && bStatus.type === 'success' ? bStatus.elapsedMs : Number.NEGATIVE_INFINITY;
-            return bMs - aMs;
-          })
-          .slice(0, NUM_SLOWEST_VISIBLE)
-      : result.data.examples;
-    return examples.filter(
+    const examples = (result.data.examples as string[]).filter(
       (exampleId) =>
         typeof statuses[exampleId] === 'undefined' || // it's still loading
         statuses[exampleId].type === 'rendering' ||
         (statuses[exampleId].type === 'success' && settings.successVisible) ||
         (statuses[exampleId].type === 'error' && settings.failVisible)
     );
+    return settings.slowestVisible
+      ? examples
+          .sort((a: string, b: string) => {
+            const aStatus = statuses[a];
+            const bStatus = statuses[b];
+            const aMs =
+              (aStatus && aStatus.type === 'success') || (aStatus && aStatus.type === 'error')
+                ? aStatus.elapsedMs
+                : Number.NEGATIVE_INFINITY;
+            const bMs =
+              (bStatus && bStatus.type === 'success') || (bStatus && bStatus.type === 'error')
+                ? bStatus.elapsedMs
+                : Number.NEGATIVE_INFINITY;
+            return bMs - aMs;
+          })
+          .slice(0, NUM_SLOWEST_VISIBLE)
+      : examples;
   }, [result, settings, statuses]);
   const filteredExampleIdsSet = useMemo(() => new Set(filteredExampleIds), [filteredExampleIds]);
 
