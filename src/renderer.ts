@@ -23,7 +23,7 @@ export class Renderer {
   }
 
   private factory: VF.Factory;
-  private clefs: Map<number, { duration: number; clef: string }[]> = new Map<
+  private clefs: Map<number, { duration: number; clef?: string; annotation?: string }[]> = new Map<
     number,
     { duration: number; clef: string }[]
   >();
@@ -47,6 +47,7 @@ export class Renderer {
 
     let timeSignature = t.let('timeSignature', () => '');
     let clef = t.let('clef', () => '');
+    let clefAnnotation: string | undefined = t.let('width', () => undefined);
     let stave: VF.Stave | undefined = t.let('stave', () => undefined);
     const staves: Map<number, VF.Stave> = t.const('staves', () => new Map<number, VF.Stave>());
     const voices: Map<number, VF.Voice> = t.let('voices', () => new Map<number, VF.Voice>());
@@ -114,17 +115,23 @@ export class Renderer {
           this.clefMeasureStart();
           break;
         case 'attributes':
-          message.clefs.forEach((value, staff) => {
-            this.clefSet(staff, duration, value);
-            clef = this.clefTranslate(value);
-            t.literal(`clef = '${clef}'`);
-            if (duration == 0) {
-              t.literal(`staff = ${staff}`);
-              t.expression(() => staves.get(staff)!.addClef(clef));
-            } else {
-              t.expression(() => notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } })));
+          for (const clefMsg of message.clefs) {
+            const clefT = this.clefTranslate(clefMsg);
+            this.clefSet(clefMsg.staff, duration, clefT);
+            if (clefT.clef) {
+              clef = clefT.clef;
+              t.literal(clefT.clef ? `clef = '${clefT.clef}'` : `clef = undefined`);
+              clefAnnotation = clefT.annotation;
+              t.literal(clefT.annotation ? `clefAnnotation = '${clefT.annotation}'` : `clefAnnotation = undefined`);
+              if (duration == 0) {
+                const staff = clefMsg.staff;
+                t.literal(`staff = ${clefMsg.staff}`);
+                t.expression(() => staves.get(staff)!.addClef(clef, 'default', clefAnnotation));
+              } else {
+                t.expression(() => notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } })));
+              }
             }
-          });
+          }
 
           timeSignature = message.time!;
           t.literal(`timeSignature = '${timeSignature}'`);
@@ -147,7 +154,7 @@ export class Renderer {
           const noteStruct: VF.GraceNoteStruct = {};
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
-          noteStruct.clef = this.clefGet(message.staff, duration);
+          noteStruct.clef = this.clefGet(message.staff, duration).clef;
           if (message.duration) duration += message.duration;
           // no pitch, rest
           if (message.head.length == 0) {
@@ -291,36 +298,73 @@ export class Renderer {
     this.clefs.forEach((value, key) => this.clefs.set(key, [{ duration: 0, clef: value.pop()!.clef }]));
   }
 
-  private clefSet(staff: number, duration: number, clef: string): void {
+  private clefSet(staff: number, duration: number, clef: { clef?: string; annotation?: string }): void {
     let current = this.clefs.get(staff);
     if (!current) current = [];
-    current.push({ duration, clef });
+    current.push({ duration, clef: clef.clef, annotation: clef.annotation });
     this.clefs.set(staff, current);
   }
 
-  private clefGet(staff: number, duration: number): string {
+  private clefGet(staff: number, duration: number): { clef?: string; annotation?: string } {
     const current = this.clefs.get(staff);
-    let clef = '';
+    let clef = {};
     if (current) {
       for (let i = current.length - 1; i >= 0; i--) {
         const value = current[i];
         if (duration >= value.duration) {
-          clef = value.clef;
+          clef = { clef: value.clef, annotation: value.annotation };
           break;
         }
       }
     }
-    return this.clefTranslate(clef);
+    return clef;
   }
 
-  private clefTranslate(messageClef: string): string {
-    switch (messageClef) {
+  private clefTranslate(clef: { sign: string; line?: number; octaveChange?: number }): {
+    clef?: string;
+    annotation?: string;
+  } {
+    const value: { clef?: string; annotation?: string } = {};
+    switch (clef.sign) {
       case 'G':
-        return 'treble';
+        // with G line defaults to 2
+        // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
+        if (clef.line == 1) value.clef = 'french';
+        value.clef = 'treble';
+        break;
       case 'F':
-        return 'bass';
+        // with F line defaults to 4
+        if (clef.line == 5) value.clef = 'subbass';
+        if (clef.line == 3) value.clef = 'baritone-f';
+        value.clef = 'bass';
+        break;
+      case 'C':
+        // with C line defaults to 3
+        if (clef.line == 5) value.clef = 'baritone-c';
+        if (clef.line == 4) value.clef = 'tenor';
+        if (clef.line == 2) value.clef = 'mezzo-soprano';
+        if (clef.line == 1) value.clef = 'soprano';
+        value.clef = 'alto';
+        break;
+      case 'percussion':
+        value.clef = 'percussion';
+        break;
+      case 'TAB':
+        // should be tab but it is buggy in VexFlow
+        //value.clef = 'tab';
+        value.clef = 'treble';
+        break;
       default:
-        return '';
+        value.clef = undefined;
     }
+    switch (clef.octaveChange) {
+      case -1:
+        value.annotation = '8vb';
+        break;
+      case 1:
+        value.annotation = '8va';
+        break;
+    }
+    return value;
   }
 }
