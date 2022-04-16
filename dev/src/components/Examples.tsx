@@ -80,7 +80,6 @@ export const Examples: React.FC = () => {
       {
         label: 'slowest',
         value: 'slowest',
-        disabled: !settings.successVisible,
       },
     ];
   }, [settings]);
