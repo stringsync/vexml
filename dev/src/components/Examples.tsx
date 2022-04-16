@@ -5,9 +5,11 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useConstant } from '../hooks/useConstant';
 import { Format, useFetch } from '../hooks/useFetch';
+import { useSettings } from '../hooks/useSettings';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { Example } from './Example';
 import { RenderStatus } from './RenderStatus';
+import { StatusSummary } from './StatusSummary';
 import { VexmlStatus } from './Vexml';
 
 const NUM_SLOWEST_VISIBLE = 10;
@@ -28,6 +30,8 @@ const StyledListItem = styled.li`
 
 export const Examples: React.FC = () => {
   const result = useFetch('/manifest', Format.Json);
+
+  const [settings, updateSettings] = useSettings();
 
   const [statuses, setStatuses] = useState<Record<string, VexmlStatus>>({});
   const loading = useMemo(() => {
@@ -61,40 +65,55 @@ export const Examples: React.FC = () => {
     [statuses]
   );
 
-  const [successVisible, setSuccessVisible] = useState(true);
-  const [failVisible, setFailVisible] = useState(true);
-  const [slowestVisible, setSlowestVisible] = useState(false);
   const options = useMemo(() => {
-    const numSuccess = Object.values(statuses).filter((status) => status.type === 'success').length;
-    const numFailed = Object.values(statuses).filter((status) => status.type === 'error').length;
     return [
       {
-        label: `success (${numSuccess})`,
+        label: 'success',
         value: 'success',
-        disabled: successVisible && successVisible !== failVisible,
+        disabled:
+          settings.slowestVisible || (settings.successVisible && settings.successVisible !== settings.failVisible),
       },
       {
-        label: `failed (${numFailed})`,
-        value: 'fail',
-        disabled: failVisible && successVisible !== failVisible,
+        label: 'failed',
+        value: 'failed',
+        disabled: settings.failVisible && settings.successVisible !== settings.failVisible,
       },
       {
-        label: `slowest (${Math.min(Object.keys(statuses).length, NUM_SLOWEST_VISIBLE)})`,
+        label: 'slowest',
         value: 'slowest',
+        disabled: !settings.successVisible,
       },
     ];
-  }, [successVisible, failVisible, statuses]);
-  const defaultFilters = useConstant(() => ['success', 'fail']);
-  const onFiltersChange = useCallback((checkedValues: CheckboxValueType[]): void => {
-    setSuccessVisible(checkedValues.includes('success'));
-    setFailVisible(checkedValues.includes('fail'));
-    setSlowestVisible(checkedValues.includes('slowest'));
-  }, []);
+  }, [settings]);
+  const defaultFilters = useConstant(() => {
+    const defaultFilters = new Array<string>();
+    if (settings.successVisible) {
+      defaultFilters.push('success');
+    }
+    if (settings.failVisible) {
+      defaultFilters.push('failed');
+    }
+    if (settings.slowestVisible) {
+      defaultFilters.push('slowest');
+    }
+    return defaultFilters;
+  });
+  const onFiltersChange = useCallback(
+    (checkedValues: CheckboxValueType[]): void => {
+      updateSettings({
+        ...settings,
+        successVisible: checkedValues.includes('success'),
+        failVisible: checkedValues.includes('failed'),
+        slowestVisible: checkedValues.includes('slowest'),
+      });
+    },
+    [updateSettings]
+  );
   const filteredExampleIds = useMemo<string[]>(() => {
     if (result.type !== 'success') {
       return [];
     }
-    const examples: string[] = slowestVisible
+    const examples: string[] = settings.slowestVisible
       ? result.data.examples
           .slice()
           .sort((a: string, b: string) => {
@@ -110,10 +129,10 @@ export const Examples: React.FC = () => {
       (exampleId) =>
         typeof statuses[exampleId] === 'undefined' || // it's still loading
         statuses[exampleId].type === 'rendering' ||
-        (statuses[exampleId].type === 'success' && successVisible) ||
-        (statuses[exampleId].type === 'error' && failVisible)
+        (statuses[exampleId].type === 'success' && settings.successVisible) ||
+        (statuses[exampleId].type === 'error' && settings.failVisible)
     );
-  }, [result, slowestVisible, successVisible, failVisible, statuses]);
+  }, [result, settings, statuses]);
   const filteredExampleIdsSet = useMemo(() => new Set(filteredExampleIds), [filteredExampleIds]);
 
   return (
@@ -123,6 +142,12 @@ export const Examples: React.FC = () => {
           <Typography.Title id="index" level={2}>
             index
           </Typography.Title>
+
+          <Typography.Title level={3}>stats</Typography.Title>
+          <StatusSummary exampleIds={result.data.examples} statuses={statuses} />
+
+          <br />
+          <br />
 
           <Typography.Title level={3}>filters</Typography.Title>
           <Checkbox.Group
@@ -135,13 +160,15 @@ export const Examples: React.FC = () => {
           <br />
           <br />
 
-          {slowestVisible ? (
+          {loading && <Typography.Text type="secondary">loading</Typography.Text>}
+          {!loading && settings.slowestVisible && (
             <ol>
               {filteredExampleIds.map((exampleId) => (
                 <StyledListItem key={exampleId}>{renderExampleStatus(exampleId)}</StyledListItem>
               ))}
             </ol>
-          ) : (
+          )}
+          {!loading && !settings.slowestVisible && (
             <AlphabeticalIndex keys={filteredExampleIds} renderKey={renderExampleStatus} />
           )}
 
