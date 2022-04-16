@@ -7,7 +7,7 @@ export type MeasureStartMessage = {
 // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
 export type AttributesMessage = {
   msgType: 'attributes';
-  clefs: Map<number, string>;
+  clefs: { staff: number; sign: string; line?: number; octaveChange?: number }[];
   time?: string;
   key?: number;
 };
