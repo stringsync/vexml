@@ -51,12 +51,20 @@ export class Producer {
         break;
       case 'attributes':
         {
-          const message: AttributesMessage = { msgType: 'attributes', clefs: new Map() };
+          const message: AttributesMessage = { msgType: 'attributes', clefs: [] };
           const clefElems = nodeElem.getElementsByTagName('clef');
           for (let i = 0; i < clefElems.length; i++) {
-            const number = parseInt(clefElems.item(i)!.getAttribute('number') ?? '1');
+            const staff = parseInt(clefElems.item(i)!.getAttribute('number') ?? '1');
             const sign = clefElems.item(i)!.getElementsByTagName('sign').item(0)?.textContent;
-            if (sign) message.clefs.set(number, sign);
+            const line = clefElems.item(i)!.getElementsByTagName('line').item(0)?.textContent;
+            const octaveChange = clefElems.item(i)!.getElementsByTagName('clef-octave-change').item(0)?.textContent;
+            if (sign)
+              message.clefs.push({
+                staff,
+                sign,
+                line: line ? parseInt(line) : undefined,
+                octaveChange: octaveChange ? parseInt(octaveChange) : undefined,
+              });
           }
           const fifths = nodeElem.getElementsByTagName('fifth').item(0)?.textContent;
           if (fifths) message.key = parseInt(fifths);
