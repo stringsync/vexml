@@ -63,6 +63,8 @@ export class Renderer {
     let voice = t.let('voice', () => 0);
     let x = t.let('x', () => 0);
     let y = t.let('y', () => 0);
+    let yCur = 100;
+    let xMax = 0;
     let width: number | undefined = t.let('width', () => undefined);
     let staveWidth: number = t.let('staveWidth', () => 0);
     let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
@@ -101,7 +103,8 @@ export class Renderer {
           t.comment(`measure ${curMeasure}`);
           t.literal(`width = ${message.width}`);
           width = message.width;
-          t.expression(() => (y = 0));
+          y = yCur;
+          t.literal(`y = ${yCur}`);
           if (message.staves) {
             numStaves = message.staves;
           }
@@ -248,6 +251,13 @@ export class Renderer {
           );
           t.expression(() => factory.draw());
           t.expression(() => (x += staves.get(1)!.getWidth()));
+          if (x > 1500) {
+            xMax = x > xMax ? x : xMax;
+            factory.getContext().resize(xMax + 10, y * 2 - yCur + 340);
+            t.literal(`factory.getContext().resize (${xMax + 10}, ${y * 2 - yCur + 340});`);
+            t.expression(() => (x = 0));
+            yCur = y + 240;
+          }
           break;
       }
     }
