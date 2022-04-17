@@ -46,11 +46,8 @@ export class Renderer {
     t.newline();
 
     let timeSignature = t.let('timeSignature', () => '');
-    let clef = t.let('clef', () => '');
-    let clefAnnotation: string | undefined = t.let('width', () => undefined);
-    let stave: VF.Stave | undefined = t.let('stave', () => undefined);
     const staves: Map<number, VF.Stave> = t.const('staves', () => new Map<number, VF.Stave>());
-    const voices: Map<number, VF.Voice> = t.let('voices', () => new Map<number, VF.Voice>());
+    const voices: Map<string, VF.Voice> = t.let('voices', () => new Map<string, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
     let formatter: VF.Formatter | undefined = t.let('formatter', () => undefined);
@@ -58,15 +55,11 @@ export class Renderer {
     let slurStart = t.let('slurStart', () => -1);
     let graceStart = t.let('graceStart', () => -1);
     let curMeasure = 1;
-    let accidental = t.let('accidental', () => '');
-    let accNdx = t.let('accNdx', () => 0);
-    let voice = t.let('voice', () => 0);
-    let x = t.let('x', () => 0);
-    let y = t.let('y', () => 0);
+    let x = 0;
+    let y = 0;
     let yCur = 100;
     let xMax = 0;
-    let width: number | undefined = t.let('width', () => undefined);
-    let staveWidth: number = t.let('staveWidth', () => 0);
+    let width: number | undefined = undefined;
     let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
     let numStaves = 1;
     let duration = 0;
@@ -101,17 +94,15 @@ export class Renderer {
         case 'measureStart':
           t.newline();
           t.comment(`measure ${curMeasure}`);
-          t.literal(`width = ${message.width}`);
           width = message.width;
           y = yCur;
-          t.literal(`y = ${yCur}`);
           if (message.staves) {
             numStaves = message.staves;
           }
           for (let staff = 1; staff <= numStaves; staff++) {
-            t.literal(`staff = ${staff}`);
-            t.expression(() => staves.set(staff, factory.Stave({ x, y, width })));
-            t.expression(() => (y += 115));
+            staves.set(staff, factory.Stave({ x, y, width }));
+            t.literal(`staves.set(${staff}, factory.Stave({ x: ${x}, y: ${y}, width: ${width} }))`);
+            y += 115;
           }
           t.expression(() => (notes = []));
           duration = 0;
@@ -122,16 +113,17 @@ export class Renderer {
             const clefT = this.clefTranslate(clefMsg);
             this.clefSet(clefMsg.staff, duration, clefT);
             if (clefT.clef) {
-              clef = clefT.clef;
-              t.literal(clefT.clef ? `clef = '${clefT.clef}'` : `clef = undefined`);
-              clefAnnotation = clefT.annotation;
-              t.literal(clefT.annotation ? `clefAnnotation = '${clefT.annotation}'` : `clefAnnotation = undefined`);
+              const clef = clefT.clef;
+              const clefAnnotation = clefT.annotation;
               if (duration == 0) {
                 const staff = clefMsg.staff;
-                t.literal(`staff = ${clefMsg.staff}`);
-                t.expression(() => staves.get(staff)!.addClef(clef, 'default', clefAnnotation));
+                staves.get(staff)!.addClef(clef, 'default', clefAnnotation);
+                if (clefAnnotation)
+                  t.literal(`staves.get(${staff}).addClef('${clef}', 'default', '${clefAnnotation}');`);
+                else t.literal(`staves.get(${staff}).addClef('${clef}', 'default');`);
               } else {
-                t.expression(() => notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } })));
+                notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
+                t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
               }
             }
           }
@@ -146,9 +138,8 @@ export class Renderer {
             );
           break;
         case 'voiceEnd':
-          voice = parseInt(message.voice);
-          t.literal(`voice = ${voice}`);
-          t.expression(() => voices.set(voice, factory.Voice().setMode(2).addTickables(notes)));
+          voices.set(message.voice, factory.Voice().setMode(2).addTickables(notes));
+          t.literal(`voices.set('${message.voice}', factory.Voice().setMode(2).addTickables(notes));`);
           t.expression(() => (notes = []));
           duration = 0;
           break;
@@ -174,27 +165,30 @@ export class Renderer {
 
           if (message.grace) {
             noteStruct.slash = message.graceSlash;
-            note = this.factory.GraceNote(noteStruct);
-            t.literal(`note = factory.GraceNote(${JSON.stringify(noteStruct)})`);
+            note = this.factory.GraceNote(noteStruct).setStave(staves.get(message.staff)!);
+            t.literal(
+              `note = factory.GraceNote(${JSON.stringify(noteStruct)}).setStave(staves.get(${message.staff}));`
+            );
           } else {
-            note = this.factory.StaveNote(noteStruct);
-            t.literal(`note = factory.StaveNote(${JSON.stringify(noteStruct)})`);
+            note = this.factory.StaveNote(noteStruct).setStave(staves.get(message.staff)!);
+            t.literal(
+              `note = factory.StaveNote(${JSON.stringify(noteStruct)}).setStave(staves.get(${message.staff}));`
+            );
           }
           for (let i = 0; i < message.dots; i++) {
             t.expression(() => VF.Dot.buildAndAttach([note!], { all: true }));
           }
           message.head.forEach((head, index) => {
             if (head.accidental != '') {
-              accidental = this.getAccidental(head.accidental);
-              t.literal(`accidental = '${accidental}'`);
-              accNdx = index;
-              t.literal(`accNdx = ${index}`);
+              const accidental = this.getAccidental(head.accidental);
               if (head.accidentalCautionary) {
-                t.expression(() =>
-                  note!.addModifier(factory.Accidental({ type: accidental }).setAsCautionary(), accNdx)
+                note!.addModifier(factory.Accidental({ type: accidental }).setAsCautionary(), index);
+                t.literal(
+                  `note.addModifier(factory.Accidental({ type: '${accidental}' }).setAsCautionary(), ${index})`
                 );
               } else {
-                t.expression(() => note!.addModifier(factory.Accidental({ type: accidental }), accNdx));
+                note!.addModifier(factory.Accidental({ type: accidental }), index);
+                t.literal(`note.addModifier(factory.Accidental({ type: '${accidental}' }), ${index});`);
               }
             }
           });
@@ -213,10 +207,6 @@ export class Renderer {
             }
             t.expression(() => (graceStart = -1));
           }
-          stave = staves.get(message.staff);
-          t.literal(`staff = ${message.staff}`);
-          t.literal(`stave = staves.get(staff)`);
-          if (stave) t.expression(() => note!.setStave(stave!));
           t.expression(() => notes.push(note!));
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
@@ -229,33 +219,27 @@ export class Renderer {
             })
           );
           t.expression(() => (formatter = factory.Formatter().joinVoices(voicesArr)));
-          t.expression(
-            () =>
-              (staveWidth = width
-                ? width
-                : formatter!.preCalculateMinTotalWidth(voicesArr) +
-                  staves.get(1)!.getNoteStartX() -
-                  staves.get(1)!.getX() +
-                  VF.Stave.defaultPadding)
-          );
-          t.expression(() =>
-            staves.forEach((stave) => {
-              stave.setWidth(staveWidth);
-            })
-          );
-          t.expression(() =>
-            formatter!.format(
-              voicesArr,
-              staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding
-            )
-          );
+          const staveWidth = width
+            ? width
+            : formatter!.preCalculateMinTotalWidth(voicesArr) +
+              staves.get(1)!.getNoteStartX() -
+              staves.get(1)!.getX() +
+              VF.Stave.defaultPadding;
+          staves.forEach((stave) => {
+            stave.setWidth(staveWidth);
+          });
+          t.literal(`staves.forEach((stave) => {stave.setWidth(${staveWidth});});`);
+          const notesWidth =
+            staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding;
+          formatter!.format(voicesArr, notesWidth);
+          t.literal(`formatter.format(voicesArr, ${notesWidth});`);
           t.expression(() => factory.draw());
-          t.expression(() => (x += staves.get(1)!.getWidth()));
+          x += staves.get(1)!.getWidth();
           if (x > 1500) {
             xMax = x > xMax ? x : xMax;
             factory.getContext().resize(xMax + 10, y * 2 - yCur + 340);
             t.literal(`factory.getContext().resize (${xMax + 10}, ${y * 2 - yCur + 340});`);
-            t.expression(() => (x = 0));
+            x = 0;
             yCur = y + 240;
           }
           break;
