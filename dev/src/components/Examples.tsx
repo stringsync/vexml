@@ -14,8 +14,7 @@ import { VexmlStatus } from './Vexml';
 
 const NUM_SLOWEST_VISIBLE = 10;
 
-const ExampleContainer = styled.div<{ visible: boolean }>`
-  display: ${(props) => (props.visible ? 'block' : 'none')};
+const ExampleContainer = styled.div`
   padding-bottom: 24px;
 `;
 
@@ -25,6 +24,12 @@ const StyledListItem = styled.li`
 
   :hover {
     background-color: #eee;
+  }
+`;
+
+const HideableChildren = styled.div`
+  .hidden {
+    display: none;
   }
 `;
 
@@ -180,21 +185,23 @@ export const Examples: React.FC = () => {
           <Typography.Title id="examples" level={2}>
             examples
           </Typography.Title>
-          {result.data.examples.map((exampleId: string) => (
-            <ExampleContainer key={exampleId} visible={filteredExampleIdsSet.has(exampleId)}>
-              <Typography.Title id={exampleId} level={3}>
-                <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
-              </Typography.Title>
+          <HideableChildren>
+            {result.data.examples.map((exampleId: string) => (
+              <ExampleContainer key={exampleId} className={filteredExampleIdsSet.has(exampleId) ? '' : 'hidden'}>
+                <Typography.Title id={exampleId} level={3}>
+                  <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
+                </Typography.Title>
 
-              <a href="#index">top</a>
-              <Divider type="vertical" />
-              <Link to={`/${exampleId}`}>show</Link>
+                <a href="#index">top</a>
+                <Divider type="vertical" />
+                <Link to={`/${exampleId}`}>show</Link>
 
-              <br />
+                <br />
 
-              <Example title={false} exampleId={exampleId} onUpdate={onUpdate} />
-            </ExampleContainer>
-          ))}
+                <Example title={false} exampleId={exampleId} onUpdate={onUpdate} />
+              </ExampleContainer>
+            ))}
+          </HideableChildren>
         </>
       )}
     </>
