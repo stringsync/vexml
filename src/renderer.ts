@@ -277,6 +277,12 @@ export class Renderer {
         return '2';
       case 'whole':
         return 'w';
+      case 'breve':
+        return '1/2';
+      case 'long':
+        // VexFlow bug: should be '1/4' but it is not supported
+        // return '1/4';
+        return '1/2';
       default:
         return '';
     }
@@ -364,7 +370,7 @@ export class Renderer {
         value.clef = 'percussion';
         break;
       case 'TAB':
-        // should be tab but it is buggy in VexFlow
+        // VexFlow bug: should be 'tab' but it is not supported
         //value.clef = 'tab';
         value.clef = 'treble';
         break;
