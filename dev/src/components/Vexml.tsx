@@ -1,5 +1,6 @@
 import { Alert } from 'antd';
 import React, { useEffect, useId, useState } from 'react';
+import { useConstant } from '../hooks/useConstant';
 import { vexml } from '../lib/vexml';
 
 export type VexmlStatus =
@@ -9,6 +10,7 @@ export type VexmlStatus =
     }
   | {
       type: 'success';
+      svg: SVGElement;
       exampleId: string;
       elapsedMs: number;
       codePrinter: vexml.CodePrinter;
@@ -35,8 +37,9 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
   const id = useId();
 
   const [status, setStatus] = useState<VexmlStatus>({ type: 'rendering', exampleId });
-  const [codePrinter] = useState(() => new vexml.CodePrinter());
-  const success = (elapsedMs: number) => setStatus({ type: 'success', exampleId, elapsedMs, codePrinter });
+  const codePrinter = useConstant(() => new vexml.CodePrinter());
+  const success = (svg: SVGElement, elapsedMs: number) =>
+    setStatus({ type: 'success', svg, exampleId, elapsedMs, codePrinter });
   const error = (e: any, elapsedMs: number) =>
     setStatus({ type: 'error', exampleId, error: getErrorMessage(e), codePrinter, elapsedMs });
 
@@ -45,7 +48,8 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
     try {
       vexml.Renderer.render(id, xml, { codeTracker: codePrinter });
       const stop = new Date().getTime();
-      success(stop - start);
+      const svg = document.getElementById(id)!.firstChild! as SVGElement;
+      success(svg, stop - start);
     } catch (e) {
       const stop = new Date().getTime();
       error(e, stop - start);
