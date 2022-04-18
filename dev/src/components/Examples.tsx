@@ -168,17 +168,14 @@ export const Examples: React.FC = () => {
           <br />
           <br />
 
-          {loading && <Typography.Text type="secondary">loading</Typography.Text>}
-          {!loading && settings.slowestVisible && (
+          {settings.slowestVisible && (
             <ol>
               {filteredExampleIds.map((exampleId) => (
                 <StyledListItem key={exampleId}>{renderExampleStatus(exampleId)}</StyledListItem>
               ))}
             </ol>
           )}
-          {!loading && !settings.slowestVisible && (
-            <AlphabeticalIndex keys={filteredExampleIds} renderKey={renderExampleStatus} />
-          )}
+          {!settings.slowestVisible && <AlphabeticalIndex keys={filteredExampleIds} renderKey={renderExampleStatus} />}
 
           <Divider />
 
