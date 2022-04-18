@@ -1,7 +1,7 @@
 import pixelmatch from 'pixelmatch';
 
 export type SnapshotComparison = {
-  diff: number;
+  match: number;
   imageData: ImageData;
   width: number;
   height: number;
@@ -66,9 +66,9 @@ export class Snapshot {
 
     const numMismatchPixels = pixelmatch(imageData.data, otherImageData.data, diffImageData.data, width, height);
     const numPixels = width * height;
-    const diff = (numPixels - numMismatchPixels) / numPixels;
+    const match = (numPixels - numMismatchPixels) / numPixels;
 
-    return { diff, imageData: diffImageData, width, height };
+    return { match, imageData: diffImageData, width, height };
   }
 
   async getImageData(): Promise<ImageData> {

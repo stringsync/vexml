@@ -2,22 +2,28 @@ import { CameraOutlined } from '@ant-design/icons';
 import { Alert, Button, message, Tabs, Typography } from 'antd';
 import React, { useCallback, useEffect, useId, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { SnapshotComparisonStatus, useSnapshotComparisonStatus } from '../hooks/useComparisonStatus';
 import { Format, useFetch } from '../hooks/useFetch';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { Snapshot } from '../lib/Snapshot';
 import { Diff } from './Diff';
-import { RenderStatus } from './RenderStatus';
+import { ExampleTitle } from './ExampleTitle';
 import { Vexml, VexmlStatus } from './Vexml';
 
 const { TabPane } = Tabs;
 
-export type ExampleProps = {
-  title?: boolean;
-  exampleId?: string;
-  onUpdate?: (status: VexmlStatus) => void;
+export type ExampleStatus = VexmlStatus & {
+  exampleId: string;
+  snapshotComparisonStatus: SnapshotComparisonStatus;
 };
 
 type SnapshotStatus = { type: 'idle' } | { type: 'loading' } | { type: 'success' } | { type: 'error' };
+
+export type ExampleProps = {
+  title?: boolean;
+  exampleId?: string;
+  onUpdate?: (status: ExampleStatus) => void;
+};
 
 export const Example: React.FC<ExampleProps> = (props) => {
   const id = useId();
@@ -59,29 +65,32 @@ export const Example: React.FC<ExampleProps> = (props) => {
   const result = useFetch(`/public/examples/${exampleId}`, Format.Text);
 
   const [code, setCode] = useState('');
-  const [status, setStatus] = useState<VexmlStatus | undefined>(undefined);
+  const [status, setStatus] = useState<ExampleStatus | undefined>(undefined);
+  const snapshotComparisonStatus = useSnapshotComparisonStatus(vexmlRenderingSnapshot, serverSnapshot);
+  const onUpdate = props.onUpdate;
   const onStatus = useCallback(
-    (status: VexmlStatus) => {
+    (vexmlStatus: VexmlStatus) => {
+      const status: ExampleStatus = { ...vexmlStatus, exampleId, snapshotComparisonStatus };
       setStatus(status);
-      switch (status.type) {
+      switch (vexmlStatus.type) {
         case 'success':
-          setCode(status.codePrinter.print());
-          setSvg(status.svg);
+          setCode(vexmlStatus.codePrinter.print());
+          setSvg(vexmlStatus.svg);
           break;
         case 'error':
-          setCode(status.codePrinter.print());
+          setCode(vexmlStatus.codePrinter.print());
           break;
       }
-      props.onUpdate && props.onUpdate({ ...status, exampleId });
+      onUpdate && onUpdate(status);
     },
-    [id, exampleId, props.onUpdate]
+    [id, exampleId, snapshotComparisonStatus, onUpdate]
   );
 
   return (
     <>
       {title && (
         <Typography.Title id={exampleId} level={2}>
-          <RenderStatus exampleId={exampleId} status={status} />
+          <ExampleTitle exampleId={exampleId} status={status} />
         </Typography.Title>
       )}
 
@@ -117,9 +126,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
             {serverSnapshotStatus.type !== 'loading' && vexmlRenderingSnapshot && !serverSnapshot && (
               <Typography.Text type="warning">no snapshot taken</Typography.Text>
             )}
-            {vexmlRenderingSnapshot && serverSnapshot && (
-              <Diff snapshot1={vexmlRenderingSnapshot} snapshot2={serverSnapshot} />
-            )}
+            {vexmlRenderingSnapshot && serverSnapshot && <Diff snapshotComparisonStatus={snapshotComparisonStatus} />}
           </TabPane>
           <TabPane tab="code" key="4">
             <Typography.Title level={2}>code</Typography.Title>
