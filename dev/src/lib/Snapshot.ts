@@ -28,8 +28,8 @@ export class Snapshot {
     return `data:image/svg+xml;base64,${btoa(clone.outerHTML)}`;
   }
 
-  static filename(exampleId: string): string {
-    return `${exampleId.split('.')[0]}.png`;
+  static url(exampleId: string): string {
+    return `/public/snapshots/${exampleId.split('.')[0]}.png`;
   }
 
   readonly blob: Blob;
