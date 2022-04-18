@@ -11,8 +11,6 @@ import { Vexml, VexmlStatus } from './Vexml';
 
 const { TabPane } = Tabs;
 
-const getSnapshotUrl = (exampleId: string) => `/public/snapshots/${Snapshot.filename(exampleId)}`;
-
 export type ExampleProps = {
   title?: boolean;
   exampleId?: string;
@@ -35,10 +33,10 @@ export const Example: React.FC<ExampleProps> = (props) => {
     }
     setServerSnapshotStatus({ type: 'loading' });
     try {
-      const filename = Snapshot.filename(exampleId);
+      const url = Snapshot.url(exampleId);
       const snapshot = await Snapshot.fromSvg(svg);
-      await snapshot.upload(filename);
-      message.success(`${filename} uploaded`);
+      await snapshot.upload(url);
+      message.success(`${url} uploaded`);
       setServerSnapshotStatus({ type: 'success' });
     } catch (e) {
       setServerSnapshotStatus({ type: 'error' });
@@ -48,7 +46,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
   const isSnapshotLoading = serverSnapshotStatus.type === 'loading';
   const isSnapshotDisabled = !svg || serverSnapshotStatus.type === 'loading';
   const [vexmlRenderingSnapshot] = useSnapshot(svg);
-  const [serverSnapshot, refetchServerSnapshot] = useSnapshot(getSnapshotUrl(exampleId));
+  const [serverSnapshot, refetchServerSnapshot] = useSnapshot(Snapshot.url(exampleId));
   useEffect(() => {
     switch (serverSnapshotStatus.type) {
       case 'success':
@@ -109,7 +107,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
             <Typography.Title level={2}>snapshot</Typography.Title>
             {!serverSnapshot && <Typography.Text type="warning">no snapshot taken</Typography.Text>}
             {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
-            {serverSnapshotStatus.type !== 'loading' && serverSnapshot && <img src={getSnapshotUrl(exampleId)} />}
+            {serverSnapshotStatus.type !== 'loading' && serverSnapshot && <img src={Snapshot.url(exampleId)} />}
           </TabPane>
           <TabPane tab="diff" key="3" forceRender={false}>
             <Typography.Title level={2}>diff</Typography.Title>
