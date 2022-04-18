@@ -3,11 +3,15 @@ import { Alert, Button, message, Tabs, Typography } from 'antd';
 import React, { useCallback, useId, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Format, useFetch } from '../hooks/useFetch';
+import { ImageDataExtractor } from '../lib/ImageDataExtractor';
 import { Snapshot } from '../lib/Snapshot';
+import { Diff } from './Diff';
 import { RenderStatus } from './RenderStatus';
 import { Vexml, VexmlStatus } from './Vexml';
 
 const { TabPane } = Tabs;
+
+const getSnapshotUrl = (exampleId: string) => `/public/snapshots/${Snapshot.filename(exampleId)}`;
 
 export type ExampleProps = {
   title?: boolean;
@@ -25,7 +29,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
 
   const [svg, setSvg] = useState<SVGElement | null>(null);
   const [snapshotStatus, setSnapshotStatus] = useState<SnapshotStatus>({ type: 'idle' });
-  const onSnapshotClick = useCallback(async () => {
+  const onSnapshotClick = useCallback<React.MouseEventHandler<HTMLElement>>(async () => {
     if (!svg) {
       return;
     }
@@ -65,6 +69,9 @@ export const Example: React.FC<ExampleProps> = (props) => {
     [id, exampleId, props.onUpdate]
   );
 
+  const src1 = useCallback(() => (svg ? ImageDataExtractor.fromSvg(svg) : Promise.resolve(null)), [svg]);
+  const src2 = useCallback(() => ImageDataExtractor.fromSrc(getSnapshotUrl(exampleId)), [exampleId]);
+
   return (
     <>
       {title && (
@@ -93,11 +100,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
           </TabPane>
           <TabPane tab="snapshot" key="2">
             <Typography.Title level={2}>snapshot</Typography.Title>
-            {snapshotStatus.type !== 'loading' && <img src={`/public/snapshots/${Snapshot.filename(exampleId)}`} />}
+            {snapshotStatus.type !== 'loading' && <img src={getSnapshotUrl(exampleId)} />}
           </TabPane>
-          <TabPane tab="diff" key="3">
+          <TabPane tab="diff" key="3" forceRender={false}>
             <Typography.Title level={2}>diff</Typography.Title>
-            TODO
+            <Diff src1={src1} src2={src2} />
           </TabPane>
           <TabPane tab="code" key="4">
             <Typography.Title level={2}>code</Typography.Title>

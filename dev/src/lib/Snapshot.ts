@@ -1,8 +1,5 @@
 export class Snapshot {
   static fromSvg(svg: SVGElement): Promise<Snapshot> {
-    const clone = svg.cloneNode(true) as SVGElement;
-    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    const imgSrc = `data:image/svg+xml;base64,${btoa(clone.outerHTML)}`;
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -12,8 +9,14 @@ export class Snapshot {
         canvas.getContext('2d')!.drawImage(img, 0, 0);
         canvas.toBlob((blob) => resolve(new Snapshot(blob!)));
       };
-      img.src = imgSrc;
+      img.src = Snapshot.src(svg);
     });
+  }
+
+  static src(svg: SVGElement): string {
+    const clone = svg.cloneNode(true) as SVGElement;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    return `data:image/svg+xml;base64,${btoa(clone.outerHTML)}`;
   }
 
   static filename(exampleId: string): string {
@@ -27,22 +30,11 @@ export class Snapshot {
   }
 
   async upload(filename: string): Promise<void> {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/snapshot', true);
     const formData = new FormData();
-    formData.append('image', this.blob, filename);
-    xhr.send(formData);
-    return new Promise((resolve, reject) => {
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve();
-        } else {
-          reject(new Error(`upload failed, status ${xhr.status}`));
-        }
-      };
-      xhr.onerror = () => {
-        reject();
-      };
-    });
+    formData.set('image', this.blob, filename);
+    const res = await fetch('/snapshot', { method: 'POST', body: formData });
+    if (!res.ok) {
+      throw new Error(`upload failed, status ${res.status}`);
+    }
   }
 }
