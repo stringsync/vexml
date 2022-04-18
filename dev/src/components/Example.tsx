@@ -1,9 +1,9 @@
 import { CameraOutlined } from '@ant-design/icons';
 import { Alert, Button, message, Tabs, Typography } from 'antd';
-import React, { useCallback, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Format, useFetch } from '../hooks/useFetch';
-import { ImageDataExtractor } from '../lib/ImageDataExtractor';
+import { useSnapshot } from '../hooks/useSnapshot';
 import { Snapshot } from '../lib/Snapshot';
 import { Diff } from './Diff';
 import { RenderStatus } from './RenderStatus';
@@ -28,25 +28,35 @@ export const Example: React.FC<ExampleProps> = (props) => {
   const exampleId = props.exampleId || params.exampleId || '';
 
   const [svg, setSvg] = useState<SVGElement | null>(null);
-  const [snapshotStatus, setSnapshotStatus] = useState<SnapshotStatus>({ type: 'idle' });
+  const [serverSnapshotStatus, setServerSnapshotStatus] = useState<SnapshotStatus>({ type: 'idle' });
   const onSnapshotClick = useCallback<React.MouseEventHandler<HTMLElement>>(async () => {
     if (!svg) {
       return;
     }
-    setSnapshotStatus({ type: 'loading' });
+    setServerSnapshotStatus({ type: 'loading' });
     try {
       const filename = Snapshot.filename(exampleId);
       const snapshot = await Snapshot.fromSvg(svg);
       await snapshot.upload(filename);
       message.success(`${filename} uploaded`);
-      setSnapshotStatus({ type: 'success' });
+      setServerSnapshotStatus({ type: 'success' });
     } catch (e) {
-      setSnapshotStatus({ type: 'error' });
+      setServerSnapshotStatus({ type: 'error' });
       message.error(String(e));
     }
   }, [exampleId, svg]);
-  const isSnapshotLoading = snapshotStatus.type === 'loading';
-  const isSnapshotDisabled = !svg || snapshotStatus.type === 'loading';
+  const isSnapshotLoading = serverSnapshotStatus.type === 'loading';
+  const isSnapshotDisabled = !svg || serverSnapshotStatus.type === 'loading';
+  const [vexmlRenderingSnapshot] = useSnapshot(svg);
+  const [serverSnapshot, refetchServerSnapshot] = useSnapshot(getSnapshotUrl(exampleId));
+  useEffect(() => {
+    switch (serverSnapshotStatus.type) {
+      case 'success':
+      case 'error':
+        refetchServerSnapshot();
+        break;
+    }
+  }, [serverSnapshotStatus, refetchServerSnapshot]);
 
   const result = useFetch(`/public/examples/${exampleId}`, Format.Text);
 
@@ -68,9 +78,6 @@ export const Example: React.FC<ExampleProps> = (props) => {
     },
     [id, exampleId, props.onUpdate]
   );
-
-  const src1 = useCallback(() => (svg ? ImageDataExtractor.fromSvg(svg) : Promise.resolve(null)), [svg]);
-  const src2 = useCallback(() => ImageDataExtractor.fromSrc(getSnapshotUrl(exampleId)), [exampleId]);
 
   return (
     <>
@@ -100,11 +107,21 @@ export const Example: React.FC<ExampleProps> = (props) => {
           </TabPane>
           <TabPane tab="snapshot" key="2">
             <Typography.Title level={2}>snapshot</Typography.Title>
-            {snapshotStatus.type !== 'loading' && <img src={getSnapshotUrl(exampleId)} />}
+            {!serverSnapshot && <Typography.Text type="warning">no snapshot taken</Typography.Text>}
+            {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
+            {serverSnapshotStatus.type !== 'loading' && serverSnapshot && <img src={getSnapshotUrl(exampleId)} />}
           </TabPane>
           <TabPane tab="diff" key="3" forceRender={false}>
             <Typography.Title level={2}>diff</Typography.Title>
-            <Diff src1={src1} src2={src2} />
+            {(serverSnapshotStatus.type === 'loading' || !vexmlRenderingSnapshot) && (
+              <Typography.Text type="secondary">loading</Typography.Text>
+            )}
+            {serverSnapshotStatus.type !== 'loading' && vexmlRenderingSnapshot && !serverSnapshot && (
+              <Typography.Text type="warning">no snapshot taken</Typography.Text>
+            )}
+            {vexmlRenderingSnapshot && serverSnapshot && (
+              <Diff snapshot1={vexmlRenderingSnapshot} snapshot2={serverSnapshot} />
+            )}
           </TabPane>
           <TabPane tab="code" key="4">
             <Typography.Title level={2}>code</Typography.Title>

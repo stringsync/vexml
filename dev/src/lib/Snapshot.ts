@@ -1,3 +1,12 @@
+import pixelmatch from 'pixelmatch';
+
+export type SnapshotComparison = {
+  diff: number;
+  imageData: ImageData;
+  width: number;
+  height: number;
+};
+
 export class Snapshot {
   static fromSvg(svg: SVGElement): Promise<Snapshot> {
     return new Promise((resolve) => {
@@ -25,7 +34,7 @@ export class Snapshot {
 
   readonly blob: Blob;
 
-  private constructor(blob: Blob) {
+  constructor(blob: Blob) {
     this.blob = blob;
   }
 
@@ -36,5 +45,44 @@ export class Snapshot {
     if (!res.ok) {
       throw new Error(`upload failed, status ${res.status}`);
     }
+  }
+
+  async compare(otherSnapshot: Snapshot): Promise<SnapshotComparison> {
+    const [imageData, otherImageData] = await Promise.all([this.getImageData(), otherSnapshot.getImageData()]);
+    if (imageData.width !== otherImageData.width) {
+      throw new Error(`images must be the same width, got: ${imageData.width}px, ${otherImageData.width}px`);
+    }
+    if (imageData.height !== otherImageData.height) {
+      throw new Error(`images must be the same height, got: ${imageData.height}px, ${otherImageData.height}px`);
+    }
+
+    const width = imageData.width;
+    const height = imageData.height;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
+    const diffImageData = ctx.createImageData(width, height);
+
+    const numMismatchPixels = pixelmatch(imageData.data, otherImageData.data, diffImageData.data, width, height);
+    const numPixels = width * height;
+    const diff = (numPixels - numMismatchPixels) / numPixels;
+
+    return { diff, imageData: diffImageData, width, height };
+  }
+
+  async getImageData(): Promise<ImageData> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        resolve(ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight));
+      };
+      img.src = URL.createObjectURL(this.blob);
+    });
   }
 }
