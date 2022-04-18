@@ -1,58 +1,72 @@
-import { Statistic } from 'antd';
-import pixelmatch from 'pixelmatch';
+import { Alert, Statistic } from 'antd';
 import React, { useEffect, useId, useState } from 'react';
+import { Snapshot, SnapshotComparison } from '../lib/Snapshot';
 
-type ImageDataFactory = () => Promise<ImageData | null>;
+const BAD_COLOR = '#cf1322';
+const GOOD_COLOR = '#3f8600';
+
+type ComparisonResult =
+  | {
+      type: 'none';
+    }
+  | {
+      type: 'success';
+      comparison: SnapshotComparison;
+    }
+  | {
+      type: 'error';
+      error: string;
+    };
 
 export type DiffProps = {
-  src1: ImageDataFactory;
-  src2: ImageDataFactory;
+  snapshot1: Snapshot;
+  snapshot2: Snapshot;
 };
 
 export const Diff: React.FC<DiffProps> = (props) => {
-  const { src1, src2 } = props;
+  const { snapshot1, snapshot2 } = props;
   const id = useId();
 
-  const [imgData1, setImgData1] = useState<ImageData | null>(null);
+  const [result, setResult] = useState<ComparisonResult>({ type: 'none' });
   useEffect(() => {
-    src1().then(setImgData1).catch();
-  }, [src1]);
+    setResult({ type: 'none' });
+    let done = false;
+    snapshot1
+      .compare(snapshot2)
+      .then((comparison) => !done && setResult({ type: 'success', comparison }))
+      .catch((e) =>
+        setResult({ type: 'error', error: e instanceof Error ? e.message : `something went wrong: ${String(e)}` })
+      )
+      .finally(() => (done = true));
+    return () => {
+      done = true;
+    };
+  }, [id, snapshot1, snapshot2]);
 
-  const [imgData2, setImgData2] = useState<ImageData | null>(null);
   useEffect(() => {
-    src2().then(setImgData2).catch();
-  }, [src2]);
-
-  const [diffResult, setDiffResult] = useState<number | null>(null);
-  useEffect(() => {
-    if (!imgData1) {
+    if (result.type !== 'success') {
       return;
     }
-    if (!imgData2) {
-      return;
-    }
-    const width = imgData1.width;
-    const height = imgData1.height;
-
     const canvas = document.getElementById(id)! as HTMLCanvasElement;
-    canvas.width = width;
-    canvas.height = height;
-
     const ctx = canvas.getContext('2d')!;
-    const diff = ctx.createImageData(width, height);
-    const numMismatchPixels = pixelmatch(imgData1.data, imgData2.data, diff.data, width, height);
-
-    const numPixels = width * height;
-    const diffResult = ((numPixels - numMismatchPixels) / numPixels) * 100;
-    setDiffResult(diffResult);
-
-    ctx.putImageData(diff, 0, 0);
-  }, [id, imgData1, imgData2]);
+    ctx.putImageData(result.comparison.imageData, 0, 0);
+  }, [result]);
 
   return (
     <>
-      {typeof diffResult === 'number' && <Statistic title="match" value={diffResult} suffix="%" precision={1} />}
-      {imgData1 && imgData2 && <canvas id={id} />}
+      {result.type === 'error' && <Alert type="error" message={result.error} />}
+      {result.type === 'success' && (
+        <>
+          <Statistic
+            title="match"
+            value={result.comparison.diff * 100}
+            precision={result.comparison.diff === 1 ? 0 : 2}
+            suffix="%"
+            valueStyle={{ color: result.comparison.diff === 1 ? GOOD_COLOR : BAD_COLOR }}
+          />
+          <canvas id={id} width={result.comparison.width} height={result.comparison.height} />
+        </>
+      )}
     </>
   );
 };
