@@ -50,8 +50,15 @@ export type NoteMessage = {
   staff: number;
 };
 
+export type ArticulationMessage = {
+  msgType: 'articulation';
+  type: string;
+  index: number;
+};
+
 export type EasyScoreMessage =
   | NoteMessage
+  | ArticulationMessage
   | AttributesMessage
   | MeasureStartMessage
   | MeasureEndMessage
