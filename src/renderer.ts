@@ -8,6 +8,12 @@ export type RendererOptions = {
   codeTracker?: CodeTracker;
 };
 
+function factoryOrnament(factory: VF.Factory, param: { type: string }): VF.Modifier {
+  const modifier = new VF.Ornament(param.type);
+  modifier.setContext(factory.getContext());
+  return modifier;
+}
+
 export class Renderer {
   static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
     const t = opts.codeTracker || CodePrinter.noop();
@@ -210,6 +216,15 @@ export class Renderer {
           t.expression(() => notes.push(note!));
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
+        case 'articulation':
+          const modifiers = this.getArticulation(factory, message.type);
+          for (const modifier of modifiers) {
+            if (modifier.class == 'A')
+              notes[notes.length - 1].addModifier(factory.Articulation({ type: modifier.type }), 0);
+            if (modifier.class == 'O')
+              notes[notes.length - 1].addModifier(factoryOrnament(factory, { type: modifier.type }), 0);
+          }
+          break;
         case 'measureEnd':
           curMeasure++;
           t.expression(() => (voicesArr = []));
@@ -305,6 +320,56 @@ export class Renderer {
         return '++';
       default:
         return '';
+    }
+  }
+
+  private getArticulation(factory: VF.Factory, articulation: string): { class: string; type: string }[] {
+    switch (articulation) {
+      case 'accent':
+        return [{ class: 'A', type: 'a>' }];
+      case 'breath-mark':
+        // VexFlow issue: supported as TextNote
+        return [];
+      case 'caesura':
+        // VexFlow issue: supported as TextNote
+        return [];
+      case 'detached-legato':
+        return [
+          { class: 'A', type: 'a-' },
+          { class: 'A', type: 'a.' },
+        ];
+      case 'doit':
+        return [{ class: 'O', type: 'doit' }];
+      case 'falloff':
+        return [{ class: 'O', type: 'fall' }];
+      case 'plop':
+        // VexFlow bug: not supported
+        return [];
+      case 'soft-accent':
+        // VexFlow bug: not supported
+        return [];
+      case 'scoop':
+        return [{ class: 'O', type: 'scoop' }];
+      case 'spiccato':
+        // VexFlow bug: not supported
+        return [];
+      case 'staccato':
+        return [{ class: 'A', type: 'a.' }];
+      case 'staccatissimo':
+        return [{ class: 'A', type: 'av' }];
+      case 'stress':
+        // VexFlow bug: not supported
+        return [];
+      case 'strong-accent':
+        return [{ class: 'A', type: 'a^' }];
+        return [];
+      case 'tenuto':
+        return [{ class: 'A', type: 'a-' }];
+      case 'unstress':
+        // VexFlow bug: not supported
+        return [];
+      default:
+        return [];
     }
   }
 
