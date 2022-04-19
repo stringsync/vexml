@@ -120,6 +120,16 @@ export class Producer {
           };
           messages.push(this.lastNoteMessage);
         }
+        // Notations
+        const notations = nodeElem.getElementsByTagName('notations').item(0)?.childNodes;
+        for (let i = 0; notations && i < notations.length; i++) {
+          // Articulations
+          if (notations.item(i).nodeName == 'articulations') {
+            for (let j = 0; j < notations.item(i).childNodes.length; j++) {
+              messages.push({ msgType: 'articulation', type: notations.item(i).childNodes.item(j).nodeName, index: i });
+            }
+          }
+        }
         // only the beam number 1 is processed, vexflow calculated the number of bars
         const beam = nodeElem.getElementsByTagName('beam').item(0)?.textContent;
         if (beam === 'begin') messages.push({ msgType: 'beamStart' });
