@@ -217,7 +217,6 @@ export class Renderer {
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
         case 'articulation':
-          console.log(message.type);
           const modifiers = this.getArticulation(factory, message.type);
           for (const modifier of modifiers) {
             if (modifier.class == 'A')
@@ -225,7 +224,6 @@ export class Renderer {
             if (modifier.class == 'O')
               notes[notes.length - 1].addModifier(factoryOrnament(factory, { type: modifier.type }), 0);
           }
-          if (modifiers.length == 0) console.log(message.type);
           break;
         case 'measureEnd':
           curMeasure++;
@@ -363,7 +361,7 @@ export class Renderer {
         // VexFlow bug: not supported
         return [];
       case 'strong-accent':
-        // VexFlow bug: not supported
+        return [{ class: 'A', type: 'a^' }];
         return [];
       case 'tenuto':
         return [{ class: 'A', type: 'a-' }];
