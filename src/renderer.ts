@@ -8,12 +8,6 @@ export type RendererOptions = {
   codeTracker?: CodeTracker;
 };
 
-function factoryOrnament(factory: VF.Factory, param: { type: string }): VF.Modifier {
-  const modifier = new VF.Ornament(param.type);
-  modifier.setContext(factory.getContext());
-  return modifier;
-}
-
 export class Renderer {
   static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
     const t = opts.codeTracker || CodePrinter.noop();
@@ -57,9 +51,17 @@ export class Renderer {
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
     let formatter: VF.Formatter | undefined = t.let('formatter', () => undefined);
-    let beamStart = t.let('beamStart', () => -1);
-    let slurStart = t.let('slurStart', () => -1);
+    let beamStart = t.let('beamStart', () => 0);
+    const slurStart: number[] = t.let('slurStart', () => [
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    ]);
+    const tiedStart: number[] = t.let('tiedStart', () => [
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    ]);
     let graceStart = t.let('graceStart', () => -1);
+    const tupletStart: number[] = t.let('tupletStart', () => [
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    ]);
     let curMeasure = 1;
     let x = 0;
     let y = 0;
@@ -70,13 +72,25 @@ export class Renderer {
     let numStaves = 1;
     let duration = 0;
 
+    function factoryOrnament(factory: VF.Factory, param: { type: string; position: string }): VF.Modifier {
+      const modifier = new VF.Ornament(param.type);
+      modifier.setPosition(param.position);
+      modifier.setContext(factory.getContext());
+      return modifier;
+    }
+    t.literal(`function factoryOrnament(factory: VF.Factory, param: { type: string; position: string }): VF.Modifier {
+      const modifier = new VF.Ornament(param.type);
+      modifier.setPosition(param.position);
+      modifier.setContext(factory.getContext());
+      return modifier;
+    }`);
+
     for (const message of this.messages) {
       switch (message.msgType) {
-        case 'beamStart':
-          beamStart = notes.length - 1;
-          break;
-        case 'beamEnd':
-          if (beamStart >= 0) {
+        case 'beam':
+          if (message.value == 'begin') {
+            beamStart = notes.length - 1;
+          } else if (message.value == 'end') {
             t.literal(`beamStart = ${beamStart}`);
             t.expression(() =>
               factory.Beam({
@@ -85,16 +99,6 @@ export class Renderer {
               })
             );
             beamStart = -1;
-          }
-          break;
-        case 'slurStart':
-          slurStart = notes.length - 1;
-          break;
-        case 'slurEnd':
-          if (slurStart >= 0) {
-            t.literal(`slurStart = ${slurStart}`);
-            t.expression(() => factory.Curve({ from: notes[slurStart], to: notes[notes.length - 1], options: {} }));
-            slurStart = -1;
           }
           break;
         case 'measureStart':
@@ -154,6 +158,7 @@ export class Renderer {
           const noteStruct: VF.GraceNoteStruct = {};
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
+          else noteStruct.auto_stem = true;
           noteStruct.clef = this.clefGet(message.staff, duration).clef;
           if (message.duration) duration += message.duration;
           // no pitch, rest
@@ -199,13 +204,13 @@ export class Renderer {
             }
           });
           if (!message.grace && graceStart >= 0) {
-            if (slurStart >= 0 && notes[slurStart] instanceof GraceNote) {
+            if (slurStart[0] >= 0 && notes[0] instanceof GraceNote) {
               t.expression(() =>
                 note!.addModifier(
                   factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[], slur: true })
                 )
               );
-              slurStart = -1;
+              slurStart[0] = -1;
             } else {
               t.expression(() =>
                 note!.addModifier(factory.GraceNoteGroup({ notes: notes.splice(graceStart) as VF.StemmableNote[] }))
@@ -216,13 +221,98 @@ export class Renderer {
           t.expression(() => notes.push(note!));
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
-        case 'articulation':
-          const modifiers = this.getArticulation(factory, message.type);
-          for (const modifier of modifiers) {
-            if (modifier.class == 'A')
-              notes[notes.length - 1].addModifier(factory.Articulation({ type: modifier.type }), 0);
-            if (modifier.class == 'O')
-              notes[notes.length - 1].addModifier(factoryOrnament(factory, { type: modifier.type }), 0);
+        case 'notation':
+          {
+            switch (message.name) {
+              case 'slur':
+                if (message.type == 'start') {
+                  slurStart[message.number - 1] = notes.length - 1;
+                } else if (message.type == 'stop') {
+                  if (slurStart[message.number - 1] >= 0) {
+                    t.literal(`slurStart = ${slurStart}`);
+                    t.expression(() =>
+                      factory.Curve({
+                        from: notes[slurStart[message.number - 1]],
+                        to: notes[notes.length - 1],
+                        options: {},
+                      })
+                    );
+                    slurStart[message.number - 1] = -1;
+                  }
+                }
+                break;
+              case 'tied':
+                if (message.type == 'start') {
+                  tiedStart[message.number - 1] = notes.length - 1;
+                } else if (message.type == 'stop') {
+                  if (tiedStart[message.number - 1] >= 0) {
+                    t.literal(`tiedStart = ${tiedStart}`);
+                    t.expression(() =>
+                      factory.Curve({
+                        from: notes[tiedStart[message.number - 1]],
+                        to: notes[notes.length - 1],
+                        options: {},
+                      })
+                    );
+                    tiedStart[message.number - 1] = -1;
+                  }
+                }
+                break;
+              case 'tuplet':
+                if (message.type == 'start') {
+                  tupletStart[message.number - 1] = notes.length - 1;
+                } else if (message.type == 'stop') {
+                  if (tupletStart[message.number - 1] >= 0) {
+                    t.literal(`tupletStart = ${tupletStart}`);
+                    t.expression(() =>
+                      factory.Tuplet({
+                        notes: notes.slice(tupletStart[message.number - 1]) as VF.StemmableNote[],
+                        options: {},
+                      })
+                    );
+                    tupletStart[message.number - 1] = -1;
+                  }
+                }
+                break;
+              case 'tremolo':
+                notes[notes.length - 1].addModifier(new VF.Tremolo(parseInt(message.value)), 0);
+                t.literal(`notes[notes.length - 1].addModifier(new VF.Tremolo(${parseInt(message.value)}), 0);`);
+                break;
+              case 'fingering':
+                notes[notes.length - 1].addModifier(
+                  factory.Fingering({ number: message.value, position: message.placement ?? 'above' }),
+                  0
+                );
+                t.literal(
+                  `notes[notes.length - 1].addModifier(factory.Fingering({ number: '${message.value}', ` +
+                    `position: '${message.placement ?? 'above'}' }), 0);`
+                );
+                break;
+              default:
+                const modifiers = this.getVexFlowNotation(factory, message.name);
+                for (const modifier of modifiers) {
+                  if (modifier.class == 'A') {
+                    notes[notes.length - 1].addModifier(
+                      factory.Articulation({ type: modifier.type, position: message.placement ?? 'above' }),
+                      0
+                    );
+                    t.literal(
+                      `notes[notes.length - 1].addModifier(factory.Articulation({ type: '${modifier.type}', ` +
+                        `position: '${message.placement ?? 'above'}' }), 0);`
+                    );
+                  }
+                  if (modifier.class == 'O') {
+                    notes[notes.length - 1].addModifier(
+                      factoryOrnament(factory, { type: modifier.type, position: message.placement ?? 'above' }),
+                      0
+                    );
+                    t.literal(
+                      `notes[notes.length - 1].addModifier(factoryOrnament(factory, { type: '${modifier.type}', ` +
+                        `position: '${message.placement ?? 'above'}' }), 0);`
+                    );
+                  }
+                }
+            }
           }
           break;
         case 'measureEnd':
@@ -323,8 +413,10 @@ export class Renderer {
     }
   }
 
-  private getArticulation(factory: VF.Factory, articulation: string): { class: string; type: string }[] {
-    switch (articulation) {
+  private getVexFlowNotation(factory: VF.Factory, type: string): { class: string; type: string }[] {
+    switch (type) {
+      // MusicXML Articulations
+      // **********************
       case 'accent':
         return [{ class: 'A', type: 'a>' }];
       case 'breath-mark':
@@ -335,8 +427,8 @@ export class Renderer {
         return [];
       case 'detached-legato':
         return [
-          { class: 'A', type: 'a-' },
           { class: 'A', type: 'a.' },
+          { class: 'A', type: 'a-' },
         ];
       case 'doit':
         return [{ class: 'O', type: 'doit' }];
@@ -368,6 +460,35 @@ export class Renderer {
       case 'unstress':
         // VexFlow bug: not supported
         return [];
+      // MusicXML Ornaments
+      // ******************
+      case 'trill-mark':
+        return [{ class: 'O', type: 'tr' }];
+      case 'turn':
+        return [{ class: 'O', type: 'turn' }];
+      case 'inverted-turn':
+        return [{ class: 'O', type: 'turn_inverted' }];
+      case 'mordent':
+        return [{ class: 'O', type: 'mordent' }];
+      case 'inverted-mordent':
+        return [{ class: 'O', type: 'mordent_inverted' }];
+      case 'schleifer':
+        // VexFlow bug: not supported
+        return [];
+      // MusicXML Notations
+      // ******************
+      case 'up-bow':
+        return [{ class: 'A', type: 'a|' }];
+      case 'down-bow':
+        return [{ class: 'A', type: 'am' }];
+      case 'snap-pizzicato':
+        return [{ class: 'A', type: 'ao' }];
+      case 'stopped':
+        return [{ class: 'A', type: 'a+' }];
+      // MusicXML Notations
+      // ******************
+      case 'fermata':
+        return [{ class: 'A', type: 'a@' }];
       default:
         return [];
     }

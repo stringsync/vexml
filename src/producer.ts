@@ -120,24 +120,53 @@ export class Producer {
           };
           messages.push(this.lastNoteMessage);
         }
+
+        const getNodeDetails = (
+          node: Node
+        ): { name: string; value: string; number: number; type?: string; placement?: string } => {
+          const nodeElem = node as Element;
+          return {
+            name: node.nodeName,
+            value: node.textContent ?? '',
+            number: parseInt(nodeElem.getAttribute('number') ?? '1'),
+            type: nodeElem.getAttribute('type') ?? undefined,
+            placement: nodeElem.getAttribute('placement') ?? undefined,
+          };
+        };
+
         // Notations
         const notations = nodeElem.getElementsByTagName('notations').item(0)?.childNodes;
+        let index = 0;
         for (let i = 0; notations && i < notations.length; i++) {
-          // Articulations
-          if (notations.item(i).nodeName == 'articulations') {
-            for (let j = 0; j < notations.item(i).childNodes.length; j++) {
-              messages.push({ msgType: 'articulation', type: notations.item(i).childNodes.item(j).nodeName, index: i });
-            }
+          const nodeName = notations.item(i).nodeName;
+
+          switch (nodeName) {
+            case 'articulations':
+            case 'ornaments':
+            case 'technical':
+              for (let j = 0; j < notations.item(i).childNodes.length; j++) {
+                if (notations.item(i).childNodes.item(j).nodeName !== '#text') {
+                  messages.push({
+                    msgType: 'notation',
+                    index,
+                    ...getNodeDetails(notations.item(i).childNodes.item(j)),
+                  });
+                  index++;
+                }
+              }
+              break;
+            case '#text':
+              break;
+            default:
+              messages.push({ msgType: 'notation', index, ...getNodeDetails(notations.item(i)) });
+              index++;
+              break;
           }
         }
         // only the beam number 1 is processed, vexflow calculated the number of bars
-        const beam = nodeElem.getElementsByTagName('beam').item(0)?.textContent;
-        if (beam === 'begin') messages.push({ msgType: 'beamStart' });
-        if (beam === 'end') messages.push({ msgType: 'beamEnd' });
-        // only the beam number 1 is processed, vexflow calculated the number of bars
-        const slur = nodeElem.getElementsByTagName('slur').item(0)?.getAttribute('type');
-        if (slur === 'start') messages.push({ msgType: 'slurStart' });
-        if (slur === 'stop') messages.push({ msgType: 'slurEnd' });
+        const beam = nodeElem.getElementsByTagName('beam').item(0);
+        if (beam) messages.push({ msgType: 'beam', ...getNodeDetails(beam) });
+
         break;
       default:
       // console.log(`unprocessed node, got:`, node);
