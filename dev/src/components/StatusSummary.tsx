@@ -1,13 +1,13 @@
 import { Col, Row, Statistic } from 'antd';
 import React, { useMemo } from 'react';
-import { VexmlStatus } from './Vexml';
+import { ExampleStatus } from '../hooks/useExampleStatus';
 
 const BAD_COLOR = '#cf1322';
 const GOOD_COLOR = '#3f8600';
 
 export type StatusSummaryProps = {
   exampleIds: string[];
-  statuses: Record<string, VexmlStatus>;
+  statuses: Record<string, ExampleStatus>;
 };
 
 export const StatusSummary: React.FC<StatusSummaryProps> = (props) => {

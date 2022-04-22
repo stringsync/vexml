@@ -6,12 +6,14 @@ export type Settings = {
   successVisible: boolean;
   failVisible: boolean;
   slowestVisible: boolean;
+  diffVisible: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = Object.freeze({
   successVisible: true,
   failVisible: true,
   slowestVisible: false,
+  diffVisible: true,
 });
 
 export const useSettings = (): [Settings, (settings: Settings) => void] => {

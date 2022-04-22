@@ -5,6 +5,10 @@ import { vexml } from '../lib/vexml';
 
 export type VexmlStatus =
   | {
+      type: 'init';
+      exampleId: string;
+    }
+  | {
       type: 'rendering';
       exampleId: string;
     }

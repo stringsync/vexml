@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Snapshot } from '../lib/Snapshot';
 
-export const useSnapshot = (src: string | SVGElement | null): [snapshot: Snapshot | null, retry: () => void] => {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+export type SnapshotStatus =
+  | { type: 'init' }
+  | { type: 'loading' }
+  | { type: 'success'; snapshot: Snapshot }
+  | { type: 'error'; error: any };
+
+export const useSnapshot = (src: string | SVGElement | null): [status: SnapshotStatus, retry: () => void] => {
+  const [status, setStatus] = useState<SnapshotStatus>({ type: 'init' });
   const [retryRequestedAt, setRetryRequestedAt] = useState(() => new Date().getTime());
 
   useEffect(() => {
@@ -17,16 +23,16 @@ export const useSnapshot = (src: string | SVGElement | null): [snapshot: Snapsho
           return res.blob();
         })
         .then((blob) => new Snapshot(blob))
-        .then((nextSnapshot) => !done && setSnapshot(nextSnapshot))
-        .catch(() => setSnapshot(null))
+        .then((snapshot) => !done && setStatus({ type: 'success', snapshot }))
+        .catch((error) => setStatus({ type: 'error', error }))
         .finally(() => (done = true));
     } else if (src instanceof SVGElement) {
       Snapshot.fromSvg(src)
-        .then((nextSnapshot) => !done && setSnapshot(nextSnapshot))
-        .catch(() => setSnapshot(null))
+        .then((snapshot) => !done && setStatus({ type: 'success', snapshot }))
+        .catch((error) => setStatus({ type: 'error', error }))
         .finally(() => (done = true));
     } else {
-      setSnapshot(null);
+      setStatus({ type: 'error', error: `invalid src: ${src}` });
       done = true;
     }
     return () => {
@@ -38,5 +44,5 @@ export const useSnapshot = (src: string | SVGElement | null): [snapshot: Snapsho
     setRetryRequestedAt(new Date().getTime());
   }, []);
 
-  return [snapshot, retry];
+  return [status, retry];
 };

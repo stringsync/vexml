@@ -33,9 +33,11 @@ export class Snapshot {
   }
 
   readonly blob: Blob;
+  private imageData: ImageData | null;
 
   constructor(blob: Blob) {
     this.blob = blob;
+    this.imageData = null;
   }
 
   async upload(filename: string): Promise<void> {
@@ -47,17 +49,41 @@ export class Snapshot {
     }
   }
 
-  async compare(otherSnapshot: Snapshot): Promise<SnapshotComparison> {
-    const [imageData, otherImageData] = await Promise.all([this.getImageData(), otherSnapshot.getImageData()]);
-    if (imageData.width !== otherImageData.width) {
-      throw new Error(`images must be the same width, got: ${imageData.width}px, ${otherImageData.width}px`);
-    }
-    if (imageData.height !== otherImageData.height) {
-      throw new Error(`images must be the same height, got: ${imageData.height}px, ${otherImageData.height}px`);
+  async resize(width: number, height: number): Promise<Snapshot> {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const imageData = await this.getImageData();
+    const ctx = canvas.getContext('2d')!;
+    ctx.putImageData(imageData, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve);
+    });
+    if (!blob) {
+      throw new Error('could not compute blob');
     }
 
-    const width = imageData.width;
-    const height = imageData.height;
+    return new Snapshot(blob);
+  }
+
+  async compare(otherSnapshot: Snapshot): Promise<SnapshotComparison> {
+    let [imageData, otherImageData] = await Promise.all([this.getImageData(), otherSnapshot.getImageData()]);
+    const width = Math.max(imageData.width, otherImageData.width);
+    const height = Math.max(imageData.height, otherImageData.height);
+
+    // Force both snapshots to be the same width and height
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let snapshot: Snapshot = this;
+    if (imageData.width !== width || imageData.height !== height) {
+      snapshot = await this.resize(width, height);
+    }
+    if (otherImageData.width !== width || otherImageData.height !== height) {
+      otherSnapshot = await otherSnapshot.resize(width, height);
+    }
+    [imageData, otherImageData] = await Promise.all([snapshot.getImageData(), otherSnapshot.getImageData()]);
+
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -72,17 +98,20 @@ export class Snapshot {
   }
 
   async getImageData(): Promise<ImageData> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0);
-        resolve(ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight));
-      };
-      img.src = URL.createObjectURL(this.blob);
-    });
+    if (!this.imageData) {
+      this.imageData = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          resolve(ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight));
+        };
+        img.src = URL.createObjectURL(this.blob);
+      });
+    }
+    return this.imageData!;
   }
 }
