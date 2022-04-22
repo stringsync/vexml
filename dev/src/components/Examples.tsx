@@ -99,9 +99,6 @@ export const Examples: React.FC = () => {
     if (settings.slowestVisible) {
       defaultFilters.push('slowest');
     }
-    if (settings.diffVisible) {
-      defaultFilters.push('diff');
-    }
     return defaultFilters;
   });
   const onFiltersChange = useCallback(
@@ -119,16 +116,18 @@ export const Examples: React.FC = () => {
     if (result.type !== 'success') {
       return [];
     }
-    const examples = (result.data.examples as string[]).filter(
-      (exampleId) =>
-        typeof statuses[exampleId] === 'undefined' || // it's still loading
-        statuses[exampleId].type === 'init' ||
-        statuses[exampleId].type === 'rendering' ||
-        statuses[exampleId].type === 'snapshotting' ||
-        statuses[exampleId].type === 'unknown' ||
-        (statuses[exampleId].type === 'success' && settings.successVisible) ||
-        (statuses[exampleId].type === 'error' && settings.failVisible)
-    );
+    const examples = (result.data.examples as string[]).filter((exampleId) => {
+      const status = statuses[exampleId];
+      return (
+        typeof status === 'undefined' || // it's still loading
+        status.type === 'init' ||
+        status.type === 'rendering' ||
+        status.type === 'snapshotting' ||
+        status.type === 'unknown' ||
+        (status.type === 'success' && settings.successVisible) ||
+        (status.type === 'error' && settings.failVisible)
+      );
+    });
     return settings.slowestVisible
       ? examples
           .sort((a: string, b: string) => {

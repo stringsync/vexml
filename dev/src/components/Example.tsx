@@ -57,8 +57,9 @@ export const Example: React.FC<ExampleProps> = (props) => {
       message.error(String(e));
     } finally {
       setIsUploading(false);
+      refetchServerSnapshot();
     }
-  }, [exampleId, vexmlSnapshot]);
+  }, [exampleId, vexmlSnapshot, refetchServerSnapshot]);
   const isServerSnapshotLoading = isUploading || serverSnapshotStatus.type === 'loading';
   const isSnapshotButtonDisabled = !svg || isUploading || serverSnapshotStatus.type === 'loading';
 
