@@ -115,21 +115,19 @@ export const Example: React.FC<ExampleProps> = (props) => {
           </TabPane>
           <TabPane tab="snapshot" key="2">
             <Typography.Title level={2}>snapshot</Typography.Title>
-            {!serverSnapshotStatus && <Typography.Text type="warning">no snapshot taken</Typography.Text>}
+            {serverSnapshotStatus.type === 'error' && (
+              <Typography.Text type="warning">no snapshot taken</Typography.Text>
+            )}
             {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
-            {serverSnapshotStatus.type !== 'loading' && serverSnapshotStatus && <img src={Snapshot.url(exampleId)} />}
+            {serverSnapshotStatus.type !== 'loading' && serverSnapshot && <img src={Snapshot.url(exampleId)} />}
           </TabPane>
           <TabPane tab="diff" key="3" forceRender={false}>
             <Typography.Title level={2}>diff</Typography.Title>
-            {(serverSnapshotStatus.type === 'loading' || !vexmlSnapshotStatus) && (
-              <Typography.Text type="secondary">loading</Typography.Text>
-            )}
-            {serverSnapshotStatus.type !== 'loading' && vexmlSnapshotStatus && !serverSnapshotStatus && (
+            {serverSnapshotStatus.type === 'error' && (
               <Typography.Text type="warning">no snapshot taken</Typography.Text>
             )}
-            {vexmlSnapshotStatus && serverSnapshotStatus && (
-              <Diff snapshotComparisonStatus={snapshotComparisonStatus} />
-            )}
+            {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
+            {vexmlSnapshot && serverSnapshot && <Diff snapshotComparisonStatus={snapshotComparisonStatus} />}
           </TabPane>
           <TabPane tab="code" key="4">
             <Typography.Title level={2}>code</Typography.Title>
