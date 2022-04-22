@@ -4,10 +4,11 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useConstant } from '../hooks/useConstant';
+import { ExampleStatus } from '../hooks/useExampleStatus';
 import { Format, useFetch } from '../hooks/useFetch';
 import { useSettings } from '../hooks/useSettings';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
-import { Example, ExampleStatus } from './Example';
+import { Example } from './Example';
 import { ExampleTitle } from './ExampleTitle';
 import { StatusSummary } from './StatusSummary';
 
@@ -98,6 +99,9 @@ export const Examples: React.FC = () => {
     if (settings.slowestVisible) {
       defaultFilters.push('slowest');
     }
+    if (settings.diffVisible) {
+      defaultFilters.push('diff');
+    }
     return defaultFilters;
   });
   const onFiltersChange = useCallback(
@@ -118,7 +122,10 @@ export const Examples: React.FC = () => {
     const examples = (result.data.examples as string[]).filter(
       (exampleId) =>
         typeof statuses[exampleId] === 'undefined' || // it's still loading
+        statuses[exampleId].type === 'init' ||
         statuses[exampleId].type === 'rendering' ||
+        statuses[exampleId].type === 'snapshotting' ||
+        statuses[exampleId].type === 'unknown' ||
         (statuses[exampleId].type === 'success' && settings.successVisible) ||
         (statuses[exampleId].type === 'error' && settings.failVisible)
     );

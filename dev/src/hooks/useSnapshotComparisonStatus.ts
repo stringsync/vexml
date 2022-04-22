@@ -3,6 +3,9 @@ import { Snapshot, SnapshotComparison } from '../lib/Snapshot';
 
 export type SnapshotComparisonStatus =
   | {
+      type: 'init';
+    }
+  | {
       type: 'none';
     }
   | {
@@ -21,7 +24,7 @@ export const useSnapshotComparisonStatus = (
   snapshot1: Snapshot | null,
   snapshot2: Snapshot | null
 ): SnapshotComparisonStatus => {
-  const [status, setStatus] = useState<SnapshotComparisonStatus>({ type: 'none' });
+  const [status, setStatus] = useState<SnapshotComparisonStatus>({ type: 'init' });
 
   useEffect(() => {
     if (!snapshot1 || !snapshot2) {

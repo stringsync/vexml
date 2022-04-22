@@ -1,6 +1,6 @@
 import { Alert, Statistic } from 'antd';
 import React, { useEffect, useId } from 'react';
-import { SnapshotComparisonStatus } from '../hooks/useComparisonStatus';
+import { SnapshotComparisonStatus } from '../hooks/useSnapshotComparisonStatus';
 
 const BAD_COLOR = '#cf1322';
 const GOOD_COLOR = '#3f8600';

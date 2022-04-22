@@ -7,29 +7,22 @@ import {
 } from '@ant-design/icons';
 import { Divider } from 'antd';
 import React from 'react';
-import { ExampleStatus } from './Example';
+import { ExampleStatus } from '../hooks/useExampleStatus';
 
 type StatusIconProps = {
   status: ExampleStatus | undefined;
 };
 
 const isLoading = (status: ExampleStatus | undefined): boolean =>
-  !status || status.type === 'rendering' || status.snapshotComparisonStatus.type === 'loading';
+  !status || status.type === 'init' || status.type === 'rendering' || status.type === 'snapshotting';
 
 const isErrored = (status: ExampleStatus | undefined): boolean => !!status && status.type === 'error';
 
 const isCompletelySuccessful = (status: ExampleStatus | undefined): boolean =>
-  !!status &&
-  status.type === 'success' &&
-  status.snapshotComparisonStatus.type === 'success' &&
-  status.snapshotComparisonStatus.comparison.match === 1;
+  !!status && status.type === 'success' && status.comparison.match === 1;
 
 const isPartiallySuccessful = (status: ExampleStatus | undefined): boolean =>
-  !!status &&
-  status.type === 'success' &&
-  (status.snapshotComparisonStatus.type === 'error' ||
-    status.snapshotComparisonStatus.type === 'none' ||
-    (status.snapshotComparisonStatus.type === 'success' && status.snapshotComparisonStatus.comparison.match < 1));
+  !!status && status.type === 'success' && status.comparison.match < 1;
 
 const StatusIcon: React.FC<StatusIconProps> = ({ status }) => {
   if (isLoading(status)) {
@@ -67,8 +60,7 @@ export const ExampleTitle: React.FC<ExampleTitleProps> = (props) => {
       {status && status.type === 'success' && (
         <>
           <Divider type="vertical" />
-          {status.snapshotComparisonStatus.type === 'success' &&
-            `(${Math.floor(status.snapshotComparisonStatus.comparison.match * 100)}%)`}
+          {`(${Math.floor(status.comparison.match * 100)}%)`}
         </>
       )}
     </>
