@@ -16,20 +16,13 @@ export type MeasureEndMessage = {
   msgType: 'measureEnd';
 };
 
-export type BeamStartMessage = {
-  msgType: 'beamStart';
-};
-
-export type BeamEndMessage = {
-  msgType: 'beamEnd';
-};
-
-export type SlurStartMessage = {
-  msgType: 'slurStart';
-};
-
-export type SlurEndMessage = {
-  msgType: 'slurEnd';
+export type BeamMessage = {
+  msgType: 'beam';
+  name: string;
+  value: string;
+  number: number;
+  type?: string;
+  placement?: string;
 };
 
 export type VoiceEndMessage = {
@@ -50,22 +43,23 @@ export type NoteMessage = {
   staff: number;
 };
 
-export type ArticulationMessage = {
-  msgType: 'articulation';
-  type: string;
+export type NotationMessage = {
+  msgType: 'notation';
   index: number;
+  name: string;
+  value: string;
+  number: number;
+  type?: string;
+  placement?: string;
 };
 
 export type EasyScoreMessage =
   | NoteMessage
-  | ArticulationMessage
+  | NotationMessage
   | AttributesMessage
   | MeasureStartMessage
   | MeasureEndMessage
-  | BeamStartMessage
-  | BeamEndMessage
-  | SlurStartMessage
-  | SlurEndMessage
+  | BeamMessage
   | VoiceEndMessage;
 
 export type EasyScoreMessageReceiver = {
