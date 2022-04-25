@@ -1,58 +1,42 @@
-import { Statistic } from 'antd';
-import pixelmatch from 'pixelmatch';
-import React, { useEffect, useId, useState } from 'react';
+import { Alert, Statistic } from 'antd';
+import React, { useEffect, useId } from 'react';
+import { SnapshotComparisonStatus } from '../hooks/useSnapshotComparisonStatus';
 
-type ImageDataFactory = () => Promise<ImageData | null>;
+const BAD_COLOR = '#cf1322';
+const GOOD_COLOR = '#3f8600';
 
 export type DiffProps = {
-  src1: ImageDataFactory;
-  src2: ImageDataFactory;
+  snapshotComparisonStatus: SnapshotComparisonStatus;
 };
 
 export const Diff: React.FC<DiffProps> = (props) => {
-  const { src1, src2 } = props;
+  const status = props.snapshotComparisonStatus;
   const id = useId();
 
-  const [imgData1, setImgData1] = useState<ImageData | null>(null);
   useEffect(() => {
-    src1().then(setImgData1).catch();
-  }, [src1]);
-
-  const [imgData2, setImgData2] = useState<ImageData | null>(null);
-  useEffect(() => {
-    src2().then(setImgData2).catch();
-  }, [src2]);
-
-  const [diffResult, setDiffResult] = useState<number | null>(null);
-  useEffect(() => {
-    if (!imgData1) {
+    if (status.type !== 'success') {
       return;
     }
-    if (!imgData2) {
-      return;
-    }
-    const width = imgData1.width;
-    const height = imgData1.height;
-
     const canvas = document.getElementById(id)! as HTMLCanvasElement;
-    canvas.width = width;
-    canvas.height = height;
-
     const ctx = canvas.getContext('2d')!;
-    const diff = ctx.createImageData(width, height);
-    const numMismatchPixels = pixelmatch(imgData1.data, imgData2.data, diff.data, width, height);
-
-    const numPixels = width * height;
-    const diffResult = ((numPixels - numMismatchPixels) / numPixels) * 100;
-    setDiffResult(diffResult);
-
-    ctx.putImageData(diff, 0, 0);
-  }, [id, imgData1, imgData2]);
+    ctx.putImageData(status.comparison.imageData, 0, 0);
+  }, [status]);
 
   return (
     <>
-      {typeof diffResult === 'number' && <Statistic title="match" value={diffResult} suffix="%" precision={1} />}
-      {imgData1 && imgData2 && <canvas id={id} />}
+      {status.type === 'error' && <Alert type="error" message={status.error} />}
+      {status.type === 'success' && (
+        <>
+          <Statistic
+            title="match"
+            value={status.comparison.match * 100}
+            precision={status.comparison.match === 1 ? 0 : 2}
+            suffix="%"
+            valueStyle={{ color: status.comparison.match === 1 ? GOOD_COLOR : BAD_COLOR }}
+          />
+          <canvas id={id} width={status.comparison.width} height={status.comparison.height} />
+        </>
+      )}
     </>
   );
 };

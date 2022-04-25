@@ -4,13 +4,13 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useConstant } from '../hooks/useConstant';
+import { ExampleStatus } from '../hooks/useExampleStatus';
 import { Format, useFetch } from '../hooks/useFetch';
 import { useSettings } from '../hooks/useSettings';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { Example } from './Example';
-import { RenderStatus } from './RenderStatus';
+import { ExampleTitle } from './ExampleTitle';
 import { StatusSummary } from './StatusSummary';
-import { VexmlStatus } from './Vexml';
 
 const NUM_SLOWEST_VISIBLE = 10;
 
@@ -38,7 +38,7 @@ export const Examples: React.FC = () => {
 
   const [settings, updateSettings] = useSettings();
 
-  const [statuses, setStatuses] = useState<Record<string, VexmlStatus>>({});
+  const [statuses, setStatuses] = useState<Record<string, ExampleStatus>>({});
   const loading = useMemo(() => {
     switch (result.type) {
       case 'idle':
@@ -51,15 +51,15 @@ export const Examples: React.FC = () => {
         return result.data.examples.some((exampleId: string) => !(exampleId in statuses));
     }
   }, [statuses, result]);
-  const onUpdate = useCallback((state: VexmlStatus) => {
-    setStatuses((statuses) => ({ ...statuses, [state.exampleId]: state }));
+  const onUpdate = useCallback((status: ExampleStatus) => {
+    setStatuses((statuses) => ({ ...statuses, [status.exampleId]: status }));
   }, []);
 
   const renderExampleStatus = useCallback(
     (exampleId: string) => {
       return (
         <>
-          <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
+          <ExampleTitle exampleId={exampleId} status={statuses[exampleId]} />
           <Divider type="vertical" />
           <a href={`#${exampleId}`}>jump</a>
           <Divider type="vertical" />
@@ -116,13 +116,18 @@ export const Examples: React.FC = () => {
     if (result.type !== 'success') {
       return [];
     }
-    const examples = (result.data.examples as string[]).filter(
-      (exampleId) =>
-        typeof statuses[exampleId] === 'undefined' || // it's still loading
-        statuses[exampleId].type === 'rendering' ||
-        (statuses[exampleId].type === 'success' && settings.successVisible) ||
-        (statuses[exampleId].type === 'error' && settings.failVisible)
-    );
+    const examples = (result.data.examples as string[]).filter((exampleId) => {
+      const status = statuses[exampleId];
+      return (
+        typeof status === 'undefined' || // it's still loading
+        status.type === 'init' ||
+        status.type === 'rendering' ||
+        status.type === 'snapshotting' ||
+        status.type === 'unknown' ||
+        (status.type === 'success' && settings.successVisible) ||
+        (status.type === 'error' && settings.failVisible)
+      );
+    });
     return settings.slowestVisible
       ? examples
           .sort((a: string, b: string) => {
@@ -168,17 +173,14 @@ export const Examples: React.FC = () => {
           <br />
           <br />
 
-          {loading && <Typography.Text type="secondary">loading</Typography.Text>}
-          {!loading && settings.slowestVisible && (
+          {settings.slowestVisible && (
             <ol>
               {filteredExampleIds.map((exampleId) => (
                 <StyledListItem key={exampleId}>{renderExampleStatus(exampleId)}</StyledListItem>
               ))}
             </ol>
           )}
-          {!loading && !settings.slowestVisible && (
-            <AlphabeticalIndex keys={filteredExampleIds} renderKey={renderExampleStatus} />
-          )}
+          {!settings.slowestVisible && <AlphabeticalIndex keys={filteredExampleIds} renderKey={renderExampleStatus} />}
 
           <Divider />
 
@@ -189,7 +191,7 @@ export const Examples: React.FC = () => {
             {result.data.examples.map((exampleId: string) => (
               <ExampleContainer key={exampleId} className={filteredExampleIdsSet.has(exampleId) ? '' : 'hidden'}>
                 <Typography.Title id={exampleId} level={3}>
-                  <RenderStatus exampleId={exampleId} status={statuses[exampleId]} />
+                  <ExampleTitle exampleId={exampleId} status={statuses[exampleId]} />
                 </Typography.Title>
 
                 <a href="#index">top</a>
