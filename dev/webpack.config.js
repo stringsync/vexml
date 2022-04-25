@@ -22,12 +22,16 @@ module.exports = {
     static: {
       directory: PUBLIC_DIR,
       publicPath: '/public',
+      watch: false,
     },
     hot: true,
     setupMiddlewares: (middlewares, devServer) => {
-      devServer.app.post('/snapshot', multer({ storage: SNAPSHOT_STORAGE }).single('image'), (req, res) => {
-        res.send('ok');
-      });
+      devServer.app.post(
+        '/snapshot',
+        multer({
+          storage: SNAPSHOT_STORAGE,
+        }).single('image')
+      );
 
       middlewares.push({
         path: '/manifest',
