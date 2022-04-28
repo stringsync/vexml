@@ -8,8 +8,8 @@ export type MeasureStartMessage = {
 export type AttributesMessage = {
   msgType: 'attributes';
   clefs: { staff: number; sign: string; line?: number; octaveChange?: number }[];
-  time?: string;
-  key?: number;
+  times: { staff?: number; signature: string }[];
+  keys: { staff?: number; fifths: number }[];
 };
 
 export type MeasureEndMessage = {
