@@ -51,7 +51,7 @@ export class Producer {
         break;
       case 'attributes':
         {
-          const message: AttributesMessage = { msgType: 'attributes', clefs: [] };
+          const message: AttributesMessage = { msgType: 'attributes', clefs: [], times: [], keys: [] };
           const clefElems = nodeElem.getElementsByTagName('clef');
           for (let i = 0; i < clefElems.length; i++) {
             const staff = parseInt(clefElems.item(i)!.getAttribute('number') ?? '1');
@@ -66,11 +66,21 @@ export class Producer {
                 octaveChange: octaveChange ? parseInt(octaveChange) : undefined,
               });
           }
-          const fifths = nodeElem.getElementsByTagName('fifth').item(0)?.textContent;
-          if (fifths) message.key = parseInt(fifths);
-          const beats = nodeElem.getElementsByTagName('beats').item(0)?.textContent;
-          const beatType = nodeElem.getElementsByTagName('beat-type').item(0)?.textContent;
-          if (beats && beatType) message.time = `${beats}/${beatType}`;
+          const keyElems = nodeElem.getElementsByTagName('key');
+          for (let i = 0; i < keyElems.length; i++) {
+            const staff = keyElems.item(i)!.getAttribute('number');
+            const fifths = parseInt(keyElems.item(i)!.getElementsByTagName('fifths').item(0)?.textContent ?? '0');
+            if (staff) message.keys.push({ staff: parseInt(staff), fifths });
+            else message.keys.push({ fifths });
+          }
+          const timeElems = nodeElem.getElementsByTagName('time');
+          for (let i = 0; i < timeElems.length; i++) {
+            const staff = timeElems.item(i)!.getAttribute('number');
+            const beats = timeElems.item(i)!.getElementsByTagName('beats').item(0)?.textContent ?? '4';
+            const beatType = timeElems.item(i)!.getElementsByTagName('beat-type').item(0)?.textContent ?? '4';
+            if (staff) message.times.push({ staff: parseInt(staff), signature: `${beats}/${beatType}` });
+            else message.times.push({ signature: `${beats}/${beatType}` });
+          }
           messages.push(message);
         }
         break;
