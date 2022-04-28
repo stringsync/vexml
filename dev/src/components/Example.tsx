@@ -118,7 +118,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
         snapshot
       </CallToActionButton>
 
-      <CallToActionButton icon={<CopyOutlined />} onClick={onCopyCodeClick}>
+      <CallToActionButton icon={<CopyOutlined />} disabled={!code} onClick={onCopyCodeClick}>
         copy code
       </CallToActionButton>
 
