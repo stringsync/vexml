@@ -1,7 +1,8 @@
-import { CameraOutlined } from '@ant-design/icons';
+import { CameraOutlined, CopyOutlined } from '@ant-design/icons';
 import { Alert, Button, message, Tabs, Typography } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import styled from 'styled-components';
 import { ExampleStatus, useExampleStatus } from '../hooks/useExampleStatus';
 import { Format, useFetch } from '../hooks/useFetch';
 import { useSnapshot } from '../hooks/useSnapshot';
@@ -12,6 +13,11 @@ import { ExampleTitle } from './ExampleTitle';
 import { Vexml, VexmlStatus } from './Vexml';
 
 const { TabPane } = Tabs;
+
+const CallToActionButton = styled(Button)`
+  margin-right: 8px;
+  margin-bottom: 12px;
+`;
 
 export type ExampleProps = {
   title?: boolean;
@@ -87,6 +93,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
     onUpdate && onUpdate(exampleStatus);
   }, [exampleStatus]);
 
+  const onCopyCodeClick = useCallback(() => {
+    navigator.clipboard.writeText(code);
+    message.success('code copied to clipboard');
+  }, [code]);
+
   return (
     <>
       {title && (
@@ -97,7 +108,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
 
       <br />
 
-      <Button
+      <CallToActionButton
         type="primary"
         icon={<CameraOutlined />}
         onClick={onSnapshotClick}
@@ -105,7 +116,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
         loading={isServerSnapshotLoading}
       >
         snapshot
-      </Button>
+      </CallToActionButton>
+
+      <CallToActionButton icon={<CopyOutlined />} onClick={onCopyCodeClick}>
+        copy code
+      </CallToActionButton>
 
       {result.type === 'success' && (
         <Tabs defaultActiveKey="1">
@@ -131,6 +146,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
           </TabPane>
           <TabPane tab="code" key="4">
             <Typography.Title level={2}>code</Typography.Title>
+            {!code && <Typography.Text type="secondary">none</Typography.Text>}
             {code && <Alert type="info" message={<pre>{code}</pre>} />}
           </TabPane>
           <TabPane tab="source" key="5">
