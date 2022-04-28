@@ -46,6 +46,7 @@ export class Renderer {
     t.newline();
 
     let timeSignature = t.let('timeSignature', () => '');
+    let keySignature = t.let('keySignature', () => '');
     const staves: Map<number, VF.Stave> = t.const('staves', () => new Map<number, VF.Stave>());
     const voices: Map<string, VF.Voice> = t.let('voices', () => new Map<string, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
@@ -138,14 +139,24 @@ export class Renderer {
             }
           }
 
-          timeSignature = message.time!;
-          t.literal(`timeSignature = '${timeSignature}'`);
-          if (timeSignature)
+          for (const timeMsg of message.times) {
+            timeSignature = timeMsg.signature;
+            t.literal(`timeSignature = '${timeSignature}'`);
             t.expression(() =>
               staves.forEach((stave) => {
                 stave.addTimeSignature(timeSignature);
               })
             );
+          }
+          for (const keyMsg of message.keys) {
+            keySignature = this.getKeySignature(keyMsg.fifths);
+            t.literal(`keySignature = '${keySignature}'`);
+            t.expression(() =>
+              staves.forEach((stave) => {
+                stave.addKeySignature(keySignature);
+              })
+            );
+          }
           break;
         case 'voiceEnd':
           voices.set(message.voice, factory.Voice().setMode(2).addTickables(notes));
@@ -384,6 +395,40 @@ export class Renderer {
         return '1/2';
       default:
         return '';
+    }
+  }
+  private getKeySignature(fifths: number): string {
+    switch (fifths) {
+      case 1:
+        return 'G';
+      case 2:
+        return 'D';
+      case 3:
+        return 'A';
+      case 4:
+        return 'E';
+      case 5:
+        return 'B';
+      case 6:
+        return 'F#';
+      case 7:
+        return 'C#';
+      case -1:
+        return 'F';
+      case -2:
+        return 'Bb';
+      case -3:
+        return 'Eb';
+      case -4:
+        return 'Ab';
+      case -5:
+        return 'Cb';
+      case -6:
+        return 'Gb';
+      case -7:
+        return 'Cb';
+      default:
+        return 'C';
     }
   }
 
