@@ -68,14 +68,18 @@ export class Producer {
           }
           const keyElems = nodeElem.getElementsByTagName('key');
           for (let i = 0; i < keyElems.length; i++) {
+            const staff = keyElems.item(i)!.getAttribute('number');
             const fifths = parseInt(keyElems.item(i)!.getElementsByTagName('fifths').item(0)?.textContent ?? '0');
-            message.keys.push({ fifths });
+            if (staff) message.keys.push({ staff: parseInt(staff), fifths });
+            else message.keys.push({ fifths });
           }
           const timeElems = nodeElem.getElementsByTagName('time');
           for (let i = 0; i < timeElems.length; i++) {
-            const beats = timeElems.item(i)!.getElementsByTagName('beats').item(0)?.textContent;
-            const beatType = timeElems.item(i)!.getElementsByTagName('beat-type').item(0)?.textContent;
-            if (beats && beatType) message.times.push({ signature: `${beats}/${beatType}` });
+            const staff = timeElems.item(i)!.getAttribute('number');
+            const beats = timeElems.item(i)!.getElementsByTagName('beats').item(0)?.textContent ?? '4';
+            const beatType = timeElems.item(i)!.getElementsByTagName('beat-type').item(0)?.textContent ?? '4';
+            if (staff) message.times.push({ staff: parseInt(staff), signature: `${beats}/${beatType}` });
+            else message.times.push({ signature: `${beats}/${beatType}` });
           }
           messages.push(message);
         }
