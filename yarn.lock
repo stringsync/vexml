@@ -7142,10 +7142,10 @@ vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-vexflow@4.0.1:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-4.0.1.tgz#4efb791829971f49d649117897d093bc9b4e8684"
-  integrity sha512-dHfP1qB6m/+CV3ecvmHZrRZjXvUZDdFVUYTM20uC8Bz8kBten4cA9K83av2S5QfjUWZ9gTD9rE+CwBi6bM/aNQ==
+vexflow@4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-4.0.2.tgz#330aeaa698da5e02fd6dd0506cc4d619b393c55e"
+  integrity sha512-zRxkCYeuWdTUk0eBUIjKQX9pIsHMV1+k0pk1oLah/X+aRbRxCgO9BqG22ItHC3WsSnQkmlz474pABvOjrUZpig==
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"
