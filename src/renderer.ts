@@ -295,6 +295,16 @@ export class Renderer {
                     `position: '${message.placement ?? 'above'}' }), 0);`
                 );
                 break;
+              case 'string':
+                notes[notes.length - 1].addModifier(
+                  factory.StringNumber({ number: message.value, position: message.placement ?? 'above' }),
+                  0
+                );
+                t.literal(
+                  `notes[notes.length - 1].addModifier(factory.StringNumber({ number: '${message.value}', ` +
+                    `position: '${message.placement ?? 'above'}' }), 0);`
+                );
+                break;
               default:
                 const modifiers = this.getVexFlowNotation(factory, message.name);
                 for (const modifier of modifiers) {
