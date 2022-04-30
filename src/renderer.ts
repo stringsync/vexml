@@ -53,16 +53,10 @@ export class Renderer {
     let notes = t.let('notes', () => new Array<VF.Note>());
     let formatter: VF.Formatter | undefined = t.let('formatter', () => undefined);
     let beamStart = t.let('beamStart', () => 0);
-    const slurStart: number[] = t.let('slurStart', () => [
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    ]);
-    const tiedStart: number[] = t.let('tiedStart', () => [
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    ]);
+    const slurStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+    const tiedStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     let graceStart = t.let('graceStart', () => -1);
-    const tupletStart: number[] = t.let('tupletStart', () => [
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    ]);
+    const tupletStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     let curMeasure = 1;
     let x = 0;
     let y = 0;
@@ -240,13 +234,14 @@ export class Renderer {
                   slurStart[message.number - 1] = notes.length - 1;
                 } else if (message.type == 'stop') {
                   if (slurStart[message.number - 1] >= 0) {
-                    t.literal(`slurStart = ${slurStart}`);
-                    t.expression(() =>
-                      factory.Curve({
-                        from: notes[slurStart[message.number - 1]],
-                        to: notes[notes.length - 1],
-                        options: {},
-                      })
+                    factory.Curve({
+                      from: notes[slurStart[message.number - 1]],
+                      to: notes[notes.length - 1],
+                      options: {},
+                    });
+                    t.literal(
+                      `factory.Curve({from: notes[${slurStart[message.number - 1]}],` +
+                        `to: notes[notes.length - 1],options: {},});`
                     );
                     slurStart[message.number - 1] = -1;
                   }
@@ -257,13 +252,14 @@ export class Renderer {
                   tiedStart[message.number - 1] = notes.length - 1;
                 } else if (message.type == 'stop') {
                   if (tiedStart[message.number - 1] >= 0) {
-                    t.literal(`tiedStart = ${tiedStart}`);
-                    t.expression(() =>
-                      factory.Curve({
-                        from: notes[tiedStart[message.number - 1]],
-                        to: notes[notes.length - 1],
-                        options: {},
-                      })
+                    factory.Curve({
+                      from: notes[tiedStart[message.number - 1]],
+                      to: notes[notes.length - 1],
+                      options: {},
+                    });
+                    t.literal(
+                      `factory.Curve({from: notes[${tiedStart[message.number - 1]}],` +
+                        `to: notes[notes.length - 1],options: {},});`
                     );
                     tiedStart[message.number - 1] = -1;
                   }
@@ -274,12 +270,12 @@ export class Renderer {
                   tupletStart[message.number - 1] = notes.length - 1;
                 } else if (message.type == 'stop') {
                   if (tupletStart[message.number - 1] >= 0) {
-                    t.literal(`tupletStart = ${tupletStart}`);
-                    t.expression(() =>
-                      factory.Tuplet({
-                        notes: notes.slice(tupletStart[message.number - 1]) as VF.StemmableNote[],
-                        options: {},
-                      })
+                    factory.Tuplet({
+                      notes: notes.slice(tupletStart[message.number - 1]) as VF.StemmableNote[],
+                      options: {},
+                    });
+                    t.literal(
+                      `factory.Tuplet({ notes: notes.slice(${tupletStart[message.number - 1]}),` + `options: {},});`
                     );
                     tupletStart[message.number - 1] = -1;
                   }
