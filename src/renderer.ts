@@ -47,7 +47,7 @@ export class Renderer {
 
     let timeSignature = t.let('timeSignature', () => '');
     let keySignature = t.let('keySignature', () => '');
-    const staves: Map<number, VF.Stave> = t.const('staves', () => new Map<number, VF.Stave>());
+    const staves: Map<string, VF.Stave> = t.const('staves', () => new Map<string, VF.Stave>());
     const voices: Map<string, VF.Voice> = t.let('voices', () => new Map<string, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
@@ -57,10 +57,11 @@ export class Renderer {
     const tiedStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     let graceStart = t.let('graceStart', () => -1);
     const tupletStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+    let curPart = '';
     let curMeasure = 1;
     let x = 0;
     let y = 0;
-    let yCur = 100;
+    const yCur: Map<string, number> = new Map<string, number>();
     let xMax = 0;
     let width: number | undefined = undefined;
     let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
@@ -96,17 +97,69 @@ export class Renderer {
             beamStart = -1;
           }
           break;
+        case 'partStart':
+          curPart = message.id;
+          if (yCur.get(`${curPart}`) == undefined) {
+            yCur.set(`${curPart}`, 100 * message.ndx);
+            factory.getContext().resize(2000, 100 * message.ndx + 300);
+            t.literal(`factory.getContext().resize (2000, ${100 * message.ndx + 300});`);
+          }
+          break;
+        case 'partEnd':
+          if (message.from == message.ndx) {
+            curMeasure++;
+            t.expression(() => (voicesArr = []));
+            t.expression(() =>
+              voices.forEach((voice) => {
+                voicesArr.push(voice);
+              })
+            );
+            t.expression(() => (formatter = factory.Formatter().joinVoices(voicesArr)));
+            const staveWidth = width
+              ? width
+              : formatter!.preCalculateMinTotalWidth(voicesArr) +
+                staves.get(`${curPart}_1`)!.getNoteStartX() -
+                staves.get(`${curPart}_1`)!.getX() +
+                VF.Stave.defaultPadding;
+            staves.forEach((stave) => {
+              stave.setWidth(staveWidth);
+            });
+            t.literal(`staves.forEach((stave) => {stave.setWidth(${staveWidth});});`);
+            const notesWidth =
+              staveWidth -
+              staves.get(`${curPart}_1`)!.getNoteStartX() +
+              staves.get(`${curPart}_1`)!.getX() -
+              VF.Stave.defaultPadding;
+            formatter!.format(voicesArr, notesWidth);
+            t.literal(`formatter.format(voicesArr, ${notesWidth});`);
+            t.expression(() => factory.draw());
+            x += staves.get(`${curPart}_1`)!.getWidth();
+            //t.expression(() => voices.clear());
+            //t.expression(() => staves.clear());
+            if (x > 1500) {
+              xMax = x > xMax ? x : xMax;
+              let yMax = 0;
+              yCur.forEach((value, key) => {
+                yCur.set(key, value + 240);
+                yMax = Math.max(yMax, value + 240);
+              });
+              factory.getContext().resize(2000, yMax + 240);
+              t.literal(`factory.getContext().resize (2000, ${yMax + 240});`);
+              x = 0;
+            }
+          }
+          break;
         case 'measureStart':
           t.newline();
           t.comment(`measure ${curMeasure}`);
           width = message.width;
-          y = yCur;
+          y = yCur.get(`${curPart}`) ?? 100;
           if (message.staves) {
             numStaves = message.staves;
           }
           for (let staff = 1; staff <= numStaves; staff++) {
-            staves.set(staff, factory.Stave({ x, y, width }));
-            t.literal(`staves.set(${staff}, factory.Stave({ x: ${x}, y: ${y}, width: ${width} }))`);
+            staves.set(`${curPart}_${staff}`, factory.Stave({ x, y, width }));
+            t.literal(`staves.set('${curPart}_${staff}', factory.Stave({ x: ${x}, y: ${y}, width: ${width} }))`);
             y += 115;
           }
           t.expression(() => (notes = []));
@@ -122,10 +175,10 @@ export class Renderer {
               const clefAnnotation = clefT.annotation;
               if (duration == 0) {
                 const staff = clefMsg.staff;
-                staves.get(staff)!.addClef(clef, 'default', clefAnnotation);
+                staves.get(`${curPart}_${staff}`)!.addClef(clef, 'default', clefAnnotation);
                 if (clefAnnotation)
-                  t.literal(`staves.get(${staff}).addClef('${clef}', 'default', '${clefAnnotation}');`);
-                else t.literal(`staves.get(${staff}).addClef('${clef}', 'default');`);
+                  t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default', '${clefAnnotation}');`);
+                else t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default');`);
               } else {
                 notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
                 t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
@@ -137,8 +190,8 @@ export class Renderer {
             timeSignature = timeMsg.signature;
             t.literal(`timeSignature = '${timeSignature}'`);
             t.expression(() =>
-              staves.forEach((stave) => {
-                stave.addTimeSignature(timeSignature);
+              staves.forEach((stave, key) => {
+                if (key.startsWith(`${curPart}_`)) stave.addTimeSignature(timeSignature);
               })
             );
           }
@@ -146,15 +199,15 @@ export class Renderer {
             keySignature = this.getKeySignature(keyMsg.fifths);
             t.literal(`keySignature = '${keySignature}'`);
             t.expression(() =>
-              staves.forEach((stave) => {
-                stave.addKeySignature(keySignature);
+              staves.forEach((stave, key) => {
+                if (key.startsWith(`${curPart}_`)) stave.addKeySignature(keySignature);
               })
             );
           }
           break;
         case 'voiceEnd':
-          voices.set(message.voice, factory.Voice().setMode(2).addTickables(notes));
-          t.literal(`voices.set('${message.voice}', factory.Voice().setMode(2).addTickables(notes));`);
+          voices.set(`${curPart}_${message.voice}`, factory.Voice().setMode(2).addTickables(notes));
+          t.literal(`voices.set('${curPart}_${message.voice}', factory.Voice().setMode(2).addTickables(notes));`);
           t.expression(() => (notes = []));
           duration = 0;
           break;
@@ -181,12 +234,14 @@ export class Renderer {
 
           if (message.grace) {
             noteStruct.slash = message.graceSlash;
-            note = this.factory.GraceNote(noteStruct).setStave(staves.get(message.staff)!);
+            note = this.factory.GraceNote(noteStruct).setStave(staves.get(`${curPart}_${message.staff}`)!);
             t.literal(
-              `note = factory.GraceNote(${JSON.stringify(noteStruct)}).setStave(staves.get(${message.staff}));`
+              `note = factory.GraceNote(${JSON.stringify(noteStruct)}).setStave(staves.get('${curPart}_${
+                message.staff
+              }'));`
             );
           } else {
-            note = this.factory.StaveNote(noteStruct).setStave(staves.get(message.staff)!);
+            note = this.factory.StaveNote(noteStruct).setStave(staves.get(`${curPart}_${message.staff}`)!);
             t.literal(
               `note = factory.StaveNote(${JSON.stringify(noteStruct)}).setStave(staves.get(${message.staff}));`
             );
@@ -333,37 +388,6 @@ export class Renderer {
           }
           break;
         case 'measureEnd':
-          curMeasure++;
-          t.expression(() => (voicesArr = []));
-          t.expression(() =>
-            voices.forEach((voice) => {
-              voicesArr.push(voice);
-            })
-          );
-          t.expression(() => (formatter = factory.Formatter().joinVoices(voicesArr)));
-          const staveWidth = width
-            ? width
-            : formatter!.preCalculateMinTotalWidth(voicesArr) +
-              staves.get(1)!.getNoteStartX() -
-              staves.get(1)!.getX() +
-              VF.Stave.defaultPadding;
-          staves.forEach((stave) => {
-            stave.setWidth(staveWidth);
-          });
-          t.literal(`staves.forEach((stave) => {stave.setWidth(${staveWidth});});`);
-          const notesWidth =
-            staveWidth - staves.get(1)!.getNoteStartX() + staves.get(1)!.getX() - VF.Stave.defaultPadding;
-          formatter!.format(voicesArr, notesWidth);
-          t.literal(`formatter.format(voicesArr, ${notesWidth});`);
-          t.expression(() => factory.draw());
-          x += staves.get(1)!.getWidth();
-          if (x > 1500) {
-            xMax = x > xMax ? x : xMax;
-            factory.getContext().resize(xMax + 10, y * 2 - yCur + 340);
-            t.literal(`factory.getContext().resize (${xMax + 10}, ${y * 2 - yCur + 340});`);
-            x = 0;
-            yCur = y + 240;
-          }
           break;
       }
     }

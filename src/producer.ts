@@ -14,6 +14,8 @@ export class Producer {
 
   private musicXml: string;
   private lastNoteMessage?: NoteMessage;
+  private parts: { id: string; childs: NodeListOf<ChildNode> }[] = [];
+  private partsIndex: number[] = [];
 
   private constructor(musicXml: string) {
     this.musicXml = musicXml;
@@ -29,12 +31,36 @@ export class Producer {
         receiver.onMessage(message);
       }
     }
+    while (this.partsIndex[0] < this.parts[0].childs.length) {
+      const messages: EasyScoreMessage[] = [];
+      for (let i = 0; i < this.parts.length; i++) {
+        messages.push({ msgType: 'partStart', id: this.parts[i].id, ndx: i + 1, from: this.parts.length });
+        do {
+          messages.push(...this.getMessages(this.parts[i].childs.item(this.partsIndex[i])));
+          this.partsIndex[i] += 1;
+        } while (
+          this.parts[i].childs.item(this.partsIndex[i] - 1).nodeName != 'measure' &&
+          this.partsIndex[0] < this.parts[0].childs.length
+        );
+        messages.push({ msgType: 'partEnd', id: this.parts[i].id, ndx: i + 1, from: this.parts.length });
+      }
+      for (const message of messages) {
+        receiver.onMessage(message);
+      }
+    }
   }
 
   private getMessages(node: Node): EasyScoreMessage[] {
     const messages: EasyScoreMessage[] = [];
     const nodeElem = node as Element;
     switch (node.nodeName) {
+      case 'part':
+        {
+          const id = nodeElem.getAttribute('id') ?? 'NN';
+          this.parts.push({ id, childs: node.childNodes });
+          this.partsIndex.push(0);
+        }
+        break;
       case 'measure':
         {
           const message: MeasureStartMessage = { msgType: 'measureStart' };
