@@ -34,7 +34,7 @@ export class Producer {
     while (this.partsIndex[0] < this.parts[0].childs.length) {
       const messages: EasyScoreMessage[] = [];
       for (let i = 0; i < this.parts.length; i++) {
-        messages.push({ msgType: 'partStart', id: this.parts[i].id, ndx: i + 1, from: this.parts.length });
+        messages.push({ msgType: 'partStart', msgIndex: i, msgCount: this.parts.length, id: this.parts[i].id });
         do {
           messages.push(...this.getMessages(this.parts[i].childs.item(this.partsIndex[i])));
           this.partsIndex[i] += 1;
@@ -42,7 +42,7 @@ export class Producer {
           this.parts[i].childs.item(this.partsIndex[i] - 1).nodeName != 'measure' &&
           this.partsIndex[0] < this.parts[0].childs.length
         );
-        messages.push({ msgType: 'partEnd', id: this.parts[i].id, ndx: i + 1, from: this.parts.length });
+        messages.push({ msgType: 'partEnd', msgIndex: i, msgCount: this.parts.length, id: this.parts[i].id });
       }
       for (const message of messages) {
         receiver.onMessage(message);
@@ -172,7 +172,6 @@ export class Producer {
 
         // Notations
         const notations = nodeElem.getElementsByTagName('notations').item(0)?.childNodes;
-        let index = 0;
         for (let i = 0; notations && i < notations.length; i++) {
           const nodeName = notations.item(i).nodeName;
 
@@ -184,18 +183,15 @@ export class Producer {
                 if (notations.item(i).childNodes.item(j).nodeName !== '#text') {
                   messages.push({
                     msgType: 'notation',
-                    index,
                     ...getNodeDetails(notations.item(i).childNodes.item(j)),
                   });
-                  index++;
                 }
               }
               break;
             case '#text':
               break;
             default:
-              messages.push({ msgType: 'notation', index, ...getNodeDetails(notations.item(i)) });
-              index++;
+              messages.push({ msgType: 'notation', ...getNodeDetails(notations.item(i)) });
               break;
           }
         }

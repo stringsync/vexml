@@ -100,13 +100,13 @@ export class Renderer {
         case 'partStart':
           curPart = message.id;
           if (yCur.get(`${curPart}`) == undefined) {
-            yCur.set(`${curPart}`, 100 * message.ndx);
-            factory.getContext().resize(2000, 100 * message.ndx + 300);
-            t.literal(`factory.getContext().resize (2000, ${100 * message.ndx + 300});`);
+            yCur.set(`${curPart}`, 100 + 100 * message.msgIndex);
+            factory.getContext().resize(2000, 100 + 100 * message.msgIndex + 300);
+            t.literal(`factory.getContext().resize (2000, ${100 + 100 * message.msgIndex + 300});`);
           }
           break;
         case 'partEnd':
-          if (message.from == message.ndx) {
+          if (message.msgCount == message.msgIndex + 1) {
             curMeasure++;
             t.expression(() => (voicesArr = []));
             t.expression(() =>
@@ -134,8 +134,6 @@ export class Renderer {
             t.literal(`formatter.format(voicesArr, ${notesWidth});`);
             t.expression(() => factory.draw());
             x += staves.get(`${curPart}_1`)!.getWidth();
-            //t.expression(() => voices.clear());
-            //t.expression(() => staves.clear());
             if (x > 1500) {
               xMax = x > xMax ? x : xMax;
               let yMax = 0;
