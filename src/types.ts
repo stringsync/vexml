@@ -6,9 +6,9 @@ export type MeasureStartMessage = {
 
 export type PartStartMessage = {
   msgType: 'partStart';
+  msgIndex: number;
+  msgCount: number;
   id: string;
-  ndx: number;
-  from: number;
 };
 
 // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
@@ -25,9 +25,9 @@ export type MeasureEndMessage = {
 
 export type PartEndMessage = {
   msgType: 'partEnd';
+  msgIndex: number;
+  msgCount: number;
   id: string;
-  ndx: number;
-  from: number;
 };
 
 export type BeamMessage = {
@@ -59,7 +59,6 @@ export type NoteMessage = {
 
 export type NotationMessage = {
   msgType: 'notation';
-  index: number;
   name: string;
   value: string;
   number: number;
