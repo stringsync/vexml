@@ -14,6 +14,8 @@ export class Producer {
 
   private musicXml: string;
   private lastNoteMessage?: NoteMessage;
+  private parts: { id: string; childs: NodeListOf<ChildNode> }[] = [];
+  private partsIndex: number[] = [];
 
   private constructor(musicXml: string) {
     this.musicXml = musicXml;
@@ -29,12 +31,36 @@ export class Producer {
         receiver.onMessage(message);
       }
     }
+    while (this.partsIndex[0] < this.parts[0].childs.length) {
+      const messages: EasyScoreMessage[] = [];
+      for (let i = 0; i < this.parts.length; i++) {
+        messages.push({ msgType: 'partStart', msgIndex: i, msgCount: this.parts.length, id: this.parts[i].id });
+        do {
+          messages.push(...this.getMessages(this.parts[i].childs.item(this.partsIndex[i])));
+          this.partsIndex[i] += 1;
+        } while (
+          this.parts[i].childs.item(this.partsIndex[i] - 1).nodeName != 'measure' &&
+          this.partsIndex[0] < this.parts[0].childs.length
+        );
+        messages.push({ msgType: 'partEnd', msgIndex: i, msgCount: this.parts.length, id: this.parts[i].id });
+      }
+      for (const message of messages) {
+        receiver.onMessage(message);
+      }
+    }
   }
 
   private getMessages(node: Node): EasyScoreMessage[] {
     const messages: EasyScoreMessage[] = [];
     const nodeElem = node as Element;
     switch (node.nodeName) {
+      case 'part':
+        {
+          const id = nodeElem.getAttribute('id') ?? 'NN';
+          this.parts.push({ id, childs: node.childNodes });
+          this.partsIndex.push(0);
+        }
+        break;
       case 'measure':
         {
           const message: MeasureStartMessage = { msgType: 'measureStart' };
@@ -146,7 +172,6 @@ export class Producer {
 
         // Notations
         const notations = nodeElem.getElementsByTagName('notations').item(0)?.childNodes;
-        let index = 0;
         for (let i = 0; notations && i < notations.length; i++) {
           const nodeName = notations.item(i).nodeName;
 
@@ -158,18 +183,15 @@ export class Producer {
                 if (notations.item(i).childNodes.item(j).nodeName !== '#text') {
                   messages.push({
                     msgType: 'notation',
-                    index,
                     ...getNodeDetails(notations.item(i).childNodes.item(j)),
                   });
-                  index++;
                 }
               }
               break;
             case '#text':
               break;
             default:
-              messages.push({ msgType: 'notation', index, ...getNodeDetails(notations.item(i)) });
-              index++;
+              messages.push({ msgType: 'notation', ...getNodeDetails(notations.item(i)) });
               break;
           }
         }

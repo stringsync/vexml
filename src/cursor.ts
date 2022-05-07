@@ -8,7 +8,7 @@ export class Cursor {
   }
 
   static fromRoot(root: Document): Cursor {
-    const path = root.evaluate('/score-partwise/part/measure', root, null, XPathResult.ANY_TYPE, null);
+    const path = root.evaluate('/score-partwise/part', root, null, XPathResult.ANY_TYPE, null);
 
     const nodes = new Array<Node>();
     let node = path.iterateNext();
