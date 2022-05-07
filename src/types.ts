@@ -4,6 +4,13 @@ export type MeasureStartMessage = {
   staves?: number;
 };
 
+export type PartStartMessage = {
+  msgType: 'partStart';
+  msgIndex: number;
+  msgCount: number;
+  id: string;
+};
+
 // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
 export type AttributesMessage = {
   msgType: 'attributes';
@@ -14,6 +21,13 @@ export type AttributesMessage = {
 
 export type MeasureEndMessage = {
   msgType: 'measureEnd';
+};
+
+export type PartEndMessage = {
+  msgType: 'partEnd';
+  msgIndex: number;
+  msgCount: number;
+  id: string;
 };
 
 export type BeamMessage = {
@@ -45,7 +59,6 @@ export type NoteMessage = {
 
 export type NotationMessage = {
   msgType: 'notation';
-  index: number;
   name: string;
   value: string;
   number: number;
@@ -59,6 +72,8 @@ export type EasyScoreMessage =
   | AttributesMessage
   | MeasureStartMessage
   | MeasureEndMessage
+  | PartStartMessage
+  | PartEndMessage
   | BeamMessage
   | VoiceEndMessage;
 
