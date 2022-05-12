@@ -1,4 +1,5 @@
 import * as VF from 'vexflow';
+import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
 import { Producer } from './producer';
@@ -23,10 +24,6 @@ export class Renderer {
   }
 
   private factory: VF.Factory;
-  private clefs: Map<number, { duration: number; clef?: string; annotation?: string }[]> = new Map<
-    number,
-    { duration: number; clef: string }[]
-  >();
 
   private messages = new Array<EasyScoreMessage>();
   private t: CodeTracker;
@@ -45,8 +42,6 @@ export class Renderer {
 
     t.newline();
 
-    let timeSignature = t.let('timeSignature', () => '');
-    let keySignature = t.let('keySignature', () => '');
     const staves: Map<string, VF.Stave> = t.const('staves', () => new Map<string, VF.Stave>());
     const voices: Map<string, VF.Voice> = t.let('voices', () => new Map<string, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
@@ -153,46 +148,10 @@ export class Renderer {
           }
           t.expression(() => (notes = []));
           duration = 0;
-          this.clefMeasureStart();
+          Attributes.clefMeasureStart();
           break;
         case 'attributes':
-          for (const clefMsg of message.clefs) {
-            const clefT = this.clefTranslate(clefMsg);
-            this.clefSet(clefMsg.staff, duration, clefT);
-            if (clefT.clef) {
-              const clef = clefT.clef;
-              const clefAnnotation = clefT.annotation;
-              if (duration == 0) {
-                const staff = clefMsg.staff;
-                staves.get(`${curPart}_${staff}`)!.addClef(clef, 'default', clefAnnotation);
-                if (clefAnnotation)
-                  t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default', '${clefAnnotation}');`);
-                else t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default');`);
-              } else {
-                notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
-                t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
-              }
-            }
-          }
-
-          for (const timeMsg of message.times) {
-            timeSignature = timeMsg.signature;
-            t.literal(`timeSignature = '${timeSignature}'`);
-            t.expression(() =>
-              staves.forEach((stave, key) => {
-                if (key.startsWith(`${curPart}_`)) stave.addTimeSignature(timeSignature);
-              })
-            );
-          }
-          for (const keyMsg of message.keys) {
-            keySignature = this.getKeySignature(keyMsg.fifths);
-            t.literal(`keySignature = '${keySignature}'`);
-            t.expression(() =>
-              staves.forEach((stave, key) => {
-                if (key.startsWith(`${curPart}_`)) stave.addKeySignature(keySignature);
-              })
-            );
-          }
+          Attributes.render(t, factory, message, curPart, duration, notes, staves);
           break;
         case 'voiceEnd':
           voices.set(`${curPart}_${message.voice}`, factory.Voice().setMode(2).addTickables(notes));
@@ -206,7 +165,7 @@ export class Renderer {
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else noteStruct.auto_stem = true;
-          noteStruct.clef = this.clefGet(message.staff, duration).clef;
+          noteStruct.clef = Attributes.clefGet(message.staff, duration).clef;
           if (message.duration) duration += message.duration;
           // no pitch, rest
           if (message.head.length == 0) {
@@ -232,7 +191,9 @@ export class Renderer {
           } else {
             note = this.factory.StaveNote(noteStruct).setStave(staves.get(`${curPart}_${message.staff}`)!);
             t.literal(
-              `note = factory.StaveNote(${JSON.stringify(noteStruct)}).setStave(staves.get(${message.staff}));`
+              `note = factory.StaveNote(${JSON.stringify(noteStruct)}).setStave(staves.get('${curPart}_${
+                message.staff
+              }'));`
             );
           }
           for (let i = 0; i < message.dots; i++) {
@@ -304,40 +265,6 @@ export class Renderer {
         return '';
     }
   }
-  private getKeySignature(fifths: number): string {
-    switch (fifths) {
-      case 1:
-        return 'G';
-      case 2:
-        return 'D';
-      case 3:
-        return 'A';
-      case 4:
-        return 'E';
-      case 5:
-        return 'B';
-      case 6:
-        return 'F#';
-      case 7:
-        return 'C#';
-      case -1:
-        return 'F';
-      case -2:
-        return 'Bb';
-      case -3:
-        return 'Eb';
-      case -4:
-        return 'Ab';
-      case -5:
-        return 'Cb';
-      case -6:
-        return 'Gb';
-      case -7:
-        return 'Cb';
-      default:
-        return 'C';
-    }
-  }
 
   private getAccidental(accidental: string): string {
     switch (accidental) {
@@ -363,79 +290,5 @@ export class Renderer {
       default:
         return '';
     }
-  }
-
-  private clefMeasureStart() {
-    this.clefs.forEach((value, key) => this.clefs.set(key, [{ duration: 0, clef: value.pop()!.clef }]));
-  }
-
-  private clefSet(staff: number, duration: number, clef: { clef?: string; annotation?: string }): void {
-    let current = this.clefs.get(staff);
-    if (!current) current = [];
-    current.push({ duration, clef: clef.clef, annotation: clef.annotation });
-    this.clefs.set(staff, current);
-  }
-
-  private clefGet(staff: number, duration: number): { clef?: string; annotation?: string } {
-    const current = this.clefs.get(staff);
-    let clef = {};
-    if (current) {
-      for (let i = current.length - 1; i >= 0; i--) {
-        const value = current[i];
-        if (duration >= value.duration) {
-          clef = { clef: value.clef, annotation: value.annotation };
-          break;
-        }
-      }
-    }
-    return clef;
-  }
-
-  private clefTranslate(clef: { sign: string; line?: number; octaveChange?: number }): {
-    clef?: string;
-    annotation?: string;
-  } {
-    const value: { clef?: string; annotation?: string } = {};
-    switch (clef.sign) {
-      case 'G':
-        // with G line defaults to 2
-        // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
-        if (clef.line == 1) value.clef = 'french';
-        value.clef = 'treble';
-        break;
-      case 'F':
-        // with F line defaults to 4
-        if (clef.line == 5) value.clef = 'subbass';
-        if (clef.line == 3) value.clef = 'baritone-f';
-        value.clef = 'bass';
-        break;
-      case 'C':
-        // with C line defaults to 3
-        if (clef.line == 5) value.clef = 'baritone-c';
-        if (clef.line == 4) value.clef = 'tenor';
-        if (clef.line == 2) value.clef = 'mezzo-soprano';
-        if (clef.line == 1) value.clef = 'soprano';
-        value.clef = 'alto';
-        break;
-      case 'percussion':
-        value.clef = 'percussion';
-        break;
-      case 'TAB':
-        // VexFlow bug: should be 'tab' but it is not supported
-        //value.clef = 'tab';
-        value.clef = 'treble';
-        break;
-      default:
-        value.clef = undefined;
-    }
-    switch (clef.octaveChange) {
-      case -1:
-        value.annotation = '8vb';
-        break;
-      case 1:
-        value.annotation = '8va';
-        break;
-    }
-    return value;
   }
 }
