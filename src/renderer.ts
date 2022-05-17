@@ -60,13 +60,6 @@ export class Renderer {
     let numStaves = 1;
     let duration = 0;
 
-    t.literal(`function factoryOrnament(factory: VF.Factory, param: { type: string; position: string }): VF.Modifier {
-      const modifier = new VF.Ornament(param.type);
-      modifier.setPosition(param.position);
-      modifier.setContext(factory.getContext());
-      return modifier;
-    }`);
-
     for (const message of this.messages) {
       switch (message.msgType) {
         case 'beam':
