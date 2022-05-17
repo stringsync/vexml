@@ -110,6 +110,11 @@ export class Producer {
           messages.push(message);
         }
         break;
+      case 'lyric':
+        const text = nodeElem.getElementsByTagName('text').item(0)?.textContent ?? '';
+        const syllabic = nodeElem.getElementsByTagName('syllabic').item(0)?.textContent ?? 'single';
+        messages.push({ msgType: 'lyric', text, syllabic });
+        break;
       case 'note':
         const rest = nodeElem.getElementsByTagName('rest').length > 0;
         const grace = nodeElem.getElementsByTagName('grace').length > 0;
@@ -198,7 +203,8 @@ export class Producer {
         // only the beam number 1 is processed, vexflow calculated the number of bars
         const beam = nodeElem.getElementsByTagName('beam').item(0);
         if (beam) messages.push({ msgType: 'beam', ...getNodeDetails(beam) });
-
+        const lyric = nodeElem.getElementsByTagName('lyric').item(0);
+        if (lyric) messages.push(...this.getMessages(lyric));
         break;
       default:
       // console.log(`unprocessed node, got:`, node);
