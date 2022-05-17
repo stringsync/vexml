@@ -1,13 +1,6 @@
 import * as VF from 'vexflow';
 import { CodeTracker, NotationMessage } from './types';
 
-function factoryOrnament(factory: VF.Factory, param: { type: string; position: string }): VF.Modifier {
-  const modifier = new VF.Ornament(param.type);
-  modifier.setPosition(param.position);
-  modifier.setContext(factory.getContext());
-  return modifier;
-}
-
 export class Notations {
   private static slurStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
   private static tiedStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
@@ -106,12 +99,12 @@ export class Notations {
           }
           if (modifier.class == 'O') {
             notes[notes.length - 1].addModifier(
-              factoryOrnament(factory, { type: modifier.type, position: message.placement ?? 'above' }),
+              factory.Ornament(modifier.type, { position: message.placement ?? 'above' }),
               0
             );
             t.literal(
-              `notes[notes.length - 1].addModifier(factoryOrnament(factory, { type: '${modifier.type}', ` +
-                `position: '${message.placement ?? 'above'}' }), 0);`
+              `notes[notes.length - 1].addModifier(factory.Ornament('${modifier.type}', ` +
+                `{position: '${message.placement ?? 'above'}' }), 0);`
             );
           }
         }
