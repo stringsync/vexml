@@ -66,7 +66,14 @@ export type NotationMessage = {
   placement?: string;
 };
 
+export type LyricMessage = {
+  msgType: 'lyric';
+  text: string;
+  syllabic: string;
+};
+
 export type EasyScoreMessage =
+  | LyricMessage
   | NoteMessage
   | NotationMessage
   | AttributesMessage

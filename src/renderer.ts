@@ -218,6 +218,16 @@ export class Renderer {
         case 'notation':
           Notations.render(t, factory, message, notes);
           break;
+        case 'lyric':
+          let text = message.text;
+          switch (message.syllabic) {
+            case 'begin':
+            case 'middle':
+              text += ' -';
+              break;
+          }
+          notes[notes.length - 1].addModifier(factory.Annotation({ text }));
+          break;
         case 'measureEnd':
           break;
       }
