@@ -59,6 +59,10 @@ export class Renderer {
     let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
     let numStaves = 1;
     let duration = 0;
+    let endingLeft = '';
+    let endingRight = '';
+    let endingText = '';
+    let endingMiddle = false;
 
     for (const message of this.messages) {
       switch (message.msgType) {
@@ -228,7 +232,90 @@ export class Renderer {
           }
           notes[notes.length - 1].addModifier(factory.Annotation({ text }));
           break;
+        case 'barline':
+          if (message.barStyle) {
+            let barlineType: VF.BarlineType | undefined;
+            switch (message.barStyle) {
+              case 'dashed':
+                barlineType = VF.BarlineType.SINGLE;
+                break;
+              case 'dotted':
+                barlineType = VF.BarlineType.SINGLE;
+                break;
+              case 'heavy':
+                barlineType = VF.BarlineType.SINGLE;
+                break;
+              case 'heavy-heavy':
+                barlineType = VF.BarlineType.DOUBLE;
+                break;
+              case 'heavy-light':
+                barlineType = VF.BarlineType.DOUBLE;
+                break;
+              case 'light-heavy':
+                barlineType = VF.BarlineType.END;
+                break;
+              case 'light-light':
+                barlineType = VF.BarlineType.DOUBLE;
+                break;
+              case 'none':
+                barlineType = VF.BarlineType.NONE;
+                break;
+              case 'regular':
+                barlineType = VF.BarlineType.SINGLE;
+                break;
+              case 'short':
+                barlineType = VF.BarlineType.SINGLE;
+                break;
+              case 'tick':
+                barlineType = VF.BarlineType.DOUBLE;
+                break;
+            }
+            switch (message.repeatDirection) {
+              case 'forward':
+                barlineType = VF.BarlineType.REPEAT_BEGIN;
+                break;
+              case 'backward':
+                barlineType = VF.BarlineType.REPEAT_END;
+                break;
+            }
+            if (message.location == 'right') {
+              staves.forEach((stave) => {
+                stave.setEndBarType(barlineType as number);
+              });
+            }
+            if (message.location == 'left') {
+              staves.forEach((stave) => {
+                stave.setBegBarType(barlineType as number);
+              });
+            }
+          }
+          if (message.ending) {
+            if (message.location == 'right') {
+              endingRight = message.ending.type;
+              endingText = message.ending.text;
+            }
+            if (message.location == 'left') {
+              endingLeft = message.ending.type;
+              endingText = message.ending.text;
+            }
+          }
+          break;
         case 'measureEnd':
+          if (endingLeft == 'start' && endingRight == 'stop') {
+            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
+            endingMiddle = false;
+          } else if (endingLeft == 'start') {
+            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
+            if (endingRight == '') endingMiddle = true;
+          } else if (endingRight == 'stop') {
+            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.END, endingText, 0);
+            endingMiddle = false;
+          } else if (endingMiddle) {
+            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.MID, endingText, 0);
+          }
+          endingLeft = '';
+          endingRight = '';
+          endingText = '';
           break;
       }
     }

@@ -110,6 +110,18 @@ export class Producer {
           messages.push(message);
         }
         break;
+      case 'barline':
+        const barStyle = nodeElem.getElementsByTagName('bar-style').item(0)?.textContent ?? undefined;
+        const repeatDirection = nodeElem.getElementsByTagName('repeat').item(0)?.getAttribute('direction') ?? undefined;
+        const location = nodeElem.getAttribute('location') ?? 'right';
+        const ending = nodeElem.getElementsByTagName('ending').item(0);
+        if (ending) {
+          const number = ending.getAttribute('number') ?? '';
+          const type = ending.getAttribute('type') ?? '';
+          const text = ending.textContent == '' || ending.textContent == null ? number : ending.textContent;
+          messages.push({ msgType: 'barline', barStyle, repeatDirection, location, ending: { number, type, text } });
+        } else messages.push({ msgType: 'barline', barStyle, repeatDirection, location });
+        break;
       case 'lyric':
         const text = nodeElem.getElementsByTagName('text').item(0)?.textContent ?? '';
         const syllabic = nodeElem.getElementsByTagName('syllabic').item(0)?.textContent ?? 'single';
