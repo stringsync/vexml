@@ -72,7 +72,16 @@ export type LyricMessage = {
   syllabic: string;
 };
 
+export type BarlineMessage = {
+  msgType: 'barline';
+  barStyle?: string;
+  repeatDirection?: string;
+  location: string;
+  ending?: { number: string; type: string; text: string };
+};
+
 export type EasyScoreMessage =
+  | BarlineMessage
   | LyricMessage
   | NoteMessage
   | NotationMessage
