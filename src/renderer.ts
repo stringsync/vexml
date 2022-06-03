@@ -172,7 +172,7 @@ export class Renderer {
           } else {
             noteStruct.keys = [];
             for (const head of message.head) {
-              noteStruct.keys.push(`${head.pitch}`);
+              noteStruct.keys.push(`${head.pitch}/this.getNotehead(head.notehead)`);
             }
             noteStruct.duration = `${durationDenominator}`;
           }
@@ -380,5 +380,61 @@ export class Renderer {
       default:
         return '';
     }
+  }
+
+  private getNotehead(notehead: string): string {
+    switch (notehead) {
+      case 'arrow down':
+        return '/td';
+      case 'arrow up':
+        return '/tu';
+      case 'back slashed':
+        return '/sb';
+      case 'circle dot':
+        return '';
+      case 'circle-x':
+        return '/cx';
+      case 'circled':
+        return '/ci';
+      case 'cluster':
+        return '';
+      case 'cross':
+        return '';
+      case 'diamond':
+        return '/d';
+      case 'do':
+        return '/do';
+      case 'fa':
+        return '/fa';
+      case 'fa up':
+        return '/faup';
+      case 'inverted triangle':
+        return '';
+      case 'left triangle':
+        return '';
+      case 'mi':
+        return '/mi';
+      case 'none':
+        return '';
+      case 'normal':
+        return '/n';
+      case 'rectangle':
+        return '';
+      case 'slash':
+        return '/s';
+      case 'slashed':
+        return '';
+      case 'so':
+        return 'so';
+      case 'square':
+        return '/sq';
+      case 'ti':
+        return '/ti';
+      case 'triangle':
+        return '/tu';
+      case 'x':
+        return '/x';
+    }
+    return '/n';
   }
 }

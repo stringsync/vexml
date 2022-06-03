@@ -136,6 +136,7 @@ export class Producer {
         const stem = nodeElem.getElementsByTagName('stem').item(0)?.textContent ?? undefined;
         const dots = nodeElem.getElementsByTagName('dot').length;
         const accidental = nodeElem.getElementsByTagName('accidental').item(0)?.textContent ?? '';
+        const notehead = nodeElem.getElementsByTagName('notehead').item(0)?.textContent ?? 'normal';
         const accidentalCautionary =
           nodeElem.getElementsByTagName('accidental').item(0)?.getAttribute('cautionary') == 'yes' ?? false;
         const duration = nodeElem.getElementsByTagName('duration').item(0)?.textContent;
@@ -147,7 +148,7 @@ export class Producer {
           messages.push({ msgType: 'voiceEnd', voice: this.lastNoteMessage.voice });
         }
         if (chord && this.lastNoteMessage) {
-          this.lastNoteMessage.head.push({ pitch: `${step}/${octave}`, accidental, accidentalCautionary });
+          this.lastNoteMessage.head.push({ pitch: `${step}/${octave}`, accidental, accidentalCautionary, notehead });
           // chords need to be sorted.
           this.lastNoteMessage.head.sort((a, b) =>
             a.pitch
@@ -163,7 +164,7 @@ export class Producer {
             msgType: 'note',
             stem,
             dots,
-            head: rest ? [] : [{ pitch: `${step}/${octave}`, accidental, accidentalCautionary }],
+            head: rest ? [] : [{ pitch: `${step}/${octave}`, accidental, accidentalCautionary, notehead }],
             duration: duration ? parseInt(duration) : undefined,
             grace,
             graceSlash,

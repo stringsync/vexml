@@ -48,7 +48,7 @@ export type NoteMessage = {
   msgType: 'note';
   stem?: string;
   dots: number;
-  head: { pitch: string; accidental: string; accidentalCautionary: boolean }[];
+  head: { pitch: string; accidental: string; accidentalCautionary: boolean; notehead: string }[];
   type: string;
   duration?: number;
   grace: boolean;
