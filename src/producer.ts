@@ -149,16 +149,6 @@ export class Producer {
         }
         if (chord && this.lastNoteMessage) {
           this.lastNoteMessage.head.push({ pitch: `${step}/${octave}`, accidental, accidentalCautionary, notehead });
-          // chords need to be sorted.
-          this.lastNoteMessage.head.sort((a, b) =>
-            a.pitch
-              .replace(/A/, 'H')
-              .replace(/B/, 'I')
-              .split('')
-              .reverse()
-              .join('')
-              .localeCompare(b.pitch.replace(/A/, 'H').replace(/B/, 'I').split('').reverse().join(''))
-          );
         } else {
           this.lastNoteMessage = {
             msgType: 'note',
