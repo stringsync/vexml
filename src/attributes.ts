@@ -11,10 +11,10 @@ export class Attributes {
     t: CodeTracker,
     factory: VF.Factory,
     message: AttributesMessage,
-    curPart: string,
+    cur1stStave: number,
     duration: number,
     notes: Array<VF.Note>,
-    staves: Map<string, VF.Stave>
+    systems: VF.System[]
   ): void {
     for (const clefMsg of message.clefs) {
       const clefT = this.clefTranslate(clefMsg);
@@ -24,10 +24,10 @@ export class Attributes {
         const clefAnnotation = clefT.annotation;
         if (duration == 0) {
           const staff = clefMsg.staff;
-          staves.get(`${curPart}_${staff}`)!.addClef(clef, 'default', clefAnnotation);
+          systems[systems.length-1].getStaves()[cur1stStave+staff-1].addClef(clef, 'default', clefAnnotation);
           if (clefAnnotation)
-            t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default', '${clefAnnotation}');`);
-          else t.literal(`staves.get('${curPart}_${staff}').addClef('${clef}', 'default');`);
+            t.literal(`systems[systems.length-1].getStaves()[${cur1stStave+staff-1}].addClef('${clef}', 'default', '${clefAnnotation}');`);
+          else t.literal(`systems[systems.length-1].getStaves()[${cur1stStave+staff-1}].addClef('${clef}', 'default');`);
         } else {
           notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
           t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
@@ -37,20 +37,20 @@ export class Attributes {
 
     for (const timeMsg of message.times) {
       const timeSignature = timeMsg.signature;
-      staves.forEach((stave, key) => {
-        if (key.startsWith(`${curPart}_`)) stave.addTimeSignature(timeSignature);
+      systems[systems.length-1].getStaves().forEach((stave, index) => {
+        if (index>=cur1stStave) stave.addTimeSignature(timeSignature);
       });
-      t.literal(`staves.forEach((stave, key) => {
-        if (key.startsWith('${curPart}')) stave.addTimeSignature('${timeSignature}');
+      t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
+        if (index>=${cur1stStave}) stave.addTimeSignature('${timeSignature}');
       });`);
     }
     for (const keyMsg of message.keys) {
       const keySignature = Attributes.getKeySignature(keyMsg.fifths);
-      staves.forEach((stave, key) => {
-        if (key.startsWith(`${curPart}_`)) stave.addKeySignature(keySignature);
+      systems[systems.length-1].getStaves().forEach((stave, index) => {
+        if (index>=cur1stStave)  stave.addKeySignature(keySignature);
       });
-      t.literal(`staves.forEach((stave, key) => {
-        if (key.startsWith('${curPart}')) stave.addKeySignature('${keySignature}');
+      t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
+        if (index>=${cur1stStave})  stave.addKeySignature('${keySignature}');
       });`);
     }
   }

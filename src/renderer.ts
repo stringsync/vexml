@@ -1,4 +1,5 @@
 import * as VF from 'vexflow';
+import { BoundingBox } from 'vexflow';
 import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
@@ -42,27 +43,28 @@ export class Renderer {
 
     t.newline();
 
-    const staves: Map<string, VF.Stave> = t.const('staves', () => new Map<string, VF.Stave>());
-    const voices: Map<string, VF.Voice> = t.let('voices', () => new Map<string, VF.Voice>());
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
-    let formatter: VF.Formatter | undefined = t.let('formatter', () => undefined);
     let beamStart = t.let('beamStart', () => 0);
     let graceStart = t.let('graceStart', () => -1);
     let curPart = '';
+    let firstPart = '';
     let curMeasure = 1;
-    let x = 0;
-    let y = 0;
-    const yCur: Map<string, number> = new Map<string, number>();
-    let xMax = 0;
+    let cur1stStave = 0;
     let width: number | undefined = undefined;
-    let voicesArr: VF.Voice[] = t.let('voiceArr', () => []);
     let numStaves = 1;
     let duration = 0;
     let endingLeft = '';
     let endingRight = '';
     let endingText = '';
     let endingMiddle = false;
+
+    const systems: VF.System[] = [];
+    
+    function appendSystem(width?: number) {
+      if (width) return factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 });
+      else return factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 });
+    }
 
     for (const message of this.messages) {
       switch (message.msgType) {
@@ -81,84 +83,43 @@ export class Renderer {
           }
           break;
         case 'partStart':
+          if (firstPart == '') firstPart = message.id;
           curPart = message.id;
-          if (yCur.get(`${curPart}`) == undefined) {
-            yCur.set(`${curPart}`, 100 + 100 * message.msgIndex);
-            factory.getContext().resize(2000, 100 + 100 * message.msgIndex + 300);
-            t.literal(`factory.getContext().resize (2000, ${100 + 100 * message.msgIndex + 300});`);
-          }
           break;
         case 'partEnd':
           if (message.msgCount == message.msgIndex + 1) {
             curMeasure++;
-            t.expression(() => (voicesArr = []));
-            t.expression(() =>
-              voices.forEach((voice) => {
-                voicesArr.push(voice);
-              })
-            );
-            t.expression(() => (formatter = factory.Formatter().joinVoices(voicesArr)));
-            const staveWidth = width
-              ? width
-              : formatter!.preCalculateMinTotalWidth(voicesArr) +
-                staves.get(`${curPart}_1`)!.getNoteStartX() -
-                staves.get(`${curPart}_1`)!.getX() +
-                VF.Stave.defaultPadding;
-            staves.forEach((stave) => {
-              stave.setWidth(staveWidth);
-            });
-            t.literal(`staves.forEach((stave) => {stave.setWidth(${staveWidth});});`);
-            const notesWidth =
-              staveWidth -
-              staves.get(`${curPart}_1`)!.getNoteStartX() +
-              staves.get(`${curPart}_1`)!.getX() -
-              VF.Stave.defaultPadding;
-            formatter!.format(voicesArr, notesWidth);
-            t.literal(`formatter.format(voicesArr, ${notesWidth});`);
-            t.expression(() => factory.draw());
-            x += staves.get(`${curPart}_1`)!.getWidth();
-            if (x > 1500) {
-              xMax = x > xMax ? x : xMax;
-              let yMax = 0;
-              yCur.forEach((value, key) => {
-                yCur.set(key, value + 240);
-                yMax = Math.max(yMax, value + 240);
-              });
-              factory.getContext().resize(2000, yMax + 240);
-              t.literal(`factory.getContext().resize (2000, ${yMax + 240});`);
-              x = 0;
-            }
           }
           break;
         case 'measureStart':
           t.newline();
           t.comment(`measure ${curMeasure}`);
           width = message.width;
-          y = yCur.get(`${curPart}`) ?? 100;
           if (message.staves) {
             numStaves = message.staves;
           }
+          if (firstPart == curPart) systems.push(appendSystem(width));
           for (let staff = 1; staff <= numStaves; staff++) {
-            staves.set(`${curPart}_${staff}`, factory.Stave({ x, y, width }));
-            t.literal(`staves.set('${curPart}_${staff}', factory.Stave({ x: ${x}, y: ${y}, width: ${width} }))`);
-            y += 115;
+            if (staff == 1) cur1stStave = systems[systems.length-1].getStaves().length;
+            systems[systems.length-1].addStave({voices:[]});
+            t.literal(`system.addStave({voices:[]})`);
           }
           t.expression(() => (notes = []));
           duration = 0;
           Attributes.clefMeasureStart();
           break;
         case 'attributes':
-          Attributes.render(t, factory, message, curPart, duration, notes, staves);
+          Attributes.render(t, factory, message, cur1stStave, duration, notes, systems);
           break;
         case 'voiceEnd':
-          voices.set(`${curPart}_${message.voice}`, factory.Voice().setMode(2).addTickables(notes));
-          t.literal(`voices.set('${curPart}_${message.voice}', factory.Voice().setMode(2).addTickables(notes));`);
+          systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)]);
+          t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)])`);
           t.expression(() => (notes = []));
           duration = 0;
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
-          const noteStruct: VF.GraceNoteStruct = {};
+          const noteStruct: VF.GraceNoteStruct = {duration: `${durationDenominator}`};
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else noteStruct.auto_stem = true;
@@ -172,25 +133,23 @@ export class Renderer {
           } else {
             noteStruct.keys = [];
             for (const head of message.head) {
-              noteStruct.keys.push(`${head.pitch}/this.getNotehead(head.notehead)`);
+              noteStruct.keys.push(`${head.pitch}${this.getNotehead(head.notehead)}`);
             }
             noteStruct.duration = `${durationDenominator}`;
           }
 
           if (message.grace) {
             noteStruct.slash = message.graceSlash;
-            note = this.factory.GraceNote(noteStruct).setStave(staves.get(`${curPart}_${message.staff}`)!);
+            note = this.factory.GraceNote(noteStruct).setStave(systems[systems.length-1].getStaves()[cur1stStave + message.staff - 1 ]);
             t.literal(
-              `note = factory.GraceNote(${JSON.stringify(noteStruct)}).setStave(staves.get('${curPart}_${
-                message.staff
-              }'));`
+              `note = factory.GraceNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
+                .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
             );
           } else {
-            note = this.factory.StaveNote(noteStruct).setStave(staves.get(`${curPart}_${message.staff}`)!);
+            note = this.factory.StaveNote(noteStruct).setStave(systems[systems.length-1].getStaves()[cur1stStave + message.staff - 1 ]);
             t.literal(
-              `note = factory.StaveNote(${JSON.stringify(noteStruct)}).setStave(staves.get('${curPart}_${
-                message.staff
-              }'));`
+              `note = factory.StaveNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
+                .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
             );
           }
           for (let i = 0; i < message.dots; i++) {
@@ -279,12 +238,12 @@ export class Renderer {
                 break;
             }
             if (message.location == 'right') {
-              staves.forEach((stave) => {
+              systems[systems.length-1].getStaves().forEach((stave) => {
                 stave.setEndBarType(barlineType as number);
               });
             }
             if (message.location == 'left') {
-              staves.forEach((stave) => {
+              systems[systems.length-1].getStaves().forEach((stave) => {
                 stave.setBegBarType(barlineType as number);
               });
             }
@@ -302,16 +261,16 @@ export class Renderer {
           break;
         case 'measureEnd':
           if (endingLeft == 'start' && endingRight == 'stop') {
-            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
+            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
             endingMiddle = false;
           } else if (endingLeft == 'start') {
-            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
+            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
             if (endingRight == '') endingMiddle = true;
           } else if (endingRight == 'stop') {
-            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.END, endingText, 0);
+            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.END, endingText, 0);
             endingMiddle = false;
           } else if (endingMiddle) {
-            staves.get(`${curPart}_1`)!.setVoltaType(VF.VoltaType.MID, endingText, 0);
+            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.MID, endingText, 0);
           }
           endingLeft = '';
           endingRight = '';
@@ -319,6 +278,28 @@ export class Renderer {
           break;
       }
     }
+    let prevSystem: VF.System | undefined;
+    const boundingBox = new BoundingBox(0,0,0,0);
+    systems.forEach((s) => {
+      if (prevSystem) {
+        let x = prevSystem.getX() + prevSystem.getBoundingBox()!.getW();
+        let y = prevSystem.getY();
+        if (x > 1000) {
+          x = 0;
+          y += prevSystem.getBoundingBox()!.getH() + 50;
+          s.addConnector('singleLeft');
+        } 
+        s.setX(x);
+        s.setY(y);
+      } else {
+        s.addConnector('singleLeft');
+      }
+      s.format();
+      boundingBox.mergeWith(s.getBoundingBox()!);
+      prevSystem = s;
+    });
+    factory.getContext().resize(boundingBox.getX() + boundingBox.getW() + 50, boundingBox.getY() + boundingBox.getH() + 50);
+    t.expression(() => factory.draw());
   }
 
   private getDurationDenominator(duration: NoteMessage['type']): string {
