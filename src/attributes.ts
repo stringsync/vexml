@@ -24,10 +24,17 @@ export class Attributes {
         const clefAnnotation = clefT.annotation;
         if (duration == 0) {
           const staff = clefMsg.staff;
-          systems[systems.length-1].getStaves()[cur1stStave+staff-1].addClef(clef, 'default', clefAnnotation);
+          systems[systems.length - 1].getStaves()[cur1stStave + staff - 1].addClef(clef, 'default', clefAnnotation);
           if (clefAnnotation)
-            t.literal(`systems[systems.length-1].getStaves()[${cur1stStave+staff-1}].addClef('${clef}', 'default', '${clefAnnotation}');`);
-          else t.literal(`systems[systems.length-1].getStaves()[${cur1stStave+staff-1}].addClef('${clef}', 'default');`);
+            t.literal(
+              `systems[systems.length-1].getStaves()[${
+                cur1stStave + staff - 1
+              }].addClef('${clef}', 'default', '${clefAnnotation}');`
+            );
+          else
+            t.literal(
+              `systems[systems.length-1].getStaves()[${cur1stStave + staff - 1}].addClef('${clef}', 'default');`
+            );
         } else {
           notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
           t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
@@ -37,8 +44,8 @@ export class Attributes {
 
     for (const timeMsg of message.times) {
       const timeSignature = timeMsg.signature;
-      systems[systems.length-1].getStaves().forEach((stave, index) => {
-        if (index>=cur1stStave) stave.addTimeSignature(timeSignature);
+      systems[systems.length - 1].getStaves().forEach((stave, index) => {
+        if (index >= cur1stStave) stave.addTimeSignature(timeSignature);
       });
       t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
         if (index>=${cur1stStave}) stave.addTimeSignature('${timeSignature}');
@@ -46,8 +53,8 @@ export class Attributes {
     }
     for (const keyMsg of message.keys) {
       const keySignature = Attributes.getKeySignature(keyMsg.fifths);
-      systems[systems.length-1].getStaves().forEach((stave, index) => {
-        if (index>=cur1stStave)  stave.addKeySignature(keySignature);
+      systems[systems.length - 1].getStaves().forEach((stave, index) => {
+        if (index >= cur1stStave) stave.addKeySignature(keySignature);
       });
       t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
         if (index>=${cur1stStave})  stave.addKeySignature('${keySignature}');
