@@ -60,7 +60,7 @@ export class Renderer {
     let endingMiddle = false;
 
     const systems: VF.System[] = [];
-    
+
     function appendSystem(width?: number) {
       if (width) return factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 });
       else return factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 });
@@ -100,8 +100,8 @@ export class Renderer {
           }
           if (firstPart == curPart) systems.push(appendSystem(width));
           for (let staff = 1; staff <= numStaves; staff++) {
-            if (staff == 1) cur1stStave = systems[systems.length-1].getStaves().length;
-            systems[systems.length-1].addStave({voices:[]});
+            if (staff == 1) cur1stStave = systems[systems.length - 1].getStaves().length;
+            systems[systems.length - 1].addStave({ voices: [] });
             t.literal(`system.addStave({voices:[]})`);
           }
           t.expression(() => (notes = []));
@@ -112,14 +112,14 @@ export class Renderer {
           Attributes.render(t, factory, message, cur1stStave, duration, notes, systems);
           break;
         case 'voiceEnd':
-          systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)]);
+          systems[systems.length - 1].addVoices([factory.Voice().setMode(2).addTickables(notes)]);
           t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)])`);
           t.expression(() => (notes = []));
           duration = 0;
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
-          const noteStruct: VF.GraceNoteStruct = {duration: `${durationDenominator}`};
+          const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}` };
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else noteStruct.auto_stem = true;
@@ -140,13 +140,17 @@ export class Renderer {
 
           if (message.grace) {
             noteStruct.slash = message.graceSlash;
-            note = this.factory.GraceNote(noteStruct).setStave(systems[systems.length-1].getStaves()[cur1stStave + message.staff - 1 ]);
+            note = this.factory
+              .GraceNote(noteStruct)
+              .setStave(systems[systems.length - 1].getStaves()[cur1stStave + message.staff - 1]);
             t.literal(
               `note = factory.GraceNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
                 .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
             );
           } else {
-            note = this.factory.StaveNote(noteStruct).setStave(systems[systems.length-1].getStaves()[cur1stStave + message.staff - 1 ]);
+            note = this.factory
+              .StaveNote(noteStruct)
+              .setStave(systems[systems.length - 1].getStaves()[cur1stStave + message.staff - 1]);
             t.literal(
               `note = factory.StaveNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
                 .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
@@ -238,12 +242,12 @@ export class Renderer {
                 break;
             }
             if (message.location == 'right') {
-              systems[systems.length-1].getStaves().forEach((stave) => {
+              systems[systems.length - 1].getStaves().forEach((stave) => {
                 stave.setEndBarType(barlineType as number);
               });
             }
             if (message.location == 'left') {
-              systems[systems.length-1].getStaves().forEach((stave) => {
+              systems[systems.length - 1].getStaves().forEach((stave) => {
                 stave.setBegBarType(barlineType as number);
               });
             }
@@ -261,16 +265,16 @@ export class Renderer {
           break;
         case 'measureEnd':
           if (endingLeft == 'start' && endingRight == 'stop') {
-            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
+            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
             endingMiddle = false;
           } else if (endingLeft == 'start') {
-            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
+            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
             if (endingRight == '') endingMiddle = true;
           } else if (endingRight == 'stop') {
-            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.END, endingText, 0);
+            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.END, endingText, 0);
             endingMiddle = false;
           } else if (endingMiddle) {
-            systems[systems.length-1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.MID, endingText, 0);
+            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.MID, endingText, 0);
           }
           endingLeft = '';
           endingRight = '';
@@ -279,7 +283,7 @@ export class Renderer {
       }
     }
     let prevSystem: VF.System | undefined;
-    const boundingBox = new BoundingBox(0,0,0,0);
+    const boundingBox = new BoundingBox(0, 0, 0, 0);
     systems.forEach((s) => {
       if (prevSystem) {
         let x = prevSystem.getX() + prevSystem.getBoundingBox()!.getW();
@@ -288,7 +292,7 @@ export class Renderer {
           x = 0;
           y += prevSystem.getBoundingBox()!.getH() + 50;
           s.addConnector('singleLeft');
-        } 
+        }
         s.setX(x);
         s.setY(y);
       } else {
@@ -298,7 +302,9 @@ export class Renderer {
       boundingBox.mergeWith(s.getBoundingBox()!);
       prevSystem = s;
     });
-    factory.getContext().resize(boundingBox.getX() + boundingBox.getW() + 50, boundingBox.getY() + boundingBox.getH() + 50);
+    factory
+      .getContext()
+      .resize(boundingBox.getX() + boundingBox.getW() + 50, boundingBox.getY() + boundingBox.getH() + 50);
     t.expression(() => factory.draw());
   }
 
