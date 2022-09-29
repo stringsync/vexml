@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { BoundingBox } from 'vexflow';
+import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
 import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
@@ -284,6 +284,12 @@ export class Renderer {
     }
     let prevSystem: VF.System | undefined;
     const boundingBox = new BoundingBox(0, 0, 0, 0);
+    const clefs: Clef[][] = [];
+
+    // Initialise clefs to keep tack of the latest one shown in each staff
+    systems[0]
+      .getStaves()
+      .forEach((stave) => clefs.push(stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY) as Clef[]));
     systems.forEach((s) => {
       if (prevSystem) {
         let x = prevSystem.getX() + prevSystem.getBoundingBox()!.getW();
@@ -292,9 +298,22 @@ export class Renderer {
           x = 0;
           y += prevSystem.getBoundingBox()!.getH() + 50;
           s.addConnector('singleLeft');
+          // On new lines make sure that the latest Clef is rendered if there is not a new one.
+          s.getStaves().forEach((stave, index) => {
+            if (stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY).length == 0) {
+              stave.addModifier(new Clef((clefs[index][0] as any).type));
+            }
+          });
         }
         s.setX(x);
         s.setY(y);
+        // Keep track of last Clef rendered on each Staff both at the begin and end position.
+        s.getStaves().forEach((stave, index) => {
+          const clef = stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY) as Clef[];
+          const endClef = stave.getModifiers(StaveModifierPosition.END, Clef.CATEGORY) as Clef[];
+          if (endClef.length != 0) clefs[index] = endClef;
+          else if (clef.length != 0) clefs[index] = clef;
+        });
       } else {
         s.addConnector('singleLeft');
       }
