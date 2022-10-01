@@ -16,6 +16,7 @@ export class PartHandler extends NodeHandler<'part'> {
   message(receiver: VexmlMessageReceiver): void {
     this.messageStart(receiver);
     this.messageContent(receiver);
+    this.messageEnd(receiver);
   }
 
   private messageStart(receiver: VexmlMessageReceiver) {
@@ -37,6 +38,15 @@ export class PartHandler extends NodeHandler<'part'> {
         throw new PartHandlerError(`unhandled node: ${node.name}`);
       }
     }
+  }
+
+  private messageEnd(receiver: VexmlMessageReceiver) {
+    receiver.onMessage({
+      msgType: 'partEnd',
+      msgIndex: 0,
+      msgCount: 0,
+      id: this.getId(),
+    });
   }
 
   private getId(): string {
