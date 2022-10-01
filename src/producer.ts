@@ -19,8 +19,7 @@ export class Producer {
     const cursor = Cursor.fromMusicXml(this.musicXml);
     while (cursor.hasNext()) {
       const node = cursor.next();
-      const messages: VexmlMessage[] = [];
-      messages.push(...this.getMessages(node));
+      const messages = this.getMessages(node);
       for (const message of messages) {
         receiver.onMessage(message);
       }
