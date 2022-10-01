@@ -1,7 +1,7 @@
 export class CursorError extends Error {}
 
 export class Cursor {
-  static fromMusicXml(musicXml: string): Cursor {
+  static fromString(musicXml: string): Cursor {
     const parser = new DOMParser();
     const root = parser.parseFromString(musicXml, 'application/xml');
     return Cursor.fromRoot(root);
@@ -9,34 +9,27 @@ export class Cursor {
 
   static fromRoot(root: Document): Cursor {
     const path = root.evaluate('/score-partwise/part', root, null, XPathResult.ANY_TYPE, null);
-
-    const nodes = new Array<Node>();
-    let node = path.iterateNext();
-    while (node) {
-      nodes.push(node);
-      node = path.iterateNext();
-    }
-
-    return new Cursor(nodes);
+    return new Cursor(path);
   }
 
-  private index = 0;
-  private nodes: Node[] = [];
+  private path: XPathResult;
+  private node: Node | null;
 
-  private constructor(nodes: Node[]) {
-    this.nodes = nodes;
+  private constructor(path: XPathResult) {
+    this.path = path;
+    this.node = path.iterateNext();
   }
 
   next(): Node {
-    if (!this.hasNext()) {
+    if (!this.node) {
       throw new CursorError('cursor does not have value');
     }
-    const node = this.nodes[this.index];
-    this.index++;
+    const node = this.node;
+    this.node = this.path.iterateNext();
     return node;
   }
 
   hasNext(): boolean {
-    return this.index < this.nodes.length;
+    return !!this.node;
   }
 }

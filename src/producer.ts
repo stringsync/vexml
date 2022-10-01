@@ -16,7 +16,7 @@ export class Producer {
   }
 
   message(receiver: VexmlMessageReceiver): void {
-    const cursor = Cursor.fromMusicXml(this.musicXml);
+    const cursor = Cursor.fromString(this.musicXml);
     while (cursor.hasNext()) {
       const node = cursor.next();
       const messages = this.getMessages(node);
