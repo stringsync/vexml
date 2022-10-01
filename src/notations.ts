@@ -99,7 +99,7 @@ export class Notations {
           }
           if (modifier.class == 'O') {
             notes[notes.length - 1].addModifier(
-              factory.Ornament(modifier.type, { position: message.placement ?? 'above' }),
+              (factory as any).Ornament(modifier.type, { position: message.placement ?? 'above' }),
               0
             );
             t.literal(

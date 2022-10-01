@@ -1,3 +1,5 @@
+import * as VF from 'vexflow';
+
 export type MeasureStartMessage = {
   msgType: 'measureStart';
   width?: number;
@@ -107,3 +109,14 @@ export interface CodeTracker {
   newline(): void;
   literal(literal: string): void;
 }
+
+// TODO(jared): Remove hack by contributing to the types upstream.
+export type System = VF.System & {
+  getStaves(): VF.Stave[];
+  getX(): number;
+  setX(x: number): void;
+  getY(): number;
+  setY(y: number): void;
+  addVoices(voices: VF.Voice[]): void;
+  appendSystem(width: number): System;
+};
