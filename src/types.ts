@@ -80,7 +80,7 @@ export type BarlineMessage = {
   ending?: { number: string; type: string; text: string };
 };
 
-export type EasyScoreMessage =
+export type VexmlMessage =
   | BarlineMessage
   | LyricMessage
   | NoteMessage
@@ -93,8 +93,8 @@ export type EasyScoreMessage =
   | BeamMessage
   | VoiceEndMessage;
 
-export type EasyScoreMessageReceiver = {
-  onMessage(message: EasyScoreMessage): void;
+export type VexmlMessageReceiver = {
+  onMessage(message: VexmlMessage): void;
 };
 
 export type Getter<T> = () => T;

@@ -4,7 +4,7 @@ import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
 import { Producer } from './producer';
-import { CodeTracker, EasyScoreMessage, NoteMessage } from './types';
+import { CodeTracker, NoteMessage, VexmlMessage } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -26,7 +26,7 @@ export class Renderer {
 
   private factory: VF.Factory;
 
-  private messages = new Array<EasyScoreMessage>();
+  private messages = new Array<VexmlMessage>();
   private t: CodeTracker;
 
   private constructor(factory: VF.Factory, codeTracker: CodeTracker) {
@@ -34,7 +34,7 @@ export class Renderer {
     this.t = codeTracker;
   }
 
-  onMessage(message: EasyScoreMessage): void {
+  onMessage(message: VexmlMessage): void {
     this.messages.push(message);
   }
 
