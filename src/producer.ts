@@ -16,10 +16,10 @@ export class Producer {
   }
 
   message(receiver: VexmlMessageReceiver): void {
-    const cursor = PartIterator.fromString(this.musicXml);
-    while (cursor.hasNext()) {
-      const node = cursor.next();
-      const messages = this.getMessages(node);
+    const partIterator = PartIterator.fromString(this.musicXml);
+    while (partIterator.hasNext()) {
+      const part = partIterator.next();
+      const messages = this.getMessages(part);
       for (const message of messages) {
         receiver.onMessage(message);
       }
