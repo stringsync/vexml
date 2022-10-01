@@ -4,13 +4,13 @@ import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
 import { Producer } from './producer';
-import { CodeTracker, NoteMessage, System, VexmlMessage } from './types';
+import { CodeTracker, NoteMessage, System, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
 };
 
-export class Renderer {
+export class Renderer implements VexmlMessageReceiver {
   static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
     const t = opts.codeTracker || CodePrinter.noop();
 
