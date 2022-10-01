@@ -1,15 +1,15 @@
-export class CursorError extends Error {}
+export class PartIteratorError extends Error {}
 
-export class Cursor {
-  static fromString(musicXml: string): Cursor {
+export class PartIterator {
+  static fromString(musicXml: string): PartIterator {
     const parser = new DOMParser();
     const root = parser.parseFromString(musicXml, 'application/xml');
-    return Cursor.fromRoot(root);
+    return PartIterator.fromRoot(root);
   }
 
-  static fromRoot(root: Document): Cursor {
+  static fromRoot(root: Document): PartIterator {
     const path = root.evaluate('/score-partwise/part', root, null, XPathResult.ANY_TYPE, null);
-    return new Cursor(path);
+    return new PartIterator(path);
   }
 
   private path: XPathResult;
@@ -22,7 +22,7 @@ export class Cursor {
 
   next(): Node {
     if (!this.node) {
-      throw new CursorError('cursor does not have value');
+      throw new PartIteratorError('cursor does not have value');
     }
     const node = this.node;
     this.node = this.path.iterateNext();
