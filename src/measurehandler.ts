@@ -12,6 +12,7 @@ const DEFAULT_NUM_STAVES = 0;
 export class MeasureHandler extends NodeHandler<'measure'> {
   message(receiver: VexmlMessageReceiver): void {
     this.messageStart(receiver);
+    this.messageContent(receiver);
     this.messageEnd(receiver);
   }
 
@@ -21,6 +22,14 @@ export class MeasureHandler extends NodeHandler<'measure'> {
       width: this.getWidth(),
       staves: this.getStaves(),
     });
+  }
+
+  private messageContent(receiver: VexmlMessageReceiver): void {
+    // noop
+  }
+
+  private messageEnd(receiver: VexmlMessageReceiver): void {
+    receiver.onMessage({ msgType: 'measureEnd' });
   }
 
   private getWidth(): number {
@@ -39,13 +48,5 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     } else {
       return DEFAULT_NUM_STAVES;
     }
-  }
-
-  private messageContent(receiver: VexmlMessageReceiver): void {
-    // noop
-  }
-
-  private messageEnd(receiver: VexmlMessageReceiver): void {
-    receiver.onMessage({ msgType: 'measureEnd' });
   }
 }
