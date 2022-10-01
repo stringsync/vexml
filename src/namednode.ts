@@ -5,8 +5,8 @@
  * foo. As long as types aren't being dynamically casted, this is also backed by the compiler.
  */
 export class NamedNode<T extends string> {
-  static of(node: Node): NamedNode<string> {
-    return new NamedNode(node, node.nodeName);
+  static of<T extends string = string>(node: Node): NamedNode<T> {
+    return new NamedNode(node, node.nodeName as T);
   }
 
   private constructor(public readonly node: Node, public readonly name: T) {}

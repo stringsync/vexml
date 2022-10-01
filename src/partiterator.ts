@@ -9,27 +9,22 @@ export class PartIterator {
 
   static fromRoot(root: Document): PartIterator {
     const path = root.evaluate('/score-partwise/part', root, null, XPathResult.ANY_TYPE, null);
-    return new PartIterator(path);
+    const node = path.iterateNext();
+    return new PartIterator(path, node);
   }
 
-  private path: XPathResult;
-  private node: Node | null;
-
-  private constructor(path: XPathResult) {
-    this.path = path;
-    this.node = path.iterateNext();
-  }
+  private constructor(private path: XPathResult, private current: Node | null) {}
 
   next(): Node {
-    if (!this.node) {
+    if (!this.current) {
       throw new PartIteratorError('cursor does not have value');
     }
-    const node = this.node;
-    this.node = this.path.iterateNext();
+    const node = this.current;
+    this.current = this.path.iterateNext();
     return node;
   }
 
   hasNext(): boolean {
-    return !!this.node;
+    return !!this.current;
   }
 }
