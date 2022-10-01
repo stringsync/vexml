@@ -1,4 +1,4 @@
-import { Cursor } from './cursor';
+import { PartIterator } from './partiterator';
 import { AttributesMessage, MeasureStartMessage, NoteMessage, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export class Producer {
@@ -16,7 +16,7 @@ export class Producer {
   }
 
   message(receiver: VexmlMessageReceiver): void {
-    const cursor = Cursor.fromString(this.musicXml);
+    const cursor = PartIterator.fromString(this.musicXml);
     while (cursor.hasNext()) {
       const node = cursor.next();
       const messages = this.getMessages(node);
