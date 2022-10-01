@@ -4,7 +4,7 @@ import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
 import { Producer } from './producer';
-import { CodeTracker, NoteMessage, VexmlMessage } from './types';
+import { CodeTracker, NoteMessage, System, VexmlMessage } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -59,11 +59,16 @@ export class Renderer {
     let endingText = '';
     let endingMiddle = false;
 
-    const systems: VF.System[] = [];
+    const systems: System[] = [];
 
-    function appendSystem(width?: number) {
-      if (width) return factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 });
-      else return factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 });
+    function appendSystem(width?: number): System {
+      let system: System;
+      if (width) {
+        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as System;
+      } else {
+        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as System;
+      }
+      return system;
     }
 
     for (const message of this.messages) {
@@ -282,7 +287,7 @@ export class Renderer {
           break;
       }
     }
-    let prevSystem: VF.System | undefined;
+    let prevSystem: System | undefined;
     const boundingBox = new BoundingBox(0, 0, 0, 0);
     const clefs: Clef[][] = [];
 
