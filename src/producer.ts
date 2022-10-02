@@ -1,13 +1,14 @@
-import { Cursor } from './cursor';
+import { PartIterator } from './partiterator';
 import {
   AttributesMessage,
-  EasyScoreMessage,
-  EasyScoreMessageReceiver,
+  LegacyVexmlMessageProducer,
   MeasureStartMessage,
   NoteMessage,
+  VexmlMessage,
+  VexmlMessageReceiver,
 } from './types';
 
-export class Producer {
+export class Producer implements LegacyVexmlMessageProducer {
   static feed(musicXml: string): Producer {
     return new Producer(musicXml);
   }
@@ -21,18 +22,17 @@ export class Producer {
     this.musicXml = musicXml;
   }
 
-  message(receiver: EasyScoreMessageReceiver): void {
-    const cursor = Cursor.fromMusicXml(this.musicXml);
-    while (cursor.hasNext()) {
-      const node = cursor.next();
-      const messages: EasyScoreMessage[] = [];
-      messages.push(...this.getMessages(node));
+  message(receiver: VexmlMessageReceiver): void {
+    const partIterator = PartIterator.fromString(this.musicXml);
+    while (partIterator.hasNext()) {
+      const part = partIterator.next();
+      const messages = this.getMessages(part);
       for (const message of messages) {
         receiver.onMessage(message);
       }
     }
     while (this.partsIndex[0] < this.parts[0].childs.length) {
-      const messages: EasyScoreMessage[] = [];
+      const messages: VexmlMessage[] = [];
       for (let i = 0; i < this.parts.length; i++) {
         messages.push({ msgType: 'partStart', msgIndex: i, msgCount: this.parts.length, id: this.parts[i].id });
         do {
@@ -50,8 +50,8 @@ export class Producer {
     }
   }
 
-  private getMessages(node: Node): EasyScoreMessage[] {
-    const messages: EasyScoreMessage[] = [];
+  private getMessages(node: Node): VexmlMessage[] {
+    const messages: VexmlMessage[] = [];
     const nodeElem = node as Element;
     switch (node.nodeName) {
       case 'part':
