@@ -1,3 +1,4 @@
+import * as msg from './msg';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { VexmlMessageReceiver } from './types';
 
@@ -17,11 +18,11 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   }
 
   private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    receiver.onMessage({
-      msgType: 'measureStart',
+    const message = msg.measureStart({
       width: this.getWidth(ctx),
       staves: this.getStaves(ctx),
     });
+    receiver.onMessage(message);
   }
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
@@ -29,13 +30,15 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   }
 
   private sendEndMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    receiver.onMessage({ msgType: 'measureEnd' });
+    const message = msg.measureEnd();
+    receiver.onMessage(message);
   }
 
   private getWidth(ctx: NodeHandlerCtx<'measure'>): number {
     const width = ctx.node.asElement().getAttribute('width');
     if (width) {
-      return parseInt(width, 10);
+      const result = parseInt(width, 10);
+      return isNaN(result) ? DEFAULT_MEASURE_WIDTH_PX : result;
     } else {
       return DEFAULT_MEASURE_WIDTH_PX;
     }
