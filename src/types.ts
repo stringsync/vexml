@@ -76,10 +76,10 @@ export type LyricMessage = {
 
 export type BarlineMessage = {
   msgType: 'barline';
-  barStyle?: string;
-  repeatDirection?: string;
+  barStyle?: string | null;
+  repeatDirection?: string | null;
   location: string;
-  ending?: { number: string; type: string; text: string };
+  ending?: { number: string; type: string; text: string } | null;
 };
 
 export type VexmlMessage =

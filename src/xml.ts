@@ -74,8 +74,25 @@ export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> 
   return NamedNode.of(attributes);
 };
 
-export const barline: CreateNode<'barline', Record<string, never>> = () => {
+export const barline: CreateNode<
+  'barline',
+  { location: string; barStyle: NamedNode<'bar-style'>; repeat: NamedNode<'repeat'>; ending: NamedNode<'ending'> }
+> = ({ location, barStyle, repeat, ending } = {}) => {
   const barline = createElement('barline');
+
+  if (location) {
+    barline.setAttribute('location', location);
+  }
+  if (barStyle) {
+    barline.append(barStyle.node);
+  }
+  if (repeat) {
+    barline.append(repeat.node);
+  }
+  if (ending) {
+    barline.append(ending.node);
+  }
+
   return NamedNode.of(barline);
 };
 
@@ -87,4 +104,44 @@ export const staves: CreateNode<'staves', { numStaves: number }> = ({ numStaves 
   }
 
   return NamedNode.of(staves);
+};
+
+export const barStyle: CreateNode<'bar-style', { textContent: string }> = ({ textContent } = {}) => {
+  const barStyle = createElement('bar-style');
+
+  if (textContent) {
+    barStyle.textContent = textContent;
+  }
+
+  return NamedNode.of(barStyle);
+};
+
+export const repeat: CreateNode<'repeat', { direction: string }> = ({ direction } = {}) => {
+  const repeat = createElement('repeat');
+
+  if (direction) {
+    repeat.setAttribute('direction', direction);
+  }
+
+  return NamedNode.of(repeat);
+};
+
+export const ending: CreateNode<'ending', { number: string; type: string; textContent: string }> = ({
+  number,
+  type,
+  textContent,
+} = {}) => {
+  const ending = createElement('ending');
+
+  if (number) {
+    ending.setAttribute('number', number);
+  }
+  if (type) {
+    ending.setAttribute('type', type);
+  }
+  if (textContent) {
+    ending.textContent = textContent;
+  }
+
+  return NamedNode.of(ending);
 };
