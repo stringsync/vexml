@@ -1,7 +1,7 @@
 import { Expression } from './expression';
 
 describe('Expression', () => {
-  it('storess the value returned by the getter', () => {
+  it('stores the value returned by the getter', () => {
     const foo = Symbol('foo');
     const expression = Expression.of(() => foo);
     expect(expression.value).toBe(foo);
@@ -29,27 +29,27 @@ describe('Expression', () => {
 
   it('computes array literals', () => {
     const expression = Expression.of(() => ['foo', 'bar']);
-    expect(expression.toString()).toBe(`['foo', 'bar']`);
+    expect(expression.toString()).toBe(`['foo','bar']`);
   });
 
   it('computes mixed array literals', () => {
     const expression = Expression.of(() => ['foo', 42, false]);
-    expect(expression.toString()).toBe(`['foo', 42, false]`);
+    expect(expression.toString()).toBe(`['foo',42,false]`);
   });
 
   it('computes non-empty object literals', () => {
     const expression = Expression.of(() => ({ foo: 'foo' }));
-    expect(expression.toString()).toBe(`{ foo: 'foo' }`);
+    expect(expression.toString()).toBe(`{foo:'foo'}`);
   });
 
   it('computes nested object literals', () => {
     const expression = Expression.of(() => ({ foo: { bar: 42 } }));
-    expect(expression.toString()).toBe(`{ foo: { bar: 42 } }`);
+    expect(expression.toString()).toBe(`{foo:{bar:42}}`);
   });
 
   it('computes complex object literals', () => {
     const expression = Expression.of(() => ({ foo: ['foo', true, [1]], bar: { baz: Symbol('baz') } }));
-    expect(expression.toString()).toBe(`{ foo: ['foo', true, [1]], bar: { baz: Symbol('baz') } }`);
+    expect(expression.toString()).toBe(`{foo:['foo',true,[1]],bar:{baz:Symbol('baz')}}`);
   });
 
   it('maintains variable names', () => {
@@ -67,7 +67,7 @@ describe('Expression', () => {
     const expression = Expression.of(() => ({ foo }));
 
     expect(expression.value.foo).toBe(foo);
-    expect(expression.toString()).toBe('{ foo }');
+    expect(expression.toString()).toBe('{foo}');
   });
 
   it('computes constructor expressions', () => {
@@ -83,7 +83,7 @@ describe('Expression', () => {
         bar: 'bar',
       };
     });
-    expect(expression.toString()).toBe(`{ foo: 'foo', bar: 'bar' }`);
+    expect(expression.toString()).toBe(`{foo:'foo',bar:'bar'}`);
   });
 
   it('allows arrow functions with implicit returns', () => {
