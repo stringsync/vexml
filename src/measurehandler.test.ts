@@ -1,19 +1,30 @@
 import { MeasureHandler } from './measurehandler';
+import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
 import { MeasureEndMessage, MeasureStartMessage } from './types';
 import * as xml from './xml';
 
 describe('MeasureHandler', () => {
   let receiver: NoopReceiver;
+  let noteHandler: NoopHandler;
+  let attributesHandler: NoopHandler;
+  let barlineHandler: NoopHandler;
   let measureHandler: MeasureHandler;
 
-  let onMessageSpy: jest.SpyInstance;
+  let receiverSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
-    measureHandler = new MeasureHandler();
+    noteHandler = new NoopHandler();
+    attributesHandler = new NoopHandler();
+    barlineHandler = new NoopHandler();
+    measureHandler = new MeasureHandler({
+      attributesHandler,
+      barlineHandler,
+      noteHandler,
+    });
 
-    onMessageSpy = jest.spyOn(receiver, 'onMessage');
+    receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
 
   afterEach(() => {
@@ -25,7 +36,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 0,
       width: 100,
@@ -37,7 +48,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 0,
       width: 42,
@@ -46,11 +57,12 @@ describe('MeasureHandler', () => {
 
   it('sends a measure start message with the specified staves', () => {
     const staves = xml.staves({ numStaves: 3 });
-    const measure = xml.measure({ staves });
+    const attributes = [xml.attributes({ staves })];
+    const measure = xml.measure({ attributes });
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 3,
       width: 100,
@@ -62,7 +74,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenLastCalledWith<[MeasureEndMessage]>({
+    expect(receiverSpy).toHaveBeenLastCalledWith<[MeasureEndMessage]>({
       msgType: 'measureEnd',
     });
   });

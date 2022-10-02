@@ -7,11 +7,20 @@ const node = (namedNode: NamedNode<string>): Node => namedNode.node;
 // creators
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
-export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure'>[] }> = (args) => {
-  const id = args?.id;
-  const measures = args?.measures;
+export const createElement = xml.createElement.bind(xml);
 
-  const part = xml.createElement('part');
+export const scorePartwise: CreateNode<'score-partwise', { parts: NamedNode<'part'>[] }> = ({ parts } = {}) => {
+  const scorePartwise = createElement('score-partwise');
+
+  if (parts) {
+    scorePartwise.append(...parts.map(node));
+  }
+
+  return NamedNode.of(scorePartwise);
+};
+
+export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure'>[] }> = ({ id, measures } = {}) => {
+  const part = createElement('part');
 
   if (id) {
     part.setAttribute('id', id);
@@ -23,14 +32,25 @@ export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure
   return NamedNode.of(part);
 };
 
-export const measure: CreateNode<'measure', { width: number; staves: NamedNode<'staves'> }> = (args) => {
-  const width = args?.width;
-  const staves = args?.staves;
+export const measure: CreateNode<
+  'measure',
+  {
+    width: number;
+    notes: NamedNode<'note'>[];
+    attributes: NamedNode<'attributes'>[];
+    barlines: NamedNode<'barlines'>[];
+  }
+> = ({ width, notes, attributes, barlines } = {}) => {
+  const measure = createElement('measure');
 
-  const measure = xml.createElement('measure');
-
-  if (staves) {
-    measure.append(staves.node);
+  if (notes) {
+    measure.append(...notes.map(node));
+  }
+  if (attributes) {
+    measure.append(...attributes.map(node));
+  }
+  if (barlines) {
+    measure.append(...barlines.map(node));
   }
   if (typeof width === 'number') {
     measure.setAttribute('width', width.toString());
@@ -39,10 +59,28 @@ export const measure: CreateNode<'measure', { width: number; staves: NamedNode<'
   return NamedNode.of(measure);
 };
 
-export const staves: CreateNode<'staves', { numStaves: number }> = (args) => {
-  const numStaves = args?.numStaves;
+export const note: CreateNode<'note', Record<string, never>> = () => {
+  const note = createElement('note');
+  return NamedNode.of(note);
+};
 
-  const staves = xml.createElement('staves');
+export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> }> = ({ staves } = {}) => {
+  const attributes = createElement('attributes');
+
+  if (staves) {
+    attributes.append(staves.node);
+  }
+
+  return NamedNode.of(attributes);
+};
+
+export const barline: CreateNode<'barline', Record<string, never>> = () => {
+  const barline = createElement('barline');
+  return NamedNode.of(barline);
+};
+
+export const staves: CreateNode<'staves', { numStaves: number }> = ({ numStaves } = {}) => {
+  const staves = createElement('staves');
 
   if (typeof numStaves === 'number') {
     staves.textContent = numStaves.toString();
