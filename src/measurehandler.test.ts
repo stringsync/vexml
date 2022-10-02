@@ -57,7 +57,8 @@ describe('MeasureHandler', () => {
 
   it('sends a measure start message with the specified staves', () => {
     const staves = xml.staves({ numStaves: 3 });
-    const measure = xml.measure({ staves });
+    const attributes = [xml.attributes({ staves })];
+    const measure = xml.measure({ attributes });
 
     measureHandler.sendMessages(receiver, { node: measure });
 
