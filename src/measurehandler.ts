@@ -1,9 +1,12 @@
 import * as msg from './msg';
+import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { VexmlMessageReceiver } from './types';
 
 const DEFAULT_MEASURE_WIDTH_PX = 100;
 const DEFAULT_NUM_STAVES = 0;
+
+export class MeasureHandlerError extends Error {}
 
 /**
  * Produces vexml messages from <measure> nodes.
@@ -11,10 +14,25 @@ const DEFAULT_NUM_STAVES = 0;
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
  */
 export class MeasureHandler extends NodeHandler<'measure'> {
+  private noteHandler: NodeHandler<'note'>;
+  private attributesHandler: NodeHandler<'attributes'>;
+  private barlineHandler: NodeHandler<'barline'>;
+
+  constructor(opts: {
+    noteHandler: NodeHandler<'note'>;
+    attributesHandler: NodeHandler<'attributes'>;
+    barlineHandler: NodeHandler<'barline'>;
+  }) {
+    super();
+    this.noteHandler = opts.noteHandler;
+    this.attributesHandler = opts.attributesHandler;
+    this.barlineHandler = opts.barlineHandler;
+  }
+
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
     this.sendStartMessage(receiver, ctx);
     this.sendContentMessages(receiver, ctx);
-    this.sendEndMessage(receiver, ctx);
+    this.sendEndMessage(receiver);
   }
 
   private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
@@ -26,10 +44,24 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   }
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    // noop
+    const childNodes = ctx.node.asElement().childNodes;
+    for (const childNode of childNodes) {
+      const node = NamedNode.of(childNode);
+      if (node.isNamed('note')) {
+        this.noteHandler.sendMessages(receiver, { node });
+      } else if (node.isNamed('attributes')) {
+        this.attributesHandler.sendMessages(receiver, { node });
+      } else if (node.isNamed('barline')) {
+        this.barlineHandler.sendMessages(receiver, { node });
+      } else if (node.isNamed('staves')) {
+        continue;
+      } else {
+        throw new MeasureHandlerError(`unhandled node: ${node.name}`);
+      }
+    }
   }
 
-  private sendEndMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
+  private sendEndMessage(receiver: VexmlMessageReceiver): void {
     const message = msg.measureEnd();
     receiver.onMessage(message);
   }
@@ -47,7 +79,8 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   private getStaves(ctx: NodeHandlerCtx<'measure'>): number {
     const staves = ctx.node.asElement().getElementsByTagName('staves').item(0)?.textContent;
     if (staves) {
-      return parseInt(staves, 10);
+      const result = parseInt(staves, 10);
+      return isNaN(result) ? DEFAULT_NUM_STAVES : result;
     } else {
       return DEFAULT_NUM_STAVES;
     }

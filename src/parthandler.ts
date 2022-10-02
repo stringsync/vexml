@@ -13,8 +13,11 @@ export class PartHandlerError extends Error {}
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-partwise/
  */
 export class PartHandler extends NodeHandler<'part'> {
-  constructor(private measureHandler: NodeHandler<'measure'>) {
+  private measureHandler: NodeHandler<'measure'>;
+
+  constructor(opts: { measureHandler: NodeHandler<'measure'> }) {
     super();
+    this.measureHandler = opts.measureHandler;
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>): void {

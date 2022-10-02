@@ -9,16 +9,14 @@ describe('PartHandler', () => {
   let measureHandler: NoopHandler;
   let partHandler: PartHandler;
 
-  let onMessageSpy: jest.SpyInstance;
-  let measureSendMessagesSpy: jest.SpyInstance;
+  let receiverSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
     measureHandler = new NoopHandler();
-    partHandler = new PartHandler(measureHandler);
+    partHandler = new PartHandler({ measureHandler });
 
-    onMessageSpy = jest.spyOn(receiver, 'onMessage');
-    measureSendMessagesSpy = jest.spyOn(measureHandler, 'sendMessages');
+    receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
 
   afterEach(() => {
@@ -30,7 +28,7 @@ describe('PartHandler', () => {
 
     partHandler.sendMessages(receiver, { node: part });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[PartStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[PartStartMessage]>(1, {
       msgType: 'partStart',
       id: 'foo',
       msgCount: 0,
@@ -43,7 +41,7 @@ describe('PartHandler', () => {
 
     partHandler.sendMessages(receiver, { node: part });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[PartStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[PartStartMessage]>(1, {
       msgType: 'partStart',
       id: 'NN',
       msgCount: 0,
@@ -56,7 +54,7 @@ describe('PartHandler', () => {
 
     partHandler.sendMessages(receiver, { node: part });
 
-    expect(onMessageSpy).toHaveBeenLastCalledWith<[PartEndMessage]>({
+    expect(receiverSpy).toHaveBeenLastCalledWith<[PartEndMessage]>({
       msgType: 'partEnd',
       id: 'foo',
       msgCount: 0,
@@ -69,7 +67,7 @@ describe('PartHandler', () => {
 
     partHandler.sendMessages(receiver, { node: part });
 
-    expect(onMessageSpy).toHaveBeenLastCalledWith<[PartEndMessage]>({
+    expect(receiverSpy).toHaveBeenLastCalledWith<[PartEndMessage]>({
       msgType: 'partEnd',
       id: 'NN',
       msgCount: 0,
@@ -78,11 +76,13 @@ describe('PartHandler', () => {
   });
 
   it('handles measure nodes', () => {
-    const measures = new Array(3).fill(null).map(xml.measure);
+    const measureHandlerSpy = jest.spyOn(measureHandler, 'sendMessages');
+
+    const measures = [xml.measure(), xml.measure(), xml.measure()];
     const part = xml.part({ id: 'foo', measures });
 
     partHandler.sendMessages(receiver, { node: part });
 
-    expect(measureSendMessagesSpy).toHaveBeenCalledTimes(3);
+    expect(measureHandlerSpy).toHaveBeenCalledTimes(3);
   });
 });

@@ -2,9 +2,9 @@ import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
 import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
+import { LegacyProducer } from './legacyproducer';
 import { Notations } from './notations';
-import { Producer } from './producer';
-import { CodeTracker, NoteMessage, System, VexmlMessage, VexmlMessageReceiver } from './types';
+import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -20,7 +20,7 @@ export class Renderer implements VexmlMessageReceiver {
 
     const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } }));
     const renderer = new Renderer(factory, t);
-    Producer.feed(musicXml).message(renderer);
+    LegacyProducer.feed(musicXml).message(renderer);
     renderer.render();
   }
 
@@ -59,14 +59,14 @@ export class Renderer implements VexmlMessageReceiver {
     let endingText = '';
     let endingMiddle = false;
 
-    const systems: System[] = [];
+    const systems: VF.System[] = [];
 
-    function appendSystem(width?: number): System {
-      let system: System;
+    function appendSystem(width?: number): VF.System {
+      let system: VF.System;
       if (width) {
-        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as System;
+        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as VF.System;
       } else {
-        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as System;
+        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as VF.System;
       }
       return system;
     }
@@ -287,7 +287,7 @@ export class Renderer implements VexmlMessageReceiver {
           break;
       }
     }
-    let prevSystem: System | undefined;
+    let prevSystem: VF.System | undefined;
     const boundingBox = new BoundingBox(0, 0, 0, 0);
     const clefs: Clef[][] = [];
 
