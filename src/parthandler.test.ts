@@ -10,7 +10,6 @@ describe('PartHandler', () => {
   let partHandler: PartHandler;
 
   let onMessageSpy: jest.SpyInstance;
-  let measureSendMessagesSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
@@ -18,7 +17,6 @@ describe('PartHandler', () => {
     partHandler = new PartHandler({ measureHandler });
 
     onMessageSpy = jest.spyOn(receiver, 'onMessage');
-    measureSendMessagesSpy = jest.spyOn(measureHandler, 'sendMessages');
   });
 
   afterEach(() => {
@@ -78,6 +76,8 @@ describe('PartHandler', () => {
   });
 
   it('handles measure nodes', () => {
+    const measureSendMessagesSpy = jest.spyOn(measureHandler, 'sendMessages');
+
     const measures = new Array(3).fill(null).map(xml.measure);
     const part = xml.part({ id: 'foo', measures });
 
