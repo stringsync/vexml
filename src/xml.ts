@@ -7,8 +7,20 @@ const node = (namedNode: NamedNode<string>): Node => namedNode.node;
 // creators
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
+export const createElement = xml.createElement.bind(xml);
+
+export const scorePartwise: CreateNode<'score-partwise', { parts: NamedNode<'part'>[] }> = ({ parts } = {}) => {
+  const scorePartwise = createElement('score-partwise');
+
+  if (parts) {
+    scorePartwise.append(...parts.map(node));
+  }
+
+  return NamedNode.of(scorePartwise);
+};
+
 export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure'>[] }> = ({ id, measures } = {}) => {
-  const part = xml.createElement('part');
+  const part = createElement('part');
 
   if (id) {
     part.setAttribute('id', id);
@@ -29,7 +41,7 @@ export const measure: CreateNode<
     barlines: NamedNode<'barlines'>[];
   }
 > = ({ width, notes, attributes, barlines } = {}) => {
-  const measure = xml.createElement('measure');
+  const measure = createElement('measure');
 
   if (notes) {
     measure.append(...notes.map(node));
@@ -48,12 +60,12 @@ export const measure: CreateNode<
 };
 
 export const note: CreateNode<'note', Record<string, never>> = () => {
-  const note = xml.createElement('note');
+  const note = createElement('note');
   return NamedNode.of(note);
 };
 
 export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> }> = ({ staves } = {}) => {
-  const attributes = xml.createElement('attributes');
+  const attributes = createElement('attributes');
 
   if (staves) {
     attributes.append(staves.node);
@@ -63,12 +75,12 @@ export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> 
 };
 
 export const barline: CreateNode<'barline', Record<string, never>> = () => {
-  const barline = xml.createElement('barline');
+  const barline = createElement('barline');
   return NamedNode.of(barline);
 };
 
 export const staves: CreateNode<'staves', { numStaves: number }> = ({ numStaves } = {}) => {
-  const staves = xml.createElement('staves');
+  const staves = createElement('staves');
 
   if (typeof numStaves === 'number') {
     staves.textContent = numStaves.toString();
