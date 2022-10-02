@@ -1,14 +1,14 @@
 import { PartIterator } from './partiterator';
 import {
   AttributesMessage,
+  LegacyVexmlMessageProducer,
   MeasureStartMessage,
   NoteMessage,
   VexmlMessage,
-  VexmlMessageProducer,
   VexmlMessageReceiver,
 } from './types';
 
-export class Producer implements VexmlMessageProducer {
+export class Producer implements LegacyVexmlMessageProducer {
   static feed(musicXml: string): Producer {
     return new Producer(musicXml);
   }

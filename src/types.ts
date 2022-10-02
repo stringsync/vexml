@@ -95,8 +95,12 @@ export type VexmlMessage =
   | BeamMessage
   | VoiceEndMessage;
 
-export interface VexmlMessageProducer {
+export interface LegacyVexmlMessageProducer {
   message(receiver: VexmlMessageReceiver): void;
+}
+
+export interface VexmlMessageProducer<T> {
+  sendMessages(receiver: VexmlMessageReceiver, ctx: T): void;
 }
 
 export interface VexmlMessageReceiver {
