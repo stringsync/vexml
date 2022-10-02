@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { AttributesMessage, CodeTracker, System } from './types';
+import { AttributesMessage, CodeTracker } from './types';
 
 export class Attributes {
   private static clefs: Map<number, { duration: number; clef?: string; annotation?: string }[]> = new Map<
@@ -14,7 +14,7 @@ export class Attributes {
     cur1stStave: number,
     duration: number,
     notes: Array<VF.Note>,
-    systems: System[]
+    systems: VF.System[]
   ): void {
     for (const clefMsg of message.clefs) {
       const clefT = this.clefTranslate(clefMsg);

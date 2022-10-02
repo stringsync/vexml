@@ -4,7 +4,7 @@ import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { LegacyProducer } from './legacyproducer';
 import { Notations } from './notations';
-import { CodeTracker, NoteMessage, System, VexmlMessage, VexmlMessageReceiver } from './types';
+import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -59,14 +59,14 @@ export class Renderer implements VexmlMessageReceiver {
     let endingText = '';
     let endingMiddle = false;
 
-    const systems: System[] = [];
+    const systems: VF.System[] = [];
 
-    function appendSystem(width?: number): System {
-      let system: System;
+    function appendSystem(width?: number): VF.System {
+      let system: VF.System;
       if (width) {
-        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as System;
+        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as VF.System;
       } else {
-        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as System;
+        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as VF.System;
       }
       return system;
     }
@@ -287,7 +287,7 @@ export class Renderer implements VexmlMessageReceiver {
           break;
       }
     }
-    let prevSystem: System | undefined;
+    let prevSystem: VF.System | undefined;
     const boundingBox = new BoundingBox(0, 0, 0, 0);
     const clefs: Clef[][] = [];
 
