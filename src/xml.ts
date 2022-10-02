@@ -1,10 +1,11 @@
 import { NamedNode } from './namednode';
 
-type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
-
 // helpers
 const xml = document.implementation.createDocument(null, null);
 const node = (namedNode: NamedNode<string>): Node => namedNode.node;
+
+// creators
+type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
 export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure'>[] }> = (args) => {
   const id = args?.id;
