@@ -7,10 +7,14 @@ on:
 
 jobs:
   test:
-    name: run tests
+    name: typecheck then run tests
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: install
+        run: yarn install
+      - name: typecheck
+        run: yarn tsc --noEmit
       - name: test
         run: yarn test --ci
