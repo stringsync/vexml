@@ -4,10 +4,6 @@
 
 ![test workflow](https://github.com/stringsync/vexml/actions/workflows/test.yml/badge.svg)
 
-## Motivation
-
-This library is a proof-of-concept spawned from [stringsync/musicxml#1](https://github.com/stringsync/musicxml/issues/1).
-
 ## How to Use
 
 TBD
@@ -28,7 +24,11 @@ yarn
 yarn dev
 ```
 
-This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in [dev/public/examples](dev/public/examples). You may need to manually reload the page.
+This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in [dev/public/examples](dev/public/examples).
+
+### Adding MusicXML Examples
+
+In order to add a MusicXML example, add the xml file to [dev/public/examples](dev/public/examples) directory. You may need to manually reload the page.
 
 ### Running Tests
 
@@ -43,7 +43,3 @@ This is just an alias for `jest`, so you use all the [jest CLI options](https://
 ```
 yarn test --watchAll
 ```
-
-### MusicXML Examples
-
-In order to add a MusicXML example, add the xml file to [dev/public/examples](dev/public/examples) directory.
