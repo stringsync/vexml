@@ -11,7 +11,7 @@ describe('MeasureHandler', () => {
   let barlineHandler: NoopHandler;
   let measureHandler: MeasureHandler;
 
-  let onMessageSpy: jest.SpyInstance;
+  let receiverSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
@@ -24,7 +24,7 @@ describe('MeasureHandler', () => {
       noteHandler,
     });
 
-    onMessageSpy = jest.spyOn(receiver, 'onMessage');
+    receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
 
   afterEach(() => {
@@ -36,7 +36,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 0,
       width: 100,
@@ -48,7 +48,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 0,
       width: 42,
@@ -62,7 +62,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
+    expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 3,
       width: 100,
@@ -74,7 +74,7 @@ describe('MeasureHandler', () => {
 
     measureHandler.sendMessages(receiver, { node: measure });
 
-    expect(onMessageSpy).toHaveBeenLastCalledWith<[MeasureEndMessage]>({
+    expect(receiverSpy).toHaveBeenLastCalledWith<[MeasureEndMessage]>({
       msgType: 'measureEnd',
     });
   });
