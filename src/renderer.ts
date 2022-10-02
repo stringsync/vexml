@@ -4,13 +4,13 @@ import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
 import { Producer } from './producer';
-import { CodeTracker, EasyScoreMessage, NoteMessage } from './types';
+import { CodeTracker, NoteMessage, System, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
 };
 
-export class Renderer {
+export class Renderer implements VexmlMessageReceiver {
   static render(elementId: string, musicXml: string, opts: RendererOptions = {}): void {
     const t = opts.codeTracker || CodePrinter.noop();
 
@@ -26,7 +26,7 @@ export class Renderer {
 
   private factory: VF.Factory;
 
-  private messages = new Array<EasyScoreMessage>();
+  private messages = new Array<VexmlMessage>();
   private t: CodeTracker;
 
   private constructor(factory: VF.Factory, codeTracker: CodeTracker) {
@@ -34,7 +34,7 @@ export class Renderer {
     this.t = codeTracker;
   }
 
-  onMessage(message: EasyScoreMessage): void {
+  onMessage(message: VexmlMessage): void {
     this.messages.push(message);
   }
 
@@ -59,11 +59,16 @@ export class Renderer {
     let endingText = '';
     let endingMiddle = false;
 
-    const systems: VF.System[] = [];
+    const systems: System[] = [];
 
-    function appendSystem(width?: number) {
-      if (width) return factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 });
-      else return factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 });
+    function appendSystem(width?: number): System {
+      let system: System;
+      if (width) {
+        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as System;
+      } else {
+        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as System;
+      }
+      return system;
     }
 
     for (const message of this.messages) {
@@ -282,7 +287,7 @@ export class Renderer {
           break;
       }
     }
-    let prevSystem: VF.System | undefined;
+    let prevSystem: System | undefined;
     const boundingBox = new BoundingBox(0, 0, 0, 0);
     const clefs: Clef[][] = [];
 

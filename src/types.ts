@@ -1,3 +1,5 @@
+import * as VF from 'vexflow';
+
 export type MeasureStartMessage = {
   msgType: 'measureStart';
   width?: number;
@@ -80,7 +82,7 @@ export type BarlineMessage = {
   ending?: { number: string; type: string; text: string };
 };
 
-export type EasyScoreMessage =
+export type VexmlMessage =
   | BarlineMessage
   | LyricMessage
   | NoteMessage
@@ -93,9 +95,17 @@ export type EasyScoreMessage =
   | BeamMessage
   | VoiceEndMessage;
 
-export type EasyScoreMessageReceiver = {
-  onMessage(message: EasyScoreMessage): void;
-};
+export interface LegacyVexmlMessageProducer {
+  message(receiver: VexmlMessageReceiver): void;
+}
+
+export interface VexmlMessageProducer<T> {
+  sendMessages(receiver: VexmlMessageReceiver, ctx: T): void;
+}
+
+export interface VexmlMessageReceiver {
+  onMessage(message: VexmlMessage): void;
+}
 
 export type Getter<T> = () => T;
 
@@ -107,3 +117,14 @@ export interface CodeTracker {
   newline(): void;
   literal(literal: string): void;
 }
+
+// TODO(jared): Remove hack by contributing to the types upstream.
+export type System = VF.System & {
+  getStaves(): VF.Stave[];
+  getX(): number;
+  setX(x: number): void;
+  getY(): number;
+  setY(y: number): void;
+  addVoices(voices: VF.Voice[]): void;
+  appendSystem(width: number): System;
+};

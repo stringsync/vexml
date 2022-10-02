@@ -67,7 +67,8 @@ const getReturnedExpressionLiteral = (src: string): string => {
   return program
     .tokens!.filter(isWithinScope(scope))
     .map((token) => token.value)
-    .join(' ');
+    .join('')
+    .trim();
 };
 
 const isWithinScope =
