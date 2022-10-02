@@ -8,9 +8,9 @@ import {
   VexmlMessageReceiver,
 } from './types';
 
-export class Producer implements LegacyVexmlMessageProducer {
-  static feed(musicXml: string): Producer {
-    return new Producer(musicXml);
+export class LegacyProducer implements LegacyVexmlMessageProducer {
+  static feed(musicXml: string): LegacyProducer {
+    return new LegacyProducer(musicXml);
   }
 
   private musicXml: string;
