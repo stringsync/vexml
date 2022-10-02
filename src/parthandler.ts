@@ -1,3 +1,4 @@
+import * as msg from './msg';
 import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { VexmlMessageReceiver } from './types';
@@ -23,12 +24,10 @@ export class PartHandler extends NodeHandler<'part'> {
   }
 
   private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
-    receiver.onMessage({
-      msgType: 'partStart',
-      msgIndex: 0,
-      msgCount: 0,
+    const message = msg.partStart({
       id: this.getId(ctx),
     });
+    receiver.onMessage(message);
   }
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
@@ -44,12 +43,10 @@ export class PartHandler extends NodeHandler<'part'> {
   }
 
   private sendEndMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
-    receiver.onMessage({
-      msgType: 'partEnd',
-      msgIndex: 0,
-      msgCount: 0,
+    const message = msg.partEnd({
       id: this.getId(ctx),
     });
+    receiver.onMessage(message);
   }
 
   private getId(ctx: NodeHandlerCtx<'part'>): string {
