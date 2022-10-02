@@ -1,17 +1,28 @@
 import { MeasureHandler } from './measurehandler';
+import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
 import { MeasureEndMessage, MeasureStartMessage } from './types';
 import * as xml from './xml';
 
 describe('MeasureHandler', () => {
   let receiver: NoopReceiver;
+  let noteHandler: NoopHandler;
+  let attributesHandler: NoopHandler;
+  let barlineHandler: NoopHandler;
   let measureHandler: MeasureHandler;
 
   let onMessageSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
-    measureHandler = new MeasureHandler();
+    noteHandler = new NoopHandler();
+    attributesHandler = new NoopHandler();
+    barlineHandler = new NoopHandler();
+    measureHandler = new MeasureHandler({
+      attributesHandler,
+      barlineHandler,
+      noteHandler,
+    });
 
     onMessageSpy = jest.spyOn(receiver, 'onMessage');
   });

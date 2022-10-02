@@ -15,7 +15,7 @@ describe('PartHandler', () => {
   beforeEach(() => {
     receiver = new NoopReceiver();
     measureHandler = new NoopHandler();
-    partHandler = new PartHandler(measureHandler);
+    partHandler = new PartHandler({ measureHandler });
 
     onMessageSpy = jest.spyOn(receiver, 'onMessage');
     measureSendMessagesSpy = jest.spyOn(measureHandler, 'sendMessages');
