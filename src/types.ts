@@ -99,7 +99,7 @@ export interface LegacyVexmlMessageProducer {
   message(receiver: VexmlMessageReceiver): void;
 }
 
-export interface VexmlMessageProducer<T> {
+export interface VexmlMessageProducer<T = never> {
   sendMessages(receiver: VexmlMessageReceiver, ctx: T): void;
 }
 
