@@ -18,10 +18,16 @@ describe('BarlineHandler', () => {
   });
 
   it('sends barline messages', () => {
-    const barStyle = xml.barStyle({ textContent: 'dashed' });
-    const repeat = xml.repeat({ direction: 'backward' });
-    const ending = xml.ending({ number: '1', type: 'start', textContent: 'ending' });
-    const barline = xml.barline({ location: 'right', barStyle, repeat, ending });
+    const barline = xml.barline({
+      location: 'right',
+      barStyle: xml.barStyle({ textContent: 'dashed' }),
+      repeat: xml.repeat({ direction: 'backward' }),
+      ending: xml.ending({
+        number: '1',
+        type: 'start',
+        textContent: 'ending',
+      }),
+    });
 
     barlineHandler.sendMessages(receiver, { node: barline });
 
