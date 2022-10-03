@@ -1,9 +1,7 @@
 import * as msg from './msg';
 import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlMessageReceiver } from './types';
-
-const DEFAULT_ID = 'NN';
+import { VexmlConfig, VexmlMessageReceiver } from './types';
 
 export class PartHandlerError extends Error {}
 
@@ -13,10 +11,13 @@ export class PartHandlerError extends Error {}
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-partwise/
  */
 export class PartHandler extends NodeHandler<'part'> {
+  private config: VexmlConfig;
   private measureHandler: NodeHandler<'measure'>;
 
-  constructor(opts: { measureHandler: NodeHandler<'measure'> }) {
+  constructor(opts: { config: VexmlConfig; measureHandler: NodeHandler<'measure'> }) {
     super();
+
+    this.config = opts.config;
     this.measureHandler = opts.measureHandler;
   }
 
@@ -57,7 +58,7 @@ export class PartHandler extends NodeHandler<'part'> {
     if (id) {
       return id;
     } else {
-      return DEFAULT_ID;
+      return this.config.DEFAULT_PART_ID;
     }
   }
 }
