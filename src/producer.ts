@@ -8,7 +8,7 @@ export class ProducerError extends Error {}
 
 export class Producer implements VexmlMessageProducer {
   static feed(musicXml: string): Producer {
-    const partHandler = di.createPartHandler();
+    const { partHandler } = di.createContainer();
     return new Producer(musicXml, { partHandler });
   }
 
