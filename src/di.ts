@@ -22,14 +22,14 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   const noteHandler = new TodoHandler();
 
   const measureHandler = new MeasureHandler({
-    config: config,
+    config,
     attributesHandler,
     barlineHandler,
     noteHandler,
   });
 
   const partHandler = new PartHandler({
-    config: config,
+    config,
     measureHandler,
   });
 
