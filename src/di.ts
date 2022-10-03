@@ -14,22 +14,22 @@ export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
 /**
  * Creates a dependency injection container.
  */
-export const createContainer = (config?: Partial<VexmlConfig>) => {
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
+  const config = { ...DEFAULT_CONFIG, ...opts?.config };
 
   const attributesHandler = new TodoHandler();
   const barlineHandler = new BarlineHandler();
   const noteHandler = new TodoHandler();
 
   const measureHandler = new MeasureHandler({
-    config: mergedConfig,
+    config: config,
     attributesHandler,
     barlineHandler,
     noteHandler,
   });
 
   const partHandler = new PartHandler({
-    config: mergedConfig,
+    config: config,
     measureHandler,
   });
 
