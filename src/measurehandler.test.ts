@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from './di';
 import { MeasureHandler } from './measurehandler';
 import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
@@ -19,6 +20,7 @@ describe('MeasureHandler', () => {
     attributesHandler = new NoopHandler();
     barlineHandler = new NoopHandler();
     measureHandler = new MeasureHandler({
+      config: DEFAULT_CONFIG,
       attributesHandler,
       barlineHandler,
       noteHandler,

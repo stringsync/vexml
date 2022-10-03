@@ -1,3 +1,9 @@
+export type VexmlConfig = {
+  DEFAULT_MEASURE_WIDTH_PX: number;
+  DEFAULT_MEASURE_NUM_STAVES: number;
+  DEFAULT_PART_ID: string;
+};
+
 export type MeasureStartMessage = {
   msgType: 'measureStart';
   width?: number;

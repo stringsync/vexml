@@ -1,10 +1,7 @@
 import * as msg from './msg';
 import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlMessageReceiver } from './types';
-
-const DEFAULT_MEASURE_WIDTH_PX = 100;
-const DEFAULT_NUM_STAVES = 0;
+import { VexmlConfig, VexmlMessageReceiver } from './types';
 
 export class MeasureHandlerError extends Error {}
 
@@ -14,16 +11,20 @@ export class MeasureHandlerError extends Error {}
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
  */
 export class MeasureHandler extends NodeHandler<'measure'> {
+  private config: VexmlConfig;
   private noteHandler: NodeHandler<'note'>;
   private attributesHandler: NodeHandler<'attributes'>;
   private barlineHandler: NodeHandler<'barline'>;
 
   constructor(opts: {
+    config: VexmlConfig;
     noteHandler: NodeHandler<'note'>;
     attributesHandler: NodeHandler<'attributes'>;
     barlineHandler: NodeHandler<'barline'>;
   }) {
     super();
+
+    this.config = opts.config;
     this.noteHandler = opts.noteHandler;
     this.attributesHandler = opts.attributesHandler;
     this.barlineHandler = opts.barlineHandler;
@@ -70,9 +71,9 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     const width = ctx.node.asElement().getAttribute('width');
     if (width) {
       const result = parseInt(width, 10);
-      return isNaN(result) ? DEFAULT_MEASURE_WIDTH_PX : result;
+      return isNaN(result) ? this.config.DEFAULT_MEASURE_WIDTH_PX : result;
     } else {
-      return DEFAULT_MEASURE_WIDTH_PX;
+      return this.config.DEFAULT_MEASURE_WIDTH_PX;
     }
   }
 
@@ -80,9 +81,9 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     const staves = ctx.node.asElement().getElementsByTagName('staves').item(0)?.textContent;
     if (staves) {
       const result = parseInt(staves, 10);
-      return isNaN(result) ? DEFAULT_NUM_STAVES : result;
+      return isNaN(result) ? this.config.DEFAULT_MEASURE_NUM_STAVES : result;
     } else {
-      return DEFAULT_NUM_STAVES;
+      return this.config.DEFAULT_MEASURE_NUM_STAVES;
     }
   }
 }
