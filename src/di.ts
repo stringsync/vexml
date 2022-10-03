@@ -1,13 +1,12 @@
 import { BarlineHandler } from './barlinehandler';
 import { MeasureHandler } from './measurehandler';
-import { NodeHandler } from './nodehandler';
 import { PartHandler } from './parthandler';
 import { TodoHandler } from './todohandler';
 
 /**
- * Creates the handler dependency chain for PartHandler.
+ * Creates a dependency injection container.
  */
-export const createPartHandler = (): NodeHandler<'part'> => {
+export const createContainer = () => {
   const attributesHandler = new TodoHandler();
   const barlineHandler = new BarlineHandler();
   const noteHandler = new TodoHandler();
@@ -22,5 +21,11 @@ export const createPartHandler = (): NodeHandler<'part'> => {
     measureHandler,
   });
 
-  return partHandler;
+  return {
+    attributesHandler,
+    barlineHandler,
+    noteHandler,
+    measureHandler,
+    partHandler,
+  } as const;
 };
