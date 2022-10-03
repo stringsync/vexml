@@ -34,6 +34,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   });
 
   return {
+    config,
     attributesHandler,
     barlineHandler,
     noteHandler,
