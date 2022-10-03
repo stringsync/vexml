@@ -78,8 +78,10 @@ describe('PartHandler', () => {
   it('handles measure nodes', () => {
     const measureHandlerSpy = jest.spyOn(measureHandler, 'sendMessages');
 
-    const measures = [xml.measure(), xml.measure(), xml.measure()];
-    const part = xml.part({ id: 'foo', measures });
+    const part = xml.part({
+      id: 'foo',
+      measures: [xml.measure(), xml.measure(), xml.measure()],
+    });
 
     partHandler.sendMessages(receiver, { node: part });
 
