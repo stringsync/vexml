@@ -52,7 +52,7 @@ export type VoiceEndMessage = {
 
 export type NoteMessage = {
   msgType: 'note';
-  stem?: string;
+  stem?: string | null;
   dots: number;
   head: { pitch: string; accidental: string; accidentalCautionary: boolean; notehead: string }[];
   type: string;
