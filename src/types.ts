@@ -53,6 +53,8 @@ export type NoteMessage = {
   duration?: number;
   grace: boolean;
   graceSlash: boolean;
+  arpeggiate: boolean;
+  arpeggiateDirection?: string;
   voice: string;
   staff: number;
 };

@@ -68,6 +68,7 @@ export const note: CreateMsg<NoteMessage> = (args) => ({
   type: '',
   grace: false,
   graceSlash: false,
+  arpeggiate: false,
   voice: '',
   staff: 0,
   ...args,
