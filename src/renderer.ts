@@ -184,6 +184,20 @@ export class Renderer implements VexmlMessageReceiver {
             );
             t.expression(() => (graceStart = -1));
           }
+          // Process arpeggiatte
+          if (message.arpeggiate) {
+            switch (message.arpeggiateDirection) {
+              default:
+                note.addStroke(0, new VF.Stroke(7));
+                break;
+              case 'up':
+                note.addStroke(0, new VF.Stroke(3));
+                break;
+              case 'down':
+                note.addStroke(0, new VF.Stroke(4));
+                break;
+            }
+          }
           t.expression(() => notes.push(note!));
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
