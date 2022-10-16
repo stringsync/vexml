@@ -144,6 +144,10 @@ export class LegacyProducer implements LegacyVexmlMessageProducer {
         const voice = nodeElem.getElementsByTagName('voice').item(0)?.textContent ?? '1';
         const staff = nodeElem.getElementsByTagName('staff').item(0)?.textContent ?? '1';
         const chord = nodeElem.getElementsByTagName('chord').length > 0;
+        // Get arpeggiate and associated direction
+        const arpeggiate = nodeElem.getElementsByTagName('arpeggiate').length > 0;
+        const arpeggiateDirection =
+          nodeElem.getElementsByTagName('arpeggiate').item(0)?.getAttribute('direction') ?? undefined;
         if (this.lastNoteMessage && this.lastNoteMessage.voice !== voice) {
           messages.push({ msgType: 'voiceEnd', voice: this.lastNoteMessage.voice });
         }
@@ -158,6 +162,8 @@ export class LegacyProducer implements LegacyVexmlMessageProducer {
             duration: duration ? parseInt(duration) : undefined,
             grace,
             graceSlash,
+            arpeggiate,
+            arpeggiateDirection,
             type,
             voice,
             staff: parseInt(staff),
