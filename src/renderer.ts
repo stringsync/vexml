@@ -187,7 +187,7 @@ export class Renderer implements VexmlMessageReceiver {
           // Process arpeggiatte
           if (message.arpeggiate) {
             switch (message.arpeggiateDirection) {
-              case undefined:
+              default:
                 note.addStroke(0, new VF.Stroke(7));
                 break;
               case 'up':
