@@ -59,9 +59,17 @@ export const measure: CreateNode<
   return NamedNode.of(measure);
 };
 
-export const note: CreateNode<'note', { stem: NamedNode<'stem'> }> = ({ stem } = {}) => {
+export const note: CreateNode<'note', { stem: NamedNode<'stem'>; dots: NamedNode<'dot'>[] }> = ({
+  stem,
+  dots,
+} = {}) => {
   const note = createElement('note');
 
+  if (dots) {
+    for (const dot of dots) {
+      note.appendChild(dot.node);
+    }
+  }
   if (stem) {
     note.appendChild(stem.node);
   }
@@ -159,4 +167,9 @@ export const stem: CreateNode<'stem', { textContent: string }> = ({ textContent 
   }
 
   return NamedNode.of(stem);
+};
+
+export const dot: CreateNode<'dot', Record<never, never>> = () => {
+  const dot = createElement('dot');
+  return NamedNode.of(dot);
 };

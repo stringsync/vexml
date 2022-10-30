@@ -6,6 +6,7 @@ export class NoteHandler extends NodeHandler<'note'> {
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'note'>): void {
     const message = msg.note({
       stem: this.getStem(ctx),
+      dots: this.getDots(ctx),
     });
     receiver.onMessage(message);
   }
