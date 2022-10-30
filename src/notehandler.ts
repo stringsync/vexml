@@ -34,8 +34,9 @@ export class NoteHandler extends NodeHandler<'note'> {
     }
     const pitch = this.getPitch(ctx);
     const accidental = this.getAccidental(ctx);
+    const accidentalCautionary = this.getAccidentalCautionary(ctx);
     const notehead = this.getNotehead(ctx);
-    return [{ pitch, accidental: accidental.value, accidentalCautionary: accidental.cautionary, notehead }];
+    return [{ pitch, accidental, accidentalCautionary, notehead }];
   }
 
   private getGrace(ctx: NodeHandlerCtx<'note'>): boolean {
@@ -63,12 +64,18 @@ export class NoteHandler extends NodeHandler<'note'> {
     return ctx.node.asElement().getElementsByTagName('octave').item(0)?.textContent ?? this.config.DEFAULT_OCTAVE_VALUE;
   }
 
-  private getAccidental(ctx: NodeHandlerCtx<'note'>): { value: string; cautionary: boolean } {
-    const accidental = ctx.node.asElement().getElementsByTagName('accidental').item(0);
-    return {
-      value: accidental?.textContent ?? this.config.DEFAULT_ACCIDENTAL_VALUE,
-      cautionary: accidental?.getAttribute('cautionary') === 'yes' ?? this.config.DEFAULT_ACCIDENTAL_CAUTIONARY,
-    };
+  private getAccidental(ctx: NodeHandlerCtx<'note'>): string {
+    return (
+      ctx.node.asElement().getElementsByTagName('accidental').item(0)?.textContent ??
+      this.config.DEFAULT_ACCIDENTAL_VALUE
+    );
+  }
+
+  private getAccidentalCautionary(ctx: NodeHandlerCtx<'note'>): boolean {
+    return (
+      ctx.node.asElement().getElementsByTagName('accidental').item(0)?.getAttribute('cautionary') === 'yes' ??
+      this.config.DEFAULT_ACCIDENTAL_CAUTIONARY
+    );
   }
 
   private getNotehead(ctx: NodeHandlerCtx<'note'>): string {
