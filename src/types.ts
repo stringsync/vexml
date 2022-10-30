@@ -2,6 +2,12 @@ export type VexmlConfig = {
   DEFAULT_MEASURE_WIDTH_PX: number;
   DEFAULT_MEASURE_NUM_STAVES: number;
   DEFAULT_PART_ID: string;
+  DEFAULT_STEP_VALUE: string;
+  DEFAULT_OCTAVE_VALUE: string;
+  DEFAULT_STEM_VALUE: string | null;
+  DEFAULT_ACCIDENTAL_VALUE: string;
+  DEFAULT_ACCIDENTAL_CAUTIONARY: boolean;
+  DEFAULT_NOTEHEAD_VALUE: string;
 };
 
 export type MeasureStartMessage = {
@@ -50,11 +56,18 @@ export type VoiceEndMessage = {
   voice: string;
 };
 
+export type NoteMessageHead = Array<{
+  pitch: string;
+  accidental: string;
+  accidentalCautionary: boolean;
+  notehead: string;
+}>;
+
 export type NoteMessage = {
   msgType: 'note';
   stem?: string | null;
   dots: number;
-  head: { pitch: string; accidental: string; accidentalCautionary: boolean; notehead: string }[];
+  head: NoteMessageHead;
   type: string;
   duration?: number;
   grace: boolean;

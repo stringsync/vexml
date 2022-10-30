@@ -59,19 +59,38 @@ export const measure: CreateNode<
   return NamedNode.of(measure);
 };
 
-export const note: CreateNode<'note', { stem: NamedNode<'stem'>; dots: NamedNode<'dot'>[] }> = ({
-  stem,
-  dots,
-} = {}) => {
+export const note: CreateNode<
+  'note',
+  {
+    stem: NamedNode<'stem'>;
+    dots: NamedNode<'dot'>[];
+    rest: NamedNode<'rest'>;
+    pitch: NamedNode<'pitch'>;
+    accidental: NamedNode<'accidental'>;
+    notehead: NamedNode<'notehead'>;
+  }
+> = ({ stem, dots, rest, pitch, accidental, notehead } = {}) => {
   const note = createElement('note');
 
+  if (pitch) {
+    note.appendChild(pitch.node);
+  }
+  if (rest) {
+    note.appendChild(rest.node);
+  }
   if (dots) {
     for (const dot of dots) {
       note.appendChild(dot.node);
     }
   }
+  if (accidental) {
+    note.appendChild(accidental.node);
+  }
   if (stem) {
     note.appendChild(stem.node);
+  }
+  if (notehead) {
+    note.appendChild(notehead.node);
   }
 
   return NamedNode.of(note);
@@ -172,4 +191,92 @@ export const stem: CreateNode<'stem', { textContent: string }> = ({ textContent 
 export const dot: CreateNode<'dot', Record<never, never>> = () => {
   const dot = createElement('dot');
   return NamedNode.of(dot);
+};
+
+export const rest: CreateNode<
+  'rest',
+  { displayStep: NamedNode<'display-step'>; displayOctave: NamedNode<'display-octave'> }
+> = ({ displayStep, displayOctave } = {}) => {
+  const rest = createElement('rest');
+
+  if (displayStep) {
+    rest.appendChild(displayStep.node);
+  }
+  if (displayOctave) {
+    rest.appendChild(displayOctave.node);
+  }
+
+  return NamedNode.of(rest);
+};
+
+export const displayStep: CreateNode<'display-step', { step: string }> = ({ step } = {}) => {
+  const displayStep = createElement('display-step');
+
+  if (step) {
+    displayStep.textContent = step;
+  }
+
+  return NamedNode.of(displayStep);
+};
+
+export const displayOctave: CreateNode<'display-octave', { octave: string }> = ({ octave } = {}) => {
+  const displayOctave = createElement('display-octave');
+
+  if (octave) {
+    displayOctave.textContent = octave;
+  }
+
+  return NamedNode.of(displayOctave);
+};
+
+export const pitch: CreateNode<'pitch', { step: NamedNode<'step'>; octave: NamedNode<'octave'> }> = ({
+  step,
+  octave,
+} = {}) => {
+  const pitch = createElement('pitch');
+
+  if (step) {
+    pitch.appendChild(step.node);
+  }
+  if (octave) {
+    pitch.appendChild(octave.node);
+  }
+
+  return NamedNode.of(pitch);
+};
+
+export const step: CreateNode<'step', { step: string }> = ({ step } = {}) => {
+  const node = createElement('step');
+
+  if (step) {
+    node.textContent = step;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const octave: CreateNode<'octave', { octave: string }> = ({ octave } = {}) => {
+  const node = createElement('octave');
+
+  if (octave) {
+    node.textContent = octave;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const accidental: CreateNode<'accidental', { value: string; cautionary: string }> = ({
+  value,
+  cautionary,
+} = {}) => {
+  const node = createElement('accidental');
+
+  if (value) {
+    node.textContent = value;
+  }
+  if (cautionary) {
+    node.setAttribute('cautionary', cautionary);
+  }
+
+  return NamedNode.of(node);
 };
