@@ -2,7 +2,7 @@ import { NamedNode } from './namednode';
 
 // helpers
 const xml = document.implementation.createDocument(null, null);
-const node = (namedNode: NamedNode<string>): Node => namedNode.node;
+const getNode = (namedNode: NamedNode<string>): Node => namedNode.node;
 
 // creators
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
@@ -10,26 +10,26 @@ type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<
 export const createElement = xml.createElement.bind(xml);
 
 export const scorePartwise: CreateNode<'score-partwise', { parts: NamedNode<'part'>[] }> = ({ parts } = {}) => {
-  const scorePartwise = createElement('score-partwise');
+  const node = createElement('score-partwise');
 
   if (parts) {
-    scorePartwise.append(...parts.map(node));
+    node.append(...parts.map(getNode));
   }
 
-  return NamedNode.of(scorePartwise);
+  return NamedNode.of(node);
 };
 
 export const part: CreateNode<'part', { id: string; measures: NamedNode<'measure'>[] }> = ({ id, measures } = {}) => {
-  const part = createElement('part');
+  const node = createElement('part');
 
   if (id) {
-    part.setAttribute('id', id);
+    node.setAttribute('id', id);
   }
   if (measures) {
-    part.append(...measures.map(node));
+    node.append(...measures.map(getNode));
   }
 
-  return NamedNode.of(part);
+  return NamedNode.of(node);
 };
 
 export const measure: CreateNode<
@@ -41,22 +41,22 @@ export const measure: CreateNode<
     barlines: NamedNode<'barlines'>[];
   }
 > = ({ width, notes, attributes, barlines } = {}) => {
-  const measure = createElement('measure');
+  const node = createElement('measure');
 
   if (notes) {
-    measure.append(...notes.map(node));
+    node.append(...notes.map(getNode));
   }
   if (attributes) {
-    measure.append(...attributes.map(node));
+    node.append(...attributes.map(getNode));
   }
   if (barlines) {
-    measure.append(...barlines.map(node));
+    node.append(...barlines.map(getNode));
   }
   if (typeof width === 'number') {
-    measure.setAttribute('width', width.toString());
+    node.setAttribute('width', width.toString());
   }
 
-  return NamedNode.of(measure);
+  return NamedNode.of(node);
 };
 
 export const note: CreateNode<
@@ -70,92 +70,92 @@ export const note: CreateNode<
     notehead: NamedNode<'notehead'>;
   }
 > = ({ stem, dots, rest, pitch, accidental, notehead } = {}) => {
-  const note = createElement('note');
+  const node = createElement('note');
 
   if (pitch) {
-    note.appendChild(pitch.node);
+    node.appendChild(pitch.node);
   }
   if (rest) {
-    note.appendChild(rest.node);
+    node.appendChild(rest.node);
   }
   if (dots) {
     for (const dot of dots) {
-      note.appendChild(dot.node);
+      node.appendChild(dot.node);
     }
   }
   if (accidental) {
-    note.appendChild(accidental.node);
+    node.appendChild(accidental.node);
   }
   if (stem) {
-    note.appendChild(stem.node);
+    node.appendChild(stem.node);
   }
   if (notehead) {
-    note.appendChild(notehead.node);
+    node.appendChild(notehead.node);
   }
 
-  return NamedNode.of(note);
+  return NamedNode.of(node);
 };
 
 export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> }> = ({ staves } = {}) => {
-  const attributes = createElement('attributes');
+  const node = createElement('attributes');
 
   if (staves) {
-    attributes.append(staves.node);
+    node.append(staves.node);
   }
 
-  return NamedNode.of(attributes);
+  return NamedNode.of(node);
 };
 
 export const barline: CreateNode<
   'barline',
   { location: string; barStyle: NamedNode<'bar-style'>; repeat: NamedNode<'repeat'>; ending: NamedNode<'ending'> }
 > = ({ location, barStyle, repeat, ending } = {}) => {
-  const barline = createElement('barline');
+  const node = createElement('barline');
 
   if (location) {
-    barline.setAttribute('location', location);
+    node.setAttribute('location', location);
   }
   if (barStyle) {
-    barline.append(barStyle.node);
+    node.append(barStyle.node);
   }
   if (repeat) {
-    barline.append(repeat.node);
+    node.append(repeat.node);
   }
   if (ending) {
-    barline.append(ending.node);
+    node.append(ending.node);
   }
 
-  return NamedNode.of(barline);
+  return NamedNode.of(node);
 };
 
 export const staves: CreateNode<'staves', { numStaves: number }> = ({ numStaves } = {}) => {
-  const staves = createElement('staves');
+  const node = createElement('staves');
 
   if (typeof numStaves === 'number') {
-    staves.textContent = numStaves.toString();
+    node.textContent = numStaves.toString();
   }
 
-  return NamedNode.of(staves);
+  return NamedNode.of(node);
 };
 
 export const barStyle: CreateNode<'bar-style', { textContent: string }> = ({ textContent } = {}) => {
-  const barStyle = createElement('bar-style');
+  const node = createElement('bar-style');
 
   if (textContent) {
-    barStyle.textContent = textContent;
+    node.textContent = textContent;
   }
 
-  return NamedNode.of(barStyle);
+  return NamedNode.of(node);
 };
 
 export const repeat: CreateNode<'repeat', { direction: string }> = ({ direction } = {}) => {
-  const repeat = createElement('repeat');
+  const node = createElement('repeat');
 
   if (direction) {
-    repeat.setAttribute('direction', direction);
+    node.setAttribute('direction', direction);
   }
 
-  return NamedNode.of(repeat);
+  return NamedNode.of(node);
 };
 
 export const ending: CreateNode<'ending', { number: string; type: string; textContent: string }> = ({
@@ -163,86 +163,86 @@ export const ending: CreateNode<'ending', { number: string; type: string; textCo
   type,
   textContent,
 } = {}) => {
-  const ending = createElement('ending');
+  const node = createElement('ending');
 
   if (number) {
-    ending.setAttribute('number', number);
+    node.setAttribute('number', number);
   }
   if (type) {
-    ending.setAttribute('type', type);
+    node.setAttribute('type', type);
   }
   if (textContent) {
-    ending.textContent = textContent;
+    node.textContent = textContent;
   }
 
-  return NamedNode.of(ending);
+  return NamedNode.of(node);
 };
 
 export const stem: CreateNode<'stem', { textContent: string }> = ({ textContent } = {}) => {
-  const stem = createElement('stem');
+  const node = createElement('stem');
 
   if (textContent) {
-    stem.textContent = textContent;
+    node.textContent = textContent;
   }
 
-  return NamedNode.of(stem);
+  return NamedNode.of(node);
 };
 
 export const dot: CreateNode<'dot', Record<never, never>> = () => {
-  const dot = createElement('dot');
-  return NamedNode.of(dot);
+  const node = createElement('dot');
+  return NamedNode.of(node);
 };
 
 export const rest: CreateNode<
   'rest',
   { displayStep: NamedNode<'display-step'>; displayOctave: NamedNode<'display-octave'> }
 > = ({ displayStep, displayOctave } = {}) => {
-  const rest = createElement('rest');
+  const node = createElement('rest');
 
   if (displayStep) {
-    rest.appendChild(displayStep.node);
+    node.appendChild(displayStep.node);
   }
   if (displayOctave) {
-    rest.appendChild(displayOctave.node);
+    node.appendChild(displayOctave.node);
   }
 
-  return NamedNode.of(rest);
+  return NamedNode.of(node);
 };
 
 export const displayStep: CreateNode<'display-step', { step: string }> = ({ step } = {}) => {
-  const displayStep = createElement('display-step');
+  const node = createElement('display-step');
 
   if (step) {
-    displayStep.textContent = step;
+    node.textContent = step;
   }
 
-  return NamedNode.of(displayStep);
+  return NamedNode.of(node);
 };
 
 export const displayOctave: CreateNode<'display-octave', { octave: string }> = ({ octave } = {}) => {
-  const displayOctave = createElement('display-octave');
+  const node = createElement('display-octave');
 
   if (octave) {
-    displayOctave.textContent = octave;
+    node.textContent = octave;
   }
 
-  return NamedNode.of(displayOctave);
+  return NamedNode.of(node);
 };
 
 export const pitch: CreateNode<'pitch', { step: NamedNode<'step'>; octave: NamedNode<'octave'> }> = ({
   step,
   octave,
 } = {}) => {
-  const pitch = createElement('pitch');
+  const node = createElement('pitch');
 
   if (step) {
-    pitch.appendChild(step.node);
+    node.appendChild(step.node);
   }
   if (octave) {
-    pitch.appendChild(octave.node);
+    node.appendChild(octave.node);
   }
 
-  return NamedNode.of(pitch);
+  return NamedNode.of(node);
 };
 
 export const step: CreateNode<'step', { step: string }> = ({ step } = {}) => {
