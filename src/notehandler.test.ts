@@ -26,9 +26,7 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({ stem: 'up', head: [{ accidental: '', accidentalCautionary: false, notehead: 'normal', pitch: '' }] })
-    );
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ stem: 'up' }));
   });
 
   it('sends a note message with dots', () => {
@@ -39,9 +37,7 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({ dots: 2, head: [{ accidental: '', accidentalCautionary: false, notehead: 'normal', pitch: '' }] })
-    );
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ dots: 2 }));
   });
 
   it('sends a note message with head for rests', () => {
@@ -103,7 +99,6 @@ describe('NoteHandler', () => {
       msg.note({
         grace: true,
         graceSlash: false,
-        head: [{ pitch: '', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
       })
     );
   });
@@ -120,8 +115,20 @@ describe('NoteHandler', () => {
       msg.note({
         grace: true,
         graceSlash: true,
-        head: [{ pitch: '', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
       })
     );
+  });
+
+  it.each([1, 4, 8, 16])('sends a note message with duration: %s', (duration) => {
+    const note = xml.note({
+      duration: xml.duration({
+        positiveDivisions: xml.positiveDivisions({ divisions: duration }),
+      }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenCalledWith<[NoteMessage]>(msg.note({ duration: duration }));
   });
 });

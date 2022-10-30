@@ -69,8 +69,9 @@ export const note: CreateNode<
     accidental: NamedNode<'accidental'>;
     notehead: NamedNode<'notehead'>;
     grace: NamedNode<'grace'>;
+    duration: NamedNode<'duration'>;
   }
-> = ({ grace, stem, dots, rest, pitch, accidental, notehead } = {}) => {
+> = ({ grace, stem, dots, rest, pitch, accidental, notehead, duration } = {}) => {
   const node = createElement('note');
 
   if (grace) {
@@ -81,6 +82,9 @@ export const note: CreateNode<
   }
   if (rest) {
     node.appendChild(rest.node);
+  }
+  if (duration) {
+    node.appendChild(duration.node);
   }
   if (dots) {
     for (const dot of dots) {
@@ -290,6 +294,28 @@ export const grace: CreateNode<'grace', { slash: string }> = ({ slash } = {}) =>
 
   if (slash) {
     node.setAttribute('slash', slash);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const duration: CreateNode<'duration', { positiveDivisions: NamedNode<'positive-divisions'> }> = ({
+  positiveDivisions,
+} = {}) => {
+  const node = createElement('duration');
+
+  if (positiveDivisions) {
+    node.appendChild(positiveDivisions.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const positiveDivisions: CreateNode<'positive-divisions', { divisions: number }> = ({ divisions } = {}) => {
+  const node = createElement('positive-divisions');
+
+  if (divisions) {
+    node.textContent = divisions.toString();
   }
 
   return NamedNode.of(node);

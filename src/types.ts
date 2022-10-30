@@ -8,6 +8,7 @@ export type VexmlConfig = {
   DEFAULT_ACCIDENTAL_VALUE: string;
   DEFAULT_ACCIDENTAL_CAUTIONARY: boolean;
   DEFAULT_NOTEHEAD_VALUE: string;
+  DEFAULT_NOTE_DURATION: number;
 };
 
 export type MeasureStartMessage = {
