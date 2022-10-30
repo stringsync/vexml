@@ -68,10 +68,14 @@ export const note: CreateNode<
     pitch: NamedNode<'pitch'>;
     accidental: NamedNode<'accidental'>;
     notehead: NamedNode<'notehead'>;
+    grace: NamedNode<'grace'>;
   }
-> = ({ stem, dots, rest, pitch, accidental, notehead } = {}) => {
+> = ({ grace, stem, dots, rest, pitch, accidental, notehead } = {}) => {
   const node = createElement('note');
 
+  if (grace) {
+    node.appendChild(grace.node);
+  }
   if (pitch) {
     node.appendChild(pitch.node);
   }
@@ -276,6 +280,16 @@ export const accidental: CreateNode<'accidental', { value: string; cautionary: s
   }
   if (cautionary) {
     node.setAttribute('cautionary', cautionary);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const grace: CreateNode<'grace', { slash: string }> = ({ slash } = {}) => {
+  const node = createElement('grace');
+
+  if (slash) {
+    node.setAttribute('slash', slash);
   }
 
   return NamedNode.of(node);

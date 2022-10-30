@@ -16,6 +16,8 @@ export class NoteHandler extends NodeHandler<'note'> {
       stem: this.getStem(ctx),
       dots: this.getDots(ctx),
       head: this.getHead(ctx),
+      grace: this.getGrace(ctx),
+      graceSlash: this.getGraceSlash(ctx),
     });
     receiver.onMessage(message);
   }

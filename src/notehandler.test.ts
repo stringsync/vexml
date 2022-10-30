@@ -84,9 +84,44 @@ describe('NoteHandler', () => {
     });
 
     noteHandler.sendMessages(receiver, { node: note });
+
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
       msg.note({ head: [{ pitch: 'A/4', accidental: 'sharp', accidentalCautionary: true, notehead: 'normal' }] })
+    );
+  });
+
+  it('sends a note message with grace data', () => {
+    const note = xml.note({
+      grace: xml.grace({ slash: 'no' }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({
+        grace: true,
+        graceSlash: false,
+        head: [{ pitch: '', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
+      })
+    );
+  });
+
+  it('sends a note message with grace slash data', () => {
+    const note = xml.note({
+      grace: xml.grace({ slash: 'yes' }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({
+        grace: true,
+        graceSlash: true,
+        head: [{ pitch: '', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
+      })
     );
   });
 });
