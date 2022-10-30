@@ -63,6 +63,7 @@ export const voiceEnd: CreateMsg<VoiceEndMessage> = (args) => ({
 
 export const note: CreateMsg<NoteMessage> = (args) => ({
   msgType: 'note',
+  stem: null,
   dots: 0,
   head: [],
   type: '',

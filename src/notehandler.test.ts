@@ -27,4 +27,15 @@ describe('NoteHandler', () => {
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ stem: 'up' }));
   });
+
+  test('sends a note message with dots', () => {
+    const note = xml.note({
+      dots: [xml.dot(), xml.dot()],
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ dots: 2 }));
+  });
 });
