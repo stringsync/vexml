@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
   DEFAULT_ACCIDENTAL_VALUE: '',
   DEFAULT_ACCIDENTAL_CAUTIONARY: false,
   DEFAULT_NOTEHEAD_VALUE: 'normal',
+  DEFAULT_NOTE_DURATION: 4,
 });
 
 /**

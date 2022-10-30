@@ -18,8 +18,18 @@ export class NoteHandler extends NodeHandler<'note'> {
       head: this.getHead(ctx),
       grace: this.getGrace(ctx),
       graceSlash: this.getGraceSlash(ctx),
+      duration: this.getDuration(ctx),
     });
     receiver.onMessage(message);
+  }
+
+  private getDuration(ctx: NodeHandlerCtx<'note'>): number {
+    const textContent = ctx.node.asElement().getElementsByTagName('duration').item(0)?.textContent ?? '';
+    const duration = parseInt(textContent, 10);
+    if (isNaN(duration)) {
+      return this.config.DEFAULT_NOTE_DURATION;
+    }
+    return duration;
   }
 
   private getStem(ctx: NodeHandlerCtx<'note'>): string | null {
