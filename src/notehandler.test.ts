@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from './di';
 import * as msg from './msg';
 import { NoopReceiver } from './noopreceiver';
 import { NoteHandler } from './notehandler';
@@ -12,7 +13,7 @@ describe('NoteHandler', () => {
 
   beforeEach(() => {
     receiver = new NoopReceiver();
-    noteHandler = new NoteHandler();
+    noteHandler = new NoteHandler({ config: DEFAULT_CONFIG });
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
@@ -25,10 +26,12 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ stem: 'up' }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ stem: 'up', head: [{ accidental: '', accidentalCautionary: false, notehead: 'normal', pitch: '' }] })
+    );
   });
 
-  test('sends a note message with dots', () => {
+  it('sends a note message with dots', () => {
     const note = xml.note({
       dots: [xml.dot(), xml.dot()],
     });
@@ -36,6 +39,54 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ dots: 2 }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ dots: 2, head: [{ accidental: '', accidentalCautionary: false, notehead: 'normal', pitch: '' }] })
+    );
+  });
+
+  it('sends a note message with head for rests', () => {
+    const note = xml.note({
+      rest: xml.rest({
+        displayStep: xml.displayStep({ step: 'A' }),
+        displayOctave: xml.displayOctave({ octave: '4' }),
+      }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ head: [] }));
+  });
+
+  it('sends a note message with head for pitches', () => {
+    const note = xml.note({
+      pitch: xml.pitch({
+        step: xml.step({ step: 'A' }),
+        octave: xml.octave({ octave: '4' }),
+      }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ head: [{ pitch: 'A/4', accidental: '', accidentalCautionary: false, notehead: 'normal' }] })
+    );
+  });
+
+  it('sends a note message with head for pitches with accidentals', () => {
+    const note = xml.note({
+      pitch: xml.pitch({
+        step: xml.step({ step: 'A' }),
+        octave: xml.octave({ octave: '4' }),
+      }),
+      accidental: xml.accidental({ value: 'sharp', cautionary: 'yes' }),
+    });
+
+    noteHandler.sendMessages(receiver, { node: note });
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ head: [{ pitch: 'A/4', accidental: 'sharp', accidentalCautionary: true, notehead: 'normal' }] })
+    );
   });
 });
