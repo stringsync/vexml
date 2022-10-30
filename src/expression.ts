@@ -64,11 +64,17 @@ const getReturnedExpressionLiteral = (src: string): string => {
     scope = expression.body.loc!;
   }
 
-  return program
-    .tokens!.filter(isWithinScope(scope))
-    .map((token) => token.value)
-    .join('')
-    .trim();
+  return program.tokens!.filter(isWithinScope(scope)).map(getTokenValue).join('').trim();
+};
+
+const getTokenValue = (token: esprima.Token): string => {
+  const value = token.value;
+  switch (value) {
+    case 'new':
+      return `${value} `;
+    default:
+      return value;
+  }
 };
 
 const isWithinScope =
