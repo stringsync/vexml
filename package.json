@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "esprima": "^4.0.1",
-    "vexflow": "./vexflow/vexflow-5fa72362.tgz"
+    "vexflow": "^4.1.0-beta.0"
   },
   "devDependencies": {
     "@ant-design/icons": "^4.7.0",
