@@ -449,3 +449,39 @@ export const beatType: CreateNode<'beat-type', { beatType: string }> = ({ beatTy
 
   return NamedNode.of(node);
 };
+
+export const lyric: CreateNode<'lyric', { text: NamedNode<'text'>; syllabic: NamedNode<'syllabic'> }> = ({
+  syllabic,
+  text,
+} = {}) => {
+  const node = createElement('lyric');
+
+  if (syllabic) {
+    node.appendChild(syllabic.node);
+  }
+  if (text) {
+    node.appendChild(text.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const syllabic: CreateNode<'syllabic', { syllabic: string }> = ({ syllabic } = {}) => {
+  const node = createElement('syllabic');
+
+  if (syllabic) {
+    node.textContent = syllabic;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const text: CreateNode<'text', { text: string }> = ({ text } = {}) => {
+  const node = createElement('text');
+
+  if (text) {
+    node.textContent = text;
+  }
+
+  return NamedNode.of(node);
+};
