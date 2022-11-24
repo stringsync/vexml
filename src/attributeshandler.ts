@@ -14,6 +14,11 @@ type Time = {
   signature: string;
 };
 
+type Key = {
+  staff?: number | undefined;
+  fifths: number;
+};
+
 export class AttributesHandler extends NodeHandler<'attributes'> {
   private config: VexmlConfig;
 
@@ -56,11 +61,11 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   getTimes(ctx: NodeHandlerCtx<'attributes'>): Time[] {
     const times = new Array<Time>();
 
-    const elements = ctx.node.asElement().getElementsByTagName('key');
-    for (const key of elements) {
-      const staff = key.getAttribute('number');
-      const beats = key.getElementsByTagName('beats').item(0)?.textContent ?? this.config.DEFAULT_BEATS;
-      const beatType = key.getElementsByTagName('beat-type').item(0)?.textContent ?? this.config.DEFAULT_BEAT_TYPE;
+    const elements = ctx.node.asElement().getElementsByTagName('time');
+    for (const time of elements) {
+      const staff = time.getAttribute('number');
+      const beats = time.getElementsByTagName('beats').item(0)?.textContent ?? this.config.DEFAULT_BEATS;
+      const beatType = time.getElementsByTagName('beat-type').item(0)?.textContent ?? this.config.DEFAULT_BEAT_TYPE;
 
       times.push({
         staff: staff ? parseInt(staff, 10) : undefined,
@@ -71,7 +76,19 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
     return times;
   }
 
-  getKeys(ctx: NodeHandlerCtx<'attributes'>): { staff?: number | undefined; fifths: number }[] | undefined {
-    throw new Error('Method not implemented.');
+  getKeys(ctx: NodeHandlerCtx<'attributes'>): Key[] {
+    const keys = new Array<Key>();
+
+    const elements = ctx.node.asElement().getElementsByTagName('key');
+    for (const key of elements) {
+      const staff = key.getAttribute('number');
+      const fifths = key.getElementsByTagName('fifths').item(0)?.textContent;
+      keys.push({
+        staff: staff ? parseInt(staff, 10) : undefined,
+        fifths: fifths ? parseInt(fifths, 10) : this.config.DEFAULT_FIFTHS,
+      });
+    }
+
+    return keys;
   }
 }

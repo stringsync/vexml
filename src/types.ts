@@ -14,6 +14,7 @@ export type VexmlConfig = {
   DEFAULT_STAFF_LINE: number;
   DEFAULT_BEATS: string;
   DEFAULT_BEAT_TYPE: string;
+  DEFAULT_FIFTHS: number;
 };
 
 export type MeasureStartMessage = {
