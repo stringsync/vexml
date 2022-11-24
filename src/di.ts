@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { BarlineHandler } from './barlinehandler';
 import { MeasureHandler } from './measurehandler';
+import { NoteHandler } from './notehandler';
 import { PartHandler } from './parthandler';
 import { TodoHandler } from './todohandler';
 import { VexmlConfig } from './types';
@@ -26,7 +27,9 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
 
   const attributesHandler = new TodoHandler();
   const barlineHandler = new BarlineHandler();
-  const noteHandler = new TodoHandler();
+  const noteHandler = new NoteHandler({
+    config,
+  });
 
   const measureHandler = new MeasureHandler({
     config,
