@@ -15,6 +15,7 @@ export type VexmlConfig = {
   DEFAULT_BEATS: string;
   DEFAULT_BEAT_TYPE: string;
   DEFAULT_FIFTHS: number;
+  DEFAULT_SYLLABIC: string;
 };
 
 export type MeasureStartMessage = {
