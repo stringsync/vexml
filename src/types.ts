@@ -9,6 +9,9 @@ export type VexmlConfig = {
   DEFAULT_ACCIDENTAL_CAUTIONARY: boolean;
   DEFAULT_NOTEHEAD_VALUE: string;
   DEFAULT_NOTE_DURATION: number;
+  DEFAULT_STAFF_NUMBER: number;
+  DEFAULT_CLEF_SIGN: string;
+  DEFAULT_STAFF_LINE: number;
 };
 
 export type MeasureStartMessage = {
