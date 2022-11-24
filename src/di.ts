@@ -17,6 +17,9 @@ export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
   DEFAULT_ACCIDENTAL_CAUTIONARY: false,
   DEFAULT_NOTEHEAD_VALUE: 'normal',
   DEFAULT_NOTE_DURATION: 4,
+  DEFAULT_STAFF_NUMBER: 1,
+  DEFAULT_CLEF_SIGN: 'G',
+  DEFAULT_STAFF_LINE: 2,
 });
 
 /**
@@ -25,7 +28,9 @@ export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
 export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   const config = { ...DEFAULT_CONFIG, ...opts?.config };
 
-  const attributesHandler = new AttributesHandler();
+  const attributesHandler = new AttributesHandler({
+    config,
+  });
 
   const barlineHandler = new BarlineHandler();
 
