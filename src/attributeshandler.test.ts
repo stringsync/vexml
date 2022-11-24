@@ -55,5 +55,21 @@ describe(AttributesHandler, () => {
     );
   });
 
-  it.todo('sends an attributes message with keys');
+  it('sends an attributes message with keys', () => {
+    const attributes = xml.attributes({
+      keys: [xml.key({ fifths: xml.fifths({ fifths: 2 }) }), xml.key({ fifths: xml.fifths({ fifths: 0 }) })],
+    });
+
+    attributesHandler.sendMessages(receiver, { node: attributes });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[AttributesMessage]>(
+      msg.attributes({
+        keys: [
+          { fifths: 2, staff: undefined },
+          { fifths: 0, staff: undefined },
+        ],
+      })
+    );
+  });
 });
