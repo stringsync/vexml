@@ -36,7 +36,24 @@ describe(AttributesHandler, () => {
     );
   });
 
-  it.todo('sends an attributes message with times');
+  it('sends an attributes message with times', () => {
+    const attributes = xml.attributes({
+      times: [
+        xml.time({
+          times: [{ beats: xml.beats({ beats: '4' }), beatType: xml.beatType({ beatType: '4' }) }],
+        }),
+      ],
+    });
+
+    attributesHandler.sendMessages(receiver, { node: attributes });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[AttributesMessage]>(
+      msg.attributes({
+        times: [{ signature: '4/4' }],
+      })
+    );
+  });
 
   it.todo('sends an attributes message with keys');
 });

@@ -429,3 +429,23 @@ export const clefOctaveChange: CreateNode<'clefOctaveChange', { clefOctaveChange
 
   return NamedNode.of(node);
 };
+
+export const beats: CreateNode<'beats', { beats: string }> = ({ beats } = {}) => {
+  const node = createElement('beats');
+
+  if (beats) {
+    node.textContent = beats;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const beatType: CreateNode<'beat-type', { beatType: string }> = ({ beatType } = {}) => {
+  const node = createElement('beatType');
+
+  if (beatType) {
+    node.textContent = beatType;
+  }
+
+  return NamedNode.of(node);
+};
