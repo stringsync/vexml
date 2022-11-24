@@ -376,7 +376,56 @@ export const time: CreateNode<
   return NamedNode.of(node);
 };
 
-export const clef: CreateNode<'clef', Record<string, never>> = () => {
+export const clef: CreateNode<
+  'clef',
+  { staff: number; sign: NamedNode<'sign'>; line: NamedNode<'line'>; clefOctaveChange: NamedNode<'clef-octave-change'> }
+> = ({ staff, sign, line, clefOctaveChange } = {}) => {
   const node = createElement('clef');
+
+  if (staff) {
+    node.setAttribute('number', staff.toString());
+  }
+  if (sign) {
+    node.appendChild(sign.node);
+  }
+  if (line) {
+    node.appendChild(line.node);
+  }
+  if (clefOctaveChange) {
+    node.appendChild(clefOctaveChange.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const sign: CreateNode<'sign', { sign: string }> = ({ sign } = {}) => {
+  const node = createElement('sign');
+
+  if (sign) {
+    node.textContent = sign;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const line: CreateNode<'line', { line: number }> = ({ line } = {}) => {
+  const node = createElement('line');
+
+  if (line) {
+    node.textContent = line.toString();
+  }
+
+  return NamedNode.of(node);
+};
+
+export const clefOctaveChange: CreateNode<'clefOctaveChange', { clefOctaveChange: number }> = ({
+  clefOctaveChange,
+} = {}) => {
+  const node = createElement('clefOctaveChange');
+
+  if (clefOctaveChange) {
+    node.textContent = clefOctaveChange.toString();
+  }
+
   return NamedNode.of(node);
 };
