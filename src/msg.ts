@@ -2,6 +2,7 @@ import {
   AttributesMessage,
   BarlineMessage,
   BeamMessage,
+  LyricMessage,
   MeasureEndMessage,
   MeasureStartMessage,
   NotationMessage,
@@ -87,5 +88,12 @@ export const notation: CreateMsg<NotationMessage> = (args) => ({
 export const barline: CreateMsg<BarlineMessage> = (args) => ({
   msgType: 'barline',
   location: '',
+  ...args,
+});
+
+export const lyric: CreateMsg<LyricMessage> = (args) => ({
+  msgType: 'lyric',
+  text: '',
+  syllabic: '',
   ...args,
 });

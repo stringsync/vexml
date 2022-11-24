@@ -23,6 +23,7 @@ export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
   DEFAULT_BEATS: '4',
   DEFAULT_BEAT_TYPE: '4',
   DEFAULT_FIFTHS: 0,
+  DEFAULT_SYLLABIC: 'single',
 });
 
 /**
