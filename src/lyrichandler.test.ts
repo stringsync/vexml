@@ -1,6 +1,9 @@
 import { DEFAULT_CONFIG } from './di';
 import { LyricHandler } from './lyrichandler';
+import * as msg from './msg';
 import { NoopReceiver } from './noopreceiver';
+import { LyricMessage } from './types';
+import * as xml from './xml';
 
 describe(LyricHandler, () => {
   let receiver: NoopReceiver;
@@ -15,7 +18,25 @@ describe(LyricHandler, () => {
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
 
-  it.todo('sends a lyric message with text');
+  it('sends a lyric message with text', () => {
+    const lyric = xml.lyric({
+      text: xml.text({ text: 'foo' }),
+    });
 
-  it.todo('sends a lyric message with syllabics');
+    lyricHandler.sendMessages(receiver, { node: lyric });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[LyricMessage]>(msg.lyric({ text: 'foo', syllabic: 'single' }));
+  });
+
+  it('sends a lyric message with syllabics', () => {
+    const lyric = xml.lyric({
+      syllabic: xml.syllabic({ syllabic: 'begin' }),
+    });
+
+    lyricHandler.sendMessages(receiver, { node: lyric });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[LyricMessage]>(msg.lyric({ text: '', syllabic: 'begin' }));
+  });
 });
