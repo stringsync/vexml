@@ -104,9 +104,26 @@ export const note: CreateNode<
   return NamedNode.of(node);
 };
 
-export const attributes: CreateNode<'attributes', { staves: NamedNode<'staves'> }> = ({ staves } = {}) => {
+export const attributes: CreateNode<
+  'attributes',
+  {
+    staves: NamedNode<'staves'>;
+    clefs: NamedNode<'clef'>[];
+    times: NamedNode<'time'>[];
+    keys: NamedNode<'key'>[];
+  }
+> = ({ staves, clefs, times, keys } = {}) => {
   const node = createElement('attributes');
 
+  if (keys) {
+    node.append(...keys.map(getNode));
+  }
+  if (times) {
+    node.append(...times.map(getNode));
+  }
+  if (clefs) {
+    node.append(...clefs.map(getNode));
+  }
   if (staves) {
     node.append(staves.node);
   }
@@ -318,5 +335,48 @@ export const positiveDivisions: CreateNode<'positive-divisions', { divisions: nu
     node.textContent = divisions.toString();
   }
 
+  return NamedNode.of(node);
+};
+
+export const key: CreateNode<'key', { fifths: NamedNode<'fifths'> }> = ({ fifths } = {}) => {
+  const node = createElement('key');
+
+  if (fifths) {
+    node.appendChild(fifths.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const fifths: CreateNode<'fifths', { fifths: number }> = ({ fifths } = {}) => {
+  const node = createElement('fifths');
+
+  node.textContent = fifths?.toString() ?? '0';
+
+  return NamedNode.of(node);
+};
+
+export const time: CreateNode<
+  'time',
+  {
+    times: {
+      beats: NamedNode<'beats'>;
+      beatType: NamedNode<'beat-type'>;
+    }[];
+  }
+> = ({ times } = {}) => {
+  const node = createElement('time');
+
+  if (times) {
+    for (const { beats, beatType } of times) {
+      node.append(beats.node, beatType.node);
+    }
+  }
+
+  return NamedNode.of(node);
+};
+
+export const clef: CreateNode<'clef', Record<string, never>> = () => {
+  const node = createElement('clef');
   return NamedNode.of(node);
 };
