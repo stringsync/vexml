@@ -1,5 +1,6 @@
 import { DEFAULT_CONFIG } from './di';
 import * as msg from './msg';
+import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
 import { NoteHandler } from './notehandler';
 import { NoteMessage } from './types';
@@ -8,12 +9,16 @@ import * as xml from './xml';
 describe('NoteHandler', () => {
   let receiver: NoopReceiver;
   let noteHandler: NoteHandler;
+  let beamHandler: NoopHandler;
+  let lyricHandler: NoopHandler;
 
   let receiverSpy: jest.SpyInstance;
 
   beforeEach(() => {
     receiver = new NoopReceiver();
-    noteHandler = new NoteHandler({ config: DEFAULT_CONFIG });
+    beamHandler = new NoopHandler();
+    lyricHandler = new NoopHandler();
+    noteHandler = new NoteHandler({ config: DEFAULT_CONFIG, beamHandler, lyricHandler });
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
@@ -23,7 +28,7 @@ describe('NoteHandler', () => {
       stem: xml.stem({ textContent: 'up' }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ stem: 'up' }));
@@ -34,7 +39,7 @@ describe('NoteHandler', () => {
       dots: [xml.dot(), xml.dot()],
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ dots: 2 }));
@@ -48,7 +53,7 @@ describe('NoteHandler', () => {
       }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ head: [] }));
@@ -62,7 +67,7 @@ describe('NoteHandler', () => {
       }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
@@ -79,7 +84,7 @@ describe('NoteHandler', () => {
       accidental: xml.accidental({ value: 'sharp', cautionary: 'yes' }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
@@ -92,7 +97,7 @@ describe('NoteHandler', () => {
       grace: xml.grace({ slash: 'no' }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
@@ -108,7 +113,7 @@ describe('NoteHandler', () => {
       grace: xml.grace({ slash: 'yes' }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
@@ -126,7 +131,7 @@ describe('NoteHandler', () => {
       }),
     });
 
-    noteHandler.sendMessages(receiver, { node: note });
+    noteHandler.sendMessages(receiver, { node: note, voice: '1' });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenCalledWith<[NoteMessage]>(msg.note({ duration: duration }));

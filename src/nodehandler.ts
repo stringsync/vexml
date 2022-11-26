@@ -8,6 +8,8 @@ export type NodeHandlerCtx<T extends string> = {
 /**
  * Derives vexml messages from MusicXML nodes.
  */
-export abstract class NodeHandler<T extends string> implements VexmlMessageProducer<NodeHandlerCtx<T>> {
-  abstract sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<T>): void;
+export abstract class NodeHandler<T extends string, S extends NodeHandlerCtx<T> = NodeHandlerCtx<T>>
+  implements VexmlMessageProducer<S>
+{
+  abstract sendMessages(receiver: VexmlMessageReceiver, ctx: S): void;
 }

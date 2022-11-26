@@ -40,7 +40,7 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   getClefs(ctx: NodeHandlerCtx<'attributes'>): Clef[] {
     const clefs = new Array<Clef>();
 
-    const elements = ctx.node.asElement().getElementsByTagName('clef');
+    const elements = Array.from(ctx.node.asElement().getElementsByTagName('clef'));
     for (const clef of elements) {
       const staff = clef.getAttribute('number');
       const sign = clef.getElementsByTagName('sign').item(0)?.textContent;
@@ -61,7 +61,7 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   getTimes(ctx: NodeHandlerCtx<'attributes'>): Time[] {
     const times = new Array<Time>();
 
-    const elements = ctx.node.asElement().getElementsByTagName('time');
+    const elements = Array.from(ctx.node.asElement().getElementsByTagName('time'));
     for (const time of elements) {
       const staff = time.getAttribute('number');
       const beats = time.getElementsByTagName('beats').item(0)?.textContent ?? this.config.DEFAULT_BEATS;
@@ -79,7 +79,7 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   getKeys(ctx: NodeHandlerCtx<'attributes'>): Key[] {
     const keys = new Array<Key>();
 
-    const elements = ctx.node.asElement().getElementsByTagName('key');
+    const elements = Array.from(ctx.node.asElement().getElementsByTagName('key'));
     for (const key of elements) {
       const staff = key.getAttribute('number');
       const fifths = key.getElementsByTagName('fifths').item(0)?.textContent;
