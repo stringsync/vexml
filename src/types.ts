@@ -64,6 +64,11 @@ export type VoiceEndMessage = {
   voice: string;
 };
 
+export type VoiceStartMessage = {
+  msgType: 'voiceStart';
+  voice: string;
+};
+
 export type NoteMessageHead = Array<{
   pitch: string;
   accidental: string;
@@ -120,6 +125,7 @@ export type VexmlMessage =
   | PartStartMessage
   | PartEndMessage
   | BeamMessage
+  | VoiceStartMessage
   | VoiceEndMessage;
 
 export interface LegacyVexmlMessageProducer {
