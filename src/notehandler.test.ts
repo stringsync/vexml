@@ -11,6 +11,7 @@ describe('NoteHandler', () => {
   let noteHandler: NoteHandler;
   let beamHandler: NoopHandler;
   let lyricHandler: NoopHandler;
+  let notationsHandler: NoopHandler;
 
   let receiverSpy: jest.SpyInstance;
 
@@ -18,7 +19,8 @@ describe('NoteHandler', () => {
     receiver = new NoopReceiver();
     beamHandler = new NoopHandler();
     lyricHandler = new NoopHandler();
-    noteHandler = new NoteHandler({ config: DEFAULT_CONFIG, beamHandler, lyricHandler });
+    notationsHandler = new NoopHandler();
+    noteHandler = new NoteHandler({ config: DEFAULT_CONFIG, beamHandler, lyricHandler, notationsHandler });
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
