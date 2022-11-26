@@ -35,9 +35,9 @@ export class PartHandler extends NodeHandler<'part'> {
   }
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
-    const childNodes = ctx.node.asElement().childNodes;
-    for (const childNode of childNodes) {
-      const node = NamedNode.of(childNode);
+    const children = Array.from(ctx.node.asElement().children);
+    for (const child of children) {
+      const node = NamedNode.of(child);
       if (node.isNamed('measure')) {
         this.measureHandler.sendMessages(receiver, { node });
       } else {

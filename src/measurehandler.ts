@@ -12,7 +12,7 @@ export class MeasureHandlerError extends Error {}
  */
 export class MeasureHandler extends NodeHandler<'measure'> {
   private config: VexmlConfig;
-  private noteHandler: NodeHandler<'note'>;
+  private noteHandler: NodeHandler<'note', NodeHandlerCtx<'note'> & { voice: string }>;
   private attributesHandler: NodeHandler<'attributes'>;
   private barlineHandler: NodeHandler<'barline'>;
 
@@ -45,21 +45,48 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   }
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    const childNodes = ctx.node.asElement().childNodes;
-    for (const childNode of childNodes) {
-      const node = NamedNode.of(childNode);
+    let voice = '1';
+
+    const children = Array.from(ctx.node.asElement().children);
+    for (const child of children) {
+      const node = NamedNode.of(child);
       if (node.isNamed('note')) {
-        this.noteHandler.sendMessages(receiver, { node });
+        this.noteHandler.sendMessages(
+          {
+            onMessage: (message) => {
+              if (message.msgType === 'note' && voice !== message.voice) {
+                voice = message.voice;
+                receiver.onMessage(msg.voiceEnd({ voice }));
+              }
+              receiver.onMessage(message);
+            },
+          },
+          { node, voice }
+        );
       } else if (node.isNamed('attributes')) {
         this.attributesHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('barline')) {
         this.barlineHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('staves')) {
         continue;
+      } else if (node.isNamed('backup')) {
+        continue;
+      } else if (node.isNamed('direction')) {
+        continue;
+      } else if (node.isNamed('grouping')) {
+        continue;
+      } else if (node.isNamed('harmony')) {
+        continue;
+      } else if (node.isNamed('figured-bass')) {
+        continue;
+      } else if (node.isNamed('print')) {
+        continue;
       } else {
         throw new MeasureHandlerError(`unhandled node: ${node.name}`);
       }
     }
+
+    receiver.onMessage(msg.voiceEnd({ voice }));
   }
 
   private sendEndMessage(receiver: VexmlMessageReceiver): void {
@@ -67,23 +94,23 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     receiver.onMessage(message);
   }
 
-  private getWidth(ctx: NodeHandlerCtx<'measure'>): number {
+  private getWidth(ctx: NodeHandlerCtx<'measure'>): number | undefined {
     const width = ctx.node.asElement().getAttribute('width');
     if (width) {
       const result = parseInt(width, 10);
-      return isNaN(result) ? this.config.DEFAULT_MEASURE_WIDTH_PX : result;
+      return isNaN(result) ? undefined : result;
     } else {
-      return this.config.DEFAULT_MEASURE_WIDTH_PX;
+      return undefined;
     }
   }
 
-  private getStaves(ctx: NodeHandlerCtx<'measure'>): number {
+  private getStaves(ctx: NodeHandlerCtx<'measure'>): number | undefined {
     const staves = ctx.node.asElement().getElementsByTagName('staves').item(0)?.textContent;
     if (staves) {
       const result = parseInt(staves, 10);
-      return isNaN(result) ? this.config.DEFAULT_MEASURE_NUM_STAVES : result;
+      return isNaN(result) ? undefined : result;
     } else {
-      return this.config.DEFAULT_MEASURE_NUM_STAVES;
+      return undefined;
     }
   }
 }

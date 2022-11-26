@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { AttributesHandler } from './attributeshandler';
 import { BarlineHandler } from './barlinehandler';
+import { BeamHandler } from './beamhandler';
+import { LyricHandler } from './lyrichandler';
 import { MeasureHandler } from './measurehandler';
 import { NoteHandler } from './notehandler';
 import { PartHandler } from './parthandler';
@@ -38,8 +40,16 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
 
   const barlineHandler = new BarlineHandler();
 
+  const lyricHandler = new LyricHandler({
+    config,
+  });
+
+  const beamHandler = new BeamHandler();
+
   const noteHandler = new NoteHandler({
     config,
+    beamHandler,
+    lyricHandler,
   });
 
   const measureHandler = new MeasureHandler({
@@ -61,5 +71,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
     noteHandler,
     measureHandler,
     partHandler,
+    lyricHandler,
+    beamHandler,
   } as const;
 };

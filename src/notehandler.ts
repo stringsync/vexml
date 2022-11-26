@@ -1,26 +1,71 @@
 import * as msg from './msg';
+import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { NoteMessageHead, VexmlConfig, VexmlMessageReceiver } from './types';
 
-export class NoteHandler extends NodeHandler<'note'> {
-  private config: VexmlConfig;
+export type NoteHandlerCtx = NodeHandlerCtx<'note'> & {
+  voice: string;
+};
 
-  constructor(opts: { config: VexmlConfig }) {
+export class NoteHandler extends NodeHandler<'note', NoteHandlerCtx> {
+  private config: VexmlConfig;
+  private beamHandler: NodeHandler<'beam'>;
+  private lyricHandler: NodeHandler<'lyric'>;
+
+  constructor(opts: { config: VexmlConfig; beamHandler: NodeHandler<'beam'>; lyricHandler: NodeHandler<'lyric'> }) {
     super();
 
     this.config = opts.config;
+    this.beamHandler = opts.beamHandler;
+    this.lyricHandler = opts.lyricHandler;
   }
 
-  sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'note'>): void {
-    const message = msg.note({
-      stem: this.getStem(ctx),
-      dots: this.getDots(ctx),
-      head: this.getHead(ctx),
-      grace: this.getGrace(ctx),
-      graceSlash: this.getGraceSlash(ctx),
-      duration: this.getDuration(ctx),
-    });
-    receiver.onMessage(message);
+  sendMessages(receiver: VexmlMessageReceiver, ctx: NoteHandlerCtx): void {
+    receiver.onMessage(
+      msg.note({
+        stem: this.getStem(ctx),
+        dots: this.getDots(ctx),
+        head: this.getHead(ctx),
+        duration: this.getDuration(ctx),
+        grace: this.getGrace(ctx),
+        graceSlash: this.getGraceSlash(ctx),
+        arpeggiate: this.getArpeggiate(ctx),
+        arpeggiateDirection: this.getArpeggiateDirection(ctx),
+        type: this.getType(ctx),
+        voice: this.getVoice(ctx),
+        staff: this.getStaff(ctx),
+      })
+    );
+
+    const beam = ctx.node.asElement().getElementsByTagName('beam').item(0);
+    if (beam) {
+      this.beamHandler.sendMessages(receiver, { node: NamedNode.of<'beam'>(beam) });
+    }
+
+    const lyric = ctx.node.asElement().getElementsByTagName('lyric').item(0);
+    if (lyric) {
+      this.lyricHandler.sendMessages(receiver, { node: NamedNode.of<'lyric'>(lyric) });
+    }
+  }
+
+  private getStaff(ctx: NodeHandlerCtx<'note'>): number {
+    return parseInt(ctx.node.asElement().getElementsByTagName('staff').item(0)?.textContent ?? '1', 10);
+  }
+
+  private getVoice(ctx: NodeHandlerCtx<'note'>): string | undefined {
+    return ctx.node.asElement().getElementsByTagName('voice').item(0)?.textContent ?? '1';
+  }
+
+  private getArpeggiateDirection(ctx: NodeHandlerCtx<'note'>): string | undefined {
+    return ctx.node.asElement().getElementsByTagName('arpeggiate').item(0)?.getAttribute('direction') ?? undefined;
+  }
+
+  private getArpeggiate(ctx: NodeHandlerCtx<'note'>): boolean {
+    return ctx.node.asElement().getElementsByTagName('arpeggiate').length > 0;
+  }
+
+  private getType(ctx: NodeHandlerCtx<'note'>): string {
+    return ctx.node.asElement().getElementsByTagName('type').item(0)?.textContent ?? 'whole';
   }
 
   private getDuration(ctx: NodeHandlerCtx<'note'>): number {
@@ -33,7 +78,7 @@ export class NoteHandler extends NodeHandler<'note'> {
   }
 
   private getStem(ctx: NodeHandlerCtx<'note'>): string | null {
-    return ctx.node.asElement().getElementsByTagName('stem').item(0)?.textContent ?? this.config.DEFAULT_STEM_VALUE;
+    return ctx.node.asElement().getElementsByTagName('stem').item(0)?.textContent ?? null;
   }
 
   private getDots(ctx: NodeHandlerCtx<'note'>): number {
