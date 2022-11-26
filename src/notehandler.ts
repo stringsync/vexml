@@ -24,6 +24,10 @@ export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'note'>): void {
+    if (this.isChordTail(ctx)) {
+      return;
+    }
+
     receiver.onMessage(
       msg.note({
         stem: this.getStem(ctx),
@@ -54,6 +58,41 @@ export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
     if (lyric) {
       this.lyricHandler.sendMessages(receiver, { node: NamedNode.of(lyric) });
     }
+  }
+
+  private isChordHead(ctx: NodeHandlerCtx<'note'>) {
+    const sibling = ctx.node.asElement().nextElementSibling;
+    if (!sibling) {
+      return false;
+    }
+
+    const node = NamedNode.of(sibling);
+    if (!node.isNamed('note')) {
+      return false;
+    }
+
+    return this.isChordTail({ node });
+  }
+
+  private isChordTail(ctx: NodeHandlerCtx<'note'>) {
+    return ctx.node.asElement().getElementsByTagName('chord').length > 0;
+  }
+
+  private getChordTail(ctx: NodeHandlerCtx<'note'>): NamedNode<'note'>[] {
+    const siblings = new Array<NamedNode<'note'>>();
+
+    let sibling = ctx.node.asElement().nextElementSibling;
+    while (sibling) {
+      const node = NamedNode.of(sibling);
+      if (node.isNamed('note') && this.isChordTail({ node })) {
+        siblings.push(node);
+      } else {
+        break;
+      }
+      sibling = sibling.nextElementSibling;
+    }
+
+    return siblings;
   }
 
   private getStaff(ctx: NodeHandlerCtx<'note'>): number {
@@ -94,14 +133,31 @@ export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
   }
 
   private getHead(ctx: NodeHandlerCtx<'note'>): NoteMessageHead {
+    const head: NoteMessageHead = [];
+
     if (this.isRest(ctx)) {
-      return [];
+      return head;
     }
-    const pitch = this.getPitch(ctx);
-    const accidental = this.getAccidental(ctx);
-    const accidentalCautionary = this.getAccidentalCautionary(ctx);
-    const notehead = this.getNotehead(ctx);
-    return [{ pitch, accidental, accidentalCautionary, notehead }];
+
+    head.push({
+      pitch: this.getPitch(ctx),
+      accidental: this.getAccidental(ctx),
+      accidentalCautionary: this.getAccidentalCautionary(ctx),
+      notehead: this.getNotehead(ctx),
+    });
+
+    if (this.isChordHead(ctx)) {
+      for (const node of this.getChordTail(ctx)) {
+        head.push({
+          pitch: this.getPitch({ node }),
+          accidental: this.getAccidental({ node }),
+          accidentalCautionary: this.getAccidentalCautionary({ node }),
+          notehead: this.getNotehead({ node }),
+        });
+      }
+    }
+
+    return head;
   }
 
   private getGrace(ctx: NodeHandlerCtx<'note'>): boolean {
