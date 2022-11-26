@@ -3,11 +3,7 @@ import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { NoteMessageHead, VexmlConfig, VexmlMessageReceiver } from './types';
 
-export type NoteHandlerCtx = NodeHandlerCtx<'note'> & {
-  voice: string;
-};
-
-export class NoteHandler extends NodeHandler<'note', NoteHandlerCtx> {
+export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
   private config: VexmlConfig;
   private beamHandler: NodeHandler<'beam'>;
   private lyricHandler: NodeHandler<'lyric'>;
@@ -20,7 +16,7 @@ export class NoteHandler extends NodeHandler<'note', NoteHandlerCtx> {
     this.lyricHandler = opts.lyricHandler;
   }
 
-  sendMessages(receiver: VexmlMessageReceiver, ctx: NoteHandlerCtx): void {
+  sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'note'>): void {
     receiver.onMessage(
       msg.note({
         stem: this.getStem(ctx),
