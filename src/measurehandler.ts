@@ -1,4 +1,5 @@
 import * as msg from './msg';
+import { MultiReceiver } from './multireceiver';
 import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 import { VexmlConfig, VexmlMessageReceiver } from './types';
@@ -12,7 +13,7 @@ export class MeasureHandlerError extends Error {}
  */
 export class MeasureHandler extends NodeHandler<'measure'> {
   private config: VexmlConfig;
-  private noteHandler: NodeHandler<'note', NodeHandlerCtx<'note'> & { voice: string }>;
+  private noteHandler: NodeHandler<'note'>;
   private attributesHandler: NodeHandler<'attributes'>;
   private barlineHandler: NodeHandler<'barline'>;
 
@@ -46,23 +47,20 @@ export class MeasureHandler extends NodeHandler<'measure'> {
 
   private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
     let voice = '1';
+    const voiceTracker: VexmlMessageReceiver = {
+      onMessage: (message) => {
+        if (message.msgType === 'note' && voice !== message.voice) {
+          voice = message.voice;
+          receiver.onMessage(msg.voiceEnd({ voice }));
+        }
+      },
+    };
 
     const children = Array.from(ctx.node.asElement().children);
     for (const child of children) {
       const node = NamedNode.of(child);
       if (node.isNamed('note')) {
-        this.noteHandler.sendMessages(
-          {
-            onMessage: (message) => {
-              if (message.msgType === 'note' && voice !== message.voice) {
-                voice = message.voice;
-                receiver.onMessage(msg.voiceEnd({ voice }));
-              }
-              receiver.onMessage(message);
-            },
-          },
-          { node, voice }
-        );
+        this.noteHandler.sendMessages(MultiReceiver.of(voiceTracker, receiver), { node });
       } else if (node.isNamed('attributes')) {
         this.attributesHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('barline')) {
