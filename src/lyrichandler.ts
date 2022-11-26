@@ -12,11 +12,12 @@ export class LyricHandler extends NodeHandler<'lyric'> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'lyric'>): void {
-    const message = msg.lyric({
-      text: this.getText(ctx),
-      syllabic: this.getSyllabic(ctx),
-    });
-    receiver.onMessage(message);
+    receiver.onMessage(
+      msg.lyric({
+        text: this.getText(ctx),
+        syllabic: this.getSyllabic(ctx),
+      })
+    );
   }
 
   getSyllabic(ctx: NodeHandlerCtx<'lyric'>): string {
