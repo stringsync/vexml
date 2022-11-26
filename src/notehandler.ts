@@ -7,13 +7,20 @@ export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
   private config: VexmlConfig;
   private beamHandler: NodeHandler<'beam'>;
   private lyricHandler: NodeHandler<'lyric'>;
+  private notationsHandler: NodeHandler<'notations'>;
 
-  constructor(opts: { config: VexmlConfig; beamHandler: NodeHandler<'beam'>; lyricHandler: NodeHandler<'lyric'> }) {
+  constructor(opts: {
+    config: VexmlConfig;
+    beamHandler: NodeHandler<'beam'>;
+    lyricHandler: NodeHandler<'lyric'>;
+    notationsHandler: NodeHandler<'notations'>;
+  }) {
     super();
 
     this.config = opts.config;
     this.beamHandler = opts.beamHandler;
     this.lyricHandler = opts.lyricHandler;
+    this.notationsHandler = opts.notationsHandler;
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'note'>): void {
@@ -33,14 +40,19 @@ export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {
       })
     );
 
+    const notations = ctx.node.asElement().getElementsByTagName('notations').item(0);
+    if (notations) {
+      this.notationsHandler.sendMessages(receiver, { node: NamedNode.of(notations) });
+    }
+
     const beam = ctx.node.asElement().getElementsByTagName('beam').item(0);
     if (beam) {
-      this.beamHandler.sendMessages(receiver, { node: NamedNode.of<'beam'>(beam) });
+      this.beamHandler.sendMessages(receiver, { node: NamedNode.of(beam) });
     }
 
     const lyric = ctx.node.asElement().getElementsByTagName('lyric').item(0);
     if (lyric) {
-      this.lyricHandler.sendMessages(receiver, { node: NamedNode.of<'lyric'>(lyric) });
+      this.lyricHandler.sendMessages(receiver, { node: NamedNode.of(lyric) });
     }
   }
 
