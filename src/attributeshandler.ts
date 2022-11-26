@@ -29,12 +29,13 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'attributes'>): void {
-    const message = msg.attributes({
-      clefs: this.getClefs(ctx),
-      times: this.getTimes(ctx),
-      keys: this.getKeys(ctx),
-    });
-    receiver.onMessage(message);
+    receiver.onMessage(
+      msg.attributes({
+        clefs: this.getClefs(ctx),
+        times: this.getTimes(ctx),
+        keys: this.getKeys(ctx),
+      })
+    );
   }
 
   getClefs(ctx: NodeHandlerCtx<'attributes'>): Clef[] {

@@ -9,13 +9,14 @@ import { VexmlMessageReceiver } from './types';
  */
 export class BarlineHandler extends NodeHandler<'barline'> {
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'barline'>): void {
-    const message = msg.barline({
-      barStyle: this.getBarStyle(ctx),
-      repeatDirection: this.getRepeatDirection(ctx),
-      location: this.getLocation(ctx),
-      ending: this.getEnding(ctx),
-    });
-    receiver.onMessage(message);
+    receiver.onMessage(
+      msg.barline({
+        barStyle: this.getBarStyle(ctx),
+        repeatDirection: this.getRepeatDirection(ctx),
+        location: this.getLocation(ctx),
+        ending: this.getEnding(ctx),
+      })
+    );
   }
 
   private getBarStyle(ctx: NodeHandlerCtx<'barline'>): string | null {

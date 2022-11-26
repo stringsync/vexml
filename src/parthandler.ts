@@ -22,19 +22,12 @@ export class PartHandler extends NodeHandler<'part'> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>): void {
-    this.sendStartMessage(receiver, ctx);
-    this.sendContentMessages(receiver, ctx);
-    this.sendEndMessage(receiver, ctx);
-  }
+    receiver.onMessage(
+      msg.partStart({
+        id: this.getId(ctx),
+      })
+    );
 
-  private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
-    const message = msg.partStart({
-      id: this.getId(ctx),
-    });
-    receiver.onMessage(message);
-  }
-
-  private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
     const children = Array.from(ctx.node.asElement().children);
     for (const child of children) {
       const node = NamedNode.of(child);
@@ -44,13 +37,12 @@ export class PartHandler extends NodeHandler<'part'> {
         throw new PartHandlerError(`unhandled node: ${node.name}`);
       }
     }
-  }
 
-  private sendEndMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'part'>) {
-    const message = msg.partEnd({
-      id: this.getId(ctx),
-    });
-    receiver.onMessage(message);
+    receiver.onMessage(
+      msg.partEnd({
+        id: this.getId(ctx),
+      })
+    );
   }
 
   private getId(ctx: NodeHandlerCtx<'part'>): string {
