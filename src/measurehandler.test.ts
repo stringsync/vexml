@@ -40,8 +40,8 @@ describe('MeasureHandler', () => {
 
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
-      staves: 0,
-      width: 100,
+      staves: undefined,
+      width: undefined,
     });
   });
 
@@ -52,7 +52,7 @@ describe('MeasureHandler', () => {
 
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
-      staves: 0,
+      staves: undefined,
       width: 42,
     });
   });
@@ -71,7 +71,7 @@ describe('MeasureHandler', () => {
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 3,
-      width: 100,
+      width: undefined,
     });
   });
 

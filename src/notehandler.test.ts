@@ -33,7 +33,9 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ stem: 'up' }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ stem: 'up', staff: 1, type: 'whole', voice: '1' })
+    );
   });
 
   it('sends a note message with dots', () => {
@@ -44,7 +46,9 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ dots: 2 }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ dots: 2, staff: 1, type: 'whole', voice: '1' })
+    );
   });
 
   it('sends a note message with head for rests', () => {
@@ -58,7 +62,9 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(msg.note({ head: [] }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ head: [], staff: 1, type: 'whole', voice: '1' })
+    );
   });
 
   it('sends a note message with head for pitches', () => {
@@ -73,7 +79,12 @@ describe('NoteHandler', () => {
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({ head: [{ pitch: 'A/4', accidental: '', accidentalCautionary: false, notehead: 'normal' }] })
+      msg.note({
+        head: [{ pitch: 'A/4', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
+        staff: 1,
+        type: 'whole',
+        voice: '1',
+      })
     );
   });
 
@@ -90,7 +101,12 @@ describe('NoteHandler', () => {
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({ head: [{ pitch: 'A/4', accidental: 'sharp', accidentalCautionary: true, notehead: 'normal' }] })
+      msg.note({
+        head: [{ pitch: 'A/4', accidental: 'sharp', accidentalCautionary: true, notehead: 'normal' }],
+        staff: 1,
+        type: 'whole',
+        voice: '1',
+      })
     );
   });
 
@@ -103,10 +119,7 @@ describe('NoteHandler', () => {
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({
-        grace: true,
-        graceSlash: false,
-      })
+      msg.note({ grace: true, graceSlash: false, staff: 1, type: 'whole', voice: '1' })
     );
   });
 
@@ -119,10 +132,7 @@ describe('NoteHandler', () => {
 
     expect(receiverSpy).toHaveBeenCalledOnce();
     expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
-      msg.note({
-        grace: true,
-        graceSlash: true,
-      })
+      msg.note({ grace: true, graceSlash: true, staff: 1, type: 'whole', voice: '1' })
     );
   });
 
@@ -136,6 +146,8 @@ describe('NoteHandler', () => {
     noteHandler.sendMessages(receiver, { node: note });
 
     expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenCalledWith<[NoteMessage]>(msg.note({ duration: duration }));
+    expect(receiverSpy).toHaveBeenLastCalledWith<[NoteMessage]>(
+      msg.note({ duration, staff: 1, type: 'whole', voice: '1' })
+    );
   });
 });
