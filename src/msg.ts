@@ -11,6 +11,7 @@ import {
   PartStartMessage,
   VexmlMessage,
   VoiceEndMessage,
+  VoiceStartMessage,
 } from './types';
 
 type CreateMsg<T extends VexmlMessage> = (args?: Omit<Partial<T>, 'msgType'>) => T;
@@ -58,6 +59,12 @@ export const beam: CreateMsg<BeamMessage> = (args) => ({
 
 export const voiceEnd: CreateMsg<VoiceEndMessage> = (args) => ({
   msgType: 'voiceEnd',
+  voice: '',
+  ...args,
+});
+
+export const voiceStart: CreateMsg<VoiceStartMessage> = (args) => ({
+  msgType: 'voiceStart',
   voice: '',
   ...args,
 });

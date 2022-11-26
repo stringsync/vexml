@@ -32,35 +32,39 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    this.sendStartMessage(receiver, ctx);
-    this.sendContentMessages(receiver, ctx);
-    this.sendEndMessage(receiver);
-  }
+    let voice: string | null = null;
+    receiver = MultiReceiver.of(
+      {
+        onMessage: (message) => {
+          if (message.msgType !== 'note') {
+            return;
+          }
 
-  private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    const message = msg.measureStart({
-      width: this.getWidth(ctx),
-      staves: this.getStaves(ctx),
-    });
-    receiver.onMessage(message);
-  }
-
-  private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    let voice = '1';
-    const voiceTracker: VexmlMessageReceiver = {
-      onMessage: (message) => {
-        if (message.msgType === 'note' && voice !== message.voice) {
-          voice = message.voice;
-          receiver.onMessage(msg.voiceEnd({ voice }));
-        }
+          const nextVoice = message.voice;
+          if (!voice && nextVoice) {
+            receiver.onMessage(msg.voiceStart({ voice: nextVoice }));
+          } else if (voice && voice !== nextVoice) {
+            receiver.onMessage(msg.voiceEnd({ voice }));
+            receiver.onMessage(msg.voiceStart({ voice: nextVoice }));
+          }
+          voice = nextVoice;
+        },
       },
-    };
+      receiver
+    );
+
+    receiver.onMessage(
+      msg.measureStart({
+        width: this.getWidth(ctx),
+        staves: this.getStaves(ctx),
+      })
+    );
 
     const children = Array.from(ctx.node.asElement().children);
     for (const child of children) {
       const node = NamedNode.of(child);
       if (node.isNamed('note')) {
-        this.noteHandler.sendMessages(MultiReceiver.of(voiceTracker, receiver), { node });
+        this.noteHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('attributes')) {
         this.attributesHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('barline')) {
@@ -84,12 +88,11 @@ export class MeasureHandler extends NodeHandler<'measure'> {
       }
     }
 
-    receiver.onMessage(msg.voiceEnd({ voice }));
-  }
+    if (voice) {
+      receiver.onMessage(msg.voiceEnd({ voice }));
+    }
 
-  private sendEndMessage(receiver: VexmlMessageReceiver): void {
-    const message = msg.measureEnd();
-    receiver.onMessage(message);
+    receiver.onMessage(msg.measureEnd());
   }
 
   private getWidth(ctx: NodeHandlerCtx<'measure'>): number | undefined {
