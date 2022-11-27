@@ -1,3 +1,23 @@
+export type VexmlConfig = {
+  DEFAULT_MEASURE_WIDTH_PX: number;
+  DEFAULT_MEASURE_NUM_STAVES: number;
+  DEFAULT_PART_ID: string;
+  DEFAULT_STEP_VALUE: string;
+  DEFAULT_OCTAVE_VALUE: string;
+  DEFAULT_STEM_VALUE: string | null;
+  DEFAULT_ACCIDENTAL_VALUE: string;
+  DEFAULT_ACCIDENTAL_CAUTIONARY: boolean;
+  DEFAULT_NOTEHEAD_VALUE: string;
+  DEFAULT_NOTE_DURATION: number;
+  DEFAULT_STAFF_NUMBER: number;
+  DEFAULT_CLEF_SIGN: string;
+  DEFAULT_STAFF_LINE: number;
+  DEFAULT_BEATS: string;
+  DEFAULT_BEAT_TYPE: string;
+  DEFAULT_FIFTHS: number;
+  DEFAULT_SYLLABIC: string;
+};
+
 export type MeasureStartMessage = {
   msgType: 'measureStart';
   width?: number;
@@ -44,11 +64,23 @@ export type VoiceEndMessage = {
   voice: string;
 };
 
+export type VoiceStartMessage = {
+  msgType: 'voiceStart';
+  voice: string;
+};
+
+export type NoteMessageHead = Array<{
+  pitch: string;
+  accidental: string;
+  accidentalCautionary: boolean;
+  notehead: string;
+}>;
+
 export type NoteMessage = {
   msgType: 'note';
-  stem?: string;
+  stem?: string | null;
   dots: number;
-  head: { pitch: string; accidental: string; accidentalCautionary: boolean; notehead: string }[];
+  head: NoteMessageHead;
   type: string;
   duration?: number;
   grace: boolean;
@@ -76,10 +108,10 @@ export type LyricMessage = {
 
 export type BarlineMessage = {
   msgType: 'barline';
-  barStyle?: string;
-  repeatDirection?: string;
+  barStyle?: string | null;
+  repeatDirection?: string | null;
   location: string;
-  ending?: { number: string; type: string; text: string };
+  ending?: { number: string; type: string; text: string } | null;
 };
 
 export type VexmlMessage =
@@ -93,11 +125,8 @@ export type VexmlMessage =
   | PartStartMessage
   | PartEndMessage
   | BeamMessage
+  | VoiceStartMessage
   | VoiceEndMessage;
-
-export interface LegacyVexmlMessageProducer {
-  message(receiver: VexmlMessageReceiver): void;
-}
 
 export interface VexmlMessageProducer<T = never> {
   sendMessages(receiver: VexmlMessageReceiver, ctx: T): void;

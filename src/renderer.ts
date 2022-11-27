@@ -2,8 +2,8 @@ import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
 import { Attributes } from './attributes';
 import { CodePrinter } from './codeprinter';
-import { LegacyProducer } from './legacyproducer';
 import { Notations } from './notations';
+import { Producer } from './producer';
 import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
@@ -20,7 +20,7 @@ export class Renderer implements VexmlMessageReceiver {
 
     const factory = t.const('factory', () => new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } }));
     const renderer = new Renderer(factory, t);
-    LegacyProducer.feed(musicXml).message(renderer);
+    Producer.feed(musicXml).sendMessages(renderer);
     renderer.render();
   }
 

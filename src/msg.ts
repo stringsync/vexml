@@ -2,6 +2,7 @@ import {
   AttributesMessage,
   BarlineMessage,
   BeamMessage,
+  LyricMessage,
   MeasureEndMessage,
   MeasureStartMessage,
   NotationMessage,
@@ -10,6 +11,7 @@ import {
   PartStartMessage,
   VexmlMessage,
   VoiceEndMessage,
+  VoiceStartMessage,
 } from './types';
 
 type CreateMsg<T extends VexmlMessage> = (args?: Omit<Partial<T>, 'msgType'>) => T;
@@ -61,14 +63,23 @@ export const voiceEnd: CreateMsg<VoiceEndMessage> = (args) => ({
   ...args,
 });
 
+export const voiceStart: CreateMsg<VoiceStartMessage> = (args) => ({
+  msgType: 'voiceStart',
+  voice: '',
+  ...args,
+});
+
 export const note: CreateMsg<NoteMessage> = (args) => ({
   msgType: 'note',
+  stem: null,
   dots: 0,
-  head: [],
+  head: [{ pitch: '', accidental: '', accidentalCautionary: false, notehead: 'normal' }],
+  duration: 4,
   type: '',
   grace: false,
   graceSlash: false,
   arpeggiate: false,
+  arpeggiateDirection: undefined,
   voice: '',
   staff: 0,
   ...args,
@@ -85,5 +96,12 @@ export const notation: CreateMsg<NotationMessage> = (args) => ({
 export const barline: CreateMsg<BarlineMessage> = (args) => ({
   msgType: 'barline',
   location: '',
+  ...args,
+});
+
+export const lyric: CreateMsg<LyricMessage> = (args) => ({
+  msgType: 'lyric',
+  text: '',
+  syllabic: '',
   ...args,
 });

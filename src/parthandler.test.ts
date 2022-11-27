@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from './di';
 import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
 import { PartHandler } from './parthandler';
@@ -14,7 +15,7 @@ describe('PartHandler', () => {
   beforeEach(() => {
     receiver = new NoopReceiver();
     measureHandler = new NoopHandler();
-    partHandler = new PartHandler({ measureHandler });
+    partHandler = new PartHandler({ config: DEFAULT_CONFIG, measureHandler });
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
@@ -78,8 +79,10 @@ describe('PartHandler', () => {
   it('handles measure nodes', () => {
     const measureHandlerSpy = jest.spyOn(measureHandler, 'sendMessages');
 
-    const measures = [xml.measure(), xml.measure(), xml.measure()];
-    const part = xml.part({ id: 'foo', measures });
+    const part = xml.part({
+      id: 'foo',
+      measures: [xml.measure(), xml.measure(), xml.measure()],
+    });
 
     partHandler.sendMessages(receiver, { node: part });
 
