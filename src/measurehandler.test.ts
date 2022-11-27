@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from './di';
 import { MeasureHandler } from './measurehandler';
 import { NoopHandler } from './noophandler';
 import { NoopReceiver } from './noopreceiver';
@@ -19,6 +20,7 @@ describe('MeasureHandler', () => {
     attributesHandler = new NoopHandler();
     barlineHandler = new NoopHandler();
     measureHandler = new MeasureHandler({
+      config: DEFAULT_CONFIG,
       attributesHandler,
       barlineHandler,
       noteHandler,
@@ -38,8 +40,8 @@ describe('MeasureHandler', () => {
 
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
-      staves: 0,
-      width: 100,
+      staves: undefined,
+      width: undefined,
     });
   });
 
@@ -50,22 +52,26 @@ describe('MeasureHandler', () => {
 
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
-      staves: 0,
+      staves: undefined,
       width: 42,
     });
   });
 
   it('sends a measure start message with the specified staves', () => {
-    const staves = xml.staves({ numStaves: 3 });
-    const attributes = [xml.attributes({ staves })];
-    const measure = xml.measure({ attributes });
+    const measure = xml.measure({
+      attributes: [
+        xml.attributes({
+          staves: xml.staves({ numStaves: 3 }),
+        }),
+      ],
+    });
 
     measureHandler.sendMessages(receiver, { node: measure });
 
     expect(receiverSpy).toHaveBeenNthCalledWith<[MeasureStartMessage]>(1, {
       msgType: 'measureStart',
       staves: 3,
-      width: 100,
+      width: undefined,
     });
   });
 

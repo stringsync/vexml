@@ -1,10 +1,8 @@
 import * as msg from './msg';
+import { MultiReceiver } from './multireceiver';
 import { NamedNode } from './namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlMessageReceiver } from './types';
-
-const DEFAULT_MEASURE_WIDTH_PX = 100;
-const DEFAULT_NUM_STAVES = 0;
+import { VexmlConfig, VexmlMessageReceiver } from './types';
 
 export class MeasureHandlerError extends Error {}
 
@@ -14,39 +12,57 @@ export class MeasureHandlerError extends Error {}
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
  */
 export class MeasureHandler extends NodeHandler<'measure'> {
+  private config: VexmlConfig;
   private noteHandler: NodeHandler<'note'>;
   private attributesHandler: NodeHandler<'attributes'>;
   private barlineHandler: NodeHandler<'barline'>;
 
   constructor(opts: {
+    config: VexmlConfig;
     noteHandler: NodeHandler<'note'>;
     attributesHandler: NodeHandler<'attributes'>;
     barlineHandler: NodeHandler<'barline'>;
   }) {
     super();
+
+    this.config = opts.config;
     this.noteHandler = opts.noteHandler;
     this.attributesHandler = opts.attributesHandler;
     this.barlineHandler = opts.barlineHandler;
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    this.sendStartMessage(receiver, ctx);
-    this.sendContentMessages(receiver, ctx);
-    this.sendEndMessage(receiver);
-  }
+    let voice: string | null = null;
+    receiver = MultiReceiver.of(
+      {
+        onMessage: (message) => {
+          if (message.msgType !== 'note') {
+            return;
+          }
 
-  private sendStartMessage(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    const message = msg.measureStart({
-      width: this.getWidth(ctx),
-      staves: this.getStaves(ctx),
-    });
-    receiver.onMessage(message);
-  }
+          const nextVoice = message.voice;
+          if (!voice && nextVoice) {
+            receiver.onMessage(msg.voiceStart({ voice: nextVoice }));
+          } else if (voice && voice !== nextVoice) {
+            receiver.onMessage(msg.voiceEnd({ voice }));
+            receiver.onMessage(msg.voiceStart({ voice: nextVoice }));
+          }
+          voice = nextVoice;
+        },
+      },
+      receiver
+    );
 
-  private sendContentMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
-    const childNodes = ctx.node.asElement().childNodes;
-    for (const childNode of childNodes) {
-      const node = NamedNode.of(childNode);
+    receiver.onMessage(
+      msg.measureStart({
+        width: this.getWidth(ctx),
+        staves: this.getStaves(ctx),
+      })
+    );
+
+    const children = Array.from(ctx.node.asElement().children);
+    for (const child of children) {
+      const node = NamedNode.of(child);
       if (node.isNamed('note')) {
         this.noteHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('attributes')) {
@@ -55,34 +71,47 @@ export class MeasureHandler extends NodeHandler<'measure'> {
         this.barlineHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('staves')) {
         continue;
+      } else if (node.isNamed('backup')) {
+        continue;
+      } else if (node.isNamed('direction')) {
+        continue;
+      } else if (node.isNamed('grouping')) {
+        continue;
+      } else if (node.isNamed('harmony')) {
+        continue;
+      } else if (node.isNamed('figured-bass')) {
+        continue;
+      } else if (node.isNamed('print')) {
+        continue;
       } else {
         throw new MeasureHandlerError(`unhandled node: ${node.name}`);
       }
     }
+
+    if (voice) {
+      receiver.onMessage(msg.voiceEnd({ voice }));
+    }
+
+    receiver.onMessage(msg.measureEnd());
   }
 
-  private sendEndMessage(receiver: VexmlMessageReceiver): void {
-    const message = msg.measureEnd();
-    receiver.onMessage(message);
-  }
-
-  private getWidth(ctx: NodeHandlerCtx<'measure'>): number {
+  private getWidth(ctx: NodeHandlerCtx<'measure'>): number | undefined {
     const width = ctx.node.asElement().getAttribute('width');
     if (width) {
       const result = parseInt(width, 10);
-      return isNaN(result) ? DEFAULT_MEASURE_WIDTH_PX : result;
+      return isNaN(result) ? undefined : result;
     } else {
-      return DEFAULT_MEASURE_WIDTH_PX;
+      return undefined;
     }
   }
 
-  private getStaves(ctx: NodeHandlerCtx<'measure'>): number {
+  private getStaves(ctx: NodeHandlerCtx<'measure'>): number | undefined {
     const staves = ctx.node.asElement().getElementsByTagName('staves').item(0)?.textContent;
     if (staves) {
       const result = parseInt(staves, 10);
-      return isNaN(result) ? DEFAULT_NUM_STAVES : result;
+      return isNaN(result) ? undefined : result;
     } else {
-      return DEFAULT_NUM_STAVES;
+      return undefined;
     }
   }
 }
