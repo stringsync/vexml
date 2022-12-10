@@ -1,6 +1,6 @@
-import * as msg from './msg';
+import * as msg from '../msg';
+import { VexmlConfig, VexmlMessageReceiver } from '../types';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlConfig, VexmlMessageReceiver } from './types';
 
 type Clef = {
   staff: number;

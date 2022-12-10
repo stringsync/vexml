@@ -1,6 +1,6 @@
-import * as msg from './msg';
+import * as msg from '../msg';
+import { VexmlMessageReceiver } from '../types';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlMessageReceiver } from './types';
 
 /**
  * Produces vexml messages from <barline> nodes.

@@ -1,10 +1,10 @@
-import { DEFAULT_CONFIG } from './di';
-import * as msg from './msg';
+import { DEFAULT_CONFIG } from '../di';
+import * as msg from '../msg';
+import { NoopReceiver } from '../noopreceiver';
+import { NoteMessage } from '../types';
+import * as xml from '../xml';
 import { NoopHandler } from './noophandler';
-import { NoopReceiver } from './noopreceiver';
 import { NoteHandler } from './notehandler';
-import { NoteMessage } from './types';
-import * as xml from './xml';
 
 describe('NoteHandler', () => {
   let receiver: NoopReceiver;

@@ -1,7 +1,7 @@
+import { NoopReceiver } from '../noopreceiver';
+import * as xml from '../xml';
 import { NoopHandler } from './noophandler';
-import { NoopReceiver } from './noopreceiver';
 import { Producer } from './producer';
-import * as xml from './xml';
 
 describe('Producer', () => {
   describe('feed', () => {

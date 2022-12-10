@@ -1,9 +1,9 @@
+import { DEFAULT_CONFIG } from '../di';
+import * as msg from '../msg';
+import { NoopReceiver } from '../noopreceiver';
+import { AttributesMessage } from '../types';
+import * as xml from '../xml';
 import { AttributesHandler } from './attributeshandler';
-import { DEFAULT_CONFIG } from './di';
-import * as msg from './msg';
-import { NoopReceiver } from './noopreceiver';
-import { AttributesMessage } from './types';
-import * as xml from './xml';
 
 describe(AttributesHandler, () => {
   let receiver: NoopReceiver;
