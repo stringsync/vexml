@@ -1,6 +1,6 @@
 import { DEFAULT_CONFIG } from '../di';
 import * as msg from '../msg';
-import { NoopReceiver } from '../noopreceiver';
+import { NoopReceiver } from '../receivers/noopreceiver';
 import { AttributesMessage } from '../types';
 import * as xml from '../xml';
 import { AttributesHandler } from './attributeshandler';

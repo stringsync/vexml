@@ -1,4 +1,4 @@
-import { NoopReceiver } from '../noopreceiver';
+import { NoopReceiver } from '../receivers/noopreceiver';
 import * as xml from '../xml';
 import { NoopHandler } from './noophandler';
 import { Producer } from './producer';

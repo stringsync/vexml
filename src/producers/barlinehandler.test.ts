@@ -1,5 +1,5 @@
 import * as msg from '../msg';
-import { NoopReceiver } from '../noopreceiver';
+import { NoopReceiver } from '../receivers/noopreceiver';
 import { BarlineMessage } from '../types';
 import * as xml from '../xml';
 import { BarlineHandler } from './barlinehandler';

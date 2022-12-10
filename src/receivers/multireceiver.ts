@@ -1,4 +1,4 @@
-import { VexmlMessage, VexmlMessageReceiver } from './types';
+import { VexmlMessage, VexmlMessageReceiver } from '../types';
 
 export class MultiReceiver implements VexmlMessageReceiver {
   static of(...receivers: VexmlMessageReceiver[]): MultiReceiver {

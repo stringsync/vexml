@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG } from '../di';
-import { NoopReceiver } from '../noopreceiver';
+import { NoopReceiver } from '../receivers/noopreceiver';
 import { PartEndMessage, PartStartMessage } from '../types';
 import * as xml from '../xml';
 import { NoopHandler } from './noophandler';
