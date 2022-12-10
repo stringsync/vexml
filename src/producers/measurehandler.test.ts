@@ -1,7 +1,7 @@
 import { DEFAULT_CONFIG } from '../di';
 import { NoopReceiver } from '../receivers/noopreceiver';
 import { MeasureEndMessage, MeasureStartMessage } from '../types';
-import * as xml from '../xml';
+import * as xml from '../util/xml';
 import { MeasureHandler } from './measurehandler';
 import { NoopHandler } from './noophandler';
 

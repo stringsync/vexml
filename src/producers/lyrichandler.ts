@@ -1,5 +1,5 @@
-import * as msg from '../msg';
 import { VexmlConfig, VexmlMessageReceiver } from '../types';
+import * as msg from '../util/msg';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 
 export class LyricHandler extends NodeHandler<'lyric'> {

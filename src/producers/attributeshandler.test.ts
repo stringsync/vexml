@@ -1,8 +1,8 @@
 import { DEFAULT_CONFIG } from '../di';
-import * as msg from '../msg';
 import { NoopReceiver } from '../receivers/noopreceiver';
 import { AttributesMessage } from '../types';
-import * as xml from '../xml';
+import * as msg from '../util/msg';
+import * as xml from '../util/xml';
 import { AttributesHandler } from './attributeshandler';
 
 describe(AttributesHandler, () => {

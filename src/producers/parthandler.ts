@@ -1,6 +1,6 @@
-import * as msg from '../msg';
-import { NamedNode } from '../namednode';
 import { VexmlConfig, VexmlMessageReceiver } from '../types';
+import * as msg from '../util/msg';
+import { NamedNode } from '../util/namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 
 export class PartHandlerError extends Error {}

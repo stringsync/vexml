@@ -1,5 +1,5 @@
-import * as msg from '../msg';
 import { VexmlMessageReceiver } from '../types';
+import * as msg from '../util/msg';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 
 export class BeamHandler extends NodeHandler<'beam', NodeHandlerCtx<'beam'>> {
