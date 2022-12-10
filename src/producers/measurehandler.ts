@@ -1,6 +1,6 @@
 import * as msg from '../msg';
-import { MultiReceiver } from '../multireceiver';
 import { NamedNode } from '../namednode';
+import { MultiReceiver } from '../receivers/multireceiver';
 import { VexmlConfig, VexmlMessageReceiver } from '../types';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 

@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { CodeTracker, NotationMessage } from './types';
+import { CodeTracker, NotationMessage } from '../types';
 
 export class Notations {
   private static slurStart: number[] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
