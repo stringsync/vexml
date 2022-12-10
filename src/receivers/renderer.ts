@@ -1,10 +1,10 @@
 import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
+import { Producer } from '../producers/producer';
+import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from '../types';
+import { CodePrinter } from '../util/codeprinter';
 import { Attributes } from './attributes';
-import { CodePrinter } from './codeprinter';
 import { Notations } from './notations';
-import { Producer } from './producer';
-import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from './types';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;

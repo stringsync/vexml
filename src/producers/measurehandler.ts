@@ -1,8 +1,8 @@
-import * as msg from './msg';
-import { MultiReceiver } from './multireceiver';
-import { NamedNode } from './namednode';
+import { MultiReceiver } from '../receivers/multireceiver';
+import { VexmlConfig, VexmlMessageReceiver } from '../types';
+import * as msg from '../util/msg';
+import { NamedNode } from '../util/namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-import { VexmlConfig, VexmlMessageReceiver } from './types';
 
 export class MeasureHandlerError extends Error {}
 

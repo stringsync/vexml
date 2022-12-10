@@ -1,5 +1,5 @@
-import { NamedNode } from './namednode';
-import { VexmlMessageProducer, VexmlMessageReceiver } from './types';
+import { VexmlMessageProducer, VexmlMessageReceiver } from '../types';
+import { NamedNode } from '../util/namednode';
 
 export type NodeHandlerCtx<T extends string> = {
   node: NamedNode<T>;

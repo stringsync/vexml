@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { AttributesHandler } from './attributeshandler';
-import { BarlineHandler } from './barlinehandler';
-import { BeamHandler } from './beamhandler';
-import { LyricHandler } from './lyrichandler';
-import { MeasureHandler } from './measurehandler';
-import { NotationsHandler } from './notationshandler';
-import { NoteHandler } from './notehandler';
-import { PartHandler } from './parthandler';
+import { AttributesHandler } from './producers/attributeshandler';
+import { BarlineHandler } from './producers/barlinehandler';
+import { BeamHandler } from './producers/beamhandler';
+import { LyricHandler } from './producers/lyrichandler';
+import { MeasureHandler } from './producers/measurehandler';
+import { NotationsHandler } from './producers/notationshandler';
+import { NoteHandler } from './producers/notehandler';
+import { PartHandler } from './producers/parthandler';
 import { VexmlConfig } from './types';
 
 export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
