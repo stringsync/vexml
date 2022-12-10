@@ -1,8 +1,8 @@
+import * as msg from '../msg';
+import { NoopReceiver } from '../noopreceiver';
+import { BarlineMessage } from '../types';
+import * as xml from '../xml';
 import { BarlineHandler } from './barlinehandler';
-import * as msg from './msg';
-import { NoopReceiver } from './noopreceiver';
-import { BarlineMessage } from './types';
-import * as xml from './xml';
 
 describe('BarlineHandler', () => {
   let barlineHandler: BarlineHandler;

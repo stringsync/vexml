@@ -1,4 +1,4 @@
 export * from './codeprinter';
-export * from './producer';
+export * from './producers/producer';
 export * from './renderer';
 export * from './types';

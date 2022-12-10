@@ -1,8 +1,8 @@
-import * as di from './di';
-import { NamedNode } from './namednode';
+import * as di from '../di';
+import { NamedNode } from '../namednode';
+import { PartIterator } from '../partiterator';
+import { VexmlMessageProducer, VexmlMessageReceiver } from '../types';
 import { NodeHandler } from './nodehandler';
-import { PartIterator } from './partiterator';
-import { VexmlMessageProducer, VexmlMessageReceiver } from './types';
 
 export class ProducerError extends Error {}
 
