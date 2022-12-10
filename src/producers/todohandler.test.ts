@@ -1,6 +1,6 @@
-import { NoopReceiver } from './noopreceiver';
+import { NoopReceiver } from '../receivers/noopreceiver';
+import * as xml from '../util/xml';
 import { TodoHandler } from './todohandler';
-import * as xml from './xml';
 
 describe('TodoHandler', () => {
   let todoHandler: TodoHandler;

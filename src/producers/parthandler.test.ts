@@ -1,9 +1,9 @@
-import { DEFAULT_CONFIG } from './di';
+import { DEFAULT_CONFIG } from '../di';
+import { NoopReceiver } from '../receivers/noopreceiver';
+import { PartEndMessage, PartStartMessage } from '../types';
+import * as xml from '../util/xml';
 import { NoopHandler } from './noophandler';
-import { NoopReceiver } from './noopreceiver';
 import { PartHandler } from './parthandler';
-import { PartEndMessage, PartStartMessage } from './types';
-import * as xml from './xml';
 
 describe('PartHandler', () => {
   let receiver: NoopReceiver;

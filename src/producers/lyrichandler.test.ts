@@ -1,9 +1,9 @@
-import { DEFAULT_CONFIG } from './di';
+import { DEFAULT_CONFIG } from '../di';
+import { NoopReceiver } from '../receivers/noopreceiver';
+import { LyricMessage } from '../types';
+import * as msg from '../util/msg';
+import * as xml from '../util/xml';
 import { LyricHandler } from './lyrichandler';
-import * as msg from './msg';
-import { NoopReceiver } from './noopreceiver';
-import { LyricMessage } from './types';
-import * as xml from './xml';
 
 describe(LyricHandler, () => {
   let receiver: NoopReceiver;

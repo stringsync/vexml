@@ -12,7 +12,7 @@ import {
   VexmlMessage,
   VoiceEndMessage,
   VoiceStartMessage,
-} from './types';
+} from '../types';
 
 type CreateMsg<T extends VexmlMessage> = (args?: Omit<Partial<T>, 'msgType'>) => T;
 

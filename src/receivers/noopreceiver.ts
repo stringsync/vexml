@@ -1,4 +1,4 @@
-import { VexmlMessageReceiver } from './types';
+import { VexmlMessageReceiver } from '../types';
 
 export class NoopReceiver implements VexmlMessageReceiver {
   onMessage(): void {
