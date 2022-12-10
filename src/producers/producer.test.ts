@@ -1,5 +1,5 @@
 import { NoopReceiver } from '../receivers/noopreceiver';
-import * as xml from '../xml';
+import * as xml from '../util/xml';
 import { NoopHandler } from './noophandler';
 import { Producer } from './producer';
 

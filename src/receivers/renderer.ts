@@ -1,8 +1,8 @@
 import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
-import { CodePrinter } from '../codeprinter';
 import { Producer } from '../producers/producer';
 import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from '../types';
+import { CodePrinter } from '../util/codeprinter';
 import { Attributes } from './attributes';
 import { Notations } from './notations';
 

@@ -1,6 +1,6 @@
-import * as msg from '../msg';
-import { NamedNode } from '../namednode';
 import { NoteMessageHead, VexmlConfig, VexmlMessageReceiver } from '../types';
+import * as msg from '../util/msg';
+import { NamedNode } from '../util/namednode';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
 
 export class NoteHandler extends NodeHandler<'note', NodeHandlerCtx<'note'>> {

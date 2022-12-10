@@ -1,7 +1,7 @@
 import * as babel from 'prettier/parser-babel';
 import * as prettier from 'prettier/standalone';
+import { CodeTracker, Getter } from '../types';
 import { Expression } from './expression';
-import { CodeTracker, Getter } from './types';
 
 export class CodePrinter implements CodeTracker {
   static noop(): CodeTracker {
