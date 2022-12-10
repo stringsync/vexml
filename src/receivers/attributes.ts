@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { AttributesMessage, CodeTracker } from './types';
+import { AttributesMessage, CodeTracker } from '../types';
 
 export class Attributes {
   private static clefs: Map<number, { duration: number; clef?: string; annotation?: string }[]> = new Map<
