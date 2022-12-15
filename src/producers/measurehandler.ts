@@ -16,12 +16,14 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   private noteHandler: NodeHandler<'note'>;
   private attributesHandler: NodeHandler<'attributes'>;
   private barlineHandler: NodeHandler<'barline'>;
+  private directionHandler: NodeHandler<'direction'>;
 
   constructor(opts: {
     config: VexmlConfig;
     noteHandler: NodeHandler<'note'>;
     attributesHandler: NodeHandler<'attributes'>;
     barlineHandler: NodeHandler<'barline'>;
+    directionHandler: NodeHandler<'direction'>;
   }) {
     super();
 
@@ -29,6 +31,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     this.noteHandler = opts.noteHandler;
     this.attributesHandler = opts.attributesHandler;
     this.barlineHandler = opts.barlineHandler;
+    this.directionHandler = opts.directionHandler;
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'measure'>): void {
@@ -74,7 +77,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
       } else if (node.isNamed('backup')) {
         continue;
       } else if (node.isNamed('direction')) {
-        continue;
+        this.directionHandler.sendMessages(receiver, { node });
       } else if (node.isNamed('grouping')) {
         continue;
       } else if (node.isNamed('harmony')) {

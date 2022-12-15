@@ -39,6 +39,12 @@ export type AttributesMessage = {
   keys: { staff?: number; fifths: number }[];
 };
 
+export type DirectionMessage = {
+  msgType: 'direction';
+  codas: Record<string, never>[];
+  segnos: Record<string, never>[];
+};
+
 export type MeasureEndMessage = {
   msgType: 'measureEnd';
 };
@@ -120,6 +126,7 @@ export type VexmlMessage =
   | NoteMessage
   | NotationMessage
   | AttributesMessage
+  | DirectionMessage
   | MeasureStartMessage
   | MeasureEndMessage
   | PartStartMessage
