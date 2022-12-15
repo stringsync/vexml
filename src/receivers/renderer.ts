@@ -1,7 +1,7 @@
 import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
 import { Producer } from '../producers/producer';
-import { CodeTracker, NoteMessage, VexmlMessage, VexmlMessageReceiver } from '../types';
+import { CodeTracker, DirectionMessage, NoteMessage, VexmlMessage, VexmlMessageReceiver } from '../types';
 import { CodePrinter } from '../util/codeprinter';
 import { Attributes } from './attributes';
 import { Notations } from './notations';
@@ -45,6 +45,8 @@ export class Renderer implements VexmlMessageReceiver {
 
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
+    let directionNotes = t.let('notes', () => new Array<VF.Note>());
+    let directionMessage: DirectionMessage | undefined = undefined;
     let beamStart = t.let('beamStart', () => 0);
     let graceStart = t.let('graceStart', () => -1);
     let curPart = '';
@@ -116,10 +118,16 @@ export class Renderer implements VexmlMessageReceiver {
         case 'attributes':
           Attributes.render(t, factory, message, cur1stStave, duration, notes, systems);
           break;
+        case 'direction':
+          directionMessage = message;
+          break;
         case 'voiceEnd':
           systems[systems.length - 1].addVoices([factory.Voice().setMode(2).addTickables(notes)]);
           t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)])`);
+          systems[systems.length - 1].addVoices([factory.Voice().setMode(2).addTickables(directionNotes)]);
+          t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(directionNotes)])`);
           t.expression(() => (notes = []));
+          t.expression(() => (directionNotes = []));
           duration = 0;
           break;
         case 'note':
@@ -199,6 +207,16 @@ export class Renderer implements VexmlMessageReceiver {
             }
           }
           t.expression(() => notes.push(note!));
+          if (directionMessage?.codas.length)
+            t.expression(() =>
+              directionNotes.push(factory.TextNote({ glyph: 'coda', duration: note!.getDuration() }).setXShift(-20))
+            );
+          else if (directionMessage?.segnos.length)
+            t.expression(() =>
+              directionNotes.push(factory.TextNote({ glyph: 'segno', duration: note!.getDuration() }).setXShift(-20))
+            );
+          else t.expression(() => directionNotes.push(factory.TextNote({ text: '', duration: note!.getDuration() })));
+          directionMessage = undefined;
           if (message.grace && graceStart < 0) t.expression(() => (graceStart = notes.length - 1));
           break;
         case 'notation':
