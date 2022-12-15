@@ -2,6 +2,7 @@
 import { AttributesHandler } from './producers/attributeshandler';
 import { BarlineHandler } from './producers/barlinehandler';
 import { BeamHandler } from './producers/beamhandler';
+import { DirectionHandler } from './producers/directionhandler';
 import { LyricHandler } from './producers/lyrichandler';
 import { MeasureHandler } from './producers/measurehandler';
 import { NotationsHandler } from './producers/notationshandler';
@@ -38,6 +39,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   const attributesHandler = new AttributesHandler({
     config,
   });
+  const directionHandler = new DirectionHandler();
 
   const notationsHandler = new NotationsHandler();
 
@@ -60,6 +62,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
     config,
     attributesHandler,
     barlineHandler,
+    directionHandler,
     noteHandler,
   });
 
@@ -72,6 +75,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
     config,
     attributesHandler,
     barlineHandler,
+    directionHandler,
     noteHandler,
     measureHandler,
     partHandler,

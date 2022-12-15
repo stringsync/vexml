@@ -131,6 +131,25 @@ export const attributes: CreateNode<
   return NamedNode.of(node);
 };
 
+export const direction: CreateNode<
+  'direction',
+  {
+    codas: NamedNode<'coda'>[];
+    segnos: NamedNode<'segno'>[];
+  }
+> = ({ codas, segnos } = {}) => {
+  const node = createElement('direction');
+
+  if (codas) {
+    node.append(...codas.map(getNode));
+  }
+  if (segnos) {
+    node.append(...segnos.map(getNode));
+  }
+
+  return NamedNode.of(node);
+};
+
 export const barline: CreateNode<
   'barline',
   { location: string; barStyle: NamedNode<'bar-style'>; repeat: NamedNode<'repeat'>; ending: NamedNode<'ending'> }
@@ -394,6 +413,18 @@ export const clef: CreateNode<
   if (clefOctaveChange) {
     node.appendChild(clefOctaveChange.node);
   }
+
+  return NamedNode.of(node);
+};
+
+export const coda: CreateNode<'coda', Record<string, never>> = () => {
+  const node = createElement('coda');
+
+  return NamedNode.of(node);
+};
+
+export const segno: CreateNode<'segno', Record<string, never>> = () => {
+  const node = createElement('segno');
 
   return NamedNode.of(node);
 };
