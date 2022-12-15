@@ -2,6 +2,7 @@ import {
   AttributesMessage,
   BarlineMessage,
   BeamMessage,
+  DirectionMessage,
   LyricMessage,
   MeasureEndMessage,
   MeasureStartMessage,
@@ -34,6 +35,13 @@ export const attributes: CreateMsg<AttributesMessage> = (args) => ({
   clefs: [],
   keys: [],
   times: [],
+  ...args,
+});
+
+export const direction: CreateMsg<DirectionMessage> = (args) => ({
+  msgType: 'direction',
+  codas: [],
+  segnos: [],
   ...args,
 });
 
