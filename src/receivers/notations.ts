@@ -85,16 +85,16 @@ export class Notations {
         );
         break;
       default:
-        const modifiers = this.getVexFlowNotation(factory, message.name);
+        const modifiers = this.getVexFlowNotation(factory, message.name, message.value);
         for (const modifier of modifiers) {
           if (modifier.class == 'A') {
             notes[notes.length - 1].addModifier(
-              factory.Articulation({ type: modifier.type, position: message.placement ?? 'above' }),
+              factory.Articulation({ type: modifier.type, position: message.type == 'inverted' ? 'below' : 'above' }),
               0
             );
             t.literal(
               `notes[notes.length - 1].addModifier(factory.Articulation({ type: '${modifier.type}', ` +
-                `position: '${message.placement ?? 'above'}' }), 0);`
+                `position: '${message.type == 'inverted' ? 'below' : 'above'}' }), 0);`
             );
           }
           if (modifier.class == 'O') {
@@ -111,8 +111,12 @@ export class Notations {
     }
   }
 
-  private static getVexFlowNotation(factory: VF.Factory, type: string): { class: string; type: string }[] {
-    switch (type) {
+  private static getVexFlowNotation(
+    factory: VF.Factory,
+    name: string,
+    value: string
+  ): { class: string; type: string }[] {
+    switch (name) {
       // MusicXML Articulations
       // **********************
       case 'accent':
@@ -186,7 +190,14 @@ export class Notations {
       // MusicXML Notations
       // ******************
       case 'fermata':
-        return [{ class: 'A', type: 'a@' }];
+        switch (value) {
+          case 'angled':
+            return [{ class: 'A', type: 'a@s' }];
+          case 'square':
+            return [{ class: 'A', type: 'a@l' }];
+          default:
+            return [{ class: 'A', type: 'a@' }];
+        }
       default:
         return [];
     }
