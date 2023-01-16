@@ -89,7 +89,10 @@ export class Notations {
         for (const modifier of modifiers) {
           if (modifier.class == 'A') {
             notes[notes.length - 1].addModifier(
-              factory.Articulation({ type: modifier.type, position: message.type == 'inverted' ? 'below' : 'above' }),
+              factory.Articulation({
+                type: modifier.type,
+                position: message.type == 'inverted' ? 'below' : message.placement ?? 'above',
+              }),
               0
             );
             t.literal(
