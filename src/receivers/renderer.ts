@@ -60,6 +60,7 @@ export class Renderer implements VexmlMessageReceiver {
     let endingRight = '';
     let endingText = '';
     let endingMiddle = false;
+    let autoStem = false;
 
     const systems: VF.System[] = [];
 
@@ -83,10 +84,11 @@ export class Renderer implements VexmlMessageReceiver {
             t.expression(() =>
               factory.Beam({
                 notes: notes.slice(beamStart) as VF.StemmableNote[],
-                options: { autoStem: true },
+                options: { autoStem: autoStem },
               })
             );
             beamStart = -1;
+            autoStem = false;
           }
           break;
         case 'partStart':
@@ -135,7 +137,10 @@ export class Renderer implements VexmlMessageReceiver {
           const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}` };
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
-          else noteStruct.auto_stem = true;
+          else {
+            noteStruct.auto_stem = true;
+            autoStem = true;
+          }
           noteStruct.clef = Attributes.clefGet(message.staff, duration).clef;
           if (message.duration) duration += message.duration;
           // no pitch, rest
