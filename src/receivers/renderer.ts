@@ -134,7 +134,7 @@ export class Renderer implements VexmlMessageReceiver {
           break;
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
-          const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}` };
+          const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}`, dots: message.dots };
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else {
@@ -148,12 +148,14 @@ export class Renderer implements VexmlMessageReceiver {
             if (noteStruct.clef == 'bass') noteStruct.keys = ['D/2'];
             else noteStruct.keys = ['B/4'];
             noteStruct.duration = `${durationDenominator}r`;
+            noteStruct.dots = message.dots;
           } else {
             noteStruct.keys = [];
             for (const head of message.head) {
               noteStruct.keys.push(`${head.pitch}${this.getNotehead(head.notehead)}`);
             }
             noteStruct.duration = `${durationDenominator}`;
+            noteStruct.dots = message.dots;
           }
 
           if (message.grace) {
