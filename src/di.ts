@@ -7,7 +7,6 @@ import { LyricHandler } from './producers/lyrichandler';
 import { MeasureHandler } from './producers/measurehandler';
 import { NotationsHandler } from './producers/notationshandler';
 import { NoteHandler } from './producers/notehandler';
-import { PartHandler } from './producers/parthandler';
 import { VexmlConfig } from './types';
 
 export const DEFAULT_CONFIG: VexmlConfig = Object.freeze({
@@ -66,11 +65,6 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
     noteHandler,
   });
 
-  const partHandler = new PartHandler({
-    config,
-    measureHandler,
-  });
-
   return {
     config,
     attributesHandler,
@@ -78,7 +72,6 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
     directionHandler,
     noteHandler,
     measureHandler,
-    partHandler,
     lyricHandler,
     beamHandler,
     notationsHandler,
