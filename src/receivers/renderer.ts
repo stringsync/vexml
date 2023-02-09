@@ -1,7 +1,14 @@
 import * as VF from 'vexflow';
 import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
 import { Producer } from '../producers/producer';
-import { CodeTracker, DirectionMessage, NoteMessage, VexmlMessage, VexmlMessageReceiver } from '../types';
+import {
+  AttributesMessage,
+  CodeTracker,
+  DirectionMessage,
+  NoteMessage,
+  VexmlMessage,
+  VexmlMessageReceiver,
+} from '../types';
 import { CodePrinter } from '../util/codeprinter';
 import { Attributes } from './attributes';
 import { Notations } from './notations';
@@ -49,6 +56,9 @@ export class Renderer implements VexmlMessageReceiver {
     let directionMessage: DirectionMessage | undefined = undefined;
     let beamStart = t.let('beamStart', () => 0);
     let graceStart = t.let('graceStart', () => -1);
+    const curAttributes: AttributesMessage = { msgType: 'attributes', clefs: [], times: [], keys: [] };
+    let lastAttributes: AttributesMessage | undefined;
+    let newLine = true;
     let curPart = '';
     let firstPart = '';
     let curMeasure = 1;
@@ -118,7 +128,35 @@ export class Renderer implements VexmlMessageReceiver {
           Attributes.clefMeasureStart();
           break;
         case 'attributes':
-          Attributes.render(t, factory, message, cur1stStave, duration, notes, systems);
+          lastAttributes = message;
+          message.clefs.forEach((clef) => {
+            const id = curAttributes.clefs.findIndex((obj) => {
+              return obj.staff == clef.staff;
+            });
+            if (id >= 0) {
+              curAttributes.clefs.splice(id, 1);
+            }
+            curAttributes.clefs.push(clef);
+          });
+          message.times.forEach((time) => {
+            const id = curAttributes.times.findIndex((obj) => {
+              return obj.staff == time.staff;
+            });
+            if (id >= 0) {
+              curAttributes.times.splice(id, 1);
+            }
+            curAttributes.times.push(time);
+          });
+          message.keys.forEach((key) => {
+            const id = curAttributes.keys.findIndex((obj) => {
+              return obj.staff == key.staff;
+            });
+            if (id >= 0) {
+              curAttributes.keys.splice(id, 1);
+            }
+            curAttributes.keys.push(key);
+          });
+          break;
           break;
         case 'direction':
           directionMessage = message;
@@ -135,6 +173,14 @@ export class Renderer implements VexmlMessageReceiver {
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
           const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}`, dots: message.dots };
+          if (newLine) {
+            Attributes.render(t, factory, curAttributes, cur1stStave, 0, notes, systems);
+            lastAttributes = undefined;
+            newLine = false;
+          } else if (lastAttributes) {
+            Attributes.render(t, factory, lastAttributes, cur1stStave, duration, notes, systems);
+            lastAttributes = undefined;
+          }
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else {
@@ -339,6 +385,7 @@ export class Renderer implements VexmlMessageReceiver {
         let x = prevSystem.getX() + prevSystem.getBoundingBox()!.getW();
         let y = prevSystem.getY();
         if (x > 1000) {
+          newLine = true;
           x = 0;
           y += prevSystem.getBoundingBox()!.getH() + 50;
           s.addConnector('singleLeft');
