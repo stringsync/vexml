@@ -131,6 +131,33 @@ export const attributes: CreateNode<
   return NamedNode.of(node);
 };
 
+export const print: CreateNode<
+  'print',
+  {
+    newSystem: boolean;
+    newPage: boolean;
+    systemLayout: NamedNode<'systemLayout'>;
+    staffLayouts: NamedNode<'staffLayout'>[];
+  }
+> = ({ newSystem, newPage, systemLayout, staffLayouts } = {}) => {
+  const node = createElement('print');
+
+  if (newSystem) {
+    node.setAttribute('new-system', newSystem ? 'yes' : 'no');
+  }
+  if (newPage) {
+    node.setAttribute('new-page', newPage ? 'yes' : 'no');
+  }
+  if (staffLayouts) {
+    node.append(...staffLayouts.map(getNode));
+  }
+  if (systemLayout) {
+    node.append(systemLayout.node);
+  }
+
+  return NamedNode.of(node);
+};
+
 export const direction: CreateNode<
   'direction',
   {

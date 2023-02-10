@@ -31,6 +31,14 @@ export type PartStartMessage = {
   id: string;
 };
 
+export type PrintMessage = {
+  msgType: 'print';
+  newSystem: boolean;
+  newPage: boolean;
+  systemLayout: { leftMargin?: number; rightMargin?: number; topSystemMargin?: number; systemMargin?: number };
+  staffLayout: { staffDistance?: number }[];
+};
+
 // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
 export type AttributesMessage = {
   msgType: 'attributes';
@@ -131,6 +139,7 @@ export type VexmlMessage =
   | MeasureEndMessage
   | PartStartMessage
   | PartEndMessage
+  | PrintMessage
   | BeamMessage
   | VoiceStartMessage
   | VoiceEndMessage;
