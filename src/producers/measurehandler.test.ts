@@ -12,6 +12,7 @@ describe('MeasureHandler', () => {
   let barlineHandler: NoopHandler;
   let directionHandler: NoopHandler;
   let measureHandler: MeasureHandler;
+  let printHandler: NoopHandler;
 
   let receiverSpy: jest.SpyInstance;
 
@@ -27,6 +28,7 @@ describe('MeasureHandler', () => {
       barlineHandler,
       directionHandler,
       noteHandler,
+      printHandler,
     });
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');

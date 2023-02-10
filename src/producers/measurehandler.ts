@@ -15,6 +15,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
   private config: VexmlConfig;
   private noteHandler: NodeHandler<'note'>;
   private attributesHandler: NodeHandler<'attributes'>;
+  private printHandler: NodeHandler<'print'>;
   private barlineHandler: NodeHandler<'barline'>;
   private directionHandler: NodeHandler<'direction'>;
 
@@ -22,6 +23,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     config: VexmlConfig;
     noteHandler: NodeHandler<'note'>;
     attributesHandler: NodeHandler<'attributes'>;
+    printHandler: NodeHandler<'print'>;
     barlineHandler: NodeHandler<'barline'>;
     directionHandler: NodeHandler<'direction'>;
   }) {
@@ -30,6 +32,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
     this.config = opts.config;
     this.noteHandler = opts.noteHandler;
     this.attributesHandler = opts.attributesHandler;
+    this.printHandler = opts.printHandler;
     this.barlineHandler = opts.barlineHandler;
     this.directionHandler = opts.directionHandler;
   }
@@ -85,7 +88,7 @@ export class MeasureHandler extends NodeHandler<'measure'> {
       } else if (node.isNamed('figured-bass')) {
         continue;
       } else if (node.isNamed('print')) {
-        continue;
+        this.printHandler.sendMessages(receiver, { node });
       } else {
         throw new MeasureHandlerError(`unhandled node: ${node.name}`);
       }

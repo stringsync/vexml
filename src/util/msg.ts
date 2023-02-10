@@ -10,6 +10,7 @@ import {
   NoteMessage,
   PartEndMessage,
   PartStartMessage,
+  PrintMessage,
   VexmlMessage,
   VoiceEndMessage,
   VoiceStartMessage,
@@ -27,6 +28,15 @@ export const partStart: CreateMsg<PartStartMessage> = (args) => ({
   id: 'NN',
   msgCount: 0,
   msgIndex: 0,
+  ...args,
+});
+
+export const print: CreateMsg<PrintMessage> = (args) => ({
+  msgType: 'print',
+  newSystem: true,
+  newPage: false,
+  systemLayout: {},
+  staffLayout: [],
   ...args,
 });
 
