@@ -16,4 +16,19 @@ describe(PrintHandler, () => {
 
     receiverSpy = jest.spyOn(receiver, 'onMessage');
   });
+
+  it('sends a print message with new system', () => {
+    const print = xml.print({
+      newSystem: true,
+    });
+
+    printHandler.sendMessages(receiver, { node: print });
+
+    expect(receiverSpy).toHaveBeenCalledOnce();
+    expect(receiverSpy).toHaveBeenLastCalledWith<[PrintMessage]>(
+      msg.print({
+        newSystem: true,
+      })
+    );
+  });
 });

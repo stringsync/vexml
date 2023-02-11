@@ -22,6 +22,7 @@ describe('MeasureHandler', () => {
     attributesHandler = new NoopHandler();
     barlineHandler = new NoopHandler();
     directionHandler = new NoopHandler();
+    printHandler = new NoopHandler();
     measureHandler = new MeasureHandler({
       config: DEFAULT_CONFIG,
       attributesHandler,
