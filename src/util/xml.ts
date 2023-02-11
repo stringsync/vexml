@@ -39,8 +39,9 @@ export const measure: CreateNode<
     notes: NamedNode<'note'>[];
     attributes: NamedNode<'attributes'>[];
     barlines: NamedNode<'barlines'>[];
+    print: NamedNode<'print'>;
   }
-> = ({ width, notes, attributes, barlines } = {}) => {
+> = ({ width, notes, attributes, barlines, print } = {}) => {
   const node = createElement('measure');
 
   if (notes) {
@@ -51,6 +52,9 @@ export const measure: CreateNode<
   }
   if (barlines) {
     node.append(...barlines.map(getNode));
+  }
+  if (print) {
+    node.append(print.node);
   }
   if (typeof width === 'number') {
     node.setAttribute('width', width.toString());
@@ -126,6 +130,33 @@ export const attributes: CreateNode<
   }
   if (staves) {
     node.append(staves.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const print: CreateNode<
+  'print',
+  {
+    newSystem: boolean;
+    newPage: boolean;
+    systemLayout: NamedNode<'systemLayout'>;
+    staffLayouts: NamedNode<'staffLayout'>[];
+  }
+> = ({ newSystem, newPage, systemLayout, staffLayouts } = {}) => {
+  const node = createElement('print');
+
+  if (newSystem) {
+    node.setAttribute('new-system', newSystem ? 'yes' : 'no');
+  }
+  if (newPage) {
+    node.setAttribute('new-page', newPage ? 'yes' : 'no');
+  }
+  if (staffLayouts) {
+    node.append(...staffLayouts.map(getNode));
+  }
+  if (systemLayout) {
+    node.append(systemLayout.node);
   }
 
   return NamedNode.of(node);
