@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { BoundingBox, Clef, StaveModifierPosition } from 'vexflow';
+import { BoundingBox } from 'vexflow';
 import { Producer } from '../producers/producer';
 import {
   AttributesMessage,
@@ -59,6 +59,9 @@ export class Renderer implements VexmlMessageReceiver {
     const curAttributes: AttributesMessage = { msgType: 'attributes', clefs: [], times: [], keys: [] };
     let lastAttributes: AttributesMessage | undefined;
     let newLine = true;
+    let newMeasure = false;
+    let connector: VF.StaveConnectorType | undefined;
+    let staffLayout: { staffDistance?: number | undefined }[] = [];
     let curPart = '';
     let firstPart = '';
     let curMeasure = 1;
@@ -77,11 +80,36 @@ export class Renderer implements VexmlMessageReceiver {
     function appendSystem(width?: number): VF.System {
       let system: VF.System;
       if (width) {
-        system = factory.System({ x: 0, y: 0, width, spaceBetweenStaves: 12 }) as VF.System;
+        system = factory.System({ x: 0, y: 0, width }) as VF.System;
       } else {
-        system = factory.System({ x: 0, y: 0, autoWidth: true, spaceBetweenStaves: 12 }) as VF.System;
+        system = factory.System({ x: 0, y: 0, autoWidth: true }) as VF.System;
       }
       return system;
+    }
+
+    function createStaves() {
+      if (newMeasure) {
+        for (let staff = 1; staff <= numStaves; staff++) {
+          if (staff == 1) cur1stStave = systems[systems.length - 1].getStaves().length;
+          if (staff < numStaves)
+            systems[systems.length - 1].addStave({
+              voices: [],
+              spaceBelow: staffLayout[0]?.staffDistance ? staffLayout[0].staffDistance / 5 - 12 : 0,
+            });
+          else systems[systems.length - 1].addStave({ voices: [] });
+          t.literal(`system.addStave({voices:[]})`);
+        }
+        newMeasure = false;
+      }
+      if (newLine) {
+        Attributes.render(t, factory, curAttributes, cur1stStave, 0, notes, systems);
+        lastAttributes = undefined;
+        connector = 'singleLeft';
+        newLine = false;
+      } else if (lastAttributes) {
+        Attributes.render(t, factory, lastAttributes, cur1stStave, duration, notes, systems);
+        lastAttributes = undefined;
+      }
     }
 
     for (const message of this.messages) {
@@ -108,6 +136,10 @@ export class Renderer implements VexmlMessageReceiver {
         case 'partEnd':
           if (message.msgCount == message.msgIndex + 1) {
             curMeasure++;
+            if (connector) {
+              systems[systems.length - 1].addConnector(connector);
+              connector = undefined;
+            }
           }
           break;
         case 'measureStart':
@@ -117,12 +149,17 @@ export class Renderer implements VexmlMessageReceiver {
           if (message.staves) {
             numStaves = message.staves;
           }
-          if (firstPart == curPart) systems.push(appendSystem(width));
-          for (let staff = 1; staff <= numStaves; staff++) {
-            if (staff == 1) cur1stStave = systems[systems.length - 1].getStaves().length;
-            systems[systems.length - 1].addStave({ voices: [] });
-            t.literal(`system.addStave({voices:[]})`);
+          if (firstPart == curPart) {
+            systems.push(appendSystem(width));
+            if (systems.length >= 2) {
+              systems[systems.length - 2].format();
+              systems[systems.length - 1].setX(
+                systems[systems.length - 2].getX() + systems[systems.length - 2].getBoundingBox()!.getW()
+              );
+              systems[systems.length - 1].setY(systems[systems.length - 2].getY());
+            }
           }
+          newMeasure = true;
           t.expression(() => (notes = []));
           duration = 0;
           Attributes.clefMeasureStart();
@@ -157,6 +194,25 @@ export class Renderer implements VexmlMessageReceiver {
             curAttributes.keys.push(key);
           });
           break;
+        case 'print':
+          newLine = true;
+          systems[systems.length - 1].setX(0 + (message.systemLayout.leftMargin ?? 0));
+          staffLayout = message.staffLayout;
+          if (systems.length >= 2) {
+            systems[systems.length - 1].setY(
+              systems[systems.length - 2].getY() +
+                systems[systems.length - 2].getBoundingBox()!.getH() +
+                (message.systemLayout.systemMargin ?? 50)
+            );
+          } else {
+            systems[systems.length - 1].setY(message.systemLayout.systemMargin ?? 50);
+          }
+
+          /*if (systems[systems.length - 1].getX() > 1000) {
+            newLine = true;
+            systems[systems.length - 1].setX(0);
+            systems[systems.length - 1].setY(systems[systems.length - 2].getBoundingBox()!.getH() + 50);
+          }*/
           break;
         case 'direction':
           directionMessage = message;
@@ -173,14 +229,8 @@ export class Renderer implements VexmlMessageReceiver {
         case 'note':
           const durationDenominator = this.getDurationDenominator(message.type);
           const noteStruct: VF.GraceNoteStruct = { duration: `${durationDenominator}`, dots: message.dots };
-          if (newLine) {
-            Attributes.render(t, factory, curAttributes, cur1stStave, 0, notes, systems);
-            lastAttributes = undefined;
-            newLine = false;
-          } else if (lastAttributes) {
-            Attributes.render(t, factory, lastAttributes, cur1stStave, duration, notes, systems);
-            lastAttributes = undefined;
-          }
+
+          createStaves();
 
           if (message.stem) noteStruct.stem_direction = message.stem == 'up' ? 1 : -1;
           else {
@@ -286,6 +336,7 @@ export class Renderer implements VexmlMessageReceiver {
           notes[notes.length - 1].addModifier(factory.Annotation({ text }));
           break;
         case 'barline':
+          createStaves();
           if (message.barStyle) {
             let barlineType: VF.BarlineType | undefined;
             switch (message.barStyle) {
@@ -372,45 +423,11 @@ export class Renderer implements VexmlMessageReceiver {
           break;
       }
     }
-    let prevSystem: VF.System | undefined;
+    systems[systems.length - 1].format();
     const boundingBox = new BoundingBox(0, 0, 0, 0);
-    const clefs: Clef[][] = [];
 
-    // Initialise clefs to keep tack of the latest one shown in each staff
-    systems[0]
-      .getStaves()
-      .forEach((stave) => clefs.push(stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY) as Clef[]));
     systems.forEach((s) => {
-      if (prevSystem) {
-        let x = prevSystem.getX() + prevSystem.getBoundingBox()!.getW();
-        let y = prevSystem.getY();
-        if (x > 1000) {
-          newLine = true;
-          x = 0;
-          y += prevSystem.getBoundingBox()!.getH() + 50;
-          s.addConnector('singleLeft');
-          // On new lines make sure that the latest Clef is rendered if there is not a new one.
-          s.getStaves().forEach((stave, index) => {
-            if (stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY).length == 0) {
-              stave.addModifier(new Clef((clefs[index][0] as any).type));
-            }
-          });
-        }
-        s.setX(x);
-        s.setY(y);
-        // Keep track of last Clef rendered on each Staff both at the begin and end position.
-        s.getStaves().forEach((stave, index) => {
-          const clef = stave.getModifiers(StaveModifierPosition.BEGIN, Clef.CATEGORY) as Clef[];
-          const endClef = stave.getModifiers(StaveModifierPosition.END, Clef.CATEGORY) as Clef[];
-          if (endClef.length != 0) clefs[index] = endClef;
-          else if (clef.length != 0) clefs[index] = clef;
-        });
-      } else {
-        s.addConnector('singleLeft');
-      }
-      s.format();
       boundingBox.mergeWith(s.getBoundingBox()!);
-      prevSystem = s;
     });
     factory
       .getContext()

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { AttributesHandler } from './producers/attributeshandler';
+import { PrintHandler } from './producers/printhandler';
 import { BarlineHandler } from './producers/barlinehandler';
 import { BeamHandler } from './producers/beamhandler';
 import { DirectionHandler } from './producers/directionhandler';
@@ -38,6 +39,8 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   const attributesHandler = new AttributesHandler({
     config,
   });
+  const printHandler = new PrintHandler();
+
   const directionHandler = new DirectionHandler();
 
   const notationsHandler = new NotationsHandler();
@@ -60,6 +63,7 @@ export const createContainer = (opts?: { config: Partial<VexmlConfig> }) => {
   const measureHandler = new MeasureHandler({
     config,
     attributesHandler,
+    printHandler,
     barlineHandler,
     directionHandler,
     noteHandler,
