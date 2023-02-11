@@ -39,8 +39,9 @@ export const measure: CreateNode<
     notes: NamedNode<'note'>[];
     attributes: NamedNode<'attributes'>[];
     barlines: NamedNode<'barlines'>[];
+    print: NamedNode<'print'>;
   }
-> = ({ width, notes, attributes, barlines } = {}) => {
+> = ({ width, notes, attributes, barlines, print } = {}) => {
   const node = createElement('measure');
 
   if (notes) {
@@ -51,6 +52,9 @@ export const measure: CreateNode<
   }
   if (barlines) {
     node.append(...barlines.map(getNode));
+  }
+  if (print) {
+    node.append(print.node);
   }
   if (typeof width === 'number') {
     node.setAttribute('width', width.toString());
