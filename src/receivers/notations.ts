@@ -13,14 +13,22 @@ export class Notations {
           Notations.slurStart[message.number - 1] = notes.length - 1;
         } else if (message.type == 'stop') {
           if (Notations.slurStart[message.number - 1] >= 0) {
+            const bSameDir =
+              notes[Notations.slurStart[message.number - 1]]?.getStemDirection() ==
+              notes[notes.length - 1]?.getStemDirection();
             factory.Curve({
               from: notes[Notations.slurStart[message.number - 1]],
               to: notes[notes.length - 1],
-              options: {},
+              options: {
+                invert: bSameDir ? true : false,
+                position: 'nearTop',
+                position_end: bSameDir ? 'nearTop' : 'nearHead',
+              },
             });
             t.literal(
               `factory.Curve({from: notes[${Notations.slurStart[message.number - 1]}],` +
-                `to: notes[notes.length - 1],options: {},});`
+                `to: notes[notes.length - 1],options: {invert: ${bSameDir ? true : false}, position: 'nearTop', 
+                position_end: '${bSameDir ? 'nearTop' : 'nearHead'}'},});`
             );
             Notations.slurStart[message.number - 1] = -1;
           }
