@@ -2,7 +2,7 @@ import * as VF from 'vexflow';
 import { BoundingBox } from 'vexflow';
 import { Producer } from '../producers/producer';
 import {
-  AttributesMessage,
+  LegacyAttributesMessage,
   CodeTracker,
   DirectionMessage,
   NoteMessage,
@@ -12,6 +12,7 @@ import {
 import { CodePrinter } from '../util/codeprinter';
 import { Attributes } from './attributes';
 import { Notations } from './notations';
+import * as msg from '../util/msg';
 
 export type RendererOptions = {
   codeTracker?: CodeTracker;
@@ -56,8 +57,8 @@ export class Renderer implements VexmlMessageReceiver {
     let directionMessage: DirectionMessage | undefined = undefined;
     let beamStart = t.let('beamStart', () => 0);
     let graceStart = t.let('graceStart', () => -1);
-    const curAttributes: AttributesMessage = { msgType: 'attributes', clefs: [], times: [], keys: [] };
-    let lastAttributes: AttributesMessage | undefined;
+    const curAttributes: LegacyAttributesMessage = msg.legacyAttributes();
+    let lastAttributes: LegacyAttributesMessage | undefined;
     let newLine = true;
     let newMeasure = false;
     let connector: VF.StaveConnectorType | undefined;
@@ -164,7 +165,7 @@ export class Renderer implements VexmlMessageReceiver {
           duration = 0;
           Attributes.clefMeasureStart();
           break;
-        case 'attributes':
+        case 'legacyAttributes':
           lastAttributes = message;
           message.clefs.forEach((clef) => {
             const id = curAttributes.clefs.findIndex((obj) => {

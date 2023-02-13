@@ -1,8 +1,10 @@
 import {
-  AttributesMessage,
   BarlineMessage,
   BeamMessage,
+  ClefMessage,
   DirectionMessage,
+  KeyMessage,
+  LegacyAttributesMessage,
   LyricMessage,
   MeasureEndMessage,
   MeasureStartMessage,
@@ -11,6 +13,7 @@ import {
   PartEndMessage,
   PartStartMessage,
   PrintMessage,
+  TimeMessage,
   VexmlMessage,
   VoiceEndMessage,
   VoiceStartMessage,
@@ -40,11 +43,35 @@ export const print: CreateMsg<PrintMessage> = (args) => ({
   ...args,
 });
 
-export const attributes: CreateMsg<AttributesMessage> = (args) => ({
-  msgType: 'attributes',
+export const legacyAttributes: CreateMsg<LegacyAttributesMessage> = (args) => ({
+  msgType: 'legacyAttributes',
   clefs: [],
   keys: [],
   times: [],
+  ...args,
+});
+
+export const clef: CreateMsg<ClefMessage> = (args) => ({
+  msgType: 'clef',
+  sign: 'none',
+  staff: null,
+  line: null,
+  octaveChange: null,
+  ...args,
+});
+
+export const time: CreateMsg<TimeMessage> = (args) => ({
+  msgType: 'time',
+  beats: 4,
+  beatType: 4,
+  staff: null,
+  ...args,
+});
+
+export const key: CreateMsg<KeyMessage> = (args) => ({
+  msgType: 'key',
+  fifths: 0,
+  staff: null,
   ...args,
 });
 

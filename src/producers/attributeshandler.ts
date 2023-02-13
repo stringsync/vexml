@@ -1,23 +1,6 @@
-import { VexmlConfig, VexmlMessageReceiver } from '../types';
+import { ClefMessage, ClefSign, KeyMessage, TimeMessage, VexmlConfig, VexmlMessageReceiver } from '../types';
 import * as msg from '../util/msg';
 import { NodeHandler, NodeHandlerCtx } from './nodehandler';
-
-type Clef = {
-  staff: number;
-  sign: string;
-  line?: number | undefined;
-  octaveChange?: number | undefined;
-};
-
-type Time = {
-  staff?: number | undefined;
-  signature: string;
-};
-
-type Key = {
-  staff?: number | undefined;
-  fifths: number;
-};
 
 export class AttributesHandler extends NodeHandler<'attributes'> {
   private config: VexmlConfig;
@@ -29,17 +12,27 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
   }
 
   sendMessages(receiver: VexmlMessageReceiver, ctx: NodeHandlerCtx<'attributes'>): void {
-    receiver.onMessage(
-      msg.attributes({
-        clefs: this.getClefs(ctx),
-        times: this.getTimes(ctx),
-        keys: this.getKeys(ctx),
-      })
-    );
+    const legacyAttributes = msg.legacyAttributes({
+      clefs: this.getClefMessages(ctx),
+      times: this.getTimeMessages(ctx),
+      keys: this.getKeyMessages(ctx),
+    });
+
+    for (const clef of legacyAttributes.clefs) {
+      receiver.onMessage(clef);
+    }
+    for (const time of legacyAttributes.times) {
+      receiver.onMessage(time);
+    }
+    for (const key of legacyAttributes.keys) {
+      receiver.onMessage(key);
+    }
+
+    receiver.onMessage(legacyAttributes);
   }
 
-  getClefs(ctx: NodeHandlerCtx<'attributes'>): Clef[] {
-    const clefs = new Array<Clef>();
+  private getClefMessages(ctx: NodeHandlerCtx<'attributes'>): ClefMessage[] {
+    const clefs = new Array<ClefMessage>();
 
     const elements = Array.from(ctx.node.asElement().getElementsByTagName('clef'));
     for (const clef of elements) {
@@ -48,46 +41,58 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
       const line = clef.getElementsByTagName('line').item(0)?.textContent;
       const octaveChange = clef.getElementsByTagName('clef-octave-change').item(0)?.textContent;
 
-      clefs.push({
-        staff: staff ? parseInt(staff, 10) : this.config.DEFAULT_STAFF_NUMBER,
-        sign: sign ?? this.config.DEFAULT_CLEF_SIGN,
-        line: line ? parseInt(line, 10) : this.config.DEFAULT_STAFF_LINE,
-        octaveChange: octaveChange ? parseInt(octaveChange, 10) : undefined,
-      });
+      clefs.push(
+        msg.clef({
+          staff: staff ? parseInt(staff, 10) : null,
+          sign: this.isClefSign(sign) ? sign : this.config.DEFAULT_CLEF_SIGN,
+          line: line ? parseInt(line, 10) : this.config.DEFAULT_STAFF_LINE,
+          octaveChange: octaveChange ? parseInt(octaveChange, 10) : null,
+        })
+      );
     }
 
     return clefs;
   }
 
-  getTimes(ctx: NodeHandlerCtx<'attributes'>): Time[] {
-    const times = new Array<Time>();
+  private isClefSign(str: any): str is ClefSign {
+    return ['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'].includes(str);
+  }
+
+  private getTimeMessages(ctx: NodeHandlerCtx<'attributes'>): TimeMessage[] {
+    const times = new Array<TimeMessage>();
 
     const elements = Array.from(ctx.node.asElement().getElementsByTagName('time'));
     for (const time of elements) {
       const staff = time.getAttribute('number');
-      const beats = time.getElementsByTagName('beats').item(0)?.textContent ?? this.config.DEFAULT_BEATS;
-      const beatType = time.getElementsByTagName('beat-type').item(0)?.textContent ?? this.config.DEFAULT_BEAT_TYPE;
+      const beats = time.getElementsByTagName('beats').item(0)?.textContent;
+      const beatType = time.getElementsByTagName('beat-type').item(0)?.textContent;
 
-      times.push({
-        staff: staff ? parseInt(staff, 10) : undefined,
-        signature: `${beats}/${beatType}`,
-      });
+      times.push(
+        msg.time({
+          staff: staff ? parseInt(staff, 10) : null,
+          beats: beats ? parseInt(beats, 10) : this.config.DEFAULT_BEATS,
+          beatType: beatType ? parseInt(beatType, 10) : this.config.DEFAULT_BEAT_TYPE,
+        })
+      );
     }
 
     return times;
   }
 
-  getKeys(ctx: NodeHandlerCtx<'attributes'>): Key[] {
-    const keys = new Array<Key>();
+  private getKeyMessages(ctx: NodeHandlerCtx<'attributes'>): KeyMessage[] {
+    const keys = new Array<KeyMessage>();
 
     const elements = Array.from(ctx.node.asElement().getElementsByTagName('key'));
     for (const key of elements) {
       const staff = key.getAttribute('number');
       const fifths = key.getElementsByTagName('fifths').item(0)?.textContent;
-      keys.push({
-        staff: staff ? parseInt(staff, 10) : undefined,
-        fifths: fifths ? parseInt(fifths, 10) : this.config.DEFAULT_FIFTHS,
-      });
+
+      keys.push(
+        msg.key({
+          staff: staff ? parseInt(staff, 10) : null,
+          fifths: fifths ? parseInt(fifths, 10) : this.config.DEFAULT_FIFTHS,
+        })
+      );
     }
 
     return keys;
