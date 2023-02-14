@@ -27,14 +27,9 @@ export class Attributes {
           systems[systems.length - 1].getStaves()[cur1stStave + staff - 1].addClef(clef, 'default', clefAnnotation);
           if (clefAnnotation)
             t.literal(
-              `systems[systems.length-1].getStaves()[${
-                cur1stStave + staff - 1
-              }].addClef('${clef}', 'default', '${clefAnnotation}');`
+              `system.getStaves()[${cur1stStave + staff - 1}].addClef('${clef}', 'default', '${clefAnnotation}');`
             );
-          else
-            t.literal(
-              `systems[systems.length-1].getStaves()[${cur1stStave + staff - 1}].addClef('${clef}', 'default');`
-            );
+          else t.literal(`system.getStaves()[${cur1stStave + staff - 1}].addClef('${clef}', 'default');`);
         } else {
           notes.push(factory.ClefNote({ type: clef, options: { size: 'small' } }));
           t.literal(`notes.push(factory.ClefNote({ type: '${clef}', options: { size: 'small' } }))`);
@@ -47,7 +42,7 @@ export class Attributes {
       systems[systems.length - 1].getStaves().forEach((stave, index) => {
         if (index >= cur1stStave) stave.addTimeSignature(timeSignature);
       });
-      t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
+      t.literal(`system.getStaves().forEach((stave, index) => {
         if (index>=${cur1stStave}) stave.addTimeSignature('${timeSignature}');
       });`);
     }
@@ -56,7 +51,7 @@ export class Attributes {
       systems[systems.length - 1].getStaves().forEach((stave, index) => {
         if (index >= cur1stStave) stave.addKeySignature(keySignature);
       });
-      t.literal(`systems[systems.length-1].getStaves().forEach((stave, index) => {
+      t.literal(`system.getStaves().forEach((stave, index) => {
         if (index>=${cur1stStave})  stave.addKeySignature('${keySignature}');
       });`);
     }
