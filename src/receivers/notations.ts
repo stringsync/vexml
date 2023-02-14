@@ -20,14 +20,14 @@ export class Notations {
               from: notes[Notations.slurStart[message.number - 1]],
               to: notes[notes.length - 1],
               options: {
-                invert: bSameDir ? true : false,
+                invert: bSameDir,
                 position: 'nearTop',
                 position_end: bSameDir ? 'nearTop' : 'nearHead',
               },
             });
             t.literal(
               `factory.Curve({from: notes[${Notations.slurStart[message.number - 1]}],` +
-                `to: notes[notes.length - 1],options: {invert: ${bSameDir ? true : false}, position: 'nearTop', 
+                `to: notes[notes.length - 1],options: {invert: ${bSameDir}, position: 'nearTop', 
                 position_end: '${bSameDir ? 'nearTop' : 'nearHead'}'},});`
             );
             Notations.slurStart[message.number - 1] = -1;
