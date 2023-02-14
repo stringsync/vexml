@@ -1,6 +1,6 @@
 import { DEFAULT_CONFIG } from '../di';
 import { NoopReceiver } from '../receivers/noopreceiver';
-import { AttributesMessage } from '../types';
+import { ClefMessage, KeyMessage, LegacyAttributesMessage, TimeMessage } from '../types';
 import * as msg from '../util/msg';
 import * as xml from '../util/xml';
 import { AttributesHandler } from './attributeshandler';
@@ -25,12 +25,21 @@ describe(AttributesHandler, () => {
 
     attributesHandler.sendMessages(receiver, { node: attributes });
 
-    expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[AttributesMessage]>(
-      msg.attributes({
+    expect(receiverSpy).toHaveBeenCalledTimes(3);
+    expect(receiverSpy).toHaveBeenNthCalledWith<[ClefMessage]>(
+      1,
+      msg.clef({ staff: 1, sign: 'G', line: 2, octaveChange: null })
+    );
+    expect(receiverSpy).toHaveBeenNthCalledWith<[ClefMessage]>(
+      2,
+      msg.clef({ staff: 2, sign: 'G', line: 2, octaveChange: null })
+    );
+    expect(receiverSpy).toHaveBeenNthCalledWith<[LegacyAttributesMessage]>(
+      3,
+      msg.legacyAttributes({
         clefs: [
-          { staff: 1, sign: 'G', line: 2, octaveChange: undefined },
-          { staff: 2, sign: 'G', line: 2, octaveChange: undefined },
+          msg.clef({ staff: 1, sign: 'G', line: 2, octaveChange: null }),
+          msg.clef({ staff: 2, sign: 'G', line: 2, octaveChange: null }),
         ],
       })
     );
@@ -47,11 +56,11 @@ describe(AttributesHandler, () => {
 
     attributesHandler.sendMessages(receiver, { node: attributes });
 
-    expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[AttributesMessage]>(
-      msg.attributes({
-        times: [{ signature: '4/4' }],
-      })
+    expect(receiverSpy).toHaveBeenCalledTimes(2);
+    expect(receiverSpy).toHaveBeenNthCalledWith<[TimeMessage]>(1, msg.time({ beats: 4, beatType: 4, staff: null }));
+    expect(receiverSpy).toHaveBeenNthCalledWith<[LegacyAttributesMessage]>(
+      2,
+      msg.legacyAttributes({ times: [msg.time({ beats: 4, beatType: 4, staff: null })] })
     );
   });
 
@@ -62,14 +71,12 @@ describe(AttributesHandler, () => {
 
     attributesHandler.sendMessages(receiver, { node: attributes });
 
-    expect(receiverSpy).toHaveBeenCalledOnce();
-    expect(receiverSpy).toHaveBeenLastCalledWith<[AttributesMessage]>(
-      msg.attributes({
-        keys: [
-          { fifths: 2, staff: undefined },
-          { fifths: 0, staff: undefined },
-        ],
-      })
+    expect(receiverSpy).toHaveBeenCalledTimes(3);
+    expect(receiverSpy).toHaveBeenNthCalledWith<[KeyMessage]>(1, msg.key({ fifths: 2, staff: null }));
+    expect(receiverSpy).toHaveBeenNthCalledWith<[KeyMessage]>(2, msg.key({ fifths: 0, staff: null }));
+    expect(receiverSpy).toHaveBeenNthCalledWith<[LegacyAttributesMessage]>(
+      3,
+      msg.legacyAttributes({ keys: [msg.key({ fifths: 2, staff: null }), msg.key({ fifths: 0, staff: null })] })
     );
   });
 });

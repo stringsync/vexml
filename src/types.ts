@@ -9,11 +9,10 @@ export type VexmlConfig = {
   DEFAULT_ACCIDENTAL_CAUTIONARY: boolean;
   DEFAULT_NOTEHEAD_VALUE: string;
   DEFAULT_NOTE_DURATION: number;
-  DEFAULT_STAFF_NUMBER: number;
-  DEFAULT_CLEF_SIGN: string;
+  DEFAULT_CLEF_SIGN: ClefSign;
   DEFAULT_STAFF_LINE: number;
-  DEFAULT_BEATS: string;
-  DEFAULT_BEAT_TYPE: string;
+  DEFAULT_BEATS: number;
+  DEFAULT_BEAT_TYPE: number;
   DEFAULT_FIFTHS: number;
   DEFAULT_SYLLABIC: string;
 };
@@ -39,12 +38,35 @@ export type PrintMessage = {
   staffLayout: { staffDistance?: number }[];
 };
 
-// see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
-export type AttributesMessage = {
-  msgType: 'attributes';
-  clefs: { staff: number; sign: string; line?: number; octaveChange?: number }[];
-  times: { staff?: number; signature: string }[];
-  keys: { staff?: number; fifths: number }[];
+// Receivers should prefer to use ClefMessage, TimeMessage, and KeyMessage.
+export type LegacyAttributesMessage = {
+  msgType: 'legacyAttributes';
+  clefs: ClefMessage[];
+  times: TimeMessage[];
+  keys: KeyMessage[];
+};
+
+export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none';
+
+export type ClefMessage = {
+  msgType: 'clef';
+  staff: number | null;
+  sign: ClefSign;
+  line: number | null;
+  octaveChange: number | null;
+};
+
+export type TimeMessage = {
+  msgType: 'time';
+  staff: number | null;
+  beats: number;
+  beatType: number;
+};
+
+export type KeyMessage = {
+  msgType: 'key';
+  staff: number | null;
+  fifths: number;
 };
 
 export type DirectionMessage = {
@@ -133,7 +155,10 @@ export type VexmlMessage =
   | LyricMessage
   | NoteMessage
   | NotationMessage
-  | AttributesMessage
+  | LegacyAttributesMessage
+  | ClefMessage
+  | TimeMessage
+  | KeyMessage
   | DirectionMessage
   | MeasureStartMessage
   | MeasureEndMessage
