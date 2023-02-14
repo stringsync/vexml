@@ -52,7 +52,7 @@ export class Renderer implements VexmlMessageReceiver {
 
     let note = t.let<VF.Note | undefined>('note', () => undefined);
     let notes = t.let('notes', () => new Array<VF.Note>());
-    let directionNotes = t.let('notes', () => new Array<VF.Note>());
+    let directionNotes = t.let('directionNotes', () => new Array<VF.Note>());
     let directionMessage: DirectionMessage | undefined = undefined;
     let beamStart = t.let('beamStart', () => 0);
     let graceStart = t.let('graceStart', () => -1);
@@ -75,14 +75,18 @@ export class Renderer implements VexmlMessageReceiver {
     let endingMiddle = false;
     let autoStem = false;
 
-    const systems: VF.System[] = [];
+    let system = t.let<VF.System | undefined>('system', () => undefined);
+    let prevSystem = t.let<VF.System | undefined>('prevSystem', () => undefined);
+    const systems = t.let('systems', () => new Array<VF.System>());
 
     function appendSystem(width?: number): VF.System {
       let system: VF.System;
       if (width) {
-        system = factory.System({ x: 0, y: 0, width }) as VF.System;
+        system = factory.System({ x: 0, y: 0, width });
+        t.literal(`system = factory.System({ x: 0, y: 0, width: ${width} })`);
       } else {
-        system = factory.System({ x: 0, y: 0, autoWidth: true }) as VF.System;
+        system = factory.System({ x: 0, y: 0, autoWidth: true });
+        t.literal('system = factory.System({ x: 0, y: 0, autoWidth: true })');
       }
       return system;
     }
@@ -90,14 +94,20 @@ export class Renderer implements VexmlMessageReceiver {
     function createStaves() {
       if (newMeasure) {
         for (let staff = 1; staff <= numStaves; staff++) {
-          if (staff == 1) cur1stStave = systems[systems.length - 1].getStaves().length;
-          if (staff < numStaves)
-            systems[systems.length - 1].addStave({
+          if (staff == 1) cur1stStave = system!.getStaves().length;
+          if (staff < numStaves) {
+            system!.addStave({
               voices: [],
               spaceBelow: staffLayout[0]?.staffDistance ? staffLayout[0].staffDistance / 5 - 12 : 0,
             });
-          else systems[systems.length - 1].addStave({ voices: [] });
-          t.literal(`system.addStave({voices:[]})`);
+            t.literal(`system.addStave({
+              voices: [],
+              spaceBelow: ${staffLayout[0]?.staffDistance ? staffLayout[0].staffDistance / 5 - 12 : 0},
+            })`);
+          } else {
+            system!.addStave({ voices: [] });
+            t.literal(`system.addStave({ voices: [] })`);
+          }
         }
         newMeasure = false;
       }
@@ -118,13 +128,14 @@ export class Renderer implements VexmlMessageReceiver {
           if (message.value == 'begin') {
             beamStart = notes.length - 1;
           } else if (message.value == 'end') {
-            t.literal(`beamStart = ${beamStart}`);
-            t.expression(() =>
-              factory.Beam({
-                notes: notes.slice(beamStart) as VF.StemmableNote[],
-                options: { autoStem: autoStem },
-              })
-            );
+            factory.Beam({
+              notes: notes.slice(beamStart) as VF.StemmableNote[],
+              options: { autoStem: autoStem },
+            });
+            t.literal(` factory.Beam({
+              notes: notes.slice(${beamStart}),
+              options: { autoStem: ${autoStem} },
+            })`);
             beamStart = -1;
             autoStem = false;
           }
@@ -137,7 +148,7 @@ export class Renderer implements VexmlMessageReceiver {
           if (message.msgCount == message.msgIndex + 1) {
             curMeasure++;
             if (connector) {
-              systems[systems.length - 1].addConnector(connector);
+              system!.addConnector(connector);
               connector = undefined;
             }
           }
@@ -150,13 +161,19 @@ export class Renderer implements VexmlMessageReceiver {
             numStaves = message.staves;
           }
           if (firstPart == curPart) {
-            systems.push(appendSystem(width));
-            if (systems.length >= 2) {
-              systems[systems.length - 2].format();
-              systems[systems.length - 1].setX(
-                systems[systems.length - 2].getX() + systems[systems.length - 2].getBoundingBox()!.getW()
-              );
-              systems[systems.length - 1].setY(systems[systems.length - 2].getY());
+            t.expression(() => (prevSystem = system));
+            system = appendSystem(width);
+            systems.push(system);
+            t.literal('systems.push(system)');
+            if (prevSystem != undefined) {
+              prevSystem!.format();
+              t.literal('prevSystem.format()');
+              system!.setX(prevSystem!.getX() + prevSystem!.getBoundingBox()!.getW());
+              t.literal(`system.setX(
+                prevSystem.getX() + prevSystem.getBoundingBox().getW()
+              )`);
+              system!.setY(prevSystem!.getY());
+              t.literal('system.setY(prevSystem.getY())');
             }
           }
           newMeasure = true;
@@ -196,32 +213,36 @@ export class Renderer implements VexmlMessageReceiver {
           break;
         case 'print':
           newLine = true;
-          systems[systems.length - 1].setX(0 + (message.systemLayout.leftMargin ?? 0));
+          system!.setX(0 + (message.systemLayout.leftMargin ?? 0));
+          t.literal(`system.setX(${0 + (message.systemLayout.leftMargin ?? 0)})`);
           staffLayout = message.staffLayout;
-          if (systems.length >= 2) {
-            systems[systems.length - 1].setY(
-              systems[systems.length - 2].getY() +
-                systems[systems.length - 2].getBoundingBox()!.getH() +
-                (message.systemLayout.systemMargin ?? 50)
+          if (prevSystem) {
+            system!.setY(
+              prevSystem!.getY() + prevSystem!.getBoundingBox()!.getH() + (message.systemLayout.systemMargin ?? 50)
             );
+            t.literal(`system.setY(${
+              prevSystem!.getY() + prevSystem!.getBoundingBox()!.getH() + (message.systemLayout.systemMargin ?? 50)
+            })
+            `);
           } else {
-            systems[systems.length - 1].setY(message.systemLayout.systemMargin ?? 50);
+            system!.setY(message.systemLayout.systemMargin ?? 50);
+            t.literal(`system.setY(${message.systemLayout.systemMargin ?? 50})`);
           }
 
-          /*if (systems[systems.length - 1].getX() > 1000) {
+          /*if (system!.getX() > 1000) {
             newLine = true;
-            systems[systems.length - 1].setX(0);
-            systems[systems.length - 1].setY(systems[systems.length - 2].getBoundingBox()!.getH() + 50);
+            system!.setX(0);
+            system!.setY(prevSystem!.getBoundingBox()!.getH() + 50);
           }*/
           break;
         case 'direction':
           directionMessage = message;
           break;
         case 'voiceEnd':
-          systems[systems.length - 1].addVoices([factory.Voice().setMode(2).addTickables(notes)]);
-          t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(notes)])`);
-          systems[systems.length - 1].addVoices([factory.Voice().setMode(2).addTickables(directionNotes)]);
-          t.literal(`systems[systems.length-1].addVoices([factory.Voice().setMode(2).addTickables(directionNotes)])`);
+          system!.addVoices([factory.Voice().setMode(2).addTickables(notes)]);
+          t.literal(`system.addVoices([factory.Voice().setMode(2).addTickables(notes)])`);
+          system!.addVoices([factory.Voice().setMode(2).addTickables(directionNotes)]);
+          t.literal(`system.addVoices([factory.Voice().setMode(2).addTickables(directionNotes)])`);
           t.expression(() => (notes = []));
           t.expression(() => (directionNotes = []));
           duration = 0;
@@ -256,20 +277,16 @@ export class Renderer implements VexmlMessageReceiver {
 
           if (message.grace) {
             noteStruct.slash = message.graceSlash;
-            note = this.factory
-              .GraceNote(noteStruct)
-              .setStave(systems[systems.length - 1].getStaves()[cur1stStave + message.staff - 1]);
+            note = this.factory.GraceNote(noteStruct).setStave(system!.getStaves()[cur1stStave + message.staff - 1]);
             t.literal(
               `note = factory.GraceNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
-                .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
+                .setStave(system.getStaves()[${cur1stStave + message.staff - 1}]);`
             );
           } else {
-            note = this.factory
-              .StaveNote(noteStruct)
-              .setStave(systems[systems.length - 1].getStaves()[cur1stStave + message.staff - 1]);
+            note = this.factory.StaveNote(noteStruct).setStave(system!.getStaves()[cur1stStave + message.staff - 1]);
             t.literal(
               `note = factory.StaveNote(${JSON.stringify(noteStruct).replace(/\n/g, '')})
-                .setStave(systems[systems.length-1].getStaves()[${cur1stStave + message.staff - 1}]);`
+                .setStave(system.getStaves()[${cur1stStave + message.staff - 1}]);`
             );
           }
           for (let i = 0; i < message.dots; i++) {
@@ -383,12 +400,12 @@ export class Renderer implements VexmlMessageReceiver {
                 break;
             }
             if (message.location == 'right') {
-              systems[systems.length - 1].getStaves().forEach((stave) => {
+              system!.getStaves().forEach((stave) => {
                 stave.setEndBarType(barlineType as number);
               });
             }
             if (message.location == 'left') {
-              systems[systems.length - 1].getStaves().forEach((stave) => {
+              system!.getStaves().forEach((stave) => {
                 stave.setBegBarType(barlineType as number);
               });
             }
@@ -406,16 +423,16 @@ export class Renderer implements VexmlMessageReceiver {
           break;
         case 'measureEnd':
           if (endingLeft == 'start' && endingRight == 'stop') {
-            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
+            system!.getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN_END, endingText, 0);
             endingMiddle = false;
           } else if (endingLeft == 'start') {
-            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
+            system!.getStaves()[cur1stStave].setVoltaType(VF.VoltaType.BEGIN, endingText, 0);
             if (endingRight == '') endingMiddle = true;
           } else if (endingRight == 'stop') {
-            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.END, endingText, 0);
+            system!.getStaves()[cur1stStave].setVoltaType(VF.VoltaType.END, endingText, 0);
             endingMiddle = false;
           } else if (endingMiddle) {
-            systems[systems.length - 1].getStaves()[cur1stStave].setVoltaType(VF.VoltaType.MID, endingText, 0);
+            system!.getStaves()[cur1stStave].setVoltaType(VF.VoltaType.MID, endingText, 0);
           }
           endingLeft = '';
           endingRight = '';
@@ -423,7 +440,7 @@ export class Renderer implements VexmlMessageReceiver {
           break;
       }
     }
-    systems[systems.length - 1].format();
+    system!.format();
     const boundingBox = new BoundingBox(0, 0, 0, 0);
 
     systems.forEach((s) => {
@@ -432,6 +449,9 @@ export class Renderer implements VexmlMessageReceiver {
     factory
       .getContext()
       .resize(boundingBox.getX() + boundingBox.getW() + 50, boundingBox.getY() + boundingBox.getH() + 50);
+    t.literal(`factory.getContext()
+      .resize(${boundingBox.getX() + boundingBox.getW() + 50}, ${boundingBox.getY() + boundingBox.getH() + 50});
+    `);
     t.expression(() => factory.draw());
   }
 
