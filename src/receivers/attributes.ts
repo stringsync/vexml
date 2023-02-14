@@ -1,5 +1,5 @@
 import * as VF from 'vexflow';
-import { AttributesMessage, CodeTracker } from '../types';
+import { LegacyAttributesMessage, CodeTracker, ClefMessage } from '../types';
 
 export class Attributes {
   private static clefs: Map<number, { duration: number; clef?: string; annotation?: string }[]> = new Map<
@@ -10,20 +10,20 @@ export class Attributes {
   public static render(
     t: CodeTracker,
     factory: VF.Factory,
-    message: AttributesMessage,
+    message: LegacyAttributesMessage,
     cur1stStave: number,
     duration: number,
     notes: Array<VF.Note>,
     systems: VF.System[]
   ): void {
     for (const clefMsg of message.clefs) {
+      const staff = clefMsg.staff ?? 1;
       const clefT = this.clefTranslate(clefMsg);
-      this.clefSet(clefMsg.staff, duration, clefT);
+      this.clefSet(staff, duration, clefT);
       if (clefT.clef) {
         const clef = clefT.clef;
         const clefAnnotation = clefT.annotation;
         if (duration == 0) {
-          const staff = clefMsg.staff;
           systems[systems.length - 1].getStaves()[cur1stStave + staff - 1].addClef(clef, 'default', clefAnnotation);
           if (clefAnnotation)
             t.literal(
@@ -38,7 +38,7 @@ export class Attributes {
     }
 
     for (const timeMsg of message.times) {
-      const timeSignature = timeMsg.signature;
+      const timeSignature = `${timeMsg.beats}/${timeMsg.beatType}`;
       systems[systems.length - 1].getStaves().forEach((stave, index) => {
         if (index >= cur1stStave) stave.addTimeSignature(timeSignature);
       });
@@ -83,7 +83,7 @@ export class Attributes {
     return clef;
   }
 
-  private static clefTranslate(clef: { sign: string; line?: number; octaveChange?: number }): {
+  private static clefTranslate(clef: ClefMessage): {
     clef?: string;
     annotation?: string;
   } {
