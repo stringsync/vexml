@@ -11,8 +11,8 @@ export type VexmlConfig = {
   DEFAULT_NOTE_DURATION: number;
   DEFAULT_CLEF_SIGN: ClefSign;
   DEFAULT_STAFF_LINE: number;
-  DEFAULT_BEATS: number;
-  DEFAULT_BEAT_TYPE: number;
+  DEFAULT_BEATS: string;
+  DEFAULT_BEAT_TYPE: string;
   DEFAULT_FIFTHS: number;
   DEFAULT_SYLLABIC: string;
 };
@@ -59,8 +59,8 @@ export type ClefMessage = {
 export type TimeMessage = {
   msgType: 'time';
   staff: number | null;
-  beats: number;
-  beatType: number;
+  beats: string;
+  beatType: string;
 };
 
 export type KeyMessage = {
