@@ -1,13 +1,12 @@
 import { NamedNode } from './namednode';
 
-// helpers
-const xml = document.implementation.createDocument(null, null);
-const getNode = (namedNode: NamedNode<string>): Node => namedNode.node;
-
-// creators
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
-export const createElement = xml.createElement.bind(xml);
+const getNode = (namedNode: NamedNode<string>): Node => namedNode.node;
+
+export const createElement = (tagName: string, options?: ElementCreationOptions): HTMLElement => {
+  return document.implementation.createDocument(null, null).createElement(tagName, options);
+};
 
 export const scorePartwise: CreateNode<'score-partwise', { parts: NamedNode<'part'>[] }> = ({ parts } = {}) => {
   const node = createElement('score-partwise');

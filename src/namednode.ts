@@ -5,20 +5,19 @@
  * foo. As long as types aren't being dynamically casted, this is also backed by the compiler.
  */
 export class NamedNode<T extends string> {
+  /** Creates a NamedNode from a document node. */
   static of<T extends string = string>(node: Node): NamedNode<T> {
     return new NamedNode(node, node.nodeName as T);
   }
 
   private constructor(public readonly node: Node, public readonly name: T) {}
 
-  isNamed<T extends string>(name: T): this is NamedNode<T> {
-    return (this as any).name === name;
+  /** Determines if the node has the given name. */
+  isNamed<S extends string>(name: S): this is NamedNode<S> {
+    return (this as NamedNode<string>).name === name;
   }
 
-  get(): Node {
-    return this.node;
-  }
-
+  /** Casts the underlying node to an Element. */
   asElement(): Element {
     return this.node as Element;
   }

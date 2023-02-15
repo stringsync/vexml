@@ -1,5 +1,5 @@
 import { Measure } from './measure';
-import { NamedNode } from './util/namednode';
+import { NamedNode } from './namednode';
 
 /** Score is the entrypoint of a MusicXML document. */
 export class Score {

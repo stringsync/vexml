@@ -9,10 +9,16 @@ describe('NamedNode', () => {
       expect(namedNode).toBeInstanceOf(NamedNode);
     });
 
-    it('wraps the node', () => {
+    it('sets the node property', () => {
       const node = xml.createElement('foo');
       const namedNode = NamedNode.of(node);
       expect(namedNode.node).toBe(node);
+    });
+
+    it('sets the name property', () => {
+      const node = xml.createElement('foo');
+      const namedNode = NamedNode.of(node);
+      expect(namedNode.name).toBe('foo');
     });
   });
 
@@ -27,14 +33,6 @@ describe('NamedNode', () => {
       const node = xml.createElement('foo');
       const namedNode = NamedNode.of(node);
       expect(namedNode.isNamed('fo')).toBeFalse();
-    });
-  });
-
-  describe('get', () => {
-    it('returns the node backing the instance', () => {
-      const node = xml.createElement('foo');
-      const namedNode = NamedNode.of(node);
-      expect(namedNode.get()).toBe(node);
     });
   });
 
