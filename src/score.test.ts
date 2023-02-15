@@ -1,5 +1,4 @@
 import { Measure } from './measure';
-import { NamedNode } from './namednode';
 import { Score } from './score';
 import * as xml from './xml';
 
