@@ -4,6 +4,11 @@ import { NamedNode } from './namednode';
 export class Measure {
   constructor(private node: NamedNode<'measure'>) {}
 
+  /** Returns the part ID that the measure belongs to, or an empty string if missing. */
+  getPartId(): string {
+    return this.node.get().parentElement?.getAttribute('id') ?? '';
+  }
+
   /** Returns the measure number or -1 if there was a problem parsing it. */
   getNumber(): number {
     const number = this.node.asElement().getAttribute('number');

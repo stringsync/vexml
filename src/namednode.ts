@@ -12,6 +12,11 @@ export class NamedNode<T extends string> {
 
   private constructor(public readonly node: Node, public readonly name: T) {}
 
+  /** Returns the underlying node. */
+  get(): Node {
+    return this.node;
+  }
+
   /** Determines if the node has the given name. */
   isNamed<S extends string>(name: S): this is NamedNode<S> {
     return (this as NamedNode<string>).name === name;
