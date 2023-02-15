@@ -1,4 +1,4 @@
-import { NamedNode } from './util/namednode';
+import { NamedNode } from './namednode';
 
 /** Measure is a basic musical data container that has notes and rests. */
 export class Measure {
