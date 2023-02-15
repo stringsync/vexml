@@ -22,6 +22,14 @@ describe('NamedNode', () => {
     });
   });
 
+  describe('get', () => {
+    it('returns the node property', () => {
+      const node = xml.createElement('foo');
+      const namedNode = NamedNode.of(node);
+      expect(namedNode.get()).toBe(node);
+    });
+  });
+
   describe('isNamed', () => {
     it('returns true when the name matches the node', () => {
       const node = xml.createElement('foo');

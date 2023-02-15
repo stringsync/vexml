@@ -8,11 +8,59 @@ export const createElement = (tagName: string, options?: ElementCreationOptions)
   return document.implementation.createDocument(null, null).createElement(tagName, options);
 };
 
-export const scorePartwise: CreateNode<'score-partwise', { parts: NamedNode<'part'>[] }> = ({ parts } = {}) => {
+export const scorePartwise: CreateNode<
+  'score-partwise',
+  {
+    parts: NamedNode<'part'>[];
+    partList: NamedNode<'part-list'>;
+  }
+> = ({ parts, partList } = {}) => {
   const node = createElement('score-partwise');
 
   if (parts) {
     node.append(...parts.map(getNode));
+  }
+  if (partList) {
+    node.append(partList.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const partList: CreateNode<'part-list', { scoreParts: NamedNode<'score-part'>[] }> = ({ scoreParts } = {}) => {
+  const node = createElement('part-list');
+
+  if (scoreParts) {
+    node.append(...scoreParts.map(getNode));
+  }
+
+  return NamedNode.of(node);
+};
+
+export const scorePart: CreateNode<
+  'score-part',
+  {
+    id: string;
+    partName: NamedNode<'part-name'>;
+  }
+> = ({ id, partName } = {}) => {
+  const node = createElement('score-part');
+
+  if (id) {
+    node.setAttribute('id', id);
+  }
+  if (partName) {
+    node.appendChild(partName.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const partName: CreateNode<'part-name', { partName: string }> = ({ partName } = {}) => {
+  const node = createElement('part-name');
+
+  if (partName) {
+    node.textContent = partName;
   }
 
   return NamedNode.of(node);

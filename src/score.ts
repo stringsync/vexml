@@ -25,7 +25,7 @@ export class Score {
       .filter((textContent): textContent is string => typeof textContent === 'string');
   }
 
-  /** Returns an array of measures in the order they appear. */
+  /** Returns an array of measures in the order they appear for each part. */
   getMeasures(): Measure[] {
     return Array.from(this.node.asElement().getElementsByTagName('measure'))
       .map((measure) => NamedNode.of<'measure'>(measure))
