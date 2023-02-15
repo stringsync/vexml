@@ -1,4 +1,4 @@
-import { Measure } from './measure';
+import { Part } from './part';
 import { Score } from './score';
 import * as xml from './xml';
 
@@ -66,15 +66,15 @@ describe(Score, () => {
 
   describe('getMeasures', () => {
     it('returns the measures in the document', () => {
-      const measure1 = xml.measure();
-      const measure2 = xml.measure();
+      const part1 = xml.part();
+      const part2 = xml.part();
       const scorePartwise = xml.scorePartwise({
-        parts: [xml.part({ measures: [measure1, measure2] })],
+        parts: [part1, part2],
       });
 
       const score = new Score(scorePartwise);
 
-      expect(score.getMeasures()).toStrictEqual([new Measure(measure1), new Measure(measure2)]);
+      expect(score.getParts()).toStrictEqual([new Part(part1), new Part(part2)]);
     });
   });
 });

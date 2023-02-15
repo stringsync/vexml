@@ -1,5 +1,5 @@
-import { Measure } from './measure';
 import { NamedNode } from './namednode';
+import { Part } from './part';
 
 /** Score is the entrypoint of a MusicXML document. */
 export class Score {
@@ -25,10 +25,10 @@ export class Score {
       .filter((textContent): textContent is string => typeof textContent === 'string');
   }
 
-  /** Returns an array of measures in the order they appear for each part. */
-  getMeasures(): Measure[] {
-    return Array.from(this.node.asElement().getElementsByTagName('measure'))
-      .map((measure) => NamedNode.of<'measure'>(measure))
-      .map((node) => new Measure(node));
+  /** Returns an array of parts in the order they appear. */
+  getParts(): Part[] {
+    return Array.from(this.node.asElement().getElementsByTagName('part'))
+      .map((part) => NamedNode.of<'part'>(part))
+      .map((node) => new Part(node));
   }
 }
