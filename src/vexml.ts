@@ -1,24 +1,51 @@
+import * as VF from 'vexflow';
+import { CodePrinter } from './codeprinter';
 import { NamedNode } from './namednode';
 import { Score } from './score';
+import { CodeTracker } from './types';
+
+export type RenderOptions = {
+  codeTracker?: CodeTracker;
+};
 
 export class Vexml {
-  /** Creates a Vexml instance from a MusicXML document as a string. */
-  static fromString(musicXml: string): Vexml {
+  static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
+    // parse xml
     const parser = new DOMParser();
-    const document = parser.parseFromString(musicXml, 'application/xml');
-    return Vexml.fromDocument(document);
-  }
+    const root = parser.parseFromString(xml, 'application/xml');
 
-  /** Creates a Vexml instance from a MusicXML document node. */
-  static fromDocument(document: Document): Vexml {
-    const elements = document.getElementsByName('score-partwise');
+    // find exactly 1 <score-partwise> element
+    const elements = root.getElementsByTagName('score-partwise');
     if (elements.length !== 1) {
       throw new Error(`expected exactly 1 <score-partwise> element, got ${elements.length}`);
     }
     const scorePartwise = NamedNode.of<'score-partwise'>(elements.item(0)!);
+
+    // create instance
     const score = new Score(scorePartwise);
-    return new Vexml(score);
+    const codeTracker = opts.codeTracker ?? CodePrinter.noop();
+    const vexml = new Vexml({ score, codeTracker, elementId });
+
+    // render
+    vexml.render();
   }
 
-  private constructor(private score: Score) {}
+  private score: Score;
+  private codeTracker: CodeTracker;
+  private elementId: string;
+
+  private constructor(opts: { score: Score; codeTracker: CodeTracker; elementId: string }) {
+    this.score = opts.score;
+    this.codeTracker = opts.codeTracker;
+    this.elementId = opts.elementId;
+  }
+
+  private render(): void {
+    const { score, elementId, codeTracker: t } = this;
+
+    t.literal('const VF = Vex.Flow;');
+    t.literal(`const factory = new VF.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
+
+    new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } });
+  }
 }
