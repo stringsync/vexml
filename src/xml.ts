@@ -254,11 +254,11 @@ export const barline: CreateNode<
   return NamedNode.of(node);
 };
 
-export const staves: CreateNode<'staves', { numStaves: number }> = ({ numStaves } = {}) => {
+export const staves: CreateNode<'staves', { staveCount: number }> = ({ staveCount } = {}) => {
   const node = createElement('staves');
 
-  if (typeof numStaves === 'number') {
-    node.textContent = numStaves.toString();
+  if (typeof staveCount === 'number') {
+    node.textContent = staveCount.toString();
   }
 
   return NamedNode.of(node);
