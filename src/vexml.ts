@@ -50,39 +50,5 @@ export class Vexml {
     // create factory, which has a side effect of rendering an empty <svg>
     const factory = new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } });
     t.literal(`const factory = new VF.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
-
-    // make a system for each measure
-    const systems = this.createSystems(factory);
-  }
-
-  private createSystems(factory: VF.Factory): VF.System[] {
-    const { codeTracker: t, score } = this;
-
-    const systems = new Array<VF.System>();
-    t.literal('const systems = [];');
-    t.newline();
-
-    for (const part of score.getParts()) {
-      for (const measure of part.getMeasures()) {
-        const number = measure.getNumber();
-        t.comment(`measure ${number}`);
-
-        let system: VF.System;
-        const width = measure.getWidth();
-        if (width === -1) {
-          system = factory.System({ x: 0, y: 0, autoWidth: true });
-          t.literal(`const system = factory.System({ x: 0, y: 0, autoWidth: true })`);
-        } else {
-          system = factory.System({ x: 0, y: 0, width });
-          t.literal(`const system = factory.System({ x: 0, y: 0, width: ${width} })`);
-        }
-
-        systems.push(system);
-        t.literal(`systems.push(system);`);
-        t.newline();
-      }
-    }
-
-    return systems;
   }
 }
