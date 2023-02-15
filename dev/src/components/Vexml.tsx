@@ -50,7 +50,7 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
   useEffect(() => {
     const start = new Date().getTime();
     try {
-      vexml.Renderer.render(id, xml, { codeTracker: codePrinter });
+      vexml.Vexml.render(id, xml, { codeTracker: codePrinter });
       const stop = new Date().getTime();
       const svg = document.getElementById(id)!.firstChild! as SVGElement;
       success(svg, stop - start);
