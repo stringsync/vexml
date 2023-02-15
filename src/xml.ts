@@ -83,12 +83,13 @@ export const measure: CreateNode<
   'measure',
   {
     width: number;
+    number: string;
     notes: NamedNode<'note'>[];
     attributes: NamedNode<'attributes'>[];
     barlines: NamedNode<'barlines'>[];
     print: NamedNode<'print'>;
   }
-> = ({ width, notes, attributes, barlines, print } = {}) => {
+> = ({ width, number, notes, attributes, barlines, print } = {}) => {
   const node = createElement('measure');
 
   if (notes) {
@@ -105,6 +106,9 @@ export const measure: CreateNode<
   }
   if (typeof width === 'number') {
     node.setAttribute('width', width.toString());
+  }
+  if (typeof number === 'string') {
+    node.setAttribute('number', number);
   }
 
   return NamedNode.of(node);

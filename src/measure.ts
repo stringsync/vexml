@@ -4,15 +4,9 @@ import { NamedNode } from './namednode';
 export class Measure {
   constructor(private node: NamedNode<'measure'>) {}
 
-  /** Returns the part ID that the measure belongs to, or an empty string if missing. */
-  getPartId(): string {
-    return this.node.get().parentElement?.getAttribute('id') ?? '';
-  }
-
-  /** Returns the measure number or -1 if there was a problem parsing it. */
-  getNumber(): number {
-    const number = this.node.asElement().getAttribute('number');
-    return this.parseIntOr(number, -1);
+  /** Returns the measure number or an empty string if missing. */
+  getNumber(): string {
+    return this.node.asElement().getAttribute('number') ?? '';
   }
 
   /** Returns whether or not the measure has a specified width */
@@ -24,12 +18,6 @@ export class Measure {
   getWidth(): number {
     const width = this.node.asElement().getAttribute('width');
     return this.parseIntOr(width, -1);
-  }
-
-  /** Returns the stave count in the measure or 1 if there was a problem parsing it. */
-  getStaveCount(): number {
-    const staves = this.node.asElement().getElementsByTagName('staves').item(0)?.textContent;
-    return this.parseIntOr(staves, 1);
   }
 
   /** Parses a value into an integer and returns the fallback if there are any problems parsing it. */
