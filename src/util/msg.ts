@@ -62,8 +62,8 @@ export const clef: CreateMsg<ClefMessage> = (args) => ({
 
 export const time: CreateMsg<TimeMessage> = (args) => ({
   msgType: 'time',
-  beats: 4,
-  beatType: 4,
+  beats: '4',
+  beatType: '4',
   staff: null,
   ...args,
 });

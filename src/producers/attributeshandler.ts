@@ -70,8 +70,8 @@ export class AttributesHandler extends NodeHandler<'attributes'> {
       times.push(
         msg.time({
           staff: staff ? parseInt(staff, 10) : null,
-          beats: beats ? parseInt(beats, 10) : this.config.DEFAULT_BEATS,
-          beatType: beatType ? parseInt(beatType, 10) : this.config.DEFAULT_BEAT_TYPE,
+          beats: beats ?? this.config.DEFAULT_BEATS,
+          beatType: beatType ?? this.config.DEFAULT_BEAT_TYPE,
         })
       );
     }

@@ -57,10 +57,10 @@ describe(AttributesHandler, () => {
     attributesHandler.sendMessages(receiver, { node: attributes });
 
     expect(receiverSpy).toHaveBeenCalledTimes(2);
-    expect(receiverSpy).toHaveBeenNthCalledWith<[TimeMessage]>(1, msg.time({ beats: 4, beatType: 4, staff: null }));
+    expect(receiverSpy).toHaveBeenNthCalledWith<[TimeMessage]>(1, msg.time({ beats: '4', beatType: '4', staff: null }));
     expect(receiverSpy).toHaveBeenNthCalledWith<[LegacyAttributesMessage]>(
       2,
-      msg.legacyAttributes({ times: [msg.time({ beats: 4, beatType: 4, staff: null })] })
+      msg.legacyAttributes({ times: [msg.time({ beats: '4', beatType: '4', staff: null })] })
     );
   });
 
