@@ -1,3 +1,4 @@
+import { Attributes } from './attributes';
 import { Measure } from './measure';
 import * as xml from './xml';
 
@@ -47,6 +48,18 @@ describe(Measure, () => {
       const node = xml.measure({ width: NaN });
       const measure = new Measure(node);
       expect(measure.getWidth()).toBe(-1);
+    });
+  });
+
+  describe('getAttributes', () => {
+    it('returns the attributes elements', () => {
+      const attributes1 = xml.attributes();
+      const attributes2 = xml.attributes();
+      const node = xml.measure({ attributes: [attributes1, attributes2] });
+
+      const measure = new Measure(node);
+
+      expect(measure.getAttributes()).toStrictEqual([new Attributes(attributes1), new Attributes(attributes2)]);
     });
   });
 });

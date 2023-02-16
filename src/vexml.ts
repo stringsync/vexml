@@ -1,6 +1,8 @@
-import * as VF from 'vexflow';
+import * as vexflow from 'vexflow';
 import { CodePrinter } from './codeprinter';
+import { Measure } from './measure';
 import { NamedNode } from './namednode';
+import { Part } from './part';
 import { Score } from './score';
 import { CodeTracker } from './types';
 
@@ -10,6 +12,18 @@ export type RenderOptions = {
 
 export class Vexml {
   static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
+    // get code tracker
+    const t = opts.codeTracker ?? CodePrinter.noop();
+
+    // declare vexflow
+    t.literal(`const vexflow = Vex.Flow;`);
+    t.newline();
+
+    // setup vexflow Factory, which renders an empty <svg>
+    const vf = new vexflow.Factory({ renderer: { elementId, width: 2000, height: 400 } });
+    t.literal(`const vf = new vexflow.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
+    t.newline();
+
     // parse xml
     const parser = new DOMParser();
     const root = parser.parseFromString(xml, 'application/xml');
@@ -21,34 +35,69 @@ export class Vexml {
     }
     const scorePartwise = NamedNode.of<'score-partwise'>(elements.item(0)!);
 
-    // create instance
+    // create Vexml instance
     const score = new Score(scorePartwise);
-    const codeTracker = opts.codeTracker ?? CodePrinter.noop();
-    const vexml = new Vexml({ score, codeTracker, elementId });
+    const vexml = new Vexml({ score, t: t, factory: vf });
 
     // render
     vexml.render();
   }
 
   private score: Score;
-  private codeTracker: CodeTracker;
-  private elementId: string;
+  private t: CodeTracker;
+  private vf: vexflow.Factory;
 
-  private constructor(opts: { score: Score; codeTracker: CodeTracker; elementId: string }) {
+  private constructor(opts: { score: Score; t: CodeTracker; factory: vexflow.Factory }) {
     this.score = opts.score;
-    this.codeTracker = opts.codeTracker;
-    this.elementId = opts.elementId;
+    this.t = opts.t;
+    this.vf = opts.factory;
   }
 
   private render(): void {
-    const { codeTracker: t, elementId } = this;
+    this.t.comment('global variables');
+    this.t.literal('let system;');
+    this.t.newline();
 
-    // declare VF
-    t.literal('const VF = Vex.Flow;');
-    t.newline();
+    for (const part of this.score.getParts()) {
+      this.renderPart(part);
+    }
 
-    // create factory, which has a side effect of rendering an empty <svg>
-    const factory = new VF.Factory({ renderer: { elementId, width: 2000, height: 400 } });
-    t.literal(`const factory = new VF.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
+    this.vf.draw();
+  }
+
+  private renderPart(part: Part): void {
+    this.t.newline();
+    this.t.comment(`part ${part.getId()}`);
+
+    for (const measure of part.getMeasures()) {
+      this.renderMeasure(measure);
+    }
+  }
+
+  private renderMeasure(measure: Measure): void {
+    this.t.newline();
+    this.t.comment(`measure ${measure.getNumber()}`);
+
+    let system: vexflow.System;
+    const width = measure.getWidth();
+    if (width === -1) {
+      system = this.vf.System({ x: 0, y: 0, autoWidth: true });
+      this.t.literal(`system = factory.System({ x: 0, y: 0, autoWidth: true })`);
+    } else {
+      system = this.vf.System({ x: 0, y: 0, width });
+      this.t.literal(`system = factory.System({ x: 0, y: 0, width: ${width} })`);
+    }
+
+    system
+      .addStave({
+        voices: [
+          this.vf
+            .Voice()
+            .setMode(2)
+            .addTickables([this.vf.StaveNote({ duration: '4', keys: ['C/4'] })]),
+        ],
+      })
+      .addClef('treble')
+      .addTimeSignature('4/4');
   }
 }
