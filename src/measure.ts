@@ -1,4 +1,6 @@
+import { Attributes } from './attributes';
 import { NamedNode } from './namednode';
+import * as parse from './parse';
 
 /** Measure is a basic musical data container that has notes and rests. */
 export class Measure {
@@ -17,20 +19,13 @@ export class Measure {
   /** Returns the specified measured width in tenths or -1 if there was a problem parsing it. */
   getWidth(): number {
     const width = this.node.asElement().getAttribute('width');
-    return this.parseIntOr(width, -1);
+    return parse.intOrDefault(width, -1);
   }
 
-  /** Parses a value into an integer and returns the fallback if there are any problems parsing it. */
-  private parseIntOr(value: any, fallback: number): number {
-    if (typeof value !== 'string') {
-      return fallback;
-    }
-
-    const int = parseInt(value, 10);
-    if (isNaN(int)) {
-      return fallback;
-    }
-
-    return int;
+  /** Returns the <attributes> element of the measure. */
+  getAttributes(): Attributes[] {
+    return Array.from(this.node.asElement().getElementsByTagName('attributes'))
+      .map((attributes) => NamedNode.of<'attributes'>(attributes))
+      .map((node) => new Attributes(node));
   }
 }
