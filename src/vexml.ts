@@ -1,9 +1,8 @@
 import * as vexflow from 'vexflow';
 import { CodePrinter } from './codeprinter';
 import { Measure } from './measure';
-import { NamedNode } from './namednode';
+import { MusicXml } from './musicxml';
 import { Part } from './part';
-import { Score } from './score';
 import { CodeTracker } from './types';
 
 export type RenderOptions = {
@@ -12,45 +11,33 @@ export type RenderOptions = {
 
 export class Vexml {
   static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
-    // get code tracker
     const t = opts.codeTracker ?? CodePrinter.noop();
 
-    // declare vexflow
     t.literal(`const vexflow = Vex.Flow;`);
     t.newline();
 
-    // setup vexflow Factory, which renders an empty <svg>
+    // Constructing a vexflow.Factory also renders an empty <svg>.
     const vf = new vexflow.Factory({ renderer: { elementId, width: 2000, height: 400 } });
     t.literal(`const vf = new vexflow.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
     t.newline();
 
-    // parse xml
     const parser = new DOMParser();
     const root = parser.parseFromString(xml, 'application/xml');
 
-    // find exactly 1 <score-partwise> element
-    const elements = root.getElementsByTagName('score-partwise');
-    if (elements.length !== 1) {
-      throw new Error(`expected exactly 1 <score-partwise> element, got ${elements.length}`);
-    }
-    const scorePartwise = NamedNode.of<'score-partwise'>(elements.item(0)!);
+    const musicXml = new MusicXml(root);
+    const vexml = new Vexml({ musicXml, t, vf });
 
-    // create Vexml instance
-    const score = new Score(scorePartwise);
-    const vexml = new Vexml({ score, t: t, factory: vf });
-
-    // render
     vexml.render();
   }
 
-  private score: Score;
+  private musicXml: MusicXml;
   private t: CodeTracker;
   private vf: vexflow.Factory;
 
-  private constructor(opts: { score: Score; t: CodeTracker; factory: vexflow.Factory }) {
-    this.score = opts.score;
+  private constructor(opts: { musicXml: MusicXml; t: CodeTracker; vf: vexflow.Factory }) {
+    this.musicXml = opts.musicXml;
     this.t = opts.t;
-    this.vf = opts.factory;
+    this.vf = opts.vf;
   }
 
   private render(): void {
@@ -58,7 +45,13 @@ export class Vexml {
     this.t.literal('let system;');
     this.t.newline();
 
-    for (const part of this.score.getParts()) {
+    const score = this.musicXml.getScorePartwise();
+    if (!score) {
+      console.warn('nothing to render: missing top-level <score-partwise>');
+      return;
+    }
+
+    for (const part of score.getParts()) {
       this.renderPart(part);
     }
 
