@@ -9,7 +9,15 @@ export type RenderOptions = {
   codeTracker?: CodeTracker;
 };
 
+/** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
+  /**
+   * Renders a MusicXML document to an HTML element.
+   *
+   * @param elementId The ID of the element to render the SVG to.
+   * @param xml The MusicXML document as a string.
+   * @param opts Rendering options.
+   */
   static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
     const t = opts.codeTracker ?? CodePrinter.noop();
 

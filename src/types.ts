@@ -1,11 +1,24 @@
+/**
+ * CodeTracker is a crude interface for manually keeping track of parallel code strings.
+ */
 export interface CodeTracker {
   literal(literal: string): void;
   comment(comment: string): void;
   newline(): void;
 }
 
+/**
+ * Stem represents the notated stem direction.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/stem-value/
+ */
 export type Stem = 'up' | 'down' | 'double' | 'none';
 
+/**
+ * NoteType represents the graphic note type.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/note-type-value/
+ */
 export type NoteType =
   | '1024th'
   | '512th'
@@ -22,6 +35,11 @@ export type NoteType =
   | 'long'
   | 'maxima';
 
+/**
+ * NoteDurationDenominator corresponds to the fraction duration of a note. The values are vexflow-specific.
+ *
+ * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L16.
+ */
 export type NoteDurationDenominator =
   | '1024'
   | '512'
@@ -33,7 +51,7 @@ export type NoteDurationDenominator =
   | '8'
   | '4'
   | '2'
-  | 'w'
+  | '1'
   | '1/2'
   | '1/2'
   | '';

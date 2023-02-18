@@ -46,7 +46,7 @@ export class Note {
       case 'half':
         return '2';
       case 'whole':
-        return 'w';
+        return '1';
       case 'breve':
         return '1/2';
       case 'long':
