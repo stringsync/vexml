@@ -1,3 +1,4 @@
+import { Key } from './key';
 import { NamedNode } from './namednode';
 import * as parse from './parse';
 import { Time } from './time';
@@ -17,9 +18,17 @@ export class Attributes {
     return parse.intOrDefault(textContent, 0);
   }
 
+  /** Returns the times. */
   getTimes(): Time[] {
     return Array.from(this.node.asElement().getElementsByTagName('time'))
       .map((time) => NamedNode.of<'time'>(time))
       .map((node) => new Time(node));
+  }
+
+  /** Returns the keys. */
+  getKeys(): Key[] {
+    return Array.from(this.node.asElement().getElementsByTagName('key'))
+      .map((key) => NamedNode.of<'key'>(key))
+      .map((node) => new Key(node));
   }
 }

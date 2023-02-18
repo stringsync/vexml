@@ -1,4 +1,5 @@
 import { Attributes } from './attributes';
+import { Key } from './key';
 import { Time } from './time';
 import * as xml from './xml';
 
@@ -39,10 +40,25 @@ describe(Attributes, () => {
       expect(attributes.getTimes()).toStrictEqual([new Time(time)]);
     });
 
-    it('returns an empty array when time is missing', () => {
+    it('returns an empty array when times are missing', () => {
       const node = xml.attributes();
       const attributes = new Attributes(node);
       expect(attributes.getTimes()).toBeEmpty();
+    });
+  });
+
+  describe('getKeys', () => {
+    it('returns the keys', () => {
+      const key = xml.key();
+      const node = xml.attributes({ keys: [key] });
+      const attributes = new Attributes(node);
+      expect(attributes.getKeys()).toStrictEqual([new Key(key)]);
+    });
+
+    it('returns an empty array when keys are missing', () => {
+      const node = xml.attributes();
+      const attributes = new Attributes(node);
+      expect(attributes.getKeys()).toBeEmpty();
     });
   });
 });
