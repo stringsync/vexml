@@ -2,9 +2,6 @@ import { NamedNode } from './namednode';
 import * as parse from './parse';
 import { Time } from './time';
 
-// TODO: The relationship between <measure> and <attributes> is one-to-many. Support mid-measure attributes changes.
-// See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
-
 /**
  * Attributes contains musical information that typically changes each measure, such as key and time signatures, clefs,
  * transpositions and staving.
