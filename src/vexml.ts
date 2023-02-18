@@ -1,9 +1,8 @@
 import * as vexflow from 'vexflow';
-import { CodePrinter } from './codeprinter';
+import { CodePrinter, CodeTracker } from './codeprinter';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Part } from './part';
-import { CodeTracker } from './types';
 
 export type RenderOptions = {
   codeTracker?: CodeTracker;

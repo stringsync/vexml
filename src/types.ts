@@ -1,13 +1,4 @@
 /**
- * CodeTracker is a crude interface for manually keeping track of parallel code strings.
- */
-export interface CodeTracker {
-  literal(literal: string): void;
-  comment(comment: string): void;
-  newline(): void;
-}
-
-/**
  * Stem represents the notated stem direction.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/stem-value/
