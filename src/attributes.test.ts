@@ -27,4 +27,54 @@ describe(Attributes, () => {
       expect(attributes.getStaveCount()).toBe(0);
     });
   });
+
+  describe('getBeats', () => {
+    it('returns the beats', () => {
+      const node = xml.attributes({
+        times: [
+          xml.time({
+            times: [
+              {
+                beats: xml.beats({ textContent: '3' }),
+                beatType: xml.beatType({ textContent: '8' }),
+              },
+            ],
+          }),
+        ],
+      });
+      const attributes = new Attributes(node);
+      expect(attributes.getBeats()).toBe('3');
+    });
+
+    it('returns 4 when beats is missing', () => {
+      const node = xml.attributes();
+      const attributes = new Attributes(node);
+      expect(attributes.getBeats()).toBe('4');
+    });
+  });
+
+  describe('getBeatType', () => {
+    it('returns the beat type', () => {
+      const node = xml.attributes({
+        times: [
+          xml.time({
+            times: [
+              {
+                beats: xml.beats({ textContent: '3' }),
+                beatType: xml.beatType({ textContent: '8' }),
+              },
+            ],
+          }),
+        ],
+      });
+      const attributes = new Attributes(node);
+      expect(attributes.getBeatType()).toBe('8');
+    });
+
+    it('returns 4 when beat type is missing', () => {
+      const node = xml.attributes();
+      const attributes = new Attributes(node);
+      expect(attributes.getBeatType()).toBe('4');
+    });
+  });
 });
