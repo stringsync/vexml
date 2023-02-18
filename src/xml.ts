@@ -479,8 +479,8 @@ export const time: CreateNode<
   'time',
   {
     times: {
-      beats: NamedNode<'beats'>;
-      beatType: NamedNode<'beat-type'>;
+      beats?: NamedNode<'beats'>;
+      beatType?: NamedNode<'beat-type'>;
     }[];
   }
 > = ({ times } = {}) => {
@@ -488,7 +488,12 @@ export const time: CreateNode<
 
   if (times) {
     for (const { beats, beatType } of times) {
-      node.append(beats.node, beatType.node);
+      if (beats) {
+        node.append(beats.node);
+      }
+      if (beatType) {
+        node.append(beatType.node);
+      }
     }
   }
 
