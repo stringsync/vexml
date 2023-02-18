@@ -1,5 +1,4 @@
-import { CodeTracker } from './types';
-import { CodePrinter } from './codeprinter';
+import { CodeTracker, CodePrinter } from './codeprinter';
 
 describe('CodePrinter', () => {
   describe('constructor', () => {
