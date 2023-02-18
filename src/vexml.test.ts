@@ -1,14 +1,24 @@
+import { CodePrinter } from './codeprinter';
 import { Vexml } from './vexml';
 
 describe(Vexml, () => {
   describe('render', () => {
-    it('runs without crashing', () => {
-      const id = 'foo';
-      const div = document.createElement('div');
-      div.id = id;
-      document.body.appendChild(div);
+    const elementId = 'foo';
 
-      expect(() => Vexml.render(id, XML)).not.toThrow();
+    beforeEach(() => {
+      const div = document.createElement('div');
+      div.id = elementId;
+      document.body.appendChild(div);
+    });
+
+    it('runs without crashing', () => {
+      expect(() => Vexml.render(elementId, XML)).not.toThrow();
+    });
+
+    it('tracks VexFlow code when given a CodePrinter', () => {
+      const codePrinter = new CodePrinter();
+      Vexml.render(elementId, XML, { codeTracker: codePrinter });
+      expect(codePrinter.print()).not.toBeEmpty();
     });
   });
 });
