@@ -69,7 +69,7 @@ describe(Note, () => {
       { noteType: 'eighth', durationDenominator: '8' },
       { noteType: 'quarter', durationDenominator: '4' },
       { noteType: 'half', durationDenominator: '2' },
-      { noteType: 'whole', durationDenominator: 'w' },
+      { noteType: 'whole', durationDenominator: '1' },
       { noteType: 'breve', durationDenominator: '1/2' },
       { noteType: 'long', durationDenominator: '1/2' },
       { noteType: 'maxima', durationDenominator: '' },
@@ -79,16 +79,16 @@ describe(Note, () => {
       expect(note.getDurationDenominator()).toBe(t.durationDenominator);
     });
 
-    it(`returns 'whole' for invalid note types`, () => {
+    it(`returns '1' for invalid note types`, () => {
       const node = xml.note({ type: xml.type({ textContent: 'foo' }) });
       const note = new Note(node);
-      expect(note.getDurationDenominator()).toBe('w');
+      expect(note.getDurationDenominator()).toBe('1');
     });
 
-    it(`returns 'whole' when note type is missing`, () => {
+    it(`returns '1' when note type is missing`, () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getDurationDenominator()).toBe('w');
+      expect(note.getDurationDenominator()).toBe('1');
     });
   });
 

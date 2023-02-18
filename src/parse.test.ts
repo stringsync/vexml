@@ -7,6 +7,16 @@ describe('parse', () => {
       expect(result).toBe(42);
     });
 
+    it('leaves integers intact', () => {
+      const result = parse.intOrDefault(42, 43);
+      expect(result).toBe(42);
+    });
+
+    it('truncates decimals', () => {
+      const result = parse.intOrDefault(42.2222, 43);
+      expect(result).toBe(42);
+    });
+
     it('parses decimals by truncating them', () => {
       const result = parse.intOrDefault('42.999999', 43);
       expect(result).toBe(42);

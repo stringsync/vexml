@@ -2,6 +2,7 @@ import * as babel from 'prettier/parser-babel';
 import * as prettier from 'prettier/standalone';
 import { CodeTracker } from './types';
 
+/** CodePrinter is a code tracker that allows the content to be printed at any point. */
 export class CodePrinter implements CodeTracker {
   static noop(): CodeTracker {
     return new NoopCodePrinter();
@@ -9,14 +10,17 @@ export class CodePrinter implements CodeTracker {
 
   private lines = new Array<string>();
 
+  /** Tracks a literal string. Callers must track valid JavaScript. */
   literal(literal: string): void {
     this.record(literal);
   }
 
+  /** Tracks a newline. */
   newline(): void {
     this.record('');
   }
 
+  /** Tracks a '//' style comment. */
   comment(comment: string): void {
     const trimmed = comment.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('/*')) {
@@ -25,6 +29,7 @@ export class CodePrinter implements CodeTracker {
     this.record(`// ${comment}`);
   }
 
+  /** Prints and formats the code using prettier. It will throw an error for invalid JavaScript code. */
   print(): string {
     const src = this.lines.join('\n');
     return prettier.format(src, {
@@ -40,6 +45,11 @@ export class CodePrinter implements CodeTracker {
   }
 }
 
+/**
+ * NoopCodePrinter is a noop CodeTracker.
+ *
+ * Its intent is to avoid needlessly storing code trackings if the caller does not care about it.
+ */
 class NoopCodePrinter implements CodeTracker {
   literal(): void {
     // noop

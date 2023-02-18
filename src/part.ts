@@ -1,6 +1,11 @@
 import { Measure } from './measure';
 import { NamedNode } from './namednode';
 
+/**
+ * The top level of musical organization below the Score that contains a sequence of Measures.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-partwise/
+ */
 export class Part {
   constructor(private node: NamedNode<'part'>) {}
 

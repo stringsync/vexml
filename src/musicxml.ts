@@ -1,6 +1,11 @@
 import { NamedNode } from './namednode';
 import { Score } from './score';
 
+/**
+ * A wrapper around a root node that corresponds to a MusicXML document.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/
+ */
 export class MusicXml {
   constructor(private root: Document) {}
 

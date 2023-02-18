@@ -2,7 +2,11 @@ import { Attributes } from './attributes';
 import { NamedNode } from './namednode';
 import * as parse from './parse';
 
-/** Measure is a basic musical data container that has notes and rests. */
+/**
+ * Measure is a basic musical data container that has notes and rests.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
+ */
 export class Measure {
   constructor(private node: NamedNode<'measure'>) {}
 
