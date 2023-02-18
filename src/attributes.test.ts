@@ -1,4 +1,5 @@
 import { Attributes } from './attributes';
+import { Time } from './time';
 import * as xml from './xml';
 
 describe(Attributes, () => {
@@ -28,53 +29,20 @@ describe(Attributes, () => {
     });
   });
 
-  describe('getBeats', () => {
-    it('returns the beats', () => {
-      const node = xml.attributes({
-        times: [
-          xml.time({
-            times: [
-              {
-                beats: xml.beats({ textContent: '3' }),
-                beatType: xml.beatType({ textContent: '8' }),
-              },
-            ],
-          }),
-        ],
+  describe('getTimes', () => {
+    it('returns the times', () => {
+      const time = xml.time({
+        times: [{ beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '8' }) }],
       });
+      const node = xml.attributes({ times: [time] });
       const attributes = new Attributes(node);
-      expect(attributes.getBeats()).toBe('3');
+      expect(attributes.getTimes()).toStrictEqual([new Time(time)]);
     });
 
-    it('returns 4 when beats is missing', () => {
+    it('returns an empty array when time is missing', () => {
       const node = xml.attributes();
       const attributes = new Attributes(node);
-      expect(attributes.getBeats()).toBe('4');
-    });
-  });
-
-  describe('getBeatType', () => {
-    it('returns the beat type', () => {
-      const node = xml.attributes({
-        times: [
-          xml.time({
-            times: [
-              {
-                beats: xml.beats({ textContent: '3' }),
-                beatType: xml.beatType({ textContent: '8' }),
-              },
-            ],
-          }),
-        ],
-      });
-      const attributes = new Attributes(node);
-      expect(attributes.getBeatType()).toBe('8');
-    });
-
-    it('returns 4 when beat type is missing', () => {
-      const node = xml.attributes();
-      const attributes = new Attributes(node);
-      expect(attributes.getBeatType()).toBe('4');
+      expect(attributes.getTimes()).toBeEmpty();
     });
   });
 });
