@@ -4,7 +4,7 @@
  * Parses the value and returns the default value if there are any problems.
  */
 export const intOrDefault = (value: any, defaultValue: number): number => {
-  if (typeof value === 'number') {
+  if (typeof value === 'number' && !isNaN(value)) {
     return Math.trunc(value);
   }
 

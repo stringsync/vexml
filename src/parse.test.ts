@@ -17,6 +17,11 @@ describe('parse', () => {
       expect(result).toBe(42);
     });
 
+    it('defaults when given NaN', () => {
+      const result = parse.intOrDefault(NaN, 42);
+      expect(result).toBe(42);
+    });
+
     it('parses decimals by truncating them', () => {
       const result = parse.intOrDefault('42.999999', 43);
       expect(result).toBe(42);
