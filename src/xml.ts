@@ -1,4 +1,5 @@
 import { NamedNode } from './namednode';
+import { NoteType } from './types';
 
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
@@ -117,6 +118,7 @@ export const measure: CreateNode<
 export const note: CreateNode<
   'note',
   {
+    type: NamedNode<'type'>;
     stem: NamedNode<'stem'>;
     dots: NamedNode<'dot'>[];
     rest: NamedNode<'rest'>;
@@ -126,9 +128,12 @@ export const note: CreateNode<
     grace: NamedNode<'grace'>;
     duration: NamedNode<'duration'>;
   }
-> = ({ grace, stem, dots, rest, pitch, accidental, notehead, duration } = {}) => {
+> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration } = {}) => {
   const node = createElement('note');
 
+  if (type) {
+    node.appendChild(type.node);
+  }
   if (grace) {
     node.appendChild(grace.node);
   }
@@ -154,6 +159,16 @@ export const note: CreateNode<
   }
   if (notehead) {
     node.appendChild(notehead.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const type: CreateNode<'type', { textContent: string }> = ({ textContent } = {}) => {
+  const node = createElement('type');
+
+  if (textContent) {
+    node.textContent = textContent;
   }
 
   return NamedNode.of(node);
