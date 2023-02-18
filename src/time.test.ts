@@ -21,4 +21,26 @@ describe(Time, () => {
     const time = new Time(node);
     expect(time.getTimeSignatures()).toBeEmpty();
   });
+
+  it('ignores extra beats', () => {
+    const node = xml.time({
+      times: [
+        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '4' }) },
+        { beats: xml.beats({ textContent: '3' }) },
+      ],
+    });
+    const time = new Time(node);
+    expect(time.getTimeSignatures()).toStrictEqual([{ numerator: '3', denominator: '4' }]);
+  });
+
+  it('ignores extra beat types', () => {
+    const node = xml.time({
+      times: [
+        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '4' }) },
+        { beatType: xml.beatType({ textContent: '6' }) },
+      ],
+    });
+    const time = new Time(node);
+    expect(time.getTimeSignatures()).toStrictEqual([{ numerator: '3', denominator: '4' }]);
+  });
 });
