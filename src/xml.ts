@@ -465,10 +465,12 @@ export const key: CreateNode<'key', { fifths: NamedNode<'fifths'> }> = ({ fifths
   return NamedNode.of(node);
 };
 
-export const fifths: CreateNode<'fifths', { fifths: number }> = ({ fifths } = {}) => {
+export const fifths: CreateNode<'fifths', { textContent: string }> = ({ textContent } = {}) => {
   const node = createElement('fifths');
 
-  node.textContent = fifths?.toString() ?? '0';
+  if (textContent) {
+    node.textContent = textContent;
+  }
 
   return NamedNode.of(node);
 };
