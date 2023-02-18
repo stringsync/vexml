@@ -1,6 +1,14 @@
 import * as babel from 'prettier/parser-babel';
 import * as prettier from 'prettier/standalone';
-import { CodeTracker } from './types';
+
+/**
+ * CodeTracker is a crude interface for manually keeping track of parallel code strings.
+ */
+export interface CodeTracker {
+  literal(literal: string): void;
+  comment(comment: string): void;
+  newline(): void;
+}
 
 /** CodePrinter is a code tracker that allows the content to be printed at any point. */
 export class CodePrinter implements CodeTracker {
