@@ -1,12 +1,13 @@
 import { NamedNode } from './namednode';
-import { NoteType } from './types';
 
 type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedNode<T>;
 
 const getNode = (namedNode: NamedNode<string>): Node => namedNode.node;
 
+export const createDocument = (): Document => document.implementation.createDocument(null, null);
+
 export const createElement = (tagName: string, options?: ElementCreationOptions): HTMLElement => {
-  return document.implementation.createDocument(null, null).createElement(tagName, options);
+  return createDocument().createElement(tagName, options);
 };
 
 export const scorePartwise: CreateNode<
