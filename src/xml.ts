@@ -733,3 +733,23 @@ export const text: CreateNode<'text', { text: string }> = ({ text } = {}) => {
 
   return NamedNode.of(node);
 };
+
+export const notations: CreateNode<'notations', { arpeggiate: NamedNode<'arpeggiate'> }> = ({ arpeggiate } = {}) => {
+  const node = createElement('notations');
+
+  if (arpeggiate) {
+    node.appendChild(arpeggiate.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const arpeggiate: CreateNode<'arpeggiate', { direction: string }> = ({ direction } = {}) => {
+  const node = createElement('arpeggiate');
+
+  if (typeof direction === 'string') {
+    node.setAttribute('direction', direction);
+  }
+
+  return NamedNode.of(node);
+};

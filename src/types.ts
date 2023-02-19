@@ -78,3 +78,10 @@ export type SystemLayout = {
   topSystemDistance: number | null;
   systemDistance: number | null;
 };
+
+/**
+ * The vertical direction of arrows and other pointed symbols.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/up-down/
+ */
+export type VerticalDirection = 'up' | 'down';
