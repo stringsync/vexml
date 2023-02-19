@@ -117,6 +117,58 @@ export class Note {
     return this.isNotehead(notehead) ? notehead : 'normal';
   }
 
+  /** Whether or not the note is the first note of a chord. */
+  isChordHead(): boolean {
+    if (this.isChordTail()) {
+      return false;
+    }
+
+    const sibling = this.node.asElement().nextElementSibling;
+    if (!sibling) {
+      return false;
+    }
+
+    const node = NamedNode.of(sibling);
+    if (node.isNamed('note')) {
+      // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
+      return new Note(node).isChordTail();
+    }
+
+    return false;
+  }
+
+  /** Whether or not the note is part of a chord and *not* the first note of the chord. */
+  isChordTail(): boolean {
+    return this.node.asElement().getElementsByTagName('chord').length > 0;
+  }
+
+  /** Returns the rest of the notes in the chord iff the current note is a chord head. Defaults to an empty array. */
+  getChordTail(): Note[] {
+    const tail = new Array<Note>();
+
+    if (!this.isChordHead()) {
+      return tail;
+    }
+
+    let sibling = this.node.asElement().nextElementSibling;
+    while (sibling) {
+      const node = NamedNode.of(sibling);
+      if (!node.isNamed('note')) {
+        break;
+      }
+
+      const note = new Note(node);
+      if (!note.isChordTail()) {
+        break;
+      }
+
+      tail.push(note);
+      sibling = sibling.nextElementSibling;
+    }
+
+    return tail;
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }

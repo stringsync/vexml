@@ -1,5 +1,6 @@
 import { Attributes } from './attributes';
 import { NamedNode } from './namednode';
+import { Note } from './note';
 import * as parse from './parse';
 
 /**
@@ -31,5 +32,12 @@ export class Measure {
     return Array.from(this.node.asElement().getElementsByTagName('attributes'))
       .map((attributes) => NamedNode.of<'attributes'>(attributes))
       .map((node) => new Attributes(node));
+  }
+
+  /** Returns the notes of the measure. */
+  getNotes(): Note[] {
+    return Array.from(this.node.asElement().getElementsByTagName('note'))
+      .map((note) => NamedNode.of<'note'>(note))
+      .map((node) => new Note(node));
   }
 }
