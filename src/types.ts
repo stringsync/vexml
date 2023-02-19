@@ -164,3 +164,21 @@ export type Notehead =
   | 'triangle'
   | 'x'
   | 'other';
+
+/**
+ * The bar style of a measure.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/bar-style/
+ */
+export type Barline =
+  | 'dashed'
+  | 'dotted'
+  | 'heavy'
+  | 'heavy-heavy'
+  | 'heavy-light'
+  | 'light-heavy'
+  | 'light-light'
+  | 'none'
+  | 'regular'
+  | 'short'
+  | 'tick';
