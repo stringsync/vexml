@@ -1,3 +1,4 @@
+import { Notations } from './notations';
 import { Note } from './note';
 import * as xml from './xml';
 
@@ -143,6 +144,22 @@ describe(Note, () => {
       const node = xml.note();
       const note = new Note(node);
       expect(note.hasGraceSlash()).toBeFalse();
+    });
+  });
+
+  describe('getNotations', () => {
+    it('returns the notations of the note', () => {
+      const notation1 = xml.notations();
+      const notation2 = xml.notations();
+      const node = xml.note({ notations: [notation1, notation2] });
+      const note = new Note(node);
+      expect(note.getNotations()).toStrictEqual([new Notations(notation1), new Notations(notation2)]);
+    });
+
+    it('returns an empty array when missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getNotations()).toBeEmpty();
     });
   });
 });

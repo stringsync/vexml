@@ -1,4 +1,5 @@
 import { NamedNode } from './namednode';
+import { Notations } from './notations';
 import { NoteDurationDenominator, NoteType, Stem } from './types';
 
 export class Note {
@@ -71,6 +72,13 @@ export class Note {
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
     return this.node.asElement().getElementsByTagName('grace').item(0)?.getAttribute('slash') === 'yes';
+  }
+
+  /** Returns the notations of the note. */
+  getNotations(): Notations[] {
+    return Array.from(this.node.asElement().getElementsByTagName('notations'))
+      .map((notations) => NamedNode.of<'notations'>(notations))
+      .map((node) => new Notations(node));
   }
 
   private isStem(value: any): value is Stem {

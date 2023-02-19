@@ -52,7 +52,7 @@ export const scorePart: CreateNode<
     node.setAttribute('id', id);
   }
   if (partName) {
-    node.appendChild(partName.node);
+    node.append(partName.node);
   }
 
   return NamedNode.of(node);
@@ -128,38 +128,40 @@ export const note: CreateNode<
     notehead: NamedNode<'notehead'>;
     grace: NamedNode<'grace'>;
     duration: NamedNode<'duration'>;
+    notations: NamedNode<'notations'>[];
   }
-> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration } = {}) => {
+> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations } = {}) => {
   const node = createElement('note');
 
   if (type) {
-    node.appendChild(type.node);
+    node.append(type.node);
   }
   if (grace) {
-    node.appendChild(grace.node);
+    node.append(grace.node);
   }
   if (pitch) {
-    node.appendChild(pitch.node);
+    node.append(pitch.node);
   }
   if (rest) {
-    node.appendChild(rest.node);
+    node.append(rest.node);
   }
   if (duration) {
-    node.appendChild(duration.node);
+    node.append(duration.node);
   }
   if (dots) {
-    for (const dot of dots) {
-      node.appendChild(dot.node);
-    }
+    node.append(...dots.map(getNode));
   }
   if (accidental) {
-    node.appendChild(accidental.node);
+    node.append(accidental.node);
   }
   if (stem) {
-    node.appendChild(stem.node);
+    node.append(stem.node);
   }
   if (notehead) {
-    node.appendChild(notehead.node);
+    node.append(notehead.node);
+  }
+  if (notations) {
+    node.append(...notations.map(getNode));
   }
 
   return NamedNode.of(node);
@@ -242,7 +244,7 @@ export const staffLayout: CreateNode<
     node.setAttribute('number', number.toString());
   }
   if (staffDistance) {
-    node.appendChild(staffDistance.node);
+    node.append(staffDistance.node);
   }
 
   return NamedNode.of(node);
@@ -270,16 +272,16 @@ export const systemLayout: CreateNode<
   const node = createElement('system-layout');
 
   if (systemMargins) {
-    node.appendChild(systemMargins.node);
+    node.append(systemMargins.node);
   }
   if (systemDistance) {
-    node.appendChild(systemDistance.node);
+    node.append(systemDistance.node);
   }
   if (topSystemDistance) {
-    node.appendChild(topSystemDistance.node);
+    node.append(topSystemDistance.node);
   }
   if (systemDividers) {
-    node.appendChild(systemDividers.node);
+    node.append(systemDividers.node);
   }
 
   return NamedNode.of(node);
@@ -292,10 +294,10 @@ export const systemMargins: CreateNode<
   const node = createElement('system-margins');
 
   if (leftMargin) {
-    node.appendChild(leftMargin.node);
+    node.append(leftMargin.node);
   }
   if (rightMargin) {
-    node.appendChild(rightMargin.node);
+    node.append(rightMargin.node);
   }
 
   return NamedNode.of(node);
@@ -454,10 +456,10 @@ export const rest: CreateNode<
   const node = createElement('rest');
 
   if (displayStep) {
-    node.appendChild(displayStep.node);
+    node.append(displayStep.node);
   }
   if (displayOctave) {
-    node.appendChild(displayOctave.node);
+    node.append(displayOctave.node);
   }
 
   return NamedNode.of(node);
@@ -490,10 +492,10 @@ export const pitch: CreateNode<'pitch', { step: NamedNode<'step'>; octave: Named
   const node = createElement('pitch');
 
   if (step) {
-    node.appendChild(step.node);
+    node.append(step.node);
   }
   if (octave) {
-    node.appendChild(octave.node);
+    node.append(octave.node);
   }
 
   return NamedNode.of(node);
@@ -551,7 +553,7 @@ export const duration: CreateNode<'duration', { positiveDivisions: NamedNode<'po
   const node = createElement('duration');
 
   if (positiveDivisions) {
-    node.appendChild(positiveDivisions.node);
+    node.append(positiveDivisions.node);
   }
 
   return NamedNode.of(node);
@@ -571,7 +573,7 @@ export const key: CreateNode<'key', { fifths: NamedNode<'fifths'> }> = ({ fifths
   const node = createElement('key');
 
   if (fifths) {
-    node.appendChild(fifths.node);
+    node.append(fifths.node);
   }
 
   return NamedNode.of(node);
@@ -622,13 +624,13 @@ export const clef: CreateNode<
     node.setAttribute('number', staff.toString());
   }
   if (sign) {
-    node.appendChild(sign.node);
+    node.append(sign.node);
   }
   if (line) {
-    node.appendChild(line.node);
+    node.append(line.node);
   }
   if (clefOctaveChange) {
-    node.appendChild(clefOctaveChange.node);
+    node.append(clefOctaveChange.node);
   }
 
   return NamedNode.of(node);
@@ -705,10 +707,10 @@ export const lyric: CreateNode<'lyric', { text: NamedNode<'text'>; syllabic: Nam
   const node = createElement('lyric');
 
   if (syllabic) {
-    node.appendChild(syllabic.node);
+    node.append(syllabic.node);
   }
   if (text) {
-    node.appendChild(text.node);
+    node.append(text.node);
   }
 
   return NamedNode.of(node);
@@ -738,7 +740,7 @@ export const notations: CreateNode<'notations', { arpeggiate: NamedNode<'arpeggi
   const node = createElement('notations');
 
   if (arpeggiate) {
-    node.appendChild(arpeggiate.node);
+    node.append(arpeggiate.node);
   }
 
   return NamedNode.of(node);
