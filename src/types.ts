@@ -85,3 +85,47 @@ export type SystemLayout = {
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/up-down/
  */
 export type VerticalDirection = 'up' | 'down';
+
+/**
+ * Notated accidentals supported by MusicXML.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/accidental-value/
+ */
+export type Accidental =
+  | 'sharp'
+  | 'natural'
+  | 'flat'
+  | 'double-sharp'
+  | 'sharp-sharp'
+  | 'flat-flat'
+  | 'natural-sharp'
+  | 'natural-flat'
+  | 'quarter-flat'
+  | 'quarter-sharp'
+  | 'three-quarters-flat'
+  | 'three-quarters-sharp'
+  | 'sharp-down'
+  | 'sharp-up'
+  | 'natural-down'
+  | 'natural-up'
+  | 'flat-down'
+  | 'flat-up'
+  | 'double-sharp-down'
+  | 'double-sharp-up'
+  | 'flat-flat-down'
+  | 'flat-flat-up'
+  | 'arrow-down'
+  | 'arrow-up'
+  | 'triple-sharp'
+  | 'triple-flat'
+  | 'slash-quarter-sharp'
+  | 'slash-sharp'
+  | 'slash-flat'
+  | 'double-slash-flat'
+  | 'flat-1'
+  | 'flat-2'
+  | 'flat-3'
+  | 'flat-4'
+  | 'sori'
+  | 'koron'
+  | 'other';
