@@ -1,6 +1,6 @@
 import { NamedNode } from './namednode';
 import { Notations } from './notations';
-import { NoteDurationDenominator, NoteType, Stem } from './types';
+import { Accidental, NoteDurationDenominator, NoteType, Stem } from './types';
 import * as parse from './parse';
 
 export class Note {
@@ -100,6 +100,12 @@ export class Note {
     return `${step}/${octave}`;
   }
 
+  /** Returns the accidental of the note. */
+  getAccidental(): Accidental | null {
+    const accidental = this.node.asElement().getElementsByTagName('accidental').item(0)?.textContent;
+    return this.isAccidental(accidental) ? accidental : null;
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }
@@ -120,6 +126,48 @@ export class Note {
       'breve',
       'long',
       'maxima',
+    ].includes(value);
+  }
+
+  private isAccidental(value: any): value is Accidental {
+    return [
+      'sharp',
+      'natural',
+      'flat',
+      'double-sharp',
+      'sharp-sharp',
+      'flat-flat',
+      'natural-sharp',
+      'natural-flat',
+      'quarter-flat',
+      'quarter-sharp',
+      'three-quarters-flat',
+      'three-quarters-sharp',
+      'sharp-down',
+      'sharp-up',
+      'natural-down',
+      'natural-up',
+      'flat-down',
+      'flat-up',
+      'double-sharp-down',
+      'double-sharp-up',
+      'flat-flat-down',
+      'flat-flat-up',
+      'arrow-down',
+      'arrow-up',
+      'triple-sharp',
+      'triple-flat',
+      'slash-quarter-sharp',
+      'slash-sharp',
+      'slash-flat',
+      'double-slash-flat',
+      'flat-1',
+      'flat-2',
+      'flat-3',
+      'flat-4',
+      'sori',
+      'koron',
+      'other',
     ].includes(value);
   }
 }
