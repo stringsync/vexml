@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import { CodePrinter, CodeTracker } from './codeprinter';
+import { History } from './history';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Part } from './part';
@@ -41,6 +42,8 @@ export class Vexml {
   private t: CodeTracker;
   private vf: vexflow.Factory;
 
+  private system = new History<vexflow.System>();
+
   private constructor(opts: { musicXml: MusicXml; t: CodeTracker; vf: vexflow.Factory }) {
     this.musicXml = opts.musicXml;
     this.t = opts.t;
@@ -78,17 +81,18 @@ export class Vexml {
     this.t.newline();
     this.t.comment(`measure ${measure.getNumber()}`);
 
+    // add a system
     let system: vexflow.System;
     const width = measure.getWidth();
     if (width === -1) {
       system = this.vf.System({ x: 0, y: 0, autoWidth: true });
-      this.t.literal(`system = factory.System({ x: 0, y: 0, autoWidth: true })`);
     } else {
       system = this.vf.System({ x: 0, y: 0, width });
-      this.t.literal(`system = factory.System({ x: 0, y: 0, width: ${width} })`);
     }
+    this.addSystem(system);
 
-    system
+    this.system
+      .getCurrent()!
       .addStave({
         voices: [
           this.vf
@@ -99,5 +103,18 @@ export class Vexml {
       })
       .addClef('treble')
       .addTimeSignature('4/4');
+  }
+
+  private addSystem(system: vexflow.System): void {
+    this.system.set(system);
+
+    const current = this.system.getCurrent()!;
+    const previous = this.system.getPrevious();
+
+    if (previous) {
+      previous.format();
+      current.setX(previous.getX() + previous.getBoundingBox()!.getW());
+      current.setY(previous.getY());
+    }
   }
 }
