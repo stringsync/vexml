@@ -58,11 +58,11 @@ export const scorePart: CreateNode<
   return NamedNode.of(node);
 };
 
-export const partName: CreateNode<'part-name', { partName: string }> = ({ partName } = {}) => {
+export const partName: CreateNode<'part-name', { textContent: string }> = ({ textContent } = {}) => {
   const node = createElement('part-name');
 
-  if (partName) {
-    node.textContent = partName;
+  if (textContent) {
+    node.textContent = textContent;
   }
 
   return NamedNode.of(node);
@@ -207,16 +207,16 @@ export const print: CreateNode<
   {
     newSystem: boolean;
     newPage: boolean;
-    systemLayout: NamedNode<'systemLayout'>;
-    staffLayouts: NamedNode<'staffLayout'>[];
+    systemLayout: NamedNode<'system-layout'>;
+    staffLayouts: NamedNode<'staff-layout'>[];
   }
 > = ({ newSystem, newPage, systemLayout, staffLayouts } = {}) => {
   const node = createElement('print');
 
-  if (newSystem) {
+  if (typeof newSystem === 'boolean') {
     node.setAttribute('new-system', newSystem ? 'yes' : 'no');
   }
-  if (newPage) {
+  if (typeof newPage === 'boolean') {
     node.setAttribute('new-page', newPage ? 'yes' : 'no');
   }
   if (staffLayouts) {
@@ -224,6 +224,118 @@ export const print: CreateNode<
   }
   if (systemLayout) {
     node.append(systemLayout.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const staffLayout: CreateNode<
+  'staff-layout',
+  {
+    number: number;
+    staffDistance: NamedNode<'staff-distance'>;
+  }
+> = ({ number, staffDistance } = {}) => {
+  const node = createElement('staff-layout');
+
+  if (typeof number === 'number') {
+    node.setAttribute('number', number.toString());
+  }
+  if (staffDistance) {
+    node.appendChild(staffDistance.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const staffDistance: CreateNode<'staff-distance', { textContent: string }> = ({ textContent } = {}) => {
+  const node = createElement('staff-distance');
+
+  if (textContent) {
+    node.textContent = textContent;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const systemLayout: CreateNode<
+  'system-layout',
+  {
+    systemMargins: NamedNode<'system-margins'>;
+    systemDistance: NamedNode<'system-distance'>;
+    topSystemDistance: NamedNode<'top-system-distance'>;
+    systemDividers: NamedNode<'system-dividers'>;
+  }
+> = ({ systemMargins, systemDistance, topSystemDistance, systemDividers } = {}) => {
+  const node = createElement('system-layout');
+
+  if (systemMargins) {
+    node.appendChild(systemMargins.node);
+  }
+  if (systemDistance) {
+    node.appendChild(systemDistance.node);
+  }
+  if (topSystemDistance) {
+    node.appendChild(topSystemDistance.node);
+  }
+  if (systemDividers) {
+    node.appendChild(systemDividers.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const systemMargins: CreateNode<
+  'system-margins',
+  { leftMargin: NamedNode<'left-margin'>; rightMargin: NamedNode<'right-margin'> }
+> = ({ leftMargin, rightMargin } = {}) => {
+  const node = createElement('system-margins');
+
+  if (leftMargin) {
+    node.appendChild(leftMargin.node);
+  }
+  if (rightMargin) {
+    node.appendChild(rightMargin.node);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const leftMargin: CreateNode<'left-margin', { tenths: number }> = ({ tenths } = {}) => {
+  const node = createElement('left-margin');
+
+  if (typeof tenths === 'number') {
+    node.textContent = tenths.toString();
+  }
+
+  return NamedNode.of(node);
+};
+
+export const rightMargin: CreateNode<'right-margin', { tenths: number }> = ({ tenths } = {}) => {
+  const node = createElement('right-margin');
+
+  if (typeof tenths === 'number') {
+    node.textContent = tenths.toString();
+  }
+
+  return NamedNode.of(node);
+};
+
+export const systemDistance: CreateNode<'system-distance', { tenths: number }> = ({ tenths } = {}) => {
+  const node = createElement('system-distance');
+
+  if (typeof tenths === 'number') {
+    node.textContent = tenths.toString();
+  }
+
+  return NamedNode.of(node);
+};
+
+export const topSystemDistance: CreateNode<'top-system-distance', { tenths: number }> = ({ tenths } = {}) => {
+  const node = createElement('top-system-distance');
+
+  if (typeof tenths === 'number') {
+    node.textContent = tenths.toString();
   }
 
   return NamedNode.of(node);
