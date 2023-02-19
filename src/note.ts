@@ -106,6 +106,11 @@ export class Note {
     return this.isAccidental(accidental) ? accidental : null;
   }
 
+  /** Whether or not the accidental is cautionary. Defaults to false. */
+  hasAccidentalCautionary(): boolean {
+    return this.node.asElement().getElementsByTagName('accidental').item(0)?.getAttribute('cautionary') === 'yes';
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }
