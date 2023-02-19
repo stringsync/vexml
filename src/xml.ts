@@ -783,3 +783,13 @@ export const staff: CreateNode<'staff', { number: number }> = ({ number } = {}) 
 
   return NamedNode.of(node);
 };
+
+export const notehead: CreateNode<'notehead', { value: string }> = ({ value } = {}) => {
+  const node = createElement('notehead');
+
+  if (typeof value === 'string') {
+    node.textContent = value;
+  }
+
+  return NamedNode.of(node);
+};

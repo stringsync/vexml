@@ -1,6 +1,6 @@
 import { NamedNode } from './namednode';
 import { Notations } from './notations';
-import { Accidental, NoteDurationDenominator, NoteType, Stem } from './types';
+import { Accidental, NoteDurationDenominator, Notehead, NoteType, Stem } from './types';
 import * as parse from './parse';
 
 export class Note {
@@ -111,6 +111,12 @@ export class Note {
     return this.node.asElement().getElementsByTagName('accidental').item(0)?.getAttribute('cautionary') === 'yes';
   }
 
+  /** Returns the notehead of the note. */
+  getNotehead(): Notehead {
+    const notehead = this.node.asElement().getElementsByTagName('notehead').item(0)?.textContent;
+    return this.isNotehead(notehead) ? notehead : 'normal';
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }
@@ -172,6 +178,39 @@ export class Note {
       'flat-4',
       'sori',
       'koron',
+      'other',
+    ].includes(value);
+  }
+
+  private isNotehead(value: any): value is Notehead {
+    return [
+      'arrow down',
+      'arrow up',
+      'back slashed',
+      'circle dot',
+      'circle-x',
+      'circled',
+      'cluster',
+      'cross',
+      'diamond',
+      'do',
+      'fa',
+      'fa up',
+      'inverted triangle',
+      'la',
+      'left triangle',
+      'mi',
+      'none',
+      'normal',
+      're',
+      'rectangle',
+      'slash',
+      'slashed',
+      'so',
+      'square',
+      'ti',
+      'triangle',
+      'x',
       'other',
     ].includes(value);
   }

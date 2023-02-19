@@ -313,4 +313,53 @@ describe(Note, () => {
       expect(note.hasAccidentalCautionary()).toBeFalse();
     });
   });
+
+  describe('getNotehead', () => {
+    it.each([
+      'arrow down',
+      'arrow up',
+      'back slashed',
+      'circle dot',
+      'circle-x',
+      'circled',
+      'cluster',
+      'cross',
+      'diamond',
+      'do',
+      'fa',
+      'fa up',
+      'inverted triangle',
+      'la',
+      'left triangle',
+      'mi',
+      'none',
+      'normal',
+      're',
+      'rectangle',
+      'slash',
+      'slashed',
+      'so',
+      'square',
+      'ti',
+      'triangle',
+      'x',
+      'other',
+    ])(`returns the notehead of the note: '%s'`, (notehead) => {
+      const node = xml.note({ notehead: xml.notehead({ value: notehead }) });
+      const note = new Note(node);
+      expect(note.getNotehead()).toBe(notehead);
+    });
+
+    it(`defaults to 'normal' when the notehead is invalid`, () => {
+      const node = xml.note({ notehead: xml.notehead({ value: 'foo' }) });
+      const note = new Note(node);
+      expect(note.getNotehead()).toBe('normal');
+    });
+
+    it(`defaults to 'normal' when the notehead is missing`, () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getNotehead()).toBe('normal');
+    });
+  });
 });
