@@ -49,10 +49,10 @@ describe(Score, () => {
         partList: xml.partList({
           scoreParts: [
             xml.scorePart({
-              partName: xml.partName({ partName: 'foo' }),
+              partName: xml.partName({ textContent: 'foo' }),
             }),
             xml.scorePart({
-              partName: xml.partName({ partName: 'bar' }),
+              partName: xml.partName({ textContent: 'bar' }),
             }),
           ],
         }),
