@@ -235,4 +235,62 @@ describe(Note, () => {
       expect(note.getPitch()).toBe('C/4');
     });
   });
+
+  describe('getAccidental', () => {
+    it.each([
+      'sharp',
+      'natural',
+      'flat',
+      'double-sharp',
+      'sharp-sharp',
+      'flat-flat',
+      'natural-sharp',
+      'natural-flat',
+      'quarter-flat',
+      'quarter-sharp',
+      'three-quarters-flat',
+      'three-quarters-sharp',
+      'sharp-down',
+      'sharp-up',
+      'natural-down',
+      'natural-up',
+      'flat-down',
+      'flat-up',
+      'double-sharp-down',
+      'double-sharp-up',
+      'flat-flat-down',
+      'flat-flat-up',
+      'arrow-down',
+      'arrow-up',
+      'triple-sharp',
+      'triple-flat',
+      'slash-quarter-sharp',
+      'slash-sharp',
+      'slash-flat',
+      'double-slash-flat',
+      'flat-1',
+      'flat-2',
+      'flat-3',
+      'flat-4',
+      'sori',
+      'koron',
+      'other',
+    ])(`returns the accidental of the note: '%s'`, (accidental) => {
+      const node = xml.note({ accidental: xml.accidental({ value: accidental }) });
+      const note = new Note(node);
+      expect(note.getAccidental()).toBe(accidental);
+    });
+
+    it('defaults to null when accidental is invalid', () => {
+      const node = xml.note({ accidental: xml.accidental({ value: 'foo' }) });
+      const note = new Note(node);
+      expect(note.getAccidental()).toBeNull();
+    });
+
+    it('defaults to null when accidental is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getAccidental()).toBeNull();
+    });
+  });
 });
