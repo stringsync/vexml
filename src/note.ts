@@ -93,6 +93,13 @@ export class Note {
     return parse.intOrDefault(staff, 1);
   }
 
+  /** Returns the step and octave of the note in the format `${step}/${octave}`. */
+  getPitch(): string {
+    const step = this.node.asElement().getElementsByTagName('step').item(0)?.textContent ?? 'C';
+    const octave = this.node.asElement().getElementsByTagName('octave').item(0)?.textContent ?? '4';
+    return `${step}/${octave}`;
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }

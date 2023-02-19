@@ -196,4 +196,43 @@ describe(Note, () => {
       expect(note.getStaff()).toBe(1);
     });
   });
+
+  describe('getPitch', () => {
+    it('returns the pitch of the note', () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          step: xml.step({ textContent: 'D' }),
+          octave: xml.octave({ textContent: '12' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getPitch()).toBe('D/12');
+    });
+
+    it(`defaults to step 'C' when missing step`, () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          octave: xml.octave({ textContent: '12' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getPitch()).toBe('C/12');
+    });
+
+    it(`defaults to octave '4' when missing octave`, () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          step: xml.step({ textContent: 'D' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getPitch()).toBe('D/4');
+    });
+
+    it(`defaults to 'C/4' when missing step and octave`, () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getPitch()).toBe('C/4');
+    });
+  });
 });

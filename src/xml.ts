@@ -509,21 +509,21 @@ export const pitch: CreateNode<'pitch', { step: NamedNode<'step'>; octave: Named
   return NamedNode.of(node);
 };
 
-export const step: CreateNode<'step', { step: string }> = ({ step } = {}) => {
+export const step: CreateNode<'step', { textContent: string }> = ({ textContent } = {}) => {
   const node = createElement('step');
 
-  if (step) {
-    node.textContent = step;
+  if (textContent) {
+    node.textContent = textContent;
   }
 
   return NamedNode.of(node);
 };
 
-export const octave: CreateNode<'octave', { octave: string }> = ({ octave } = {}) => {
+export const octave: CreateNode<'octave', { textContent: string }> = ({ textContent } = {}) => {
   const node = createElement('octave');
 
-  if (octave) {
-    node.textContent = octave;
+  if (textContent) {
+    node.textContent = textContent;
   }
 
   return NamedNode.of(node);
