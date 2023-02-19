@@ -196,3 +196,10 @@ export type RepeatDirection = 'backward' | 'forward';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/right-left-middle/
  */
 export type BarlineLocation = 'right' | 'left' | 'middle';
+
+/**
+ * The ending type.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-discontinue/
+ */
+export type EndingType = 'start' | 'stop' | 'discontinue';
