@@ -63,6 +63,16 @@ export class Note {
     return this.node.asElement().getElementsByTagName('dot').length;
   }
 
+  /** Whether or not the note is a grace note. */
+  isGrace(): boolean {
+    return this.node.asElement().getElementsByTagName('grace').length > 0;
+  }
+
+  /** Whether or not the note has a glash slash. */
+  hasGraceSlash(): boolean {
+    return this.node.asElement().getElementsByTagName('grace').item(0)?.getAttribute('slash') === 'yes';
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }

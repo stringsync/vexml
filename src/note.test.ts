@@ -105,4 +105,44 @@ describe(Note, () => {
       expect(note.getDotCount()).toBe(0);
     });
   });
+
+  describe('isGrace', () => {
+    it('returns true when the note has a grace', () => {
+      const node = xml.note({ grace: xml.grace() });
+      const note = new Note(node);
+      expect(note.isGrace()).toBeTrue();
+    });
+
+    it('returns false when the note does not have a grace', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.isGrace()).toBeFalse();
+    });
+  });
+
+  describe('hasGraceSlash', () => {
+    it('returns true when the note has a grace when slash is yes', () => {
+      const node = xml.note({ grace: xml.grace({ slash: 'yes' }) });
+      const note = new Note(node);
+      expect(note.hasGraceSlash()).toBeTrue();
+    });
+
+    it('returns false when the note has a grace when slash is no', () => {
+      const node = xml.note({ grace: xml.grace({ slash: 'no' }) });
+      const note = new Note(node);
+      expect(note.hasGraceSlash()).toBeFalse();
+    });
+
+    it('returns false when the note has an invalid slash', () => {
+      const node = xml.note({ grace: xml.grace({ slash: 'foo' }) });
+      const note = new Note(node);
+      expect(note.hasGraceSlash()).toBeFalse();
+    });
+
+    it('returns false when the note has no grace', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.hasGraceSlash()).toBeFalse();
+    });
+  });
 });
