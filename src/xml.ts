@@ -131,12 +131,16 @@ export const note: CreateNode<
     notations: NamedNode<'notations'>[];
     voice: NamedNode<'voice'>;
     staff: NamedNode<'staff'>;
+    chord: NamedNode<'chord'>;
   }
-> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff } = {}) => {
+> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff, chord } = {}) => {
   const node = createElement('note');
 
   if (grace) {
     node.append(grace.node);
+  }
+  if (chord) {
+    node.append(chord.node);
   }
   if (pitch) {
     node.append(pitch.node);
@@ -790,6 +794,12 @@ export const notehead: CreateNode<'notehead', { value: string }> = ({ value } = 
   if (typeof value === 'string') {
     node.textContent = value;
   }
+
+  return NamedNode.of(node);
+};
+
+export const chord: CreateNode<'chord', Record<never, never>> = () => {
+  const node = createElement('chord');
 
   return NamedNode.of(node);
 };

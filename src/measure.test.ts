@@ -1,5 +1,6 @@
 import { Attributes } from './attributes';
 import { Measure } from './measure';
+import { Note } from './note';
 import * as xml from './xml';
 
 describe(Measure, () => {
@@ -60,6 +61,18 @@ describe(Measure, () => {
       const measure = new Measure(node);
 
       expect(measure.getAttributes()).toStrictEqual([new Attributes(attributes1), new Attributes(attributes2)]);
+    });
+  });
+
+  describe('getNotes', () => {
+    it('returns the notes of the measure', () => {
+      const note1 = xml.note();
+      const note2 = xml.note();
+      const node = xml.measure({ notes: [note1, note2] });
+
+      const measure = new Measure(node);
+
+      expect(measure.getNotes()).toStrictEqual([new Note(note1), new Note(note2)]);
     });
   });
 });
