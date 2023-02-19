@@ -162,4 +162,18 @@ describe(Note, () => {
       expect(note.getNotations()).toBeEmpty();
     });
   });
+
+  describe('getVoice', () => {
+    it('returns the voice of the note', () => {
+      const node = xml.note({ voice: xml.voice({ textContent: '2' }) });
+      const note = new Note(node);
+      expect(note.getVoice()).toBe('2');
+    });
+
+    it(`defaults '1' when voice is missing`, () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getVoice()).toBe('1');
+    });
+  });
 });

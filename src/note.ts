@@ -81,6 +81,11 @@ export class Note {
       .map((node) => new Notations(node));
   }
 
+  /** Returns the voice this note belongs to. */
+  getVoice(): string {
+    return this.node.asElement().getElementsByTagName('voice').item(0)?.textContent ?? '1';
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }
