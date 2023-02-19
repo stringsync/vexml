@@ -293,4 +293,24 @@ describe(Note, () => {
       expect(note.getAccidental()).toBeNull();
     });
   });
+
+  describe('hasAccidentalCautionary', () => {
+    it('returns if the note has an accidental that is cautionary', () => {
+      const node = xml.note({ accidental: xml.accidental({ cautionary: 'yes' }) });
+      const note = new Note(node);
+      expect(note.hasAccidentalCautionary()).toBeTrue();
+    });
+
+    it('returns false when the cautionary value is invalid', () => {
+      const node = xml.note({ accidental: xml.accidental({ cautionary: 'foo' }) });
+      const note = new Note(node);
+      expect(note.hasAccidentalCautionary()).toBeFalse();
+    });
+
+    it('returns false when the accidental is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.hasAccidentalCautionary()).toBeFalse();
+    });
+  });
 });
