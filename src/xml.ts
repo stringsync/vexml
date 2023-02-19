@@ -129,13 +129,11 @@ export const note: CreateNode<
     grace: NamedNode<'grace'>;
     duration: NamedNode<'duration'>;
     notations: NamedNode<'notations'>[];
+    voice: NamedNode<'voice'>;
   }
-> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations } = {}) => {
+> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice } = {}) => {
   const node = createElement('note');
 
-  if (type) {
-    node.append(type.node);
-  }
   if (grace) {
     node.append(grace.node);
   }
@@ -147,6 +145,12 @@ export const note: CreateNode<
   }
   if (duration) {
     node.append(duration.node);
+  }
+  if (voice) {
+    node.append(voice.node);
+  }
+  if (type) {
+    node.append(type.node);
   }
   if (dots) {
     node.append(...dots.map(getNode));
@@ -751,6 +755,16 @@ export const arpeggiate: CreateNode<'arpeggiate', { direction: string }> = ({ di
 
   if (typeof direction === 'string') {
     node.setAttribute('direction', direction);
+  }
+
+  return NamedNode.of(node);
+};
+
+export const voice: CreateNode<'voice', { textContent: string }> = ({ textContent } = {}) => {
+  const node = createElement('voice');
+
+  if (typeof textContent === 'string') {
+    node.textContent = textContent;
   }
 
   return NamedNode.of(node);
