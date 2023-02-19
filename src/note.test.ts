@@ -446,4 +446,18 @@ describe(Note, () => {
       expect(notes[1].getChordTail()).toStrictEqual([notes[2], notes[3]]);
     });
   });
+
+  describe('isRest', () => {
+    it('returns true when the note has a rest element', () => {
+      const node = xml.note({ rest: xml.rest() });
+      const note = new Note(node);
+      expect(note.isRest()).toBeTrue();
+    });
+
+    it('returns false when the note does not have a rest element', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.isRest()).toBeFalse();
+    });
+  });
 });

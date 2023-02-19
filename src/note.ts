@@ -169,6 +169,11 @@ export class Note {
     return tail;
   }
 
+  /** Returns whether or not the note is a rest. */
+  isRest(): boolean {
+    return this.node.asElement().getElementsByTagName('rest').length > 0;
+  }
+
   private isStem(value: any): value is Stem {
     return ['up', 'down', 'double', 'none'].includes(value);
   }
