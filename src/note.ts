@@ -1,6 +1,7 @@
 import { NamedNode } from './namednode';
 import { Notations } from './notations';
 import { NoteDurationDenominator, NoteType, Stem } from './types';
+import * as parse from './parse';
 
 export class Note {
   constructor(private node: NamedNode<'note'>) {}
@@ -84,6 +85,12 @@ export class Note {
   /** Returns the voice this note belongs to. */
   getVoice(): string {
     return this.node.asElement().getElementsByTagName('voice').item(0)?.textContent ?? '1';
+  }
+
+  /** Returns the staff the note belongs to. */
+  getStaff(): number {
+    const staff = this.node.asElement().getElementsByTagName('staff').item(0)?.textContent;
+    return parse.intOrDefault(staff, 1);
   }
 
   private isStem(value: any): value is Stem {
