@@ -176,4 +176,24 @@ describe(Note, () => {
       expect(note.getVoice()).toBe('1');
     });
   });
+
+  describe('getStaff', () => {
+    it('returns the staff the note belongs to', () => {
+      const node = xml.note({ staff: xml.staff({ number: 42 }) });
+      const note = new Note(node);
+      expect(note.getStaff()).toBe(42);
+    });
+
+    it('defaults to 1 when staff is invalid', () => {
+      const node = xml.note({ staff: xml.staff({ number: NaN }) });
+      const note = new Note(node);
+      expect(note.getStaff()).toBe(1);
+    });
+
+    it('defaults to 1 when staff is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getStaff()).toBe(1);
+    });
+  });
 });

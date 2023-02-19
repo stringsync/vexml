@@ -130,8 +130,9 @@ export const note: CreateNode<
     duration: NamedNode<'duration'>;
     notations: NamedNode<'notations'>[];
     voice: NamedNode<'voice'>;
+    staff: NamedNode<'staff'>;
   }
-> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice } = {}) => {
+> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff } = {}) => {
   const node = createElement('note');
 
   if (grace) {
@@ -163,6 +164,9 @@ export const note: CreateNode<
   }
   if (notehead) {
     node.append(notehead.node);
+  }
+  if (staff) {
+    node.append(staff.node);
   }
   if (notations) {
     node.append(...notations.map(getNode));
@@ -765,6 +769,16 @@ export const voice: CreateNode<'voice', { textContent: string }> = ({ textConten
 
   if (typeof textContent === 'string') {
     node.textContent = textContent;
+  }
+
+  return NamedNode.of(node);
+};
+
+export const staff: CreateNode<'staff', { number: number }> = ({ number } = {}) => {
+  const node = createElement('staff');
+
+  if (typeof number === 'number') {
+    node.textContent = number.toString();
   }
 
   return NamedNode.of(node);
