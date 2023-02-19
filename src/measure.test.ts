@@ -1,4 +1,5 @@
 import { Attributes } from './attributes';
+import { Barline } from './barline';
 import { Measure } from './measure';
 import { Note } from './note';
 import * as xml from './xml';
@@ -73,6 +74,30 @@ describe(Measure, () => {
       const measure = new Measure(node);
 
       expect(measure.getNotes()).toStrictEqual([new Note(note1), new Note(note2)]);
+    });
+
+    it('returns an empty array when there are no notes', () => {
+      const node = xml.measure();
+      const measure = new Measure(node);
+      expect(measure.getNotes()).toBeEmpty();
+    });
+  });
+
+  describe('getBarlines', () => {
+    it('returns the barlines of the measure', () => {
+      const barline1 = xml.barline();
+      const barline2 = xml.barline();
+      const node = xml.measure({ barlines: [barline1, barline2] });
+
+      const measure = new Measure(node);
+
+      expect(measure.getBarlines()).toStrictEqual([new Barline(barline1), new Barline(barline2)]);
+    });
+
+    it('returns an empty array when there are no barlines', () => {
+      const node = xml.measure();
+      const measure = new Measure(node);
+      expect(measure.getBarlines()).toBeEmpty();
     });
   });
 });
