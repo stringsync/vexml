@@ -376,7 +376,12 @@ export const direction: CreateNode<
 
 export const barline: CreateNode<
   'barline',
-  { location: string; barStyle: NamedNode<'bar-style'>; repeat: NamedNode<'repeat'>; ending: NamedNode<'ending'> }
+  {
+    location: string;
+    barStyle: NamedNode<'bar-style'>;
+    repeat: NamedNode<'repeat'>;
+    ending: NamedNode<'ending'>;
+  }
 > = ({ location, barStyle, repeat, ending } = {}) => {
   const node = createElement('barline');
 

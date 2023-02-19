@@ -182,3 +182,17 @@ export type BarStyle =
   | 'regular'
   | 'short'
   | 'tick';
+
+/**
+ * The direction of a repeat.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/backward-forward/
+ */
+export type RepeatDirection = 'backward' | 'forward';
+
+/**
+ * The location of a barline.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/right-left-middle/
+ */
+export type BarlineLocation = 'right' | 'left' | 'middle';

@@ -1,5 +1,5 @@
 import { NamedNode } from './namednode';
-import { BarStyle } from './types';
+import { BarlineLocation, BarStyle, RepeatDirection } from './types';
 
 /**
  * Barline includes information about repeats, endings, and graphical bar styles.
@@ -13,6 +13,23 @@ export class Barline {
   getBarStyle(): BarStyle {
     const barStyle = this.node.asElement().getElementsByTagName('bar-style').item(0)?.textContent;
     return this.isBarStyle(barStyle) ? barStyle : 'regular';
+  }
+
+  /** Whether or not the barline is a repeat. Defaults to false. */
+  isRepeat(): boolean {
+    return this.node.asElement().getElementsByTagName('repeat').length > 0;
+  }
+
+  /** Returns the repeat direction. Defaults to null. */
+  getRepeatDirection(): RepeatDirection | null {
+    const repeatDirection = this.node.asElement().getElementsByTagName('repeat').item(0)?.getAttribute('direction');
+    return this.isRepeatDirection(repeatDirection) ? repeatDirection : null;
+  }
+
+  /** Returns the location of the barline. Defaults to 'right'. */
+  getLocation(): BarlineLocation {
+    const location = this.node.asElement().getAttribute('location');
+    return this.isBarlineLocation(location) ? location : 'right';
   }
 
   private isBarStyle(value: any): value is BarStyle {
@@ -29,5 +46,13 @@ export class Barline {
       'short',
       'tick',
     ].includes(value);
+  }
+
+  private isRepeatDirection(value: any): value is RepeatDirection {
+    return ['backward', 'forward'].includes(value);
+  }
+
+  private isBarlineLocation(value: any): value is BarlineLocation {
+    return ['right', 'left', 'middle'].includes(value);
   }
 }
