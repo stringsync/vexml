@@ -1,4 +1,5 @@
 import { Attributes } from './attributes';
+import { Barline } from './barline';
 import { NamedNode } from './namednode';
 import { Note } from './note';
 import * as parse from './parse';
@@ -39,5 +40,12 @@ export class Measure {
     return Array.from(this.node.asElement().getElementsByTagName('note'))
       .map((note) => NamedNode.of<'note'>(note))
       .map((node) => new Note(node));
+  }
+
+  /** Returns the barlines of the measure. */
+  getBarlines(): Barline[] {
+    return Array.from(this.node.asElement().getElementsByTagName('barline'))
+      .map((barline) => NamedNode.of<'barline'>(barline))
+      .map((node) => new Barline(node));
   }
 }

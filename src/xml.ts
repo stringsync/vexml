@@ -88,7 +88,7 @@ export const measure: CreateNode<
     number: string;
     notes: NamedNode<'note'>[];
     attributes: NamedNode<'attributes'>[];
-    barlines: NamedNode<'barlines'>[];
+    barlines: NamedNode<'barline'>[];
     print: NamedNode<'print'>;
   }
 > = ({ width, number, notes, attributes, barlines, print } = {}) => {
@@ -406,11 +406,11 @@ export const staves: CreateNode<'staves', { staveCount: number }> = ({ staveCoun
   return NamedNode.of(node);
 };
 
-export const barStyle: CreateNode<'bar-style', { textContent: string }> = ({ textContent } = {}) => {
+export const barStyle: CreateNode<'bar-style', { value: string }> = ({ value } = {}) => {
   const node = createElement('bar-style');
 
-  if (textContent) {
-    node.textContent = textContent;
+  if (value) {
+    node.textContent = value;
   }
 
   return NamedNode.of(node);
