@@ -129,3 +129,38 @@ export type Accidental =
   | 'sori'
   | 'koron'
   | 'other';
+
+/**
+ * Notehead shapes other than the open and closed ovals associated with note durations.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/notehead-value/
+ */
+export type Notehead =
+  | 'arrow down'
+  | 'arrow up'
+  | 'back slashed'
+  | 'circle dot'
+  | 'circle-x'
+  | 'circled'
+  | 'cluster'
+  | 'cross'
+  | 'diamond'
+  | 'do'
+  | 'fa'
+  | 'fa up'
+  | 'inverted triangle'
+  | 'la'
+  | 'left triangle'
+  | 'mi'
+  | 'none'
+  | 'normal'
+  | 're'
+  | 'rectangle'
+  | 'slash'
+  | 'slashed'
+  | 'so'
+  | 'square'
+  | 'ti'
+  | 'triangle'
+  | 'x'
+  | 'other';
