@@ -1,5 +1,5 @@
 import { NamedNode } from './namednode';
-import { ClefSign } from './types';
+import { ClefAnnotation, ClefSign, ClefType } from './types';
 import * as parse from './parse';
 
 /**
@@ -10,10 +10,16 @@ import * as parse from './parse';
 export class Clef {
   constructor(private node: NamedNode<'clef'>) {}
 
-  /** Returns the clef sign. Defaults to 'G'. */
-  getSign(): ClefSign {
+  /** Returns the staff */
+  getStaffNumber(): number {
+    const number = this.node.asElement().getAttribute('number');
+    return parse.intOrDefault(number, 1);
+  }
+
+  /** Returns the clef sign. Defaults to null. */
+  getSign(): ClefSign | null {
     const clefSign = this.node.asElement().getElementsByTagName('sign').item(0)?.textContent;
-    return this.isClefSign(clefSign) ? clefSign : 'G';
+    return this.isClefSign(clefSign) ? clefSign : null;
   }
 
   /** Returns the line of the clef. Defaults to null. */
@@ -28,7 +34,56 @@ export class Clef {
     return parse.intOrDefault(octaveChange, null);
   }
 
+  /** Returns the clef type. Defaults to null. */
+  getClefType(): ClefType | null {
+    const sign = this.getSign();
+    const line = this.getLine();
+
+    if (sign === 'G') {
+      // with G line defaults to 2
+      // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
+      if (line === 1) return 'french';
+      return 'treble';
+    }
+
+    if (sign === 'F') {
+      if (line === 5) return 'subbass';
+      if (line === 3) return 'baritone-f';
+      return 'bass';
+    }
+
+    if (sign === 'C') {
+      if (line === 5) return 'baritone-c';
+      if (line === 4) return 'tenor';
+      if (line === 2) return 'mezzo-soprano';
+      if (line === 1) return 'soprano';
+      return 'alto';
+    }
+
+    if (sign === 'percussion') {
+      return 'percussion';
+    }
+
+    if (sign === 'TAB') {
+      return 'treble';
+    }
+
+    return null;
+  }
+
+  /** Returns the clef annotation. Defaults to null. */
+  getAnnotation(): ClefAnnotation | null {
+    switch (this.getOctaveChange()) {
+      case 1:
+        return '8va';
+      case -1:
+        return '8vb';
+      default:
+        return null;
+    }
+  }
+
   private isClefSign(value: any): value is ClefSign {
-    return ['G', 'F', 'C'].includes(value);
+    return ['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'].includes(value);
   }
 }

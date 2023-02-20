@@ -1,11 +1,16 @@
 import * as vexflow from 'vexflow';
 import { Attributes } from './attributes';
+import { Clef } from './clef';
 import { CodePrinter, CodeTracker } from './codeprinter';
 import { History } from './history';
+import { Key } from './key';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
 import { Part } from './part';
+import { Print } from './print';
+import { Time } from './time';
+import { ClefType } from './types';
 
 export type RenderOptions = {
   codeTracker?: CodeTracker;
@@ -43,12 +48,9 @@ export class Vexml {
   private musicXml: MusicXml;
   private t: CodeTracker;
   private vf: vexflow.Factory;
-
   private system = new History<vexflow.System>();
-  private attributes = new History<Attributes>();
-
-  private staffByNumber: Record<number, vexflow.Stave> = {};
-  private clefByStaffNumber: Record<number, vexflow.Clef> = {};
+  private systems = new Array<vexflow.System>();
+  private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; t: CodeTracker; vf: vexflow.Factory }) {
     this.musicXml = opts.musicXml;
@@ -57,10 +59,6 @@ export class Vexml {
   }
 
   private render(): void {
-    this.t.comment('global variables');
-    this.t.literal('let system;');
-    this.t.newline();
-
     const score = this.musicXml.getScorePartwise();
     if (!score) {
       console.warn('nothing to render: missing top-level <score-partwise>');
@@ -87,28 +85,19 @@ export class Vexml {
     this.t.newline();
     this.t.comment(`measure ${measure.getNumber()}`);
 
-    // add a system
-    let system: vexflow.System;
-    const width = measure.getWidth();
-    if (width === -1) {
-      system = this.vf.System({ x: 0, y: 0, autoWidth: true });
-    } else {
-      system = this.vf.System({ x: 0, y: 0, width });
-    }
-    this.addSystem(system);
+    this.addSystem(measure);
 
-    // add staves to the system
-    const staveCount = this.getStaveCount(measure);
-    const spaceBelow = this.getSpaceBelow(measure);
-    const staves = this.addStaves(staveCount, spaceBelow, system);
+    this.addStaves(measure);
 
-    // process attributes
-    const attributes = measure.getAttributes();
-    for (const attribute of attributes) {
-      this.processAttributes(attribute);
+    for (const attributes of measure.getAttributes()) {
+      this.renderAttributes(attributes);
     }
 
-    // add the notes to the system
+    for (const print of measure.getPrints()) {
+      this.processPrint(print);
+    }
+
+    const tickables = new Array<vexflow.Tickable>();
     for (const note of measure.getNotes()) {
       if (note.isChordTail()) {
         continue;
@@ -119,37 +108,104 @@ export class Vexml {
       } else if (note.isGrace()) {
         this.renderGrace(note);
       } else {
-        this.renderNote(note);
+        tickables.push(this.createStaveNote(note));
       }
     }
 
-    // this.system
-    //   .getCurrent()!
-    //   .addStave({
-    //     voices: [
-    //       this.vf
-    //         .Voice()
-    //         .setMode(2)
-    //         .addTickables([this.vf.StaveNote({ duration: '4', keys: ['C/4'] })]),
-    //     ],
-    //   })
-    //   .addClef('treble')
-    //   .addTimeSignature('4/4');
+    const system = this.system.getCurrent()!;
+    system.addVoices([this.vf.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
+    system.format();
   }
 
-  private renderNote(note: Note): void {
-    const noteStruct: vexflow.NoteStruct = {
+  private renderAttributes(attributes: Attributes): void {
+    const staves = this.system.getCurrent()?.getStaves() ?? [];
+    if (staves.length === 0) {
+      return;
+    }
+    const stave = staves[staves.length - 1];
+
+    // TODO: Support more than one clef, key, and times.
+
+    const clefs = attributes.getClefs();
+    if (clefs.length > 0) {
+      const clef = clefs[0];
+      const staffNumber = clef.getStaffNumber();
+      this.clefByStaffNumber[staffNumber] = clef;
+
+      const clefType = clef.getClefType();
+      const annotation = clef.getAnnotation() ?? undefined;
+
+      if (clefType) {
+        stave.addClef(clefType, 'default', annotation);
+      }
+    }
+
+    const keys = attributes.getKeys();
+    if (keys.length > 0) {
+      const key = keys[0];
+      stave.setKeySignature(key.getKeySignature());
+    }
+
+    const timeSignatures = attributes.getTimes().flatMap((time) => time.getTimeSignatures());
+    if (timeSignatures.length > 0) {
+      const timeSignature = timeSignatures[0];
+      stave.setTimeSignature(`${timeSignature.numerator}/${timeSignature.denominator}`);
+    }
+  }
+
+  private processPrint(print: Print): void {
+    const systemLayout = print.getSystemLayout();
+    const leftMargin = systemLayout.leftMargin ?? 0;
+    const systemDistance = systemLayout.systemDistance ?? 50;
+
+    const currentSystem = this.system.getCurrent();
+    const previousSystem = this.system.getPrevious();
+
+    if (currentSystem) {
+      currentSystem.setX(leftMargin);
+      currentSystem.setY(systemDistance);
+    }
+    if (currentSystem && previousSystem) {
+      currentSystem.setY(previousSystem.getY() + previousSystem.getBoundingBox()!.getH() + systemDistance);
+    }
+  }
+
+  private createStaveNote(note: Note): vexflow.StaveNote {
+    let clefType: ClefType | undefined = undefined;
+    const staffNumber = this.getStaffNumber(note);
+    if (typeof staffNumber === 'number') {
+      const clef = this.clefByStaffNumber[staffNumber];
+      if (clef) {
+        clefType = clef.getClefType() ?? undefined;
+      }
+    }
+
+    const staveNote = this.vf.StaveNote({
+      keys: [note.getPitch()],
       duration: `${note.getDurationDenominator()}`,
       dots: note.getDotCount(),
-    };
+      clef: clefType,
+    });
 
-    const number = note.getStaffNumber();
-    const staff = this.staffByNumber[number];
-    if (staff) {
-      // this.vf.StaveNote(noteStruct).setStave(staff);
+    const stem = note.getStem();
+    if (stem === 'up') {
+      staveNote.setStemDirection(vexflow.Stem.UP);
+    } else if (stem === 'down') {
+      staveNote.setStemDirection(vexflow.Stem.DOWN);
     } else {
-      console.warn(`could not find staff number: ${number}, skipping`);
+      staveNote.autoStem();
     }
+
+    const accidentalCode = note.getAccidentalCode();
+    if (accidentalCode) {
+      const accidental = this.vf.Accidental({ type: accidentalCode });
+      if (note.hasAccidentalCautionary()) {
+        accidental.setAsCautionary();
+      }
+      staveNote.addModifier(accidental);
+    }
+
+    return staveNote;
   }
 
   private renderChord(notes: Note[]): void {
@@ -161,55 +217,46 @@ export class Vexml {
   }
 
   private renderGrace(note: Note): void {
-    const graceNoteStruct: vexflow.GraceNoteStruct = {
-      duration: `${note.getDurationDenominator()}`,
-      dots: note.getDotCount(),
-    };
-
-    const stem = note.getStem();
-    if (stem) {
-      graceNoteStruct.stem_direction = stem === 'up' ? 1 : -1;
-    }
-  }
-
-  private addSystem(system: vexflow.System): void {
-    this.system.set(system);
-
-    const current = this.system.getCurrent()!;
-    const previous = this.system.getPrevious();
-
-    if (previous) {
-      previous.format();
-      current.setX(previous.getX() + previous.getBoundingBox()!.getW());
-      current.setY(previous.getY());
-    }
-  }
-
-  private addStaves(staveCount: number, spaceBelow: number, system: vexflow.System): vexflow.Stave[] {
-    const staves = new Array<vexflow.Stave>();
-
-    const len = Object.keys(this.staffByNumber).length;
-    for (let ndx = 0; ndx < staveCount; ndx++) {
-      let stave: vexflow.Stave;
-      if (ndx < staveCount - 1) {
-        stave = system.addStave({ voices: [], spaceBelow });
-      } else {
-        stave = system.addStave({ voices: [] });
-      }
-      const number = len + ndx + 1;
-      this.staffByNumber[number] = stave;
-    }
-
-    return staves;
-  }
-
-  private processAttributes(attributes: Attributes): void {
     // TODO: Flesh this out.
   }
 
-  private getStaveCount(measure: Measure): number {
-    const attributes = measure.getAttributes();
-    return Math.max(...attributes.map((attribute) => attribute.getStaveCount()), 1);
+  private addSystem(measure: Measure): void {
+    const currentSystem = this.system.getCurrent();
+
+    let x = 0;
+    let y = 0;
+    if (currentSystem) {
+      x = currentSystem.getX() + currentSystem.getBoundingBox()!.getW();
+      y = currentSystem.getY();
+    }
+
+    const width = measure.getWidth();
+    if (typeof width === 'number') {
+      this.system.set(this.vf.System({ x, y, width }));
+    } else {
+      this.system.set(this.vf.System({ x, y, autoWidth: true }));
+    }
+
+    this.systems.push(this.system.getCurrent()!);
+  }
+
+  private addStaves(measure: Measure): void {
+    const system = this.system.getCurrent();
+    if (!system) {
+      return;
+    }
+
+    const staveCounts = measure.getAttributes().map((attributes) => attributes.getStaveCount());
+    const staveCount = staveCounts.length > 0 ? staveCounts[0] : 1;
+    const spaceBelow = this.getSpaceBelow(measure);
+
+    for (let ndx = 1; ndx <= staveCount; ndx++) {
+      if (ndx < staveCount - 1) {
+        system.addStave({ voices: [], spaceBelow });
+      } else {
+        system.addStave({ voices: [] });
+      }
+    }
   }
 
   private getSpaceBelow(measure: Measure): number {
@@ -221,5 +268,15 @@ export class Vexml {
       }
     }
     return 0;
+  }
+
+  private getStaffNumber(value: Clef | Note): number | null {
+    if (value instanceof Clef) {
+      return value.getStaffNumber();
+    }
+    if (value instanceof Note) {
+      return value.getStaffNumber();
+    }
+    return null;
   }
 }
