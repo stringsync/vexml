@@ -1,16 +1,15 @@
 import * as vexflow from 'vexflow';
 import { Attributes } from './attributes';
+import { Barline } from './barline';
 import { Clef } from './clef';
 import { CodePrinter, CodeTracker } from './codeprinter';
 import { History } from './history';
-import { Key } from './key';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
 import { Part } from './part';
 import { Print } from './print';
-import { Time } from './time';
-import { ClefType } from './types';
+import { ClefType, Notehead } from './types';
 
 export type RenderOptions = {
   codeTracker?: CodeTracker;
@@ -28,13 +27,8 @@ export class Vexml {
   static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
     const t = opts.codeTracker ?? CodePrinter.noop();
 
-    t.literal(`const vexflow = Vex.Flow;`);
-    t.newline();
-
     // Constructing a vexflow.Factory also renders an empty <svg>.
     const vf = new vexflow.Factory({ renderer: { elementId, width: 2000, height: 400 } });
-    t.literal(`const vf = new vexflow.Factory({ renderer: { elementId: '${elementId}', width: 2000, height: 400 } });`);
-    t.newline();
 
     const parser = new DOMParser();
     const root = parser.parseFromString(xml, 'application/xml');
@@ -49,7 +43,6 @@ export class Vexml {
   private t: CodeTracker;
   private vf: vexflow.Factory;
   private system = new History<vexflow.System>();
-  private systems = new Array<vexflow.System>();
   private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; t: CodeTracker; vf: vexflow.Factory }) {
@@ -73,19 +66,13 @@ export class Vexml {
   }
 
   private renderPart(part: Part): void {
-    this.t.newline();
-    this.t.comment(`part ${part.getId()}`);
-
     for (const measure of part.getMeasures()) {
       this.renderMeasure(measure);
     }
   }
 
   private renderMeasure(measure: Measure): void {
-    this.t.newline();
-    this.t.comment(`measure ${measure.getNumber()}`);
-
-    this.addSystem(measure);
+    const system = this.addSystem(measure);
 
     this.addStaves(measure);
 
@@ -111,9 +98,24 @@ export class Vexml {
         tickables.push(this.createStaveNote(note));
       }
     }
-
-    const system = this.system.getCurrent()!;
     system.addVoices([this.vf.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
+
+    for (const barline of measure.getBarlines()) {
+      const barlineType = this.getBarlineType(barline);
+      if (barlineType === null) {
+        continue;
+      }
+
+      const barlineLocation = barline.getLocation();
+      for (const stave of system.getStaves()) {
+        if (barlineLocation === 'left') {
+          stave.setEndBarType(barlineType);
+        }
+        if (barlineLocation === 'right') {
+          stave.setBegBarType(barlineType);
+        }
+      }
+    }
     system.format();
   }
 
@@ -180,8 +182,14 @@ export class Vexml {
       }
     }
 
+    let key = note.getPitch();
+    const suffix = note.getNoteheadSuffix();
+    if (suffix) {
+      key += `/${suffix}`;
+    }
+
     const staveNote = this.vf.StaveNote({
-      keys: [note.getPitch()],
+      keys: [key],
       duration: `${note.getDurationDenominator()}`,
       dots: note.getDotCount(),
       clef: clefType,
@@ -220,7 +228,8 @@ export class Vexml {
     // TODO: Flesh this out.
   }
 
-  private addSystem(measure: Measure): void {
+  private addSystem(measure: Measure): vexflow.System {
+    let system: vexflow.System;
     const currentSystem = this.system.getCurrent();
 
     let x = 0;
@@ -232,12 +241,12 @@ export class Vexml {
 
     const width = measure.getWidth();
     if (typeof width === 'number') {
-      this.system.set(this.vf.System({ x, y, width }));
+      system = this.vf.System({ x, y, width });
     } else {
-      this.system.set(this.vf.System({ x, y, autoWidth: true }));
+      system = this.vf.System({ x, y, autoWidth: true });
     }
-
-    this.systems.push(this.system.getCurrent()!);
+    this.system.set(system);
+    return system;
   }
 
   private addStaves(measure: Measure): void {
@@ -278,5 +287,27 @@ export class Vexml {
       return value.getStaffNumber();
     }
     return null;
+  }
+
+  private getBarlineType(barline: Barline): vexflow.BarlineType | null {
+    switch (barline.getBarStyle()) {
+      case 'regular':
+      case 'short':
+      case 'dashed':
+      case 'dotted':
+      case 'heavy':
+        return vexflow.BarlineType.SINGLE;
+      case 'heavy-light':
+      case 'heavy-heavy':
+      case 'light-light':
+      case 'tick':
+        return vexflow.BarlineType.DOUBLE;
+      case 'light-heavy':
+        return vexflow.BarlineType.END;
+      case 'none':
+        return vexflow.BarlineType.NONE;
+      default:
+        return null;
+    }
   }
 }

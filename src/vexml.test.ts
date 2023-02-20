@@ -15,10 +15,10 @@ describe(Vexml, () => {
       expect(() => Vexml.render(elementId, XML)).not.toThrow();
     });
 
-    it('tracks VexFlow code when given a CodePrinter', () => {
+    it('does not track VexFlow code when given a CodePrinter', () => {
       const codePrinter = new CodePrinter();
       Vexml.render(elementId, XML, { codeTracker: codePrinter });
-      expect(codePrinter.print()).not.toBeEmpty();
+      expect(codePrinter.print()).toBeEmpty();
     });
   });
 });
