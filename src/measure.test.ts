@@ -2,6 +2,7 @@ import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Measure } from './measure';
 import { Note } from './note';
+import { Print } from './print';
 import * as xml from './xml';
 
 describe(Measure, () => {
@@ -98,6 +99,18 @@ describe(Measure, () => {
       const node = xml.measure();
       const measure = new Measure(node);
       expect(measure.getBarlines()).toBeEmpty();
+    });
+  });
+
+  describe('getPrints', () => {
+    it('returns the prints of the measure', () => {
+      const print1 = xml.print();
+      const print2 = xml.print();
+      const node = xml.measure({ prints: [print1, print2] });
+
+      const measure = new Measure(node);
+
+      expect(measure.getPrints()).toStrictEqual([new Print(print1), new Print(print2)]);
     });
   });
 });

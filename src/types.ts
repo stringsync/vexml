@@ -203,3 +203,10 @@ export type BarlineLocation = 'right' | 'left' | 'middle';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-discontinue/
  */
 export type EndingType = 'start' | 'stop' | 'discontinue';
+
+/**
+ * Different types of clef symbols.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/clef-sign/
+ */
+export type ClefSign = 'G' | 'F' | 'C';

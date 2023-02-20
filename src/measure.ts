@@ -3,6 +3,7 @@ import { Barline } from './barline';
 import { NamedNode } from './namednode';
 import { Note } from './note';
 import * as parse from './parse';
+import { Print } from './print';
 
 /**
  * Measure is a basic musical data container that has notes and rests.
@@ -47,5 +48,12 @@ export class Measure {
     return Array.from(this.node.asElement().getElementsByTagName('barline'))
       .map((barline) => NamedNode.of<'barline'>(barline))
       .map((node) => new Barline(node));
+  }
+
+  /** Returns the prints of the measure. */
+  getPrints(): Print[] {
+    return Array.from(this.node.asElement().getElementsByTagName('print'))
+      .map((print) => NamedNode.of<'print'>(print))
+      .map((node) => new Print(node));
   }
 }

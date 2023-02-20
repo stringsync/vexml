@@ -3,7 +3,7 @@
 /**
  * Parses the value and returns the default value if there are any problems.
  */
-export const intOrDefault = (value: any, defaultValue: number): number => {
+export const intOrDefault = <T>(value: any, defaultValue: T): number | T => {
   if (typeof value === 'number' && !isNaN(value)) {
     return Math.trunc(value);
   }

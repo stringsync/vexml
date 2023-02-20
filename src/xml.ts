@@ -89,9 +89,9 @@ export const measure: CreateNode<
     notes: NamedNode<'note'>[];
     attributes: NamedNode<'attributes'>[];
     barlines: NamedNode<'barline'>[];
-    print: NamedNode<'print'>;
+    prints: NamedNode<'print'>[];
   }
-> = ({ width, number, notes, attributes, barlines, print } = {}) => {
+> = ({ width, number, notes, attributes, barlines, prints } = {}) => {
   const node = createElement('measure');
 
   if (notes) {
@@ -103,8 +103,8 @@ export const measure: CreateNode<
   if (barlines) {
     node.append(...barlines.map(getNode));
   }
-  if (print) {
-    node.append(print.node);
+  if (prints) {
+    node.append(...prints.map(getNode));
   }
   if (typeof width === 'number') {
     node.setAttribute('width', width.toString());
@@ -564,23 +564,11 @@ export const grace: CreateNode<'grace', { slash: string }> = ({ slash } = {}) =>
   return NamedNode.of(node);
 };
 
-export const duration: CreateNode<'duration', { positiveDivisions: NamedNode<'positive-divisions'> }> = ({
-  positiveDivisions,
-} = {}) => {
+export const duration: CreateNode<'duration', { positiveDivisions: number }> = ({ positiveDivisions } = {}) => {
   const node = createElement('duration');
 
   if (positiveDivisions) {
-    node.append(positiveDivisions.node);
-  }
-
-  return NamedNode.of(node);
-};
-
-export const positiveDivisions: CreateNode<'positive-divisions', { divisions: number }> = ({ divisions } = {}) => {
-  const node = createElement('positive-divisions');
-
-  if (divisions) {
-    node.textContent = divisions.toString();
+    node.textContent = positiveDivisions.toString();
   }
 
   return NamedNode.of(node);
@@ -665,33 +653,31 @@ export const segno: CreateNode<'segno', Record<string, never>> = () => {
   return NamedNode.of(node);
 };
 
-export const sign: CreateNode<'sign', { sign: string }> = ({ sign } = {}) => {
+export const sign: CreateNode<'sign', { value: string }> = ({ value } = {}) => {
   const node = createElement('sign');
 
-  if (sign) {
-    node.textContent = sign;
+  if (value) {
+    node.textContent = value;
   }
 
   return NamedNode.of(node);
 };
 
-export const line: CreateNode<'line', { line: number }> = ({ line } = {}) => {
+export const line: CreateNode<'line', { value: number }> = ({ value } = {}) => {
   const node = createElement('line');
 
-  if (line) {
-    node.textContent = line.toString();
+  if (typeof value === 'number') {
+    node.textContent = value.toString();
   }
 
   return NamedNode.of(node);
 };
 
-export const clefOctaveChange: CreateNode<'clefOctaveChange', { clefOctaveChange: number }> = ({
-  clefOctaveChange,
-} = {}) => {
-  const node = createElement('clefOctaveChange');
+export const clefOctaveChange: CreateNode<'clef-octave-change', { value: number }> = ({ value } = {}) => {
+  const node = createElement('clef-octave-change');
 
-  if (clefOctaveChange) {
-    node.textContent = clefOctaveChange.toString();
+  if (typeof value === 'number') {
+    node.textContent = value.toString();
   }
 
   return NamedNode.of(node);
