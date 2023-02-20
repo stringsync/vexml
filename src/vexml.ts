@@ -1,4 +1,5 @@
 import * as vexflow from 'vexflow';
+import { BoundingBox } from 'vexflow';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
@@ -9,7 +10,7 @@ import { MusicXml } from './musicxml';
 import { Note } from './note';
 import { Part } from './part';
 import { Print } from './print';
-import { ClefType, Notehead } from './types';
+import { ClefType } from './types';
 
 export type RenderOptions = {
   codeTracker?: CodeTracker;
@@ -27,28 +28,28 @@ export class Vexml {
   static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
     const t = opts.codeTracker ?? CodePrinter.noop();
 
-    // Constructing a vexflow.Factory also renders an empty <svg>.
-    const vf = new vexflow.Factory({ renderer: { elementId, width: 2000, height: 400 } });
+    // Constructing a Factory also renders an empty <svg>.
+    const f = new Factory({ renderer: { elementId, width: 2000, height: 400 } });
 
     const parser = new DOMParser();
     const root = parser.parseFromString(xml, 'application/xml');
 
     const musicXml = new MusicXml(root);
-    const vexml = new Vexml({ musicXml, t, vf });
+    const vexml = new Vexml({ musicXml, t, f });
 
     vexml.render();
   }
 
   private musicXml: MusicXml;
   private t: CodeTracker;
-  private vf: vexflow.Factory;
+  private f: Factory;
   private system = new History<vexflow.System>();
   private clefByStaffNumber: Record<number, Clef> = {};
 
-  private constructor(opts: { musicXml: MusicXml; t: CodeTracker; vf: vexflow.Factory }) {
+  private constructor(opts: { musicXml: MusicXml; t: CodeTracker; f: Factory }) {
     this.musicXml = opts.musicXml;
     this.t = opts.t;
-    this.vf = opts.vf;
+    this.f = opts.f;
   }
 
   private render(): void {
@@ -62,7 +63,14 @@ export class Vexml {
       this.renderPart(part);
     }
 
-    this.vf.draw();
+    const systems = this.f.getSystems();
+    const bb = new BoundingBox(0, 0, 0, 0);
+    for (const system of systems) {
+      bb.mergeWith(system.getBoundingBox()!);
+    }
+    this.f.getContext().resize(bb.getX() + bb.getW() + 50, bb.getY() + bb.getH() + 50);
+
+    this.f.draw();
   }
 
   private renderPart(part: Part): void {
@@ -98,7 +106,7 @@ export class Vexml {
         tickables.push(this.createStaveNote(note));
       }
     }
-    system.addVoices([this.vf.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
+    system.addVoices([this.f.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
 
     for (const barline of measure.getBarlines()) {
       const barlineType = this.getBarlineType(barline);
@@ -188,7 +196,7 @@ export class Vexml {
       key += `/${suffix}`;
     }
 
-    const staveNote = this.vf.StaveNote({
+    const staveNote = this.f.StaveNote({
       keys: [key],
       duration: `${note.getDurationDenominator()}`,
       dots: note.getDotCount(),
@@ -206,7 +214,7 @@ export class Vexml {
 
     const accidentalCode = note.getAccidentalCode();
     if (accidentalCode) {
-      const accidental = this.vf.Accidental({ type: accidentalCode });
+      const accidental = this.f.Accidental({ type: accidentalCode });
       if (note.hasAccidentalCautionary()) {
         accidental.setAsCautionary();
       }
@@ -241,9 +249,9 @@ export class Vexml {
 
     const width = measure.getWidth();
     if (typeof width === 'number') {
-      system = this.vf.System({ x, y, width });
+      system = this.f.System({ x, y, width });
     } else {
-      system = this.vf.System({ x, y, autoWidth: true });
+      system = this.f.System({ x, y, autoWidth: true });
     }
     this.system.set(system);
     return system;
@@ -309,5 +317,12 @@ export class Vexml {
       default:
         return null;
     }
+  }
+}
+
+/** Wrapper around vexflow.Factory to expose protected properties. */
+class Factory extends vexflow.Factory {
+  getSystems() {
+    return [...this.systems];
   }
 }
