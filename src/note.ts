@@ -1,6 +1,14 @@
 import { NamedNode } from './namednode';
 import { Notations } from './notations';
-import { AccidentalCode, AccidentalType, NoteDurationDenominator, Notehead, NoteType, Stem } from './types';
+import {
+  AccidentalCode,
+  AccidentalType,
+  NoteDurationDenominator,
+  Notehead,
+  NoteheadSuffix,
+  NoteType,
+  Stem,
+} from './types';
 import * as parse from './parse';
 
 export class Note {
@@ -139,6 +147,51 @@ export class Note {
   getNotehead(): Notehead {
     const notehead = this.node.asElement().getElementsByTagName('notehead').item(0)?.textContent;
     return this.isNotehead(notehead) ? notehead : 'normal';
+  }
+
+  /** Returns the notehead suffix of the note. Defaults to ''. */
+  getNoteheadSuffix(): NoteheadSuffix {
+    switch (this.getNotehead()) {
+      case 'circle dot':
+      case 'cluster':
+      case 'cross':
+      case 'inverted triangle':
+      case 'left triangle':
+      case 'slashed':
+        return '';
+      case 'arrow down':
+        return 'TD';
+      case 'arrow up':
+        return 'TU';
+      case 'back slashed':
+        return 'SB';
+      case 'circled':
+        return 'CI';
+      case 'diamond':
+        return 'D';
+      case 'do':
+        return 'DO';
+      case 'fa':
+        return 'FA';
+      case 'fa up':
+        return 'FAUP';
+      case 'mi':
+        return 'MI';
+      case 'normal':
+        return 'N';
+      case 'slash':
+        return 'S';
+      case 'so':
+        return 'SO';
+      case 'ti':
+        return 'TI';
+      case 'triangle':
+        return 'TU';
+      case 'x':
+        return 'X';
+      default:
+        return '';
+    }
   }
 
   /** Whether or not the note is the first note of a chord. */
