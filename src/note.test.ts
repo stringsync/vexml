@@ -178,23 +178,23 @@ describe(Note, () => {
     });
   });
 
-  describe('getStaff', () => {
-    it('returns the staff the note belongs to', () => {
+  describe('getStaffNumber', () => {
+    it('returns the staff number the note belongs to', () => {
       const node = xml.note({ staff: xml.staff({ number: 42 }) });
       const note = new Note(node);
-      expect(note.getStaff()).toBe(42);
+      expect(note.getStaffNumber()).toBe(42);
     });
 
-    it('defaults to 1 when staff is invalid', () => {
+    it('defaults to 1 when staff number is invalid', () => {
       const node = xml.note({ staff: xml.staff({ number: NaN }) });
       const note = new Note(node);
-      expect(note.getStaff()).toBe(1);
+      expect(note.getStaffNumber()).toBe(1);
     });
 
-    it('defaults to 1 when staff is missing', () => {
+    it('defaults to 1 when staff number is missing', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getStaff()).toBe(1);
+      expect(note.getStaffNumber()).toBe(1);
     });
   });
 
@@ -312,6 +312,26 @@ describe(Note, () => {
       const node = xml.note();
       const note = new Note(node);
       expect(note.hasAccidentalCautionary()).toBeFalse();
+    });
+  });
+
+  describe('getDuration', () => {
+    it('returns the duration of the note', () => {
+      const node = xml.note({ duration: xml.duration({ positiveDivisions: 2 }) });
+      const note = new Note(node);
+      expect(note.getDuration()).toBe(2);
+    });
+
+    it('returns 4 when duration is invalid', () => {
+      const node = xml.note({ duration: xml.duration({ positiveDivisions: NaN }) });
+      const note = new Note(node);
+      expect(note.getDuration()).toBe(4);
+    });
+
+    it('returns 4 when duration is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getDuration()).toBe(4);
     });
   });
 

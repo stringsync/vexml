@@ -1,4 +1,5 @@
 import { Attributes } from './attributes';
+import { Clef } from './clef';
 import { Key } from './key';
 import { Time } from './time';
 import * as xml from './xml';
@@ -11,22 +12,22 @@ describe(Attributes, () => {
       expect(attributes.getStaveCount()).toBe(4);
     });
 
-    it('returns 0 when there is no staves element', () => {
+    it('returns 1 when there is no staves element', () => {
       const node = xml.attributes();
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(0);
+      expect(attributes.getStaveCount()).toBe(1);
     });
 
-    it('returns 0 when the staves element is empty', () => {
+    it('returns 1 when the staves element is empty', () => {
       const node = xml.attributes({ staves: xml.staves() });
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(0);
+      expect(attributes.getStaveCount()).toBe(1);
     });
 
-    it('returns 0 when the staves text content is invalid', () => {
+    it('returns 1 when the staves text content is invalid', () => {
       const node = xml.attributes({ staves: xml.staves({ staveCount: NaN }) });
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(0);
+      expect(attributes.getStaveCount()).toBe(1);
     });
   });
 
@@ -59,6 +60,21 @@ describe(Attributes, () => {
       const node = xml.attributes();
       const attributes = new Attributes(node);
       expect(attributes.getKeys()).toBeEmpty();
+    });
+  });
+
+  describe('getClefs', () => {
+    it('returns the clefs', () => {
+      const clef = xml.clef();
+      const node = xml.attributes({ clefs: [clef] });
+      const attributes = new Attributes(node);
+      expect(attributes.getClefs()).toStrictEqual([new Clef(clef)]);
+    });
+
+    it('returns an empty array when keys are missing', () => {
+      const node = xml.attributes();
+      const attributes = new Attributes(node);
+      expect(attributes.getClefs()).toBeEmpty();
     });
   });
 });

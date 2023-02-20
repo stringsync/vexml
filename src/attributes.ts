@@ -1,3 +1,4 @@
+import { Clef } from './clef';
 import { Key } from './key';
 import { NamedNode } from './namednode';
 import * as parse from './parse';
@@ -15,7 +16,7 @@ export class Attributes {
   /** Returns the number of staves. */
   getStaveCount(): number {
     const textContent = this.node.asElement().getElementsByTagName('staves')?.item(0)?.textContent;
-    return parse.intOrDefault(textContent, 0);
+    return parse.intOrDefault(textContent, 1);
   }
 
   /** Returns the times. */
@@ -30,5 +31,12 @@ export class Attributes {
     return Array.from(this.node.asElement().getElementsByTagName('key'))
       .map((key) => NamedNode.of<'key'>(key))
       .map((node) => new Key(node));
+  }
+
+  /** Returns the clefs. */
+  getClefs(): Clef[] {
+    return Array.from(this.node.asElement().getElementsByTagName('clef'))
+      .map((clef) => NamedNode.of<'clef'>(clef))
+      .map((node) => new Clef(node));
   }
 }

@@ -24,6 +24,12 @@ export class Note {
     return 'whole';
   }
 
+  /** Returns the duration of the note. Defaults to 4 */
+  getDuration(): number {
+    const duration = this.node.asElement().getElementsByTagName('duration').item(0)?.textContent;
+    return parse.intOrDefault(duration, 4);
+  }
+
   /** Translates the note type to the duration denominator of the note. */
   getDurationDenominator(): NoteDurationDenominator {
     switch (this.getType()) {
@@ -88,7 +94,7 @@ export class Note {
   }
 
   /** Returns the staff the note belongs to. */
-  getStaff(): number {
+  getStaffNumber(): number {
     const staff = this.node.asElement().getElementsByTagName('staff').item(0)?.textContent;
     return parse.intOrDefault(staff, 1);
   }
