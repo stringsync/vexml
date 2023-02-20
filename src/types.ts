@@ -91,7 +91,7 @@ export type VerticalDirection = 'up' | 'down';
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/accidental-value/
  */
-export type Accidental =
+export type AccidentalType =
   | 'sharp'
   | 'natural'
   | 'flat'
@@ -129,6 +129,14 @@ export type Accidental =
   | 'sori'
   | 'koron'
   | 'other';
+
+/**
+ * The accidental code from VexFlow. The list only contains typical accidentals from Western music and is currently not
+ * exhaustive.
+ *
+ * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L169
+ */
+export type AccidentalCode = '#' | '##' | 'b' | 'bb' | 'n';
 
 /**
  * Notehead shapes other than the open and closed ovals associated with note durations.
@@ -209,4 +217,29 @@ export type EndingType = 'start' | 'stop' | 'discontinue';
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/clef-sign/
  */
-export type ClefSign = 'G' | 'F' | 'C';
+export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none';
+
+/**
+ * The translation of the clef sign and line.
+ *
+ * See https://github.com/0xfe/vexflow/blob/ea48402cb22a312249719fdbdb0766240678156d/src/clef.ts#L68
+ */
+export type ClefType =
+  | 'treble'
+  | 'french'
+  | 'subbass'
+  | 'baritone-f'
+  | 'bass'
+  | 'baritone-c'
+  | 'tenor'
+  | 'mezzo-soprano'
+  | 'soprano'
+  | 'alto'
+  | 'percussion';
+
+/**
+ * The clef annotation derived from its octave change.
+ *
+ * See https://github.com/0xfe/vexflow/blob/ea48402cb22a312249719fdbdb0766240678156d/src/clef.ts#L133
+ */
+export type ClefAnnotation = '8vb' | '8va';

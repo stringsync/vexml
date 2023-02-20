@@ -1,6 +1,6 @@
 import { NamedNode } from './namednode';
 import { Notations } from './notations';
-import { Accidental, NoteDurationDenominator, Notehead, NoteType, Stem } from './types';
+import { AccidentalCode, AccidentalType, NoteDurationDenominator, Notehead, NoteType, Stem } from './types';
 import * as parse from './parse';
 
 export class Note {
@@ -106,10 +106,28 @@ export class Note {
     return `${step}/${octave}`;
   }
 
-  /** Returns the accidental of the note. */
-  getAccidental(): Accidental | null {
-    const accidental = this.node.asElement().getElementsByTagName('accidental').item(0)?.textContent;
-    return this.isAccidental(accidental) ? accidental : null;
+  /** Returns the accidental type of the note. Defaults to null. */
+  getAccidentalType(): AccidentalType | null {
+    const accidentalType = this.node.asElement().getElementsByTagName('accidental').item(0)?.textContent;
+    return this.isAccidentalType(accidentalType) ? accidentalType : null;
+  }
+
+  /** Returns the accidental code of the note. Defaults to null. */
+  getAccidentalCode(): AccidentalCode | null {
+    switch (this.getAccidentalType()) {
+      case 'sharp':
+        return '#';
+      case 'double-sharp':
+        return '##';
+      case 'natural':
+        return 'n';
+      case 'flat':
+        return 'b';
+      case 'flat-flat':
+        return 'bb';
+      default:
+        return null;
+    }
   }
 
   /** Whether or not the accidental is cautionary. Defaults to false. */
@@ -203,7 +221,7 @@ export class Note {
     ].includes(value);
   }
 
-  private isAccidental(value: any): value is Accidental {
+  private isAccidentalType(value: any): value is AccidentalType {
     return [
       'sharp',
       'natural',

@@ -23,10 +23,10 @@ export class Measure {
     return this.node.asElement().hasAttribute('width');
   }
 
-  /** Returns the specified measured width in tenths or -1 if there was a problem parsing it. */
-  getWidth(): number {
+  /** Returns the specified measured width in tenths. Defaults to null. */
+  getWidth(): number | null {
     const width = this.node.asElement().getAttribute('width');
-    return parse.intOrDefault(width, -1);
+    return parse.intOrDefault(width, null);
   }
 
   /** Returns the <attributes> element of the measure. */

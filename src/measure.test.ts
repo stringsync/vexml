@@ -41,16 +41,16 @@ describe(Measure, () => {
       expect(measure.getWidth()).toBe(42);
     });
 
-    it('returns -1 when the measure width is missing', () => {
+    it('defaults null when the measure width is missing', () => {
       const node = xml.measure();
       const measure = new Measure(node);
-      expect(measure.getWidth()).toBe(-1);
+      expect(measure.getWidth()).toBeNull();
     });
 
-    it('returns -1 when the measure width is invalid', () => {
+    it('defaults null when the measure width is invalid', () => {
       const node = xml.measure({ width: NaN });
       const measure = new Measure(node);
-      expect(measure.getWidth()).toBe(-1);
+      expect(measure.getWidth()).toBeNull();
     });
   });
 

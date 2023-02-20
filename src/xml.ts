@@ -621,12 +621,17 @@ export const time: CreateNode<
 
 export const clef: CreateNode<
   'clef',
-  { staff: number; sign: NamedNode<'sign'>; line: NamedNode<'line'>; clefOctaveChange: NamedNode<'clef-octave-change'> }
-> = ({ staff, sign, line, clefOctaveChange } = {}) => {
+  {
+    number: number;
+    sign: NamedNode<'sign'>;
+    line: NamedNode<'line'>;
+    clefOctaveChange: NamedNode<'clef-octave-change'>;
+  }
+> = ({ number, sign, line, clefOctaveChange } = {}) => {
   const node = createElement('clef');
 
-  if (staff) {
-    node.setAttribute('number', staff.toString());
+  if (typeof number === 'number') {
+    node.setAttribute('number', number.toString());
   }
   if (sign) {
     node.append(sign.node);

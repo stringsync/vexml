@@ -237,7 +237,7 @@ describe(Note, () => {
     });
   });
 
-  describe('getAccidental', () => {
+  describe('getAccidentalType', () => {
     it.each([
       'sharp',
       'natural',
@@ -276,22 +276,48 @@ describe(Note, () => {
       'sori',
       'koron',
       'other',
-    ])(`returns the accidental of the note: '%s'`, (accidental) => {
+    ])(`returns the accidental type of the note: '%s'`, (accidental) => {
       const node = xml.note({ accidental: xml.accidental({ value: accidental }) });
       const note = new Note(node);
-      expect(note.getAccidental()).toBe(accidental);
+      expect(note.getAccidentalType()).toBe(accidental);
     });
 
     it('defaults to null when accidental is invalid', () => {
       const node = xml.note({ accidental: xml.accidental({ value: 'foo' }) });
       const note = new Note(node);
-      expect(note.getAccidental()).toBeNull();
+      expect(note.getAccidentalType()).toBeNull();
     });
 
     it('defaults to null when accidental is missing', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getAccidental()).toBeNull();
+      expect(note.getAccidentalType()).toBeNull();
+    });
+  });
+
+  describe('getAccidentalCode', () => {
+    it.each([
+      { accidental: 'sharp', accidentalCode: '#' },
+      { accidental: 'double-sharp', accidentalCode: '##' },
+      { accidental: 'natural', accidentalCode: 'n' },
+      { accidental: 'flat', accidentalCode: 'b' },
+      { accidental: 'flat-flat', accidentalCode: 'bb' },
+    ])(`returns the accidental code: $accidental`, (t) => {
+      const node = xml.note({ accidental: xml.accidental({ value: t.accidental }) });
+      const note = new Note(node);
+      expect(note.getAccidentalCode()).toBe(t.accidentalCode);
+    });
+
+    it('defaults to null when accidental is invalid', () => {
+      const node = xml.note({ accidental: xml.accidental({ value: 'foo' }) });
+      const note = new Note(node);
+      expect(note.getAccidentalCode()).toBeNull();
+    });
+
+    it('defaults to null when accidental is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getAccidentalCode()).toBeNull();
     });
   });
 
