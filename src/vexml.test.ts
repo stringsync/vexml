@@ -1,4 +1,3 @@
-import { CodePrinter } from './codeprinter';
 import { Vexml } from './vexml';
 
 describe(Vexml, () => {
@@ -12,13 +11,7 @@ describe(Vexml, () => {
     });
 
     it('runs without crashing', () => {
-      expect(() => Vexml.render(elementId, XML)).not.toThrow();
-    });
-
-    it('does not track VexFlow code when given a CodePrinter', () => {
-      const codePrinter = new CodePrinter();
-      Vexml.render(elementId, XML, { codeTracker: codePrinter });
-      expect(codePrinter.print()).toBeEmpty();
+      expect(() => Vexml.render({ elementId, xml: XML, width: 2000, height: 400 })).not.toThrow();
     });
   });
 });

@@ -1,4 +1,4 @@
-import { CameraOutlined, CopyOutlined } from '@ant-design/icons';
+import { CameraOutlined } from '@ant-design/icons';
 import { Alert, Button, message, Tabs, Typography } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -69,7 +69,6 @@ export const Example: React.FC<ExampleProps> = (props) => {
   const isServerSnapshotLoading = isUploading || serverSnapshotStatus.type === 'loading';
   const isSnapshotButtonDisabled = !svg || isUploading || serverSnapshotStatus.type === 'loading';
 
-  const [code, setCode] = useState('');
   const [vexmlStatus, setVexmlStatus] = useState<VexmlStatus>({ type: 'init', exampleId });
   const snapshotComparisonStatus = useSnapshotComparisonStatus(vexmlSnapshot, serverSnapshot);
   const exampleStatus = useExampleStatus(exampleId, vexmlStatus, snapshotComparisonStatus);
@@ -81,22 +80,15 @@ export const Example: React.FC<ExampleProps> = (props) => {
       case 'rendering':
         break;
       case 'snapshotting':
-        setCode(exampleStatus.codePrinter.print());
         setSvg(exampleStatus.svg);
         break;
       case 'success':
         break;
       case 'error':
-        setCode(exampleStatus.codePrinter.print());
         break;
     }
     onUpdate && onUpdate(exampleStatus);
   }, [exampleStatus]);
-
-  const onCopyCodeClick = useCallback(() => {
-    navigator.clipboard.writeText(code);
-    message.success('code copied to clipboard');
-  }, [code]);
 
   return (
     <>
@@ -116,10 +108,6 @@ export const Example: React.FC<ExampleProps> = (props) => {
         loading={isServerSnapshotLoading}
       >
         snapshot
-      </CallToActionButton>
-
-      <CallToActionButton icon={<CopyOutlined />} disabled={!code} onClick={onCopyCodeClick}>
-        copy code
       </CallToActionButton>
 
       {result.type === 'success' && (
@@ -144,14 +132,9 @@ export const Example: React.FC<ExampleProps> = (props) => {
             {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
             {vexmlSnapshot && serverSnapshot && <Diff snapshotComparisonStatus={snapshotComparisonStatus} />}
           </TabPane>
-          <TabPane tab="code" key="4">
-            <Typography.Title level={2}>code</Typography.Title>
-            {!code && <Typography.Text type="secondary">none</Typography.Text>}
-            {code && <Alert type="info" message={<pre>{code}</pre>} />}
-          </TabPane>
           <TabPane tab="source" key="5">
             <Typography.Title level={2}>source</Typography.Title>
-            {code && <Alert type="info" message={<pre>{result.data}</pre>} />}
+            {result.data && <Alert type="info" message={<pre>{result.data}</pre>} />}
           </TabPane>
         </Tabs>
       )}

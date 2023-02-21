@@ -22,14 +22,12 @@ export type ExampleStatus =
       exampleId: string;
       svg: SVGElement;
       elapsedMs: number;
-      codePrinter: vexml.CodePrinter;
     }
   | {
       type: 'success';
       exampleId: string;
       svg: SVGElement;
       elapsedMs: number;
-      codePrinter: vexml.CodePrinter;
       comparison: SnapshotComparison;
     }
   | {
@@ -37,7 +35,6 @@ export type ExampleStatus =
       error: any;
       exampleId: string;
       elapsedMs: number;
-      codePrinter: vexml.CodePrinter;
     };
 
 export const useExampleStatus = (
@@ -63,7 +60,6 @@ export const useExampleStatus = (
           exampleId,
           error: vexmlStatus.error,
           elapsedMs: vexmlStatus.elapsedMs,
-          codePrinter: vexmlStatus.codePrinter,
         };
       case 'success':
         switch (snapshotComparisonStatus.type) {
@@ -74,7 +70,6 @@ export const useExampleStatus = (
               type: 'snapshotting',
               exampleId,
               elapsedMs: vexmlStatus.elapsedMs,
-              codePrinter: vexmlStatus.codePrinter,
               svg: vexmlStatus.svg,
             };
           case 'success':
@@ -82,7 +77,6 @@ export const useExampleStatus = (
               type: 'success',
               exampleId,
               elapsedMs: vexmlStatus.elapsedMs,
-              codePrinter: vexmlStatus.codePrinter,
               svg: vexmlStatus.svg,
               comparison: snapshotComparisonStatus.comparison,
             };
@@ -92,7 +86,6 @@ export const useExampleStatus = (
               exampleId,
               error: snapshotComparisonStatus.error,
               elapsedMs: vexmlStatus.elapsedMs,
-              codePrinter: vexmlStatus.codePrinter,
             };
         }
     }
