@@ -94,6 +94,7 @@ export class Vexml {
         tickables.push(this.createStaveNote(note));
       }
     }
+
     system.addVoices([this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
 
     for (const barline of measure.getBarlines()) {
@@ -112,6 +113,8 @@ export class Vexml {
         }
       }
     }
+
+    vexflow.Formatter.SimpleFormat(tickables);
 
     system.format();
   }
