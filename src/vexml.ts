@@ -1,5 +1,4 @@
 import * as vexflow from 'vexflow';
-import { BoundingBox } from 'vexflow';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
