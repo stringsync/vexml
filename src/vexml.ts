@@ -2,7 +2,6 @@ import * as vexflow from 'vexflow';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
-import { History } from './history';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
@@ -47,7 +46,6 @@ export class Vexml {
 
   private musicXml: MusicXml;
   private factory: Factory;
-  private system = new History<vexflow.System>();
   private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
@@ -76,7 +74,8 @@ export class Vexml {
   }
 
   private renderMeasure(measure: Measure): void {
-    const system = this.addSystem(measure);
+    this.addSystem(measure);
+    const system = this.factory.getCurrentSystem()!;
 
     this.addStaves(measure);
 
@@ -125,7 +124,7 @@ export class Vexml {
   }
 
   private renderAttributes(attributes: Attributes): void {
-    const staves = this.system.getCurrent()?.getStaves() ?? [];
+    const staves = this.factory.getCurrentSystem()?.getStaves() ?? [];
     if (staves.length === 0) {
       return;
     }
@@ -165,8 +164,8 @@ export class Vexml {
     const leftMargin = systemLayout.leftMargin ?? 0;
     const systemDistance = systemLayout.systemDistance ?? 50;
 
-    const currentSystem = this.system.getCurrent();
-    const previousSystem = this.system.getPrevious();
+    const currentSystem = this.factory.getCurrentSystem();
+    const previousSystem = this.factory.getPreviousSystem();
 
     if (currentSystem) {
       currentSystem.setX(leftMargin);
@@ -233,9 +232,8 @@ export class Vexml {
     // TODO: Flesh this out.
   }
 
-  private addSystem(measure: Measure): vexflow.System {
-    let system: vexflow.System;
-    const currentSystem = this.system.getCurrent();
+  private addSystem(measure: Measure): void {
+    const currentSystem = this.factory.getCurrentSystem();
 
     let x = 0;
     let y = 0;
@@ -246,16 +244,14 @@ export class Vexml {
 
     const width = measure.getWidth();
     if (typeof width === 'number') {
-      system = this.factory.System({ x, y, width });
+      this.factory.System({ x, y, width });
     } else {
-      system = this.factory.System({ x, y, autoWidth: true });
+      this.factory.System({ x, y, autoWidth: true });
     }
-    this.system.set(system);
-    return system;
   }
 
   private addStaves(measure: Measure): void {
-    const system = this.system.getCurrent();
+    const system = this.factory.getCurrentSystem();
     if (!system) {
       return;
     }
@@ -321,5 +317,13 @@ export class Vexml {
 class Factory extends vexflow.Factory {
   getSystems() {
     return [...this.systems];
+  }
+
+  getCurrentSystem(): vexflow.System | null {
+    return this.systems[this.systems.length - 1] ?? null;
+  }
+
+  getPreviousSystem(): vexflow.System | null {
+    return this.systems[this.systems.length - 2] ?? null;
   }
 }
