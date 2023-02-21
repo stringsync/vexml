@@ -2,7 +2,6 @@ import * as vexflow from 'vexflow';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
-import { CodePrinter, CodeTracker } from './codeprinter';
 import { History } from './history';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
@@ -12,7 +11,10 @@ import { Print } from './print';
 import { ClefType } from './types';
 
 export type RenderOptions = {
-  codeTracker?: CodeTracker;
+  elementId: string;
+  xml: string;
+  width: number;
+  height: number;
 };
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
@@ -24,30 +26,32 @@ export class Vexml {
    * @param xml The MusicXML document as a string.
    * @param opts Rendering options.
    */
-  static render(elementId: string, xml: string, opts: RenderOptions = {}): void {
-    const t = opts.codeTracker ?? CodePrinter.noop();
-
+  static render(opts: RenderOptions): void {
     // Constructing a Factory also renders an empty <svg>.
-    const factory = new Factory({ renderer: { elementId, width: 2000, height: 400 } });
+    const factory = new Factory({
+      renderer: {
+        elementId: opts.elementId,
+        width: opts.width,
+        height: opts.height,
+      },
+    });
 
     const parser = new DOMParser();
-    const root = parser.parseFromString(xml, 'application/xml');
+    const root = parser.parseFromString(opts.xml, 'application/xml');
 
     const musicXml = new MusicXml(root);
-    const vexml = new Vexml({ musicXml, t, factory });
+    const vexml = new Vexml({ musicXml, factory });
 
     vexml.render();
   }
 
   private musicXml: MusicXml;
-  private t: CodeTracker;
   private factory: Factory;
   private system = new History<vexflow.System>();
   private clefByStaffNumber: Record<number, Clef> = {};
 
-  private constructor(opts: { musicXml: MusicXml; t: CodeTracker; factory: Factory }) {
+  private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
     this.musicXml = opts.musicXml;
-    this.t = opts.t;
     this.factory = opts.factory;
   }
 

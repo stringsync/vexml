@@ -1,6 +1,5 @@
 import { Alert } from 'antd';
 import React, { useEffect, useId, useState } from 'react';
-import { useConstant } from '../hooks/useConstant';
 import { vexml } from '../lib/vexml';
 
 export type VexmlStatus =
@@ -17,14 +16,12 @@ export type VexmlStatus =
       svg: SVGElement;
       exampleId: string;
       elapsedMs: number;
-      codePrinter: vexml.CodePrinter;
     }
   | {
       type: 'error';
       elapsedMs: number;
       exampleId: string;
       error: any;
-      codePrinter: vexml.CodePrinter;
     };
 
 const getErrorMessage = (e: any) => (e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`);
@@ -41,16 +38,14 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
   const id = useId();
 
   const [status, setStatus] = useState<VexmlStatus>({ type: 'rendering', exampleId });
-  const codePrinter = useConstant(() => new vexml.CodePrinter());
-  const success = (svg: SVGElement, elapsedMs: number) =>
-    setStatus({ type: 'success', svg, exampleId, elapsedMs, codePrinter });
+  const success = (svg: SVGElement, elapsedMs: number) => setStatus({ type: 'success', svg, exampleId, elapsedMs });
   const error = (e: any, elapsedMs: number) =>
-    setStatus({ type: 'error', exampleId, error: getErrorMessage(e), codePrinter, elapsedMs });
+    setStatus({ type: 'error', exampleId, error: getErrorMessage(e), elapsedMs });
 
   useEffect(() => {
     const start = new Date().getTime();
     try {
-      vexml.Vexml.render(id, xml, { codeTracker: codePrinter });
+      vexml.Vexml.render({ elementId: id, xml, width: 2000, height: 400 });
       const stop = new Date().getTime();
       const svg = document.getElementById(id)!.firstChild! as SVGElement;
       success(svg, stop - start);
@@ -58,7 +53,7 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
       const stop = new Date().getTime();
       error(e, stop - start);
     }
-  }, [id, xml, codePrinter]);
+  }, [id, xml]);
 
   useEffect(() => {
     onStateChange && onStateChange(status);
