@@ -18,13 +18,7 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  /**
-   * Renders a MusicXML document to an HTML element.
-   *
-   * @param elementId The ID of the element to render the SVG to.
-   * @param xml The MusicXML document as a string.
-   * @param opts Rendering options.
-   */
+  /** Renders a MusicXML document to an HTML element. */
   static render(opts: RenderOptions): void {
     // Constructing a Factory also renders an empty <svg>.
     const factory = new Factory({
@@ -37,7 +31,6 @@ export class Vexml {
 
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
-
     const musicXml = new MusicXml(root);
     const vexml = new Vexml({ musicXml, factory });
 
