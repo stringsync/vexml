@@ -1,6 +1,6 @@
 import { Attributes } from './attributes';
 import { Barline } from './barline';
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { Note } from './note';
 import * as parse from './parse';
 import { Print } from './print';
@@ -11,49 +11,49 @@ import { Print } from './print';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
  */
 export class Measure {
-  constructor(private node: NamedNode<'measure'>) {}
+  constructor(private node: NamedElement<'measure'>) {}
 
   /** Returns the measure number or an empty string if missing. */
   getNumber(): string {
-    return this.node.asElement().getAttribute('number') ?? '';
+    return this.node.native().getAttribute('number') ?? '';
   }
 
   /** Returns whether or not the measure has a specified width */
   hasWidth(): boolean {
-    return this.node.asElement().hasAttribute('width');
+    return this.node.native().hasAttribute('width');
   }
 
   /** Returns the specified measured width in tenths. Defaults to null. */
   getWidth(): number | null {
-    const width = this.node.asElement().getAttribute('width');
+    const width = this.node.native().getAttribute('width');
     return parse.intOrDefault(width, null);
   }
 
   /** Returns the <attributes> element of the measure. */
   getAttributes(): Attributes[] {
-    return Array.from(this.node.asElement().getElementsByTagName('attributes'))
-      .map((attributes) => NamedNode.of<'attributes'>(attributes))
+    return Array.from(this.node.native().getElementsByTagName('attributes'))
+      .map((attributes) => NamedElement.of<'attributes'>(attributes))
       .map((node) => new Attributes(node));
   }
 
   /** Returns the notes of the measure. */
   getNotes(): Note[] {
-    return Array.from(this.node.asElement().getElementsByTagName('note'))
-      .map((note) => NamedNode.of<'note'>(note))
+    return Array.from(this.node.native().getElementsByTagName('note'))
+      .map((note) => NamedElement.of<'note'>(note))
       .map((node) => new Note(node));
   }
 
   /** Returns the barlines of the measure. */
   getBarlines(): Barline[] {
-    return Array.from(this.node.asElement().getElementsByTagName('barline'))
-      .map((barline) => NamedNode.of<'barline'>(barline))
+    return Array.from(this.node.native().getElementsByTagName('barline'))
+      .map((barline) => NamedElement.of<'barline'>(barline))
       .map((node) => new Barline(node));
   }
 
   /** Returns the prints of the measure. */
   getPrints(): Print[] {
-    return Array.from(this.node.asElement().getElementsByTagName('print'))
-      .map((print) => NamedNode.of<'print'>(print))
+    return Array.from(this.node.native().getElementsByTagName('print'))
+      .map((print) => NamedElement.of<'print'>(print))
       .map((node) => new Print(node));
   }
 }

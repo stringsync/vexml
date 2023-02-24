@@ -1,5 +1,5 @@
 import { MusicXml } from './musicxml';
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { Score } from './score';
 import * as xml from './xml';
 
@@ -7,8 +7,8 @@ describe(MusicXml, () => {
   describe('getScorePartwise', () => {
     it('returns the score of the musicxml document', () => {
       const root = xml.createDocument();
-      const scorePartwise = NamedNode.of<'score-partwise'>(root.createElement('score-partwise'));
-      root.appendChild(scorePartwise.node);
+      const scorePartwise = NamedElement.of<'score-partwise'>(root.createElement('score-partwise'));
+      root.appendChild(scorePartwise.native());
 
       const musicXml = new MusicXml(root);
 

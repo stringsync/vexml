@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { VerticalDirection } from './types';
 
 /**
@@ -7,16 +7,16 @@ import { VerticalDirection } from './types';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/notations/
  */
 export class Notations {
-  constructor(private node: NamedNode<'notations'>) {}
+  constructor(private node: NamedElement<'notations'>) {}
 
   /** Whether or not the note/chord is arpeggiated. */
   isArpeggiated(): boolean {
-    return this.node.asElement().getElementsByTagName('arpeggiate').length > 0;
+    return this.node.native().getElementsByTagName('arpeggiate').length > 0;
   }
 
   /** Returns the direction of the arppegio when appregiated and null otherwise. */
   getArpeggioDirection(): VerticalDirection {
-    const direction = this.node.asElement().getElementsByTagName('arpeggiate').item(0)?.getAttribute('direction');
+    const direction = this.node.native().getElementsByTagName('arpeggiate').item(0)?.getAttribute('direction');
     return this.isVerticalDirection(direction) ? direction : 'up';
   }
 

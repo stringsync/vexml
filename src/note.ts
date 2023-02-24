@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { Notations } from './notations';
 import {
   AccidentalCode,
@@ -12,11 +12,11 @@ import {
 import * as parse from './parse';
 
 export class Note {
-  constructor(private node: NamedNode<'note'>) {}
+  constructor(private node: NamedElement<'note'>) {}
 
   /** Returns the stem of the note or null when missing or invalid. */
   getStem(): Stem | null {
-    const stem = this.node.asElement().getElementsByTagName('stem').item(0)?.textContent;
+    const stem = this.node.native().getElementsByTagName('stem').item(0)?.textContent;
     if (this.isStem(stem)) {
       return stem;
     }
@@ -25,7 +25,7 @@ export class Note {
 
   /** Returns the type of note or 'whole' when missing or invalid. */
   getType(): NoteType {
-    const type = this.node.asElement().getElementsByTagName('type').item(0)?.textContent;
+    const type = this.node.native().getElementsByTagName('type').item(0)?.textContent;
     if (this.isNoteType(type)) {
       return type;
     }
@@ -34,7 +34,7 @@ export class Note {
 
   /** Returns the duration of the note. Defaults to 4 */
   getDuration(): number {
-    const duration = this.node.asElement().getElementsByTagName('duration').item(0)?.textContent;
+    const duration = this.node.native().getElementsByTagName('duration').item(0)?.textContent;
     return parse.intOrDefault(duration, 4);
   }
 
@@ -76,47 +76,47 @@ export class Note {
 
   /** Returns how many dots are on the note. */
   getDotCount(): number {
-    return this.node.asElement().getElementsByTagName('dot').length;
+    return this.node.native().getElementsByTagName('dot').length;
   }
 
   /** Whether or not the note is a grace note. */
   isGrace(): boolean {
-    return this.node.asElement().getElementsByTagName('grace').length > 0;
+    return this.node.native().getElementsByTagName('grace').length > 0;
   }
 
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
-    return this.node.asElement().getElementsByTagName('grace').item(0)?.getAttribute('slash') === 'yes';
+    return this.node.native().getElementsByTagName('grace').item(0)?.getAttribute('slash') === 'yes';
   }
 
   /** Returns the notations of the note. */
   getNotations(): Notations[] {
-    return Array.from(this.node.asElement().getElementsByTagName('notations'))
-      .map((notations) => NamedNode.of<'notations'>(notations))
+    return Array.from(this.node.native().getElementsByTagName('notations'))
+      .map((notations) => NamedElement.of<'notations'>(notations))
       .map((node) => new Notations(node));
   }
 
   /** Returns the voice this note belongs to. */
   getVoice(): string {
-    return this.node.asElement().getElementsByTagName('voice').item(0)?.textContent ?? '1';
+    return this.node.native().getElementsByTagName('voice').item(0)?.textContent ?? '1';
   }
 
   /** Returns the staff the note belongs to. */
   getStaffNumber(): number {
-    const staff = this.node.asElement().getElementsByTagName('staff').item(0)?.textContent;
+    const staff = this.node.native().getElementsByTagName('staff').item(0)?.textContent;
     return parse.intOrDefault(staff, 1);
   }
 
   /** Returns the step and octave of the note in the format `${step}/${octave}`. */
   getPitch(): string {
-    const step = this.node.asElement().getElementsByTagName('step').item(0)?.textContent ?? 'C';
-    const octave = this.node.asElement().getElementsByTagName('octave').item(0)?.textContent ?? '4';
+    const step = this.node.native().getElementsByTagName('step').item(0)?.textContent ?? 'C';
+    const octave = this.node.native().getElementsByTagName('octave').item(0)?.textContent ?? '4';
     return `${step}/${octave}`;
   }
 
   /** Returns the accidental type of the note. Defaults to null. */
   getAccidentalType(): AccidentalType | null {
-    const accidentalType = this.node.asElement().getElementsByTagName('accidental').item(0)?.textContent;
+    const accidentalType = this.node.native().getElementsByTagName('accidental').item(0)?.textContent;
     return this.isAccidentalType(accidentalType) ? accidentalType : null;
   }
 
@@ -140,12 +140,12 @@ export class Note {
 
   /** Whether or not the accidental is cautionary. Defaults to false. */
   hasAccidentalCautionary(): boolean {
-    return this.node.asElement().getElementsByTagName('accidental').item(0)?.getAttribute('cautionary') === 'yes';
+    return this.node.first('accidental')?.attr('cautionary').str() === 'yes';
   }
 
   /** Returns the notehead of the note. */
   getNotehead(): Notehead {
-    const notehead = this.node.asElement().getElementsByTagName('notehead').item(0)?.textContent;
+    const notehead = this.node.native().getElementsByTagName('notehead').item(0)?.textContent;
     return this.isNotehead(notehead) ? notehead : 'normal';
   }
 
@@ -200,12 +200,12 @@ export class Note {
       return false;
     }
 
-    const sibling = this.node.asElement().nextElementSibling;
+    const sibling = this.node.native().nextElementSibling;
     if (!sibling) {
       return false;
     }
 
-    const node = NamedNode.of(sibling);
+    const node = NamedElement.of(sibling);
     if (node.isNamed('note')) {
       // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
       return new Note(node).isChordTail();
@@ -216,7 +216,7 @@ export class Note {
 
   /** Whether or not the note is part of a chord and *not* the first note of the chord. */
   isChordTail(): boolean {
-    return this.node.asElement().getElementsByTagName('chord').length > 0;
+    return this.node.native().getElementsByTagName('chord').length > 0;
   }
 
   /** Returns the rest of the notes in the chord iff the current note is a chord head. Defaults to an empty array. */
@@ -227,9 +227,9 @@ export class Note {
       return tail;
     }
 
-    let sibling = this.node.asElement().nextElementSibling;
+    let sibling = this.node.native().nextElementSibling;
     while (sibling) {
-      const node = NamedNode.of(sibling);
+      const node = NamedElement.of(sibling);
       if (!node.isNamed('note')) {
         break;
       }
@@ -248,7 +248,7 @@ export class Note {
 
   /** Returns whether or not the note is a rest. */
   isRest(): boolean {
-    return this.node.asElement().getElementsByTagName('rest').length > 0;
+    return this.node.native().getElementsByTagName('rest').length > 0;
   }
 
   private isStem(value: any): value is Stem {

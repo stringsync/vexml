@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import * as parse from './parse';
 
 /**
@@ -7,11 +7,11 @@ import * as parse from './parse';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/key/
  */
 export class Key {
-  constructor(private node: NamedNode<'key'>) {}
+  constructor(private node: NamedElement<'key'>) {}
 
   /** Returns the fifths count of the key or defaults to 0. */
   getFifthsCount(): number {
-    const fifths = this.node.asElement().getElementsByTagName('fifths').item(0)?.textContent;
+    const fifths = this.node.native().getElementsByTagName('fifths').item(0)?.textContent;
     return parse.intOrDefault(fifths, 0);
   }
 
