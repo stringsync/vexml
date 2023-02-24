@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { ClefAnnotation, ClefSign, ClefType } from './types';
 import * as parse from './parse';
 
@@ -8,29 +8,29 @@ import * as parse from './parse';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/clef-sign/
  */
 export class Clef {
-  constructor(private node: NamedNode<'clef'>) {}
+  constructor(private node: NamedElement<'clef'>) {}
 
   /** Returns the staff */
   getStaffNumber(): number {
-    const number = this.node.asElement().getAttribute('number');
+    const number = this.node.native().getAttribute('number');
     return parse.intOrDefault(number, 1);
   }
 
   /** Returns the clef sign. Defaults to null. */
   getSign(): ClefSign | null {
-    const clefSign = this.node.asElement().getElementsByTagName('sign').item(0)?.textContent;
+    const clefSign = this.node.native().getElementsByTagName('sign').item(0)?.textContent;
     return this.isClefSign(clefSign) ? clefSign : null;
   }
 
   /** Returns the line of the clef. Defaults to null. */
   getLine(): number | null {
-    const line = this.node.asElement().getElementsByTagName('line').item(0)?.textContent;
+    const line = this.node.native().getElementsByTagName('line').item(0)?.textContent;
     return parse.intOrDefault(line, null);
   }
 
   /** Returns the octave change of the clef. Defaults to null. */
   getOctaveChange(): number | null {
-    const octaveChange = this.node.asElement().getElementsByTagName('clef-octave-change').item(0)?.textContent;
+    const octaveChange = this.node.native().getElementsByTagName('clef-octave-change').item(0)?.textContent;
     return parse.intOrDefault(octaveChange, null);
   }
 

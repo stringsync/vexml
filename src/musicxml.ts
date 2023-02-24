@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { Score } from './score';
 
 /**
@@ -15,6 +15,6 @@ export class MusicXml {
     if (!node) {
       return null;
     }
-    return new Score(NamedNode.of(node));
+    return new Score(NamedElement.of(node));
   }
 }

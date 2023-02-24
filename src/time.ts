@@ -1,4 +1,4 @@
-import { NamedNode } from './namednode';
+import { NamedElement } from './namedelement';
 import { TimeSignature } from './types';
 
 /**
@@ -7,16 +7,16 @@ import { TimeSignature } from './types';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/time/
  */
 export class Time {
-  constructor(private node: NamedNode<'time'>) {}
+  constructor(private node: NamedElement<'time'>) {}
 
   /** Returns the time signatures of the time. There is typically only one. */
   getTimeSignatures(): TimeSignature[] {
     const result = new Array<TimeSignature>();
 
-    const beats = Array.from(this.node.asElement().getElementsByTagName('beats'))
+    const beats = Array.from(this.node.native().getElementsByTagName('beats'))
       .map((beats) => beats.textContent)
       .filter((text): text is string => typeof text === 'string');
-    const beatTypes = Array.from(this.node.asElement().getElementsByTagName('beat-type'))
+    const beatTypes = Array.from(this.node.native().getElementsByTagName('beat-type'))
       .map((beatType) => beatType.textContent)
       .filter((text): text is string => typeof text === 'string');
 
