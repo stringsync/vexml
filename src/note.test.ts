@@ -6,7 +6,7 @@ import * as xml from './xml';
 describe(Note, () => {
   describe('getStem', () => {
     it.each(['up', 'down', 'double', 'none'])(`returns the stem of the note when valid: '%s'`, (stem) => {
-      const node = xml.note({ stem: xml.stem({ textContent: stem }) });
+      const node = xml.note({ stem: xml.stem({ value: stem }) });
       const note = new Note(node);
       expect(note.getStem()).toBe(stem);
     });
@@ -18,7 +18,7 @@ describe(Note, () => {
     });
 
     it('returns null when stem is invalid', () => {
-      const node = xml.note({ stem: xml.stem({ textContent: 'foo' }) });
+      const node = xml.note({ stem: xml.stem({ value: 'foo' }) });
       const note = new Note(node);
       expect(note.getStem()).toBeNull();
     });
@@ -166,7 +166,7 @@ describe(Note, () => {
 
   describe('getVoice', () => {
     it('returns the voice of the note', () => {
-      const node = xml.note({ voice: xml.voice({ textContent: '2' }) });
+      const node = xml.note({ voice: xml.voice({ value: '2' }) });
       const note = new Note(node);
       expect(note.getVoice()).toBe('2');
     });
@@ -202,8 +202,8 @@ describe(Note, () => {
     it('returns the pitch of the note', () => {
       const node = xml.note({
         pitch: xml.pitch({
-          step: xml.step({ textContent: 'D' }),
-          octave: xml.octave({ textContent: '12' }),
+          step: xml.step({ value: 'D' }),
+          octave: xml.octave({ value: '12' }),
         }),
       });
       const note = new Note(node);
@@ -213,7 +213,7 @@ describe(Note, () => {
     it(`defaults to step 'C' when missing step`, () => {
       const node = xml.note({
         pitch: xml.pitch({
-          octave: xml.octave({ textContent: '12' }),
+          octave: xml.octave({ value: '12' }),
         }),
       });
       const note = new Note(node);
@@ -223,7 +223,7 @@ describe(Note, () => {
     it(`defaults to octave '4' when missing octave`, () => {
       const node = xml.note({
         pitch: xml.pitch({
-          step: xml.step({ textContent: 'D' }),
+          step: xml.step({ value: 'D' }),
         }),
       });
       const note = new Note(node);

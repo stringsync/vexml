@@ -4,7 +4,7 @@ import * as xml from './xml';
 describe(Key, () => {
   describe('getFifthsCount', () => {
     it('returns the fifths count of the key', () => {
-      const node = xml.key({ fifths: xml.fifths({ textContent: '5' }) });
+      const node = xml.key({ fifths: xml.fifths({ value: '5' }) });
       const key = new Key(node);
       expect(key.getFifthsCount()).toBe(5);
     });
@@ -34,7 +34,7 @@ describe(Key, () => {
       { fifths: -6, keySignature: 'Gb' },
       { fifths: -7, keySignature: 'Cb' },
     ])('returns the key signature based on the fifths: $fifths yields $keySignature', (t) => {
-      const node = xml.key({ fifths: xml.fifths({ textContent: t.fifths.toString() }) });
+      const node = xml.key({ fifths: xml.fifths({ value: t.fifths.toString() }) });
       const key = new Key(node);
       expect(key.getKeySignature()).toBe(t.keySignature);
     });
@@ -46,7 +46,7 @@ describe(Key, () => {
     });
 
     it('returns C when fifths is invalid', () => {
-      const node = xml.key({ fifths: xml.fifths({ textContent: 'hello' }) });
+      const node = xml.key({ fifths: xml.fifths({ value: 'hello' }) });
       const key = new Key(node);
       expect(key.getKeySignature()).toBe('C');
     });

@@ -1,11 +1,12 @@
 import { Attr } from './attr';
 
 /**
- * A wrapper class that is used to facilitate compile-time checking on an element's name and provide conveinence methods
- * on top of the Element api.
+ * A readonly wrapper that enforces compile-time checking on an element's name.
  *
  * For example, requiring a signature to use NamedElement<'foo'> will force the caller to assert that an element's name
  * is foo. As long as types aren't being dynamically casted, this is also backed by the compiler.
+ *
+ * It also provides convenience methods on top of the Element API.
  */
 export class NamedElement<T extends string> {
   /** Creates a NamedNode from a document node. */
@@ -23,11 +24,6 @@ export class NamedElement<T extends string> {
   /** Casts the underlying node to an Element. */
   native(): Element {
     return this.element;
-  }
-
-  /** Appends the elements as direct children. */
-  append(...elements: NamedElement<string>[]): void {
-    this.element.append(...elements.map((element) => element.native()));
   }
 
   /** Returns the first _descendant_ node matching the tag name. Defaults to null. */

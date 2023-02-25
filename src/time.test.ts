@@ -5,8 +5,8 @@ describe(Time, () => {
   it('returns the time signatures of the time', () => {
     const node = xml.time({
       times: [
-        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '4' }) },
-        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '8' }) },
+        { beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '4' }) },
+        { beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '8' }) },
       ],
     });
     const time = new Time(node);
@@ -25,8 +25,8 @@ describe(Time, () => {
   it('ignores extra beats', () => {
     const node = xml.time({
       times: [
-        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '4' }) },
-        { beats: xml.beats({ textContent: '3' }) },
+        { beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '4' }) },
+        { beats: xml.beats({ value: '3' }) },
       ],
     });
     const time = new Time(node);
@@ -36,8 +36,8 @@ describe(Time, () => {
   it('ignores extra beat types', () => {
     const node = xml.time({
       times: [
-        { beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '4' }) },
-        { beatType: xml.beatType({ textContent: '6' }) },
+        { beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '4' }) },
+        { beatType: xml.beatType({ value: '6' }) },
       ],
     });
     const time = new Time(node);

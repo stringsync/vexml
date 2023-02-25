@@ -1,92 +1,135 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NamedElement } from './namedelement';
 
-type CreateNode<T extends string, A extends Record<any, any>> = (args?: Partial<A>) => NamedElement<T>;
+/**
+ * A wrapper around NamedElement that performs mutative actions.
+ *
+ * This allows callers to exclusively work with NamedElements, as opposed to casting NamedElements to their native form.
+ * It also prevents the need for NamedElement to have an mutative actions.
+ */
+class NamedElementEditor {
+  constructor(private element: NamedElement<string>) {}
 
-const getNode = (namedNode: NamedElement<string>): Node => namedNode.native();
+  /** Appends the elements to the wrapped element as direct children. */
+  append(...elements: Array<NamedElement<string>>): void {
+    this.element.native().append(...elements.map((element) => element.native()));
+  }
 
+  /** Sets the text content of the wrapped element. */
+  setTextContent(textContent: string): void {
+    this.element.native().textContent = textContent;
+  }
+
+  /** Sets the attribute of the wrapped element. */
+  setAttribute(name: string, value: string): void {
+    this.element.native().setAttribute(name, value);
+  }
+}
+
+/** Creates a document node. */
 export const createDocument = (): Document => document.implementation.createDocument(null, null);
 
-export const createElement = (tagName: string, options?: ElementCreationOptions): Element => {
-  return createDocument().createElement(tagName, options);
+/** Creates an XML element with the specified tag name. */
+export const createElement = (tagName: string): Element => {
+  return createDocument().createElement(tagName);
 };
 
-export const scorePartwise: CreateNode<
+/** Creates a NamedElement with the specified tag name. */
+export const createNamedElement = <T extends string>(tagName: T): NamedElement<T> => {
+  return NamedElement.of(createElement(tagName));
+};
+
+/**
+ * Creates an element factory.
+ *
+ * Factories are invoked by invoking the returned function with the arguments.
+ * @example
+ * const fooFactory = createNamedElementFactory<'foo', { bar: string }>('foo', (e, { bar }) => {
+ *   if (typeof bar === 'string') {
+ *     e.setTextContent(bar);
+ *   }
+ * });
+ * const fooNamedElement = fooFactory('bar');
+ */
+const createNamedElementFactory = <T extends string, A extends Record<any, any>>(
+  tagName: T,
+  builder: (e: NamedElementEditor, args: Partial<A>) => void
+) => {
+  return (args?: Partial<A>): NamedElement<T> => {
+    const element = createNamedElement(tagName);
+    builder(new NamedElementEditor(element), args ?? {});
+    return element;
+  };
+};
+
+export const scorePartwise = createNamedElementFactory<
   'score-partwise',
   {
     parts: NamedElement<'part'>[];
     partList: NamedElement<'part-list'>;
   }
-> = ({ parts, partList } = {}) => {
-  const node = createElement('score-partwise');
-
+>('score-partwise', (e, { parts, partList }) => {
   if (parts) {
-    node.append(...parts.map(getNode));
+    e.append(...parts);
   }
   if (partList) {
-    node.append(partList.native());
+    e.append(partList);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const partList: CreateNode<'part-list', { scoreParts: NamedElement<'score-part'>[] }> = ({
-  scoreParts,
-} = {}) => {
-  const node = createElement('part-list');
-
+export const partList = createNamedElementFactory<
+  'part-list',
+  {
+    scoreParts: NamedElement<'score-part'>[];
+  }
+>('part-list', (e, { scoreParts }) => {
   if (scoreParts) {
-    node.append(...scoreParts.map(getNode));
+    e.append(...scoreParts);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const scorePart: CreateNode<
+export const scorePart = createNamedElementFactory<
   'score-part',
   {
     id: string;
     partName: NamedElement<'part-name'>;
   }
-> = ({ id, partName } = {}) => {
-  const node = createElement('score-part');
-
+>('score-part', (e, { id, partName }) => {
   if (id) {
-    node.setAttribute('id', id);
+    e.setAttribute('id', id);
   }
   if (partName) {
-    node.append(partName.native());
+    e.append(partName);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const partName: CreateNode<'part-name', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('part-name');
-
+export const partName = createNamedElementFactory<
+  'part-name',
+  {
+    textContent: string;
+  }
+>('part-name', (e, { textContent }) => {
   if (textContent) {
-    node.textContent = textContent;
+    e.setTextContent(textContent);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const part: CreateNode<'part', { id: string; measures: NamedElement<'measure'>[] }> = ({
-  id,
-  measures,
-} = {}) => {
-  const node = createElement('part');
-
+export const part = createNamedElementFactory<
+  'part',
+  {
+    id: string;
+    measures: NamedElement<'measure'>[];
+  }
+>('part', (e, { id, measures }) => {
   if (id) {
-    node.setAttribute('id', id);
+    e.setAttribute('id', id);
   }
   if (measures) {
-    node.append(...measures.map(getNode));
+    e.append(...measures);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const measure: CreateNode<
+export const measure = createNamedElementFactory<
   'measure',
   {
     width: number;
@@ -96,32 +139,28 @@ export const measure: CreateNode<
     barlines: NamedElement<'barline'>[];
     prints: NamedElement<'print'>[];
   }
-> = ({ width, number, notes, attributes, barlines, prints } = {}) => {
-  const node = createElement('measure');
-
+>('measure', (e, { width, number, notes, attributes, barlines, prints }) => {
   if (notes) {
-    node.append(...notes.map(getNode));
+    e.append(...notes);
   }
   if (attributes) {
-    node.append(...attributes.map(getNode));
+    e.append(...attributes);
   }
   if (barlines) {
-    node.append(...barlines.map(getNode));
+    e.append(...barlines);
   }
   if (prints) {
-    node.append(...prints.map(getNode));
+    e.append(...prints);
   }
   if (typeof width === 'number') {
-    node.setAttribute('width', width.toString());
+    e.setAttribute('width', width.toString());
   }
   if (typeof number === 'string') {
-    node.setAttribute('number', number);
+    e.setAttribute('number', number);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const note: CreateNode<
+export const note = createNamedElementFactory<
   'note',
   {
     type: NamedElement<'type'>;
@@ -138,63 +177,63 @@ export const note: CreateNode<
     staff: NamedElement<'staff'>;
     chord: NamedElement<'chord'>;
   }
-> = ({ type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff, chord } = {}) => {
-  const node = createElement('note');
+>(
+  'note',
+  (e, { type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff, chord }) => {
+    if (grace) {
+      e.append(grace);
+    }
+    if (chord) {
+      e.append(chord);
+    }
+    if (pitch) {
+      e.append(pitch);
+    }
+    if (rest) {
+      e.append(rest);
+    }
+    if (duration) {
+      e.append(duration);
+    }
+    if (voice) {
+      e.append(voice);
+    }
+    if (type) {
+      e.append(type);
+    }
+    if (dots) {
+      e.append(...dots);
+    }
+    if (accidental) {
+      e.append(accidental);
+    }
+    if (stem) {
+      e.append(stem);
+    }
+    if (notehead) {
+      e.append(notehead);
+    }
+    if (staff) {
+      e.append(staff);
+    }
+    if (notations) {
+      e.append(...notations);
+    }
+  }
+);
 
-  if (grace) {
-    node.append(grace.native());
+export const type = createNamedElementFactory<
+  'type',
+  {
+    textContent: string;
   }
-  if (chord) {
-    node.append(chord.native());
-  }
-  if (pitch) {
-    node.append(pitch.native());
-  }
-  if (rest) {
-    node.append(rest.native());
-  }
-  if (duration) {
-    node.append(duration.native());
-  }
-  if (voice) {
-    node.append(voice.native());
-  }
-  if (type) {
-    node.append(type.native());
-  }
-  if (dots) {
-    node.append(...dots.map(getNode));
-  }
-  if (accidental) {
-    node.append(accidental.native());
-  }
-  if (stem) {
-    node.append(stem.native());
-  }
-  if (notehead) {
-    node.append(notehead.native());
-  }
-  if (staff) {
-    node.append(staff.native());
-  }
-  if (notations) {
-    node.append(...notations.map(getNode));
-  }
-
-  return NamedElement.of(node);
-};
-
-export const type: CreateNode<'type', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('type');
-
+>('type', (e, { textContent }) => {
   if (textContent) {
-    node.textContent = textContent;
+    e.setTextContent(textContent);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const attributes: CreateNode<
+export const attributes = createNamedElementFactory<
   'attributes',
   {
     staves: NamedElement<'staves'>;
@@ -202,26 +241,22 @@ export const attributes: CreateNode<
     times: NamedElement<'time'>[];
     keys: NamedElement<'key'>[];
   }
-> = ({ staves, clefs, times, keys } = {}) => {
-  const node = createElement('attributes');
-
+>('attributes', (e, { staves, clefs, times, keys }) => {
   if (keys) {
-    node.append(...keys.map(getNode));
+    e.append(...keys);
   }
   if (times) {
-    node.append(...times.map(getNode));
+    e.append(...times);
   }
   if (clefs) {
-    node.append(...clefs.map(getNode));
+    e.append(...clefs);
   }
   if (staves) {
-    node.append(staves.native());
+    e.append(staves);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const print: CreateNode<
+export const print = createNamedElementFactory<
   'print',
   {
     newSystem: boolean;
@@ -229,55 +264,48 @@ export const print: CreateNode<
     systemLayout: NamedElement<'system-layout'>;
     staffLayouts: NamedElement<'staff-layout'>[];
   }
-> = ({ newSystem, newPage, systemLayout, staffLayouts } = {}) => {
-  const node = createElement('print');
-
+>('print', (e, { newSystem, newPage, staffLayouts, systemLayout }) => {
   if (typeof newSystem === 'boolean') {
-    node.setAttribute('new-system', newSystem ? 'yes' : 'no');
+    e.setAttribute('new-system', newSystem ? 'yes' : 'no');
   }
   if (typeof newPage === 'boolean') {
-    node.setAttribute('new-page', newPage ? 'yes' : 'no');
+    e.setAttribute('new-page', newPage ? 'yes' : 'no');
   }
   if (staffLayouts) {
-    node.append(...staffLayouts.map(getNode));
+    e.append(...staffLayouts);
   }
   if (systemLayout) {
-    node.append(systemLayout.native());
+    e.append(systemLayout);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const staffLayout: CreateNode<
+export const staffLayout = createNamedElementFactory<
   'staff-layout',
   {
     number: number;
     staffDistance: NamedElement<'staff-distance'>;
   }
-> = ({ number, staffDistance } = {}) => {
-  const node = createElement('staff-layout');
-
+>('staff-layout', (e, { number, staffDistance }) => {
   if (typeof number === 'number') {
-    node.setAttribute('number', number.toString());
+    e.setAttribute('number', number.toString());
   }
   if (staffDistance) {
-    node.append(staffDistance.native());
+    e.append(staffDistance);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const staffDistance: CreateNode<'staff-distance', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('staff-distance');
-
+export const staffDistance = createNamedElementFactory<
+  'staff-distance',
+  {
+    textContent: string;
+  }
+>('staff-distance', (e, { textContent }) => {
   if (textContent) {
-    node.textContent = textContent;
+    e.setTextContent(textContent);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const systemLayout: CreateNode<
+export const systemLayout = createNamedElementFactory<
   'system-layout',
   {
     systemMargins: NamedElement<'system-margins'>;
@@ -285,101 +313,96 @@ export const systemLayout: CreateNode<
     topSystemDistance: NamedElement<'top-system-distance'>;
     systemDividers: NamedElement<'system-dividers'>;
   }
-> = ({ systemMargins, systemDistance, topSystemDistance, systemDividers } = {}) => {
-  const node = createElement('system-layout');
-
+>('system-layout', (e, { systemMargins, systemDistance, topSystemDistance, systemDividers }) => {
   if (systemMargins) {
-    node.append(systemMargins.native());
+    e.append(systemMargins);
   }
   if (systemDistance) {
-    node.append(systemDistance.native());
+    e.append(systemDistance);
   }
   if (topSystemDistance) {
-    node.append(topSystemDistance.native());
+    e.append(topSystemDistance);
   }
   if (systemDividers) {
-    node.append(systemDividers.native());
+    e.append(systemDividers);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const systemMargins: CreateNode<
+export const systemMargins = createNamedElementFactory<
   'system-margins',
-  { leftMargin: NamedElement<'left-margin'>; rightMargin: NamedElement<'right-margin'> }
-> = ({ leftMargin, rightMargin } = {}) => {
-  const node = createElement('system-margins');
-
+  {
+    leftMargin: NamedElement<'left-margin'>;
+    rightMargin: NamedElement<'right-margin'>;
+  }
+>('system-margins', (e, { leftMargin, rightMargin }) => {
   if (leftMargin) {
-    node.append(leftMargin.native());
+    e.append(leftMargin);
   }
   if (rightMargin) {
-    node.append(rightMargin.native());
+    e.append(rightMargin);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const leftMargin: CreateNode<'left-margin', { tenths: number }> = ({ tenths } = {}) => {
-  const node = createElement('left-margin');
-
+export const leftMargin = createNamedElementFactory<
+  'left-margin',
+  {
+    tenths: number;
+  }
+>('left-margin', (e, { tenths }) => {
   if (typeof tenths === 'number') {
-    node.textContent = tenths.toString();
+    e.setTextContent(tenths.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const rightMargin: CreateNode<'right-margin', { tenths: number }> = ({ tenths } = {}) => {
-  const node = createElement('right-margin');
-
+export const rightMargin = createNamedElementFactory<
+  'right-margin',
+  {
+    tenths: number;
+  }
+>('right-margin', (e, { tenths }) => {
   if (typeof tenths === 'number') {
-    node.textContent = tenths.toString();
+    e.setTextContent(tenths.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const systemDistance: CreateNode<'system-distance', { tenths: number }> = ({ tenths } = {}) => {
-  const node = createElement('system-distance');
-
+export const systemDistance = createNamedElementFactory<
+  'system-distance',
+  {
+    tenths: number;
+  }
+>('system-distance', (e, { tenths }) => {
   if (typeof tenths === 'number') {
-    node.textContent = tenths.toString();
+    e.setTextContent(tenths.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const topSystemDistance: CreateNode<'top-system-distance', { tenths: number }> = ({ tenths } = {}) => {
-  const node = createElement('top-system-distance');
-
+export const topSystemDistance = createNamedElementFactory<
+  'top-system-distance',
+  {
+    tenths: number;
+  }
+>('top-system-distance', (e, { tenths }) => {
   if (typeof tenths === 'number') {
-    node.textContent = tenths.toString();
+    e.setTextContent(tenths.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const direction: CreateNode<
+export const direction = createNamedElementFactory<
   'direction',
   {
     codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
   }
-> = ({ codas, segnos } = {}) => {
-  const node = createElement('direction');
-
+>('direction', (e, { codas, segnos }) => {
   if (codas) {
-    node.append(...codas.map(getNode));
+    e.append(...codas);
   }
   if (segnos) {
-    node.append(...segnos.map(getNode));
+    e.append(...segnos);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const barline: CreateNode<
+export const barline = createNamedElementFactory<
   'barline',
   {
     location: string;
@@ -387,244 +410,243 @@ export const barline: CreateNode<
     repeat: NamedElement<'repeat'>;
     ending: NamedElement<'ending'>;
   }
-> = ({ location, barStyle, repeat, ending } = {}) => {
-  const node = createElement('barline');
-
+>('barline', (e, { location, barStyle, repeat, ending }) => {
   if (location) {
-    node.setAttribute('location', location);
+    e.setAttribute('location', location);
   }
   if (barStyle) {
-    node.append(barStyle.native());
+    e.append(barStyle);
   }
   if (repeat) {
-    node.append(repeat.native());
+    e.append(repeat);
   }
   if (ending) {
-    node.append(ending.native());
+    e.append(ending);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const staves: CreateNode<'staves', { staveCount: number }> = ({ staveCount } = {}) => {
-  const node = createElement('staves');
-
+export const staves = createNamedElementFactory<
+  'staves',
+  {
+    staveCount: number;
+  }
+>('staves', (e, { staveCount }) => {
   if (typeof staveCount === 'number') {
-    node.textContent = staveCount.toString();
+    e.setTextContent(staveCount.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const barStyle: CreateNode<'bar-style', { value: string }> = ({ value } = {}) => {
-  const node = createElement('bar-style');
-
+export const barStyle = createNamedElementFactory<
+  'bar-style',
+  {
+    value: string;
+  }
+>('bar-style', (e, { value }) => {
   if (value) {
-    node.textContent = value;
+    e.setTextContent(value);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const repeat: CreateNode<'repeat', { direction: string }> = ({ direction } = {}) => {
-  const node = createElement('repeat');
-
+export const repeat = createNamedElementFactory<
+  'repeat',
+  {
+    direction: string;
+  }
+>('repeat', (e, { direction }) => {
   if (direction) {
-    node.setAttribute('direction', direction);
+    e.setAttribute('direction', direction);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const ending: CreateNode<'ending', { number: string; type: string; textContent: string }> = ({
-  number,
-  type,
-  textContent,
-} = {}) => {
-  const node = createElement('ending');
-
+export const ending = createNamedElementFactory<
+  'ending',
+  {
+    number: string;
+    type: string;
+    textContent: string;
+  }
+>('ending', (e, { number, type, textContent }) => {
   if (number) {
-    node.setAttribute('number', number);
+    e.setAttribute('number', number);
   }
   if (type) {
-    node.setAttribute('type', type);
+    e.setAttribute('type', type);
   }
   if (textContent) {
-    node.textContent = textContent;
+    e.setTextContent(textContent);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const stem: CreateNode<'stem', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('stem');
-
-  if (textContent) {
-    node.textContent = textContent;
+export const stem = createNamedElementFactory<
+  'stem',
+  {
+    value: string;
   }
+>('stem', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-  return NamedElement.of(node);
-};
+export const dot = createNamedElementFactory<'dot', Record<never, never>>('dot', (_, __) => {
+  // noop
+});
 
-export const dot: CreateNode<'dot', Record<never, never>> = () => {
-  const node = createElement('dot');
-  return NamedElement.of(node);
-};
-
-export const rest: CreateNode<
+export const rest = createNamedElementFactory<
   'rest',
-  { displayStep: NamedElement<'display-step'>; displayOctave: NamedElement<'display-octave'> }
-> = ({ displayStep, displayOctave } = {}) => {
-  const node = createElement('rest');
-
+  {
+    displayStep: NamedElement<'display-step'>;
+    displayOctave: NamedElement<'display-octave'>;
+  }
+>('rest', (e, { displayStep, displayOctave }) => {
   if (displayStep) {
-    node.append(displayStep.native());
+    e.append(displayStep);
   }
   if (displayOctave) {
-    node.append(displayOctave.native());
+    e.append(displayOctave);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const displayStep: CreateNode<'display-step', { step: string }> = ({ step } = {}) => {
-  const node = createElement('display-step');
-
+export const displayStep = createNamedElementFactory<
+  'display-step',
+  {
+    step: string;
+  }
+>('display-step', (e, { step }) => {
   if (step) {
-    node.textContent = step;
+    e.setTextContent(step);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const displayOctave: CreateNode<'display-octave', { octave: string }> = ({ octave } = {}) => {
-  const node = createElement('display-octave');
-
+export const displayOctave = createNamedElementFactory<
+  'display-octave',
+  {
+    octave: string;
+  }
+>('display-octave', (e, { octave }) => {
   if (octave) {
-    node.textContent = octave;
+    e.setTextContent(octave);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const pitch: CreateNode<'pitch', { step: NamedElement<'step'>; octave: NamedElement<'octave'> }> = ({
-  step,
-  octave,
-} = {}) => {
-  const node = createElement('pitch');
-
+export const pitch = createNamedElementFactory<
+  'pitch',
+  {
+    step: NamedElement<'step'>;
+    octave: NamedElement<'octave'>;
+  }
+>('pitch', (e, { step, octave }) => {
   if (step) {
-    node.append(step.native());
+    e.append(step);
   }
   if (octave) {
-    node.append(octave.native());
+    e.append(octave);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const step: CreateNode<'step', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('step');
-
-  if (textContent) {
-    node.textContent = textContent;
+export const step = createNamedElementFactory<
+  'step',
+  {
+    value: string;
   }
-
-  return NamedElement.of(node);
-};
-
-export const octave: CreateNode<'octave', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('octave');
-
-  if (textContent) {
-    node.textContent = textContent;
-  }
-
-  return NamedElement.of(node);
-};
-
-export const accidental: CreateNode<'accidental', { value: string; cautionary: string }> = ({
-  value,
-  cautionary,
-} = {}) => {
-  const node = createElement('accidental');
-
+>('step', (e, { value }) => {
   if (value) {
-    node.textContent = value;
+    e.setTextContent(value);
+  }
+});
+
+export const octave = createNamedElementFactory<
+  'octave',
+  {
+    value: string;
+  }
+>('octave', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const accidental = createNamedElementFactory<
+  'accidental',
+  {
+    value: string;
+    cautionary: string;
+  }
+>('accidental', (e, { value, cautionary }) => {
+  if (value) {
+    e.setTextContent(value);
   }
   if (cautionary) {
-    node.setAttribute('cautionary', cautionary);
+    e.setAttribute('cautionary', cautionary);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const grace: CreateNode<'grace', { slash: string }> = ({ slash } = {}) => {
-  const node = createElement('grace');
-
+export const grace = createNamedElementFactory<
+  'grace',
+  {
+    slash: string;
+  }
+>('grace', (e, { slash }) => {
   if (slash) {
-    node.setAttribute('slash', slash);
+    e.setAttribute('slash', slash);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const duration: CreateNode<'duration', { positiveDivisions: number }> = ({ positiveDivisions } = {}) => {
-  const node = createElement('duration');
-
-  if (positiveDivisions) {
-    node.textContent = positiveDivisions.toString();
+export const duration = createNamedElementFactory<
+  'duration',
+  {
+    positiveDivisions: number;
   }
+>('duration', (e, { positiveDivisions }) => {
+  if (typeof positiveDivisions === 'number') {
+    e.setTextContent(positiveDivisions.toString());
+  }
+});
 
-  return NamedElement.of(node);
-};
-
-export const key: CreateNode<'key', { fifths: NamedElement<'fifths'> }> = ({ fifths } = {}) => {
-  const node = createElement('key');
-
+export const key = createNamedElementFactory<
+  'key',
+  {
+    fifths: NamedElement<'fifths'>;
+  }
+>('key', (e, { fifths }) => {
   if (fifths) {
-    node.append(fifths.native());
+    e.append(fifths);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const fifths: CreateNode<'fifths', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('fifths');
-
-  if (textContent) {
-    node.textContent = textContent;
+export const fifths = createNamedElementFactory<
+  'fifths',
+  {
+    value: string;
   }
+>('fifths', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-  return NamedElement.of(node);
-};
-
-export const time: CreateNode<
+export const time = createNamedElementFactory<
   'time',
   {
-    times: {
+    times: Array<{
       beats?: NamedElement<'beats'>;
       beatType?: NamedElement<'beat-type'>;
-    }[];
+    }>;
   }
-> = ({ times } = {}) => {
-  const node = createElement('time');
-
+>('time', (e, { times }) => {
   if (times) {
     for (const { beats, beatType } of times) {
       if (beats) {
-        node.append(beats.native());
+        e.append(beats);
       }
       if (beatType) {
-        node.append(beatType.native());
+        e.append(beatType);
       }
     }
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const clef: CreateNode<
+export const clef = createNamedElementFactory<
   'clef',
   {
     number: number;
@@ -632,175 +654,176 @@ export const clef: CreateNode<
     line: NamedElement<'line'>;
     clefOctaveChange: NamedElement<'clef-octave-change'>;
   }
-> = ({ number, sign, line, clefOctaveChange } = {}) => {
-  const node = createElement('clef');
-
+>('clef', (e, { number, sign, line, clefOctaveChange }) => {
   if (typeof number === 'number') {
-    node.setAttribute('number', number.toString());
+    e.setAttribute('number', number.toString());
   }
   if (sign) {
-    node.append(sign.native());
+    e.append(sign);
   }
   if (line) {
-    node.append(line.native());
+    e.append(line);
   }
   if (clefOctaveChange) {
-    node.append(clefOctaveChange.native());
+    e.append(clefOctaveChange);
   }
+});
 
-  return NamedElement.of(node);
-};
+export const coda = createNamedElementFactory<'coda', Record<never, never>>('coda', (_, __) => {
+  // noop
+});
 
-export const coda: CreateNode<'coda', Record<string, never>> = () => {
-  const node = createElement('coda');
+export const segno = createNamedElementFactory<'segno', Record<never, never>>('segno', (_, __) => {
+  // noop
+});
 
-  return NamedElement.of(node);
-};
-
-export const segno: CreateNode<'segno', Record<string, never>> = () => {
-  const node = createElement('segno');
-
-  return NamedElement.of(node);
-};
-
-export const sign: CreateNode<'sign', { value: string }> = ({ value } = {}) => {
-  const node = createElement('sign');
-
+export const sign = createNamedElementFactory<
+  'sign',
+  {
+    value: string;
+  }
+>('sign', (e, { value }) => {
   if (value) {
-    node.textContent = value;
+    e.setTextContent(value);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const line: CreateNode<'line', { value: number }> = ({ value } = {}) => {
-  const node = createElement('line');
-
+export const line = createNamedElementFactory<
+  'line',
+  {
+    value: number;
+  }
+>('line', (e, { value }) => {
   if (typeof value === 'number') {
-    node.textContent = value.toString();
+    e.setTextContent(value.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const clefOctaveChange: CreateNode<'clef-octave-change', { value: number }> = ({ value } = {}) => {
-  const node = createElement('clef-octave-change');
-
+export const clefOctaveChange = createNamedElementFactory<
+  'clef-octave-change',
+  {
+    value: number;
+  }
+>('clef-octave-change', (e, { value }) => {
   if (typeof value === 'number') {
-    node.textContent = value.toString();
+    e.setTextContent(value.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const beats: CreateNode<'beats', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('beats');
-
-  if (textContent) {
-    node.textContent = textContent;
+export const beats = createNamedElementFactory<
+  'beats',
+  {
+    value: string;
   }
-
-  return NamedElement.of(node);
-};
-
-export const beatType: CreateNode<'beat-type', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('beat-type');
-
-  if (textContent) {
-    node.textContent = textContent;
+>('beats', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
   }
+});
 
-  return NamedElement.of(node);
-};
+export const beatType = createNamedElementFactory<
+  'beat-type',
+  {
+    value: string;
+  }
+>('beat-type', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-export const lyric: CreateNode<'lyric', { text: NamedElement<'text'>; syllabic: NamedElement<'syllabic'> }> = ({
-  syllabic,
-  text,
-} = {}) => {
-  const node = createElement('lyric');
-
+export const lyric = createNamedElementFactory<
+  'lyric',
+  {
+    text: NamedElement<'text'>;
+    syllabic: NamedElement<'syllabic'>;
+  }
+>('lyric', (e, { text, syllabic }) => {
   if (syllabic) {
-    node.append(syllabic.native());
+    e.append(syllabic);
   }
   if (text) {
-    node.append(text.native());
+    e.append(text);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const syllabic: CreateNode<'syllabic', { syllabic: string }> = ({ syllabic } = {}) => {
-  const node = createElement('syllabic');
-
-  if (syllabic) {
-    node.textContent = syllabic;
+export const syllabic = createNamedElementFactory<
+  'syllabic',
+  {
+    value: string;
   }
-
-  return NamedElement.of(node);
-};
-
-export const text: CreateNode<'text', { text: string }> = ({ text } = {}) => {
-  const node = createElement('text');
-
-  if (text) {
-    node.textContent = text;
+>('syllabic', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
   }
+});
 
-  return NamedElement.of(node);
-};
+export const text = createNamedElementFactory<
+  'text',
+  {
+    value: string;
+  }
+>('text', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-export const notations: CreateNode<'notations', { arpeggiate: NamedElement<'arpeggiate'> }> = ({ arpeggiate } = {}) => {
-  const node = createElement('notations');
-
+export const notations = createNamedElementFactory<
+  'notations',
+  {
+    arpeggiate: NamedElement<'arpeggiate'>;
+  }
+>('notations', (e, { arpeggiate }) => {
   if (arpeggiate) {
-    node.append(arpeggiate.native());
+    e.append(arpeggiate);
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const arpeggiate: CreateNode<'arpeggiate', { direction: string }> = ({ direction } = {}) => {
-  const node = createElement('arpeggiate');
-
-  if (typeof direction === 'string') {
-    node.setAttribute('direction', direction);
+export const arpeggiate = createNamedElementFactory<
+  'arpeggiate',
+  {
+    direction: string;
   }
-
-  return NamedElement.of(node);
-};
-
-export const voice: CreateNode<'voice', { textContent: string }> = ({ textContent } = {}) => {
-  const node = createElement('voice');
-
-  if (typeof textContent === 'string') {
-    node.textContent = textContent;
+>('arpeggiate', (e, { direction }) => {
+  if (direction) {
+    e.setAttribute('direction', direction);
   }
+});
 
-  return NamedElement.of(node);
-};
+export const voice = createNamedElementFactory<
+  'voice',
+  {
+    value: string;
+  }
+>('voice', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-export const staff: CreateNode<'staff', { number: number }> = ({ number } = {}) => {
-  const node = createElement('staff');
-
+export const staff = createNamedElementFactory<
+  'staff',
+  {
+    number: number;
+  }
+>('staff', (e, { number }) => {
   if (typeof number === 'number') {
-    node.textContent = number.toString();
+    e.setTextContent(number.toString());
   }
+});
 
-  return NamedElement.of(node);
-};
-
-export const notehead: CreateNode<'notehead', { value: string }> = ({ value } = {}) => {
-  const node = createElement('notehead');
-
-  if (typeof value === 'string') {
-    node.textContent = value;
+export const notehead = createNamedElementFactory<
+  'notehead',
+  {
+    value: string;
   }
+>('notehead', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
 
-  return NamedElement.of(node);
-};
-
-export const chord: CreateNode<'chord', Record<never, never>> = () => {
-  const node = createElement('chord');
-
-  return NamedElement.of(node);
-};
+export const chord = createNamedElementFactory<'chord', Record<never, never>>('chord', (_, __) => {
+  // noop
+});

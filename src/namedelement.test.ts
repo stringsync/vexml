@@ -38,18 +38,6 @@ describe(NamedElement, () => {
     });
   });
 
-  describe('append', () => {
-    it('appends the elements as direct children', () => {
-      const foo = NamedElement.of(xml.createElement('foo'));
-      const bar = NamedElement.of(xml.createElement('bar'));
-
-      foo.append(bar);
-
-      expect(foo.first('bar')).toStrictEqual(bar);
-      expect(bar.ancestor('foo')).toStrictEqual(foo);
-    });
-  });
-
   describe('all', () => {
     it('returns all the descendent nodes matching the name', () => {
       const foo = xml.createElement('foo');
