@@ -11,32 +11,25 @@ import { Time } from './time';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
  */
 export class Attributes {
-  constructor(private node: NamedElement<'attributes'>) {}
+  constructor(private element: NamedElement<'attributes'>) {}
 
   /** Returns the number of staves. */
   getStaveCount(): number {
-    const textContent = this.node.native().getElementsByTagName('staves')?.item(0)?.textContent;
-    return parse.intOrDefault(textContent, 1);
+    return this.element.first('staves')?.content().withDefault(1).int() ?? 1;
   }
 
   /** Returns the times. */
   getTimes(): Time[] {
-    return Array.from(this.node.native().getElementsByTagName('time'))
-      .map((time) => NamedElement.of<'time'>(time))
-      .map((node) => new Time(node));
+    return this.element.all('time').map((element) => new Time(element));
   }
 
   /** Returns the keys. */
   getKeys(): Key[] {
-    return Array.from(this.node.native().getElementsByTagName('key'))
-      .map((key) => NamedElement.of<'key'>(key))
-      .map((node) => new Key(node));
+    return this.element.all('key').map((element) => new Key(element));
   }
 
   /** Returns the clefs. */
   getClefs(): Clef[] {
-    return Array.from(this.node.native().getElementsByTagName('clef'))
-      .map((clef) => NamedElement.of<'clef'>(clef))
-      .map((node) => new Clef(node));
+    return this.element.all('clef').map((element) => new Clef(element));
   }
 }

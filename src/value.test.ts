@@ -1,86 +1,104 @@
 import { Value } from './value';
 
 describe(Value, () => {
+  describe('withDefault', () => {
+    it('returns a new instance', () => {
+      const value = Value.of('foo');
+      expect(value.withDefault('bar')).not.toBe(value);
+    });
+
+    it('sets a default on the new instance', () => {
+      const value = Value.of(null);
+      expect(value.withDefault('bar').str()).toBe('bar');
+    });
+
+    it('leaves the original instance intact', () => {
+      const value = Value.of(null);
+      value.withDefault('bar');
+      expect(value.str()).toBeNull();
+    });
+  });
+
   describe('str', () => {
     it('parses a value into a string', () => {
-      const attr = Value.of('foo');
-      expect(attr.str()).toBe('foo');
+      const value = Value.of('foo');
+      expect(value.str()).toBe('foo');
     });
 
     it('defaults when the string is null', () => {
-      const attr = Value.of(null).withDefault('foo');
-      expect(attr.str()).toBe('foo');
+      const value = Value.of(null).withDefault('foo');
+      expect(value.str()).toBe('foo');
     });
 
     it('does not default empty strings', () => {
-      const attr = Value.of('');
-      expect(attr.str()).toBe('');
+      const value = Value.of('');
+      expect(value.str()).toBe('');
     });
   });
 
   describe('bool', () => {
     it('parses true string', () => {
-      const attr = Value.of('true');
-      expect(attr.bool()).toBeTrue();
+      const value = Value.of('true');
+      expect(value.bool()).toBeTrue();
     });
 
     it('parses false string', () => {
-      const attr = Value.of('false');
-      expect(attr.bool()).toBeFalse();
+      const value = Value.of('false');
+      expect(value.bool()).toBeFalse();
     });
 
     it('defaults non-boolean strings', () => {
-      const attr = Value.of('0');
-      expect(attr.bool()).toBeNull();
+      const value = Value.of('0');
+      expect(value.bool()).toBeNull();
     });
 
     it('defaults null', () => {
-      const attr = Value.of(null).withDefault('foo');
-      expect(attr.bool()).toBe('foo');
+      const value = Value.of(null).withDefault('foo');
+      expect(value.bool()).toBe('foo');
     });
   });
 
   describe('int', () => {
     it('parses a value into an integer', () => {
-      const attr = Value.of('42');
-      expect(attr.int()).toBe(42);
+      const value = Value.of('42');
+      expect(value.int()).toBe(42);
     });
 
     it('truncates decimals', () => {
-      const attr = Value.of('42.99999');
-      expect(attr.int()).toBe(42);
+      const value = Value.of('42.99999');
+      expect(value.int()).toBe(42);
     });
 
     it('defaults NaNs', () => {
-      const attr = Value.of('NaN');
-      expect(attr.int()).toBeNull();
+      const value = Value.of('NaN');
+      expect(value.int()).toBeNull();
     });
 
     it('defaults null', () => {
-      const attr = Value.of(null).withDefault(42);
-      expect(attr.int()).toBe(42);
+      const value = Value.of(null).withDefault(42);
+      expect(value.int()).toBe(42);
     });
   });
 
   describe('float', () => {
     it('parses a value into a float', () => {
-      const attr = Value.of('42.2');
-      expect(attr.float()).toBe(42.2);
+      const value = Value.of('42.2');
+      expect(value.float()).toBe(42.2);
     });
 
     it('parses integer strings', () => {
-      const attr = Value.of('42');
-      expect(attr.float()).toBe(42);
+      const value = Value.of('42');
+      expect(value.float()).toBe(42);
     });
 
     it('defaults NaNs', () => {
-      const attr = Value.of('NaN');
-      expect(attr.float()).toBeNull();
+      const value = Value.of('NaN');
+      expect(value.float()).toBeNull();
     });
 
     it('defaults null', () => {
-      const attr = Value.of(null).withDefault(42.2);
-      expect(attr.float()).toBe(42.2);
+      const value = Value.of(null).withDefault(42.2);
+      expect(value.float()).toBe(42.2);
     });
   });
 
@@ -90,18 +108,18 @@ describe(Value, () => {
     const Choices: Choice[] = ['foo', 'bar', 'baz'];
 
     it('parses a value into an enum', () => {
-      const attr = Value.of('bar');
-      expect(attr.enum(Choices)).toBe('bar');
+      const value = Value.of('bar');
+      expect(value.enum(Choices)).toBe('bar');
     });
 
     it('defaults when the value is not part of the enum', () => {
-      const attr = Value.of('bam');
-      expect(attr.enum(Choices)).toBeNull();
+      const value = Value.of('bam');
+      expect(value.enum(Choices)).toBeNull();
     });
 
     it('defaults null', () => {
-      const attr = Value.of(null).withDefault('foo' as const);
-      expect(attr.enum(Choices)).toBe('foo');
+      const value = Value.of(null).withDefault('foo' as const);
+      expect(value.enum(Choices)).toBe('foo');
     });
   });
 });
