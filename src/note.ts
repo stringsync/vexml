@@ -1,42 +1,35 @@
-import { NamedElement } from './namedelement';
-import { Notations } from './notations';
 import {
   AccidentalCode,
   AccidentalType,
+  ACCIDENTAL_TYPES,
   NoteDurationDenominator,
   Notehead,
+  NOTEHEADS,
   NoteheadSuffix,
   NoteType,
+  NOTE_TYPES,
   Stem,
-} from './types';
-import * as parse from './parse';
-import { NOTE_TYPES } from './enums';
+  STEMS,
+} from './enums';
+import { NamedElement } from './namedelement';
+import { Notations } from './notations';
 
 export class Note {
   constructor(private node: NamedElement<'note'>) {}
 
   /** Returns the stem of the note or null when missing or invalid. */
   getStem(): Stem | null {
-    const stem = this.node.native().getElementsByTagName('stem').item(0)?.textContent;
-    if (this.isStem(stem)) {
-      return stem;
-    }
-    return null;
+    return this.node.first('stem')?.content().enum(STEMS) ?? null;
   }
 
   /** Returns the type of note or 'whole' when missing or invalid. */
   getType(): NoteType {
-    const type = this.node.native().getElementsByTagName('type').item(0)?.textContent;
-    if (this.isNoteType(type)) {
-      return type;
-    }
-    return 'whole';
+    return this.node.first('type')?.content().enum(NOTE_TYPES) ?? 'whole';
   }
 
   /** Returns the duration of the note. Defaults to 4 */
   getDuration(): number {
-    const duration = this.node.native().getElementsByTagName('duration').item(0)?.textContent;
-    return parse.intOrDefault(duration, 4);
+    return this.node.first('duration')?.content().int() ?? 4;
   }
 
   /** Translates the note type to the duration denominator of the note. */
@@ -104,8 +97,7 @@ export class Note {
 
   /** Returns the staff the note belongs to. */
   getStaffNumber(): number {
-    const staff = this.node.native().getElementsByTagName('staff').item(0)?.textContent;
-    return parse.intOrDefault(staff, 1);
+    return this.node.first('staff')?.content().int() ?? 1;
   }
 
   /** Returns the step and octave of the note in the format `${step}/${octave}`. */
@@ -117,8 +109,7 @@ export class Note {
 
   /** Returns the accidental type of the note. Defaults to null. */
   getAccidentalType(): AccidentalType | null {
-    const accidentalType = this.node.native().getElementsByTagName('accidental').item(0)?.textContent;
-    return this.isAccidentalType(accidentalType) ? accidentalType : null;
+    return this.node.first('accidental')?.content().enum(ACCIDENTAL_TYPES) ?? null;
   }
 
   /** Returns the accidental code of the note. Defaults to null. */
@@ -146,8 +137,7 @@ export class Note {
 
   /** Returns the notehead of the note. */
   getNotehead(): Notehead {
-    const notehead = this.node.native().getElementsByTagName('notehead').item(0)?.textContent;
-    return this.isNotehead(notehead) ? notehead : 'normal';
+    return this.node.first('notehead')?.content().enum(NOTEHEADS) ?? 'normal';
   }
 
   /** Returns the notehead suffix of the note. Defaults to ''. */
@@ -250,88 +240,5 @@ export class Note {
   /** Returns whether or not the note is a rest. */
   isRest(): boolean {
     return this.node.native().getElementsByTagName('rest').length > 0;
-  }
-
-  private isStem(value: any): value is Stem {
-    return ['up', 'down', 'double', 'none'].includes(value);
-  }
-
-  private isNoteType(value: any): value is NoteType {
-    return NOTE_TYPES.includes(value);
-  }
-
-  private isAccidentalType(value: any): value is AccidentalType {
-    return [
-      'sharp',
-      'natural',
-      'flat',
-      'double-sharp',
-      'sharp-sharp',
-      'flat-flat',
-      'natural-sharp',
-      'natural-flat',
-      'quarter-flat',
-      'quarter-sharp',
-      'three-quarters-flat',
-      'three-quarters-sharp',
-      'sharp-down',
-      'sharp-up',
-      'natural-down',
-      'natural-up',
-      'flat-down',
-      'flat-up',
-      'double-sharp-down',
-      'double-sharp-up',
-      'flat-flat-down',
-      'flat-flat-up',
-      'arrow-down',
-      'arrow-up',
-      'triple-sharp',
-      'triple-flat',
-      'slash-quarter-sharp',
-      'slash-sharp',
-      'slash-flat',
-      'double-slash-flat',
-      'flat-1',
-      'flat-2',
-      'flat-3',
-      'flat-4',
-      'sori',
-      'koron',
-      'other',
-    ].includes(value);
-  }
-
-  private isNotehead(value: any): value is Notehead {
-    return [
-      'arrow down',
-      'arrow up',
-      'back slashed',
-      'circle dot',
-      'circle-x',
-      'circled',
-      'cluster',
-      'cross',
-      'diamond',
-      'do',
-      'fa',
-      'fa up',
-      'inverted triangle',
-      'la',
-      'left triangle',
-      'mi',
-      'none',
-      'normal',
-      're',
-      'rectangle',
-      'slash',
-      'slashed',
-      'so',
-      'square',
-      'ti',
-      'triangle',
-      'x',
-      'other',
-    ].includes(value);
   }
 }

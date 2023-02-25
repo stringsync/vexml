@@ -1,5 +1,5 @@
+import { ClefAnnotation, ClefSign, ClefType, CLEF_SIGNS } from './enums';
 import { NamedElement } from './namedelement';
-import { ClefAnnotation, ClefSign, ClefType } from './types';
 import * as parse from './parse';
 
 /**
@@ -18,8 +18,7 @@ export class Clef {
 
   /** Returns the clef sign. Defaults to null. */
   getSign(): ClefSign | null {
-    const clefSign = this.node.native().getElementsByTagName('sign').item(0)?.textContent;
-    return this.isClefSign(clefSign) ? clefSign : null;
+    return this.node.first('sign')?.content().enum(CLEF_SIGNS) ?? null;
   }
 
   /** Returns the line of the clef. Defaults to null. */
@@ -81,9 +80,5 @@ export class Clef {
       default:
         return null;
     }
-  }
-
-  private isClefSign(value: any): value is ClefSign {
-    return ['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'].includes(value);
   }
 }

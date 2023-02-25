@@ -71,6 +71,6 @@ export class NamedElement<T extends string> {
 
   /** Returns the text content of the node. */
   content(): Value<null> {
-    return Value.of(this.element.textContent || null);
+    return Value.of(this.element.textContent || null)!;
   }
 }

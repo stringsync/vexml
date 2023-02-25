@@ -2,12 +2,12 @@ import * as vexflow from 'vexflow';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
+import { ClefType } from './enums';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
 import { Part } from './part';
 import { Print } from './print';
-import { ClefType } from './types';
 
 export type RenderOptions = {
   elementId: string;

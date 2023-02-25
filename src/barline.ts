@@ -1,5 +1,14 @@
+import {
+  BarlineLocation,
+  BARLINE_LOCATIONS,
+  BarStyle,
+  BAR_STYLES,
+  ENDING_TYPES,
+  RepeatDirection,
+  REPEAT_DIRECTIONS,
+  EndingType,
+} from './enums';
 import { NamedElement } from './namedelement';
-import { BarlineLocation, BarStyle, EndingType, RepeatDirection } from './types';
 
 /**
  * Barline includes information about repeats, endings, and graphical bar styles.
@@ -11,8 +20,7 @@ export class Barline {
 
   /** Returns the bar style of the barline. Defaults to 'regular'. */
   getBarStyle(): BarStyle {
-    const barStyle = this.node.native().getElementsByTagName('bar-style').item(0)?.textContent;
-    return this.isBarStyle(barStyle) ? barStyle : 'regular';
+    return this.node.first('bar-style')?.content().enum(BAR_STYLES) ?? 'regular';
   }
 
   /** Whether or not the barline is a repeat. Defaults to false. */
@@ -22,14 +30,15 @@ export class Barline {
 
   /** Returns the repeat direction. Defaults to null. */
   getRepeatDirection(): RepeatDirection | null {
-    const repeatDirection = this.node.native().getElementsByTagName('repeat').item(0)?.getAttribute('direction');
-    return this.isRepeatDirection(repeatDirection) ? repeatDirection : null;
+    return this.node.first('repeat')?.attr('direction').enum(REPEAT_DIRECTIONS) ?? null;
   }
 
   /** Returns the location of the barline. Defaults to 'right'. */
   getLocation(): BarlineLocation {
-    const location = this.node.native().getAttribute('location');
-    return this.isBarlineLocation(location) ? location : 'right';
+    return this.node
+      .attr('location')
+      .withDefault('right' as const)
+      .enum(BARLINE_LOCATIONS);
   }
 
   /** Whether or not the barline is an ending */
@@ -49,35 +58,6 @@ export class Barline {
 
   /** Returns the ending type. Defaults to 'start'. */
   getEndingType(): EndingType {
-    const endingType = this.node.native().getElementsByTagName('ending').item(0)?.getAttribute('type');
-    return this.isEndingType(endingType) ? endingType : 'start';
-  }
-
-  private isBarStyle(value: any): value is BarStyle {
-    return [
-      'dashed',
-      'dotted',
-      'heavy',
-      'heavy-heavy',
-      'heavy-light',
-      'light-heavy',
-      'light-light',
-      'none',
-      'regular',
-      'short',
-      'tick',
-    ].includes(value);
-  }
-
-  private isRepeatDirection(value: any): value is RepeatDirection {
-    return ['backward', 'forward'].includes(value);
-  }
-
-  private isBarlineLocation(value: any): value is BarlineLocation {
-    return ['right', 'left', 'middle'].includes(value);
-  }
-
-  private isEndingType(value: any): value is EndingType {
-    return ['start', 'stop', 'discontinue'].includes(value);
+    return this.node.first('ending')?.attr('type').enum(ENDING_TYPES) ?? 'start';
   }
 }

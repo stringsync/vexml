@@ -1,5 +1,5 @@
+import { VerticalDirection, VERTICAL_DIRECTIONS } from './enums';
 import { NamedElement } from './namedelement';
-import { VerticalDirection } from './types';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -16,11 +16,6 @@ export class Notations {
 
   /** Returns the direction of the arppegio when appregiated and null otherwise. */
   getArpeggioDirection(): VerticalDirection {
-    const direction = this.node.native().getElementsByTagName('arpeggiate').item(0)?.getAttribute('direction');
-    return this.isVerticalDirection(direction) ? direction : 'up';
-  }
-
-  private isVerticalDirection(value: any): value is VerticalDirection {
-    return ['up', 'down'].includes(value);
+    return this.node.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
   }
 }
