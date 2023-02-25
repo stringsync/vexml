@@ -1,5 +1,4 @@
 import { NamedElement } from './namedelement';
-import * as parse from './parse';
 
 /**
  * Key represents a key signature.
@@ -11,8 +10,7 @@ export class Key {
 
   /** Returns the fifths count of the key or defaults to 0. */
   getFifthsCount(): number {
-    const fifths = this.node.native().getElementsByTagName('fifths').item(0)?.textContent;
-    return parse.intOrDefault(fifths, 0);
+    return this.node.first('fifths')?.content().int() ?? 0;
   }
 
   /** Returns the key signature based on the fifths count. */

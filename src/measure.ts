@@ -2,7 +2,6 @@ import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { NamedElement } from './namedelement';
 import { Note } from './note';
-import * as parse from './parse';
 import { Print } from './print';
 
 /**
@@ -25,8 +24,7 @@ export class Measure {
 
   /** Returns the specified measured width in tenths. Defaults to null. */
   getWidth(): number | null {
-    const width = this.node.native().getAttribute('width');
-    return parse.intOrDefault(width, null);
+    return this.node.attr('width').int();
   }
 
   /** Returns the <attributes> element of the measure. */

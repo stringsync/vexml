@@ -1,7 +1,6 @@
 import { Clef } from './clef';
 import { Key } from './key';
 import { NamedElement } from './namedelement';
-import * as parse from './parse';
 import { Time } from './time';
 
 /**
