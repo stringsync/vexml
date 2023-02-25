@@ -6,11 +6,11 @@ import { NamedElement } from './namedelement';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/key/
  */
 export class Key {
-  constructor(private node: NamedElement<'key'>) {}
+  constructor(private element: NamedElement<'key'>) {}
 
   /** Returns the fifths count of the key or defaults to 0. */
   getFifthsCount(): number {
-    return this.node.first('fifths')?.content().int() ?? 0;
+    return this.element.first('fifths')?.content().int() ?? 0;
   }
 
   /** Returns the key signature based on the fifths count. */

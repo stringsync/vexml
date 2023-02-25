@@ -11,28 +11,27 @@ export class Score {
 
   /** Returns the part count in the score. */
   getPartCount(): number {
-    return this.node.native().getElementsByTagName('score-part').length;
+    return this.node.all('score-part').length;
   }
 
   /** Returns an array of part IDs in the score in the order they appear. Each part ID should be unique. */
   getPartIds(): string[] {
-    return Array.from(this.node.native().getElementsByTagName('score-part'))
-      .filter((scorePart) => scorePart.hasAttribute('id'))
-      .map((scorePart) => scorePart.getAttribute('id'))
+    return this.node
+      .all('score-part')
+      .map((element) => element.attr('id').str())
       .filter((id): id is string => typeof id === 'string');
   }
 
   /** Returns an array of part names in the score in the order they appear. Part names can be duplicated. */
   getPartNames(): string[] {
-    return Array.from(this.node.native().getElementsByTagName('part-name'))
-      .map((partName) => partName.textContent)
-      .filter((textContent): textContent is string => typeof textContent === 'string');
+    return this.node
+      .all('part-name')
+      .map((element) => element.content().str())
+      .filter((content): content is string => typeof content === 'string');
   }
 
   /** Returns an array of parts in the order they appear. */
   getParts(): Part[] {
-    return Array.from(this.node.native().getElementsByTagName('part'))
-      .map((part) => NamedElement.of<'part'>(part))
-      .map((node) => new Part(node));
+    return this.node.all('part').map((element) => new Part(element));
   }
 }

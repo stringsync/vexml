@@ -10,48 +10,40 @@ import { Print } from './print';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/measure-partwise/
  */
 export class Measure {
-  constructor(private node: NamedElement<'measure'>) {}
+  constructor(private element: NamedElement<'measure'>) {}
 
   /** Returns the measure number or an empty string if missing. */
   getNumber(): string {
-    return this.node.native().getAttribute('number') ?? '';
+    return this.element.attr('number').withDefault('').str();
   }
 
   /** Returns whether or not the measure has a specified width */
   hasWidth(): boolean {
-    return this.node.native().hasAttribute('width');
+    return typeof this.getWidth() === 'number';
   }
 
   /** Returns the specified measured width in tenths. Defaults to null. */
   getWidth(): number | null {
-    return this.node.attr('width').int();
+    return this.element.attr('width').int();
   }
 
   /** Returns the <attributes> element of the measure. */
   getAttributes(): Attributes[] {
-    return Array.from(this.node.native().getElementsByTagName('attributes'))
-      .map((attributes) => NamedElement.of<'attributes'>(attributes))
-      .map((node) => new Attributes(node));
+    return this.element.all('attributes').map((element) => new Attributes(element));
   }
 
   /** Returns the notes of the measure. */
   getNotes(): Note[] {
-    return Array.from(this.node.native().getElementsByTagName('note'))
-      .map((note) => NamedElement.of<'note'>(note))
-      .map((node) => new Note(node));
+    return this.element.all('note').map((element) => new Note(element));
   }
 
   /** Returns the barlines of the measure. */
   getBarlines(): Barline[] {
-    return Array.from(this.node.native().getElementsByTagName('barline'))
-      .map((barline) => NamedElement.of<'barline'>(barline))
-      .map((node) => new Barline(node));
+    return this.element.all('barline').map((element) => new Barline(element));
   }
 
   /** Returns the prints of the measure. */
   getPrints(): Print[] {
-    return Array.from(this.node.native().getElementsByTagName('print'))
-      .map((print) => NamedElement.of<'print'>(print))
-      .map((node) => new Print(node));
+    return this.element.all('print').map((element) => new Print(element));
   }
 }
