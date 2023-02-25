@@ -7,15 +7,15 @@ import { NamedElement } from './namedelement';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/notations/
  */
 export class Notations {
-  constructor(private node: NamedElement<'notations'>) {}
+  constructor(private element: NamedElement<'notations'>) {}
 
   /** Whether or not the note/chord is arpeggiated. */
   isArpeggiated(): boolean {
-    return this.node.all('arpeggiate').length > 0;
+    return this.element.all('arpeggiate').length > 0;
   }
 
   /** Returns the direction of the arppegio when appregiated and null otherwise. */
   getArpeggioDirection(): VerticalDirection {
-    return this.node.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
+    return this.element.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
   }
 }

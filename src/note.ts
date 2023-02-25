@@ -15,21 +15,21 @@ import { NamedElement } from './namedelement';
 import { Notations } from './notations';
 
 export class Note {
-  constructor(private node: NamedElement<'note'>) {}
+  constructor(private element: NamedElement<'note'>) {}
 
   /** Returns the stem of the note or null when missing or invalid. */
   getStem(): Stem | null {
-    return this.node.first('stem')?.content().enum(STEMS) ?? null;
+    return this.element.first('stem')?.content().enum(STEMS) ?? null;
   }
 
   /** Returns the type of note or 'whole' when missing or invalid. */
   getType(): NoteType {
-    return this.node.first('type')?.content().enum(NOTE_TYPES) ?? 'whole';
+    return this.element.first('type')?.content().enum(NOTE_TYPES) ?? 'whole';
   }
 
   /** Returns the duration of the note. Defaults to 4 */
   getDuration(): number {
-    return this.node.first('duration')?.content().int() ?? 4;
+    return this.element.first('duration')?.content().int() ?? 4;
   }
 
   /** Translates the note type to the duration denominator of the note. */
@@ -70,44 +70,44 @@ export class Note {
 
   /** Returns how many dots are on the note. */
   getDotCount(): number {
-    return this.node.all('dot').length;
+    return this.element.all('dot').length;
   }
 
   /** Whether or not the note is a grace note. */
   isGrace(): boolean {
-    return this.node.all('grace').length > 0;
+    return this.element.all('grace').length > 0;
   }
 
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
-    return this.node.first('grace')?.attr('slash').str() === 'yes';
+    return this.element.first('grace')?.attr('slash').str() === 'yes';
   }
 
   /** Returns the notations of the note. */
   getNotations(): Notations[] {
-    return this.node.all('notations').map((element) => new Notations(element));
+    return this.element.all('notations').map((element) => new Notations(element));
   }
 
   /** Returns the voice this note belongs to. */
   getVoice(): string {
-    return this.node.first('voice')?.content().str() ?? '1';
+    return this.element.first('voice')?.content().str() ?? '1';
   }
 
   /** Returns the staff the note belongs to. */
   getStaffNumber(): number {
-    return this.node.first('staff')?.content().int() ?? 1;
+    return this.element.first('staff')?.content().int() ?? 1;
   }
 
   /** Returns the step and octave of the note in the format `${step}/${octave}`. */
   getPitch(): string {
-    const step = this.node.first('step')?.content().str() ?? 'C';
-    const octave = this.node.first('octave')?.content().str() ?? '4';
+    const step = this.element.first('step')?.content().str() ?? 'C';
+    const octave = this.element.first('octave')?.content().str() ?? '4';
     return `${step}/${octave}`;
   }
 
   /** Returns the accidental type of the note. Defaults to null. */
   getAccidentalType(): AccidentalType | null {
-    return this.node.first('accidental')?.content().enum(ACCIDENTAL_TYPES) ?? null;
+    return this.element.first('accidental')?.content().enum(ACCIDENTAL_TYPES) ?? null;
   }
 
   /** Returns the accidental code of the note. Defaults to null. */
@@ -130,12 +130,12 @@ export class Note {
 
   /** Whether or not the accidental is cautionary. Defaults to false. */
   hasAccidentalCautionary(): boolean {
-    return this.node.first('accidental')?.attr('cautionary').str() === 'yes';
+    return this.element.first('accidental')?.attr('cautionary').str() === 'yes';
   }
 
   /** Returns the notehead of the note. */
   getNotehead(): Notehead {
-    return this.node.first('notehead')?.content().enum(NOTEHEADS) ?? 'normal';
+    return this.element.first('notehead')?.content().enum(NOTEHEADS) ?? 'normal';
   }
 
   /** Returns the notehead suffix of the note. Defaults to ''. */
@@ -189,7 +189,7 @@ export class Note {
       return false;
     }
 
-    const sibling = this.node.next('note');
+    const sibling = this.element.next('note');
     if (!sibling) {
       return false;
     }
@@ -200,7 +200,7 @@ export class Note {
 
   /** Whether or not the note is part of a chord and *not* the first note of the chord. */
   isChordTail(): boolean {
-    return this.node.all('chord').length > 0;
+    return this.element.all('chord').length > 0;
   }
 
   /** Returns the rest of the notes in the chord iff the current note is a chord head. Defaults to an empty array. */
@@ -211,7 +211,7 @@ export class Note {
       return tail;
     }
 
-    let sibling = this.node.next('note');
+    let sibling = this.element.next('note');
     while (sibling) {
       const note = new Note(sibling);
       if (!note.isChordTail()) {
@@ -226,6 +226,6 @@ export class Note {
 
   /** Returns whether or not the note is a rest. */
   isRest(): boolean {
-    return this.node.all('rest').length > 0;
+    return this.element.all('rest').length > 0;
   }
 }

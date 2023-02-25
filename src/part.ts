@@ -7,15 +7,15 @@ import { NamedElement } from './namedelement';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-partwise/
  */
 export class Part {
-  constructor(private node: NamedElement<'part'>) {}
+  constructor(private element: NamedElement<'part'>) {}
 
   /** Returns the ID of the part or an empty string if missing. */
   getId(): string {
-    return this.node.attr('id').withDefault('').str();
+    return this.element.attr('id').withDefault('').str();
   }
 
   /** Returns an array of measures in the order they appear. */
   getMeasures(): Measure[] {
-    return this.node.all('measure').map((element) => new Measure(element));
+    return this.element.all('measure').map((element) => new Measure(element));
   }
 }
