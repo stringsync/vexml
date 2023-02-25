@@ -10,6 +10,7 @@ import {
   Stem,
 } from './types';
 import * as parse from './parse';
+import { NOTE_TYPES } from './enums';
 
 export class Note {
   constructor(private node: NamedElement<'note'>) {}
@@ -256,22 +257,7 @@ export class Note {
   }
 
   private isNoteType(value: any): value is NoteType {
-    return [
-      '1024th',
-      '512th',
-      '256th',
-      '128th',
-      '64th',
-      '32nd',
-      '16th',
-      'eighth',
-      'quarter',
-      'half',
-      'whole',
-      'breve',
-      'long',
-      'maxima',
-    ].includes(value);
+    return NOTE_TYPES.includes(value);
   }
 
   private isAccidentalType(value: any): value is AccidentalType {
