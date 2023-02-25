@@ -13,12 +13,14 @@ export class Time {
   getTimeSignatures(): TimeSignature[] {
     const result = new Array<TimeSignature>();
 
-    const beats = Array.from(this.node.native().getElementsByTagName('beats'))
-      .map((beats) => beats.textContent)
-      .filter((text): text is string => typeof text === 'string');
-    const beatTypes = Array.from(this.node.native().getElementsByTagName('beat-type'))
-      .map((beatType) => beatType.textContent)
-      .filter((text): text is string => typeof text === 'string');
+    const beats = this.node
+      .all('beats')
+      .map((beats) => beats.content().str())
+      .filter((content): content is string => typeof content === 'string');
+    const beatTypes = this.node
+      .all('beat-type')
+      .map((beatType) => beatType.content().str())
+      .filter((content): content is string => typeof content === 'string');
 
     // Ignore extra <beats> and <beat-type> elements.
     const len = Math.min(beats.length, beatTypes.length);

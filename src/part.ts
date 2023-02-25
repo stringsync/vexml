@@ -11,13 +11,11 @@ export class Part {
 
   /** Returns the ID of the part or an empty string if missing. */
   getId(): string {
-    return this.node.native().getAttribute('id') ?? '';
+    return this.node.attr('id').withDefault('').str();
   }
 
   /** Returns an array of measures in the order they appear. */
   getMeasures(): Measure[] {
-    return Array.from(this.node.native().getElementsByTagName('measure'))
-      .map((measure) => NamedElement.of<'measure'>(measure))
-      .map((node) => new Measure(node));
+    return this.node.all('measure').map((element) => new Measure(element));
   }
 }

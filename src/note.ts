@@ -70,29 +70,27 @@ export class Note {
 
   /** Returns how many dots are on the note. */
   getDotCount(): number {
-    return this.node.native().getElementsByTagName('dot').length;
+    return this.node.all('dot').length;
   }
 
   /** Whether or not the note is a grace note. */
   isGrace(): boolean {
-    return this.node.native().getElementsByTagName('grace').length > 0;
+    return this.node.all('grace').length > 0;
   }
 
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
-    return this.node.native().getElementsByTagName('grace').item(0)?.getAttribute('slash') === 'yes';
+    return this.node.first('grace')?.attr('slash').str() === 'yes';
   }
 
   /** Returns the notations of the note. */
   getNotations(): Notations[] {
-    return Array.from(this.node.native().getElementsByTagName('notations'))
-      .map((notations) => NamedElement.of<'notations'>(notations))
-      .map((node) => new Notations(node));
+    return this.node.all('notations').map((element) => new Notations(element));
   }
 
   /** Returns the voice this note belongs to. */
   getVoice(): string {
-    return this.node.native().getElementsByTagName('voice').item(0)?.textContent ?? '1';
+    return this.node.first('voice')?.content().str() ?? '1';
   }
 
   /** Returns the staff the note belongs to. */
@@ -102,8 +100,8 @@ export class Note {
 
   /** Returns the step and octave of the note in the format `${step}/${octave}`. */
   getPitch(): string {
-    const step = this.node.native().getElementsByTagName('step').item(0)?.textContent ?? 'C';
-    const octave = this.node.native().getElementsByTagName('octave').item(0)?.textContent ?? '4';
+    const step = this.node.first('step')?.content().str() ?? 'C';
+    const octave = this.node.first('octave')?.content().str() ?? '4';
     return `${step}/${octave}`;
   }
 
@@ -191,23 +189,18 @@ export class Note {
       return false;
     }
 
-    const sibling = this.node.native().nextElementSibling;
+    const sibling = this.node.next('note');
     if (!sibling) {
       return false;
     }
 
-    const node = NamedElement.of(sibling);
-    if (node.isNamed('note')) {
-      // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
-      return new Note(node).isChordTail();
-    }
-
-    return false;
+    // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
+    return new Note(sibling).isChordTail();
   }
 
   /** Whether or not the note is part of a chord and *not* the first note of the chord. */
   isChordTail(): boolean {
-    return this.node.native().getElementsByTagName('chord').length > 0;
+    return this.node.all('chord').length > 0;
   }
 
   /** Returns the rest of the notes in the chord iff the current note is a chord head. Defaults to an empty array. */
@@ -218,20 +211,14 @@ export class Note {
       return tail;
     }
 
-    let sibling = this.node.native().nextElementSibling;
+    let sibling = this.node.next('note');
     while (sibling) {
-      const node = NamedElement.of(sibling);
-      if (!node.isNamed('note')) {
-        break;
-      }
-
-      const note = new Note(node);
+      const note = new Note(sibling);
       if (!note.isChordTail()) {
         break;
       }
-
       tail.push(note);
-      sibling = sibling.nextElementSibling;
+      sibling = sibling.next('note');
     }
 
     return tail;
@@ -239,6 +226,6 @@ export class Note {
 
   /** Returns whether or not the note is a rest. */
   isRest(): boolean {
-    return this.node.native().getElementsByTagName('rest').length > 0;
+    return this.node.all('rest').length > 0;
   }
 }

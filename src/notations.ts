@@ -11,7 +11,7 @@ export class Notations {
 
   /** Whether or not the note/chord is arpeggiated. */
   isArpeggiated(): boolean {
-    return this.node.native().getElementsByTagName('arpeggiate').length > 0;
+    return this.node.all('arpeggiate').length > 0;
   }
 
   /** Returns the direction of the arppegio when appregiated and null otherwise. */

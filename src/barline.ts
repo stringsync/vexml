@@ -16,26 +16,26 @@ import { NamedElement } from './namedelement';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/barline/
  */
 export class Barline {
-  constructor(private node: NamedElement<'barline'>) {}
+  constructor(private element: NamedElement<'barline'>) {}
 
   /** Returns the bar style of the barline. Defaults to 'regular'. */
   getBarStyle(): BarStyle {
-    return this.node.first('bar-style')?.content().enum(BAR_STYLES) ?? 'regular';
+    return this.element.first('bar-style')?.content().enum(BAR_STYLES) ?? 'regular';
   }
 
   /** Whether or not the barline is a repeat. Defaults to false. */
   isRepeat(): boolean {
-    return this.node.native().getElementsByTagName('repeat').length > 0;
+    return this.element.all('repeat').length > 0;
   }
 
   /** Returns the repeat direction. Defaults to null. */
   getRepeatDirection(): RepeatDirection | null {
-    return this.node.first('repeat')?.attr('direction').enum(REPEAT_DIRECTIONS) ?? null;
+    return this.element.first('repeat')?.attr('direction').enum(REPEAT_DIRECTIONS) ?? null;
   }
 
   /** Returns the location of the barline. Defaults to 'right'. */
   getLocation(): BarlineLocation {
-    return this.node
+    return this.element
       .attr('location')
       .withDefault('right' as const)
       .enum(BARLINE_LOCATIONS);
@@ -43,21 +43,21 @@ export class Barline {
 
   /** Whether or not the barline is an ending */
   isEnding(): boolean {
-    return this.node.native().getElementsByTagName('ending').length > 0;
+    return this.element.all('ending').length > 0;
   }
 
   /** Returns the ending text. Defaults to empty string. */
   getEndingText(): string {
-    return this.node.native().getElementsByTagName('ending').item(0)?.textContent ?? '';
+    return this.element.first('ending')?.content().str() ?? '';
   }
 
   /** Returns the ending number. Defaults to '1'. */
   getEndingNumber(): string {
-    return this.node.native().getElementsByTagName('ending').item(0)?.getAttribute('number') ?? '1';
+    return this.element.first('ending')?.attr('number').str() ?? '1';
   }
 
   /** Returns the ending type. Defaults to 'start'. */
   getEndingType(): EndingType {
-    return this.node.first('ending')?.attr('type').enum(ENDING_TYPES) ?? 'start';
+    return this.element.first('ending')?.attr('type').enum(ENDING_TYPES) ?? 'start';
   }
 }
