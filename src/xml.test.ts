@@ -2,12 +2,18 @@ import * as xml from './xml';
 
 type FnNames = keyof typeof xml;
 
-const AUTO_CRASH_TEST_SKIP_NAMES: Set<FnNames> = new Set(['createElement']);
+const AUTO_CRASH_TEST_SKIP_NAMES: Set<FnNames> = new Set(['createElement', 'createNamedElement']);
 
 describe('xml', () => {
   describe('createElement', () => {
     it('runs without crashing', () => {
       expect(() => xml.createElement('foo')).not.toThrow();
+    });
+  });
+
+  describe('createNamedElement', () => {
+    it('runs without crashing', () => {
+      expect(() => xml.createNamedElement('foo')).not.toThrow();
     });
   });
 

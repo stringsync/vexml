@@ -34,7 +34,7 @@ describe(Attributes, () => {
   describe('getTimes', () => {
     it('returns the times', () => {
       const time = xml.time({
-        times: [{ beats: xml.beats({ textContent: '3' }), beatType: xml.beatType({ textContent: '8' }) }],
+        times: [{ beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '8' }) }],
       });
       const node = xml.attributes({ times: [time] });
       const attributes = new Attributes(node);
