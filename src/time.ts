@@ -7,17 +7,17 @@ import { TimeSignature } from './types';
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/time/
  */
 export class Time {
-  constructor(private node: NamedElement<'time'>) {}
+  constructor(private element: NamedElement<'time'>) {}
 
   /** Returns the time signatures of the time. There is typically only one. */
   getTimeSignatures(): TimeSignature[] {
     const result = new Array<TimeSignature>();
 
-    const beats = this.node
+    const beats = this.element
       .all('beats')
       .map((beats) => beats.content().str())
       .filter((content): content is string => typeof content === 'string');
-    const beatTypes = this.node
+    const beatTypes = this.element
       .all('beat-type')
       .map((beatType) => beatType.content().str())
       .filter((content): content is string => typeof content === 'string');
