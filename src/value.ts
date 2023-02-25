@@ -1,18 +1,16 @@
 /**
- * Attr is a wrapper around any arbitrary value that adds functionality to default.
- *
- * This class is not related to the Attributes class and is not specific to MusicXML.
+ * Value is a wrapper around any arbitrary value that adds functionality to default.
  */
-export class Attr<T> {
-  static of(value: string | null): Attr<null> {
-    return new Attr(value, null);
+export class Value<T> {
+  static of(value: string | null): Value<null> {
+    return new Value(value, null);
   }
 
   private constructor(private value: string | null, private defaultValue: T) {}
 
   /** Returns a new attr with a different default value. */
-  withDefault<T>(defaultValue: T): Attr<T> {
-    return new Attr(this.value, defaultValue);
+  withDefault<T>(defaultValue: T): Value<T> {
+    return new Value(this.value, defaultValue);
   }
 
   /** Parses the attribute into a string. */

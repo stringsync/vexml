@@ -181,4 +181,38 @@ describe(NamedElement, () => {
       expect(element.ancestor('baz')).toBeNull();
     });
   });
+
+  describe('attr', () => {
+    it('returns the attr with the specified name', () => {
+      const foo = xml.createElement('foo');
+      foo.setAttribute('bar', 'baz');
+
+      const element = NamedElement.of(foo);
+
+      expect(element.attr('bar').str()).toBe('baz');
+    });
+
+    it('defaults when the attribute is not set', () => {
+      const foo = xml.createElement('foo');
+      const element = NamedElement.of(foo);
+      expect(element.attr('bar').str()).toBeNull();
+    });
+  });
+
+  describe('content', () => {
+    it('returns the text content of the node', () => {
+      const foo = xml.createElement('foo');
+      foo.textContent = 'bar';
+
+      const element = NamedElement.of(foo);
+
+      expect(element.content().str()).toBe('bar');
+    });
+
+    it('defaults when the text content is missing', () => {
+      const foo = xml.createElement('foo');
+      const element = NamedElement.of(foo);
+      expect(element.content().str()).toBeNull();
+    });
+  });
 });

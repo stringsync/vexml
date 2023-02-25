@@ -1,4 +1,4 @@
-import { Attr } from './attr';
+import { Value } from './value';
 
 /**
  * A readonly wrapper that enforces compile-time checking on an element's name.
@@ -64,13 +64,13 @@ export class NamedElement<T extends string> {
   }
 
   /** Returns an attr wrapper for the attribute of the given name. */
-  attr(name: string): Attr<null> {
+  attr(name: string): Value<null> {
     const value = this.element.getAttribute(name);
-    return Attr.of(value);
+    return Value.of(value);
   }
 
-  /** Returns the text content of the node. Defaults to empty string. */
-  text(): string {
-    return this.element.textContent ?? '';
+  /** Returns the text content of the node. */
+  content(): Value<null> {
+    return Value.of(this.element.textContent || null);
   }
 }
