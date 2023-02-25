@@ -1,3 +1,4 @@
+import { Enum } from './enums';
 import { Value } from './value';
 
 describe(Value, () => {
@@ -103,9 +104,7 @@ describe(Value, () => {
   });
 
   describe('enum', () => {
-    type Choice = 'foo' | 'bar' | 'baz';
-
-    const Choices: Choice[] = ['foo', 'bar', 'baz'];
+    const Choices = new Enum(['foo', 'bar', 'baz'] as const);
 
     it('parses a value into an enum', () => {
       const value = Value.of('bar');

@@ -1,3 +1,5 @@
+import { Enum, EnumValues } from './enums';
+
 /**
  * Value is a wrapper around any arbitrary value that adds functionality to default.
  */
@@ -59,14 +61,13 @@ export class Value<T> {
   }
 
   /** Parses the attribute into an enum. */
-  enum<E extends string>(choices: E[]): E | T {
+  enum<E extends Enum<any>>(e: E): T | EnumValues<E> {
     if (typeof this.value !== 'string') {
       return this.defaultValue;
     }
 
-    const isChoice = (value: any): value is E => choices.includes(value);
-    if (isChoice(this.value)) {
-      return this.value;
+    if (e.includes(this.value)) {
+      return this.value as EnumValues<E>;
     }
 
     return this.defaultValue;

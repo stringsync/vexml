@@ -1,6 +1,6 @@
 type Values<T extends readonly any[]> = T extends readonly (infer U)[] ? U : never;
 
-type EnumValues<T extends Enum<any>> = T extends Enum<infer U> ? Values<U> : never;
+export type EnumValues<T extends Enum<any>> = T extends Enum<infer U> ? Values<U> : never;
 
 /** An enumeration of string values. */
 export class Enum<T extends readonly string[]> {
@@ -226,6 +226,9 @@ export const BAR_STYLES = new Enum([
   'short',
   'tick',
 ] as const);
+
+export type VerticalDirection = EnumValues<typeof VERTICAL_DIRECTIONS>;
+export const VERTICAL_DIRECTIONS = new Enum(['up', 'down'] as const);
 
 /**
  * The direction of a repeat.
