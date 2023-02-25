@@ -9,8 +9,6 @@ import { Time } from './time';
  * transpositions and staving.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/attributes/
- *
- * This class is not specifically related to Attr.
  */
 export class Attributes {
   constructor(private node: NamedElement<'attributes'>) {}
