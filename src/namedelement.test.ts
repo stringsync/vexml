@@ -1,7 +1,7 @@
 import { NamedElement } from './namedelement';
 import * as xml from './xml';
 
-describe('NamedElement', () => {
+describe(NamedElement, () => {
   describe('of', () => {
     it('creates a NamedElement instance', () => {
       const foo = xml.createElement('foo');
@@ -35,6 +35,18 @@ describe('NamedElement', () => {
       const foo = xml.createElement('foo');
       const element = NamedElement.of(foo);
       expect(element.native()).toBe(foo);
+    });
+  });
+
+  describe('append', () => {
+    it('appends the elements as direct children', () => {
+      const foo = NamedElement.of(xml.createElement('foo'));
+      const bar = NamedElement.of(xml.createElement('bar'));
+
+      foo.append(bar);
+
+      expect(foo.first('bar')).toStrictEqual(bar);
+      expect(bar.ancestor('foo')).toStrictEqual(foo);
     });
   });
 
