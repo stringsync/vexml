@@ -1,6 +1,5 @@
 import { ClefAnnotation, ClefSign, ClefType, CLEF_SIGNS } from './enums';
 import { NamedElement } from './namedelement';
-import * as parse from './parse';
 
 /**
  * A symbol placed at the left-hand end of  staff, indicating the pitch of the notes written.
@@ -12,8 +11,7 @@ export class Clef {
 
   /** Returns the staff */
   getStaffNumber(): number {
-    const number = this.node.native().getAttribute('number');
-    return parse.intOrDefault(number, 1);
+    return this.node.attr('number').withDefault(1).int();
   }
 
   /** Returns the clef sign. Defaults to null. */
@@ -23,14 +21,12 @@ export class Clef {
 
   /** Returns the line of the clef. Defaults to null. */
   getLine(): number | null {
-    const line = this.node.native().getElementsByTagName('line').item(0)?.textContent;
-    return parse.intOrDefault(line, null);
+    return this.node.first('line')?.content().int() ?? null;
   }
 
   /** Returns the octave change of the clef. Defaults to null. */
   getOctaveChange(): number | null {
-    const octaveChange = this.node.native().getElementsByTagName('clef-octave-change').item(0)?.textContent;
-    return parse.intOrDefault(octaveChange, null);
+    return this.node.first('clef-octave-change')?.content().int() ?? null;
   }
 
   /** Returns the clef type. Defaults to null. */

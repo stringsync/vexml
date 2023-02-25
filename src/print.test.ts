@@ -6,8 +6,8 @@ describe(Print, () => {
     it('returns staff layouts', () => {
       const node = xml.print({
         staffLayouts: [
-          xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ textContent: '42' }) }),
-          xml.staffLayout({ number: 2, staffDistance: xml.staffDistance({ textContent: '43' }) }),
+          xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ value: '42' }) }),
+          xml.staffLayout({ number: 2, staffDistance: xml.staffDistance({ value: '43' }) }),
         ],
       });
 
@@ -21,7 +21,7 @@ describe(Print, () => {
 
     it('defaults number to 1 when missing', () => {
       const node = xml.print({
-        staffLayouts: [xml.staffLayout({ staffDistance: xml.staffDistance({ textContent: '42' }) })],
+        staffLayouts: [xml.staffLayout({ staffDistance: xml.staffDistance({ value: '42' }) })],
       });
       const print = new Print(node);
       expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: 42 }]);
@@ -45,7 +45,7 @@ describe(Print, () => {
 
     it('defaults staff distance to 0 when invalid', () => {
       const node = xml.print({
-        staffLayouts: [xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ textContent: 'NaN' }) })],
+        staffLayouts: [xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ value: 'NaN' }) })],
       });
       const print = new Print(node);
       expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: 0 }]);

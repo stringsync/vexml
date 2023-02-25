@@ -297,11 +297,11 @@ export const staffLayout = createNamedElementFactory<
 export const staffDistance = createNamedElementFactory<
   'staff-distance',
   {
-    textContent: string;
+    value: string;
   }
->('staff-distance', (e, { textContent }) => {
-  if (textContent) {
-    e.setTextContent(textContent);
+>('staff-distance', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
   }
 });
 
