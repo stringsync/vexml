@@ -2,11 +2,11 @@ import { NamedElement } from './namedelement';
 import { Part } from './part';
 
 /**
- * Score is the entrypoint of a MusicXML document.
+ * ScorePartwise is the entrypoint of a MusicXML document.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/score-partwise/
  */
-export class Score {
+export class ScorePartwise {
   constructor(private element: NamedElement<'score-partwise'>) {}
 
   /** Returns the part count in the score. */
