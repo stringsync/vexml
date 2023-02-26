@@ -4,6 +4,7 @@ import { Barline } from './barline';
 import { Clef } from './clef';
 import { ClefType } from './enums';
 import { Factory } from './factory';
+import { Line } from './line';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
@@ -43,11 +44,13 @@ export class Vexml {
 
   private musicXml: MusicXml;
   private factory: Factory;
+  private line: Line;
   private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
     this.musicXml = opts.musicXml;
     this.factory = opts.factory;
+    this.line = Line.create(opts.factory);
   }
 
   private render(): void {
@@ -99,8 +102,7 @@ export class Vexml {
         tickables.push(this.createStaveNote(note));
       }
     }
-    const voices = [this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)];
-    system.addVoices(voices);
+    system.addVoices([this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
 
     // Renders the barlines of the measure, if specified. Otherwise, defaults to the standard single line.
     for (const barline of measure.getBarlines()) {
@@ -118,6 +120,18 @@ export class Vexml {
           stave.setBegBarType(barlineType);
         }
       }
+    }
+
+    const outcome = this.line.propose(system);
+    switch (outcome.type) {
+      case 'accepted':
+        this.line.accept(outcome);
+        break;
+      case 'newline':
+        this.line = this.line.newline(outcome);
+        break;
+      default:
+        throw new Error(`unhandled line proposal outcome: ${JSON.stringify(outcome)}`);
     }
 
     system.format();
