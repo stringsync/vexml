@@ -16,4 +16,9 @@ export class Factory extends vexflow.Factory {
   getPreviousSystem(): vexflow.System | null {
     return this.systems[this.systems.length - 2] ?? null;
   }
+
+  /** Returns the width of the renderer. */
+  getRendererWidth(): number {
+    return this.options.renderer.width;
+  }
 }
