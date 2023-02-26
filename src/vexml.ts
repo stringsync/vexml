@@ -43,13 +43,11 @@ export class Vexml {
 
   private musicXml: MusicXml;
   private factory: Factory;
-  private formatter: vexflow.Formatter;
   private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
     this.musicXml = opts.musicXml;
     this.factory = opts.factory;
-    this.formatter = opts.factory.Formatter();
   }
 
   private render(): void {
@@ -121,10 +119,6 @@ export class Vexml {
         }
       }
     }
-
-    this.formatter.joinVoices(voices);
-    const minWidth = this.formatter.preCalculateMinTotalWidth(voices);
-    this.resizeSystemWidth(system, minWidth + 200);
 
     system.format();
   }
@@ -253,19 +247,6 @@ export class Vexml {
       return this.factory.System({ x, y, width });
     } else {
       return this.factory.System({ x, y, autoWidth: true });
-    }
-  }
-
-  private resizeSystemWidth(system: vexflow.System, width: number): void {
-    system.setOptions({
-      x: system.getX(),
-      y: system.getY(),
-      width,
-      factory: this.factory,
-    });
-
-    for (const stave of system.getStaves()) {
-      stave.setWidth(width);
     }
   }
 

@@ -72,4 +72,10 @@ describe(Factory, () => {
       expect(previousSystem).toBeNull();
     });
   });
+
+  describe('getRendererWidth', () => {
+    it('returns the width of the renderer', () => {
+      expect(factory.getRendererWidth()).toBe(1200);
+    });
+  });
 });
