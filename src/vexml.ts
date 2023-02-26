@@ -3,10 +3,10 @@ import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { Clef } from './clef';
 import { ClefType } from './enums';
+import { Factory } from './factory';
 import { Measure } from './measure';
 import { MusicXml } from './musicxml';
 import { Note } from './note';
-import { Part } from './part';
 import { Print } from './print';
 
 export type RenderOptions = {
@@ -16,9 +16,13 @@ export type RenderOptions = {
   height: number;
 };
 
-/** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
+/**
+ * Vexml contains the core operation of this library: rendering MusicXML in a web browser.
+ */
 export class Vexml {
-  /** Renders a MusicXML document to an HTML element. */
+  /**
+   * Renders a MusicXML document to an HTML element.
+   */
   static render(opts: RenderOptions): void {
     // Constructing a Factory also renders an empty <svg>.
     const factory = new Factory({
@@ -39,53 +43,56 @@ export class Vexml {
 
   private musicXml: MusicXml;
   private factory: Factory;
+  private formatter: vexflow.Formatter;
   private clefByStaffNumber: Record<number, Clef> = {};
 
   private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
     this.musicXml = opts.musicXml;
     this.factory = opts.factory;
+    this.formatter = opts.factory.Formatter();
   }
 
   private render(): void {
-    const score = this.musicXml.getScorePartwise();
-    if (!score) {
-      console.warn('nothing to render: missing top-level <score-partwise>');
+    const scorePartwise = this.musicXml.getScorePartwise();
+    if (!scorePartwise) {
       return;
     }
 
-    for (const part of score.getParts()) {
-      this.renderPart(part);
+    for (const part of scorePartwise.getParts()) {
+      for (const measure of part.getMeasures()) {
+        this.renderMeasure(measure);
+      }
     }
 
     this.factory.draw();
   }
 
-  private renderPart(part: Part): void {
-    for (const measure of part.getMeasures()) {
-      this.renderMeasure(measure);
-    }
-  }
-
   private renderMeasure(measure: Measure): void {
-    this.addSystem(measure);
-    const system = this.factory.getCurrentSystem()!;
+    // In VexFlow, each measure is backed by a system. VexFlow will automatically associate certain factory objects with
+    // the last created system.
+    const system = this.addSystem(measure);
 
+    // Adding staves must be done after adding the system, because some factory objects need it to exists before they
+    // can be created.
     this.addStaves(measure);
 
+    // Now that the staves exist, apply the layouts.
+    for (const print of measure.getPrints()) {
+      this.applyLayouts(print);
+    }
+
+    // Renders measure attributes such as key signature, time signature, and clefs.
     for (const attributes of measure.getAttributes()) {
       this.renderAttributes(attributes);
     }
 
-    for (const print of measure.getPrints()) {
-      this.processPrint(print);
-    }
-
+    // Renders the notes of the measure and collects them as Tickables.
     const tickables = new Array<vexflow.Tickable>();
     for (const note of measure.getNotes()) {
       if (note.isChordTail()) {
         continue;
       } else if (note.isChordHead()) {
-        this.renderChord([note, ...note.getChordTail()]);
+        this.renderChord(note);
       } else if (note.isRest()) {
         this.renderRest(note);
       } else if (note.isGrace()) {
@@ -94,9 +101,10 @@ export class Vexml {
         tickables.push(this.createStaveNote(note));
       }
     }
+    const voices = [this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)];
+    system.addVoices(voices);
 
-    system.addVoices([this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
-
+    // Renders the barlines of the measure, if specified. Otherwise, defaults to the standard single line.
     for (const barline of measure.getBarlines()) {
       const barlineType = this.getBarlineType(barline);
       if (barlineType === null) {
@@ -114,7 +122,9 @@ export class Vexml {
       }
     }
 
-    vexflow.Formatter.SimpleFormat(tickables);
+    this.formatter.joinVoices(voices);
+    const minWidth = this.formatter.preCalculateMinTotalWidth(voices);
+    this.resizeSystemWidth(system, minWidth + 200);
 
     system.format();
   }
@@ -155,7 +165,7 @@ export class Vexml {
     }
   }
 
-  private processPrint(print: Print): void {
+  private applyLayouts(print: Print): void {
     const systemLayout = print.getSystemLayout();
     const leftMargin = systemLayout.leftMargin ?? 0;
     const systemDistance = systemLayout.systemDistance ?? 50;
@@ -163,12 +173,12 @@ export class Vexml {
     const currentSystem = this.factory.getCurrentSystem();
     const previousSystem = this.factory.getPreviousSystem();
 
-    if (currentSystem) {
+    if (currentSystem && previousSystem) {
+      currentSystem.setX(leftMargin);
+      currentSystem.setY(previousSystem.getY() + previousSystem.getBoundingBox()!.getH() + systemDistance);
+    } else if (currentSystem) {
       currentSystem.setX(leftMargin);
       currentSystem.setY(systemDistance);
-    }
-    if (currentSystem && previousSystem) {
-      currentSystem.setY(previousSystem.getY() + previousSystem.getBoundingBox()!.getH() + systemDistance);
     }
   }
 
@@ -216,7 +226,7 @@ export class Vexml {
     return staveNote;
   }
 
-  private renderChord(notes: Note[]): void {
+  private renderChord(note: Note): void {
     // TODO: Flesh this out.
   }
 
@@ -228,7 +238,7 @@ export class Vexml {
     // TODO: Flesh this out.
   }
 
-  private addSystem(measure: Measure): void {
+  private addSystem(measure: Measure): vexflow.System {
     const currentSystem = this.factory.getCurrentSystem();
 
     let x = 0;
@@ -240,9 +250,22 @@ export class Vexml {
 
     const width = measure.getWidth();
     if (typeof width === 'number') {
-      this.factory.System({ x, y, width });
+      return this.factory.System({ x, y, width });
     } else {
-      this.factory.System({ x, y, autoWidth: true });
+      return this.factory.System({ x, y, autoWidth: true });
+    }
+  }
+
+  private resizeSystemWidth(system: vexflow.System, width: number): void {
+    system.setOptions({
+      x: system.getX(),
+      y: system.getY(),
+      width,
+      factory: this.factory,
+    });
+
+    for (const stave of system.getStaves()) {
+      stave.setWidth(width);
     }
   }
 
@@ -306,20 +329,5 @@ export class Vexml {
       default:
         return null;
     }
-  }
-}
-
-/** Wrapper around vexflow.Factory to expose protected properties. */
-class Factory extends vexflow.Factory {
-  getSystems() {
-    return [...this.systems];
-  }
-
-  getCurrentSystem(): vexflow.System | null {
-    return this.systems[this.systems.length - 1] ?? null;
-  }
-
-  getPreviousSystem(): vexflow.System | null {
-    return this.systems[this.systems.length - 2] ?? null;
   }
 }

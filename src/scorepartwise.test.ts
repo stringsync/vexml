@@ -1,8 +1,8 @@
 import { Part } from './part';
-import { Score } from './score';
+import { ScorePartwise } from './scorepartwise';
 import * as xml from './xml';
 
-describe(Score, () => {
+describe(ScorePartwise, () => {
   describe('getPartCount', () => {
     it('returns the number of <score-part> elements in the document', () => {
       const scorePartwise = xml.scorePartwise({
@@ -11,7 +11,7 @@ describe(Score, () => {
         }),
       });
 
-      const score = new Score(scorePartwise);
+      const score = new ScorePartwise(scorePartwise);
 
       expect(score.getPartCount()).toBe(2);
     });
@@ -25,7 +25,7 @@ describe(Score, () => {
         }),
       });
 
-      const score = new Score(scorePartwise);
+      const score = new ScorePartwise(scorePartwise);
 
       expect(score.getPartIds()).toStrictEqual(['foo', 'bar']);
     });
@@ -37,7 +37,7 @@ describe(Score, () => {
         }),
       });
 
-      const score = new Score(scorePartwise);
+      const score = new ScorePartwise(scorePartwise);
 
       expect(score.getPartIds()).toStrictEqual(['foo']);
     });
@@ -58,7 +58,7 @@ describe(Score, () => {
         }),
       });
 
-      const score = new Score(scorePartwise);
+      const score = new ScorePartwise(scorePartwise);
 
       expect(score.getPartNames()).toStrictEqual(['foo', 'bar']);
     });
@@ -72,7 +72,7 @@ describe(Score, () => {
         parts: [part1, part2],
       });
 
-      const score = new Score(scorePartwise);
+      const score = new ScorePartwise(scorePartwise);
 
       expect(score.getParts()).toStrictEqual([new Part(part1), new Part(part2)]);
     });

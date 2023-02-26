@@ -1,6 +1,6 @@
 import { MusicXml } from './musicxml';
 import { NamedElement } from './namedelement';
-import { Score } from './score';
+import { ScorePartwise } from './scorepartwise';
 import * as xml from './xml';
 
 describe(MusicXml, () => {
@@ -12,7 +12,7 @@ describe(MusicXml, () => {
 
       const musicXml = new MusicXml(root);
 
-      expect(musicXml.getScorePartwise()).toStrictEqual(new Score(scorePartwise));
+      expect(musicXml.getScorePartwise()).toStrictEqual(new ScorePartwise(scorePartwise));
     });
 
     it('returns null when <score-partwise> is missing', () => {
