@@ -1,5 +1,6 @@
 import { CameraOutlined } from '@ant-design/icons';
-import { Alert, Button, message, Tabs, Typography } from 'antd';
+import { Alert, Button, Checkbox, message, Switch, Tabs, Typography } from 'antd';
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
@@ -31,6 +32,11 @@ export const Example: React.FC<ExampleProps> = (props) => {
   const exampleId = props.exampleId || params.exampleId || '';
 
   const result = useFetch(`/public/examples/${exampleId}`, Format.Text);
+
+  const [responsive, setResponsive] = useState(false);
+  const onResponsiveChange = (e: CheckboxChangeEvent) => {
+    setResponsive(e.target.checked);
+  };
 
   const [svg, setSvg] = useState<SVGElement | null>(null);
   const [vexmlSnapshotStatus] = useSnapshot(svg);
@@ -67,7 +73,9 @@ export const Example: React.FC<ExampleProps> = (props) => {
     }
   }, [exampleId, vexmlSnapshot, refetchServerSnapshot]);
   const isServerSnapshotLoading = isUploading || serverSnapshotStatus.type === 'loading';
-  const isSnapshotButtonDisabled = !svg || isUploading || serverSnapshotStatus.type === 'loading';
+  const isSnapshotButtonDisabled = !svg || responsive || isUploading || serverSnapshotStatus.type === 'loading';
+  const isSnapshotTabDisabled = responsive;
+  const isDiffTabDisabled = responsive;
 
   const [vexmlStatus, setVexmlStatus] = useState<VexmlStatus>({ type: 'init', exampleId });
   const snapshotComparisonStatus = useSnapshotComparisonStatus(vexmlSnapshot, serverSnapshot);
@@ -114,9 +122,15 @@ export const Example: React.FC<ExampleProps> = (props) => {
         <Tabs defaultActiveKey="1">
           <TabPane tab="vexml" key="1">
             <Typography.Title level={2}>vexml</Typography.Title>
-            <Vexml exampleId={exampleId} xml={result.data} onUpdate={setVexmlStatus} />
+
+            <Checkbox onChange={onResponsiveChange}>responsive</Checkbox>
+
+            <br />
+            <br />
+
+            <Vexml responsive={responsive} exampleId={exampleId} xml={result.data} onUpdate={setVexmlStatus} />
           </TabPane>
-          <TabPane tab="snapshot" key="2">
+          <TabPane tab="snapshot" key="2" disabled={isSnapshotTabDisabled}>
             <Typography.Title level={2}>snapshot</Typography.Title>
             {serverSnapshotStatus.type === 'error' && (
               <Typography.Text type="warning">no snapshot taken</Typography.Text>
@@ -124,7 +138,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
             {serverSnapshotStatus.type === 'loading' && <Typography.Text type="secondary">loading</Typography.Text>}
             {serverSnapshotStatus.type !== 'loading' && serverSnapshot && <img src={Snapshot.url(exampleId)} />}
           </TabPane>
-          <TabPane tab="diff" key="3" forceRender={false}>
+          <TabPane tab="diff" key="3" forceRender={false} disabled={isDiffTabDisabled}>
             <Typography.Title level={2}>diff</Typography.Title>
             {serverSnapshotStatus.type === 'error' && (
               <Typography.Text type="warning">no snapshot taken</Typography.Text>
