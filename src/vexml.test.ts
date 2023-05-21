@@ -2,16 +2,15 @@ import { Vexml } from './vexml';
 
 describe(Vexml, () => {
   describe('render', () => {
-    const elementId = 'foo';
+    let div: HTMLDivElement;
 
     beforeEach(() => {
-      const div = document.createElement('div');
-      div.id = elementId;
+      div = document.createElement('div');
       document.body.appendChild(div);
     });
 
     it('runs without crashing', () => {
-      expect(() => Vexml.render({ elementId, xml: XML, width: 2000, height: 400 })).not.toThrow();
+      expect(() => Vexml.render({ element: div, xml: XML, width: 2000 })).not.toThrow();
     });
   });
 });

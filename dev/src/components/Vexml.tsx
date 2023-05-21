@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import { vexml } from '../lib/vexml';
 
 const DEFAULT_WIDTH = 2000;
-const DEFAULT_HEIGHT = 400;
 
 const FixedDiv = styled.div<{ width: number }>`
   width: ${(props) => props.width}px;
@@ -87,10 +86,15 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
   useEffect(() => {
     const start = new Date().getTime();
 
-    document.getElementById(id)?.firstChild?.remove();
+    const div = document.getElementById(id);
+    if (!(div instanceof HTMLDivElement)) {
+      return;
+    }
+
+    div.firstChild?.remove();
 
     try {
-      vexml.Vexml.render({ elementId: id, xml, width, height: DEFAULT_HEIGHT });
+      vexml.Vexml.render({ element: div, xml, width });
       const stop = new Date().getTime();
       const svg = document.getElementById(id)!.firstChild as SVGElement;
       success(svg, stop - start);

@@ -1,21 +1,20 @@
 import * as vexflow from 'vexflow';
-import { Attributes } from './attributes';
-import { Barline } from './barline';
-import { Clef } from './clef';
-import { ClefType } from './enums';
-import { Factory } from './factory';
-import { Line } from './line';
-import { Measure } from './measure';
 import { MusicXml } from './musicxml';
+import { Measure } from './measure';
+import { Part } from './part';
+import { ClefType } from './enums';
+import { TimeSignature } from './types';
+import { Barline } from './barline';
 import { Note } from './note';
-import { Print } from './print';
+import { StaveBuilder } from './stavebuilder';
 
 export type RenderOptions = {
-  elementId: string;
+  element: HTMLDivElement | HTMLCanvasElement;
   xml: string;
   width: number;
-  height: number;
 };
+
+const DEFAULT_STAVE_WIDTH_PX = 400;
 
 /**
  * Vexml contains the core operation of this library: rendering MusicXML in a web browser.
@@ -25,32 +24,32 @@ export class Vexml {
    * Renders a MusicXML document to an HTML element.
    */
   static render(opts: RenderOptions): void {
-    // Constructing a Factory also renders an empty <svg>.
-    const factory = new Factory({
-      renderer: {
-        elementId: opts.elementId,
-        width: opts.width,
-        height: opts.height,
-      },
-    });
+    const renderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
 
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
     const musicXml = new MusicXml(root);
-    const vexml = new Vexml({ musicXml, factory });
 
+    const vexml = new Vexml({ musicXml, renderer, width: opts.width });
     vexml.render();
   }
 
   private musicXml: MusicXml;
-  private factory: Factory;
-  private line: Line;
-  private clefByStaffNumber: Record<number, Clef> = {};
+  private renderer: vexflow.Renderer;
 
-  private constructor(opts: { musicXml: MusicXml; factory: Factory }) {
+  private width: number;
+  private height = 500;
+
+  private staveX = 0;
+  private staveY = 0;
+
+  private staves = new Array<vexflow.Stave>();
+  private voices = new Array<vexflow.Voice>();
+
+  private constructor(opts: { musicXml: MusicXml; renderer: vexflow.Renderer; width: number }) {
     this.musicXml = opts.musicXml;
-    this.factory = opts.factory;
-    this.line = Line.create(opts.factory);
+    this.renderer = opts.renderer;
+    this.width = opts.width;
   }
 
   private render(): void {
@@ -59,249 +58,75 @@ export class Vexml {
       return;
     }
 
-    for (const part of scorePartwise.getParts()) {
-      for (const measure of part.getMeasures()) {
-        this.renderMeasure(measure);
+    const parts = scorePartwise.getParts();
+    for (const part of parts) {
+      this.renderPart(part);
+    }
+
+    const ctx = this.renderer.getContext();
+    this.staves.forEach((stave) => stave.setContext(ctx).draw());
+    this.voices.forEach((voice) => voice.setContext(ctx).draw());
+  }
+
+  private renderPart(part: Part) {
+    const measures = part.getMeasures();
+    for (const measure of measures) {
+      this.renderMeasure(measure);
+    }
+  }
+
+  private renderMeasure(measure: Measure) {
+    const stave = this.createStave();
+
+    // TODO: Handle more than one attributes
+    const attributes = measure.getAttributes();
+
+    const clefType: ClefType | undefined = attributes[0]?.getClefs()[0]?.getClefType() ?? undefined;
+    if (clefType) {
+      stave.addClef(clefType);
+    }
+
+    const timeSignature: TimeSignature | undefined = attributes[0]?.getTimes()[0]?.getTimeSignatures()[0];
+    if (timeSignature) {
+      stave.addTimeSignature(`${timeSignature.numerator}/${timeSignature.denominator}`);
+    }
+
+    for (const barline of measure.getBarlines()) {
+      const barlineType = this.getBarlineType(barline);
+      if (typeof barlineType !== 'number') {
+        continue;
+      }
+      switch (barline.getLocation()) {
+        case 'left':
+          stave.setBegBarType(barlineType);
+          break;
+        case 'right':
+          stave.setEndBarType(barlineType);
+          break;
       }
     }
 
-    this.factory.draw();
-  }
-
-  private renderMeasure(measure: Measure): void {
-    // In VexFlow, each measure is backed by a system. VexFlow will automatically associate certain factory objects with
-    // the last created system.
-    const system = this.addSystem(measure);
-
-    // Adding staves must be done after adding the system, because some factory objects need it to exists before they
-    // can be created.
-    this.addStaves(measure);
-
-    // Now that the staves exist, apply the layouts.
-    for (const print of measure.getPrints()) {
-      this.applyLayouts(print);
-    }
-
-    // Renders measure attributes such as key signature, time signature, and clefs.
-    for (const attributes of measure.getAttributes()) {
-      this.renderAttributes(attributes);
-    }
-
-    // Renders the notes of the measure and collects them as Tickables.
     const tickables = new Array<vexflow.Tickable>();
     for (const note of measure.getNotes()) {
       if (note.isChordTail()) {
         continue;
       } else if (note.isChordHead()) {
-        this.renderChord(note);
-      } else if (note.isRest()) {
-        this.renderRest(note);
-      } else if (note.isGrace()) {
-        this.renderGrace(note);
-      } else {
-        tickables.push(this.createStaveNote(note));
-      }
-    }
-    system.addVoices([this.factory.Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables)]);
-
-    // Renders the barlines of the measure, if specified. Otherwise, defaults to the standard single line.
-    for (const barline of measure.getBarlines()) {
-      const barlineType = this.getBarlineType(barline);
-      if (barlineType === null) {
         continue;
-      }
-
-      const barlineLocation = barline.getLocation();
-      for (const stave of system.getStaves()) {
-        if (barlineLocation === 'left') {
-          stave.setEndBarType(barlineType);
-        }
-        if (barlineLocation === 'right') {
-          stave.setBegBarType(barlineType);
-        }
-      }
-    }
-
-    const outcome = this.line.propose(system);
-    switch (outcome.type) {
-      case 'accepted':
-        this.line.accept(outcome);
-        break;
-      case 'newline':
-        this.line = this.line.newline(outcome);
-        break;
-      default:
-        throw new Error(`unhandled line proposal outcome: ${JSON.stringify(outcome)}`);
-    }
-
-    system.format();
-  }
-
-  private renderAttributes(attributes: Attributes): void {
-    const staves = this.factory.getCurrentSystem()?.getStaves() ?? [];
-    if (staves.length === 0) {
-      return;
-    }
-    const stave = staves[staves.length - 1];
-
-    // TODO: Support more than one clef, key, and times.
-
-    const clefs = attributes.getClefs();
-    if (clefs.length > 0) {
-      const clef = clefs[0];
-      const staffNumber = clef.getStaffNumber();
-      this.clefByStaffNumber[staffNumber] = clef;
-
-      const clefType = clef.getClefType();
-      const annotation = clef.getAnnotation() ?? undefined;
-
-      if (clefType) {
-        stave.addClef(clefType, 'default', annotation);
-      }
-    }
-
-    const keys = attributes.getKeys();
-    if (keys.length > 0) {
-      const key = keys[0];
-      stave.setKeySignature(key.getKeySignature());
-    }
-
-    const timeSignatures = attributes.getTimes().flatMap((time) => time.getTimeSignatures());
-    if (timeSignatures.length > 0) {
-      const timeSignature = timeSignatures[0];
-      stave.setTimeSignature(`${timeSignature.numerator}/${timeSignature.denominator}`);
-    }
-  }
-
-  private applyLayouts(print: Print): void {
-    const systemLayout = print.getSystemLayout();
-    const leftMargin = systemLayout.leftMargin ?? 0;
-    const systemDistance = systemLayout.systemDistance ?? 50;
-
-    const currentSystem = this.factory.getCurrentSystem();
-    const previousSystem = this.factory.getPreviousSystem();
-
-    if (currentSystem && previousSystem) {
-      currentSystem.setX(leftMargin);
-      currentSystem.setY(previousSystem.getY() + previousSystem.getBoundingBox()!.getH() + systemDistance);
-    } else if (currentSystem) {
-      currentSystem.setX(leftMargin);
-      currentSystem.setY(systemDistance);
-    }
-  }
-
-  private createStaveNote(note: Note): vexflow.StaveNote {
-    let clefType: ClefType | undefined = undefined;
-    const staffNumber = this.getStaffNumber(note);
-    if (typeof staffNumber === 'number') {
-      const clef = this.clefByStaffNumber[staffNumber];
-      if (clef) {
-        clefType = clef.getClefType() ?? undefined;
-      }
-    }
-
-    let key = note.getPitch();
-    const suffix = note.getNoteheadSuffix();
-    if (suffix) {
-      key += `/${suffix}`;
-    }
-
-    const staveNote = this.factory.StaveNote({
-      keys: [key],
-      duration: `${note.getDurationDenominator()}`,
-      dots: note.getDotCount(),
-      clef: clefType,
-    });
-
-    const stem = note.getStem();
-    if (stem === 'up') {
-      staveNote.setStemDirection(vexflow.Stem.UP);
-    } else if (stem === 'down') {
-      staveNote.setStemDirection(vexflow.Stem.DOWN);
-    } else {
-      staveNote.autoStem();
-    }
-
-    const accidentalCode = note.getAccidentalCode();
-    if (accidentalCode) {
-      const accidental = this.factory.Accidental({ type: accidentalCode });
-      if (note.hasAccidentalCautionary()) {
-        accidental.setAsCautionary();
-      }
-      staveNote.addModifier(accidental);
-    }
-
-    return staveNote;
-  }
-
-  private renderChord(note: Note): void {
-    // TODO: Flesh this out.
-  }
-
-  private renderRest(note: Note): void {
-    // TODO: Flesh this out.
-  }
-
-  private renderGrace(note: Note): void {
-    // TODO: Flesh this out.
-  }
-
-  private addSystem(measure: Measure): vexflow.System {
-    const currentSystem = this.factory.getCurrentSystem();
-
-    let x = 0;
-    let y = 0;
-    if (currentSystem) {
-      x = currentSystem.getX() + currentSystem.getBoundingBox()!.getW();
-      y = currentSystem.getY();
-    }
-
-    const width = measure.getWidth();
-    if (typeof width === 'number') {
-      return this.factory.System({ x, y, width });
-    } else {
-      return this.factory.System({ x, y, autoWidth: true });
-    }
-  }
-
-  private addStaves(measure: Measure): void {
-    const system = this.factory.getCurrentSystem();
-    if (!system) {
-      return;
-    }
-
-    const staveCounts = measure.getAttributes().map((attributes) => attributes.getStaveCount());
-    const staveCount = staveCounts.length > 0 ? staveCounts[0] : 1;
-    const spaceBelow = this.getSpaceBelow(measure);
-
-    for (let ndx = 1; ndx <= staveCount; ndx++) {
-      if (ndx < staveCount - 1) {
-        system.addStave({ voices: [], spaceBelow });
+      } else if (note.isRest()) {
+        continue;
+      } else if (note.isGrace()) {
+        continue;
       } else {
-        system.addStave({ voices: [] });
+        const staveNote = this.createStaveNote(note, clefType);
+        tickables.push(staveNote);
       }
     }
-  }
-
-  private getSpaceBelow(measure: Measure): number {
-    for (const print of measure.getPrints()) {
-      for (const staffLayout of print.getStaffLayouts()) {
-        if (typeof staffLayout.staffDistance === 'number') {
-          return staffLayout.staffDistance / 5 - 12;
-        }
-      }
+    if (timeSignature) {
+      const voice = new vexflow.Voice().setStave(stave).setMode(vexflow.VoiceMode.SOFT).addTickables(tickables);
+      const formatter = new vexflow.Formatter();
+      formatter.format([voice]);
+      this.voices.push(voice);
     }
-    return 0;
-  }
-
-  private getStaffNumber(value: Clef | Note): number | null {
-    if (value instanceof Clef) {
-      return value.getStaffNumber();
-    }
-    if (value instanceof Note) {
-      return value.getStaffNumber();
-    }
-    return null;
   }
 
   private getBarlineType(barline: Barline): vexflow.BarlineType | null {
@@ -325,4 +150,70 @@ export class Vexml {
         return null;
     }
   }
+
+  private createStave(): vexflow.Stave {
+    const stave = new vexflow.Stave(this.staveX, this.staveY, DEFAULT_STAVE_WIDTH_PX);
+    this.staves.push(stave);
+    return stave;
+  }
+
+  private createStaveNote(note: Note, clefType: ClefType | undefined): vexflow.StaveNote {
+    let key = note.getPitch();
+    const suffix = note.getNoteheadSuffix();
+    if (suffix) {
+      key += `/${suffix}`;
+    }
+
+    const staveNote = new vexflow.StaveNote({
+      keys: [key],
+      duration: note.getDurationDenominator().toString(),
+      dots: note.getDotCount(),
+      clef: clefType,
+    });
+
+    const stem = note.getStem();
+    if (stem === 'up') {
+      staveNote.setStemDirection(vexflow.Stem.UP);
+    } else if (stem === 'down') {
+      staveNote.setStemDirection(vexflow.Stem.DOWN);
+    } else {
+      staveNote.autoStem();
+    }
+
+    const accidentalCode = note.getAccidentalCode();
+    if (accidentalCode) {
+      const accidental = new vexflow.Accidental(accidentalCode);
+      if (note.hasAccidentalCautionary()) {
+        accidental.setAsCautionary();
+      }
+      staveNote.addModifier(accidental);
+    }
+
+    return staveNote;
+  }
 }
+
+// const stave = new vexflow.Stave(0, 0, 400)
+//   .addClef('treble')
+//   .addTimeSignature('4/4')
+//   .setEndBarType(vexflow.BarlineType.SINGLE);
+
+// const voice = new vexflow.Voice({ num_beats: 4, beat_value: 4 })
+//   .setStave(stave)
+//   .setStrict(false)
+//   .addTickables([
+//     new vexflow.StaveNote({ keys: ['c/4'], duration: 'q' }),
+//     new vexflow.StaveNote({ keys: ['d/4'], duration: 'q' }),
+//     new vexflow.StaveNote({ keys: ['b/4'], duration: 'qr' }),
+//     new vexflow.StaveNote({ keys: ['c/4', 'e/4', 'g/4'], duration: 'q' }),
+//   ]);
+
+// const formatter = new vexflow.Formatter();
+// formatter.joinVoices([voice]).formatToStave([voice], stave);
+
+// this.renderer.resize(this.width, this.height);
+
+// const ctx = this.renderer.getContext();
+
+// stave.setContext(ctx).draw();
+// voice.setContext(ctx).draw();
