@@ -37,13 +37,21 @@ export class System {
 
   setX(x: number): this {
     for (const stave of this.staves) {
+      stave.setNoteStartX(x - stave.getX());
       stave.setX(x);
     }
     return this;
   }
 
-  getVoiceWidth(): number {
-    return Math.max(0, ...this.staves.map((stave) => stave.getVoiceWidth()));
+  setY(y: number): this {
+    for (const stave of this.staves) {
+      stave.setY(y);
+    }
+    return this;
+  }
+
+  getJustifyWidth(): number {
+    return Math.max(0, ...this.staves.map((stave) => stave.getJustifyWidth()));
   }
 
   getModifiersWidth(): number {

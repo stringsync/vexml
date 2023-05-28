@@ -1,7 +1,10 @@
+import { ClefType } from './enums';
 import { System } from './system';
 
 export class Line {
   private systems = new Array<System>();
+  private timeSignature = '4/4';
+  private clef: ClefType = 'treble';
 
   isEmpty(): boolean {
     return this.systems.length === 0;
