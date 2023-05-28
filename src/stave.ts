@@ -9,7 +9,7 @@ export class Stave {
   private x = 0;
   private y = 0;
   private width = 0;
-  private voiceWidth = 0;
+  private justifyWidth = 0;
   private modifiersWidth = 0;
   private noteStartX = 0;
   private clef?: ClefType;
@@ -23,7 +23,7 @@ export class Stave {
       .setX(this.x)
       .setY(this.y)
       .setWidth(this.width)
-      .setVoiceWidth(this.voiceWidth)
+      .setJustifyWidth(this.justifyWidth)
       .setModifiersWidth(this.modifiersWidth)
       .setNoteStartX(this.noteStartX)
       .setClef(this.clef)
@@ -60,13 +60,13 @@ export class Stave {
     return this;
   }
 
-  setVoiceWidth(voiceWidth: number): this {
-    this.voiceWidth = voiceWidth;
+  setJustifyWidth(justifyWidth: number): this {
+    this.justifyWidth = justifyWidth;
     return this;
   }
 
-  getVoiceWidth(): number {
-    return this.voiceWidth;
+  getJustifyWidth(): number {
+    return this.justifyWidth;
   }
 
   setModifiersWidth(modifiersWidth: number): this {

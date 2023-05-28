@@ -16,6 +16,9 @@ export type RenderOptions = {
   width: number;
 };
 
+const JUSTIFY_PADDING = 100;
+const HEIGHT_PADDING = 100;
+
 /**
  * Vexml contains the core operation of this library: rendering MusicXML in a web browser.
  */
@@ -36,7 +39,6 @@ export class Vexml {
 
   private musicXml: MusicXml;
   private renderer: vexflow.Renderer;
-
   private width: number;
   private height: number;
 
@@ -44,7 +46,7 @@ export class Vexml {
     this.musicXml = opts.musicXml;
     this.renderer = opts.renderer;
     this.width = opts.width;
-    this.height = 500;
+    this.height = 0;
   }
 
   private render(): void {
@@ -53,7 +55,7 @@ export class Vexml {
 
     // Populate systems with each part.
     for (const part of parts) {
-      const measures = part.getMeasures().slice(0, 1);
+      const measures = part.getMeasures();
       for (let index = 0; index < measures.length; index++) {
         systems[index] ??= new System();
         const system = systems[index];
@@ -71,9 +73,10 @@ export class Vexml {
       this.stretchToWidth(line, this.width);
     }
 
-    this.renderer.resize(this.width, this.height);
     const ctx = this.renderer.getContext();
-    lines.flatMap((line) => this.formatLine(line)).forEach((element) => element.setContext(ctx).draw());
+    const elements = lines.flatMap((line) => this.formatLine(line));
+    this.renderer.resize(this.width, this.height);
+    elements.forEach((element) => element.setContext(ctx).draw());
   }
 
   private addMeasurePart(measure: Measure, system: System): void {
@@ -190,14 +193,14 @@ export class Vexml {
     for (const system of systems) {
       for (const stave of system.getStaves()) {
         lastTimeSignature = stave.getTimeSignature() ?? lastTimeSignature;
-        const voiceWidth = this.getVoiceWidth(stave);
+        const justifyWidth = this.getJustifyWidth(stave);
         const modifiersWidth = this.getModifiersWidth(stave, lastTimeSignature);
-        stave.setVoiceWidth(voiceWidth).setModifiersWidth(modifiersWidth);
+        stave.setJustifyWidth(justifyWidth).setModifiersWidth(modifiersWidth);
       }
     }
   }
 
-  private getVoiceWidth(stave: Stave) {
+  private getJustifyWidth(stave: Stave) {
     const vfVoice = stave.getVoice()?.toVexflow();
     return typeof vfVoice === 'undefined' ? 0 : new vexflow.Formatter().preCalculateMinTotalWidth([vfVoice]);
   }
@@ -212,7 +215,7 @@ export class Vexml {
     let remainingWidth = this.width;
 
     for (const system of systems) {
-      let requiredWidth = system.getVoiceWidth() + vexflow.Stave.rightPadding;
+      let requiredWidth = system.getJustifyWidth() + JUSTIFY_PADDING;
 
       const needsModifiers = line.isEmpty();
       if (needsModifiers) {
@@ -255,6 +258,7 @@ export class Vexml {
     let x = 0;
     for (const system of line.getSystems()) {
       system.setX(x);
+      system.setY(this.height);
       x += system.getWidth();
 
       const nextElements = this.formatSystem(system);
@@ -263,14 +267,15 @@ export class Vexml {
       }
     }
 
+    this.height += HEIGHT_PADDING + Math.max(0, ...elements.map((element) => element.getBoundingBox()!.getH()));
+
     return elements;
   }
 
   private formatSystem(system: System): vexflow.Element[] {
     const formatter = new vexflow.Formatter();
 
-    const vfStaves = [];
-    const vfVoices = [];
+    const vfSystems = new Array<{ vfStave: vexflow.Stave; vfVoice: vexflow.Voice }>();
     for (const stave of system.getStaves()) {
       const vfVoice = stave.getVoice()?.toVexflow();
       if (typeof vfVoice === 'undefined') {
@@ -278,16 +283,18 @@ export class Vexml {
       }
       const vfStave = stave.toVexflow();
       vfVoice.setStave(vfStave);
-      vfVoices.push(vfVoice);
-      vfStaves.push(vfStave);
+      vfSystems.push({ vfStave, vfVoice });
     }
 
-    formatter.joinVoices(vfVoices);
-    formatter.format(vfVoices, system.getWidth());
+    formatter.joinVoices(vfSystems.map((vfSystem) => vfSystem.vfVoice));
+
+    for (const vfSystem of vfSystems) {
+      formatter.formatToStave([vfSystem.vfVoice], vfSystem.vfStave);
+    }
     formatter.postFormat();
 
-    vexflow.Stave.formatBegModifiers(vfStaves);
+    vexflow.Stave.formatBegModifiers(vfSystems.map((vfSystem) => vfSystem.vfStave));
 
-    return [...vfStaves, ...vfVoices];
+    return vfSystems.flatMap((vfSystem) => [vfSystem.vfStave, vfSystem.vfVoice]);
   }
 }
