@@ -143,4 +143,36 @@ describe(Line, () => {
       expect(() => line.fit(5)).not.toThrow();
     });
   });
+
+  describe('setBeginningModifiers', () => {
+    it.todo('updates the first stave modifiers');
+
+    it.todo('does not affect staves after the first one');
+
+    it.todo('changes the width of the stave to account for the modifiers');
+  });
+
+  describe('hasEndBarType', () => {
+    it.todo('returns true when there is an end bar');
+
+    it.todo('returns false when there is not an end bar');
+  });
+
+  describe('setEndBarType', () => {
+    it.todo('sets the end bar of the last stave');
+
+    it.todo('does not affects staves before the last one');
+  });
+
+  describe('getFirstSystem', () => {
+    it.todo('returns the first system when it exists');
+
+    it.todo('returns undefined when the first does not exist');
+  });
+
+  describe('getLastSystem', () => {
+    it.todo('returns the last system when it exists');
+
+    it.todo('returns undefined when the last does not exist');
+  });
 });

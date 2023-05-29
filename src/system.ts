@@ -59,4 +59,12 @@ export class System {
   getModifiersWidth(): number {
     return Math.max(0, ...this.staves.map((stave) => stave.getModifiersWidth()));
   }
+
+  getFirstStave(): Stave | undefined {
+    return this.staves[0];
+  }
+
+  getLastStave(): Stave | undefined {
+    return this.staves[this.staves.length - 1];
+  }
 }

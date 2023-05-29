@@ -60,6 +60,10 @@ export class Stave {
     return this;
   }
 
+  addWidth(width: number): void {
+    this.width += width;
+  }
+
   setJustifyWidth(justifyWidth: number): this {
     this.justifyWidth = justifyWidth;
     return this;
@@ -75,7 +79,7 @@ export class Stave {
   }
 
   getModifiersWidth(): number {
-    return this.modifiersWidth;
+    return this.clone().setX(0).toVexflow().getNoteStartX();
   }
 
   getNoteStartX(): number {

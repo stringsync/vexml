@@ -17,7 +17,9 @@ export type RenderOptions = {
 };
 
 const JUSTIFY_PADDING = 100;
-const HEIGHT_PADDING = 100;
+const TOP_PADDING = 50;
+const LINE_PADDING = 100;
+const END_BARLINE_OFFSET = 1;
 
 /**
  * Vexml contains the core operation of this library: rendering MusicXML in a web browser.
@@ -46,7 +48,7 @@ export class Vexml {
     this.musicXml = opts.musicXml;
     this.renderer = opts.renderer;
     this.width = opts.width;
-    this.height = 0;
+    this.height = TOP_PADDING;
   }
 
   private render(): void {
@@ -68,9 +70,30 @@ export class Vexml {
 
     const lines = this.partitionToLines(systems);
 
+    // Add modifiers to all the lines using the latest modifiers.
+    let timeSignature: string | undefined;
+    let clef: ClefType | undefined;
+    for (const line of lines) {
+      for (const system of line.getSystems()) {
+        for (const stave of system.getStaves()) {
+          timeSignature = stave.getTimeSignature() ?? timeSignature;
+          clef = stave.getClef() ?? clef;
+        }
+      }
+      line.setBeginningModifiers({ timeSignature, clef });
+    }
+
+    // Add end barlines to all lines if it doesn't exist.
+    for (const line of lines) {
+      if (!line.hasEndBarType()) {
+        line.setEndBarType(vexflow.BarlineType.SINGLE);
+      }
+    }
+
     // Fit all the lines to width except the last one.
+    const width = this.width - END_BARLINE_OFFSET;
     for (const line of lines.slice(0, -1)) {
-      line.fit(this.width);
+      line.fit(width);
     }
 
     const ctx = this.renderer.getContext();
@@ -238,20 +261,6 @@ export class Vexml {
     return lines.filter((line) => !line.isEmpty());
   }
 
-  private stretchToWidth(line: Line, width: number): void {
-    const remainingWidth = width - line.getWidth();
-    const systems = line.getSystems();
-    const numSystems = systems.length;
-
-    const additionalWidth = remainingWidth / numSystems;
-
-    for (const system of systems) {
-      const currentWidth = system.getWidth();
-      const nextWidth = currentWidth + additionalWidth;
-      system.setWidth(nextWidth);
-    }
-  }
-
   private formatLine(line: Line): vexflow.Element[] {
     const elements = new Array<vexflow.Element>();
 
@@ -267,7 +276,7 @@ export class Vexml {
       }
     }
 
-    this.height += HEIGHT_PADDING + Math.max(0, ...elements.map((element) => element.getBoundingBox()!.getH()));
+    this.height += LINE_PADDING + Math.max(0, ...elements.map((element) => element.getBoundingBox()!.getH()));
 
     return elements;
   }
