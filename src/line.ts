@@ -1,3 +1,5 @@
+import * as vexflow from 'vexflow';
+import { ClefType } from './enums';
 import { System } from './system';
 
 /**
@@ -60,5 +62,50 @@ export class Line {
 
       system.setWidth(nextWidth);
     }
+  }
+
+  /**
+   * Ensures that the first stave has the given modifiers.
+   *
+   * The width of the stave may change to accommodate the modifiers.
+   */
+  setBeginningModifiers(opts: { timeSignature?: string; clef?: ClefType }): void {
+    const stave = this.getFirstSystem()?.getFirstStave();
+    if (!stave) {
+      return;
+    }
+
+    const modifiersWidth = stave.getModifiersWidth();
+    stave.setTimeSignature(opts.timeSignature);
+    stave.setClef(opts.clef);
+    stave.addWidth(stave.getModifiersWidth() - modifiersWidth);
+  }
+
+  /**
+   * Whether the last stave has a barline.
+   */
+  hasEndBarType(): boolean {
+    return typeof this.getLastSystem()?.getLastStave()?.getEndBarType() !== 'undefined';
+  }
+
+  /**
+   * Ensures that the last stave has a barline.
+   */
+  setEndBarType(barlineType: vexflow.BarlineType): void {
+    this.getLastSystem()?.getLastStave()?.setEndBarType(barlineType);
+  }
+
+  /**
+   * Returns the first system in the line.
+   */
+  getFirstSystem(): System | undefined {
+    return this.systems[0];
+  }
+
+  /**
+   * Returns the last system in the line.
+   */
+  getLastSystem(): System | undefined {
+    return this.systems[this.systems.length - 1];
   }
 }
