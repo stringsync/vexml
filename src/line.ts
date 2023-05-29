@@ -23,9 +23,8 @@ export class Line {
   /**
    * Adds a system to the line.
    */
-  addSystem(system: System): this {
+  addSystem(system: System): void {
     this.systems.push(system);
-    return this;
   }
 
   /**
@@ -37,5 +36,29 @@ export class Line {
       width += system.getWidth();
     }
     return width;
+  }
+
+  /**
+   * Takes the remaining/excess width, and distributes the change across all the systems of the line respecting the
+   * current proportions.
+   */
+  fit(width: number): void {
+    const isUnderspecified = this.systems.some((system) => system.getWidth() === 0);
+    if (isUnderspecified) {
+      throw new Error('all line systems must have a non-zero width before fit');
+    }
+
+    const totalWidth = this.getWidth();
+    const remainingWidth = width - totalWidth;
+
+    for (const system of this.systems) {
+      const systemWidth = system.getWidth();
+
+      const widthFraction = systemWidth / totalWidth;
+      const deltaWidth = remainingWidth * widthFraction;
+      const nextWidth = systemWidth + deltaWidth;
+
+      system.setWidth(nextWidth);
+    }
   }
 }

@@ -1,7 +1,9 @@
-import * as vexflow from 'vexflow';
 import { Stave } from './stave';
 import { Voice } from './voice';
 
+/**
+ * A data container for vexflow.System.
+ */
 export class System {
   private staves = new Array<Stave>();
   private voices = new Array<Voice>();
