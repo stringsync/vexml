@@ -145,11 +145,62 @@ describe(Line, () => {
   });
 
   describe('setBeginningModifiers', () => {
-    it.todo('updates the first stave modifiers');
+    it('updates the first stave modifiers', () => {
+      const stave1 = new Stave();
+      const stave2 = new Stave();
 
-    it.todo('does not affect staves after the first one');
+      const system1 = new System();
+      system1.addStave(stave1);
+      const system2 = new System();
+      system2.addStave(stave2);
 
-    it.todo('changes the width of the stave to account for the modifiers');
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+
+      expect(stave1.getTimeSignature()).toBe('6/8');
+      expect(stave1.getClef()).toBe('alto');
+    });
+
+    it('does not affect staves after the first one', () => {
+      const stave1 = new Stave();
+      const stave2 = new Stave();
+
+      const system1 = new System();
+      system1.addStave(stave1);
+      const system2 = new System();
+      system2.addStave(stave2);
+
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+
+      expect(stave2.getTimeSignature()).toBeUndefined();
+      expect(stave2.getClef()).toBeUndefined();
+    });
+
+    it('changes the width of the stave to account for the modifiers', () => {
+      const stave1 = new Stave();
+      const stave2 = new Stave();
+
+      const system1 = new System();
+      system1.addStave(stave1);
+      const system2 = new System();
+      system2.addStave(stave2);
+
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      const prevStave1 = stave1.clone();
+      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+
+      expect(stave1.getWidth()).toBeGreaterThan(prevStave1.getWidth());
+    });
   });
 
   describe('hasEndBarType', () => {
