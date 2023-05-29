@@ -68,9 +68,9 @@ export class Vexml {
 
     const lines = this.partitionToLines(systems);
 
-    // Stretch all the lines except the last one.
+    // Fit all the lines to width except the last one.
     for (const line of lines.slice(0, -1)) {
-      this.stretchToWidth(line, this.width);
+      line.fit(this.width);
     }
 
     const ctx = this.renderer.getContext();
