@@ -1,5 +1,4 @@
-import * as vexflow from 'vexflow';
-import { ClefType } from './enums';
+import { BarStyle, ClefType } from './enums';
 import { System } from './system';
 
 /**
@@ -85,14 +84,14 @@ export class Line {
    * Whether the last stave has a barline.
    */
   hasEndBarType(): boolean {
-    return typeof this.getLastSystem()?.getLastStave()?.getEndBarType() !== 'undefined';
+    return typeof this.getLastSystem()?.getLastStave()?.getEndBarStyle() !== 'undefined';
   }
 
   /**
    * Ensures that the last stave has a barline.
    */
-  setEndBarType(barlineType: vexflow.BarlineType): void {
-    this.getLastSystem()?.getLastStave()?.setEndBarType(barlineType);
+  setEndBarType(barStyle: BarStyle): void {
+    this.getLastSystem()?.getLastStave()?.setEndBarStyle(barStyle);
   }
 
   /**

@@ -1,4 +1,3 @@
-import * as vexflow from 'vexflow';
 import { Line } from './line';
 import { Stave } from './stave';
 import { System } from './system';
@@ -207,7 +206,7 @@ describe(Line, () => {
   describe('hasEndBarType', () => {
     it('returns true when there is an end bar', () => {
       const stave = new Stave();
-      stave.setEndBarType(vexflow.BarlineType.DOUBLE);
+      stave.setEndBarStyle('regular');
 
       const system = new System();
       system.addStave(stave);
@@ -245,9 +244,9 @@ describe(Line, () => {
       line.addSystem(system1);
       line.addSystem(system2);
 
-      line.setEndBarType(vexflow.BarlineType.END);
+      line.setEndBarType('regular');
 
-      expect(stave2.getEndBarType()).toBe(vexflow.BarlineType.END);
+      expect(stave2.getEndBarStyle()).toBe('regular');
     });
 
     it('does not affects staves before the last one', () => {
@@ -263,9 +262,9 @@ describe(Line, () => {
       line.addSystem(system1);
       line.addSystem(system2);
 
-      line.setEndBarType(vexflow.BarlineType.END);
+      line.setEndBarType('regular');
 
-      expect(stave1.getEndBarType()).toBeUndefined();
+      expect(stave1.getEndBarStyle()).toBeUndefined();
     });
   });
 
