@@ -1,5 +1,5 @@
 import * as vexflow from 'vexflow';
-import { ClefType } from './enums';
+import { BarStyle, ClefType } from './enums';
 import { Voice } from './voice';
 
 /**
@@ -9,13 +9,11 @@ export class Stave {
   private x = 0;
   private y = 0;
   private width = 0;
-  private justifyWidth = 0;
-  private modifiersWidth = 0;
   private noteStartX = 0;
   private clef?: ClefType;
   private timeSignature?: string;
-  private begBarType?: vexflow.BarlineType;
-  private endBarType?: vexflow.BarlineType;
+  private beginningBarStyle?: BarStyle;
+  private endBarStyle?: BarStyle;
   private voice?: Voice;
 
   clone(): Stave {
@@ -23,13 +21,11 @@ export class Stave {
       .setX(this.x)
       .setY(this.y)
       .setWidth(this.width)
-      .setJustifyWidth(this.justifyWidth)
-      .setModifiersWidth(this.modifiersWidth)
       .setNoteStartX(this.noteStartX)
       .setClef(this.clef)
       .setTimeSignature(this.timeSignature)
-      .setBegBarType(this.begBarType)
-      .setEndBarType(this.endBarType)
+      .setBeginningBarStyle(this.beginningBarStyle)
+      .setEndBarStyle(this.endBarStyle)
       .setVoice(this.voice?.clone());
   }
 
@@ -60,22 +56,14 @@ export class Stave {
     return this;
   }
 
-  addWidth(width: number): void {
+  addWidth(width: number): this {
     this.width += width;
-  }
-
-  setJustifyWidth(justifyWidth: number): this {
-    this.justifyWidth = justifyWidth;
     return this;
   }
 
   getJustifyWidth(): number {
-    return this.justifyWidth;
-  }
-
-  setModifiersWidth(modifiersWidth: number): this {
-    this.modifiersWidth = modifiersWidth;
-    return this;
+    const vfVoice = this.getVoice()?.toVexflow();
+    return typeof vfVoice === 'undefined' ? 0 : new vexflow.Formatter().preCalculateMinTotalWidth([vfVoice]);
   }
 
   getModifiersWidth(): number {
@@ -109,21 +97,21 @@ export class Stave {
     return this;
   }
 
-  getBegBarType(): vexflow.BarlineType | undefined {
-    return this.begBarType;
+  getBeginningBarStyle(): BarStyle | undefined {
+    return this.beginningBarStyle;
   }
 
-  setBegBarType(begBarType: vexflow.BarlineType | undefined): this {
-    this.begBarType = begBarType;
+  setBeginningBarStyle(barStyle: BarStyle | undefined): this {
+    this.beginningBarStyle = barStyle;
     return this;
   }
 
-  getEndBarType(): vexflow.BarlineType | undefined {
-    return this.endBarType;
+  getEndBarStyle(): BarStyle | undefined {
+    return this.endBarStyle;
   }
 
-  setEndBarType(endBarType: vexflow.BarlineType | undefined): this {
-    this.endBarType = endBarType;
+  setEndBarStyle(endBarStyle: BarStyle | undefined): this {
+    this.endBarStyle = endBarStyle;
     return this;
   }
 
@@ -149,16 +137,38 @@ export class Stave {
       stave.addTimeSignature(timeSignature);
     }
 
-    const begBarType = this.begBarType;
+    const begBarType = this.getBarlineType(this.beginningBarStyle);
     if (typeof begBarType !== 'undefined') {
       stave.setBegBarType(begBarType);
     }
 
-    const endBarType = this.endBarType;
+    const endBarType = this.getBarlineType(this.endBarStyle);
     if (typeof endBarType !== 'undefined') {
       stave.setEndBarType(endBarType);
     }
 
     return stave;
+  }
+
+  private getBarlineType(barStyle: BarStyle | undefined): vexflow.BarlineType | undefined {
+    switch (barStyle) {
+      case 'regular':
+      case 'short':
+      case 'dashed':
+      case 'dotted':
+      case 'heavy':
+        return vexflow.BarlineType.SINGLE;
+      case 'heavy-light':
+      case 'heavy-heavy':
+      case 'light-light':
+      case 'tick':
+        return vexflow.BarlineType.DOUBLE;
+      case 'light-heavy':
+        return vexflow.BarlineType.END;
+      case 'none':
+        return vexflow.BarlineType.NONE;
+      default:
+        return undefined;
+    }
   }
 }

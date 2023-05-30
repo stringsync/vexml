@@ -66,8 +66,6 @@ export class Vexml {
       }
     }
 
-    this.updateStaveWidthMetadata(systems);
-
     const lines = this.partitionToLines(systems);
 
     // Add modifiers to all the lines using the latest modifiers.
@@ -83,10 +81,10 @@ export class Vexml {
       line.setBeginningModifiers({ timeSignature, clef });
     }
 
-    // Add end barlines to all lines if it doesn't exist.
+    // Add barlines to all lines if it doesn't exist.
     for (const line of lines) {
       if (!line.hasEndBarType()) {
-        line.setEndBarType(vexflow.BarlineType.SINGLE);
+        line.setEndBarType('regular');
       }
     }
 
@@ -117,16 +115,13 @@ export class Vexml {
     }
 
     for (const barline of measure.getBarlines()) {
-      const barlineType = this.getBarlineType(barline);
-      if (typeof barlineType !== 'number') {
-        continue;
-      }
+      const barStyle = barline.getBarStyle();
       switch (barline.getLocation()) {
         case 'left':
-          stave.setBegBarType(barlineType);
+          stave.setBeginningBarStyle(barStyle);
           break;
         case 'right':
-          stave.setEndBarType(barlineType);
+          stave.setEndBarStyle(barStyle);
           break;
       }
     }
@@ -209,27 +204,6 @@ export class Vexml {
     }
 
     return staveNote;
-  }
-
-  private updateStaveWidthMetadata(systems: System[]): void {
-    let lastTimeSignature: string | undefined;
-    for (const system of systems) {
-      for (const stave of system.getStaves()) {
-        lastTimeSignature = stave.getTimeSignature() ?? lastTimeSignature;
-        const justifyWidth = this.getJustifyWidth(stave);
-        const modifiersWidth = this.getModifiersWidth(stave, lastTimeSignature);
-        stave.setJustifyWidth(justifyWidth).setModifiersWidth(modifiersWidth);
-      }
-    }
-  }
-
-  private getJustifyWidth(stave: Stave) {
-    const vfVoice = stave.getVoice()?.toVexflow();
-    return typeof vfVoice === 'undefined' ? 0 : new vexflow.Formatter().preCalculateMinTotalWidth([vfVoice]);
-  }
-
-  private getModifiersWidth(stave: Stave, timeSignature: string | undefined) {
-    return stave.clone().setTimeSignature(timeSignature).setX(0).toVexflow().getNoteStartX();
   }
 
   private partitionToLines(systems: System[]): Line[] {
