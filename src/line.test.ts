@@ -1,3 +1,4 @@
+import * as vexflow from 'vexflow';
 import { Line } from './line';
 import { Stave } from './stave';
 import { System } from './system';
@@ -204,26 +205,105 @@ describe(Line, () => {
   });
 
   describe('hasEndBarType', () => {
-    it.todo('returns true when there is an end bar');
+    it('returns true when there is an end bar', () => {
+      const stave = new Stave();
+      stave.setEndBarType(vexflow.BarlineType.DOUBLE);
 
-    it.todo('returns false when there is not an end bar');
+      const system = new System();
+      system.addStave(stave);
+
+      const line = new Line();
+      line.addSystem(system);
+
+      expect(line.hasEndBarType()).toBeTrue();
+    });
+
+    it('returns false when there is not an end bar', () => {
+      const stave = new Stave();
+
+      const system = new System();
+      system.addStave(stave);
+
+      const line = new Line();
+      line.addSystem(system);
+
+      expect(line.hasEndBarType()).toBeFalse();
+    });
   });
 
   describe('setEndBarType', () => {
-    it.todo('sets the end bar of the last stave');
+    it('sets the end bar of the last stave', () => {
+      const stave1 = new Stave();
+      const stave2 = new Stave();
 
-    it.todo('does not affects staves before the last one');
+      const system1 = new System();
+      system1.addStave(stave1);
+      const system2 = new System();
+      system2.addStave(stave2);
+
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      line.setEndBarType(vexflow.BarlineType.END);
+
+      expect(stave2.getEndBarType()).toBe(vexflow.BarlineType.END);
+    });
+
+    it('does not affects staves before the last one', () => {
+      const stave1 = new Stave();
+      const stave2 = new Stave();
+
+      const system1 = new System();
+      system1.addStave(stave1);
+      const system2 = new System();
+      system2.addStave(stave2);
+
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      line.setEndBarType(vexflow.BarlineType.END);
+
+      expect(stave1.getEndBarType()).toBeUndefined();
+    });
   });
 
   describe('getFirstSystem', () => {
-    it.todo('returns the first system when it exists');
+    it('returns the first system when it exists', () => {
+      const system1 = new System();
+      const system2 = new System();
 
-    it.todo('returns undefined when the first does not exist');
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      expect(line.getFirstSystem()).toBe(system1);
+    });
+
+    it('returns undefined when the first does not exist', () => {
+      const line = new Line();
+
+      expect(line.getFirstSystem()).toBeUndefined();
+    });
   });
 
   describe('getLastSystem', () => {
-    it.todo('returns the last system when it exists');
+    it('returns the last system when it exists', () => {
+      const system1 = new System();
+      const system2 = new System();
 
-    it.todo('returns undefined when the last does not exist');
+      const line = new Line();
+      line.addSystem(system1);
+      line.addSystem(system2);
+
+      expect(line.getLastSystem()).toBe(system2);
+    });
+
+    it('returns undefined when the last does not exist', () => {
+      const line = new Line();
+
+      expect(line.getLastSystem()).toBeUndefined();
+    });
   });
 });
