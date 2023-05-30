@@ -149,28 +149,6 @@ export class Vexml {
     system.addVoice(voice);
   }
 
-  private getBarlineType(barline: Barline): vexflow.BarlineType | null {
-    switch (barline.getBarStyle()) {
-      case 'regular':
-      case 'short':
-      case 'dashed':
-      case 'dotted':
-      case 'heavy':
-        return vexflow.BarlineType.SINGLE;
-      case 'heavy-light':
-      case 'heavy-heavy':
-      case 'light-light':
-      case 'tick':
-        return vexflow.BarlineType.DOUBLE;
-      case 'light-heavy':
-        return vexflow.BarlineType.END;
-      case 'none':
-        return vexflow.BarlineType.NONE;
-      default:
-        return null;
-    }
-  }
-
   private createStaveNote(note: Note, clefType: ClefType | undefined): vexflow.StaveNote {
     let key = note.getPitch();
     const suffix = note.getNoteheadSuffix();
