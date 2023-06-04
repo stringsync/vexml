@@ -1,5 +1,6 @@
 import { BarStyle, ClefType } from './enums';
 import { System } from './system';
+import { TimeSignature } from './timesignature';
 
 /**
  * Line represents a group of Systems that are rendered in the same horizontal space.
@@ -68,7 +69,7 @@ export class Line {
    *
    * The width of the stave may change to accommodate the modifiers.
    */
-  setBeginningModifiers(opts: { timeSignature?: string; clef?: ClefType }): void {
+  setBeginningModifiers(opts: { timeSignature?: TimeSignature; clef?: ClefType }): void {
     const stave = this.getFirstSystem()?.getFirstStave();
     if (!stave) {
       return;

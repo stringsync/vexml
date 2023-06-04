@@ -1,4 +1,5 @@
 import { Time } from './time';
+import { TimeSignature } from './timesignature';
 import * as xml from './xml';
 
 describe(Time, () => {
@@ -10,10 +11,7 @@ describe(Time, () => {
       ],
     });
     const time = new Time(node);
-    expect(time.getTimeSignatures()).toStrictEqual([
-      { numerator: '3', denominator: '4' },
-      { numerator: '3', denominator: '8' },
-    ]);
+    expect(time.getTimeSignatures()).toStrictEqual([new TimeSignature(3, 4), new TimeSignature(3, 8)]);
   });
 
   it('returns an empty array when beat and beat type elements are missing', () => {
@@ -30,7 +28,7 @@ describe(Time, () => {
       ],
     });
     const time = new Time(node);
-    expect(time.getTimeSignatures()).toStrictEqual([{ numerator: '3', denominator: '4' }]);
+    expect(time.getTimeSignatures()).toStrictEqual([new TimeSignature(3, 4)]);
   });
 
   it('ignores extra beat types', () => {
@@ -41,6 +39,6 @@ describe(Time, () => {
       ],
     });
     const time = new Time(node);
-    expect(time.getTimeSignatures()).toStrictEqual([{ numerator: '3', denominator: '4' }]);
+    expect(time.getTimeSignatures()).toStrictEqual([new TimeSignature(3, 4)]);
   });
 });

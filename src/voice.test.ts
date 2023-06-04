@@ -1,34 +1,23 @@
 import * as vexflow from 'vexflow';
 import { Voice } from './voice';
+import { TimeSignature } from './timesignature';
 
 describe(Voice, () => {
-  describe('getNumBeats', () => {
-    it('returns the number of beats', () => {
-      const voice = new Voice().setNumBeats(42);
-      expect(voice.getNumBeats()).toBe(42);
+  describe('getTimeSignature', () => {
+    it('returns the time signature', () => {
+      const timeSignature = new TimeSignature(6, 8);
+      const voice = new Voice().setTimeSignature(timeSignature);
+      expect(voice.getTimeSignature()).toBe(timeSignature);
     });
   });
 
-  describe('setNumBeats', () => {
-    it('sets the number of beats', () => {
+  describe('setTimeSignature', () => {
+    it('sets the time signature', () => {
       () => {
-        const voice = new Voice().setNumBeats(42);
-        expect(voice.getNumBeats()).toBe(42);
+        const timeSignature = new TimeSignature(6, 8);
+        const voice = new Voice().setTimeSignature(timeSignature);
+        expect(voice.getTimeSignature()).toBe(timeSignature);
       };
-    });
-  });
-
-  describe('getBeatValue', () => {
-    it('returns the beat value', () => {
-      const voice = new Voice().setBeatValue(42);
-      expect(voice.getBeatValue()).toBe(42);
-    });
-  });
-
-  describe('setBeatValue', () => {
-    it('sets the beat value', () => {
-      const voice = new Voice().setBeatValue(42);
-      expect(voice.getBeatValue()).toBe(42);
     });
   });
 
@@ -68,7 +57,7 @@ describe(Voice, () => {
         keys: ['C/4'],
         duration: 'w',
       });
-      const voice = new Voice().setNumBeats(6).setBeatValue(8).addTickables([staveNote]);
+      const voice = new Voice().setTimeSignature(new TimeSignature(6, 8)).addTickables([staveNote]);
 
       const vfVoice = voice.toVexflow();
 

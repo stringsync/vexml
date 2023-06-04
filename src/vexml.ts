@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import { MusicXml } from './musicxml';
 import { Measure } from './measure';
 import { ClefType } from './enums';
-import { TimeSignature } from './types';
+import { TimeSignature } from './timesignature';
 import { Note } from './note';
 import { Stave } from './stave';
 import { Voice } from './voice';
@@ -68,7 +68,7 @@ export class Vexml {
     const lines = this.partitionToLines(systems);
 
     // Add modifiers to all the lines using the latest modifiers.
-    let timeSignature: string | undefined;
+    let timeSignature: TimeSignature | undefined;
     let clef: ClefType | undefined;
     for (const line of lines) {
       for (const system of line.getSystems()) {
@@ -110,7 +110,7 @@ export class Vexml {
 
     const timeSignature: TimeSignature | undefined = attributes[0]?.getTimes()[0]?.getTimeSignatures()[0];
     if (timeSignature) {
-      stave.setTimeSignature(`${timeSignature.numerator}/${timeSignature.denominator}`);
+      stave.setTimeSignature(timeSignature);
     }
 
     for (const barline of measure.getBarlines()) {

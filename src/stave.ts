@@ -1,6 +1,7 @@
 import * as vexflow from 'vexflow';
 import { BarStyle, ClefType } from './enums';
 import { Voice } from './voice';
+import { TimeSignature } from './timesignature';
 
 /**
  * Data container for vexflow.Stave objects.
@@ -10,7 +11,7 @@ export class Stave {
   private y = 0;
   private width = 0;
   private clef?: ClefType;
-  private timeSignature?: string;
+  private timeSignature?: TimeSignature;
   private beginningBarStyle?: BarStyle;
   private endBarStyle?: BarStyle;
   private voice?: Voice;
@@ -123,14 +124,14 @@ export class Stave {
   /**
    * Returns the time signature of the stave.
    */
-  getTimeSignature(): string | undefined {
+  getTimeSignature(): TimeSignature | undefined {
     return this.timeSignature;
   }
 
   /**
    * Sets the time signature of the stave.
    */
-  setTimeSignature(timeSignature: string | undefined): this {
+  setTimeSignature(timeSignature: TimeSignature | undefined): this {
     this.timeSignature = timeSignature;
     return this;
   }
@@ -193,7 +194,7 @@ export class Stave {
 
     const timeSignature = this.timeSignature;
     if (typeof timeSignature !== 'undefined') {
-      stave.addTimeSignature(timeSignature);
+      stave.addTimeSignature(timeSignature.toString());
     }
 
     const begBarType = this.getBarlineType(this.beginningBarStyle);

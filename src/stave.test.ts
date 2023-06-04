@@ -1,6 +1,7 @@
 import * as vexflow from 'vexflow';
 import { Stave } from './stave';
 import { Voice } from './voice';
+import { TimeSignature } from './timesignature';
 
 describe(Stave, () => {
   describe('clone', () => {
@@ -111,15 +112,17 @@ describe(Stave, () => {
 
   describe('getTimeSignature', () => {
     it('returns the time signature', () => {
-      const stave = new Stave().setTimeSignature('4/4');
-      expect(stave.getTimeSignature()).toBe('4/4');
+      const timeSignature = new TimeSignature(4, 4);
+      const stave = new Stave().setTimeSignature(timeSignature);
+      expect(stave.getTimeSignature()).toBe(timeSignature);
     });
   });
 
   describe('setTimeSignature', () => {
     it('sets the time signature', () => {
-      const stave = new Stave().setTimeSignature('4/4');
-      expect(stave.getTimeSignature()).toBe('4/4');
+      const timeSignature = new TimeSignature(4, 4);
+      const stave = new Stave().setTimeSignature(timeSignature);
+      expect(stave.getTimeSignature()).toBe(timeSignature);
     });
   });
 
@@ -169,12 +172,13 @@ describe(Stave, () => {
 
   describe('toVexflow', () => {
     it('transforms to a vexflow.Stave', () => {
+      const timeSignature = new TimeSignature(4, 4);
       const stave = new Stave()
         .setX(42)
         .setY(43)
         .setWidth(44)
         .setClef('treble')
-        .setTimeSignature('6/8')
+        .setTimeSignature(timeSignature)
         .setBeginningBarStyle('regular')
         .setEndBarStyle('tick');
 

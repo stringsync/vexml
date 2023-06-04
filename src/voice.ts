@@ -1,47 +1,32 @@
 import * as vexflow from 'vexflow';
+import { TimeSignature } from './timesignature';
 
 /**
  * Data container for vexflow.Voice objects.
  */
 export class Voice {
-  private numBeats = 4;
-  private beatValue = 4;
+  private timeSignature = new TimeSignature(4, 4);
   private tickables = new Array<vexflow.Tickable>();
 
   /**
    * Creates a deep clone of the voice.
    */
   clone(): Voice {
-    return new Voice().setNumBeats(this.numBeats).setBeatValue(this.beatValue).addTickables(this.tickables);
+    return new Voice().setTimeSignature(this.timeSignature).addTickables(this.tickables);
   }
 
   /**
-   * Returns the number of beats.
+   * Returns the time signature of the voice.
    */
-  getNumBeats(): number {
-    return this.numBeats;
+  getTimeSignature(): TimeSignature {
+    return this.timeSignature;
   }
 
   /**
    * Sets the number of beats.
    */
-  setNumBeats(numBeats: number): this {
-    this.numBeats = numBeats;
-    return this;
-  }
-
-  /**
-   * Returns the beat value.
-   */
-  getBeatValue(): number {
-    return this.beatValue;
-  }
-
-  /**
-   * Sets the beat value.
-   */
-  setBeatValue(beatValue: number): this {
-    this.beatValue = beatValue;
+  setTimeSignature(timeSignature: TimeSignature): this {
+    this.timeSignature = timeSignature;
     return this;
   }
 
@@ -64,7 +49,10 @@ export class Voice {
    * Transforms the voice into a vexflow.Voice.
    */
   toVexflow(): vexflow.Voice {
-    return new vexflow.Voice({ num_beats: this.numBeats, beat_value: this.beatValue })
+    return new vexflow.Voice({
+      num_beats: this.timeSignature.getBeatsPerMeasure(),
+      beat_value: this.timeSignature.getBeatValue(),
+    })
       .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)
       .addTickables(this.tickables);
