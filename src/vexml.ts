@@ -3,7 +3,6 @@ import { MusicXml } from './musicxml';
 import { Measure } from './measure';
 import { ClefType } from './enums';
 import { TimeSignature } from './types';
-import { Barline } from './barline';
 import { Note } from './note';
 import { Stave } from './stave';
 import { Voice } from './voice';

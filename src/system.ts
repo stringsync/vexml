@@ -39,7 +39,6 @@ export class System {
 
   setX(x: number): this {
     for (const stave of this.staves) {
-      stave.setNoteStartX(x - stave.getX());
       stave.setX(x);
     }
     return this;
