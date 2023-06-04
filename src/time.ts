@@ -1,5 +1,5 @@
 import { NamedElement } from './namedelement';
-import { TimeSignature } from './types';
+import { TimeSignature } from './timesignature';
 
 /**
  * Time represents a time signature element.
@@ -25,10 +25,9 @@ export class Time {
     // Ignore extra <beats> and <beat-type> elements.
     const len = Math.min(beats.length, beatTypes.length);
     for (let ndx = 0; ndx < len; ndx++) {
-      result.push({
-        numerator: beats[ndx],
-        denominator: beatTypes[ndx],
-      });
+      const beatsPerMeasure = parseInt(beats[ndx], 10);
+      const beatValue = parseInt(beatTypes[ndx], 10);
+      result.push(new TimeSignature(beatsPerMeasure, beatValue));
     }
 
     return result;

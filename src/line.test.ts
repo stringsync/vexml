@@ -1,6 +1,7 @@
 import { Line } from './line';
 import { Stave } from './stave';
 import { System } from './system';
+import { TimeSignature } from './timesignature';
 
 describe(Line, () => {
   describe('isEmpty', () => {
@@ -158,9 +159,10 @@ describe(Line, () => {
       line.addSystem(system1);
       line.addSystem(system2);
 
-      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+      const timeSignature = new TimeSignature(6, 8);
+      line.setBeginningModifiers({ timeSignature, clef: 'alto' });
 
-      expect(stave1.getTimeSignature()).toBe('6/8');
+      expect(stave1.getTimeSignature()).toBe(timeSignature);
       expect(stave1.getClef()).toBe('alto');
     });
 
@@ -177,7 +179,8 @@ describe(Line, () => {
       line.addSystem(system1);
       line.addSystem(system2);
 
-      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+      const timeSignature = new TimeSignature(6, 8);
+      line.setBeginningModifiers({ timeSignature, clef: 'alto' });
 
       expect(stave2.getTimeSignature()).toBeUndefined();
       expect(stave2.getClef()).toBeUndefined();
@@ -197,7 +200,8 @@ describe(Line, () => {
       line.addSystem(system2);
 
       const prevStave1 = stave1.clone();
-      line.setBeginningModifiers({ timeSignature: '6/8', clef: 'alto' });
+      const timeSignature = new TimeSignature(6, 8);
+      line.setBeginningModifiers({ timeSignature, clef: 'alto' });
 
       expect(stave1.getWidth()).toBeGreaterThan(prevStave1.getWidth());
     });
