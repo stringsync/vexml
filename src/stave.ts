@@ -181,7 +181,7 @@ export class Stave {
   }
 
   /**
-   * Transforms the stave into a Vexflow Stave.
+   * Transforms the stave into a vexflow.Stave.
    */
   toVexflow(): vexflow.Stave {
     const stave = new vexflow.Stave(this.x, this.y, this.width);

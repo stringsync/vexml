@@ -141,7 +141,7 @@ export class Vexml {
       }
     }
 
-    const voice = new Voice().setMode(vexflow.VoiceMode.SOFT).addTickables(tickables);
+    const voice = new Voice().addTickables(tickables);
     stave.setVoice(voice);
 
     system.addStave(stave);
