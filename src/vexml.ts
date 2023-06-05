@@ -145,7 +145,6 @@ export class Vexml {
 
     stave.addVoice(voice);
     system.addStave(stave);
-    system.addVoice(voice);
   }
 
   private createStaveNote(note: Note, clefType: ClefType | undefined): vexflow.StaveNote {
