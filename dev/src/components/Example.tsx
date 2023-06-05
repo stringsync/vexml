@@ -119,7 +119,7 @@ export const Example: React.FC<ExampleProps> = (props) => {
       </CallToActionButton>
 
       {result.type === 'success' && (
-        <Tabs defaultActiveKey="1">
+        <Tabs destroyInactiveTabPane defaultActiveKey="1">
           <TabPane tab="vexml" key="1">
             <Typography.Title level={2}>vexml</Typography.Title>
 
