@@ -1,3 +1,4 @@
+import { VERTICAL_DIRECTIONS } from './enums';
 import { Notations } from './notations';
 import * as xml from './xml';
 
@@ -17,7 +18,7 @@ describe(Notations, () => {
   });
 
   describe('getArpeggioDirection', () => {
-    it.each(['up', 'down'])(`returns the arpeggio direction: '%s'`, (direction) => {
+    it.each(VERTICAL_DIRECTIONS.values)(`returns the arpeggio direction: '%s'`, (direction) => {
       const node = xml.notations({ arpeggiate: xml.arpeggiate({ direction }) });
       const notations = new Notations(node);
       expect(notations.getArpeggioDirection()).toBe(direction);
