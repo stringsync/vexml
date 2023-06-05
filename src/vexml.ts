@@ -142,8 +142,8 @@ export class Vexml {
     }
 
     const voice = new Voice().addTickables(tickables);
-    stave.setVoice(voice);
 
+    stave.addVoice(voice);
     system.addStave(stave);
     system.addVoice(voice);
   }
@@ -233,28 +233,22 @@ export class Vexml {
   }
 
   private formatSystem(system: System): vexflow.Element[] {
-    const formatter = new vexflow.Formatter();
+    const elements = new Array<vexflow.Element>();
 
-    const vfSystems = new Array<{ vfStave: vexflow.Stave; vfVoice: vexflow.Voice }>();
+    const vfStaves = new Array<vexflow.Stave>();
     for (const stave of system.getStaves()) {
-      const vfVoice = stave.getVoice()?.toVexflow();
-      if (typeof vfVoice === 'undefined') {
-        continue;
-      }
+      const formatter = new vexflow.Formatter();
       const vfStave = stave.toVexflow();
-      vfVoice.setStave(vfStave);
-      vfSystems.push({ vfStave, vfVoice });
+      const vfVoices = stave.getVoices().map((voice) => voice.toVexflow().setStave(vfStave));
+
+      formatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave).postFormat();
+
+      vfStaves.push(vfStave);
+      elements.push(vfStave, ...vfVoices);
     }
 
-    formatter.joinVoices(vfSystems.map((vfSystem) => vfSystem.vfVoice));
+    vexflow.Stave.formatBegModifiers(vfStaves);
 
-    for (const vfSystem of vfSystems) {
-      formatter.formatToStave([vfSystem.vfVoice], vfSystem.vfStave);
-    }
-    formatter.postFormat();
-
-    vexflow.Stave.formatBegModifiers(vfSystems.map((vfSystem) => vfSystem.vfStave));
-
-    return vfSystems.flatMap((vfSystem) => [vfSystem.vfStave, vfSystem.vfVoice]);
+    return elements;
   }
 }

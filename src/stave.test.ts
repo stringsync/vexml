@@ -65,13 +65,15 @@ describe(Stave, () => {
 
   describe('getJustifyWidth', () => {
     it('calculates the justify width using the voice', () => {
-      const voice = new Voice().addTickables([
-        new vexflow.StaveNote({
-          keys: ['C/4'],
-          duration: '4',
-        }),
-      ]);
-      const stave = new Stave().setVoice(voice);
+      const voices = [
+        new Voice().addTickables([
+          new vexflow.StaveNote({
+            keys: ['C/4'],
+            duration: '4',
+          }),
+        ]),
+      ];
+      const stave = new Stave().setVoices(voices);
 
       expect(stave.getJustifyWidth()).toBeWithin(13, 14);
     });
@@ -154,19 +156,27 @@ describe(Stave, () => {
     });
   });
 
-  describe('getVoice', () => {
-    it('returns the voice', () => {
+  describe('addVoice', () => {
+    it('adds a voice to the stave', () => {
       const voice = new Voice();
-      const stave = new Stave().setVoice(voice);
-      expect(stave.getVoice()).toBe(voice);
+      const stave = new Stave().addVoice(voice);
+      expect(stave.getVoices()).toStrictEqual([voice]);
     });
   });
 
-  describe('setVoice', () => {
+  describe('getVoices', () => {
+    it('returns the voice', () => {
+      const voices = [new Voice()];
+      const stave = new Stave().setVoices(voices);
+      expect(stave.getVoices()).toBe(voices);
+    });
+  });
+
+  describe('setVoices', () => {
     it('sets the voice', () => {
-      const voice = new Voice();
-      const stave = new Stave().setVoice(voice);
-      expect(stave.getVoice()).toBe(voice);
+      const voices = [new Voice()];
+      const stave = new Stave().setVoices(voices);
+      expect(stave.getVoices()).toBe(voices);
     });
   });
 
