@@ -16,9 +16,7 @@ export class Stave {
   private endBarStyle?: BarStyle;
   private voices = new Array<Voice>();
 
-  /**
-   * Creates a deep clone of the stave.
-   */
+  /** Creates a deep clone of the stave. */
   clone(): Stave {
     return new Stave()
       .setX(this.x)
@@ -31,62 +29,46 @@ export class Stave {
       .setVoices(this.voices.map((voice) => voice.clone()));
   }
 
-  /**
-   * Returns the X coordinate of where the stave starts.
-   */
+  /** Returns the X coordinate of where the stave starts. */
   getX(): number {
     return this.x;
   }
 
-  /**
-   * Sets the X coordinate of where the stave starts.
-   */
+  /** Sets the X coordinate of where the stave starts. */
   setX(x: number): this {
     this.x = x;
     return this;
   }
 
-  /**
-   * Returns the Y coordinate of where the stave starts.
-   */
+  /** Returns the Y coordinate of where the stave starts. */
   getY(): number {
     return this.y;
   }
 
-  /**
-   * Sets the Y coordinate of where the stave starts.
-   */
+  /** Sets the Y coordinate of where the stave starts. */
   setY(y: number): this {
     this.y = y;
     return this;
   }
 
-  /**
-   * Returns the width of the stave.
-   */
+  /** Returns the width of the stave. */
   getWidth(): number {
     return this.width;
   }
 
-  /**
-   * Sets the width of the stave.
-   */
+  /** Sets the width of the stave. */
   setWidth(width: number): this {
     this.width = width;
     return this;
   }
 
-  /**
-   * Adds width to the stave.
-   */
+  /** Adds width to the stave. */
   addWidth(width: number): this {
     this.width += width;
     return this;
   }
 
-  /**
-   * Calculates the minunmum justify width of the stave.
-   */
+  /** Calculates the minunmum justify width of the stave. */
   getJustifyWidth(): number {
     if (this.voices.length === 0) {
       return 0;
@@ -97,106 +79,78 @@ export class Stave {
     return formatter.preCalculateMinTotalWidth(vfVoices);
   }
 
-  /**
-   * Calculates the minimum width needed to accomodate the modifiers.
-   */
+  /** Calculates the minimum width needed to accomodate the modifiers. */
   getModifiersWidth(): number {
     return this.clone().setX(0).toVexflow().getNoteStartX();
   }
 
-  /**
-   * Returns the X coordinate of where the notes start.
-   */
+  /** Returns the X coordinate of where the notes start. */
   getNoteStartX(): number {
     return this.toVexflow().getNoteStartX();
   }
 
-  /**
-   * Returns the clef of the stave.
-   */
+  /** Returns the clef of the stave. */
   getClef(): ClefType | undefined {
     return this.clef;
   }
 
-  /**
-   * Sets the clef of the stave.
-   */
+  /** Sets the clef of the stave. */
   setClef(clef: ClefType | undefined): this {
     this.clef = clef;
     return this;
   }
 
-  /**
-   * Returns the time signature of the stave.
-   */
+  /** Returns the time signature of the stave. */
   getTimeSignature(): TimeSignature | undefined {
     return this.timeSignature;
   }
 
-  /**
-   * Sets the time signature of the stave.
-   */
+  /** Sets the time signature of the stave. */
   setTimeSignature(timeSignature: TimeSignature | undefined): this {
     this.timeSignature = timeSignature;
     return this;
   }
 
-  /**
-   * Returns the beginning bar style of the stave.
-   */
+  /** Returns the beginning bar style of the stave. */
   getBeginningBarStyle(): BarStyle | undefined {
     return this.beginningBarStyle;
   }
 
-  /**
-   * Sets the beginning bar style of the stave.
-   */
+  /** Sets the beginning bar style of the stave. */
   setBeginningBarStyle(barStyle: BarStyle | undefined): this {
     this.beginningBarStyle = barStyle;
     return this;
   }
 
-  /**
-   * Returns the end bar style of the stave.
-   */
+  /** Returns the end bar style of the stave. */
   getEndBarStyle(): BarStyle | undefined {
     return this.endBarStyle;
   }
 
-  /**
-   * Sets the end bar style of the stave.
-   */
+  /** Sets the end bar style of the stave. */
   setEndBarStyle(endBarStyle: BarStyle | undefined): this {
     this.endBarStyle = endBarStyle;
     return this;
   }
 
-  /**
-   * Returns the voice of the stave.
-   */
+  /** Returns the voice of the stave. */
   getVoices(): Voice[] {
     return this.voices;
   }
 
-  /**
-   * Sets the voices of the stave.
-   */
+  /** Sets the voices of the stave. */
   setVoices(voices: Voice[]): this {
     this.voices = voices;
     return this;
   }
 
-  /**
-   * Adds a voice to the stave.
-   */
+  /** Adds a voice to the stave. */
   addVoice(voice: Voice): this {
     this.voices = [...this.voices, voice];
     return this;
   }
 
-  /**
-   * Transforms the stave into a vexflow.Stave.
-   */
+  /** Transforms the stave into a vexflow.Stave. */
   toVexflow(): vexflow.Stave {
     const stave = new vexflow.Stave(this.x, this.y, this.width);
 
