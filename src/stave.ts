@@ -14,7 +14,7 @@ export class Stave {
   private timeSignature?: TimeSignature;
   private beginningBarStyle?: BarStyle;
   private endBarStyle?: BarStyle;
-  private voice?: Voice;
+  private voices = new Array<Voice>();
 
   /**
    * Creates a deep clone of the stave.
@@ -28,7 +28,7 @@ export class Stave {
       .setTimeSignature(this.timeSignature)
       .setBeginningBarStyle(this.beginningBarStyle)
       .setEndBarStyle(this.endBarStyle)
-      .setVoice(this.voice?.clone());
+      .setVoices(this.voices.map((voice) => voice.clone()));
   }
 
   /**
@@ -88,8 +88,13 @@ export class Stave {
    * Calculates the minunmum justify width of the stave.
    */
   getJustifyWidth(): number {
-    const vfVoice = this.getVoice()?.toVexflow();
-    return typeof vfVoice === 'undefined' ? 0 : new vexflow.Formatter().preCalculateMinTotalWidth([vfVoice]);
+    if (this.voices.length === 0) {
+      return 0;
+    }
+
+    const formatter = new vexflow.Formatter();
+    const vfVoices = this.voices.map((voice) => voice.toVexflow());
+    return formatter.preCalculateMinTotalWidth(vfVoices);
   }
 
   /**
@@ -169,15 +174,23 @@ export class Stave {
   /**
    * Returns the voice of the stave.
    */
-  getVoice(): Voice | undefined {
-    return this.voice;
+  getVoices(): Voice[] {
+    return this.voices;
   }
 
   /**
-   * Sets the voice of the stave.
+   * Sets the voices of the stave.
    */
-  setVoice(voice: Voice | undefined): this {
-    this.voice = voice;
+  setVoices(voices: Voice[]): this {
+    this.voices = voices;
+    return this;
+  }
+
+  /**
+   * Adds a voice to the stave.
+   */
+  addVoice(voice: Voice): this {
+    this.voices = [...this.voices, voice];
     return this;
   }
 
