@@ -4,12 +4,12 @@ export type EnumValues<T extends Enum<any>> = T extends Enum<infer U> ? Values<U
 
 /** An enumeration of string values. */
 export class Enum<T extends readonly string[]> {
-  constructor(private choices: T) {}
+  constructor(public readonly values: T) {}
 
   /** Type predicate that returns whether or not the value is one of the choices. */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   includes(value: any): value is Values<T> {
-    return this.choices.includes(value);
+    return this.values.includes(value);
   }
 }
 

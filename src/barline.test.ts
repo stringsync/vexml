@@ -1,21 +1,10 @@
 import { Barline } from './barline';
+import { BAR_STYLES } from './enums';
 import * as xml from './xml';
 
 describe(Barline, () => {
   describe('getBarStyle', () => {
-    it.each([
-      'dashed',
-      'dotted',
-      'heavy',
-      'heavy-heavy',
-      'heavy-light',
-      'light-heavy',
-      'light-light',
-      'none',
-      'regular',
-      'short',
-      'tick',
-    ])(`returns the bar style of the barline: '%s'`, (barStyle) => {
+    it.each(BAR_STYLES.values)(`returns the bar style of the barline: '%s'`, (barStyle) => {
       const node = xml.barline({ barStyle: xml.barStyle({ value: barStyle }) });
       const barline = new Barline(node);
       expect(barline.getBarStyle()).toBe(barStyle);

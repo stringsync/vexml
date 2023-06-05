@@ -1,3 +1,4 @@
+import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from './enums';
 import { Measure } from './measure';
 import { Notations } from './notations';
 import { Note } from './note';
@@ -25,22 +26,7 @@ describe(Note, () => {
   });
 
   describe('getType', () => {
-    it.each([
-      '1024th',
-      '512th',
-      '256th',
-      '128th',
-      '64th',
-      '32nd',
-      '16th',
-      'eighth',
-      'quarter',
-      'half',
-      'whole',
-      'breve',
-      'long',
-      'maxima',
-    ])(`returns the note type when valid: '%s'`, (noteType) => {
+    it.each(NOTE_TYPES.values)(`returns the note type when valid: '%s'`, (noteType) => {
       const node = xml.note({ type: xml.type({ textContent: noteType }) });
       const note = new Note(node);
       expect(note.getType()).toBe(noteType);
@@ -238,45 +224,7 @@ describe(Note, () => {
   });
 
   describe('getAccidentalType', () => {
-    it.each([
-      'sharp',
-      'natural',
-      'flat',
-      'double-sharp',
-      'sharp-sharp',
-      'flat-flat',
-      'natural-sharp',
-      'natural-flat',
-      'quarter-flat',
-      'quarter-sharp',
-      'three-quarters-flat',
-      'three-quarters-sharp',
-      'sharp-down',
-      'sharp-up',
-      'natural-down',
-      'natural-up',
-      'flat-down',
-      'flat-up',
-      'double-sharp-down',
-      'double-sharp-up',
-      'flat-flat-down',
-      'flat-flat-up',
-      'arrow-down',
-      'arrow-up',
-      'triple-sharp',
-      'triple-flat',
-      'slash-quarter-sharp',
-      'slash-sharp',
-      'slash-flat',
-      'double-slash-flat',
-      'flat-1',
-      'flat-2',
-      'flat-3',
-      'flat-4',
-      'sori',
-      'koron',
-      'other',
-    ])(`returns the accidental type of the note: '%s'`, (accidental) => {
+    it.each(ACCIDENTAL_TYPES.values)(`returns the accidental type of the note: '%s'`, (accidental) => {
       const node = xml.note({ accidental: xml.accidental({ value: accidental }) });
       const note = new Note(node);
       expect(note.getAccidentalType()).toBe(accidental);
@@ -362,36 +310,7 @@ describe(Note, () => {
   });
 
   describe('getNotehead', () => {
-    it.each([
-      'arrow down',
-      'arrow up',
-      'back slashed',
-      'circle dot',
-      'circle-x',
-      'circled',
-      'cluster',
-      'cross',
-      'diamond',
-      'do',
-      'fa',
-      'fa up',
-      'inverted triangle',
-      'la',
-      'left triangle',
-      'mi',
-      'none',
-      'normal',
-      're',
-      'rectangle',
-      'slash',
-      'slashed',
-      'so',
-      'square',
-      'ti',
-      'triangle',
-      'x',
-      'other',
-    ])(`returns the notehead of the note: '%s'`, (notehead) => {
+    it.each(NOTEHEADS.values)(`returns the notehead of the note: '%s'`, (notehead) => {
       const node = xml.note({ notehead: xml.notehead({ value: notehead }) });
       const note = new Note(node);
       expect(note.getNotehead()).toBe(notehead);
