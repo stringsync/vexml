@@ -1,3 +1,4 @@
+import { Beam } from './beam';
 import {
   AccidentalCode,
   AccidentalType,
@@ -227,5 +228,10 @@ export class Note {
   /** Returns whether or not the note is a rest. */
   isRest(): boolean {
     return this.element.all('rest').length > 0;
+  }
+
+  /** Returns the beams of the note. */
+  getBeams(): Beam[] {
+    return this.element.all('beam').map((element) => new Beam(element));
   }
 }
