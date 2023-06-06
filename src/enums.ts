@@ -289,3 +289,11 @@ export const CLEF_TYPES = new Enum([
  */
 export type ClefAnnotation = EnumValues<typeof CLEF_ANNOTATIONS>;
 export const CLEF_ANNOTATIONS = new Enum(['8vb', '8va'] as const);
+
+/**
+ * Describes beaming for a single note.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/beam-value/
+ */
+export type BeamValue = EnumValues<typeof BEAM_VALUES>;
+export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook']);
