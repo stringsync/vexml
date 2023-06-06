@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { BeamValue } from './enums';
 import { NamedElement } from './namedelement';
 
 /**
@@ -827,3 +828,15 @@ export const notehead = createNamedElementFactory<
 export const chord = createNamedElementFactory<'chord', Record<never, never>>('chord', (_, __) => {
   // noop
 });
+
+export const beam = createNamedElementFactory<'beam', { number: number; beamValue: BeamValue }>(
+  'beam',
+  (e, { number, beamValue }) => {
+    if (typeof number === 'number') {
+      e.setAttribute('number', number.toString());
+    }
+    if (typeof beamValue === 'string') {
+      e.setTextContent(beamValue);
+    }
+  }
+);
