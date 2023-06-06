@@ -1,3 +1,4 @@
+import { Beam } from './beam';
 import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from './enums';
 import { Measure } from './measure';
 import { Notations } from './notations';
@@ -465,6 +466,19 @@ describe(Note, () => {
       const node = xml.note();
       const note = new Note(node);
       expect(note.isRest()).toBeFalse();
+    });
+  });
+
+  describe('getBeams', () => {
+    it('returns the beams of the note', () => {
+      const beam1 = xml.beam({ number: 4 });
+      const beam2 = xml.beam({ number: 2 });
+      const node = xml.note({ beams: [beam1, beam2] });
+      const note = new Note(node);
+
+      const beams = note.getBeams();
+
+      expect(beams).toStrictEqual([new Beam(beam1), new Beam(beam2)]);
     });
   });
 });
