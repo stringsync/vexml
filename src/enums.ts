@@ -296,4 +296,4 @@ export const CLEF_ANNOTATIONS = new Enum(['8vb', '8va'] as const);
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/beam-value/
  */
 export type BeamValue = EnumValues<typeof BEAM_VALUES>;
-export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook']);
+export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook'] as const);
