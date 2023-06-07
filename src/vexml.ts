@@ -134,21 +134,23 @@ export class Vexml {
       const tickables = new Array<vexflow.Tickable>();
 
       if (note.isChordTail()) {
+        // This should already be handled when encountering the chord head note.
         continue;
       } else if (note.isChordHead()) {
-        continue;
+        tickables.push(this.createStaveNote([note, ...note.getChordTail()], clef));
       } else if (note.isRest()) {
         tickables.push(this.createRest(note, clef));
       } else if (note.isGrace()) {
         continue;
       } else {
-        tickables.push(this.createStaveNote(note, clef));
+        tickables.push(this.createStaveNote([note], clef));
       }
 
       notes.push([note, tickables]);
     }
 
     // Create beams.
+    // TODO: Fix this, see http://localhost:8080/beam.xml
     let beamNotes = new Array<vexflow.StemmableNote>();
     for (const [note, tickables] of notes) {
       const stemmables = tickables.filter(
@@ -181,21 +183,26 @@ export class Vexml {
     system.addStave(stave);
   }
 
-  private createStaveNote(note: Note, clefType: ClefType | undefined): vexflow.StaveNote {
-    let key = note.getPitch();
-    const suffix = note.getNoteheadSuffix();
-    if (suffix) {
-      key += `/${suffix}`;
-    }
+  private createStaveNote(notes: Note[], clef: ClefType | undefined): vexflow.StaveNote {
+    const [head, ...tail] = notes;
 
-    const staveNote = new vexflow.StaveNote({
-      keys: [key],
-      duration: note.getDurationDenominator(),
-      dots: note.getDotCount(),
-      clef: clefType,
+    const keys = [head, ...tail].map((note) => {
+      let key = note.getPitch();
+      const suffix = note.getNoteheadSuffix();
+      if (suffix) {
+        key += `/${suffix}`;
+      }
+      return key;
     });
 
-    const stem = note.getStem();
+    const staveNote = new vexflow.StaveNote({
+      keys,
+      duration: head.getDurationDenominator(),
+      dots: head.getDotCount(),
+      clef,
+    });
+
+    const stem = head.getStem();
     if (stem === 'up') {
       staveNote.setStemDirection(vexflow.Stem.UP);
     } else if (stem === 'down') {
@@ -204,10 +211,10 @@ export class Vexml {
       staveNote.autoStem();
     }
 
-    const accidentalCode = note.getAccidentalCode();
+    const accidentalCode = head.getAccidentalCode();
     if (accidentalCode) {
       const accidental = new vexflow.Accidental(accidentalCode);
-      if (note.hasAccidentalCautionary()) {
+      if (head.hasAccidentalCautionary()) {
         accidental.setAsCautionary();
       }
       staveNote.addModifier(accidental);
