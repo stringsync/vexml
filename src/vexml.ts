@@ -184,9 +184,7 @@ export class Vexml {
   }
 
   private createStaveNote(notes: Note[], clef: ClefType | undefined): vexflow.StaveNote {
-    const [head, ...tail] = notes;
-
-    const keys = [head, ...tail].map((note) => {
+    const keys = notes.map((note) => {
       let key = note.getPitch();
       const suffix = note.getNoteheadSuffix();
       if (suffix) {
@@ -194,6 +192,8 @@ export class Vexml {
       }
       return key;
     });
+
+    const head = notes[0];
 
     const staveNote = new vexflow.StaveNote({
       keys,
