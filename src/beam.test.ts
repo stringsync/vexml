@@ -37,7 +37,7 @@ describe(Beam, () => {
     });
 
     it('defaults to the first BEAM_VALUES value', () => {
-      const node = xml.beam({ beamValue: 'hello world' });
+      const node = xml.beam();
       const beam = new Beam(node);
       expect(beam.getBeamValue()).toBe(BEAM_VALUES.values[0]);
     });

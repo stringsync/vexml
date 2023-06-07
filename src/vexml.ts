@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
 import { MusicXml } from './musicxml';
 import { Measure } from './measure';
-import { ClefType } from './enums';
+import { BeamValue, ClefType } from './enums';
 import { TimeSignature } from './timesignature';
 import { Note } from './note';
 import { Stave } from './stave';
@@ -42,6 +42,7 @@ export class Vexml {
   private renderer: vexflow.Renderer;
   private width: number;
   private height: number;
+  private beams = new Array<vexflow.Beam>();
 
   private constructor(opts: { musicXml: MusicXml; renderer: vexflow.Renderer; width: number }) {
     this.musicXml = opts.musicXml;
@@ -93,9 +94,11 @@ export class Vexml {
       line.fit(width);
     }
 
-    const ctx = this.renderer.getContext();
-    const elements = lines.flatMap((line) => this.formatLine(line));
+    const elements = [...lines.flatMap((line) => this.formatLine(line)), ...this.beams];
+
     this.renderer.resize(this.width, this.height);
+
+    const ctx = this.renderer.getContext();
     elements.forEach((element) => element.setContext(ctx).draw());
   }
 
@@ -125,22 +128,53 @@ export class Vexml {
       }
     }
 
-    const tickables = new Array<vexflow.Tickable>();
+    // Create tickables, but keep associations with MusicXML note.
+    const notes = new Array<[note: Note, tickables: vexflow.Tickable[]]>();
     for (const note of measure.getNotes()) {
+      const tickables = new Array<vexflow.Tickable>();
+
       if (note.isChordTail()) {
         continue;
       } else if (note.isChordHead()) {
         continue;
       } else if (note.isRest()) {
-        continue;
+        tickables.push(this.createRest(note, clef));
       } else if (note.isGrace()) {
         continue;
       } else {
-        const staveNote = this.createStaveNote(note, clef);
-        tickables.push(staveNote);
+        tickables.push(this.createStaveNote(note, clef));
+      }
+
+      notes.push([note, tickables]);
+    }
+
+    // Create beams.
+    let beamNotes = new Array<vexflow.StemmableNote>();
+    for (const [note, tickables] of notes) {
+      const stemmables = tickables.filter(
+        (tickable): tickable is vexflow.StemmableNote => tickable instanceof vexflow.StemmableNote
+      );
+
+      // TODO: Handle more than one beam.
+      const beamValue: BeamValue | undefined = note.getBeams()[0]?.getBeamValue();
+      switch (beamValue) {
+        case 'begin':
+        case 'continue':
+          beamNotes.push(...stemmables);
+          break;
+        case 'end':
+          beamNotes.push(...stemmables);
+          // TODO: Honor the stem that the notes specify.
+          const beam = new vexflow.Beam(beamNotes);
+
+          this.beams.push(beam);
+          beamNotes = [];
+          break;
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const tickables = notes.flatMap(([note, tickables]) => tickables);
     const voice = new Voice().addTickables(tickables);
 
     stave.addVoice(voice);
@@ -156,7 +190,7 @@ export class Vexml {
 
     const staveNote = new vexflow.StaveNote({
       keys: [key],
-      duration: note.getDurationDenominator().toString(),
+      duration: note.getDurationDenominator(),
       dots: note.getDotCount(),
       clef: clefType,
     });
@@ -180,6 +214,24 @@ export class Vexml {
     }
 
     return staveNote;
+  }
+
+  private createRest(note: Note, clef: ClefType | undefined): vexflow.StaveNote {
+    return new vexflow.StaveNote({
+      keys: [this.getRestKey(clef)],
+      duration: `${note.getDurationDenominator()}r`,
+      dots: note.getDotCount(),
+      clef: clef,
+    });
+  }
+
+  private getRestKey(clef: ClefType | undefined): string {
+    switch (clef) {
+      case 'bass':
+        return 'D/2';
+      default:
+        return 'B/4';
+    }
   }
 
   private partitionToLines(systems: System[]): Line[] {
