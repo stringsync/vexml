@@ -299,7 +299,7 @@ export class Vexml {
       const vfStave = stave.toVexflow();
       const vfVoices = stave.getVoices().map((voice) => voice.toVexflow().setStave(vfStave));
 
-      formatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave).postFormat();
+      formatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
 
       vfStaves.push(vfStave);
       elements.push(vfStave, ...vfVoices);
