@@ -4,9 +4,30 @@
 
 ![test workflow](https://github.com/stringsync/vexml/actions/workflows/test.yml/badge.svg)
 
-## How to Use
+## Usage
 
-TBD
+### Installing
+
+You _will_ be able to use any JavaScript package manager (e.g. `yarn`, `npm`, `pnpm`) to install `vexml`. At the moment, `stringsync/vexml` is not published to any public registry.
+
+### Rendering
+
+```ts
+import { vexml } from 'vexml';
+
+const width = 600;
+const height = 600;
+
+const div = document.createElement('div');
+div.style.width = `${width}px`;
+div.style.height = `${height}px`;
+
+const xml = 'some valid musicXML'; // see dev/public/examples for valid musicXML documents
+
+vexml.Vexml.render({ element: div, width: width, xml: xml });
+```
+
+This will render a child SVG element whose height will automatically adjust to fit the container. There is currently no option to disable this.
 
 ## Development
 
