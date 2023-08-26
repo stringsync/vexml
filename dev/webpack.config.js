@@ -24,6 +24,7 @@ module.exports = {
       publicPath: '/public',
       watch: false,
     },
+    allowedHosts: 'all',
     hot: true,
     setupMiddlewares: (middlewares, devServer) => {
       devServer.app.post(
