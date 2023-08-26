@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  dev:
+    image: vexml:latest
+    build: .
+    environment:
+      PORT: 8080
+    volumes:
+      - './src:/vexml/src'
+    ports:
+      - 8080:8080
+
+  test:
+    image: vexml:latest
+    build: .
+    volumes:
+      - './src:/vexml/src'
+    links:
+      - dev
+    command:
+      - 'yarn'
+      - 'test'
