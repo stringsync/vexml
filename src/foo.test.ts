@@ -12,8 +12,8 @@ describe('foo', () => {
   });
 
   it('works', async () => {
-    await page.goto('https://google.com');
+    await page.goto('http://vexml:8080/01a-Pitches-Pitches.xml');
     const text = await page.evaluate(() => document.title);
-    expect(text).toBe('Google');
+    expect(text).toContain('vexml');
   });
 });

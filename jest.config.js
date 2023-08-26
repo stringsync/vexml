@@ -3,4 +3,5 @@ module.exports = {
   globalTeardown: './jest.teardown.js',
   setupFilesAfterEnv: ['jest-extended/all'],
   testEnvironment: './PuppeteerEnvironment.js',
+  testTimeout: 30000,
 };
