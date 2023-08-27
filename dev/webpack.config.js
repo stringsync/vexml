@@ -27,6 +27,10 @@ module.exports = {
     allowedHosts: 'all',
     hot: true,
     setupMiddlewares: (middlewares, devServer) => {
+      devServer.app.get('/health', (req, res) => {
+        res.send('ok');
+      });
+
       devServer.app.post(
         '/snapshot',
         multer({
