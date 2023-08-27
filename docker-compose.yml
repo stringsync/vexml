@@ -2,6 +2,7 @@ version: '3.7'
 
 services:
   vexml:
+    container_name: vexml
     image: vexml:latest
     environment:
       PORT: 8080
@@ -10,11 +11,21 @@ services:
       - ./src:/vexml/src
     ports:
       - 8080:8080
+    healthcheck:
+      test: ['CMD', 'curl', 'http://localhost:8080/health']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
 
   test:
+    container_name: test
     image: vexml:latest
     volumes:
       - ./dev:/vexml/dev
       - ./src:/vexml/src
+    depends_on:
+      vexml:
+        condition: service_healthy
     links:
       - vexml
