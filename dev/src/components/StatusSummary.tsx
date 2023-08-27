@@ -1,6 +1,6 @@
 import { Col, Row, Statistic } from 'antd';
 import React, { useMemo } from 'react';
-import { ExampleStatus } from '../hooks/useExampleStatus';
+import { ExampleStatus } from '../lib/types';
 
 const BAD_COLOR = '#cf1322';
 const GOOD_COLOR = '#3f8600';

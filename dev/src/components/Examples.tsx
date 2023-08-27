@@ -4,13 +4,13 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useConstant } from '../hooks/useConstant';
-import { ExampleStatus } from '../hooks/useExampleStatus';
 import { Format, useFetch } from '../hooks/useFetch';
 import { useSettings } from '../hooks/useSettings';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { Example } from './Example';
 import { ExampleTitle } from './ExampleTitle';
 import { StatusSummary } from './StatusSummary';
+import { ExampleStatus } from '../lib/types';
 
 const NUM_SLOWEST_VISIBLE = 10;
 
@@ -122,8 +122,6 @@ export const Examples: React.FC = () => {
         typeof status === 'undefined' || // it's still loading
         status.type === 'init' ||
         status.type === 'rendering' ||
-        status.type === 'snapshotting' ||
-        status.type === 'unknown' ||
         (status.type === 'success' && settings.successVisible) ||
         (status.type === 'error' && settings.failVisible)
       );

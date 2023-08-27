@@ -1,18 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const fs = require('fs');
-const multer = require('multer');
 
 const INDEX_HTML = path.join(__dirname, 'public', 'index.html');
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const SNAPSHOTS_DIR = path.join(__dirname, 'public', 'snapshots');
 const EXAMPLES_DIR = path.join(PUBLIC_DIR, 'examples');
-const SNAPSHOT_STORAGE = multer.diskStorage({
-  destination: SNAPSHOTS_DIR,
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
-  },
-});
 
 module.exports = {
   mode: 'development',
@@ -31,19 +23,9 @@ module.exports = {
         res.send('ok');
       });
 
-      devServer.app.post(
-        '/snapshot',
-        multer({
-          storage: SNAPSHOT_STORAGE,
-        }).single('image')
-      );
-
-      middlewares.push({
-        path: '/manifest',
-        middleware: (req, res) => {
-          const examples = fs.readdirSync(EXAMPLES_DIR).sort();
-          res.json({ examples });
-        },
+      devServer.app.get('/manifest', (req, res) => {
+        const examples = fs.readdirSync(EXAMPLES_DIR).sort();
+        res.json({ examples });
       });
 
       middlewares.push((req, res) => {
