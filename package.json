@@ -15,11 +15,16 @@
   "license": "MIT",
   "scripts": {
     "build": "webpack",
-    "build:image:m1": "docker build . --platform linux/amd64 -t vexml:latest",
-    "build:image": "docker build . -t vexml:latest",
     "dev": "webpack serve --config ./dev/webpack.config.js",
-    "test": "docker compose run --remove-orphans --renew-anon-volumes --quiet --exit-code-from test jest",
-    "typecheck": "yarn tsc --noEmit"
+    "typecheck": "yarn tsc --noEmit",
+    "build:image": "docker build . --tag vexml:latest --quiet",
+    "build:image:m1": "docker build . --tag vexml:latest --quiet --platform linux/amd64",
+    "pretest": "yarn build:image",
+    "pretest:m1": "yarn build:image:m1",
+    "test": "docker compose run --rm --remove-orphans test yarn jest",
+    "test:m1": "docker compose run --rm --remove-orphans test yarn jest",
+    "posttest": "docker compose down",
+    "posttest:m1": "docker compose down"
   },
   "dependencies": {
     "vexflow": "^4.2.0-beta.2"
