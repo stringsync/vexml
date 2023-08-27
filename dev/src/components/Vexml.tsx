@@ -119,7 +119,7 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
       <br />
 
       {status.type === 'error' && <Alert type="error" message={<pre>{status.error}</pre>} />}
-      <div id={id} />
+      <div id={id} data-screenshot-ready={status.type === 'success'} />
     </>
   );
 };
