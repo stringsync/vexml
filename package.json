@@ -13,6 +13,13 @@
     "musicxml"
   ],
   "license": "MIT",
+  "scripts": {
+    "build": "webpack",
+    "typecheck": "yarn tsc --noEmit --watch",
+    "watch": "webpack --watch",
+    "dev": "webpack serve --config ./dev/webpack.config.js",
+    "test": "jest"
+  },
   "dependencies": {
     "vexflow": "^4.2.0-beta.2"
   },
@@ -53,7 +60,6 @@
     "jest-extended": "^2.0.0",
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
-    "lint-staged": "^12.3.7",
     "multer": "^1.4.4",
     "node-fetch": "^3.3.2",
     "pixelmatch": "^5.2.1",
@@ -70,20 +76,5 @@
     "webpack": "^5.71.0",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"
-  },
-  "scripts": {
-    "build": "webpack",
-    "typecheck": "yarn tsc --noEmit --watch",
-    "prepare": "husky install",
-    "watch": "webpack --watch",
-    "dev": "webpack serve --config ./dev/webpack.config.js",
-    "test": "jest"
-  },
-  "lint-staged": {
-    "src/**/*": [
-      "bash -c \"yarn tsc --noEmit\"",
-      "eslint",
-      "prettier --write --ignore-unknown"
-    ]
   }
 }
