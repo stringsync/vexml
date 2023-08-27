@@ -2,12 +2,7 @@ import { Alert, Divider } from 'antd';
 import React, { useEffect, useId, useState } from 'react';
 import styled from 'styled-components';
 import { vexml } from '../lib/vexml';
-
-const DEFAULT_WIDTH = 2000;
-
-const FixedDiv = styled.div<{ width: number }>`
-  width: ${(props) => props.width}px;
-`;
+import { VexmlStatus } from '../lib/types';
 
 const BlackDivider = styled(Divider)`
   &.ant-divider-horizontal.ant-divider-with-text {
@@ -15,57 +10,29 @@ const BlackDivider = styled(Divider)`
   }
 `;
 
-export type VexmlStatus =
-  | {
-      type: 'init';
-      exampleId: string;
-    }
-  | {
-      type: 'rendering';
-      exampleId: string;
-    }
-  | {
-      type: 'success';
-      svg: SVGElement;
-      exampleId: string;
-      elapsedMs: number;
-    }
-  | {
-      type: 'error';
-      elapsedMs: number;
-      exampleId: string;
-      error: any;
-    };
-
 const getErrorMessage = (e: any) => (e instanceof Error ? e.stack || e.message : `something went wrong: ${e}`);
 
 export type VexmlProps = {
   exampleId: string;
-  responsive: boolean;
   xml: string;
   onUpdate?: (status: VexmlStatus) => void;
 };
 
 export const Vexml: React.FC<VexmlProps> = (props) => {
-  const { xml, exampleId, responsive, onUpdate: onStateChange } = props;
+  const { xml, exampleId, onUpdate: onStateChange } = props;
 
   const id = useId();
 
   const [status, setStatus] = useState<VexmlStatus>({ type: 'rendering', exampleId });
-  const success = (svg: SVGElement, elapsedMs: number) => setStatus({ type: 'success', svg, exampleId, elapsedMs });
+  const success = (elapsedMs: number) => setStatus({ type: 'success', exampleId, elapsedMs });
   const error = (e: any, elapsedMs: number) =>
     setStatus({ type: 'error', exampleId, error: getErrorMessage(e), elapsedMs });
 
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(0);
   useEffect(() => {
-    if (!responsive) {
-      setWidth(DEFAULT_WIDTH);
-      return;
-    }
-
     const div = document.getElementById(id);
     if (!div) {
-      setWidth(DEFAULT_WIDTH);
+      setWidth(0);
       return;
     }
 
@@ -81,7 +48,7 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
     return () => {
       observer.disconnect();
     };
-  }, [id, responsive]);
+  }, [id]);
 
   useEffect(() => {
     const start = new Date().getTime();
@@ -91,13 +58,16 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
       return;
     }
 
+    if (width === 0) {
+      return;
+    }
+
     div.firstChild?.remove();
 
     try {
       vexml.Vexml.render({ element: div, xml, width });
       const stop = new Date().getTime();
-      const svg = document.getElementById(id)!.firstChild as SVGElement;
-      success(svg, stop - start);
+      success(stop - start);
     } catch (e) {
       const stop = new Date().getTime();
       error(e, stop - start);
@@ -110,11 +80,11 @@ export const Vexml: React.FC<VexmlProps> = (props) => {
 
   return (
     <>
-      <FixedDiv width={width}>
+      <div>
         <BlackDivider plain orientation="left">
           {width}px
         </BlackDivider>
-      </FixedDiv>
+      </div>
 
       <br />
 
