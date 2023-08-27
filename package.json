@@ -15,10 +15,11 @@
   "license": "MIT",
   "scripts": {
     "build": "webpack",
-    "typecheck": "yarn tsc --noEmit --watch",
-    "watch": "webpack --watch",
+    "build:image:m1": "docker build . --platform linux/amd64 -t vexml:latest",
+    "build:image": "docker build . -t vexml:latest",
     "dev": "webpack serve --config ./dev/webpack.config.js",
-    "test": "jest"
+    "test": "docker compose run --remove-orphans --renew-anon-volumes --quiet --exit-code-from test jest",
+    "typecheck": "yarn tsc --noEmit"
   },
   "dependencies": {
     "vexflow": "^4.2.0-beta.2"
@@ -34,7 +35,6 @@
     "@types/esprima": "^4.0.3",
     "@types/estree": "^0.0.51",
     "@types/jest": "^27.4.1",
-    "@types/node-fetch": "^2.6.1",
     "@types/pixelmatch": "^5.2.4",
     "@types/react": "^18.0.1",
     "@types/react-dom": "^18.0.0",
@@ -61,7 +61,6 @@
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
     "multer": "^1.4.4",
-    "node-fetch": "^3.3.2",
     "pixelmatch": "^5.2.1",
     "prettier": "^2.6.2",
     "prettier-plugin-organize-imports": "^2.3.4",
