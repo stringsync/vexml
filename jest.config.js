@@ -7,4 +7,5 @@ module.exports = {
   moduleNameMapper: {
     '@/(.*)': '<rootDir>/src/$1',
   },
+  reporters: ['default', 'jest-image-snapshot/src/outdated-snapshot-reporter.js'],
 };
