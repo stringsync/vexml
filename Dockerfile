@@ -14,16 +14,17 @@ COPY yarn.lock .
 RUN yarn install
 
 # Copy config.
-COPY babel.config.json .
 COPY jest.config.js .
+COPY babel.config.json .
 COPY PuppeteerEnvironment.js .
+COPY globalSetup.js .
+COPY globalTeardown.js .
 COPY jest.setup.js .
-COPY jest.teardown.js .
 
 # Copy the code needed to run the dev server and tests.
 COPY dev dev
 COPY src src
 COPY tests tests
 
-# Run the dev server by default.
-CMD [ "yarn", "dev" ]
+# Run the test by default.
+CMD [ "yarn", "jest" ]

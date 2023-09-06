@@ -1,7 +1,7 @@
 module.exports = {
-  globalSetup: './jest.setup.js',
-  globalTeardown: './jest.teardown.js',
-  setupFilesAfterEnv: ['jest-extended/all'],
+  globalSetup: './globalSetup.js',
+  globalTeardown: './globalTeardown.js',
+  setupFilesAfterEnv: ['jest-extended/all', './jest.setup.js'],
   testEnvironment: './PuppeteerEnvironment.js',
   testTimeout: 30000,
   moduleNameMapper: {
