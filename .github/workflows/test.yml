@@ -17,8 +17,8 @@ jobs:
       - name: lint
         run: yarn lint
       - name: check format
-        run: yarn prettier . --check
+        run: yarn format --check
       - name: typecheck
-        run: yarn tsc --noEmit
+        run: yarn typecheck
       - name: test
         run: yarn test --ci
