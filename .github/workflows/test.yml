@@ -21,4 +21,4 @@ jobs:
       - name: typecheck
         run: yarn typecheck
       - name: test
-        run: yarn test --ci
+        run: yarn test:ci
