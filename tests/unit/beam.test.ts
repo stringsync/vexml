@@ -1,6 +1,6 @@
-import * as xml from './xml';
-import { Beam } from './beam';
-import { BEAM_VALUES } from './enums';
+import * as xml from '@/xml';
+import { Beam } from '@/beam';
+import { BEAM_VALUES } from '@/enums';
 
 describe(Beam, () => {
   describe('getNumber', () => {

@@ -1,9 +1,9 @@
-import { Attributes } from './attributes';
-import { Barline } from './barline';
-import { Measure } from './measure';
-import { Note } from './note';
-import { Print } from './print';
-import * as xml from './xml';
+import { Attributes } from '@/attributes';
+import { Barline } from '@/barline';
+import { Measure } from '@/measure';
+import { Note } from '@/note';
+import { Print } from '@/print';
+import * as xml from '@/xml';
 
 describe(Measure, () => {
   describe('getNumber', () => {

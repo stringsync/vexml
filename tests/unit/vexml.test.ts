@@ -1,4 +1,4 @@
-import { Vexml } from './vexml';
+import { Vexml } from '@/vexml';
 
 describe(Vexml, () => {
   describe('render', () => {

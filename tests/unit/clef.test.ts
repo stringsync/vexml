@@ -1,5 +1,5 @@
-import { Clef } from './clef';
-import * as xml from './xml';
+import { Clef } from '@/clef';
+import * as xml from '@/xml';
 
 describe(Clef, () => {
   describe('getStaffNumber', () => {

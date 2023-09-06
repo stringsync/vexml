@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
-import { Stave } from './stave';
-import { System } from './system';
-import { Voice } from './voice';
+import { Stave } from '@/stave';
+import { System } from '@/system';
+import { Voice } from '@/voice';
 
 describe(System, () => {
   describe('getStaves', () => {

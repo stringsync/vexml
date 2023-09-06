@@ -1,4 +1,4 @@
-import { Enum } from './enums';
+import { Enum } from '@/enums';
 
 describe(Enum, () => {
   describe('includes', () => {

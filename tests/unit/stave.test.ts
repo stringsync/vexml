@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
-import { Stave } from './stave';
-import { Voice } from './voice';
-import { TimeSignature } from './timesignature';
+import { Stave } from '@/stave';
+import { Voice } from '@/voice';
+import { TimeSignature } from '@/timesignature';
 
 describe(Stave, () => {
   describe('clone', () => {

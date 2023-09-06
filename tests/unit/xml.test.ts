@@ -1,4 +1,4 @@
-import * as xml from './xml';
+import * as xml from '@/xml';
 
 type FnNames = keyof typeof xml;
 

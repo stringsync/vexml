@@ -1,6 +1,6 @@
-import { Time } from './time';
-import { TimeSignature } from './timesignature';
-import * as xml from './xml';
+import { Time } from '@/time';
+import { TimeSignature } from '@/timesignature';
+import * as xml from '@/xml';
 
 describe(Time, () => {
   it('returns the time signatures of the time', () => {

@@ -1,6 +1,6 @@
-import { VERTICAL_DIRECTIONS } from './enums';
-import { Notations } from './notations';
-import * as xml from './xml';
+import { VERTICAL_DIRECTIONS } from '@/enums';
+import { Notations } from '@/notations';
+import * as xml from '@/xml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {

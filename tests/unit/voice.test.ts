@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import { Voice } from './voice';
-import { TimeSignature } from './timesignature';
+import { Voice } from '@/voice';
+import { TimeSignature } from '@/timesignature';
 
 describe(Voice, () => {
   describe('getTimeSignature', () => {

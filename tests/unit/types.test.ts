@@ -1,5 +1,5 @@
 describe('types', () => {
   it('loads', () => {
-    expect(() => import('./types')).not.toThrow();
+    expect(() => import('@/types')).not.toThrow();
   });
 });

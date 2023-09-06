@@ -1,7 +1,7 @@
-import { Line } from './line';
-import { Stave } from './stave';
-import { System } from './system';
-import { TimeSignature } from './timesignature';
+import { Line } from '@/line';
+import { Stave } from '@/stave';
+import { System } from '@/system';
+import { TimeSignature } from '@/timesignature';
 
 describe(Line, () => {
   describe('isEmpty', () => {

@@ -1,5 +1,5 @@
-import { Enum } from './enums';
-import { Value } from './value';
+import { Enum } from '@/enums';
+import { Value } from '@/value';
 
 describe(Value, () => {
   describe('withDefault', () => {

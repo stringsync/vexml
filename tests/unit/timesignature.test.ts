@@ -1,4 +1,4 @@
-import { TimeSignature } from './timesignature';
+import { TimeSignature } from '@/timesignature';
 
 describe(TimeSignature, () => {
   describe('getBeatsPerMeasure', () => {

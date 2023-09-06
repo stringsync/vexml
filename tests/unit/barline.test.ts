@@ -1,6 +1,6 @@
-import { Barline } from './barline';
-import { BAR_STYLES } from './enums';
-import * as xml from './xml';
+import { Barline } from '@/barline';
+import { BAR_STYLES } from '@/enums';
+import * as xml from '@/xml';
 
 describe(Barline, () => {
   describe('getBarStyle', () => {

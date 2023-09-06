@@ -23,6 +23,7 @@ COPY jest.teardown.js .
 # Copy the code needed to run the dev server and tests.
 COPY dev dev
 COPY src src
+COPY tests tests
 
 # Run the dev server by default.
 CMD [ "yarn", "dev" ]
