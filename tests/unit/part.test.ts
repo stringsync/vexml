@@ -1,6 +1,6 @@
-import { Measure } from './measure';
-import { Part } from './part';
-import * as xml from './xml';
+import { Measure } from '@/measure';
+import { Part } from '@/part';
+import * as xml from '@/xml';
 
 describe(Part, () => {
   describe('getId', () => {

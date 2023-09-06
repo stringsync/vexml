@@ -1,5 +1,5 @@
-import { Key } from './key';
-import * as xml from './xml';
+import { Key } from '@/key';
+import * as xml from '@/xml';
 
 describe(Key, () => {
   describe('getFifthsCount', () => {

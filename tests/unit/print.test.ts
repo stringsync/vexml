@@ -1,5 +1,5 @@
-import { Print } from './print';
-import * as xml from './xml';
+import { Print } from '@/print';
+import * as xml from '@/xml';
 
 describe(Print, () => {
   describe('getStaffLayouts', () => {

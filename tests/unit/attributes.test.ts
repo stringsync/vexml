@@ -1,8 +1,8 @@
-import { Attributes } from './attributes';
-import { Clef } from './clef';
-import { Key } from './key';
-import { Time } from './time';
-import * as xml from './xml';
+import { Attributes } from '@/attributes';
+import { Clef } from '@/clef';
+import { Key } from '@/key';
+import { Time } from '@/time';
+import * as xml from '@/xml';
 
 describe(Attributes, () => {
   describe('getStaveCount', () => {

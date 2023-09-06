@@ -1,9 +1,9 @@
-import { Beam } from './beam';
-import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from './enums';
-import { Measure } from './measure';
-import { Notations } from './notations';
-import { Note } from './note';
-import * as xml from './xml';
+import { Beam } from '@/beam';
+import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/enums';
+import { Measure } from '@/measure';
+import { Notations } from '@/notations';
+import { Note } from '@/note';
+import * as xml from '@/xml';
 
 describe(Note, () => {
   describe('getStem', () => {

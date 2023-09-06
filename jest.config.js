@@ -4,4 +4,7 @@ module.exports = {
   setupFilesAfterEnv: ['jest-extended/all'],
   testEnvironment: './PuppeteerEnvironment.js',
   testTimeout: 30000,
+  moduleNameMapper: {
+    '@/(.*)': '<rootDir>/src/$1',
+  },
 };

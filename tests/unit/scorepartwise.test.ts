@@ -1,6 +1,6 @@
-import { Part } from './part';
-import { ScorePartwise } from './scorepartwise';
-import * as xml from './xml';
+import { Part } from '@/part';
+import { ScorePartwise } from '@/scorepartwise';
+import * as xml from '@/xml';
 
 describe(ScorePartwise, () => {
   describe('getPartCount', () => {

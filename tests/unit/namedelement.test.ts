@@ -1,5 +1,5 @@
-import { NamedElement } from './namedelement';
-import * as xml from './xml';
+import { NamedElement } from '@/namedelement';
+import * as xml from '@/xml';
 
 describe(NamedElement, () => {
   describe('of', () => {

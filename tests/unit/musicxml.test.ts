@@ -1,7 +1,7 @@
-import { MusicXml } from './musicxml';
-import { NamedElement } from './namedelement';
-import { ScorePartwise } from './scorepartwise';
-import * as xml from './xml';
+import { MusicXml } from '@/musicxml';
+import { NamedElement } from '@/namedelement';
+import { ScorePartwise } from '@/scorepartwise';
+import * as xml from '@/xml';
 
 describe(MusicXml, () => {
   describe('getScorePartwise', () => {
