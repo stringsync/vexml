@@ -28,17 +28,13 @@ describe('lilypond', () => {
   ])(`$filename ($width px)`, async (t) => {
     const outerDiv = document.createElement('div');
     const innerDiv = document.createElement('div');
-    const h1 = document.createElement('h1');
 
     outerDiv.append(innerDiv);
-    innerDiv.append(h1);
 
     outerDiv.setAttribute('id', 'screenshot');
     outerDiv.style.paddingLeft = '16px';
     outerDiv.style.paddingRight = '16px';
     outerDiv.style.display = 'inline-block';
-
-    h1.innerHTML = `${t.filename} (${t.width}px)`;
 
     Vexml.render({
       element: innerDiv,
