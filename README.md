@@ -31,36 +31,59 @@ This will render a child SVG element whose height will automatically adjust to f
 
 ## Development
 
+### Prerequisites
+
+- [yarn](https://classic.yarnpkg.com/lang/en/docs/install)
+- [docker](https://docs.docker.com/engine/install)
+
 ### Installing
 
-Before you run any commands, you must use `yarn` to install the dependencies.
+Before you run any commands, install the dependencies.
 
 ```
-yarn
+yarn install
 ```
-
-### Running Locally
-
-```
-yarn dev
-```
-
-This will run `webpack-dev-server` at http://localhost:8080 by default. When visited, the app will render all the examples in [dev/public/examples](dev/public/examples).
-
-### Adding MusicXML Examples
-
-In order to add a MusicXML example, add the xml file to [dev/public/examples](dev/public/examples) directory. You may need to manually reload the page.
 
 ### Running Tests
 
-In order to run tests, run:
+In order to run tests on x86 architecture, run:
 
 ```
 yarn test
 ```
 
-This is just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
+If you're running a machine using ARM architecture, try `yarn test:m1` instead:
+
+```
+yarn test:m1
+```
+
+These commands are just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
 
 ```
 yarn test --watchAll
 ```
+
+### Snapshots
+
+This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests. When there is more than 1% difference between the snapshot and what was produced by the test, the test will fail.
+
+#### Diffs
+
+You can see diff images in the `__diff_output__` directory (nested under `__image_snapshots__`). Images here are ignored by git, but allow you to see what changed. The order of images are: snapshot, diff, proposed.
+
+#### Updating Snapshots
+
+Rendering varies by platform, so it is important you run tests using the `yarn test*` commands, since that runs tests in a consistent environment (via Docker). This is also the environment that CI will use.
+
+When you want to update all snapshots, rerun the test command with the `--updateSnapshot`.
+
+```
+yarn test --updateSnapshot
+```
+
+If you want to only update a single snapshot from specific test, you can use [`--testNamePattern`](https://jestjs.io/docs/cli#--testnamepatternregex).
+
+#### Removing tests
+
+When removing a test, it is important to remove the corresponding snapshot. There is currently no automatic mechanism to do this. Alternatively, you can run the `vexml:latest` Docker image with `JEST_IMAGE_SNAPSHOT_TRACK_OBSOLETE=1`, but make sure you're running the entire test suite. See the [docs](https://github.com/americanexpress/jest-image-snapshot#removing-outdated-snapshots) for more information.
