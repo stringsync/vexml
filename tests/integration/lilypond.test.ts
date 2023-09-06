@@ -1,11 +1,11 @@
-import { Page, Viewport } from 'puppeteer';
+import { Page } from 'puppeteer';
 import { Vexml } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 
 type TestCase = {
   filename: string;
-  viewport: Viewport;
+  width: number;
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'lilypond');
@@ -23,18 +23,35 @@ describe('lilypond', () => {
 
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
-    { filename: '01a-Pitches-Pitches.xml', viewport: { width: 1920, height: 1080 } },
-    { filename: '01a-Pitches-Pitches.xml', viewport: { width: 360, height: 800 } },
-  ])(`renders: $filename ($viewport.width X $viewport.height)`, async (t) => {
-    await page.setViewport(t.viewport);
+    { filename: '01a-Pitches-Pitches.xml', width: 1920 },
+    { filename: '01a-Pitches-Pitches.xml', width: 360 },
+  ])(`$filename ($width px)`, async (t) => {
+    const outerDiv = document.createElement('div');
+    const innerDiv = document.createElement('div');
+    const h1 = document.createElement('h1');
 
-    const div = document.createElement('div');
-    div.setAttribute('id', 'screenshot');
+    outerDiv.append(innerDiv);
+    innerDiv.append(h1);
 
-    const xml = fs.readFileSync(path.join(DATA_DIR, t.filename)).toString();
+    outerDiv.setAttribute('id', 'screenshot');
+    outerDiv.style.paddingLeft = '16px';
+    outerDiv.style.paddingRight = '16px';
+    outerDiv.style.display = 'inline-block';
 
-    Vexml.render({ element: div, xml, width: t.viewport.width });
-    await page.setContent(div.outerHTML);
+    h1.innerHTML = `${t.filename} (${t.width}px)`;
+
+    Vexml.render({
+      element: innerDiv,
+      xml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
+      width: t.width,
+    });
+
+    await page.setViewport({
+      width: t.width,
+      // height doesn't matter since we screenshot the element, not the page.
+      height: 0,
+    });
+    await page.setContent(outerDiv.outerHTML);
 
     const element = await page.$('#screenshot');
     const screenshot = await element!.screenshot();

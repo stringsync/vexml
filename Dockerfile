@@ -22,7 +22,6 @@ COPY globalTeardown.js .
 COPY jest.setup.js .
 
 # Copy the code needed to run the dev server and tests.
-COPY dev dev
 COPY src src
 COPY tests tests
 
