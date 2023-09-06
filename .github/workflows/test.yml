@@ -11,9 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: install
         run: yarn install
+      - name: lint
+        run: yarn lint
+      - name: check format
+        run: yarn prettier . --check
       - name: typecheck
         run: yarn tsc --noEmit
       - name: test
