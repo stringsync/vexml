@@ -1,0 +1,24 @@
+name: premerge
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  premerge:
+    name: run premerge code checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: install
+        run: yarn install
+      - name: lint
+        run: yarn lint
+      - name: check format
+        run: yarn format --check
+      - name: typecheck
+        run: yarn typecheck
+      - name: test
+        run: yarn test:ci
