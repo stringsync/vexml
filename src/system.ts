@@ -31,12 +31,22 @@ export class System {
     return this;
   }
 
+  /** Returns the X coordinate of the system. */
+  getX(): number {
+    return this.getFirstStave()?.getX() ?? 0;
+  }
+
   /** Sets the X coordinate of the system. */
   setX(x: number): this {
     for (const stave of this.staves) {
       stave.setX(x);
     }
     return this;
+  }
+
+  /** Returns the Y coordinate of the system. */
+  getY(): number {
+    return this.getFirstStave()?.getY() ?? 0;
   }
 
   /** Sets the Y coordinate of the system. */
