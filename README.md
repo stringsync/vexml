@@ -66,7 +66,7 @@ yarn test --watchAll
 
 ### Snapshots
 
-This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests. When there is more than 1% difference between the snapshot and what was produced by the test, the test will fail.
+This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests.
 
 #### Diffs
 
