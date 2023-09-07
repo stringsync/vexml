@@ -5,6 +5,7 @@ import { Stave } from './stave';
  */
 export class System {
   private staves = new Array<Stave>();
+  private measureNumber = 1;
 
   /** Returns the staves of the system. */
   getStaves(): Stave[] {
@@ -64,5 +65,16 @@ export class System {
   /** Returns the last stave of the system. */
   getLastStave(): Stave | undefined {
     return this.staves[this.staves.length - 1];
+  }
+
+  /** Sets the measure number of the system. */
+  setMeasureNumber(measureNumber: number): this {
+    this.measureNumber = measureNumber;
+    return this;
+  }
+
+  /** Returns the measure number of the system. */
+  getMeasureNumber(): number {
+    return this.measureNumber;
   }
 }
