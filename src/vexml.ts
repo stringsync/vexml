@@ -100,6 +100,16 @@ export class Vexml {
 
     const ctx = this.renderer.getContext();
     elements.forEach((element) => element.setContext(ctx).draw());
+
+    // Render measure numbers.
+    for (const system of systems) {
+      const measureNumber = system.getMeasureNumber();
+      if (measureNumber > 0) {
+        const systemX = system.getX();
+        const systemY = system.getY();
+        ctx.fillText(measureNumber.toString(), systemX, systemY);
+      }
+    }
   }
 
   private addMeasurePart(measure: Measure, system: System): void {
