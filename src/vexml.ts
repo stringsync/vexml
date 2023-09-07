@@ -103,6 +103,11 @@ export class Vexml {
   }
 
   private addMeasurePart(measure: Measure, system: System): void {
+    const measureNumber = parseInt(measure.getNumber(), 10);
+    if (Number.isFinite(measureNumber)) {
+      system.setMeasureNumber(measureNumber);
+    }
+
     const stave = new Stave();
 
     // TODO: Handle more than one attributes
