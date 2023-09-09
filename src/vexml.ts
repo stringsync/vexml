@@ -1,13 +1,13 @@
 import * as vexflow from 'vexflow';
-import { MusicXml } from './musicxml';
-import { Measure } from './measure';
-import { BeamValue, ClefType } from './enums';
-import { TimeSignature } from './timesignature';
-import { Note } from './note';
-import { Stave } from './stave';
-import { Voice } from './voice';
-import { System } from './system';
-import { Line } from './line';
+import { MusicXml } from './musicxml/musicxml';
+import { Measure } from './musicxml/measure';
+import { BeamValue, ClefType } from './musicxml/enums';
+import { TimeSignature } from './musicxml/timesignature';
+import { Note } from './musicxml/note';
+import { Stave } from './musicxml/stave';
+import { Voice } from './musicxml/voice';
+import { System } from './musicxml/system';
+import { Line } from './musicxml/line';
 
 export type RenderOptions = {
   element: HTMLDivElement | HTMLCanvasElement;
