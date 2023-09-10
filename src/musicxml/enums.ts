@@ -297,3 +297,11 @@ export const CLEF_ANNOTATIONS = new Enum(['8vb', '8va'] as const);
  */
 export type BeamValue = EnumValues<typeof BEAM_VALUES>;
 export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook'] as const);
+
+/**
+ * The staff-type value specifies different uses for the staff.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/staff-type/
+ */
+export type StaffType = EnumValues<typeof STAFF_TYPES>;
+export const STAFF_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', 'regular'] as const);

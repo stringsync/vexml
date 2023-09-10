@@ -1,22 +1,37 @@
 import * as musicxml from '@/musicxml';
-import { Stave } from './stave';
+import * as vexflow from 'vexflow';
+import { Measure } from './measure';
+
+type CreateOptions = {
+  musicXml: {
+    part: musicxml.Part;
+  };
+};
+
+type RenderOptions = {
+  ctx: vexflow.RenderContext;
+};
 
 export class Part {
-  static fromMusicXml(part: musicxml.Part): Part {
-    const id = part.getId();
-
-    // TODO(jared): Figure out how to break down a part into multiple staves.
-
-    return new Part(id, []);
+  static create(opts: CreateOptions): Part {
+    const id = opts.musicXml.part.getId();
+    const measures = opts.musicXml.part.getMeasures().map((measure) => Measure.create({ musicXml: { measure } }));
+    return new Part(id, measures);
   }
 
-  constructor(private id: string, private staves: Stave[]) {}
+  private id: string;
+  private measures: Measure[];
+
+  private constructor(id: string, measures: Measure[]) {
+    this.id = id;
+    this.measures = measures;
+  }
 
   getId(): string {
     return this.id;
   }
 
-  render(): void {
+  render(opts: RenderOptions): void {
     // noop
   }
 }
