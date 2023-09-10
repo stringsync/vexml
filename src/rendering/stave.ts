@@ -1,20 +1,10 @@
-import { Position } from './position';
-import { Size } from './size';
-import { Renderable } from './types';
+import * as musicxml from '@/musicxml';
+import { Measure } from './measure';
 
-export class Stave implements Renderable {
-  private position = Position.zero();
-  private size = Size.zero();
-
-  getPosition(): Position {
-    return this.position;
+export class Stave {
+  static fromMusicXml(part: musicxml.Part): Stave {
+    return new Stave([]);
   }
 
-  getSize(): Size {
-    return this.size;
-  }
-
-  render(): void {
-    // TODO
-  }
+  constructor(private measures: Measure[]) {}
 }
