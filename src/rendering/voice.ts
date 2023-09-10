@@ -1,12 +1,13 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Note } from './note';
+import { VoiceEntry } from './voiceentry';
 
 type CreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
   };
   staffNumber: number;
+  clefType: musicxml.ClefType;
 };
 
 type RenderOptions = {
@@ -15,18 +16,18 @@ type RenderOptions = {
 
 export class Voice {
   static create(opts: CreateOptions): Voice {
-    const notes = opts.musicXml.measure
+    const entries = opts.musicXml.measure
       .getNotes()
       .filter((note) => note.getStaffNumber() === opts.staffNumber)
-      .map((note) => Note.create({ musicXml: { note } }));
+      .map((note) => VoiceEntry.create({ musicXml: { note }, clefType: opts.clefType }));
 
-    return new Voice(notes);
+    return new Voice(entries);
   }
 
-  private notes: Note[];
+  private entries: VoiceEntry[];
 
-  private constructor(notes: Note[]) {
-    this.notes = notes;
+  private constructor(entries: VoiceEntry[]) {
+    this.entries = entries;
   }
 
   render(opts: RenderOptions): void {

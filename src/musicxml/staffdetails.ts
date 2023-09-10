@@ -15,7 +15,7 @@ export class StaffDetails {
   }
 
   /** Returns the number of the staff. */
-  getNumber(): number {
+  getStaffNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
 

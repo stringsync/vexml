@@ -15,7 +15,10 @@ type RenderOptions = {
 export class Part {
   static create(opts: CreateOptions): Part {
     const id = opts.musicXml.part.getId();
-    const measures = opts.musicXml.part.getMeasures().map((measure) => Measure.create({ musicXml: { measure } }));
+    const measures = opts.musicXml.part
+      .getMeasures()
+      .map((measure, index) => Measure.create({ musicXml: { measure }, index }));
+
     return new Part(id, measures);
   }
 

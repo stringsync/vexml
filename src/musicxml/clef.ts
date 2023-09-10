@@ -9,7 +9,7 @@ import { NamedElement } from '../util/namedelement';
 export class Clef {
   constructor(private element: NamedElement<'clef'>) {}
 
-  /** Returns the staff */
+  /** Returns the staff number this clef belongs to. */
   getStaffNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }

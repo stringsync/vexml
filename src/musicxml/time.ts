@@ -9,6 +9,11 @@ import { TimeSignature } from './timesignature';
 export class Time {
   constructor(private element: NamedElement<'time'>) {}
 
+  /** Returns the staff number this time belongs to. */
+  getStaffNumber(): number {
+    return this.element.attr('number').withDefault(1).int();
+  }
+
   /** Returns the time signatures of the time. There is typically only one. */
   getTimeSignatures(): TimeSignature[] {
     const result = new Array<TimeSignature>();

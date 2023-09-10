@@ -25,7 +25,7 @@ export class System {
   }
 
   static fit(width: number, systems: System[]): void {
-    // noop
+    // TODO: Implement to match musicxml.Line.fit.
   }
 
   private parts: Part[];
@@ -73,7 +73,7 @@ export class System {
 
   render(opts: RenderOptions): void {
     for (const part of this.parts) {
-      part.render();
+      part.render({ ctx: opts.ctx });
     }
   }
 }
