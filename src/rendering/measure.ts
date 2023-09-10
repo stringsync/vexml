@@ -6,6 +6,7 @@ type CreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
   };
+  index: number;
 };
 
 type RenderOptions = {
@@ -21,11 +22,6 @@ export class Measure {
   static create(opts: CreateOptions): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
-    // TODO: Properly handle multiple <attributes>.
-    const clefs = attributes.flatMap((attribute) => attribute.getClefs());
-    const staffDetails = attributes.flatMap((attribute) => attribute.getStaffDetails());
-    const notes = opts.musicXml.measure.getNotes();
-
     const staveCount = Math.max(1, ...attributes.map((attribute) => attribute.getStaveCount()));
     const staves = new Array<Stave>(staveCount);
 
@@ -33,20 +29,19 @@ export class Measure {
       staves[staffNumber - 1] = Stave.create({
         staffNumber,
         musicXml: {
-          notes: notes.filter((note) => note.getStaffNumber() === staffNumber),
+          measure: opts.musicXml.measure,
         },
-        clefType: clefs.find((clef) => clef.getStaffNumber() === staffNumber)?.getClefType() ?? 'treble',
-        staffType:
-          staffDetails.find((staffDetail) => staffDetail.getNumber() === staffNumber)?.getStaffType() ?? 'regular',
       });
     }
 
-    return new Measure(staves);
+    return new Measure(opts.index, staves);
   }
 
+  private index: number;
   private staves: Stave[];
 
-  private constructor(staves: Stave[]) {
+  private constructor(index: number, staves: Stave[]) {
+    this.index = index;
     this.staves = staves;
   }
 
