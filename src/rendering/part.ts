@@ -1,33 +1,22 @@
-import { Position } from './position';
-import { Size } from './size';
-import { System } from './system';
-import { Renderable } from './types';
+import * as musicxml from '@/musicxml';
+import { Stave } from './stave';
 
-/**
- * Represents a Part in a musical score, corresponding to the <part> element in MusicXML.
- * This class encompasses the entire musical content for a specific instrument or voice,
- * potentially spanning multiple systems when rendered in the viewport.
- */
-export class Part implements Renderable {
-  getPosition(): Position {
-    return Position.zero();
+export class Part {
+  static fromMusicXml(part: musicxml.Part): Part {
+    const id = part.getId();
+
+    // TODO(jared): Figure out how to break down a part into multiple staves.
+
+    return new Part(id, []);
   }
 
-  getSize(): Size {
-    return Size.zero();
+  constructor(private id: string, private staves: Stave[]) {}
+
+  getId(): string {
+    return this.id;
   }
 
   render(): void {
-    const systems = this.organizeMeasuresIntoSystems();
-    for (const system of systems) {
-      system.render();
-    }
-  }
-
-  /**
-   * Takes the measures of the part and splits them
-   */
-  private organizeMeasuresIntoSystems(): System[] {
-    return [];
+    // noop
   }
 }
