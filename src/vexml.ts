@@ -8,6 +8,7 @@ import { Stave } from './musicxml/stave';
 import { Voice } from './musicxml/voice';
 import { System } from './musicxml/system';
 import { Line } from './musicxml/line';
+import { Score } from '@/rendering/score';
 
 export type RenderOptions = {
   element: HTMLDivElement | HTMLCanvasElement;
@@ -28,14 +29,13 @@ export class Vexml {
    * Renders a MusicXML document to an HTML element.
    */
   static render(opts: RenderOptions): void {
-    const renderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
-
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
     const musicXml = new MusicXml(root);
 
-    const vexml = new Vexml({ musicXml, renderer, width: opts.width });
-    vexml.render();
+    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
+
+    Score.create({ musicXml }).render({ ctx: vfRenderer.getContext(), width: opts.width });
   }
 
   private musicXml: MusicXml;
