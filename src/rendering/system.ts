@@ -8,9 +8,7 @@ type SystemCreateOptions = {
   };
 };
 
-type SystemRenderOptions = {
-  ctx: vexflow.RenderContext;
-};
+type SystemRenderOptions = Record<string, never>;
 
 export type SystemRenderResult = {
   parts: Array<{
@@ -37,6 +35,7 @@ export class System {
     return new System(parts);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static fit(width: number, systems: System[]): void {
     // TODO: Implement to match musicxml.Line.fit.
   }
@@ -80,11 +79,13 @@ export class System {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   split(width: number): System[] {
     // TODO: Make real implementation.
     return [this];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   render(opts: SystemRenderOptions): SystemRenderResult {
     const parts = new Array<{
       measures: Array<{
@@ -99,7 +100,6 @@ export class System {
 
     for (const part of this.parts) {
       const result = part.render({
-        ctx: opts.ctx,
         x: this.x,
         y: this.x,
       });

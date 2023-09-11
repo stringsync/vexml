@@ -20,10 +20,6 @@ type NoteConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type NoteRenderOptions = {
-  ctx: vexflow.RenderContext;
-};
-
 export type NoteRenderResult = Record<string, never>;
 
 export class Note {
@@ -77,9 +73,5 @@ export class Note {
       dots: this.dotCount,
       clef: this.clefType,
     });
-  }
-
-  render(opts: NoteRenderOptions): void {
-    // noop
   }
 }

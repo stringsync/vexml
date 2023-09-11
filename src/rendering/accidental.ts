@@ -23,6 +23,7 @@ export class Accidental {
     this.isCautionary = isCautionary;
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars
   render(opts: RenderOptions) {
     // noop
   }

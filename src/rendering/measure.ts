@@ -10,7 +10,6 @@ type MeasureCreateOptions = {
 };
 
 type MeasureRenderOptions = {
-  ctx: vexflow.RenderContext;
   x: number;
   y: number;
 };
@@ -71,7 +70,7 @@ export class Measure {
     }>();
 
     for (const stave of this.staves) {
-      const result = stave.render({ ctx: opts.ctx, x: opts.x, y: opts.y });
+      const result = stave.render({ x: opts.x, y: opts.y });
 
       const vfStave = result.vexflow.stave;
       const vfVoices = result.vexflow.voices;

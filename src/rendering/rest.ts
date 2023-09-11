@@ -14,10 +14,6 @@ type RestConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type RestRenderOptions = {
-  ctx: vexflow.RenderContext;
-};
-
 export type RestRenderResult = Record<string, never>;
 
 export class Rest {
@@ -48,10 +44,6 @@ export class Rest {
       dots: this.dotCount,
       clef: this.clefType,
     });
-  }
-
-  render(opts: RestRenderOptions): RestRenderResult {
-    return {};
   }
 
   private getKey(): string {

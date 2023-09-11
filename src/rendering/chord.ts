@@ -20,10 +20,6 @@ type ChordConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type ChordRenderOptions = {
-  ctx: vexflow.RenderContext;
-};
-
 export type ChordRenderResult = Record<string, never>;
 
 export class Chord {
@@ -82,9 +78,5 @@ export class Chord {
       dots: this.dotCount,
       clef: this.clefType,
     });
-  }
-
-  render(opts: ChordRenderOptions): ChordRenderResult {
-    return {};
   }
 }
