@@ -35,6 +35,7 @@ export type ScoreRenderResult = {
 export class Score {
   static create(opts: ScoreCreateOptions): Score {
     const parts = opts.musicXml.getScorePartwise()?.getParts() ?? [];
+
     const system = System.create({ musicXml: { parts } });
 
     return new Score(system);
@@ -47,6 +48,7 @@ export class Score {
   }
 
   render(opts: ScoreRenderOptions): ScoreRenderResult {
+    // Track the system rendering results.
     const systems = new Array<{
       parts: Array<{
         measures: Array<{
@@ -60,9 +62,28 @@ export class Score {
       }>;
     }>();
 
+    // Render the entire hierarchy.
     for (const system of this.system.split(opts.width)) {
       const result = system.render({ ctx: opts.ctx });
       systems.push({ parts: result.parts });
+    }
+
+    // Get a reference to the measure components.
+    const components = systems
+      .flatMap((system) => system.parts)
+      .flatMap((part) => part.measures)
+      .flatMap((measure) => measure.components);
+
+    // Render vexflow.Stave elements.
+    const vfStaves = components.map((component) => component.vexflow.stave);
+    for (const vfStave of vfStaves) {
+      vfStave.draw();
+    }
+
+    // Render vexflow.Voice elements.
+    const vfVoices = components.flatMap((component) => component.vexflow.voices);
+    for (const vfVoice of vfVoices) {
+      vfVoice.draw();
     }
 
     return { systems };

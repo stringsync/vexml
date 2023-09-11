@@ -38,7 +38,7 @@ export class Measure {
     const staveCount = Math.max(1, ...attributes.map((attribute) => attribute.getStaveCount()));
     const staves = new Array<Stave>(staveCount);
 
-    for (let staffNumber = 1; staffNumber <= staveCount; staffNumber) {
+    for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
       staves[staffNumber - 1] = Stave.create({
         staffNumber,
         musicXml: {
