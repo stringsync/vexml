@@ -1,17 +1,17 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Beam } from './beam';
 import { Accidental } from './accidental';
+import { Beam } from './beam';
 
-type NoteCreateOptions = {
+type ChordCreateOptions = {
   musicXml: {
     note: musicxml.Note;
   };
   clefType: musicxml.ClefType;
 };
 
-type NoteConstructorOptions = {
-  key: string;
+type ChordConstructorOptions = {
+  keys: string[];
   stem: musicxml.Stem | null;
   beams: Beam[];
   accidental: Accidental | null;
@@ -20,14 +20,14 @@ type NoteConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type NoteRenderOptions = {
+type ChordRenderOptions = {
   ctx: vexflow.RenderContext;
 };
 
-export type NoteRenderResult = Record<string, never>;
+export type ChordRenderResult = Record<string, never>;
 
-export class Note {
-  static create(opts: NoteCreateOptions): Note {
+export class Chord {
+  static create(opts: ChordCreateOptions): Chord {
     const note = opts.musicXml.note;
 
     let accidental: Accidental | null = null;
@@ -43,16 +43,21 @@ export class Note {
     const dotCount = note.getDotCount();
     const durationDenominator = note.getDurationDenominator();
 
+    const keys = [note, ...note.getChordTail()].map(Chord.getKey);
+
+    return new Chord({ keys, stem, beams, accidental, dotCount, durationDenominator, clefType });
+  }
+
+  private static getKey(note: musicxml.Note): string {
     let key = note.getPitch();
     const suffix = note.getNoteheadSuffix();
     if (suffix) {
       key += `/${suffix}`;
     }
-
-    return new Note({ key, stem, beams, accidental, dotCount, durationDenominator, clefType });
+    return key;
   }
 
-  private key: string;
+  private keys: string[];
   private stem: musicxml.Stem | null;
   private beams: Beam[];
   private accidental: Accidental | null;
@@ -60,8 +65,8 @@ export class Note {
   private durationDenominator: musicxml.NoteDurationDenominator;
   private clefType: musicxml.ClefType;
 
-  private constructor(opts: NoteConstructorOptions) {
-    this.key = opts.key;
+  private constructor(opts: ChordConstructorOptions) {
+    this.keys = opts.keys;
     this.stem = opts.stem;
     this.beams = opts.beams;
     this.accidental = opts.accidental;
@@ -72,14 +77,14 @@ export class Note {
 
   toVexflowStaveNote(): vexflow.StaveNote {
     return new vexflow.StaveNote({
-      keys: [this.key],
+      keys: this.keys,
       duration: this.durationDenominator,
       dots: this.dotCount,
       clef: this.clefType,
     });
   }
 
-  render(opts: NoteRenderOptions): void {
-    // noop
+  render(opts: ChordRenderOptions): ChordRenderResult {
+    return {};
   }
 }

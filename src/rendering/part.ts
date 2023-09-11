@@ -2,18 +2,31 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Measure } from './measure';
 
-type CreateOptions = {
+type PartCreateOptions = {
   musicXml: {
     part: musicxml.Part;
   };
 };
 
-type RenderOptions = {
+type PartRenderOptions = {
   ctx: vexflow.RenderContext;
+  x: number;
+  y: number;
+};
+
+export type PartRenderResult = {
+  measures: Array<{
+    components: Array<{
+      vexflow: {
+        stave: vexflow.Stave;
+        voices: vexflow.Voice[];
+      };
+    }>;
+  }>;
 };
 
 export class Part {
-  static create(opts: CreateOptions): Part {
+  static create(opts: PartCreateOptions): Part {
     const id = opts.musicXml.part.getId();
     const measures = opts.musicXml.part
       .getMeasures()
@@ -30,11 +43,31 @@ export class Part {
     this.measures = measures;
   }
 
-  getId(): string {
-    return this.id;
+  getWidth(): number {
+    return Math.max(0, ...this.measures.map((measure) => measure.getWidth()));
   }
 
-  render(opts: RenderOptions): void {
-    // noop
+  render(opts: PartRenderOptions): PartRenderResult {
+    const measures = new Array<{
+      components: Array<{
+        vexflow: {
+          stave: vexflow.Stave;
+          voices: vexflow.Voice[];
+        };
+      }>;
+    }>();
+
+    let x = opts.x;
+    const y = opts.y;
+
+    for (const measure of this.measures) {
+      const result = measure.render({ ctx: opts.ctx, x, y });
+
+      measures.push({ components: result.measure.components });
+
+      x += measure.getWidth();
+    }
+
+    return { measures };
   }
 }

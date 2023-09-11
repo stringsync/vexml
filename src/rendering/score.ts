@@ -2,13 +2,28 @@ import { System } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
-type CreateOptions = {
+type ScoreCreateOptions = {
   musicXml: musicxml.MusicXml;
 };
 
-type RenderOptions = {
+type ScoreRenderOptions = {
   ctx: vexflow.RenderContext;
   width: number;
+};
+
+export type ScoreRenderResult = {
+  systems: Array<{
+    parts: Array<{
+      measures: Array<{
+        components: Array<{
+          vexflow: {
+            stave: vexflow.Stave;
+            voices: vexflow.Voice[];
+          };
+        }>;
+      }>;
+    }>;
+  }>;
 };
 
 /**
@@ -18,7 +33,7 @@ type RenderOptions = {
  * contextual information like title, composer, and other pertinent details.
  */
 export class Score {
-  static create(opts: CreateOptions): Score {
+  static create(opts: ScoreCreateOptions): Score {
     const parts = opts.musicXml.getScorePartwise()?.getParts() ?? [];
     const system = System.create({ musicXml: { parts } });
 
@@ -31,7 +46,25 @@ export class Score {
     this.system = system;
   }
 
-  render(opts: RenderOptions): void {
-    this.system.split(opts.width).forEach((system) => system.render({ ctx: opts.ctx }));
+  render(opts: ScoreRenderOptions): ScoreRenderResult {
+    const systems = new Array<{
+      parts: Array<{
+        measures: Array<{
+          components: Array<{
+            vexflow: {
+              stave: vexflow.Stave;
+              voices: vexflow.Voice[];
+            };
+          }>;
+        }>;
+      }>;
+    }>();
+
+    for (const system of this.system.split(opts.width)) {
+      const result = system.render({ ctx: opts.ctx });
+      systems.push({ parts: result.parts });
+    }
+
+    return { systems };
   }
 }
