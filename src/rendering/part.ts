@@ -9,7 +9,6 @@ type PartCreateOptions = {
 };
 
 type PartRenderOptions = {
-  ctx: vexflow.RenderContext;
   x: number;
   y: number;
 };
@@ -61,7 +60,7 @@ export class Part {
     const y = opts.y;
 
     for (const measure of this.measures) {
-      const result = measure.render({ ctx: opts.ctx, x, y });
+      const result = measure.render({ x, y });
 
       measures.push({ components: result.measure.components });
 

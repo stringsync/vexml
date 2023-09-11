@@ -19,9 +19,7 @@ type VoiceConstructorOptions = {
   timeSignature: musicxml.TimeSignature;
 };
 
-type VoiceRenderOptions = {
-  ctx: vexflow.RenderContext;
-};
+type VoiceRenderOptions = Record<string, never>;
 
 export type VoiceRenderResult = {
   vexflow: {
@@ -93,8 +91,9 @@ export class Voice {
       .addTickables(tickables);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   render(opts: VoiceRenderOptions): VoiceRenderResult {
-    const vfVoice = this.toVexflowVoice().setContext(opts.ctx);
+    const vfVoice = this.toVexflowVoice();
 
     return { vexflow: { voice: vfVoice } };
   }

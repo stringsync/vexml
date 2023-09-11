@@ -20,7 +20,6 @@ type StaveConstructorOpts = {
 };
 
 type StaveRenderOptions = {
-  ctx: vexflow.RenderContext;
   x: number;
   y: number;
 };
@@ -119,7 +118,6 @@ export class Stave {
 
   render(opts: StaveRenderOptions): StaveRenderResult {
     const vfStave = new vexflow.Stave(opts.x, opts.y, this.getWidth())
-      .setContext(opts.ctx)
       .addClef(this.clefType)
       .addTimeSignature(this.timeSignature.toString())
       .setBegBarType(this.getBarlineType(this.beginningBarStyle))
@@ -127,7 +125,7 @@ export class Stave {
 
     const vfVoices = new Array<vexflow.Voice>();
     for (const voice of this.voices) {
-      const result = voice.render({ ctx: opts.ctx });
+      const result = voice.render({});
 
       const vfVoice = result.vexflow.voice;
 

@@ -33,9 +33,7 @@ export class Vexml {
     const root = parser.parseFromString(opts.xml, 'application/xml');
     const musicXml = new MusicXml(root);
 
-    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
-
-    Score.create({ musicXml }).render({ ctx: vfRenderer.getContext(), width: opts.width });
+    Score.create({ musicXml }).render({ element: opts.element, width: opts.width });
   }
 
   private musicXml: MusicXml;

@@ -7,7 +7,7 @@ type ScoreCreateOptions = {
 };
 
 type ScoreRenderOptions = {
-  ctx: vexflow.RenderContext;
+  element: HTMLDivElement | HTMLCanvasElement;
   width: number;
 };
 
@@ -64,7 +64,7 @@ export class Score {
 
     // Render the entire hierarchy.
     for (const system of this.system.split(opts.width)) {
-      const result = system.render({ ctx: opts.ctx });
+      const result = system.render({});
       systems.push({ parts: result.parts });
     }
 
@@ -74,16 +74,19 @@ export class Score {
       .flatMap((part) => part.measures)
       .flatMap((measure) => measure.components);
 
+    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
+    const vfContext = vfRenderer.getContext();
+
     // Render vexflow.Stave elements.
     const vfStaves = components.map((component) => component.vexflow.stave);
     for (const vfStave of vfStaves) {
-      vfStave.draw();
+      vfStave.setContext(vfContext).draw();
     }
 
     // Render vexflow.Voice elements.
     const vfVoices = components.flatMap((component) => component.vexflow.voices);
     for (const vfVoice of vfVoices) {
-      vfVoice.draw();
+      vfVoice.setContext(vfContext).draw();
     }
 
     return { systems };
