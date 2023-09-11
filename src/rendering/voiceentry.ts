@@ -17,18 +17,9 @@ export class VoiceEntry {
   static create(opts: CreateOptions): VoiceEntry {
     const note = opts.musicXml.note;
 
-    let notes = new Array<Note>();
-    if (note.isChordTail()) {
-      // noop
-    } else if (note.isChordHead()) {
-      notes = [note, ...note.getChordTail()].map((note) =>
-        Note.create({ musicXml: { note }, clefType: opts.clefType })
-      );
-    } else if (note.isGrace()) {
-      // TODO: Handle grace notes properly.
-    } else {
-      notes = [Note.create({ musicXml: { note }, clefType: opts.clefType })];
-    }
+    const notes = [note, ...note.getChordTail()].map((note) =>
+      Note.create({ musicXml: { note }, clefType: opts.clefType })
+    );
 
     return new VoiceEntry(notes);
   }

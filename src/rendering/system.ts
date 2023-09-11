@@ -2,14 +2,27 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Part } from './part';
 
-type CreateOptions = {
+type SystemCreateOptions = {
   musicXml: {
     parts: musicxml.Part[];
   };
 };
 
-type RenderOptions = {
+type SystemRenderOptions = {
   ctx: vexflow.RenderContext;
+};
+
+export type SystemRenderResult = {
+  parts: Array<{
+    measures: Array<{
+      components: Array<{
+        vexflow: {
+          stave: vexflow.Stave;
+          voices: vexflow.Voice[];
+        };
+      }>;
+    }>;
+  }>;
 };
 
 /**
@@ -18,7 +31,7 @@ type RenderOptions = {
  * parts, and multiple systems collectively render the entirety of those parts.
  */
 export class System {
-  static create(opts: CreateOptions): System {
+  static create(opts: SystemCreateOptions): System {
     const parts = opts.musicXml.parts.map((part) => Part.create({ musicXml: { part } }));
 
     return new System(parts);
@@ -68,12 +81,32 @@ export class System {
   }
 
   split(width: number): System[] {
+    // TODO: Make real implementation.
     return [this];
   }
 
-  render(opts: RenderOptions): void {
+  render(opts: SystemRenderOptions): SystemRenderResult {
+    const parts = new Array<{
+      measures: Array<{
+        components: Array<{
+          vexflow: {
+            stave: vexflow.Stave;
+            voices: vexflow.Voice[];
+          };
+        }>;
+      }>;
+    }>();
+
     for (const part of this.parts) {
-      part.render({ ctx: opts.ctx });
+      const result = part.render({
+        ctx: opts.ctx,
+        x: this.x,
+        y: this.x,
+      });
+
+      parts.push({ measures: result.measures });
     }
+
+    return { parts };
   }
 }

@@ -2,29 +2,38 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Voice } from './voice';
 
-type CreateOptions = {
+type StaveCreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
   };
   staffNumber: number;
 };
 
-type ConstructorOpts = {
+type StaveConstructorOpts = {
   staffNumber: number;
   clefType: musicxml.ClefType;
   staffType: musicxml.StaffType;
   timeSignature: musicxml.TimeSignature;
   beginningBarStyle: musicxml.BarStyle;
   endBarStyle: musicxml.BarStyle;
-  voice: Voice;
+  voices: Voice[];
 };
 
-type RenderOptions = {
+type StaveRenderOptions = {
   ctx: vexflow.RenderContext;
+  x: number;
+  y: number;
+};
+
+export type StaveRenderResult = {
+  vexflow: {
+    stave: vexflow.Stave;
+    voices: vexflow.Voice[];
+  };
 };
 
 export class Stave {
-  static create(opts: CreateOptions): Stave {
+  static create(opts: StaveCreateOptions): Stave {
     // TODO: Properly handle multiple <attributes>.
     const attributes = opts.musicXml.measure.getAttributes();
 
@@ -61,11 +70,14 @@ export class Stave {
       }
     }
 
-    const voice = Voice.create({
-      musicXml: { measure: opts.musicXml.measure },
-      staffNumber: opts.staffNumber,
-      clefType,
-    });
+    // TODO: Support multiple voices per stave.
+    const voices = [
+      Voice.create({
+        musicXml: { measure: opts.musicXml.measure },
+        staffNumber: opts.staffNumber,
+        clefType,
+      }),
+    ];
 
     return new Stave({
       staffNumber: opts.staffNumber,
@@ -74,23 +86,85 @@ export class Stave {
       timeSignature,
       beginningBarStyle,
       endBarStyle,
-      voice,
+      voices,
     });
   }
 
   private staffNumber: number;
-  private staffType: musicxml.StaffType;
   private clefType: musicxml.ClefType;
-  private voice: Voice;
+  private staffType: musicxml.StaffType;
+  private timeSignature: musicxml.TimeSignature;
+  private beginningBarStyle: musicxml.BarStyle;
+  private endBarStyle: musicxml.BarStyle;
+  private voices: Voice[];
 
-  private constructor(opts: ConstructorOpts) {
+  private constructor(opts: StaveConstructorOpts) {
     this.staffNumber = opts.staffNumber;
     this.staffType = opts.staffType;
+    this.timeSignature = opts.timeSignature;
+    this.beginningBarStyle = opts.beginningBarStyle;
+    this.endBarStyle = opts.endBarStyle;
     this.clefType = opts.clefType;
-    this.voice = opts.voice;
+    this.voices = opts.voices;
   }
 
-  render(opts: RenderOptions): void {
-    // noop
+  getWidth(): number {
+    if (this.voices.length === 0) {
+      return 0;
+    }
+    const vfVoices = this.voices.map((voice) => voice.toVexflowVoice());
+    const vfFormatter = new vexflow.Formatter();
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices);
+  }
+
+  render(opts: StaveRenderOptions): StaveRenderResult {
+    const vfStave = new vexflow.Stave(opts.x, opts.y, this.getWidth())
+      .setContext(opts.ctx)
+      .addClef(this.clefType)
+      .addTimeSignature(this.timeSignature.toString())
+      .setBegBarType(this.getBarlineType(this.beginningBarStyle))
+      .setEndBarType(this.getBarlineType(this.endBarStyle));
+
+    const vfVoices = new Array<vexflow.Voice>();
+    for (const voice of this.voices) {
+      const result = voice.render({ ctx: opts.ctx });
+
+      const vfVoice = result.vexflow.voice;
+
+      vfVoice.setStave(vfStave);
+      vfVoices.push(vfVoice);
+    }
+
+    const vfFormatter = new vexflow.Formatter();
+    vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+
+    return {
+      vexflow: {
+        stave: vfStave,
+        voices: vfVoices,
+      },
+    };
+  }
+
+  private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {
+    switch (barStyle) {
+      case 'regular':
+      case 'short':
+      case 'dashed':
+      case 'dotted':
+      case 'heavy':
+        return vexflow.BarlineType.SINGLE;
+      case 'heavy-light':
+      case 'heavy-heavy':
+      case 'light-light':
+      case 'tick':
+        return vexflow.BarlineType.DOUBLE;
+      case 'light-heavy':
+        return vexflow.BarlineType.END;
+      case 'none':
+        return vexflow.BarlineType.NONE;
+      default:
+        return vexflow.BarlineType.NONE;
+    }
   }
 }
