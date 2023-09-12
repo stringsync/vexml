@@ -1,5 +1,4 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
 import { Part, PartRendering } from './part';
 
 type SystemCreateOptions = {

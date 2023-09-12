@@ -5,17 +5,20 @@ type MeasureCreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
   };
-  index: number;
+};
+
+type MeasureConstructorOptions = {
+  staves: Stave[];
 };
 
 type MeasureRenderOptions = {
   x: number;
   y: number;
+  renderModifiers: boolean;
 };
 
 export type MeasureRendering = {
   type: 'measure';
-  index: number;
   staves: StaveRendering[];
 };
 
@@ -40,29 +43,31 @@ export class Measure {
       });
     }
 
-    return new Measure(opts.index, staves);
+    return new Measure({ staves });
   }
 
-  private index: number;
   private staves: Stave[];
 
-  private constructor(index: number, staves: Stave[]) {
-    this.index = index;
-    this.staves = staves;
+  private constructor(opts: MeasureConstructorOptions) {
+    this.staves = opts.staves;
   }
 
   getWidth(): number {
-    return Math.max(0, ...this.staves.map((stave) => stave.getWidth()));
+    return Math.max(0, ...this.staves.map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  getStaves(): Stave[] {
+    return this.staves;
   }
 
   render(opts: MeasureRenderOptions): MeasureRendering {
     const staveRenderings = new Array<StaveRendering>();
 
     for (const stave of this.staves) {
-      const staveRendering = stave.render({ x: opts.x, y: opts.y });
+      const staveRendering = stave.render({ x: opts.x, y: opts.y, renderModifiers: opts.renderModifiers });
       staveRenderings.push(staveRendering);
     }
 
-    return { type: 'measure', index: this.index, staves: staveRenderings };
+    return { type: 'measure', staves: staveRenderings };
   }
 }

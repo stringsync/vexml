@@ -13,6 +13,11 @@ export class Key {
     return this.element.first('fifths')?.content().int() ?? 0;
   }
 
+  /** Returns the staff number this key belongs to. */
+  getStaffNumber(): number {
+    return this.element.attr('number').withDefault(1).int();
+  }
+
   /** Returns the key signature based on the fifths count. */
   getKeySignature(): string {
     switch (this.getFifthsCount()) {

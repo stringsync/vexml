@@ -12,20 +12,28 @@ type StaveCreateOptions = {
 type StaveConstructorOpts = {
   staffNumber: number;
   clefType: musicxml.ClefType;
-  staffType: musicxml.StaffType;
   timeSignature: musicxml.TimeSignature;
+  keySignature: string;
   beginningBarStyle: musicxml.BarStyle;
   endBarStyle: musicxml.BarStyle;
   voices: Voice[];
 };
 
+type ToVexflowStaveOptions = {
+  x: number;
+  y: number;
+  renderModifiers: boolean;
+};
+
 type StaveRenderOptions = {
   x: number;
   y: number;
+  renderModifiers: boolean;
 };
 
 export type StaveRendering = {
   type: 'stave';
+  staffNumber: number;
   vexflow: {
     stave: vexflow.Stave;
   };
@@ -43,18 +51,18 @@ export class Stave {
         .find((clef) => clef.getStaffNumber() === opts.staffNumber)
         ?.getClefType() ?? 'treble';
 
-    const staffType =
-      attributes
-        .flatMap((attribute) => attribute.getStaffDetails())
-        .find((staffDetail) => staffDetail.getStaffNumber() === opts.staffNumber)
-        ?.getStaffType() ?? 'regular';
-
     // TODO: Handle multiple time signatures.
     const timeSignature =
       attributes
         .flatMap((attribute) => attribute.getTimes())
         .find((time) => time.getStaffNumber() === opts.staffNumber)
         ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
+
+    const keySignature =
+      attributes
+        .flatMap((attribute) => attribute.getKeys())
+        .find((key) => key.getStaffNumber() === opts.staffNumber)
+        ?.getKeySignature() ?? 'C';
 
     let beginningBarStyle: musicxml.BarStyle = 'regular';
     let endBarStyle: musicxml.BarStyle = 'regular';
@@ -82,8 +90,8 @@ export class Stave {
     return new Stave({
       staffNumber: opts.staffNumber,
       clefType,
-      staffType,
       timeSignature,
+      keySignature,
       beginningBarStyle,
       endBarStyle,
       voices,
@@ -92,23 +100,35 @@ export class Stave {
 
   private staffNumber: number;
   private clefType: musicxml.ClefType;
-  private staffType: musicxml.StaffType;
   private timeSignature: musicxml.TimeSignature;
+  private keySignature: string;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private voices: Voice[];
 
   private constructor(opts: StaveConstructorOpts) {
     this.staffNumber = opts.staffNumber;
-    this.staffType = opts.staffType;
     this.timeSignature = opts.timeSignature;
+    this.keySignature = opts.keySignature;
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
     this.clefType = opts.clefType;
     this.voices = opts.voices;
   }
 
-  getWidth(): number {
+  getClefType(): musicxml.ClefType {
+    return this.clefType;
+  }
+
+  getTimeSignature(): musicxml.TimeSignature {
+    return this.timeSignature;
+  }
+
+  getKeySignature(): string {
+    return this.keySignature;
+  }
+
+  getMinJustifyWidth(): number {
     if (this.voices.length === 0) {
       return 0;
     }
@@ -117,12 +137,12 @@ export class Stave {
     return vfFormatter.preCalculateMinTotalWidth(vfVoices);
   }
 
+  getModifiersWidth(): number {
+    return this.toVexflowStave({ x: 0, y: 0, renderModifiers: true }).getNoteStartX();
+  }
+
   render(opts: StaveRenderOptions): StaveRendering {
-    const vfStave = new vexflow.Stave(opts.x, opts.y, this.getWidth())
-      .addClef(this.clefType)
-      .addTimeSignature(this.timeSignature.toString())
-      .setBegBarType(this.getBarlineType(this.beginningBarStyle))
-      .setEndBarType(this.getBarlineType(this.endBarStyle));
+    const vfStave = this.toVexflowStave({ x: opts.x, y: opts.y, renderModifiers: opts.renderModifiers });
 
     const voiceRenderings = new Array<VoiceRendering>();
     for (const voice of this.voices) {
@@ -137,11 +157,24 @@ export class Stave {
 
     return {
       type: 'stave',
+      staffNumber: this.staffNumber,
       vexflow: {
         stave: vfStave,
       },
       voices: voiceRenderings,
     };
+  }
+
+  private toVexflowStave(opts: ToVexflowStaveOptions): vexflow.Stave {
+    const vfStave = new vexflow.Stave(opts.x, opts.y, this.getMinJustifyWidth())
+      .setBegBarType(this.getBarlineType(this.beginningBarStyle))
+      .setEndBarType(this.getBarlineType(this.endBarStyle));
+
+    if (opts.renderModifiers) {
+      vfStave.addClef(this.clefType).addTimeSignature(this.timeSignature.toString());
+    }
+
+    return vfStave;
   }
 
   private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {
