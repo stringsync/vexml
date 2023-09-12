@@ -41,10 +41,16 @@ export class Score {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
+    // Split the main system into smaller ones to fit in the width.
+    const systems = this.system.split(opts.width);
+
+    let y = 0;
+
     // Render the entire hierarchy.
-    for (const system of this.system.split(opts.width)) {
-      const systemRendering = system.render({});
+    for (const system of systems) {
+      const systemRendering = system.render({ x: 0, y, width: opts.width });
       systemRenderings.push(systemRendering);
+      y += 300;
     }
 
     // Get a reference to the staves.
@@ -54,6 +60,7 @@ export class Score {
       .flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
+    vfRenderer.resize(400, y + 400);
     const vfContext = vfRenderer.getContext();
 
     // Render vexflow.Stave elements.

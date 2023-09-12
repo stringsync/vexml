@@ -2,6 +2,8 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Voice, VoiceRendering } from './voice';
 
+const JUSTIFY_PADDING = 100;
+
 type StaveCreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
@@ -22,12 +24,14 @@ type StaveConstructorOpts = {
 type ToVexflowStaveOptions = {
   x: number;
   y: number;
+  width: number;
   renderModifiers: boolean;
 };
 
 type StaveRenderOptions = {
   x: number;
   y: number;
+  width: number;
   renderModifiers: boolean;
 };
 
@@ -134,15 +138,25 @@ export class Stave {
     }
     const vfVoices = this.voices.map((voice) => voice.render({}).vexflow.voice);
     const vfFormatter = new vexflow.Formatter();
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices);
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + JUSTIFY_PADDING;
   }
 
   getModifiersWidth(): number {
-    return this.toVexflowStave({ x: 0, y: 0, renderModifiers: true }).getNoteStartX();
+    return this.toVexflowStave({
+      x: 0,
+      y: 0,
+      width: this.getMinJustifyWidth(),
+      renderModifiers: true,
+    }).getNoteStartX();
   }
 
   render(opts: StaveRenderOptions): StaveRendering {
-    const vfStave = this.toVexflowStave({ x: opts.x, y: opts.y, renderModifiers: opts.renderModifiers });
+    const vfStave = this.toVexflowStave({
+      x: opts.x,
+      y: opts.y,
+      width: opts.width,
+      renderModifiers: opts.renderModifiers,
+    });
 
     const voiceRenderings = new Array<VoiceRendering>();
     for (const voice of this.voices) {
@@ -166,7 +180,7 @@ export class Stave {
   }
 
   private toVexflowStave(opts: ToVexflowStaveOptions): vexflow.Stave {
-    const vfStave = new vexflow.Stave(opts.x, opts.y, this.getMinJustifyWidth())
+    const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
       .setBegBarType(this.getBarlineType(this.beginningBarStyle))
       .setEndBarType(this.getBarlineType(this.endBarStyle));
 
