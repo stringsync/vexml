@@ -1,6 +1,5 @@
-import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import { Stave } from './stave';
+import { Stave, StaveRendering } from './stave';
 
 type MeasureCreateOptions = {
   musicXml: {
@@ -14,15 +13,10 @@ type MeasureRenderOptions = {
   y: number;
 };
 
-export type MeasureRenderResult = {
-  measure: {
-    components: Array<{
-      vexflow: {
-        stave: vexflow.Stave;
-        voices: vexflow.Voice[];
-      };
-    }>;
-  };
+export type MeasureRendering = {
+  type: 'measure';
+  index: number;
+  staves: StaveRendering[];
 };
 
 /**
@@ -61,23 +55,14 @@ export class Measure {
     return Math.max(0, ...this.staves.map((stave) => stave.getWidth()));
   }
 
-  render(opts: MeasureRenderOptions): MeasureRenderResult {
-    const components = new Array<{
-      vexflow: {
-        stave: vexflow.Stave;
-        voices: vexflow.Voice[];
-      };
-    }>();
+  render(opts: MeasureRenderOptions): MeasureRendering {
+    const staveRenderings = new Array<StaveRendering>();
 
     for (const stave of this.staves) {
-      const result = stave.render({ x: opts.x, y: opts.y });
-
-      const vfStave = result.vexflow.stave;
-      const vfVoices = result.vexflow.voices;
-
-      components.push({ vexflow: { stave: vfStave, voices: vfVoices } });
+      const staveRendering = stave.render({ x: opts.x, y: opts.y });
+      staveRenderings.push(staveRendering);
     }
 
-    return { measure: { components } };
+    return { type: 'measure', index: this.index, staves: staveRenderings };
   }
 }

@@ -1,8 +1,8 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Note } from './note';
-import { Chord } from './chord';
-import { Rest } from './rest';
+import { Note, NoteRendering } from './note';
+import { Chord, ChordRendering } from './chord';
+import { Rest, RestRendering } from './rest';
 
 export type VoiceEntry = Note | Chord | Rest;
 
@@ -21,10 +21,14 @@ type VoiceConstructorOptions = {
 
 type VoiceRenderOptions = Record<string, never>;
 
-export type VoiceRenderResult = {
+export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering;
+
+export type VoiceRendering = {
+  type: 'voice';
   vexflow: {
     voice: vexflow.Voice;
   };
+  notes: VoiceEntryRendering[];
 };
 
 export class Voice {
@@ -67,16 +71,27 @@ export class Voice {
     this.timeSignature = opts.timeSignature;
   }
 
-  toVexflowVoice(): vexflow.Voice {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  render(opts: VoiceRenderOptions): VoiceRendering {
+    const vfVoice = this.toVexflowVoice();
+
+    return {
+      type: 'voice',
+      vexflow: { voice: vfVoice },
+      notes: [],
+    };
+  }
+
+  private toVexflowVoice(): vexflow.Voice {
     const tickables = this.entries.map<vexflow.Tickable>((entry) => {
       if (entry instanceof Note) {
-        return entry.toVexflowStaveNote();
+        return entry.render({}).vexflow.staveNote;
       }
       if (entry instanceof Chord) {
-        return entry.toVexflowStaveNote();
+        return entry.render({}).vexflow.staveNote;
       }
       if (entry instanceof Rest) {
-        return entry.toVexflowStaveNote();
+        return entry.render({}).vexflow.staveNote;
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${entry}`);
@@ -89,12 +104,5 @@ export class Voice {
       .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)
       .addTickables(tickables);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: VoiceRenderOptions): VoiceRenderResult {
-    const vfVoice = this.toVexflowVoice();
-
-    return { vexflow: { voice: vfVoice } };
   }
 }

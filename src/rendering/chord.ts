@@ -20,7 +20,14 @@ type ChordConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-export type ChordRenderResult = Record<string, never>;
+type ChordRenderOptions = Record<string, never>;
+
+export type ChordRendering = {
+  type: 'chord';
+  vexflow: {
+    staveNote: vexflow.StaveNote;
+  };
+};
 
 export class Chord {
   static create(opts: ChordCreateOptions): Chord {
@@ -71,7 +78,13 @@ export class Chord {
     this.clefType = opts.clefType;
   }
 
-  toVexflowStaveNote(): vexflow.StaveNote {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  render(opts: ChordRenderOptions): ChordRendering {
+    const vfStaveNote = this.toVexflowStaveNote();
+    return { type: 'chord', vexflow: { staveNote: vfStaveNote } };
+  }
+
+  private toVexflowStaveNote(): vexflow.StaveNote {
     return new vexflow.StaveNote({
       keys: this.keys,
       duration: this.durationDenominator,

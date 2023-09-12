@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Voice } from './voice';
+import { Voice, VoiceRendering } from './voice';
 
 type StaveCreateOptions = {
   musicXml: {
@@ -24,11 +24,12 @@ type StaveRenderOptions = {
   y: number;
 };
 
-export type StaveRenderResult = {
+export type StaveRendering = {
+  type: 'stave';
   vexflow: {
     stave: vexflow.Stave;
-    voices: vexflow.Voice[];
   };
+  voices: VoiceRendering[];
 };
 
 export class Stave {
@@ -111,36 +112,35 @@ export class Stave {
     if (this.voices.length === 0) {
       return 0;
     }
-    const vfVoices = this.voices.map((voice) => voice.toVexflowVoice());
+    const vfVoices = this.voices.map((voice) => voice.render({}).vexflow.voice);
     const vfFormatter = new vexflow.Formatter();
     return vfFormatter.preCalculateMinTotalWidth(vfVoices);
   }
 
-  render(opts: StaveRenderOptions): StaveRenderResult {
+  render(opts: StaveRenderOptions): StaveRendering {
     const vfStave = new vexflow.Stave(opts.x, opts.y, this.getWidth())
       .addClef(this.clefType)
       .addTimeSignature(this.timeSignature.toString())
       .setBegBarType(this.getBarlineType(this.beginningBarStyle))
       .setEndBarType(this.getBarlineType(this.endBarStyle));
 
-    const vfVoices = new Array<vexflow.Voice>();
+    const voiceRenderings = new Array<VoiceRendering>();
     for (const voice of this.voices) {
-      const result = voice.render({});
-
-      const vfVoice = result.vexflow.voice;
-
-      vfVoice.setStave(vfStave);
-      vfVoices.push(vfVoice);
+      const voiceRendering = voice.render({});
+      voiceRenderings.push(voiceRendering);
+      voiceRendering.vexflow.voice.setStave(vfStave);
     }
 
+    const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
     const vfFormatter = new vexflow.Formatter();
     vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
 
     return {
+      type: 'stave',
       vexflow: {
         stave: vfStave,
-        voices: vfVoices,
       },
+      voices: voiceRenderings,
     };
   }
 

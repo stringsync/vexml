@@ -20,7 +20,14 @@ type NoteConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-export type NoteRenderResult = Record<string, never>;
+type NoteRenderOptions = Record<string, never>;
+
+export type NoteRendering = {
+  type: 'note';
+  vexflow: {
+    staveNote: vexflow.StaveNote;
+  };
+};
 
 export class Note {
   static create(opts: NoteCreateOptions): Note {
@@ -66,7 +73,13 @@ export class Note {
     this.clefType = opts.clefType;
   }
 
-  toVexflowStaveNote(): vexflow.StaveNote {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  render(opts: NoteRenderOptions): NoteRendering {
+    const vfStaveNote = this.toVexflowStaveNote();
+    return { type: 'note', vexflow: { staveNote: vfStaveNote } };
+  }
+
+  private toVexflowStaveNote(): vexflow.StaveNote {
     return new vexflow.StaveNote({
       keys: [this.key],
       duration: this.durationDenominator,
