@@ -20,21 +20,54 @@ export type PartRendering = {
 export class Part {
   static create(opts: PartCreateOptions): Part {
     const id = opts.musicXml.part.getId();
-    const measures = opts.musicXml.part.getMeasures().map((measure) => Measure.create({ musicXml: { measure } }));
 
-    return new Part(id, measures);
+    let previousMeasure: Measure | null = null;
+    const measures = new Array<Measure>();
+    for (const musicXmlMeasure of opts.musicXml.part.getMeasures()) {
+      const measure = Measure.create({ musicXml: { measure: musicXmlMeasure }, previousMeasure });
+      measures.push(measure);
+      previousMeasure = measure;
+    }
+
+    return new Part({ id, measures });
   }
 
   private id: string;
   private measures: Measure[];
 
-  private constructor(id: string, measures: Measure[]) {
-    this.id = id;
-    this.measures = measures;
+  private constructor(opts: { id: string; measures: Measure[] }) {
+    this.id = opts.id;
+    this.measures = opts.measures;
   }
 
   getWidth(): number {
-    return Math.max(0, ...this.measures.map((measure) => measure.getWidth()));
+    return Math.max(0, ...this.measures.map((measure, partMeasureIndex) => measure.getWidth(partMeasureIndex)));
+  }
+
+  getMeasures(): Measure[] {
+    return this.measures;
+  }
+
+  getMeasureAt(measureIndex: number): Measure | null {
+    return this.measures[measureIndex] ?? null;
+  }
+
+  slice(opts: { measureStartIndex: number; measureEndIndex: number }): Part {
+    const measureStartIndex = opts.measureStartIndex;
+    const measureEndIndex = opts.measureEndIndex;
+
+    if (measureStartIndex < 0) {
+      throw new Error(`measureStartIndex cannot be less than 0, got: ${measureStartIndex}`);
+    }
+    if (measureEndIndex > this.measures.length) {
+      throw new Error(
+        `measureEndIndex cannot be greater than measures length (${this.measures.length}), got: ${measureEndIndex}`
+      );
+    }
+
+    const measures = this.measures.slice(opts.measureStartIndex, opts.measureEndIndex);
+
+    return new Part({ id: this.id, measures });
   }
 
   render(opts: PartRenderOptions): PartRendering {
@@ -46,47 +79,12 @@ export class Part {
     for (let index = 0; index < this.measures.length; index++) {
       const measure = this.measures[index];
 
-      const renderModifiers = index === 0 || this.areModifiersDifferent(measure, this.measures[index - 1]);
-
-      const measureRendering = measure.render({ x, y, renderModifiers });
+      const measureRendering = measure.render({ x, y, partMeasureIndex: index });
       measureRenderings.push(measureRendering);
 
-      x += measure.getWidth();
+      x += measure.getWidth(index);
     }
 
     return { id: this.id, measures: measureRenderings };
-  }
-
-  private areModifiersDifferent(measure1: Measure, measure2: Measure): boolean {
-    const staves1 = measure1.getStaves();
-    const staves2 = measure2.getStaves();
-    if (staves1.length !== staves2.length) {
-      return true;
-    }
-
-    for (let index = 0; index < staves1.length; index++) {
-      const stave1 = staves1[index];
-      const stave2 = staves2[index];
-
-      const clefType1 = stave1.getClefType();
-      const clefType2 = stave2.getClefType();
-      if (clefType1 !== clefType2) {
-        return true;
-      }
-
-      const timeSignature1 = stave1.getTimeSignature().toString();
-      const timeSignature2 = stave2.getTimeSignature().toString();
-      if (timeSignature1 !== timeSignature2) {
-        return true;
-      }
-
-      const keySignature1 = stave1.getKeySignature();
-      const keySignature2 = stave2.getKeySignature();
-      if (keySignature1 !== keySignature2) {
-        return true;
-      }
-    }
-
-    return false;
   }
 }

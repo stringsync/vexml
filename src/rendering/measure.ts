@@ -5,16 +5,13 @@ type MeasureCreateOptions = {
   musicXml: {
     measure: musicxml.Measure;
   };
-};
-
-type MeasureConstructorOptions = {
-  staves: Stave[];
+  previousMeasure: Measure | null;
 };
 
 type MeasureRenderOptions = {
   x: number;
   y: number;
-  renderModifiers: boolean;
+  partMeasureIndex: number;
 };
 
 export type MeasureRendering = {
@@ -43,17 +40,66 @@ export class Measure {
       });
     }
 
-    return new Measure({ staves });
+    return new Measure({ staves, previousMeasure: opts.previousMeasure });
+  }
+
+  private static areModifiersEqual(measure1: Measure | null, measure2: Measure | null): boolean {
+    if (!measure1 && measure2) {
+      return false;
+    }
+    if (measure1 && !measure2) {
+      return false;
+    }
+    if (!measure1 && !measure2) {
+      return true;
+    }
+
+    const staves1 = measure1!.getStaves();
+    const staves2 = measure2!.getStaves();
+    if (staves1.length !== staves2.length) {
+      return false;
+    }
+
+    for (let index = 0; index < staves1.length; index++) {
+      const stave1 = staves1[index];
+      const stave2 = staves2[index];
+
+      const clefType1 = stave1.getClefType();
+      const clefType2 = stave2.getClefType();
+      if (clefType1 !== clefType2) {
+        return false;
+      }
+
+      const timeSignature1 = stave1.getTimeSignature().toString();
+      const timeSignature2 = stave2.getTimeSignature().toString();
+      if (timeSignature1 !== timeSignature2) {
+        return false;
+      }
+
+      const keySignature1 = stave1.getKeySignature();
+      const keySignature2 = stave2.getKeySignature();
+      if (keySignature1 !== keySignature2) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private staves: Stave[];
+  private previousMeasure: Measure | null;
 
-  private constructor(opts: MeasureConstructorOptions) {
+  private constructor(opts: { staves: Stave[]; previousMeasure: Measure | null }) {
     this.staves = opts.staves;
+    this.previousMeasure = opts.previousMeasure;
   }
 
-  getWidth(): number {
-    return Math.max(0, ...this.staves.map((stave) => stave.getMinJustifyWidth()));
+  getWidth(partMeasureIndex: number): number {
+    let width = this.getMinJustifyWidth();
+    if (this.shouldRenderModifiers(partMeasureIndex)) {
+      width += this.getModifiersWidth();
+    }
+    return width;
   }
 
   getStaves(): Stave[] {
@@ -64,10 +110,30 @@ export class Measure {
     const staveRenderings = new Array<StaveRendering>();
 
     for (const stave of this.staves) {
-      const staveRendering = stave.render({ x: opts.x, y: opts.y, renderModifiers: opts.renderModifiers });
+      const staveRendering = stave.render({
+        x: opts.x,
+        y: opts.y,
+        // TODO: It seems like stave knows too much about
+        width: this.getWidth(opts.partMeasureIndex),
+        renderModifiers: this.shouldRenderModifiers(opts.partMeasureIndex),
+      });
       staveRenderings.push(staveRendering);
     }
 
     return { type: 'measure', staves: staveRenderings };
+  }
+
+  private shouldRenderModifiers(partMeasureIndex: number): boolean {
+    const isFirstMeasureInPart = partMeasureIndex === 0;
+    const didModifiersChange = !Measure.areModifiersEqual(this, this.previousMeasure);
+    return isFirstMeasureInPart || didModifiersChange;
+  }
+
+  private getMinJustifyWidth(): number {
+    return Math.max(0, ...this.staves.map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  private getModifiersWidth(): number {
+    return Math.max(0, ...this.staves.map((stave) => stave.getModifiersWidth()));
   }
 }
