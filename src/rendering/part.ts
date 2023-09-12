@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Measure } from './measure';
+import { Measure, MeasureRendering } from './measure';
 
 type PartCreateOptions = {
   musicXml: {
@@ -13,15 +13,9 @@ type PartRenderOptions = {
   y: number;
 };
 
-export type PartRenderResult = {
-  measures: Array<{
-    components: Array<{
-      vexflow: {
-        stave: vexflow.Stave;
-        voices: vexflow.Voice[];
-      };
-    }>;
-  }>;
+export type PartRendering = {
+  id: string;
+  measures: MeasureRendering[];
 };
 
 export class Part {
@@ -46,27 +40,18 @@ export class Part {
     return Math.max(0, ...this.measures.map((measure) => measure.getWidth()));
   }
 
-  render(opts: PartRenderOptions): PartRenderResult {
-    const measures = new Array<{
-      components: Array<{
-        vexflow: {
-          stave: vexflow.Stave;
-          voices: vexflow.Voice[];
-        };
-      }>;
-    }>();
+  render(opts: PartRenderOptions): PartRendering {
+    const measureRenderings = new Array<MeasureRendering>();
 
     let x = opts.x;
     const y = opts.y;
 
     for (const measure of this.measures) {
-      const result = measure.render({ x, y });
-
-      measures.push({ components: result.measure.components });
-
+      const measureRendering = measure.render({ x, y });
+      measureRenderings.push(measureRendering);
       x += measure.getWidth();
     }
 
-    return { measures };
+    return { id: this.id, measures: measureRenderings };
   }
 }

@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Part } from './part';
+import { Part, PartRendering } from './part';
 
 type SystemCreateOptions = {
   musicXml: {
@@ -10,17 +10,9 @@ type SystemCreateOptions = {
 
 type SystemRenderOptions = Record<string, never>;
 
-export type SystemRenderResult = {
-  parts: Array<{
-    measures: Array<{
-      components: Array<{
-        vexflow: {
-          stave: vexflow.Stave;
-          voices: vexflow.Voice[];
-        };
-      }>;
-    }>;
-  }>;
+export type SystemRendering = {
+  type: 'system';
+  parts: PartRendering[];
 };
 
 /**
@@ -86,27 +78,17 @@ export class System {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: SystemRenderOptions): SystemRenderResult {
-    const parts = new Array<{
-      measures: Array<{
-        components: Array<{
-          vexflow: {
-            stave: vexflow.Stave;
-            voices: vexflow.Voice[];
-          };
-        }>;
-      }>;
-    }>();
+  render(opts: SystemRenderOptions): SystemRendering {
+    const partRenderings = new Array<PartRendering>();
 
     for (const part of this.parts) {
-      const result = part.render({
+      const partRendering = part.render({
         x: this.x,
         y: this.x,
       });
-
-      parts.push({ measures: result.measures });
+      partRenderings.push(partRendering);
     }
 
-    return { parts };
+    return { type: 'system', parts: partRenderings };
   }
 }

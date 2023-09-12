@@ -14,7 +14,14 @@ type RestConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-export type RestRenderResult = Record<string, never>;
+type RestRenderOptions = Record<string, never>;
+
+export type RestRendering = {
+  type: 'rest';
+  vexflow: {
+    staveNote: vexflow.StaveNote;
+  };
+};
 
 export class Rest {
   static create(opts: RestCreateOptions): Rest {
@@ -37,7 +44,13 @@ export class Rest {
     this.clefType = opts.clefType;
   }
 
-  toVexflowStaveNote(): vexflow.StaveNote {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  render(opts: RestRenderOptions): RestRendering {
+    const vfStaveNote = this.toVexflowStaveNote();
+    return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
+  }
+
+  private toVexflowStaveNote(): vexflow.StaveNote {
     return new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
