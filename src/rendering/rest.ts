@@ -9,6 +9,20 @@ export type RestRendering = {
 };
 
 export class Rest {
+  private durationDenominator: musicxml.NoteDurationDenominator;
+  private dotCount: number;
+  private clefType: musicxml.ClefType;
+
+  private constructor(opts: {
+    durationDenominator: musicxml.NoteDurationDenominator;
+    dotCount: number;
+    clefType: musicxml.ClefType;
+  }) {
+    this.durationDenominator = opts.durationDenominator;
+    this.dotCount = opts.dotCount;
+    this.clefType = opts.clefType;
+  }
+
   static create(opts: {
     musicXml: {
       note: musicxml.Note;
@@ -22,20 +36,6 @@ export class Rest {
       dotCount: note.getDotCount(),
       clefType: opts.clefType,
     });
-  }
-
-  private durationDenominator: musicxml.NoteDurationDenominator;
-  private dotCount: number;
-  private clefType: musicxml.ClefType;
-
-  private constructor(opts: {
-    durationDenominator: musicxml.NoteDurationDenominator;
-    dotCount: number;
-    clefType: musicxml.ClefType;
-  }) {
-    this.durationDenominator = opts.durationDenominator;
-    this.dotCount = opts.dotCount;
-    this.clefType = opts.clefType;
   }
 
   render(): RestRendering {

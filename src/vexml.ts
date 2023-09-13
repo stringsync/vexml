@@ -25,16 +25,6 @@ const END_BARLINE_OFFSET = 1;
  * Vexml contains the core operation of this library: rendering MusicXML in a web browser.
  */
 export class Vexml {
-  /**
-   * Renders a MusicXML document to an HTML element.
-   */
-  static render(opts: RenderOptions): void {
-    const parser = new DOMParser();
-    const root = parser.parseFromString(opts.xml, 'application/xml');
-    const musicXml = new MusicXml(root);
-    rendering.Score.create(musicXml).render({ element: opts.element, width: opts.width });
-  }
-
   private musicXml: MusicXml;
   private renderer: vexflow.Renderer;
   private width: number;
@@ -46,6 +36,16 @@ export class Vexml {
     this.renderer = opts.renderer;
     this.width = opts.width;
     this.height = TOP_PADDING;
+  }
+
+  /**
+   * Renders a MusicXML document to an HTML element.
+   */
+  static render(opts: RenderOptions): void {
+    const parser = new DOMParser();
+    const root = parser.parseFromString(opts.xml, 'application/xml');
+    const musicXml = new MusicXml(root);
+    rendering.Score.create(musicXml).render({ element: opts.element, width: opts.width });
   }
 
   private render(): void {

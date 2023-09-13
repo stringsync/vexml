@@ -19,6 +19,7 @@
   "plugins": ["@typescript-eslint", "jest"],
   "ignorePatterns": ["*.xml"],
   "rules": {
+    "@typescript-eslint/member-ordering": "error",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
     "no-case-declarations": "off"

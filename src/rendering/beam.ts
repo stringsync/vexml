@@ -1,23 +1,14 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
-type CreateOptions = {
-  musicXml: {
-    beam: musicxml.Beam;
+export type BeamRendering = {
+  type: 'beam';
+  vexflow: {
+    beam: vexflow.Beam;
   };
 };
 
-type RenderOptions = {
-  ctx: vexflow.RenderContext;
-};
-
 export class Beam {
-  static create(opts: CreateOptions): Beam {
-    const beamNumber = opts.musicXml.beam.getNumber();
-    const beamValue = opts.musicXml.beam.getBeamValue();
-    return new Beam(beamNumber, beamValue);
-  }
-
   private beamNumber: number;
   private beamValue: musicxml.BeamValue;
 
@@ -26,7 +17,18 @@ export class Beam {
     this.beamValue = beamValue;
   }
 
-  render(opts: RenderOptions): void {
-    // noop
+  static create(opts: {
+    musicXml: {
+      beam: musicxml.Beam;
+    };
+  }): Beam {
+    const beamNumber = opts.musicXml.beam.getNumber();
+    const beamValue = opts.musicXml.beam.getBeamValue();
+    return new Beam(beamNumber, beamValue);
+  }
+
+  render(): BeamRendering {
+    const vfBeam = new vexflow.Beam([]);
+    return { type: 'beam', vexflow: { beam: vfBeam } };
   }
 }

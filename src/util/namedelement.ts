@@ -9,12 +9,12 @@ import { Value } from './value';
  * It also provides convenience methods on top of the Element API.
  */
 export class NamedElement<T extends string> {
+  private constructor(private readonly element: Element, public readonly name: T) {}
+
   /** Creates a NamedNode from a document node. */
   static of<T extends string = string>(element: Element): NamedElement<T> {
     return new NamedElement(element, element.nodeName as T);
   }
-
-  private constructor(private readonly element: Element, public readonly name: T) {}
 
   /** Determines if the node has the given name. */
   isNamed<S extends string>(name: S): this is NamedElement<S> {

@@ -1,14 +1,14 @@
-import { Enum, EnumValues } from '../musicxml/enums';
+import { Enum, EnumValues } from './enum';
 
 /**
  * Value is a wrapper around any arbitrary value that adds functionality to default.
  */
 export class Value<T> {
+  private constructor(private value: string | null, private defaultValue: T) {}
+
   static of(value: string | null): Value<null> {
     return new Value(value, null);
   }
-
-  private constructor(private value: string | null, private defaultValue: T) {}
 
   /** Returns a new attr with a different default value. */
   withDefault<T>(defaultValue: T): Value<T> {

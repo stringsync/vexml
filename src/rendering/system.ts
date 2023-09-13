@@ -12,15 +12,19 @@ export type SystemRendering = {
  * parts, and multiple systems collectively render the entirety of those parts.
  */
 export class System {
+  private parts: Part[];
+
+  private constructor(parts: Part[]) {
+    this.parts = parts;
+  }
+
   static create(opts: { musicXml: { parts: musicxml.Part[] } }): System {
     const parts = opts.musicXml.parts.map((part) => Part.create({ musicXml: { part } }));
     return new System(parts);
   }
 
-  private parts: Part[];
-
-  private constructor(parts: Part[]) {
-    this.parts = parts;
+  getWidth(): number {
+    return Math.max(0, ...this.parts.map((part) => part.getWidth()));
   }
 
   /**
@@ -76,6 +80,26 @@ export class System {
     }
 
     return systems;
+  }
+
+  fit(width: number): void {
+    const totalWidth = this.getWidth();
+    // Describes how much width we need to fill to fit the given width. When this is negative, it means we need to
+    // shrink the parts to fit the width.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const excessWidth = width - totalWidth;
+
+    const measureCount = this.getMeasureCount();
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // Measures across parts, not all measures of a given part.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const measures = this.parts.map((part) => part.getMeasureAt(measureIndex));
+
+      // All measures across parts should have the same width.
+
+      // TODO: When measures can set width, finish this.
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

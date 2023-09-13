@@ -14,18 +14,18 @@ export type ScoreRendering = {
  * contextual information like title, composer, and other pertinent details.
  */
 export class Score {
+  private system: System;
+
+  private constructor(system: System) {
+    this.system = system;
+  }
+
   static create(musicXml: musicxml.MusicXml): Score {
     const parts = musicXml.getScorePartwise()?.getParts() ?? [];
 
     const system = System.create({ musicXml: { parts } });
 
     return new Score(system);
-  }
-
-  private system: System;
-
-  private constructor(system: System) {
-    this.system = system;
   }
 
   render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {

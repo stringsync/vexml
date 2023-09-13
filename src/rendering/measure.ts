@@ -12,6 +12,14 @@ export type MeasureRendering = {
  * and is the primary unit of time in a score. Measures are sequenced consecutively within a system.
  */
 export class Measure {
+  private staves: Stave[];
+  private previousMeasure: Measure | null;
+
+  private constructor(opts: { staves: Stave[]; previousMeasure: Measure | null }) {
+    this.staves = opts.staves;
+    this.previousMeasure = opts.previousMeasure;
+  }
+
   static create(opts: {
     musicXml: {
       measure: musicxml.Measure;
@@ -78,14 +86,6 @@ export class Measure {
     return true;
   }
 
-  private staves: Stave[];
-  private previousMeasure: Measure | null;
-
-  private constructor(opts: { staves: Stave[]; previousMeasure: Measure | null }) {
-    this.staves = opts.staves;
-    this.previousMeasure = opts.previousMeasure;
-  }
-
   getWidth(partMeasureIndex: number): number {
     let width = this.getMinJustifyWidth();
     if (this.shouldRenderModifiers(partMeasureIndex)) {
@@ -105,7 +105,6 @@ export class Measure {
       const staveRendering = stave.render({
         x: opts.x,
         y: opts.y,
-        // TODO: It seems like stave knows too much about
         width: this.getWidth(opts.partMeasureIndex),
         renderModifiers: this.shouldRenderModifiers(opts.partMeasureIndex),
       });

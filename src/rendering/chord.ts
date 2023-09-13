@@ -12,6 +12,32 @@ export type ChordRendering = {
 };
 
 export class Chord {
+  private keys: string[];
+  private stem: musicxml.Stem | null;
+  private beams: Beam[];
+  private accidental: Accidental | null;
+  private dotCount: number;
+  private durationDenominator: musicxml.NoteDurationDenominator;
+  private clefType: musicxml.ClefType;
+
+  private constructor(opts: {
+    keys: string[];
+    stem: musicxml.Stem | null;
+    beams: Beam[];
+    accidental: Accidental | null;
+    dotCount: number;
+    durationDenominator: musicxml.NoteDurationDenominator;
+    clefType: musicxml.ClefType;
+  }) {
+    this.keys = opts.keys;
+    this.stem = opts.stem;
+    this.beams = opts.beams;
+    this.accidental = opts.accidental;
+    this.dotCount = opts.dotCount;
+    this.durationDenominator = opts.durationDenominator;
+    this.clefType = opts.clefType;
+  }
+
   static create(opts: {
     musicXml: {
       note: musicxml.Note;
@@ -45,32 +71,6 @@ export class Chord {
       key += `/${suffix}`;
     }
     return key;
-  }
-
-  private keys: string[];
-  private stem: musicxml.Stem | null;
-  private beams: Beam[];
-  private accidental: Accidental | null;
-  private dotCount: number;
-  private durationDenominator: musicxml.NoteDurationDenominator;
-  private clefType: musicxml.ClefType;
-
-  private constructor(opts: {
-    keys: string[];
-    stem: musicxml.Stem | null;
-    beams: Beam[];
-    accidental: Accidental | null;
-    dotCount: number;
-    durationDenominator: musicxml.NoteDurationDenominator;
-    clefType: musicxml.ClefType;
-  }) {
-    this.keys = opts.keys;
-    this.stem = opts.stem;
-    this.beams = opts.beams;
-    this.accidental = opts.accidental;
-    this.dotCount = opts.dotCount;
-    this.durationDenominator = opts.durationDenominator;
-    this.clefType = opts.clefType;
   }
 
   render(): ChordRendering {
