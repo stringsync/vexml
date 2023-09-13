@@ -19,8 +19,6 @@ type VoiceConstructorOptions = {
   timeSignature: musicxml.TimeSignature;
 };
 
-type VoiceRenderOptions = Record<string, never>;
-
 export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering;
 
 export type VoiceRendering = {
@@ -71,8 +69,7 @@ export class Voice {
     this.timeSignature = opts.timeSignature;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: VoiceRenderOptions): VoiceRendering {
+  render(): VoiceRendering {
     const vfVoice = this.toVexflowVoice();
 
     return {
@@ -85,13 +82,13 @@ export class Voice {
   private toVexflowVoice(): vexflow.Voice {
     const tickables = this.entries.map<vexflow.Tickable>((entry) => {
       if (entry instanceof Note) {
-        return entry.render({}).vexflow.staveNote;
+        return entry.render().vexflow.staveNote;
       }
       if (entry instanceof Chord) {
-        return entry.render({}).vexflow.staveNote;
+        return entry.render().vexflow.staveNote;
       }
       if (entry instanceof Rest) {
-        return entry.render({}).vexflow.staveNote;
+        return entry.render().vexflow.staveNote;
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${entry}`);

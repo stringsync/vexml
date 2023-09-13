@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Beam } from './beam';
-import { Accidental } from './accidental';
+import { Accidental, AccidentalRendering } from './accidental';
 
 type NoteCreateOptions = {
   musicXml: {
@@ -20,13 +20,12 @@ type NoteConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type NoteRenderOptions = Record<string, never>;
-
 export type NoteRendering = {
   type: 'note';
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
+  accidental: AccidentalRendering | null;
 };
 
 export class Note {
@@ -37,7 +36,7 @@ export class Note {
     const code = note.getAccidentalCode();
     if (musicxml.ACCIDENTAL_CODES.includes(code)) {
       const isCautionary = note.hasAccidentalCautionary();
-      accidental = Accidental.create({ code, isCautionary });
+      accidental = new Accidental({ code, isCautionary });
     }
 
     const clefType = opts.clefType;
@@ -73,18 +72,38 @@ export class Note {
     this.clefType = opts.clefType;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: NoteRenderOptions): NoteRendering {
-    const vfStaveNote = this.toVexflowStaveNote();
-    return { type: 'note', vexflow: { staveNote: vfStaveNote } };
+  render(): NoteRendering {
+    const accidentalRendering = this.accidental?.render() ?? null;
+    const vfAccidental = accidentalRendering?.vexflow.accidental ?? null;
+
+    const vfStaveNote = this.toVexflowStaveNote(vfAccidental);
+
+    return { type: 'note', vexflow: { staveNote: vfStaveNote }, accidental: accidentalRendering };
   }
 
-  private toVexflowStaveNote(): vexflow.StaveNote {
-    return new vexflow.StaveNote({
+  private toVexflowStaveNote(vfAccidental: vexflow.Accidental | null): vexflow.StaveNote {
+    const vfStaveNote = new vexflow.StaveNote({
       keys: [this.key],
       duration: this.durationDenominator,
       dots: this.dotCount,
       clef: this.clefType,
     });
+
+    if (vfAccidental) {
+      vfStaveNote.addModifier(vfAccidental);
+    }
+
+    switch (this.stem) {
+      case 'up':
+        vfStaveNote.setStemDirection(vexflow.Stem.UP);
+        break;
+      case 'down':
+        vfStaveNote.setStemDirection(vexflow.Stem.DOWN);
+        break;
+      default:
+        vfStaveNote.autoStem();
+    }
+
+    return vfStaveNote;
   }
 }
