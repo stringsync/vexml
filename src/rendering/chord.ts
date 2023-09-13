@@ -61,7 +61,15 @@ export class Chord {
 
     const keys = [note, ...note.getChordTail()].map(Chord.getKey);
 
-    return new Chord({ keys, stem, beams, accidental, dotCount, durationDenominator, clefType });
+    return new Chord({
+      keys,
+      stem,
+      beams,
+      accidental,
+      dotCount,
+      durationDenominator,
+      clefType,
+    });
   }
 
   private static getKey(note: musicxml.Note): string {
@@ -71,6 +79,18 @@ export class Chord {
       key += `/${suffix}`;
     }
     return key;
+  }
+
+  clone(): Chord {
+    return new Chord({
+      keys: [...this.keys],
+      stem: this.stem,
+      beams: this.beams.map((beam) => beam.clone()),
+      accidental: this.accidental.clone(),
+      dotCount: this.dotCount,
+      durationDenominator: this.durationDenominator,
+      clefType: this.clefType,
+    });
   }
 
   render(): ChordRendering {

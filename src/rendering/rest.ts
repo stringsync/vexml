@@ -38,6 +38,14 @@ export class Rest {
     });
   }
 
+  clone(): Rest {
+    return new Rest({
+      durationDenominator: this.durationDenominator,
+      dotCount: this.dotCount,
+      clefType: this.clefType,
+    });
+  }
+
   render(): RestRendering {
     const vfStaveNote = this.toVexflowStaveNote();
     return { type: 'rest', vexflow: { staveNote: vfStaveNote } };

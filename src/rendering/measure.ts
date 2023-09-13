@@ -86,6 +86,13 @@ export class Measure {
     return true;
   }
 
+  clone(): Measure {
+    return new Measure({
+      staves: this.staves.map((stave) => stave.clone()),
+      previousMeasure: null,
+    });
+  }
+
   getWidth(partMeasureIndex: number): number {
     let width = this.getMinJustifyWidth();
     if (this.shouldRenderModifiers(partMeasureIndex)) {

@@ -12,9 +12,9 @@ export class Beam {
   private beamNumber: number;
   private beamValue: musicxml.BeamValue;
 
-  private constructor(beamNumber: number, beamValue: musicxml.BeamValue) {
-    this.beamNumber = beamNumber;
-    this.beamValue = beamValue;
+  private constructor(opts: { beamNumber: number; beamValue: musicxml.BeamValue }) {
+    this.beamNumber = opts.beamNumber;
+    this.beamValue = opts.beamValue;
   }
 
   static create(opts: {
@@ -24,7 +24,14 @@ export class Beam {
   }): Beam {
     const beamNumber = opts.musicXml.beam.getNumber();
     const beamValue = opts.musicXml.beam.getBeamValue();
-    return new Beam(beamNumber, beamValue);
+    return new Beam({ beamNumber, beamValue });
+  }
+
+  clone(): Beam {
+    return new Beam({
+      beamNumber: this.beamNumber,
+      beamValue: this.beamValue,
+    });
   }
 
   render(): BeamRendering {

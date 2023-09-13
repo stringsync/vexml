@@ -1,6 +1,10 @@
 export class TimeSignature {
   constructor(private beatsPerMeasure: number, private beatValue: number) {}
 
+  clone(): TimeSignature {
+    return new TimeSignature(this.beatsPerMeasure, this.beatValue);
+  }
+
   /**
    * Returns the number of beats per measure.
    */
