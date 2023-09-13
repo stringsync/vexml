@@ -65,7 +65,27 @@ export class Note {
       key += `/${suffix}`;
     }
 
-    return new Note({ key, stem, beams, accidental, dotCount, durationDenominator, clefType });
+    return new Note({
+      key,
+      stem,
+      beams,
+      accidental,
+      dotCount,
+      durationDenominator,
+      clefType,
+    });
+  }
+
+  clone(): Note {
+    return new Note({
+      key: this.key,
+      stem: this.stem,
+      beams: this.beams.map((beam) => beam.clone()),
+      accidental: this.accidental.clone(),
+      dotCount: this.dotCount,
+      durationDenominator: this.durationDenominator,
+      clefType: this.clefType,
+    });
   }
 
   render(): NoteRendering {

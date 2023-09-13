@@ -62,6 +62,25 @@ export class Voice {
     return Note.create({ musicXml: { note }, clefType });
   }
 
+  clone(): Voice {
+    return new Voice({
+      entries: this.entries.map((entry) => {
+        if (entry instanceof Note) {
+          return entry.clone();
+        }
+        if (entry instanceof Chord) {
+          return entry.clone();
+        }
+        if (entry instanceof Rest) {
+          return entry.clone();
+        }
+        // If this error is thrown, this is a problem with vexml, not the musicXML document.
+        throw new Error(`unexpected voice entry: ${entry}`);
+      }),
+      timeSignature: this.timeSignature.clone(),
+    });
+  }
+
   render(): VoiceRendering {
     const vfVoice = this.toVexflowVoice();
 

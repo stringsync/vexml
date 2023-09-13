@@ -102,6 +102,18 @@ export class Stave {
     });
   }
 
+  clone(): Stave {
+    return new Stave({
+      staffNumber: this.staffNumber,
+      clefType: this.clefType,
+      timeSignature: this.timeSignature.clone(),
+      keySignature: this.keySignature,
+      beginningBarStyle: this.beginningBarStyle,
+      endBarStyle: this.endBarStyle,
+      voices: this.voices.map((voice) => voice.clone()),
+    });
+  }
+
   getClefType(): musicxml.ClefType {
     return this.clefType;
   }

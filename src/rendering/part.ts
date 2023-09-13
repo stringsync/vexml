@@ -29,10 +29,6 @@ export class Part {
     return new Part({ id, measures });
   }
 
-  clone(): Part {
-    return this;
-  }
-
   getWidth(): number {
     return Math.max(0, ...this.measures.map((measure, partMeasureIndex) => measure.getWidth(partMeasureIndex)));
   }
@@ -58,7 +54,9 @@ export class Part {
       );
     }
 
-    const measures = this.measures.slice(opts.measureStartIndex, opts.measureEndIndex);
+    const measures = this.measures
+      .slice(opts.measureStartIndex, opts.measureEndIndex)
+      .map((measure) => measure.clone());
 
     return new Part({ id: this.id, measures });
   }
