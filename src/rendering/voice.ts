@@ -17,6 +17,14 @@ export type VoiceRendering = {
 };
 
 export class Voice {
+  private entries: VoiceEntry[];
+  private timeSignature: musicxml.TimeSignature;
+
+  private constructor(opts: { entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
+    this.entries = opts.entries;
+    this.timeSignature = opts.timeSignature;
+  }
+
   static create(opts: {
     musicXml: {
       measure: musicxml.Measure;
@@ -52,14 +60,6 @@ export class Voice {
       return Rest.create({ musicXml: { note }, clefType });
     }
     return Note.create({ musicXml: { note }, clefType });
-  }
-
-  private entries: VoiceEntry[];
-  private timeSignature: musicxml.TimeSignature;
-
-  private constructor(opts: { entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
-    this.entries = opts.entries;
-    this.timeSignature = opts.timeSignature;
   }
 
   render(): VoiceRendering {

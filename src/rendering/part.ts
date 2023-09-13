@@ -7,6 +7,14 @@ export type PartRendering = {
 };
 
 export class Part {
+  private id: string;
+  private measures: Measure[];
+
+  private constructor(opts: { id: string; measures: Measure[] }) {
+    this.id = opts.id;
+    this.measures = opts.measures;
+  }
+
   static create(opts: { musicXml: { part: musicxml.Part } }): Part {
     const id = opts.musicXml.part.getId();
 
@@ -21,12 +29,8 @@ export class Part {
     return new Part({ id, measures });
   }
 
-  private id: string;
-  private measures: Measure[];
-
-  private constructor(opts: { id: string; measures: Measure[] }) {
-    this.id = opts.id;
-    this.measures = opts.measures;
+  clone(): Part {
+    return this;
   }
 
   getWidth(): number {

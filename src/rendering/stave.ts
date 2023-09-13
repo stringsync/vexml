@@ -14,6 +14,32 @@ export type StaveRendering = {
 };
 
 export class Stave {
+  private staffNumber: number;
+  private clefType: musicxml.ClefType;
+  private timeSignature: musicxml.TimeSignature;
+  private keySignature: string;
+  private beginningBarStyle: musicxml.BarStyle;
+  private endBarStyle: musicxml.BarStyle;
+  private voices: Voice[];
+
+  private constructor(opts: {
+    staffNumber: number;
+    clefType: musicxml.ClefType;
+    timeSignature: musicxml.TimeSignature;
+    keySignature: string;
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
+    voices: Voice[];
+  }) {
+    this.staffNumber = opts.staffNumber;
+    this.timeSignature = opts.timeSignature;
+    this.keySignature = opts.keySignature;
+    this.beginningBarStyle = opts.beginningBarStyle;
+    this.endBarStyle = opts.endBarStyle;
+    this.clefType = opts.clefType;
+    this.voices = opts.voices;
+  }
+
   static create(opts: {
     musicXml: {
       measure: musicxml.Measure;
@@ -74,32 +100,6 @@ export class Stave {
       endBarStyle,
       voices,
     });
-  }
-
-  private staffNumber: number;
-  private clefType: musicxml.ClefType;
-  private timeSignature: musicxml.TimeSignature;
-  private keySignature: string;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
-  private voices: Voice[];
-
-  private constructor(opts: {
-    staffNumber: number;
-    clefType: musicxml.ClefType;
-    timeSignature: musicxml.TimeSignature;
-    keySignature: string;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
-    voices: Voice[];
-  }) {
-    this.staffNumber = opts.staffNumber;
-    this.timeSignature = opts.timeSignature;
-    this.keySignature = opts.keySignature;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
-    this.clefType = opts.clefType;
-    this.voices = opts.voices;
   }
 
   getClefType(): musicxml.ClefType {
