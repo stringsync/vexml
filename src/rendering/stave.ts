@@ -136,7 +136,7 @@ export class Stave {
     if (this.voices.length === 0) {
       return 0;
     }
-    const vfVoices = this.voices.map((voice) => voice.render({}).vexflow.voice);
+    const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
     const vfFormatter = new vexflow.Formatter();
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + JUSTIFY_PADDING;
   }

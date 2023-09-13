@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Accidental } from './accidental';
+import { Accidental, AccidentalRendering } from './accidental';
 import { Beam } from './beam';
 
 type ChordCreateOptions = {
@@ -20,13 +20,12 @@ type ChordConstructorOptions = {
   clefType: musicxml.ClefType;
 };
 
-type ChordRenderOptions = Record<string, never>;
-
 export type ChordRendering = {
   type: 'chord';
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
+  accidental: AccidentalRendering | null;
 };
 
 export class Chord {
@@ -37,7 +36,7 @@ export class Chord {
     const code = note.getAccidentalCode();
     if (musicxml.ACCIDENTAL_CODES.includes(code)) {
       const isCautionary = note.hasAccidentalCautionary();
-      accidental = Accidental.create({ code, isCautionary });
+      accidental = new Accidental({ code, isCautionary });
     }
 
     const clefType = opts.clefType;
@@ -78,18 +77,27 @@ export class Chord {
     this.clefType = opts.clefType;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: ChordRenderOptions): ChordRendering {
-    const vfStaveNote = this.toVexflowStaveNote();
-    return { type: 'chord', vexflow: { staveNote: vfStaveNote } };
+  render(): ChordRendering {
+    const accidentalRendering = this.accidental?.render() ?? null;
+    const vfAccidental = accidentalRendering?.vexflow.accidental ?? null;
+
+    const vfStaveNote = this.toVexflowStaveNote(vfAccidental);
+
+    return { type: 'chord', vexflow: { staveNote: vfStaveNote }, accidental: accidentalRendering };
   }
 
-  private toVexflowStaveNote(): vexflow.StaveNote {
-    return new vexflow.StaveNote({
+  private toVexflowStaveNote(vfAccidental: vexflow.Accidental | null): vexflow.StaveNote {
+    const vfStaveNote = new vexflow.StaveNote({
       keys: this.keys,
       duration: this.durationDenominator,
       dots: this.dotCount,
       clef: this.clefType,
     });
+
+    if (vfAccidental) {
+      vfStaveNote.addModifier(vfAccidental);
+    }
+
+    return vfStaveNote;
   }
 }
