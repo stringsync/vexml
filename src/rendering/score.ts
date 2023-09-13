@@ -2,15 +2,6 @@ import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
-type ScoreCreateOptions = {
-  musicXml: musicxml.MusicXml;
-};
-
-type ScoreRenderOptions = {
-  element: HTMLDivElement | HTMLCanvasElement;
-  width: number;
-};
-
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
@@ -23,8 +14,8 @@ export type ScoreRendering = {
  * contextual information like title, composer, and other pertinent details.
  */
 export class Score {
-  static create(opts: ScoreCreateOptions): Score {
-    const parts = opts.musicXml.getScorePartwise()?.getParts() ?? [];
+  static create(musicXml: musicxml.MusicXml): Score {
+    const parts = musicXml.getScorePartwise()?.getParts() ?? [];
 
     const system = System.create({ musicXml: { parts } });
 
@@ -37,7 +28,7 @@ export class Score {
     this.system = system;
   }
 
-  render(opts: ScoreRenderOptions): ScoreRendering {
+  render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 

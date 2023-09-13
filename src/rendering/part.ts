@@ -1,24 +1,13 @@
 import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 
-type PartCreateOptions = {
-  musicXml: {
-    part: musicxml.Part;
-  };
-};
-
-type PartRenderOptions = {
-  x: number;
-  y: number;
-};
-
 export type PartRendering = {
   id: string;
   measures: MeasureRendering[];
 };
 
 export class Part {
-  static create(opts: PartCreateOptions): Part {
+  static create(opts: { musicXml: { part: musicxml.Part } }): Part {
     const id = opts.musicXml.part.getId();
 
     let previousMeasure: Measure | null = null;
@@ -70,7 +59,7 @@ export class Part {
     return new Part({ id: this.id, measures });
   }
 
-  render(opts: PartRenderOptions): PartRendering {
+  render(opts: { x: number; y: number }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
     let x = opts.x;

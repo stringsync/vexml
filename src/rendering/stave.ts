@@ -4,37 +4,6 @@ import { Voice, VoiceRendering } from './voice';
 
 const JUSTIFY_PADDING = 100;
 
-type StaveCreateOptions = {
-  musicXml: {
-    measure: musicxml.Measure;
-  };
-  staffNumber: number;
-};
-
-type StaveConstructorOpts = {
-  staffNumber: number;
-  clefType: musicxml.ClefType;
-  timeSignature: musicxml.TimeSignature;
-  keySignature: string;
-  beginningBarStyle: musicxml.BarStyle;
-  endBarStyle: musicxml.BarStyle;
-  voices: Voice[];
-};
-
-type ToVexflowStaveOptions = {
-  x: number;
-  y: number;
-  width: number;
-  renderModifiers: boolean;
-};
-
-type StaveRenderOptions = {
-  x: number;
-  y: number;
-  width: number;
-  renderModifiers: boolean;
-};
-
 export type StaveRendering = {
   type: 'stave';
   staffNumber: number;
@@ -45,7 +14,12 @@ export type StaveRendering = {
 };
 
 export class Stave {
-  static create(opts: StaveCreateOptions): Stave {
+  static create(opts: {
+    musicXml: {
+      measure: musicxml.Measure;
+    };
+    staffNumber: number;
+  }): Stave {
     // TODO: Properly handle multiple <attributes>.
     const attributes = opts.musicXml.measure.getAttributes();
 
@@ -110,7 +84,15 @@ export class Stave {
   private endBarStyle: musicxml.BarStyle;
   private voices: Voice[];
 
-  private constructor(opts: StaveConstructorOpts) {
+  private constructor(opts: {
+    staffNumber: number;
+    clefType: musicxml.ClefType;
+    timeSignature: musicxml.TimeSignature;
+    keySignature: string;
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
+    voices: Voice[];
+  }) {
     this.staffNumber = opts.staffNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -150,7 +132,7 @@ export class Stave {
     }).getNoteStartX();
   }
 
-  render(opts: StaveRenderOptions): StaveRendering {
+  render(opts: { x: number; y: number; width: number; renderModifiers: boolean }): StaveRendering {
     const vfStave = this.toVexflowStave({
       x: opts.x,
       y: opts.y,
@@ -160,7 +142,7 @@ export class Stave {
 
     const voiceRenderings = new Array<VoiceRendering>();
     for (const voice of this.voices) {
-      const voiceRendering = voice.render({});
+      const voiceRendering = voice.render();
       voiceRenderings.push(voiceRendering);
       voiceRendering.vexflow.voice.setStave(vfStave);
     }
@@ -179,7 +161,7 @@ export class Stave {
     };
   }
 
-  private toVexflowStave(opts: ToVexflowStaveOptions): vexflow.Stave {
+  private toVexflowStave(opts: { x: number; y: number; width: number; renderModifiers: boolean }): vexflow.Stave {
     const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
       .setBegBarType(this.getBarlineType(this.beginningBarStyle))
       .setEndBarType(this.getBarlineType(this.endBarStyle));

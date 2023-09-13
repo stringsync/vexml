@@ -3,23 +3,6 @@ import * as vexflow from 'vexflow';
 import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 
-type NoteCreateOptions = {
-  musicXml: {
-    note: musicxml.Note;
-  };
-  clefType: musicxml.ClefType;
-};
-
-type NoteConstructorOptions = {
-  key: string;
-  stem: musicxml.Stem | null;
-  beams: Beam[];
-  accidental: Accidental | null;
-  dotCount: number;
-  durationDenominator: musicxml.NoteDurationDenominator;
-  clefType: musicxml.ClefType;
-};
-
 export type NoteRendering = {
   type: 'note';
   vexflow: {
@@ -29,7 +12,12 @@ export type NoteRendering = {
 };
 
 export class Note {
-  static create(opts: NoteCreateOptions): Note {
+  static create(opts: {
+    musicXml: {
+      note: musicxml.Note;
+    };
+    clefType: musicxml.ClefType;
+  }): Note {
     const note = opts.musicXml.note;
 
     let accidental: Accidental | null = null;
@@ -62,7 +50,15 @@ export class Note {
   private durationDenominator: musicxml.NoteDurationDenominator;
   private clefType: musicxml.ClefType;
 
-  private constructor(opts: NoteConstructorOptions) {
+  private constructor(opts: {
+    key: string;
+    stem: musicxml.Stem | null;
+    beams: Beam[];
+    accidental: Accidental | null;
+    dotCount: number;
+    durationDenominator: musicxml.NoteDurationDenominator;
+    clefType: musicxml.ClefType;
+  }) {
     this.key = opts.key;
     this.stem = opts.stem;
     this.beams = opts.beams;
