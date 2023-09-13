@@ -1,2 +1,1 @@
-export * from './measure';
-export * from './stave';
+export * from './score';

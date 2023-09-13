@@ -6,19 +6,6 @@ import { Rest, RestRendering } from './rest';
 
 export type VoiceEntry = Note | Chord | Rest;
 
-type VoiceCreateOptions = {
-  musicXml: {
-    measure: musicxml.Measure;
-  };
-  staffNumber: number;
-  clefType: musicxml.ClefType;
-};
-
-type VoiceConstructorOptions = {
-  entries: VoiceEntry[];
-  timeSignature: musicxml.TimeSignature;
-};
-
 export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering;
 
 export type VoiceRendering = {
@@ -30,7 +17,13 @@ export type VoiceRendering = {
 };
 
 export class Voice {
-  static create(opts: VoiceCreateOptions): Voice {
+  static create(opts: {
+    musicXml: {
+      measure: musicxml.Measure;
+    };
+    staffNumber: number;
+    clefType: musicxml.ClefType;
+  }): Voice {
     const entries = opts.musicXml.measure
       .getNotes()
       .filter((note) => note.getStaffNumber() === opts.staffNumber)
@@ -64,7 +57,7 @@ export class Voice {
   private entries: VoiceEntry[];
   private timeSignature: musicxml.TimeSignature;
 
-  private constructor(opts: VoiceConstructorOptions) {
+  private constructor(opts: { entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
   }

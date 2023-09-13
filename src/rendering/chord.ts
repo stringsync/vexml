@@ -3,23 +3,6 @@ import * as vexflow from 'vexflow';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Beam } from './beam';
 
-type ChordCreateOptions = {
-  musicXml: {
-    note: musicxml.Note;
-  };
-  clefType: musicxml.ClefType;
-};
-
-type ChordConstructorOptions = {
-  keys: string[];
-  stem: musicxml.Stem | null;
-  beams: Beam[];
-  accidental: Accidental | null;
-  dotCount: number;
-  durationDenominator: musicxml.NoteDurationDenominator;
-  clefType: musicxml.ClefType;
-};
-
 export type ChordRendering = {
   type: 'chord';
   vexflow: {
@@ -29,7 +12,12 @@ export type ChordRendering = {
 };
 
 export class Chord {
-  static create(opts: ChordCreateOptions): Chord {
+  static create(opts: {
+    musicXml: {
+      note: musicxml.Note;
+    };
+    clefType: musicxml.ClefType;
+  }): Chord {
     const note = opts.musicXml.note;
 
     let accidental: Accidental | null = null;
@@ -67,7 +55,15 @@ export class Chord {
   private durationDenominator: musicxml.NoteDurationDenominator;
   private clefType: musicxml.ClefType;
 
-  private constructor(opts: ChordConstructorOptions) {
+  private constructor(opts: {
+    keys: string[];
+    stem: musicxml.Stem | null;
+    beams: Beam[];
+    accidental: Accidental | null;
+    dotCount: number;
+    durationDenominator: musicxml.NoteDurationDenominator;
+    clefType: musicxml.ClefType;
+  }) {
     this.keys = opts.keys;
     this.stem = opts.stem;
     this.beams = opts.beams;
@@ -96,6 +92,17 @@ export class Chord {
 
     if (vfAccidental) {
       vfStaveNote.addModifier(vfAccidental);
+    }
+
+    switch (this.stem) {
+      case 'up':
+        vfStaveNote.setStemDirection(vexflow.Stem.UP);
+        break;
+      case 'down':
+        vfStaveNote.setStemDirection(vexflow.Stem.DOWN);
+        break;
+      default:
+        vfStaveNote.autoStem();
     }
 
     return vfStaveNote;

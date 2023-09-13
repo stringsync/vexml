@@ -1,19 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
 
-type MeasureCreateOptions = {
-  musicXml: {
-    measure: musicxml.Measure;
-  };
-  previousMeasure: Measure | null;
-};
-
-type MeasureRenderOptions = {
-  x: number;
-  y: number;
-  partMeasureIndex: number;
-};
-
 export type MeasureRendering = {
   type: 'measure';
   staves: StaveRendering[];
@@ -25,7 +12,12 @@ export type MeasureRendering = {
  * and is the primary unit of time in a score. Measures are sequenced consecutively within a system.
  */
 export class Measure {
-  static create(opts: MeasureCreateOptions): Measure {
+  static create(opts: {
+    musicXml: {
+      measure: musicxml.Measure;
+    };
+    previousMeasure: Measure | null;
+  }): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
     const staveCount = Math.max(1, ...attributes.map((attribute) => attribute.getStaveCount()));
@@ -106,7 +98,7 @@ export class Measure {
     return this.staves;
   }
 
-  render(opts: MeasureRenderOptions): MeasureRendering {
+  render(opts: { x: number; y: number; partMeasureIndex: number }): MeasureRendering {
     const staveRenderings = new Array<StaveRendering>();
 
     for (const stave of this.staves) {

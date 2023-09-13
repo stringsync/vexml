@@ -1,12 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Part, PartRendering } from './part';
 
-type SystemCreateOptions = {
-  musicXml: {
-    parts: musicxml.Part[];
-  };
-};
-
 export type SystemRendering = {
   type: 'system';
   parts: PartRendering[];
@@ -18,7 +12,7 @@ export type SystemRendering = {
  * parts, and multiple systems collectively render the entirety of those parts.
  */
 export class System {
-  static create(opts: SystemCreateOptions): System {
+  static create(opts: { musicXml: { parts: musicxml.Part[] } }): System {
     const parts = opts.musicXml.parts.map((part) => Part.create({ musicXml: { part } }));
     return new System(parts);
   }

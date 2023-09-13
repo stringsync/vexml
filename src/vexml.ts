@@ -8,7 +8,7 @@ import { Stave } from './musicxml/stave';
 import { Voice } from './musicxml/voice';
 import { System } from './musicxml/system';
 import { Line } from './musicxml/line';
-import { Score } from '@/rendering/score';
+import * as rendering from '@/rendering';
 
 export type RenderOptions = {
   element: HTMLDivElement | HTMLCanvasElement;
@@ -32,8 +32,7 @@ export class Vexml {
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
     const musicXml = new MusicXml(root);
-
-    Score.create({ musicXml }).render({ element: opts.element, width: opts.width });
+    rendering.Score.create(musicXml).render({ element: opts.element, width: opts.width });
   }
 
   private musicXml: MusicXml;
