@@ -2,6 +2,8 @@ import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
+const END_BARLINE_OFFSET = 1;
+
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
@@ -38,8 +40,14 @@ export class Score {
     let y = 0;
 
     // Render the entire hierarchy.
-    for (const system of systems) {
-      const systemRendering = system.render({ x: 0, y, width: opts.width });
+    for (let index = 0; index < systems.length; index++) {
+      const system = systems[index];
+      const systemRendering = system.render({
+        x: 0,
+        y,
+        width: opts.width - END_BARLINE_OFFSET,
+        isLastSystem: index === systems.length - 1,
+      });
       systemRenderings.push(systemRendering);
       y += 300;
     }
@@ -51,7 +59,7 @@ export class Score {
       .flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
-    vfRenderer.resize(400, y + 400);
+    vfRenderer.resize(opts.width, y + 400);
     const vfContext = vfRenderer.getContext();
 
     // Render vexflow.Stave elements.

@@ -12,19 +12,18 @@ export type SystemRendering = {
  * parts, and multiple systems collectively render the entirety of those parts.
  */
 export class System {
+  private id: symbol;
   private parts: Part[];
 
-  private constructor(parts: Part[]) {
-    this.parts = parts;
+  private constructor(opts: { id: symbol; parts: Part[] }) {
+    this.id = opts.id;
+    this.parts = opts.parts;
   }
 
   static create(opts: { musicXml: { parts: musicxml.Part[] } }): System {
-    const parts = opts.musicXml.parts.map((part) => Part.create({ musicXml: { part } }));
-    return new System(parts);
-  }
-
-  getWidth(): number {
-    return Math.max(0, ...this.parts.map((part) => part.getWidth()));
+    const id = Symbol();
+    const parts = opts.musicXml.parts.map((part) => Part.create({ systemId: id, musicXml: { part } }));
+    return new System({ id, parts });
   }
 
   /**
@@ -32,84 +31,76 @@ export class System {
    */
   split(width: number): System[] {
     const systems = new Array<System>();
-
-    // Measure index for the proposed split system, not overall measure index.
-    let partMeasureIndex = 0;
-    let measureStartIndex = 0;
-    let remainingWidth = width;
     const measureCount = this.getMeasureCount();
+    let measureStartIndex = 0;
+    let widthBudget = width;
 
-    // Adds a system, then prepares local state for the next system.
-    const addSystem = (measureEndIndex: number): void => {
-      const parts = this.parts.map((part) => part.slice({ measureStartIndex, measureEndIndex }));
-      const system = new System(parts);
+    const commitSystem = (measureEndIndex: number) => {
+      const systemId = Symbol();
+      const parts = this.parts.map((part) =>
+        part.slice({
+          systemId,
+          measureStartIndex,
+          measureEndIndex,
+        })
+      );
+
+      const system = new System({ id: systemId, parts });
       systems.push(system);
 
+      widthBudget = width;
       measureStartIndex = measureEndIndex;
-      remainingWidth = width;
-      partMeasureIndex = 0;
     };
 
-    // Includes the measure in the next system by doing the remainingWidth and partMeasureIndex accounting.
-    const includeMeasureInNextSystem = (requiredWidth: number): void => {
-      remainingWidth -= requiredWidth;
-      partMeasureIndex++;
+    const continueSystem = (width: number) => {
+      widthBudget -= width;
     };
 
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      // Measures across parts, not all measures of a given part.
-      const measures = this.parts.map((part) => part.getMeasureAt(measureIndex));
+    for (let index = 0; index < measureCount; index++) {
+      const measures = this.parts.map((part) => ({
+        previous: part.getMeasureAt(index - 1),
+        current: part.getMeasureAt(index)!,
+      }));
 
-      const requiredWidth = Math.max(0, ...measures.map((measure) => measure?.getWidth(partMeasureIndex) ?? 0));
+      let minRequiredWidth = Math.max(
+        0,
+        ...measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous))
+      );
 
-      const isProcessingLastMeasure = measureIndex == measureCount - 1;
-      const hasMeasures = measureIndex !== measureStartIndex;
-
-      if (isProcessingLastMeasure && hasMeasures) {
-        // When on the last measure, we need to push whatever parts+measures as the last system. If there are none left
-        // we don't need to push anything.
-        addSystem(measureIndex + 1);
-      } else if (requiredWidth <= remainingWidth) {
-        // When we have enough width budget, simply account for it by advancing the partMeasureIndex.
-        includeMeasureInNextSystem(requiredWidth);
+      const isProcessingLastMeasure = index === measureCount - 1;
+      if (isProcessingLastMeasure) {
+        if (minRequiredWidth <= widthBudget) {
+          commitSystem(index + 1);
+        } else {
+          commitSystem(index);
+          commitSystem(index + 1);
+        }
+      } else if (minRequiredWidth <= widthBudget) {
+        continueSystem(minRequiredWidth);
       } else {
-        // Otherwise, we don't have enough width budget and we need to push another system.
-        addSystem(measureIndex + 1);
-        includeMeasureInNextSystem(requiredWidth);
+        commitSystem(index);
+        // Recalculate to reflect the new conditions of the measure being on a different system.
+        // TODO: Using null breaks encapsulation, figure out another way to do this.
+        minRequiredWidth = Math.max(0, ...measures.map((measure) => measure.current.getMinRequiredWidth(null)));
+        continueSystem(minRequiredWidth);
       }
     }
 
     return systems;
   }
 
-  fit(width: number): void {
-    const totalWidth = this.getWidth();
-    // Describes how much width we need to fill to fit the given width. When this is negative, it means we need to
-    // shrink the parts to fit the width.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const excessWidth = width - totalWidth;
-
-    const measureCount = this.getMeasureCount();
-
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      // Measures across parts, not all measures of a given part.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const measures = this.parts.map((part) => part.getMeasureAt(measureIndex));
-
-      // All measures across parts should have the same width.
-
-      // TODO: When measures can set width, finish this.
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(opts: { x: number; y: number; width: number }): SystemRendering {
+  render(opts: { x: number; y: number; width: number; isLastSystem: boolean }): SystemRendering {
     const partRenderings = new Array<PartRendering>();
+
+    const minRequiredSystemWidth = this.getMinRequiredWidth();
 
     for (const part of this.parts) {
       const partRendering = part.render({
         x: opts.x,
         y: opts.y,
+        isLastSystem: opts.isLastSystem,
+        minRequiredSystemWidth,
+        targetSystemWidth: opts.width,
       });
       partRenderings.push(partRendering);
     }
@@ -119,5 +110,23 @@ export class System {
 
   private getMeasureCount(): number {
     return Math.max(0, ...this.parts.map((part) => part.getMeasures().length));
+  }
+
+  private getMinRequiredWidth(): number {
+    const measureCount = this.getMeasureCount();
+    let totalWidth = 0;
+
+    // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts).
+    for (let index = 0; index < measureCount; index++) {
+      // Measures across parts, not all measures of a given part.
+      const measures = this.parts.map((part) => ({
+        previous: part.getMeasureAt(index - 1),
+        current: part.getMeasureAt(index)!,
+      }));
+
+      totalWidth += Math.max(0, ...measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
+    }
+
+    return totalWidth;
   }
 }

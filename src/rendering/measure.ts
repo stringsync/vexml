@@ -13,18 +13,18 @@ export type MeasureRendering = {
  */
 export class Measure {
   private staves: Stave[];
-  private previousMeasure: Measure | null;
+  private systemId: symbol;
 
-  private constructor(opts: { staves: Stave[]; previousMeasure: Measure | null }) {
+  private constructor(opts: { staves: Stave[]; systemId: symbol }) {
     this.staves = opts.staves;
-    this.previousMeasure = opts.previousMeasure;
+    this.systemId = opts.systemId;
   }
 
   static create(opts: {
     musicXml: {
       measure: musicxml.Measure;
     };
-    previousMeasure: Measure | null;
+    systemId: symbol;
   }): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
@@ -40,7 +40,7 @@ export class Measure {
       });
     }
 
-    return new Measure({ staves, previousMeasure: opts.previousMeasure });
+    return new Measure({ staves, systemId: opts.systemId });
   }
 
   private static areModifiersEqual(measure1: Measure | null, measure2: Measure | null): boolean {
@@ -54,8 +54,8 @@ export class Measure {
       return true;
     }
 
-    const staves1 = measure1!.getStaves();
-    const staves2 = measure2!.getStaves();
+    const staves1 = measure1!.staves;
+    const staves2 = measure2!.staves;
     if (staves1.length !== staves2.length) {
       return false;
     }
@@ -89,42 +89,64 @@ export class Measure {
   clone(): Measure {
     return new Measure({
       staves: this.staves.map((stave) => stave.clone()),
-      previousMeasure: null,
+      systemId: this.systemId,
     });
   }
 
-  getWidth(partMeasureIndex: number): number {
-    let width = this.getMinJustifyWidth();
-    if (this.shouldRenderModifiers(partMeasureIndex)) {
-      width += this.getModifiersWidth();
+  setSystemId(systemId: symbol): this {
+    this.systemId = systemId;
+    return this;
+  }
+
+  getMinRequiredWidth(previousMeasure: Measure | null): number {
+    let requiredWidth = this.getMinJustifyWidth();
+    if (this.shouldRenderModifiers(previousMeasure)) {
+      requiredWidth += this.getModifiersWidth();
     }
-    return width;
+
+    return requiredWidth;
   }
 
-  getStaves(): Stave[] {
-    return this.staves;
+  shouldRenderModifiers(previousMeasure: Measure | null): boolean {
+    return this.systemId !== previousMeasure?.systemId || !Measure.areModifiersEqual(this, previousMeasure);
   }
 
-  render(opts: { x: number; y: number; partMeasureIndex: number }): MeasureRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    isLastSystem: boolean;
+    targetSystemWidth: number;
+    minRequiredSystemWidth: number;
+    previousMeasure: Measure | null;
+  }): MeasureRendering {
     const staveRenderings = new Array<StaveRendering>();
 
     for (const stave of this.staves) {
+      const renderModifiers = this.shouldRenderModifiers(opts.previousMeasure);
+
+      let minRequiredMeasureWidth = this.getMinJustifyWidth();
+      if (renderModifiers) {
+        minRequiredMeasureWidth += this.getModifiersWidth();
+      }
+
+      if (!opts.isLastSystem) {
+        const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
+        const widthFraction = minRequiredMeasureWidth / opts.minRequiredSystemWidth;
+        const widthDelta = widthDeficit * widthFraction;
+
+        minRequiredMeasureWidth += widthDelta;
+      }
+
       const staveRendering = stave.render({
         x: opts.x,
         y: opts.y,
-        width: this.getWidth(opts.partMeasureIndex),
-        renderModifiers: this.shouldRenderModifiers(opts.partMeasureIndex),
+        width: minRequiredMeasureWidth,
+        renderModifiers: renderModifiers,
       });
       staveRenderings.push(staveRendering);
     }
 
     return { type: 'measure', staves: staveRenderings };
-  }
-
-  private shouldRenderModifiers(partMeasureIndex: number): boolean {
-    const isFirstMeasureInPart = partMeasureIndex === 0;
-    const didModifiersChange = !Measure.areModifiersEqual(this, this.previousMeasure);
-    return isFirstMeasureInPart || didModifiersChange;
   }
 
   private getMinJustifyWidth(): number {

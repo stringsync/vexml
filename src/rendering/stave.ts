@@ -7,6 +7,7 @@ const JUSTIFY_PADDING = 100;
 export type StaveRendering = {
   type: 'stave';
   staffNumber: number;
+  width: number;
   vexflow: {
     stave: vexflow.Stave;
   };
@@ -166,6 +167,7 @@ export class Stave {
     return {
       type: 'stave',
       staffNumber: this.staffNumber,
+      width: opts.width,
       vexflow: {
         stave: vfStave,
       },
