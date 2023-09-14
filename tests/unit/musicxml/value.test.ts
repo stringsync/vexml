@@ -1,4 +1,4 @@
-import { Enum } from '@/musicxml/enums';
+import { Enum } from '@/util/enum';
 import { Value } from '@/util/value';
 
 describe(Value, () => {

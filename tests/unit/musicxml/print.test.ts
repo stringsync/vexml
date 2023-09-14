@@ -14,8 +14,8 @@ describe(Print, () => {
       const print = new Print(node);
 
       expect(print.getStaffLayouts()).toStrictEqual([
-        { number: 1, staffDistance: 42 },
-        { number: 2, staffDistance: 43 },
+        { staffNumber: 1, staffDistance: 42 },
+        { staffNumber: 2, staffDistance: 43 },
       ]);
     });
 
@@ -24,7 +24,7 @@ describe(Print, () => {
         staffLayouts: [xml.staffLayout({ staffDistance: xml.staffDistance({ value: '42' }) })],
       });
       const print = new Print(node);
-      expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: 42 }]);
+      expect(print.getStaffLayouts()).toStrictEqual([{ staffNumber: 1, staffDistance: 42 }]);
     });
 
     it('defaults number to 1 when invalid', () => {
@@ -32,7 +32,7 @@ describe(Print, () => {
         staffLayouts: [xml.staffLayout({ number: NaN })],
       });
       const print = new Print(node);
-      expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: null }]);
+      expect(print.getStaffLayouts()).toStrictEqual([{ staffNumber: 1, staffDistance: null }]);
     });
 
     it('defaults staff distance to null when missing', () => {
@@ -40,7 +40,7 @@ describe(Print, () => {
         staffLayouts: [xml.staffLayout({ number: 1 })],
       });
       const print = new Print(node);
-      expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: null }]);
+      expect(print.getStaffLayouts()).toStrictEqual([{ staffNumber: 1, staffDistance: null }]);
     });
 
     it('defaults staff distance to 0 when invalid', () => {
@@ -48,7 +48,7 @@ describe(Print, () => {
         staffLayouts: [xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ value: 'NaN' }) })],
       });
       const print = new Print(node);
-      expect(print.getStaffLayouts()).toStrictEqual([{ number: 1, staffDistance: 0 }]);
+      expect(print.getStaffLayouts()).toStrictEqual([{ staffNumber: 1, staffDistance: 0 }]);
     });
   });
 

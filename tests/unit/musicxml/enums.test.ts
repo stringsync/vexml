@@ -1,4 +1,4 @@
-import { Enum } from '@/musicxml/enums';
+import { Enum } from '@/util/enum';
 
 describe(Enum, () => {
   describe('includes', () => {
