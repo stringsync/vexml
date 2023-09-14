@@ -3,6 +3,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
 const END_BARLINE_OFFSET = 1;
+const DEFAULT_SYSTEM_DISTANCE = 80;
 
 export type ScoreRendering = {
   type: 'score';
@@ -62,7 +63,23 @@ export class Score {
         staffLayouts: this.staffLayouts,
       });
       systemRenderings.push(systemRendering);
-      y += 300;
+
+      // Height is calculated during render time to avoid duplicate work that would've been done if we were using
+      // instance methods on the rendering.Stave object.
+      const maxY = Math.max(
+        y,
+        ...systemRendering.parts
+          .flatMap((part) => part.measures)
+          .flatMap((measure) => measure.staves)
+          .map((stave) => {
+            const box = stave.vexflow.stave.getBoundingBox();
+            return box.getY() + box.getH();
+          })
+      );
+      const height = maxY - y;
+
+      y += height;
+      y += this.systemLayout?.systemDistance ?? DEFAULT_SYSTEM_DISTANCE;
     }
 
     // Get a reference to the staves.
