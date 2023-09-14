@@ -115,6 +115,10 @@ export class Stave {
     });
   }
 
+  getStaffNumber(): number {
+    return this.staffNumber;
+  }
+
   getClefType(): musicxml.ClefType {
     return this.clefType;
   }

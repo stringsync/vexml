@@ -59,6 +59,7 @@ export class Score {
         y,
         width: opts.width - END_BARLINE_OFFSET,
         isLastSystem: index === systems.length - 1,
+        staffLayouts: this.staffLayouts,
       });
       systemRenderings.push(systemRendering);
       y += 300;

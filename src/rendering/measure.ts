@@ -1,6 +1,8 @@
 import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
 
+const DEFAULT_STAFF_DISTANCE = 80;
+
 export type MeasureRendering = {
   type: 'measure';
   staves: StaveRendering[];
@@ -118,8 +120,11 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
+    staffLayouts: musicxml.StaffLayout[];
   }): MeasureRendering {
     const staveRenderings = new Array<StaveRendering>();
+
+    let y = opts.y;
 
     for (const stave of this.staves) {
       const renderModifiers = this.shouldRenderModifiers(opts.previousMeasure);
@@ -139,11 +144,17 @@ export class Measure {
 
       const staveRendering = stave.render({
         x: opts.x,
-        y: opts.y,
+        y,
         width: minRequiredMeasureWidth,
         renderModifiers: renderModifiers,
       });
       staveRenderings.push(staveRendering);
+
+      const staffDistance =
+        opts.staffLayouts.find((staffLayout) => staffLayout.staffNumber === staffLayout.staffNumber)?.staffDistance ??
+        DEFAULT_STAFF_DISTANCE;
+
+      y += staffDistance;
     }
 
     return { type: 'measure', staves: staveRenderings };

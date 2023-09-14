@@ -89,7 +89,13 @@ export class System {
     return systems;
   }
 
-  render(opts: { x: number; y: number; width: number; isLastSystem: boolean }): SystemRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    isLastSystem: boolean;
+    staffLayouts: musicxml.StaffLayout[];
+  }): SystemRendering {
     const partRenderings = new Array<PartRendering>();
 
     const minRequiredSystemWidth = this.getMinRequiredWidth();
@@ -101,6 +107,7 @@ export class System {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
+        staffLayouts: opts.staffLayouts,
       });
       partRenderings.push(partRendering);
     }
