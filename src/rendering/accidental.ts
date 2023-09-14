@@ -17,6 +17,13 @@ export class Accidental {
     this.isCautionary = opts.isCautionary;
   }
 
+  clone(): Accidental {
+    return new Accidental({
+      code: this.code,
+      isCautionary: this.isCautionary,
+    });
+  }
+
   getCode(): musicxml.AccidentalCode {
     return this.code;
   }
