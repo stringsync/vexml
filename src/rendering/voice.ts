@@ -82,36 +82,38 @@ export class Voice {
   }
 
   render(): VoiceRendering {
-    const vfVoice = this.toVexflowVoice();
-
-    return {
-      type: 'voice',
-      vexflow: { voice: vfVoice },
-      notes: [],
-    };
-  }
-
-  private toVexflowVoice(): vexflow.Voice {
-    const tickables = this.entries.map<vexflow.Tickable>((entry) => {
+    const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
       if (entry instanceof Note) {
-        return entry.render().vexflow.staveNote;
+        return entry.render();
       }
       if (entry instanceof Chord) {
-        return entry.render().vexflow.staveNote;
+        return entry.render();
       }
       if (entry instanceof Rest) {
-        return entry.render().vexflow.staveNote;
+        return entry.render();
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${entry}`);
     });
 
+    const vfTickables = voiceEntryRenderings.map((voiceEntryRendering) => voiceEntryRendering.vexflow.staveNote);
+
+    const vfVoice = this.toVexflowVoice(vfTickables);
+
+    return {
+      type: 'voice',
+      vexflow: { voice: vfVoice },
+      notes: voiceEntryRenderings,
+    };
+  }
+
+  private toVexflowVoice(vfTickables: vexflow.Tickable[]): vexflow.Voice {
     return new vexflow.Voice({
       num_beats: this.timeSignature.getBeatsPerMeasure(),
       beat_value: this.timeSignature.getBeatValue(),
     })
       .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)
-      .addTickables(tickables);
+      .addTickables(vfTickables);
   }
 }

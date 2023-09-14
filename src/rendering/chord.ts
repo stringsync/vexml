@@ -86,7 +86,7 @@ export class Chord {
       keys: [...this.keys],
       stem: this.stem,
       beams: this.beams.map((beam) => beam.clone()),
-      accidental: this.accidental.clone(),
+      accidental: this.accidental?.clone() ?? null,
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clefType: this.clefType,

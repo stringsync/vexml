@@ -5863,10 +5863,10 @@ v8-to-istanbul@^9.0.1:
     "@types/istanbul-lib-coverage" "^2.0.1"
     convert-source-map "^1.6.0"
 
-vexflow@^4.2.0-beta.2:
-  version "4.2.0-beta.2"
-  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-4.2.0-beta.2.tgz#789907cd58f336cb7ca4e64775bc14bf38458376"
-  integrity sha512-bdFRoSNbqZjo8WQogmB+1RNXDueXUBkS6BpEI63Gd90CUUHmKcmfciFBlPwMMpvpEQ5bvgVl2XhEPt0BJvlk8g==
+vexflow@4.2.3:
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-4.2.3.tgz#2db536297fc97fd1f502cdc042ccc6caefd9bc11"
+  integrity sha512-YiwYhZYuXPKqPfvvIC0QRYS3xnInDjeAxJeAZsQ+njTEE3q10sZMfo7RRGXj40rg7n74AFWdTiN3FymW8qE1Jw==
 
 w3c-xmlserializer@^4.0.0:
   version "4.0.0"

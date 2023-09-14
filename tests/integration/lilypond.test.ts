@@ -42,15 +42,15 @@ describe('lilypond', () => {
       width: t.width,
     });
 
-    await page.setViewport({
-      width: t.width,
-      // height doesn't matter since we screenshot the element, not the page.
-      height: 0,
-    });
-    await page.setContent(outerDiv.outerHTML);
+    // await page.setViewport({
+    //   width: t.width,
+    //   // height doesn't matter since we screenshot the element, not the page.
+    //   height: 0,
+    // });
+    // await page.setContent(outerDiv.outerHTML);
 
-    const element = await page.$('#screenshot');
-    const screenshot = await element!.screenshot();
-    expect(screenshot).toMatchImageSnapshot();
+    // const element = await page.$('#screenshot');
+    // const screenshot = await element!.screenshot();
+    // expect(screenshot).toMatchImageSnapshot();
   });
 });

@@ -23,12 +23,12 @@
     "pretest": "yarn build:image",
     "pretest:ci": "yarn build:image",
     "pretest:m1": "yarn build:image:m1",
-    "test": "docker run -it -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand",
-    "test:ci": "docker run vexml:latest yarn jest --runInBand --ci",
-    "test:m1": "docker run -it -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand"
+    "test": "docker run -it --rm -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand",
+    "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci",
+    "test:m1": "docker run -it --rm -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand"
   },
   "dependencies": {
-    "vexflow": "^4.2.0-beta.2"
+    "vexflow": "4.2.3"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",
