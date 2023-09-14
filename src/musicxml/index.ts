@@ -19,3 +19,4 @@ export * from './timesignature';
 export * from './types';
 export * from './voice';
 export * from './staffdetails';
+export * from './defaults';

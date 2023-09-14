@@ -26,15 +26,14 @@ export class System {
     return new System({ id, parts });
   }
 
-  /**
-   * Splits the system into smaller systems that fit in the width.
-   */
+  /** Splits the system into smaller systems that fit in the width. */
   split(width: number): System[] {
     const systems = new Array<System>();
     const measureCount = this.getMeasureCount();
     let measureStartIndex = 0;
     let widthBudget = width;
 
+    /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
       const systemId = Symbol();
       const parts = this.parts.map((part) =>
@@ -52,6 +51,7 @@ export class System {
       measureStartIndex = measureEndIndex;
     };
 
+    /** Accounts for a system being added. */
     const continueSystem = (width: number) => {
       widthBudget -= width;
     };

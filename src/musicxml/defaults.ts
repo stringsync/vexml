@@ -1,10 +1,10 @@
 import { NamedElement } from '../util/namedelement';
 import { StaffLayout, SystemLayout } from './types';
 
-export class Print {
-  constructor(private element: NamedElement<'print'>) {}
+export class Defaults {
+  constructor(private element: NamedElement<'defaults'>) {}
 
-  /** Returns staff layouts of the print. */
+  /** Returns staff layouts of the defaults element. */
   getStaffLayouts(): StaffLayout[] {
     return this.element.all('staff-layout').map((element) => ({
       staffNumber: element.attr('number').withDefault(1).int(),
@@ -12,7 +12,7 @@ export class Print {
     }));
   }
 
-  /** Returns system layouts of the print. */
+  /** Returns system layouts of the defaults element. */
   getSystemLayout(): SystemLayout {
     const leftMargin = this.element.first('left-margin')?.content().withDefault(0) ?? null;
     const rightMargin = this.element.first('right-margin')?.content().withDefault(0) ?? null;
