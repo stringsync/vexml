@@ -17,17 +17,29 @@ export type ScoreRendering = {
  */
 export class Score {
   private system: System;
+  private staffLayouts: musicxml.StaffLayout[];
+  private systemLayout: musicxml.SystemLayout | null;
 
-  private constructor(system: System) {
-    this.system = system;
+  private constructor(opts: {
+    system: System;
+    staffLayouts: musicxml.StaffLayout[];
+    systemLayout: musicxml.SystemLayout | null;
+  }) {
+    this.system = opts.system;
+    this.staffLayouts = opts.staffLayouts;
+    this.systemLayout = opts.systemLayout;
   }
 
   static create(musicXml: musicxml.MusicXml): Score {
-    const parts = musicXml.getScorePartwise()?.getParts() ?? [];
+    const scorePartwise = musicXml.getScorePartwise();
+    const parts = scorePartwise?.getParts() ?? [];
+    const defaults = scorePartwise?.getDefaults() ?? null;
+    const staffLayouts = defaults?.getStaffLayouts() ?? [];
+    const systemLayout = defaults?.getSystemLayout() ?? null;
 
     const system = System.create({ musicXml: { parts } });
 
-    return new Score(system);
+    return new Score({ system, staffLayouts, systemLayout });
   }
 
   render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
@@ -37,7 +49,7 @@ export class Score {
     // Split the main system into smaller ones to fit in the width.
     const systems = this.system.split(opts.width);
 
-    let y = 0;
+    let y = this.systemLayout?.topSystemDistance ?? 0;
 
     // Render the entire hierarchy.
     for (let index = 0; index < systems.length; index++) {

@@ -1,4 +1,5 @@
 import { NamedElement } from '../util/namedelement';
+import { Defaults } from './defaults';
 import { Part } from './part';
 
 /**
@@ -33,5 +34,10 @@ export class ScorePartwise {
   /** Returns an array of parts in the order they appear. */
   getParts(): Part[] {
     return this.element.all('part').map((element) => new Part(element));
+  }
+
+  getDefaults(): Defaults | null {
+    const defaults = this.element.first('defaults');
+    return defaults ? new Defaults(defaults) : null;
   }
 }
