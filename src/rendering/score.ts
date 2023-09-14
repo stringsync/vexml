@@ -89,7 +89,7 @@ export class Score {
       .flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
-    vfRenderer.resize(opts.width, y + 400);
+    vfRenderer.resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
     // Render vexflow.Stave elements.

@@ -16,8 +16,8 @@
   "scripts": {
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
-    "build:image": "docker build . --tag vexml:latest --quiet",
-    "build:image:m1": "docker build . --tag vexml:latest --quiet --platform linux/amd64",
+    "build:image": "docker build . --tag vexml:latest",
+    "build:image:m1": "docker build . --tag vexml:latest --platform linux/amd64",
     "lint": "yarn eslint",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
