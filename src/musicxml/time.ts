@@ -29,9 +29,9 @@ export class Time {
 
     // Ignore extra <beats> and <beat-type> elements.
     const len = Math.min(beats.length, beatTypes.length);
-    for (let ndx = 0; ndx < len; ndx++) {
-      const beatsPerMeasure = parseInt(beats[ndx], 10);
-      const beatValue = parseInt(beatTypes[ndx], 10);
+    for (let index = 0; index < len; index++) {
+      const beatsPerMeasure = parseInt(beats[index], 10);
+      const beatValue = parseInt(beatTypes[index], 10);
       result.push(new TimeSignature(beatsPerMeasure, beatValue));
     }
 
