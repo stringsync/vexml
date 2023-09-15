@@ -17,15 +17,13 @@
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
-    "build:image:m1": "docker build . --tag vexml:latest --platform linux/amd64",
     "lint": "yarn eslint",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
     "pretest:ci": "yarn build:image",
     "pretest:m1": "yarn build:image:m1",
     "test": "docker run -it --rm -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand",
-    "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci",
-    "test:m1": "docker run -it --rm -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand"
+    "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },
   "dependencies": {
     "vexflow": "4.2.3"
