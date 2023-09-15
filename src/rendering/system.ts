@@ -2,7 +2,7 @@ import * as musicxml from '@/musicxml';
 import { Part, PartRendering } from './part';
 import { Config } from './config';
 
-/** The result of rendering a system. */
+/** The result of rendering a System. */
 export type SystemRendering = {
   type: 'system';
   parts: PartRendering[];

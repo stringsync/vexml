@@ -7,7 +7,7 @@ import { Config, DEFAULT_CONFIG } from './config';
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
 
-/** The result of rendering a score. */
+/** The result of rendering a Score. */
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
@@ -36,7 +36,7 @@ export class Score {
     this.systemLayout = opts.systemLayout;
   }
 
-  /** Creates a Score rendering object. */
+  /** Creates a Score. */
   static create(opts: { musicXml: musicxml.MusicXml; config?: Partial<Config> }): Score {
     const config = { ...DEFAULT_CONFIG, ...opts.config };
     const scorePartwise = opts.musicXml.getScorePartwise();
