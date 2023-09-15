@@ -2,7 +2,7 @@ import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 
-/** The result of rendering a part. */
+/** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
   measures: MeasureRendering[];
@@ -26,7 +26,7 @@ export class Part {
     this.measures = opts.measures;
   }
 
-  /** Creates a Part rendering object. */
+  /** Creates a Part. */
   static create(opts: { config: Config; musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
     const id = opts.musicXml.part.getId();
 
@@ -41,16 +41,6 @@ export class Part {
     }
 
     return new Part({ config: opts.config, id, systemId: opts.systemId, measures });
-  }
-
-  /** Clones a Part rendering object. */
-  clone(): Part {
-    return new Part({
-      config: this.config,
-      id: this.id,
-      systemId: this.systemId,
-      measures: this.measures.map((measure) => measure.clone()),
-    });
   }
 
   /** Returns the measures of the Part. */
@@ -77,7 +67,7 @@ export class Part {
     }
     const measures = this.measures
       .slice(opts.measureStartIndex, opts.measureEndIndex)
-      .map((measure) => measure.clone().setSystemId(opts.systemId));
+      .map((measure) => measure.clone(opts.systemId));
 
     return new Part({
       config: this.config,

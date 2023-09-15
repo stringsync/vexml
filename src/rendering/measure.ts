@@ -2,17 +2,16 @@ import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
 import { Config } from './config';
 
-const DEFAULT_STAFF_DISTANCE = 80;
-
+/** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
   staves: StaveRendering[];
 };
 
 /**
- * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML.
- * A Measure contains a specific segment of musical content, defined by its beginning and ending beats,
- * and is the primary unit of time in a score. Measures are sequenced consecutively within a system.
+ * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
+ * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
+ * score. Measures are sequenced consecutively within a system.
  */
 export class Measure {
   private config: Config;
@@ -25,6 +24,7 @@ export class Measure {
     this.systemId = opts.systemId;
   }
 
+  /** Creates a Measure rendering object. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -50,6 +50,7 @@ export class Measure {
     return new Measure({ config: opts.config, staves, systemId: opts.systemId });
   }
 
+  /** Compares two different measures to see if their modifiers are equal. */
   private static areModifiersEqual(measure1: Measure | null, measure2: Measure | null): boolean {
     if (!measure1 && measure2) {
       return false;
@@ -93,19 +94,16 @@ export class Measure {
     return true;
   }
 
-  clone(): Measure {
+  /** Deeply clones the Measure, but replaces the systemId. */
+  clone(systemId: symbol): Measure {
     return new Measure({
+      systemId,
       config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
-      systemId: this.systemId,
     });
   }
 
-  setSystemId(systemId: symbol): this {
-    this.systemId = systemId;
-    return this;
-  }
-
+  /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(previousMeasure: Measure | null): number {
     let requiredWidth = this.getMinJustifyWidth();
     if (this.shouldRenderModifiers(previousMeasure)) {
@@ -115,10 +113,7 @@ export class Measure {
     return requiredWidth;
   }
 
-  shouldRenderModifiers(previousMeasure: Measure | null): boolean {
-    return this.systemId !== previousMeasure?.systemId || !Measure.areModifiersEqual(this, previousMeasure);
-  }
-
+  /** Renders the Measure. */
   render(opts: {
     x: number;
     y: number;
@@ -158,7 +153,7 @@ export class Measure {
 
       const staffDistance =
         opts.staffLayouts.find((staffLayout) => staffLayout.staffNumber === staffLayout.staffNumber)?.staffDistance ??
-        DEFAULT_STAFF_DISTANCE;
+        this.config.defaultStaffDistance;
 
       y += staffDistance;
     }
@@ -166,10 +161,17 @@ export class Measure {
     return { type: 'measure', staves: staveRenderings };
   }
 
+  /** Whether the Measure should render modifiers. */
+  private shouldRenderModifiers(previousMeasure: Measure | null): boolean {
+    return this.systemId !== previousMeasure?.systemId || !Measure.areModifiersEqual(this, previousMeasure);
+  }
+
+  /** Returns the minimum justify width. */
   private getMinJustifyWidth(): number {
     return Math.max(0, ...this.staves.map((stave) => stave.getMinJustifyWidth()));
   }
 
+  /** Returns the modifiers width. */
   private getModifiersWidth(): number {
     return Math.max(0, ...this.staves.map((stave) => stave.getModifiersWidth()));
   }
