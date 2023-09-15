@@ -4,12 +4,15 @@ import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 
+export type ModifierRendering = AccidentalRendering | null;
+
 export type NoteRendering = {
   type: 'note';
+  keys: string[];
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
-  accidental: AccidentalRendering | null;
+  modifierGroups: ModifierRendering[][];
 };
 
 export class Note {
@@ -82,6 +85,60 @@ export class Note {
     });
   }
 
+  /**
+   * Renders multiple notes as a single vexflow.StaveNote.
+   *
+   * This exists to dedup code with rendering.Chord without exposing private members in this class.
+   */
+  static render(notes: Note[]): NoteRendering {
+    if (notes.length === 0) {
+      throw new Error('cannot render empty notes');
+    }
+
+    const durationDenominators = new Set(notes.map((note) => note.durationDenominator));
+    if (durationDenominators.size > 1) {
+      throw new Error('all notes must have the same durationDenominator');
+    }
+
+    const dotCounts = new Set(notes.map((note) => note.dotCount));
+    if (dotCounts.size > 1) {
+      throw new Error('all notes must have the same dotCount');
+    }
+
+    const clefTypes = new Set(notes.map((note) => note.clefType));
+    if (clefTypes.size > 1) {
+      throw new Error('all notes must have the same clefTypes');
+    }
+
+    const keys = notes.map((note) => note.key);
+
+    const vfStaveNote = new vexflow.StaveNote({
+      keys: notes.map((note) => note.key),
+      duration: notes[0].durationDenominator,
+      dots: notes[0].dotCount,
+      clef: notes[0].clefType,
+    });
+
+    const modifierRenderingGroups = notes.map<ModifierRendering[]>((note) => {
+      const renderings = new Array<ModifierRendering>();
+      if (note.accidental) {
+        renderings.push(note.accidental.render());
+      }
+      return renderings;
+    });
+
+    modifierRenderingGroups.forEach((modifierRenderings, index) => {
+      for (const modifierRendering of modifierRenderings) {
+        switch (modifierRendering?.type) {
+          case 'accidental':
+            vfStaveNote.addModifier(modifierRendering.vexflow.accidental, index);
+        }
+      }
+    });
+
+    return { type: 'note', keys, vexflow: { staveNote: vfStaveNote }, modifierGroups: modifierRenderingGroups };
+  }
+
   clone(): Note {
     return new Note({
       config: this.config,
@@ -96,37 +153,6 @@ export class Note {
   }
 
   render(): NoteRendering {
-    const accidentalRendering = this.accidental?.render() ?? null;
-    const vfAccidental = accidentalRendering?.vexflow.accidental ?? null;
-
-    const vfStaveNote = this.toVexflowStaveNote(vfAccidental);
-
-    return { type: 'note', vexflow: { staveNote: vfStaveNote }, accidental: accidentalRendering };
-  }
-
-  private toVexflowStaveNote(vfAccidental: vexflow.Accidental | null): vexflow.StaveNote {
-    const vfStaveNote = new vexflow.StaveNote({
-      keys: [this.key],
-      duration: this.durationDenominator,
-      dots: this.dotCount,
-      clef: this.clefType,
-    });
-
-    if (vfAccidental) {
-      vfStaveNote.addModifier(vfAccidental);
-    }
-
-    switch (this.stem) {
-      case 'up':
-        vfStaveNote.setStemDirection(vexflow.Stem.UP);
-        break;
-      case 'down':
-        vfStaveNote.setStemDirection(vexflow.Stem.DOWN);
-        break;
-      default:
-        vfStaveNote.autoStem();
-    }
-
-    return vfStaveNote;
+    return Note.render([this]);
   }
 }
