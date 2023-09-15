@@ -2,11 +2,17 @@ import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 
+/** The result of rendering a part. */
 export type PartRendering = {
   id: string;
   measures: MeasureRendering[];
 };
 
+/**
+ * Represents a Part in a musical score, corresponding to the <part> element in MusicXML. This class encompasses the
+ * entire musical content for a specific instrument or voice, potentially spanning multiple systems when rendered in the
+ * viewport.
+ */
 export class Part {
   private config: Config;
   private id: string;
@@ -20,6 +26,7 @@ export class Part {
     this.measures = opts.measures;
   }
 
+  /** Creates a Part rendering object. */
   static create(opts: { config: Config; musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
     const id = opts.musicXml.part.getId();
 
@@ -36,6 +43,7 @@ export class Part {
     return new Part({ config: opts.config, id, systemId: opts.systemId, measures });
   }
 
+  /** Clones a Part rendering object. */
   clone(): Part {
     return new Part({
       config: this.config,
@@ -45,14 +53,17 @@ export class Part {
     });
   }
 
+  /** Returns the measures of the Part. */
   getMeasures(): Measure[] {
     return this.measures;
   }
 
+  /** Returns a measure at a specific index. */
   getMeasureAt(measureIndex: number): Measure | null {
     return this.measures[measureIndex] ?? null;
   }
 
+  /** Slices the measures of the part using the indexes, clones, them, then creates a new Part from them. */
   slice(opts: { systemId: symbol; measureStartIndex: number; measureEndIndex: number }): Part {
     const measureStartIndex = opts.measureStartIndex;
     const measureEndIndex = opts.measureEndIndex;
@@ -76,6 +87,7 @@ export class Part {
     });
   }
 
+  /** Renders the part. */
   render(opts: {
     x: number;
     y: number;
