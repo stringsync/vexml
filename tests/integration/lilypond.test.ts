@@ -23,7 +23,7 @@ describe('lilypond', () => {
 
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
-    { filename: '01a-Pitches-Pitches.xml', width: 900 },
+    // { filename: '01a-Pitches-Pitches.xml', width: 900 },
     { filename: '01a-Pitches-Pitches.xml', width: 360 },
   ])(`$filename ($width px)`, async (t) => {
     const outerDiv = document.createElement('div');
@@ -42,15 +42,15 @@ describe('lilypond', () => {
       width: t.width,
     });
 
-    // await page.setViewport({
-    //   width: t.width,
-    //   // height doesn't matter since we screenshot the element, not the page.
-    //   height: 0,
-    // });
-    // await page.setContent(outerDiv.outerHTML);
+    await page.setViewport({
+      width: t.width,
+      // height doesn't matter since we screenshot the element, not the page.
+      height: 0,
+    });
+    await page.setContent(outerDiv.outerHTML);
 
-    // const element = await page.$('#screenshot');
-    // const screenshot = await element!.screenshot();
-    // expect(screenshot).toMatchImageSnapshot();
+    const element = await page.$('#screenshot');
+    const screenshot = await element!.screenshot();
+    expect(screenshot).toMatchImageSnapshot();
   });
 });
