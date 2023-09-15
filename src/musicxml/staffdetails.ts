@@ -1,4 +1,4 @@
-import { NamedElement } from '@/util/namedelement';
+import { NamedElement } from '@/util';
 import { STAFF_TYPES, StaffType } from './enums';
 
 /**

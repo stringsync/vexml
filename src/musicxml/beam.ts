@@ -1,5 +1,5 @@
 import { BEAM_VALUES, BeamValue } from './enums';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 export class Beam {
   constructor(private element: NamedElement<'beam'>) {}

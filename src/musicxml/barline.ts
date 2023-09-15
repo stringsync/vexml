@@ -8,7 +8,7 @@ import {
   REPEAT_DIRECTIONS,
   EndingType,
 } from './enums';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 /**
  * Barline includes information about repeats, endings, and graphical bar styles.

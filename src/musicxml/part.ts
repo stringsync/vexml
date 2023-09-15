@@ -1,5 +1,5 @@
 import { Measure } from './measure';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 /**
  * The top level of musical organization below the Score that contains a sequence of Measures.

@@ -2,7 +2,7 @@ import { Attributes } from '@/musicxml/attributes';
 import { Clef } from '@/musicxml/clef';
 import { Key } from '@/musicxml/key';
 import { Time } from '@/musicxml/time';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Attributes, () => {
   describe('getStaveCount', () => {

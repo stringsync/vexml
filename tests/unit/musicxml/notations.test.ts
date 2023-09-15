@@ -1,6 +1,6 @@
 import { VERTICAL_DIRECTIONS } from '@/musicxml/enums';
 import { Notations } from '@/musicxml/notations';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {

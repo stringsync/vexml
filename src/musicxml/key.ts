@@ -1,4 +1,4 @@
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 /**
  * Key represents a key signature.

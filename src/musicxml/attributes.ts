@@ -1,6 +1,6 @@
 import { Clef } from './clef';
 import { Key } from './key';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 import { Time } from './time';
 import { StaffDetails } from './staffdetails';
 

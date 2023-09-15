@@ -1,4 +1,4 @@
 export * from './enum';
 export * from './namedelement';
 export * from './value';
-export * from './xml';
+export * as xml from './xml';

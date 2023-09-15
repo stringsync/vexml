@@ -12,7 +12,7 @@ import {
   Stem,
   STEMS,
 } from './enums';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 import { Notations } from './notations';
 
 export class Note {

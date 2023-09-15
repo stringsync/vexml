@@ -1,6 +1,6 @@
 import { Part } from '@/musicxml/part';
 import { ScorePartwise } from '@/musicxml/scorepartwise';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(ScorePartwise, () => {
   describe('getPartCount', () => {
