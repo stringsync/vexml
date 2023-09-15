@@ -70,9 +70,8 @@ export class System {
         current: part.getMeasureAt(index)!,
       }));
 
-      let minRequiredWidth = Math.max(
-        0,
-        ...measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous))
+      let minRequiredWidth = util.math.max(
+        measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous))
       );
 
       const isProcessingLastMeasure = index === measureCount - 1;
