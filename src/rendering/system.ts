@@ -2,15 +2,16 @@ import * as musicxml from '@/musicxml';
 import { Part, PartRendering } from './part';
 import { Config } from './config';
 
+/** The result of rendering a system. */
 export type SystemRendering = {
   type: 'system';
   parts: PartRendering[];
 };
 
 /**
- * Represents a System in a musical score, a horizontal grouping of staves spanning the width
- * of the viewport or page. Each system contains a segment of musical content from one or more
- * parts, and multiple systems collectively render the entirety of those parts.
+ * Represents a System in a musical score, a horizontal grouping of staves spanning the width of the viewport or page.
+ * Each system contains a segment of musical content from one or more parts, and multiple systems collectively render
+ * the entirety of those parts.
  */
 export class System {
   private config: Config;
@@ -23,6 +24,7 @@ export class System {
     this.parts = opts.parts;
   }
 
+  /** Creates a System rendering object. */
   static create(opts: { config: Config; musicXml: { parts: musicxml.Part[] } }): System {
     const id = Symbol();
     const parts = opts.musicXml.parts.map((part) =>
@@ -94,6 +96,7 @@ export class System {
     return systems;
   }
 
+  /** Renders the System. */
   render(opts: {
     x: number;
     y: number;
