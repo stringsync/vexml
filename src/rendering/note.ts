@@ -4,15 +4,15 @@ import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 
-export type ModifierRendering = AccidentalRendering | null;
+export type ModifierRendering = AccidentalRendering;
 
 export type NoteRendering = {
   type: 'note';
-  keys: string[];
+  key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
-  modifierGroups: ModifierRendering[][];
+  modifiers: ModifierRendering[];
 };
 
 export class Note {
@@ -90,7 +90,7 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(notes: Note[]): NoteRendering {
+  static render(notes: Note[]): NoteRendering[] {
     if (notes.length === 0) {
       throw new Error('cannot render empty notes');
     }
@@ -136,7 +136,12 @@ export class Note {
       }
     });
 
-    return { type: 'note', keys, vexflow: { staveNote: vfStaveNote }, modifierGroups: modifierRenderingGroups };
+    return keys.map((key, index) => ({
+      type: 'note',
+      key,
+      modifiers: modifierRenderingGroups[index],
+      vexflow: { staveNote: vfStaveNote },
+    }));
   }
 
   clone(): Note {
@@ -153,6 +158,6 @@ export class Note {
   }
 
   render(): NoteRendering {
-    return Note.render([this]);
+    return Note.render([this])[0];
   }
 }
