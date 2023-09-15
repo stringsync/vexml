@@ -1,15 +1,10 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
 import { Config } from './config';
-import { ModifierRendering, Note } from './note';
+import { Note, NoteRendering } from './note';
 
 export type ChordRendering = {
   type: 'chord';
-  keys: string[];
-  vexflow: {
-    staveNote: vexflow.StaveNote;
-  };
-  modifierGroups: ModifierRendering[][];
+  notes: NoteRendering[];
 };
 
 export class Chord {
@@ -46,15 +41,11 @@ export class Chord {
   }
 
   render(): ChordRendering {
-    const noteRendering = Note.render(this.notes);
+    const noteRenderings = Note.render(this.notes);
 
     return {
       type: 'chord',
-      keys: noteRendering.keys,
-      vexflow: {
-        staveNote: noteRendering.vexflow.staveNote,
-      },
-      modifierGroups: noteRendering.modifierGroups,
+      notes: noteRenderings,
     };
   }
 }
