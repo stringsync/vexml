@@ -24,7 +24,7 @@ export class Measure {
     this.systemId = opts.systemId;
   }
 
-  /** Creates a Measure rendering object. */
+  /** Creates a Measure. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -48,50 +48,6 @@ export class Measure {
     }
 
     return new Measure({ config: opts.config, staves, systemId: opts.systemId });
-  }
-
-  /** Compares two different measures to see if their modifiers are equal. */
-  private static areModifiersEqual(measure1: Measure | null, measure2: Measure | null): boolean {
-    if (!measure1 && measure2) {
-      return false;
-    }
-    if (measure1 && !measure2) {
-      return false;
-    }
-    if (!measure1 && !measure2) {
-      return true;
-    }
-
-    const staves1 = measure1!.staves;
-    const staves2 = measure2!.staves;
-    if (staves1.length !== staves2.length) {
-      return false;
-    }
-
-    for (let index = 0; index < staves1.length; index++) {
-      const stave1 = staves1[index];
-      const stave2 = staves2[index];
-
-      const clefType1 = stave1.getClefType();
-      const clefType2 = stave2.getClefType();
-      if (clefType1 !== clefType2) {
-        return false;
-      }
-
-      const timeSignature1 = stave1.getTimeSignature().toString();
-      const timeSignature2 = stave2.getTimeSignature().toString();
-      if (timeSignature1 !== timeSignature2) {
-        return false;
-      }
-
-      const keySignature1 = stave1.getKeySignature();
-      const keySignature2 = stave2.getKeySignature();
-      if (keySignature1 !== keySignature2) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
@@ -161,9 +117,26 @@ export class Measure {
     return { type: 'measure', staves: staveRenderings };
   }
 
+  private hasEqualModifiers(other: Measure | null): boolean {
+    if (!other) {
+      return false;
+    }
+
+    for (let index = 0; index < this.staves.length; index++) {
+      const stave1 = this.staves[index];
+      const stave2 = other.staves[index];
+
+      if (!stave1.hasEqualModifiers(stave2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /** Whether the Measure should render modifiers. */
   private shouldRenderModifiers(previousMeasure: Measure | null): boolean {
-    return this.systemId !== previousMeasure?.systemId || !Measure.areModifiersEqual(this, previousMeasure);
+    return this.systemId !== previousMeasure?.systemId || !this.hasEqualModifiers(previousMeasure);
   }
 
   /** Returns the minimum justify width. */

@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
 
+/** The result of rendering a Stave. */
 export type StaveRendering = {
   type: 'stave';
   staffNumber: number;
@@ -13,6 +14,13 @@ export type StaveRendering = {
   voices: VoiceRendering[];
 };
 
+/**
+ * Represents a single stave (or staff) in a measure, providing the graphical foundation for musical symbols such as
+ * notes, rests, clefs, and key signatures.
+ *
+ * The `Stave` class acts as a container for musical elements that are vertically aligned in a score or sheet music. It
+ * typically corresponds to a specific voice or set of voices, especially in multi-staff instruments like the piano.
+ */
 export class Stave {
   private config: Config;
   private staffNumber: number;
@@ -43,6 +51,7 @@ export class Stave {
     this.voices = opts.voices;
   }
 
+  /** Creates a Stave. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -108,6 +117,7 @@ export class Stave {
     });
   }
 
+  /** Cleans the Stave. */
   clone(): Stave {
     return new Stave({
       config: this.config,
@@ -121,22 +131,16 @@ export class Stave {
     });
   }
 
-  getStaffNumber(): number {
-    return this.staffNumber;
+  /** Wether the staves have the same modifiers. */
+  hasEqualModifiers(stave: Stave): boolean {
+    return (
+      this.clefType === stave.clefType &&
+      this.timeSignature.toString() === stave.timeSignature.toString() &&
+      this.keySignature === stave.keySignature
+    );
   }
 
-  getClefType(): musicxml.ClefType {
-    return this.clefType;
-  }
-
-  getTimeSignature(): musicxml.TimeSignature {
-    return this.timeSignature;
-  }
-
-  getKeySignature(): string {
-    return this.keySignature;
-  }
-
+  /** Returns the minimum justify width for the stave in a measure context. */
   getMinJustifyWidth(): number {
     if (this.voices.length === 0) {
       return 0;
@@ -146,6 +150,7 @@ export class Stave {
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
   }
 
+  /** Returns the width that the modifiers take up. */
   getModifiersWidth(): number {
     return this.toVexflowStave({
       x: 0,
@@ -155,6 +160,7 @@ export class Stave {
     }).getNoteStartX();
   }
 
+  /** Renders the Stave. */
   render(opts: { x: number; y: number; width: number; renderModifiers: boolean }): StaveRendering {
     const vfStave = this.toVexflowStave({
       x: opts.x,
