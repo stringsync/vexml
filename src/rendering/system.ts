@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { Part, PartRendering } from './part';
 import { Config } from './config';
+import * as util from '@/util';
 
 /** The result of rendering a System. */
 export type SystemRendering = {
@@ -88,7 +89,7 @@ export class System {
         commitSystem(index);
         // Recalculate to reflect the new conditions of the measure being on a different system.
         // TODO: Using null breaks encapsulation, figure out another way to do this.
-        minRequiredWidth = Math.max(0, ...measures.map((measure) => measure.current.getMinRequiredWidth(null)));
+        minRequiredWidth = util.math.max(measures.map((measure) => measure.current.getMinRequiredWidth(null)));
         continueSystem(minRequiredWidth);
       }
     }
@@ -124,7 +125,7 @@ export class System {
   }
 
   private getMeasureCount(): number {
-    return Math.max(0, ...this.parts.map((part) => part.getMeasures().length));
+    return util.math.max(this.parts.map((part) => part.getMeasures().length));
   }
 
   private getMinRequiredWidth(): number {
@@ -139,7 +140,7 @@ export class System {
         current: part.getMeasureAt(index)!,
       }));
 
-      totalWidth += Math.max(0, ...measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
+      totalWidth += util.math.max(measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
     }
 
     return totalWidth;
