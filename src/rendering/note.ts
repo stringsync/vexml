@@ -4,17 +4,28 @@ import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 
-export type ModifierRendering = AccidentalRendering;
+export type NoteModifierRendering = AccidentalRendering;
 
+/** The result rendering a Note. */
 export type NoteRendering = {
   type: 'note';
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
-  modifiers: ModifierRendering[];
+  modifiers: NoteModifierRendering[];
 };
 
+/**
+ * Represents an individual musical note or rest, encapsulating its pitch, duration, and other associated notations.
+ *
+ * The `Note` class is foundational to musical notation, capturing the basic elements required to convey a musical idea.
+ * Whether representing a sounded pitch or a rest, each note carries with it a wealth of information, including its
+ * rhythmic value, position on the stave, and potential modifications or embellishments.
+ *
+ * Notes can exist in various forms ranging from whole notes to sixteenth notes and beyond, with potential ties, dots,
+ * and other modifiers affecting their duration and representation.
+ */
 export class Note {
   private config: Config;
   private key: string;
@@ -45,6 +56,7 @@ export class Note {
     this.clefType = opts.clefType;
   }
 
+  /** Create a Note. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -119,8 +131,8 @@ export class Note {
       clef: notes[0].clefType,
     });
 
-    const modifierRenderingGroups = notes.map<ModifierRendering[]>((note) => {
-      const renderings = new Array<ModifierRendering>();
+    const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
+      const renderings = new Array<NoteModifierRendering>();
       if (note.accidental) {
         renderings.push(note.accidental.render());
       }
@@ -144,6 +156,7 @@ export class Note {
     }));
   }
 
+  /** Clones the Note. */
   clone(): Note {
     return new Note({
       config: this.config,
@@ -157,6 +170,7 @@ export class Note {
     });
   }
 
+  /** Renders the Note. */
   render(): NoteRendering {
     return Note.render([this])[0];
   }

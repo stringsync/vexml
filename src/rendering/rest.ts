@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 
+/** The result of rendering a Rest. */
 export type RestRendering = {
   type: 'rest';
   vexflow: {
@@ -9,6 +10,16 @@ export type RestRendering = {
   };
 };
 
+/**
+ * Represents a musical rest, denoting a pause or silence in the music.
+ *
+ * The `Rest` class encapsulates the absence of sound within a specific duration in music notation. Just as notes define
+ * when and how sound is produced, rests define when it's deliberately not. Each rest, much like its note counterpart,
+ * has a rhythmic value determining its length.
+ *
+ * In musical compositions, rests play an essential role in shaping the music's rhythm, phrasing, and overall dynamics,
+ * allowing for moments of reflection or anticipation.
+ */
 export class Rest {
   private config: Config;
   private durationDenominator: musicxml.NoteDurationDenominator;
@@ -27,6 +38,7 @@ export class Rest {
     this.clefType = opts.clefType;
   }
 
+  /** Creates the Rest. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -44,6 +56,7 @@ export class Rest {
     });
   }
 
+  /** Clones the Rest. */
   clone(): Rest {
     return new Rest({
       config: this.config,
@@ -53,6 +66,7 @@ export class Rest {
     });
   }
 
+  /** Renders the Rest. */
   render(): RestRendering {
     const vfStaveNote = this.toVexflowStaveNote();
     return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
