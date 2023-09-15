@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import { Config } from './config';
 
 export type RestRendering = {
   type: 'rest';
@@ -9,21 +10,25 @@ export type RestRendering = {
 };
 
 export class Rest {
+  private config: Config;
   private durationDenominator: musicxml.NoteDurationDenominator;
   private dotCount: number;
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
+    config: Config;
     durationDenominator: musicxml.NoteDurationDenominator;
     dotCount: number;
     clefType: musicxml.ClefType;
   }) {
+    this.config = opts.config;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
     this.clefType = opts.clefType;
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       note: musicxml.Note;
     };
@@ -32,6 +37,7 @@ export class Rest {
     const note = opts.musicXml.note;
 
     return new Rest({
+      config: opts.config,
       durationDenominator: note.getDurationDenominator(),
       dotCount: note.getDotCount(),
       clefType: opts.clefType,
@@ -40,6 +46,7 @@ export class Rest {
 
   clone(): Rest {
     return new Rest({
+      config: this.config,
       durationDenominator: this.durationDenominator,
       dotCount: this.dotCount,
       clefType: this.clefType,

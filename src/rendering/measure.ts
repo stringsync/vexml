@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
+import { Config } from './config';
 
 const DEFAULT_STAFF_DISTANCE = 80;
 
@@ -14,15 +15,18 @@ export type MeasureRendering = {
  * and is the primary unit of time in a score. Measures are sequenced consecutively within a system.
  */
 export class Measure {
+  private config: Config;
   private staves: Stave[];
   private systemId: symbol;
 
-  private constructor(opts: { staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: { config: Config; staves: Stave[]; systemId: symbol }) {
+    this.config = opts.config;
     this.staves = opts.staves;
     this.systemId = opts.systemId;
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       measure: musicxml.Measure;
     };
@@ -35,6 +39,7 @@ export class Measure {
 
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
       staves[staffNumber - 1] = Stave.create({
+        config: opts.config,
         staffNumber,
         musicXml: {
           measure: opts.musicXml.measure,
@@ -42,7 +47,7 @@ export class Measure {
       });
     }
 
-    return new Measure({ staves, systemId: opts.systemId });
+    return new Measure({ config: opts.config, staves, systemId: opts.systemId });
   }
 
   private static areModifiersEqual(measure1: Measure | null, measure2: Measure | null): boolean {
@@ -90,6 +95,7 @@ export class Measure {
 
   clone(): Measure {
     return new Measure({
+      config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
       systemId: this.systemId,
     });

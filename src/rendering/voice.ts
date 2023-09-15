@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
+import { Config } from './config';
 
 export type VoiceEntry = Note | Chord | Rest;
 
@@ -17,15 +18,18 @@ export type VoiceRendering = {
 };
 
 export class Voice {
+  private config: Config;
   private entries: VoiceEntry[];
   private timeSignature: musicxml.TimeSignature;
 
-  private constructor(opts: { entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
+  private constructor(opts: { config: Config; entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
+    this.config = opts.config;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       measure: musicxml.Measure;
     };
@@ -36,7 +40,7 @@ export class Voice {
       .getNotes()
       .filter((note) => note.getStaffNumber() === opts.staffNumber)
       .filter(Voice.canCreateVoiceEntry)
-      .map((note) => Voice.createVoiceEntry(note, opts.clefType));
+      .map((note) => Voice.createVoiceEntry(opts.config, note, opts.clefType));
 
     const timeSignature =
       opts.musicXml.measure
@@ -45,25 +49,26 @@ export class Voice {
         .find((time) => time.getStaffNumber() === opts.staffNumber)
         ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
 
-    return new Voice({ entries, timeSignature });
+    return new Voice({ config: opts.config, entries, timeSignature });
   }
 
   private static canCreateVoiceEntry(note: musicxml.Note): boolean {
     return !note.isChordTail() && !note.isGrace();
   }
 
-  private static createVoiceEntry(note: musicxml.Note, clefType: musicxml.ClefType): VoiceEntry {
+  private static createVoiceEntry(config: Config, note: musicxml.Note, clefType: musicxml.ClefType): VoiceEntry {
     if (note.isChordHead()) {
-      return Chord.create({ musicXml: { note }, clefType });
+      return Chord.create({ config, musicXml: { note }, clefType });
     }
     if (note.isRest()) {
-      return Rest.create({ musicXml: { note }, clefType });
+      return Rest.create({ config, musicXml: { note }, clefType });
     }
-    return Note.create({ musicXml: { note }, clefType });
+    return Note.create({ config, musicXml: { note }, clefType });
   }
 
   clone(): Voice {
     return new Voice({
+      config: this.config,
       entries: this.entries.map((entry) => {
         if (entry instanceof Note) {
           return entry.clone();

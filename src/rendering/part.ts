@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
+import { Config } from './config';
 
 export type PartRendering = {
   id: string;
@@ -7,33 +8,37 @@ export type PartRendering = {
 };
 
 export class Part {
+  private config: Config;
   private id: string;
   private systemId: symbol;
   private measures: Measure[];
 
-  private constructor(opts: { id: string; systemId: symbol; measures: Measure[] }) {
+  private constructor(opts: { config: Config; id: string; systemId: symbol; measures: Measure[] }) {
+    this.config = opts.config;
     this.id = opts.id;
     this.systemId = opts.systemId;
     this.measures = opts.measures;
   }
 
-  static create(opts: { musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
+  static create(opts: { config: Config; musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
     const id = opts.musicXml.part.getId();
 
     const measures = new Array<Measure>();
     for (const musicXmlMeasure of opts.musicXml.part.getMeasures()) {
       const measure = Measure.create({
+        config: opts.config,
         musicXml: { measure: musicXmlMeasure },
         systemId: opts.systemId,
       });
       measures.push(measure);
     }
 
-    return new Part({ id, systemId: opts.systemId, measures });
+    return new Part({ config: opts.config, id, systemId: opts.systemId, measures });
   }
 
   clone(): Part {
     return new Part({
+      config: this.config,
       id: this.id,
       systemId: this.systemId,
       measures: this.measures.map((measure) => measure.clone()),
@@ -63,7 +68,12 @@ export class Part {
       .slice(opts.measureStartIndex, opts.measureEndIndex)
       .map((measure) => measure.clone().setSystemId(opts.systemId));
 
-    return new Part({ id: this.id, systemId: opts.systemId, measures });
+    return new Part({
+      config: this.config,
+      id: this.id,
+      systemId: opts.systemId,
+      measures,
+    });
   }
 
   render(opts: {
