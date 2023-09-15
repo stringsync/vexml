@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
 import { Config } from './config';
+import * as util from '@/util';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -141,11 +142,11 @@ export class Measure {
 
   /** Returns the minimum justify width. */
   private getMinJustifyWidth(): number {
-    return Math.max(0, ...this.staves.map((stave) => stave.getMinJustifyWidth()));
+    return util.math.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
   }
 
   /** Returns the modifiers width. */
   private getModifiersWidth(): number {
-    return Math.max(0, ...this.staves.map((stave) => stave.getModifiersWidth()));
+    return util.math.max(this.staves.map((stave) => stave.getModifiersWidth()));
   }
 }
