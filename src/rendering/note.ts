@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
+import { Config } from './config';
 
 export type NoteRendering = {
   type: 'note';
@@ -12,6 +13,7 @@ export type NoteRendering = {
 };
 
 export class Note {
+  private config: Config;
   private key: string;
   private stem: musicxml.Stem | null;
   private beams: Beam[];
@@ -21,6 +23,7 @@ export class Note {
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
+    config: Config;
     key: string;
     stem: musicxml.Stem | null;
     beams: Beam[];
@@ -29,6 +32,7 @@ export class Note {
     durationDenominator: musicxml.NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }) {
+    this.config = opts.config;
     this.key = opts.key;
     this.stem = opts.stem;
     this.beams = opts.beams;
@@ -39,6 +43,7 @@ export class Note {
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       note: musicxml.Note;
     };
@@ -66,6 +71,7 @@ export class Note {
     }
 
     return new Note({
+      config: opts.config,
       key,
       stem,
       beams,
@@ -78,6 +84,7 @@ export class Note {
 
   clone(): Note {
     return new Note({
+      config: this.config,
       key: this.key,
       stem: this.stem,
       beams: this.beams.map((beam) => beam.clone()),

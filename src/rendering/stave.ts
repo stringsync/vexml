@@ -1,8 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Voice, VoiceRendering } from './voice';
-
-const JUSTIFY_PADDING = 100;
+import { Config } from './config';
 
 export type StaveRendering = {
   type: 'stave';
@@ -15,6 +14,7 @@ export type StaveRendering = {
 };
 
 export class Stave {
+  private config: Config;
   private staffNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
@@ -24,6 +24,7 @@ export class Stave {
   private voices: Voice[];
 
   private constructor(opts: {
+    config: Config;
     staffNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
@@ -32,6 +33,7 @@ export class Stave {
     endBarStyle: musicxml.BarStyle;
     voices: Voice[];
   }) {
+    this.config = opts.config;
     this.staffNumber = opts.staffNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -42,6 +44,7 @@ export class Stave {
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       measure: musicxml.Measure;
     };
@@ -86,6 +89,7 @@ export class Stave {
     // TODO: Support multiple voices per stave.
     const voices = [
       Voice.create({
+        config: opts.config,
         musicXml: { measure: opts.musicXml.measure },
         staffNumber: opts.staffNumber,
         clefType,
@@ -93,6 +97,7 @@ export class Stave {
     ];
 
     return new Stave({
+      config: opts.config,
       staffNumber: opts.staffNumber,
       clefType,
       timeSignature,
@@ -105,6 +110,7 @@ export class Stave {
 
   clone(): Stave {
     return new Stave({
+      config: this.config,
       staffNumber: this.staffNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
@@ -137,7 +143,7 @@ export class Stave {
     }
     const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
     const vfFormatter = new vexflow.Formatter();
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + JUSTIFY_PADDING;
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
   }
 
   getModifiersWidth(): number {

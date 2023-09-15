@@ -5,6 +5,7 @@ export type RenderOptions = {
   element: HTMLDivElement | HTMLCanvasElement;
   xml: string;
   width: number;
+  config?: Partial<rendering.Config>;
 };
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
@@ -13,8 +14,13 @@ export class Vexml {
   static render(opts: RenderOptions): rendering.ScoreRendering {
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
-    const musicXml = new musicxml.MusicXml(root);
 
-    return rendering.Score.create(musicXml).render({ element: opts.element, width: opts.width });
+    const musicXml = new musicxml.MusicXml(root);
+    const config = opts.config;
+
+    return rendering.Score.create({ musicXml, config }).render({
+      element: opts.element,
+      width: opts.width,
+    });
   }
 }

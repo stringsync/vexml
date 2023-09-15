@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Part, PartRendering } from './part';
+import { Config } from './config';
 
 export type SystemRendering = {
   type: 'system';
@@ -12,18 +13,22 @@ export type SystemRendering = {
  * parts, and multiple systems collectively render the entirety of those parts.
  */
 export class System {
+  private config: Config;
   private id: symbol;
   private parts: Part[];
 
-  private constructor(opts: { id: symbol; parts: Part[] }) {
+  private constructor(opts: { config: Config; id: symbol; parts: Part[] }) {
+    this.config = opts.config;
     this.id = opts.id;
     this.parts = opts.parts;
   }
 
-  static create(opts: { musicXml: { parts: musicxml.Part[] } }): System {
+  static create(opts: { config: Config; musicXml: { parts: musicxml.Part[] } }): System {
     const id = Symbol();
-    const parts = opts.musicXml.parts.map((part) => Part.create({ systemId: id, musicXml: { part } }));
-    return new System({ id, parts });
+    const parts = opts.musicXml.parts.map((part) =>
+      Part.create({ config: opts.config, systemId: id, musicXml: { part } })
+    );
+    return new System({ config: opts.config, id, parts });
   }
 
   /** Splits the system into smaller systems that fit in the width. */
@@ -44,7 +49,7 @@ export class System {
         })
       );
 
-      const system = new System({ id: systemId, parts });
+      const system = new System({ config: this.config, id: systemId, parts });
       systems.push(system);
 
       widthBudget = width;

@@ -2,9 +2,10 @@ import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import { Config, DEFAULT_CONFIG } from './config';
 
+// Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
-const DEFAULT_SYSTEM_DISTANCE = 80;
 
 export type ScoreRendering = {
   type: 'score';
@@ -17,31 +18,35 @@ export type ScoreRendering = {
  * components. It also provides contextual information like title, composer, and other pertinent details.
  */
 export class Score {
+  private config: Config;
   private system: System;
   private staffLayouts: musicxml.StaffLayout[];
   private systemLayout: musicxml.SystemLayout | null;
 
   private constructor(opts: {
+    config: Config;
     system: System;
     staffLayouts: musicxml.StaffLayout[];
     systemLayout: musicxml.SystemLayout | null;
   }) {
+    this.config = opts.config;
     this.system = opts.system;
     this.staffLayouts = opts.staffLayouts;
     this.systemLayout = opts.systemLayout;
   }
 
   /** Creates a Score rendering object. */
-  static create(musicXml: musicxml.MusicXml): Score {
-    const scorePartwise = musicXml.getScorePartwise();
+  static create(opts: { musicXml: musicxml.MusicXml; config?: Partial<Config> }): Score {
+    const config = { ...DEFAULT_CONFIG, ...opts.config };
+    const scorePartwise = opts.musicXml.getScorePartwise();
     const parts = scorePartwise?.getParts() ?? [];
     const defaults = scorePartwise?.getDefaults() ?? null;
     const staffLayouts = defaults?.getStaffLayouts() ?? [];
     const systemLayout = defaults?.getSystemLayout() ?? null;
 
-    const system = System.create({ musicXml: { parts } });
+    const system = System.create({ config, musicXml: { parts } });
 
-    return new Score({ system, staffLayouts, systemLayout });
+    return new Score({ system, staffLayouts, systemLayout, config });
   }
 
   /** Renders a Score. */
@@ -81,7 +86,7 @@ export class Score {
       const height = maxY - y;
 
       y += height;
-      y += this.systemLayout?.systemDistance ?? DEFAULT_SYSTEM_DISTANCE;
+      y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
     }
 
     // Get a reference to the staves.

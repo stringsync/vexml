@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Beam } from './beam';
+import { Config } from './config';
 
 export type ChordRendering = {
   type: 'chord';
@@ -12,6 +13,7 @@ export type ChordRendering = {
 };
 
 export class Chord {
+  private config: Config;
   private keys: string[];
   private stem: musicxml.Stem | null;
   private beams: Beam[];
@@ -21,6 +23,7 @@ export class Chord {
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
+    config: Config;
     keys: string[];
     stem: musicxml.Stem | null;
     beams: Beam[];
@@ -29,6 +32,7 @@ export class Chord {
     durationDenominator: musicxml.NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }) {
+    this.config = opts.config;
     this.keys = opts.keys;
     this.stem = opts.stem;
     this.beams = opts.beams;
@@ -39,6 +43,7 @@ export class Chord {
   }
 
   static create(opts: {
+    config: Config;
     musicXml: {
       note: musicxml.Note;
     };
@@ -62,6 +67,7 @@ export class Chord {
     const keys = [note, ...note.getChordTail()].map(Chord.getKey);
 
     return new Chord({
+      config: opts.config,
       keys,
       stem,
       beams,
@@ -83,6 +89,7 @@ export class Chord {
 
   clone(): Chord {
     return new Chord({
+      config: this.config,
       keys: [...this.keys],
       stem: this.stem,
       beams: this.beams.map((beam) => beam.clone()),
