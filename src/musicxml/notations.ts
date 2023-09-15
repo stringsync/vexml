@@ -1,5 +1,5 @@
 import { VerticalDirection, VERTICAL_DIRECTIONS } from './enums';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 /**
  * Musical notations that apply to a specific note or chord.

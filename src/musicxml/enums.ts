@@ -1,4 +1,4 @@
-import { EnumValues, Enum } from '@/util/enum';
+import { EnumValues, Enum } from '@/util';
 
 /**
  * Stem represents the notated stem direction.

@@ -1,6 +1,6 @@
 import { Barline } from '@/musicxml/barline';
 import { BAR_STYLES } from '@/musicxml/enums';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Barline, () => {
   describe('getBarStyle', () => {

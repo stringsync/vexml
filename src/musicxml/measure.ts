@@ -1,6 +1,6 @@
 import { Attributes } from './attributes';
 import { Barline } from './barline';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 import { Note } from './note';
 import { Print } from './print';
 

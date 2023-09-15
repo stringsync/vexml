@@ -1,4 +1,4 @@
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 import { Defaults } from './defaults';
 import { Part } from './part';
 

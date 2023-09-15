@@ -3,7 +3,7 @@ import { Barline } from '@/musicxml/barline';
 import { Measure } from '@/musicxml/measure';
 import { Note } from '@/musicxml/note';
 import { Print } from '@/musicxml/print';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Measure, () => {
   describe('getNumber', () => {

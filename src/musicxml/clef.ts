@@ -1,5 +1,5 @@
 import { ClefAnnotation, ClefSign, ClefType, CLEF_SIGNS } from './enums';
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 
 /**
  * A symbol placed at the left-hand end of  staff, indicating the pitch of the notes written.

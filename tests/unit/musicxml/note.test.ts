@@ -3,7 +3,7 @@ import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/musicxml/enums';
 import { Measure } from '@/musicxml/measure';
 import { Notations } from '@/musicxml/notations';
 import { Note } from '@/musicxml/note';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Note, () => {
   describe('getStem', () => {

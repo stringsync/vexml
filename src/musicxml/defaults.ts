@@ -1,4 +1,4 @@
-import { NamedElement } from '../util/namedelement';
+import { NamedElement } from '@/util';
 import { StaffLayout, SystemLayout } from './types';
 
 export class Defaults {

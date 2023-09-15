@@ -1,6 +1,6 @@
 import { Time } from '@/musicxml/time';
 import { TimeSignature } from '@/musicxml/timesignature';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Time, () => {
   it('returns the time signatures of the time', () => {

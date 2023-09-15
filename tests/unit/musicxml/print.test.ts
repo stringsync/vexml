@@ -1,5 +1,5 @@
 import { Print } from '@/musicxml/print';
-import * as xml from '@/util/xml';
+import { xml } from '@/util';
 
 describe(Print, () => {
   describe('getStaffLayouts', () => {
