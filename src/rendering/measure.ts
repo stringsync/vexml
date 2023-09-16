@@ -35,7 +35,7 @@ export class Measure {
   }): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
-    const staveCount = Math.max(1, ...attributes.map((attribute) => attribute.getStaveCount()));
+    const staveCount = util.math.max([1, ...attributes.map((attribute) => attribute.getStaveCount())]);
     const staves = new Array<Stave>(staveCount);
 
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
