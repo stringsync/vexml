@@ -3,18 +3,23 @@ export function memoize(): MethodDecorator {
   return function (target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<any>) {
     const originalMethod = descriptor.value;
 
-    let isCached = false;
-    let cachedResult: any;
+    // Using symbols to ensure uniqueness and avoid potential property name collisions
+    const isCachedSymbol = Symbol(`isCached_${String(propertyKey)}`);
+    const cachedResultSymbol = Symbol(`cachedResult_${String(propertyKey)}`);
 
     descriptor.value = function (...args: any[]) {
       if (args.length > 0) {
         throw new Error(`cannot memoize a function that takes arguments`);
       }
-      if (!isCached) {
-        cachedResult = originalMethod.call(this);
-        isCached = true;
+
+      // Sidestep TypeScript typings.
+      const self = this as any;
+
+      if (!self[isCachedSymbol]) {
+        self[cachedResultSymbol] = originalMethod.call(self);
+        self[isCachedSymbol] = true;
       }
-      return cachedResult;
+      return self[cachedResultSymbol];
     };
 
     return descriptor;
