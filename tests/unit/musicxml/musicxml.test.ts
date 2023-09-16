@@ -1,16 +1,14 @@
 import { MusicXml } from '@/musicxml/musicxml';
-import { NamedElement } from '@/util';
 import { ScorePartwise } from '@/musicxml/scorepartwise';
 import { xml } from '@/util';
 
 describe(MusicXml, () => {
   describe('getScorePartwise', () => {
     it('returns the score of the musicxml document', () => {
-      const root = xml.createDocument();
-      const scorePartwise = NamedElement.of<'score-partwise'>(root.createElement('score-partwise'));
-      root.appendChild(scorePartwise.native());
+      const scorePartwise = xml.scorePartwise();
+      const document = xml.musicXml(scorePartwise);
 
-      const musicXml = new MusicXml(root);
+      const musicXml = new MusicXml(document);
 
       expect(musicXml.getScorePartwise()).toStrictEqual(new ScorePartwise(scorePartwise));
     });
