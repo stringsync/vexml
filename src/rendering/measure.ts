@@ -141,11 +141,13 @@ export class Measure {
   }
 
   /** Returns the minimum justify width. */
+  @util.memoize()
   private getMinJustifyWidth(): number {
     return util.math.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
   }
 
   /** Returns the modifiers width. */
+  @util.memoize()
   private getModifiersWidth(): number {
     return util.math.max(this.staves.map((stave) => stave.getModifiersWidth()));
   }
