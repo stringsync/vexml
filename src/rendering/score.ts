@@ -74,7 +74,7 @@ export class Score {
 
       // Height is calculated during render time to avoid duplicate work that would've been done if we were using
       // instance methods on the rendering.Stave object.
-      const maxY = util.math.max([
+      const maxY = util.max([
         y,
         ...systemRendering.parts
           .flatMap((part) => part.measures)

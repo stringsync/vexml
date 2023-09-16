@@ -70,9 +70,7 @@ export class System {
         current: part.getMeasureAt(index)!,
       }));
 
-      let minRequiredWidth = util.math.max(
-        measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous))
-      );
+      let minRequiredWidth = util.max(measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
 
       const isProcessingLastMeasure = index === measureCount - 1;
       if (isProcessingLastMeasure) {
@@ -88,7 +86,7 @@ export class System {
         commitSystem(index);
         // Recalculate to reflect the new conditions of the measure being on a different system.
         // TODO: Using null breaks encapsulation, figure out another way to do this.
-        minRequiredWidth = util.math.max(measures.map((measure) => measure.current.getMinRequiredWidth(null)));
+        minRequiredWidth = util.max(measures.map((measure) => measure.current.getMinRequiredWidth(null)));
         continueSystem(minRequiredWidth);
       }
     }
@@ -124,7 +122,7 @@ export class System {
   }
 
   private getMeasureCount(): number {
-    return util.math.max(this.parts.map((part) => part.getMeasures().length));
+    return util.max(this.parts.map((part) => part.getMeasures().length));
   }
 
   private getMinRequiredWidth(): number {
@@ -139,7 +137,7 @@ export class System {
         current: part.getMeasureAt(index)!,
       }));
 
-      totalWidth += util.math.max(measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
+      totalWidth += util.max(measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
     }
 
     return totalWidth;
