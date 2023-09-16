@@ -35,7 +35,7 @@ export class Measure {
   }): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
-    const staveCount = util.math.max([1, ...attributes.map((attribute) => attribute.getStaveCount())]);
+    const staveCount = util.max([1, ...attributes.map((attribute) => attribute.getStaveCount())]);
     const staves = new Array<Stave>(staveCount);
 
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
@@ -143,12 +143,12 @@ export class Measure {
   /** Returns the minimum justify width. */
   @util.memoize()
   private getMinJustifyWidth(): number {
-    return util.math.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
+    return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
   }
 
   /** Returns the modifiers width. */
   @util.memoize()
   private getModifiersWidth(): number {
-    return util.math.max(this.staves.map((stave) => stave.getModifiersWidth()));
+    return util.max(this.staves.map((stave) => stave.getModifiersWidth()));
   }
 }
