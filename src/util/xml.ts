@@ -248,8 +248,9 @@ export const attributes = createNamedElementFactory<
     clefs: NamedElement<'clef'>[];
     times: NamedElement<'time'>[];
     keys: NamedElement<'key'>[];
+    staffDetails: NamedElement<'staff-details'>[];
   }
->('attributes', (e, { staves, clefs, times, keys }) => {
+>('attributes', (e, { staves, clefs, times, keys, staffDetails }) => {
   if (keys) {
     e.append(...keys);
   }
@@ -261,6 +262,9 @@ export const attributes = createNamedElementFactory<
   }
   if (staves) {
     e.append(staves);
+  }
+  if (staffDetails) {
+    e.append(...staffDetails);
   }
 });
 
@@ -845,5 +849,12 @@ export const beam = createNamedElementFactory<'beam', { number: number; beamValu
     if (typeof beamValue === 'string') {
       e.setTextContent(beamValue);
     }
+  }
+);
+
+export const staffDetails = createNamedElementFactory<'staff-details', Record<never, never>>(
+  'staff-details',
+  (_, __) => {
+    // noop
   }
 );
