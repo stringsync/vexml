@@ -40,7 +40,7 @@ This will render a child SVG element whose height will automatically adjust to f
 
 Before you run any commands, install the dependencies.
 
-```
+```sh
 yarn install
 ```
 
@@ -48,14 +48,14 @@ yarn install
 
 In order to run tests on x86 architecture, run:
 
-```
+```sh
 yarn test
 ```
 
-If you're running a machine using ARM architecture, try `yarn test:m1` instead:
+If you're running a machine using ARM architecture (such as an M series mac), try setting the default platform before running the command (or set it in your shell profile):
 
-```
-yarn test:m1
+```sh
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
 ```
 
 These commands are just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
@@ -66,7 +66,7 @@ yarn test --watchAll
 
 ### Snapshots
 
-This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests. When there is more than 1% difference between the snapshot and what was produced by the test, the test will fail.
+This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests.
 
 #### Diffs
 
@@ -78,7 +78,7 @@ Rendering varies by platform, so it is important you run tests using the `yarn t
 
 When you want to update all snapshots, rerun the test command with the `--updateSnapshot`.
 
-```
+```sh
 yarn test --updateSnapshot
 ```
 

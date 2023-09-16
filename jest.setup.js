@@ -1,9 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { configureToMatchImageSnapshot } = require('jest-image-snapshot');
-
-const toMatchImageSnapshot = configureToMatchImageSnapshot({
-  failureThreshold: 1,
-  failureThresholdType: 'percent',
-});
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { toMatchImageSnapshot } = require('jest-image-snapshot');
 
 expect.extend({ toMatchImageSnapshot });
