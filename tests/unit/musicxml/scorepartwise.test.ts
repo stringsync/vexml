@@ -1,6 +1,7 @@
 import { Part } from '@/musicxml/part';
 import { ScorePartwise } from '@/musicxml/scorepartwise';
 import { xml } from '@/util';
+import { Defaults } from '@/musicxml';
 
 describe(ScorePartwise, () => {
   describe('getPartCount', () => {
@@ -75,6 +76,23 @@ describe(ScorePartwise, () => {
       const score = new ScorePartwise(scorePartwise);
 
       expect(score.getParts()).toStrictEqual([new Part(part1), new Part(part2)]);
+    });
+  });
+
+  describe('getDefaults', () => {
+    it('returns the defaults of the score partwise', () => {
+      const defaults = xml.defaults();
+      const node = xml.scorePartwise({ defaults });
+
+      const score = new ScorePartwise(node);
+
+      expect(score.getDefaults()).toStrictEqual(new Defaults(defaults));
+    });
+
+    it('returns null when defaults is missing', () => {
+      const node = xml.scorePartwise({});
+      const score = new ScorePartwise(node);
+      expect(score.getDefaults()).toBeNull();
     });
   });
 });

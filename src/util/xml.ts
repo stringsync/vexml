@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BeamValue } from '../musicxml/enums';
 import { NamedElement } from './namedelement';
 
 /**
@@ -68,13 +67,17 @@ export const scorePartwise = createNamedElementFactory<
   {
     parts: NamedElement<'part'>[];
     partList: NamedElement<'part-list'>;
+    defaults: NamedElement<'defaults'>;
   }
->('score-partwise', (e, { parts, partList }) => {
+>('score-partwise', (e, { parts, partList, defaults }) => {
   if (parts) {
     e.append(...parts);
   }
   if (partList) {
     e.append(partList);
+  }
+  if (defaults) {
+    e.append(defaults);
   }
 });
 
@@ -283,6 +286,21 @@ export const print = createNamedElementFactory<
   if (typeof newPage === 'boolean') {
     e.setAttribute('new-page', newPage ? 'yes' : 'no');
   }
+  if (staffLayouts) {
+    e.append(...staffLayouts);
+  }
+  if (systemLayout) {
+    e.append(systemLayout);
+  }
+});
+
+export const defaults = createNamedElementFactory<
+  'defaults',
+  {
+    systemLayout: NamedElement<'system-layout'>;
+    staffLayouts: NamedElement<'staff-layout'>[];
+  }
+>('defaults', (e, { staffLayouts, systemLayout }) => {
   if (staffLayouts) {
     e.append(...staffLayouts);
   }
@@ -840,7 +858,7 @@ export const chord = createNamedElementFactory<'chord', Record<never, never>>('c
   // noop
 });
 
-export const beam = createNamedElementFactory<'beam', { number: number; beamValue: BeamValue }>(
+export const beam = createNamedElementFactory<'beam', { number: number; beamValue: string }>(
   'beam',
   (e, { number, beamValue }) => {
     if (typeof number === 'number') {
@@ -852,9 +870,29 @@ export const beam = createNamedElementFactory<'beam', { number: number; beamValu
   }
 );
 
-export const staffDetails = createNamedElementFactory<'staff-details', Record<never, never>>(
+export const staffDetails = createNamedElementFactory<
   'staff-details',
-  (_, __) => {
-    // noop
+  { number: number; staffType: NamedElement<'staff-type'>; staffLines: NamedElement<'staff-lines'> }
+>('staff-details', (e, { number, staffType, staffLines }) => {
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
   }
-);
+  if (staffType) {
+    e.append(staffType);
+  }
+  if (staffLines) {
+    e.append(staffLines);
+  }
+});
+
+export const staffLines = createNamedElementFactory<'staff-lines', { value: number }>('staff-lines', (e, { value }) => {
+  if (typeof value === 'number') {
+    e.setTextContent(value.toString());
+  }
+});
+
+export const staffType = createNamedElementFactory<'staff-type', { value: string }>('staff-type', (e, { value }) => {
+  if (typeof value === 'string') {
+    e.setTextContent(value);
+  }
+});
