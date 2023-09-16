@@ -118,6 +118,28 @@ export class Stave {
     });
   }
 
+  /** Returns the minimum justify width for the stave in a measure context. */
+  @util.memoize()
+  getMinJustifyWidth(): number {
+    if (this.voices.length === 0) {
+      return 0;
+    }
+    const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
+    const vfFormatter = new vexflow.Formatter();
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
+  }
+
+  /** Returns the width that the modifiers take up. */
+  @util.memoize()
+  getModifiersWidth(): number {
+    return this.toVexflowStave({
+      x: 0,
+      y: 0,
+      width: this.getMinJustifyWidth(),
+      renderModifiers: true,
+    }).getNoteStartX();
+  }
+
   /** Cleans the Stave. */
   clone(): Stave {
     return new Stave({
@@ -139,28 +161,6 @@ export class Stave {
       this.timeSignature.toString() === stave.timeSignature.toString() &&
       this.keySignature === stave.keySignature
     );
-  }
-
-  /** Returns the minimum justify width for the stave in a measure context. */
-  @util.memoize()
-  getMinJustifyWidth(): number {
-    if (this.voices.length === 0) {
-      return 0;
-    }
-    const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
-    const vfFormatter = new vexflow.Formatter();
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
-  }
-
-  /** Returns the width that the modifiers take up. */
-  @util.memoize()
-  getModifiersWidth(): number {
-    return this.toVexflowStave({
-      x: 0,
-      y: 0,
-      width: this.getMinJustifyWidth(),
-      renderModifiers: true,
-    }).getNoteStartX();
   }
 
   /** Renders the Stave. */

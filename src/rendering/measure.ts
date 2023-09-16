@@ -80,7 +80,7 @@ export class Measure {
     previousMeasure: Measure | null;
     staffLayouts: musicxml.StaffLayout[];
   }): MeasureRendering {
-    const staveRenderings = new Array<StaveRendering>();
+    const staveRenderings = [];
 
     let y = opts.y;
 
@@ -118,6 +118,18 @@ export class Measure {
     return { type: 'measure', staves: staveRenderings };
   }
 
+  /** Returns the minimum justify width. */
+  @util.memoize()
+  private getMinJustifyWidth(): number {
+    return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  /** Returns the modifiers width. */
+  @util.memoize()
+  private getModifiersWidth(): number {
+    return util.max(this.staves.map((stave) => stave.getModifiersWidth()));
+  }
+
   private hasEqualModifiers(other: Measure | null): boolean {
     if (!other) {
       return false;
@@ -138,17 +150,5 @@ export class Measure {
   /** Whether the Measure should render modifiers. */
   private shouldRenderModifiers(previousMeasure: Measure | null): boolean {
     return this.systemId !== previousMeasure?.systemId || !this.hasEqualModifiers(previousMeasure);
-  }
-
-  /** Returns the minimum justify width. */
-  @util.memoize()
-  private getMinJustifyWidth(): number {
-    return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
-  }
-
-  /** Returns the modifiers width. */
-  @util.memoize()
-  private getModifiersWidth(): number {
-    return util.max(this.staves.map((stave) => stave.getModifiersWidth()));
   }
 }
