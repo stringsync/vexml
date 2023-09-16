@@ -40,7 +40,7 @@ describe('math', () => {
     });
 
     it('throws when min is greater than max', () => {
-      expect(() => max(3, 1, 2)).toThrow();
+      expect(() => clamp(3, 1, 2)).toThrow();
     });
   });
 });
