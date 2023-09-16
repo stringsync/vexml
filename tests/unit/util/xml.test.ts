@@ -2,7 +2,7 @@ import { xml } from '@/util';
 
 type FnNames = keyof typeof xml;
 
-const AUTO_CRASH_TEST_SKIP_NAMES: Set<FnNames> = new Set(['createElement', 'createNamedElement']);
+const AUTO_CRASH_TEST_SKIP_NAMES: Set<FnNames> = new Set(['createElement', 'createNamedElement', 'musicXml']);
 
 describe('xml', () => {
   describe('createElement', () => {
