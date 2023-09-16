@@ -1,6 +1,11 @@
 import { NamedElement } from '@/util';
 import { StaffLayout, SystemLayout } from './types';
 
+/**
+ * Contains general printing parameters, including layout elements.
+ *
+ * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/print/
+ */
 export class Print {
   constructor(private element: NamedElement<'print'>) {}
 

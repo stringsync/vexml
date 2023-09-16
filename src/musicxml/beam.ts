@@ -1,21 +1,22 @@
 import { BEAM_VALUES, BeamValue } from './enums';
-import { NamedElement } from '@/util';
+import { NamedElement, clamp } from '@/util';
 
+/**
+ * Beam is a note connector that indicates a rhythmic relationship amongst a group of notes.
+ *
+ * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/beam/
+ */
 export class Beam {
   constructor(private element: NamedElement<'beam'>) {}
 
   /** Returns the beam level of the beam. */
   getNumber(): number {
     const number = this.element.attr('number').withDefault(1).int();
-    return this.clamp(1, 8, number);
+    return clamp(1, 8, number);
   }
 
   /** Returns the beam value of the beam. */
   getBeamValue(): BeamValue {
     return this.element.content().withDefault(BEAM_VALUES.values[0]).enum(BEAM_VALUES);
-  }
-
-  private clamp(min: number, max: number, value: number): number {
-    return Math.min(max, Math.max(min, value));
   }
 }
