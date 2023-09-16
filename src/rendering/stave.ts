@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
+import * as util from '@/util';
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -141,6 +142,7 @@ export class Stave {
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
+  @util.memoize()
   getMinJustifyWidth(): number {
     if (this.voices.length === 0) {
       return 0;
@@ -151,6 +153,7 @@ export class Stave {
   }
 
   /** Returns the width that the modifiers take up. */
+  @util.memoize()
   getModifiersWidth(): number {
     return this.toVexflowStave({
       x: 0,
