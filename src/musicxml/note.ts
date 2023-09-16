@@ -15,6 +15,11 @@ import {
 import { NamedElement } from '@/util';
 import { Notations } from './notations';
 
+/**
+ * Contains graphical and musical information about a note.
+ *
+ * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/note/
+ */
 export class Note {
   constructor(private element: NamedElement<'note'>) {}
 

@@ -10,6 +10,7 @@ import { STAFF_TYPES, StaffType } from './enums';
 export class StaffDetails {
   constructor(private element: NamedElement<'staff-details'>) {}
 
+  /** Returns the staff type. */
   getStaffType(): StaffType {
     return this.element.first('staff-type')?.content().enum(STAFF_TYPES) ?? 'regular';
   }

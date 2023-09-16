@@ -17,11 +17,11 @@ export type NoteRendering = {
 };
 
 /**
- * Represents an individual musical note or rest, encapsulating its pitch, duration, and other associated notations.
+ * Represents an individual musical note, encapsulating its pitch, duration, and other associated notations.
  *
  * The `Note` class is foundational to musical notation, capturing the basic elements required to convey a musical idea.
- * Whether representing a sounded pitch or a rest, each note carries with it a wealth of information, including its
- * rhythmic value, position on the stave, and potential modifications or embellishments.
+ * Whether representing a sounded pitch, each note carries with it a wealth of information, including its rhythmic
+ * value, position on the stave, and potential modifications or embellishments.
  *
  * Notes can exist in various forms ranging from whole notes to sixteenth notes and beyond, with potential ties, dots,
  * and other modifiers affecting their duration and representation.

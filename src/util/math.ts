@@ -7,3 +7,14 @@ export const max = (values: number[], initial = 0): number => {
 export const sum = (values: number[]): number => {
   return values.reduce((sum, value) => sum + value, 0);
 };
+
+/** Ensures a number is within a range. */
+export const clamp = (min: number, max: number, value: number): number => {
+  if (Number.isNaN(min) || Number.isNaN(max)) {
+    throw new Error(`min and max must not be NaN`);
+  }
+
+  value = Number.isNaN(value) ? min : value;
+
+  return Math.min(max, Math.max(min, value));
+};
