@@ -26,7 +26,7 @@
     "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },
   "dependencies": {
-    "vexflow": "4.2.3"
+    "vxflw-early-access": "5.0.0-alpha.2"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",

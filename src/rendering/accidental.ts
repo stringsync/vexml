@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 
 /** The result of rendering an Accidental. */
 export type AccidentalRendering = {

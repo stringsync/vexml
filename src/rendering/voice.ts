@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';

@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
 import * as util from '@/util';

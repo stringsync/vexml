@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';

@@ -1,6 +1,6 @@
 import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 import * as util from '@/util';
 import { Config, DEFAULT_CONFIG } from './config';
 

@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
+import * as vexflow from 'vxflw-early-access';
 import { Config } from './config';
 
 /** The result of rendering a Rest. */
