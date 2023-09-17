@@ -41,8 +41,8 @@ Another thing worth calling out is how this class provides a static default. In 
 
 ### Testing
 
-Each class in this module has a unit test in [tests/unit](tests/unit). 100% coverage is preferred (but not strictly required), because the tests are relatively easy to setup. The most tedious work is adding the MusicXML spec to [src/util/xml.ts](src/util/xml.ts), but there is plenty of prior art to work from.
+Each class in this module has a unit test in [tests/unit](../../tests/unit). 100% coverage is preferred (but not strictly required), because the tests are relatively easy to setup. The most tedious work is adding the MusicXML spec to [src/util/xml.ts](../util/xml.ts), but there is plenty of prior art to work from.
 
 ### Enums
 
-Instead of using native TypeScript enums, use the `Enum` class defined in [src/util/enum.ts](src/util/enum.ts). This avoids the need to do a translation from a plain string (originating from the MusicXML document) to a TypeScript enum. `Enum` also plays nicely with the `Value` class defined in [src/util/value.ts](src/util/value.ts).
+Instead of using native TypeScript enums, use the `Enum` class defined in [src/util/enum.ts](../util/enum.ts). This avoids the need to do a translation from a plain string (originating from the MusicXML document) to a TypeScript enum. `Enum` also plays nicely with the `Value` class defined in [src/util/value.ts](../util/value.ts).
