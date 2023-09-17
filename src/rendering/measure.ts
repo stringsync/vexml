@@ -17,12 +17,14 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
+  private label: string;
   private staves: Stave[];
   private systemId: symbol;
 
-  private constructor(opts: { config: Config; index: number; staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: { config: Config; index: number; label: string; staves: Stave[]; systemId: symbol }) {
     this.config = opts.config;
     this.index = opts.index;
+    this.label = opts.label;
     this.staves = opts.staves;
     this.systemId = opts.systemId;
   }
@@ -51,7 +53,9 @@ export class Measure {
       });
     }
 
-    return new Measure({ config: opts.config, index: opts.index, staves, systemId: opts.systemId });
+    const label = opts.musicXml.measure.getNumber() || (opts.index + 1).toString();
+
+    return new Measure({ config: opts.config, index: opts.index, label, staves, systemId: opts.systemId });
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
@@ -59,6 +63,7 @@ export class Measure {
     return new Measure({
       systemId,
       index: this.index,
+      label: this.label,
       config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
     });
