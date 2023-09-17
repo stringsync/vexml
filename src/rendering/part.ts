@@ -31,12 +31,19 @@ export class Part {
     const id = opts.musicXml.part.getId();
 
     const measures = new Array<Measure>();
-    for (const musicXmlMeasure of opts.musicXml.part.getMeasures()) {
+    const mxMeasures = opts.musicXml.part.getMeasures();
+    for (let index = 0; index < mxMeasures.length; index++) {
+      const mxMeasure = mxMeasures[index];
+
       const measure = Measure.create({
+        // When splitting a system into smaller systems, the measure index should be maintained from when it was just
+        // a single system. Therefore, this index should continue to be correct when a system is split.
+        index,
         config: opts.config,
-        musicXml: { measure: musicXmlMeasure },
+        musicXml: { measure: mxMeasure },
         systemId: opts.systemId,
       });
+
       measures.push(measure);
     }
 
