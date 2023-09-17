@@ -6,6 +6,8 @@ import * as util from '@/util';
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+  index: number;
+  label: string;
   staves: StaveRendering[];
 };
 
@@ -124,7 +126,7 @@ export class Measure {
       y += staffDistance;
     }
 
-    return { type: 'measure', staves: staveRenderings };
+    return { type: 'measure', index: this.index, label: this.label, staves: staveRenderings };
   }
 
   /** Returns the minimum justify width. */
