@@ -22,7 +22,7 @@ const div = document.createElement('div');
 div.style.width = `${width}px`;
 div.style.height = `${height}px`;
 
-const xml = 'some valid musicXML'; // see dev/public/examples for valid musicXML documents
+const xml = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
 
 vexml.Vexml.render({ element: div, width: width, xml: xml });
 ```
