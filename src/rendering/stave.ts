@@ -3,6 +3,12 @@ import * as vexflow from 'vexflow';
 import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
 import * as util from '@/util';
+import { Text } from './text';
+
+const STAVE_LABEL_OFFSET_X = 0;
+const STAVE_LABEL_OFFSET_Y = 24;
+const STAVE_LABEL_FONT_SIZE = 8;
+const STAVE_LABEL_COLOR = '#aaaaaa';
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -12,6 +18,7 @@ export type StaveRendering = {
   vexflow: {
     stave: vexflow.Stave;
   };
+  label: Text;
   voices: VoiceRendering[];
 };
 
@@ -24,6 +31,7 @@ export type StaveRendering = {
  */
 export class Stave {
   private config: Config;
+  private label: string;
   private staffNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
@@ -34,6 +42,7 @@ export class Stave {
 
   private constructor(opts: {
     config: Config;
+    label: string;
     staffNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
@@ -43,6 +52,7 @@ export class Stave {
     voices: Voice[];
   }) {
     this.config = opts.config;
+    this.label = opts.label;
     this.staffNumber = opts.staffNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -55,6 +65,7 @@ export class Stave {
   /** Creates a Stave. */
   static create(opts: {
     config: Config;
+    label: string;
     musicXml: {
       measure: musicxml.Measure;
     };
@@ -108,6 +119,7 @@ export class Stave {
 
     return new Stave({
       config: opts.config,
+      label: opts.label,
       staffNumber: opts.staffNumber,
       clefType,
       timeSignature,
@@ -144,6 +156,7 @@ export class Stave {
   clone(): Stave {
     return new Stave({
       config: this.config,
+      label: this.label,
       staffNumber: this.staffNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
@@ -183,6 +196,15 @@ export class Stave {
     const vfFormatter = new vexflow.Formatter();
     vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
 
+    const label = new Text({
+      content: this.label,
+      italic: true,
+      x: opts.x + STAVE_LABEL_OFFSET_X,
+      y: opts.y + STAVE_LABEL_OFFSET_Y,
+      color: STAVE_LABEL_COLOR,
+      size: STAVE_LABEL_FONT_SIZE,
+    });
+
     return {
       type: 'stave',
       staffNumber: this.staffNumber,
@@ -190,6 +212,7 @@ export class Stave {
       vexflow: {
         stave: vfStave,
       },
+      label,
       voices: voiceRenderings,
     };
   }

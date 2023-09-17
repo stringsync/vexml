@@ -101,16 +101,26 @@ export class Score {
     const vfContext = vfRenderer.getContext();
 
     // Render vexflow.Stave elements.
-    const vfStaves = staves.map((stave) => stave.vexflow.stave);
-    for (const vfStave of vfStaves) {
-      vfStave.setContext(vfContext).draw();
-    }
+    staves
+      .map((stave) => stave.vexflow.stave)
+      .forEach((vfStave) => {
+        vfStave.setContext(vfContext).draw();
+      });
 
     // Render vexflow.Voice elements.
-    const vfVoices = staves.flatMap((stave) => stave.voices).map((voice) => voice.vexflow.voice);
-    for (const vfVoice of vfVoices) {
-      vfVoice.setContext(vfContext).draw();
-    }
+    staves
+      .flatMap((stave) => stave.voices)
+      .map((voice) => voice.vexflow.voice)
+      .forEach((vfVoice) => {
+        vfVoice.setContext(vfContext).draw();
+      });
+
+    // Render measure labels.
+    staves
+      .map((stave) => stave.label)
+      .forEach((label) => {
+        label.draw(vfContext);
+      });
 
     return { type: 'score', systems: systemRenderings };
   }
