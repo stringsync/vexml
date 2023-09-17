@@ -6,6 +6,7 @@ import * as util from '@/util';
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+  index: number;
   staves: StaveRendering[];
 };
 
@@ -16,11 +17,13 @@ export type MeasureRendering = {
  */
 export class Measure {
   private config: Config;
+  private index: number;
   private staves: Stave[];
   private systemId: symbol;
 
-  private constructor(opts: { config: Config; staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: { config: Config; index: number; staves: Stave[]; systemId: symbol }) {
     this.config = opts.config;
+    this.index = opts.index;
     this.staves = opts.staves;
     this.systemId = opts.systemId;
   }
@@ -28,6 +31,7 @@ export class Measure {
   /** Creates a Measure. */
   static create(opts: {
     config: Config;
+    index: number;
     musicXml: {
       measure: musicxml.Measure;
     };
@@ -38,6 +42,8 @@ export class Measure {
     const staveCount = util.max([1, ...attributes.map((attribute) => attribute.getStaveCount())]);
     const staves = new Array<Stave>(staveCount);
 
+    const label = opts.musicXml.measure.getNumber() || (opts.index + 1).toString();
+
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
       staves[staffNumber - 1] = Stave.create({
         config: opts.config,
@@ -45,16 +51,18 @@ export class Measure {
         musicXml: {
           measure: opts.musicXml.measure,
         },
+        label,
       });
     }
 
-    return new Measure({ config: opts.config, staves, systemId: opts.systemId });
+    return new Measure({ config: opts.config, index: opts.index, staves, systemId: opts.systemId });
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
   clone(systemId: symbol): Measure {
     return new Measure({
       systemId,
+      index: this.index,
       config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
     });
@@ -115,7 +123,11 @@ export class Measure {
       y += staffDistance;
     }
 
-    return { type: 'measure', staves: staveRenderings };
+    return {
+      type: 'measure',
+      index: this.index,
+      staves: staveRenderings,
+    };
   }
 
   /** Returns the minimum justify width. */
