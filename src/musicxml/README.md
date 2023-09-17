@@ -1,6 +1,6 @@
 # musicxml
 
-The `musicxml` module is mainly responsible for interfacing with [MusicXML](https://www.w3.org/2021/06/musicxml40/) documents.
+The `musicxml` library is responsible for interfacing with [MusicXML](https://www.w3.org/2021/06/musicxml40/) documents.
 
 ## Intent
 
@@ -20,7 +20,7 @@ The `musicxml` module is mainly responsible for interfacing with [MusicXML](http
 
 ### MusicXML Element Wrappers
 
-Most classes in this module wrap a [MusicXML element](https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/). They will just take a `NamedElement` node and provide convenience methods to the underlying data. For example, for the [<barline> element](https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/barline/):
+Most classes in this library wrap a [MusicXML element](https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/). They will just take a `NamedElement` node and provide convenience methods to the underlying data. For example, for the [<barline> element](https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/barline/):
 
 ```ts
 export class Barline {
@@ -41,7 +41,7 @@ Another thing worth calling out is how this class provides a static default. In 
 
 ### Testing
 
-Each class in this module has a unit test in [tests/unit](../../tests/unit). 100% coverage is preferred (but not strictly required), because the tests are relatively easy to setup. The most tedious work is adding the MusicXML spec to [src/util/xml.ts](../util/xml.ts), but there is plenty of prior art to work from.
+Each class in this library has a unit test in [tests/unit](../../tests/unit). 100% coverage is preferred (but not strictly required), because the tests are relatively easy to setup. The most tedious work is adding the MusicXML spec to [src/util/xml.ts](../util/xml.ts), but there is plenty of prior art to work from.
 
 ### Enums
 
