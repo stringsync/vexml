@@ -6031,6 +6031,11 @@ v8-to-istanbul@^9.0.1:
     "@types/istanbul-lib-coverage" "^2.0.1"
     convert-source-map "^1.6.0"
 
+vexflow-fonts@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/vexflow-fonts/-/vexflow-fonts-1.0.6.tgz#2fe3e3a056850bb39f436c568e50dec2c95ab90c"
+  integrity sha512-B6jJGfCFn0OJoC4UdGq4FCa1tEtIruaBwyb/BPAeqyROr+gTJ4FlcM4X0ir5xdoH2CUrRwNoHdUWVIeqqIEj4g==
+
 vxflw-early-access@5.0.0-alpha.2:
   version "5.0.0-alpha.2"
   resolved "https://registry.yarnpkg.com/vxflw-early-access/-/vxflw-early-access-5.0.0-alpha.2.tgz#8ad71b2a9b3136342d591be41505111d711186f8"

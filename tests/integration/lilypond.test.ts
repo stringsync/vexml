@@ -1,5 +1,6 @@
 import { Page } from 'puppeteer';
 import { Vexml } from '@/index';
+import { registerFont } from 'canvas';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -9,9 +10,18 @@ type TestCase = {
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'lilypond');
+const FONTS_DIR = path.join(__dirname, '../../node_modules/vexflow-fonts');
 
 describe('lilypond', () => {
   let page: Page;
+
+  beforeAll(() => {
+    registerFont(path.join(FONTS_DIR, 'bravura/Bravura_1.392.otf'), { family: 'Bravura' });
+    registerFont(path.join(FONTS_DIR, 'academico/Academico_0.902.otf'), { family: 'Academico' });
+    registerFont(path.join(FONTS_DIR, 'petaluma/Petaluma_1.065.otf'), { family: 'Petaluma' });
+    registerFont(path.join(FONTS_DIR, 'petaluma/PetalumaScript_1.10.otf'), { family: 'Petaluma Script' });
+    registerFont(path.join(FONTS_DIR, 'gonvillesmufl/GonvilleSmufl_1.100.otf'), { family: 'Gonville' });
+  });
 
   beforeEach(async () => {
     page = await (globalThis as any).__BROWSER_GLOBAL__.newPage();

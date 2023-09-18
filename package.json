@@ -26,6 +26,7 @@
     "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },
   "dependencies": {
+    "vexflow-fonts": "^1.0.6",
     "vxflw-early-access": "5.0.0-alpha.2"
   },
   "devDependencies": {
