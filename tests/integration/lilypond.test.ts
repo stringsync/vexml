@@ -17,10 +17,6 @@ describe('lilypond', () => {
 
   beforeAll(() => {
     registerFont(path.join(FONTS_DIR, 'bravura/Bravura_1.392.otf'), { family: 'Bravura' });
-    registerFont(path.join(FONTS_DIR, 'academico/Academico_0.902.otf'), { family: 'Academico' });
-    registerFont(path.join(FONTS_DIR, 'petaluma/Petaluma_1.065.otf'), { family: 'Petaluma' });
-    registerFont(path.join(FONTS_DIR, 'petaluma/PetalumaScript_1.10.otf'), { family: 'Petaluma Script' });
-    registerFont(path.join(FONTS_DIR, 'gonvillesmufl/GonvilleSmufl_1.100.otf'), { family: 'Gonville' });
   });
 
   beforeEach(async () => {
@@ -58,6 +54,18 @@ describe('lilypond', () => {
       height: 0,
     });
     await page.setContent(outerDiv.outerHTML);
+    await page.evaluate(() => {
+      const style = document.createElement('style');
+
+      style.innerHTML = `
+        @font-face {
+          font-family: 'Bravura';
+          src: url('https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf') format('opentype');
+        }
+      `;
+
+      document.head.appendChild(style);
+    });
 
     const element = await page.$('#screenshot');
     const screenshot = await element!.screenshot();
