@@ -54,7 +54,6 @@
     "jest-extended": "^2.0.0",
     "jest-image-snapshot": "^6.2.0",
     "prettier": "^2.6.2",
-    "prettier-plugin-organize-imports": "^2.3.4",
     "puppeteer": "21.1.0",
     "ts-loader": "^9.2.8",
     "typescript": "5.1.6",
