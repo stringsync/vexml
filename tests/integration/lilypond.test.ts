@@ -29,8 +29,6 @@ describe('lilypond', () => {
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
-    console.log(document.documentElement.outerHTML);
-
     Vexml.render({
       element: vexmlDiv,
       xml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
