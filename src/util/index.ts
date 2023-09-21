@@ -4,3 +4,4 @@ export * from './value';
 export * as xml from './xml';
 export * from './math';
 export * from './decorators';
+export * from './html';
