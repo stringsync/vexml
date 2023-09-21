@@ -138,8 +138,8 @@ export class Voice {
 
   private toVexflowVoice(vfTickables: vexflow.Tickable[]): vexflow.Voice {
     return new vexflow.Voice({
-      num_beats: this.timeSignature.getBeatsPerMeasure(),
-      beat_value: this.timeSignature.getBeatValue(),
+      numBeats: this.timeSignature.getBeatsPerMeasure(),
+      beatValue: this.timeSignature.getBeatValue(),
     })
       .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)

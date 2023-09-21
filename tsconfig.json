@@ -10,7 +10,8 @@
     "types": ["node", "jest", "jest-extended"],
     "experimentalDecorators": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "vexflow": ["./node_modules/vxflw-early-access"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],
