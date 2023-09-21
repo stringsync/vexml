@@ -2,6 +2,7 @@ import { Page } from 'puppeteer';
 import { Vexml } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
+import { setup } from './helpers';
 
 type TestCase = {
   filename: string;
@@ -26,18 +27,10 @@ describe('lilypond', () => {
     { filename: '01a-Pitches-Pitches.xml', width: 900 },
     { filename: '01a-Pitches-Pitches.xml', width: 360 },
   ])(`$filename ($width px)`, async (t) => {
-    const outerDiv = document.createElement('div');
-    const innerDiv = document.createElement('div');
-
-    outerDiv.append(innerDiv);
-
-    outerDiv.setAttribute('id', 'screenshot');
-    outerDiv.style.paddingLeft = '16px';
-    outerDiv.style.paddingRight = '16px';
-    outerDiv.style.display = 'inline-block';
+    const { document, vexmlDiv, screenshotElementSelector } = setup();
 
     Vexml.render({
-      element: innerDiv,
+      element: vexmlDiv,
       xml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
       width: t.width,
     });
@@ -47,9 +40,9 @@ describe('lilypond', () => {
       // height doesn't matter since we screenshot the element, not the page.
       height: 0,
     });
-    await page.setContent(outerDiv.outerHTML);
+    await page.setContent(document.documentElement.outerHTML);
 
-    const element = await page.$('#screenshot');
+    const element = await page.$(screenshotElementSelector);
     const screenshot = await element!.screenshot();
     expect(screenshot).toMatchImageSnapshot();
   });

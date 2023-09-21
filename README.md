@@ -10,6 +10,10 @@
 
 You _will_ be able to use any JavaScript package manager (e.g. `yarn`, `npm`, `pnpm`) to install `vexml`. At the moment, `stringsync/vexml` is not published to any public registry.
 
+### ⚠️ IMPORTANT: Loading Fonts
+
+`vexml` uses VexFlow 5, which requires you to load the fonts you need to use. See the `vexflow` documentation TODO(TBD link) on how to do this.
+
 ### Rendering
 
 ```ts
