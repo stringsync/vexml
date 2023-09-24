@@ -36,6 +36,7 @@ export class Measure {
       measure: musicxml.Measure;
     };
     systemId: symbol;
+    previousMeasure: Measure | null;
   }): Measure {
     const attributes = opts.musicXml.measure.getAttributes();
 
@@ -45,13 +46,15 @@ export class Measure {
     const label = opts.musicXml.measure.getNumber() || (opts.index + 1).toString();
 
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
-      staves[staffNumber - 1] = Stave.create({
+      const staffIndex = staffNumber - 1;
+      staves[staffIndex] = Stave.create({
         config: opts.config,
         staffNumber,
         musicXml: {
           measure: opts.musicXml.measure,
         },
         label,
+        previousStave: opts.previousMeasure?.staves[staffIndex] ?? null,
       });
     }
 
