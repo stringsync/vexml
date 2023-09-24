@@ -69,6 +69,7 @@ export class Stave {
     musicXml: {
       measure: musicxml.Measure;
     };
+    previousStave: Stave | null;
     staffNumber: number;
   }): Stave {
     // TODO: Properly handle multiple <attributes>.
@@ -78,20 +79,26 @@ export class Stave {
       attributes
         .flatMap((attribute) => attribute.getClefs())
         .find((clef) => clef.getStaffNumber() === opts.staffNumber)
-        ?.getClefType() ?? 'treble';
+        ?.getClefType() ??
+      opts.previousStave?.clefType ??
+      'treble';
 
     // TODO: Handle multiple time signatures.
     const timeSignature =
       attributes
         .flatMap((attribute) => attribute.getTimes())
         .find((time) => time.getStaffNumber() === opts.staffNumber)
-        ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
+        ?.getTimeSignatures()[0] ??
+      opts.previousStave?.timeSignature ??
+      new musicxml.TimeSignature(4, 4);
 
     const keySignature =
       attributes
         .flatMap((attribute) => attribute.getKeys())
         .find((key) => key.getStaffNumber() === opts.staffNumber)
-        ?.getKeySignature() ?? 'C';
+        ?.getKeySignature() ??
+      opts.previousStave?.keySignature ??
+      'C';
 
     let beginningBarStyle: musicxml.BarStyle = 'regular';
     let endBarStyle: musicxml.BarStyle = 'regular';

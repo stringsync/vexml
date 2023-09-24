@@ -124,11 +124,15 @@ export class Note {
 
     const keys = notes.map((note) => note.key);
 
+    const { autoStem, stemDirection } = Note.getStemParameters(notes);
+
     const vfStaveNote = new vexflow.StaveNote({
       keys: notes.map((note) => note.key),
       duration: notes[0].durationDenominator,
       dots: notes[0].dotCount,
       clef: notes[0].clefType,
+      autoStem,
+      stemDirection,
     });
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
@@ -154,6 +158,19 @@ export class Note {
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
     }));
+  }
+
+  private static getStemParameters(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
+    const autoStem = notes.every((note) => !note.stem);
+    if (autoStem) {
+      return { autoStem };
+    }
+
+    // TODO: Figure out what to do if some notes in a multivoice or chord have different specified stem directions.
+    // https://sites.coloradocollege.edu/musicengraving/engraving-convention/notes-and-stems/ has some information,
+    // but I'm not sure if vexflow has this capability. For now, we just auto stem since it'll be right ~most of the
+    // time.
+    return { autoStem: true };
   }
 
   /** Clones the Note. */
