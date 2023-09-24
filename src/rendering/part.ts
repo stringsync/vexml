@@ -30,6 +30,7 @@ export class Part {
   static create(opts: { config: Config; musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
     const id = opts.musicXml.part.getId();
 
+    let previousMeasure: Measure | null = null;
     const measures = new Array<Measure>();
     const mxMeasures = opts.musicXml.part.getMeasures();
     for (let index = 0; index < mxMeasures.length; index++) {
@@ -42,9 +43,11 @@ export class Part {
         config: opts.config,
         musicXml: { measure: mxMeasure },
         systemId: opts.systemId,
+        previousMeasure,
       });
 
       measures.push(measure);
+      previousMeasure = measure;
     }
 
     return new Part({ config: opts.config, id, systemId: opts.systemId, measures });
