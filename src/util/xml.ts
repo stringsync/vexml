@@ -187,12 +187,29 @@ export const note = createNamedElementFactory<
     staff: NamedElement<'staff'>;
     beams: NamedElement<'beam'>[];
     chord: NamedElement<'chord'>;
+    lyrics: NamedElement<'lyric'>[];
   }
 >(
   'note',
   (
     e,
-    { type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff, beams, chord }
+    {
+      type,
+      grace,
+      stem,
+      dots,
+      rest,
+      pitch,
+      accidental,
+      notehead,
+      duration,
+      notations,
+      voice,
+      staff,
+      beams,
+      chord,
+      lyrics,
+    }
   ) => {
     if (grace) {
       e.append(grace);
@@ -235,6 +252,9 @@ export const note = createNamedElementFactory<
     }
     if (notations) {
       e.append(...notations);
+    }
+    if (lyrics) {
+      e.append(...lyrics);
     }
   }
 );

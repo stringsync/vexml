@@ -4,6 +4,7 @@ import { Measure } from '@/musicxml/measure';
 import { Notations } from '@/musicxml/notations';
 import { Note } from '@/musicxml/note';
 import { xml } from '@/util';
+import { Lyric } from '@/musicxml/lyric';
 
 describe(Note, () => {
   describe('getStem', () => {
@@ -479,6 +480,28 @@ describe(Note, () => {
       const beams = note.getBeams();
 
       expect(beams).toStrictEqual([new Beam(beam1), new Beam(beam2)]);
+    });
+  });
+
+  describe('getLyrics', () => {
+    it('returns the lyrics of the note', () => {
+      const lyric1 = xml.lyric();
+      const lyric2 = xml.lyric();
+      const node = xml.note({ lyrics: [lyric1, lyric2] });
+      const note = new Note(node);
+
+      const lyrics = note.getLyrics();
+
+      expect(lyrics).toStrictEqual([new Lyric(lyric1), new Lyric(lyric2)]);
+    });
+
+    it('returns an empty array if the note does not have any lyrics', () => {
+      const node = xml.note();
+      const note = new Note(node);
+
+      const lyrics = note.getLyrics();
+
+      expect(lyrics).toStrictEqual([]);
     });
   });
 });
