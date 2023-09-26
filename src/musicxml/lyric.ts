@@ -14,4 +14,9 @@ export type LyricComponent =
  */
 export class Lyric {
   constructor(private element: NamedElement<'lyric'>) {}
+
+  /** Returns the verse number the lyric belongs to. Defaults to 1. */
+  getVerseNumber(): string {
+    return this.element.attr('number').withDefault('1').str();
+  }
 }
