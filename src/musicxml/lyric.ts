@@ -1,4 +1,11 @@
 import { NamedElement } from '../util';
+import { SyllabicType } from './enums';
+
+export type LyricComponent =
+  | { type: 'syllabic'; value: SyllabicType }
+  | { type: 'text'; value: string }
+  | { type: 'elision'; value: string }
+  | { type: 'extend' };
 
 /**
  * The <lyric> element represents text underlays for lyrics.
