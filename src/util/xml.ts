@@ -187,12 +187,29 @@ export const note = createNamedElementFactory<
     staff: NamedElement<'staff'>;
     beams: NamedElement<'beam'>[];
     chord: NamedElement<'chord'>;
+    lyrics: NamedElement<'lyric'>[];
   }
 >(
   'note',
   (
     e,
-    { type, grace, stem, dots, rest, pitch, accidental, notehead, duration, notations, voice, staff, beams, chord }
+    {
+      type,
+      grace,
+      stem,
+      dots,
+      rest,
+      pitch,
+      accidental,
+      notehead,
+      duration,
+      notations,
+      voice,
+      staff,
+      beams,
+      chord,
+      lyrics,
+    }
   ) => {
     if (grace) {
       e.append(grace);
@@ -235,6 +252,9 @@ export const note = createNamedElementFactory<
     }
     if (notations) {
       e.append(...notations);
+    }
+    if (lyrics) {
+      e.append(...lyrics);
     }
   }
 );
@@ -771,15 +791,15 @@ export const beatType = createNamedElementFactory<
 export const lyric = createNamedElementFactory<
   'lyric',
   {
-    text: NamedElement<'text'>;
-    syllabic: NamedElement<'syllabic'>;
+    number: number;
+    components: Array<NamedElement<'syllabic'> | NamedElement<'text'> | NamedElement<'elision'>>;
   }
->('lyric', (e, { text, syllabic }) => {
-  if (syllabic) {
-    e.append(syllabic);
+>('lyric', (e, { number, components }) => {
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
   }
-  if (text) {
-    e.append(text);
+  if (components) {
+    e.append(...components);
   }
 });
 
@@ -800,6 +820,12 @@ export const text = createNamedElementFactory<
     value: string;
   }
 >('text', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const elision = createNamedElementFactory<'elision', { value: string }>('elision', (e, { value }) => {
   if (value) {
     e.setTextContent(value);
   }

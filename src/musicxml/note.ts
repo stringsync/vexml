@@ -14,6 +14,7 @@ import {
 } from './enums';
 import { NamedElement } from '@/util';
 import { Notations } from './notations';
+import { Lyric } from './lyric';
 
 /**
  * Contains graphical and musical information about a note.
@@ -77,6 +78,11 @@ export class Note {
   /** Returns how many dots are on the note. */
   getDotCount(): number {
     return this.element.all('dot').length;
+  }
+
+  /** Returns the lyrics associated with the note. */
+  getLyrics(): Lyric[] {
+    return this.element.all('lyric').map((element) => new Lyric(element));
   }
 
   /** Whether or not the note is a grace note. */

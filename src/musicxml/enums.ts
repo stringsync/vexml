@@ -292,3 +292,11 @@ export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end'
  */
 export type StaffType = EnumValues<typeof STAFF_TYPES>;
 export const STAFF_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', 'regular'] as const);
+
+/**
+ * Lyric hyphenation is indicated by the syllabic type.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/syllabic/
+ */
+export type SyllabicType = EnumValues<typeof SYLLABIC_TYPES>;
+export const SYLLABIC_TYPES = new Enum(['begin', 'end', 'middle', 'single'] as const);

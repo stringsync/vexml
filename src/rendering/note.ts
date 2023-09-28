@@ -3,8 +3,9 @@ import * as vexflow from 'vexflow';
 import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
+import { Lyric, LyricRendering } from './lyric';
 
-export type NoteModifierRendering = AccidentalRendering;
+export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
 /** The result rendering a Note. */
 export type NoteRendering = {
@@ -30,6 +31,7 @@ export class Note {
   private config: Config;
   private key: string;
   private stem: musicxml.Stem | null;
+  private lyrics: Lyric[];
   private beams: Beam[];
   private accidental: Accidental | null;
   private dotCount: number;
@@ -40,6 +42,7 @@ export class Note {
     config: Config;
     key: string;
     stem: musicxml.Stem | null;
+    lyrics: Lyric[];
     beams: Beam[];
     accidental: Accidental | null;
     dotCount: number;
@@ -49,6 +52,7 @@ export class Note {
     this.config = opts.config;
     this.key = opts.key;
     this.stem = opts.stem;
+    this.lyrics = opts.lyrics;
     this.beams = opts.beams;
     this.accidental = opts.accidental;
     this.dotCount = opts.dotCount;
@@ -56,7 +60,7 @@ export class Note {
     this.clefType = opts.clefType;
   }
 
-  /** Create a Note. */
+  /** Creates a Note. */
   static create(opts: {
     config: Config;
     musicXml: {
@@ -74,6 +78,10 @@ export class Note {
     }
 
     const clefType = opts.clefType;
+    const lyrics = note
+      .getLyrics()
+      .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
+      .map((lyric) => Lyric.create({ lyric }));
     const stem = note.getStem();
     const beams = note.getBeams().map((beam) => Beam.create({ musicXml: { beam } }));
     const dotCount = note.getDotCount();
@@ -89,6 +97,7 @@ export class Note {
       config: opts.config,
       key,
       stem,
+      lyrics,
       beams,
       accidental,
       dotCount,
@@ -137,20 +146,31 @@ export class Note {
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
       const renderings = new Array<NoteModifierRendering>();
+
       if (note.accidental) {
         renderings.push(note.accidental.render());
       }
+
+      // Lyrics sorted by ascending verse number.
+      for (const lyric of note.lyrics) {
+        renderings.push(lyric.render());
+      }
+
       return renderings;
     });
 
-    modifierRenderingGroups.forEach((modifierRenderings, index) => {
-      for (const modifierRendering of modifierRenderings) {
+    for (let index = 0; index < modifierRenderingGroups.length; index++) {
+      for (const modifierRendering of modifierRenderingGroups[index]) {
         switch (modifierRendering?.type) {
           case 'accidental':
             vfStaveNote.addModifier(modifierRendering.vexflow.accidental, index);
+            break;
+          case 'lyric':
+            vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
+            break;
         }
       }
-    });
+    }
 
     return keys.map((key, index) => ({
       type: 'note',
@@ -179,6 +199,7 @@ export class Note {
       config: this.config,
       key: this.key,
       stem: this.stem,
+      lyrics: this.lyrics.map((lyric) => lyric.clone()),
       beams: this.beams.map((beam) => beam.clone()),
       accidental: this.accidental?.clone() ?? null,
       dotCount: this.dotCount,

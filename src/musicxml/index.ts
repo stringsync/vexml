@@ -16,3 +16,4 @@ export * from './timesignature';
 export * from './types';
 export * from './staffdetails';
 export * from './defaults';
+export * from './lyric';
