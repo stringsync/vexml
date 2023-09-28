@@ -20,5 +20,7 @@ jobs:
         run: yarn format --check
       - name: typecheck
         run: yarn typecheck
+      - name: expose GitHub runtime
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: test
         run: yarn test:ci
