@@ -32,6 +32,8 @@ describe('lilypond', () => {
     { filename: '01c-Pitches-NoVoiceElement.xml', width: 360 },
     { filename: '01d-Pitches-Microtones.xml', width: 900 },
     { filename: '01d-Pitches-Microtones.xml', width: 360 },
+    { filename: '01e-Pitches-ParenthesizedAccidentals.xml', width: 900 },
+    { filename: '01e-Pitches-ParenthesizedAccidentals.xml', width: 360 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
