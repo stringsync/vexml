@@ -17,7 +17,7 @@
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
-    "build:image:ci": "docker buildx build . --tag vexml:latest --push  --cache-to type=gha,url=$ACTIONS_CACHE_URL --cache-from type=gha,url=$ACTIONS_RUNTIME_TOKEN",
+    "build:image:ci": "docker buildx build . --tag vexml:latest --push --cache-to type=gha,url=${{ secrets.GITHUB_SERVER_URL }},token=${{ secrets.GITHUB_TOKEN }} --cache-from type=gha,url=${{ secrets.GITHUB_SERVER_URL }},token=${{ secrets.GITHUB_TOKEN }}",
     "lint": "yarn eslint .",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
