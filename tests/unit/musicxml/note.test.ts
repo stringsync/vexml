@@ -245,29 +245,23 @@ describe(Note, () => {
     });
   });
 
-  describe('getAccidentalCode', () => {
-    it.each([
-      { accidental: 'sharp', accidentalCode: '#' },
-      { accidental: 'double-sharp', accidentalCode: '##' },
-      { accidental: 'natural', accidentalCode: 'n' },
-      { accidental: 'flat', accidentalCode: 'b' },
-      { accidental: 'flat-flat', accidentalCode: 'bb' },
-    ])(`returns the accidental code: $accidental`, (t) => {
-      const node = xml.note({ accidental: xml.accidental({ value: t.accidental }) });
+  describe('getAlter', () => {
+    it('returns the alter of the note', () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          alter: xml.alter({ value: 1.5 }),
+        }),
+      });
+
       const note = new Note(node);
-      expect(note.getAccidentalCode()).toBe(t.accidentalCode);
+
+      expect(note.getAlter()).toBe(1.5);
     });
 
-    it('defaults to null when accidental is invalid', () => {
-      const node = xml.note({ accidental: xml.accidental({ value: 'foo' }) });
-      const note = new Note(node);
-      expect(note.getAccidentalCode()).toBeNull();
-    });
-
-    it('defaults to null when accidental is missing', () => {
+    it('defaults to null when the alter is missing', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getAccidentalCode()).toBeNull();
+      expect(note.getAlter()).toBeNull();
     });
   });
 

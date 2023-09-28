@@ -71,10 +71,12 @@ export class Note {
     const note = opts.musicXml.note;
 
     let accidental: Accidental | null = null;
-    const code = note.getAccidentalCode();
-    if (musicxml.ACCIDENTAL_CODES.includes(code)) {
+    const alter = note.getAlter();
+    const accidentalType = note.getAccidentalType();
+    const hasAccidental = typeof alter === 'number' || musicxml.ACCIDENTAL_TYPES.includes(accidentalType);
+    if (hasAccidental) {
       const isCautionary = note.hasAccidentalCautionary();
-      accidental = new Accidental({ code, isCautionary });
+      accidental = Accidental.create({ accidentalType, alter, isCautionary });
     }
 
     const clefType = opts.clefType;
