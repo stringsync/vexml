@@ -17,11 +17,11 @@
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
+    "build:image:ci": "docker buildx build . --tag vexml:latest --push  --cache-to type=gha --cache-from type=gha",
     "lint": "yarn eslint .",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
-    "pretest:ci": "yarn build:image",
-    "pretest:m1": "yarn build:image:m1",
+    "pretest:ci": "yarn build:image:ci",
     "test": "docker run -it --rm -v ./src:/vexml/src -v ./tests:/vexml/tests vexml:latest yarn jest --runInBand",
     "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },
