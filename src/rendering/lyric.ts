@@ -9,9 +9,7 @@ export type LyricRendering = {
   };
 };
 
-/**
- * Represents a lyric attached to a single note.
- */
+/** Represents a lyric attached to a single note. */
 export class Lyric {
   private lyric: musicxml.Lyric;
 
@@ -19,11 +17,13 @@ export class Lyric {
     this.lyric = opts.lyric;
   }
 
+  /** Creates a Lyric. */
   static create(opts: { lyric: musicxml.Lyric }): Lyric {
     const lyric = opts.lyric;
     return new Lyric({ lyric });
   }
 
+  /** Renders the Lyric. */
   render(): LyricRendering {
     const verseNumber = this.lyric.getVerseNumber();
     const text = this.getAnnotationText();
@@ -49,6 +49,7 @@ export class Lyric {
   }
 }
 
+/** A state machine for calculating the text that should come from a <lyric> element. */
 class LyricStateMachine {
   private state: 'INITIAL' | 'IN_SYLLABLE' | 'AFTER_SYLLABLE' = 'INITIAL';
   private textParts = new Array<string>();

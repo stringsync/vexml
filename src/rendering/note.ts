@@ -56,7 +56,7 @@ export class Note {
     this.clefType = opts.clefType;
   }
 
-  /** Create a Note. */
+  /** Creates a Note. */
   static create(opts: {
     config: Config;
     musicXml: {
