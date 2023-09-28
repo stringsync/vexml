@@ -43,7 +43,10 @@ export class Lyric {
   }
 
   private createSyllabic(syllabic: NamedElement<'syllabic'>): Extract<LyricComponent, { type: 'syllabic' }> {
-    const value = syllabic.content().withDefault('single').enum(SYLLABIC_TYPES);
+    const value = syllabic
+      .content()
+      .withDefault('single' as SyllabicType)
+      .enum(SYLLABIC_TYPES);
     return { type: 'syllabic', value };
   }
 

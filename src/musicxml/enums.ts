@@ -299,4 +299,4 @@ export const STAFF_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', '
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/syllabic/
  */
 export type SyllabicType = EnumValues<typeof SYLLABIC_TYPES>;
-export const SYLLABIC_TYPES = new Enum(['begin', 'end', 'middle', 'single']);
+export const SYLLABIC_TYPES = new Enum(['begin', 'end', 'middle', 'single'] as const);
