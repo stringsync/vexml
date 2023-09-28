@@ -108,7 +108,7 @@ export class Voice {
         return entry.render();
       }
       if (entry instanceof Rest) {
-        return entry.render();
+        return entry.render({ voiceEntryCount: this.entries.length });
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${entry}`);
