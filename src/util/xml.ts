@@ -589,11 +589,15 @@ export const pitch = createNamedElementFactory<
   'pitch',
   {
     step: NamedElement<'step'>;
+    alter: NamedElement<'alter'>;
     octave: NamedElement<'octave'>;
   }
->('pitch', (e, { step, octave }) => {
+>('pitch', (e, { step, alter, octave }) => {
   if (step) {
     e.append(step);
+  }
+  if (alter) {
+    e.append(alter);
   }
   if (octave) {
     e.append(octave);
@@ -608,6 +612,12 @@ export const step = createNamedElementFactory<
 >('step', (e, { value }) => {
   if (value) {
     e.setTextContent(value);
+  }
+});
+
+export const alter = createNamedElementFactory<'alter', { value: number }>('alter', (e, { value }) => {
+  if (typeof value === 'number') {
+    e.setTextContent(value.toString());
   }
 });
 
