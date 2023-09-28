@@ -791,15 +791,11 @@ export const beatType = createNamedElementFactory<
 export const lyric = createNamedElementFactory<
   'lyric',
   {
-    text: NamedElement<'text'>;
-    syllabic: NamedElement<'syllabic'>;
+    components: Array<NamedElement<'syllabic'> | NamedElement<'text'> | NamedElement<'elision'>>;
   }
->('lyric', (e, { text, syllabic }) => {
-  if (syllabic) {
-    e.append(syllabic);
-  }
-  if (text) {
-    e.append(text);
+>('lyric', (e, { components }) => {
+  if (components) {
+    e.append(...components);
   }
 });
 
