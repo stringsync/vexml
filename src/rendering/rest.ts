@@ -67,18 +67,20 @@ export class Rest {
   }
 
   /** Renders the Rest. */
-  render(): RestRendering {
-    const vfStaveNote = this.toVexflowStaveNote();
-    return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
-  }
-
-  private toVexflowStaveNote(): vexflow.StaveNote {
-    return new vexflow.StaveNote({
+  render(opts: { voiceEntryCount: number }): RestRendering {
+    const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
       dots: this.dotCount,
+      alignCenter: opts.voiceEntryCount === 1,
       clef: this.clefType,
     });
+
+    for (let index = 0; index < this.dotCount; index++) {
+      vexflow.Dot.buildAndAttach([vfStaveNote]);
+    }
+
+    return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
   }
 
   private getKey(): string {

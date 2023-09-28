@@ -146,6 +146,10 @@ export class Note {
       stemDirection,
     });
 
+    for (let index = 0; index < notes[0].dotCount; index++) {
+      vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
+    }
+
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
       const renderings = new Array<NoteModifierRendering>();
 
