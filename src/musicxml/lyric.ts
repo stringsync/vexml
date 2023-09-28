@@ -19,7 +19,11 @@ export class Lyric {
     return this.element.attr('number').withDefault(1).int();
   }
 
-  /** Returns the components of the lyric. */
+  /**
+   * Returns the components of the lyric.
+   *
+   * This method assumes that the lyric children adhere to the MusicXML spec — it does not coerc values.
+   */
   getComponents(): LyricComponent[] {
     const components = new Array<LyricComponent>();
 
