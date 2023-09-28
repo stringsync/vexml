@@ -225,6 +225,60 @@ describe(Note, () => {
     });
   });
 
+  describe('getRestDisplayPitch', () => {
+    it('returns the display pitch of the rest', () => {
+      const node = xml.note({
+        rest: xml.rest({
+          displayStep: xml.displayStep({ step: 'D' }),
+          displayOctave: xml.displayOctave({ octave: '12' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getRestDisplayPitch()).toBe('D/12');
+    });
+
+    it('defaults to null when missing display step', () => {
+      const node = xml.note({
+        rest: xml.rest({
+          displayOctave: xml.displayOctave({ octave: '12' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getRestDisplayPitch()).toBeNull();
+    });
+
+    it('defaults to null when missing display octave', () => {
+      const node = xml.note({
+        rest: xml.rest({
+          displayStep: xml.displayStep({ step: 'D' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getRestDisplayPitch()).toBeNull();
+    });
+
+    it('defaults to null when missing display step and display octave', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getRestDisplayPitch()).toBeNull();
+    });
+
+    it('is independent of the note pitch', () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          step: xml.step({ value: 'C' }),
+          octave: xml.octave({ value: '4' }),
+        }),
+        rest: xml.rest({
+          displayStep: xml.displayStep({ step: 'D' }),
+          displayOctave: xml.displayOctave({ octave: '12' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getRestDisplayPitch()).toBe('D/12');
+    });
+  });
+
   describe('getAccidentalType', () => {
     it.each(ACCIDENTAL_TYPES.values)(`returns the accidental type of the note: '%s'`, (accidental) => {
       const node = xml.note({ accidental: xml.accidental({ value: accidental }) });

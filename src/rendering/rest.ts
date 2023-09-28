@@ -22,17 +22,20 @@ export type RestRendering = {
  */
 export class Rest {
   private config: Config;
+  private displayPitch: string | null;
   private durationDenominator: musicxml.NoteDurationDenominator;
   private dotCount: number;
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
     config: Config;
+    displayPitch: string | null;
     durationDenominator: musicxml.NoteDurationDenominator;
     dotCount: number;
     clefType: musicxml.ClefType;
   }) {
     this.config = opts.config;
+    this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
     this.clefType = opts.clefType;
@@ -50,6 +53,7 @@ export class Rest {
 
     return new Rest({
       config: opts.config,
+      displayPitch: note.getRestDisplayPitch(),
       durationDenominator: note.getDurationDenominator(),
       dotCount: note.getDotCount(),
       clefType: opts.clefType,
@@ -60,6 +64,7 @@ export class Rest {
   clone(): Rest {
     return new Rest({
       config: this.config,
+      displayPitch: this.displayPitch,
       durationDenominator: this.durationDenominator,
       dotCount: this.dotCount,
       clefType: this.clefType,
@@ -84,6 +89,9 @@ export class Rest {
   }
 
   private getKey(): string {
+    if (this.displayPitch) {
+      return this.displayPitch;
+    }
     switch (this.clefType) {
       case 'bass':
         return 'D/2';
