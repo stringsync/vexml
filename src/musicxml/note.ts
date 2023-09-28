@@ -1,6 +1,5 @@
 import { Beam } from './beam';
 import {
-  AccidentalCode,
   AccidentalType,
   ACCIDENTAL_TYPES,
   NoteDurationDenominator,
@@ -122,22 +121,9 @@ export class Note {
     return this.element.first('accidental')?.content().enum(ACCIDENTAL_TYPES) ?? null;
   }
 
-  /** Returns the accidental code of the note. Defaults to null. */
-  getAccidentalCode(): AccidentalCode | null {
-    switch (this.getAccidentalType()) {
-      case 'sharp':
-        return '#';
-      case 'double-sharp':
-        return '##';
-      case 'natural':
-        return 'n';
-      case 'flat':
-        return 'b';
-      case 'flat-flat':
-        return 'bb';
-      default:
-        return null;
-    }
+  /** Returns the alteration of the note. Defaults to null. */
+  getAlter(): number | null {
+    return this.element.first('alter')?.content().float() ?? null;
   }
 
   /** Whether or not the accidental is cautionary. Defaults to false. */

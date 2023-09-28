@@ -101,15 +101,6 @@ export const ACCIDENTAL_TYPES = new Enum([
 ] as const);
 
 /**
- * The accidental code from VexFlow. The list only contains typical accidentals from Western music and is currently not
- * exhaustive.
- *
- * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L169
- */
-export type AccidentalCode = EnumValues<typeof ACCIDENTAL_CODES>;
-export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n'] as const);
-
-/**
  * Notehead shapes other than the open and closed ovals associated with note durations.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/notehead-value/
