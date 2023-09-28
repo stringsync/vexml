@@ -11,83 +11,109 @@ export type LyricRendering = {
 
 /** Represents a lyric attached to a single note. */
 export class Lyric {
-  private lyric: musicxml.Lyric;
+  private verseNumber: number;
+  private text: string;
 
-  private constructor(opts: { lyric: musicxml.Lyric }) {
-    this.lyric = opts.lyric;
+  private constructor(opts: { verseNumber: number; text: string }) {
+    this.verseNumber = opts.verseNumber;
+    this.text = opts.text;
   }
 
   /** Creates a Lyric. */
   static create(opts: { lyric: musicxml.Lyric }): Lyric {
-    const lyric = opts.lyric;
-    return new Lyric({ lyric });
+    const verseNumber = opts.lyric.getVerseNumber();
+
+    const machine = new TextStateMachine();
+    for (const component of opts.lyric.getComponents()) {
+      machine.process(component);
+    }
+    const text = machine.getText();
+
+    return new Lyric({ verseNumber, text });
+  }
+
+  /** Clones the Lyric. */
+  clone(): Lyric {
+    return new Lyric({ verseNumber: this.verseNumber, text: this.text });
   }
 
   /** Renders the Lyric. */
   render(): LyricRendering {
-    const verseNumber = this.lyric.getVerseNumber();
-    const text = this.getAnnotationText();
-    const vfAnnotation = new vexflow.Annotation(text).setPosition(vexflow.ModifierPosition.BELOW);
+    const vfAnnotation = new vexflow.Annotation(this.text).setVerticalJustification(
+      vexflow.AnnotationVerticalJustify.BOTTOM
+    );
 
     return {
       type: 'lyric',
-      verseNumber,
+      verseNumber: this.verseNumber,
       vexflow: {
         annotation: vfAnnotation,
       },
     };
   }
-
-  private getAnnotationText(): string {
-    const machine = new LyricStateMachine();
-
-    for (const component of this.lyric.getComponents()) {
-      machine.process(component);
-    }
-
-    return machine.getText();
-  }
 }
 
 /** A state machine for calculating the text that should come from a <lyric> element. */
-class LyricStateMachine {
+class TextStateMachine {
   private state: 'INITIAL' | 'IN_SYLLABLE' | 'AFTER_SYLLABLE' = 'INITIAL';
-  private textParts = new Array<string>();
+  private parts = new Array<string>();
 
   process(component: musicxml.LyricComponent): void {
     switch (this.state) {
       case 'INITIAL':
-        if (component.type === 'syllabic' || component.type === 'text') {
-          this.push(component.value);
-          this.state =
-            component.type === 'syllabic' && (component.value === 'begin' || component.value === 'middle')
-              ? 'IN_SYLLABLE'
-              : 'AFTER_SYLLABLE';
-        }
+        this.processInitial(component);
         break;
       case 'IN_SYLLABLE':
-        if (component.type === 'text') {
-          this.push(component.value);
-        } else if (component.type === 'syllabic' && (component.value === 'end' || component.value === 'single')) {
-          this.state = 'AFTER_SYLLABLE';
-        } else if (component.type === 'elision') {
-          this.push(component.value);
-        }
+        this.processInSyllable(component);
         break;
       case 'AFTER_SYLLABLE':
-        if (component.type === 'elision') {
-          this.push(component.value);
-          this.state = 'INITIAL';
-        }
+        this.processAfterSyllable(component);
         break;
     }
   }
 
   getText(): string {
-    return this.textParts.join('');
+    return this.parts.join('');
   }
 
-  private push(part: string): void {
-    this.textParts.push(part);
+  private processInitial(component: musicxml.LyricComponent): void {
+    switch (component.type) {
+      case 'syllabic':
+        switch (component.value) {
+          case 'begin':
+          case 'middle':
+            this.state = 'IN_SYLLABLE';
+            break;
+        }
+        break;
+      case 'text':
+        this.parts.push(component.value);
+        break;
+    }
+  }
+
+  private processInSyllable(component: musicxml.LyricComponent): void {
+    switch (component.type) {
+      case 'syllabic':
+        switch (component.value) {
+          case 'single':
+          case 'end':
+            this.state = 'AFTER_SYLLABLE';
+            break;
+        }
+        break;
+      case 'text':
+        this.parts.push(component.value);
+        break;
+    }
+  }
+
+  private processAfterSyllable(component: musicxml.LyricComponent): void {
+    switch (component.type) {
+      case 'elision':
+        this.parts.push(component.value);
+        this.state = 'INITIAL';
+        break;
+    }
   }
 }
