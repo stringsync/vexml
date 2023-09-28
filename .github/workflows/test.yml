@@ -20,7 +20,13 @@ jobs:
         run: yarn format --check
       - name: typecheck
         run: yarn typecheck
-      - name: expose GitHub runtime
-        uses: crazy-max/ghaction-github-runtime@v3
+      - name: build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: 'vexml/vexml:latest'
+          cache-from: type=gha
+          cache-to: type=gha
       - name: test
         run: yarn test:ci
