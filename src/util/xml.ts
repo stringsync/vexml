@@ -825,6 +825,12 @@ export const text = createNamedElementFactory<
   }
 });
 
+export const elision = createNamedElementFactory<'elision', { value: string }>('elision', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
 export const notations = createNamedElementFactory<
   'notations',
   {
