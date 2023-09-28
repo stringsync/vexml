@@ -791,9 +791,13 @@ export const beatType = createNamedElementFactory<
 export const lyric = createNamedElementFactory<
   'lyric',
   {
+    number: number;
     components: Array<NamedElement<'syllabic'> | NamedElement<'text'> | NamedElement<'elision'>>;
   }
->('lyric', (e, { components }) => {
+>('lyric', (e, { number, components }) => {
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
+  }
   if (components) {
     e.append(...components);
   }
