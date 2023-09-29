@@ -18,23 +18,43 @@ export class Part {
   private id: string;
   private systemId: symbol;
   private measures: Measure[];
+  private noopMeasureCount: number;
 
-  private constructor(opts: { config: Config; id: string; systemId: symbol; measures: Measure[] }) {
+  private constructor(opts: {
+    config: Config;
+    id: string;
+    systemId: symbol;
+    measures: Measure[];
+    noopMeasureCount: number;
+  }) {
     this.config = opts.config;
     this.id = opts.id;
     this.systemId = opts.systemId;
     this.measures = opts.measures;
+    this.noopMeasureCount = opts.noopMeasureCount;
   }
 
   /** Creates a Part. */
-  static create(opts: { config: Config; musicXml: { part: musicxml.Part }; systemId: symbol }): Part {
+  static create(opts: {
+    config: Config;
+    musicXml: { part: musicxml.Part };
+    systemId: symbol;
+    previousPart: Part | null;
+  }): Part {
     const id = opts.musicXml.part.getId();
 
     let previousMeasure: Measure | null = null;
+    let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
     const mxMeasures = opts.musicXml.part.getMeasures();
     for (let index = 0; index < mxMeasures.length; index++) {
       const mxMeasure = mxMeasures[index];
+
+      // Don't create noop measures (typically <measures> after a multi measure rest).
+      if (noopMeasureCount > 0) {
+        noopMeasureCount--;
+        continue;
+      }
 
       const measure = Measure.create({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
@@ -46,11 +66,18 @@ export class Part {
         previousMeasure,
       });
 
+      noopMeasureCount += measure.getMultiRestCount() - 1;
       measures.push(measure);
       previousMeasure = measure;
     }
 
-    return new Part({ config: opts.config, id, systemId: opts.systemId, measures });
+    return new Part({
+      config: opts.config,
+      id,
+      systemId: opts.systemId,
+      measures,
+      noopMeasureCount,
+    });
   }
 
   /** Returns the measures of the Part. */
@@ -84,6 +111,7 @@ export class Part {
       id: this.id,
       systemId: opts.systemId,
       measures,
+      noopMeasureCount: this.noopMeasureCount,
     });
   }
 

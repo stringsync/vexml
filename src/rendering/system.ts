@@ -28,9 +28,20 @@ export class System {
   /** Creates a System rendering object. */
   static create(opts: { config: Config; musicXml: { parts: musicxml.Part[] } }): System {
     const id = Symbol();
-    const parts = opts.musicXml.parts.map((part) =>
-      Part.create({ config: opts.config, systemId: id, musicXml: { part } })
-    );
+
+    let previousPart: Part | null = null;
+    const parts = new Array<Part>();
+    for (const mxPart of opts.musicXml.parts) {
+      const part = Part.create({
+        config: opts.config,
+        systemId: id,
+        musicXml: { part: mxPart },
+        previousPart,
+      });
+      parts.push(part);
+      previousPart = part;
+    }
+
     return new System({ config: opts.config, id, parts });
   }
 
