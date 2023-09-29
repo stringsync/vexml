@@ -7,6 +7,7 @@ export type MultiRestRendering = {
   };
 };
 
+/** Represents a rest that spans multiple measures. */
 export class MultiRest {
   private count: number;
 
