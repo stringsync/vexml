@@ -32,9 +32,6 @@
           <sign>G</sign>
           <line>2</line>
         </clef>
-        <measure-style>
-          <multiple-rest>2</multiple-rest>
-        </measure-style>
       </attributes>
       <note>
         <rest/>
