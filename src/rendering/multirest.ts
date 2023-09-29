@@ -20,6 +20,11 @@ export class MultiRest {
     return new MultiRest({ count: opts.count });
   }
 
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getCount(): number {
+    return this.count;
+  }
+
   /** Clones the Multi Measure Rest. */
   clone(): MultiRest {
     return new MultiRest({ count: this.count });
@@ -28,7 +33,7 @@ export class MultiRest {
   /** Renders the Multi Measure Rest */
   render(): MultiRestRendering {
     const vfMultiMeasureRest = new vexflow.MultiMeasureRest(this.count, {
-      numberOfMeasures: this.count,
+      numberOfMeasures: 1,
     });
 
     return {

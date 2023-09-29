@@ -81,6 +81,11 @@ export class Measure {
     return requiredWidth;
   }
 
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    return util.max(this.staves.map((stave) => stave.getMultiRestCount()));
+  }
+
   /** Renders the Measure. */
   render(opts: {
     x: number;
