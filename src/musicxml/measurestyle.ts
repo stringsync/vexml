@@ -19,6 +19,6 @@ export class MeasureStyle {
    * Defaults to 0. A value of 0 indicates that there are no multiple rests.
    */
   getMultipleRestCount(): number {
-    return this.element.first('measure-repeat')?.content().int() ?? 0;
+    return this.element.first('multiple-rest')?.content().int() ?? 0;
   }
 }
