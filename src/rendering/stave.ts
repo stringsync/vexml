@@ -105,17 +105,21 @@ export class Stave {
       opts.previousStave?.keySignature ??
       'C';
 
+    const begginingMeasure = opts.musicXml.measure;
     let beginningBarStyle: musicxml.BarStyle = 'regular';
-    let endBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of opts.musicXml.measure.getBarlines()) {
+    for (const barline of begginingMeasure.getBarlines()) {
       const barStyle = barline.getBarStyle();
-      switch (barline.getLocation()) {
-        case 'left':
-          beginningBarStyle = barStyle;
-          break;
-        case 'right':
-          endBarStyle = barStyle;
-          break;
+      if (barline.getLocation() === 'left') {
+        beginningBarStyle = barStyle;
+      }
+    }
+
+    const endingMeasure = opts.musicXml.measure.getEndingMeasure();
+    let endBarStyle: musicxml.BarStyle = 'regular';
+    for (const barline of endingMeasure.getBarlines()) {
+      const barStyle = barline.getBarStyle();
+      if (barline.getLocation() === 'right') {
+        endBarStyle = barStyle;
       }
     }
 

@@ -1,6 +1,6 @@
 import { Attributes } from './attributes';
 import { Barline } from './barline';
-import { NamedElement } from '@/util';
+import { NamedElement, max } from '@/util';
 import { Note } from './note';
 import { Print } from './print';
 
@@ -45,5 +45,23 @@ export class Measure {
   /** Returns the prints of the measure. */
   getPrints(): Print[] {
     return this.element.all('print').map((element) => new Print(element));
+  }
+
+  /** Returns the ending measure for multi rest measures, or itself otherwise. */
+  getEndingMeasure(): Measure {
+    const multipleRestCount = max(
+      this.getAttributes()
+        .flatMap((attributes) => attributes.getMeasureStyles())
+        .map((measureStyle) => measureStyle.getMultipleRestCount())
+    );
+
+    let measure = this.element;
+    for (let index = 0; index < multipleRestCount; index++) {
+      // We don't expect the next measure to be null. However, if we do come across a null measure, we fallback to the
+      // last non-null measure we came across.
+      measure = measure.next('measure') ?? measure;
+    }
+
+    return new Measure(measure);
   }
 }
