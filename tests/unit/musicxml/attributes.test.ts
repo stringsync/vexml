@@ -4,6 +4,7 @@ import { Key } from '@/musicxml/key';
 import { Time } from '@/musicxml/time';
 import { StaffDetails } from '@/musicxml/staffdetails';
 import { xml } from '@/util';
+import { MeasureStyle } from '@/musicxml/measurestyle';
 
 describe(Attributes, () => {
   describe('getStaveCount', () => {
@@ -97,6 +98,27 @@ describe(Attributes, () => {
       const node = xml.attributes({});
       const attributes = new Attributes(node);
       expect(attributes.getStaffDetails()).toBeEmpty();
+    });
+  });
+
+  describe('getMeasureStyles', () => {
+    it('returns the measure styles', () => {
+      const measureStyle1 = xml.measureStyle();
+      const measureStyle2 = xml.measureStyle();
+      const node = xml.attributes({ measureStyles: [measureStyle1, measureStyle2] });
+
+      const attributes = new Attributes(node);
+
+      expect(attributes.getMeasureStyles()).toStrictEqual([
+        new MeasureStyle(measureStyle1),
+        new MeasureStyle(measureStyle2),
+      ]);
+    });
+
+    it('returns an empty array when measure styles are missing', () => {
+      const node = xml.attributes({});
+      const attributes = new Attributes(node);
+      expect(attributes.getMeasureStyles()).toBeEmpty();
     });
   });
 });

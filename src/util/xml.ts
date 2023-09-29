@@ -278,8 +278,9 @@ export const attributes = createNamedElementFactory<
     times: NamedElement<'time'>[];
     keys: NamedElement<'key'>[];
     staffDetails: NamedElement<'staff-details'>[];
+    measureStyles: NamedElement<'measure-style'>[];
   }
->('attributes', (e, { staves, clefs, times, keys, staffDetails }) => {
+>('attributes', (e, { staves, clefs, times, keys, staffDetails, measureStyles }) => {
   if (keys) {
     e.append(...keys);
   }
@@ -294,6 +295,9 @@ export const attributes = createNamedElementFactory<
   }
   if (staffDetails) {
     e.append(...staffDetails);
+  }
+  if (measureStyles) {
+    e.append(...measureStyles);
   }
 });
 
@@ -926,6 +930,24 @@ export const staffDetails = createNamedElementFactory<
     e.append(staffLines);
   }
 });
+
+export const measureStyle = createNamedElementFactory<'measure-style', { multipleRest: NamedElement<'multiple-rest'> }>(
+  'measure-style',
+  (e, { multipleRest }) => {
+    if (multipleRest) {
+      e.append(multipleRest);
+    }
+  }
+);
+
+export const multipleRest = createNamedElementFactory<'multiple-rest', { multipleRestCount: number }>(
+  'multiple-rest',
+  (e, { multipleRestCount }) => {
+    if (typeof multipleRestCount === 'number') {
+      e.setTextContent(multipleRestCount.toString());
+    }
+  }
+);
 
 export const staffLines = createNamedElementFactory<'staff-lines', { value: number }>('staff-lines', (e, { value }) => {
   if (typeof value === 'number') {
