@@ -3,6 +3,7 @@ import { Key } from './key';
 import { NamedElement } from '@/util';
 import { Time } from './time';
 import { StaffDetails } from './staffdetails';
+import { MeasureStyle } from './measurestyle';
 
 /**
  * Attributes contains musical information that typically changes each measure, such as key and time signatures, clefs,
@@ -36,5 +37,10 @@ export class Attributes {
   /** Returns the clefs. */
   getClefs(): Clef[] {
     return this.element.all('clef').map((element) => new Clef(element));
+  }
+
+  /** Returns the measure styles. */
+  getMeasureStyles(): MeasureStyle[] {
+    return this.element.all('measure-style').map((element) => new MeasureStyle(element));
   }
 }
