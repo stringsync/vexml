@@ -931,14 +931,17 @@ export const staffDetails = createNamedElementFactory<
   }
 });
 
-export const measureStyle = createNamedElementFactory<'measure-style', { multipleRest: NamedElement<'multiple-rest'> }>(
+export const measureStyle = createNamedElementFactory<
   'measure-style',
-  (e, { multipleRest }) => {
-    if (multipleRest) {
-      e.append(multipleRest);
-    }
+  { staffNumber: number; multipleRest: NamedElement<'multiple-rest'> }
+>('measure-style', (e, { staffNumber, multipleRest }) => {
+  if (typeof staffNumber === 'number') {
+    e.setAttribute('number', staffNumber.toString());
   }
-);
+  if (multipleRest) {
+    e.append(multipleRest);
+  }
+});
 
 export const multipleRest = createNamedElementFactory<'multiple-rest', { multipleRestCount: number }>(
   'multiple-rest',
