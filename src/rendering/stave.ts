@@ -4,6 +4,7 @@ import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
 import * as util from '@/util';
 import { Text } from './text';
+import { MultiRest, MultiRestRendering } from './multirest';
 
 const STAVE_LABEL_OFFSET_X = 0;
 const STAVE_LABEL_OFFSET_Y = 24;
@@ -20,6 +21,7 @@ export type StaveRendering = {
   };
   label: Text;
   voices: VoiceRendering[];
+  multiRest: MultiRestRendering | null;
 };
 
 /**
@@ -39,6 +41,7 @@ export class Stave {
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private voices: Voice[];
+  private multiRest: MultiRest | null;
 
   private constructor(opts: {
     config: Config;
@@ -50,6 +53,7 @@ export class Stave {
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     voices: Voice[];
+    multiRest: MultiRest | null;
   }) {
     this.config = opts.config;
     this.label = opts.label;
@@ -60,6 +64,7 @@ export class Stave {
     this.endBarStyle = opts.endBarStyle;
     this.clefType = opts.clefType;
     this.voices = opts.voices;
+    this.multiRest = opts.multiRest;
   }
 
   /** Creates a Stave. */
@@ -114,15 +119,27 @@ export class Stave {
       }
     }
 
+    const multiRestCount =
+      opts.musicXml.measure
+        .getAttributes()
+        .flatMap((attribute) => attribute.getMeasureStyles())
+        .find((measureStyle) => measureStyle.getStaffNumber() === opts.staffNumber)
+        ?.getMultipleRestCount() ?? 0;
+    const multiRest = multiRestCount > 0 ? MultiRest.create({ count: multiRestCount }) : null;
+
     // TODO: Support multiple voices per stave.
-    const voices = [
-      Voice.create({
-        config: opts.config,
-        musicXml: { measure: opts.musicXml.measure },
-        staffNumber: opts.staffNumber,
-        clefType,
-      }),
-    ];
+    const voices =
+      multiRestCount > 0
+        ? []
+        : // No need to create voices if we're rendering a MultiRest.
+          [
+            Voice.create({
+              config: opts.config,
+              musicXml: { measure: opts.musicXml.measure },
+              staffNumber: opts.staffNumber,
+              clefType,
+            }),
+          ];
 
     return new Stave({
       config: opts.config,
@@ -134,18 +151,27 @@ export class Stave {
       beginningBarStyle,
       endBarStyle,
       voices,
+      multiRest,
     });
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(): number {
-    if (this.voices.length === 0) {
-      return 0;
+    if (this.voices.length > 0) {
+      const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
+      const vfFormatter = new vexflow.Formatter();
+      return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
     }
-    const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
-    const vfFormatter = new vexflow.Formatter();
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
+
+    if (this.multiRest) {
+      // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
+      // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
+      // the moment.
+      return this.config.multiMeasureRestWidth;
+    }
+
+    return 0;
   }
 
   /** Returns the width that the modifiers take up. */
@@ -157,6 +183,11 @@ export class Stave {
       width: this.getMinJustifyWidth(),
       renderModifiers: true,
     }).getNoteStartX();
+  }
+
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    return this.multiRest?.getCount() ?? 0;
   }
 
   /** Cleans the Stave. */
@@ -171,6 +202,7 @@ export class Stave {
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
       voices: this.voices.map((voice) => voice.clone()),
+      multiRest: this.multiRest?.clone() ?? null,
     });
   }
 
@@ -192,6 +224,11 @@ export class Stave {
       renderModifiers: opts.renderModifiers,
     });
 
+    const multiRestRendering = this.multiRest?.render() ?? null;
+    if (multiRestRendering) {
+      multiRestRendering.vexflow.multiMeasureRest.setStave(vfStave);
+    }
+
     const voiceRenderings = new Array<VoiceRendering>();
     for (const voice of this.voices) {
       const voiceRendering = voice.render();
@@ -199,9 +236,11 @@ export class Stave {
       voiceRendering.vexflow.voice.setStave(vfStave);
     }
 
-    const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
-    const vfFormatter = new vexflow.Formatter();
-    vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+    if (voiceRenderings.length > 0) {
+      const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
+      const vfFormatter = new vexflow.Formatter();
+      vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+    }
 
     const label = new Text({
       content: this.label,
@@ -221,6 +260,7 @@ export class Stave {
       },
       label,
       voices: voiceRenderings,
+      multiRest: multiRestRendering,
     };
   }
 
