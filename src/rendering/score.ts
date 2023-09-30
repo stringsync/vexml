@@ -105,6 +105,13 @@ export class Score {
         vfStave.setContext(vfContext).draw();
       });
 
+    // Render vexflow.StaveConnector elements.
+    measures
+      .map((measure) => measure.vexflow.staveConnector)
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector?.setContext(vfContext).draw();
+      });
+
     // Render vexflow.MultiMeasureRest elements.
     staves
       .map((stave) => stave.multiRest?.vexflow.multiMeasureRest)
