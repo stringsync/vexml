@@ -56,7 +56,7 @@ export class Measure {
     );
 
     let measure = this.element;
-    for (let index = 0; index < multipleRestCount; index++) {
+    for (let index = 1; index < multipleRestCount; index++) {
       // We don't expect the next measure to be null. However, if we do come across a null measure, we fallback to the
       // last non-null measure we came across.
       measure = measure.next('measure') ?? measure;
