@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { Stave, StaveRendering } from './stave';
+import { Stave, StaveModifier, StaveRendering } from './stave';
 import { Config } from './config';
 import * as util from '@/util';
 
@@ -73,12 +73,9 @@ export class Measure {
 
   /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(previousMeasure: Measure | null): number {
-    let requiredWidth = this.getMinJustifyWidth();
-    if (this.shouldRenderModifiers(previousMeasure)) {
-      requiredWidth += this.getModifiersWidth();
-    }
-
-    return requiredWidth;
+    const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasure);
+    const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
+    return this.getMinJustifyWidth() + staveModifiersWidth;
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
@@ -101,26 +98,22 @@ export class Measure {
     let y = opts.y;
 
     for (const stave of this.staves) {
-      const renderModifiers = this.shouldRenderModifiers(opts.previousMeasure);
-
-      let minRequiredMeasureWidth = this.getMinJustifyWidth();
-      if (renderModifiers) {
-        minRequiredMeasureWidth += this.getModifiersWidth();
-      }
+      const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasure);
+      let minRequiredWidth = this.getMinRequiredWidth(opts.previousMeasure);
 
       if (!opts.isLastSystem) {
         const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
-        const widthFraction = minRequiredMeasureWidth / opts.minRequiredSystemWidth;
+        const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
         const widthDelta = widthDeficit * widthFraction;
 
-        minRequiredMeasureWidth += widthDelta;
+        minRequiredWidth += widthDelta;
       }
 
       const staveRendering = stave.render({
         x: opts.x,
         y,
-        width: minRequiredMeasureWidth,
-        renderModifiers: renderModifiers,
+        width: minRequiredWidth,
+        modifiers: staveModifiers,
       });
       staveRenderings.push(staveRendering);
 
@@ -145,30 +138,30 @@ export class Measure {
   }
 
   /** Returns the modifiers width. */
-  @util.memoize()
-  private getModifiersWidth(): number {
-    return util.max(this.staves.map((stave) => stave.getModifiersWidth()));
+  private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
+    return util.max(this.staves.map((stave) => stave.getModifiersWidth(staveModifiers)));
   }
 
-  private hasEqualModifiers(other: Measure | null): boolean {
-    if (!other) {
-      return false;
+  /** Returns what modifiers changed _in any stave_. */
+  private getChangedStaveModifiers(previousMeasure: Measure | null): StaveModifier[] {
+    if (!previousMeasure) {
+      return ['clefType', 'keySignature', 'timeSignature'];
     }
+
+    if (this.systemId !== previousMeasure.systemId) {
+      return ['clefType', 'keySignature', 'timeSignature'];
+    }
+
+    const staveModifiersChanges = new Set<StaveModifier>();
 
     for (let index = 0; index < this.staves.length; index++) {
       const stave1 = this.staves[index];
-      const stave2 = other.staves[index];
-
-      if (!stave1.hasEqualModifiers(stave2)) {
-        return false;
+      const stave2 = previousMeasure.staves[index];
+      for (const modifier of stave1.getModifierChanges(stave2)) {
+        staveModifiersChanges.add(modifier);
       }
     }
 
-    return true;
-  }
-
-  /** Whether the Measure should render modifiers. */
-  private shouldRenderModifiers(previousMeasure: Measure | null): boolean {
-    return this.systemId !== previousMeasure?.systemId || !this.hasEqualModifiers(previousMeasure);
+    return Array.from(staveModifiersChanges);
   }
 }
