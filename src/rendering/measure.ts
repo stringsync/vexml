@@ -140,8 +140,8 @@ export class Measure {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
     if (opts.isFirstPartMeasure && staveRenderings.length > 1) {
-      const topStave = staveRenderings[0];
-      const bottomStave = staveRenderings[staveRenderings.length - 1];
+      const topStave = util.first(staveRenderings)!;
+      const bottomStave = util.last(staveRenderings)!;
 
       vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
         'singleLeft'

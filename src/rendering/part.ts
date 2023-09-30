@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
+import * as util from '@/util';
 
 /** The result of rendering a Part. */
 export type PartRendering = {
@@ -145,7 +146,7 @@ export class Part {
       });
       measureRenderings.push(measureRendering);
 
-      x += measureRendering.staves[0]?.width ?? 0;
+      x += util.first(measureRendering.staves)?.width ?? 0;
     }
 
     return { id: this.id, measures: measureRenderings };
