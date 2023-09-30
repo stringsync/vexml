@@ -91,11 +91,8 @@ export class Score {
       y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
     }
 
-    // Get a reference to the staves.
-    const staves = systemRenderings
-      .flatMap((system) => system.parts)
-      .flatMap((part) => part.measures)
-      .flatMap((measure) => measure.staves);
+    const measures = systemRenderings.flatMap((system) => system.parts).flatMap((part) => part.measures);
+    const staves = measures.flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
     vfRenderer.resize(opts.width, y);
@@ -128,8 +125,8 @@ export class Score {
       });
 
     // Render measure labels.
-    staves
-      .map((stave) => stave.label)
+    measures
+      .map((measure) => measure.label)
       .forEach((label) => {
         label.draw(vfContext);
       });

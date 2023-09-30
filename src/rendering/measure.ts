@@ -2,11 +2,18 @@ import * as musicxml from '@/musicxml';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import { Config } from './config';
 import * as util from '@/util';
+import { Text } from './text';
+
+const MEASURE_LABEL_OFFSET_X = 0;
+const MEASURE_LABEL_OFFSET_Y = 24;
+const MEASURE_LABEL_FONT_SIZE = 8;
+const MEASURE_LABEL_COLOR = '#aaaaaa';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
   index: number;
+  label: Text;
   staves: StaveRendering[];
 };
 
@@ -18,12 +25,14 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
+  private label: string;
   private staves: Stave[];
   private systemId: symbol;
 
-  private constructor(opts: { config: Config; index: number; staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: { config: Config; index: number; label: string; staves: Stave[]; systemId: symbol }) {
     this.config = opts.config;
     this.index = opts.index;
+    this.label = opts.label;
     this.staves = opts.staves;
     this.systemId = opts.systemId;
   }
@@ -53,12 +62,11 @@ export class Measure {
         musicXml: {
           measure: opts.musicXml.measure,
         },
-        label,
         previousStave: opts.previousMeasure?.staves[staffIndex] ?? null,
       });
     }
 
-    return new Measure({ config: opts.config, index: opts.index, staves, systemId: opts.systemId });
+    return new Measure({ config: opts.config, index: opts.index, label, staves, systemId: opts.systemId });
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
@@ -66,6 +74,7 @@ export class Measure {
     return new Measure({
       systemId,
       index: this.index,
+      label: this.label,
       config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
     });
@@ -87,13 +96,14 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
+    isFirstPartMeasure: boolean;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
     staffLayouts: musicxml.StaffLayout[];
   }): MeasureRendering {
-    const staveRenderings = [];
+    const staveRenderings = new Array<StaveRendering>();
 
     let y = opts.y;
 
@@ -124,9 +134,26 @@ export class Measure {
       y += staffDistance;
     }
 
+    if (opts.isFirstPartMeasure && staveRenderings.length > 1) {
+      const topStave = staveRenderings[0];
+      const bottomStave = staveRenderings[staveRenderings.length - 1];
+
+      // TODO: Render StaveConnector.
+    }
+
+    const label = new Text({
+      content: this.label,
+      italic: true,
+      x: opts.x + MEASURE_LABEL_OFFSET_X,
+      y: opts.y + MEASURE_LABEL_OFFSET_Y,
+      color: MEASURE_LABEL_COLOR,
+      size: MEASURE_LABEL_FONT_SIZE,
+    });
+
     return {
       type: 'measure',
       index: this.index,
+      label,
       staves: staveRenderings,
     };
   }

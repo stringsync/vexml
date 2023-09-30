@@ -136,6 +136,7 @@ export class Part {
       const measureRendering = measure.render({
         x,
         y,
+        isFirstPartMeasure: index === 0,
         isLastSystem: opts.isLastSystem,
         previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
