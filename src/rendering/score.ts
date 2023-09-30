@@ -3,7 +3,6 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Config, DEFAULT_CONFIG } from './config';
-import { MultiRest, MultiRestRendering } from './multirest';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
