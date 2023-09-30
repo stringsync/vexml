@@ -24,6 +24,9 @@ export type StaveRendering = {
   multiRest: MultiRestRendering | null;
 };
 
+/** The modifiers of a stave. */
+export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
+
 /**
  * Represents a single stave (or staff) in a measure, providing the graphical foundation for musical symbols such as
  * notes, rests, clefs, and key signatures.
@@ -179,14 +182,20 @@ export class Stave {
   }
 
   /** Returns the width that the modifiers take up. */
-  @util.memoize()
-  getModifiersWidth(): number {
-    return this.toVexflowStave({
-      x: 0,
-      y: 0,
-      width: this.getMinJustifyWidth(),
-      renderModifiers: true,
-    }).getNoteStartX();
+  getModifiersWidth(modifiers: StaveModifier[]): number {
+    let width = 0;
+
+    if (modifiers.includes('clefType')) {
+      width += this.getClefWidth();
+    }
+    if (modifiers.includes('keySignature')) {
+      width += this.getKeySignatureWidth();
+    }
+    if (modifiers.includes('timeSignature')) {
+      width += this.getTimeSignatureWidth();
+    }
+
+    return width;
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
@@ -211,21 +220,29 @@ export class Stave {
   }
 
   /** Wether the staves have the same modifiers. */
-  hasEqualModifiers(stave: Stave): boolean {
-    return (
-      this.clefType === stave.clefType &&
-      this.timeSignature.toString() === stave.timeSignature.toString() &&
-      this.keySignature === stave.keySignature
-    );
+  getModifierChanges(stave: Stave): StaveModifier[] {
+    const result = new Array<StaveModifier>();
+
+    if (this.clefType !== stave.clefType) {
+      result.push('clefType');
+    }
+    if (this.keySignature !== stave.keySignature) {
+      result.push('keySignature');
+    }
+    if (this.timeSignature.toString() !== stave.timeSignature.toString()) {
+      result.push('timeSignature');
+    }
+
+    return result;
   }
 
   /** Renders the Stave. */
-  render(opts: { x: number; y: number; width: number; renderModifiers: boolean }): StaveRendering {
+  render(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): StaveRendering {
     const vfStave = this.toVexflowStave({
       x: opts.x,
       y: opts.y,
       width: opts.width,
-      renderModifiers: opts.renderModifiers,
+      modifiers: opts.modifiers,
     });
 
     const multiRestRendering = this.multiRest?.render() ?? null;
@@ -268,13 +285,54 @@ export class Stave {
     };
   }
 
-  private toVexflowStave(opts: { x: number; y: number; width: number; renderModifiers: boolean }): vexflow.Stave {
+  /** Returns the width that the clef takes up. */
+  @util.memoize()
+  private getClefWidth(): number {
+    return this.toVexflowStave({
+      x: 0,
+      y: 0,
+      width: this.getMinJustifyWidth(),
+      modifiers: ['clefType'],
+    }).getNoteStartX();
+  }
+
+  /** Returns the width that the key signature takes up. */
+  @util.memoize()
+  private getKeySignatureWidth(): number {
+    return this.keySignature === 'C'
+      ? 0
+      : this.toVexflowStave({
+          x: 0,
+          y: 0,
+          width: this.getMinJustifyWidth(),
+          modifiers: ['keySignature'],
+        }).getNoteStartX();
+  }
+
+  /** Returns the width that the time signature takes up. */
+  @util.memoize()
+  private getTimeSignatureWidth(): number {
+    return this.toVexflowStave({
+      x: 0,
+      y: 0,
+      width: this.getMinJustifyWidth(),
+      modifiers: ['timeSignature'],
+    }).getNoteStartX();
+  }
+
+  private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
       .setBegBarType(this.getBarlineType(this.beginningBarStyle))
       .setEndBarType(this.getBarlineType(this.endBarStyle));
 
-    if (opts.renderModifiers) {
-      vfStave.addClef(this.clefType).addTimeSignature(this.timeSignature.toString());
+    if (opts.modifiers.includes('clefType')) {
+      vfStave.addClef(this.clefType);
+    }
+    if (opts.modifiers.includes('keySignature')) {
+      vfStave.addKeySignature(this.keySignature);
+    }
+    if (opts.modifiers.includes('timeSignature')) {
+      vfStave.addTimeSignature(this.timeSignature.toString());
     }
 
     return vfStave;
