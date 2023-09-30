@@ -3,6 +3,7 @@ import { Stave, StaveModifier, StaveRendering } from './stave';
 import { Config } from './config';
 import * as util from '@/util';
 import { Text } from './text';
+import * as vexflow from 'vexflow';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -12,6 +13,9 @@ const MEASURE_LABEL_COLOR = '#aaaaaa';
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+  vexflow: {
+    staveConnector: vexflow.StaveConnector | null;
+  };
   index: number;
   label: Text;
   staves: StaveRendering[];
@@ -134,11 +138,14 @@ export class Measure {
       y += staffDistance;
     }
 
+    let vfStaveConnector: vexflow.StaveConnector | null = null;
     if (opts.isFirstPartMeasure && staveRenderings.length > 1) {
       const topStave = staveRenderings[0];
       const bottomStave = staveRenderings[staveRenderings.length - 1];
 
-      // TODO: Render StaveConnector.
+      vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
+        'singleLeft'
+      );
     }
 
     const label = new Text({
@@ -152,6 +159,9 @@ export class Measure {
 
     return {
       type: 'measure',
+      vexflow: {
+        staveConnector: vfStaveConnector,
+      },
       index: this.index,
       label,
       staves: staveRenderings,
