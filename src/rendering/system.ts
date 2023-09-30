@@ -113,21 +113,18 @@ export class System {
     isLastSystem: boolean;
     staffLayouts: musicxml.StaffLayout[];
   }): SystemRendering {
-    const partRenderings = new Array<PartRendering>();
-
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
-    for (const part of this.parts) {
-      const partRendering = part.render({
+    const partRenderings = this.parts.map((part) =>
+      part.render({
         x: opts.x,
         y: opts.y,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
         staffLayouts: opts.staffLayouts,
-      });
-      partRenderings.push(partRendering);
-    }
+      })
+    );
 
     return { type: 'system', parts: partRenderings };
   }
