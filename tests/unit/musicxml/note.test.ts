@@ -3,7 +3,7 @@ import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/musicxml/enums';
 import { Measure } from '@/musicxml/measure';
 import { Notations } from '@/musicxml/notations';
 import { Note } from '@/musicxml/note';
-import { xml } from '@/util';
+import { xml, first } from '@/util';
 import { Lyric } from '@/musicxml/lyric';
 
 describe(Note, () => {
@@ -425,21 +425,21 @@ describe(Note, () => {
     it('returns true when the next note has a chord element', () => {
       const node = xml.measure({ notes: [xml.note(), xml.note({ chord: xml.chord() })] });
       const measure = new Measure(node);
-      const note = measure.getNotes()[0];
+      const note = first(measure.getNotes())!;
       expect(note.isChordHead()).toBeTrue();
     });
 
     it('returns false when the next note does not have a chord element', () => {
       const node = xml.measure({ notes: [xml.note(), xml.note()] });
       const measure = new Measure(node);
-      const note = measure.getNotes()[0];
+      const note = first(measure.getNotes())!;
       expect(note.isChordHead()).toBeFalse();
     });
 
     it('returns false when the current note has a chord element', () => {
       const node = xml.measure({ notes: [xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })] });
       const measure = new Measure(node);
-      const note = measure.getNotes()[0];
+      const note = first(measure.getNotes())!;
       expect(note.isChordHead()).toBeFalse();
     });
 
@@ -481,7 +481,7 @@ describe(Note, () => {
         notes: [xml.note(), xml.note(), xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })],
       });
       const measure = new Measure(node);
-      const note = measure.getNotes()[0];
+      const note = first(measure.getNotes())!;
       expect(note.getChordTail()).toBeEmpty();
     });
 

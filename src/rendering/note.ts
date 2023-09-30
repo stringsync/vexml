@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
@@ -139,14 +140,14 @@ export class Note {
 
     const vfStaveNote = new vexflow.StaveNote({
       keys: notes.map((note) => note.key),
-      duration: notes[0].durationDenominator,
-      dots: notes[0].dotCount,
-      clef: notes[0].clefType,
+      duration: util.first(notes)!.durationDenominator,
+      dots: util.first(notes)!.dotCount,
+      clef: util.first(notes)!.clefType,
       autoStem,
       stemDirection,
     });
 
-    for (let index = 0; index < notes[0].dotCount; index++) {
+    for (let index = 0; index < util.first(notes)!.dotCount; index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
     }
 
@@ -216,6 +217,6 @@ export class Note {
 
   /** Renders the Note. */
   render(): NoteRendering {
-    return Note.render([this])[0];
+    return util.first(Note.render([this]))!;
   }
 }
