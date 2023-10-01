@@ -12,6 +12,8 @@ export type StaveRendering = {
   width: number;
   vexflow: {
     stave: vexflow.Stave;
+    begginningBarlineType: vexflow.BarlineType;
+    endBarlineType: vexflow.BarlineType;
   };
   voices: VoiceRendering[];
   multiRest: MultiRestRendering | null;
@@ -244,10 +246,11 @@ export class Stave {
       voiceRendering.vexflow.voice.setStave(vfStave);
     }
 
-    if (voiceRenderings.length > 0) {
-      const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
+    const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
+    const vfTickables = vfVoices.flatMap((vfVoices) => vfVoices.getTickables());
+    if (vfTickables.length > 0) {
       const vfFormatter = new vexflow.Formatter();
-      vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+      vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave, { alignRests: true });
     }
 
     return {
@@ -256,6 +259,8 @@ export class Stave {
       width: opts.width,
       vexflow: {
         stave: vfStave,
+        begginningBarlineType: this.getBeginningBarlineType(),
+        endBarlineType: this.getEndBarlineType(),
       },
       voices: voiceRenderings,
       multiRest: multiRestRendering,
@@ -299,8 +304,8 @@ export class Stave {
 
   private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
-      .setBegBarType(this.getBarlineType(this.beginningBarStyle))
-      .setEndBarType(this.getBarlineType(this.endBarStyle));
+      .setBegBarType(this.getBeginningBarlineType())
+      .setEndBarType(this.getEndBarlineType());
 
     if (opts.modifiers.includes('clefType')) {
       vfStave.addClef(this.clefType);
@@ -313,6 +318,14 @@ export class Stave {
     }
 
     return vfStave;
+  }
+
+  private getBeginningBarlineType(): vexflow.BarlineType {
+    return this.getBarlineType(this.beginningBarStyle);
+  }
+
+  private getEndBarlineType(): vexflow.BarlineType {
+    return this.getBarlineType(this.endBarStyle);
   }
 
   private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {

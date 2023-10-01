@@ -5,6 +5,7 @@ import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
+import { NoteDurationDenominator } from './enums';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
@@ -36,7 +37,7 @@ export class Note {
   private beams: Beam[];
   private accidental: Accidental | null;
   private dotCount: number;
-  private durationDenominator: musicxml.NoteDurationDenominator;
+  private durationDenominator: NoteDurationDenominator;
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
@@ -47,7 +48,7 @@ export class Note {
     beams: Beam[];
     accidental: Accidental | null;
     dotCount: number;
-    durationDenominator: musicxml.NoteDurationDenominator;
+    durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }) {
     this.config = opts.config;
@@ -67,6 +68,7 @@ export class Note {
     musicXml: {
       note: musicxml.Note;
     };
+    durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }): Note {
     const note = opts.musicXml.note;
@@ -88,7 +90,7 @@ export class Note {
     const stem = note.getStem();
     const beams = note.getBeams().map((beam) => Beam.create({ musicXml: { beam } }));
     const dotCount = note.getDotCount();
-    const durationDenominator = note.getDurationDenominator();
+    const durationDenominator = opts.durationDenominator;
 
     let key = note.getPitch();
     const suffix = note.getNoteheadSuffix();

@@ -273,6 +273,7 @@ export const type = createNamedElementFactory<
 export const attributes = createNamedElementFactory<
   'attributes',
   {
+    divisions: NamedElement<'divisions'>;
     staves: NamedElement<'staves'>;
     clefs: NamedElement<'clef'>[];
     times: NamedElement<'time'>[];
@@ -280,7 +281,10 @@ export const attributes = createNamedElementFactory<
     staffDetails: NamedElement<'staff-details'>[];
     measureStyles: NamedElement<'measure-style'>[];
   }
->('attributes', (e, { staves, clefs, times, keys, staffDetails, measureStyles }) => {
+>('attributes', (e, { divisions, staves, clefs, times, keys, staffDetails, measureStyles }) => {
+  if (divisions) {
+    e.append(divisions);
+  }
   if (keys) {
     e.append(...keys);
   }
@@ -300,6 +304,15 @@ export const attributes = createNamedElementFactory<
     e.append(...measureStyles);
   }
 });
+
+export const divisions = createNamedElementFactory<'divisions', { positiveDivisions: number }>(
+  'divisions',
+  (e, { positiveDivisions }) => {
+    if (typeof positiveDivisions === 'number') {
+      e.setTextContent(positiveDivisions.toString());
+    }
+  }
+);
 
 export const print = createNamedElementFactory<
   'print',

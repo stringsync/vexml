@@ -106,9 +106,9 @@ export class Score {
 
     // Render vexflow.StaveConnector elements.
     measures
-      .map((measure) => measure.vexflow.staveConnector)
+      .flatMap((measure) => measure.vexflow.staveConnectors)
       .forEach((vfStaveConnector) => {
-        vfStaveConnector?.setContext(vfContext).draw();
+        vfStaveConnector.setContext(vfContext).draw();
       });
 
     // Render vexflow.MultiMeasureRest elements.
