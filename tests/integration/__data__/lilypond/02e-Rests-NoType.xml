@@ -81,6 +81,7 @@
         <duration>4</duration>
         <voice>2</voice>
         <type>whole</type>
+        <staff>2</staff>
       </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>

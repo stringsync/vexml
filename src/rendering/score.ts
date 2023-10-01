@@ -3,7 +3,6 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Config, DEFAULT_CONFIG } from './config';
-import { MultiRest, MultiRestRendering } from './multirest';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -91,11 +90,9 @@ export class Score {
       y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
     }
 
-    // Get a reference to the staves.
-    const staves = systemRenderings
-      .flatMap((system) => system.parts)
-      .flatMap((part) => part.measures)
-      .flatMap((measure) => measure.staves);
+    const parts = systemRenderings.flatMap((system) => system.parts);
+    const measures = parts.flatMap((part) => part.measures);
+    const staves = measures.flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
     vfRenderer.resize(opts.width, y);
@@ -106,6 +103,20 @@ export class Score {
       .map((stave) => stave.vexflow.stave)
       .forEach((vfStave) => {
         vfStave.setContext(vfContext).draw();
+      });
+
+    // Render vexflow.StaveConnector elements from measures.
+    measures
+      .flatMap((measure) => measure.vexflow.staveConnectors)
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector.setContext(vfContext).draw();
+      });
+
+    // Render vexflow.StaveConnector elements from parts.
+    parts
+      .map((part) => part.vexflow.staveConnector)
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector?.setContext(vfContext).draw();
       });
 
     // Render vexflow.MultiMeasureRest elements.
@@ -128,8 +139,8 @@ export class Score {
       });
 
     // Render measure labels.
-    staves
-      .map((stave) => stave.label)
+    measures
+      .map((measure) => measure.label)
       .forEach((label) => {
         label.draw(vfContext);
       });

@@ -1,10 +1,17 @@
 import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
+import * as util from '@/util';
+import * as vexflow from 'vexflow';
+
+const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
 /** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
+  vexflow: {
+    staveConnector: vexflow.StaveConnector | null;
+  };
   measures: MeasureRendering[];
 };
 
@@ -18,6 +25,7 @@ export class Part {
   private id: string;
   private systemId: symbol;
   private measures: Measure[];
+  private staveCount: number;
   private noopMeasureCount: number;
 
   private constructor(opts: {
@@ -25,12 +33,14 @@ export class Part {
     id: string;
     systemId: symbol;
     measures: Measure[];
+    staveCount: number;
     noopMeasureCount: number;
   }) {
     this.config = opts.config;
     this.id = opts.id;
     this.systemId = opts.systemId;
     this.measures = opts.measures;
+    this.staveCount = opts.staveCount;
     this.noopMeasureCount = opts.noopMeasureCount;
   }
 
@@ -47,6 +57,9 @@ export class Part {
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
     const mxMeasures = opts.musicXml.part.getMeasures();
+    const staveCount = util.max(
+      mxMeasures.flatMap((mxMeasure) => mxMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
+    );
     for (let index = 0; index < mxMeasures.length; index++) {
       const mxMeasure = mxMeasures[index];
 
@@ -62,6 +75,7 @@ export class Part {
         index,
         config: opts.config,
         musicXml: { measure: mxMeasure },
+        staveCount,
         systemId: opts.systemId,
         previousMeasure,
       });
@@ -76,6 +90,7 @@ export class Part {
       id,
       systemId: opts.systemId,
       measures,
+      staveCount,
       noopMeasureCount,
     });
   }
@@ -111,6 +126,7 @@ export class Part {
       id: this.id,
       systemId: opts.systemId,
       measures,
+      staveCount: this.staveCount,
       noopMeasureCount: this.noopMeasureCount,
     });
   }
@@ -129,9 +145,17 @@ export class Part {
     let x = opts.x;
     const y = opts.y;
 
+    let vfStaveConnector: vexflow.StaveConnector | null = null;
+
     for (let index = 0; index < this.measures.length; index++) {
       const measure = this.measures[index];
       const previousMeasure = this.measures[index - 1] ?? null;
+
+      const hasStaveConnectorBrace = index === 0 && this.staveCount > 1;
+
+      if (hasStaveConnectorBrace) {
+        x += STAVE_CONNECTOR_BRACE_WIDTH;
+      }
 
       const measureRendering = measure.render({
         x,
@@ -144,9 +168,22 @@ export class Part {
       });
       measureRenderings.push(measureRendering);
 
-      x += measureRendering.staves[0]?.width ?? 0;
+      if (hasStaveConnectorBrace) {
+        const topStave = util.first(measureRendering.staves)!;
+        const bottomStave = util.last(measureRendering.staves)!;
+
+        vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
+          'brace'
+        );
+      }
+
+      x += util.first(measureRendering.staves)?.width ?? 0;
     }
 
-    return { id: this.id, measures: measureRenderings };
+    return {
+      id: this.id,
+      vexflow: { staveConnector: vfStaveConnector },
+      measures: measureRenderings,
+    };
   }
 }

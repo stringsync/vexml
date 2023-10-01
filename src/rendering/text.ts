@@ -20,6 +20,10 @@ export class Text {
 
   /** Draws the text element. */
   draw(vfContext: vexflow.RenderContext) {
+    if (!this.content) {
+      return;
+    }
+
     vfContext.save();
 
     if (typeof this.color === 'string') {
