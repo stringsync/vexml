@@ -90,7 +90,8 @@ export class Score {
       y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
     }
 
-    const measures = systemRenderings.flatMap((system) => system.parts).flatMap((part) => part.measures);
+    const parts = systemRenderings.flatMap((system) => system.parts);
+    const measures = parts.flatMap((part) => part.measures);
     const staves = measures.flatMap((measure) => measure.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
@@ -104,11 +105,18 @@ export class Score {
         vfStave.setContext(vfContext).draw();
       });
 
-    // Render vexflow.StaveConnector elements.
+    // Render vexflow.StaveConnector elements from measures.
     measures
       .flatMap((measure) => measure.vexflow.staveConnectors)
       .forEach((vfStaveConnector) => {
         vfStaveConnector.setContext(vfContext).draw();
+      });
+
+    // Render vexflow.StaveConnector elements from parts.
+    parts
+      .map((part) => part.vexflow.staveConnector)
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector?.setContext(vfContext).draw();
       });
 
     // Render vexflow.MultiMeasureRest elements.
