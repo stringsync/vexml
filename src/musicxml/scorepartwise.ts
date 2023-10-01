@@ -36,8 +36,14 @@ export class ScorePartwise {
     return this.element.all('part').map((element) => new Part(element));
   }
 
+  /** Returns the defaults of the score. */
   getDefaults(): Defaults | null {
     const defaults = this.element.first('defaults');
     return defaults ? new Defaults(defaults) : null;
+  }
+
+  /** Returns the title of the score */
+  getTitle(): string {
+    return this.element.first('movement-title')?.content().str()?.trim() ?? '';
   }
 }
