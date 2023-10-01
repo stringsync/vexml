@@ -3,6 +3,8 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 
+const STAVE_CONNECTOR_BRACE_WIDTH = 16;
+
 /** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
@@ -19,6 +21,7 @@ export class Part {
   private id: string;
   private systemId: symbol;
   private measures: Measure[];
+  private staveCount: number;
   private noopMeasureCount: number;
 
   private constructor(opts: {
@@ -26,12 +29,14 @@ export class Part {
     id: string;
     systemId: symbol;
     measures: Measure[];
+    staveCount: number;
     noopMeasureCount: number;
   }) {
     this.config = opts.config;
     this.id = opts.id;
     this.systemId = opts.systemId;
     this.measures = opts.measures;
+    this.staveCount = opts.staveCount;
     this.noopMeasureCount = opts.noopMeasureCount;
   }
 
@@ -81,6 +86,7 @@ export class Part {
       id,
       systemId: opts.systemId,
       measures,
+      staveCount,
       noopMeasureCount,
     });
   }
@@ -116,6 +122,7 @@ export class Part {
       id: this.id,
       systemId: opts.systemId,
       measures,
+      staveCount: this.staveCount,
       noopMeasureCount: this.noopMeasureCount,
     });
   }
@@ -137,6 +144,10 @@ export class Part {
     for (let index = 0; index < this.measures.length; index++) {
       const measure = this.measures[index];
       const previousMeasure = this.measures[index - 1] ?? null;
+
+      if (index === 0 && this.staveCount > 1) {
+        x += STAVE_CONNECTOR_BRACE_WIDTH;
+      }
 
       const measureRendering = measure.render({
         x,
