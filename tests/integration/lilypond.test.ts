@@ -35,6 +35,7 @@ describe('lilypond', () => {
     { filename: '02c-Rests-MultiMeasureRests.xml', width: 900 },
     { filename: '02d-Rests-Multimeasure-TimeSignatures.xml', width: 900 },
     { filename: '02e-Rests-NoType.xml', width: 900 },
+    { filename: '03a-Rhythm-Durations.xml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
