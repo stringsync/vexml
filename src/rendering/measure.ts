@@ -52,9 +52,10 @@ export class Measure {
     systemId: symbol;
     previousMeasure: Measure | null;
   }): Measure {
+    const measure = opts.musicXml.measure;
     const staves = new Array<Stave>(opts.staveCount);
 
-    const label = opts.musicXml.measure.getNumber() || (opts.index + 1).toString();
+    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
 
     for (let staffNumber = 1; staffNumber <= opts.staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
@@ -62,7 +63,7 @@ export class Measure {
         config: opts.config,
         staffNumber,
         musicXml: {
-          measure: opts.musicXml.measure,
+          measure: measure,
         },
         previousStave: opts.previousMeasure?.staves[staffIndex] ?? null,
       });
