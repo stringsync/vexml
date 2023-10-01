@@ -48,6 +48,9 @@ export class Part {
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
     const mxMeasures = opts.musicXml.part.getMeasures();
+    const staveCount = util.max(
+      mxMeasures.flatMap((mxMeasure) => mxMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
+    );
     for (let index = 0; index < mxMeasures.length; index++) {
       const mxMeasure = mxMeasures[index];
 
@@ -63,6 +66,7 @@ export class Part {
         index,
         config: opts.config,
         musicXml: { measure: mxMeasure },
+        staveCount,
         systemId: opts.systemId,
         previousMeasure,
       });

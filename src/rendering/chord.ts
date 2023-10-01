@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { Config } from './config';
 import { Note, NoteRendering } from './note';
+import { NoteDurationDenominator } from './enums';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -34,14 +35,18 @@ export class Chord {
     musicXml: {
       note: musicxml.Note;
     };
+    durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }): Chord {
     const config = opts.config;
     const clefType = opts.clefType;
+    const durationDenominator = opts.durationDenominator;
 
     const head = opts.musicXml.note;
     const tail = head.getChordTail();
-    const notes = [head, ...tail].map((note) => Note.create({ config, musicXml: { note }, clefType }));
+    const notes = [head, ...tail].map((note) =>
+      Note.create({ config, musicXml: { note }, clefType, durationDenominator })
+    );
 
     return new Chord({ config, notes });
   }

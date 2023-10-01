@@ -4,6 +4,7 @@ import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
+import { NoteDurationDenominator } from './enums';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest;
@@ -47,11 +48,21 @@ export class Voice {
     staffNumber: number;
     clefType: musicxml.ClefType;
   }): Voice {
+    const quarterNoteDivisions =
+      opts.musicXml.measure.getAttributes().flatMap((attribute) => attribute.getQuarterNoteDivisions())[0] ?? 1;
+
     const entries = opts.musicXml.measure
       .getNotes()
       .filter((note) => note.getStaffNumber() === opts.staffNumber)
       .filter(Voice.canCreateVoiceEntry)
-      .map((note) => Voice.createVoiceEntry(opts.config, note, opts.clefType));
+      .map((note) =>
+        Voice.createVoiceEntry({
+          config: opts.config,
+          note,
+          quarterNoteDivisions,
+          clefType: opts.clefType,
+        })
+      );
 
     const timeSignature =
       opts.musicXml.measure
@@ -67,14 +78,89 @@ export class Voice {
     return !note.isChordTail() && !note.isGrace();
   }
 
-  private static createVoiceEntry(config: Config, note: musicxml.Note, clefType: musicxml.ClefType): VoiceEntry {
+  private static createVoiceEntry(opts: {
+    config: Config;
+    note: musicxml.Note;
+    clefType: musicxml.ClefType;
+    quarterNoteDivisions: number;
+  }): VoiceEntry {
+    const note = opts.note;
+    const config = opts.config;
+    const clefType = opts.clefType;
+    const quarterNoteDivisions = opts.quarterNoteDivisions;
+    const durationDenominator = Voice.getDurationDenominator(note, quarterNoteDivisions);
+
     if (note.isChordHead()) {
-      return Chord.create({ config, musicXml: { note }, clefType });
+      return Chord.create({ config, musicXml: { note }, clefType, durationDenominator });
     }
     if (note.isRest()) {
-      return Rest.create({ config, musicXml: { note }, clefType });
+      return Rest.create({ config, musicXml: { note }, clefType, durationDenominator });
     }
-    return Note.create({ config, musicXml: { note }, clefType });
+    return Note.create({ config, musicXml: { note }, clefType, durationDenominator });
+  }
+
+  private static getDurationDenominator(note: musicxml.Note, quarterNoteDivisions: number): NoteDurationDenominator {
+    switch (note.getType()) {
+      case '1024th':
+        return '1024';
+      case '512th':
+        return '512';
+      case '256th':
+        return '256';
+      case '128th':
+        return '128';
+      case '64th':
+        return '64';
+      case '32nd':
+        return '32';
+      case '16th':
+        return '16';
+      case 'eighth':
+        return '8';
+      case 'quarter':
+        return '4';
+      case 'half':
+        return '2';
+      case 'whole':
+        return '1';
+      case 'breve':
+        return '1/2';
+      case 'long':
+        // VexFlow bug: should be '1/4' but it is not supported
+        // return '1/4';
+        return '1/2';
+    }
+
+    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
+    // <duration>.
+    const duration = note.getDuration();
+
+    console.log(`duration: ${duration}, quarterNoteDivisions: ${quarterNoteDivisions}`);
+
+    switch (duration / quarterNoteDivisions) {
+      case 4:
+        return '1';
+      case 2:
+        return '2';
+      case 1:
+        return '4';
+      case 1 / 2:
+        return '8';
+      case 1 / 8:
+        return '32';
+      case 1 / 16:
+        return '64';
+      case 1 / 32:
+        return '128';
+      case 1 / 64:
+        return '256';
+      case 1 / 128:
+        return '512';
+      case 1 / 256:
+        return '1024';
+    }
+
+    return '';
   }
 
   /** Clones the Voice. */

@@ -2,7 +2,6 @@ import { Beam } from './beam';
 import {
   AccidentalType,
   ACCIDENTAL_TYPES,
-  NoteDurationDenominator,
   Notehead,
   NOTEHEADS,
   NoteheadSuffix,
@@ -28,50 +27,14 @@ export class Note {
     return this.element.first('stem')?.content().enum(STEMS) ?? null;
   }
 
-  /** Returns the type of note or 'whole' when missing or invalid. */
-  getType(): NoteType {
-    return this.element.first('type')?.content().enum(NOTE_TYPES) ?? 'whole';
+  /** Returns the type of note or null when missing or invalid. */
+  getType(): NoteType | null {
+    return this.element.first('type')?.content().enum(NOTE_TYPES) ?? null;
   }
 
   /** Returns the duration of the note. Defaults to 4 */
   getDuration(): number {
     return this.element.first('duration')?.content().int() ?? 4;
-  }
-
-  /** Translates the note type to the duration denominator of the note. */
-  getDurationDenominator(): NoteDurationDenominator {
-    switch (this.getType()) {
-      case '1024th':
-        return '1024';
-      case '512th':
-        return '512';
-      case '256th':
-        return '256';
-      case '128th':
-        return '128';
-      case '64th':
-        return '64';
-      case '32nd':
-        return '32';
-      case '16th':
-        return '16';
-      case 'eighth':
-        return '8';
-      case 'quarter':
-        return '4';
-      case 'half':
-        return '2';
-      case 'whole':
-        return '1';
-      case 'breve':
-        return '1/2';
-      case 'long':
-        // VexFlow bug: should be '1/4' but it is not supported
-        // return '1/4';
-        return '1/2';
-      default:
-        return '';
-    }
   }
 
   /** Returns how many dots are on the note. */

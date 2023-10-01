@@ -14,7 +14,7 @@ const MEASURE_LABEL_COLOR = '#aaaaaa';
 export type MeasureRendering = {
   type: 'measure';
   vexflow: {
-    staveConnector: vexflow.StaveConnector | null;
+    staveConnectors: vexflow.StaveConnector[];
   };
   index: number;
   label: Text;
@@ -48,17 +48,15 @@ export class Measure {
     musicXml: {
       measure: musicxml.Measure;
     };
+    staveCount: number;
     systemId: symbol;
     previousMeasure: Measure | null;
   }): Measure {
-    const attributes = opts.musicXml.measure.getAttributes();
-
-    const staveCount = util.max([1, ...attributes.map((attribute) => attribute.getStaveCount())]);
-    const staves = new Array<Stave>(staveCount);
+    const staves = new Array<Stave>(opts.staveCount);
 
     const label = opts.musicXml.measure.getNumber() || (opts.index + 1).toString();
 
-    for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
+    for (let staffNumber = 1; staffNumber <= opts.staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
       staves[staffIndex] = Stave.create({
         config: opts.config,
@@ -138,14 +136,26 @@ export class Measure {
       y += staffDistance;
     }
 
-    let vfStaveConnector: vexflow.StaveConnector | null = null;
-    if (opts.isFirstPartMeasure && staveRenderings.length > 1) {
+    const vfStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    if (staveRenderings.length > 1) {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
-        'singleLeft'
-      );
+      const addVfStaveConnector = (type: vexflow.StaveConnectorType) =>
+        vfStaveConnectors.push(
+          new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(type)
+        );
+
+      if (opts.isFirstPartMeasure) {
+        addVfStaveConnector('brace');
+      }
+
+      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
+      addVfStaveConnector(begginingStaveConnectorType);
+
+      const endStaveConnectorType = this.toEndStaveConnectorType(topStave.vexflow.endBarlineType);
+      addVfStaveConnector(endStaveConnectorType);
     }
 
     const label = new Text({
@@ -160,7 +170,7 @@ export class Measure {
     return {
       type: 'measure',
       vexflow: {
-        staveConnector: vfStaveConnector,
+        staveConnectors: vfStaveConnectors,
       },
       index: this.index,
       label,
@@ -200,5 +210,23 @@ export class Measure {
     }
 
     return Array.from(staveModifiersChanges);
+  }
+
+  private toBeginningStaveConnectorType(beginningBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
+    switch (beginningBarlineType) {
+      case vexflow.BarlineType.SINGLE:
+        return 'singleLeft';
+      default:
+        return vexflow.BarlineType.SINGLE;
+    }
+  }
+
+  private toEndStaveConnectorType(endBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
+    switch (endBarlineType) {
+      case vexflow.BarlineType.SINGLE:
+        return 'singleRight';
+      default:
+        return vexflow.BarlineType.SINGLE;
+    }
   }
 }

@@ -34,51 +34,16 @@ describe(Note, () => {
       expect(note.getType()).toBe(noteType);
     });
 
-    it(`returns 'whole' when note type is missing`, () => {
+    it(`returns null when note type is missing`, () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getType()).toBe('whole');
+      expect(note.getType()).toBeNull();
     });
 
-    it(`returns 'whole' when note type is invalid`, () => {
+    it(`returns null when note type is invalid`, () => {
       const node = xml.note({ type: xml.type({ textContent: 'foo' }) });
       const note = new Note(node);
-      expect(note.getType()).toBe('whole');
-    });
-  });
-
-  describe('getDurationDenominator', () => {
-    it.each([
-      { noteType: '1024th', durationDenominator: '1024' },
-      { noteType: '512th', durationDenominator: '512' },
-      { noteType: '256th', durationDenominator: '256' },
-      { noteType: '128th', durationDenominator: '128' },
-      { noteType: '64th', durationDenominator: '64' },
-      { noteType: '32nd', durationDenominator: '32' },
-      { noteType: '16th', durationDenominator: '16' },
-      { noteType: 'eighth', durationDenominator: '8' },
-      { noteType: 'quarter', durationDenominator: '4' },
-      { noteType: 'half', durationDenominator: '2' },
-      { noteType: 'whole', durationDenominator: '1' },
-      { noteType: 'breve', durationDenominator: '1/2' },
-      { noteType: 'long', durationDenominator: '1/2' },
-      { noteType: 'maxima', durationDenominator: '' },
-    ])(`translates note types into a duration denominators: '$noteType' to '$durationDenominator'`, (t) => {
-      const node = xml.note({ type: xml.type({ textContent: t.noteType }) });
-      const note = new Note(node);
-      expect(note.getDurationDenominator()).toBe(t.durationDenominator);
-    });
-
-    it(`returns '1' for invalid note types`, () => {
-      const node = xml.note({ type: xml.type({ textContent: 'foo' }) });
-      const note = new Note(node);
-      expect(note.getDurationDenominator()).toBe('1');
-    });
-
-    it(`returns '1' when note type is missing`, () => {
-      const node = xml.note();
-      const note = new Note(node);
-      expect(note.getDurationDenominator()).toBe('1');
+      expect(note.getType()).toBeNull();
     });
   });
 
