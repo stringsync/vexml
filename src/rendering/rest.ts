@@ -79,7 +79,7 @@ export class Rest {
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
       dots: this.dotCount,
-      alignCenter: opts.voiceEntryCount === 1,
+      alignCenter: this.shouldCenter(opts.voiceEntryCount),
       clef: this.clefType,
     });
 
@@ -100,5 +100,18 @@ export class Rest {
       default:
         return 'B/4';
     }
+  }
+
+  private shouldCenter(voiceEntryCount: number): boolean {
+    if (voiceEntryCount > 1) {
+      return false;
+    }
+    if (this.durationDenominator === '1') {
+      return true;
+    }
+    if (this.durationDenominator === '2') {
+      return true;
+    }
+    return false;
   }
 }

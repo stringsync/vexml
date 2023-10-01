@@ -217,6 +217,8 @@ export class Measure {
     switch (beginningBarlineType) {
       case vexflow.BarlineType.SINGLE:
         return 'singleLeft';
+      case vexflow.BarlineType.DOUBLE:
+        return 'boldDoubleLeft';
       default:
         return vexflow.BarlineType.SINGLE;
     }
@@ -226,6 +228,8 @@ export class Measure {
     switch (endBarlineType) {
       case vexflow.BarlineType.SINGLE:
         return 'singleRight';
+      case vexflow.BarlineType.END:
+        return 'boldDoubleRight';
       default:
         return vexflow.BarlineType.SINGLE;
     }
