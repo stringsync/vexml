@@ -121,4 +121,28 @@ describe(Attributes, () => {
       expect(attributes.getMeasureStyles()).toBeEmpty();
     });
   });
+
+  describe('getQuarterNoteDivisions', () => {
+    it('returns the attributes divisions', () => {
+      const node = xml.attributes({
+        divisions: xml.divisions({ positiveDivisions: 4 }),
+      });
+      const attributes = new Attributes(node);
+      expect(attributes.getQuarterNoteDivisions()).toBe(4);
+    });
+
+    it('defaults to 1 when missing', () => {
+      const node = xml.attributes();
+      const attributes = new Attributes(node);
+      expect(attributes.getQuarterNoteDivisions()).toBe(1);
+    });
+
+    it('defaults to 1 when invalid', () => {
+      const node = xml.attributes({
+        divisions: xml.divisions({ positiveDivisions: NaN }),
+      });
+      const attributes = new Attributes(node);
+      expect(attributes.getQuarterNoteDivisions()).toBe(1);
+    });
+  });
 });

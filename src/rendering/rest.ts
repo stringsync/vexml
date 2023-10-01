@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
+import { NoteDurationDenominator } from './enums';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -23,14 +24,14 @@ export type RestRendering = {
 export class Rest {
   private config: Config;
   private displayPitch: string | null;
-  private durationDenominator: musicxml.NoteDurationDenominator;
+  private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
   private clefType: musicxml.ClefType;
 
   private constructor(opts: {
     config: Config;
     displayPitch: string | null;
-    durationDenominator: musicxml.NoteDurationDenominator;
+    durationDenominator: NoteDurationDenominator;
     dotCount: number;
     clefType: musicxml.ClefType;
   }) {
@@ -47,6 +48,7 @@ export class Rest {
     musicXml: {
       note: musicxml.Note;
     };
+    durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }): Rest {
     const note = opts.musicXml.note;
@@ -54,7 +56,7 @@ export class Rest {
     return new Rest({
       config: opts.config,
       displayPitch: note.getRestDisplayPitch(),
-      durationDenominator: note.getDurationDenominator(),
+      durationDenominator: opts.durationDenominator,
       dotCount: note.getDotCount(),
       clefType: opts.clefType,
     });
@@ -77,7 +79,7 @@ export class Rest {
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
       dots: this.dotCount,
-      alignCenter: opts.voiceEntryCount === 1,
+      alignCenter: this.shouldCenter(opts.voiceEntryCount),
       clef: this.clefType,
     });
 
@@ -94,9 +96,22 @@ export class Rest {
     }
     switch (this.clefType) {
       case 'bass':
-        return 'D/2';
+        return 'D/3';
       default:
         return 'B/4';
     }
+  }
+
+  private shouldCenter(voiceEntryCount: number): boolean {
+    if (voiceEntryCount > 1) {
+      return false;
+    }
+    if (this.durationDenominator === '1') {
+      return true;
+    }
+    if (this.durationDenominator === '2') {
+      return true;
+    }
+    return false;
   }
 }
