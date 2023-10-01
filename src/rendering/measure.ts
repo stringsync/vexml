@@ -99,7 +99,6 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
-    isFirstPartMeasure: boolean;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
@@ -147,10 +146,6 @@ export class Measure {
         vfStaveConnectors.push(
           new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(type)
         );
-
-      if (opts.isFirstPartMeasure) {
-        add('brace');
-      }
 
       const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
       add(begginingStaveConnectorType);

@@ -2,12 +2,16 @@ import * as musicxml from '@/musicxml';
 import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
 /** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
+  vexflow: {
+    staveConnector: vexflow.StaveConnector | null;
+  };
   measures: MeasureRendering[];
 };
 
@@ -141,18 +145,21 @@ export class Part {
     let x = opts.x;
     const y = opts.y;
 
+    let vfStaveConnector: vexflow.StaveConnector | null = null;
+
     for (let index = 0; index < this.measures.length; index++) {
       const measure = this.measures[index];
       const previousMeasure = this.measures[index - 1] ?? null;
 
-      if (index === 0 && this.staveCount > 1) {
+      const hasStaveConnectorBrace = index === 0 && this.staveCount > 1;
+
+      if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
       }
 
       const measureRendering = measure.render({
         x,
         y,
-        isFirstPartMeasure: index === 0,
         isLastSystem: opts.isLastSystem,
         previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
@@ -161,9 +168,22 @@ export class Part {
       });
       measureRenderings.push(measureRendering);
 
+      if (hasStaveConnectorBrace) {
+        const topStave = util.first(measureRendering.staves)!;
+        const bottomStave = util.last(measureRendering.staves)!;
+
+        vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
+          'brace'
+        );
+      }
+
       x += util.first(measureRendering.staves)?.width ?? 0;
     }
 
-    return { id: this.id, measures: measureRenderings };
+    return {
+      id: this.id,
+      vexflow: { staveConnector: vfStaveConnector },
+      measures: measureRenderings,
+    };
   }
 }
