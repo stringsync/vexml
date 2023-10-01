@@ -1,5 +1,5 @@
 declare namespace jest {
   interface Matchers<R> {
-    toMatchImageSnapshot(): R;
+    toMatchImageSnapshot(opts: { customSnapshotIdentifier?: string }): R;
   }
 }
