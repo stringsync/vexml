@@ -12,6 +12,11 @@ import { Print } from './print';
 export class Measure {
   constructor(private element: NamedElement<'measure'>) {}
 
+  // Wether the measure number should appear or not.
+  isImplicit(): boolean {
+    return this.element.attr('implicit').withDefault('no').str() === 'yes';
+  }
+
   /** Returns the measure number or an empty string if missing. */
   getNumber(): string {
     return this.element.attr('number').withDefault('').str();

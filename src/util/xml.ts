@@ -144,12 +144,13 @@ export const measure = createNamedElementFactory<
   {
     width: number;
     number: string;
+    implicit: string;
     notes: NamedElement<'note'>[];
     attributes: NamedElement<'attributes'>[];
     barlines: NamedElement<'barline'>[];
     prints: NamedElement<'print'>[];
   }
->('measure', (e, { width, number, notes, attributes, barlines, prints }) => {
+>('measure', (e, { width, implicit, number, notes, attributes, barlines, prints }) => {
   if (notes) {
     e.append(...notes);
   }
@@ -161,6 +162,9 @@ export const measure = createNamedElementFactory<
   }
   if (prints) {
     e.append(...prints);
+  }
+  if (implicit) {
+    e.setAttribute('implicit', implicit);
   }
   if (typeof width === 'number') {
     e.setAttribute('width', width.toString());

@@ -6,6 +6,26 @@ import { Print } from '@/musicxml/print';
 import { xml } from '@/util';
 
 describe(Measure, () => {
+  describe('isImplicit', () => {
+    it('returns whether the measure number should show', () => {
+      const node = xml.measure({ implicit: 'yes' });
+      const measure = new Measure(node);
+      expect(measure.isImplicit()).toBeTrue();
+    });
+
+    it('defaults to false when missing', () => {
+      const node = xml.measure();
+      const measure = new Measure(node);
+      expect(measure.isImplicit()).toBeFalse();
+    });
+
+    it('defaults to false when invalid', () => {
+      const node = xml.measure({ implicit: 'lol' });
+      const measure = new Measure(node);
+      expect(measure.isImplicit()).toBeFalse();
+    });
+  });
+
   describe('getNumber', () => {
     it('returns the measure number', () => {
       const node = xml.measure({ number: '1' });
