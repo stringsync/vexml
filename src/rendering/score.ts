@@ -3,6 +3,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Config, DEFAULT_CONFIG } from './config';
+import { Title, TitleRendering } from './title';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -23,17 +24,20 @@ export class Score {
   private system: System;
   private staffLayouts: musicxml.StaffLayout[];
   private systemLayout: musicxml.SystemLayout | null;
+  private title: Title;
 
   private constructor(opts: {
     config: Config;
     system: System;
     staffLayouts: musicxml.StaffLayout[];
     systemLayout: musicxml.SystemLayout | null;
+    title: Title;
   }) {
     this.config = opts.config;
     this.system = opts.system;
     this.staffLayouts = opts.staffLayouts;
     this.systemLayout = opts.systemLayout;
+    this.title = opts.title;
   }
 
   /** Creates a Score. */
@@ -45,9 +49,10 @@ export class Score {
     const staffLayouts = defaults?.getStaffLayouts() ?? [];
     const systemLayout = defaults?.getSystemLayout() ?? null;
 
+    const title = Title.create({ config, text: scorePartwise?.getTitle() ?? '' });
     const system = System.create({ config, musicXml: { parts } });
 
-    return new Score({ system, staffLayouts, systemLayout, config });
+    return new Score({ system, staffLayouts, systemLayout, config, title });
   }
 
   /** Renders the Score. */
@@ -58,7 +63,19 @@ export class Score {
     // Split the main system into smaller ones to fit in the width.
     const systems = this.system.split(opts.width);
 
-    let y = this.systemLayout?.topSystemDistance ?? 0;
+    let y = 0;
+
+    // Produce the title rendering, but only if it has text.
+    let titleRendering: TitleRendering | null = null;
+    if (this.title.hasText()) {
+      y += this.config.titleTopPadding;
+
+      titleRendering = this.title.render({ y, containerWidth: opts.width });
+
+      y += titleRendering.approximateHeight;
+    }
+
+    y += this.systemLayout?.topSystemDistance ?? 0;
 
     // Render the entire hierarchy.
     for (let index = 0; index < systems.length; index++) {
@@ -97,6 +114,9 @@ export class Score {
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
     vfRenderer.resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
+
+    // Render the title.
+    titleRendering?.text.draw(vfContext);
 
     // Render vexflow.Stave elements.
     staves

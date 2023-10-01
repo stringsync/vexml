@@ -7,7 +7,6 @@ import * as vexflow from 'vexflow';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
-const MEASURE_LABEL_FONT_SIZE = 8;
 const MEASURE_LABEL_COLOR = '#aaaaaa';
 
 /** The result of rendering a Measure. */
@@ -160,7 +159,7 @@ export class Measure {
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
       color: MEASURE_LABEL_COLOR,
-      size: MEASURE_LABEL_FONT_SIZE,
+      size: this.config.measureNumberFontSize,
     });
 
     return {
