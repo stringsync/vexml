@@ -2,7 +2,7 @@ import { Page } from 'puppeteer';
 import { Vexml } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
-import { setup } from './helpers';
+import { setup, getSnapshotIdentifier } from './helpers';
 
 type TestCase = {
   filename: string;
@@ -25,27 +25,16 @@ describe('lilypond', () => {
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
     { filename: '01a-Pitches-Pitches.xml', width: 900 },
-    { filename: '01a-Pitches-Pitches.xml', width: 360 },
     { filename: '01b-Pitches-Intervals.xml', width: 900 },
-    { filename: '01b-Pitches-Intervals.xml', width: 360 },
     { filename: '01c-Pitches-NoVoiceElement.xml', width: 900 },
-    { filename: '01c-Pitches-NoVoiceElement.xml', width: 360 },
     { filename: '01d-Pitches-Microtones.xml', width: 900 },
-    { filename: '01d-Pitches-Microtones.xml', width: 360 },
     { filename: '01e-Pitches-ParenthesizedAccidentals.xml', width: 900 },
-    { filename: '01e-Pitches-ParenthesizedAccidentals.xml', width: 360 },
     { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.xml', width: 900 },
-    { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.xml', width: 360 },
     { filename: '02a-Rests-Durations.xml', width: 900 },
-    { filename: '02a-Rests-Durations.xml', width: 360 },
     { filename: '02b-Rests-PitchedRests.xml', width: 900 },
-    { filename: '02b-Rests-PitchedRests.xml', width: 360 },
     { filename: '02c-Rests-MultiMeasureRests.xml', width: 900 },
-    { filename: '02c-Rests-MultiMeasureRests.xml', width: 360 },
     { filename: '02d-Rests-Multimeasure-TimeSignatures.xml', width: 900 },
-    { filename: '02d-Rests-Multimeasure-TimeSignatures.xml', width: 360 },
     { filename: '02e-Rests-NoType.xml', width: 900 },
-    { filename: '02e-Rests-NoType.xml', width: 360 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
@@ -64,6 +53,8 @@ describe('lilypond', () => {
 
     const element = await page.$(screenshotElementSelector);
     const screenshot = await element!.screenshot();
-    expect(screenshot).toMatchImageSnapshot();
+    expect(screenshot).toMatchImageSnapshot({
+      customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width }),
+    });
   });
 });

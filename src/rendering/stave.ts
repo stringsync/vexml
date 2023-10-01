@@ -155,17 +155,17 @@ export class Stave {
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(): number {
-    if (this.voices.length > 0) {
-      const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
-      const vfFormatter = new vexflow.Formatter();
-      return vfFormatter.preCalculateMinTotalWidth(vfVoices) + this.config.measureSpacingBuffer;
-    }
-
     if (this.multiRest) {
       // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
       // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
       // the moment.
       return this.config.multiMeasureRestWidth;
+    }
+
+    if (this.voices.length > 0) {
+      const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
+      const vfFormatter = new vexflow.Formatter();
+      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.measurePadding;
     }
 
     return 0;
