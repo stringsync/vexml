@@ -135,8 +135,6 @@ export class Voice {
     // <duration>.
     const duration = note.getDuration();
 
-    console.log(`duration: ${duration}, quarterNoteDivisions: ${quarterNoteDivisions}`);
-
     switch (duration / quarterNoteDivisions) {
       case 4:
         return '1';

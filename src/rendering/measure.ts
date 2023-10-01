@@ -142,20 +142,20 @@ export class Measure {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      const addVfStaveConnector = (type: vexflow.StaveConnectorType) =>
+      const add = (type: vexflow.StaveConnectorType) =>
         vfStaveConnectors.push(
           new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(type)
         );
 
       if (opts.isFirstPartMeasure) {
-        addVfStaveConnector('brace');
+        add('brace');
       }
 
       const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
-      addVfStaveConnector(begginingStaveConnectorType);
+      add(begginingStaveConnectorType);
 
       const endStaveConnectorType = this.toEndStaveConnectorType(topStave.vexflow.endBarlineType);
-      addVfStaveConnector(endStaveConnectorType);
+      add(endStaveConnectorType);
     }
 
     const label = new Text({
