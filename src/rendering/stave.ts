@@ -127,17 +127,15 @@ export class Stave {
 
     // TODO: Support multiple voices per stave.
     const voices =
+      // No need to create voices if we're rendering a MultiRest.
       multiRestCount > 0
         ? []
-        : // No need to create voices if we're rendering a MultiRest.
-          [
-            Voice.create({
-              config: opts.config,
-              musicXml: { measure: opts.musicXml.measure },
-              staffNumber: opts.staffNumber,
-              clefType,
-            }),
-          ];
+        : Voice.createMulti({
+            config: opts.config,
+            musicXml: { measure: opts.musicXml.measure },
+            staffNumber: opts.staffNumber,
+            clefType,
+          });
 
     return new Stave({
       config: opts.config,

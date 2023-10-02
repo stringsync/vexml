@@ -39,15 +39,15 @@ export class Voice {
     this.timeSignature = opts.timeSignature;
   }
 
-  /** Create a Voice. */
-  static create(opts: {
+  /** Creates all the Voices derived from the Measure. */
+  static createMulti(opts: {
     config: Config;
     musicXml: {
       measure: musicxml.Measure;
     };
     staffNumber: number;
     clefType: musicxml.ClefType;
-  }): Voice {
+  }): Voice[] {
     const quarterNoteDivisions =
       opts.musicXml.measure.getAttributes().flatMap((attribute) => attribute.getQuarterNoteDivisions())[0] ?? 1;
 
@@ -71,7 +71,13 @@ export class Voice {
         .find((time) => time.getStaffNumber() === opts.staffNumber)
         ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
 
-    return new Voice({ config: opts.config, entries, timeSignature });
+    // TODO(jared): Iterate through the measure entries and derive the voice entries (and the voices they belong to)
+    // into separate voice elements. You can use ghost notes in case the second voice doesn't start at the beginning
+    // of the measure. I think a state machine could work in two stages: create a mapping of voice -> duration ->
+    // voice entry, then a separate process to figure out how to fill duration gaps into ghost notes. Don't assume
+    // that voice 1 will always be the "anchor" voice.
+
+    return [new Voice({ config: opts.config, entries, timeSignature })];
   }
 
   private static canCreateVoiceEntry(note: musicxml.Note): boolean {
