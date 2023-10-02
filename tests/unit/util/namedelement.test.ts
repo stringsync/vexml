@@ -235,8 +235,10 @@ describe(NamedElement, () => {
       const foo = xml.createElement('foo');
       const bar = xml.createElement('bar');
       const baz = xml.createElement('baz');
+      const bam = xml.createElement('bam');
 
       foo.append(bar, baz);
+      bar.append(bam);
 
       const element = NamedElement.of(foo);
 
@@ -247,8 +249,10 @@ describe(NamedElement, () => {
       const foo = xml.createElement('foo');
       const bar = xml.createElement('bar');
       const baz = xml.createElement('baz');
+      const bam = xml.createElement('bam');
 
       foo.append(bar, baz);
+      bar.append(bam);
 
       const element = NamedElement.of(foo);
 
