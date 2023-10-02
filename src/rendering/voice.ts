@@ -82,6 +82,41 @@ export class Voice {
       voiceEventMachine.process(measureEntry);
     }
 
+    const events = voiceEventMachine.getVoiceEvents().sort((a, b) => a.at - b.at);
+    const voiceNames = voiceEventMachine.getVoiceNames();
+
+    // A mapping of voice names to the last division a note ended.
+    const ends = voiceNames.reduce<{ [voiceName: string]: number }>((ends, voiceName) => {
+      ends[voiceName] = 0;
+      return ends;
+    }, {});
+
+    // A mapping of voice names to its voice entries.
+    const voiceEntries = voiceNames.reduce<{ [voiceName: string]: string[] }>((voiceEntries, voiceName) => {
+      voiceEntries[voiceName] = [];
+      return voiceEntries;
+    }, {});
+
+    for (const event of events) {
+      const voiceName = event.voiceName;
+
+      const ghostNoteStart = ends[voiceName];
+      const ghostNoteEnd = event.at;
+
+      const noteStart = event.at;
+      const noteEnd = noteStart + event.note.getDuration();
+
+      const ghostNoteDuration = ghostNoteEnd - ghostNoteStart;
+      if (ghostNoteDuration > 0) {
+        voiceEntries[voiceName].push(`ghost note (${ghostNoteStart}, ${ghostNoteEnd})`);
+      }
+      voiceEntries[voiceName].push(`note (${noteStart}, ${noteEnd})`);
+
+      ends[voiceName] = noteEnd;
+    }
+
+    // console.log(voiceEntries, quarterNoteDivisions);
+
     return [new Voice({ config: opts.config, entries, timeSignature })];
   }
 
@@ -244,7 +279,7 @@ export class Voice {
 
 /** An intermediate data structure that facilitates the calculation of what notes belong to what voices. */
 type VoiceEvent = {
-  voice: string;
+  voiceName: string;
   note: musicxml.Note;
   at: number;
 };
@@ -252,7 +287,7 @@ type VoiceEvent = {
 /** A factory that transforms musicxml.MeasureEntry[] to VoiceEvent[]. */
 class VoiceEventStateMachine {
   private voiceEvents = new Array<VoiceEvent>();
-  private beat = 0;
+  private divisions = 0;
 
   process(measureEntry: musicxml.MeasureEntry): void {
     if (measureEntry instanceof musicxml.Note) {
@@ -271,6 +306,22 @@ class VoiceEventStateMachine {
     return this.voiceEvents;
   }
 
+  /** Returns the voice names. */
+  getVoiceNames(): string[] {
+    const seen = new Set<string>();
+    const voiceNames = new Array<string>();
+
+    for (const voiceEvent of this.voiceEvents) {
+      const voiceName = voiceEvent.voiceName;
+      if (!seen.has(voiceName)) {
+        voiceNames.push(voiceName);
+      }
+      seen.add(voiceName);
+    }
+
+    return voiceNames;
+  }
+
   private onNote(note: musicxml.Note): void {
     // TODO: Attach grace notes correctly.
     if (note.isGrace()) {
@@ -281,19 +332,19 @@ class VoiceEventStateMachine {
     }
 
     this.voiceEvents.push({
-      voice: note.getVoice(),
-      at: this.beat,
+      voiceName: note.getVoice(),
+      at: this.divisions,
       note: note,
     });
 
-    this.beat += note.getDuration();
+    this.divisions += note.getDuration();
   }
 
   private onBackup(backup: musicxml.Backup): void {
-    this.beat -= backup.getDuration();
+    this.divisions -= backup.getDuration();
   }
 
   private onForward(forward: musicxml.Forward): void {
-    this.beat += forward.getDuration();
+    this.divisions += forward.getDuration();
   }
 }
