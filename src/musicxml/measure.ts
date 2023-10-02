@@ -3,6 +3,10 @@ import { Barline } from './barline';
 import { NamedElement, max } from '@/util';
 import { Note } from './note';
 import { Print } from './print';
+import { Backup } from './backup';
+import { Forward } from './forward';
+
+export type MeasureEntry = Note | Backup | Forward;
 
 /**
  * Measure is a basic musical data container that has notes and rests.

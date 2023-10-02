@@ -18,3 +18,5 @@ export * from './staffdetails';
 export * from './defaults';
 export * from './lyric';
 export * from './measurestyle';
+export * from './backup';
+export * from './forward';
