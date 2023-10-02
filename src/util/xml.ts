@@ -145,12 +145,16 @@ export const measure = createNamedElementFactory<
     width: number;
     number: string;
     implicit: string;
+    entries: Array<NamedElement<'note'> | NamedElement<'backup'> | NamedElement<'forward'>>;
     notes: NamedElement<'note'>[];
     attributes: NamedElement<'attributes'>[];
     barlines: NamedElement<'barline'>[];
     prints: NamedElement<'print'>[];
   }
->('measure', (e, { width, implicit, number, notes, attributes, barlines, prints }) => {
+>('measure', (e, { width, entries, implicit, number, notes, attributes, barlines, prints }) => {
+  if (entries) {
+    e.append(...entries);
+  }
   if (notes) {
     e.append(...notes);
   }
@@ -259,6 +263,24 @@ export const note = createNamedElementFactory<
     }
     if (lyrics) {
       e.append(...lyrics);
+    }
+  }
+);
+
+export const backup = createNamedElementFactory<'backup', { duration: NamedElement<'duration'> }>(
+  'backup',
+  (e, { duration }) => {
+    if (duration) {
+      e.append(duration);
+    }
+  }
+);
+
+export const forward = createNamedElementFactory<'forward', { duration: NamedElement<'duration'> }>(
+  'forward',
+  (e, { duration }) => {
+    if (duration) {
+      e.append(duration);
     }
   }
 );
