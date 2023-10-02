@@ -21,18 +21,6 @@ export type VoiceRendering = {
   notes: VoiceEntryRendering[];
 };
 
-/** An intermediate data structure that facilitates the calculation of what notes belong to what voices. */
-type VoiceNote = {
-  /** Which voice the note belongs to. */
-  voice: string;
-
-  /** The note of the voice. */
-  note: musicxml.Note;
-
-  /** The _accumulated_ duration within the measure. */
-  duration: number;
-};
-
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
  *
@@ -261,7 +249,7 @@ type VoiceEvent = {
   at: number;
 };
 
-/** A factory that transforms musicxml.MeasureEntry[] to sorted VoiceEvent[]. */
+/** A factory that transforms musicxml.MeasureEntry[] to VoiceEvent[]. */
 class VoiceEventStateMachine {
   private voiceEvents = new Array<VoiceEvent>();
   private beat = 0;
