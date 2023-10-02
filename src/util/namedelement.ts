@@ -26,6 +26,19 @@ export class NamedElement<T extends string> {
     return this.element;
   }
 
+  children<S extends string>(...tagNames: S[]): Array<NamedElement<S>> {
+    let nodes: Element[];
+
+    if (tagNames.length === 0) {
+      nodes = Array.from(this.element.children);
+    } else {
+      const selector = tagNames.map((tagName) => `:scope > ${tagName}`).join(', ');
+      nodes = Array.from(this.element.querySelectorAll(selector));
+    }
+
+    return nodes.map((node) => NamedElement.of<S>(node));
+  }
+
   /** Returns the first _descendant_ node matching the tag name. Defaults to null. */
   first<S extends string>(tagName: S): NamedElement<S> | null {
     const element = this.element.getElementsByTagName(tagName).item(0);
