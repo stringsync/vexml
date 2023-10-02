@@ -254,6 +254,7 @@ export class Voice {
   }
 }
 
+/** A collection that keeps track of notes and their accumulated durations. */
 class VoiceNoteCollection {
   private voices = new Array<string>();
   private voiceNotes = new Array<VoiceNote>();
@@ -286,5 +287,22 @@ class VoiceNoteCollection {
   /** Returns voice notes in the order that they were added. */
   getVoiceNotes(): VoiceNote[] {
     return this.voiceNotes;
+  }
+
+  /** Returns the unique durations in the order they were added. */
+  getDurations(): number[] {
+    const durations = new Array<number>();
+    const seen = new Set<number>();
+
+    for (const voiceNote of this.voiceNotes) {
+      const duration = voiceNote.duration;
+
+      if (!seen.has(duration)) {
+        durations.push(duration);
+        seen.add(duration);
+      }
+    }
+
+    return durations;
   }
 }
