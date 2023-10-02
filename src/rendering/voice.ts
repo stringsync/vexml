@@ -21,6 +21,18 @@ export type VoiceRendering = {
   notes: VoiceEntryRendering[];
 };
 
+/** An intermediate data structure that facilitates the calculation of what notes belong to what voices. */
+type VoiceNote = {
+  /** Which voice the note belongs to. */
+  voice: string;
+
+  /** The note of the voice. */
+  note: musicxml.Note;
+
+  /** The _accumulated_ duration within the measure. */
+  duration: number;
+};
+
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
  *
@@ -76,6 +88,11 @@ export class Voice {
     // of the measure. I think a state machine could work in two stages: create a mapping of voice -> duration ->
     // voice entry, then a separate process to figure out how to fill duration gaps into ghost notes. Don't assume
     // that voice 1 will always be the "anchor" voice.
+
+    const voiceNoteCollection = new VoiceNoteCollection();
+    for (const measureEntry of opts.musicXml.measure.getEntries()) {
+      voiceNoteCollection.add(measureEntry);
+    }
 
     return [new Voice({ config: opts.config, entries, timeSignature })];
   }
@@ -234,5 +251,40 @@ export class Voice {
       .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)
       .addTickables(vfTickables);
+  }
+}
+
+class VoiceNoteCollection {
+  private voices = new Array<string>();
+  private voiceNotes = new Array<VoiceNote>();
+  private duration = 0;
+
+  add(measureEntry: musicxml.MeasureEntry): void {
+    if (measureEntry instanceof musicxml.Note) {
+      this.voiceNotes.push({
+        voice: measureEntry.getVoice(),
+        duration: this.duration,
+        note: measureEntry,
+      });
+      this.duration += measureEntry.getDuration();
+    }
+
+    if (measureEntry instanceof musicxml.Backup) {
+      this.duration -= measureEntry.getDuration();
+    }
+
+    if (measureEntry instanceof musicxml.Forward) {
+      this.duration += measureEntry.getDuration();
+    }
+  }
+
+  /** Returns voices in the order that they were added. */
+  getVoices(): string[] {
+    return this.voices;
+  }
+
+  /** Returns voice notes in the order that they were added. */
+  getVoiceNotes(): VoiceNote[] {
+    return this.voiceNotes;
   }
 }
