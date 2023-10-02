@@ -46,6 +46,22 @@ export class Measure {
     return this.element.all('note').map((element) => new Note(element));
   }
 
+  /** Returns the entries of the measure. */
+  getEntries(): MeasureEntry[] {
+    return this.element.children('note', 'backup', 'forward').map((element) => {
+      if (element.isNamed('note')) {
+        return new Note(element);
+      }
+      if (element.isNamed('backup')) {
+        return new Backup(element);
+      }
+      if (element.isNamed('forward')) {
+        return new Forward(element);
+      }
+      throw new Error(`unexpected element: <${element.name}>`);
+    });
+  }
+
   /** Returns the barlines of the measure. */
   getBarlines(): Barline[] {
     return this.element.all('barline').map((element) => new Barline(element));
