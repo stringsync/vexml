@@ -89,9 +89,9 @@ export class Voice {
     // voice entry, then a separate process to figure out how to fill duration gaps into ghost notes. Don't assume
     // that voice 1 will always be the "anchor" voice.
 
-    const voiceNoteCollection = new VoiceNoteCollection();
+    const voiceEventMachine = new VoiceEventStateMachine();
     for (const measureEntry of opts.musicXml.measure.getEntries()) {
-      voiceNoteCollection.add(measureEntry);
+      voiceEventMachine.process(measureEntry);
     }
 
     return [new Voice({ config: opts.config, entries, timeSignature })];
@@ -254,55 +254,58 @@ export class Voice {
   }
 }
 
-/** A collection that keeps track of notes and their accumulated durations. */
-class VoiceNoteCollection {
-  private voices = new Array<string>();
-  private voiceNotes = new Array<VoiceNote>();
-  private duration = 0;
+/** An intermediate data structure that facilitates the calculation of what notes belong to what voices. */
+type VoiceEvent = {
+  voice: string;
+  note: musicxml.Note;
+  at: number;
+};
 
-  add(measureEntry: musicxml.MeasureEntry): void {
+/** A factory that transforms musicxml.MeasureEntry[] to sorted VoiceEvent[]. */
+class VoiceEventStateMachine {
+  private voiceEvents = new Array<VoiceEvent>();
+  private beat = 0;
+
+  process(measureEntry: musicxml.MeasureEntry): void {
     if (measureEntry instanceof musicxml.Note) {
-      this.voiceNotes.push({
-        voice: measureEntry.getVoice(),
-        duration: this.duration,
-        note: measureEntry,
-      });
-      this.duration += measureEntry.getDuration();
+      this.onNote(measureEntry);
     }
-
     if (measureEntry instanceof musicxml.Backup) {
-      this.duration -= measureEntry.getDuration();
+      this.onBackup(measureEntry);
     }
-
     if (measureEntry instanceof musicxml.Forward) {
-      this.duration += measureEntry.getDuration();
+      this.onForward(measureEntry);
     }
   }
 
-  /** Returns voices in the order that they were added. */
-  getVoices(): string[] {
-    return this.voices;
+  /** Returns the voice events. */
+  getVoiceEvents(): VoiceEvent[] {
+    return this.voiceEvents;
   }
 
-  /** Returns voice notes in the order that they were added. */
-  getVoiceNotes(): VoiceNote[] {
-    return this.voiceNotes;
-  }
-
-  /** Returns the unique durations in the order they were added. */
-  getDurations(): number[] {
-    const durations = new Array<number>();
-    const seen = new Set<number>();
-
-    for (const voiceNote of this.voiceNotes) {
-      const duration = voiceNote.duration;
-
-      if (!seen.has(duration)) {
-        durations.push(duration);
-        seen.add(duration);
-      }
+  private onNote(note: musicxml.Note): void {
+    // TODO: Attach grace notes correctly.
+    if (note.isGrace()) {
+      return;
+    }
+    if (note.isChordTail()) {
+      return;
     }
 
-    return durations;
+    this.voiceEvents.push({
+      voice: note.getVoice(),
+      at: this.beat,
+      note: note,
+    });
+
+    this.beat += note.getDuration();
+  }
+
+  private onBackup(backup: musicxml.Backup): void {
+    this.beat -= backup.getDuration();
+  }
+
+  private onForward(forward: musicxml.Forward): void {
+    this.beat += forward.getDuration();
   }
 }
