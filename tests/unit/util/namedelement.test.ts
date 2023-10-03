@@ -215,4 +215,70 @@ describe(NamedElement, () => {
       expect(element.content().str()).toBeNull();
     });
   });
+
+  describe('children', () => {
+    it('returns the children of the node with a single name', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      const baz = xml.createElement('baz');
+
+      foo.append(bar, baz);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.children('bar')).toStrictEqual([NamedElement.of(bar)]);
+    });
+
+    it('returns the children of the node with multiple tag names', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      const baz = xml.createElement('baz');
+
+      foo.append(bar, baz);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.children('bar', 'baz')).toStrictEqual([NamedElement.of(bar), NamedElement.of(baz)]);
+    });
+
+    it('returns children in the order that they appear', () => {
+      const foo = xml.createElement('foo');
+      const bar1 = xml.createElement('bar');
+      const bar2 = xml.createElement('bar');
+
+      foo.append(bar1);
+      bar1.append(bar2);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.children('baz', 'bar')).toStrictEqual([NamedElement.of(bar1)]);
+    });
+
+    it('ignores ancestors deeper than child level', () => {
+      const foo = xml.createElement('foo');
+      const bar1 = xml.createElement('bar');
+      const bar2 = xml.createElement('bar');
+
+      foo.append(bar1);
+      bar1.append(bar2);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.children('bar', 'baz')).toStrictEqual([NamedElement.of(bar1)]);
+    });
+
+    it('returns all children when tag name is not given', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      const baz = xml.createElement('baz');
+      const bam = xml.createElement('bam');
+
+      foo.append(bar, baz);
+      bar.append(bam);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.children()).toStrictEqual([NamedElement.of(bar), NamedElement.of(baz)]);
+    });
+  });
 });
