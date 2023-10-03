@@ -21,3 +21,9 @@ export const NOTE_DURATION_DENOMINATORS = new Enum([
   '1/2',
   '',
 ] as const);
+
+/**
+ * The direction of the stem of a note.
+ */
+export type StemDirection = EnumValues<typeof STEM_DIRECTIONS>;
+export const STEM_DIRECTIONS = new Enum(['up', 'down', 'none', 'auto'] as const);

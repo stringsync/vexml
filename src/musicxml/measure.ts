@@ -3,6 +3,10 @@ import { Barline } from './barline';
 import { NamedElement, max } from '@/util';
 import { Note } from './note';
 import { Print } from './print';
+import { Backup } from './backup';
+import { Forward } from './forward';
+
+export type MeasureEntry = Note | Backup | Forward;
 
 /**
  * Measure is a basic musical data container that has notes and rests.
@@ -37,9 +41,20 @@ export class Measure {
     return this.element.all('attributes').map((element) => new Attributes(element));
   }
 
-  /** Returns the notes of the measure. */
-  getNotes(): Note[] {
-    return this.element.all('note').map((element) => new Note(element));
+  /** Returns the entries of the measure. */
+  getEntries(): MeasureEntry[] {
+    return this.element.children('note', 'backup', 'forward').map((element) => {
+      if (element.isNamed('note')) {
+        return new Note(element);
+      }
+      if (element.isNamed('backup')) {
+        return new Backup(element);
+      }
+      if (element.isNamed('forward')) {
+        return new Forward(element);
+      }
+      throw new Error(`unexpected element: <${element.name}>`);
+    });
   }
 
   /** Returns the barlines of the measure. */
