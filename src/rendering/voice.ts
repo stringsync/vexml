@@ -351,7 +351,7 @@ class VoiceEntryDataFactory {
     }
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
-    // should be on top, middle, and bottom easier.
+    // should be on top, middle, and bottom easily.
     util.sortBy(notes, (entry) => -this.toStaveNoteLine(entry.note));
 
     if (notes.length > 1) {
