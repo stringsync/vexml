@@ -330,16 +330,16 @@ describe(Note, () => {
       expect(note.getNotehead()).toBe(notehead);
     });
 
-    it(`defaults to 'normal' when the notehead is invalid`, () => {
+    it(`defaults to null when the notehead is invalid`, () => {
       const node = xml.note({ notehead: xml.notehead({ value: 'foo' }) });
       const note = new Note(node);
-      expect(note.getNotehead()).toBe('normal');
+      expect(note.getNotehead()).toBeNull();
     });
 
-    it(`defaults to 'normal' when the notehead is missing`, () => {
+    it(`defaults to null when the notehead is missing`, () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getNotehead()).toBe('normal');
+      expect(note.getNotehead()).toBeNull();
     });
   });
 
@@ -372,16 +372,16 @@ describe(Note, () => {
       expect(note.getNoteheadSuffix()).toBe(t.suffix);
     });
 
-    it(`defaults to 'N' for invalid noteheads`, () => {
+    it(`defaults to empty string for invalid noteheads`, () => {
       const node = xml.note({ notehead: xml.notehead({ value: 'asdf' }) });
       const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBe('N');
+      expect(note.getNoteheadSuffix()).toBeEmpty();
     });
 
     it('defaults to empty string for missing noteheads', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBe('N');
+      expect(note.getNoteheadSuffix()).toBeEmpty();
     });
   });
 
