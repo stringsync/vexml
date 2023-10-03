@@ -1,9 +1,8 @@
 import { Beam } from '@/musicxml/beam';
 import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/musicxml/enums';
-import { Measure } from '@/musicxml/measure';
 import { Notations } from '@/musicxml/notations';
 import { Note } from '@/musicxml/note';
-import { xml, first } from '@/util';
+import { xml } from '@/util';
 import { Lyric } from '@/musicxml/lyric';
 
 describe(Note, () => {
