@@ -6,12 +6,13 @@ import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
 import { NoteDurationDenominator, StemDirection } from './enums';
+import { GhostNote, GhostNoteRendering } from './ghostnote';
 
 /** A component of a Voice. */
-export type VoiceEntry = Note | Chord | Rest;
+export type VoiceEntry = Note | Chord | Rest | GhostNote;
 
 /** The result rendering a VoiceEntry. */
-export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering;
+export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering | GhostNoteRendering;
 
 /** The result rendering a Voice. */
 export type VoiceRendering = {
@@ -21,6 +22,24 @@ export type VoiceRendering = {
   };
   notes: VoiceEntryRendering[];
 };
+
+type NoteData = {
+  type: 'note';
+  voice: string;
+  note: musicxml.Note;
+  start: number;
+  end: number;
+  stem: StemDirection;
+};
+
+type GhostNoteData = {
+  type: 'ghost';
+  voice: string;
+  start: number;
+  end: number;
+};
+
+type VoiceEntryData = NoteData | GhostNoteData;
 
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
@@ -51,19 +70,8 @@ export class Voice {
   }): Voice[] {
     const quarterNoteDivisions =
       opts.musicXml.measure.getAttributes().flatMap((attribute) => attribute.getQuarterNoteDivisions())[0] ?? 1;
-
-    const entries = opts.musicXml.measure
-      .getNotes()
-      .filter((note) => note.getStaffNumber() === opts.staffNumber)
-      .filter(Voice.canCreateVoiceEntry)
-      .map((note) =>
-        Voice.createVoiceEntry({
-          config: opts.config,
-          note,
-          quarterNoteDivisions,
-          clefType: opts.clefType,
-        })
-      );
+    const clefType = opts.clefType;
+    const config = opts.config;
 
     const timeSignature =
       opts.musicXml.measure
@@ -72,47 +80,92 @@ export class Voice {
         .find((time) => time.getStaffNumber() === opts.staffNumber)
         ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
 
-    // TODO(jared): Iterate through the measure entries and derive the voice entries (and the voices they belong to)
-    // into separate voice elements. You can use ghost notes in case the second voice doesn't start at the beginning
-    // of the measure. I think a state machine could work in two stages: create a mapping of voice -> duration ->
-    // voice entry, then a separate process to figure out how to fill duration gaps into ghost notes. Don't assume
-    // that voice 1 will always be the "anchor" voice.
-
     const factory = new VoiceEntryDataFactory();
-    for (const measureEntry of opts.musicXml.measure.getEntries()) {
-      factory.add(measureEntry);
-    }
+    opts.musicXml.measure
+      .getEntries()
+      .filter(
+        (measureEntry) =>
+          (measureEntry instanceof musicxml.Note && measureEntry.getStaffNumber() === opts.staffNumber) ||
+          measureEntry instanceof musicxml.Forward ||
+          measureEntry instanceof musicxml.Backup
+      )
+      .forEach((measureEntry) => {
+        factory.add(measureEntry);
+      });
 
-    return [new Voice({ config: opts.config, entries, timeSignature })];
-  }
-
-  private static canCreateVoiceEntry(note: musicxml.Note): boolean {
-    return !note.isChordTail() && !note.isGrace();
+    return factory.createVoiceEntryData().map(
+      (entries) =>
+        new Voice({
+          config: opts.config,
+          timeSignature,
+          entries: entries.map((entry) =>
+            this.createVoiceEntry({
+              config,
+              clefType,
+              entry,
+              quarterNoteDivisions,
+            })
+          ),
+        })
+    );
   }
 
   private static createVoiceEntry(opts: {
     config: Config;
-    note: musicxml.Note;
+    entry: VoiceEntryData;
     clefType: musicxml.ClefType;
     quarterNoteDivisions: number;
   }): VoiceEntry {
-    const note = opts.note;
     const config = opts.config;
+    const entry = opts.entry;
     const clefType = opts.clefType;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
-    const durationDenominator = Voice.getDurationDenominator(note, quarterNoteDivisions);
+    const durationDenominator = Voice.getDurationDenominator({
+      duration: entry.end - entry.start,
+      quarterNoteDivisions,
+    });
+
+    if (entry.type === 'ghost') {
+      return GhostNote.create({ durationDenominator });
+    }
+
+    const note = entry.note;
+    const stem = entry.stem;
 
     if (note.isChordHead()) {
-      return Chord.create({ config, musicXml: { note }, clefType, durationDenominator });
+      return Chord.create({
+        config,
+        musicXml: { note },
+        stem,
+        clefType,
+        durationDenominator,
+      });
     }
+
     if (note.isRest()) {
-      return Rest.create({ config, musicXml: { note }, clefType, durationDenominator });
+      return Rest.create({
+        config,
+        musicXml: { note },
+        clefType,
+        durationDenominator,
+      });
     }
-    return Note.create({ config, musicXml: { note }, clefType, durationDenominator });
+
+    return Note.create({
+      config,
+      musicXml: { note },
+      stem,
+      clefType,
+      durationDenominator,
+    });
   }
 
-  private static getDurationDenominator(note: musicxml.Note, quarterNoteDivisions: number): NoteDurationDenominator {
-    switch (note.getType()) {
+  private static getDurationDenominator(opts: {
+    noteType?: musicxml.NoteType;
+    duration: number;
+    quarterNoteDivisions: number;
+  }): NoteDurationDenominator {
+    switch (opts.noteType) {
       case '1024th':
         return '1024';
       case '512th':
@@ -145,9 +198,7 @@ export class Voice {
 
     // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
     // <duration>.
-    const duration = note.getDuration();
-
-    switch (duration / quarterNoteDivisions) {
+    switch (opts.duration / opts.quarterNoteDivisions) {
       case 4:
         return '1';
       case 2:
@@ -187,6 +238,9 @@ export class Voice {
         if (entry instanceof Rest) {
           return entry.clone();
         }
+        if (entry instanceof GhostNote) {
+          return entry.clone();
+        }
         // If this error is thrown, this is a problem with vexml, not the musicXML document.
         throw new Error(`unexpected voice entry: ${entry}`);
       }),
@@ -206,6 +260,9 @@ export class Voice {
       if (entry instanceof Rest) {
         return entry.render({ voiceEntryCount: this.entries.length });
       }
+      if (entry instanceof GhostNote) {
+        return entry.render();
+      }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${entry}`);
     });
@@ -218,6 +275,8 @@ export class Voice {
           return voiceEntryRendering.notes[0].vexflow.staveNote;
         case 'rest':
           return voiceEntryRendering.vexflow.staveNote;
+        case 'ghostnote':
+          return voiceEntryRendering.vexflow.ghostNote;
         default:
           throw new Error(`unexpected voice entry rendering: ${voiceEntryRendering}`);
       }
@@ -242,24 +301,6 @@ export class Voice {
       .addTickables(vfTickables);
   }
 }
-
-type NoteData = {
-  type: 'note';
-  voice: string;
-  note: musicxml.Note;
-  start: number;
-  end: number;
-  stem: StemDirection;
-};
-
-type GhostNoteData = {
-  type: 'ghost';
-  voice: string;
-  start: number;
-  end: number;
-};
-
-type VoiceEntryData = NoteData | GhostNoteData;
 
 /** A state machine that takes musicxml.MeasureEntry[] as events to produce VoiceEntry[][]. */
 class VoiceEntryDataFactory {
@@ -307,7 +348,8 @@ class VoiceEntryDataFactory {
       }
     }
 
-    // Sort the notes by descending line based on the entry's highest note.
+    // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
+    // should be on top, middle, and bottom easier.
     util.sortBy(notes, (entry) => -this.toStaveNoteLine(entry.note));
 
     if (notes.length > 1) {
