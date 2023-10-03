@@ -1,10 +1,11 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
-import { NoteDurationDenominator } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest;
@@ -77,45 +78,10 @@ export class Voice {
     // voice entry, then a separate process to figure out how to fill duration gaps into ghost notes. Don't assume
     // that voice 1 will always be the "anchor" voice.
 
-    const voiceEventMachine = new VoiceEventStateMachine();
+    const factory = new VoiceEntryDataFactory();
     for (const measureEntry of opts.musicXml.measure.getEntries()) {
-      voiceEventMachine.process(measureEntry);
+      factory.add(measureEntry);
     }
-
-    const events = voiceEventMachine.getVoiceEvents().sort((a, b) => a.at - b.at);
-    const voiceNames = voiceEventMachine.getVoiceNames();
-
-    // A mapping of voice names to the last division a note ended.
-    const ends = voiceNames.reduce<{ [voiceName: string]: number }>((ends, voiceName) => {
-      ends[voiceName] = 0;
-      return ends;
-    }, {});
-
-    // A mapping of voice names to its voice entries.
-    const voiceEntries = voiceNames.reduce<{ [voiceName: string]: string[] }>((voiceEntries, voiceName) => {
-      voiceEntries[voiceName] = [];
-      return voiceEntries;
-    }, {});
-
-    for (const event of events) {
-      const voiceName = event.voiceName;
-
-      const ghostNoteStart = ends[voiceName];
-      const ghostNoteEnd = event.at;
-
-      const noteStart = event.at;
-      const noteEnd = noteStart + event.note.getDuration();
-
-      const ghostNoteDuration = ghostNoteEnd - ghostNoteStart;
-      if (ghostNoteDuration > 0) {
-        voiceEntries[voiceName].push(`ghost note (${ghostNoteStart}, ${ghostNoteEnd})`);
-      }
-      voiceEntries[voiceName].push(`note (${noteStart}, ${noteEnd})`);
-
-      ends[voiceName] = noteEnd;
-    }
-
-    // console.log(voiceEntries, quarterNoteDivisions);
 
     return [new Voice({ config: opts.config, entries, timeSignature })];
   }
@@ -277,19 +243,31 @@ export class Voice {
   }
 }
 
-/** An intermediate data structure that facilitates the calculation of what notes belong to what voices. */
-type VoiceEvent = {
-  voiceName: string;
+type NoteData = {
+  type: 'note';
+  voice: string;
   note: musicxml.Note;
-  at: number;
+  start: number;
+  end: number;
+  stem: StemDirection;
 };
 
-/** A factory that transforms musicxml.MeasureEntry[] to VoiceEvent[]. */
-class VoiceEventStateMachine {
-  private voiceEvents = new Array<VoiceEvent>();
-  private divisions = 0;
+type GhostNoteData = {
+  type: 'ghost';
+  voice: string;
+  start: number;
+  end: number;
+};
 
-  process(measureEntry: musicxml.MeasureEntry): void {
+type VoiceEntryData = NoteData | GhostNoteData;
+
+/** A state machine that takes musicxml.MeasureEntry[] as events to produce VoiceEntry[][]. */
+class VoiceEntryDataFactory {
+  private data: { [voice: string]: VoiceEntryData[] } = {};
+  private divisions: number = 0;
+
+  /** Adds a measure entry to the data. */
+  add(measureEntry: musicxml.MeasureEntry): void {
     if (measureEntry instanceof musicxml.Note) {
       this.onNote(measureEntry);
     }
@@ -301,25 +279,64 @@ class VoiceEventStateMachine {
     }
   }
 
-  /** Returns the voice events. */
-  getVoiceEvents(): VoiceEvent[] {
-    return this.voiceEvents;
-  }
+  /** Creates the voice entry groups based on the data provided. */
+  createVoiceEntryData(): VoiceEntryData[][] {
+    // TODO: It's likely that the stem direction algorithm doesn't cover edge cases well. Maybe draw some
+    // inspiration from OSMD.
+    // See https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/68320ab5fe824cb30850e5d5f357dfd15e7cd157/src/VexFlowPatch/src/stavenote.js#L57
 
-  /** Returns the voice names. */
-  getVoiceNames(): string[] {
-    const seen = new Set<string>();
-    const voiceNames = new Array<string>();
+    // NOTE: Copy the data and copy its values so we can mutate entries without affecting the original.
+    const data = Object.entries(this.data).reduce<{ [voice: string]: VoiceEntryData[] }>((data, [key, value]) => {
+      data[key] = value.map((v) => ({ ...v }));
+      return data;
+    }, {});
 
-    for (const voiceEvent of this.voiceEvents) {
-      const voiceName = voiceEvent.voiceName;
-      if (!seen.has(voiceName)) {
-        voiceNames.push(voiceName);
+    const voices = Object.keys(data);
+
+    // Return note data that corresponds to audible notes. This is useful in this context because we don't want to
+    // account for rests when determining stems.
+    const isNonRestNoteData = (entry: VoiceEntryData): entry is NoteData =>
+      entry.type === 'note' && !entry.note.isRest();
+
+    // Get the first non-rest note data.
+    const notes = new Array<NoteData>();
+    for (const voice of voices) {
+      const note = data[voice].find(isNonRestNoteData);
+      if (note) {
+        notes.push(note);
       }
-      seen.add(voiceName);
     }
 
-    return voiceNames;
+    // Sort the notes by descending line based on the entry's highest note.
+    util.sortBy(notes, (entry) => -this.toStaveNoteLine(entry.note));
+
+    if (notes.length > 1) {
+      const stems: { [voice: string]: StemDirection } = {};
+
+      const top = util.first(notes)!;
+      const middle = notes.slice(1, -1);
+      const bottom = util.last(notes)!;
+
+      stems[top.voice] = 'up';
+      stems[bottom.voice] = 'down';
+      for (const note of middle) {
+        stems[note.voice] = 'none';
+      }
+
+      const setStem = (stem: StemDirection, notes: NoteData[]): void =>
+        notes
+          // Only change stems that haven't been explicitly specified.
+          .filter((note) => note.stem === 'auto')
+          .forEach((note) => {
+            note.stem = stem;
+          });
+
+      for (const voice of voices) {
+        setStem(stems[voice], data[voice].filter(isNonRestNoteData));
+      }
+    }
+
+    return Object.values(data);
   }
 
   private onNote(note: musicxml.Note): void {
@@ -327,17 +344,41 @@ class VoiceEventStateMachine {
     if (note.isGrace()) {
       return;
     }
+
     if (note.isChordTail()) {
       return;
     }
 
-    this.voiceEvents.push({
-      voiceName: note.getVoice(),
-      at: this.divisions,
-      note: note,
+    const voice = note.getVoice();
+    this.data[voice] ??= [];
+
+    const ghostNoteStart = util.last(this.data[voice])?.end ?? 0;
+    const ghostNoteEnd = this.divisions;
+    const ghostNoteDuration = ghostNoteEnd - ghostNoteStart;
+
+    if (ghostNoteDuration > 0) {
+      this.data[voice].push({
+        type: 'ghost',
+        voice,
+        start: ghostNoteStart,
+        end: ghostNoteEnd,
+      });
+    }
+
+    const noteDuration = note.getDuration();
+    const noteStart = this.divisions;
+    const noteEnd = noteStart + noteDuration;
+
+    this.data[voice].push({
+      type: 'note',
+      voice,
+      note,
+      start: noteStart,
+      end: noteEnd,
+      stem: this.getStem(note),
     });
 
-    this.divisions += note.getDuration();
+    this.divisions += noteDuration;
   }
 
   private onBackup(backup: musicxml.Backup): void {
@@ -346,5 +387,34 @@ class VoiceEventStateMachine {
 
   private onForward(forward: musicxml.Forward): void {
     this.divisions += forward.getDuration();
+  }
+
+  private getStem(note: musicxml.Note): StemDirection {
+    switch (note.getStem()) {
+      case 'up':
+        return 'up';
+      case 'down':
+        return 'down';
+      case 'none':
+        return 'none';
+      default:
+        return 'auto';
+    }
+  }
+
+  private toStaveNoteLine(note: musicxml.Note): number {
+    return new vexflow.StaveNote({
+      duration: '4',
+      keys: [note, ...note.getChordTail()].map((note) => {
+        let key = note.getPitch();
+
+        const suffix = note.getNoteheadSuffix();
+        if (suffix) {
+          key += `/${suffix}`;
+        }
+
+        return key;
+      }),
+    }).getKeyLine(0);
   }
 }
