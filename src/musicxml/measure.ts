@@ -41,11 +41,6 @@ export class Measure {
     return this.element.all('attributes').map((element) => new Attributes(element));
   }
 
-  /** Returns the notes of the measure. */
-  getNotes(): Note[] {
-    return this.element.all('note').map((element) => new Note(element));
-  }
-
   /** Returns the entries of the measure. */
   getEntries(): MeasureEntry[] {
     return this.element.children('note', 'backup', 'forward').map((element) => {

@@ -88,24 +88,6 @@ describe(Measure, () => {
     });
   });
 
-  describe('getNotes', () => {
-    it('returns the notes of the measure', () => {
-      const note1 = xml.note();
-      const note2 = xml.note();
-      const node = xml.measure({ notes: [note1, note2] });
-
-      const measure = new Measure(node);
-
-      expect(measure.getNotes()).toStrictEqual([new Note(note1), new Note(note2)]);
-    });
-
-    it('returns an empty array when there are no notes', () => {
-      const node = xml.measure();
-      const measure = new Measure(node);
-      expect(measure.getNotes()).toBeEmpty();
-    });
-  });
-
   describe('getBarlines', () => {
     it('returns the barlines of the measure', () => {
       const barline1 = xml.barline();
