@@ -388,24 +388,30 @@ describe(Note, () => {
 
   describe('isChordHead', () => {
     it('returns true when the next note has a chord element', () => {
-      const node = xml.measure({ notes: [xml.note(), xml.note({ chord: xml.chord() })] });
-      const measure = new Measure(node);
-      const note = first(measure.getNotes())!;
-      expect(note.isChordHead()).toBeTrue();
+      const note1 = xml.note();
+      const note2 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2] });
+
+      expect(new Note(note1).isChordHead()).toBeTrue();
     });
 
     it('returns false when the next note does not have a chord element', () => {
-      const node = xml.measure({ notes: [xml.note(), xml.note()] });
-      const measure = new Measure(node);
-      const note = first(measure.getNotes())!;
-      expect(note.isChordHead()).toBeFalse();
+      const note1 = xml.note();
+      const note2 = xml.note();
+
+      xml.measure({ notes: [note1, note2] });
+
+      expect(new Note(note1).isChordHead()).toBeFalse();
     });
 
     it('returns false when the current note has a chord element', () => {
-      const node = xml.measure({ notes: [xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })] });
-      const measure = new Measure(node);
-      const note = first(measure.getNotes())!;
-      expect(note.isChordHead()).toBeFalse();
+      const note1 = xml.note({ chord: xml.chord() });
+      const note2 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2] });
+
+      expect(new Note(note1).isChordHead()).toBeFalse();
     });
 
     it('returns false when there is no next note', () => {
@@ -417,55 +423,65 @@ describe(Note, () => {
 
   describe('isChordTail', () => {
     it('returns true when the note has a chord element', () => {
-      const node = xml.measure({ notes: [xml.note(), xml.note({ chord: xml.chord() })] });
-      const measure = new Measure(node);
-      const note = measure.getNotes()[1];
-      expect(note.isChordTail()).toBeTrue();
+      const note1 = xml.note();
+      const note2 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2] });
+
+      expect(new Note(note2).isChordTail()).toBeTrue();
     });
 
     it('returns false when the note does not have a chord element', () => {
-      const node = xml.measure({ notes: [xml.note(), xml.note()] });
-      const measure = new Measure(node);
-      const note = measure.getNotes()[1];
-      expect(note.isChordTail()).toBeFalse();
+      const note1 = xml.note();
+      const note2 = xml.note();
+
+      xml.measure({ notes: [note1, note2] });
+
+      expect(new Note(note2).isChordTail()).toBeFalse();
     });
   });
 
   describe('getChordTail', () => {
     it('returns the chord tail of a note that is a chord head', () => {
-      const node = xml.measure({
-        notes: [xml.note(), xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })],
-      });
-      const measure = new Measure(node);
-      const [head, ...tail] = measure.getNotes();
-      expect(head.getChordTail()).toStrictEqual(tail);
+      const note1 = xml.note();
+      const note2 = xml.note({ chord: xml.chord() });
+      const note3 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2, note3] });
+
+      expect(new Note(note1).getChordTail()).toStrictEqual([new Note(note2), new Note(note3)]);
     });
 
     it('returns an empty array if the note is not a chord head', () => {
-      const node = xml.measure({
-        notes: [xml.note(), xml.note(), xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })],
-      });
-      const measure = new Measure(node);
-      const note = first(measure.getNotes())!;
-      expect(note.getChordTail()).toBeEmpty();
+      const note1 = xml.note();
+      const note2 = xml.note();
+      const note3 = xml.note({ chord: xml.chord() });
+      const note4 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2, note3, note4] });
+
+      expect(new Note(note1).getChordTail()).toBeEmpty();
     });
 
     it('returns an empty array if the note is part of a chord tail', () => {
-      const node = xml.measure({
-        notes: [xml.note(), xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() })],
-      });
-      const measure = new Measure(node);
-      const note = measure.getNotes()[1];
-      expect(note.getChordTail()).toBeEmpty();
+      const note1 = xml.note();
+      const note2 = xml.note({ chord: xml.chord() });
+      const note3 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2, note3] });
+
+      expect(new Note(note2).getChordTail()).toBeEmpty();
     });
 
     it('does not include non-chord tail notes before or after the chord', () => {
-      const node = xml.measure({
-        notes: [xml.note(), xml.note(), xml.note({ chord: xml.chord() }), xml.note({ chord: xml.chord() }), xml.note()],
-      });
-      const measure = new Measure(node);
-      const notes = measure.getNotes();
-      expect(notes[1].getChordTail()).toStrictEqual([notes[2], notes[3]]);
+      const note1 = xml.note();
+      const note2 = xml.note();
+      const note3 = xml.note({ chord: xml.chord() });
+      const note4 = xml.note({ chord: xml.chord() });
+
+      xml.measure({ notes: [note1, note2, note3, note4] });
+
+      expect(new Note(note2).getChordTail()).toStrictEqual([new Note(note3), new Note(note4)]);
     });
   });
 
