@@ -120,17 +120,23 @@ export class Voice {
     const entry = opts.entry;
     const clefType = opts.clefType;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
-    const durationDenominator = Voice.getDurationDenominator({
-      duration: entry.end - entry.start,
-      quarterNoteDivisions,
-    });
 
     if (entry.type === 'ghost') {
-      return GhostNote.create({ durationDenominator });
+      return GhostNote.create({
+        durationDenominator: Voice.getDurationDenominator({
+          duration: entry.end - entry.start,
+          quarterNoteDivisions,
+        }),
+      });
     }
 
     const note = entry.note;
     const stem = entry.stem;
+    const durationDenominator = Voice.getDurationDenominator({
+      noteType: note.getType(),
+      duration: note.getDuration(),
+      quarterNoteDivisions,
+    });
 
     if (note.isChordHead()) {
       return Chord.create({
@@ -161,7 +167,7 @@ export class Voice {
   }
 
   private static getDurationDenominator(opts: {
-    noteType?: musicxml.NoteType;
+    noteType?: musicxml.NoteType | null;
     duration: number;
     quarterNoteDivisions: number;
   }): NoteDurationDenominator {
