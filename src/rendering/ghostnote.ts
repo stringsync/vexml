@@ -9,22 +9,22 @@ export type GhostNoteRendering = {
 };
 
 export class GhostNote {
-  private duration: NoteDurationDenominator;
+  private durationDenominator: NoteDurationDenominator;
 
-  private constructor(opts: { duration: NoteDurationDenominator }) {
-    this.duration = opts.duration;
+  private constructor(opts: { durationDenominator: NoteDurationDenominator }) {
+    this.durationDenominator = opts.durationDenominator;
   }
 
-  static create(opts: { duration: NoteDurationDenominator }): GhostNote {
-    return new GhostNote({ duration: opts.duration });
+  static create(opts: { durationDenominator: NoteDurationDenominator }): GhostNote {
+    return new GhostNote({ durationDenominator: opts.durationDenominator });
   }
 
   clone(): GhostNote {
-    return new GhostNote({ duration: this.duration });
+    return new GhostNote({ durationDenominator: this.durationDenominator });
   }
 
   render(): GhostNoteRendering {
-    const ghostNote = new vexflow.GhostNote({ duration: this.duration });
+    const ghostNote = new vexflow.GhostNote({ duration: this.durationDenominator });
 
     return {
       type: 'ghostnote',

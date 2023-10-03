@@ -5,7 +5,7 @@ import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
-import { NoteDurationDenominator } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
@@ -32,7 +32,7 @@ export type NoteRendering = {
 export class Note {
   private config: Config;
   private key: string;
-  private stem: musicxml.Stem | null;
+  private stem: StemDirection;
   private lyrics: Lyric[];
   private beams: Beam[];
   private accidental: Accidental | null;
@@ -43,7 +43,7 @@ export class Note {
   private constructor(opts: {
     config: Config;
     key: string;
-    stem: musicxml.Stem | null;
+    stem: StemDirection;
     lyrics: Lyric[];
     beams: Beam[];
     accidental: Accidental | null;
@@ -68,6 +68,7 @@ export class Note {
     musicXml: {
       note: musicxml.Note;
     };
+    stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
   }): Note {
@@ -87,7 +88,7 @@ export class Note {
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
       .map((lyric) => Lyric.create({ lyric }));
-    const stem = note.getStem();
+    const stem = opts.stem;
     const beams = note.getBeams().map((beam) => Beam.create({ musicXml: { beam } }));
     const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
@@ -138,7 +139,7 @@ export class Note {
 
     const keys = notes.map((note) => note.key);
 
-    const { autoStem, stemDirection } = Note.getStemParameters(notes);
+    const { autoStem, stemDirection } = Note.getStemParams(notes);
 
     const vfStaveNote = new vexflow.StaveNote({
       keys: notes.map((note) => note.key),
@@ -189,17 +190,17 @@ export class Note {
     }));
   }
 
-  private static getStemParameters(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
-    const autoStem = notes.every((note) => !note.stem);
-    if (autoStem) {
-      return { autoStem };
+  private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
+    switch (notes[0]?.stem) {
+      case 'up':
+        return { stemDirection: vexflow.Stem.UP };
+      case 'down':
+        return { stemDirection: vexflow.Stem.DOWN };
+      case 'none':
+        return {};
+      default:
+        return { autoStem: true };
     }
-
-    // TODO: Figure out what to do if some notes in a multivoice or chord have different specified stem directions.
-    // https://sites.coloradocollege.edu/musicengraving/engraving-convention/notes-and-stems/ has some information,
-    // but I'm not sure if vexflow has this capability. For now, we just auto stem since it'll be right ~most of the
-    // time.
-    return { autoStem: true };
   }
 
   /** Clones the Note. */
