@@ -33,13 +33,13 @@ describe(Note, () => {
       expect(note.getType()).toBe(noteType);
     });
 
-    it(`returns null when note type is missing`, () => {
+    it('returns null when note type is missing', () => {
       const node = xml.note();
       const note = new Note(node);
       expect(note.getType()).toBeNull();
     });
 
-    it(`returns null when note type is invalid`, () => {
+    it('returns null when note type is invalid', () => {
       const node = xml.note({ type: xml.type({ textContent: 'foo' }) });
       const note = new Note(node);
       expect(note.getType()).toBeNull();
