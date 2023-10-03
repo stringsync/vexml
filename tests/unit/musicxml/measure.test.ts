@@ -144,4 +144,34 @@ describe(Measure, () => {
       expect(measure.getEntries()).toBeEmpty();
     });
   });
+
+  describe('getEndingMeasure', () => {
+    it('returns the ending measure for multi rest measures', () => {
+      const measure1 = xml.measure({
+        number: '1',
+        attributes: [
+          xml.attributes({
+            measureStyles: [
+              xml.measureStyle({
+                multipleRest: xml.multipleRest({ multipleRestCount: 3 }),
+              }),
+            ],
+          }),
+        ],
+      });
+      const measure2 = xml.measure({ number: '2' });
+      const measure3 = xml.measure({ number: '3' });
+      xml.part({ measures: [measure1, measure2, measure3] });
+
+      expect(new Measure(measure1).getEndingMeasure()).toStrictEqual(new Measure(measure3));
+    });
+
+    it('returns itself if its not an multi rest measure', () => {
+      const measure1 = xml.measure({ number: '1' });
+      const measure2 = xml.measure({ number: '2' });
+      xml.part({ measures: [measure1, measure2] });
+
+      expect(new Measure(measure1).getEndingMeasure()).toStrictEqual(new Measure(measure1));
+    });
+  });
 });
