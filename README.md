@@ -74,7 +74,9 @@ To bypass Docker, run:
 yarn jest
 ```
 
-This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshots__`, which is ignored by git. **It is important that you run it for the first time on a branch without any changes.** Doing this on a dirty branch could cause you to have an incorrect snapshot, which may cause problems when developing. You can delete the directory at any time, and they'll be regenerated the next time the test suite is run. Alternatively, you can run the following command to update the snapshots on a clean branch:
+This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshots__`, which is ignored by git. **It is important that you run it for the first time on a branch without any changes.** Doing this on a dirty branch could cause you to have an incorrect snapshot, which may cause problems when developing.
+
+If you suspect issues with the tmp snapshots, run the following command to retake the snapshots (which is scripted to do this at origin/master):
 
 ```
 yarn resnap
