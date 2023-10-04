@@ -4,6 +4,8 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Title, TitleRendering } from './title';
+import { MultiRestRendering } from './multirest';
+import { ChorusRendering } from './chorus';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -141,7 +143,9 @@ export class Score {
 
     // Render vexflow.MultiMeasureRest elements.
     staves
-      .map((stave) => stave.multiRest?.vexflow.multiMeasureRest)
+      .map((stave) => stave.entry)
+      .filter((entry): entry is MultiRestRendering => entry.type === 'multirest')
+      .map((entry) => entry.vexflow.multiMeasureRest)
       .filter(
         (vfMultiMeasureRest): vfMultiMeasureRest is vexflow.MultiMeasureRest =>
           vfMultiMeasureRest instanceof vexflow.MultiMeasureRest
@@ -152,7 +156,9 @@ export class Score {
 
     // Render vexflow.Voice elements.
     staves
-      .flatMap((stave) => stave.voices)
+      .flatMap((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((entry) => entry.voices)
       .map((voice) => voice.vexflow.voice)
       .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();

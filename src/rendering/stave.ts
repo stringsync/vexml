@@ -1,9 +1,14 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Voice, VoiceRendering } from './voice';
 import { Config } from './config';
 import * as util from '@/util';
 import { MultiRest, MultiRestRendering } from './multirest';
+import { Chorus, ChorusRendering } from './chorus';
+
+/** A possible component of a Stave. */
+export type StaveEntry = Chorus | MultiRest;
+
+export type StaveEntryRendering = ChorusRendering | MultiRestRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -15,8 +20,7 @@ export type StaveRendering = {
     begginningBarlineType: vexflow.BarlineType;
     endBarlineType: vexflow.BarlineType;
   };
-  voices: VoiceRendering[];
-  multiRest: MultiRestRendering | null;
+  entry: StaveEntryRendering;
 };
 
 /** The modifiers of a stave. */
@@ -37,8 +41,7 @@ export class Stave {
   private keySignature: string;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
-  private voices: Voice[];
-  private multiRest: MultiRest | null;
+  private entry: StaveEntry;
 
   private constructor(opts: {
     config: Config;
@@ -48,8 +51,7 @@ export class Stave {
     keySignature: string;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
-    voices: Voice[];
-    multiRest: MultiRest | null;
+    entry: StaveEntry;
   }) {
     this.config = opts.config;
     this.staffNumber = opts.staffNumber;
@@ -58,8 +60,7 @@ export class Stave {
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
     this.clefType = opts.clefType;
-    this.voices = opts.voices;
-    this.multiRest = opts.multiRest;
+    this.entry = opts.entry;
   }
 
   /** Creates a Stave. */
@@ -123,14 +124,13 @@ export class Stave {
         .flatMap((attribute) => attribute.getMeasureStyles())
         .find((measureStyle) => measureStyle.getStaffNumber() === opts.staffNumber)
         ?.getMultipleRestCount() ?? 0;
-    const multiRest = multiRestCount > 0 ? MultiRest.create({ count: multiRestCount }) : null;
 
-    // TODO: Support multiple voices per stave.
-    const voices =
-      // No need to create voices if we're rendering a MultiRest.
+    const entry =
       multiRestCount > 0
-        ? []
-        : Voice.createMulti({
+        ? MultiRest.create({
+            count: multiRestCount,
+          })
+        : Chorus.create({
             config: opts.config,
             musicXml: { measure: opts.musicXml.measure },
             staffNumber: opts.staffNumber,
@@ -145,25 +145,22 @@ export class Stave {
       keySignature,
       beginningBarStyle,
       endBarStyle,
-      voices,
-      multiRest,
+      entry,
     });
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(): number {
-    if (this.multiRest) {
+    if (this.entry instanceof MultiRest) {
       // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
       // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
       // the moment.
       return this.config.multiMeasureRestWidth;
     }
 
-    if (this.voices.length > 0) {
-      const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
-      const vfFormatter = new vexflow.Formatter();
-      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.measurePadding;
+    if (this.entry instanceof Chorus) {
+      return this.entry.getMinJustifyWidth();
     }
 
     return 0;
@@ -188,7 +185,7 @@ export class Stave {
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
-    return this.multiRest?.getCount() ?? 0;
+    return this.entry instanceof MultiRest ? this.entry.getCount() : 0;
   }
 
   /** Cleans the Stave. */
@@ -201,8 +198,7 @@ export class Stave {
       keySignature: this.keySignature,
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
-      voices: this.voices.map((voice) => voice.clone()),
-      multiRest: this.multiRest?.clone() ?? null,
+      entry: this.entry.clone(),
     });
   }
 
@@ -232,23 +228,24 @@ export class Stave {
       modifiers: opts.modifiers,
     });
 
-    const multiRestRendering = this.multiRest?.render() ?? null;
-    if (multiRestRendering) {
-      multiRestRendering.vexflow.multiMeasureRest.setStave(vfStave);
-    }
+    const staveEntryRendering = this.entry.render();
 
-    const voiceRenderings = new Array<VoiceRendering>();
-    for (const voice of this.voices) {
-      const voiceRendering = voice.render();
-      voiceRenderings.push(voiceRendering);
-      voiceRendering.vexflow.voice.setStave(vfStave);
-    }
+    switch (staveEntryRendering.type) {
+      case 'multirest':
+        staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
+        break;
+      case 'chorus':
+        const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
+        for (const vfVoice of vfVoices) {
+          vfVoice.setStave(vfStave);
+        }
 
-    const vfVoices = voiceRenderings.map((voiceRendering) => voiceRendering.vexflow.voice);
-    const vfTickables = vfVoices.flatMap((vfVoices) => vfVoices.getTickables());
-    if (vfTickables.length > 0) {
-      const vfFormatter = new vexflow.Formatter();
-      vfFormatter.joinVoices(vfVoices).formatToStave(vfVoices, vfStave, { alignRests: true });
+        const vfTickables = vfVoices.flatMap((vfVoice) => vfVoice.getTickables());
+        if (vfTickables.length > 0) {
+          // TODO: Use Formatter.format instead of Formatter.formatToStave so we have more control over rendering.
+          new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+        }
+        break;
     }
 
     return {
@@ -260,8 +257,7 @@ export class Stave {
         begginningBarlineType: this.getBeginningBarlineType(),
         endBarlineType: this.getEndBarlineType(),
       },
-      voices: voiceRenderings,
-      multiRest: multiRestRendering,
+      entry: staveEntryRendering,
     };
   }
 
