@@ -90,7 +90,7 @@ To run a debugger, run:
 yarn debug
 ```
 
-If you're using VSCode, open the debugging tool and launch `Attach`. You can set breakpoints in VSCode or insert `debugger` statements to cause execution to pause.
+If you're using VSCode, open the debugging tool and launch `Attach to Process`. You can set breakpoints in VSCode or insert `debugger` statements to cause execution to pause.
 
 If you're not using VSCode, open Chrome and visit chrome://inspect. You should see a virtual device that starts with `./node_modules/.bin/jest` with an "inspect" button. Clicking this will allow you to use the Chrome debugger.
 

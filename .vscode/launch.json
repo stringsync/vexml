@@ -2,9 +2,9 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Attach to Process",
       "type": "node",
       "request": "attach",
-      "name": "Attach",
       "port": 9229
     }
   ]
