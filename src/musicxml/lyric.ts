@@ -27,9 +27,7 @@ export class Lyric {
   getComponents(): LyricComponent[] {
     const components = new Array<LyricComponent>();
 
-    for (const child of this.element.native().children) {
-      const element = NamedElement.of(child);
-
+    for (const element of this.element.children('syllabic', 'text', 'elision')) {
       if (element.isNamed('syllabic')) {
         components.push(this.createSyllabic(element));
       } else if (element.isNamed('text')) {

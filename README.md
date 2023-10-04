@@ -68,13 +68,21 @@ These commands are just an alias for `jest`, so you use all the [jest CLI option
 yarn test --watchAll
 ```
 
+To bypass Docker, run:
+
+```
+yarn jest
+```
+
+This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshots__`, which is ignored by git. **It is important that you run it for the first time on a branch without any changes.** Doing this on a dirty branch could cause you to have an incorrect snapshot, which may cause problems when developing. You can delete the directory at any time, and they'll be regenerated the next time the test suite is run.
+
 ### Snapshots
 
 This library uses [americanexpress/jest-image-snapshot](https://github.com/americanexpress/jest-image-snapshot) for image-based snapshot tests.
 
 #### Diffs
 
-You can see diff images in the `__diff_output__` directory (nested under `__image_snapshots__`). Images here are ignored by git, but allow you to see what changed. The order of images are: snapshot, diff, proposed.
+You can see diff images in the `__diff_output__` directory (nested under `__image_snapshots__`). Images here are ignored by git, but allow you to see what changed. The order of images are: snapshot, diff, received.
 
 #### Updating Snapshots
 

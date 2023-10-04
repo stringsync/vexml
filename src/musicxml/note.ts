@@ -106,8 +106,8 @@ export class Note {
   }
 
   /** Returns the notehead of the note. */
-  getNotehead(): Notehead {
-    return this.element.first('notehead')?.content().enum(NOTEHEADS) ?? 'normal';
+  getNotehead(): Notehead | null {
+    return this.element.first('notehead')?.content().enum(NOTEHEADS) ?? null;
   }
 
   /** Returns the notehead suffix of the note. Defaults to ''. */
