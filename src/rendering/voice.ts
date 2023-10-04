@@ -328,10 +328,6 @@ class VoiceEntryDataFactory {
 
   /** Creates the voice entry groups based on the data provided. */
   createVoiceEntryData(): VoiceEntryData[][] {
-    // TODO: It's likely that the stem direction algorithm doesn't cover edge cases well. Maybe draw some
-    // inspiration from OSMD.
-    // See https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/68320ab5fe824cb30850e5d5f357dfd15e7cd157/src/VexFlowPatch/src/stavenote.js#L57
-
     // NOTE: Copy the data and copy its values so we can mutate entries without affecting the original.
     const data = Object.entries(this.data).reduce<{ [voice: string]: VoiceEntryData[] }>((data, [key, value]) => {
       data[key] = value.map((v) => ({ ...v }));
@@ -355,7 +351,7 @@ class VoiceEntryDataFactory {
     }
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
-    // should be on top, middle, and bottom easier.
+    // should be on top, middle, and bottom easily.
     util.sortBy(notes, (entry) => -this.toStaveNoteLine(entry.note));
 
     if (notes.length > 1) {

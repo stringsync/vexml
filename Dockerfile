@@ -1,5 +1,7 @@
 FROM ghcr.io/puppeteer/puppeteer:21.2.1
 
+ENV VEXML_CANONICAL_TEST_ENV=true
+
 WORKDIR /vexml
 
 # Install dependencies.
