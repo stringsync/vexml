@@ -17,6 +17,7 @@
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
+    "resnap": "rm -rf tests/integration/__tmp_image_snapshots__ && yarn jest integration --silent",
     "lint": "yarn eslint .",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
