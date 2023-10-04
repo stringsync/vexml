@@ -8,10 +8,14 @@ const rl = readline.createInterface({
 });
 
 try {
-  rl.question(`WARNING: Your staged git changes will become unstaged. Do you want to continue? (y/n): `, (answer) => {
+  const hasChanges = execSync('git status --porcelain').toString().trim().length > 0;
+
+  rl.question(`WARNING: Any staged git changes will become unstaged. Do you want to continue? (y/n): `, (answer) => {
     if (answer === 'y') {
-      console.log('Stashing any pending git changes...');
-      execSync('git stash');
+      if (hasChanges) {
+        console.log('Stashing any pending git changes...');
+        execSync('git stash');
+      }
 
       console.log('Getting current branch...');
       const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
@@ -25,8 +29,10 @@ try {
       console.log(`Checking out ${branch}...`);
       execSync(`git checkout ${branch}`);
 
-      console.log('Unstashing changes...');
-      execSync('git stash pop');
+      if (hasChanges) {
+        console.log('Unstashing changes...');
+        execSync('git stash pop');
+      }
     }
     rl.close();
   });
