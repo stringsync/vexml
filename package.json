@@ -17,6 +17,7 @@
     "build": "webpack",
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
+    "resnap": "node scripts/resnap.js",
     "lint": "yarn eslint .",
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
