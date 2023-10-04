@@ -477,8 +477,9 @@ describe(Note, () => {
       const note2 = xml.note();
       const note3 = xml.note({ chord: xml.chord() });
       const note4 = xml.note({ chord: xml.chord() });
+      const note5 = xml.note();
 
-      xml.measure({ notes: [note1, note2, note3, note4] });
+      xml.measure({ notes: [note1, note2, note3, note4, note5] });
 
       expect(new Note(note2).getChordTail()).toStrictEqual([new Note(note3), new Note(note4)]);
     });
