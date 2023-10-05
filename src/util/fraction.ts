@@ -27,7 +27,7 @@ export class Fraction {
     return new Fraction(decimal * denominator, denominator).simplify();
   }
 
-  /** Returns the decimal of the fraction.*/
+  /** Returns the decimal of the fraction. */
   toDecimal(): number {
     return this.numerator / this.denominator;
   }
