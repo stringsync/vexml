@@ -242,7 +242,6 @@ export class Stave {
 
         const vfTickables = vfVoices.flatMap((vfVoice) => vfVoice.getTickables());
         if (vfTickables.length > 0) {
-          // TODO: Use Formatter.format instead of Formatter.formatToStave so we have more control over rendering.
           new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
         }
         break;
