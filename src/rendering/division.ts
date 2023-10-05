@@ -26,6 +26,12 @@ export class Division {
     return new Division(fraction);
   }
 
+  /** Returns the difference as a new Division. */
+  subtract(value: Division) {
+    const fraction = this.fraction.subtract(value.fraction);
+    return new Division(fraction);
+  }
+
   /** Returns the number of beats (quarter notes). */
   toBeats(): number {
     return this.fraction.toDecimal();

@@ -1,4 +1,5 @@
 import { Config } from './config';
+import { Division } from './division';
 import { StemDirection } from './enums';
 import { Voice, VoiceEntryData, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
@@ -42,8 +43,12 @@ export class Chorus {
     const staffNumber = opts.staffNumber;
     const clefType = opts.clefType;
 
+    // TODO: Handle attributes changing mid-measure.
+    const attributes = measure.getAttributes();
+    const quarterNoteDivisions = attributes.flatMap((attribute) => attribute.getQuarterNoteDivisions())[0] ?? 2;
+
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
-    let divisions = 0;
+    let divisions = Division.of(0, quarterNoteDivisions);
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (const entry of measure.getEntries()) {
@@ -64,29 +69,31 @@ export class Chorus {
 
         data[voiceId] ??= [];
 
-        const noteDuration = note.getDuration();
+        const noteDuration = Division.of(note.getDuration(), quarterNoteDivisions);
         const startDivision = divisions;
-        const endDivision = startDivision + noteDuration;
+        const endDivision = startDivision.add(noteDuration);
 
         const stem = Chorus.toStemDirection(note.getStem());
 
         data[voiceId].push({
           voiceId,
           note,
-          startDivision,
-          endDivision,
+          start: startDivision,
+          end: endDivision,
           stem,
         });
 
-        divisions += noteDuration;
+        divisions = divisions.add(noteDuration);
       }
 
       if (entry instanceof musicxml.Backup) {
-        divisions -= entry.getDuration();
+        const backupDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        divisions = divisions.subtract(backupDuration);
       }
 
       if (entry instanceof musicxml.Forward) {
-        divisions += entry.getDuration();
+        const forwardDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        divisions = divisions.add(forwardDuration);
       }
     }
 
@@ -125,9 +132,6 @@ export class Chorus {
       }
     }
 
-    // TODO: Handle attributes changing mid-measure.
-    const attributes = measure.getAttributes();
-    const quarterNoteDivisions = attributes.flatMap((attribute) => attribute.getQuarterNoteDivisions())[0] ?? 2;
     const timeSignature =
       attributes
         .flatMap((attribute) => attribute.getTimes())
