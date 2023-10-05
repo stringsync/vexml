@@ -32,6 +32,13 @@ export class Fraction {
     return this.numerator / this.denominator;
   }
 
+  /** Returns whether the other fraction is equal to this fraction.  */
+  isEqual(value: Fraction): boolean {
+    const v1 = this.simplify();
+    const v2 = value.simplify();
+    return v1.numerator === v2.numerator;
+  }
+
   /** Reduces the numerator and denominator to its lowest common factor. */
   simplify(): Fraction {
     const gcd = this.gcd(this.numerator, this.denominator);
