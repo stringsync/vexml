@@ -1,3 +1,16 @@
+/** Represents a mixed fraction. */
+export type MixedFraction = {
+  whole: number;
+  remainder: Fraction;
+};
+
+/**
+ * Represents the sign of a fraction.
+ *
+ * 0, -0, +0 have a sign of '/'.
+ */
+export type FractionSign = '+' | '-' | '/';
+
 /**
  * Represents a mathematical fraction with a numerator and a denominator.
  *
@@ -25,7 +38,7 @@ export class Fraction {
   /**
    * Creates a fraction from a decimal number.
    *
-   * NOTE: Integers will work too.
+   * NOTE: Integers work too.
    */
   static fromDecimal(decimal: number): Fraction {
     const len = (decimal.toString().split('.')[1] || '').length;
@@ -33,18 +46,34 @@ export class Fraction {
     return new Fraction(decimal * denominator, denominator).simplify();
   }
 
+  /** Creates a fraction from a mixed fraction. */
+  static fromMixed(mixed: MixedFraction): Fraction {
+    const denominator = mixed.remainder.denominator;
+    return new Fraction(mixed.whole * denominator, denominator).add(mixed.remainder);
+  }
+
   /** Returns the decimal of the fraction. */
   toDecimal(): number {
     return this.numerator / this.denominator;
   }
 
-  /**
-   * Returns the sign (positive or negative) of the decimal.
-   *
-   * 0 returns '+'.
-   */
-  sign(): '+' | '-' {
-    return this.toDecimal() >= 0 ? '+' : '-';
+  /** Returns the fraction in mixed form. */
+  toMixed(): MixedFraction {
+    const whole = Math.floor(this.numerator / this.denominator);
+    const remainder = new Fraction(this.numerator % this.denominator, this.denominator).simplify();
+    return { whole, remainder };
+  }
+
+  /** Returns the sign of the fraction. */
+  sign(): FractionSign {
+    const decimal = this.toDecimal();
+    if (decimal === 0) {
+      return '/';
+    } else if (decimal > 0) {
+      return '+';
+    } else {
+      return '-';
+    }
   }
 
   /** Returns whether the other fraction is equal to this fraction.  */

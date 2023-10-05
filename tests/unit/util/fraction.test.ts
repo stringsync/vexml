@@ -61,6 +61,44 @@ describe(Fraction, () => {
       expect(Math.abs(fraction.denominator)).toBe(8);
       expect(fraction.sign()).toBe('-');
     });
+
+    it('inverts toDecimal', () => {
+      const fraction = Fraction.fromDecimal(new Fraction(1, 2).toDecimal());
+      expect(fraction.numerator).toBe(1);
+      expect(fraction.denominator).toBe(2);
+    });
+  });
+
+  describe('fromMixed', () => {
+    it('converts a mixed fraction to a fraction', () => {
+      const fraction = Fraction.fromMixed({ whole: 1, remainder: new Fraction(1, 2) });
+      expect(fraction.numerator).toBe(3);
+      expect(fraction.denominator).toBe(2);
+    });
+
+    it('converts a mixed fraction less than 1 to a fraction', () => {
+      const fraction = Fraction.fromMixed({ whole: 0, remainder: new Fraction(1, 2) });
+      expect(fraction.numerator).toBe(1);
+      expect(fraction.denominator).toBe(2);
+    });
+
+    it('converts a mixed fraction with no remainder', () => {
+      const fraction = Fraction.fromMixed({ whole: 4, remainder: new Fraction(0) });
+      expect(fraction.numerator).toBe(4);
+      expect(fraction.denominator).toBe(1);
+    });
+
+    it('converts a 0 mixed fraction', () => {
+      const fraction = Fraction.fromMixed({ whole: 0, remainder: new Fraction(0) });
+      expect(fraction.numerator).toBe(0);
+      expect(fraction.denominator).toBe(1);
+    });
+
+    it('inverts toMixed', () => {
+      const fraction = Fraction.fromMixed(new Fraction(1, 2).toMixed());
+      expect(fraction.numerator).toBe(1);
+      expect(fraction.denominator).toBe(2);
+    });
   });
 
   describe('toDecimal', () => {
@@ -74,10 +112,46 @@ describe(Fraction, () => {
       expect(fraction.toDecimal()).toBe(-0.5);
     });
 
-    it('is the inverse operation of fromDecimal', () => {
+    it('inverts fromDecimal', () => {
       const decimal = 0.361;
       const fraction = Fraction.fromDecimal(decimal);
       expect(fraction.toDecimal()).toBe(decimal);
+    });
+  });
+
+  describe('toMixed', () => {
+    it('converts a fraction greater than 1 to a mixed fraction', () => {
+      const mixed = new Fraction(3, 2).toMixed();
+      expect(mixed.whole).toBe(1);
+      expect(mixed.remainder.numerator).toBe(1);
+      expect(mixed.remainder.denominator).toBe(2);
+    });
+
+    it('converts a fraction equal to 1 to a mixed fraction', () => {
+      const mixed = new Fraction(2, 2).toMixed();
+      expect(mixed.whole).toBe(1);
+      expect(mixed.remainder.numerator).toBe(0);
+      expect(mixed.remainder.denominator).toBe(1);
+    });
+
+    it('converts a fraction less than 1 to a mixed fraction', () => {
+      const mixed = new Fraction(1, 2).toMixed();
+      expect(mixed.whole).toBe(0);
+      expect(mixed.remainder.numerator).toBe(1);
+      expect(mixed.remainder.denominator).toBe(2);
+    });
+
+    it('converts a fraction equal to 0 to a mixed fraction', () => {
+      const mixed = new Fraction(0, 2).toMixed();
+      expect(mixed.whole).toBe(0);
+      expect(mixed.remainder.numerator).toBe(0);
+      expect(mixed.remainder.denominator).toBe(1);
+    });
+
+    it('inverts fromMixed', () => {
+      const fraction = Fraction.fromMixed(new Fraction(123, 10).toMixed());
+      expect(fraction.numerator).toBe(123);
+      expect(fraction.denominator).toBe(10);
     });
   });
 
@@ -100,6 +174,11 @@ describe(Fraction, () => {
     it(`returns '+' when both numerator and denominator are negative`, () => {
       const fraction = new Fraction(-1, -2);
       expect(fraction.sign()).toBe('+');
+    });
+
+    it.each([0, -0])(`returns '/' for %s`, (n) => {
+      const fraction = new Fraction(n);
+      expect(fraction.sign()).toBe('/');
     });
   });
 
