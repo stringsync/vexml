@@ -6,6 +6,7 @@ import { Rest, RestRendering } from './rest';
 import { Config } from './config';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
+import { Division } from './division';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -26,8 +27,8 @@ export type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
   stem: StemDirection;
-  startDivision: number;
-  endDivision: number;
+  start: Division;
+  end: Division;
 };
 
 /**
@@ -61,19 +62,19 @@ export class Voice {
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const clefType = opts.clefType;
 
-    let division = 0;
+    let divisions = Division.of(0, quarterNoteDivisions);
     const entries = new Array<VoiceEntry>();
     for (const entry of opts.data) {
-      const ghostNoteStart = division;
-      const ghostNoteEnd = entry.startDivision;
-      const ghostNoteDuration = ghostNoteEnd - ghostNoteStart;
+      const ghostNoteStart = divisions;
+      const ghostNoteEnd = entry.start;
+      const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
 
-      if (ghostNoteDuration > 0) {
-        entries.push(Voice.createGhostNote({ duration: ghostNoteDuration, quarterNoteDivisions }));
+      if (ghostNoteDuration.toBeats() > 0) {
+        entries.push(Voice.createGhostNote(ghostNoteDuration));
       }
-      entries.push(Voice.createVoiceEntry({ config, clefType, entry, quarterNoteDivisions }));
+      entries.push(Voice.createVoiceEntry({ config, clefType, entry }));
 
-      division = entry.endDivision;
+      divisions = entry.end;
     }
 
     return new Voice({
@@ -83,15 +84,8 @@ export class Voice {
     });
   }
 
-  private static createGhostNote(opts: { duration: number; quarterNoteDivisions: number }): GhostNote {
-    const duration = opts.duration;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
-
-    const durationDenominator = Voice.calculateDurationDenominator({
-      duration,
-      quarterNoteDivisions,
-    });
-
+  private static createGhostNote(divisions: Division): GhostNote {
+    const durationDenominator = Voice.calculateDurationDenominator(divisions);
     return GhostNote.create({ durationDenominator });
   }
 
@@ -99,18 +93,17 @@ export class Voice {
     config: Config;
     entry: VoiceEntryData;
     clefType: musicxml.ClefType;
-    quarterNoteDivisions: number;
   }): VoiceEntry {
     const config = opts.config;
     const entry = opts.entry;
     const clefType = opts.clefType;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
     const note = entry.note;
     const stem = entry.stem;
 
+    const duration = entry.end.subtract(entry.start);
+
     const durationDenominator =
-      Voice.toDurationDenominator(note.getType()) ??
-      Voice.calculateDurationDenominator({ duration: note.getDuration(), quarterNoteDivisions });
+      Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
 
     if (note.isChordHead()) {
       return Chord.create({
@@ -175,13 +168,10 @@ export class Voice {
     }
   }
 
-  private static calculateDurationDenominator(opts: {
-    duration: number;
-    quarterNoteDivisions: number;
-  }): NoteDurationDenominator {
+  private static calculateDurationDenominator(divisions: Division): NoteDurationDenominator {
     // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
     // <duration>.
-    switch (opts.duration / opts.quarterNoteDivisions) {
+    switch (divisions.toBeats()) {
       case 4:
         return '1';
       case 2:
