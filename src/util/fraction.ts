@@ -12,7 +12,13 @@
 export class Fraction {
   constructor(public readonly numerator: number, public readonly denominator: number = 1) {
     if (this.denominator === 0) {
-      throw new Error('Denominator cannot be zero.');
+      throw new Error('denominator cannot be zero');
+    }
+    if (!Number.isInteger(this.numerator)) {
+      throw new Error('numerator must be an integer, try Fraction.fromDecimal instead');
+    }
+    if (!Number.isInteger(this.denominator)) {
+      throw new Error('denominator must be an integer, try Fraction.fromDecimal instead');
     }
   }
 
@@ -30,6 +36,15 @@ export class Fraction {
   /** Returns the decimal of the fraction. */
   toDecimal(): number {
     return this.numerator / this.denominator;
+  }
+
+  /**
+   * Returns the sign (positive or negative) of the decimal.
+   *
+   * 0 returns '+'.
+   */
+  sign(): '+' | '-' {
+    return this.toDecimal() >= 0 ? '+' : '-';
   }
 
   /** Returns whether the other fraction is equal to this fraction.  */
