@@ -191,14 +191,20 @@ describe(Fraction, () => {
 
     it('returns false when the fractions are different values', () => {
       const fraction1 = new Fraction(1, 2);
-      const fraction2 = new Fraction(1, 2);
-      expect(fraction1.isEqual(fraction2)).toBeTrue();
+      const fraction2 = new Fraction(2, 1);
+      expect(fraction1.isEqual(fraction2)).toBeFalse();
     });
 
     it('returns true when the fractions simplify to the same value', () => {
       const fraction1 = new Fraction(1, 2);
       const fraction2 = new Fraction(2, 4);
       expect(fraction1.isEqual(fraction2)).toBeTrue();
+    });
+
+    it('returns false when the denominators are different', () => {
+      const fraction1 = new Fraction(1, 2);
+      const fraction2 = new Fraction(1, 3);
+      expect(fraction1.isEqual(fraction2)).toBeFalse();
     });
   });
 
