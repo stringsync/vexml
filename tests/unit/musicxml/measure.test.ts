@@ -120,18 +120,22 @@ describe(Measure, () => {
 
   describe('getEntries', () => {
     it('returns the notes, backups, and forwards of the measure', () => {
+      const attributes1 = xml.attributes();
       const note1 = xml.note();
       const backup = xml.backup({ duration: xml.duration({ positiveDivisions: 4 }) });
+      const attributes2 = xml.attributes();
       const note2 = xml.note();
       const forward = xml.forward({ duration: xml.duration({ positiveDivisions: 8 }) });
       const note3 = xml.note();
 
-      const node = xml.measure({ entries: [note1, backup, note2, forward, note3] });
+      const node = xml.measure({ entries: [attributes1, note1, backup, attributes2, note2, forward, note3] });
       const measure = new Measure(node);
 
       expect(measure.getEntries()).toStrictEqual([
+        new Attributes(attributes1),
         new Note(note1),
         new Backup(backup),
+        new Attributes(attributes2),
         new Note(note2),
         new Forward(forward),
         new Note(note3),

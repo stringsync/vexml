@@ -145,7 +145,9 @@ export const measure = createNamedElementFactory<
     width: number;
     number: string;
     implicit: string;
-    entries: Array<NamedElement<'note'> | NamedElement<'backup'> | NamedElement<'forward'>>;
+    entries: Array<
+      NamedElement<'attributes'> | NamedElement<'note'> | NamedElement<'backup'> | NamedElement<'forward'>
+    >;
     notes: NamedElement<'note'>[];
     attributes: NamedElement<'attributes'>[];
     barlines: NamedElement<'barline'>[];
