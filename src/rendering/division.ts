@@ -20,6 +20,11 @@ export class Division {
     return new Division(fraction);
   }
 
+  /** Returns if the other divisions is equal to this. */
+  isEqual(value: Division): boolean {
+    return this.fraction.isEqual(value.fraction);
+  }
+
   /** Returns the sum as a new Division. */
   add(value: Division) {
     const fraction = this.fraction.add(value.fraction);

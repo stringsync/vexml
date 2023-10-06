@@ -31,6 +31,22 @@ export type VoiceEntryData = {
   end: Division;
 };
 
+const DURATION_DENOMINATOR_CONVERSIONS: Array<{
+  case: Division;
+  value: NoteDurationDenominator;
+}> = [
+  { case: Division.of(4, 1), value: '1' },
+  { case: Division.of(2, 1), value: '2' },
+  { case: Division.of(1, 1), value: '4' },
+  { case: Division.of(1, 2), value: '8' },
+  { case: Division.of(1, 8), value: '32' },
+  { case: Division.of(1, 16), value: '64' },
+  { case: Division.of(1, 32), value: '128' },
+  { case: Division.of(1, 64), value: '256' },
+  { case: Division.of(1, 128), value: '512' },
+  { case: Division.of(1, 256), value: '1024' },
+];
+
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
  *
@@ -102,6 +118,8 @@ export class Voice {
 
     const duration = entry.end.subtract(entry.start);
 
+    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
+    // <duration>.
     const durationDenominator =
       Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
 
@@ -169,32 +187,7 @@ export class Voice {
   }
 
   private static calculateDurationDenominator(divisions: Division): NoteDurationDenominator {
-    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
-    // <duration>.
-    switch (divisions.toBeats()) {
-      case 4:
-        return '1';
-      case 2:
-        return '2';
-      case 1:
-        return '4';
-      case 1 / 2:
-        return '8';
-      case 1 / 8:
-        return '32';
-      case 1 / 16:
-        return '64';
-      case 1 / 32:
-        return '128';
-      case 1 / 64:
-        return '256';
-      case 1 / 128:
-        return '512';
-      case 1 / 256:
-        return '1024';
-    }
-
-    return '';
+    return DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '';
   }
 
   /** Clones the Voice. */
