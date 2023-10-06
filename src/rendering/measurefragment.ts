@@ -87,16 +87,17 @@ export class MeasureFragment {
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
 
-      staves[staffIndex] = Stave.create({
-        config,
-        staffNumber,
-        musicXml: {
-          // TODO: Fix this.
-          measureEntries: [],
-        },
-        previousStave,
-        previousMeasureFragment,
-      });
+      // TODO: Finish staves implementation.
+      // staves[staffIndex] = Stave.create({
+      //   config,
+      //   staffNumber,
+      //   musicXml: {
+      //     // TODO: Fix this.
+      //     measureEntries: [],
+      //   },
+      //   previousStave,
+      //   previousMeasureFragment,
+      // });
 
       previousStave = staves[staffIndex];
     }
