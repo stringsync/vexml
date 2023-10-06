@@ -269,7 +269,6 @@ export class Voice {
       numBeats: this.timeSignature.getBeatsPerMeasure(),
       beatValue: this.timeSignature.getBeatValue(),
     })
-      .setMode(vexflow.VoiceMode.SOFT)
       .setStrict(false)
       .addTickables(vfTickables);
   }

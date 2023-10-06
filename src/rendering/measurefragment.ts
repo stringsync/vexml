@@ -45,11 +45,14 @@ export class MeasureFragment {
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
     };
+    staveCount: number;
     staffNumber: number;
     previousMeasureFragment: MeasureFragment | null;
   }): MeasureFragment {
     const config = opts.config;
     const attributes = opts.musicXml.attributes;
+    const measureEntries = opts.musicXml.measureEntries;
+    const staveCount = opts.staveCount;
     const staffNumber = opts.staffNumber;
     const previousMeasureFragment = opts.previousMeasureFragment;
     const beginningBarStyle = opts.musicXml.beginningBarStyle;
@@ -78,6 +81,25 @@ export class MeasureFragment {
         ?.getKeySignature() ??
       previousMeasureFragment?.keySignature ??
       'C';
+
+    const staves = new Array<Stave>(staveCount);
+    let previousStave: Stave | null = null;
+    for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
+      const staffIndex = staffNumber - 1;
+
+      staves[staffIndex] = Stave.create({
+        config,
+        staffNumber,
+        musicXml: {
+          // TODO: Fix this.
+          measureEntries: [],
+        },
+        previousStave,
+        previousMeasureFragment,
+      });
+
+      previousStave = staves[staffIndex];
+    }
 
     return new MeasureFragment({
       config,
