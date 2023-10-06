@@ -80,7 +80,7 @@ export class Fraction {
   isEqual(value: Fraction): boolean {
     const v1 = this.simplify();
     const v2 = value.simplify();
-    return v1.numerator === v2.numerator;
+    return v1.numerator === v2.numerator && v1.denominator === v2.denominator;
   }
 
   /** Reduces the numerator and denominator to its lowest common factor. */
