@@ -1,14 +1,14 @@
 import { NamedElement } from '@/util';
-import { StaffLayout, SystemLayout } from './types';
+import { StaveLayout, SystemLayout } from './types';
 
 export class Defaults {
   constructor(private element: NamedElement<'defaults'>) {}
 
-  /** Returns staff layouts of the defaults element. */
-  getStaffLayouts(): StaffLayout[] {
+  /** Returns stave layouts of the defaults element. */
+  getStaveLayouts(): StaveLayout[] {
     return this.element.all('staff-layout').map((element) => ({
-      staffNumber: element.attr('number').withDefault(1).int(),
-      staffDistance: element.first('staff-distance')?.content().withDefault(0).int() ?? null,
+      staveNumber: element.attr('number').withDefault(1).int(),
+      staveDistance: element.first('staff-distance')?.content().withDefault(0).int() ?? null,
     }));
   }
 

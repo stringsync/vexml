@@ -24,20 +24,20 @@ export type ScoreRendering = {
 export class Score {
   private config: Config;
   private system: System;
-  private staffLayouts: musicxml.StaffLayout[];
+  private staveLayouts: musicxml.StaveLayout[];
   private systemLayout: musicxml.SystemLayout | null;
   private title: Title;
 
   private constructor(opts: {
     config: Config;
     system: System;
-    staffLayouts: musicxml.StaffLayout[];
+    staveLayouts: musicxml.StaveLayout[];
     systemLayout: musicxml.SystemLayout | null;
     title: Title;
   }) {
     this.config = opts.config;
     this.system = opts.system;
-    this.staffLayouts = opts.staffLayouts;
+    this.staveLayouts = opts.staveLayouts;
     this.systemLayout = opts.systemLayout;
     this.title = opts.title;
   }
@@ -48,13 +48,13 @@ export class Score {
     const scorePartwise = opts.musicXml.getScorePartwise();
     const parts = scorePartwise?.getParts() ?? [];
     const defaults = scorePartwise?.getDefaults() ?? null;
-    const staffLayouts = defaults?.getStaffLayouts() ?? [];
+    const staveLayouts = defaults?.getStaveLayouts() ?? [];
     const systemLayout = defaults?.getSystemLayout() ?? null;
 
     const title = Title.create({ config, text: scorePartwise?.getTitle() ?? '' });
     const system = System.create({ config, musicXml: { parts } });
 
-    return new Score({ system, staffLayouts, systemLayout, config, title });
+    return new Score({ system, staveLayouts, systemLayout, config, title });
   }
 
   /** Renders the Score. */
@@ -70,7 +70,7 @@ export class Score {
     // Produce the title rendering, but only if it has text.
     let titleRendering: TitleRendering | null = null;
     if (this.title.hasText()) {
-      y += this.config.titleTopPadding;
+      y += this.config.TITLE_TOP_PADDING;
 
       titleRendering = this.title.render({ y, containerWidth: opts.width });
 
@@ -87,7 +87,7 @@ export class Score {
         y,
         width: opts.width - END_BARLINE_OFFSET,
         isLastSystem: index === systems.length - 1,
-        staffLayouts: this.staffLayouts,
+        staveLayouts: this.staveLayouts,
       });
       systemRenderings.push(systemRendering);
 
@@ -107,7 +107,7 @@ export class Score {
       const height = maxY - y;
 
       y += height;
-      y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
+      y += this.systemLayout?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
     }
 
     const parts = systemRenderings.flatMap((system) => system.parts);

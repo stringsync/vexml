@@ -14,7 +14,7 @@ export * from './scorepartwise';
 export * from './time';
 export * from './timesignature';
 export * from './types';
-export * from './staffdetails';
+export * from './stavedetails';
 export * from './defaults';
 export * from './lyric';
 export * from './measurestyle';

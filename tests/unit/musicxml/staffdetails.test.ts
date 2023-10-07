@@ -1,78 +1,76 @@
-import { STAFF_TYPES, StaffDetails } from '@/musicxml';
+import { STAVE_TYPES, StaveDetails } from '@/musicxml';
 import { xml } from '@/util';
 
-describe(StaffDetails, () => {
-  describe('getStaffType', () => {
-    it.each(STAFF_TYPES.values)('returns the staff type: %s', (value) => {
+describe(StaveDetails, () => {
+  describe('getStaveType', () => {
+    it.each(STAVE_TYPES.values)('returns the staff type: %s', (value) => {
       const staffType = xml.staffType({ value });
       const node = xml.staffDetails({ staffType });
 
-      const staffDetails = new StaffDetails(node);
+      const staveDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffType()).toBe(value);
+      expect(staveDetails.getStaveType()).toBe(value);
     });
 
     it('returns regular for invalid staff types', () => {
       const staffType = xml.staffType({ value: 'invalid staff type' });
       const node = xml.staffDetails({ staffType });
 
-      const staffDetails = new StaffDetails(node);
+      const staveDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffType()).toBe('regular');
+      expect(staveDetails.getStaveType()).toBe('regular');
     });
 
     it('returns regular for missing staff types', () => {
       const node = xml.staffDetails({});
-      const staffDetails = new StaffDetails(node);
-      expect(staffDetails.getStaffType()).toBe('regular');
+      const staveDetails = new StaveDetails(node);
+      expect(staveDetails.getStaveType()).toBe('regular');
     });
   });
 
-  describe('getStaffNumber', () => {
-    describe('getStaffNumber', () => {
-      it('returns the staff number', () => {
-        const node = xml.staffDetails({ number: 2 });
-        const staffDetails = new StaffDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(2);
-      });
+  describe('getStaveNumber', () => {
+    it('returns the staff number', () => {
+      const node = xml.staffDetails({ number: 2 });
+      const staveDetails = new StaveDetails(node);
+      expect(staveDetails.getStaveNumber()).toBe(2);
+    });
 
-      it(`defaults to '1' when invalid staff number`, () => {
-        const node = xml.staffDetails({ number: NaN });
-        const staffDetails = new StaffDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(1);
-      });
+    it(`defaults to '1' when invalid staff number`, () => {
+      const node = xml.staffDetails({ number: NaN });
+      const staveDetails = new StaveDetails(node);
+      expect(staveDetails.getStaveNumber()).toBe(1);
+    });
 
-      it(`defaults to '1' when staff number missing`, () => {
-        const node = xml.staffDetails({});
-        const staffDetails = new StaffDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(1);
-      });
+    it(`defaults to '1' when staff number missing`, () => {
+      const node = xml.staffDetails({});
+      const staveDetails = new StaveDetails(node);
+      expect(staveDetails.getStaveNumber()).toBe(1);
     });
   });
 
-  describe('getStaffLines', () => {
+  describe('getStaveLines', () => {
     it('returns the number of staff lines', () => {
       const staffLines = xml.staffLines({ value: 6 });
       const node = xml.staffDetails({ staffLines });
 
-      const staffDetails = new StaffDetails(node);
+      const staveDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffLines()).toBe(6);
+      expect(staveDetails.getStaveLines()).toBe(6);
     });
 
     it('defaults to 5 when missing', () => {
       const node = xml.staffDetails({});
-      const staffDetails = new StaffDetails(node);
-      expect(staffDetails.getStaffLines()).toBe(5);
+      const staveDetails = new StaveDetails(node);
+      expect(staveDetails.getStaveLines()).toBe(5);
     });
 
     it('defaults to 5 when invalid', () => {
       const staffLines = xml.staffLines({ value: NaN });
       const node = xml.staffDetails({ staffLines });
 
-      const staffDetails = new StaffDetails(node);
+      const staveDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffLines()).toBe(5);
+      expect(staveDetails.getStaveLines()).toBe(5);
     });
   });
 });
