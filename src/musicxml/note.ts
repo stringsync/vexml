@@ -67,8 +67,8 @@ export class Note {
     return this.element.first('voice')?.content().str() ?? '1';
   }
 
-  /** Returns the staff the note belongs to. */
-  getStaffNumber(): number {
+  /** Returns the stave the note belongs to. */
+  getStaveNumber(): number {
     return this.element.first('staff')?.content().int() ?? 1;
   }
 
