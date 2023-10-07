@@ -66,80 +66,44 @@ export class Stave {
   /** Creates a Stave. */
   static create(opts: {
     config: Config;
-    musicXml: {
-      measure: musicxml.Measure;
-    };
-    previousStave: Stave | null;
     staffNumber: number;
+    clefType: musicxml.ClefType | null;
+    timeSignature: musicxml.TimeSignature | null;
+    keySignature: string | null;
+    multiRestCount: number;
+    measureEntries: musicxml.MeasureEntry[];
+    quarterNoteDivisions: number;
+    previousStave: Stave | null;
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
   }): Stave {
-    // TODO: Properly handle multiple <attributes>.
-    const attributes = opts.musicXml.measure.getAttributes();
+    const config = opts.config;
+    const staffNumber = opts.staffNumber;
+    const measureEntries = opts.measureEntries;
+    const multiRestCount = opts.multiRestCount;
+    const quarterNoteDivisions = opts.quarterNoteDivisions;
+    const beginningBarStyle = opts.beginningBarStyle;
+    const endBarStyle = opts.endBarStyle;
+    const previousStave = opts.previousStave;
 
-    const clefType =
-      attributes
-        .flatMap((attribute) => attribute.getClefs())
-        .find((clef) => clef.getStaffNumber() === opts.staffNumber)
-        ?.getClefType() ??
-      opts.previousStave?.clefType ??
-      'treble';
-
-    // TODO: Handle multiple time signatures.
-    const timeSignature =
-      attributes
-        .flatMap((attribute) => attribute.getTimes())
-        .find((time) => time.getStaffNumber() === opts.staffNumber)
-        ?.getTimeSignatures()[0] ??
-      opts.previousStave?.timeSignature ??
-      new musicxml.TimeSignature(4, 4);
-
-    const keySignature =
-      attributes
-        .flatMap((attribute) => attribute.getKeys())
-        .find((key) => key.getStaffNumber() === opts.staffNumber)
-        ?.getKeySignature() ??
-      opts.previousStave?.keySignature ??
-      'C';
-
-    const begginingMeasure = opts.musicXml.measure;
-    let beginningBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of begginingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'left') {
-        beginningBarStyle = barStyle;
-      }
-    }
-
-    const endingMeasure = opts.musicXml.measure.getEndingMeasure();
-    let endBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of endingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'right') {
-        endBarStyle = barStyle;
-      }
-    }
-
-    const multiRestCount =
-      opts.musicXml.measure
-        .getAttributes()
-        .flatMap((attribute) => attribute.getMeasureStyles())
-        .find((measureStyle) => measureStyle.getStaffNumber() === opts.staffNumber)
-        ?.getMultipleRestCount() ?? 0;
+    const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
+    const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
+    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? new musicxml.TimeSignature(4, 4);
 
     const entry =
       multiRestCount > 0
-        ? MultiRest.create({
-            count: multiRestCount,
-          })
+        ? MultiRest.create({ count: multiRestCount })
         : Chorus.create({
-            config: opts.config,
-            musicXml: { measure: opts.musicXml.measure },
-            staffNumber: opts.staffNumber,
+            config,
+            measureEntries: measureEntries,
             clefType,
+            timeSignature,
+            quarterNoteDivisions,
           });
 
     return new Stave({
-      config: opts.config,
-      staffNumber: opts.staffNumber,
+      config,
+      staffNumber,
       clefType,
       timeSignature,
       keySignature,

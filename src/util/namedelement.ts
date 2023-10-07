@@ -63,6 +63,19 @@ export class NamedElement<T extends string> {
     return null;
   }
 
+  /** Returns the previous _sibling_ node matching the tag name. */
+  previous<S extends string>(tagName: S): NamedElement<S> | null {
+    let sibling = this.element.previousElementSibling;
+    while (sibling) {
+      const element = NamedElement.of(sibling);
+      if (element.isNamed(tagName)) {
+        return element;
+      }
+      sibling = sibling.previousElementSibling;
+    }
+    return null;
+  }
+
   /** Returns the _ancestor_ matching the tag name. Defaults to null. */
   ancestor<S extends string>(tagName: S): NamedElement<S> | null {
     let parent = this.element.parentElement;
