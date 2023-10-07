@@ -286,7 +286,7 @@ export class Measure {
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
       color: MEASURE_LABEL_COLOR,
-      size: this.config.measureNumberFontSize,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
     });
 
     return {

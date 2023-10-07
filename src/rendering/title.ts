@@ -30,7 +30,7 @@ export class Title {
     const config = opts.config;
     const text = opts.text;
 
-    context.font = `${config.titleFontSize} ${config.titleFontFamily}`;
+    context.font = `${config.TITLE_FONT_SIZE} ${config.TITLE_FONT_FAMILY}`;
 
     const textMetrics = context.measureText(text);
     const width = textMetrics.width;
@@ -49,8 +49,8 @@ export class Title {
     const x = (opts.containerWidth - this.width) / 2;
     const y = opts.y;
     const content = this.text;
-    const size = this.config.titleFontSize;
-    const family = this.config.titleFontFamily;
+    const size = this.config.TITLE_FONT_SIZE;
+    const family = this.config.TITLE_FONT_FAMILY;
 
     const text = new Text({ content, x, y, size, family });
 

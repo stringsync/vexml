@@ -70,7 +70,7 @@ export class Score {
     // Produce the title rendering, but only if it has text.
     let titleRendering: TitleRendering | null = null;
     if (this.title.hasText()) {
-      y += this.config.titleTopPadding;
+      y += this.config.TITLE_TOP_PADDING;
 
       titleRendering = this.title.render({ y, containerWidth: opts.width });
 
@@ -107,7 +107,7 @@ export class Score {
       const height = maxY - y;
 
       y += height;
-      y += this.systemLayout?.systemDistance ?? this.config.defaultSystemDistance;
+      y += this.systemLayout?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
     }
 
     const parts = systemRenderings.flatMap((system) => system.parts);

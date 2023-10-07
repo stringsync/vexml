@@ -175,7 +175,7 @@ export class MeasureFragment {
 
       const staveDistance =
         opts.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
-          ?.staveDistance ?? this.config.defaultStaveDistance;
+          ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;
     }

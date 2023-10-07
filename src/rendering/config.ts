@@ -1,21 +1,21 @@
 export type Config = {
-  defaultSystemDistance: number;
-  defaultStaveDistance: number;
-  titleTopPadding: number;
-  titleFontFamily: string;
-  titleFontSize: string;
-  voicePadding: number;
-  measureNumberFontSize: string;
-  multiMeasureRestWidth: number;
+  DEFAULT_SYSTEM_DISTANCE: number;
+  DEFAULT_STAVE_DISTANCE: number;
+  TITLE_TOP_PADDING: number;
+  TITLE_FONT_FAMILY: string;
+  TITLE_FONT_SIZE: string;
+  VOICE_PADDING: number;
+  MEASURE_NUMBER_FONT_SIZE: string;
+  MULTI_MEASURE_REST_WIDTH: number;
 };
 
 export const DEFAULT_CONFIG: Config = {
-  defaultSystemDistance: 80,
-  defaultStaveDistance: 80,
-  titleTopPadding: 40,
-  titleFontFamily: 'Arial',
-  titleFontSize: '36px',
-  voicePadding: 80,
-  measureNumberFontSize: '10px',
-  multiMeasureRestWidth: 200,
+  DEFAULT_SYSTEM_DISTANCE: 80,
+  DEFAULT_STAVE_DISTANCE: 80,
+  TITLE_TOP_PADDING: 40,
+  TITLE_FONT_FAMILY: 'Arial',
+  TITLE_FONT_SIZE: '36px',
+  VOICE_PADDING: 80,
+  MEASURE_NUMBER_FONT_SIZE: '10px',
+  MULTI_MEASURE_REST_WIDTH: 200,
 } as const;
