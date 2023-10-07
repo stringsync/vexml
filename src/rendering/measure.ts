@@ -180,12 +180,12 @@ export class Measure {
 
     // Check to see if the time signature changed in a manner that requires a separate stave.
     const times1 = attributes1.getTimes().reduce<Record<number, string>>((memo, time) => {
-      memo[time.getStaffNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
+      memo[time.getStaveNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
       return memo;
     }, {});
 
     for (const time2 of attributes2.getTimes()) {
-      const staffNumber = time2.getStaffNumber();
+      const staffNumber = time2.getStaveNumber();
       const timeSignature1 = times1[staffNumber];
       const timeSignature2 = util.first(time2.getTimeSignatures())?.toString();
 
