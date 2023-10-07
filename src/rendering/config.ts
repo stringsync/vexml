@@ -1,6 +1,6 @@
 export type Config = {
   defaultSystemDistance: number;
-  defaultStaffDistance: number;
+  defaultStaveDistance: number;
   titleTopPadding: number;
   titleFontFamily: string;
   titleFontSize: string;
@@ -11,7 +11,7 @@ export type Config = {
 
 export const DEFAULT_CONFIG: Config = {
   defaultSystemDistance: 80,
-  defaultStaffDistance: 80,
+  defaultStaveDistance: 80,
   titleTopPadding: 40,
   titleFontFamily: 'Arial',
   titleFontSize: '36px',

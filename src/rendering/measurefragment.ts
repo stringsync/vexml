@@ -175,7 +175,7 @@ export class MeasureFragment {
 
       const staffDistance =
         opts.staffLayouts.find((staffLayout) => staffLayout.staveNumber === staveRendering.staffNumber)
-          ?.staveDistance ?? this.config.defaultStaffDistance;
+          ?.staveDistance ?? this.config.defaultStaveDistance;
 
       y += staffDistance;
     }
