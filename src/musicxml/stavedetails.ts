@@ -2,12 +2,12 @@ import { NamedElement } from '@/util';
 import { STAFF_TYPES, StaffType } from './enums';
 
 /**
- * Indicates different staff (aka stave) types. A stave is the set of five horizontal lines where notes and other musical
+ * Indicates different stave types. A stave is the set of five horizontal lines where notes and other musical
  * symbols are placed.
  *
  * https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/staff-details/
  */
-export class StaffDetails {
+export class StaveDetails {
   constructor(private element: NamedElement<'staff-details'>) {}
 
   /** Returns the staff type. */

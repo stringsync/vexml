@@ -2,7 +2,7 @@ import { Attributes } from '@/musicxml/attributes';
 import { Clef } from '@/musicxml/clef';
 import { Key } from '@/musicxml/key';
 import { Time } from '@/musicxml/time';
-import { StaffDetails } from '@/musicxml/staffdetails';
+import { StaveDetails } from '@/musicxml/stavedetails';
 import { xml } from '@/util';
 import { MeasureStyle } from '@/musicxml/measurestyle';
 
@@ -89,8 +89,8 @@ describe(Attributes, () => {
       const attributes = new Attributes(node);
 
       expect(attributes.getStaffDetails()).toStrictEqual([
-        new StaffDetails(staffDetails1),
-        new StaffDetails(staffDetails2),
+        new StaveDetails(staffDetails1),
+        new StaveDetails(staffDetails2),
       ]);
     });
 
