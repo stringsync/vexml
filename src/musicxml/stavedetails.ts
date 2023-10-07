@@ -10,18 +10,18 @@ import { STAVE_TYPES, StaveType } from './enums';
 export class StaveDetails {
   constructor(private element: NamedElement<'staff-details'>) {}
 
-  /** Returns the staff type. */
+  /** Returns the stave type. */
   getStaveType(): StaveType {
     return this.element.first('staff-type')?.content().enum(STAVE_TYPES) ?? 'regular';
   }
 
-  /** Returns the number of the staff. */
-  getStaffNumber(): number {
+  /** Returns the number of the stave. */
+  getStaveNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
 
-  /** Returns the number of lines of the staff. */
-  getStaffLines(): number {
+  /** Returns the number of lines of the stave. */
+  getStaveLines(): number {
     return this.element.first('staff-lines')?.content().withDefault(5).int() ?? 5;
   }
 }
