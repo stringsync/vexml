@@ -24,7 +24,7 @@ export type MeasureRendering = {
 /** Assigns a single Attributes to a list of MeasureFragEntries. */
 type MeasureEntryGroup = {
   attributes: musicxml.Attributes | null;
-  voiceData: ChorusEntry[];
+  chorusEntries: ChorusEntry[];
 };
 
 /**
@@ -93,7 +93,7 @@ export class Measure {
         systemId,
         musicXml: {
           attributes: group.attributes,
-          voiceData: group.voiceData,
+          chorusEntries: group.chorusEntries,
           beginningBarStyle: isFirst ? beginningBarStyle : 'none',
           endBarStyle: isLast ? endBarStyle : 'none',
         },
@@ -115,24 +115,27 @@ export class Measure {
   ): MeasureEntryGroup[] {
     const groups = new Array<MeasureEntryGroup>();
     let attributes: musicxml.Attributes | null = previousMeasure?.getLastFragment()?.getAttributes() ?? null;
-    let voiceData = new Array<ChorusEntry>();
+    let chorusEntries = new Array<ChorusEntry>();
 
     const xmlMeasureEntries = xmlMeasure.getEntries();
 
-    for (let index = 0; index < voiceData.length; index++) {
+    for (let index = 0; index < xmlMeasureEntries.length; index++) {
       const xmlMeasureEntry = xmlMeasureEntries[index];
+      const isFirst = index === 0;
+      const isLast = index === xmlMeasureEntries.length - 1;
 
       if (xmlMeasureEntry instanceof musicxml.Attributes) {
-        groups.push({ attributes, voiceData });
+        if (!isFirst) {
+          groups.push({ attributes, chorusEntries });
+        }
         attributes = xmlMeasureEntry;
-        voiceData = [];
+        chorusEntries = [];
       } else {
-        voiceData.push(xmlMeasureEntry);
+        chorusEntries.push(xmlMeasureEntry);
       }
 
-      const isLast = index === voiceData.length - 1;
       if (isLast) {
-        groups.push({ attributes, voiceData });
+        groups.push({ attributes, chorusEntries });
       }
     }
 
@@ -164,7 +167,7 @@ export class Measure {
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
-    return 0;
+    return util.sum(this.fragments.map((fragment) => fragment.getMultiRestCount()));
   }
 
   /** Renders the Measure. */

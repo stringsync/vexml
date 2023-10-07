@@ -42,7 +42,7 @@ export class MeasureFragment {
     systemId: symbol;
     musicXml: {
       attributes: musicxml.Attributes | null;
-      voiceData: ChorusEntry[];
+      chorusEntries: ChorusEntry[];
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
     };
@@ -51,7 +51,7 @@ export class MeasureFragment {
     const config = opts.config;
     const systemId = opts.systemId;
     const attributes = opts.musicXml.attributes;
-    const voiceData = opts.musicXml.voiceData;
+    const chorusEntries = opts.musicXml.chorusEntries;
     const staveCount = opts.staveCount;
     const beginningBarStyle = opts.musicXml.beginningBarStyle;
     const endBarStyle = opts.musicXml.endBarStyle;
@@ -97,7 +97,7 @@ export class MeasureFragment {
         staffNumber,
         beginningBarStyle,
         endBarStyle,
-        chorusEntries: voiceData.filter((entry) => {
+        chorusEntries: chorusEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
             return entry.getStaffNumber() === staffNumber;
           }
@@ -115,7 +115,7 @@ export class MeasureFragment {
       attributes,
       beginningBarStyle,
       endBarStyle,
-      staves: [],
+      staves,
     });
   }
 
@@ -131,19 +131,9 @@ export class MeasureFragment {
     return this.getMinJustifyWidth() + staveModifiersWidth;
   }
 
-  /** Returns the width needed to stretch to fit the target width of the System. */
-  getSystemFitWidth(opts: {
-    previous: MeasureFragment | null;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
-  }): number {
-    const minRequiredWidth = this.getMinRequiredWidth(opts.previous);
-
-    const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
-    const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
-    const widthDelta = widthDeficit * widthFraction;
-
-    return minRequiredWidth + widthDelta;
+  getMultiRestCount(): number {
+    // TODO: One stave could be a multi measure rest, while another one could have voices.
+    return util.max(this.staves.map((stave) => stave.getMultiRestCount()));
   }
 
   /** Clones the MeasureFragment and updates the systemId. */
@@ -209,6 +199,21 @@ export class MeasureFragment {
   @util.memoize()
   private getMinJustifyWidth(): number {
     return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  /** Returns the width needed to stretch to fit the target width of the System. */
+  private getSystemFitWidth(opts: {
+    previous: MeasureFragment | null;
+    targetSystemWidth: number;
+    minRequiredSystemWidth: number;
+  }): number {
+    const minRequiredWidth = this.getMinRequiredWidth(opts.previous);
+
+    const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
+    const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
+    const widthDelta = widthDeficit * widthFraction;
+
+    return minRequiredWidth + widthDelta;
   }
 
   /** Returns what modifiers changed _in any stave_. */
