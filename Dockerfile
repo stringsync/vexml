@@ -8,7 +8,7 @@ WORKDIR /vexml
 # See https://github.com/puppeteer/puppeteer/blob/163394d7353d755e2b5ec47ffe56e2e869214860/docker/Dockerfile#L16
 USER root
 RUN mkdir -p src tests \
-    chown -R pptruser:pptruser /vexml \
+    && chown -R pptruser:pptruser /vexml \
     && chmod -R ugoa+rwX /vexml
 USER pptruser
 
