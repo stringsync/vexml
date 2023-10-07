@@ -2,20 +2,20 @@ import { Clef } from '@/musicxml/clef';
 import { xml } from '@/util';
 
 describe(Clef, () => {
-  describe('getStaffNumber', () => {
-    it('returns the staff number', () => {
+  describe('getStaveNumber', () => {
+    it('returns the stave number', () => {
       const node = xml.clef({ number: 2 });
       const clef = new Clef(node);
       expect(clef.getStaveNumber()).toBe(2);
     });
 
-    it(`defaults to '1' when invalid staff number`, () => {
+    it(`defaults to '1' when invalid stave number`, () => {
       const node = xml.clef({ number: NaN });
       const clef = new Clef(node);
       expect(clef.getStaveNumber()).toBe(1);
     });
 
-    it(`defaults to '1' when staff number missing`, () => {
+    it(`defaults to '1' when stave number missing`, () => {
       const node = xml.clef({});
       const clef = new Clef(node);
       expect(clef.getStaveNumber()).toBe(1);

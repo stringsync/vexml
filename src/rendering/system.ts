@@ -111,7 +111,7 @@ export class System {
     y: number;
     width: number;
     isLastSystem: boolean;
-    staffLayouts: musicxml.StaveLayout[];
+    staveLayouts: musicxml.StaveLayout[];
   }): SystemRendering {
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
@@ -122,7 +122,7 @@ export class System {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
-        staffLayouts: opts.staffLayouts,
+        staveLayouts: opts.staveLayouts,
       })
     );
 

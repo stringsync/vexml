@@ -169,8 +169,8 @@ export class Measure {
     }, {});
 
     for (const key2 of attributes2.getKeys()) {
-      const staffNumber = key2.getStaveNumber();
-      const keySignature1 = keys1[staffNumber];
+      const staveNumber = key2.getStaveNumber();
+      const keySignature1 = keys1[staveNumber];
       const keySignature2 = key2.getKeySignature();
 
       if (keySignature1 && keySignature1 !== keySignature2) {
@@ -185,8 +185,8 @@ export class Measure {
     }, {});
 
     for (const time2 of attributes2.getTimes()) {
-      const staffNumber = time2.getStaveNumber();
-      const timeSignature1 = times1[staffNumber];
+      const staveNumber = time2.getStaveNumber();
+      const timeSignature1 = times1[staveNumber];
       const timeSignature2 = util.first(time2.getTimeSignatures())?.toString();
 
       if (timeSignature1 && timeSignature1 !== timeSignature2) {
@@ -235,7 +235,7 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
-    staffLayouts: musicxml.StaveLayout[];
+    staveLayouts: musicxml.StaveLayout[];
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
@@ -251,7 +251,7 @@ export class Measure {
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
         previousMeasureFragment: previousFragment,
-        staffLayouts: opts.staffLayouts,
+        staveLayouts: opts.staveLayouts,
       });
       fragmentRenderings.push(fragmentRendering);
 

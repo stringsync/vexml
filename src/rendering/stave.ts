@@ -13,7 +13,7 @@ export type StaveEntryRendering = ChorusRendering | MultiRestRendering;
 /** The result of rendering a Stave. */
 export type StaveRendering = {
   type: 'stave';
-  staffNumber: number;
+  staveNumber: number;
   width: number;
   vexflow: {
     stave: vexflow.Stave;
@@ -31,11 +31,11 @@ export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
  * notes, rests, clefs, and key signatures.
  *
  * The `Stave` class acts as a container for musical elements that are vertically aligned in a score or sheet music. It
- * typically corresponds to a specific voice or set of voices, especially in multi-staff instruments like the piano.
+ * typically corresponds to a specific voice or set of voices, especially in multi-stave instruments like the piano.
  */
 export class Stave {
   private config: Config;
-  private staffNumber: number;
+  private staveNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: string;
@@ -45,7 +45,7 @@ export class Stave {
 
   private constructor(opts: {
     config: Config;
-    staffNumber: number;
+    staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: string;
@@ -54,7 +54,7 @@ export class Stave {
     entry: StaveEntry;
   }) {
     this.config = opts.config;
-    this.staffNumber = opts.staffNumber;
+    this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
     this.beginningBarStyle = opts.beginningBarStyle;
@@ -66,7 +66,7 @@ export class Stave {
   /** Creates a Stave. */
   static create(opts: {
     config: Config;
-    staffNumber: number;
+    staveNumber: number;
     clefType: musicxml.ClefType | null;
     timeSignature: musicxml.TimeSignature | null;
     keySignature: string | null;
@@ -78,7 +78,7 @@ export class Stave {
     endBarStyle: musicxml.BarStyle;
   }): Stave {
     const config = opts.config;
-    const staffNumber = opts.staffNumber;
+    const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
     const multiRestCount = opts.multiRestCount;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
@@ -103,7 +103,7 @@ export class Stave {
 
     return new Stave({
       config,
-      staffNumber,
+      staveNumber,
       clefType,
       timeSignature,
       keySignature,
@@ -156,7 +156,7 @@ export class Stave {
   clone(): Stave {
     return new Stave({
       config: this.config,
-      staffNumber: this.staffNumber,
+      staveNumber: this.staveNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
       keySignature: this.keySignature,
@@ -213,7 +213,7 @@ export class Stave {
 
     return {
       type: 'stave',
-      staffNumber: this.staffNumber,
+      staveNumber: this.staveNumber,
       width: opts.width,
       vexflow: {
         stave: vfStave,

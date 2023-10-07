@@ -55,9 +55,9 @@ export class MeasureFragment {
     const previousFragment = opts.previousFragment;
 
     const staves = new Array<Stave>(staveCount);
-    for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
-      const staffIndex = staffNumber - 1;
-      const previousStave = previousFragment?.staves[staffIndex] ?? null;
+    for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
+      const staveIndex = staveNumber - 1;
+      const previousStave = previousFragment?.staves[staveIndex] ?? null;
 
       // Assume that the measureEntries after the attributes do not need a new stave. See how MeasureFragments are
       // constructured in Measure.
@@ -65,42 +65,42 @@ export class MeasureFragment {
       const clefType =
         attributes
           ?.getClefs()
-          .find((clef) => clef.getStaveNumber() === staffNumber)
+          .find((clef) => clef.getStaveNumber() === staveNumber)
           ?.getClefType() ?? null;
 
       const timeSignature =
         attributes
           ?.getTimes()
-          .find((time) => time.getStaveNumber() === staffNumber)
+          .find((time) => time.getStaveNumber() === staveNumber)
           ?.getTimeSignatures()[0] ?? null;
 
       const keySignature =
         attributes
           ?.getKeys()
-          .find((key) => key.getStaveNumber() === staffNumber)
+          .find((key) => key.getStaveNumber() === staveNumber)
           ?.getKeySignature() ?? null;
 
       const multiRestCount =
         attributes
           ?.getMeasureStyles()
-          .find((measureStyle) => measureStyle.getStaveNumber() === staffNumber)
+          .find((measureStyle) => measureStyle.getStaveNumber() === staveNumber)
           ?.getMultipleRestCount() ?? 0;
 
       const quarterNoteDivisions = attributes?.getQuarterNoteDivisions() ?? 2;
 
-      staves[staffIndex] = Stave.create({
+      staves[staveIndex] = Stave.create({
         config,
         clefType,
         timeSignature,
         keySignature,
         multiRestCount,
         quarterNoteDivisions,
-        staffNumber,
+        staveNumber,
         beginningBarStyle,
         endBarStyle,
         measureEntries: measureEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
-            return entry.getStaveNumber() === staffNumber;
+            return entry.getStaveNumber() === staveNumber;
           }
           return true;
         }),
@@ -148,7 +148,7 @@ export class MeasureFragment {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
-    staffLayouts: musicxml.StaveLayout[];
+    staveLayouts: musicxml.StaveLayout[];
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
@@ -173,11 +173,11 @@ export class MeasureFragment {
       });
       staveRenderings.push(staveRendering);
 
-      const staffDistance =
-        opts.staffLayouts.find((staffLayout) => staffLayout.staveNumber === staveRendering.staffNumber)
+      const staveDistance =
+        opts.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
           ?.staveDistance ?? this.config.defaultStaveDistance;
 
-      y += staffDistance;
+      y += staveDistance;
     }
 
     return {

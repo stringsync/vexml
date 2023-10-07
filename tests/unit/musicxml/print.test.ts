@@ -2,8 +2,8 @@ import { Print } from '@/musicxml/print';
 import { xml } from '@/util';
 
 describe(Print, () => {
-  describe('getStaffLayouts', () => {
-    it('returns staff layouts', () => {
+  describe('getStaveLayouts', () => {
+    it('returns stave layouts', () => {
       const node = xml.print({
         staffLayouts: [
           xml.staffLayout({ number: 1, staffDistance: xml.staffDistance({ value: '42' }) }),
