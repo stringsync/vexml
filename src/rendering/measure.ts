@@ -93,31 +93,22 @@ export class Measure {
       }
     }
 
-    const fragments = new Array<MeasureFragment>();
-
     const entryGroups = Measure.createMeasureEntryGroups(xmlMeasure, previousMeasure);
-    let previousMeasureFragment: MeasureFragment | null = util.last(previousMeasure?.fragments ?? []) ?? null;
-
-    for (let index = 0; index < entryGroups.length; index++) {
-      const entryGroup = entryGroups[index];
+    const fragments = entryGroups.map((group, index) => {
       const isFirst = index === 0;
       const isLast = index === entryGroups.length - 1;
 
-      const measureFragment = MeasureFragment.create({
+      return MeasureFragment.create({
         config,
         musicXml: {
-          attributes: entryGroup.attributes,
-          measureEntries: entryGroup.entries,
+          attributes: group.attributes,
+          measureEntries: group.entries,
           beginningBarStyle: isFirst ? beginningBarStyle : 'none',
           endBarStyle: isLast ? endBarStyle : 'none',
         },
         staveCount,
-        staffNumber: 1,
-        previousMeasureFragment,
       });
-
-      previousMeasureFragment = measureFragment;
-    }
+    });
 
     for (let staffNumber = 1; staffNumber <= opts.staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
