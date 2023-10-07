@@ -15,7 +15,6 @@ export type MeasureFragmentRendering = {
 export class MeasureFragment {
   private config: Config;
   private systemId: symbol;
-  private attributes: musicxml.Attributes | null;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private staves: Stave[];
@@ -23,14 +22,12 @@ export class MeasureFragment {
   private constructor(opts: {
     config: Config;
     systemId: symbol;
-    attributes: musicxml.Attributes | null;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     staves: Stave[];
   }) {
     this.config = opts.config;
     this.systemId = opts.systemId;
-    this.attributes = opts.attributes;
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
     this.staves = opts.staves;
@@ -47,6 +44,7 @@ export class MeasureFragment {
       endBarStyle: musicxml.BarStyle;
     };
     staveCount: number;
+    previousFragment: MeasureFragment | null;
   }): MeasureFragment {
     const config = opts.config;
     const systemId = opts.systemId;
@@ -55,29 +53,30 @@ export class MeasureFragment {
     const staveCount = opts.staveCount;
     const beginningBarStyle = opts.musicXml.beginningBarStyle;
     const endBarStyle = opts.musicXml.endBarStyle;
+    const previousFragment = opts.previousFragment;
 
     const staves = new Array<Stave>(staveCount);
-    let previousStave: Stave | null = null;
     for (let staffNumber = 1; staffNumber <= staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
+      const previousStave = previousFragment?.staves[staffIndex] ?? null;
 
       const clefType =
         attributes
           ?.getClefs()
           .find((clef) => clef.getStaffNumber() === staffNumber)
-          ?.getClefType() ?? 'treble';
+          ?.getClefType() ?? null;
 
       const timeSignature =
         attributes
           ?.getTimes()
           .find((time) => time.getStaffNumber() === staffNumber)
-          ?.getTimeSignatures()[0] ?? new musicxml.TimeSignature(4, 4);
+          ?.getTimeSignatures()[0] ?? null;
 
       const keySignature =
         attributes
           ?.getKeys()
           .find((key) => key.getStaffNumber() === staffNumber)
-          ?.getKeySignature() ?? 'C';
+          ?.getKeySignature() ?? null;
 
       const multiRestCount =
         attributes
@@ -105,23 +104,15 @@ export class MeasureFragment {
         }),
         previousStave,
       });
-
-      previousStave = staves[staffIndex];
     }
 
     return new MeasureFragment({
       config,
       systemId,
-      attributes,
       beginningBarStyle,
       endBarStyle,
       staves,
     });
-  }
-
-  /** Returns the attributes that the MeasureFrament is using. */
-  getAttributes(): musicxml.Attributes | null {
-    return this.attributes;
   }
 
   /** Returns the minimum required width for the Measure. */
@@ -141,7 +132,6 @@ export class MeasureFragment {
     return new MeasureFragment({
       config: this.config,
       systemId: systemId,
-      attributes: this.attributes,
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
       staves: this.staves.map((stave) => stave.clone()),

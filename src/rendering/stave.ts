@@ -67,9 +67,9 @@ export class Stave {
   static create(opts: {
     config: Config;
     staffNumber: number;
-    clefType: musicxml.ClefType;
-    timeSignature: musicxml.TimeSignature;
-    keySignature: string;
+    clefType: musicxml.ClefType | null;
+    timeSignature: musicxml.TimeSignature | null;
+    keySignature: string | null;
     multiRestCount: number;
     chorusEntries: ChorusEntry[];
     quarterNoteDivisions: number;
@@ -80,13 +80,15 @@ export class Stave {
     const config = opts.config;
     const staffNumber = opts.staffNumber;
     const chorusEntries = opts.chorusEntries;
-    const clefType = opts.clefType;
-    const keySignature = opts.keySignature;
-    const timeSignature = opts.timeSignature;
     const multiRestCount = opts.multiRestCount;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
     const endBarStyle = opts.endBarStyle;
+    const previousStave = opts.previousStave;
+
+    const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
+    const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
+    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? new musicxml.TimeSignature(4, 4);
 
     const entry =
       multiRestCount > 0
