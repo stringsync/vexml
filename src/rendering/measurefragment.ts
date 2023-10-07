@@ -1,4 +1,3 @@
-import { ChorusEntry } from './chorus';
 import { Config } from './config';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
@@ -39,7 +38,7 @@ export class MeasureFragment {
     systemId: symbol;
     musicXml: {
       attributes: musicxml.Attributes | null;
-      chorusEntries: ChorusEntry[];
+      measureEntries: musicxml.MeasureEntry[];
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
     };
@@ -49,7 +48,7 @@ export class MeasureFragment {
     const config = opts.config;
     const systemId = opts.systemId;
     const attributes = opts.musicXml.attributes;
-    const chorusEntries = opts.musicXml.chorusEntries;
+    const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
     const beginningBarStyle = opts.musicXml.beginningBarStyle;
     const endBarStyle = opts.musicXml.endBarStyle;
@@ -96,7 +95,7 @@ export class MeasureFragment {
         staffNumber,
         beginningBarStyle,
         endBarStyle,
-        chorusEntries: chorusEntries.filter((entry) => {
+        measureEntries: measureEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
             return entry.getStaffNumber() === staffNumber;
           }

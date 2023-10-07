@@ -3,7 +3,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import * as util from '@/util';
 import { MultiRest, MultiRestRendering } from './multirest';
-import { Chorus, ChorusEntry, ChorusRendering } from './chorus';
+import { Chorus, ChorusRendering } from './chorus';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest;
@@ -71,7 +71,7 @@ export class Stave {
     timeSignature: musicxml.TimeSignature | null;
     keySignature: string | null;
     multiRestCount: number;
-    chorusEntries: ChorusEntry[];
+    measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
     previousStave: Stave | null;
     beginningBarStyle: musicxml.BarStyle;
@@ -79,7 +79,7 @@ export class Stave {
   }): Stave {
     const config = opts.config;
     const staffNumber = opts.staffNumber;
-    const chorusEntries = opts.chorusEntries;
+    const measureEntries = opts.measureEntries;
     const multiRestCount = opts.multiRestCount;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
@@ -97,7 +97,7 @@ export class Stave {
           })
         : Chorus.create({
             config,
-            entries: chorusEntries,
+            measureEntries: measureEntries,
             clefType,
             timeSignature,
             quarterNoteDivisions,

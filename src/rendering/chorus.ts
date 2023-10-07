@@ -12,9 +12,6 @@ export type ChorusRendering = {
   voices: VoiceRendering[];
 };
 
-/** The data needed to specify multiple voices in a stave. */
-export type ChorusEntry = musicxml.Note | musicxml.Backup | musicxml.Forward;
-
 /**
  * Represents a collection or cluster of musical voices within a single measure.
  *
@@ -35,13 +32,13 @@ export class Chorus {
   /** Creates a Chorus. */
   static create(opts: {
     config: Config;
-    entries: ChorusEntry[];
+    measureEntries: musicxml.MeasureEntry[];
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
     quarterNoteDivisions: number;
   }): Chorus {
     const config = opts.config;
-    const entries = opts.entries;
+    const measureEntries = opts.measureEntries;
     const clefType = opts.clefType;
     const timeSignature = opts.timeSignature;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
@@ -50,7 +47,7 @@ export class Chorus {
     let divisions = Division.of(0, quarterNoteDivisions);
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
-    for (const entry of entries) {
+    for (const entry of measureEntries) {
       if (entry instanceof musicxml.Note) {
         const note = entry;
 

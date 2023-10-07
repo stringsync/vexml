@@ -1,10 +1,9 @@
 import * as musicxml from '@/musicxml';
-import { Config } from './config';
 import * as util from '@/util';
-import { Text } from './text';
 import * as vexflow from 'vexflow';
+import { Config } from './config';
+import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
-import { ChorusEntry } from './chorus';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -22,10 +21,9 @@ export type MeasureRendering = {
   width: number;
 };
 
-/** Assigns a single Attributes to a list of MeasureFragEntries. */
 type MeasureEntryGroup = {
   attributes: musicxml.Attributes | null;
-  chorusEntries: ChorusEntry[];
+  entries: musicxml.MeasureEntry[];
 };
 
 /**
@@ -38,12 +36,20 @@ export class Measure {
   private index: number;
   private label: string;
   private fragments: MeasureFragment[];
+  private attributes: musicxml.Attributes[];
 
-  private constructor(opts: { config: Config; index: number; label: string; fragments: MeasureFragment[] }) {
+  private constructor(opts: {
+    config: Config;
+    index: number;
+    label: string;
+    fragments: MeasureFragment[];
+    attributes: musicxml.Attributes[];
+  }) {
     this.config = opts.config;
     this.index = opts.index;
     this.label = opts.label;
     this.fragments = opts.fragments;
+    this.attributes = opts.attributes;
   }
 
   /** Creates a Measure. */
@@ -83,7 +89,7 @@ export class Measure {
       }
     }
 
-    const entryGroups = Measure.createMeasureEntryGroups(xmlMeasure);
+    const entryGroups = Measure.groupByStave(xmlMeasure.getEntries());
     const fragments = new Array<MeasureFragment>();
     let previousFragment = util.last(previousMeasure?.fragments ?? []);
 
@@ -97,7 +103,7 @@ export class Measure {
         systemId,
         musicXml: {
           attributes: entryGroup.attributes,
-          chorusEntries: entryGroup.chorusEntries,
+          measureEntries: entryGroup.entries,
           beginningBarStyle: isFirst ? beginningBarStyle : 'none',
           endBarStyle: isLast ? endBarStyle : 'none',
         },
@@ -114,37 +120,82 @@ export class Measure {
       index: opts.index,
       label,
       fragments,
+      attributes: xmlMeasure.getAttributes(),
     });
   }
 
-  private static createMeasureEntryGroups(xmlMeasure: musicxml.Measure): MeasureEntryGroup[] {
+  /** Takes the entries, and groups them by <attributes> changes that would require a new stave. */
+  private static groupByStave(xmlMeasureEntries: musicxml.MeasureEntry[]): MeasureEntryGroup[] {
     const groups = new Array<MeasureEntryGroup>();
-    let attributes: musicxml.Attributes | null = null;
-    let chorusEntries = new Array<ChorusEntry>();
 
-    const xmlMeasureEntries = xmlMeasure.getEntries();
+    let entries = new Array<musicxml.MeasureEntry>();
+    let attributes: musicxml.Attributes | null = null;
 
     for (let index = 0; index < xmlMeasureEntries.length; index++) {
-      const xmlMeasureEntry = xmlMeasureEntries[index];
+      const entry = xmlMeasureEntries[index];
       const isFirst = index === 0;
       const isLast = index === xmlMeasureEntries.length - 1;
 
-      if (xmlMeasureEntry instanceof musicxml.Attributes) {
-        if (!isFirst) {
-          groups.push({ attributes, chorusEntries });
+      if (entry instanceof musicxml.Attributes) {
+        if (!isFirst && xmlMeasureEntries.length > 0 && Measure.shouldRenderSeparateStave(attributes, entry)) {
+          groups.push({ attributes, entries });
+          entries = [];
         }
-        attributes = xmlMeasureEntry;
-        chorusEntries = [];
-      } else {
-        chorusEntries.push(xmlMeasureEntry);
+        attributes = entry;
       }
 
+      entries.push(entry);
+
       if (isLast) {
-        groups.push({ attributes, chorusEntries });
+        groups.push({ attributes, entries });
       }
     }
 
     return groups;
+  }
+
+  private static shouldRenderSeparateStave(
+    attributes1: musicxml.Attributes | null,
+    attributes2: musicxml.Attributes
+  ): boolean {
+    if (!attributes1) {
+      return false;
+    }
+
+    // Check to see if the key signature changed in a manner that requires a separate stave.
+    const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
+      memo[key.getStaffNumber()] = key.getKeySignature();
+      return memo;
+    }, {});
+
+    for (const key2 of attributes2.getKeys()) {
+      const staffNumber = key2.getStaffNumber();
+      const keySignature1 = keys1[staffNumber];
+      const keySignature2 = key2.getKeySignature();
+
+      if (keySignature1 && keySignature1 !== keySignature2) {
+        return true;
+      }
+    }
+
+    // Check to see if the time signature changed in a manner that requires a separate stave.
+    const times1 = attributes1.getTimes().reduce<Record<number, string>>((memo, time) => {
+      memo[time.getStaffNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
+      return memo;
+    }, {});
+
+    for (const time2 of attributes2.getTimes()) {
+      const staffNumber = time2.getStaffNumber();
+      const timeSignature1 = times1[staffNumber];
+      const timeSignature2 = util.first(time2.getTimeSignatures())?.toString();
+
+      if (timeSignature1 && timeSignature1 !== timeSignature2) {
+        return true;
+      }
+    }
+
+    // Nothing changed that warrants a new stave.
+    return false;
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
@@ -154,6 +205,7 @@ export class Measure {
       label: this.label,
       config: this.config,
       fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
+      attributes: this.attributes,
     });
   }
 
