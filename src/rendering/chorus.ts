@@ -178,7 +178,7 @@ export class Chorus {
     if (this.voices.length > 0) {
       const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
       const vfFormatter = new vexflow.Formatter();
-      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.voicePadding;
+      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
     }
     return 0;
   }

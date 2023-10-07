@@ -120,7 +120,7 @@ export class Stave {
       // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
       // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
       // the moment.
-      return this.config.multiMeasureRestWidth;
+      return this.config.MULTI_MEASURE_REST_WIDTH;
     }
 
     if (this.entry instanceof Chorus) {
