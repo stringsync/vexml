@@ -33,19 +33,19 @@ describe(StaveDetails, () => {
       it('returns the staff number', () => {
         const node = xml.staffDetails({ number: 2 });
         const staffDetails = new StaveDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(2);
+        expect(staffDetails.getStaveNumber()).toBe(2);
       });
 
       it(`defaults to '1' when invalid staff number`, () => {
         const node = xml.staffDetails({ number: NaN });
         const staffDetails = new StaveDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(1);
+        expect(staffDetails.getStaveNumber()).toBe(1);
       });
 
       it(`defaults to '1' when staff number missing`, () => {
         const node = xml.staffDetails({});
         const staffDetails = new StaveDetails(node);
-        expect(staffDetails.getStaffNumber()).toBe(1);
+        expect(staffDetails.getStaveNumber()).toBe(1);
       });
     });
   });
@@ -57,13 +57,13 @@ describe(StaveDetails, () => {
 
       const staffDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffLines()).toBe(6);
+      expect(staffDetails.getStaveLines()).toBe(6);
     });
 
     it('defaults to 5 when missing', () => {
       const node = xml.staffDetails({});
       const staffDetails = new StaveDetails(node);
-      expect(staffDetails.getStaffLines()).toBe(5);
+      expect(staffDetails.getStaveLines()).toBe(5);
     });
 
     it('defaults to 5 when invalid', () => {
@@ -72,7 +72,7 @@ describe(StaveDetails, () => {
 
       const staffDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffLines()).toBe(5);
+      expect(staffDetails.getStaveLines()).toBe(5);
     });
   });
 });
