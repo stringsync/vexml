@@ -24,14 +24,14 @@ export type ScoreRendering = {
 export class Score {
   private config: Config;
   private system: System;
-  private staffLayouts: musicxml.StaffLayout[];
+  private staffLayouts: musicxml.StaveLayout[];
   private systemLayout: musicxml.SystemLayout | null;
   private title: Title;
 
   private constructor(opts: {
     config: Config;
     system: System;
-    staffLayouts: musicxml.StaffLayout[];
+    staffLayouts: musicxml.StaveLayout[];
     systemLayout: musicxml.SystemLayout | null;
     title: Title;
   }) {
@@ -48,7 +48,7 @@ export class Score {
     const scorePartwise = opts.musicXml.getScorePartwise();
     const parts = scorePartwise?.getParts() ?? [];
     const defaults = scorePartwise?.getDefaults() ?? null;
-    const staffLayouts = defaults?.getStaffLayouts() ?? [];
+    const staffLayouts = defaults?.getStaveLayouts() ?? [];
     const systemLayout = defaults?.getSystemLayout() ?? null;
 
     const title = Title.create({ config, text: scorePartwise?.getTitle() ?? '' });

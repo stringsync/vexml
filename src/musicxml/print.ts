@@ -1,5 +1,5 @@
 import { NamedElement } from '@/util';
-import { StaffLayout, SystemLayout } from './types';
+import { StaveLayout, SystemLayout } from './types';
 
 /**
  * Contains general printing parameters, including layout elements.
@@ -10,7 +10,7 @@ export class Print {
   constructor(private element: NamedElement<'print'>) {}
 
   /** Returns staff layouts of the print. */
-  getStaffLayouts(): StaffLayout[] {
+  getStaffLayouts(): StaveLayout[] {
     return this.element.all('staff-layout').map((element) => ({
       staffNumber: element.attr('number').withDefault(1).int(),
       staffDistance: element.first('staff-distance')?.content().withDefault(0).int() ?? null,
