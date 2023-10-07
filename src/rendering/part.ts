@@ -178,7 +178,7 @@ export class Part {
         );
       }
 
-      x += util.first(staves)?.width ?? 0;
+      x += measureRendering.width;
     }
 
     return {
