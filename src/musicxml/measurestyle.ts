@@ -8,8 +8,8 @@ import { NamedElement } from '@/util';
 export class MeasureStyle {
   constructor(private element: NamedElement<'measure-style'>) {}
 
-  /** Returns the staff number this measure style belongs to. */
-  getStaffNumber(): number {
+  /** Returns the stave number this measure style belongs to. */
+  getStaveNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
 
