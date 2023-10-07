@@ -254,12 +254,12 @@ export type BeamValue = EnumValues<typeof BEAM_VALUES>;
 export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook'] as const);
 
 /**
- * The staff-type value specifies different uses for the staff.
+ * The stave-type value specifies different uses for the staff.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/staff-type/
  */
-export type StaffType = EnumValues<typeof STAFF_TYPES>;
-export const STAFF_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', 'regular'] as const);
+export type StaveType = EnumValues<typeof STAVE_TYPES>;
+export const STAVE_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', 'regular'] as const);
 
 /**
  * Lyric hyphenation is indicated by the syllabic type.
