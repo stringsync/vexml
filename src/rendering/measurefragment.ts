@@ -65,7 +65,7 @@ export class MeasureFragment {
       const clefType =
         attributes
           ?.getClefs()
-          .find((clef) => clef.getStaffNumber() === staffNumber)
+          .find((clef) => clef.getStaveNumber() === staffNumber)
           ?.getClefType() ?? null;
 
       const timeSignature =
