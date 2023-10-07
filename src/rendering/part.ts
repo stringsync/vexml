@@ -138,7 +138,7 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
-    staffLayouts: musicxml.StaffLayout[];
+    staffLayouts: musicxml.StaveLayout[];
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 

@@ -1,11 +1,11 @@
 /**
- * StaffLayout describes how a staff is positioned.
+ * StaveLayout describes how a stave is positioned.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/staff-layout/
  */
-export type StaffLayout = {
-  staffNumber: number;
-  staffDistance: number | null;
+export type StaveLayout = {
+  staveNumber: number;
+  staveDistance: number | null;
 };
 
 /**

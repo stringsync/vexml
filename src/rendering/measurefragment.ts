@@ -148,7 +148,7 @@ export class MeasureFragment {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
-    staffLayouts: musicxml.StaffLayout[];
+    staffLayouts: musicxml.StaveLayout[];
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
@@ -174,8 +174,8 @@ export class MeasureFragment {
       staveRenderings.push(staveRendering);
 
       const staffDistance =
-        opts.staffLayouts.find((staffLayout) => staffLayout.staffNumber === staveRendering.staffNumber)
-          ?.staffDistance ?? this.config.defaultStaffDistance;
+        opts.staffLayouts.find((staffLayout) => staffLayout.staveNumber === staveRendering.staffNumber)
+          ?.staveDistance ?? this.config.defaultStaffDistance;
 
       y += staffDistance;
     }

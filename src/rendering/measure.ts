@@ -235,7 +235,7 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
-    staffLayouts: musicxml.StaffLayout[];
+    staffLayouts: musicxml.StaveLayout[];
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
