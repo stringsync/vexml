@@ -9,11 +9,11 @@ import { StaveLayout, SystemLayout } from './types';
 export class Print {
   constructor(private element: NamedElement<'print'>) {}
 
-  /** Returns staff layouts of the print. */
-  getStaffLayouts(): StaveLayout[] {
+  /** Returns stave layouts of the print. */
+  getStaveLayouts(): StaveLayout[] {
     return this.element.all('staff-layout').map((element) => ({
-      staffNumber: element.attr('number').withDefault(1).int(),
-      staffDistance: element.first('staff-distance')?.content().withDefault(0).int() ?? null,
+      staveNumber: element.attr('number').withDefault(1).int(),
+      staveDistance: element.first('staff-distance')?.content().withDefault(0).int() ?? null,
     }));
   }
 
