@@ -2,7 +2,7 @@ import { MeasureStyle } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(MeasureStyle, () => {
-  describe('getStaffNumber', () => {
+  describe('getStaveNumber', () => {
     it('returns the number of the measure style', () => {
       const node = xml.measureStyle({ staffNumber: 4 });
       const measureStyle = new MeasureStyle(node);

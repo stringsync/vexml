@@ -80,8 +80,8 @@ describe(Attributes, () => {
     });
   });
 
-  describe('getStaffDetails', () => {
-    it('returns the staff details', () => {
+  describe('getStaveDetails', () => {
+    it('returns the stave details', () => {
       const staffDetails1 = xml.staffDetails();
       const staffDetails2 = xml.staffDetails();
       const node = xml.attributes({ staffDetails: [staffDetails1, staffDetails2] });
