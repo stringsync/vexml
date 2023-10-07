@@ -97,7 +97,8 @@ export class Score {
         y,
         ...systemRendering.parts
           .flatMap((part) => part.measures)
-          .flatMap((measure) => measure.staves)
+          .flatMap((measure) => measure.fragments)
+          .flatMap((measureFragment) => measureFragment.staves)
           .map((stave) => {
             const box = stave.vexflow.stave.getBoundingBox();
             return box.getY() + box.getH();
@@ -111,7 +112,8 @@ export class Score {
 
     const parts = systemRenderings.flatMap((system) => system.parts);
     const measures = parts.flatMap((part) => part.measures);
-    const staves = measures.flatMap((measure) => measure.staves);
+    const measureFragments = measures.flatMap((measure) => measure.fragments);
+    const staves = measureFragments.flatMap((measureFragment) => measureFragment.staves);
 
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
     vfRenderer.resize(opts.width, y);

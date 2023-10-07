@@ -168,16 +168,17 @@ export class Part {
       });
       measureRenderings.push(measureRendering);
 
+      const staves = measureRendering.fragments.flatMap((fragment) => fragment.staves);
       if (hasStaveConnectorBrace) {
-        const topStave = util.first(measureRendering.staves)!;
-        const bottomStave = util.last(measureRendering.staves)!;
+        const topStave = util.first(staves)!;
+        const bottomStave = util.last(staves)!;
 
         vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
           'brace'
         );
       }
 
-      x += util.first(measureRendering.staves)?.width ?? 0;
+      x += util.first(staves)?.width ?? 0;
     }
 
     return {

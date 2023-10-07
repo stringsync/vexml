@@ -16,3 +16,8 @@ export const clamp = (min: number, max: number, value: number): number => {
 
   return Math.min(max, Math.max(min, value));
 };
+
+/** Computes the sum of the numbers, filtering out NaNs. */
+export const sum = (values: number[], initial = 0): number => {
+  return values.filter((value) => !Number.isNaN(value)).reduce((sum, value) => sum + value, initial);
+};
