@@ -164,12 +164,12 @@ export class Measure {
 
     // Check to see if the key signature changed in a manner that requires a separate stave.
     const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
-      memo[key.getStaffNumber()] = key.getKeySignature();
+      memo[key.getStaveNumber()] = key.getKeySignature();
       return memo;
     }, {});
 
     for (const key2 of attributes2.getKeys()) {
-      const staffNumber = key2.getStaffNumber();
+      const staffNumber = key2.getStaveNumber();
       const keySignature1 = keys1[staffNumber];
       const keySignature2 = key2.getKeySignature();
 

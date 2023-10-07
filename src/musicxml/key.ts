@@ -13,8 +13,8 @@ export class Key {
     return this.element.first('fifths')?.content().int() ?? 0;
   }
 
-  /** Returns the staff number this key belongs to. */
-  getStaffNumber(): number {
+  /** Returns the stave number this key belongs to. */
+  getStaveNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
 
