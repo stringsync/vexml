@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Key } from './key';
 import { NamedElement } from '@/util';
 import { Time } from './time';
-import { StaffDetails } from './staffdetails';
+import { StaveDetails } from './stavedetails';
 import { MeasureStyle } from './measurestyle';
 
 /**
@@ -20,8 +20,8 @@ export class Attributes {
   }
 
   /** Returns the staff details. */
-  getStaffDetails(): StaffDetails[] {
-    return this.element.all('staff-details').map((element) => new StaffDetails(element));
+  getStaffDetails(): StaveDetails[] {
+    return this.element.all('staff-details').map((element) => new StaveDetails(element));
   }
 
   /** Returns the times. */
