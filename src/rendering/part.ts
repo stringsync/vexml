@@ -138,7 +138,7 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
-    staffLayouts: musicxml.StaffLayout[];
+    staveLayouts: musicxml.StaveLayout[];
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
@@ -164,7 +164,7 @@ export class Part {
         previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
-        staffLayouts: opts.staffLayouts,
+        staveLayouts: opts.staveLayouts,
       });
       measureRenderings.push(measureRendering);
 

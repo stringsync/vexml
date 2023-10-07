@@ -2,7 +2,7 @@ import { Attributes } from '@/musicxml/attributes';
 import { Clef } from '@/musicxml/clef';
 import { Key } from '@/musicxml/key';
 import { Time } from '@/musicxml/time';
-import { StaffDetails } from '@/musicxml/staffdetails';
+import { StaveDetails } from '@/musicxml/stavedetails';
 import { xml } from '@/util';
 import { MeasureStyle } from '@/musicxml/measurestyle';
 
@@ -80,24 +80,24 @@ describe(Attributes, () => {
     });
   });
 
-  describe('getStaffDetails', () => {
-    it('returns the staff details', () => {
+  describe('getStaveDetails', () => {
+    it('returns the stave details', () => {
       const staffDetails1 = xml.staffDetails();
       const staffDetails2 = xml.staffDetails();
       const node = xml.attributes({ staffDetails: [staffDetails1, staffDetails2] });
 
       const attributes = new Attributes(node);
 
-      expect(attributes.getStaffDetails()).toStrictEqual([
-        new StaffDetails(staffDetails1),
-        new StaffDetails(staffDetails2),
+      expect(attributes.getStaveDetails()).toStrictEqual([
+        new StaveDetails(staffDetails1),
+        new StaveDetails(staffDetails2),
       ]);
     });
 
     it('returns an empty array when staff details are missing', () => {
       const node = xml.attributes({});
       const attributes = new Attributes(node);
-      expect(attributes.getStaffDetails()).toBeEmpty();
+      expect(attributes.getStaveDetails()).toBeEmpty();
     });
   });
 

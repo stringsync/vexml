@@ -2,23 +2,23 @@ import { MeasureStyle } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(MeasureStyle, () => {
-  describe('getStaffNumber', () => {
+  describe('getStaveNumber', () => {
     it('returns the number of the measure style', () => {
       const node = xml.measureStyle({ staffNumber: 4 });
       const measureStyle = new MeasureStyle(node);
-      expect(measureStyle.getStaffNumber()).toBe(4);
+      expect(measureStyle.getStaveNumber()).toBe(4);
     });
 
     it('defaults to 1 when number is missing', () => {
       const node = xml.measureStyle();
       const measureStyle = new MeasureStyle(node);
-      expect(measureStyle.getStaffNumber()).toBe(1);
+      expect(measureStyle.getStaveNumber()).toBe(1);
     });
 
     it('defaults to 1 when number is invalid', () => {
       const node = xml.measureStyle({ staffNumber: NaN });
       const measureStyle = new MeasureStyle(node);
-      expect(measureStyle.getStaffNumber()).toBe(1);
+      expect(measureStyle.getStaveNumber()).toBe(1);
     });
   });
 

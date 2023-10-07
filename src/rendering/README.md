@@ -89,7 +89,7 @@ The `vexflow` key serves as a namespace:
 /** The result of rendering a Stave. */
 export type StaveRendering = {
   type: 'stave';
-  staffNumber: number;
+  staveNumber: number;
   width: number;
   vexflow: {
     stave: vexflow.Stave;

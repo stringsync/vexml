@@ -9,8 +9,8 @@ import { TimeSignature } from './timesignature';
 export class Time {
   constructor(private element: NamedElement<'time'>) {}
 
-  /** Returns the staff number this time belongs to. */
-  getStaffNumber(): number {
+  /** Returns the stave number this time belongs to. */
+  getStaveNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
 

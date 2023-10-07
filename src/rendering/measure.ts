@@ -164,13 +164,13 @@ export class Measure {
 
     // Check to see if the key signature changed in a manner that requires a separate stave.
     const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
-      memo[key.getStaffNumber()] = key.getKeySignature();
+      memo[key.getStaveNumber()] = key.getKeySignature();
       return memo;
     }, {});
 
     for (const key2 of attributes2.getKeys()) {
-      const staffNumber = key2.getStaffNumber();
-      const keySignature1 = keys1[staffNumber];
+      const staveNumber = key2.getStaveNumber();
+      const keySignature1 = keys1[staveNumber];
       const keySignature2 = key2.getKeySignature();
 
       if (keySignature1 && keySignature1 !== keySignature2) {
@@ -180,13 +180,13 @@ export class Measure {
 
     // Check to see if the time signature changed in a manner that requires a separate stave.
     const times1 = attributes1.getTimes().reduce<Record<number, string>>((memo, time) => {
-      memo[time.getStaffNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
+      memo[time.getStaveNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
       return memo;
     }, {});
 
     for (const time2 of attributes2.getTimes()) {
-      const staffNumber = time2.getStaffNumber();
-      const timeSignature1 = times1[staffNumber];
+      const staveNumber = time2.getStaveNumber();
+      const timeSignature1 = times1[staveNumber];
       const timeSignature2 = util.first(time2.getTimeSignatures())?.toString();
 
       if (timeSignature1 && timeSignature1 !== timeSignature2) {
@@ -235,7 +235,7 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
-    staffLayouts: musicxml.StaffLayout[];
+    staveLayouts: musicxml.StaveLayout[];
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
@@ -251,7 +251,7 @@ export class Measure {
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
         previousMeasureFragment: previousFragment,
-        staffLayouts: opts.staffLayouts,
+        staveLayouts: opts.staveLayouts,
       });
       fragmentRenderings.push(fragmentRendering);
 
@@ -286,7 +286,7 @@ export class Measure {
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
       color: MEASURE_LABEL_COLOR,
-      size: this.config.measureNumberFontSize,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
     });
 
     return {
