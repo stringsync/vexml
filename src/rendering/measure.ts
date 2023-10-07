@@ -4,6 +4,7 @@ import { Config } from './config';
 import * as util from '@/util';
 import { Text } from './text';
 import * as vexflow from 'vexflow';
+import { MeasureFragment, MeasureFragmentEntry } from './measurefragment';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -20,6 +21,12 @@ export type MeasureRendering = {
   staves: StaveRendering[];
 };
 
+/** Assigns a single Attributes to a list of MeasureFragEntries. */
+type MeasureEntryGroup = {
+  attributes: musicxml.Attributes | null;
+  entries: MeasureFragmentEntry[];
+};
+
 /**
  * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
  * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
@@ -31,13 +38,22 @@ export class Measure {
   private label: string;
   private staves: Stave[];
   private systemId: symbol;
+  private fragments: MeasureFragment[];
 
-  private constructor(opts: { config: Config; index: number; label: string; staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: {
+    config: Config;
+    index: number;
+    label: string;
+    staves: Stave[];
+    systemId: symbol;
+    fragments: MeasureFragment[];
+  }) {
     this.config = opts.config;
     this.index = opts.index;
     this.label = opts.label;
     this.staves = opts.staves;
     this.systemId = opts.systemId;
+    this.fragments = opts.fragments;
   }
 
   /** Creates a Measure. */
@@ -51,10 +67,57 @@ export class Measure {
     systemId: symbol;
     previousMeasure: Measure | null;
   }): Measure {
-    const measure = opts.musicXml.measure;
+    const config = opts.config;
+    const xmlMeasure = opts.musicXml.measure;
+    const staveCount = opts.staveCount;
+    const previousMeasure = opts.previousMeasure;
     const staves = new Array<Stave>(opts.staveCount);
 
-    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
+    const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
+
+    const begginingMeasure = xmlMeasure;
+    let beginningBarStyle: musicxml.BarStyle = 'regular';
+    for (const barline of begginingMeasure.getBarlines()) {
+      const barStyle = barline.getBarStyle();
+      if (barline.getLocation() === 'left') {
+        beginningBarStyle = barStyle;
+      }
+    }
+
+    const endingMeasure = xmlMeasure.getEndingMeasure();
+    let endBarStyle: musicxml.BarStyle = 'regular';
+    for (const barline of endingMeasure.getBarlines()) {
+      const barStyle = barline.getBarStyle();
+      if (barline.getLocation() === 'right') {
+        endBarStyle = barStyle;
+      }
+    }
+
+    const fragments = new Array<MeasureFragment>();
+
+    const entryGroups = Measure.createMeasureEntryGroups(xmlMeasure, previousMeasure);
+    let previousMeasureFragment: MeasureFragment | null = util.last(previousMeasure?.fragments ?? []) ?? null;
+
+    for (let index = 0; index < entryGroups.length; index++) {
+      const entryGroup = entryGroups[index];
+      const isFirst = index === 0;
+      const isLast = index === entryGroups.length - 1;
+
+      const measureFragment = MeasureFragment.create({
+        config,
+        musicXml: {
+          attributes: entryGroup.attributes,
+          measureEntries: entryGroup.entries,
+          beginningBarStyle: isFirst ? beginningBarStyle : 'none',
+          endBarStyle: isLast ? endBarStyle : 'none',
+        },
+        staveCount,
+        staffNumber: 1,
+        previousMeasureFragment,
+      });
+
+      previousMeasureFragment = measureFragment;
+    }
 
     for (let staffNumber = 1; staffNumber <= opts.staveCount; staffNumber++) {
       const staffIndex = staffNumber - 1;
@@ -62,13 +125,50 @@ export class Measure {
         config: opts.config,
         staffNumber,
         musicXml: {
-          measure: measure,
+          measure: xmlMeasure,
         },
         previousStave: opts.previousMeasure?.staves[staffIndex] ?? null,
       });
     }
 
-    return new Measure({ config: opts.config, index: opts.index, label, staves, systemId: opts.systemId });
+    return new Measure({
+      config: opts.config,
+      index: opts.index,
+      label,
+      staves,
+      systemId: opts.systemId,
+      fragments,
+    });
+  }
+
+  private static createMeasureEntryGroups(
+    xmlMeasure: musicxml.Measure,
+    previousMeasure: Measure | null
+  ): MeasureEntryGroup[] {
+    const groups = new Array<MeasureEntryGroup>();
+    let attributes: musicxml.Attributes | null = previousMeasure?.getLastFragment()?.getAttributes() ?? null;
+    let entries = new Array<MeasureFragmentEntry>();
+
+    const xmlMeasureEntries = xmlMeasure.getEntries();
+
+    for (let index = 0; index < entries.length; index++) {
+      const xmlMeasureEntry = xmlMeasureEntries[index];
+
+      if (xmlMeasureEntry instanceof musicxml.Attributes) {
+        groups.push({ attributes, entries });
+        attributes = xmlMeasureEntry;
+        entries = [];
+      } else {
+        entries.push(xmlMeasureEntry);
+      }
+
+      const isLast = index === entries.length - 1;
+      if (isLast) {
+        groups.push({ attributes, entries });
+      }
+    }
+
+    return groups;
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
@@ -79,6 +179,7 @@ export class Measure {
       label: this.label,
       config: this.config,
       staves: this.staves.map((stave) => stave.clone()),
+      fragments: this.fragments.map((fragment) => fragment.clone()),
     });
   }
 
@@ -227,5 +328,9 @@ export class Measure {
       default:
         return vexflow.BarlineType.SINGLE;
     }
+  }
+
+  private getLastFragment(): MeasureFragment | null {
+    return util.last(this.fragments);
   }
 }

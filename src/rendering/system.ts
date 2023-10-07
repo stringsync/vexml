@@ -31,11 +31,11 @@ export class System {
 
     let previousPart: Part | null = null;
     const parts = new Array<Part>();
-    for (const mxPart of opts.musicXml.parts) {
+    for (const xmlPart of opts.musicXml.parts) {
       const part = Part.create({
         config: opts.config,
         systemId: id,
-        musicXml: { part: mxPart },
+        musicXml: { part: xmlPart },
         previousPart,
       });
       parts.push(part);
@@ -95,8 +95,8 @@ export class System {
         continueSystem(minRequiredWidth);
       } else {
         commitSystem(index);
-        // Recalculate to reflect the new conditions of the measure being on a different system.
-        // TODO: Using null breaks encapsulation, figure out another way to do this.
+        // Recalculate to reflect the new conditions of the measure being on a different system, which is why null
+        // is being used.
         minRequiredWidth = util.max(measures.map((measure) => measure.current.getMinRequiredWidth(null)));
         continueSystem(minRequiredWidth);
       }
