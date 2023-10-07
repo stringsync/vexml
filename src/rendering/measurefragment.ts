@@ -77,7 +77,7 @@ export class MeasureFragment {
       const keySignature =
         attributes
           ?.getKeys()
-          .find((key) => key.getStaffNumber() === staffNumber)
+          .find((key) => key.getStaveNumber() === staffNumber)
           ?.getKeySignature() ?? null;
 
       const multiRestCount =

@@ -254,7 +254,7 @@ export type BeamValue = EnumValues<typeof BEAM_VALUES>;
 export const BEAM_VALUES = new Enum(['backward hook', 'begin', 'continue', 'end', 'forward hook'] as const);
 
 /**
- * The stave-type value specifies different uses for the staff.
+ * The stave-type value specifies different uses for the stave.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/staff-type/
  */
