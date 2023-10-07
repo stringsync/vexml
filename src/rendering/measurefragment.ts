@@ -59,6 +59,9 @@ export class MeasureFragment {
       const staffIndex = staffNumber - 1;
       const previousStave = previousFragment?.staves[staffIndex] ?? null;
 
+      // Assume that the measureEntries after the attributes do not need a new stave. See how MeasureFragments are
+      // constructured in Measure.
+
       const clefType =
         attributes
           ?.getClefs()
