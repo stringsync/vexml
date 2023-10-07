@@ -41,13 +41,17 @@ export class Chorus {
     const measureEntries = opts.measureEntries;
     const clefType = opts.clefType;
     const timeSignature = opts.timeSignature;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
 
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
+    let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (const entry of measureEntries) {
+      if (entry instanceof musicxml.Attributes) {
+        quarterNoteDivisions = entry.getQuarterNoteDivisions();
+      }
+
       if (entry instanceof musicxml.Note) {
         const note = entry;
 
