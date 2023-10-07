@@ -1,9 +1,9 @@
 import * as musicxml from '@/musicxml';
-import { Stave, StaveModifier, StaveRendering } from './stave';
-import { Config } from './config';
 import * as util from '@/util';
-import { Text } from './text';
 import * as vexflow from 'vexflow';
+import { Config } from './config';
+import { Text } from './text';
+import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -17,7 +17,13 @@ export type MeasureRendering = {
   };
   index: number;
   label: Text;
-  staves: StaveRendering[];
+  fragments: MeasureFragmentRendering[];
+  width: number;
+};
+
+type MeasureEntryGroup = {
+  attributes: musicxml.Attributes | null;
+  entries: musicxml.MeasureEntry[];
 };
 
 /**
@@ -29,15 +35,21 @@ export class Measure {
   private config: Config;
   private index: number;
   private label: string;
-  private staves: Stave[];
-  private systemId: symbol;
+  private fragments: MeasureFragment[];
+  private attributes: musicxml.Attributes[];
 
-  private constructor(opts: { config: Config; index: number; label: string; staves: Stave[]; systemId: symbol }) {
+  private constructor(opts: {
+    config: Config;
+    index: number;
+    label: string;
+    fragments: MeasureFragment[];
+    attributes: musicxml.Attributes[];
+  }) {
     this.config = opts.config;
     this.index = opts.index;
     this.label = opts.label;
-    this.staves = opts.staves;
-    this.systemId = opts.systemId;
+    this.fragments = opts.fragments;
+    this.attributes = opts.attributes;
   }
 
   /** Creates a Measure. */
@@ -51,47 +63,168 @@ export class Measure {
     systemId: symbol;
     previousMeasure: Measure | null;
   }): Measure {
-    const measure = opts.musicXml.measure;
-    const staves = new Array<Stave>(opts.staveCount);
+    const config = opts.config;
+    const systemId = opts.systemId;
+    const xmlMeasure = opts.musicXml.measure;
+    const staveCount = opts.staveCount;
+    const previousMeasure = opts.previousMeasure;
 
-    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
+    const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
 
-    for (let staffNumber = 1; staffNumber <= opts.staveCount; staffNumber++) {
-      const staffIndex = staffNumber - 1;
-      staves[staffIndex] = Stave.create({
-        config: opts.config,
-        staffNumber,
-        musicXml: {
-          measure: measure,
-        },
-        previousStave: opts.previousMeasure?.staves[staffIndex] ?? null,
-      });
+    const begginingMeasure = xmlMeasure;
+    let beginningBarStyle: musicxml.BarStyle = 'regular';
+    for (const barline of begginingMeasure.getBarlines()) {
+      const barStyle = barline.getBarStyle();
+      if (barline.getLocation() === 'left') {
+        beginningBarStyle = barStyle;
+      }
     }
 
-    return new Measure({ config: opts.config, index: opts.index, label, staves, systemId: opts.systemId });
+    const endingMeasure = xmlMeasure.getEndingMeasure();
+    let endBarStyle: musicxml.BarStyle = 'regular';
+    for (const barline of endingMeasure.getBarlines()) {
+      const barStyle = barline.getBarStyle();
+      if (barline.getLocation() === 'right') {
+        endBarStyle = barStyle;
+      }
+    }
+
+    const entryGroups = Measure.groupByStave(xmlMeasure.getEntries());
+    const fragments = new Array<MeasureFragment>();
+    let previousFragment = util.last(previousMeasure?.fragments ?? []);
+
+    for (let index = 0; index < entryGroups.length; index++) {
+      const entryGroup = entryGroups[index];
+      const isFirst = index === 0;
+      const isLast = index === entryGroups.length - 1;
+
+      const fragment = MeasureFragment.create({
+        config,
+        systemId,
+        musicXml: {
+          attributes: entryGroup.attributes,
+          measureEntries: entryGroup.entries,
+          beginningBarStyle: isFirst ? beginningBarStyle : 'none',
+          endBarStyle: isLast ? endBarStyle : 'none',
+        },
+        staveCount,
+        previousFragment,
+      });
+      fragments.push(fragment);
+
+      previousFragment = fragment;
+    }
+
+    return new Measure({
+      config: opts.config,
+      index: opts.index,
+      label,
+      fragments,
+      attributes: xmlMeasure.getAttributes(),
+    });
+  }
+
+  /** Takes the entries, and groups them by <attributes> changes that would require a new stave. */
+  private static groupByStave(xmlMeasureEntries: musicxml.MeasureEntry[]): MeasureEntryGroup[] {
+    const groups = new Array<MeasureEntryGroup>();
+
+    let entries = new Array<musicxml.MeasureEntry>();
+    let attributes: musicxml.Attributes | null = null;
+
+    for (let index = 0; index < xmlMeasureEntries.length; index++) {
+      const entry = xmlMeasureEntries[index];
+      const isFirst = index === 0;
+      const isLast = index === xmlMeasureEntries.length - 1;
+
+      if (entry instanceof musicxml.Attributes) {
+        if (!isFirst && xmlMeasureEntries.length > 0 && Measure.shouldRenderSeparateStave(attributes, entry)) {
+          groups.push({ attributes, entries });
+          entries = [];
+        }
+        attributes = entry;
+      }
+
+      entries.push(entry);
+
+      if (isLast) {
+        groups.push({ attributes, entries });
+      }
+    }
+
+    return groups;
+  }
+
+  private static shouldRenderSeparateStave(
+    attributes1: musicxml.Attributes | null,
+    attributes2: musicxml.Attributes
+  ): boolean {
+    if (!attributes1) {
+      return false;
+    }
+
+    // Check to see if the key signature changed in a manner that requires a separate stave.
+    const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
+      memo[key.getStaffNumber()] = key.getKeySignature();
+      return memo;
+    }, {});
+
+    for (const key2 of attributes2.getKeys()) {
+      const staffNumber = key2.getStaffNumber();
+      const keySignature1 = keys1[staffNumber];
+      const keySignature2 = key2.getKeySignature();
+
+      if (keySignature1 && keySignature1 !== keySignature2) {
+        return true;
+      }
+    }
+
+    // Check to see if the time signature changed in a manner that requires a separate stave.
+    const times1 = attributes1.getTimes().reduce<Record<number, string>>((memo, time) => {
+      memo[time.getStaffNumber()] = util.first(time.getTimeSignatures())?.toString() ?? '';
+      return memo;
+    }, {});
+
+    for (const time2 of attributes2.getTimes()) {
+      const staffNumber = time2.getStaffNumber();
+      const timeSignature1 = times1[staffNumber];
+      const timeSignature2 = util.first(time2.getTimeSignatures())?.toString();
+
+      if (timeSignature1 && timeSignature1 !== timeSignature2) {
+        return true;
+      }
+    }
+
+    // Nothing changed that warrants a new stave.
+    return false;
   }
 
   /** Deeply clones the Measure, but replaces the systemId. */
   clone(systemId: symbol): Measure {
     return new Measure({
-      systemId,
       index: this.index,
       label: this.label,
       config: this.config,
-      staves: this.staves.map((stave) => stave.clone()),
+      fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
+      attributes: this.attributes,
     });
   }
 
   /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(previousMeasure: Measure | null): number {
-    const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasure);
-    const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
-    return this.getMinJustifyWidth() + staveModifiersWidth;
+    let sum = 0;
+
+    let previousMeasureFragment = util.last(previousMeasure?.fragments ?? []);
+    for (const fragment of this.fragments) {
+      sum += fragment.getMinRequiredWidth(previousMeasureFragment);
+      previousMeasureFragment = fragment;
+    }
+
+    return sum;
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
-    return util.max(this.staves.map((stave) => stave.getMultiRestCount()));
+    return util.sum(this.fragments.map((fragment) => fragment.getMultiRestCount()));
   }
 
   /** Renders the Measure. */
@@ -104,53 +237,47 @@ export class Measure {
     previousMeasure: Measure | null;
     staffLayouts: musicxml.StaffLayout[];
   }): MeasureRendering {
-    const staveRenderings = new Array<StaveRendering>();
+    const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
-    let y = opts.y;
+    let previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
+    let x = opts.x;
+    let width = 0;
 
-    for (const stave of this.staves) {
-      const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasure);
-      let minRequiredWidth = this.getMinRequiredWidth(opts.previousMeasure);
-
-      if (!opts.isLastSystem) {
-        const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
-        const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
-        const widthDelta = widthDeficit * widthFraction;
-
-        minRequiredWidth += widthDelta;
-      }
-
-      const staveRendering = stave.render({
-        x: opts.x,
-        y,
-        width: minRequiredWidth,
-        modifiers: staveModifiers,
+    for (const fragment of this.fragments) {
+      const fragmentRendering = fragment.render({
+        x,
+        y: opts.y,
+        isLastSystem: opts.isLastSystem,
+        minRequiredSystemWidth: opts.minRequiredSystemWidth,
+        targetSystemWidth: opts.targetSystemWidth,
+        previousMeasureFragment: previousFragment,
+        staffLayouts: opts.staffLayouts,
       });
-      staveRenderings.push(staveRendering);
+      fragmentRenderings.push(fragmentRendering);
 
-      const staffDistance =
-        opts.staffLayouts.find((staffLayout) => staffLayout.staffNumber === staffLayout.staffNumber)?.staffDistance ??
-        this.config.defaultStaffDistance;
-
-      y += staffDistance;
+      previousFragment = fragment;
+      x += fragmentRendering.width;
+      width += fragmentRendering.width;
     }
 
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
 
+    const staveRenderings = util.first(fragmentRenderings)?.staves ?? [];
     if (staveRenderings.length > 1) {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      const add = (type: vexflow.StaveConnectorType) =>
-        vfStaveConnectors.push(
-          new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(type)
-        );
-
       const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
-      add(begginingStaveConnectorType);
+      vfStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
+          begginingStaveConnectorType
+        )
+      );
 
       const endStaveConnectorType = this.toEndStaveConnectorType(topStave.vexflow.endBarlineType);
-      add(endStaveConnectorType);
+      vfStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
+      );
     }
 
     const label = new Text({
@@ -169,42 +296,9 @@ export class Measure {
       },
       index: this.index,
       label,
-      staves: staveRenderings,
+      fragments: fragmentRenderings,
+      width,
     };
-  }
-
-  /** Returns the minimum justify width. */
-  @util.memoize()
-  private getMinJustifyWidth(): number {
-    return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
-  }
-
-  /** Returns the modifiers width. */
-  private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
-    return util.max(this.staves.map((stave) => stave.getModifiersWidth(staveModifiers)));
-  }
-
-  /** Returns what modifiers changed _in any stave_. */
-  private getChangedStaveModifiers(previousMeasure: Measure | null): StaveModifier[] {
-    if (!previousMeasure) {
-      return ['clefType', 'keySignature', 'timeSignature'];
-    }
-
-    if (this.systemId !== previousMeasure.systemId) {
-      return ['clefType', 'keySignature', 'timeSignature'];
-    }
-
-    const staveModifiersChanges = new Set<StaveModifier>();
-
-    for (let index = 0; index < this.staves.length; index++) {
-      const stave1 = this.staves[index];
-      const stave2 = previousMeasure.staves[index];
-      for (const modifier of stave1.getModifierChanges(stave2)) {
-        staveModifiersChanges.add(modifier);
-      }
-    }
-
-    return Array.from(staveModifiersChanges);
   }
 
   private toBeginningStaveConnectorType(beginningBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
@@ -227,5 +321,9 @@ export class Measure {
       default:
         return vexflow.BarlineType.SINGLE;
     }
+  }
+
+  private getLastFragment(): MeasureFragment | null {
+    return util.last(this.fragments);
   }
 }

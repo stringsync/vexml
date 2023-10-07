@@ -1,4 +1,4 @@
-import { clamp, max } from '@/util';
+import { clamp, max, sum } from '@/util';
 
 describe('math', () => {
   describe('max', () => {
@@ -41,6 +41,23 @@ describe('math', () => {
 
     it('throws when min is greater than max', () => {
       expect(() => clamp(3, 1, 2)).toThrow();
+    });
+  });
+
+  describe('sum', () => {
+    it('returns the sum of the array', () => {
+      const result = sum([1, 2, 3]);
+      expect(result).toBe(6);
+    });
+
+    it('returns 0 as the sum if initial is not specified', () => {
+      const result = sum([]);
+      expect(result).toBe(0);
+    });
+
+    it('returns initial if there are no values', () => {
+      const result = sum([], 42);
+      expect(result).toBe(42);
     });
   });
 });

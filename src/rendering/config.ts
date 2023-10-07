@@ -4,7 +4,7 @@ export type Config = {
   titleTopPadding: number;
   titleFontFamily: string;
   titleFontSize: string;
-  measurePadding: number;
+  voicePadding: number;
   measureNumberFontSize: string;
   multiMeasureRestWidth: number;
 };
@@ -15,7 +15,7 @@ export const DEFAULT_CONFIG: Config = {
   titleTopPadding: 40,
   titleFontFamily: 'Arial',
   titleFontSize: '36px',
-  measurePadding: 80,
+  voicePadding: 80,
   measureNumberFontSize: '10px',
   multiMeasureRestWidth: 200,
 } as const;
