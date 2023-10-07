@@ -82,24 +82,31 @@ export class Measure {
       }
     }
 
-    const entryGroups = Measure.createMeasureEntryGroups(xmlMeasure, previousMeasure);
+    const entryGroups = Measure.createMeasureEntryGroups(xmlMeasure);
+    const fragments = new Array<MeasureFragment>();
+    let previousFragment = util.last(previousMeasure?.fragments ?? []);
 
-    const fragments = entryGroups.map((group, index) => {
+    for (let index = 0; index < entryGroups.length; index++) {
+      const entryGroup = entryGroups[index];
       const isFirst = index === 0;
       const isLast = index === entryGroups.length - 1;
 
-      return MeasureFragment.create({
+      const fragment = MeasureFragment.create({
         config,
         systemId,
         musicXml: {
-          attributes: group.attributes,
-          chorusEntries: group.chorusEntries,
+          attributes: entryGroup.attributes,
+          chorusEntries: entryGroup.chorusEntries,
           beginningBarStyle: isFirst ? beginningBarStyle : 'none',
           endBarStyle: isLast ? endBarStyle : 'none',
         },
         staveCount,
+        previousFragment,
       });
-    });
+      fragments.push(fragment);
+
+      previousFragment = fragment;
+    }
 
     return new Measure({
       config: opts.config,
@@ -109,12 +116,9 @@ export class Measure {
     });
   }
 
-  private static createMeasureEntryGroups(
-    xmlMeasure: musicxml.Measure,
-    previousMeasure: Measure | null
-  ): MeasureEntryGroup[] {
+  private static createMeasureEntryGroups(xmlMeasure: musicxml.Measure): MeasureEntryGroup[] {
     const groups = new Array<MeasureEntryGroup>();
-    let attributes: musicxml.Attributes | null = previousMeasure?.getLastFragment()?.getAttributes() ?? null;
+    let attributes: musicxml.Attributes | null = null;
     let chorusEntries = new Array<ChorusEntry>();
 
     const xmlMeasureEntries = xmlMeasure.getEntries();
