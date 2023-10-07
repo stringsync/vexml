@@ -100,7 +100,7 @@ export class MeasureFragment {
         endBarStyle,
         measureEntries: measureEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
-            return entry.getStaffNumber() === staffNumber;
+            return entry.getStaveNumber() === staffNumber;
           }
           return true;
         }),

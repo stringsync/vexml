@@ -134,19 +134,19 @@ describe(Note, () => {
     it('returns the staff number the note belongs to', () => {
       const node = xml.note({ staff: xml.staff({ number: 42 }) });
       const note = new Note(node);
-      expect(note.getStaffNumber()).toBe(42);
+      expect(note.getStaveNumber()).toBe(42);
     });
 
     it('defaults to 1 when staff number is invalid', () => {
       const node = xml.note({ staff: xml.staff({ number: NaN }) });
       const note = new Note(node);
-      expect(note.getStaffNumber()).toBe(1);
+      expect(note.getStaveNumber()).toBe(1);
     });
 
     it('defaults to 1 when staff number is missing', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getStaffNumber()).toBe(1);
+      expect(note.getStaveNumber()).toBe(1);
     });
   });
 
