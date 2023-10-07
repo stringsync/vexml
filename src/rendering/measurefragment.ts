@@ -83,7 +83,7 @@ export class MeasureFragment {
       const multiRestCount =
         attributes
           ?.getMeasureStyles()
-          .find((measureStyle) => measureStyle.getStaffNumber() === staffNumber)
+          .find((measureStyle) => measureStyle.getStaveNumber() === staffNumber)
           ?.getMultipleRestCount() ?? 0;
 
       const quarterNoteDivisions = attributes?.getQuarterNoteDivisions() ?? 2;
