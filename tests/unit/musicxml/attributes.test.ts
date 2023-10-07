@@ -88,7 +88,7 @@ describe(Attributes, () => {
 
       const attributes = new Attributes(node);
 
-      expect(attributes.getStaffDetails()).toStrictEqual([
+      expect(attributes.getStaveDetails()).toStrictEqual([
         new StaveDetails(staffDetails1),
         new StaveDetails(staffDetails2),
       ]);
@@ -97,7 +97,7 @@ describe(Attributes, () => {
     it('returns an empty array when staff details are missing', () => {
       const node = xml.attributes({});
       const attributes = new Attributes(node);
-      expect(attributes.getStaffDetails()).toBeEmpty();
+      expect(attributes.getStaveDetails()).toBeEmpty();
     });
   });
 

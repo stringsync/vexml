@@ -19,8 +19,8 @@ export class Attributes {
     return this.element.first('staves')?.content().withDefault(1).int() ?? 1;
   }
 
-  /** Returns the staff details. */
-  getStaffDetails(): StaveDetails[] {
+  /** Returns the stave details. */
+  getStaveDetails(): StaveDetails[] {
     return this.element.all('staff-details').map((element) => new StaveDetails(element));
   }
 
