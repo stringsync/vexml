@@ -1,5 +1,5 @@
 import { NamedElement } from '@/util';
-import { STAFF_TYPES, StaffType } from './enums';
+import { STAVE_TYPES, StaveType } from './enums';
 
 /**
  * Indicates different stave types. A stave is the set of five horizontal lines where notes and other musical
@@ -11,8 +11,8 @@ export class StaveDetails {
   constructor(private element: NamedElement<'staff-details'>) {}
 
   /** Returns the staff type. */
-  getStaffType(): StaffType {
-    return this.element.first('staff-type')?.content().enum(STAFF_TYPES) ?? 'regular';
+  getStaveType(): StaveType {
+    return this.element.first('staff-type')?.content().enum(STAVE_TYPES) ?? 'regular';
   }
 
   /** Returns the number of the staff. */

@@ -1,15 +1,15 @@
-import { STAFF_TYPES, StaveDetails } from '@/musicxml';
+import { STAVE_TYPES, StaveDetails } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(StaveDetails, () => {
   describe('getStaffType', () => {
-    it.each(STAFF_TYPES.values)('returns the staff type: %s', (value) => {
+    it.each(STAVE_TYPES.values)('returns the staff type: %s', (value) => {
       const staffType = xml.staffType({ value });
       const node = xml.staffDetails({ staffType });
 
       const staffDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffType()).toBe(value);
+      expect(staffDetails.getStaveType()).toBe(value);
     });
 
     it('returns regular for invalid staff types', () => {
@@ -18,13 +18,13 @@ describe(StaveDetails, () => {
 
       const staffDetails = new StaveDetails(node);
 
-      expect(staffDetails.getStaffType()).toBe('regular');
+      expect(staffDetails.getStaveType()).toBe('regular');
     });
 
     it('returns regular for missing staff types', () => {
       const node = xml.staffDetails({});
       const staffDetails = new StaveDetails(node);
-      expect(staffDetails.getStaffType()).toBe('regular');
+      expect(staffDetails.getStaveType()).toBe('regular');
     });
   });
 
