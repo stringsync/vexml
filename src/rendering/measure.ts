@@ -19,6 +19,7 @@ export type MeasureRendering = {
   index: number;
   label: Text;
   fragments: MeasureFragmentRendering[];
+  width: number;
 };
 
 /** Assigns a single Attributes to a list of MeasureFragEntries. */
@@ -188,6 +189,7 @@ export class Measure {
 
     let previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
     let x = opts.x;
+    let width = 0;
 
     for (const fragment of this.fragments) {
       const fragmentRendering = fragment.render({
@@ -203,6 +205,7 @@ export class Measure {
 
       previousFragment = fragment;
       x += fragmentRendering.width;
+      width += fragmentRendering.width;
     }
 
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
@@ -242,6 +245,7 @@ export class Measure {
       index: this.index,
       label,
       fragments: fragmentRenderings,
+      width,
     };
   }
 
