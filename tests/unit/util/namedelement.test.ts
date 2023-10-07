@@ -145,6 +145,41 @@ describe(NamedElement, () => {
     });
   });
 
+  describe('prev', () => {
+    it('returns the first sibling nodes matching the name', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      const baz = xml.createElement('baz');
+      foo.append(bar, baz);
+
+      const element = NamedElement.of(baz);
+
+      expect(element.previous('bar')).toStrictEqual(NamedElement.of(bar));
+    });
+
+    it('does not return descendants', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      const baz = xml.createElement('baz');
+      foo.append(bar);
+      bar.append(baz);
+
+      const element = NamedElement.of(foo);
+
+      expect(element.previous('baz')).toBeNull();
+    });
+
+    it('does not return ancestors', () => {
+      const foo = xml.createElement('foo');
+      const bar = xml.createElement('bar');
+      foo.append(bar);
+
+      const element = NamedElement.of(bar);
+
+      expect(element.previous('foo')).toBeNull();
+    });
+  });
+
   describe('ancestor', () => {
     it('returns the first descendent nodes matching the name', () => {
       const foo = xml.createElement('foo');

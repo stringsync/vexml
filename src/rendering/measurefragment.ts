@@ -8,9 +8,13 @@ export type MeasureFragmentRendering = {
   staves: StaveRendering[];
 };
 
+/** MusicXML elements that compose a MeasureFragment. */
+export type MeasureFragmentEntry = musicxml.Note | musicxml.Forward | musicxml.Backup;
+
 /** Represents a fragment of a measure. */
 export class MeasureFragment {
   private config: Config;
+  private attributes: musicxml.Attributes | null;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: string;
@@ -20,6 +24,7 @@ export class MeasureFragment {
 
   private constructor(opts: {
     config: Config;
+    attributes: musicxml.Attributes | null;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: string;
@@ -28,6 +33,7 @@ export class MeasureFragment {
     staves: Stave[];
   }) {
     this.config = opts.config;
+    this.attributes = opts.attributes;
     this.clefType = opts.clefType;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -40,7 +46,7 @@ export class MeasureFragment {
   static create(opts: {
     config: Config;
     musicXml: {
-      attributes: musicxml.Attributes;
+      attributes: musicxml.Attributes | null;
       measureEntries: musicxml.MeasureEntry[];
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
@@ -60,7 +66,7 @@ export class MeasureFragment {
 
     const clefType =
       attributes
-        .getClefs()
+        ?.getClefs()
         .find((clef) => clef.getStaffNumber() === staffNumber)
         ?.getClefType() ??
       previousMeasureFragment?.clefType ??
@@ -68,7 +74,7 @@ export class MeasureFragment {
 
     const timeSignature =
       attributes
-        .getTimes()
+        ?.getTimes()
         .find((time) => time.getStaffNumber() === opts.staffNumber)
         ?.getTimeSignatures()[0] ??
       previousMeasureFragment?.timeSignature ??
@@ -76,7 +82,7 @@ export class MeasureFragment {
 
     const keySignature =
       attributes
-        .getKeys()
+        ?.getKeys()
         .find((key) => key.getStaffNumber() === opts.staffNumber)
         ?.getKeySignature() ??
       previousMeasureFragment?.keySignature ??
@@ -96,7 +102,7 @@ export class MeasureFragment {
       //     measureEntries: [],
       //   },
       //   previousStave,
-      //   previousMeasureFragment,
+      //   previousMeasureFragmentment,
       // });
 
       previousStave = staves[staffIndex];
@@ -104,6 +110,7 @@ export class MeasureFragment {
 
     return new MeasureFragment({
       config,
+      attributes,
       clefType,
       timeSignature,
       keySignature,
@@ -113,10 +120,16 @@ export class MeasureFragment {
     });
   }
 
+  /** Returns the attributes that the MeasureFrament is using. */
+  getAttributes(): musicxml.Attributes | null {
+    return this.attributes;
+  }
+
   /** Clones the MeasureFragment. */
   clone(): MeasureFragment {
     return new MeasureFragment({
       config: this.config,
+      attributes: this.attributes,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
       keySignature: this.keySignature,

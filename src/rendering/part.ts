@@ -56,12 +56,12 @@ export class Part {
     let previousMeasure: Measure | null = null;
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
-    const mxMeasures = opts.musicXml.part.getMeasures();
+    const xmlMeasures = opts.musicXml.part.getMeasures();
     const staveCount = util.max(
-      mxMeasures.flatMap((mxMeasure) => mxMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
+      xmlMeasures.flatMap((xmlMeasure) => xmlMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
     );
-    for (let index = 0; index < mxMeasures.length; index++) {
-      const mxMeasure = mxMeasures[index];
+    for (let index = 0; index < xmlMeasures.length; index++) {
+      const xmlMeasure = xmlMeasures[index];
 
       // Don't create noop measures (typically <measures> after a multi measure rest).
       if (noopMeasureCount > 0) {
@@ -74,7 +74,7 @@ export class Part {
         // a single system. Therefore, this index should continue to be correct when a system is split.
         index,
         config: opts.config,
-        musicXml: { measure: mxMeasure },
+        musicXml: { measure: xmlMeasure },
         staveCount,
         systemId: opts.systemId,
         previousMeasure,
