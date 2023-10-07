@@ -92,9 +92,7 @@ export class Stave {
 
     const entry =
       multiRestCount > 0
-        ? MultiRest.create({
-            count: multiRestCount,
-          })
+        ? MultiRest.create({ count: multiRestCount })
         : Chorus.create({
             config,
             measureEntries: measureEntries,
