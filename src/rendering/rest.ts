@@ -112,7 +112,10 @@ export class Rest {
     if (this.durationDenominator === '2') {
       return 'B/4';
     }
-    return 'D/5';
+    if (this.durationDenominator === '1') {
+      return 'D/5';
+    }
+    return 'B/4';
   }
 
   private shouldCenter(voiceEntryCount: number): boolean {
