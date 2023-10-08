@@ -53,14 +53,14 @@ describe(TimeSignature, () => {
     });
 
     it('returns true for equal complex time signatures', () => {
-      const timeSignature1 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
-      const timeSignature2 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
+      const timeSignature1 = TimeSignature.complex([new Fraction(3, 8), new Fraction(2, 8)]);
+      const timeSignature2 = TimeSignature.complex([new Fraction(3, 8), new Fraction(2, 8)]);
       expect(timeSignature1.isEqual(timeSignature2)).toBeTrue();
     });
 
     it('returns false for complex time signatures that have different orders', () => {
-      const timeSignature1 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
-      const timeSignature2 = TimeSignature.complex(new Fraction(2, 8), new Fraction(3, 8));
+      const timeSignature1 = TimeSignature.complex([new Fraction(3, 8), new Fraction(2, 8)]);
+      const timeSignature2 = TimeSignature.complex([new Fraction(2, 8), new Fraction(3, 8)]);
       expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
     });
   });

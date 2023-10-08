@@ -318,9 +318,42 @@ export class Stave {
         return 'C';
       case 'cut':
         return 'C|';
-      default:
-        const fraction = this.timeSignature.toFraction();
-        return `${fraction.numerator}/${fraction.denominator}`;
     }
+
+    const components = this.timeSignature.getComponents();
+    if (components.length > 1) {
+      return this.toComplexTimeSpec(components);
+    }
+
+    return this.toSimpleTimeSpec(components[0]);
+  }
+
+  private toSimpleTimeSpec(component: util.Fraction): string {
+    return `${component.numerator}/${component.denominator}`;
+  }
+
+  private toComplexTimeSpec(components: util.Fraction[]): string {
+    const denominators = new Array<number>();
+    const memo: Record<number, number[]> = {};
+
+    for (const component of components) {
+      const numerator = component.numerator;
+      const denominator = component.denominator;
+
+      if (typeof memo[denominator] === 'undefined') {
+        denominators.push(denominator);
+      }
+
+      memo[denominator] ??= [];
+      memo[denominator].push(numerator);
+    }
+
+    const result = new Array<string>();
+
+    for (const denominator of denominators) {
+      result.push(`${memo[denominator].join('+')}/${denominator}`);
+    }
+
+    return result.join('+');
   }
 }
