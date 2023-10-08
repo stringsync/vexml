@@ -19,7 +19,6 @@ export const NOTE_DURATION_DENOMINATORS = new Enum([
   '2',
   '1',
   '1/2',
-  '',
 ] as const);
 
 /**
