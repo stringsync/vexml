@@ -37,9 +37,4 @@ export class TimeSignature {
   getBeatValue(): number {
     return this.beatValue;
   }
-
-  /** Returns a string representation of the time signature. */
-  toString(): string {
-    return `${this.beatsPerMeasure}/${this.beatValue}`;
-  }
 }
