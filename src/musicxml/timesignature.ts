@@ -7,24 +7,24 @@ export class TimeSignature {
 
   /** Returns a normal TimeSignature, composed of two numbers. */
   static of(beatsPerMeasure: number, beatValue: number): TimeSignature {
-    const parts = [new Fraction(beatsPerMeasure, beatValue)];
-    return new TimeSignature(parts, null);
+    const components = [new Fraction(beatsPerMeasure, beatValue)];
+    return new TimeSignature(components, null);
   }
 
   /** Returns a TimeSignature in cut time. */
   static cut(): TimeSignature {
-    const parts = [new Fraction(2, 2)];
-    return new TimeSignature(parts, 'cut');
+    const components = [new Fraction(2, 2)];
+    return new TimeSignature(components, 'cut');
   }
 
   /** Returns a TimeSignature in common time. */
   static common(): TimeSignature {
-    const parts = [new Fraction(4, 4)];
-    return new TimeSignature(parts, 'common');
+    const components = [new Fraction(4, 4)];
+    return new TimeSignature(components, 'common');
   }
 
   /**
-   * Returns a TimeSignature composed of many parts.
+   * Returns a TimeSignature composed of many components.
    *
    * The parameter type signature ensures that there are at least two Fractions present.
    */
@@ -38,6 +38,11 @@ export class TimeSignature {
     return new TimeSignature(components, null);
   }
 
+  /** Creates a new time signature that should be displayed as a single number. */
+  static singleNumber(timeSignature: TimeSignature): TimeSignature {
+    return new TimeSignature(timeSignature.components, 'single-number');
+  }
+
   /** Returns whether the time signatures are equal. */
   isEqual(other: TimeSignature): boolean {
     const components1 = this.components;
@@ -47,7 +52,7 @@ export class TimeSignature {
       return false;
     }
 
-    // Parts must also be in the same order, even if they are the same set of components.
+    // Components must also be in the same order, even if they are the same set of components.
     for (let index = 0; index < components1.length; index++) {
       const component1 = components1[index];
       const component2 = components2[index];

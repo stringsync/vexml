@@ -38,6 +38,14 @@ describe(TimeSignature, () => {
     });
   });
 
+  describe('singleNumber', () => {
+    it('wraps a time signature with a single-number symbol', () => {
+      const timeSignature = TimeSignature.singleNumber(TimeSignature.common());
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(4, 4)]);
+      expect(timeSignature.getSymbol()).toBe('single-number');
+    });
+  });
+
   describe('getSymbol', () => {
     it('returns the symbol of the time signature', () => {
       const timeSignature = TimeSignature.common();
