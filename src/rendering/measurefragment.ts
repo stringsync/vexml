@@ -72,7 +72,7 @@ export class MeasureFragment {
         attributes
           ?.getTimes()
           .find((time) => time.getStaveNumber() === staveNumber)
-          ?.getTimeSignatures()[0] ?? null;
+          ?.getTimeSignature() ?? null;
 
       const keySignature =
         attributes
