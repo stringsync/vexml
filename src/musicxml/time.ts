@@ -1,4 +1,4 @@
-import { NamedElement } from '@/util';
+import { NamedElement, Fraction } from '@/util';
 import { TimeSignature } from './timesignature';
 import { TIME_SYMBOLS } from './enums';
 
@@ -41,11 +41,24 @@ export class Time {
     // Ignore extra <beats> and <beat-type> elements.
     const len = Math.min(beats.length, beatTypes.length);
     for (let index = 0; index < len; index++) {
-      const beatsPerMeasure = parseInt(beats[index], 10);
-      const beatValue = parseInt(beatTypes[index], 10);
-      result.push(TimeSignature.of(beatsPerMeasure, beatValue));
+      const beatsPerMeasure = beats[index];
+      const beatValue = beatTypes[index];
+      const timeSignature = this.parseTimeSignature(beatsPerMeasure, beatValue);
+      result.push(timeSignature);
     }
 
     return result;
+  }
+
+  private parseTimeSignature(beatsPerMeasure: string, beatValue: string): TimeSignature {
+    const denominator = parseInt(beatValue.trim(), 10);
+    const numerators = beatsPerMeasure.split('+').map((b) => parseInt(b.trim(), 10));
+
+    if (numerators.length > 1) {
+      const fractions = numerators.map((numerator) => new Fraction(numerator, denominator));
+      return TimeSignature.complex(fractions);
+    }
+
+    return TimeSignature.of(numerators[0], denominator);
   }
 }

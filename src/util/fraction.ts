@@ -16,11 +16,6 @@ export type FractionSign = '+' | '-' | '/';
  *
  * The `Fraction` class provides methods for basic arithmetic operations such as addition, subtraction, multiplication,
  * and division, as well as utility methods for comparing, simplifying, and converting fractions.
- *
- * Caveats:
- *   - The denominator should never be zero. If attempted, an error will be thrown.
- *   - Arithmetic methods return a new `Fraction` instance without modifying the original instance.
- *   - Simplification is applied automatically where applicable.
  */
 export class Fraction {
   constructor(public readonly numerator: number, public readonly denominator: number = 1) {
@@ -60,7 +55,7 @@ export class Fraction {
   /** Returns the fraction in mixed form. */
   toMixed(): MixedFraction {
     const whole = Math.floor(this.numerator / this.denominator);
-    const remainder = new Fraction(this.numerator % this.denominator, this.denominator).simplify();
+    const remainder = new Fraction(this.numerator % this.denominator, this.denominator);
     return { whole, remainder };
   }
 
@@ -77,10 +72,15 @@ export class Fraction {
   }
 
   /** Returns whether the other fraction is equal to this fraction.  */
-  isEqual(value: Fraction): boolean {
+  isEquivalent(value: Fraction): boolean {
     const v1 = this.simplify();
     const v2 = value.simplify();
     return v1.numerator === v2.numerator && v1.denominator === v2.denominator;
+  }
+
+  /** Returns whether the other fraction has the exact same numerator and denominator. */
+  isEqual(value: Fraction): boolean {
+    return this.numerator === value.numerator && this.denominator === value.denominator;
   }
 
   /** Reduces the numerator and denominator to its lowest common factor. */
@@ -93,7 +93,7 @@ export class Fraction {
   add(value: Fraction): Fraction {
     const commonDenominator = this.denominator * value.denominator;
     const newNumerator = this.numerator * value.denominator + value.numerator * this.denominator;
-    return new Fraction(newNumerator, commonDenominator).simplify();
+    return new Fraction(newNumerator, commonDenominator);
   }
 
   /** Returns the difference as a new fraction. */
@@ -103,7 +103,7 @@ export class Fraction {
 
   /** Returns the product as a new fraction. */
   multiply(value: Fraction): Fraction {
-    return new Fraction(this.numerator * value.numerator, this.denominator * value.denominator).simplify();
+    return new Fraction(this.numerator * value.numerator, this.denominator * value.denominator);
   }
 
   /** Returns the quotient as a new fraction. */
