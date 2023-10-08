@@ -22,7 +22,7 @@ export class Division {
 
   /** Returns if the other divisions is equal to this. */
   isEqual(value: Division): boolean {
-    return this.fraction.isEqual(value.fraction);
+    return this.fraction.isEquivalent(value.fraction);
   }
 
   /** Returns the sum as a new Division. */

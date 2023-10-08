@@ -1,10 +1,10 @@
 import { Time } from '@/musicxml/time';
 import { TimeSignature } from '@/musicxml/timesignature';
-import { xml } from '@/util';
+import { Fraction, xml } from '@/util';
 
 describe(Time, () => {
   describe('getTimeSignatures', () => {
-    it('returns the time signatures of the time', () => {
+    it('returns simple time signatures of the time', () => {
       const node = xml.time({
         times: [
           { beats: xml.beats({ value: '3' }), beatType: xml.beatType({ value: '4' }) },
@@ -13,6 +13,14 @@ describe(Time, () => {
       });
       const time = new Time(node);
       expect(time.getTimeSignatures()).toStrictEqual([TimeSignature.of(3, 4), TimeSignature.of(3, 8)]);
+    });
+
+    it('returns complex time signatures of the time', () => {
+      const node = xml.time({
+        times: [{ beats: xml.beats({ value: '3+4' }), beatType: xml.beatType({ value: '4' }) }],
+      });
+      const time = new Time(node);
+      expect(time.getTimeSignatures()).toStrictEqual([TimeSignature.complex([new Fraction(3, 4), new Fraction(4, 4)])]);
     });
 
     it('returns an empty array when beat and beat type elements are missing', () => {

@@ -41,6 +41,7 @@ describe('lilypond', () => {
     { filename: '03d-Rhythm-DottedDurations-Factors.xml', width: 900 },
     { filename: '11a-TimeSignatures.xml', width: 900 },
     { filename: '11b-TimeSignatures-NoTime.xml', width: 900 },
+    { filename: '11c-TimeSignatures-CompoundSimple.xml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 

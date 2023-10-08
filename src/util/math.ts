@@ -21,3 +21,13 @@ export const clamp = (min: number, max: number, value: number): number => {
 export const sum = (values: number[], initial = 0): number => {
   return values.filter((value) => !Number.isNaN(value)).reduce((sum, value) => sum + value, initial);
 };
+
+/** Returns the greatest common denominator. */
+export const gcd = (a: number, b: number): number => {
+  return b ? gcd(b, a % b) : a;
+};
+
+/** Returns the least common mulitple between the numbers. */
+export const lcm = (a: number, b: number): number => {
+  return (a * b) / gcd(a, b);
+};

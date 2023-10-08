@@ -275,9 +275,11 @@ export class Voice {
   }
 
   private toVexflowVoice(vfTickables: vexflow.Tickable[]): vexflow.Voice {
+    const fraction = this.timeSignature.toFraction();
+
     return new vexflow.Voice({
-      numBeats: this.timeSignature.getBeatsPerMeasure(),
-      beatValue: this.timeSignature.getBeatValue(),
+      numBeats: fraction.numerator,
+      beatValue: fraction.denominator,
     })
       .setStrict(false)
       .addTickables(vfTickables);
