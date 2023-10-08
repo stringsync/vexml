@@ -88,7 +88,7 @@ export class Stave {
 
     const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
     const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
-    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? new musicxml.TimeSignature(4, 4);
+    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? musicxml.TimeSignature.common();
 
     let entry: StaveEntry;
 
