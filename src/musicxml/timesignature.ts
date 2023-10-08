@@ -1,10 +1,31 @@
-import { Fraction } from '@/util';
+import { TimeSymbol } from './enums';
 
 export class TimeSignature {
-  constructor(private beatsPerMeasure: number, private beatValue: number) {}
+  private constructor(private beatsPerMeasure: number, private beatValue: number, private symbol: TimeSymbol | null) {}
 
+  /** Returns a normal TimeSignature, composed of two numbers. */
+  static of(beatsPerMeasure: number, beatValue: number): TimeSignature {
+    return new TimeSignature(beatsPerMeasure, beatValue, null);
+  }
+
+  /** Returns a TimeSignature in cut time. */
+  static cut(): TimeSignature {
+    return new TimeSignature(2, 2, 'cut');
+  }
+
+  /** Returns a TimeSignature in common time. */
+  static common(): TimeSignature {
+    return new TimeSignature(4, 4, 'common');
+  }
+
+  /** Clones the TimeSignature. */
   clone(): TimeSignature {
-    return new TimeSignature(this.beatsPerMeasure, this.beatValue);
+    return new TimeSignature(this.beatsPerMeasure, this.beatValue, this.symbol);
+  }
+
+  /** Returns the symbol of the time signature. */
+  getSymbol(): TimeSymbol | null {
+    return this.symbol;
   }
 
   /** Returns the number of beats per measure. */
@@ -20,10 +41,5 @@ export class TimeSignature {
   /** Returns a string representation of the time signature. */
   toString(): string {
     return `${this.beatsPerMeasure}/${this.beatValue}`;
-  }
-
-  /** Returns the fraction */
-  toFraction(): Fraction {
-    return new Fraction(this.beatsPerMeasure, this.beatValue);
   }
 }

@@ -33,7 +33,7 @@ export class Time {
     for (let index = 0; index < len; index++) {
       const beatsPerMeasure = parseInt(beats[index], 10);
       const beatValue = parseInt(beatTypes[index], 10);
-      result.push(new TimeSignature(beatsPerMeasure, beatValue));
+      result.push(TimeSignature.of(beatsPerMeasure, beatValue));
     }
 
     return result;
