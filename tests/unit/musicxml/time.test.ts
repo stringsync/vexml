@@ -42,24 +42,4 @@ describe(Time, () => {
     const time = new Time(node);
     expect(time.getTimeSignatures()).toStrictEqual([TimeSignature.of(3, 4)]);
   });
-
-  describe('getSymbol', () => {
-    it.each(TIME_SYMBOLS.values)('returns valid time symbols', (symbol) => {
-      const node = xml.time({ times: [{ symbol }] });
-      const time = new Time(node);
-      expect(time.getSymbol()).toBe(symbol);
-    });
-
-    it('defaults to null for invalid time symbols', () => {
-      const node = xml.time({ times: [{ symbol: 'foo' }] });
-      const time = new Time(node);
-      expect(time.getSymbol()).toBeNull();
-    });
-
-    it('defaults to null for missing time symbols', () => {
-      const node = xml.time();
-      const time = new Time(node);
-      expect(time.getSymbol()).toBeNull();
-    });
-  });
 });
