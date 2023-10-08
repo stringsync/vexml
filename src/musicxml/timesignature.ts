@@ -28,7 +28,7 @@ export class TimeSignature {
    *
    * The parameter type signature ensures that there are at least two Fractions present.
    */
-  static complex(...components: [Fraction, Fraction, ...Fraction[]]): TimeSignature {
+  static complex(components: Fraction[]): TimeSignature {
     return new TimeSignature(components, null);
   }
 
