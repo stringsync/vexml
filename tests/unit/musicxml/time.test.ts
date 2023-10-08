@@ -41,4 +41,12 @@ describe(Time, () => {
     const time = new Time(node);
     expect(time.getTimeSignatures()).toStrictEqual([new TimeSignature(3, 4)]);
   });
+
+  describe('getTimeSymbol', () => {
+    it.todo('returns valid time symbols');
+
+    it.todo('defaults to null for invalid time symbols');
+
+    it.todo('defaults to null for missing time symbols');
+  });
 });
