@@ -1,3 +1,5 @@
+import { Fraction } from '@/util';
+
 export class TimeSignature {
   constructor(private beatsPerMeasure: number, private beatValue: number) {}
 
@@ -5,24 +7,23 @@ export class TimeSignature {
     return new TimeSignature(this.beatsPerMeasure, this.beatValue);
   }
 
-  /**
-   * Returns the number of beats per measure.
-   */
+  /** Returns the number of beats per measure. */
   getBeatsPerMeasure(): number {
     return this.beatsPerMeasure;
   }
 
-  /**
-   * Returns the value of each beat.
-   */
+  /** Returns the value of each beat. */
   getBeatValue(): number {
     return this.beatValue;
   }
 
-  /**
-   * Returns a string representation of the time signature.
-   */
+  /** Returns a string representation of the time signature. */
   toString(): string {
     return `${this.beatsPerMeasure}/${this.beatValue}`;
+  }
+
+  /** Returns the fraction */
+  toFraction(): Fraction {
+    return new Fraction(this.beatsPerMeasure, this.beatValue);
   }
 }

@@ -132,7 +132,6 @@ export class Chorus {
     const voices = voiceIds.map((voiceId) =>
       Voice.create({
         config,
-        id: voiceId,
         data: data[voiceId],
         quarterNoteDivisions,
         timeSignature,
@@ -141,6 +140,29 @@ export class Chorus {
     );
 
     return new Chorus({ config, voices });
+  }
+
+  /**
+   * Creates a Chorus with a single voice that is a single whole note rest.
+   *
+   * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
+   * which is why it's being used.
+   */
+  static wholeRest(opts: {
+    config: Config;
+    timeSignature: musicxml.TimeSignature;
+    clefType: musicxml.ClefType;
+  }): Chorus {
+    const voice = Voice.wholeRest({
+      config: opts.config,
+      timeSignature: opts.timeSignature,
+      clefType: opts.clefType,
+    });
+
+    return new Chorus({
+      config: opts.config,
+      voices: [voice],
+    });
   }
 
   private static toStemDirection(stem: musicxml.Stem | null): StemDirection {

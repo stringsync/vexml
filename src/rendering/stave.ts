@@ -90,16 +90,21 @@ export class Stave {
     const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
     const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? new musicxml.TimeSignature(4, 4);
 
-    const entry =
-      multiRestCount > 0
-        ? MultiRest.create({ count: multiRestCount })
-        : Chorus.create({
-            config,
-            measureEntries: measureEntries,
-            clefType,
-            timeSignature,
-            quarterNoteDivisions,
-          });
+    let entry: StaveEntry;
+
+    if (multiRestCount === 1) {
+      entry = Chorus.wholeRest({ config, clefType, timeSignature });
+    } else if (multiRestCount > 1) {
+      entry = MultiRest.create({ count: multiRestCount });
+    } else {
+      entry = Chorus.create({
+        config,
+        measureEntries: measureEntries,
+        clefType,
+        timeSignature,
+        quarterNoteDivisions,
+      });
+    }
 
     return new Stave({
       config,

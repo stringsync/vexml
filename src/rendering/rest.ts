@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
+import { Fraction } from '../util';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -62,6 +63,17 @@ export class Rest {
     });
   }
 
+  /** Creates a whole rest. */
+  static whole(opts: { config: Config; clefType: musicxml.ClefType }): Rest {
+    return new Rest({
+      config: opts.config,
+      displayPitch: null,
+      durationDenominator: '1',
+      dotCount: 0,
+      clefType: opts.clefType,
+    });
+  }
+
   /** Clones the Rest. */
   clone(): Rest {
     return new Rest({
@@ -94,12 +106,16 @@ export class Rest {
     if (this.displayPitch) {
       return this.displayPitch;
     }
-    switch (this.clefType) {
-      case 'bass':
-        return 'D/3';
-      default:
-        return 'B/4';
+    if (this.clefType === 'bass') {
+      return 'D/3';
     }
+    if (this.durationDenominator === '2') {
+      return 'B/4';
+    }
+    if (this.durationDenominator === '1') {
+      return 'D/5';
+    }
+    return 'B/4';
   }
 
   private shouldCenter(voiceEntryCount: number): boolean {
