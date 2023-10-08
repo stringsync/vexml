@@ -67,7 +67,6 @@ export class Voice {
 
   static create(opts: {
     config: Config;
-    id: string;
     data: VoiceEntryData[];
     quarterNoteDivisions: number;
     timeSignature: musicxml.TimeSignature;
@@ -97,6 +96,24 @@ export class Voice {
       config,
       timeSignature,
       entries,
+    });
+  }
+
+  /** Creates a voice with a single whole note rest. */
+  static wholeRest(opts: {
+    config: Config;
+    timeSignature: musicxml.TimeSignature;
+    clefType: musicxml.ClefType;
+  }): Voice {
+    const wholeRest = Rest.whole({
+      config: opts.config,
+      clefType: opts.clefType,
+    });
+
+    return new Voice({
+      config: opts.config,
+      timeSignature: opts.timeSignature,
+      entries: [wholeRest],
     });
   }
 
@@ -187,7 +204,7 @@ export class Voice {
   }
 
   private static calculateDurationDenominator(divisions: Division): NoteDurationDenominator {
-    return DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '';
+    return DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '1';
   }
 
   /** Clones the Voice. */
