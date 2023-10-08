@@ -43,7 +43,7 @@ describe(Time, () => {
     expect(time.getTimeSignatures()).toStrictEqual([new TimeSignature(3, 4)]);
   });
 
-  describe('getTimeSymbol', () => {
+  describe('getSymbol', () => {
     it.each(TIME_SYMBOLS.values)('returns valid time symbols', (symbol) => {
       const node = xml.time({ times: [{ symbol }] });
       const time = new Time(node);
