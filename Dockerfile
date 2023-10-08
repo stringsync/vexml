@@ -28,8 +28,8 @@ COPY tests tests
 # Allow pptruser to read and write to the directories under /vexml, which is needed when snapshots don't match. This is
 # done after the COPY commands, since those would've changed the owner and maybe permissions (?) depending on the
 # platform and version of Docker engine.
-RUN chown -R pptruser:pptruser /vexml \
-    && chmod -R ugoa+rwX /vexml
+RUN chown -R pptruser:pptruser tests \
+    && chmod -R ugoa+rwX tests
 USER pptruser
 
 # Run the test by default.
