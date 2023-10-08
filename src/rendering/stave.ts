@@ -322,7 +322,7 @@ export class Stave {
 
     const components = this.timeSignature.getComponents();
     if (components.length > 1) {
-      return this.toComplexTimeSpec(components);
+      return this.toComplexTimeSpec(components) ?? this.toSimpleTimeSpec(this.timeSignature.toFraction());
     }
 
     return this.toSimpleTimeSpec(components[0]);
@@ -332,7 +332,7 @@ export class Stave {
     return `${component.numerator}/${component.denominator}`;
   }
 
-  private toComplexTimeSpec(components: util.Fraction[]): string {
+  private toComplexTimeSpec(components: util.Fraction[]): string | null {
     const denominators = new Array<number>();
     const memo: Record<number, number[]> = {};
 
@@ -352,6 +352,12 @@ export class Stave {
 
     for (const denominator of denominators) {
       result.push(`${memo[denominator].join('+')}/${denominator}`);
+    }
+
+    // TODO: If/when vexflow supports multiple complex time signatures, remove this result branch. Right now, vexflow
+    // seems to only support at most one time signature denominator.
+    if (denominators.length !== 1) {
+      return null;
     }
 
     return result.join('+');

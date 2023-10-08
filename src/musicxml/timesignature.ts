@@ -32,6 +32,12 @@ export class TimeSignature {
     return new TimeSignature(components, null);
   }
 
+  /** Combines multiple time signatures into a single one, ignoring any symbols. */
+  static combine(timeSignatures: TimeSignature[]): TimeSignature {
+    const components = timeSignatures.flatMap((timeSignature) => timeSignature.components);
+    return new TimeSignature(components, null);
+  }
+
   /** Returns whether the time signatures are equal. */
   isEqual(other: TimeSignature): boolean {
     const components1 = this.components;

@@ -180,14 +180,14 @@ export class Measure {
 
     // Check to see if the time signature changed in a manner that requires a separate stave.
     const times1 = attributes1.getTimes().reduce<Record<number, musicxml.TimeSignature | null>>((memo, time) => {
-      memo[time.getStaveNumber()] = util.first(time.getTimeSignatures()) ?? null;
+      memo[time.getStaveNumber()] = time.getTimeSignature();
       return memo;
     }, {});
 
     for (const time2 of attributes2.getTimes()) {
       const staveNumber = time2.getStaveNumber();
       const timeSignature1 = times1[staveNumber];
-      const timeSignature2 = util.first(time2.getTimeSignatures());
+      const timeSignature2 = time2.getTimeSignature();
 
       if (timeSignature1 && timeSignature2 && !timeSignature1.isEqual(timeSignature2)) {
         return true;
