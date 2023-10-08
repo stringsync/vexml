@@ -740,13 +740,17 @@ export const time = createNamedElementFactory<
   'time',
   {
     times: Array<{
+      symbol?: string;
       beats?: NamedElement<'beats'>;
       beatType?: NamedElement<'beat-type'>;
     }>;
   }
 >('time', (e, { times }) => {
   if (times) {
-    for (const { beats, beatType } of times) {
+    for (const { symbol, beats, beatType } of times) {
+      if (typeof symbol === 'string') {
+        e.setAttribute('symbol', symbol);
+      }
       if (beats) {
         e.append(beats);
       }
