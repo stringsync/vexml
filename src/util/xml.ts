@@ -739,18 +739,18 @@ export const fifths = createNamedElementFactory<
 export const time = createNamedElementFactory<
   'time',
   {
+    symbol: string;
     times: Array<{
-      symbol?: string;
       beats?: NamedElement<'beats'>;
       beatType?: NamedElement<'beat-type'>;
     }>;
   }
->('time', (e, { times }) => {
+>('time', (e, { symbol, times }) => {
+  if (symbol) {
+    e.setAttribute('symbol', symbol);
+  }
   if (times) {
-    for (const { symbol, beats, beatType } of times) {
-      if (typeof symbol === 'string') {
-        e.setAttribute('symbol', symbol);
-      }
+    for (const { beats, beatType } of times) {
       if (beats) {
         e.append(beats);
       }
