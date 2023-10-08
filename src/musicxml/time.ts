@@ -15,19 +15,17 @@ export class Time {
     return this.element.attr('number').withDefault(1).int();
   }
 
-  /** Returns the time signatures of the time. There is typically only one. */
-  getTimeSignatures(): TimeSignature[] {
+  /** Returns the time signature of the time. */
+  getTimeSignature(): TimeSignature | null {
     // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
     // specifications.
     const symbol = this.element.attr('symbol').enum(TIME_SYMBOLS);
     switch (symbol) {
       case 'common':
-        return [TimeSignature.common()];
+        return TimeSignature.common();
       case 'cut':
-        return [TimeSignature.cut()];
+        return TimeSignature.cut();
     }
-
-    const result = new Array<TimeSignature>();
 
     const beats = this.element
       .all('beats')
@@ -38,16 +36,23 @@ export class Time {
       .map((beatType) => beatType.content().str())
       .filter((content): content is string => typeof content === 'string');
 
-    // Ignore extra <beats> and <beat-type> elements.
+    const timeSignatures = new Array<TimeSignature>();
+
     const len = Math.min(beats.length, beatTypes.length);
     for (let index = 0; index < len; index++) {
       const beatsPerMeasure = beats[index];
       const beatValue = beatTypes[index];
       const timeSignature = this.parseTimeSignature(beatsPerMeasure, beatValue);
-      result.push(timeSignature);
+      timeSignatures.push(timeSignature);
     }
 
-    return result;
+    if (timeSignatures.length === 0) {
+      return null;
+    }
+    if (timeSignatures.length === 1) {
+      return timeSignatures[0];
+    }
+    return TimeSignature.combine(timeSignatures);
   }
 
   private parseTimeSignature(beatsPerMeasure: string, beatValue: string): TimeSignature {

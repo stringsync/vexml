@@ -26,6 +26,18 @@ describe(TimeSignature, () => {
     });
   });
 
+  describe('combine', () => {
+    it('combines multiple time signatures', () => {
+      const timeSignature = TimeSignature.combine([TimeSignature.of(2, 4), TimeSignature.common()]);
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(2, 4), new Fraction(4, 4)]);
+    });
+
+    it('does not propagate symbols', () => {
+      const timeSignature = TimeSignature.combine([TimeSignature.cut(), TimeSignature.common()]);
+      expect(timeSignature.getSymbol()).toBeNull();
+    });
+  });
+
   describe('getSymbol', () => {
     it('returns the symbol of the time signature', () => {
       const timeSignature = TimeSignature.common();
