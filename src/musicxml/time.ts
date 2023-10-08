@@ -1,5 +1,6 @@
 import { NamedElement } from '@/util';
 import { TimeSignature } from './timesignature';
+import { TIME_SYMBOLS, TimeSymbol } from './enums';
 
 /**
  * Time represents a time signature element.
@@ -36,5 +37,10 @@ export class Time {
     }
 
     return result;
+  }
+
+  /** Returns the time symbol. Defaults to null. */
+  getSymbol(): TimeSymbol | null {
+    return this.element.attr('symbol').enum(TIME_SYMBOLS);
   }
 }
