@@ -72,14 +72,12 @@ describe(Fraction, () => {
   describe('fromMixed', () => {
     it('converts a mixed fraction to a fraction', () => {
       const fraction = Fraction.fromMixed({ whole: 1, remainder: new Fraction(1, 2) });
-      expect(fraction.numerator).toBe(3);
-      expect(fraction.denominator).toBe(2);
+      expect(fraction.isEquivalent(new Fraction(3, 2))).toBeTrue();
     });
 
     it('converts a mixed fraction less than 1 to a fraction', () => {
       const fraction = Fraction.fromMixed({ whole: 0, remainder: new Fraction(1, 2) });
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(2);
+      expect(fraction.isEquivalent(new Fraction(1, 2))).toBeTrue();
     });
 
     it('converts a mixed fraction with no remainder', () => {
@@ -96,8 +94,7 @@ describe(Fraction, () => {
 
     it('inverts toMixed', () => {
       const fraction = Fraction.fromMixed(new Fraction(1, 2).toMixed());
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(2);
+      expect(fraction.isEquivalent(new Fraction(1, 2))).toBeTrue();
     });
   });
 
@@ -130,8 +127,7 @@ describe(Fraction, () => {
     it('converts a fraction equal to 1 to a mixed fraction', () => {
       const mixed = new Fraction(2, 2).toMixed();
       expect(mixed.whole).toBe(1);
-      expect(mixed.remainder.numerator).toBe(0);
-      expect(mixed.remainder.denominator).toBe(1);
+      expect(mixed.remainder.isEquivalent(new Fraction(0))).toBeTrue();
     });
 
     it('converts a fraction less than 1 to a mixed fraction', () => {
@@ -144,14 +140,12 @@ describe(Fraction, () => {
     it('converts a fraction equal to 0 to a mixed fraction', () => {
       const mixed = new Fraction(0, 2).toMixed();
       expect(mixed.whole).toBe(0);
-      expect(mixed.remainder.numerator).toBe(0);
-      expect(mixed.remainder.denominator).toBe(1);
+      expect(mixed.remainder.isEquivalent(new Fraction(0))).toBeTrue();
     });
 
     it('inverts fromMixed', () => {
       const fraction = Fraction.fromMixed(new Fraction(123, 10).toMixed());
-      expect(fraction.numerator).toBe(123);
-      expect(fraction.denominator).toBe(10);
+      expect(fraction.isEquivalent(new Fraction(123, 10))).toBeTrue();
     });
   });
 
@@ -182,6 +176,32 @@ describe(Fraction, () => {
     });
   });
 
+  describe('isEquivalent', () => {
+    it('returns true when both fractions have the same numerator and denominator', () => {
+      const fraction1 = new Fraction(1, 2);
+      const fraction2 = new Fraction(1, 2);
+      expect(fraction1.isEquivalent(fraction2)).toBeTrue();
+    });
+
+    it('returns false when the fractions are different values', () => {
+      const fraction1 = new Fraction(1, 2);
+      const fraction2 = new Fraction(2, 1);
+      expect(fraction1.isEquivalent(fraction2)).toBeFalse();
+    });
+
+    it('returns true when the fractions simplify to the same value', () => {
+      const fraction1 = new Fraction(1, 2);
+      const fraction2 = new Fraction(2, 4);
+      expect(fraction1.isEquivalent(fraction2)).toBeTrue();
+    });
+
+    it('returns false when the denominators are different', () => {
+      const fraction1 = new Fraction(1, 2);
+      const fraction2 = new Fraction(1, 3);
+      expect(fraction1.isEquivalent(fraction2)).toBeFalse();
+    });
+  });
+
   describe('isEqual', () => {
     it('returns true when both fractions have the same numerator and denominator', () => {
       const fraction1 = new Fraction(1, 2);
@@ -195,10 +215,10 @@ describe(Fraction, () => {
       expect(fraction1.isEqual(fraction2)).toBeFalse();
     });
 
-    it('returns true when the fractions simplify to the same value', () => {
+    it('returns false even when the fractions simplify to the same value', () => {
       const fraction1 = new Fraction(1, 2);
       const fraction2 = new Fraction(2, 4);
-      expect(fraction1.isEqual(fraction2)).toBeTrue();
+      expect(fraction1.isEqual(fraction2)).toBeFalse();
     });
 
     it('returns false when the denominators are different', () => {
@@ -231,28 +251,14 @@ describe(Fraction, () => {
   describe('add', () => {
     it('adds fractions', () => {
       const fraction = new Fraction(1, 2).add(new Fraction(1, 2));
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(1);
-    });
-
-    it('simplifies the result', () => {
-      const fraction = new Fraction(2, 2).add(new Fraction(2, 2));
-      expect(fraction.numerator).toBe(2);
-      expect(fraction.denominator).toBe(1);
+      expect(fraction.isEquivalent(new Fraction(1))).toBeTrue();
     });
   });
 
   describe('subtract', () => {
     it('subtracts fractions', () => {
       const fraction = new Fraction(2, 2).subtract(new Fraction(1, 2));
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(2);
-    });
-
-    it('simplifies the result', () => {
-      const fraction = new Fraction(3, 2).subtract(new Fraction(1, 2));
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(1);
+      expect(fraction.isEquivalent(new Fraction(1, 2))).toBeTrue();
     });
   });
 
@@ -262,12 +268,6 @@ describe(Fraction, () => {
       expect(fraction.numerator).toBe(1);
       expect(fraction.denominator).toBe(4);
     });
-
-    it('simplifies the result', () => {
-      const fraction = new Fraction(4, 2).multiply(new Fraction(1, 2));
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(1);
-    });
   });
 
   describe('divide', () => {
@@ -275,12 +275,6 @@ describe(Fraction, () => {
       const fraction = new Fraction(1, 2).divide(new Fraction(2));
       expect(fraction.numerator).toBe(1);
       expect(fraction.denominator).toBe(4);
-    });
-
-    it('simplifies the result', () => {
-      const fraction = new Fraction(4, 2).divide(new Fraction(2));
-      expect(fraction.numerator).toBe(1);
-      expect(fraction.denominator).toBe(1);
     });
   });
 

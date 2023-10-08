@@ -319,7 +319,8 @@ export class Stave {
       case 'cut':
         return 'C|';
       default:
-        return `${this.timeSignature.getBeatsPerMeasure()}/${this.timeSignature.getBeatValue()}`;
+        const fraction = this.timeSignature.toFraction();
+        return `${fraction.numerator}/${fraction.denominator}`;
     }
   }
 }
