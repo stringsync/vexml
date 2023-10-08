@@ -18,6 +18,15 @@ export class TimeSignature {
     return new TimeSignature(4, 4, 'common');
   }
 
+  /** Returns whether the time signatures are equal. */
+  isEqual(other: TimeSignature): boolean {
+    return (
+      this.beatValue === other.beatValue &&
+      this.beatsPerMeasure === other.beatsPerMeasure &&
+      this.symbol === other.symbol
+    );
+  }
+
   /** Clones the TimeSignature. */
   clone(): TimeSignature {
     return new TimeSignature(this.beatsPerMeasure, this.beatValue, this.symbol);

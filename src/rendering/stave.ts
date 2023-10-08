@@ -181,7 +181,7 @@ export class Stave {
     if (this.keySignature !== stave.keySignature) {
       result.push('keySignature');
     }
-    if (this.timeSignature.toString() !== stave.timeSignature.toString()) {
+    if (!this.timeSignature.isEqual(stave.timeSignature)) {
       result.push('timeSignature');
     }
 
