@@ -48,10 +48,22 @@ describe(TimeSignature, () => {
   });
 
   describe('isEqual', () => {
-    it.todo('returns true when the time signatures are equal');
+    it('returns true when the time signatures are equal', () => {
+      const timeSignature1 = TimeSignature.of(4, 4);
+      const timeSignature2 = TimeSignature.of(4, 4);
+      expect(timeSignature1.isEqual(timeSignature2)).toBeTrue();
+    });
 
-    it.todo('returns false when the time signatures are not equal');
+    it('returns false when the time signatures are not equal', () => {
+      const timeSignature1 = TimeSignature.of(2, 4);
+      const timeSignature2 = TimeSignature.of(4, 8);
+      expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
+    });
 
-    it.todo('returns false when the time signatures differ in symbols only');
+    it('returns false when the time signatures differ in symbols only', () => {
+      const timeSignature1 = TimeSignature.common();
+      const timeSignature2 = TimeSignature.of(4, 4);
+      expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
+    });
   });
 });
