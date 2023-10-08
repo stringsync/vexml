@@ -49,6 +49,9 @@ export class Time {
     if (timeSignatures.length === 0) {
       return null;
     }
+    if (symbol === 'single-number') {
+      return TimeSignature.singleNumber(TimeSignature.combine(timeSignatures));
+    }
     if (timeSignatures.length === 1) {
       return timeSignatures[0];
     }
