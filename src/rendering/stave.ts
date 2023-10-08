@@ -276,7 +276,7 @@ export class Stave {
       vfStave.addKeySignature(this.keySignature);
     }
     if (opts.modifiers.includes('timeSignature')) {
-      vfStave.addTimeSignature(this.timeSignature.toString());
+      vfStave.addTimeSignature(this.getTimeSpec());
     }
 
     return vfStave;
@@ -309,6 +309,17 @@ export class Stave {
         return vexflow.BarlineType.NONE;
       default:
         return vexflow.BarlineType.NONE;
+    }
+  }
+
+  private getTimeSpec(): string {
+    switch (this.timeSignature.getSymbol()) {
+      case 'common':
+        return 'C';
+      case 'cut':
+        return 'C|';
+      default:
+        return `${this.timeSignature.getBeatsPerMeasure()}/${this.timeSignature.getBeatValue()}`;
     }
   }
 }
