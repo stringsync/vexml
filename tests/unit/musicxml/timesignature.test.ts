@@ -46,4 +46,12 @@ describe(TimeSignature, () => {
       expect(timeSignature.getSymbol()).toBe('common');
     });
   });
+
+  describe('isEqual', () => {
+    it.todo('returns true when the time signatures are equal');
+
+    it.todo('returns false when the time signatures are not equal');
+
+    it.todo('returns false when the time signatures differ in symbols only');
+  });
 });
