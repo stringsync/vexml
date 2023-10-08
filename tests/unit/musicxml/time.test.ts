@@ -1,6 +1,7 @@
 import { Time } from '@/musicxml/time';
 import { TimeSignature } from '@/musicxml/timesignature';
 import { xml } from '@/util';
+import { TIME_SYMBOLS } from '@/musicxml/enums';
 
 describe(Time, () => {
   it('returns the time signatures of the time', () => {
@@ -43,10 +44,22 @@ describe(Time, () => {
   });
 
   describe('getTimeSymbol', () => {
-    it.todo('returns valid time symbols');
+    it.each(TIME_SYMBOLS.values)('returns valid time symbols', (symbol) => {
+      const node = xml.time({ times: [{ symbol }] });
+      const time = new Time(node);
+      expect(time.getSymbol()).toBe(symbol);
+    });
 
-    it.todo('defaults to null for invalid time symbols');
+    it('defaults to null for invalid time symbols', () => {
+      const node = xml.time({ times: [{ symbol: 'foo' }] });
+      const time = new Time(node);
+      expect(time.getSymbol()).toBeNull();
+    });
 
-    it.todo('defaults to null for missing time symbols');
+    it('defaults to null for missing time symbols', () => {
+      const node = xml.time();
+      const time = new Time(node);
+      expect(time.getSymbol()).toBeNull();
+    });
   });
 });
