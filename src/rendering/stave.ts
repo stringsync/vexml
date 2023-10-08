@@ -318,6 +318,9 @@ export class Stave {
         return 'C';
       case 'cut':
         return 'C|';
+      case 'single-number':
+        // TODO: If/when vexflow supporst this, return the time spec for a single number time signature.
+        return this.toSimpleTimeSpec(this.timeSignature.toFraction());
     }
 
     const components = this.timeSignature.getComponents();
