@@ -1,11 +1,11 @@
 import { TimeSignature } from '@/musicxml/timesignature';
+import { Fraction } from '@/util';
 
 describe(TimeSignature, () => {
   describe('of', () => {
     it('creates a normal time signature with the specification', () => {
       const timeSignature = TimeSignature.of(3, 4);
-      expect(timeSignature.getBeatsPerMeasure()).toBe(3);
-      expect(timeSignature.getBeatValue()).toBe(4);
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(3, 4)]);
       expect(timeSignature.getSymbol()).toBeNull();
     });
   });
@@ -13,8 +13,7 @@ describe(TimeSignature, () => {
   describe('common', () => {
     it('creates a time signature in common time', () => {
       const timeSignature = TimeSignature.common();
-      expect(timeSignature.getBeatsPerMeasure()).toBe(4);
-      expect(timeSignature.getBeatValue()).toBe(4);
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(4, 4)]);
       expect(timeSignature.getSymbol()).toBe('common');
     });
   });
@@ -22,22 +21,9 @@ describe(TimeSignature, () => {
   describe('cut', () => {
     it('creates a time signature in cut time', () => {
       const timeSignature = TimeSignature.cut();
-      expect(timeSignature.getBeatsPerMeasure()).toBe(2);
-      expect(timeSignature.getBeatValue()).toBe(2);
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(2, 2)]);
       expect(timeSignature.getSymbol()).toBe('cut');
     });
-  });
-
-  describe('getBeatsPerMeasure', () => {
-    it('returns the number of beats per measure', () => {
-      const timeSignature = TimeSignature.of(6, 8);
-      expect(timeSignature.getBeatsPerMeasure()).toBe(6);
-    });
-  });
-
-  describe('getBeatValue', () => {
-    const timeSignature = TimeSignature.of(6, 8);
-    expect(timeSignature.getBeatValue()).toBe(8);
   });
 
   describe('getSymbol', () => {
@@ -54,7 +40,7 @@ describe(TimeSignature, () => {
       expect(timeSignature1.isEqual(timeSignature2)).toBeTrue();
     });
 
-    it('returns false when the time signatures are not equal', () => {
+    it('returns false when the time signatures are not exactly equal', () => {
       const timeSignature1 = TimeSignature.of(2, 4);
       const timeSignature2 = TimeSignature.of(4, 8);
       expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
@@ -63,6 +49,18 @@ describe(TimeSignature, () => {
     it('returns false when the time signatures differ in symbols only', () => {
       const timeSignature1 = TimeSignature.common();
       const timeSignature2 = TimeSignature.of(4, 4);
+      expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
+    });
+
+    it('returns true for equal complex time signatures', () => {
+      const timeSignature1 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
+      const timeSignature2 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
+      expect(timeSignature1.isEqual(timeSignature2)).toBeTrue();
+    });
+
+    it('returns false for complex time signatures that have different orders', () => {
+      const timeSignature1 = TimeSignature.complex(new Fraction(3, 8), new Fraction(2, 8));
+      const timeSignature2 = TimeSignature.complex(new Fraction(2, 8), new Fraction(3, 8));
       expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
     });
   });
