@@ -88,7 +88,7 @@ export class Stave {
 
     const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
     const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
-    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? new musicxml.TimeSignature(4, 4);
+    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? musicxml.TimeSignature.common();
 
     let entry: StaveEntry;
 
@@ -181,7 +181,7 @@ export class Stave {
     if (this.keySignature !== stave.keySignature) {
       result.push('keySignature');
     }
-    if (this.timeSignature.toString() !== stave.timeSignature.toString()) {
+    if (!this.timeSignature.isEqual(stave.timeSignature)) {
       result.push('timeSignature');
     }
 
@@ -276,7 +276,7 @@ export class Stave {
       vfStave.addKeySignature(this.keySignature);
     }
     if (opts.modifiers.includes('timeSignature')) {
-      vfStave.addTimeSignature(this.timeSignature.toString());
+      vfStave.addTimeSignature(this.getTimeSpec());
     }
 
     return vfStave;
@@ -309,6 +309,17 @@ export class Stave {
         return vexflow.BarlineType.NONE;
       default:
         return vexflow.BarlineType.NONE;
+    }
+  }
+
+  private getTimeSpec(): string {
+    switch (this.timeSignature.getSymbol()) {
+      case 'common':
+        return 'C';
+      case 'cut':
+        return 'C|';
+      default:
+        return `${this.timeSignature.getBeatsPerMeasure()}/${this.timeSignature.getBeatValue()}`;
     }
   }
 }

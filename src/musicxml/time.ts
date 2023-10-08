@@ -1,5 +1,6 @@
 import { NamedElement } from '@/util';
 import { TimeSignature } from './timesignature';
+import { TIME_SYMBOLS } from './enums';
 
 /**
  * Time represents a time signature element.
@@ -16,6 +17,16 @@ export class Time {
 
   /** Returns the time signatures of the time. There is typically only one. */
   getTimeSignatures(): TimeSignature[] {
+    // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
+    // specifications.
+    const symbol = this.element.attr('symbol').enum(TIME_SYMBOLS);
+    switch (symbol) {
+      case 'common':
+        return [TimeSignature.common()];
+      case 'cut':
+        return [TimeSignature.cut()];
+    }
+
     const result = new Array<TimeSignature>();
 
     const beats = this.element
@@ -32,7 +43,7 @@ export class Time {
     for (let index = 0; index < len; index++) {
       const beatsPerMeasure = parseInt(beats[index], 10);
       const beatValue = parseInt(beatTypes[index], 10);
-      result.push(new TimeSignature(beatsPerMeasure, beatValue));
+      result.push(TimeSignature.of(beatsPerMeasure, beatValue));
     }
 
     return result;
