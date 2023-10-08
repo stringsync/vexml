@@ -51,8 +51,8 @@ export class Time {
   }
 
   private parseTimeSignature(beatsPerMeasure: string, beatValue: string): TimeSignature {
-    const denominator = parseInt(beatValue, 10);
-    const numerators = beatsPerMeasure.split('+').map((b) => parseInt(b, 10));
+    const denominator = parseInt(beatValue.trim(), 10);
+    const numerators = beatsPerMeasure.split('+').map((b) => parseInt(b.trim(), 10));
 
     if (numerators.length > 1) {
       const fractions = numerators.map((numerator) => new Fraction(numerator, denominator));

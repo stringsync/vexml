@@ -63,5 +63,23 @@ describe(TimeSignature, () => {
       const timeSignature2 = TimeSignature.complex([new Fraction(2, 8), new Fraction(3, 8)]);
       expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
     });
+
+    it('returns false when the time signatures are composed of components that have different lengths', () => {
+      const timeSignature1 = TimeSignature.complex([new Fraction(3, 8), new Fraction(2, 8)]);
+      const timeSignature2 = TimeSignature.complex([new Fraction(2, 8), new Fraction(3, 8), new Fraction(4, 8)]);
+      expect(timeSignature1.isEqual(timeSignature2)).toBeFalse();
+    });
+  });
+
+  describe('toFraction', () => {
+    it('converts a simple time signature to a fraction', () => {
+      const timeSignature = TimeSignature.of(4, 4);
+      expect(timeSignature.toFraction().isEquivalent(new Fraction(4, 4)));
+    });
+
+    it('converts a complex time signature to a single fraction using the lcm', () => {
+      const timeSignature = TimeSignature.complex([new Fraction(3, 4), new Fraction(2, 8)]);
+      expect(timeSignature.toFraction().isEqual(new Fraction(8, 8))).toBeTrue();
+    });
   });
 });
