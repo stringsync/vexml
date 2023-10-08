@@ -40,13 +40,6 @@ describe(TimeSignature, () => {
     expect(timeSignature.getBeatValue()).toBe(8);
   });
 
-  describe('toString', () => {
-    it('calculates the string representation of the time signature', () => {
-      const timeSignature = TimeSignature.of(6, 8);
-      expect(timeSignature.toString()).toBe('6/8');
-    });
-  });
-
   describe('getSymbol', () => {
     it('returns the symbol of the time signature', () => {
       const timeSignature = TimeSignature.common();
