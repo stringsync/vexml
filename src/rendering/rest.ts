@@ -2,7 +2,6 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
-import { Fraction } from '../util';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
