@@ -268,3 +268,11 @@ export const STAVE_TYPES = new Enum(['alternate', 'cue', 'editorial', 'ossia', '
  */
 export type SyllabicType = EnumValues<typeof SYLLABIC_TYPES>;
 export const SYLLABIC_TYPES = new Enum(['begin', 'end', 'middle', 'single'] as const);
+
+/**
+ * Indicates how to display a time signature.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/time-symbol/
+ */
+export type TimeSymbol = EnumValues<typeof TIME_SYMBOLS>;
+export const TIME_SYMBOLS = new Enum(['common', 'cut', 'dotted-note', 'normal', 'note', 'single-number'] as const);
