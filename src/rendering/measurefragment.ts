@@ -10,7 +10,12 @@ export type MeasureFragmentRendering = {
   width: number;
 };
 
-/** Represents a fragment of a measure. */
+/**
+ * Represents a fragment of a measure.
+ *
+ * A measure fragment is necessary when stave modifiers change. It is not a formal musical concept, and it is moreso an
+ * outcome of vexflow's Stave implementation.
+ */
 export class MeasureFragment {
   private config: Config;
   private systemId: symbol;
