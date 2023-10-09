@@ -2,13 +2,23 @@ import { Config } from './config';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
+import { Chorus, ChorusRendering } from './chorus';
+import { VoiceRendering } from './voice';
+import { Note, NoteRendering } from './note';
+import { Chord, ChordRendering } from './chord';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
+  vexflow: {
+    beams: vexflow.Beam[];
+  };
   staves: StaveRendering[];
   width: number;
 };
+
+type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
 
 /**
  * Represents a fragment of a measure.
@@ -167,6 +177,7 @@ export class MeasureFragment {
 
     let y = opts.y;
 
+    // Render staves.
     for (const stave of this.staves) {
       const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
 
@@ -185,8 +196,15 @@ export class MeasureFragment {
       y += staveDistance;
     }
 
+    const vfBeams = staveRenderings
+      .map((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((chorus) => chorus.voices)
+      .flatMap((voice) => this.extractVfBeams(voice));
+
     return {
       type: 'measurefragment',
+      vexflow: { beams: vfBeams },
       staves: staveRenderings,
       width,
     };
@@ -239,5 +257,58 @@ export class MeasureFragment {
   /** Returns the modifiers width. */
   private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
     return util.max(this.staves.map((stave) => stave.getModifiersWidth(staveModifiers)));
+  }
+
+  private extractVfBeams(voice: VoiceRendering): vexflow.Beam[] {
+    const vfBeams = new Array<vexflow.Beam>();
+
+    const stemmables = voice.entries.filter(
+      (entry): entry is StemmableVoiceEntryRendering => entry.type === 'note' || entry.type === 'chord'
+    );
+
+    let vfStemmables = new Array<vexflow.StemmableNote>();
+    for (let index = 0; index < stemmables.length; index++) {
+      const stemmable = stemmables[index];
+      const isLast = index === stemmables.length - 1;
+
+      const note = this.getBeamDeterminingNote(stemmable);
+      switch (note.beamValue) {
+        case 'begin':
+        case 'continue':
+        case 'backward hook':
+        case 'forward hook':
+          vfStemmables.push(note.vexflow.staveNote);
+          break;
+        case 'end':
+          vfStemmables.push(note.vexflow.staveNote);
+          vfBeams.push(new vexflow.Beam(vfStemmables));
+          vfStemmables = [];
+          break;
+      }
+
+      if (isLast && vfStemmables.length > 0) {
+        vfBeams.push(new vexflow.Beam(vfStemmables));
+      }
+    }
+
+    return vfBeams;
+  }
+
+  /** Returns the note that determine beaming behavior. */
+  private getBeamDeterminingNote(stemmable: StemmableVoiceEntryRendering): NoteRendering {
+    if (stemmable.type === 'note') {
+      return stemmable;
+    }
+
+    // Chords are rendering using a single vexflow.StaveNote, so it's ok to just use the first one in a chord.
+    const vfStemDirection = util.first(stemmable.notes.map((note) => note.vexflow.staveNote.getStemDirection()));
+
+    // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is broken,
+    // we look at the stem direction to determine which note should be the one to determine the beamining.
+    if (vfStemDirection === vexflow.Stem.DOWN) {
+      return util.last(stemmable.notes)!;
+    } else {
+      return util.first(stemmable.notes)!;
+    }
   }
 }
