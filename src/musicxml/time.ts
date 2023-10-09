@@ -17,6 +17,11 @@ export class Time {
 
   /** Returns the time signature of the time. */
   getTimeSignature(): TimeSignature | null {
+    const isHidden = !!this.element.first('senza-misura');
+    if (isHidden) {
+      return TimeSignature.hidden();
+    }
+
     // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
     // specifications.
     const symbol = this.element.attr('symbol').enum(TIME_SYMBOLS);
