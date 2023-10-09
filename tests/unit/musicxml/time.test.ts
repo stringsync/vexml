@@ -76,5 +76,20 @@ describe(Time, () => {
       const time = new Time(node);
       expect(time.getTimeSignature()).toStrictEqual(TimeSignature.common());
     });
+
+    it('returns a hidden time signature when a senza misura is present', () => {
+      const node = xml.time({ senzaMisura: xml.senzaMisura() });
+      const time = new Time(node);
+      expect(time.getTimeSignature()).toStrictEqual(TimeSignature.hidden());
+    });
+
+    it('returns a hidden time signature when a senza misura is present and a symbol is specified', () => {
+      const node = xml.time({
+        symbol: 'common',
+        senzaMisura: xml.senzaMisura(),
+      });
+      const time = new Time(node);
+      expect(time.getTimeSignature()).toStrictEqual(TimeSignature.hidden());
+    });
   });
 });
