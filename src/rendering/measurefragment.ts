@@ -3,10 +3,10 @@ import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
-import { Chorus, ChorusRendering } from './chorus';
+import { ChorusRendering } from './chorus';
 import { VoiceRendering } from './voice';
-import { Note, NoteRendering } from './note';
-import { Chord, ChordRendering } from './chord';
+import { NoteRendering } from './note';
+import { ChordRendering } from './chord';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
