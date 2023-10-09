@@ -5,6 +5,9 @@ import { Fraction } from '@/util';
  *
  * The `Division` class provides a unified way to manage and manipulate musical divisions, ensuring consistent
  * representations and operations upon them.
+ *
+ * While it delegates most of its methods to the `Fraction` class, the main purpose of `Division` is to limit the
+ * scope of the `Fraction` class and provide meaningful labels to the value.
  */
 export class Division {
   private constructor(private fraction: Fraction) {}

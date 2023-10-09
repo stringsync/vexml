@@ -1,7 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Beam } from './beam';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
@@ -17,6 +16,7 @@ export type NoteRendering = {
     staveNote: vexflow.StaveNote;
   };
   modifiers: NoteModifierRendering[];
+  beamValue: musicxml.BeamValue | null;
 };
 
 /**
@@ -34,32 +34,32 @@ export class Note {
   private key: string;
   private stem: StemDirection;
   private lyrics: Lyric[];
-  private beams: Beam[];
   private accidental: Accidental | null;
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clefType: musicxml.ClefType;
+  private beamValue: musicxml.BeamValue | null;
 
   private constructor(opts: {
     config: Config;
     key: string;
     stem: StemDirection;
     lyrics: Lyric[];
-    beams: Beam[];
     accidental: Accidental | null;
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
+    beamValue: musicxml.BeamValue | null;
   }) {
     this.config = opts.config;
     this.key = opts.key;
     this.stem = opts.stem;
     this.lyrics = opts.lyrics;
-    this.beams = opts.beams;
     this.accidental = opts.accidental;
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clefType = opts.clefType;
+    this.beamValue = opts.beamValue;
   }
 
   /** Creates a Note. */
@@ -89,7 +89,6 @@ export class Note {
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
       .map((lyric) => Lyric.create({ lyric }));
     const stem = opts.stem;
-    const beams = note.getBeams().map((beam) => Beam.create({ musicXml: { beam } }));
     const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
 
@@ -99,16 +98,21 @@ export class Note {
       key += `/${suffix}`;
     }
 
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
+    const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
+    const beamValue = util.first(beams)?.getBeamValue() ?? null;
+
     return new Note({
       config: opts.config,
       key,
       stem,
       lyrics,
-      beams,
       accidental,
       dotCount,
       durationDenominator,
       clefType,
+      beamValue,
     });
   }
 
@@ -187,6 +191,7 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
+      beamValue: notes[index].beamValue,
     }));
   }
 
@@ -210,11 +215,11 @@ export class Note {
       key: this.key,
       stem: this.stem,
       lyrics: this.lyrics.map((lyric) => lyric.clone()),
-      beams: this.beams.map((beam) => beam.clone()),
       accidental: this.accidental?.clone() ?? null,
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clefType: this.clefType,
+      beamValue: this.beamValue,
     });
   }
 
