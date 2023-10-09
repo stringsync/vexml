@@ -43,6 +43,17 @@ export class TimeSignature {
     return new TimeSignature(timeSignature.components, 'single-number');
   }
 
+  /**
+   * Returns a TimeSiganture that should be hidden.
+   *
+   * NOTE: It contains time signature components, but purely to simplify rendering downstream. It shouldn't be used for
+   * calculations.
+   */
+  static hidden(): TimeSignature {
+    const components = [new Fraction(4, 4)];
+    return new TimeSignature(components, 'hidden');
+  }
+
   /** Returns whether the time signatures are equal. */
   isEqual(other: TimeSignature): boolean {
     const components1 = this.components;

@@ -740,12 +740,13 @@ export const time = createNamedElementFactory<
   'time',
   {
     symbol: string;
+    senzaMisura: NamedElement<'senza-misura'>;
     times: Array<{
       beats?: NamedElement<'beats'>;
       beatType?: NamedElement<'beat-type'>;
     }>;
   }
->('time', (e, { symbol, times }) => {
+>('time', (e, { symbol, times, senzaMisura }) => {
   if (symbol) {
     e.setAttribute('symbol', symbol);
   }
@@ -759,7 +760,19 @@ export const time = createNamedElementFactory<
       }
     }
   }
+  if (senzaMisura) {
+    e.append(senzaMisura);
+  }
 });
+
+export const senzaMisura = createNamedElementFactory<'senza-misura', { content: string }>(
+  'senza-misura',
+  (e, { content }) => {
+    if (content) {
+      e.setTextContent(content);
+    }
+  }
+);
 
 export const clef = createNamedElementFactory<
   'clef',

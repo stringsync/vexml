@@ -323,6 +323,8 @@ export class Stave {
       case 'single-number':
         // TODO: If/when vexflow supports this, return the time spec for a single number time signature.
         return [this.toSimpleTimeSpecs(this.timeSignature.toFraction())];
+      case 'hidden':
+        return [];
     }
 
     const components = this.timeSignature.getComponents();
