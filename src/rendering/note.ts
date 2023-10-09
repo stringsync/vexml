@@ -37,6 +37,7 @@ export class Note {
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clefType: musicxml.ClefType;
+  private beamValue: musicxml.BeamValue | null;
 
   private constructor(opts: {
     config: Config;
@@ -47,6 +48,7 @@ export class Note {
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clefType: musicxml.ClefType;
+    beamValue: musicxml.BeamValue | null;
   }) {
     this.config = opts.config;
     this.key = opts.key;
@@ -56,6 +58,7 @@ export class Note {
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clefType = opts.clefType;
+    this.beamValue = opts.beamValue;
   }
 
   /** Creates a Note. */
@@ -94,6 +97,9 @@ export class Note {
       key += `/${suffix}`;
     }
 
+    const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
+    const beamValue = util.first(beams)?.getBeamValue() ?? null;
+
     return new Note({
       config: opts.config,
       key,
@@ -103,6 +109,7 @@ export class Note {
       dotCount,
       durationDenominator,
       clefType,
+      beamValue,
     });
   }
 
@@ -208,6 +215,7 @@ export class Note {
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clefType: this.clefType,
+      beamValue: this.beamValue,
     });
   }
 
