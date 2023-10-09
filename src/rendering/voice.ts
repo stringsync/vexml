@@ -20,7 +20,7 @@ export type VoiceRendering = {
   vexflow: {
     voice: vexflow.Voice;
   };
-  notes: VoiceEntryRendering[];
+  entries: VoiceEntryRendering[];
 };
 
 export type VoiceEntryData = {
@@ -270,7 +270,7 @@ export class Voice {
     return {
       type: 'voice',
       vexflow: { voice: vfVoice },
-      notes: voiceEntryRenderings,
+      entries: voiceEntryRenderings,
     };
   }
 

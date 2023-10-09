@@ -158,12 +158,20 @@ export class Score {
 
     // Render vexflow.Voice elements.
     staves
-      .flatMap((stave) => stave.entry)
+      .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
       .flatMap((entry) => entry.voices)
       .map((voice) => voice.vexflow.voice)
       .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
+      });
+
+    // Render vexflow.Beam elements.
+    measures
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.vexflow.beams)
+      .forEach((vfBeam) => {
+        vfBeam.setContext(vfContext).draw();
       });
 
     // Render measure labels.
