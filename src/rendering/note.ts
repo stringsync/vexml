@@ -16,6 +16,7 @@ export type NoteRendering = {
     staveNote: vexflow.StaveNote;
   };
   modifiers: NoteModifierRendering[];
+  beamValue: musicxml.BeamValue | null;
 };
 
 /**
@@ -97,6 +98,8 @@ export class Note {
       key += `/${suffix}`;
     }
 
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
     const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
     const beamValue = util.first(beams)?.getBeamValue() ?? null;
 
@@ -188,6 +191,7 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
+      beamValue: notes[index].beamValue,
     }));
   }
 
