@@ -46,6 +46,14 @@ describe(TimeSignature, () => {
     });
   });
 
+  describe('hidden', () => {
+    it('creates the specs of a hidden time signature', () => {
+      const timeSignature = TimeSignature.hidden();
+      expect(timeSignature.getComponents()).toStrictEqual([new Fraction(4, 4)]);
+      expect(timeSignature.getSymbol()).toBe('hidden');
+    });
+  });
+
   describe('getSymbol', () => {
     it('returns the symbol of the time signature', () => {
       const timeSignature = TimeSignature.common();

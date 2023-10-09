@@ -275,4 +275,12 @@ export const SYLLABIC_TYPES = new Enum(['begin', 'end', 'middle', 'single'] as c
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/time-symbol/
  */
 export type TimeSymbol = EnumValues<typeof TIME_SYMBOLS>;
-export const TIME_SYMBOLS = new Enum(['common', 'cut', 'dotted-note', 'normal', 'note', 'single-number'] as const);
+export const TIME_SYMBOLS = new Enum([
+  'common',
+  'cut',
+  'dotted-note',
+  'normal',
+  'note',
+  'single-number',
+  'hidden',
+] as const);
