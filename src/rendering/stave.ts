@@ -276,7 +276,9 @@ export class Stave {
       vfStave.addKeySignature(this.keySignature);
     }
     if (opts.modifiers.includes('timeSignature')) {
-      vfStave.addTimeSignature(this.getTimeSpec());
+      for (const timeSpec of this.getTimeSpecs()) {
+        vfStave.addTimeSignature(timeSpec);
+      }
     }
 
     return vfStave;
@@ -312,30 +314,30 @@ export class Stave {
     }
   }
 
-  private getTimeSpec(): string {
+  private getTimeSpecs(): string[] {
     switch (this.timeSignature.getSymbol()) {
       case 'common':
-        return 'C';
+        return ['C'];
       case 'cut':
-        return 'C|';
+        return ['C|'];
       case 'single-number':
-        // TODO: If/when vexflow supporst this, return the time spec for a single number time signature.
-        return this.toSimpleTimeSpec(this.timeSignature.toFraction());
+        // TODO: If/when vexflow supports this, return the time spec for a single number time signature.
+        return [this.toSimpleTimeSpecs(this.timeSignature.toFraction())];
     }
 
     const components = this.timeSignature.getComponents();
     if (components.length > 1) {
-      return this.toComplexTimeSpec(components) ?? this.toSimpleTimeSpec(this.timeSignature.toFraction());
+      return this.toComplexTimeSpecs(components);
     }
 
-    return this.toSimpleTimeSpec(components[0]);
+    return [this.toSimpleTimeSpecs(components[0])];
   }
 
-  private toSimpleTimeSpec(component: util.Fraction): string {
+  private toSimpleTimeSpecs(component: util.Fraction): string {
     return `${component.numerator}/${component.denominator}`;
   }
 
-  private toComplexTimeSpec(components: util.Fraction[]): string | null {
+  private toComplexTimeSpecs(components: util.Fraction[]): string[] {
     const denominators = new Array<number>();
     const memo: Record<number, number[]> = {};
 
@@ -353,16 +355,17 @@ export class Stave {
 
     const result = new Array<string>();
 
-    for (const denominator of denominators) {
+    for (let index = 0; index < denominators.length; index++) {
+      const denominator = denominators[index];
+      const isLast = index === denominators.length - 1;
+
       result.push(`${memo[denominator].join('+')}/${denominator}`);
+
+      if (!isLast) {
+        result.push('+');
+      }
     }
 
-    // TODO: If/when vexflow supports multiple complex time signatures, remove this result branch. Right now, vexflow
-    // seems to only support at most one time signature denominator.
-    if (denominators.length !== 1) {
-      return null;
-    }
-
-    return result.join('+');
+    return result;
   }
 }
