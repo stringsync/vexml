@@ -51,23 +51,17 @@ export class StaveSignatureRegistry {
   }
 
   /** Returns all the StaveSignatures at a measure index. */
-  atMeasure(measureIndex: number): StaveSignature[] {
-    const measureAttributesSet = this.registry[measureIndex];
-    if (!measureAttributesSet) {
-      throw new Error(`invalid measure index: ${measureIndex}, max allowed: ${this.registry.length}`);
-    }
-    return measureAttributesSet;
+  atMeasure(measureIndex: number): StaveSignature[] | null {
+    return this.registry[measureIndex] ?? null;
   }
 
   /** Returns all the StaveSignatures at a [measure index, measure entry index]. */
-  at(measureIndex: number, measureEntryIndex: number): StaveSignature {
-    const measureAttributes = this.atMeasure(measureIndex).find(
-      (measureAttributes) => measureAttributes.getMeasureEntryIndex() === measureEntryIndex
+  at(measureIndex: number, measureEntryIndex: number): StaveSignature | null {
+    return (
+      this.atMeasure(measureIndex)?.find(
+        (measureAttributes) => measureAttributes.getMeasureEntryIndex() === measureEntryIndex
+      ) ?? null
     );
-    if (!measureAttributes) {
-      throw new Error(`invalid measure entry index: ${measureEntryIndex}`);
-    }
-    return measureAttributes;
   }
 }
 

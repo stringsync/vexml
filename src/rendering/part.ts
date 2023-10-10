@@ -58,11 +58,14 @@ export class Part {
 
     let previousMeasure: Measure | null = null;
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
-    const measures = new Array<Measure>();
-    const xmlMeasures = opts.musicXml.part.getMeasures();
+
     const staveCount = util.max(
       staveSignatureRegistry.all().map((measureAttribute) => measureAttribute.getStaveCount())
     );
+
+    const measures = new Array<Measure>();
+    const xmlMeasures = opts.musicXml.part.getMeasures();
+
     for (let index = 0; index < xmlMeasures.length; index++) {
       const xmlMeasure = xmlMeasures[index];
 
