@@ -3,6 +3,7 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import { MeasureAttributes } from './measureattributes';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -14,9 +15,6 @@ export type PartRendering = {
   };
   measures: MeasureRendering[];
 };
-
-/** Mapping of stave numbers to musicxml.ClefTypes. */
-type StaveClefs = Record<number | string, musicxml.ClefType>;
 
 /**
  * Represents a Part in a musical score, corresponding to the <part> element in MusicXML. This class encompasses the
@@ -56,13 +54,13 @@ export class Part {
   }): Part {
     const id = opts.musicXml.part.getId();
 
+    const measureAttributes = MeasureAttributes.extract(opts.musicXml.part);
+
     let previousMeasure: Measure | null = null;
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
     const xmlMeasures = opts.musicXml.part.getMeasures();
-    const staveCount = util.max(
-      xmlMeasures.flatMap((xmlMeasure) => xmlMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
-    );
+    const staveCount = util.max(measureAttributes.map((measureAttribute) => measureAttribute.getStaveCount()));
     for (let index = 0; index < xmlMeasures.length; index++) {
       const xmlMeasure = xmlMeasures[index];
 
@@ -96,48 +94,6 @@ export class Part {
       staveCount,
       noopMeasureCount,
     });
-  }
-
-  /** Returns the measure indexes where there is at least one clef change on one of the staves. */
-  private static detectClefChanges(part: musicxml.Part): number[] {
-    const result = new Array<number>();
-
-    let staveClefs: StaveClefs = {};
-
-    const toStaveClefs = (attributes: musicxml.Attributes): StaveClefs =>
-      attributes
-        .getClefs()
-        .filter((clef) => !!clef.getClefType())
-        .reduce<StaveClefs>((map, clef) => {
-          map[clef.getStaveNumber()] = clef.getClefType()!;
-          return map;
-        }, {});
-
-    const changed = (current: StaveClefs, proposed: StaveClefs): boolean =>
-      Object.keys(proposed)
-        // If the key doesn't currently exist, then we don't want to count it as a meaningful change.
-        .filter((staveNumber) => staveNumber in current)
-        .some((staveNumber) => current[staveNumber] !== proposed[staveNumber]);
-
-    const measures = part.getMeasures();
-
-    for (let index = 0; index < measures.length - 1; index++) {
-      const measure = measures[index];
-
-      const [first, ...rest] = measure.getAttributes();
-
-      const firstStaveClefs = toStaveClefs(first);
-      if (changed(staveClefs, firstStaveClefs)) {
-        result.push(index);
-      }
-      staveClefs = { ...staveClefs, ...firstStaveClefs };
-
-      for (const attributes of rest) {
-        staveClefs = { ...staveClefs, ...toStaveClefs(attributes) };
-      }
-    }
-
-    return result;
   }
 
   /** Returns the measures of the Part. */

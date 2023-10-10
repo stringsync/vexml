@@ -15,6 +15,7 @@ export class MeasureAttributes {
   private keySignatures: StaveMap<string>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
   private quarterNoteDivisions: number;
+  private staveCount: number;
 
   private constructor(opts: {
     measureIndex: number;
@@ -23,6 +24,7 @@ export class MeasureAttributes {
     keySignatures: StaveMap<string>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
     quarterNoteDivisions: number;
+    staveCount: number;
   }) {
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
@@ -30,6 +32,7 @@ export class MeasureAttributes {
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
+    this.staveCount = opts.staveCount;
   }
 
   /** Extracts an array of MeasureAttributes from a musicxml.Part. */
@@ -51,7 +54,7 @@ export class MeasureAttributes {
             measureIndex,
             measureEntryIndex,
             previousMeasureAttributes,
-            xmlAttributes: entry,
+            musicXml: { attributes: entry },
           });
           result.push(measureAttributes);
 
@@ -68,11 +71,13 @@ export class MeasureAttributes {
     measureIndex: number;
     measureEntryIndex: number;
     previousMeasureAttributes: MeasureAttributes | null;
-    xmlAttributes: musicxml.Attributes;
+    musicXml: {
+      attributes: musicxml.Attributes;
+    };
   }): MeasureAttributes {
     const clefTypes = {
       ...opts.previousMeasureAttributes?.clefTypes,
-      ...opts.xmlAttributes
+      ...opts.musicXml.attributes
         .getClefs()
         .map((clef): [staveNumber: number, clefType: musicxml.ClefType | null] => [
           clef.getStaveNumber(),
@@ -87,7 +92,7 @@ export class MeasureAttributes {
 
     const keySignatures = {
       ...opts.previousMeasureAttributes?.keySignatures,
-      ...opts.xmlAttributes.getKeys().reduce<StaveMap<string>>((map, key) => {
+      ...opts.musicXml.attributes.getKeys().reduce<StaveMap<string>>((map, key) => {
         map[key.getStaveNumber()] = key.getKeySignature();
         return map;
       }, {}),
@@ -95,7 +100,7 @@ export class MeasureAttributes {
 
     const timeSignatures = {
       ...opts.previousMeasureAttributes?.timeSignatures,
-      ...opts.xmlAttributes
+      ...opts.musicXml.attributes
         .getTimes()
         .map((time): [staveNumber: number, timeSignature: musicxml.TimeSignature | null] => [
           time.getStaveNumber(),
@@ -108,7 +113,8 @@ export class MeasureAttributes {
         }, {}),
     };
 
-    const quarterNoteDivisions = opts.xmlAttributes.getQuarterNoteDivisions();
+    const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
+    const staveCount = opts.musicXml.attributes.getStaveCount();
 
     return new MeasureAttributes({
       measureIndex: opts.measureIndex,
@@ -117,6 +123,7 @@ export class MeasureAttributes {
       keySignatures,
       timeSignatures,
       quarterNoteDivisions,
+      staveCount,
     });
   }
 
@@ -183,5 +190,10 @@ export class MeasureAttributes {
   /** Returns the time signature corresponding to the stave number. */
   getTimeSignature(staveNumber: number): musicxml.TimeSignature | null {
     return this.timeSignatures[staveNumber] ?? null;
+  }
+
+  /** Returns the number of staves the measure should have. */
+  getStaveCount(): number {
+    return this.staveCount;
   }
 }
