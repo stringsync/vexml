@@ -32,6 +32,37 @@ export class MeasureAttributes {
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
   }
 
+  /** Extracts an array of MeasureAttributes from a musicxml.Part. */
+  static extract(part: musicxml.Part): MeasureAttributes[] {
+    const result = new Array<MeasureAttributes>();
+
+    let previousMeasureAttributes: MeasureAttributes | null = null;
+
+    const measures = part.getMeasures();
+    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
+      const measure = measures[measureIndex];
+
+      const entries = measure.getEntries();
+      for (let measureEntryIndex = 0; measureEntryIndex < entries.length; measureEntryIndex++) {
+        const entry = entries[measureEntryIndex];
+
+        if (entry instanceof musicxml.Attributes) {
+          const measureAttributes = MeasureAttributes.merge({
+            measureIndex,
+            measureEntryIndex,
+            previousMeasureAttributes,
+            xmlAttributes: entry,
+          });
+          result.push(measureAttributes);
+
+          previousMeasureAttributes = measureAttributes;
+        }
+      }
+    }
+
+    return result;
+  }
+
   /** Creates a new MeasureAttributes by selectively merging properties from its designated previous. */
   static merge(opts: {
     measureIndex: number;
