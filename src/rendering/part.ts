@@ -3,7 +3,7 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
-import { MeasureAttributes } from './measureattributes';
+import { StaveSignatureRegistry } from './stavesignatureregistry';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -54,13 +54,15 @@ export class Part {
   }): Part {
     const id = opts.musicXml.part.getId();
 
-    const measureAttributes = MeasureAttributes.extract(opts.musicXml.part);
+    const staveSignatureRegistry = StaveSignatureRegistry.from(opts.musicXml.part);
 
     let previousMeasure: Measure | null = null;
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
     const measures = new Array<Measure>();
     const xmlMeasures = opts.musicXml.part.getMeasures();
-    const staveCount = util.max(measureAttributes.map((measureAttribute) => measureAttribute.getStaveCount()));
+    const staveCount = util.max(
+      staveSignatureRegistry.all().map((measureAttribute) => measureAttribute.getStaveCount())
+    );
     for (let index = 0; index < xmlMeasures.length; index++) {
       const xmlMeasure = xmlMeasures[index];
 
