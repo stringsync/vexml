@@ -91,4 +91,19 @@ export class MeasureAttributes {
   getMeasureEntryIndex(): number {
     return this.measureEntryIndex;
   }
+
+  /** Returns the clef corresponding to the stave number. */
+  getClef(staveNumber: number): musicxml.ClefType | null {
+    return this.clefs[staveNumber] ?? null;
+  }
+
+  /** Returns the key signature corresponding to the stave number. */
+  getKeySignature(staveNumber: number): string | null {
+    return this.keySignatures[staveNumber] ?? null;
+  }
+
+  /** Returns the time signature corresponding to the stave number. */
+  getTimeSignature(staveNumber: number): musicxml.TimeSignature | null {
+    return this.timeSignatures[staveNumber] ?? null;
+  }
 }
