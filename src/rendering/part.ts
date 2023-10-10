@@ -15,6 +15,9 @@ export type PartRendering = {
   measures: MeasureRendering[];
 };
 
+/** Mapping of stave numbers to musicxml.ClefTypes. */
+type StaveClefs = Record<number | string, musicxml.ClefType>;
+
 /**
  * Represents a Part in a musical score, corresponding to the <part> element in MusicXML. This class encompasses the
  * entire musical content for a specific instrument or voice, potentially spanning multiple systems when rendered in the
@@ -93,6 +96,48 @@ export class Part {
       staveCount,
       noopMeasureCount,
     });
+  }
+
+  /** Returns the measure indexes where there is at least one clef change on one of the staves. */
+  private static detectClefChanges(part: musicxml.Part): number[] {
+    const result = new Array<number>();
+
+    let staveClefs: StaveClefs = {};
+
+    const toStaveClefs = (attributes: musicxml.Attributes): StaveClefs =>
+      attributes
+        .getClefs()
+        .filter((clef) => !!clef.getClefType())
+        .reduce<StaveClefs>((map, clef) => {
+          map[clef.getStaveNumber()] = clef.getClefType()!;
+          return map;
+        }, {});
+
+    const changed = (current: StaveClefs, proposed: StaveClefs): boolean =>
+      Object.keys(proposed)
+        // If the key doesn't currently exist, then we don't want to count it as a meaningful change.
+        .filter((staveNumber) => staveNumber in current)
+        .some((staveNumber) => current[staveNumber] !== proposed[staveNumber]);
+
+    const measures = part.getMeasures();
+
+    for (let index = 0; index < measures.length - 1; index++) {
+      const measure = measures[index];
+
+      const [first, ...rest] = measure.getAttributes();
+
+      const firstStaveClefs = toStaveClefs(first);
+      if (changed(staveClefs, firstStaveClefs)) {
+        result.push(index);
+      }
+      staveClefs = { ...staveClefs, ...firstStaveClefs };
+
+      for (const attributes of rest) {
+        staveClefs = { ...staveClefs, ...toStaveClefs(attributes) };
+      }
+    }
+
+    return result;
   }
 
   /** Returns the measures of the Part. */
