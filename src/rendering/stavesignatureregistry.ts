@@ -1,45 +1,22 @@
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { StaveModifier } from './stave';
 
-export type StaveMap<T> = Record<string | number, T>;
+export type StaveMap<T> = { [staveNumber: number | string]: T };
 
-/**
- * A utility class to account for <attributes> changes.
- *
- * Nil <attributes> values don't actually mean anything changed — it actually means use the previous value.
- */
-export class MeasureAttributes {
-  private measureIndex: number;
-  private measureEntryIndex: number;
-  private clefTypes: StaveMap<musicxml.ClefType>;
-  private keySignatures: StaveMap<string>;
-  private timeSignatures: StaveMap<musicxml.TimeSignature>;
-  private quarterNoteDivisions: number;
-  private staveCount: number;
+/** A collection of all the stave signatures that belong to a MusicXML Part. */
+export class StaveSignatureRegistry {
+  private registry: StaveSignature[][];
 
-  private constructor(opts: {
-    measureIndex: number;
-    measureEntryIndex: number;
-    clefTypes: StaveMap<musicxml.ClefType>;
-    keySignatures: StaveMap<string>;
-    timeSignatures: StaveMap<musicxml.TimeSignature>;
-    quarterNoteDivisions: number;
-    staveCount: number;
-  }) {
-    this.measureIndex = opts.measureIndex;
-    this.measureEntryIndex = opts.measureEntryIndex;
-    this.clefTypes = opts.clefTypes;
-    this.keySignatures = opts.keySignatures;
-    this.timeSignatures = opts.timeSignatures;
-    this.quarterNoteDivisions = opts.quarterNoteDivisions;
-    this.staveCount = opts.staveCount;
+  private constructor(registry: StaveSignature[][]) {
+    this.registry = registry;
   }
 
-  /** Extracts an array of MeasureAttributes from a musicxml.Part. */
-  static extract(part: musicxml.Part): MeasureAttributes[] {
-    const result = new Array<MeasureAttributes>();
+  /** Creates a registry from a MusicXML part. */
+  static from(part: musicxml.Part): StaveSignatureRegistry {
+    const registry = new Array<StaveSignature[]>();
 
-    let previousMeasureAttributes: MeasureAttributes | null = null;
+    let previousMeasureAttributes: StaveSignature | null = null;
 
     const measures = part.getMeasures();
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
@@ -49,34 +26,101 @@ export class MeasureAttributes {
       for (let measureEntryIndex = 0; measureEntryIndex < entries.length; measureEntryIndex++) {
         const entry = entries[measureEntryIndex];
 
+        registry.push([]);
+
         if (entry instanceof musicxml.Attributes) {
-          const measureAttributes = MeasureAttributes.merge({
+          const measureAttributes = StaveSignature.merge({
             measureIndex,
             measureEntryIndex,
-            previousMeasureAttributes,
+            previousStaveSignature: previousMeasureAttributes,
             musicXml: { attributes: entry },
           });
-          result.push(measureAttributes);
+          registry[measureIndex].push(measureAttributes);
 
           previousMeasureAttributes = measureAttributes;
         }
       }
     }
 
-    return result;
+    return new StaveSignatureRegistry(registry);
   }
 
-  /** Creates a new MeasureAttributes by selectively merging properties from its designated previous. */
+  /** Returns all StaveSignatures in the order they appeared. */
+  all(): StaveSignature[] {
+    return this.registry.flat();
+  }
+
+  /** Returns all the StaveSignatures at a measure index. */
+  atMeasure(measureIndex: number): StaveSignature[] {
+    const measureAttributesSet = this.registry[measureIndex];
+    if (!measureAttributesSet) {
+      throw new Error(`invalid measure index: ${measureIndex}, max allowed: ${this.registry.length}`);
+    }
+    return measureAttributesSet;
+  }
+
+  /** Returns all the StaveSignatures at a [measure index, measure entry index]. */
+  at(measureIndex: number, measureEntryIndex: number): StaveSignature {
+    const measureAttributes = this.atMeasure(measureIndex).find(
+      (measureAttributes) => measureAttributes.getMeasureEntryIndex() === measureEntryIndex
+    );
+    if (!measureAttributes) {
+      throw new Error(`invalid measure entry index: ${measureEntryIndex}`);
+    }
+    return measureAttributes;
+  }
+}
+
+/**
+ * A utility class to account for <attributes> changes.
+ *
+ * The name "attributes" isn't used because it has two main problems:
+ *  - It's ambiguous. What "attributes" are we talking about?
+ *  - It's inherently plural. What do you call an array of "attributes"?
+ */
+class StaveSignature {
+  private measureIndex: number;
+  private measureEntryIndex: number;
+  private clefTypes: StaveMap<musicxml.ClefType>;
+  private keySignatures: StaveMap<string>;
+  private timeSignatures: StaveMap<musicxml.TimeSignature>;
+  private quarterNoteDivisions: number;
+  private staveCount: number;
+  private previousStaveSignature: StaveSignature | null;
+
+  private constructor(opts: {
+    measureIndex: number;
+    measureEntryIndex: number;
+    clefTypes: StaveMap<musicxml.ClefType>;
+    keySignatures: StaveMap<string>;
+    timeSignatures: StaveMap<musicxml.TimeSignature>;
+    quarterNoteDivisions: number;
+    staveCount: number;
+    previousStaveSignature: StaveSignature | null;
+  }) {
+    this.measureIndex = opts.measureIndex;
+    this.measureEntryIndex = opts.measureEntryIndex;
+    this.clefTypes = opts.clefTypes;
+    this.keySignatures = opts.keySignatures;
+    this.timeSignatures = opts.timeSignatures;
+    this.quarterNoteDivisions = opts.quarterNoteDivisions;
+    this.staveCount = opts.staveCount;
+    this.previousStaveSignature = opts.previousStaveSignature;
+  }
+
+  /** Creates a new StaveSignature by selectively merging properties from its designated previous. */
   static merge(opts: {
     measureIndex: number;
     measureEntryIndex: number;
-    previousMeasureAttributes: MeasureAttributes | null;
+    previousStaveSignature: StaveSignature | null;
     musicXml: {
       attributes: musicxml.Attributes;
     };
-  }): MeasureAttributes {
+  }): StaveSignature {
+    const previousStaveSignature = opts.previousStaveSignature;
+
     const clefTypes = {
-      ...opts.previousMeasureAttributes?.clefTypes,
+      ...previousStaveSignature?.clefTypes,
       ...opts.musicXml.attributes
         .getClefs()
         .map((clef): [staveNumber: number, clefType: musicxml.ClefType | null] => [
@@ -91,7 +135,7 @@ export class MeasureAttributes {
     };
 
     const keySignatures = {
-      ...opts.previousMeasureAttributes?.keySignatures,
+      ...previousStaveSignature?.keySignatures,
       ...opts.musicXml.attributes.getKeys().reduce<StaveMap<string>>((map, key) => {
         map[key.getStaveNumber()] = key.getKeySignature();
         return map;
@@ -99,7 +143,7 @@ export class MeasureAttributes {
     };
 
     const timeSignatures = {
-      ...opts.previousMeasureAttributes?.timeSignatures,
+      ...previousStaveSignature?.timeSignatures,
       ...opts.musicXml.attributes
         .getTimes()
         .map((time): [staveNumber: number, timeSignature: musicxml.TimeSignature | null] => [
@@ -116,7 +160,7 @@ export class MeasureAttributes {
     const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
     const staveCount = opts.musicXml.attributes.getStaveCount();
 
-    return new MeasureAttributes({
+    return new StaveSignature({
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
       clefTypes,
@@ -124,37 +168,37 @@ export class MeasureAttributes {
       timeSignatures,
       quarterNoteDivisions,
       staveCount,
+      previousStaveSignature,
     });
   }
 
   /**
    * Returns the stave modifiers that _meaningfully_ changed.
    *
-   * When one of the values is null for a given stave number, it does not indicate a change.
+   * When one of the values is nil for a given stave number, it does not indicate a change. Instead, it signals that
+   * the previous value should be used.
    */
-  static diffStaveModifiers(
-    measureAttributes1: MeasureAttributes,
-    measureAttributes2: MeasureAttributes
-  ): StaveModifier[] {
+  @util.memoize()
+  getChangedStaveModifiers(): StaveModifier[] {
     const changed = new Set<StaveModifier>();
 
-    for (const [staveNumber, clefType2] of Object.entries(measureAttributes2.clefTypes)) {
-      const clefType1 = measureAttributes1.clefTypes[staveNumber];
-      if (clefType1 && clefType1 !== clefType2) {
+    for (const [staveNumber, clefType] of Object.entries(this.clefTypes)) {
+      const previousClefType = this.previousStaveSignature?.clefTypes[staveNumber];
+      if (previousClefType && previousClefType !== clefType) {
         changed.add('clefType');
       }
     }
 
-    for (const [staveNumber, keySignature2] of Object.entries(measureAttributes2.keySignatures)) {
-      const keySignature1 = measureAttributes1.keySignatures[staveNumber];
-      if (keySignature1 && keySignature1 !== keySignature2) {
+    for (const [staveNumber, keySignature] of Object.entries(this.keySignatures)) {
+      const previousKeySignature = this.previousStaveSignature?.keySignatures[staveNumber];
+      if (previousKeySignature && previousKeySignature !== keySignature) {
         changed.add('keySignature');
       }
     }
 
-    for (const [staveNumber, timeSignature2] of Object.entries(measureAttributes2.timeSignatures)) {
-      const timeSignature1 = measureAttributes1.timeSignatures[staveNumber];
-      if (timeSignature1 && !timeSignature1.isEqual(timeSignature2)) {
+    for (const [staveNumber, timeSignature] of Object.entries(this.timeSignatures)) {
+      const previousTimeSignature = this.previousStaveSignature?.timeSignatures[staveNumber];
+      if (previousTimeSignature && !previousTimeSignature.isEqual(timeSignature)) {
         changed.add('timeSignature');
       }
     }
