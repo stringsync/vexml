@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import { StaveModifier } from './stave';
 
 type StaveMap<T> = Record<string | number, T>;
 
@@ -10,20 +11,20 @@ type StaveMap<T> = Record<string | number, T>;
 export class MeasureAttributes {
   private measureIndex: number;
   private measureEntryIndex: number;
-  private clefs: StaveMap<musicxml.ClefType>;
+  private clefTypes: StaveMap<musicxml.ClefType>;
   private keySignatures: StaveMap<string>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
 
   private constructor(opts: {
     measureIndex: number;
     measureEntryIndex: number;
-    clefs: StaveMap<musicxml.ClefType>;
+    clefTypes: StaveMap<musicxml.ClefType>;
     keySignatures: StaveMap<string>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
   }) {
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
-    this.clefs = opts.clefs;
+    this.clefTypes = opts.clefTypes;
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
   }
@@ -35,8 +36,8 @@ export class MeasureAttributes {
     previousMeasureAttributes: MeasureAttributes | null;
     xmlAttributes: musicxml.Attributes;
   }): MeasureAttributes {
-    const clefs = {
-      ...opts.previousMeasureAttributes?.clefs,
+    const clefTypes = {
+      ...opts.previousMeasureAttributes?.clefTypes,
       ...opts.xmlAttributes
         .getClefs()
         .map((clef): [staveNumber: number, clefType: musicxml.ClefType | null] => [
@@ -76,10 +77,42 @@ export class MeasureAttributes {
     return new MeasureAttributes({
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
-      clefs,
+      clefTypes,
       keySignatures,
       timeSignatures,
     });
+  }
+
+  /**
+   * Returns the stave modifiers that _meaningfully_ changed.
+   *
+   * When one of the values is null for a given stave number, it does not indicate a change.
+   */
+  static diff(measureAttributes1: MeasureAttributes, measureAttributes2: MeasureAttributes): StaveModifier[] {
+    const changed = new Set<StaveModifier>();
+
+    for (const [staveNumber, clefType2] of Object.entries(measureAttributes2.clefTypes)) {
+      const clefType1 = measureAttributes1.clefTypes[staveNumber];
+      if (clefType1 && clefType1 !== clefType2) {
+        changed.add('clefType');
+      }
+    }
+
+    for (const [staveNumber, keySignature2] of Object.entries(measureAttributes2.keySignatures)) {
+      const keySignature1 = measureAttributes1.keySignatures[staveNumber];
+      if (keySignature1 && keySignature1 !== keySignature2) {
+        changed.add('keySignature');
+      }
+    }
+
+    for (const [staveNumber, timeSignature2] of Object.entries(measureAttributes2.timeSignatures)) {
+      const timeSignature1 = measureAttributes1.timeSignatures[staveNumber];
+      if (timeSignature1 && !timeSignature1.isEqual(timeSignature2)) {
+        changed.add('timeSignature');
+      }
+    }
+
+    return Array.from(changed);
   }
 
   /** Returns the measure index of the MeasureAttributes. */
@@ -93,8 +126,8 @@ export class MeasureAttributes {
   }
 
   /** Returns the clef corresponding to the stave number. */
-  getClef(staveNumber: number): musicxml.ClefType | null {
-    return this.clefs[staveNumber] ?? null;
+  getClefType(staveNumber: number): musicxml.ClefType | null {
+    return this.clefTypes[staveNumber] ?? null;
   }
 
   /** Returns the key signature corresponding to the stave number. */
