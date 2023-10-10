@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { StaveModifier } from './stave';
 
-type StaveMap<T> = Record<string | number, T>;
+export type StaveMap<T> = Record<string | number, T>;
 
 /**
  * A utility class to account for <attributes> changes.
@@ -14,6 +14,7 @@ export class MeasureAttributes {
   private clefTypes: StaveMap<musicxml.ClefType>;
   private keySignatures: StaveMap<string>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
+  private quarterNoteDivisions: number;
 
   private constructor(opts: {
     measureIndex: number;
@@ -21,12 +22,14 @@ export class MeasureAttributes {
     clefTypes: StaveMap<musicxml.ClefType>;
     keySignatures: StaveMap<string>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
+    quarterNoteDivisions: number;
   }) {
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
     this.clefTypes = opts.clefTypes;
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
+    this.quarterNoteDivisions = opts.quarterNoteDivisions;
   }
 
   /** Creates a new MeasureAttributes by selectively merging properties from its designated previous. */
@@ -74,12 +77,15 @@ export class MeasureAttributes {
         }, {}),
     };
 
+    const quarterNoteDivisions = opts.xmlAttributes.getQuarterNoteDivisions();
+
     return new MeasureAttributes({
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
       clefTypes,
       keySignatures,
       timeSignatures,
+      quarterNoteDivisions,
     });
   }
 
@@ -88,7 +94,10 @@ export class MeasureAttributes {
    *
    * When one of the values is null for a given stave number, it does not indicate a change.
    */
-  static diff(measureAttributes1: MeasureAttributes, measureAttributes2: MeasureAttributes): StaveModifier[] {
+  static diffStaveModifiers(
+    measureAttributes1: MeasureAttributes,
+    measureAttributes2: MeasureAttributes
+  ): StaveModifier[] {
     const changed = new Set<StaveModifier>();
 
     for (const [staveNumber, clefType2] of Object.entries(measureAttributes2.clefTypes)) {
@@ -133,6 +142,11 @@ export class MeasureAttributes {
   /** Returns the key signature corresponding to the stave number. */
   getKeySignature(staveNumber: number): string | null {
     return this.keySignatures[staveNumber] ?? null;
+  }
+
+  /** Returns how many divisions a quarter note has. */
+  getQuarterNoteDivisions(): number {
+    return this.quarterNoteDivisions;
   }
 
   /** Returns the time signature corresponding to the stave number. */
