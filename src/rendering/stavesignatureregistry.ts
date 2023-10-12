@@ -51,14 +51,14 @@ export class StaveSignatureRegistry {
   }
 
   /** Returns all the StaveSignatures at a measure index. */
-  atMeasure(measureIndex: number): StaveSignature[] | null {
+  getMeasureStaveSignatures(measureIndex: number): StaveSignature[] | null {
     return this.registry[measureIndex] ?? null;
   }
 
   /** Returns all the StaveSignatures at a [measure index, measure entry index]. */
-  at(measureIndex: number, measureEntryIndex: number): StaveSignature | null {
+  getStaveSignature(measureIndex: number, measureEntryIndex: number): StaveSignature | null {
     return (
-      this.atMeasure(measureIndex)?.find(
+      this.getMeasureStaveSignatures(measureIndex)?.find(
         (measureAttributes) => measureAttributes.getMeasureEntryIndex() === measureEntryIndex
       ) ?? null
     );
