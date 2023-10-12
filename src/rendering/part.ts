@@ -90,9 +90,12 @@ export class Part {
         config: opts.config,
         musicXml: { measure: xmlMeasure },
         staveCount,
+        isFirstPartMeasure: measureIndex === 0,
+        isLastPartMeasure: measureIndex === xmlMeasures.length - 1,
         systemId: opts.systemId,
         previousMeasure,
         leadingStaveSignature,
+        staveSignatureRegistry,
       });
 
       noopMeasureCount += measure.getMultiRestCount() - 1;
@@ -132,6 +135,7 @@ export class Part {
         `measureEndIndex cannot be greater than measures length (${this.measures.length}), got: ${measureEndIndex}`
       );
     }
+
     const measures = this.measures
       .slice(opts.measureStartIndex, opts.measureEndIndex)
       .map((measure) => measure.clone(opts.systemId));

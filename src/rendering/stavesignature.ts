@@ -17,6 +17,7 @@ export class StaveSignature {
   private clefTypes: StaveMap<musicxml.ClefType>;
   private keySignatures: StaveMap<string>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
+  private multiRestCounts: StaveMap<number>;
   private quarterNoteDivisions: number;
   private staveCount: number;
   private previousStaveSignature: StaveSignature | null;
@@ -27,6 +28,7 @@ export class StaveSignature {
     clefTypes: StaveMap<musicxml.ClefType>;
     keySignatures: StaveMap<string>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
+    multiRestCounts: StaveMap<number>;
     quarterNoteDivisions: number;
     staveCount: number;
     previousStaveSignature: StaveSignature | null;
@@ -36,6 +38,7 @@ export class StaveSignature {
     this.clefTypes = opts.clefTypes;
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
+    this.multiRestCounts = opts.multiRestCounts;
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
     this.staveCount = opts.staveCount;
     this.previousStaveSignature = opts.previousStaveSignature;
@@ -90,6 +93,13 @@ export class StaveSignature {
         }, {}),
     };
 
+    const multiRestCounts = opts.musicXml.attributes
+      .getMeasureStyles()
+      .reduce<StaveMap<number>>((map, measureStyle) => {
+        map[measureStyle.getStaveNumber()] = measureStyle.getMultipleRestCount();
+        return map;
+      }, {});
+
     const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
     const staveCount = opts.musicXml.attributes.getStaveCount();
 
@@ -99,6 +109,7 @@ export class StaveSignature {
       clefTypes,
       keySignatures,
       timeSignatures,
+      multiRestCounts,
       quarterNoteDivisions,
       staveCount,
       previousStaveSignature,
@@ -167,6 +178,11 @@ export class StaveSignature {
   /** Returns the time signature corresponding to the stave number. */
   getTimeSignature(staveNumber: number): musicxml.TimeSignature | null {
     return this.timeSignatures[staveNumber] ?? null;
+  }
+
+  /** Returns the multiple rest count. */
+  getMultiRestCount(staveNumber: number): number {
+    return this.multiRestCounts[staveNumber] ?? 0;
   }
 
   /** Returns the number of staves the measure should have. */
