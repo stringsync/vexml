@@ -4,7 +4,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
-import { StaveSignature } from './stavesignatureregistry';
+import { StaveSignature } from './stavesignature';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
