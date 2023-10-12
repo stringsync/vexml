@@ -5,6 +5,7 @@ import { Config } from './config';
 import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { StaveSignature } from './stavesignature';
+import { StaveSignatureRegistry } from './stavesignatureregistry';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -22,11 +23,6 @@ export type MeasureRendering = {
   width: number;
 };
 
-type MeasureEntryGroup = {
-  attributes: musicxml.Attributes | null;
-  entries: musicxml.MeasureEntry[];
-};
-
 /**
  * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
  * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
@@ -37,20 +33,12 @@ export class Measure {
   private index: number;
   private label: string;
   private fragments: MeasureFragment[];
-  private attributes: musicxml.Attributes[];
 
-  private constructor(opts: {
-    config: Config;
-    index: number;
-    label: string;
-    fragments: MeasureFragment[];
-    attributes: musicxml.Attributes[];
-  }) {
+  private constructor(opts: { config: Config; index: number; label: string; fragments: MeasureFragment[] }) {
     this.config = opts.config;
     this.index = opts.index;
     this.label = opts.label;
     this.fragments = opts.fragments;
-    this.attributes = opts.attributes;
   }
 
   /** Creates a Measure. */
@@ -62,14 +50,13 @@ export class Measure {
     };
     staveCount: number;
     systemId: symbol;
+    isFirstPartMeasure: boolean;
+    isLastPartMeasure: boolean;
     previousMeasure: Measure | null;
     leadingStaveSignature: StaveSignature | null;
+    staveSignatureRegistry: StaveSignatureRegistry;
   }): Measure {
-    const config = opts.config;
-    const systemId = opts.systemId;
     const xmlMeasure = opts.musicXml.measure;
-    const staveCount = opts.staveCount;
-    const previousMeasure = opts.previousMeasure;
 
     const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
 
@@ -91,30 +78,52 @@ export class Measure {
       }
     }
 
-    const entryGroups = Measure.groupByStave(xmlMeasure.getEntries());
     const fragments = new Array<MeasureFragment>();
-    let previousFragment = util.last(previousMeasure?.fragments ?? []);
 
-    for (let index = 0; index < entryGroups.length; index++) {
-      const entryGroup = entryGroups[index];
-      const isFirst = index === 0;
-      const isLast = index === entryGroups.length - 1;
+    const measureIndex = opts.index;
+    const measureEntries = xmlMeasure.getEntries();
+    const staveSignatureRegistry = opts.staveSignatureRegistry;
 
-      const fragment = MeasureFragment.create({
-        config,
-        systemId,
-        musicXml: {
-          attributes: entryGroup.attributes,
-          measureEntries: entryGroup.entries,
-          beginningBarStyle: isFirst ? beginningBarStyle : 'none',
-          endBarStyle: isLast ? endBarStyle : 'none',
-        },
-        staveCount,
-        previousFragment,
-      });
-      fragments.push(fragment);
+    let staveSignature = opts.leadingStaveSignature;
+    let currentMeasureEntries = new Array<musicxml.MeasureEntry>();
 
-      previousFragment = fragment;
+    function create(beginningBarStyle: musicxml.BarStyle, endBarStyle: musicxml.BarStyle) {
+      fragments.push(
+        MeasureFragment.create({
+          config: opts.config,
+          systemId: opts.systemId,
+          leadingStaveSignature: staveSignature,
+          musicXml: {
+            beginningBarStyle,
+            endBarStyle,
+            measureEntries: currentMeasureEntries,
+          },
+          staveCount: opts.staveCount,
+        })
+      );
+      currentMeasureEntries = [];
+    }
+
+    for (let measureEntryIndex = 0; measureEntryIndex < measureEntries.length; measureEntryIndex++) {
+      const measureEntry = measureEntries[measureEntryIndex];
+      const isLastMeasureEntry = measureEntryIndex === measureEntries.length - 1;
+
+      if (measureEntry instanceof musicxml.Attributes) {
+        // This should not be null assuming that the [measureIndex, measureEntryIndex] valid.
+        staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
+        util.assertNotNull(staveSignature);
+
+        const didClefTypeChange = staveSignature.getChangedStaveModifiers().includes('clefType');
+        if (didClefTypeChange) {
+          create('none', 'none');
+        }
+      }
+
+      currentMeasureEntries.push(measureEntry);
+
+      if (isLastMeasureEntry) {
+        create('none', 'none');
+      }
     }
 
     return new Measure({
@@ -122,92 +131,16 @@ export class Measure {
       index: opts.index,
       label,
       fragments,
-      attributes: xmlMeasure.getAttributes(),
     });
   }
 
-  /** Takes the entries, and groups them by <attributes> changes that would require a new stave. */
-  private static groupByStave(xmlMeasureEntries: musicxml.MeasureEntry[]): MeasureEntryGroup[] {
-    const groups = new Array<MeasureEntryGroup>();
-
-    let entries = new Array<musicxml.MeasureEntry>();
-    let attributes: musicxml.Attributes | null = null;
-
-    for (let index = 0; index < xmlMeasureEntries.length; index++) {
-      const entry = xmlMeasureEntries[index];
-      const isFirst = index === 0;
-      const isLast = index === xmlMeasureEntries.length - 1;
-
-      if (entry instanceof musicxml.Attributes) {
-        if (!isFirst && xmlMeasureEntries.length > 0 && Measure.shouldRenderSeparateStave(attributes, entry)) {
-          groups.push({ attributes, entries });
-          entries = [];
-        }
-        attributes = entry;
-      }
-
-      entries.push(entry);
-
-      if (isLast) {
-        groups.push({ attributes, entries });
-      }
-    }
-
-    return groups;
-  }
-
-  private static shouldRenderSeparateStave(
-    attributes1: musicxml.Attributes | null,
-    attributes2: musicxml.Attributes
-  ): boolean {
-    if (!attributes1) {
-      return false;
-    }
-
-    // Check to see if the key signature changed in a manner that requires a separate stave.
-    const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
-      memo[key.getStaveNumber()] = key.getKeySignature();
-      return memo;
-    }, {});
-
-    for (const key2 of attributes2.getKeys()) {
-      const staveNumber = key2.getStaveNumber();
-      const keySignature1 = keys1[staveNumber];
-      const keySignature2 = key2.getKeySignature();
-
-      if (keySignature1 && keySignature1 !== keySignature2) {
-        return true;
-      }
-    }
-
-    // Check to see if the time signature changed in a manner that requires a separate stave.
-    const times1 = attributes1.getTimes().reduce<Record<number, musicxml.TimeSignature | null>>((memo, time) => {
-      memo[time.getStaveNumber()] = time.getTimeSignature();
-      return memo;
-    }, {});
-
-    for (const time2 of attributes2.getTimes()) {
-      const staveNumber = time2.getStaveNumber();
-      const timeSignature1 = times1[staveNumber];
-      const timeSignature2 = time2.getTimeSignature();
-
-      if (timeSignature1 && timeSignature2 && !timeSignature1.isEqual(timeSignature2)) {
-        return true;
-      }
-    }
-
-    // Nothing changed that warrants a new stave.
-    return false;
-  }
-
-  /** Deeply clones the Measure, but replaces the systemId. */
+  /** Deeply clones the Measure, but replaces the systemId and partMeasuresLength. */
   clone(systemId: symbol): Measure {
     return new Measure({
       index: this.index,
       label: this.label,
       config: this.config,
       fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
-      attributes: this.attributes,
     });
   }
 

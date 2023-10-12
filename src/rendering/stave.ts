@@ -67,13 +67,12 @@ export class Stave {
   static create(opts: {
     config: Config;
     staveNumber: number;
-    clefType: musicxml.ClefType | null;
-    timeSignature: musicxml.TimeSignature | null;
-    keySignature: string | null;
+    clefType: musicxml.ClefType;
+    timeSignature: musicxml.TimeSignature;
+    keySignature: string;
     multiRestCount: number;
     measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
-    previousStave: Stave | null;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
   }): Stave {
@@ -84,11 +83,9 @@ export class Stave {
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
     const endBarStyle = opts.endBarStyle;
-    const previousStave = opts.previousStave;
-
-    const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
-    const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
-    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? musicxml.TimeSignature.common();
+    const clefType = opts.clefType;
+    const keySignature = opts.keySignature;
+    const timeSignature = opts.timeSignature;
 
     let entry: StaveEntry;
 

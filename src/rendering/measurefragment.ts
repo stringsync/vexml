@@ -7,6 +7,7 @@ import { ChorusRendering } from './chorus';
 import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
+import { StaveSignature } from './stavesignature';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -51,59 +52,31 @@ export class MeasureFragment {
   static create(opts: {
     config: Config;
     systemId: symbol;
+    leadingStaveSignature: StaveSignature | null;
     musicXml: {
-      attributes: musicxml.Attributes | null;
       measureEntries: musicxml.MeasureEntry[];
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
     };
     staveCount: number;
-    previousFragment: MeasureFragment | null;
   }): MeasureFragment {
     const config = opts.config;
     const systemId = opts.systemId;
-    const attributes = opts.musicXml.attributes;
+    const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
     const beginningBarStyle = opts.musicXml.beginningBarStyle;
     const endBarStyle = opts.musicXml.endBarStyle;
-    const previousFragment = opts.previousFragment;
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const staveIndex = staveNumber - 1;
-      const previousStave = previousFragment?.staves[staveIndex] ?? null;
+      const clefType = leadingStaveSignature?.getClefType(staveNumber) ?? 'treble';
+      const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? musicxml.TimeSignature.common();
+      const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? 'C';
+      const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;
+      const quarterNoteDivisions = leadingStaveSignature?.getQuarterNoteDivisions() ?? 2;
 
-      // Assume that the measureEntries after the attributes do not need a new stave. See how MeasureFragments are
-      // constructured in Measure.
-
-      const clefType =
-        attributes
-          ?.getClefs()
-          .find((clef) => clef.getStaveNumber() === staveNumber)
-          ?.getClefType() ?? null;
-
-      const timeSignature =
-        attributes
-          ?.getTimes()
-          .find((time) => time.getStaveNumber() === staveNumber)
-          ?.getTimeSignature() ?? null;
-
-      const keySignature =
-        attributes
-          ?.getKeys()
-          .find((key) => key.getStaveNumber() === staveNumber)
-          ?.getKeySignature() ?? null;
-
-      const multiRestCount =
-        attributes
-          ?.getMeasureStyles()
-          .find((measureStyle) => measureStyle.getStaveNumber() === staveNumber)
-          ?.getMultipleRestCount() ?? 0;
-
-      const quarterNoteDivisions = attributes?.getQuarterNoteDivisions() ?? 2;
-
-      staves[staveIndex] = Stave.create({
+      staves[staveNumber - 1] = Stave.create({
         config,
         clefType,
         timeSignature,
@@ -119,7 +92,6 @@ export class MeasureFragment {
           }
           return true;
         }),
-        previousStave,
       });
     }
 
