@@ -4,6 +4,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
+import { StaveSignature } from './stavesignatureregistry';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -62,6 +63,7 @@ export class Measure {
     staveCount: number;
     systemId: symbol;
     previousMeasure: Measure | null;
+    leadingStaveSignature: StaveSignature | null;
   }): Measure {
     const config = opts.config;
     const systemId = opts.systemId;

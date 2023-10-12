@@ -72,7 +72,7 @@ export class StaveSignatureRegistry {
  *  - It's ambiguous. What "attributes" are we talking about?
  *  - It's inherently plural. What do you call an array of "attributes"?
  */
-class StaveSignature {
+export class StaveSignature {
   private measureIndex: number;
   private measureEntryIndex: number;
   private clefTypes: StaveMap<musicxml.ClefType>;

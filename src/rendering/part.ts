@@ -55,19 +55,18 @@ export class Part {
     const id = opts.musicXml.part.getId();
 
     const staveSignatureRegistry = StaveSignatureRegistry.from(opts.musicXml.part);
-
-    let previousMeasure: Measure | null = null;
-    let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
-
     const staveCount = util.max(
       staveSignatureRegistry.all().map((measureAttribute) => measureAttribute.getStaveCount())
     );
 
+    let previousMeasure: Measure | null = null;
+    let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
+
     const measures = new Array<Measure>();
     const xmlMeasures = opts.musicXml.part.getMeasures();
 
-    for (let index = 0; index < xmlMeasures.length; index++) {
-      const xmlMeasure = xmlMeasures[index];
+    for (let measureIndex = 0; measureIndex < xmlMeasures.length; measureIndex++) {
+      const xmlMeasure = xmlMeasures[measureIndex];
 
       // Don't create noop measures (typically <measures> after a multi measure rest).
       if (noopMeasureCount > 0) {
@@ -75,15 +74,25 @@ export class Part {
         continue;
       }
 
+      // Get the first stave signature that matches the measure index or get the last stave signature seen before this
+      // measure index.
+      const staveSignatures = staveSignatureRegistry
+        .all()
+        .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
+      const leadingStaveSignature =
+        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
+        util.last(staveSignatures);
+
       const measure = Measure.create({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
         // a single system. Therefore, this index should continue to be correct when a system is split.
-        index,
+        index: measureIndex,
         config: opts.config,
         musicXml: { measure: xmlMeasure },
         staveCount,
         systemId: opts.systemId,
         previousMeasure,
+        leadingStaveSignature,
       });
 
       noopMeasureCount += measure.getMultiRestCount() - 1;
