@@ -30,21 +30,11 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
 export class MeasureFragment {
   private config: Config;
   private systemId: symbol;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
   private staves: Stave[];
 
-  private constructor(opts: {
-    config: Config;
-    systemId: symbol;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
-    staves: Stave[];
-  }) {
+  private constructor(opts: { config: Config; systemId: symbol; staves: Stave[] }) {
     this.config = opts.config;
     this.systemId = opts.systemId;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
     this.staves = opts.staves;
   }
 
@@ -55,9 +45,9 @@ export class MeasureFragment {
     leadingStaveSignature: StaveSignature | null;
     musicXml: {
       measureEntries: musicxml.MeasureEntry[];
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
     };
+    beginningBarStyle: util.Tbd<musicxml.BarStyle>;
+    endBarStyle: util.Tbd<musicxml.BarStyle>;
     staveCount: number;
   }): MeasureFragment {
     const config = opts.config;
@@ -65,8 +55,8 @@ export class MeasureFragment {
     const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
-    const beginningBarStyle = opts.musicXml.beginningBarStyle;
-    const endBarStyle = opts.musicXml.endBarStyle;
+    const beginningBarStyle = opts.beginningBarStyle;
+    const endBarStyle = opts.endBarStyle;
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
@@ -98,8 +88,6 @@ export class MeasureFragment {
     return new MeasureFragment({
       config,
       systemId,
-      beginningBarStyle,
-      endBarStyle,
       staves,
     });
   }
@@ -121,8 +109,6 @@ export class MeasureFragment {
     return new MeasureFragment({
       config: this.config,
       systemId: systemId,
-      beginningBarStyle: this.beginningBarStyle,
-      endBarStyle: this.endBarStyle,
       staves: this.staves.map((stave) => stave.clone()),
     });
   }

@@ -28,7 +28,7 @@ export class Tbd<T> {
    */
   getFinal(): T {
     if (!this.isFinalized) {
-      throw new Error('cannot get final value of a tbd that is not finalized');
+      throw new Error('must set final before getting it');
     }
     return this.final!;
   }
@@ -40,7 +40,7 @@ export class Tbd<T> {
    */
   setFinal(final: T): void {
     if (this.isFinalized) {
-      throw new Error('cannot set final value of an already-finalized tbd');
+      throw new Error('can only set final exactly once');
     }
     this.final = final;
     this.isFinalized = true;

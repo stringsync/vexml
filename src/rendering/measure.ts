@@ -89,10 +89,10 @@ export class Measure {
           systemId: opts.systemId,
           leadingStaveSignature: staveSignature,
           musicXml: {
-            beginningBarStyle,
-            endBarStyle,
             measureEntries: currentMeasureEntries,
           },
+          beginningBarStyle: new util.Tbd(beginningBarStyle),
+          endBarStyle: new util.Tbd(endBarStyle),
           staveCount: opts.staveCount,
         })
       );
