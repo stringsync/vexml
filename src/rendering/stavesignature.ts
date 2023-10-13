@@ -124,25 +124,29 @@ export class StaveSignature {
    */
   @util.memoize()
   getChangedStaveModifiers(): StaveModifier[] {
+    if (!this.previousStaveSignature) {
+      return ['clefType', 'keySignature', 'timeSignature'];
+    }
+
     const changed = new Set<StaveModifier>();
 
     for (const [staveNumber, clefType] of Object.entries(this.clefTypes)) {
-      const previousClefType = this.previousStaveSignature?.clefTypes[staveNumber];
-      if (previousClefType && previousClefType !== clefType) {
+      const previousClefType = this.previousStaveSignature.clefTypes[staveNumber];
+      if (previousClefType !== clefType) {
         changed.add('clefType');
       }
     }
 
     for (const [staveNumber, keySignature] of Object.entries(this.keySignatures)) {
-      const previousKeySignature = this.previousStaveSignature?.keySignatures[staveNumber];
-      if (previousKeySignature && previousKeySignature !== keySignature) {
+      const previousKeySignature = this.previousStaveSignature.keySignatures[staveNumber];
+      if (previousKeySignature !== keySignature) {
         changed.add('keySignature');
       }
     }
 
     for (const [staveNumber, timeSignature] of Object.entries(this.timeSignatures)) {
-      const previousTimeSignature = this.previousStaveSignature?.timeSignatures[staveNumber];
-      if (previousTimeSignature && !previousTimeSignature.isEqual(timeSignature)) {
+      const previousTimeSignature = this.previousStaveSignature.timeSignatures[staveNumber];
+      if (!previousTimeSignature.isEqual(timeSignature)) {
         changed.add('timeSignature');
       }
     }
