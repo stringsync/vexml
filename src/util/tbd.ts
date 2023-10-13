@@ -45,4 +45,9 @@ export class Tbd<T> {
     this.final = final;
     this.isFinalized = true;
   }
+
+  /** Returns a new Tbd with the same initial value set. */
+  reinitialize(): Tbd<T> {
+    return new Tbd(this.initial);
+  }
 }

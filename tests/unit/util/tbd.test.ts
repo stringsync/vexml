@@ -34,4 +34,19 @@ describe(Tbd, () => {
       expect(() => tbd.setFinal('mars')).toThrow();
     });
   });
+
+  describe('reinitialize', () => {
+    it('returns a new tbd with the same tbd value set', () => {
+      const value1 = Symbol('initial');
+      const value2 = Symbol('final');
+
+      const tbd1 = new Tbd<symbol>(value1);
+      tbd1.setFinal(value2);
+
+      const tbd2 = tbd1.reinitialize();
+
+      expect(tbd2.getInitial()).toBe(value1);
+      expect(() => tbd2.getFinal()).toThrow();
+    });
+  });
 });

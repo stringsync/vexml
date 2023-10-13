@@ -58,25 +58,20 @@ export class Measure {
   }): Measure {
     const xmlMeasure = opts.musicXml.measure;
 
+    const beginningBarStyle =
+      xmlMeasure
+        .getBarlines()
+        .find((barline) => barline.getLocation() === 'left')
+        ?.getBarStyle() ?? 'regular';
+
+    const endBarStyle =
+      xmlMeasure
+        .getEndingMeasure()
+        .getBarlines()
+        .find((barline) => barline.getLocation() === 'right')
+        ?.getBarStyle() ?? 'regular';
+
     const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
-
-    const begginingMeasure = xmlMeasure;
-    let beginningBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of begginingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'left') {
-        beginningBarStyle = barStyle;
-      }
-    }
-
-    const endingMeasure = xmlMeasure.getEndingMeasure();
-    let endBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of endingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'right') {
-        endBarStyle = barStyle;
-      }
-    }
 
     const fragments = new Array<MeasureFragment>();
 
@@ -113,16 +108,16 @@ export class Measure {
         staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
         util.assertNotNull(staveSignature);
 
-        const didClefTypeChange = staveSignature.getChangedStaveModifiers().includes('clefType');
-        if (didClefTypeChange) {
-          create('none', 'none');
+        const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().includes('clefType');
+        if (didStaveModifiersChange) {
+          create(fragments.length === 0 ? beginningBarStyle : 'none', 'none');
         }
       }
 
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        create('none', 'none');
+        create(fragments.length === 0 ? beginningBarStyle : 'none', endBarStyle);
       }
     }
 
