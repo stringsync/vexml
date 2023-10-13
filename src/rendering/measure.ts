@@ -252,8 +252,4 @@ export class Measure {
         return vexflow.BarlineType.SINGLE;
     }
   }
-
-  private getLastFragment(): MeasureFragment | null {
-    return util.last(this.fragments);
-  }
 }
