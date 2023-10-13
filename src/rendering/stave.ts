@@ -39,8 +39,8 @@ export class Stave {
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: string;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
+  private beginningBarStyle: util.Tbd<musicxml.BarStyle>;
+  private endBarStyle: util.Tbd<musicxml.BarStyle>;
   private entry: StaveEntry;
 
   private constructor(opts: {
@@ -49,8 +49,8 @@ export class Stave {
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: string;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    beginningBarStyle: util.Tbd<musicxml.BarStyle>;
+    endBarStyle: util.Tbd<musicxml.BarStyle>;
     entry: StaveEntry;
   }) {
     this.config = opts.config;
@@ -73,8 +73,8 @@ export class Stave {
     multiRestCount: number;
     measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    beginningBarStyle: util.Tbd<musicxml.BarStyle>;
+    endBarStyle: util.Tbd<musicxml.BarStyle>;
   }): Stave {
     const config = opts.config;
     const staveNumber = opts.staveNumber;
@@ -162,8 +162,8 @@ export class Stave {
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
       keySignature: this.keySignature,
-      beginningBarStyle: this.beginningBarStyle,
-      endBarStyle: this.endBarStyle,
+      beginningBarStyle: this.beginningBarStyle.reinitialize(),
+      endBarStyle: this.endBarStyle.reinitialize(),
       entry: this.entry.clone(),
     });
   }
@@ -282,11 +282,11 @@ export class Stave {
   }
 
   private getBeginningBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.beginningBarStyle);
+    return this.getBarlineType(this.beginningBarStyle.getFinal());
   }
 
   private getEndBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.endBarStyle);
+    return this.getBarlineType(this.endBarStyle.getFinal());
   }
 
   private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {
