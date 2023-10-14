@@ -23,40 +23,4 @@ export class Key {
   getStaveNumber(): number {
     return this.element.attr('number').withDefault(1).int();
   }
-
-  /** Returns the key signature based on the fifths count. */
-  getKeySignature(): string {
-    switch (this.getFifthsCount()) {
-      case 1:
-        return 'G';
-      case 2:
-        return 'D';
-      case 3:
-        return 'A';
-      case 4:
-        return 'E';
-      case 5:
-        return 'B';
-      case 6:
-        return 'F#';
-      case 7:
-        return 'C#';
-      case -1:
-        return 'F';
-      case -2:
-        return 'Bb';
-      case -3:
-        return 'Eb';
-      case -4:
-        return 'Ab';
-      case -5:
-        return 'Cb';
-      case -6:
-        return 'Gb';
-      case -7:
-        return 'Cb';
-      default:
-        return 'C';
-    }
-  }
 }
