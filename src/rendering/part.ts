@@ -160,6 +160,8 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
+    previousPart: Part | null;
+    nextPart: Part | null;
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
@@ -168,9 +170,13 @@ export class Part {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
-    for (let index = 0; index < this.measures.length; index++) {
-      const measure = this.measures[index];
-      const previousMeasure = this.measures[index - 1] ?? null;
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], index) => {
+      if (index === 0) {
+        previousMeasure = util.last(opts.previousPart?.measures ?? []);
+      }
+      if (index === this.measures.length - 1) {
+        nextMeasure = util.first(opts.nextPart?.measures ?? []);
+      }
 
       const hasStaveConnectorBrace = index === 0 && this.staveCount > 1;
 
@@ -178,13 +184,14 @@ export class Part {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
       }
 
-      const measureRendering = measure.render({
+      const measureRendering = currentMeasure.render({
         x,
         y,
         isLastSystem: opts.isLastSystem,
-        previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
+        previousMeasure,
+        nextMeasure,
       });
       measureRenderings.push(measureRendering);
 
@@ -199,7 +206,7 @@ export class Part {
       }
 
       x += measureRendering.width;
-    }
+    });
 
     return {
       id: this.id,

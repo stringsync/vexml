@@ -78,13 +78,14 @@ export class Score {
     y += this.systemLayout?.topSystemDistance ?? 0;
 
     // Render the entire hierarchy.
-    for (let index = 0; index < systems.length; index++) {
-      const system = systems[index];
-      const systemRendering = system.render({
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], index) => {
+      const systemRendering = currentSystem.render({
         x: 0,
         y,
         width: opts.width - END_BARLINE_OFFSET,
         isLastSystem: index === systems.length - 1,
+        previousSystem,
+        nextSystem,
       });
       systemRenderings.push(systemRendering);
 
@@ -105,7 +106,7 @@ export class Score {
 
       y += height;
       y += this.systemLayout?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
-    }
+    });
 
     const parts = systemRenderings.flatMap((system) => system.parts);
     const measures = parts.flatMap((part) => part.measures);

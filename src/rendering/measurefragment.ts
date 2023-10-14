@@ -132,6 +132,7 @@ export class MeasureFragment {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
+    nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
@@ -145,15 +146,24 @@ export class MeasureFragment {
 
     let y = opts.y;
 
-    // Render staves.
-    for (const stave of this.staves) {
-      const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
+    const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
 
-      const staveRendering = stave.render({
+    // Render staves.
+    util.forEachTriple(this.staves, ([previousStave, currentStave, nextStave], index) => {
+      if (index === 0) {
+        previousStave = util.last(opts.previousMeasureFragment?.staves ?? []);
+      }
+      if (index === this.staves.length - 1) {
+        nextStave = util.first(opts.nextMeasureFragment?.staves ?? []);
+      }
+
+      const staveRendering = currentStave.render({
         x: opts.x,
         y,
         width,
         modifiers: staveModifiers,
+        previousStave,
+        nextStave,
       });
       staveRenderings.push(staveRendering);
 
@@ -162,7 +172,7 @@ export class MeasureFragment {
           ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;
-    }
+    });
 
     const vfBeams = staveRenderings
       .map((stave) => stave.entry)

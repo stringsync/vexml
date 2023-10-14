@@ -167,28 +167,35 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
+    nextMeasure: Measure | null;
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
-    let previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
     let x = opts.x;
     let width = 0;
 
-    for (const fragment of this.fragments) {
-      const fragmentRendering = fragment.render({
+    util.forEachTriple(this.fragments, ([previousFragment, currentFragment, nextFragment], index) => {
+      if (index === 0) {
+        previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
+      }
+      if (index === this.fragments.length - 1) {
+        nextFragment = util.first(opts.nextMeasure?.fragments ?? []);
+      }
+
+      const fragmentRendering = currentFragment.render({
         x,
         y: opts.y,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
         previousMeasureFragment: previousFragment,
+        nextMeasureFragment: nextFragment,
       });
       fragmentRenderings.push(fragmentRendering);
 
-      previousFragment = fragment;
       x += fragmentRendering.width;
       width += fragmentRendering.width;
-    }
+    });
 
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
 
