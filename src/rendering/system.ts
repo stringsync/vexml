@@ -111,18 +111,37 @@ export class System {
   }
 
   /** Renders the System. */
-  render(opts: { x: number; y: number; width: number; isLastSystem: boolean }): SystemRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    isLastSystem: boolean;
+    previousSystem: System | null;
+    nextSystem: System | null;
+  }): SystemRendering {
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
-    const partRenderings = this.parts.map((part) =>
-      part.render({
+    const partRenderings = new Array<PartRendering>();
+
+    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], index) => {
+      if (index === 0) {
+        previousPart = util.last(opts.previousSystem?.parts ?? []);
+      }
+      if (index === this.parts.length - 1) {
+        nextPart = util.first(opts.nextSystem?.parts ?? []);
+      }
+
+      const partRendering = currentPart.render({
         x: opts.x,
         y: opts.y,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
-      })
-    );
+        previousPart,
+        nextPart,
+      });
+      partRenderings.push(partRendering);
+    });
 
     return { type: 'system', parts: partRenderings };
   }

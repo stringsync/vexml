@@ -186,7 +186,14 @@ export class Stave {
   }
 
   /** Renders the Stave. */
-  render(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): StaveRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    modifiers: StaveModifier[];
+    previousStave: Stave | null;
+    nextStave: Stave | null;
+  }): StaveRendering {
     const vfStave = this.toVexflowStave({
       x: opts.x,
       y: opts.y,
