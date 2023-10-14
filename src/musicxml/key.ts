@@ -8,9 +8,14 @@ import { NamedElement } from '@/util';
 export class Key {
   constructor(private element: NamedElement<'key'>) {}
 
-  /** Returns the fifths count of the key or defaults to 0. */
+  /** Returns the fifths count of the key. Defaults to 0. */
   getFifthsCount(): number {
     return this.element.first('fifths')?.content().int() ?? 0;
+  }
+
+  /** Returns the mode of the key. Defaults to null. */
+  getMode(): unknown {
+    return;
   }
 
   /** Returns the stave number this key belongs to. */
