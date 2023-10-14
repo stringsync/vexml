@@ -60,7 +60,7 @@ export class Clef {
     }
 
     if (sign === 'TAB') {
-      return 'treble';
+      return 'tab';
     }
 
     return null;

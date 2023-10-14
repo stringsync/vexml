@@ -235,6 +235,7 @@ export const CLEF_TYPES = new Enum([
   'soprano',
   'alto',
   'percussion',
+  'tab',
 ] as const);
 
 /**
