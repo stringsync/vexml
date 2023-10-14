@@ -46,8 +46,8 @@ export class MeasureFragment {
     musicXml: {
       measureEntries: musicxml.MeasureEntry[];
     };
-    beginningBarStyle: util.Tbd<musicxml.BarStyle>;
-    endBarStyle: util.Tbd<musicxml.BarStyle>;
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
     staveCount: number;
   }): MeasureFragment {
     const config = opts.config;
