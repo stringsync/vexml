@@ -1,4 +1,4 @@
-import { first, last } from '@/util';
+import { first, forEachTriple, last } from '@/util';
 
 describe('first', () => {
   it('returns the first element of an array', () => {
@@ -21,5 +21,21 @@ describe('last', () => {
 
   it('returns null when the last element does not exist', () => {
     expect(last([])).toBeNull();
+  });
+});
+
+describe('forEachTriple', () => {
+  it('iterates over each [previous, current, next] triple', () => {
+    const callback = jest.fn();
+
+    forEachTriple([1, 2, 3], callback);
+
+    expect(callback.mock.calls).toStrictEqual([[[null, 1, 2]], [[1, 2, 3]], [[2, 3, null]]]);
+  });
+
+  it('does not iterate over anything when the array is empty', () => {
+    const callback = jest.fn();
+    forEachTriple([], callback);
+    expect(callback).not.toHaveBeenCalled();
   });
 });
