@@ -205,7 +205,7 @@ export class Measure {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
+      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.beginningBarlineType);
       vfStaveConnectors.push(
         new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
           begginingStaveConnectorType
