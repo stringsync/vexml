@@ -59,13 +59,13 @@ export class Measure {
   }): Measure {
     const xmlMeasure = opts.musicXml.measure;
 
-    const tbdBeginningBarStyle =
+    const beginningBarStyle =
       xmlMeasure
         .getBarlines()
         .find((barline) => barline.getLocation() === 'left')
         ?.getBarStyle() ?? 'regular';
 
-    const tbdEndBarStyle =
+    const endBarStyle =
       xmlMeasure
         .getEndingMeasure()
         .getBarlines()
@@ -96,8 +96,8 @@ export class Measure {
         systemId: opts.systemId,
         leadingStaveSignature,
         musicXml: { measureEntries },
-        tbdBeginningBarStyle: beginningBarStyle,
-        tbdEndBarStyle: endBarStyle,
+        beginningBarStyle: beginningBarStyle,
+        endBarStyle: endBarStyle,
         staveCount: opts.staveCount,
         staveLayouts: opts.staveLayouts,
       });
@@ -119,7 +119,7 @@ export class Measure {
           addFragment(
             staveSignature,
             currentMeasureEntries,
-            fragments.length === 0 ? tbdBeginningBarStyle : 'none',
+            fragments.length === 0 ? beginningBarStyle : 'none',
             'none'
           );
           currentMeasureEntries = [];
@@ -137,7 +137,7 @@ export class Measure {
           addFragment(
             staveSignature,
             currentMeasureEntries, 
-            fragments.length === 0 ? tbdBeginningBarStyle : 'none', 
+            fragments.length === 0 ? beginningBarStyle : 'none', 
             'none',
           );
           // prettier-ignore
@@ -145,15 +145,15 @@ export class Measure {
             nextStaveSignature,
             [nextStaveSignature.getAttributes()],
             'none',
-            tbdEndBarStyle
+            endBarStyle
           );
         } else {
           // prettier-ignore
           addFragment(
             staveSignature,
             currentMeasureEntries,
-            fragments.length === 0 ? tbdBeginningBarStyle : 'none',
-            tbdEndBarStyle
+            fragments.length === 0 ? beginningBarStyle : 'none',
+            endBarStyle
           );
         }
       }
