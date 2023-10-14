@@ -24,7 +24,6 @@ export type ScoreRendering = {
 export class Score {
   private config: Config;
   private system: System;
-  private staveLayouts: musicxml.StaveLayout[];
   private systemLayout: musicxml.SystemLayout | null;
   private title: Title;
 
@@ -37,7 +36,6 @@ export class Score {
   }) {
     this.config = opts.config;
     this.system = opts.system;
-    this.staveLayouts = opts.staveLayouts;
     this.systemLayout = opts.systemLayout;
     this.title = opts.title;
   }
@@ -52,7 +50,7 @@ export class Score {
     const systemLayout = defaults?.getSystemLayout() ?? null;
 
     const title = Title.create({ config, text: scorePartwise?.getTitle() ?? '' });
-    const system = System.create({ config, musicXml: { parts } });
+    const system = System.create({ config, staveLayouts, musicXml: { parts } });
 
     return new Score({ system, staveLayouts, systemLayout, config, title });
   }
@@ -80,14 +78,14 @@ export class Score {
     y += this.systemLayout?.topSystemDistance ?? 0;
 
     // Render the entire hierarchy.
-    for (let index = 0; index < systems.length; index++) {
-      const system = systems[index];
-      const systemRendering = system.render({
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], index) => {
+      const systemRendering = currentSystem.render({
         x: 0,
         y,
         width: opts.width - END_BARLINE_OFFSET,
         isLastSystem: index === systems.length - 1,
-        staveLayouts: this.staveLayouts,
+        previousSystem,
+        nextSystem,
       });
       systemRenderings.push(systemRendering);
 
@@ -108,7 +106,7 @@ export class Score {
 
       y += height;
       y += this.systemLayout?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
-    }
+    });
 
     const parts = systemRenderings.flatMap((system) => system.parts);
     const measures = parts.flatMap((part) => part.measures);

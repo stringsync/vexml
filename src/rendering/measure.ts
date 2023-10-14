@@ -4,6 +4,8 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
+import { StaveSignature } from './stavesignature';
+import { StaveSignatureRegistry } from './stavesignatureregistry';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -21,11 +23,6 @@ export type MeasureRendering = {
   width: number;
 };
 
-type MeasureEntryGroup = {
-  attributes: musicxml.Attributes | null;
-  entries: musicxml.MeasureEntry[];
-};
-
 /**
  * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
  * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
@@ -36,20 +33,12 @@ export class Measure {
   private index: number;
   private label: string;
   private fragments: MeasureFragment[];
-  private attributes: musicxml.Attributes[];
 
-  private constructor(opts: {
-    config: Config;
-    index: number;
-    label: string;
-    fragments: MeasureFragment[];
-    attributes: musicxml.Attributes[];
-  }) {
+  private constructor(opts: { config: Config; index: number; label: string; fragments: MeasureFragment[] }) {
     this.config = opts.config;
     this.index = opts.index;
     this.label = opts.label;
     this.fragments = opts.fragments;
-    this.attributes = opts.attributes;
   }
 
   /** Creates a Measure. */
@@ -61,58 +50,113 @@ export class Measure {
     };
     staveCount: number;
     systemId: symbol;
+    isFirstPartMeasure: boolean;
+    isLastPartMeasure: boolean;
     previousMeasure: Measure | null;
+    leadingStaveSignature: StaveSignature | null;
+    staveSignatureRegistry: StaveSignatureRegistry;
+    staveLayouts: musicxml.StaveLayout[];
   }): Measure {
-    const config = opts.config;
-    const systemId = opts.systemId;
     const xmlMeasure = opts.musicXml.measure;
-    const staveCount = opts.staveCount;
-    const previousMeasure = opts.previousMeasure;
+
+    const beginningBarStyle =
+      xmlMeasure
+        .getBarlines()
+        .find((barline) => barline.getLocation() === 'left')
+        ?.getBarStyle() ?? 'regular';
+
+    const endBarStyle =
+      xmlMeasure
+        .getEndingMeasure()
+        .getBarlines()
+        .find((barline) => barline.getLocation() === 'right')
+        ?.getBarStyle() ?? 'regular';
 
     const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
 
-    const begginingMeasure = xmlMeasure;
-    let beginningBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of begginingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'left') {
-        beginningBarStyle = barStyle;
-      }
-    }
-
-    const endingMeasure = xmlMeasure.getEndingMeasure();
-    let endBarStyle: musicxml.BarStyle = 'regular';
-    for (const barline of endingMeasure.getBarlines()) {
-      const barStyle = barline.getBarStyle();
-      if (barline.getLocation() === 'right') {
-        endBarStyle = barStyle;
-      }
-    }
-
-    const entryGroups = Measure.groupByStave(xmlMeasure.getEntries());
     const fragments = new Array<MeasureFragment>();
-    let previousFragment = util.last(previousMeasure?.fragments ?? []);
 
-    for (let index = 0; index < entryGroups.length; index++) {
-      const entryGroup = entryGroups[index];
-      const isFirst = index === 0;
-      const isLast = index === entryGroups.length - 1;
+    const measureIndex = opts.index;
+    const measureEntries = xmlMeasure.getEntries();
+    const staveSignatureRegistry = opts.staveSignatureRegistry;
 
+    let staveSignature = opts.leadingStaveSignature;
+    let currentMeasureEntries = new Array<musicxml.MeasureEntry>();
+
+    function addFragment(
+      leadingStaveSignature: StaveSignature | null,
+      measureEntries: musicxml.MeasureEntry[],
+      beginningBarStyle: musicxml.BarStyle,
+      endBarStyle: musicxml.BarStyle
+    ) {
       const fragment = MeasureFragment.create({
-        config,
-        systemId,
-        musicXml: {
-          attributes: entryGroup.attributes,
-          measureEntries: entryGroup.entries,
-          beginningBarStyle: isFirst ? beginningBarStyle : 'none',
-          endBarStyle: isLast ? endBarStyle : 'none',
-        },
-        staveCount,
-        previousFragment,
+        config: opts.config,
+        measureIndex,
+        measureFragmentIndex: fragments.length,
+        systemId: opts.systemId,
+        leadingStaveSignature,
+        musicXml: { measureEntries },
+        beginningBarStyle: beginningBarStyle,
+        endBarStyle: endBarStyle,
+        staveCount: opts.staveCount,
+        staveLayouts: opts.staveLayouts,
       });
       fragments.push(fragment);
+    }
 
-      previousFragment = fragment;
+    for (let measureEntryIndex = 0; measureEntryIndex < measureEntries.length; measureEntryIndex++) {
+      const measureEntry = measureEntries[measureEntryIndex];
+      const isLastMeasureEntry = measureEntryIndex === measureEntries.length - 1;
+
+      if (measureEntry instanceof musicxml.Attributes) {
+        // This should not be null assuming that the [measureIndex, measureEntryIndex] valid.
+        staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
+        util.assertNotNull(staveSignature);
+
+        const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().length > 0;
+        if (didStaveModifiersChange) {
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries,
+            fragments.length === 0 ? beginningBarStyle : 'none',
+            'none'
+          );
+          currentMeasureEntries = [];
+        }
+      }
+
+      currentMeasureEntries.push(measureEntry);
+
+      if (isLastMeasureEntry) {
+        const nextStaveSignature = staveSignatureRegistry.getStaveSignature(measureIndex + 1, 0);
+        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clefType');
+
+        if (nextStaveSignature && willClefTypeChange) {
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries, 
+            fragments.length === 0 ? beginningBarStyle : 'none', 
+            'none',
+          );
+          // prettier-ignore
+          addFragment(
+            nextStaveSignature,
+            [nextStaveSignature.getAttributes()],
+            'none',
+            endBarStyle
+          );
+        } else {
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries,
+            fragments.length === 0 ? beginningBarStyle : 'none',
+            endBarStyle
+          );
+        }
+      }
     }
 
     return new Measure({
@@ -120,92 +164,16 @@ export class Measure {
       index: opts.index,
       label,
       fragments,
-      attributes: xmlMeasure.getAttributes(),
     });
   }
 
-  /** Takes the entries, and groups them by <attributes> changes that would require a new stave. */
-  private static groupByStave(xmlMeasureEntries: musicxml.MeasureEntry[]): MeasureEntryGroup[] {
-    const groups = new Array<MeasureEntryGroup>();
-
-    let entries = new Array<musicxml.MeasureEntry>();
-    let attributes: musicxml.Attributes | null = null;
-
-    for (let index = 0; index < xmlMeasureEntries.length; index++) {
-      const entry = xmlMeasureEntries[index];
-      const isFirst = index === 0;
-      const isLast = index === xmlMeasureEntries.length - 1;
-
-      if (entry instanceof musicxml.Attributes) {
-        if (!isFirst && xmlMeasureEntries.length > 0 && Measure.shouldRenderSeparateStave(attributes, entry)) {
-          groups.push({ attributes, entries });
-          entries = [];
-        }
-        attributes = entry;
-      }
-
-      entries.push(entry);
-
-      if (isLast) {
-        groups.push({ attributes, entries });
-      }
-    }
-
-    return groups;
-  }
-
-  private static shouldRenderSeparateStave(
-    attributes1: musicxml.Attributes | null,
-    attributes2: musicxml.Attributes
-  ): boolean {
-    if (!attributes1) {
-      return false;
-    }
-
-    // Check to see if the key signature changed in a manner that requires a separate stave.
-    const keys1 = attributes1.getKeys().reduce<Record<number, string>>((memo, key) => {
-      memo[key.getStaveNumber()] = key.getKeySignature();
-      return memo;
-    }, {});
-
-    for (const key2 of attributes2.getKeys()) {
-      const staveNumber = key2.getStaveNumber();
-      const keySignature1 = keys1[staveNumber];
-      const keySignature2 = key2.getKeySignature();
-
-      if (keySignature1 && keySignature1 !== keySignature2) {
-        return true;
-      }
-    }
-
-    // Check to see if the time signature changed in a manner that requires a separate stave.
-    const times1 = attributes1.getTimes().reduce<Record<number, musicxml.TimeSignature | null>>((memo, time) => {
-      memo[time.getStaveNumber()] = time.getTimeSignature();
-      return memo;
-    }, {});
-
-    for (const time2 of attributes2.getTimes()) {
-      const staveNumber = time2.getStaveNumber();
-      const timeSignature1 = times1[staveNumber];
-      const timeSignature2 = time2.getTimeSignature();
-
-      if (timeSignature1 && timeSignature2 && !timeSignature1.isEqual(timeSignature2)) {
-        return true;
-      }
-    }
-
-    // Nothing changed that warrants a new stave.
-    return false;
-  }
-
-  /** Deeply clones the Measure, but replaces the systemId. */
+  /** Deeply clones the Measure, but replaces the systemId and partMeasuresLength. */
   clone(systemId: symbol): Measure {
     return new Measure({
       index: this.index,
       label: this.label,
       config: this.config,
       fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
-      attributes: this.attributes,
     });
   }
 
@@ -235,30 +203,35 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
-    staveLayouts: musicxml.StaveLayout[];
+    nextMeasure: Measure | null;
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
-    let previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
     let x = opts.x;
     let width = 0;
 
-    for (const fragment of this.fragments) {
-      const fragmentRendering = fragment.render({
+    util.forEachTriple(this.fragments, ([previousFragment, currentFragment, nextFragment], index) => {
+      if (index === 0) {
+        previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
+      }
+      if (index === this.fragments.length - 1) {
+        nextFragment = util.first(opts.nextMeasure?.fragments ?? []);
+      }
+
+      const fragmentRendering = currentFragment.render({
         x,
         y: opts.y,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
         previousMeasureFragment: previousFragment,
-        staveLayouts: opts.staveLayouts,
+        nextMeasureFragment: nextFragment,
       });
       fragmentRenderings.push(fragmentRendering);
 
-      previousFragment = fragment;
       x += fragmentRendering.width;
       width += fragmentRendering.width;
-    }
+    });
 
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
 
@@ -267,7 +240,7 @@ export class Measure {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.begginningBarlineType);
+      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.beginningBarlineType);
       vfStaveConnectors.push(
         new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
           begginingStaveConnectorType
@@ -321,9 +294,5 @@ export class Measure {
       default:
         return vexflow.BarlineType.SINGLE;
     }
-  }
-
-  private getLastFragment(): MeasureFragment | null {
-    return util.last(this.fragments);
   }
 }

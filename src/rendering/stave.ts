@@ -4,11 +4,12 @@ import { Config } from './config';
 import * as util from '@/util';
 import { MultiRest, MultiRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
+import { Tablature, TablatureRendering } from './tablature';
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | MultiRest;
+export type StaveEntry = Chorus | MultiRest | Tablature;
 
-export type StaveEntryRendering = ChorusRendering | MultiRestRendering;
+export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -17,7 +18,7 @@ export type StaveRendering = {
   width: number;
   vexflow: {
     stave: vexflow.Stave;
-    begginningBarlineType: vexflow.BarlineType;
+    beginningBarlineType: vexflow.BarlineType;
     endBarlineType: vexflow.BarlineType;
   };
   entry: StaveEntryRendering;
@@ -35,6 +36,9 @@ export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
  */
 export class Stave {
   private config: Config;
+  private measureIndex: number;
+  private measureFragmentIndex: number;
+  private systemId: symbol;
   private staveNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
@@ -45,6 +49,9 @@ export class Stave {
 
   private constructor(opts: {
     config: Config;
+    measureIndex: number;
+    measureFragmentIndex: number;
+    systemId: symbol;
     staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
@@ -54,6 +61,9 @@ export class Stave {
     entry: StaveEntry;
   }) {
     this.config = opts.config;
+    this.measureIndex = opts.measureIndex;
+    this.measureFragmentIndex = opts.measureFragmentIndex;
+    this.systemId = opts.systemId;
     this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -66,29 +76,32 @@ export class Stave {
   /** Creates a Stave. */
   static create(opts: {
     config: Config;
+    measureIndex: number;
+    measureFragmentIndex: number;
+    systemId: symbol;
     staveNumber: number;
-    clefType: musicxml.ClefType | null;
-    timeSignature: musicxml.TimeSignature | null;
-    keySignature: string | null;
+    clefType: musicxml.ClefType;
+    timeSignature: musicxml.TimeSignature;
+    keySignature: string;
     multiRestCount: number;
     measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
-    previousStave: Stave | null;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
   }): Stave {
     const config = opts.config;
+    const measureIndex = opts.measureIndex;
+    const measureFragmentIndex = opts.measureFragmentIndex;
+    const systemId = opts.systemId;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
     const multiRestCount = opts.multiRestCount;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
     const endBarStyle = opts.endBarStyle;
-    const previousStave = opts.previousStave;
-
-    const clefType = opts.clefType ?? previousStave?.clefType ?? 'treble';
-    const keySignature = opts.keySignature ?? previousStave?.keySignature ?? 'C';
-    const timeSignature = opts.timeSignature ?? previousStave?.timeSignature ?? musicxml.TimeSignature.common();
+    const clefType = opts.clefType;
+    const keySignature = opts.keySignature;
+    const timeSignature = opts.timeSignature;
 
     let entry: StaveEntry;
 
@@ -96,10 +109,13 @@ export class Stave {
       entry = Chorus.wholeRest({ config, clefType, timeSignature });
     } else if (multiRestCount > 1) {
       entry = MultiRest.create({ count: multiRestCount });
+    } else if (clefType === 'tab') {
+      // TODO: Render tablature correctly.
+      entry = Tablature.create();
     } else {
       entry = Chorus.create({
         config,
-        measureEntries: measureEntries,
+        measureEntries,
         clefType,
         timeSignature,
         quarterNoteDivisions,
@@ -108,6 +124,9 @@ export class Stave {
 
     return new Stave({
       config,
+      measureIndex,
+      measureFragmentIndex,
+      systemId,
       staveNumber,
       clefType,
       timeSignature,
@@ -158,9 +177,12 @@ export class Stave {
   }
 
   /** Cleans the Stave. */
-  clone(): Stave {
+  clone(systemId: symbol): Stave {
     return new Stave({
       config: this.config,
+      measureIndex: this.measureIndex,
+      measureFragmentIndex: this.measureFragmentIndex,
+      systemId,
       staveNumber: this.staveNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
@@ -189,7 +211,14 @@ export class Stave {
   }
 
   /** Renders the Stave. */
-  render(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): StaveRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    modifiers: StaveModifier[];
+    previousStave: Stave | null;
+    nextStave: Stave | null;
+  }): StaveRendering {
     const vfStave = this.toVexflowStave({
       x: opts.x,
       y: opts.y,
@@ -222,7 +251,7 @@ export class Stave {
       width: opts.width,
       vexflow: {
         stave: vfStave,
-        begginningBarlineType: this.getBeginningBarlineType(),
+        beginningBarlineType: this.getBeginningBarlineType(),
         endBarlineType: this.getEndBarlineType(),
       },
       entry: staveEntryRendering,
@@ -265,9 +294,12 @@ export class Stave {
   }
 
   private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
-    const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
-      .setBegBarType(this.getBeginningBarlineType())
-      .setEndBarType(this.getEndBarlineType());
+    const vfStave =
+      this.clefType === 'tab'
+        ? new vexflow.TabStave(opts.x, opts.y, opts.width)
+        : new vexflow.Stave(opts.x, opts.y, opts.width);
+
+    vfStave.setBegBarType(this.getBeginningBarlineType()).setEndBarType(this.getEndBarlineType());
 
     if (opts.modifiers.includes('clefType')) {
       vfStave.addClef(this.clefType);
@@ -285,14 +317,14 @@ export class Stave {
   }
 
   private getBeginningBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.beginningBarStyle);
+    return this.toBarlineType(this.beginningBarStyle);
   }
 
   private getEndBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.endBarStyle);
+    return this.toBarlineType(this.endBarStyle);
   }
 
-  private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {
+  private toBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {
     switch (barStyle) {
       case 'regular':
       case 'short':

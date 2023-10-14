@@ -26,7 +26,11 @@ export class System {
   }
 
   /** Creates a System rendering object. */
-  static create(opts: { config: Config; musicXml: { parts: musicxml.Part[] } }): System {
+  static create(opts: {
+    config: Config;
+    staveLayouts: musicxml.StaveLayout[];
+    musicXml: { parts: musicxml.Part[] };
+  }): System {
     const id = Symbol();
 
     let previousPart: Part | null = null;
@@ -37,6 +41,7 @@ export class System {
         systemId: id,
         musicXml: { part: xmlPart },
         previousPart,
+        staveLayouts: opts.staveLayouts,
       });
       parts.push(part);
       previousPart = part;
@@ -111,20 +116,32 @@ export class System {
     y: number;
     width: number;
     isLastSystem: boolean;
-    staveLayouts: musicxml.StaveLayout[];
+    previousSystem: System | null;
+    nextSystem: System | null;
   }): SystemRendering {
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
-    const partRenderings = this.parts.map((part) =>
-      part.render({
+    const partRenderings = new Array<PartRendering>();
+
+    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], index) => {
+      if (index === 0) {
+        previousPart = util.last(opts.previousSystem?.parts ?? []);
+      }
+      if (index === this.parts.length - 1) {
+        nextPart = util.first(opts.nextSystem?.parts ?? []);
+      }
+
+      const partRendering = currentPart.render({
         x: opts.x,
         y: opts.y,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
-        staveLayouts: opts.staveLayouts,
-      })
-    );
+        previousPart,
+        nextPart,
+      });
+      partRenderings.push(partRendering);
+    });
 
     return { type: 'system', parts: partRenderings };
   }

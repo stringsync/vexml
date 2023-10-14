@@ -3,6 +3,7 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import { StaveSignatureRegistry } from './stavesignatureregistry';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -50,18 +51,24 @@ export class Part {
     musicXml: { part: musicxml.Part };
     systemId: symbol;
     previousPart: Part | null;
+    staveLayouts: musicxml.StaveLayout[];
   }): Part {
     const id = opts.musicXml.part.getId();
+    const staveLayouts = opts.staveLayouts;
+
+    const staveSignatureRegistry = StaveSignatureRegistry.from(opts.musicXml.part);
+    const staveCount = util.max(
+      staveSignatureRegistry.all().map((measureAttribute) => measureAttribute.getStaveCount())
+    );
 
     let previousMeasure: Measure | null = null;
     let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
+
     const measures = new Array<Measure>();
     const xmlMeasures = opts.musicXml.part.getMeasures();
-    const staveCount = util.max(
-      xmlMeasures.flatMap((xmlMeasure) => xmlMeasure.getAttributes()).map((attribute) => attribute.getStaveCount())
-    );
-    for (let index = 0; index < xmlMeasures.length; index++) {
-      const xmlMeasure = xmlMeasures[index];
+
+    for (let measureIndex = 0; measureIndex < xmlMeasures.length; measureIndex++) {
+      const xmlMeasure = xmlMeasures[measureIndex];
 
       // Don't create noop measures (typically <measures> after a multi measure rest).
       if (noopMeasureCount > 0) {
@@ -69,15 +76,29 @@ export class Part {
         continue;
       }
 
+      // Get the first stave signature that matches the measure index or get the last stave signature seen before this
+      // measure index.
+      const staveSignatures = staveSignatureRegistry
+        .all()
+        .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
+      const leadingStaveSignature =
+        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
+        util.last(staveSignatures);
+
       const measure = Measure.create({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
         // a single system. Therefore, this index should continue to be correct when a system is split.
-        index,
+        index: measureIndex,
         config: opts.config,
         musicXml: { measure: xmlMeasure },
         staveCount,
+        isFirstPartMeasure: measureIndex === 0,
+        isLastPartMeasure: measureIndex === xmlMeasures.length - 1,
         systemId: opts.systemId,
         previousMeasure,
+        leadingStaveSignature,
+        staveSignatureRegistry,
+        staveLayouts,
       });
 
       noopMeasureCount += measure.getMultiRestCount() - 1;
@@ -117,6 +138,7 @@ export class Part {
         `measureEndIndex cannot be greater than measures length (${this.measures.length}), got: ${measureEndIndex}`
       );
     }
+
     const measures = this.measures
       .slice(opts.measureStartIndex, opts.measureEndIndex)
       .map((measure) => measure.clone(opts.systemId));
@@ -138,7 +160,8 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
-    staveLayouts: musicxml.StaveLayout[];
+    previousPart: Part | null;
+    nextPart: Part | null;
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
@@ -147,9 +170,13 @@ export class Part {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
-    for (let index = 0; index < this.measures.length; index++) {
-      const measure = this.measures[index];
-      const previousMeasure = this.measures[index - 1] ?? null;
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], index) => {
+      if (index === 0) {
+        previousMeasure = util.last(opts.previousPart?.measures ?? []);
+      }
+      if (index === this.measures.length - 1) {
+        nextMeasure = util.first(opts.nextPart?.measures ?? []);
+      }
 
       const hasStaveConnectorBrace = index === 0 && this.staveCount > 1;
 
@@ -157,14 +184,14 @@ export class Part {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
       }
 
-      const measureRendering = measure.render({
+      const measureRendering = currentMeasure.render({
         x,
         y,
         isLastSystem: opts.isLastSystem,
-        previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
-        staveLayouts: opts.staveLayouts,
+        previousMeasure,
+        nextMeasure,
       });
       measureRenderings.push(measureRendering);
 
@@ -179,7 +206,7 @@ export class Part {
       }
 
       x += measureRendering.width;
-    }
+    });
 
     return {
       id: this.id,

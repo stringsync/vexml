@@ -83,7 +83,7 @@ describe(Clef, () => {
       { sign: 'C', line: 1, clefType: 'soprano' },
       { sign: 'C', line: undefined, clefType: 'alto' },
       { sign: 'percussion', line: undefined, clefType: 'percussion' },
-      { sign: 'TAB', line: undefined, clefType: 'treble' },
+      { sign: 'TAB', line: undefined, clefType: 'tab' },
       { sign: 'foo', line: 1, clefType: null },
     ])(`returns the clef type for sign '$sign' and line $line`, (t) => {
       const node = xml.clef({ sign: xml.sign({ value: t.sign }), line: xml.line({ value: t.line }) });
