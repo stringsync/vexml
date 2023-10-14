@@ -1,4 +1,5 @@
 import { NamedElement } from '@/util';
+import { KEY_MODES, KeyMode } from './enums';
 
 /**
  * Key represents a key signature.
@@ -13,9 +14,9 @@ export class Key {
     return this.element.first('fifths')?.content().int() ?? 0;
   }
 
-  /** Returns the mode of the key. Defaults to null. */
-  getMode(): unknown {
-    return;
+  /** Returns the mode of the key. Defaults to 'none'. */
+  getMode(): KeyMode {
+    return this.element.first('mode')?.content().enum(KEY_MODES) ?? 'none';
   }
 
   /** Returns the stave number this key belongs to. */
