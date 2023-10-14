@@ -128,7 +128,7 @@ export class MeasureFragment {
       config: this.config,
       measureIndex: this.measureIndex,
       systemId,
-      staves: this.staves.map((stave) => stave.clone()),
+      staves: this.staves.map((stave) => stave.clone(systemId)),
       staveLayouts: this.staveLayouts,
     });
   }

@@ -167,11 +167,11 @@ export class Stave {
   }
 
   /** Cleans the Stave. */
-  clone(): Stave {
+  clone(systemId: symbol): Stave {
     return new Stave({
       config: this.config,
       measureIndex: this.measureIndex,
-      systemId: this.systemId,
+      systemId,
       staveNumber: this.staveNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
