@@ -51,8 +51,10 @@ export class Part {
     musicXml: { part: musicxml.Part };
     systemId: symbol;
     previousPart: Part | null;
+    staveLayouts: musicxml.StaveLayout[];
   }): Part {
     const id = opts.musicXml.part.getId();
+    const staveLayouts = opts.staveLayouts;
 
     const staveSignatureRegistry = StaveSignatureRegistry.from(opts.musicXml.part);
     const staveCount = util.max(
@@ -96,6 +98,7 @@ export class Part {
         previousMeasure,
         leadingStaveSignature,
         staveSignatureRegistry,
+        staveLayouts,
       });
 
       noopMeasureCount += measure.getMultiRestCount() - 1;
@@ -157,7 +160,6 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
-    staveLayouts: musicxml.StaveLayout[];
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
@@ -183,7 +185,6 @@ export class Part {
         previousMeasure,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
-        staveLayouts: opts.staveLayouts,
       });
       measureRenderings.push(measureRendering);
 

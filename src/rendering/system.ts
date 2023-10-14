@@ -26,7 +26,11 @@ export class System {
   }
 
   /** Creates a System rendering object. */
-  static create(opts: { config: Config; musicXml: { parts: musicxml.Part[] } }): System {
+  static create(opts: {
+    config: Config;
+    staveLayouts: musicxml.StaveLayout[];
+    musicXml: { parts: musicxml.Part[] };
+  }): System {
     const id = Symbol();
 
     let previousPart: Part | null = null;
@@ -37,6 +41,7 @@ export class System {
         systemId: id,
         musicXml: { part: xmlPart },
         previousPart,
+        staveLayouts: opts.staveLayouts,
       });
       parts.push(part);
       previousPart = part;
@@ -106,13 +111,7 @@ export class System {
   }
 
   /** Renders the System. */
-  render(opts: {
-    x: number;
-    y: number;
-    width: number;
-    isLastSystem: boolean;
-    staveLayouts: musicxml.StaveLayout[];
-  }): SystemRendering {
+  render(opts: { x: number; y: number; width: number; isLastSystem: boolean }): SystemRendering {
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
     const partRenderings = this.parts.map((part) =>
@@ -122,7 +121,6 @@ export class System {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
-        staveLayouts: opts.staveLayouts,
       })
     );
 

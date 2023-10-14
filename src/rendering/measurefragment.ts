@@ -31,11 +31,18 @@ export class MeasureFragment {
   private config: Config;
   private systemId: symbol;
   private staves: Stave[];
+  private staveLayouts: musicxml.StaveLayout[];
 
-  private constructor(opts: { config: Config; systemId: symbol; staves: Stave[] }) {
+  private constructor(opts: {
+    config: Config;
+    systemId: symbol;
+    staves: Stave[];
+    staveLayouts: musicxml.StaveLayout[];
+  }) {
     this.config = opts.config;
     this.systemId = opts.systemId;
     this.staves = opts.staves;
+    this.staveLayouts = opts.staveLayouts;
   }
 
   /** Creates a MeasureFragment. */
@@ -49,12 +56,14 @@ export class MeasureFragment {
     tbdBeginningBarStyle: musicxml.BarStyle;
     tbdEndBarStyle: musicxml.BarStyle;
     staveCount: number;
+    staveLayouts: musicxml.StaveLayout[];
   }): MeasureFragment {
     const config = opts.config;
     const systemId = opts.systemId;
     const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
+    const staveLayouts = opts.staveLayouts;
     const tbdBeginningBarStyle = opts.tbdBeginningBarStyle;
     const tbdEndBarStyle = opts.tbdEndBarStyle;
 
@@ -89,6 +98,7 @@ export class MeasureFragment {
       config,
       systemId,
       staves,
+      staveLayouts,
     });
   }
 
@@ -110,6 +120,7 @@ export class MeasureFragment {
       config: this.config,
       systemId: systemId,
       staves: this.staves.map((stave) => stave.clone()),
+      staveLayouts: this.staveLayouts,
     });
   }
 
@@ -121,7 +132,6 @@ export class MeasureFragment {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
-    staveLayouts: musicxml.StaveLayout[];
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
@@ -148,7 +158,7 @@ export class MeasureFragment {
       staveRenderings.push(staveRendering);
 
       const staveDistance =
-        opts.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
+        this.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
           ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;

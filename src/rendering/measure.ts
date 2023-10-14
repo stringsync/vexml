@@ -55,6 +55,7 @@ export class Measure {
     previousMeasure: Measure | null;
     leadingStaveSignature: StaveSignature | null;
     staveSignatureRegistry: StaveSignatureRegistry;
+    staveLayouts: musicxml.StaveLayout[];
   }): Measure {
     const xmlMeasure = opts.musicXml.measure;
 
@@ -94,6 +95,7 @@ export class Measure {
           tbdBeginningBarStyle: beginningBarStyle,
           tbdEndBarStyle: endBarStyle,
           staveCount: opts.staveCount,
+          staveLayouts: opts.staveLayouts,
         })
       );
       currentMeasureEntries = [];
@@ -165,7 +167,6 @@ export class Measure {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
-    staveLayouts: musicxml.StaveLayout[];
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
@@ -181,7 +182,6 @@ export class Measure {
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
         previousMeasureFragment: previousFragment,
-        staveLayouts: opts.staveLayouts,
       });
       fragmentRenderings.push(fragmentRendering);
 
