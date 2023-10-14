@@ -7,6 +7,9 @@ import { ChorusRendering } from './chorus';
 import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
+import { StaveSignature } from './stavesignature';
+
+const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -28,83 +31,70 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
  */
 export class MeasureFragment {
   private config: Config;
+  private measureIndex: number;
+  private measureFragmentIndex: number;
   private systemId: symbol;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
   private staves: Stave[];
+  private staveLayouts: musicxml.StaveLayout[];
+  private rightPadding: number;
 
   private constructor(opts: {
     config: Config;
+    measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
     staves: Stave[];
+    staveLayouts: musicxml.StaveLayout[];
+    rightPadding: number;
   }) {
     this.config = opts.config;
+    this.measureIndex = opts.measureIndex;
+    this.measureFragmentIndex = opts.measureFragmentIndex;
     this.systemId = opts.systemId;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
     this.staves = opts.staves;
+    this.staveLayouts = opts.staveLayouts;
+    this.rightPadding = opts.rightPadding;
   }
 
   /** Creates a MeasureFragment. */
   static create(opts: {
     config: Config;
+    measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
+    leadingStaveSignature: StaveSignature | null;
     musicXml: {
-      attributes: musicxml.Attributes | null;
       measureEntries: musicxml.MeasureEntry[];
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
     };
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
     staveCount: number;
-    previousFragment: MeasureFragment | null;
+    staveLayouts: musicxml.StaveLayout[];
   }): MeasureFragment {
     const config = opts.config;
+    const measureIndex = opts.measureIndex;
+    const measureFragmentIndex = opts.measureFragmentIndex;
     const systemId = opts.systemId;
-    const attributes = opts.musicXml.attributes;
+    const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
-    const beginningBarStyle = opts.musicXml.beginningBarStyle;
-    const endBarStyle = opts.musicXml.endBarStyle;
-    const previousFragment = opts.previousFragment;
+    const staveLayouts = opts.staveLayouts;
+    const beginningBarStyle = opts.beginningBarStyle;
+    const endBarStyle = opts.endBarStyle;
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const staveIndex = staveNumber - 1;
-      const previousStave = previousFragment?.staves[staveIndex] ?? null;
+      const clefType = leadingStaveSignature?.getClefType(staveNumber) ?? 'treble';
+      const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? musicxml.TimeSignature.common();
+      const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? 'C';
+      const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;
+      const quarterNoteDivisions = leadingStaveSignature?.getQuarterNoteDivisions() ?? 2;
 
-      // Assume that the measureEntries after the attributes do not need a new stave. See how MeasureFragments are
-      // constructured in Measure.
-
-      const clefType =
-        attributes
-          ?.getClefs()
-          .find((clef) => clef.getStaveNumber() === staveNumber)
-          ?.getClefType() ?? null;
-
-      const timeSignature =
-        attributes
-          ?.getTimes()
-          .find((time) => time.getStaveNumber() === staveNumber)
-          ?.getTimeSignature() ?? null;
-
-      const keySignature =
-        attributes
-          ?.getKeys()
-          .find((key) => key.getStaveNumber() === staveNumber)
-          ?.getKeySignature() ?? null;
-
-      const multiRestCount =
-        attributes
-          ?.getMeasureStyles()
-          .find((measureStyle) => measureStyle.getStaveNumber() === staveNumber)
-          ?.getMultipleRestCount() ?? 0;
-
-      const quarterNoteDivisions = attributes?.getQuarterNoteDivisions() ?? 2;
-
-      staves[staveIndex] = Stave.create({
+      staves[staveNumber - 1] = Stave.create({
         config,
+        measureIndex,
+        measureFragmentIndex,
+        systemId,
         clefType,
         timeSignature,
         keySignature,
@@ -119,16 +109,22 @@ export class MeasureFragment {
           }
           return true;
         }),
-        previousStave,
       });
+    }
+
+    let padding = 0;
+    if (measureEntries.length === 1 && measureEntries[0] instanceof musicxml.Attributes) {
+      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
     }
 
     return new MeasureFragment({
       config,
+      measureIndex,
+      measureFragmentIndex,
       systemId,
-      beginningBarStyle,
-      endBarStyle,
       staves,
+      staveLayouts,
+      rightPadding: padding,
     });
   }
 
@@ -136,7 +132,7 @@ export class MeasureFragment {
   getMinRequiredWidth(previousMeasureFragment: MeasureFragment | null): number {
     const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasureFragment);
     const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
-    return this.getMinJustifyWidth() + staveModifiersWidth;
+    return this.getMinJustifyWidth() + staveModifiersWidth + this.rightPadding;
   }
 
   getMultiRestCount(): number {
@@ -148,10 +144,12 @@ export class MeasureFragment {
   clone(systemId: symbol): MeasureFragment {
     return new MeasureFragment({
       config: this.config,
-      systemId: systemId,
-      beginningBarStyle: this.beginningBarStyle,
-      endBarStyle: this.endBarStyle,
-      staves: this.staves.map((stave) => stave.clone()),
+      measureIndex: this.measureIndex,
+      measureFragmentIndex: this.measureFragmentIndex,
+      systemId,
+      staves: this.staves.map((stave) => stave.clone(systemId)),
+      staveLayouts: this.staveLayouts,
+      rightPadding: this.rightPadding,
     });
   }
 
@@ -163,7 +161,7 @@ export class MeasureFragment {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
-    staveLayouts: musicxml.StaveLayout[];
+    nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
@@ -177,24 +175,33 @@ export class MeasureFragment {
 
     let y = opts.y;
 
-    // Render staves.
-    for (const stave of this.staves) {
-      const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
+    const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
 
-      const staveRendering = stave.render({
+    // Render staves.
+    util.forEachTriple(this.staves, ([previousStave, currentStave, nextStave], index) => {
+      if (index === 0) {
+        previousStave = util.last(opts.previousMeasureFragment?.staves ?? []);
+      }
+      if (index === this.staves.length - 1) {
+        nextStave = util.first(opts.nextMeasureFragment?.staves ?? []);
+      }
+
+      const staveRendering = currentStave.render({
         x: opts.x,
         y,
         width,
         modifiers: staveModifiers,
+        previousStave,
+        nextStave,
       });
       staveRenderings.push(staveRendering);
 
       const staveDistance =
-        opts.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
+        this.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
           ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;
-    }
+    });
 
     const vfBeams = staveRenderings
       .map((stave) => stave.entry)
