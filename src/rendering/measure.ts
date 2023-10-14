@@ -83,23 +83,25 @@ export class Measure {
     let staveSignature = opts.leadingStaveSignature;
     let currentMeasureEntries = new Array<musicxml.MeasureEntry>();
 
-    function create(beginningBarStyle: musicxml.BarStyle, endBarStyle: musicxml.BarStyle) {
+    function addFragment(
+      leadingStaveSignature: StaveSignature | null,
+      measureEntries: musicxml.MeasureEntry[],
+      beginningBarStyle: musicxml.BarStyle,
+      endBarStyle: musicxml.BarStyle
+    ) {
       const fragment = MeasureFragment.create({
         config: opts.config,
         measureIndex,
         measureFragmentIndex: fragments.length,
         systemId: opts.systemId,
-        leadingStaveSignature: staveSignature,
-        musicXml: {
-          measureEntries: currentMeasureEntries,
-        },
+        leadingStaveSignature,
+        musicXml: { measureEntries },
         tbdBeginningBarStyle: beginningBarStyle,
         tbdEndBarStyle: endBarStyle,
         staveCount: opts.staveCount,
         staveLayouts: opts.staveLayouts,
       });
       fragments.push(fragment);
-      currentMeasureEntries = [];
     }
 
     for (let measureEntryIndex = 0; measureEntryIndex < measureEntries.length; measureEntryIndex++) {
@@ -111,16 +113,49 @@ export class Measure {
         staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
         util.assertNotNull(staveSignature);
 
-        const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().includes('clefType');
+        const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().length > 0;
         if (didStaveModifiersChange) {
-          create(fragments.length === 0 ? tbdBeginningBarStyle : 'none', 'none');
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries,
+            fragments.length === 0 ? tbdBeginningBarStyle : 'none',
+            'none'
+          );
+          currentMeasureEntries = [];
         }
       }
 
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        create(fragments.length === 0 ? tbdBeginningBarStyle : 'none', tbdEndBarStyle);
+        const nextStaveSignature = staveSignatureRegistry.getStaveSignature(measureIndex + 1, 0);
+        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clefType');
+
+        if (nextStaveSignature && willClefTypeChange) {
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries, 
+            fragments.length === 0 ? tbdBeginningBarStyle : 'none', 
+            'none',
+          );
+          // prettier-ignore
+          addFragment(
+            nextStaveSignature,
+            [nextStaveSignature.getAttributes()],
+            'none',
+            tbdEndBarStyle
+          );
+        } else {
+          // prettier-ignore
+          addFragment(
+            staveSignature,
+            currentMeasureEntries,
+            fragments.length === 0 ? tbdBeginningBarStyle : 'none',
+            tbdEndBarStyle
+          );
+        }
       }
     }
 

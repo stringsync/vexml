@@ -215,16 +215,11 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const beginningBarStyle = this.getBeginningBarStyle(opts.previousStave);
-    const endBarStyle = this.getEndBarStyle(opts.previousStave, opts.nextStave);
-
     const vfStave = this.toVexflowStave({
       x: opts.x,
       y: opts.y,
       width: opts.width,
       modifiers: opts.modifiers,
-      beginningBarStyle,
-      endBarStyle,
     });
 
     const staveEntryRendering = this.entry.render();
@@ -252,8 +247,8 @@ export class Stave {
       width: opts.width,
       vexflow: {
         stave: vfStave,
-        beginningBarlineType: this.toBarlineType(beginningBarStyle),
-        endBarlineType: this.toBarlineType(endBarStyle),
+        beginningBarlineType: this.getBeginningBarlineType(),
+        endBarlineType: this.getEndBarlineType(),
       },
       entry: staveEntryRendering,
     };
@@ -267,8 +262,6 @@ export class Stave {
       y: 0,
       width: this.getMinJustifyWidth(),
       modifiers: ['clefType'],
-      beginningBarStyle: this.tbdBeginningBarStyle,
-      endBarStyle: this.tbdEndBarStyle,
     }).getNoteStartX();
   }
 
@@ -282,8 +275,6 @@ export class Stave {
           y: 0,
           width: this.getMinJustifyWidth(),
           modifiers: ['keySignature'],
-          beginningBarStyle: this.tbdBeginningBarStyle,
-          endBarStyle: this.tbdEndBarStyle,
         }).getNoteStartX();
   }
 
@@ -295,23 +286,13 @@ export class Stave {
       y: 0,
       width: this.getMinJustifyWidth(),
       modifiers: ['timeSignature'],
-      beginningBarStyle: this.tbdBeginningBarStyle,
-      endBarStyle: this.tbdEndBarStyle,
     }).getNoteStartX();
   }
 
-  private toVexflowStave(opts: {
-    x: number;
-    y: number;
-    width: number;
-    modifiers: StaveModifier[];
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
-  }): vexflow.Stave {
-    const begBarType = this.toBarlineType(opts.beginningBarStyle);
-    const endBarType = this.toBarlineType(opts.endBarStyle);
-
-    const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width).setBegBarType(begBarType).setEndBarType(endBarType);
+  private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
+    const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
+      .setBegBarType(this.getBeginningBarlineType())
+      .setEndBarType(this.getEndBarlineType());
 
     if (opts.modifiers.includes('clefType')) {
       vfStave.addClef(this.clefType);
@@ -328,33 +309,12 @@ export class Stave {
     return vfStave;
   }
 
-  private getBeginningBarStyle(previousStave: Stave | null): musicxml.BarStyle {
-    const isAtBeginningOfSystem = !previousStave || previousStave.systemId !== this.systemId;
-    const isAtBeginningOfMeasure = this.measureFragmentIndex === 0;
-    const didClefTypeChange = previousStave !== null && previousStave.clefType !== this.clefType;
-    if (!isAtBeginningOfSystem && isAtBeginningOfMeasure && didClefTypeChange) {
-      return 'none';
-    }
-
-    return this.tbdBeginningBarStyle;
+  private getBeginningBarlineType(): vexflow.BarlineType {
+    return this.toBarlineType(this.tbdBeginningBarStyle);
   }
 
-  private getEndBarStyle(previousStave: Stave | null, nextStave: Stave | null): musicxml.BarStyle {
-    const isAtBeginningOfSystem = !previousStave || previousStave.systemId !== this.systemId;
-    const isAtEndOfSystem = !nextStave || nextStave.systemId !== this.systemId;
-    const isAtEndOfMeasure = !nextStave || nextStave?.measureFragmentIndex === 0;
-    const willClefTypeChange = nextStave !== null && nextStave.clefType !== this.clefType;
-    if (!isAtBeginningOfSystem && !isAtEndOfSystem && isAtEndOfMeasure && willClefTypeChange) {
-      return 'none';
-    }
-
-    const isAtBeginningOfMeasure = this.measureFragmentIndex === 0;
-    const didClefTypeChange = previousStave !== null && previousStave.clefType !== this.clefType;
-    if (!isAtBeginningOfSystem && !isAtEndOfSystem && isAtBeginningOfMeasure && didClefTypeChange) {
-      return previousStave.tbdEndBarStyle;
-    }
-
-    return this.tbdEndBarStyle;
+  private getEndBarlineType(): vexflow.BarlineType {
+    return this.toBarlineType(this.tbdEndBarStyle);
   }
 
   private toBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {

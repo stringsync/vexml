@@ -9,6 +9,8 @@ import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { StaveSignature } from './stavesignature';
 
+const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
+
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
@@ -34,6 +36,7 @@ export class MeasureFragment {
   private systemId: symbol;
   private staves: Stave[];
   private staveLayouts: musicxml.StaveLayout[];
+  private rightPadding: number;
 
   private constructor(opts: {
     config: Config;
@@ -42,6 +45,7 @@ export class MeasureFragment {
     systemId: symbol;
     staves: Stave[];
     staveLayouts: musicxml.StaveLayout[];
+    rightPadding: number;
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
@@ -49,6 +53,7 @@ export class MeasureFragment {
     this.systemId = opts.systemId;
     this.staves = opts.staves;
     this.staveLayouts = opts.staveLayouts;
+    this.rightPadding = opts.rightPadding;
   }
 
   /** Creates a MeasureFragment. */
@@ -107,6 +112,11 @@ export class MeasureFragment {
       });
     }
 
+    let padding = 0;
+    if (measureEntries.length === 1 && measureEntries[0] instanceof musicxml.Attributes) {
+      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
+    }
+
     return new MeasureFragment({
       config,
       measureIndex,
@@ -114,6 +124,7 @@ export class MeasureFragment {
       systemId,
       staves,
       staveLayouts,
+      rightPadding: padding,
     });
   }
 
@@ -121,7 +132,7 @@ export class MeasureFragment {
   getMinRequiredWidth(previousMeasureFragment: MeasureFragment | null): number {
     const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasureFragment);
     const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
-    return this.getMinJustifyWidth() + staveModifiersWidth;
+    return this.getMinJustifyWidth() + staveModifiersWidth + this.rightPadding;
   }
 
   getMultiRestCount(): number {
@@ -138,6 +149,7 @@ export class MeasureFragment {
       systemId,
       staves: this.staves.map((stave) => stave.clone(systemId)),
       staveLayouts: this.staveLayouts,
+      rightPadding: this.rightPadding,
     });
   }
 

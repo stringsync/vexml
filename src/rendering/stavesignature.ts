@@ -21,6 +21,7 @@ export class StaveSignature {
   private quarterNoteDivisions: number;
   private staveCount: number;
   private previousStaveSignature: StaveSignature | null;
+  private attributes: musicxml.Attributes;
 
   private constructor(opts: {
     measureIndex: number;
@@ -32,6 +33,7 @@ export class StaveSignature {
     quarterNoteDivisions: number;
     staveCount: number;
     previousStaveSignature: StaveSignature | null;
+    attributes: musicxml.Attributes;
   }) {
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
@@ -42,6 +44,7 @@ export class StaveSignature {
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
     this.staveCount = opts.staveCount;
     this.previousStaveSignature = opts.previousStaveSignature;
+    this.attributes = opts.attributes;
   }
 
   /** Creates a new StaveSignature by selectively merging properties from its designated previous. */
@@ -102,6 +105,7 @@ export class StaveSignature {
 
     const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
     const staveCount = opts.musicXml.attributes.getStaveCount();
+    const attributes = opts.musicXml.attributes;
 
     return new StaveSignature({
       measureIndex: opts.measureIndex,
@@ -113,6 +117,7 @@ export class StaveSignature {
       quarterNoteDivisions,
       staveCount,
       previousStaveSignature,
+      attributes,
     });
   }
 
@@ -192,5 +197,10 @@ export class StaveSignature {
   /** Returns the number of staves the measure should have. */
   getStaveCount(): number {
     return this.staveCount;
+  }
+
+  /** Returns the <attributes> that corresponds to this stave signature. */
+  getAttributes(): musicxml.Attributes {
+    return this.attributes;
   }
 }
