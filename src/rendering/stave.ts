@@ -35,6 +35,8 @@ export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
  */
 export class Stave {
   private config: Config;
+  private measureIndex: number;
+  private systemId: symbol;
   private staveNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
@@ -45,6 +47,8 @@ export class Stave {
 
   private constructor(opts: {
     config: Config;
+    measureIndex: number;
+    systemId: symbol;
     staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
@@ -54,6 +58,8 @@ export class Stave {
     entry: StaveEntry;
   }) {
     this.config = opts.config;
+    this.measureIndex = opts.measureIndex;
+    this.systemId = opts.systemId;
     this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -66,6 +72,8 @@ export class Stave {
   /** Creates a Stave. */
   static create(opts: {
     config: Config;
+    measureIndex: number;
+    systemId: symbol;
     staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
@@ -77,6 +85,8 @@ export class Stave {
     tbdEndBarStyle: musicxml.BarStyle;
   }): Stave {
     const config = opts.config;
+    const measureIndex = opts.measureIndex;
+    const systemId = opts.systemId;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
     const multiRestCount = opts.multiRestCount;
@@ -105,6 +115,8 @@ export class Stave {
 
     return new Stave({
       config,
+      measureIndex,
+      systemId,
       staveNumber,
       clefType,
       timeSignature,
@@ -158,6 +170,8 @@ export class Stave {
   clone(): Stave {
     return new Stave({
       config: this.config,
+      measureIndex: this.measureIndex,
+      systemId: this.systemId,
       staveNumber: this.staveNumber,
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),

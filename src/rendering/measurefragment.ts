@@ -29,17 +29,20 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
  */
 export class MeasureFragment {
   private config: Config;
+  private measureIndex: number;
   private systemId: symbol;
   private staves: Stave[];
   private staveLayouts: musicxml.StaveLayout[];
 
   private constructor(opts: {
     config: Config;
+    measureIndex: number;
     systemId: symbol;
     staves: Stave[];
     staveLayouts: musicxml.StaveLayout[];
   }) {
     this.config = opts.config;
+    this.measureIndex = opts.measureIndex;
     this.systemId = opts.systemId;
     this.staves = opts.staves;
     this.staveLayouts = opts.staveLayouts;
@@ -48,6 +51,7 @@ export class MeasureFragment {
   /** Creates a MeasureFragment. */
   static create(opts: {
     config: Config;
+    measureIndex: number;
     systemId: symbol;
     leadingStaveSignature: StaveSignature | null;
     musicXml: {
@@ -59,6 +63,7 @@ export class MeasureFragment {
     staveLayouts: musicxml.StaveLayout[];
   }): MeasureFragment {
     const config = opts.config;
+    const measureIndex = opts.measureIndex;
     const systemId = opts.systemId;
     const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
@@ -77,6 +82,8 @@ export class MeasureFragment {
 
       staves[staveNumber - 1] = Stave.create({
         config,
+        measureIndex,
+        systemId,
         clefType,
         timeSignature,
         keySignature,
@@ -96,6 +103,7 @@ export class MeasureFragment {
 
     return new MeasureFragment({
       config,
+      measureIndex,
       systemId,
       staves,
       staveLayouts,
@@ -118,7 +126,8 @@ export class MeasureFragment {
   clone(systemId: symbol): MeasureFragment {
     return new MeasureFragment({
       config: this.config,
-      systemId: systemId,
+      measureIndex: this.measureIndex,
+      systemId,
       staves: this.staves.map((stave) => stave.clone()),
       staveLayouts: this.staveLayouts,
     });

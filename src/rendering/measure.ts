@@ -87,6 +87,7 @@ export class Measure {
       fragments.push(
         MeasureFragment.create({
           config: opts.config,
+          measureIndex,
           systemId: opts.systemId,
           leadingStaveSignature: staveSignature,
           musicXml: {
