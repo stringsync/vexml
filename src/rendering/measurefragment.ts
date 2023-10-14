@@ -30,6 +30,7 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
 export class MeasureFragment {
   private config: Config;
   private measureIndex: number;
+  private measureFragmentIndex: number;
   private systemId: symbol;
   private staves: Stave[];
   private staveLayouts: musicxml.StaveLayout[];
@@ -37,12 +38,14 @@ export class MeasureFragment {
   private constructor(opts: {
     config: Config;
     measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
     staves: Stave[];
     staveLayouts: musicxml.StaveLayout[];
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
+    this.measureFragmentIndex = opts.measureFragmentIndex;
     this.systemId = opts.systemId;
     this.staves = opts.staves;
     this.staveLayouts = opts.staveLayouts;
@@ -52,6 +55,7 @@ export class MeasureFragment {
   static create(opts: {
     config: Config;
     measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
     leadingStaveSignature: StaveSignature | null;
     musicXml: {
@@ -64,6 +68,7 @@ export class MeasureFragment {
   }): MeasureFragment {
     const config = opts.config;
     const measureIndex = opts.measureIndex;
+    const measureFragmentIndex = opts.measureFragmentIndex;
     const systemId = opts.systemId;
     const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
@@ -83,6 +88,7 @@ export class MeasureFragment {
       staves[staveNumber - 1] = Stave.create({
         config,
         measureIndex,
+        measureFragmentIndex,
         systemId,
         clefType,
         timeSignature,
@@ -104,6 +110,7 @@ export class MeasureFragment {
     return new MeasureFragment({
       config,
       measureIndex,
+      measureFragmentIndex,
       systemId,
       staves,
       staveLayouts,
@@ -127,6 +134,7 @@ export class MeasureFragment {
     return new MeasureFragment({
       config: this.config,
       measureIndex: this.measureIndex,
+      measureFragmentIndex: this.measureFragmentIndex,
       systemId,
       staves: this.staves.map((stave) => stave.clone(systemId)),
       staveLayouts: this.staveLayouts,
