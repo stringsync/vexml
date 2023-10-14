@@ -46,8 +46,8 @@ export class MeasureFragment {
     musicXml: {
       measureEntries: musicxml.MeasureEntry[];
     };
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    tbdBeginningBarStyle: musicxml.BarStyle;
+    tbdEndBarStyle: musicxml.BarStyle;
     staveCount: number;
   }): MeasureFragment {
     const config = opts.config;
@@ -55,8 +55,8 @@ export class MeasureFragment {
     const leadingStaveSignature = opts.leadingStaveSignature;
     const measureEntries = opts.musicXml.measureEntries;
     const staveCount = opts.staveCount;
-    const beginningBarStyle = opts.beginningBarStyle;
-    const endBarStyle = opts.endBarStyle;
+    const tbdBeginningBarStyle = opts.tbdBeginningBarStyle;
+    const tbdEndBarStyle = opts.tbdEndBarStyle;
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
@@ -74,8 +74,8 @@ export class MeasureFragment {
         multiRestCount,
         quarterNoteDivisions,
         staveNumber,
-        beginningBarStyle,
-        endBarStyle,
+        tbdBeginningBarStyle,
+        tbdEndBarStyle,
         measureEntries: measureEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
             return entry.getStaveNumber() === staveNumber;

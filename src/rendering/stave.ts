@@ -39,8 +39,8 @@ export class Stave {
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: string;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
+  private tbdBeginningBarStyle: musicxml.BarStyle;
+  private tbdEndBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
 
   private constructor(opts: {
@@ -49,16 +49,16 @@ export class Stave {
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: string;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    tbdBeginningBarStyle: musicxml.BarStyle;
+    tbdEndBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
   }) {
     this.config = opts.config;
     this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
+    this.tbdBeginningBarStyle = opts.tbdBeginningBarStyle;
+    this.tbdEndBarStyle = opts.tbdEndBarStyle;
     this.clefType = opts.clefType;
     this.entry = opts.entry;
   }
@@ -73,16 +73,16 @@ export class Stave {
     multiRestCount: number;
     measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    tbdBeginningBarStyle: musicxml.BarStyle;
+    tbdEndBarStyle: musicxml.BarStyle;
   }): Stave {
     const config = opts.config;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
     const multiRestCount = opts.multiRestCount;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
-    const beginningBarStyle = opts.beginningBarStyle;
-    const endBarStyle = opts.endBarStyle;
+    const beginningBarStyle = opts.tbdBeginningBarStyle;
+    const endBarStyle = opts.tbdEndBarStyle;
     const clefType = opts.clefType;
     const keySignature = opts.keySignature;
     const timeSignature = opts.timeSignature;
@@ -109,8 +109,8 @@ export class Stave {
       clefType,
       timeSignature,
       keySignature,
-      beginningBarStyle,
-      endBarStyle,
+      tbdBeginningBarStyle: beginningBarStyle,
+      tbdEndBarStyle: endBarStyle,
       entry,
     });
   }
@@ -162,8 +162,8 @@ export class Stave {
       clefType: this.clefType,
       timeSignature: this.timeSignature.clone(),
       keySignature: this.keySignature,
-      beginningBarStyle: this.beginningBarStyle,
-      endBarStyle: this.endBarStyle,
+      tbdBeginningBarStyle: this.tbdBeginningBarStyle,
+      tbdEndBarStyle: this.tbdEndBarStyle,
       entry: this.entry.clone(),
     });
   }
@@ -282,11 +282,11 @@ export class Stave {
   }
 
   private getBeginningBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.beginningBarStyle);
+    return this.getBarlineType(this.tbdBeginningBarStyle);
   }
 
   private getEndBarlineType(): vexflow.BarlineType {
-    return this.getBarlineType(this.endBarStyle);
+    return this.getBarlineType(this.tbdEndBarStyle);
   }
 
   private getBarlineType(barStyle: musicxml.BarStyle): vexflow.BarlineType {

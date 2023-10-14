@@ -58,13 +58,13 @@ export class Measure {
   }): Measure {
     const xmlMeasure = opts.musicXml.measure;
 
-    const beginningBarStyle =
+    const tbdBeginningBarStyle =
       xmlMeasure
         .getBarlines()
         .find((barline) => barline.getLocation() === 'left')
         ?.getBarStyle() ?? 'regular';
 
-    const endBarStyle =
+    const tbdEndBarStyle =
       xmlMeasure
         .getEndingMeasure()
         .getBarlines()
@@ -91,8 +91,8 @@ export class Measure {
           musicXml: {
             measureEntries: currentMeasureEntries,
           },
-          beginningBarStyle: beginningBarStyle,
-          endBarStyle: endBarStyle,
+          tbdBeginningBarStyle: beginningBarStyle,
+          tbdEndBarStyle: endBarStyle,
           staveCount: opts.staveCount,
         })
       );
@@ -110,14 +110,14 @@ export class Measure {
 
         const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().includes('clefType');
         if (didStaveModifiersChange) {
-          create(fragments.length === 0 ? beginningBarStyle : 'none', 'none');
+          create(fragments.length === 0 ? tbdBeginningBarStyle : 'none', 'none');
         }
       }
 
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        create(fragments.length === 0 ? beginningBarStyle : 'none', endBarStyle);
+        create(fragments.length === 0 ? tbdBeginningBarStyle : 'none', tbdEndBarStyle);
       }
     }
 
