@@ -110,6 +110,7 @@ export class Stave {
     } else if (multiRestCount > 1) {
       entry = MultiRest.create({ count: multiRestCount });
     } else if (clefType === 'tab') {
+      // TODO: Render tablature correctly.
       entry = Tablature.create();
     } else {
       entry = Chorus.create({
