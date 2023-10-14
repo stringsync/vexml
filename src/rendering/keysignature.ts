@@ -3,42 +3,64 @@ import * as util from '@/util';
 
 const ROOTS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
 
+// Used to align with
+// https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/tests/vexflow_test_helpers.ts#L399.
+const MAJOR_ENHARMOICS: Record<string, string> = {};
+
+// Used to align with
+// https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/tests/vexflow_test_helpers.ts#L417.
+const MINOR_ENHARMONICS: Record<string, string> = {
+  Db: 'C#',
+  Eb: 'D#',
+  Gb: 'F#',
+  Ab: 'G#',
+  Bb: 'A#',
+  Cb: 'B', // Though it's unusual to encounter this one
+  'E#': 'F', // This is also quite rare
+};
+
 /** Represents a key signature. */
 export class KeySignature {
-  private key: musicxml.Key;
+  private fifths: number;
+  private mode: musicxml.KeyMode;
 
-  constructor(key: musicxml.Key) {
-    this.key = key;
+  constructor(fifths: number, mode: musicxml.KeyMode) {
+    this.fifths = fifths;
+    this.mode = mode;
+  }
+
+  static Cmajor(): KeySignature {
+    return new KeySignature(0, 'major');
   }
 
   /** Returns the root of the key signature. */
   @util.memoize()
-  getRoot(): string {
-    const fifths = this.key.getFifthsCount();
-    const mode = this.key.getMode();
-
-    const root = fifths >= 0 ? ROOTS[fifths] : ROOTS[ROOTS.length + fifths];
+  getKeySpec(): string {
+    let root = this.fifths >= 0 ? ROOTS[this.fifths] : ROOTS[ROOTS.length + this.fifths];
 
     // Adjust root based on mode, since vexflow only understands major and minor modes.
-    switch (mode) {
+    switch (this.mode) {
       case 'major':
       case 'ionian':
       case 'lydian':
       case 'mixolydian':
-        return root;
+        return MAJOR_ENHARMOICS[root] || root;
       case 'minor':
       case 'aeolian':
         // Leverage vexflow's minor key signatures.
-        return `${root}m`;
+        return `${MINOR_ENHARMONICS[root] || root}m`;
       case 'dorian':
         // Transpose down by a whole step
-        return this.transposeRoot(root, -2);
+        root = this.transposeRoot(root, -2);
+        return MINOR_ENHARMONICS[root] || root;
       case 'phrygian':
         // Transpose down by a minor third
-        return this.transposeRoot(root, -3);
+        root = this.transposeRoot(root, -3);
+        return MINOR_ENHARMONICS[root] || root;
       case 'locrian':
         // Transpose down by a half step
-        return this.transposeRoot(root, -1);
+        root = this.transposeRoot(root, -1);
+        return MINOR_ENHARMONICS[root] || root;
       default:
         return root;
     }
@@ -53,8 +75,8 @@ export class KeySignature {
 
   /** Returns whether the key signatures are equal. */
   isEqual(other: KeySignature): boolean {
-    const root1 = this.getRoot();
-    const root2 = other.getRoot();
+    const root1 = this.getKeySpec();
+    const root2 = other.getKeySpec();
     if (root1 !== root2) {
       return false;
     }
