@@ -25,12 +25,16 @@ describe('last', () => {
 });
 
 describe('forEachTriple', () => {
-  it('iterates over each [previous, current, next] triple', () => {
+  it('iterates over each [previous, current, next] triple providing an index', () => {
     const callback = jest.fn();
 
     forEachTriple([1, 2, 3], callback);
 
-    expect(callback.mock.calls).toStrictEqual([[[null, 1, 2]], [[1, 2, 3]], [[2, 3, null]]]);
+    expect(callback.mock.calls).toStrictEqual([
+      [[null, 1, 2], 0],
+      [[1, 2, 3], 1],
+      [[2, 3, null], 2],
+    ]);
   });
 
   it('does not iterate over anything when the array is empty', () => {
