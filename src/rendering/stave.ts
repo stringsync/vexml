@@ -4,11 +4,12 @@ import { Config } from './config';
 import * as util from '@/util';
 import { MultiRest, MultiRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
+import { Tablature, TablatureRendering } from './tablature';
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | MultiRest;
+export type StaveEntry = Chorus | MultiRest | Tablature;
 
-export type StaveEntryRendering = ChorusRendering | MultiRestRendering;
+export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -108,10 +109,12 @@ export class Stave {
       entry = Chorus.wholeRest({ config, clefType, timeSignature });
     } else if (multiRestCount > 1) {
       entry = MultiRest.create({ count: multiRestCount });
+    } else if (clefType === 'tab') {
+      entry = Tablature.create();
     } else {
       entry = Chorus.create({
         config,
-        measureEntries: measureEntries,
+        measureEntries,
         clefType,
         timeSignature,
         quarterNoteDivisions,
@@ -127,8 +130,8 @@ export class Stave {
       clefType,
       timeSignature,
       keySignature,
-      beginningBarStyle: beginningBarStyle,
-      endBarStyle: endBarStyle,
+      beginningBarStyle,
+      endBarStyle,
       entry,
     });
   }
@@ -290,9 +293,12 @@ export class Stave {
   }
 
   private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
-    const vfStave = new vexflow.Stave(opts.x, opts.y, opts.width)
-      .setBegBarType(this.getBeginningBarlineType())
-      .setEndBarType(this.getEndBarlineType());
+    const vfStave =
+      this.clefType === 'tab'
+        ? new vexflow.TabStave(opts.x, opts.y, opts.width)
+        : new vexflow.Stave(opts.x, opts.y, opts.width);
+
+    vfStave.setBegBarType(this.getBeginningBarlineType()).setEndBarType(this.getEndBarlineType());
 
     if (opts.modifiers.includes('clefType')) {
       vfStave.addClef(this.clefType);
