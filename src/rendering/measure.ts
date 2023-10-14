@@ -91,8 +91,8 @@ export class Measure {
           musicXml: {
             measureEntries: currentMeasureEntries,
           },
-          beginningBarStyle: new util.Tbd(beginningBarStyle),
-          endBarStyle: new util.Tbd(endBarStyle),
+          beginningBarStyle: beginningBarStyle,
+          endBarStyle: endBarStyle,
           staveCount: opts.staveCount,
         })
       );
