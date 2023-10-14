@@ -84,21 +84,21 @@ export class Measure {
     let currentMeasureEntries = new Array<musicxml.MeasureEntry>();
 
     function create(beginningBarStyle: musicxml.BarStyle, endBarStyle: musicxml.BarStyle) {
-      fragments.push(
-        MeasureFragment.create({
-          config: opts.config,
-          measureIndex,
-          systemId: opts.systemId,
-          leadingStaveSignature: staveSignature,
-          musicXml: {
-            measureEntries: currentMeasureEntries,
-          },
-          tbdBeginningBarStyle: beginningBarStyle,
-          tbdEndBarStyle: endBarStyle,
-          staveCount: opts.staveCount,
-          staveLayouts: opts.staveLayouts,
-        })
-      );
+      const fragment = MeasureFragment.create({
+        config: opts.config,
+        measureIndex,
+        measureFragmentIndex: fragments.length,
+        systemId: opts.systemId,
+        leadingStaveSignature: staveSignature,
+        musicXml: {
+          measureEntries: currentMeasureEntries,
+        },
+        tbdBeginningBarStyle: beginningBarStyle,
+        tbdEndBarStyle: endBarStyle,
+        staveCount: opts.staveCount,
+        staveLayouts: opts.staveLayouts,
+      });
+      fragments.push(fragment);
       currentMeasureEntries = [];
     }
 

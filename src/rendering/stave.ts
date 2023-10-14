@@ -36,6 +36,7 @@ export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private measureIndex: number;
+  private measureFragmentIndex: number;
   private systemId: symbol;
   private staveNumber: number;
   private clefType: musicxml.ClefType;
@@ -48,6 +49,7 @@ export class Stave {
   private constructor(opts: {
     config: Config;
     measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
     clefType: musicxml.ClefType;
@@ -59,6 +61,7 @@ export class Stave {
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
+    this.measureFragmentIndex = opts.measureFragmentIndex;
     this.systemId = opts.systemId;
     this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
@@ -73,6 +76,7 @@ export class Stave {
   static create(opts: {
     config: Config;
     measureIndex: number;
+    measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
     clefType: musicxml.ClefType;
@@ -86,6 +90,7 @@ export class Stave {
   }): Stave {
     const config = opts.config;
     const measureIndex = opts.measureIndex;
+    const measureFragmentIndex = opts.measureFragmentIndex;
     const systemId = opts.systemId;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
@@ -116,6 +121,7 @@ export class Stave {
     return new Stave({
       config,
       measureIndex,
+      measureFragmentIndex,
       systemId,
       staveNumber,
       clefType,
@@ -171,6 +177,7 @@ export class Stave {
     return new Stave({
       config: this.config,
       measureIndex: this.measureIndex,
+      measureFragmentIndex: this.measureFragmentIndex,
       systemId,
       staveNumber: this.staveNumber,
       clefType: this.clefType,
