@@ -1,3 +1,4 @@
+import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { StemDirection } from './enums';
@@ -33,13 +34,13 @@ export class Chorus {
   static create(opts: {
     config: Config;
     measureEntries: musicxml.MeasureEntry[];
-    clefType: musicxml.ClefType;
+    clef: Clef;
     timeSignature: musicxml.TimeSignature;
     quarterNoteDivisions: number;
   }): Chorus {
     const config = opts.config;
     const measureEntries = opts.measureEntries;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const timeSignature = opts.timeSignature;
 
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
@@ -104,7 +105,7 @@ export class Chorus {
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstNonRestVoiceEntries, (entry) => -Chorus.toStaveNoteLine(entry.note));
+    util.sortBy(firstNonRestVoiceEntries, (entry) => -Chorus.toStaveNoteLine(entry.note, clef));
 
     if (firstNonRestVoiceEntries.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
@@ -135,7 +136,7 @@ export class Chorus {
         data: data[voiceId],
         quarterNoteDivisions,
         timeSignature,
-        clefType,
+        clef,
       })
     );
 
@@ -148,15 +149,11 @@ export class Chorus {
    * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
    * which is why it's being used.
    */
-  static wholeRest(opts: {
-    config: Config;
-    timeSignature: musicxml.TimeSignature;
-    clefType: musicxml.ClefType;
-  }): Chorus {
+  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clef: Clef }): Chorus {
     const voice = Voice.wholeRest({
       config: opts.config,
       timeSignature: opts.timeSignature,
-      clefType: opts.clefType,
+      clef: opts.clef,
     });
 
     return new Chorus({
@@ -178,11 +175,11 @@ export class Chorus {
     }
   }
 
-  private static toStaveNoteLine(note: musicxml.Note): number {
+  private static toStaveNoteLine(note: musicxml.Note, clef: Clef): number {
     return new vexflow.StaveNote({
       duration: '4',
       keys: [note, ...note.getChordTail()].map((note) => {
-        let key = note.getPitch();
+        let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
 
         const suffix = note.getNoteheadSuffix();
         if (suffix) {

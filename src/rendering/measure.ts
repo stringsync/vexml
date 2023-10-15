@@ -130,7 +130,7 @@ export class Measure {
 
       if (isLastMeasureEntry) {
         const nextStaveSignature = staveSignatureRegistry.getStaveSignature(measureIndex + 1, 0);
-        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clefType');
+        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clef');
 
         if (nextStaveSignature && willClefTypeChange) {
           // prettier-ignore
