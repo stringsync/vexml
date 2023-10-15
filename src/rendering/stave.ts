@@ -6,7 +6,6 @@ import { MultiRest, MultiRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
-import { ClefType } from './enums';
 import { Clef } from './clef';
 
 /** A possible component of a Stave. */
