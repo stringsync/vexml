@@ -35,14 +35,11 @@ export class KeySignature {
 
     switch (this.mode) {
       case 'major':
-      case 'ionian':
-      case 'none':
         return this.toMajorKey(fifths);
       case 'minor':
-      case 'aeolian':
         return this.toMinorKey(fifths);
       default:
-        throw new Error(`cannot handle mode: ${this.mode}`);
+        return this.toMajorKey(fifths);
     }
   }
 
@@ -85,23 +82,16 @@ export class KeySignature {
 
   /** Returns whether the key signatures are equal. */
   isEqual(other: KeySignature): boolean {
-    const root1 = this.getKey();
-    const root2 = other.getKey();
-    if (root1 !== root2) {
+    if (this.fifths !== other.fifths) {
       return false;
     }
 
-    const alterations1 = this.getAlterations();
-    const alterations2 = other.getAlterations();
-    if (alterations1.length !== alterations2.length) {
+    // See the implementation of KeySignature.getKey — we only fork for minor.
+    if ((this.mode === 'minor' || other.mode === 'minor') && this.mode !== other.mode) {
       return false;
     }
-    for (let index = 0; index < alterations1.length; index++) {
-      if (alterations1[index] !== alterations2[index]) {
-        return false;
-      }
-    }
 
+    // Otherwise, all other modes are treated as major.
     return true;
   }
 
