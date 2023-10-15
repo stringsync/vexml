@@ -230,13 +230,13 @@ export class StaveSignature {
   }
 
   /** Returns the clef corresponding to the stave number. */
-  getClef(staveNumber: number): Clef | null {
-    return this.clefs[staveNumber] ?? null;
+  getClef(staveNumber: number): Clef {
+    return this.clefs[staveNumber] ?? Clef.treble();
   }
 
   /** Returns the key signature corresponding to the stave number. */
-  getKeySignature(staveNumber: number): KeySignature | null {
-    return this.keySignatures[staveNumber] ?? null;
+  getKeySignature(staveNumber: number): KeySignature {
+    return this.keySignatures[staveNumber] ?? KeySignature.Cmajor();
   }
 
   /** Returns how many divisions a quarter note has. */
@@ -245,8 +245,8 @@ export class StaveSignature {
   }
 
   /** Returns the time signature corresponding to the stave number. */
-  getTimeSignature(staveNumber: number): TimeSignature | null {
-    return this.timeSignatures[staveNumber] ?? null;
+  getTimeSignature(staveNumber: number): TimeSignature {
+    return this.timeSignatures[staveNumber] ?? TimeSignature.common();
   }
 
   /** Returns the multiple rest count. */

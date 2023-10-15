@@ -8,6 +8,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
+import { KeySignature } from './keysignature';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -39,11 +40,13 @@ export class Chorus {
     clef: Clef;
     timeSignature: TimeSignature;
     quarterNoteDivisions: number;
+    keySignature: KeySignature;
   }): Chorus {
     const config = opts.config;
     const measureEntries = opts.measureEntries;
     const clef = opts.clef;
     const timeSignature = opts.timeSignature;
+    const keySignature = opts.keySignature;
 
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
     let quarterNoteDivisions = opts.quarterNoteDivisions;
@@ -139,6 +142,7 @@ export class Chorus {
         quarterNoteDivisions,
         timeSignature,
         clef,
+        keySignature,
       })
     );
 

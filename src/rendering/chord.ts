@@ -3,6 +3,7 @@ import { Config } from './config';
 import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
+import { KeySignature } from './keysignature';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -39,10 +40,12 @@ export class Chord {
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
+    keySignature: KeySignature;
   }): Chord {
     const config = opts.config;
     const clef = opts.clef;
     const durationDenominator = opts.durationDenominator;
+    const keySignature = opts.keySignature;
 
     const head = opts.musicXml.note;
     const tail = head.getChordTail();
@@ -53,6 +56,7 @@ export class Chord {
         stem: opts.stem,
         clef,
         durationDenominator,
+        keySignature,
       })
     );
 

@@ -9,6 +9,7 @@ import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Division } from './division';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
+import { KeySignature } from './keysignature';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -73,11 +74,13 @@ export class Voice {
     quarterNoteDivisions: number;
     timeSignature: TimeSignature;
     clef: Clef;
+    keySignature: KeySignature;
   }): Voice {
     const config = opts.config;
     const timeSignature = opts.timeSignature;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const clef = opts.clef;
+    const keySignature = opts.keySignature;
 
     let divisions = Division.of(0, quarterNoteDivisions);
     const entries = new Array<VoiceEntry>();
@@ -89,7 +92,7 @@ export class Voice {
       if (ghostNoteDuration.toBeats() > 0) {
         entries.push(Voice.createGhostNote(ghostNoteDuration));
       }
-      entries.push(Voice.createVoiceEntry({ config, clef, entry }));
+      entries.push(Voice.createVoiceEntry({ config, clef, entry, keySignature }));
 
       divisions = entry.end;
     }
@@ -120,12 +123,18 @@ export class Voice {
     return GhostNote.create({ durationDenominator });
   }
 
-  private static createVoiceEntry(opts: { config: Config; entry: VoiceEntryData; clef: Clef }): VoiceEntry {
+  private static createVoiceEntry(opts: {
+    config: Config;
+    entry: VoiceEntryData;
+    clef: Clef;
+    keySignature: KeySignature;
+  }): VoiceEntry {
     const config = opts.config;
     const entry = opts.entry;
     const clef = opts.clef;
     const note = entry.note;
     const stem = entry.stem;
+    const keySignature = opts.keySignature;
 
     const duration = entry.end.subtract(entry.start);
 
@@ -141,6 +150,7 @@ export class Voice {
         stem,
         clef,
         durationDenominator,
+        keySignature,
       });
     }
 
@@ -159,6 +169,7 @@ export class Voice {
       stem,
       clef,
       durationDenominator,
+      keySignature,
     });
   }
 
@@ -221,7 +232,7 @@ export class Voice {
         // If this error is thrown, this is a problem with vexml, not the musicXML document.
         throw new Error(`unexpected voice entry: ${entry}`);
       }),
-      timeSignature: this.timeSignature.clone(),
+      timeSignature: this.timeSignature,
     });
   }
 
