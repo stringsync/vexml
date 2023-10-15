@@ -144,14 +144,6 @@ export class TimeSignature {
     return this.components;
   }
 
-  /** Clones the TimeSignature. */
-  clone(): TimeSignature {
-    return new TimeSignature(
-      this.components.map(({ numerator, denominator }) => new Fraction(numerator, denominator)),
-      this.symbol
-    );
-  }
-
   /** Returns a fraction that represents the combination of all */
   toFraction(): Fraction {
     const denominator = this.lcm();
