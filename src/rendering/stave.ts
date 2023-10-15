@@ -7,10 +7,12 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
+import { MeasureEntry } from './stavesignature';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
 
+/** The result of rendering a Stave entry. */
 export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
@@ -86,7 +88,7 @@ export class Stave {
     timeSignature: musicxml.TimeSignature;
     keySignature: KeySignature;
     multiRestCount: number;
-    measureEntries: musicxml.MeasureEntry[];
+    measureEntries: MeasureEntry[];
     quarterNoteDivisions: number;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
@@ -202,7 +204,7 @@ export class Stave {
     if (!this.clef.isEqual(stave.clef)) {
       result.push('clef');
     }
-    if (this.keySignature !== stave.keySignature) {
+    if (!this.keySignature.isEqual(stave.keySignature)) {
       result.push('keySignature');
     }
     if (!this.timeSignature.isEqual(stave.timeSignature)) {

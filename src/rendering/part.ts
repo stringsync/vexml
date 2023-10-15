@@ -3,7 +3,7 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
-import { StaveSignatureRegistry } from './stavesignatureregistry';
+import { StaveSignature } from './stavesignature';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -56,9 +56,12 @@ export class Part {
     const id = opts.musicXml.part.getId();
     const staveLayouts = opts.staveLayouts;
 
-    const staveSignatureRegistry = StaveSignatureRegistry.from(opts.musicXml.part);
+    const measureEntryGroups = StaveSignature.toMeasureEntryGroups({ part: opts.musicXml.part });
     const staveCount = util.max(
-      staveSignatureRegistry.all().map((measureAttribute) => measureAttribute.getStaveCount())
+      measureEntryGroups
+        .flat()
+        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
+        .map((entry) => entry.getStaveCount())
     );
 
     let previousMeasure: Measure | null = null;
@@ -78,12 +81,15 @@ export class Part {
 
       // Get the first stave signature that matches the measure index or get the last stave signature seen before this
       // measure index.
-      const staveSignatures = staveSignatureRegistry
-        .all()
+      const staveSignatures = measureEntryGroups
+        .flat()
+        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
         .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
       const leadingStaveSignature =
         staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
         util.last(staveSignatures);
+
+      const measureEntries = measureEntryGroups[measureIndex];
 
       const measure = Measure.create({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
@@ -97,7 +103,7 @@ export class Part {
         systemId: opts.systemId,
         previousMeasure,
         leadingStaveSignature,
-        staveSignatureRegistry,
+        measureEntries,
         staveLayouts,
       });
 

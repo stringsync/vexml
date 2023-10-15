@@ -4,10 +4,15 @@ import { StaveModifier } from './stave';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 
+/** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
+export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, musicxml.Attributes>;
+
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
 /**
  * A utility class to account for <attributes> changes.
+ *
+ * It establishes a doubly-linked list connection with neighboring <attributes>.
  *
  * The name "attributes" isn't used because it has two main problems:
  *  - It's ambiguous. What "attributes" are we talking about?
@@ -22,8 +27,9 @@ export class StaveSignature {
   private multiRestCounts: StaveMap<number>;
   private quarterNoteDivisions: number;
   private staveCount: number;
-  private previousStaveSignature: StaveSignature | null;
   private attributes: musicxml.Attributes;
+  private previous: StaveSignature | null;
+  private next: StaveSignature | null;
 
   private constructor(opts: {
     measureIndex: number;
@@ -34,7 +40,6 @@ export class StaveSignature {
     multiRestCounts: StaveMap<number>;
     quarterNoteDivisions: number;
     staveCount: number;
-    previousStaveSignature: StaveSignature | null;
     attributes: musicxml.Attributes;
   }) {
     this.measureIndex = opts.measureIndex;
@@ -45,12 +50,52 @@ export class StaveSignature {
     this.multiRestCounts = opts.multiRestCounts;
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
     this.staveCount = opts.staveCount;
-    this.previousStaveSignature = opts.previousStaveSignature;
     this.attributes = opts.attributes;
+    this.previous = null;
+    this.next = null;
+  }
+
+  /** Creates a matrix of `StaveSignature` objects from a `musicxml.Part`, grouped by measure index. */
+  static toMeasureEntryGroups(musicXml: { part: musicxml.Part }): MeasureEntry[][] {
+    const result = new Array<MeasureEntry[]>();
+
+    let previousStaveSignature: StaveSignature | null = null;
+
+    const measures = musicXml.part.getMeasures();
+    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
+      const measure = measures[measureIndex];
+
+      const entries = measure.getEntries();
+      for (let measureEntryIndex = 0; measureEntryIndex < entries.length; measureEntryIndex++) {
+        const entry = entries[measureEntryIndex];
+
+        result.push(new Array<MeasureEntry>());
+
+        if (entry instanceof musicxml.Attributes) {
+          const staveSignature = StaveSignature.merge({
+            measureIndex,
+            measureEntryIndex,
+            previousStaveSignature: previousStaveSignature,
+            musicXml: { attributes: entry },
+          });
+          result[measureIndex].push(staveSignature);
+
+          previousStaveSignature = staveSignature;
+        } else if (
+          entry instanceof musicxml.Note ||
+          entry instanceof musicxml.Backup ||
+          entry instanceof musicxml.Forward
+        ) {
+          result[measureIndex].push(entry);
+        }
+      }
+    }
+
+    return result;
   }
 
   /** Creates a new StaveSignature by selectively merging properties from its designated previous. */
-  static merge(opts: {
+  private static merge(opts: {
     measureIndex: number;
     measureEntryIndex: number;
     previousStaveSignature: StaveSignature | null;
@@ -64,7 +109,7 @@ export class StaveSignature {
       ...previousStaveSignature?.clefs,
       ...opts.musicXml.attributes
         .getClefs()
-        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.fromMusicXml({ clef })])
+        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.from({ clef })])
         .reduce<StaveMap<Clef>>((map, [staveNumber, clef]) => {
           map[staveNumber] = clef;
           return map;
@@ -74,7 +119,7 @@ export class StaveSignature {
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
       ...opts.musicXml.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
-        map[key.getStaveNumber()] = new KeySignature(key.getFifthsCount(), key.getMode());
+        map[key.getStaveNumber()] = KeySignature.from({ key });
         return map;
       }, {}),
     };
@@ -105,7 +150,7 @@ export class StaveSignature {
     const staveCount = opts.musicXml.attributes.getStaveCount();
     const attributes = opts.musicXml.attributes;
 
-    return new StaveSignature({
+    const staveSignature = new StaveSignature({
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
       clefs,
@@ -114,9 +159,15 @@ export class StaveSignature {
       multiRestCounts,
       quarterNoteDivisions,
       staveCount,
-      previousStaveSignature,
       attributes,
     });
+
+    staveSignature.previous = previousStaveSignature;
+    if (previousStaveSignature) {
+      previousStaveSignature.next = staveSignature;
+    }
+
+    return staveSignature;
   }
 
   /**
@@ -127,28 +178,28 @@ export class StaveSignature {
    */
   @util.memoize()
   getChangedStaveModifiers(): StaveModifier[] {
-    if (!this.previousStaveSignature) {
+    if (!this.previous) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const changed = new Set<StaveModifier>();
 
     for (const [staveNumber, clef] of Object.entries(this.clefs)) {
-      const previousClef = this.previousStaveSignature.clefs[staveNumber];
+      const previousClef = this.previous.clefs[staveNumber];
       if (!previousClef.isEqual(clef)) {
         changed.add('clef');
       }
     }
 
     for (const [staveNumber, keySignature] of Object.entries(this.keySignatures)) {
-      const previousKeySignature = this.previousStaveSignature.keySignatures[staveNumber];
+      const previousKeySignature = this.previous.keySignatures[staveNumber];
       if (!previousKeySignature.isEqual(keySignature)) {
         changed.add('keySignature');
       }
     }
 
     for (const [staveNumber, timeSignature] of Object.entries(this.timeSignatures)) {
-      const previousTimeSignature = this.previousStaveSignature.timeSignatures[staveNumber];
+      const previousTimeSignature = this.previous.timeSignatures[staveNumber];
       if (!previousTimeSignature.isEqual(timeSignature)) {
         changed.add('timeSignature');
       }
@@ -157,12 +208,22 @@ export class StaveSignature {
     return Array.from(changed);
   }
 
-  /** Returns the measure index of the MeasureAttributes. */
+  /** Returns the previous stave signature. */
+  getPrevious(): StaveSignature | null {
+    return this.previous;
+  }
+
+  /** Returns the next stave signature. */
+  getNext(): StaveSignature | null {
+    return this.next;
+  }
+
+  /** Returns the measure index of the corresponding MeasureAttributes. */
   getMeasureIndex(): number {
     return this.measureIndex;
   }
 
-  /** Returns the measure entry index that the MeasureAttributes appeared in. */
+  /** Returns the measure entry index that the corresponding MeasureAttributes appeared in. */
   getMeasureEntryIndex(): number {
     return this.measureEntryIndex;
   }
