@@ -70,14 +70,14 @@ export class KeySignature {
       const sharpCount = Math.min(this.fifths, 7);
       const sharps = CIRCLE_OF_FIFTHS_SHARP.slice(0, sharpCount);
       const sharpIndex = sharps.findIndex((sharp) => sharp === root);
-      return this.getAlterations()[sharpIndex] ?? '#';
+      return sharpIndex < 0 ? 'n' : this.getAlterations()[sharpIndex] ?? '#';
     }
 
     if (this.fifths < 0) {
       const flatCount = Math.min(Math.abs(this.fifths), 7);
       const flats = CIRCLE_OF_FIFTHS_FLAT.slice(0, flatCount);
       const flatIndex = flats.findIndex((flat) => flat === root);
-      return this.getAlterations()[flatIndex] ?? 'b';
+      return flatIndex < 0 ? 'n' : this.getAlterations()[flatIndex] ?? 'b';
     }
 
     return 'n';
