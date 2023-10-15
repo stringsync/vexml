@@ -110,7 +110,7 @@ export class Measure {
 
       if (measureEntry instanceof musicxml.Attributes) {
         // This should not be null assuming that the [measureIndex, measureEntryIndex] valid.
-        staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
+        staveSignature = staveSignatureRegistry.get(measureIndex, measureEntryIndex);
         util.assertNotNull(staveSignature);
 
         const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().length > 0;
@@ -129,7 +129,7 @@ export class Measure {
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        const nextStaveSignature = staveSignatureRegistry.getStaveSignature(measureIndex + 1, 0);
+        const nextStaveSignature = staveSignatureRegistry.get(measureIndex + 1, 0);
         const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clef');
 
         if (nextStaveSignature && willClefTypeChange) {
