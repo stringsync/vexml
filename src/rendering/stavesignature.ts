@@ -5,7 +5,7 @@ import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 
 /** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
-export type MeasureEntry = StaveSignature | Exclude<musicxml.Attributes, musicxml.MeasureEntry>;
+export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, musicxml.Attributes>;
 
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
@@ -55,8 +55,47 @@ export class StaveSignature {
     this.next = null;
   }
 
+  /** Creates a matrix of `StaveSignature` objects from a `musicxml.Part`, grouped by measure index. */
+  static toMeasureEntryGroups(musicXml: { part: musicxml.Part }): MeasureEntry[][] {
+    const result = new Array<MeasureEntry[]>();
+
+    let previousStaveSignature: StaveSignature | null = null;
+
+    const measures = musicXml.part.getMeasures();
+    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
+      const measure = measures[measureIndex];
+
+      const entries = measure.getEntries();
+      for (let measureEntryIndex = 0; measureEntryIndex < entries.length; measureEntryIndex++) {
+        const entry = entries[measureEntryIndex];
+
+        result.push(new Array<MeasureEntry>());
+
+        if (entry instanceof musicxml.Attributes) {
+          const staveSignature = StaveSignature.merge({
+            measureIndex,
+            measureEntryIndex,
+            previousStaveSignature: previousStaveSignature,
+            musicXml: { attributes: entry },
+          });
+          result[measureIndex].push(staveSignature);
+
+          previousStaveSignature = staveSignature;
+        } else if (
+          entry instanceof musicxml.Note ||
+          entry instanceof musicxml.Backup ||
+          entry instanceof musicxml.Forward
+        ) {
+          result[measureIndex].push(entry);
+        }
+      }
+    }
+
+    return result;
+  }
+
   /** Creates a new StaveSignature by selectively merging properties from its designated previous. */
-  static merge(opts: {
+  private static merge(opts: {
     measureIndex: number;
     measureEntryIndex: number;
     previousStaveSignature: StaveSignature | null;
