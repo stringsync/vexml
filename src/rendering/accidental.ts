@@ -17,7 +17,7 @@ export type AccidentalRendering = {
  * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L169
  */
 export type AccidentalCode = EnumValues<typeof ACCIDENTAL_CODES>;
-export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', 'db', '++']);
+export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', 'db', '++'] as const);
 
 /**
  * Represents a musical accidental, which alters the pitch of a note.
