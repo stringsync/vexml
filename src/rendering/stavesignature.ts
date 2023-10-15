@@ -64,7 +64,7 @@ export class StaveSignature {
       ...previousStaveSignature?.clefs,
       ...opts.musicXml.attributes
         .getClefs()
-        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.fromMusicXml({ clef })])
+        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.from({ clef })])
         .reduce<StaveMap<Clef>>((map, [staveNumber, clef]) => {
           map[staveNumber] = clef;
           return map;
@@ -74,7 +74,7 @@ export class StaveSignature {
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
       ...opts.musicXml.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
-        map[key.getStaveNumber()] = new KeySignature(key.getFifthsCount(), key.getMode());
+        map[key.getStaveNumber()] = KeySignature.from({ key });
         return map;
       }, {}),
     };

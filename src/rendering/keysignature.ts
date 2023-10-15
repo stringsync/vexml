@@ -5,9 +5,15 @@ export class KeySignature {
   private fifths: number;
   private mode: musicxml.KeyMode;
 
-  constructor(fifths: number, mode: musicxml.KeyMode) {
+  private constructor(fifths: number, mode: musicxml.KeyMode) {
     this.fifths = fifths;
     this.mode = mode;
+  }
+
+  static from(musicXml: { key: musicxml.Key }) {
+    const fifths = musicXml.key.getFifthsCount();
+    const mode = musicXml.key.getMode();
+    return new KeySignature(fifths, mode);
   }
 
   static Cmajor(): KeySignature {
