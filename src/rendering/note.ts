@@ -6,6 +6,7 @@ import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
+import { KeySignature } from './keysignature';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
@@ -72,6 +73,7 @@ export class Note {
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
+    keySignature: KeySignature;
   }): Note {
     const note = opts.musicXml.note;
 

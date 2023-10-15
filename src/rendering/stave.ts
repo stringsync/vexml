@@ -126,6 +126,7 @@ export class Stave {
         clef,
         timeSignature,
         quarterNoteDivisions,
+        keySignature,
       });
     }
 
