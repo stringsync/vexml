@@ -1,8 +1,8 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
-import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { StaveSignature } from './stavesignature';
 import { StaveSignatureRegistry } from './stavesignatureregistry';
@@ -18,7 +18,7 @@ export type MeasureRendering = {
     staveConnectors: vexflow.StaveConnector[];
   };
   index: number;
-  label: Text;
+  label: drawables.Text;
   fragments: MeasureFragmentRendering[];
   width: number;
 };
@@ -253,7 +253,7 @@ export class Measure {
       );
     }
 
-    const label = new Text({
+    const label = new drawables.Text({
       content: this.label,
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
