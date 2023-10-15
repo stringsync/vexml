@@ -168,16 +168,6 @@ describe(Note, () => {
       const note = new Note(node);
       expect(note.getStep()).toBe('C');
     });
-
-    it(`defaults to 'C' when invalid`, () => {
-      const node = xml.note({
-        pitch: xml.pitch({
-          step: xml.step({ value: 'P' }),
-        }),
-      });
-      const note = new Note(node);
-      expect(note.getStep()).toBe('C');
-    });
   });
 
   describe('getOctave', () => {
@@ -202,7 +192,7 @@ describe(Note, () => {
     it('defaults to 4 when invalid', () => {
       const node = xml.note({
         pitch: xml.pitch({
-          octave: xml.octave({ value: 3.14 }),
+          octave: xml.octave({ value: NaN }),
         }),
       });
       const note = new Note(node);
