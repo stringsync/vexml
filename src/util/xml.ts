@@ -718,10 +718,14 @@ export const key = createNamedElementFactory<
   'key',
   {
     fifths: NamedElement<'fifths'>;
+    mode: NamedElement<'mode'>;
   }
->('key', (e, { fifths }) => {
+>('key', (e, { fifths, mode }) => {
   if (fifths) {
     e.append(fifths);
+  }
+  if (mode) {
+    e.append(mode);
   }
 });
 
@@ -731,6 +735,12 @@ export const fifths = createNamedElementFactory<
     value: string;
   }
 >('fifths', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const mode = createNamedElementFactory<'mode', { value: string }>('mode', (e, { value }) => {
   if (value) {
     e.setTextContent(value);
   }

@@ -285,3 +285,22 @@ export const TIME_SYMBOLS = new Enum([
   'single-number',
   'hidden',
 ] as const);
+
+/**
+ * The <mode> element is used to specify major/minor and other mode distinctions.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/mode/
+ */
+export type KeyMode = EnumValues<typeof KEY_MODES>;
+export const KEY_MODES = new Enum([
+  'none',
+  'major',
+  'minor',
+  'dorian',
+  'phrygian',
+  'lydian',
+  'mixolydian',
+  'aeolian',
+  'ionian',
+  'locrian',
+] as const);
