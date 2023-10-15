@@ -5,6 +5,7 @@ import * as util from '@/util';
 import { MultiRest, MultiRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
+import { KeySignature } from './keysignature';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -42,7 +43,7 @@ export class Stave {
   private staveNumber: number;
   private clefType: musicxml.ClefType;
   private timeSignature: musicxml.TimeSignature;
-  private keySignature: string;
+  private keySignature: KeySignature;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
@@ -55,7 +56,7 @@ export class Stave {
     staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
-    keySignature: string;
+    keySignature: KeySignature;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
@@ -82,7 +83,7 @@ export class Stave {
     staveNumber: number;
     clefType: musicxml.ClefType;
     timeSignature: musicxml.TimeSignature;
-    keySignature: string;
+    keySignature: KeySignature;
     multiRestCount: number;
     measureEntries: musicxml.MeasureEntry[];
     quarterNoteDivisions: number;
@@ -272,14 +273,12 @@ export class Stave {
   /** Returns the width that the key signature takes up. */
   @util.memoize()
   private getKeySignatureWidth(): number {
-    return this.keySignature === 'C'
-      ? 0
-      : this.toVexflowStave({
-          x: 0,
-          y: 0,
-          width: this.getMinJustifyWidth(),
-          modifiers: ['keySignature'],
-        }).getNoteStartX();
+    return this.toVexflowStave({
+      x: 0,
+      y: 0,
+      width: this.getMinJustifyWidth(),
+      modifiers: ['keySignature'],
+    }).getNoteStartX();
   }
 
   /** Returns the width that the time signature takes up. */
@@ -305,7 +304,13 @@ export class Stave {
       vfStave.addClef(this.clefType);
     }
     if (opts.modifiers.includes('keySignature')) {
-      vfStave.addKeySignature(this.keySignature);
+      new vexflow.KeySignature(
+        this.keySignature.getKey(),
+        undefined, // cancelKeySpec
+        this.keySignature.getAlterations()
+      )
+        .setPosition(vexflow.StaveModifierPosition.BEGIN)
+        .addToStave(vfStave);
     }
     if (opts.modifiers.includes('timeSignature')) {
       for (const timeSpec of this.getTimeSpecs()) {

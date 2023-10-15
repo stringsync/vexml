@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { StaveModifier } from './stave';
+import { KeySignature } from './keysignature';
 
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
@@ -15,7 +16,7 @@ export class StaveSignature {
   private measureIndex: number;
   private measureEntryIndex: number;
   private clefTypes: StaveMap<musicxml.ClefType>;
-  private keySignatures: StaveMap<string>;
+  private keySignatures: StaveMap<KeySignature>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
   private multiRestCounts: StaveMap<number>;
   private quarterNoteDivisions: number;
@@ -27,7 +28,7 @@ export class StaveSignature {
     measureIndex: number;
     measureEntryIndex: number;
     clefTypes: StaveMap<musicxml.ClefType>;
-    keySignatures: StaveMap<string>;
+    keySignatures: StaveMap<KeySignature>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
     multiRestCounts: StaveMap<number>;
     quarterNoteDivisions: number;
@@ -75,8 +76,8 @@ export class StaveSignature {
 
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
-      ...opts.musicXml.attributes.getKeys().reduce<StaveMap<string>>((map, key) => {
-        map[key.getStaveNumber()] = key.getKeySignature();
+      ...opts.musicXml.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
+        map[key.getStaveNumber()] = new KeySignature(key.getFifthsCount(), key.getMode());
         return map;
       }, {}),
     };
@@ -175,7 +176,7 @@ export class StaveSignature {
   }
 
   /** Returns the key signature corresponding to the stave number. */
-  getKeySignature(staveNumber: number): string | null {
+  getKeySignature(staveNumber: number): KeySignature | null {
     return this.keySignatures[staveNumber] ?? null;
   }
 
