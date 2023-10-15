@@ -1,5 +1,4 @@
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
 
 /** Represents a key signature. */
 export class KeySignature {
@@ -16,7 +15,6 @@ export class KeySignature {
   }
 
   /** Returns the root of the key signature. */
-  @util.memoize()
   getKey(): string {
     // Clamp between -7 and 7 — the excess gets handled by alterations.
     let fifths = this.fifths;
@@ -36,7 +34,6 @@ export class KeySignature {
   }
 
   /** Returns the alterations of the  key signature. */
-  @util.memoize()
   getAlterations(): string[] {
     const alterations = new Array<string>();
 
@@ -139,7 +136,7 @@ export class KeySignature {
       case 6:
         return 'D#m';
       case 7:
-        return 'Bm';
+        return 'A#m';
       default:
         throw new Error(`cannot handle fifths: ${fifths}`);
     }
