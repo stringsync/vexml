@@ -24,6 +24,7 @@ export class KeySignature {
     switch (this.mode) {
       case 'major':
       case 'ionian':
+      case 'none':
         return this.toMajorKey(fifths);
       case 'minor':
       case 'aeolian':
