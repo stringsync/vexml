@@ -13,7 +13,7 @@ export class StaveSignatureRegistry {
   static from(part: musicxml.Part): StaveSignatureRegistry {
     const registry = new Array<StaveSignature[]>();
 
-    let previousMeasureAttributes: StaveSignature | null = null;
+    let previousStaveSignature: StaveSignature | null = null;
 
     const measures = part.getMeasures();
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
@@ -26,15 +26,15 @@ export class StaveSignatureRegistry {
         registry.push([]);
 
         if (entry instanceof musicxml.Attributes) {
-          const measureAttributes = StaveSignature.merge({
+          const staveSignature = StaveSignature.merge({
             measureIndex,
             measureEntryIndex,
-            previousStaveSignature: previousMeasureAttributes,
+            previousStaveSignature: previousStaveSignature,
             musicXml: { attributes: entry },
           });
-          registry[measureIndex].push(measureAttributes);
+          registry[measureIndex].push(staveSignature);
 
-          previousMeasureAttributes = measureAttributes;
+          previousStaveSignature = staveSignature;
         }
       }
     }
@@ -52,7 +52,7 @@ export class StaveSignatureRegistry {
     return this.registry[measureIndex] ?? null;
   }
 
-  /** Returns all the StaveSignatures at a [measure index, measure entry index]. */
+  /** Returns the StaveSignatures at a [measure index, measure entry index]. */
   getStaveSignature(measureIndex: number, measureEntryIndex: number): StaveSignature | null {
     return (
       this.getMeasureStaveSignatures(measureIndex)?.find(
