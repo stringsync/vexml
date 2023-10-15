@@ -1,24 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 
-const ROOTS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
-
-// Used to align with
-// https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/tests/vexflow_test_helpers.ts#L399.
-const MAJOR_ENHARMOICS: Record<string, string> = {};
-
-// Used to align with
-// https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/tests/vexflow_test_helpers.ts#L417.
-const MINOR_ENHARMONICS: Record<string, string> = {
-  Db: 'C#',
-  Eb: 'D#',
-  Gb: 'F#',
-  Ab: 'G#',
-  Bb: 'A#',
-  Cb: 'B', // Though it's unusual to encounter this one
-  'E#': 'F', // This is also quite rare
-};
-
 /** Represents a key signature. */
 export class KeySignature {
   private fifths: number;
@@ -35,48 +17,42 @@ export class KeySignature {
 
   /** Returns the root of the key signature. */
   @util.memoize()
-  getKeySpec(): string {
-    let root = this.fifths >= 0 ? ROOTS[this.fifths] : ROOTS[ROOTS.length + this.fifths];
+  getKey(): string {
+    // Clamp between -7 and 7 — the excess gets handled by alterations.
+    let fifths = this.fifths;
+    fifths = Math.max(-7, fifths);
+    fifths = Math.min(7, fifths);
 
-    // Adjust root based on mode, since vexflow only understands major and minor modes.
     switch (this.mode) {
       case 'major':
       case 'ionian':
-      case 'lydian':
-      case 'mixolydian':
-        return MAJOR_ENHARMOICS[root] || root;
+        return this.toMajorKey(fifths);
       case 'minor':
       case 'aeolian':
-        // Leverage vexflow's minor key signatures.
-        return `${MINOR_ENHARMONICS[root] || root}m`;
-      case 'dorian':
-        // Transpose down by a whole step
-        root = this.transposeRoot(root, -2);
-        return MINOR_ENHARMONICS[root] || root;
-      case 'phrygian':
-        // Transpose down by a minor third
-        root = this.transposeRoot(root, -3);
-        return MINOR_ENHARMONICS[root] || root;
-      case 'locrian':
-        // Transpose down by a half step
-        root = this.transposeRoot(root, -1);
-        return MINOR_ENHARMONICS[root] || root;
+        return this.toMinorKey(fifths);
       default:
-        return root;
+        throw new Error(`cannot handle mode: ${this.mode}`);
     }
   }
 
   /** Returns the alterations of the  key signature. */
   @util.memoize()
   getAlterations(): string[] {
-    // TODO: Implement after hooking KeySignature into the rendering pipeline.
-    return [];
+    const alterations = new Array<string>();
+
+    if (Math.abs(this.fifths) > 7) {
+      const additional = Math.abs(this.fifths) - 7;
+      for (let index = 0; index < additional; index++) {
+        alterations.push(this.fifths > 0 ? '##' : 'bb');
+      }
+    }
+    return alterations;
   }
 
   /** Returns whether the key signatures are equal. */
   isEqual(other: KeySignature): boolean {
-    const root1 = this.getKeySpec();
-    const root2 = other.getKeySpec();
+    const root1 = this.getKey();
+    const root2 = other.getKey();
     if (root1 !== root2) {
       return false;
     }
@@ -95,11 +71,77 @@ export class KeySignature {
     return true;
   }
 
-  /** Transposes the root by the number of half steps. */
-  private transposeRoot(originalRoot: string, halfSteps: number): string {
-    const roots = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    let index = roots.indexOf(originalRoot) + halfSteps;
-    while (index < 0) index += 12; // Ensure index stays in range
-    return roots[index % 12];
+  private toMajorKey(fifths: number): string {
+    switch (fifths) {
+      case -7:
+        return 'Cb';
+      case -6:
+        return 'Gb';
+      case -5:
+        return 'Db';
+      case -4:
+        return 'Ab';
+      case -3:
+        return 'Eb';
+      case -2:
+        return 'Bb';
+      case -1:
+        return 'F';
+      case 0:
+        return 'C';
+      case 1:
+        return 'G';
+      case 2:
+        return 'D';
+      case 3:
+        return 'A';
+      case 4:
+        return 'E';
+      case 5:
+        return 'B';
+      case 6:
+        return 'F#';
+      case 7:
+        return 'C#';
+      default:
+        throw new Error(`cannot handle fifths: ${fifths}`);
+    }
+  }
+
+  private toMinorKey(fifths: number): string {
+    switch (fifths) {
+      case -7:
+        return 'Abm';
+      case -6:
+        return 'Ebm';
+      case -5:
+        return 'Bbm';
+      case -4:
+        return 'Fm';
+      case -3:
+        return 'Cm';
+      case -2:
+        return 'Gm';
+      case -1:
+        return 'Dm';
+      case 0:
+        return 'Am';
+      case 1:
+        return 'Em';
+      case 2:
+        return 'Bm';
+      case 3:
+        return 'F#m';
+      case 4:
+        return 'C#m';
+      case 5:
+        return 'G#m';
+      case 6:
+        return 'D#m';
+      case 7:
+        return 'Bm';
+      default:
+        throw new Error(`cannot handle fifths: ${fifths}`);
+    }
   }
 }
