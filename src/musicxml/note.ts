@@ -72,11 +72,14 @@ export class Note {
     return this.element.first('staff')?.content().int() ?? 1;
   }
 
-  /** Returns the step and octave of the note in the format `${step}/${octave}`. */
-  getPitch(): string {
-    const step = this.element.first('step')?.content().str() ?? 'C';
-    const octave = this.element.first('octave')?.content().str() ?? '4';
-    return `${step}/${octave}`;
+  /** Returns the step of the note. Defaults to 'C'. */
+  getStep(): string {
+    return this.element.first('step')?.content().str() ?? 'C';
+  }
+
+  /** Returns the octave of the note. Defaults to 4. */
+  getOctave(): number {
+    return this.element.first('octave')?.content().int() ?? 4;
   }
 
   /**

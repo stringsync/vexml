@@ -71,6 +71,11 @@ export class Clef {
     return 'treble';
   }
 
+  /** Returns the octave change of the clef. Defaults to 0. */
+  getOctaveChange(): number {
+    return this.octaveChange ?? 0;
+  }
+
   /** Returns the clef annotation. Defaults to null. */
   getAnnotation(): ClefAnnotation | null {
     switch (this.octaveChange) {

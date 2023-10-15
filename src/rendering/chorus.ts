@@ -105,7 +105,7 @@ export class Chorus {
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstNonRestVoiceEntries, (entry) => -Chorus.toStaveNoteLine(entry.note));
+    util.sortBy(firstNonRestVoiceEntries, (entry) => -Chorus.toStaveNoteLine(entry.note, clef));
 
     if (firstNonRestVoiceEntries.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
@@ -175,11 +175,11 @@ export class Chorus {
     }
   }
 
-  private static toStaveNoteLine(note: musicxml.Note): number {
+  private static toStaveNoteLine(note: musicxml.Note, clef: Clef): number {
     return new vexflow.StaveNote({
       duration: '4',
       keys: [note, ...note.getChordTail()].map((note) => {
-        let key = note.getPitch();
+        let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
 
         const suffix = note.getNoteheadSuffix();
         if (suffix) {

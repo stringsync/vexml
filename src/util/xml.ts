@@ -669,11 +669,11 @@ export const alter = createNamedElementFactory<'alter', { value: number }>('alte
 export const octave = createNamedElementFactory<
   'octave',
   {
-    value: string;
+    value: number;
   }
 >('octave', (e, { value }) => {
   if (value) {
-    e.setTextContent(value);
+    e.setTextContent(value.toString());
   }
 });
 
