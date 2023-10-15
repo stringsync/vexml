@@ -6,6 +6,7 @@ import { Voice, VoiceEntryData, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -33,7 +34,7 @@ export class Chorus {
   /** Creates a Chorus. */
   static create(opts: {
     config: Config;
-    measureEntries: musicxml.MeasureEntry[];
+    measureEntries: MeasureEntry[];
     clef: Clef;
     timeSignature: musicxml.TimeSignature;
     quarterNoteDivisions: number;
@@ -49,7 +50,7 @@ export class Chorus {
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (const entry of measureEntries) {
-      if (entry instanceof musicxml.Attributes) {
+      if (entry instanceof StaveSignature) {
         quarterNoteDivisions = entry.getQuarterNoteDivisions();
       }
 

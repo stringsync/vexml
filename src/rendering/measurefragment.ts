@@ -7,7 +7,7 @@ import { ChorusRendering } from './chorus';
 import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
-import { StaveSignature } from './stavesignature';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 
@@ -65,10 +65,8 @@ export class MeasureFragment {
     measureFragmentIndex: number;
     systemId: symbol;
     leadingStaveSignature: StaveSignature | null;
-    musicXml: {
-      measureEntries: musicxml.MeasureEntry[];
-    };
     beginningBarStyle: musicxml.BarStyle;
+    measureEntries: MeasureEntry[];
     endBarStyle: musicxml.BarStyle;
     staveCount: number;
     staveLayouts: musicxml.StaveLayout[];
@@ -78,7 +76,7 @@ export class MeasureFragment {
     const measureFragmentIndex = opts.measureFragmentIndex;
     const systemId = opts.systemId;
     const leadingStaveSignature = opts.leadingStaveSignature;
-    const measureEntries = opts.musicXml.measureEntries;
+    const measureEntries = opts.measureEntries;
     const staveCount = opts.staveCount;
     const staveLayouts = opts.staveLayouts;
     const beginningBarStyle = opts.beginningBarStyle;
@@ -115,7 +113,7 @@ export class MeasureFragment {
     }
 
     let padding = 0;
-    if (measureEntries.length === 1 && measureEntries[0] instanceof musicxml.Attributes) {
+    if (measureEntries.length === 1 && measureEntries[0] instanceof StaveSignature) {
       padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
     }
 
