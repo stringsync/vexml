@@ -198,7 +198,7 @@ export class Stave {
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
       entry: this.entry.clone(),
-      previousKeySignature: this.keySignature,
+      previousKeySignature: this.previousKeySignature,
     });
   }
 
@@ -314,7 +314,7 @@ export class Stave {
     if (opts.modifiers.includes('keySignature')) {
       new vexflow.KeySignature(
         this.keySignature.getKey(),
-        undefined, // cancelKeySpec
+        this.previousKeySignature?.getKey() ?? undefined,
         this.keySignature.getAlterations()
       )
         .setPosition(vexflow.StaveModifierPosition.BEGIN)
