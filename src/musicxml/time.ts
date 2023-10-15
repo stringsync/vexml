@@ -1,5 +1,4 @@
-import { NamedElement, Fraction } from '@/util';
-import { TimeSignature } from './timesignature';
+import { NamedElement } from '@/util';
 import { TIME_SYMBOLS, TimeSymbol } from './enums';
 
 /**
@@ -39,10 +38,5 @@ export class Time {
   /** Returns the symbol of the time. */
   getSymbol(): TimeSymbol | null {
     return this.element.attr('symbol').enum(TIME_SYMBOLS) ?? null;
-  }
-
-  /** Returns the time signature of the time. */
-  getTimeSignature(): TimeSignature | null {
-    return TimeSignature.from({ time: this });
   }
 }
