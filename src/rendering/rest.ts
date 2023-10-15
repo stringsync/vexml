@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { ClefType, NoteDurationDenominator } from './enums';
+import { Clef } from './clef';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -26,20 +27,20 @@ export class Rest {
   private displayPitch: string | null;
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
-  private clefType: ClefType;
+  private clef: Clef;
 
   private constructor(opts: {
     config: Config;
     displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
-    clefType: ClefType;
+    clef: Clef;
   }) {
     this.config = opts.config;
     this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
-    this.clefType = opts.clefType;
+    this.clef = opts.clef;
   }
 
   /** Creates the Rest. */
@@ -49,7 +50,7 @@ export class Rest {
       note: musicxml.Note;
     };
     durationDenominator: NoteDurationDenominator;
-    clefType: ClefType;
+    clef: Clef;
   }): Rest {
     const note = opts.musicXml.note;
 
@@ -58,18 +59,18 @@ export class Rest {
       displayPitch: note.getRestDisplayPitch(),
       durationDenominator: opts.durationDenominator,
       dotCount: note.getDotCount(),
-      clefType: opts.clefType,
+      clef: opts.clef,
     });
   }
 
   /** Creates a whole rest. */
-  static whole(opts: { config: Config; clefType: ClefType }): Rest {
+  static whole(opts: { config: Config; clef: Clef }): Rest {
     return new Rest({
       config: opts.config,
       displayPitch: null,
       durationDenominator: '1',
       dotCount: 0,
-      clefType: opts.clefType,
+      clef: opts.clef,
     });
   }
 
@@ -80,7 +81,7 @@ export class Rest {
       displayPitch: this.displayPitch,
       durationDenominator: this.durationDenominator,
       dotCount: this.dotCount,
-      clefType: this.clefType,
+      clef: this.clef,
     });
   }
 
@@ -91,7 +92,7 @@ export class Rest {
       duration: `${this.durationDenominator}r`,
       dots: this.dotCount,
       alignCenter: this.shouldCenter(opts.voiceEntryCount),
-      clef: this.clefType,
+      clef: this.clef.getType(),
     });
 
     for (let index = 0; index < this.dotCount; index++) {
@@ -105,7 +106,7 @@ export class Rest {
     if (this.displayPitch) {
       return this.displayPitch;
     }
-    if (this.clefType === 'bass') {
+    if (this.clef.getType() === 'bass') {
       return 'D/3';
     }
     if (this.durationDenominator === '2') {

@@ -128,7 +128,7 @@ export class StaveSignature {
   @util.memoize()
   getChangedStaveModifiers(): StaveModifier[] {
     if (!this.previousStaveSignature) {
-      return ['clefType', 'keySignature', 'timeSignature'];
+      return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const changed = new Set<StaveModifier>();
@@ -136,7 +136,7 @@ export class StaveSignature {
     for (const [staveNumber, clef] of Object.entries(this.clefs)) {
       const previousClef = this.previousStaveSignature.clefs[staveNumber];
       if (!previousClef.isEqual(clef)) {
-        changed.add('clefType');
+        changed.add('clef');
       }
     }
 

@@ -5,6 +5,7 @@ import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { ClefType, NoteDurationDenominator, StemDirection } from './enums';
+import { Clef } from './clef';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
@@ -37,7 +38,7 @@ export class Note {
   private accidental: Accidental | null;
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
-  private clefType: ClefType;
+  private clef: Clef;
   private beamValue: musicxml.BeamValue | null;
 
   private constructor(opts: {
@@ -48,7 +49,7 @@ export class Note {
     accidental: Accidental | null;
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
-    clefType: ClefType;
+    clef: Clef;
     beamValue: musicxml.BeamValue | null;
   }) {
     this.config = opts.config;
@@ -58,7 +59,7 @@ export class Note {
     this.accidental = opts.accidental;
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
-    this.clefType = opts.clefType;
+    this.clef = opts.clef;
     this.beamValue = opts.beamValue;
   }
 
@@ -70,7 +71,7 @@ export class Note {
     };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
-    clefType: ClefType;
+    clef: Clef;
   }): Note {
     const note = opts.musicXml.note;
 
@@ -83,7 +84,7 @@ export class Note {
       accidental = Accidental.create({ accidentalType, alter, isCautionary });
     }
 
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const lyrics = note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
@@ -111,7 +112,7 @@ export class Note {
       accidental,
       dotCount,
       durationDenominator,
-      clefType,
+      clef,
       beamValue,
     });
   }
@@ -136,7 +137,7 @@ export class Note {
       throw new Error('all notes must have the same dotCount');
     }
 
-    const clefTypes = new Set(notes.map((note) => note.clefType));
+    const clefTypes = new Set(notes.map((note) => note.clef));
     if (clefTypes.size > 1) {
       throw new Error('all notes must have the same clefTypes');
     }
@@ -149,7 +150,7 @@ export class Note {
       keys: notes.map((note) => note.key),
       duration: util.first(notes)!.durationDenominator,
       dots: util.first(notes)!.dotCount,
-      clef: util.first(notes)!.clefType,
+      clef: util.first(notes)!.clef.getType(),
       autoStem,
       stemDirection,
     });
@@ -218,7 +219,7 @@ export class Note {
       accidental: this.accidental?.clone() ?? null,
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
-      clefType: this.clefType,
+      clef: this.clef,
       beamValue: this.beamValue,
     });
   }
