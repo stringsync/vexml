@@ -6,6 +6,7 @@ import { MultiRest, MultiRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
+import { ClefType } from './enums';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -41,7 +42,7 @@ export class Stave {
   private measureFragmentIndex: number;
   private systemId: symbol;
   private staveNumber: number;
-  private clefType: musicxml.ClefType;
+  private clefType: ClefType;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: KeySignature;
   private beginningBarStyle: musicxml.BarStyle;
@@ -54,7 +55,7 @@ export class Stave {
     measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: KeySignature;
     beginningBarStyle: musicxml.BarStyle;
@@ -81,7 +82,7 @@ export class Stave {
     measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
     timeSignature: musicxml.TimeSignature;
     keySignature: KeySignature;
     multiRestCount: number;
