@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { ClefType } from './enums';
+import { ClefAnnotation, ClefType } from './enums';
 
 /** A musical symbol used to indicate which notes are represented by the lines and spaces on a stave. */
 export class Clef {
@@ -14,7 +14,7 @@ export class Clef {
   }
 
   /** Creates a clef from a MusicXML element. */
-  static fromMusicXml(musicXml: { clef: musicxml.Clef }) {
+  static fromMusicXml(musicXml: { clef: musicxml.Clef }): Clef {
     const clef = musicXml.clef;
 
     const sign = clef.getSign();
@@ -24,13 +24,18 @@ export class Clef {
     return new Clef(sign, line, octaveChange);
   }
 
+  /** Creates a standard treble clef. */
+  static treble(): Clef {
+    return new Clef('G', 2, null);
+  }
+
   /** Returns whether or not the clef is equal with the other. */
   isEqual(other: Clef): boolean {
     return this.sign === other.sign && this.line === other.line && this.octaveChange === other.octaveChange;
   }
 
   /** Returns the type of clef. */
-  getType(): ClefType | null {
+  getType(): ClefType {
     const sign = this.sign;
     const line = this.line;
 
@@ -63,6 +68,18 @@ export class Clef {
       return 'tab';
     }
 
-    return null;
+    return 'treble';
+  }
+
+  /** Returns the clef annotation. Defaults to null. */
+  getAnnotation(): ClefAnnotation | null {
+    switch (this.octaveChange) {
+      case 1:
+        return '8va';
+      case -1:
+        return '8vb';
+      default:
+        return null;
+    }
   }
 }

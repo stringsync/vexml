@@ -7,6 +7,7 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
 import { ClefType } from './enums';
+import { Clef } from './clef';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -27,7 +28,7 @@ export type StaveRendering = {
 };
 
 /** The modifiers of a stave. */
-export type StaveModifier = 'clefType' | 'keySignature' | 'timeSignature';
+export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 
 /**
  * Represents a single stave (or staff) in a measure, providing the graphical foundation for musical symbols such as
@@ -42,7 +43,7 @@ export class Stave {
   private measureFragmentIndex: number;
   private systemId: symbol;
   private staveNumber: number;
-  private clefType: ClefType;
+  private clef: Clef;
   private timeSignature: musicxml.TimeSignature;
   private keySignature: KeySignature;
   private beginningBarStyle: musicxml.BarStyle;
@@ -55,7 +56,7 @@ export class Stave {
     measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
-    clefType: ClefType;
+    clef: Clef;
     timeSignature: musicxml.TimeSignature;
     keySignature: KeySignature;
     beginningBarStyle: musicxml.BarStyle;
@@ -71,7 +72,7 @@ export class Stave {
     this.keySignature = opts.keySignature;
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
-    this.clefType = opts.clefType;
+    this.clef = opts.clef;
     this.entry = opts.entry;
   }
 
@@ -82,7 +83,7 @@ export class Stave {
     measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
-    clefType: ClefType;
+    clef: Clef;
     timeSignature: musicxml.TimeSignature;
     keySignature: KeySignature;
     multiRestCount: number;
@@ -101,24 +102,24 @@ export class Stave {
     const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
     const endBarStyle = opts.endBarStyle;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const keySignature = opts.keySignature;
     const timeSignature = opts.timeSignature;
 
     let entry: StaveEntry;
 
     if (multiRestCount === 1) {
-      entry = Chorus.wholeRest({ config, clefType, timeSignature });
+      entry = Chorus.wholeRest({ config, clef, timeSignature });
     } else if (multiRestCount > 1) {
       entry = MultiRest.create({ count: multiRestCount });
-    } else if (clefType === 'tab') {
+    } else if (clef.getType() === 'tab') {
       // TODO: Render tablature correctly.
       entry = Tablature.create();
     } else {
       entry = Chorus.create({
         config,
         measureEntries,
-        clefType,
+        clef,
         timeSignature,
         quarterNoteDivisions,
       });
@@ -130,7 +131,7 @@ export class Stave {
       measureFragmentIndex,
       systemId,
       staveNumber,
-      clefType,
+      clef,
       timeSignature,
       keySignature,
       beginningBarStyle,
@@ -160,7 +161,7 @@ export class Stave {
   getModifiersWidth(modifiers: StaveModifier[]): number {
     let width = 0;
 
-    if (modifiers.includes('clefType')) {
+    if (modifiers.includes('clef')) {
       width += this.getClefWidth();
     }
     if (modifiers.includes('keySignature')) {
@@ -186,7 +187,7 @@ export class Stave {
       measureFragmentIndex: this.measureFragmentIndex,
       systemId,
       staveNumber: this.staveNumber,
-      clefType: this.clefType,
+      clef: this.clef,
       timeSignature: this.timeSignature.clone(),
       keySignature: this.keySignature,
       beginningBarStyle: this.beginningBarStyle,
@@ -199,8 +200,8 @@ export class Stave {
   getModifierChanges(stave: Stave): StaveModifier[] {
     const result = new Array<StaveModifier>();
 
-    if (this.clefType !== stave.clefType) {
-      result.push('clefType');
+    if (!this.clef.isEqual(stave.clef)) {
+      result.push('clef');
     }
     if (this.keySignature !== stave.keySignature) {
       result.push('keySignature');
@@ -267,7 +268,7 @@ export class Stave {
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
-      modifiers: ['clefType'],
+      modifiers: ['clef'],
     }).getNoteStartX();
   }
 
@@ -295,14 +296,14 @@ export class Stave {
 
   private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave =
-      this.clefType === 'tab'
+      this.clef.getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width);
 
     vfStave.setBegBarType(this.getBeginningBarlineType()).setEndBarType(this.getEndBarlineType());
 
-    if (opts.modifiers.includes('clefType')) {
-      vfStave.addClef(this.clefType);
+    if (opts.modifiers.includes('clef')) {
+      vfStave.addClef(this.clef.getType(), 'default', this.clef.getAnnotation() ?? undefined);
     }
     if (opts.modifiers.includes('keySignature')) {
       new vexflow.KeySignature(

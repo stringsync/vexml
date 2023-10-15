@@ -7,6 +7,7 @@ import { Config } from './config';
 import { ClefType, NoteDurationDenominator, StemDirection } from './enums';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Division } from './division';
+import { Clef } from './clef';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -70,12 +71,12 @@ export class Voice {
     data: VoiceEntryData[];
     quarterNoteDivisions: number;
     timeSignature: musicxml.TimeSignature;
-    clefType: ClefType;
+    clef: Clef;
   }): Voice {
     const config = opts.config;
     const timeSignature = opts.timeSignature;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
 
     let divisions = Division.of(0, quarterNoteDivisions);
     const entries = new Array<VoiceEntry>();
@@ -87,7 +88,7 @@ export class Voice {
       if (ghostNoteDuration.toBeats() > 0) {
         entries.push(Voice.createGhostNote(ghostNoteDuration));
       }
-      entries.push(Voice.createVoiceEntry({ config, clefType, entry }));
+      entries.push(Voice.createVoiceEntry({ config, clef, entry }));
 
       divisions = entry.end;
     }
@@ -100,10 +101,10 @@ export class Voice {
   }
 
   /** Creates a voice with a single whole note rest. */
-  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clefType: ClefType }): Voice {
+  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clef: Clef }): Voice {
     const wholeRest = Rest.whole({
       config: opts.config,
-      clefType: opts.clefType,
+      clef: opts.clef,
     });
 
     return new Voice({
@@ -118,10 +119,10 @@ export class Voice {
     return GhostNote.create({ durationDenominator });
   }
 
-  private static createVoiceEntry(opts: { config: Config; entry: VoiceEntryData; clefType: ClefType }): VoiceEntry {
+  private static createVoiceEntry(opts: { config: Config; entry: VoiceEntryData; clef: Clef }): VoiceEntry {
     const config = opts.config;
     const entry = opts.entry;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const note = entry.note;
     const stem = entry.stem;
 
@@ -137,7 +138,7 @@ export class Voice {
         config,
         musicXml: { note },
         stem,
-        clefType,
+        clef,
         durationDenominator,
       });
     }
@@ -146,7 +147,7 @@ export class Voice {
       return Rest.create({
         config,
         musicXml: { note },
-        clefType,
+        clef,
         durationDenominator,
       });
     }
@@ -155,7 +156,7 @@ export class Voice {
       config,
       musicXml: { note },
       stem,
-      clefType,
+      clef,
       durationDenominator,
     });
   }

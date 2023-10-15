@@ -1,6 +1,7 @@
+import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
-import { ClefType, StemDirection } from './enums';
+import { StemDirection } from './enums';
 import { Voice, VoiceEntryData, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -33,13 +34,13 @@ export class Chorus {
   static create(opts: {
     config: Config;
     measureEntries: musicxml.MeasureEntry[];
-    clefType: ClefType;
+    clef: Clef;
     timeSignature: musicxml.TimeSignature;
     quarterNoteDivisions: number;
   }): Chorus {
     const config = opts.config;
     const measureEntries = opts.measureEntries;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const timeSignature = opts.timeSignature;
 
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
@@ -135,7 +136,7 @@ export class Chorus {
         data: data[voiceId],
         quarterNoteDivisions,
         timeSignature,
-        clefType,
+        clef,
       })
     );
 
@@ -148,11 +149,11 @@ export class Chorus {
    * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
    * which is why it's being used.
    */
-  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clefType: ClefType }): Chorus {
+  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clef: Clef }): Chorus {
     const voice = Voice.wholeRest({
       config: opts.config,
       timeSignature: opts.timeSignature,
-      clefType: opts.clefType,
+      clef: opts.clef,
     });
 
     return new Chorus({
