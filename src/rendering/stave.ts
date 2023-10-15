@@ -11,6 +11,7 @@ import { Clef } from './clef';
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
 
+/** The result of rendering a Stave entry. */
 export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
