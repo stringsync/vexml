@@ -1,11 +1,6 @@
 import * as vexflow from 'vexflow';
 
-/**
- * An element that renders text to the notation.
- *
- * This is more like a lower level vexflow element, and therefore doesn't follow the typical create/render pattern as
- * other rendering objects in the rendering lib.
- */
+/** A drawable piece of text. */
 export class Text {
   private content: string;
   private x: number;
