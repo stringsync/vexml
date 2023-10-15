@@ -56,26 +56,59 @@ export class Measure {
     measureEntries: MeasureEntry[];
     staveLayouts: musicxml.StaveLayout[];
   }): Measure {
-    const xmlMeasure = opts.musicXml.measure;
+    const measure = opts.musicXml.measure;
+
+    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
+
+    const fragments = Measure.fragment({
+      config: opts.config,
+      measureIndex: opts.index,
+      systemId: opts.systemId,
+      musicXml: {
+        measure: opts.musicXml.measure,
+      },
+      leadingStaveSignature: opts.leadingStaveSignature,
+      measureEntries: opts.measureEntries,
+      staveCount: opts.staveCount,
+      staveLayouts: opts.staveLayouts,
+    });
+
+    return new Measure({
+      config: opts.config,
+      index: opts.index,
+      label,
+      fragments,
+    });
+  }
+
+  private static fragment(opts: {
+    config: Config;
+    measureIndex: number;
+    systemId: symbol;
+    musicXml: {
+      measure: musicxml.Measure;
+    };
+    leadingStaveSignature: StaveSignature | null;
+    staveCount: number;
+    staveLayouts: musicxml.StaveLayout[];
+    measureEntries: MeasureEntry[];
+  }): MeasureFragment[] {
+    const fragments = new Array<MeasureFragment>();
+
+    const measureIndex = opts.measureIndex;
 
     const beginningBarStyle =
-      xmlMeasure
+      opts.musicXml.measure
         .getBarlines()
         .find((barline) => barline.getLocation() === 'left')
         ?.getBarStyle() ?? 'regular';
 
     const endBarStyle =
-      xmlMeasure
+      opts.musicXml.measure
         .getEndingMeasure()
         .getBarlines()
         .find((barline) => barline.getLocation() === 'right')
         ?.getBarStyle() ?? 'regular';
-
-    const label = xmlMeasure.isImplicit() ? '' : xmlMeasure.getNumber() || (opts.index + 1).toString();
-
-    const fragments = new Array<MeasureFragment>();
-
-    const measureIndex = opts.index;
 
     let staveSignature = opts.leadingStaveSignature;
     let currentMeasureEntries = new Array<MeasureEntry>();
@@ -158,12 +191,7 @@ export class Measure {
       }
     }
 
-    return new Measure({
-      config: opts.config,
-      index: opts.index,
-      label,
-      fragments,
-    });
+    return fragments;
   }
 
   /** Deeply clones the Measure, but replaces the systemId and partMeasuresLength. */
