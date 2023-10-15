@@ -4,10 +4,11 @@ import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
-import { ClefType, NoteDurationDenominator, StemDirection } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Division } from './division';
 import { Clef } from './clef';
+import { TimeSignature } from './timesignature';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -58,9 +59,9 @@ const DURATION_DENOMINATOR_CONVERSIONS: Array<{
 export class Voice {
   private config: Config;
   private entries: VoiceEntry[];
-  private timeSignature: musicxml.TimeSignature;
+  private timeSignature: TimeSignature;
 
-  private constructor(opts: { config: Config; entries: VoiceEntry[]; timeSignature: musicxml.TimeSignature }) {
+  private constructor(opts: { config: Config; entries: VoiceEntry[]; timeSignature: TimeSignature }) {
     this.config = opts.config;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
@@ -70,7 +71,7 @@ export class Voice {
     config: Config;
     data: VoiceEntryData[];
     quarterNoteDivisions: number;
-    timeSignature: musicxml.TimeSignature;
+    timeSignature: TimeSignature;
     clef: Clef;
   }): Voice {
     const config = opts.config;
@@ -101,7 +102,7 @@ export class Voice {
   }
 
   /** Creates a voice with a single whole note rest. */
-  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clef: Clef }): Voice {
+  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Voice {
     const wholeRest = Rest.whole({
       config: opts.config,
       clef: opts.clef,

@@ -10,6 +10,7 @@ import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
+import { TimeSignature } from './timesignature';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
@@ -85,7 +86,7 @@ export class MeasureFragment {
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
       const clef = leadingStaveSignature?.getClef(staveNumber) ?? Clef.treble();
-      const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? musicxml.TimeSignature.common();
+      const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? TimeSignature.common();
       const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? KeySignature.Cmajor();
       const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;
       const quarterNoteDivisions = leadingStaveSignature?.getQuarterNoteDivisions() ?? 2;

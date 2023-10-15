@@ -1,9 +1,9 @@
 import { Config } from './config';
-import { Text } from '../drawables/text';
+import * as drawables from '@/drawables';
 
 export type TitleRendering = {
   type: 'title';
-  text: Text;
+  text: drawables.Text;
   approximateHeight: number;
 };
 
@@ -52,7 +52,7 @@ export class Title {
     const size = this.config.TITLE_FONT_SIZE;
     const family = this.config.TITLE_FONT_FAMILY;
 
-    const text = new Text({ content, x, y, size, family });
+    const text = new drawables.Text({ content, x, y, size, family });
 
     return {
       type: 'title',
