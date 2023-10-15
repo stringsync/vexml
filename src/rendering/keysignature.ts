@@ -1,4 +1,9 @@
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
+import { AccidentalCode } from './accidental';
+
+const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
 
 /** Represents a key signature. */
 export class KeySignature {
@@ -21,6 +26,7 @@ export class KeySignature {
   }
 
   /** Returns the root of the key signature. */
+  @util.memoize()
   getKey(): string {
     // Clamp between -7 and 7 — the excess gets handled by alterations.
     let fifths = this.fifths;
@@ -41,8 +47,9 @@ export class KeySignature {
   }
 
   /** Returns the alterations of the  key signature. */
-  getAlterations(): string[] {
-    const alterations = new Array<string>();
+  @util.memoize()
+  getAlterations(): AccidentalCode[] {
+    const alterations = new Array<AccidentalCode>();
 
     if (Math.abs(this.fifths) > 7) {
       const additional = Math.abs(this.fifths) - 7;
@@ -50,7 +57,30 @@ export class KeySignature {
         alterations.push(this.fifths > 0 ? '##' : 'bb');
       }
     }
+
     return alterations;
+  }
+
+  /** Returns the accidental code being applied to the line that the pitch is on based on the key signature. */
+  getAccidentalCode(pitch: string): AccidentalCode {
+    // strip the accidental character (e.g., #, b) if any
+    const root = pitch.charAt(0);
+
+    if (this.fifths > 0) {
+      const sharpCount = Math.min(this.fifths, 7);
+      const sharps = CIRCLE_OF_FIFTHS_SHARP.slice(0, sharpCount);
+      const sharpIndex = sharps.findIndex((sharp) => sharp === root);
+      return sharpIndex < 0 ? 'n' : this.getAlterations()[sharpIndex] ?? '#';
+    }
+
+    if (this.fifths < 0) {
+      const flatCount = Math.min(Math.abs(this.fifths), 7);
+      const flats = CIRCLE_OF_FIFTHS_FLAT.slice(0, flatCount);
+      const flatIndex = flats.findIndex((flat) => flat === root);
+      return flatIndex < 0 ? 'n' : this.getAlterations()[flatIndex] ?? 'b';
+    }
+
+    return 'n';
   }
 
   /** Returns whether the key signatures are equal. */
