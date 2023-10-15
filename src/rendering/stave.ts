@@ -304,7 +304,13 @@ export class Stave {
       vfStave.addClef(this.clefType);
     }
     if (opts.modifiers.includes('keySignature')) {
-      vfStave.addKeySignature(this.keySignature.getKeySpec());
+      new vexflow.KeySignature(
+        this.keySignature.getKey(),
+        undefined, // cancelKeySpec
+        this.keySignature.getAlterations()
+      )
+        .setPosition(vexflow.StaveModifierPosition.BEGIN)
+        .addToStave(vfStave);
     }
     if (opts.modifiers.includes('timeSignature')) {
       for (const timeSpec of this.getTimeSpecs()) {
