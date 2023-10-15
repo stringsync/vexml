@@ -4,7 +4,7 @@ import * as util from '@/util';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
-import { NoteDurationDenominator, StemDirection } from './enums';
+import { ClefType, NoteDurationDenominator, StemDirection } from './enums';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
 
@@ -37,7 +37,7 @@ export class Note {
   private accidental: Accidental | null;
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
-  private clefType: musicxml.ClefType;
+  private clefType: ClefType;
   private beamValue: musicxml.BeamValue | null;
 
   private constructor(opts: {
@@ -48,7 +48,7 @@ export class Note {
     accidental: Accidental | null;
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
     beamValue: musicxml.BeamValue | null;
   }) {
     this.config = opts.config;
@@ -70,7 +70,7 @@ export class Note {
     };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
   }): Note {
     const note = opts.musicXml.note;
 

@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { StaveModifier } from './stave';
 import { KeySignature } from './keysignature';
+import { Clef } from './clef';
 
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
@@ -15,7 +16,7 @@ type StaveMap<T> = { [staveNumber: number | string]: T };
 export class StaveSignature {
   private measureIndex: number;
   private measureEntryIndex: number;
-  private clefTypes: StaveMap<musicxml.ClefType>;
+  private clefs: StaveMap<Clef>;
   private keySignatures: StaveMap<KeySignature>;
   private timeSignatures: StaveMap<musicxml.TimeSignature>;
   private multiRestCounts: StaveMap<number>;
@@ -27,7 +28,7 @@ export class StaveSignature {
   private constructor(opts: {
     measureIndex: number;
     measureEntryIndex: number;
-    clefTypes: StaveMap<musicxml.ClefType>;
+    clefs: StaveMap<Clef>;
     keySignatures: StaveMap<KeySignature>;
     timeSignatures: StaveMap<musicxml.TimeSignature>;
     multiRestCounts: StaveMap<number>;
@@ -38,7 +39,7 @@ export class StaveSignature {
   }) {
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
-    this.clefTypes = opts.clefTypes;
+    this.clefs = opts.clefs;
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
     this.multiRestCounts = opts.multiRestCounts;
@@ -59,17 +60,13 @@ export class StaveSignature {
   }): StaveSignature {
     const previousStaveSignature = opts.previousStaveSignature;
 
-    const clefTypes = {
-      ...previousStaveSignature?.clefTypes,
+    const clefs = {
+      ...previousStaveSignature?.clefs,
       ...opts.musicXml.attributes
         .getClefs()
-        .map((clef): [staveNumber: number, clefType: musicxml.ClefType | null] => [
-          clef.getStaveNumber(),
-          clef.getClefType(),
-        ])
-        .filter((clef): clef is [staveNumber: number, clefType: musicxml.ClefType] => !!clef[1])
-        .reduce<StaveMap<musicxml.ClefType>>((map, [staveNumber, clefType]) => {
-          map[staveNumber] = clefType;
+        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.fromMusicXml({ clef })])
+        .reduce<StaveMap<Clef>>((map, [staveNumber, clef]) => {
+          map[staveNumber] = clef;
           return map;
         }, {}),
     };
@@ -111,7 +108,7 @@ export class StaveSignature {
     return new StaveSignature({
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
-      clefTypes,
+      clefs,
       keySignatures,
       timeSignatures,
       multiRestCounts,
@@ -136,16 +133,16 @@ export class StaveSignature {
 
     const changed = new Set<StaveModifier>();
 
-    for (const [staveNumber, clefType] of Object.entries(this.clefTypes)) {
-      const previousClefType = this.previousStaveSignature.clefTypes[staveNumber];
-      if (previousClefType !== clefType) {
+    for (const [staveNumber, clef] of Object.entries(this.clefs)) {
+      const previousClef = this.previousStaveSignature.clefs[staveNumber];
+      if (!previousClef.isEqual(clef)) {
         changed.add('clefType');
       }
     }
 
     for (const [staveNumber, keySignature] of Object.entries(this.keySignatures)) {
       const previousKeySignature = this.previousStaveSignature.keySignatures[staveNumber];
-      if (previousKeySignature !== keySignature) {
+      if (!previousKeySignature.isEqual(keySignature)) {
         changed.add('keySignature');
       }
     }
@@ -171,8 +168,8 @@ export class StaveSignature {
   }
 
   /** Returns the clef corresponding to the stave number. */
-  getClefType(staveNumber: number): musicxml.ClefType | null {
-    return this.clefTypes[staveNumber] ?? null;
+  getClef(staveNumber: number): Clef | null {
+    return this.clefs[staveNumber] ?? null;
   }
 
   /** Returns the key signature corresponding to the stave number. */

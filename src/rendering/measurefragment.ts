@@ -85,7 +85,7 @@ export class MeasureFragment {
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const clefType = leadingStaveSignature?.getClefType(staveNumber) ?? 'treble';
+      const clefType = leadingStaveSignature?.getClef(staveNumber)?.getType() ?? 'treble';
       const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? musicxml.TimeSignature.common();
       const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? KeySignature.Cmajor();
       const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;

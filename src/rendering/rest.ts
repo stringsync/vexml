@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
-import { NoteDurationDenominator } from './enums';
+import { ClefType, NoteDurationDenominator } from './enums';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -26,14 +26,14 @@ export class Rest {
   private displayPitch: string | null;
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
-  private clefType: musicxml.ClefType;
+  private clefType: ClefType;
 
   private constructor(opts: {
     config: Config;
     displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
   }) {
     this.config = opts.config;
     this.displayPitch = opts.displayPitch;
@@ -49,7 +49,7 @@ export class Rest {
       note: musicxml.Note;
     };
     durationDenominator: NoteDurationDenominator;
-    clefType: musicxml.ClefType;
+    clefType: ClefType;
   }): Rest {
     const note = opts.musicXml.note;
 
@@ -63,7 +63,7 @@ export class Rest {
   }
 
   /** Creates a whole rest. */
-  static whole(opts: { config: Config; clefType: musicxml.ClefType }): Rest {
+  static whole(opts: { config: Config; clefType: ClefType }): Rest {
     return new Rest({
       config: opts.config,
       displayPitch: null,
