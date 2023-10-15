@@ -12,7 +12,6 @@ export * from './part';
 export * from './print';
 export * from './scorepartwise';
 export * from './time';
-export * from './timesignature';
 export * from './types';
 export * from './stavedetails';
 export * from './defaults';

@@ -1,4 +1,4 @@
-import { TimeSignature } from '@/musicxml/timesignature';
+import { TimeSignature } from '@/rendering/timesignature';
 import { Fraction } from '@/util';
 
 describe(TimeSignature, () => {
