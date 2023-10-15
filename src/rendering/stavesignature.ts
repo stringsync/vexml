@@ -4,6 +4,9 @@ import { StaveModifier } from './stave';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 
+/** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
+export type MeasureEntry = StaveSignature | Exclude<musicxml.Attributes, musicxml.MeasureEntry>;
+
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
 /**
