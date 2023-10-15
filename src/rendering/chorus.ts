@@ -7,6 +7,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { TimeSignature } from './timesignature';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -36,7 +37,7 @@ export class Chorus {
     config: Config;
     measureEntries: MeasureEntry[];
     clef: Clef;
-    timeSignature: musicxml.TimeSignature;
+    timeSignature: TimeSignature;
     quarterNoteDivisions: number;
   }): Chorus {
     const config = opts.config;
@@ -150,7 +151,7 @@ export class Chorus {
    * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
    * which is why it's being used.
    */
-  static wholeRest(opts: { config: Config; timeSignature: musicxml.TimeSignature; clef: Clef }): Chorus {
+  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
     const voice = Voice.wholeRest({
       config: opts.config,
       timeSignature: opts.timeSignature,

@@ -8,6 +8,7 @@ import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 import { MeasureEntry } from './stavesignature';
+import { TimeSignature } from './timesignature';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -45,7 +46,7 @@ export class Stave {
   private systemId: symbol;
   private staveNumber: number;
   private clef: Clef;
-  private timeSignature: musicxml.TimeSignature;
+  private timeSignature: TimeSignature;
   private keySignature: KeySignature;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
@@ -58,7 +59,7 @@ export class Stave {
     systemId: symbol;
     staveNumber: number;
     clef: Clef;
-    timeSignature: musicxml.TimeSignature;
+    timeSignature: TimeSignature;
     keySignature: KeySignature;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
@@ -85,7 +86,7 @@ export class Stave {
     systemId: symbol;
     staveNumber: number;
     clef: Clef;
-    timeSignature: musicxml.TimeSignature;
+    timeSignature: TimeSignature;
     keySignature: KeySignature;
     multiRestCount: number;
     measureEntries: MeasureEntry[];

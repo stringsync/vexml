@@ -1,10 +1,9 @@
 import { Fraction } from '@/util';
 import * as util from '@/util';
-import { TimeSymbol } from './enums';
 import * as musicxml from '@/musicxml';
 
 export class TimeSignature {
-  private constructor(private components: Fraction[], private symbol: TimeSymbol | null) {}
+  private constructor(private components: Fraction[], private symbol: musicxml.TimeSymbol | null) {}
 
   static from(musicXml: { time: musicxml.Time }): TimeSignature | null {
     const time = musicXml.time;
@@ -136,7 +135,7 @@ export class TimeSignature {
   }
 
   /** Returns the symbol of the time signature. */
-  getSymbol(): TimeSymbol | null {
+  getSymbol(): musicxml.TimeSymbol | null {
     return this.symbol;
   }
 

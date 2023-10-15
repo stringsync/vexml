@@ -3,6 +3,7 @@ import * as util from '@/util';
 import { StaveModifier } from './stave';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
+import { TimeSignature } from './timesignature';
 
 /** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
 export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, musicxml.Attributes>;
@@ -23,7 +24,7 @@ export class StaveSignature {
   private measureEntryIndex: number;
   private clefs: StaveMap<Clef>;
   private keySignatures: StaveMap<KeySignature>;
-  private timeSignatures: StaveMap<musicxml.TimeSignature>;
+  private timeSignatures: StaveMap<TimeSignature>;
   private multiRestCounts: StaveMap<number>;
   private quarterNoteDivisions: number;
   private staveCount: number;
@@ -36,7 +37,7 @@ export class StaveSignature {
     measureEntryIndex: number;
     clefs: StaveMap<Clef>;
     keySignatures: StaveMap<KeySignature>;
-    timeSignatures: StaveMap<musicxml.TimeSignature>;
+    timeSignatures: StaveMap<TimeSignature>;
     multiRestCounts: StaveMap<number>;
     quarterNoteDivisions: number;
     staveCount: number;
@@ -128,12 +129,12 @@ export class StaveSignature {
       ...previousStaveSignature?.timeSignatures,
       ...opts.musicXml.attributes
         .getTimes()
-        .map((time): [staveNumber: number, timeSignature: musicxml.TimeSignature | null] => [
+        .map((time): [staveNumber: number, timeSignature: TimeSignature | null] => [
           time.getStaveNumber(),
-          time.getTimeSignature(),
+          TimeSignature.from({ time }),
         ])
-        .filter((time): time is [staveNumber: number, timeSignature: musicxml.TimeSignature] => !!time[1])
-        .reduce<StaveMap<musicxml.TimeSignature>>((map, [staveNumber, timeSignature]) => {
+        .filter((time): time is [staveNumber: number, timeSignature: TimeSignature] => !!time[1])
+        .reduce<StaveMap<TimeSignature>>((map, [staveNumber, timeSignature]) => {
           map[staveNumber] = timeSignature;
           return map;
         }, {}),
@@ -244,7 +245,7 @@ export class StaveSignature {
   }
 
   /** Returns the time signature corresponding to the stave number. */
-  getTimeSignature(staveNumber: number): musicxml.TimeSignature | null {
+  getTimeSignature(staveNumber: number): TimeSignature | null {
     return this.timeSignatures[staveNumber] ?? null;
   }
 
