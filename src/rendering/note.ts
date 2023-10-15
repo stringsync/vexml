@@ -4,7 +4,7 @@ import * as util from '@/util';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
-import { ClefType, NoteDurationDenominator, StemDirection } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering;
@@ -93,7 +93,7 @@ export class Note {
     const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
 
-    let key = note.getPitch();
+    let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
     const suffix = note.getNoteheadSuffix();
     if (suffix) {
       key += `/${suffix}`;

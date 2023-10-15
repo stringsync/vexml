@@ -150,42 +150,63 @@ describe(Note, () => {
     });
   });
 
-  describe('getPitch', () => {
-    it('returns the pitch of the note', () => {
-      const node = xml.note({
-        pitch: xml.pitch({
-          step: xml.step({ value: 'D' }),
-          octave: xml.octave({ value: '12' }),
-        }),
-      });
-      const note = new Note(node);
-      expect(note.getPitch()).toBe('D/12');
-    });
-
-    it(`defaults to step 'C' when missing step`, () => {
-      const node = xml.note({
-        pitch: xml.pitch({
-          octave: xml.octave({ value: '12' }),
-        }),
-      });
-      const note = new Note(node);
-      expect(note.getPitch()).toBe('C/12');
-    });
-
-    it(`defaults to octave '4' when missing octave`, () => {
+  describe('getStep', () => {
+    it('returns the step of the note', () => {
       const node = xml.note({
         pitch: xml.pitch({
           step: xml.step({ value: 'D' }),
         }),
       });
       const note = new Note(node);
-      expect(note.getPitch()).toBe('D/4');
+      expect(note.getStep()).toBe('D');
     });
 
-    it(`defaults to 'C/4' when missing step and octave`, () => {
-      const node = xml.note();
+    it(`defaults to 'C' when missing`, () => {
+      const node = xml.note({
+        pitch: xml.pitch(),
+      });
       const note = new Note(node);
-      expect(note.getPitch()).toBe('C/4');
+      expect(note.getStep()).toBe('C');
+    });
+
+    it(`defaults to 'C' when invalid`, () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          step: xml.step({ value: 'P' }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getStep()).toBe('C');
+    });
+  });
+
+  describe('getOctave', () => {
+    it('returns the octave of the note', () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          octave: xml.octave({ value: 7 }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getOctave()).toBe(7);
+    });
+
+    it('defaults to 4 when missing', () => {
+      const node = xml.note({
+        pitch: xml.pitch(),
+      });
+      const note = new Note(node);
+      expect(note.getOctave()).toBe(4);
+    });
+
+    it('defaults to 4 when invalid', () => {
+      const node = xml.note({
+        pitch: xml.pitch({
+          octave: xml.octave({ value: 3.14 }),
+        }),
+      });
+      const note = new Note(node);
+      expect(note.getOctave()).toBe(4);
     });
   });
 
@@ -231,7 +252,7 @@ describe(Note, () => {
       const node = xml.note({
         pitch: xml.pitch({
           step: xml.step({ value: 'C' }),
-          octave: xml.octave({ value: '4' }),
+          octave: xml.octave({ value: 4 }),
         }),
         rest: xml.rest({
           displayStep: xml.displayStep({ step: 'D' }),
