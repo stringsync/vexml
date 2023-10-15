@@ -1,11 +1,10 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
-import { Text } from './text';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
-import { StaveSignature } from './stavesignature';
-import { StaveSignatureRegistry } from './stavesignatureregistry';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -18,7 +17,7 @@ export type MeasureRendering = {
     staveConnectors: vexflow.StaveConnector[];
   };
   index: number;
-  label: Text;
+  label: drawables.Text;
   fragments: MeasureFragmentRendering[];
   width: number;
 };
@@ -54,7 +53,7 @@ export class Measure {
     isLastPartMeasure: boolean;
     previousMeasure: Measure | null;
     leadingStaveSignature: StaveSignature | null;
-    staveSignatureRegistry: StaveSignatureRegistry;
+    measureEntries: MeasureEntry[];
     staveLayouts: musicxml.StaveLayout[];
   }): Measure {
     const xmlMeasure = opts.musicXml.measure;
@@ -77,15 +76,13 @@ export class Measure {
     const fragments = new Array<MeasureFragment>();
 
     const measureIndex = opts.index;
-    const measureEntries = xmlMeasure.getEntries();
-    const staveSignatureRegistry = opts.staveSignatureRegistry;
 
     let staveSignature = opts.leadingStaveSignature;
-    let currentMeasureEntries = new Array<musicxml.MeasureEntry>();
+    let currentMeasureEntries = new Array<MeasureEntry>();
 
     function addFragment(
       leadingStaveSignature: StaveSignature | null,
-      measureEntries: musicxml.MeasureEntry[],
+      measureEntries: MeasureEntry[],
       beginningBarStyle: musicxml.BarStyle,
       endBarStyle: musicxml.BarStyle
     ) {
@@ -95,23 +92,21 @@ export class Measure {
         measureFragmentIndex: fragments.length,
         systemId: opts.systemId,
         leadingStaveSignature,
-        musicXml: { measureEntries },
         beginningBarStyle: beginningBarStyle,
         endBarStyle: endBarStyle,
         staveCount: opts.staveCount,
         staveLayouts: opts.staveLayouts,
+        measureEntries,
       });
       fragments.push(fragment);
     }
 
-    for (let measureEntryIndex = 0; measureEntryIndex < measureEntries.length; measureEntryIndex++) {
-      const measureEntry = measureEntries[measureEntryIndex];
-      const isLastMeasureEntry = measureEntryIndex === measureEntries.length - 1;
+    for (let measureEntryIndex = 0; measureEntryIndex < opts.measureEntries.length; measureEntryIndex++) {
+      const measureEntry = opts.measureEntries[measureEntryIndex];
+      const isLastMeasureEntry = measureEntryIndex === opts.measureEntries.length - 1;
 
-      if (measureEntry instanceof musicxml.Attributes) {
-        // This should not be null assuming that the [measureIndex, measureEntryIndex] valid.
-        staveSignature = staveSignatureRegistry.getStaveSignature(measureIndex, measureEntryIndex);
-        util.assertNotNull(staveSignature);
+      if (measureEntry instanceof StaveSignature) {
+        staveSignature = measureEntry;
 
         const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().length > 0;
         if (didStaveModifiersChange) {
@@ -129,10 +124,13 @@ export class Measure {
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        const nextStaveSignature = staveSignatureRegistry.getStaveSignature(measureIndex + 1, 0);
-        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clef');
+        const nextStaveSignature = staveSignature?.getNext();
+        const hasClefChangeAtMeasureBoundary =
+          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
+          nextStaveSignature?.getMeasureIndex() === measureIndex + 1 &&
+          nextStaveSignature?.getMeasureEntryIndex() === 0;
 
-        if (nextStaveSignature && willClefTypeChange) {
+        if (hasClefChangeAtMeasureBoundary) {
           // prettier-ignore
           addFragment(
             staveSignature,
@@ -140,10 +138,11 @@ export class Measure {
             fragments.length === 0 ? beginningBarStyle : 'none', 
             'none',
           );
+
           // prettier-ignore
           addFragment(
             nextStaveSignature,
-            [nextStaveSignature.getAttributes()],
+            [nextStaveSignature],
             'none',
             endBarStyle
           );
@@ -253,7 +252,7 @@ export class Measure {
       );
     }
 
-    const label = new Text({
+    const label = new drawables.Text({
       content: this.label,
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,

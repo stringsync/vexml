@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { Text } from './text';
+import { Text } from '../drawables/text';
 
 export type TitleRendering = {
   type: 'title';
