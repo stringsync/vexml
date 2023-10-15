@@ -67,6 +67,7 @@ export class Measure {
       musicXml: {
         measure: opts.musicXml.measure,
       },
+      previousMeasure: opts.previousMeasure,
       leadingStaveSignature: opts.leadingStaveSignature,
       measureEntries: opts.measureEntries,
       staveCount: opts.staveCount,
@@ -88,6 +89,7 @@ export class Measure {
     musicXml: {
       measure: musicxml.Measure;
     };
+    previousMeasure: Measure | null;
     leadingStaveSignature: StaveSignature | null;
     staveCount: number;
     staveLayouts: musicxml.StaveLayout[];
@@ -112,6 +114,7 @@ export class Measure {
 
     let staveSignature = opts.leadingStaveSignature;
     let currentMeasureEntries = new Array<MeasureEntry>();
+    let previousMeasureFragment = util.last(opts.previousMeasure?.fragments ?? []);
 
     function addFragment(
       leadingStaveSignature: StaveSignature | null,
@@ -130,8 +133,10 @@ export class Measure {
         staveCount: opts.staveCount,
         staveLayouts: opts.staveLayouts,
         measureEntries,
+        previousMeasureFragment,
       });
       fragments.push(fragment);
+      previousMeasureFragment = fragment;
     }
 
     for (let measureEntryIndex = 0; measureEntryIndex < opts.measureEntries.length; measureEntryIndex++) {

@@ -7,7 +7,7 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Tablature, TablatureRendering } from './tablature';
 import { KeySignature } from './keysignature';
 import { Clef } from './clef';
-import { MeasureEntry } from './stavesignature';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 
 /** A possible component of a Stave. */
@@ -51,6 +51,7 @@ export class Stave {
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
+  private previousKeySignature: KeySignature | null;
 
   private constructor(opts: {
     config: Config;
@@ -64,6 +65,7 @@ export class Stave {
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
+    previousKeySignature: KeySignature | null;
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
@@ -76,6 +78,7 @@ export class Stave {
     this.endBarStyle = opts.endBarStyle;
     this.clef = opts.clef;
     this.entry = opts.entry;
+    this.previousKeySignature = opts.previousKeySignature;
   }
 
   /** Creates a Stave. */
@@ -85,14 +88,11 @@ export class Stave {
     measureFragmentIndex: number;
     systemId: symbol;
     staveNumber: number;
-    clef: Clef;
-    timeSignature: TimeSignature;
-    keySignature: KeySignature;
-    multiRestCount: number;
     measureEntries: MeasureEntry[];
-    quarterNoteDivisions: number;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
+    staveSignature: StaveSignature | null;
+    previousStave: Stave | null;
   }): Stave {
     const config = opts.config;
     const measureIndex = opts.measureIndex;
@@ -100,13 +100,15 @@ export class Stave {
     const systemId = opts.systemId;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
-    const multiRestCount = opts.multiRestCount;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
     const beginningBarStyle = opts.beginningBarStyle;
     const endBarStyle = opts.endBarStyle;
-    const clef = opts.clef;
-    const keySignature = opts.keySignature;
-    const timeSignature = opts.timeSignature;
+
+    const multiRestCount = opts.staveSignature?.getMultiRestCount(staveNumber) ?? 0;
+    const quarterNoteDivisions = opts.staveSignature?.getQuarterNoteDivisions() ?? 2;
+    const clef = opts.staveSignature?.getClef(staveNumber) ?? Clef.treble();
+    const keySignature = opts.staveSignature?.getKeySignature(staveNumber) ?? KeySignature.Cmajor();
+    const timeSignature = opts.staveSignature?.getTimeSignature(staveNumber) ?? TimeSignature.common();
+    const previousKeySignature = opts.previousStave?.keySignature ?? null;
 
     let entry: StaveEntry;
 
@@ -139,6 +141,7 @@ export class Stave {
       beginningBarStyle,
       endBarStyle,
       entry,
+      previousKeySignature,
     });
   }
 
@@ -190,11 +193,12 @@ export class Stave {
       systemId,
       staveNumber: this.staveNumber,
       clef: this.clef,
-      timeSignature: this.timeSignature.clone(),
+      timeSignature: this.timeSignature,
       keySignature: this.keySignature,
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
       entry: this.entry.clone(),
+      previousKeySignature: this.keySignature,
     });
   }
 

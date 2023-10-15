@@ -221,7 +221,7 @@ export class Voice {
         // If this error is thrown, this is a problem with vexml, not the musicXML document.
         throw new Error(`unexpected voice entry: ${entry}`);
       }),
-      timeSignature: this.timeSignature.clone(),
+      timeSignature: this.timeSignature,
     });
   }
 

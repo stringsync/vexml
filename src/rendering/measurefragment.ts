@@ -8,9 +8,6 @@ import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { KeySignature } from './keysignature';
-import { Clef } from './clef';
-import { TimeSignature } from './timesignature';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
@@ -71,6 +68,7 @@ export class MeasureFragment {
     endBarStyle: musicxml.BarStyle;
     staveCount: number;
     staveLayouts: musicxml.StaveLayout[];
+    previousMeasureFragment: MeasureFragment | null;
   }): MeasureFragment {
     const config = opts.config;
     const measureIndex = opts.measureIndex;
@@ -85,22 +83,17 @@ export class MeasureFragment {
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const clef = leadingStaveSignature?.getClef(staveNumber) ?? Clef.treble();
-      const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? TimeSignature.common();
-      const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? KeySignature.Cmajor();
-      const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;
-      const quarterNoteDivisions = leadingStaveSignature?.getQuarterNoteDivisions() ?? 2;
+      const staveIndex = staveNumber - 1;
 
-      staves[staveNumber - 1] = Stave.create({
+      const previousStave = opts.previousMeasureFragment?.staves[staveIndex] ?? null;
+
+      staves[staveIndex] = Stave.create({
         config,
         measureIndex,
         measureFragmentIndex,
         systemId,
-        clef,
-        timeSignature,
-        keySignature,
-        multiRestCount,
-        quarterNoteDivisions,
+        staveSignature: leadingStaveSignature,
+        previousStave,
         staveNumber,
         beginningBarStyle,
         endBarStyle,
