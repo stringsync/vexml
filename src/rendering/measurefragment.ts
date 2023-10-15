@@ -9,6 +9,7 @@ import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { StaveSignature } from './stavesignature';
 import { KeySignature } from './keysignature';
+import { Clef } from './clef';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
@@ -85,7 +86,7 @@ export class MeasureFragment {
 
     const staves = new Array<Stave>(staveCount);
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const clefType = leadingStaveSignature?.getClefType(staveNumber) ?? 'treble';
+      const clef = leadingStaveSignature?.getClef(staveNumber) ?? Clef.treble();
       const timeSignature = leadingStaveSignature?.getTimeSignature(staveNumber) ?? musicxml.TimeSignature.common();
       const keySignature = leadingStaveSignature?.getKeySignature(staveNumber) ?? KeySignature.Cmajor();
       const multiRestCount = leadingStaveSignature?.getMultiRestCount(staveNumber) ?? 0;
@@ -96,7 +97,7 @@ export class MeasureFragment {
         measureIndex,
         measureFragmentIndex,
         systemId,
-        clefType,
+        clef,
         timeSignature,
         keySignature,
         multiRestCount,
@@ -242,11 +243,11 @@ export class MeasureFragment {
   /** Returns what modifiers changed _in any stave_. */
   private getChangedStaveModifiers(previousMeasureFragment: MeasureFragment | null): StaveModifier[] {
     if (!previousMeasureFragment) {
-      return ['clefType', 'keySignature', 'timeSignature'];
+      return ['clef', 'keySignature', 'timeSignature'];
     }
 
     if (this.systemId !== previousMeasureFragment.systemId) {
-      return ['clefType', 'keySignature', 'timeSignature'];
+      return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const staveModifiersChanges = new Set<StaveModifier>();

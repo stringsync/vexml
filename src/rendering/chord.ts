@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import { Config } from './config';
 import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
+import { Clef } from './clef';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -37,10 +38,10 @@ export class Chord {
     };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
-    clefType: musicxml.ClefType;
+    clef: Clef;
   }): Chord {
     const config = opts.config;
-    const clefType = opts.clefType;
+    const clef = opts.clef;
     const durationDenominator = opts.durationDenominator;
 
     const head = opts.musicXml.note;
@@ -50,7 +51,7 @@ export class Chord {
         config,
         musicXml: { note },
         stem: opts.stem,
-        clefType,
+        clef,
         durationDenominator,
       })
     );
