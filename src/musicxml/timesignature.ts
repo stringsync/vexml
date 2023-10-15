@@ -1,9 +1,53 @@
 import { Fraction } from '@/util';
 import * as util from '@/util';
 import { TimeSymbol } from './enums';
+import * as musicxml from '@/musicxml';
 
 export class TimeSignature {
   private constructor(private components: Fraction[], private symbol: TimeSymbol | null) {}
+
+  static from(musicXml: { time: musicxml.Time }): TimeSignature | null {
+    const time = musicXml.time;
+    if (time.isHidden()) {
+      return TimeSignature.hidden();
+    }
+
+    // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
+    // specifications.
+    const symbol = time.getSymbol();
+    switch (symbol) {
+      case 'common':
+        return TimeSignature.common();
+      case 'cut':
+        return TimeSignature.cut();
+      case 'hidden':
+        return TimeSignature.hidden();
+    }
+
+    const beats = time.getBeats();
+    const beatTypes = time.getBeatTypes();
+
+    const timeSignatures = new Array<TimeSignature>();
+
+    const len = Math.min(beats.length, beatTypes.length);
+    for (let index = 0; index < len; index++) {
+      const beatsPerMeasure = beats[index];
+      const beatValue = beatTypes[index];
+      const timeSignature = TimeSignature.parse(beatsPerMeasure, beatValue);
+      timeSignatures.push(timeSignature);
+    }
+
+    if (timeSignatures.length === 0) {
+      return null;
+    }
+    if (symbol === 'single-number') {
+      return TimeSignature.singleNumber(TimeSignature.combine(timeSignatures));
+    }
+    if (timeSignatures.length === 1) {
+      return timeSignatures[0];
+    }
+    return TimeSignature.combine(timeSignatures);
+  }
 
   /** Returns a normal TimeSignature, composed of two numbers. */
   static of(beatsPerMeasure: number, beatValue: number): TimeSignature {
@@ -52,6 +96,18 @@ export class TimeSignature {
   static hidden(): TimeSignature {
     const components = [new Fraction(4, 4)];
     return new TimeSignature(components, 'hidden');
+  }
+
+  private static parse(beatsPerMeasure: string, beatValue: string): TimeSignature {
+    const denominator = parseInt(beatValue.trim(), 10);
+    const numerators = beatsPerMeasure.split('+').map((b) => parseInt(b.trim(), 10));
+
+    if (numerators.length > 1) {
+      const fractions = numerators.map((numerator) => new Fraction(numerator, denominator));
+      return TimeSignature.complex(fractions);
+    }
+
+    return TimeSignature.of(numerators[0], denominator);
   }
 
   /** Returns whether the time signatures are equal. */
