@@ -35,3 +35,7 @@ class Foo {
 ```
 
 This method should be purely side effects. I strongly discourage returning anything from `draw()`, since it may cause an unwanted dependency.
+
+### Testing
+
+Similar to the `rendering` library, prefer to cover these in snapshot integration tests.
