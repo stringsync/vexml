@@ -50,7 +50,7 @@ describe('lilypond', () => {
     { filename: '12a-Clefs.xml', width: 900 },
     { filename: '12b-Clefs-NoKeyOrClef.xml', width: 900 },
     { filename: '13a-KeySignatures.xml', width: 900 },
-    // { filename: '13b-KeySignatures-ChurchModes.xml', width: 900 },
+    { filename: '13b-KeySignatures-ChurchModes.xml', width: 900 },
     // { filename: '13c-KeySignatures-NonTraditional.xml', width: 900 },
     // { filename: '13d-KeySignatures-Microtones.xml', width: 900 },
     // { filename: '14a-StaffDetails-LineChanges.xml', width: 900 },
