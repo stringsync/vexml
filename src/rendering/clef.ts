@@ -13,6 +13,7 @@ export class Clef {
     this.octaveChange = octaveChange;
   }
 
+  /** Creates a clef from a MusicXML element. */
   static fromMusicXml(musicXml: { clef: musicxml.Clef }) {
     const clef = musicXml.clef;
 
@@ -23,10 +24,12 @@ export class Clef {
     return new Clef(sign, line, octaveChange);
   }
 
+  /** Returns whether or not the clef is equal with the other. */
   isEqual(other: Clef): boolean {
     return this.sign === other.sign && this.line === other.line && this.octaveChange === other.octaveChange;
   }
 
+  /** Returns the type of clef. */
   getType(): ClefType | null {
     const sign = this.sign;
     const line = this.line;
