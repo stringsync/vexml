@@ -129,10 +129,13 @@ export class Measure {
       currentMeasureEntries.push(measureEntry);
 
       if (isLastMeasureEntry) {
-        const nextStaveSignature = staveSignatureRegistry.get(measureIndex + 1, 0);
-        const willClefTypeChange = nextStaveSignature?.getChangedStaveModifiers().includes('clef');
+        const nextStaveSignature = staveSignature?.getNext();
+        const hasClefChangeAtMeasureBoundary =
+          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
+          nextStaveSignature?.getMeasureIndex() === measureIndex + 1 &&
+          nextStaveSignature?.getMeasureEntryIndex() === 0;
 
-        if (nextStaveSignature && willClefTypeChange) {
+        if (hasClefChangeAtMeasureBoundary) {
           // prettier-ignore
           addFragment(
             staveSignature,
@@ -140,6 +143,7 @@ export class Measure {
             fragments.length === 0 ? beginningBarStyle : 'none', 
             'none',
           );
+
           // prettier-ignore
           addFragment(
             nextStaveSignature,
