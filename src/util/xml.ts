@@ -749,6 +749,7 @@ export const mode = createNamedElementFactory<'mode', { value: string }>('mode',
 export const time = createNamedElementFactory<
   'time',
   {
+    staveNumber: number;
     symbol: string;
     senzaMisura: NamedElement<'senza-misura'>;
     times: Array<{
@@ -756,7 +757,10 @@ export const time = createNamedElementFactory<
       beatType?: NamedElement<'beat-type'>;
     }>;
   }
->('time', (e, { symbol, times, senzaMisura }) => {
+>('time', (e, { staveNumber, symbol, times, senzaMisura }) => {
+  if (typeof staveNumber === 'number') {
+    e.setAttribute('number', staveNumber.toString());
+  }
   if (symbol) {
     e.setAttribute('symbol', symbol);
   }
