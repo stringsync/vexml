@@ -204,7 +204,7 @@ export class Stave {
     if (!this.clef.isEqual(stave.clef)) {
       result.push('clef');
     }
-    if (this.keySignature !== stave.keySignature) {
+    if (!this.keySignature.isEqual(stave.keySignature)) {
       result.push('keySignature');
     }
     if (!this.timeSignature.isEqual(stave.timeSignature)) {
