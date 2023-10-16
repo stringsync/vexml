@@ -11,9 +11,9 @@ export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, music
 type StaveMap<T> = { [staveNumber: number | string]: T };
 
 /**
- * A utility class to account for <attributes> changes.
+ * A utility class to account for `<attributes>` changes.
  *
- * It establishes a doubly-linked list connection with neighboring <attributes>.
+ * It establishes a doubly-linked list connection with neighboring `<attributes>`.
  *
  * The name "attributes" isn't used because it has two main problems:
  *  - It's ambiguous. What "attributes" are we talking about?
@@ -66,17 +66,17 @@ export class StaveSignature {
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
+      result.push(new Array<MeasureEntry>());
+
       const entries = measure.getEntries();
       for (let measureEntryIndex = 0; measureEntryIndex < entries.length; measureEntryIndex++) {
         const entry = entries[measureEntryIndex];
-
-        result.push(new Array<MeasureEntry>());
 
         if (entry instanceof musicxml.Attributes) {
           const staveSignature = StaveSignature.merge({
             measureIndex,
             measureEntryIndex,
-            previousStaveSignature: previousStaveSignature,
+            previousStaveSignature,
             musicXml: { attributes: entry },
           });
           result[measureIndex].push(staveSignature);

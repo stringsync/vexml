@@ -82,17 +82,7 @@ export class KeySignature {
 
   /** Returns whether the key signatures are equal. */
   isEqual(other: KeySignature): boolean {
-    if (this.fifths !== other.fifths) {
-      return false;
-    }
-
-    // See the implementation of KeySignature.getKey — we only fork for minor.
-    if ((this.mode === 'minor' || other.mode === 'minor') && this.mode !== other.mode) {
-      return false;
-    }
-
-    // Otherwise, all other modes are treated as major.
-    return true;
+    return this.fifths === other.fifths && this.mode === other.mode;
   }
 
   private toMajorKey(fifths: number): string {
