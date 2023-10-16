@@ -144,10 +144,8 @@ export class Measure {
       const isLastMeasureEntry = measureEntryIndex === opts.measureEntries.length - 1;
 
       if (measureEntry instanceof StaveSignature) {
-        staveSignature = measureEntry;
-
-        const didStaveModifiersChange = staveSignature.getChangedStaveModifiers().length > 0;
-        if (didStaveModifiersChange) {
+        const didStaveModifiersChange = measureEntry.getChangedStaveModifiers().length > 0;
+        if (didStaveModifiersChange && currentMeasureEntries.length > 0) {
           // prettier-ignore
           addFragment(
             staveSignature,
@@ -157,6 +155,8 @@ export class Measure {
           );
           currentMeasureEntries = [];
         }
+
+        staveSignature = measureEntry;
       }
 
       currentMeasureEntries.push(measureEntry);
