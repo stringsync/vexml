@@ -77,7 +77,7 @@ describe('lilypond', () => {
     // { filename: '24e-GraceNote-StaffChange.xml', width: 900 },
     // { filename: '24f-GraceNote-Slur.xml', width: 900 },
     // { filename: '31a-Directions.xml', width: 900 },
-    // { filename: '31c-MetronomeMarks.xml', width: 900 },
+    { filename: '31c-MetronomeMarks.xml', width: 900 },
     // { filename: '32a-Notations.xml', width: 900 },
     // { filename: '32b-Articulations-Texts.xml', width: 900 },
     // { filename: '32c-MultipleNotationChildren.xml', width: 900 },
