@@ -19,3 +19,6 @@ export * from './lyric';
 export * from './measurestyle';
 export * from './backup';
 export * from './forward';
+export * from './metronome';
+export * from './directiontype';
+export * from './direction';
