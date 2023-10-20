@@ -157,6 +157,14 @@ export class Measure {
         }
 
         staveSignature = measureEntry;
+      } else if (measureEntry instanceof musicxml.Direction && currentMeasureEntries.length > 0) {
+        // prettier-ignore
+        addFragment(
+          staveSignature,
+          currentMeasureEntries,
+          fragments.length === 0 ? beginningBarStyle : 'none',
+          'none'
+        )
       }
 
       currentMeasureEntries.push(measureEntry);
