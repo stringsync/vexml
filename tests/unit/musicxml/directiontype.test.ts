@@ -1,11 +1,35 @@
-import { DirectionType } from '@/musicxml';
+import { DirectionType, Metronome } from '@/musicxml';
+import { xml } from '@/util';
 
 describe(DirectionType, () => {
   describe('getContent', () => {
-    it.todo('returns the metronome when supplied');
+    it('returns the metronome when supplied', () => {
+      const metronome = xml.metronome();
+      const node = xml.directionType({ metronome });
 
-    it.todo('returns an empty content when none is provided');
+      const directionType = new DirectionType(node);
 
-    it.todo('returns an unsupported content when the content is not supported');
+      expect(directionType.getContent()).toStrictEqual({
+        type: 'metronome',
+        metronome: new Metronome(metronome),
+      });
+    });
+
+    it('returns an empty content when it does not have any children', () => {
+      const node = xml.directionType();
+      const directionType = new DirectionType(node);
+      expect(directionType.getContent()).toStrictEqual({ type: 'empty' });
+    });
+
+    it('returns an unsupported content when the content is not supported', () => {
+      const node = xml.directionType({
+        codas: [xml.coda()],
+      });
+      const directionType = new DirectionType(node);
+      expect(directionType.getContent()).toStrictEqual({
+        type: 'unsupported',
+        tagNames: ['coda'],
+      });
+    });
   });
 });
