@@ -491,15 +491,66 @@ export const topSystemDistance = createNamedElementFactory<
 export const direction = createNamedElementFactory<
   'direction',
   {
+    types: NamedElement<'direction-type'>[];
+  }
+>('direction', (e, { types }) => {
+  if (types) {
+    e.append(...types);
+  }
+});
+
+export const directionType = createNamedElementFactory<
+  'direction-type',
+  {
     codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
+    metronome: NamedElement<'metronome'>;
   }
->('direction', (e, { codas, segnos }) => {
+>('direction-type', (e, { codas, segnos, metronome }) => {
   if (codas) {
     e.append(...codas);
   }
   if (segnos) {
     e.append(...segnos);
+  }
+  if (metronome) {
+    e.append(metronome);
+  }
+});
+
+export const metronome = createNamedElementFactory<
+  'metronome',
+  {
+    beatUnit: NamedElement<'beat-unit'>;
+    beatUnitDot: NamedElement<'beat-unit-dot'>;
+    perMinute: NamedElement<'per-minute'>;
+  }
+>('metronome', (e, { beatUnit, beatUnitDot, perMinute }) => {
+  if (beatUnit) {
+    e.append(beatUnit);
+  }
+  if (beatUnitDot) {
+    e.append(beatUnitDot);
+  }
+  if (perMinute) {
+    e.append(perMinute);
+  }
+});
+
+export const beatUnit = createNamedElementFactory<'beat-unit', { noteTypeValue: string }>(
+  'beat-unit',
+  (e, { noteTypeValue }) => {
+    if (noteTypeValue) {
+      e.setTextContent(noteTypeValue);
+    }
+  }
+);
+
+export const beatUnitDot = createNamedElementFactory<'beat-unit-dot', Record<string, never>>('beat-unit-dot', () => {});
+
+export const perMinute = createNamedElementFactory<'per-minute', { value: string }>('per-minute', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
   }
 });
 
