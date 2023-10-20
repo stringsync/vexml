@@ -1,21 +1,25 @@
 import { NamedElement } from '../util';
 import { Metronome } from './metronome';
 
-/**
- * Non-exhaustive _supported_ options that the `<direction-type>` can contain.
- */
+export type EmptyDirectionTypeContent = {
+  type: 'empty';
+};
+
+export type UnsupportedDirectionTypeContent = {
+  type: 'unsupported';
+  tagNames: string[];
+};
+
+export type MetronomeDirectionTypeContent = {
+  type: 'metronome';
+  metronome: Metronome;
+};
+
+/** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
-  | {
-      type: 'empty';
-    }
-  | {
-      type: 'unsupported';
-      tagNames: string[];
-    }
-  | {
-      type: 'metronome';
-      metronome: Metronome;
-    };
+  | EmptyDirectionTypeContent
+  | UnsupportedDirectionTypeContent
+  | MetronomeDirectionTypeContent;
 
 /**
  * Represents the type of direction.

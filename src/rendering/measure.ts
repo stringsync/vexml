@@ -157,7 +157,11 @@ export class Measure {
         }
 
         staveSignature = measureEntry;
-      } else if (measureEntry instanceof musicxml.Direction && currentMeasureEntries.length > 0) {
+      } else if (
+        measureEntry instanceof musicxml.Direction &&
+        util.first(measureEntry.getTypes())?.getContent().type === 'metronome' &&
+        currentMeasureEntries.length > 0
+      ) {
         // prettier-ignore
         addFragment(
           staveSignature,
