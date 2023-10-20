@@ -6,6 +6,7 @@ import { Print } from '@/musicxml/print';
 import { xml } from '@/util';
 import { Backup } from '@/musicxml/backup';
 import { Forward } from '@/musicxml/forward';
+import { Direction } from '@/musicxml/direction';
 
 describe(Measure, () => {
   describe('isImplicit', () => {
@@ -127,8 +128,11 @@ describe(Measure, () => {
       const note2 = xml.note();
       const forward = xml.forward({ duration: xml.duration({ positiveDivisions: 8 }) });
       const note3 = xml.note();
+      const direction = xml.direction();
 
-      const node = xml.measure({ entries: [attributes1, note1, backup, attributes2, note2, forward, note3] });
+      const node = xml.measure({
+        entries: [attributes1, note1, backup, attributes2, note2, forward, note3, direction],
+      });
       const measure = new Measure(node);
 
       expect(measure.getEntries()).toStrictEqual([
@@ -139,6 +143,7 @@ describe(Measure, () => {
         new Note(note2),
         new Forward(forward),
         new Note(note3),
+        new Direction(direction),
       ]);
     });
 

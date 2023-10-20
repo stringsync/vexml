@@ -146,7 +146,11 @@ export const measure = createNamedElementFactory<
     number: string;
     implicit: string;
     entries: Array<
-      NamedElement<'attributes'> | NamedElement<'note'> | NamedElement<'backup'> | NamedElement<'forward'>
+      | NamedElement<'attributes'>
+      | NamedElement<'note'>
+      | NamedElement<'backup'>
+      | NamedElement<'forward'>
+      | NamedElement<'direction'>
     >;
     notes: NamedElement<'note'>[];
     attributes: NamedElement<'attributes'>[];
