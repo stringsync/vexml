@@ -52,6 +52,7 @@ export class Stave {
   private endBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
   private previousKeySignature: KeySignature | null;
+  private metronome: musicxml.Metronome | null;
 
   private constructor(opts: {
     config: Config;
@@ -66,6 +67,7 @@ export class Stave {
     endBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
     previousKeySignature: KeySignature | null;
+    metronome: musicxml.Metronome | null;
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
@@ -79,6 +81,7 @@ export class Stave {
     this.clef = opts.clef;
     this.entry = opts.entry;
     this.previousKeySignature = opts.previousKeySignature;
+    this.metronome = opts.metronome;
   }
 
   /** Creates a Stave. */
@@ -130,6 +133,15 @@ export class Stave {
       });
     }
 
+    const metronome = util.first(
+      measureEntries
+        .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
+        .flatMap((direction) => direction.getTypes())
+        .map((directionType) => directionType.getContent())
+        .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
+        .map((content) => content.metronome)
+    );
+
     return new Stave({
       config,
       measureIndex,
@@ -143,6 +155,7 @@ export class Stave {
       endBarStyle,
       entry,
       previousKeySignature,
+      metronome,
     });
   }
 
@@ -200,6 +213,7 @@ export class Stave {
       endBarStyle: this.endBarStyle,
       entry: this.entry.clone(),
       previousKeySignature: this.previousKeySignature,
+      metronome: this.metronome,
     });
   }
 
