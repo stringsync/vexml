@@ -14,7 +14,7 @@ export class Direction {
    *
    * There should be at least one, but will defaults to an empty array.
    */
-  getType(): DirectionType[] {
+  getTypes(): DirectionType[] {
     return this.element.all('direction-type').map((node) => new DirectionType(node));
   }
 }
