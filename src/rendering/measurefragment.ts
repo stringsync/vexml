@@ -122,11 +122,16 @@ export class MeasureFragment {
     });
   }
 
-  /** Returns the minimum required width for the Measure. */
+  /** Returns the minimum required width for the measure fragment. */
   getMinRequiredWidth(previousMeasureFragment: MeasureFragment | null): number {
     const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasureFragment);
     const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
     return this.getMinJustifyWidth() + staveModifiersWidth + this.rightPadding;
+  }
+
+  /** Returns the top padding for the measure fragment. */
+  getTopPadding(): number {
+    return util.max(this.staves.map((stave) => stave.getTopPadding()));
   }
 
   getMultiRestCount(): number {

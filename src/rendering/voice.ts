@@ -10,6 +10,7 @@ import { Division } from './division';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
+import { Token } from './token';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -29,6 +30,7 @@ export type VoiceRendering = {
 export type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
+  tokens: Array<Token>;
   stem: StemDirection;
   start: Division;
   end: Division;
@@ -118,62 +120,7 @@ export class Voice {
     });
   }
 
-  private static createGhostNote(divisions: Division): GhostNote {
-    const durationDenominator = Voice.calculateDurationDenominator(divisions);
-    return GhostNote.create({ durationDenominator });
-  }
-
-  private static createVoiceEntry(opts: {
-    config: Config;
-    entry: VoiceEntryData;
-    clef: Clef;
-    keySignature: KeySignature;
-  }): VoiceEntry {
-    const config = opts.config;
-    const entry = opts.entry;
-    const clef = opts.clef;
-    const note = entry.note;
-    const stem = entry.stem;
-    const keySignature = opts.keySignature;
-
-    const duration = entry.end.subtract(entry.start);
-
-    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
-    // <duration>.
-    const durationDenominator =
-      Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
-
-    if (note.isChordHead()) {
-      return Chord.create({
-        config,
-        musicXml: { note },
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
-    }
-
-    if (note.isRest()) {
-      return Rest.create({
-        config,
-        musicXml: { note },
-        clef,
-        durationDenominator,
-      });
-    }
-
-    return Note.create({
-      config,
-      musicXml: { note },
-      stem,
-      clef,
-      durationDenominator,
-      keySignature,
-    });
-  }
-
-  private static toDurationDenominator(noteType: musicxml.NoteType | null): NoteDurationDenominator | null {
+  static toDurationDenominator(noteType: musicxml.NoteType | null): NoteDurationDenominator | null {
     switch (noteType) {
       case '1024th':
         return '1024';
@@ -206,6 +153,62 @@ export class Voice {
       default:
         return null;
     }
+  }
+
+  private static createGhostNote(divisions: Division): GhostNote {
+    const durationDenominator = Voice.calculateDurationDenominator(divisions);
+    return GhostNote.create({ durationDenominator });
+  }
+
+  private static createVoiceEntry(opts: {
+    config: Config;
+    entry: VoiceEntryData;
+    clef: Clef;
+    keySignature: KeySignature;
+  }): VoiceEntry {
+    const config = opts.config;
+    const entry = opts.entry;
+    const clef = opts.clef;
+    const note = entry.note;
+    const stem = entry.stem;
+    const keySignature = opts.keySignature;
+    const tokens = entry.tokens;
+
+    const duration = entry.end.subtract(entry.start);
+
+    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
+    // <duration>.
+    const durationDenominator =
+      Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
+
+    if (note.isChordHead()) {
+      return Chord.create({
+        config,
+        musicXml: { note, tokens },
+        stem,
+        clef,
+        durationDenominator,
+        keySignature,
+      });
+    }
+
+    if (note.isRest()) {
+      return Rest.create({
+        config,
+        musicXml: { note, tokens },
+        clef,
+        durationDenominator,
+      });
+    }
+
+    return Note.create({
+      config,
+      musicXml: { note, tokens },
+      stem,
+      clef,
+      durationDenominator,
+      keySignature,
+    });
   }
 
   private static calculateDurationDenominator(divisions: Division): NoteDurationDenominator {
