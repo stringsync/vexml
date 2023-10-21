@@ -5,6 +5,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { directionType } from '../util/xml';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -159,7 +160,10 @@ export class Measure {
         staveSignature = measureEntry;
       } else if (
         measureEntry instanceof musicxml.Direction &&
-        util.first(measureEntry.getTypes())?.getContent().type === 'metronome' &&
+        measureEntry.getTypes().some((directionType) => {
+          const content = directionType.getContent();
+          return content.type === 'metronome' && content.metronome.isSupported();
+        }) &&
         currentMeasureEntries.length > 0
       ) {
         // prettier-ignore
@@ -169,6 +173,7 @@ export class Measure {
           fragments.length === 0 ? beginningBarStyle : 'none',
           'none'
         )
+        currentMeasureEntries = [];
       }
 
       currentMeasureEntries.push(measureEntry);

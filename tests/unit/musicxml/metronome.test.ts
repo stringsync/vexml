@@ -2,6 +2,26 @@ import { Metronome } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Metronome, () => {
+  describe('isSupported', () => {
+    it('returns true when per-minute is numeric', () => {
+      const node = xml.metronome({ perMinute: xml.perMinute({ value: '100' }) });
+      const metronome = new Metronome(node);
+      expect(metronome.isSupported()).toBeTrue();
+    });
+
+    it('returns false when per-minute is not numeric', () => {
+      const node = xml.metronome({ perMinute: xml.perMinute({ value: 'half' }) });
+      const metronome = new Metronome(node);
+      expect(metronome.isSupported()).toBeFalse();
+    });
+
+    it('returns false when per-minute is not provided', () => {
+      const node = xml.metronome();
+      const metronome = new Metronome(node);
+      expect(metronome.isSupported()).toBeFalse();
+    });
+  });
+
   describe('getBeatUnit', () => {
     it('returns the beat unit of the metronome', () => {
       const beatUnit = xml.beatUnit({ noteTypeValue: 'half' });
@@ -24,17 +44,27 @@ describe(Metronome, () => {
     });
   });
 
-  describe('getDotCount', () => {
-    it('returns how many dots the metronome has', () => {
+  describe('getBeatUnitDotCount', () => {
+    it('returns how many dots are applied to the beat unit', () => {
       const node = xml.metronome({ beatUnitDots: [xml.beatUnitDot(), xml.beatUnitDot()] });
       const metronome = new Metronome(node);
-      expect(metronome.getDotCount()).toBe(2);
+      expect(metronome.getBeatUnitDotCount()).toBe(2);
     });
 
     it('defaults to 0 when dots are missing', () => {
       const node = xml.metronome();
       const metronome = new Metronome(node);
-      expect(metronome.getDotCount()).toBe(0);
+      expect(metronome.getBeatUnitDotCount()).toBe(0);
+    });
+
+    it('does not count dots after a per minute specification', () => {
+      const node = xml.metronome({
+        beatUnitDots: [xml.beatUnitDot()],
+        perMinute: xml.perMinute(),
+        perMinuteDots: [xml.beatUnitDot()],
+      });
+      const metronome = new Metronome(node);
+      expect(metronome.getBeatUnitDotCount()).toBe(1);
     });
   });
 
@@ -47,18 +77,18 @@ describe(Metronome, () => {
       expect(metronome.getBeatsPerMinute()).toBe(42);
     });
 
-    it('defaults to 120 when missing', () => {
+    it('defaults to null when missing', () => {
       const node = xml.metronome();
       const metronome = new Metronome(node);
-      expect(metronome.getBeatsPerMinute()).toBe(120);
+      expect(metronome.getBeatsPerMinute()).toBeNull();
     });
 
-    it('does not support non-numeric bpm specifications and defaults to 120', () => {
+    it('does not support non-numeric bpm specifications and defaults to null', () => {
       const node = xml.metronome({
         perMinute: xml.perMinute({ value: 'foo' }),
       });
       const metronome = new Metronome(node);
-      expect(metronome.getBeatsPerMinute()).toBe(120);
+      expect(metronome.getBeatsPerMinute()).toBeNull();
     });
   });
 });

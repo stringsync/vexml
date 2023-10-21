@@ -143,6 +143,8 @@ export class Stave {
         .map((directionType) => directionType.getContent())
         .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
         .map((content) => content.metronome)
+        // Select the first renderable metronome, since there can be only one per vexflow.Stave.
+        .filter((metronome) => metronome.isSupported())
     );
 
     return new Stave({
@@ -355,12 +357,17 @@ export class Stave {
         vfStave.addTimeSignature(timeSpec);
       }
     }
-    if (this.metronome) {
+
+    const beatsPerMinute = this.metronome?.getBeatsPerMinute();
+    const beatUnitDotCount = this.metronome?.getBeatUnitDotCount();
+    const beatUnit = this.metronome?.getBeatUnit();
+    const isMetronomeMarkSupported = beatsPerMinute && beatUnitDotCount && beatUnit;
+    if (isMetronomeMarkSupported) {
       vfStave.setTempo(
         {
-          bpm: this.metronome.getBeatsPerMinute(),
-          dots: this.metronome.getDotCount(),
-          duration: Voice.toDurationDenominator(this.metronome.getBeatUnit())!,
+          bpm: beatsPerMinute,
+          dots: beatUnitDotCount,
+          duration: Voice.toDurationDenominator(beatUnit)!,
         },
         opts.y
       );
