@@ -239,7 +239,13 @@ export class Stave {
 
   /** Returns the top padding of the stave. */
   getTopPadding(): number {
-    return this.metronome ? METRONOME_TOP_PADDING : 0;
+    let topPadding = 0;
+
+    if (this.metronome) {
+      topPadding += METRONOME_TOP_PADDING;
+    }
+
+    return topPadding;
   }
 
   /** Renders the Stave. */
@@ -251,7 +257,7 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const vfStave = this.toVexflowStave({
+    const vfStave = this.createVexflowStave({
       x: opts.x,
       y: opts.y,
       width: opts.width,
@@ -274,6 +280,7 @@ export class Stave {
         if (vfTickables.length > 0) {
           new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
         }
+
         break;
     }
 
@@ -293,7 +300,7 @@ export class Stave {
   /** Returns the width that the clef takes up. */
   @util.memoize()
   private getClefWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -304,7 +311,7 @@ export class Stave {
   /** Returns the width that the key signature takes up. */
   @util.memoize()
   private getKeySignatureWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -315,7 +322,7 @@ export class Stave {
   /** Returns the width that the time signature takes up. */
   @util.memoize()
   private getTimeSignatureWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -323,7 +330,7 @@ export class Stave {
     }).getNoteStartX();
   }
 
-  private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
+  private createVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave =
       this.clef.getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)

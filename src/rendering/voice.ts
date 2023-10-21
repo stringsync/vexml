@@ -10,6 +10,7 @@ import { Division } from './division';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
+import { Token } from './token';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -29,6 +30,7 @@ export type VoiceRendering = {
 export type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
+  tokens: Array<Token>;
   stem: StemDirection;
   start: Division;
   end: Division;
@@ -170,6 +172,7 @@ export class Voice {
     const note = entry.note;
     const stem = entry.stem;
     const keySignature = opts.keySignature;
+    const tokens = entry.tokens;
 
     const duration = entry.end.subtract(entry.start);
 
@@ -181,7 +184,7 @@ export class Voice {
     if (note.isChordHead()) {
       return Chord.create({
         config,
-        musicXml: { note },
+        musicXml: { note, tokens },
         stem,
         clef,
         durationDenominator,
@@ -192,7 +195,7 @@ export class Voice {
     if (note.isRest()) {
       return Rest.create({
         config,
-        musicXml: { note },
+        musicXml: { note, tokens },
         clef,
         durationDenominator,
       });
@@ -200,7 +203,7 @@ export class Voice {
 
     return Note.create({
       config,
-      musicXml: { note },
+      musicXml: { note, tokens },
       stem,
       clef,
       durationDenominator,

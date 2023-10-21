@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { ClefType, NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
+import { Token } from './token';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -28,6 +29,7 @@ export class Rest {
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
   private clef: Clef;
+  private tokens: Token[];
 
   private constructor(opts: {
     config: Config;
@@ -35,12 +37,14 @@ export class Rest {
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
     clef: Clef;
+    tokens: Token[];
   }) {
     this.config = opts.config;
     this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
     this.clef = opts.clef;
+    this.tokens = opts.tokens;
   }
 
   /** Creates the Rest. */
@@ -48,11 +52,13 @@ export class Rest {
     config: Config;
     musicXml: {
       note: musicxml.Note;
+      tokens: Token[];
     };
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
   }): Rest {
     const note = opts.musicXml.note;
+    const tokens = opts.musicXml.tokens;
 
     return new Rest({
       config: opts.config,
@@ -60,6 +66,7 @@ export class Rest {
       durationDenominator: opts.durationDenominator,
       dotCount: note.getDotCount(),
       clef: opts.clef,
+      tokens,
     });
   }
 
@@ -71,6 +78,7 @@ export class Rest {
       durationDenominator: '1',
       dotCount: 0,
       clef: opts.clef,
+      tokens: [],
     });
   }
 
@@ -82,6 +90,7 @@ export class Rest {
       durationDenominator: this.durationDenominator,
       dotCount: this.dotCount,
       clef: this.clef,
+      tokens: this.tokens,
     });
   }
 

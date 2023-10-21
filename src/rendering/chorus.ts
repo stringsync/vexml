@@ -9,6 +9,7 @@ import * as vexflow from 'vexflow';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
+import { Token } from './token';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -51,11 +52,23 @@ export class Chorus {
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
     let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
+    let tokens = new Array<Token>();
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (const entry of measureEntries) {
       if (entry instanceof StaveSignature) {
         quarterNoteDivisions = entry.getQuarterNoteDivisions();
+      }
+
+      if (entry instanceof musicxml.Direction) {
+        entry
+          .getTypes()
+          .map((directionType) => directionType.getContent())
+          .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
+          .flatMap((content) => content.tokens)
+          .forEach((token) => {
+            tokens.push(Token.create({ musicXml: { token } }));
+          });
       }
 
       if (entry instanceof musicxml.Note) {
@@ -81,12 +94,14 @@ export class Chorus {
         data[voiceId].push({
           voiceId,
           note,
+          tokens,
           start: startDivision,
           end: endDivision,
           stem,
         });
 
         divisions = divisions.add(noteDuration);
+        tokens = [];
       }
 
       if (entry instanceof musicxml.Backup) {

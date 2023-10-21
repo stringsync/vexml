@@ -7,8 +7,9 @@ import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
+import { Token, TokenRendering } from './token';
 
-export type NoteModifierRendering = AccidentalRendering | LyricRendering;
+export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
 
 /** The result rendering a Note. */
 export type NoteRendering = {
@@ -41,6 +42,7 @@ export class Note {
   private durationDenominator: NoteDurationDenominator;
   private clef: Clef;
   private beamValue: musicxml.BeamValue | null;
+  private tokens: Token[];
 
   private constructor(opts: {
     config: Config;
@@ -52,6 +54,7 @@ export class Note {
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
     beamValue: musicxml.BeamValue | null;
+    tokens: Token[];
   }) {
     this.config = opts.config;
     this.key = opts.key;
@@ -62,6 +65,7 @@ export class Note {
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
     this.beamValue = opts.beamValue;
+    this.tokens = opts.tokens;
   }
 
   /** Creates a Note. */
@@ -69,6 +73,7 @@ export class Note {
     config: Config;
     musicXml: {
       note: musicxml.Note;
+      tokens: Token[];
     };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
@@ -76,6 +81,7 @@ export class Note {
     keySignature: KeySignature;
   }): Note {
     const note = opts.musicXml.note;
+    const tokens = opts.musicXml.tokens;
     const keySignature = opts.keySignature;
 
     let accidental: Accidental | null = null;
@@ -117,6 +123,7 @@ export class Note {
       durationDenominator,
       clef,
       beamValue,
+      tokens,
     });
   }
 
@@ -174,16 +181,23 @@ export class Note {
         renderings.push(lyric.render());
       }
 
+      for (const token of note.tokens) {
+        renderings.push(token.render());
+      }
+
       return renderings;
     });
 
     for (let index = 0; index < modifierRenderingGroups.length; index++) {
       for (const modifierRendering of modifierRenderingGroups[index]) {
-        switch (modifierRendering?.type) {
+        switch (modifierRendering.type) {
           case 'accidental':
             vfStaveNote.addModifier(modifierRendering.vexflow.accidental, index);
             break;
           case 'lyric':
+            vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
+            break;
+          case 'token':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
         }
@@ -267,6 +281,7 @@ export class Note {
       durationDenominator: this.durationDenominator,
       clef: this.clef,
       beamValue: this.beamValue,
+      tokens: this.tokens,
     });
   }
 
