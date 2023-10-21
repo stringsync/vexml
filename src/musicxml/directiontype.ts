@@ -1,5 +1,7 @@
 import { NamedElement } from '../util';
 import { Metronome } from './metronome';
+import { Symbolic } from './symbolic';
+import { Words } from './words';
 
 export type EmptyDirectionTypeContent = {
   type: 'empty';
@@ -15,11 +17,17 @@ export type MetronomeDirectionTypeContent = {
   metronome: Metronome;
 };
 
+export type SymbolicDirectionTypeContent = {
+  type: 'symbolic';
+  symbolics: Array<Words | Symbolic>;
+};
+
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
-  | MetronomeDirectionTypeContent;
+  | MetronomeDirectionTypeContent
+  | SymbolicDirectionTypeContent;
 
 /**
  * Represents the type of direction.
@@ -42,6 +50,18 @@ export class DirectionType {
       return {
         type: 'metronome',
         metronome: new Metronome(first),
+      };
+    }
+
+    if (first.isNamed('words') || first.isNamed('symbol')) {
+      return {
+        type: 'symbolic',
+        symbolics: children
+          .filter(
+            (child): child is NamedElement<'words'> | NamedElement<'symbol'> =>
+              child.isNamed('words') || child.isNamed('symbol')
+          )
+          .map((child) => (child.isNamed('words') ? new Words(child) : new Symbolic(child))),
       };
     }
 
