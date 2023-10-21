@@ -11,22 +11,44 @@ import { NOTE_TYPES, NoteType } from './enums';
 export class Metronome {
   constructor(private element: NamedElement<'metronome'>) {}
 
+  /** Returns whether the metronome is supported in vexml. */
+  isSupported(): boolean {
+    return typeof this.getBeatsPerMinute() === 'number';
+  }
+
   /** Returns the first beat unit. Defaults to 'quarter'. */
   getBeatUnit(): NoteType {
     return this.element.first('beat-unit')?.content().enum(NOTE_TYPES) ?? 'quarter';
   }
 
-  /** Returns how many dots are applied to the beat unit. Defaults to 0. */
-  getDotCount(): number {
-    return this.element.children('beat-unit-dot').length;
+  /**
+   * Returns how many dots are applied to the beat unit, which are only the ones right after the <beat-unit>.
+   *
+   * Defaults to 0.
+   */
+  getBeatUnitDotCount(): number {
+    let count = 0;
+
+    for (const child of this.element.children()) {
+      if (child.isNamed('beat-unit')) {
+        continue;
+      } else if (child.isNamed('beat-unit-dot')) {
+        count++;
+      } else {
+        // The other <beat-unit-dots> do not apply to the beat-unit.
+        break;
+      }
+    }
+
+    return count;
   }
 
   /**
    * Returns the beats per minute.
    *
-   * Only supports integer values. Defaults to 120.
+   * Only supports integer values. Defaults to null.
    */
-  getBeatsPerMinute(): number {
-    return this.element.first('per-minute')?.content().withDefault(120).int() ?? 120;
+  getBeatsPerMinute(): number | null {
+    return this.element.first('per-minute')?.content().int() ?? null;
   }
 }
