@@ -146,7 +146,11 @@ export const measure = createNamedElementFactory<
     number: string;
     implicit: string;
     entries: Array<
-      NamedElement<'attributes'> | NamedElement<'note'> | NamedElement<'backup'> | NamedElement<'forward'>
+      | NamedElement<'attributes'>
+      | NamedElement<'note'>
+      | NamedElement<'backup'>
+      | NamedElement<'forward'>
+      | NamedElement<'direction'>
     >;
     notes: NamedElement<'note'>[];
     attributes: NamedElement<'attributes'>[];
@@ -491,15 +495,85 @@ export const topSystemDistance = createNamedElementFactory<
 export const direction = createNamedElementFactory<
   'direction',
   {
+    types: NamedElement<'direction-type'>[];
+  }
+>('direction', (e, { types }) => {
+  if (types) {
+    e.append(...types);
+  }
+});
+
+export const directionType = createNamedElementFactory<
+  'direction-type',
+  {
     codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
+    metronome: NamedElement<'metronome'>;
+    tokens: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
   }
->('direction', (e, { codas, segnos }) => {
+>('direction-type', (e, { codas, segnos, metronome, tokens }) => {
   if (codas) {
     e.append(...codas);
   }
   if (segnos) {
     e.append(...segnos);
+  }
+  if (metronome) {
+    e.append(metronome);
+  }
+  if (tokens) {
+    e.append(...tokens);
+  }
+});
+
+export const words = createNamedElementFactory<'words', { content: string }>('words', (e, { content }) => {
+  if (content) {
+    e.setTextContent(content);
+  }
+});
+
+export const symbolic = createNamedElementFactory<'symbol', { smuflGlyphName: string }>(
+  'symbol',
+  (e, { smuflGlyphName }) => {
+    if (smuflGlyphName) {
+      e.setTextContent(smuflGlyphName);
+    }
+  }
+);
+
+export const metronome = createNamedElementFactory<
+  'metronome',
+  {
+    beatUnit: NamedElement<'beat-unit'>;
+    beatUnitDots: NamedElement<'beat-unit-dot'>[];
+    perMinute: NamedElement<'per-minute'>;
+  }
+>('metronome', (e, { beatUnit, beatUnitDots, perMinute }) => {
+  if (beatUnit) {
+    e.append(beatUnit);
+  }
+  if (beatUnitDots) {
+    e.append(...beatUnitDots);
+  }
+  if (perMinute) {
+    e.append(perMinute);
+  }
+});
+
+export const beatUnit = createNamedElementFactory<'beat-unit', { noteTypeValue: string }>(
+  'beat-unit',
+  (e, { noteTypeValue }) => {
+    if (noteTypeValue) {
+      e.setTextContent(noteTypeValue);
+    }
+  }
+);
+
+export const beatUnitDot = createNamedElementFactory<'beat-unit-dot', Record<string, never>>('beat-unit-dot', () => {});
+
+export const perMinute = createNamedElementFactory<'per-minute', { value: string }>('per-minute', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
   }
 });
 

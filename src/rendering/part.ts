@@ -172,7 +172,7 @@ export class Part {
     const measureRenderings = new Array<MeasureRendering>();
 
     let x = opts.x;
-    const y = opts.y;
+    const y = opts.y + this.getTopPadding();
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
@@ -219,5 +219,10 @@ export class Part {
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
     };
+  }
+
+  /** Returns the top padding of the part. */
+  private getTopPadding() {
+    return util.max(this.measures.map((measure) => measure.getTopPadding()));
   }
 }

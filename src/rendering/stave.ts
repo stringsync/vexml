@@ -9,6 +9,9 @@ import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
+import { Voice } from './voice';
+
+const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -52,6 +55,7 @@ export class Stave {
   private endBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
   private previousKeySignature: KeySignature | null;
+  private metronome: musicxml.Metronome | null;
 
   private constructor(opts: {
     config: Config;
@@ -66,6 +70,7 @@ export class Stave {
     endBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
     previousKeySignature: KeySignature | null;
+    metronome: musicxml.Metronome | null;
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
@@ -79,6 +84,7 @@ export class Stave {
     this.clef = opts.clef;
     this.entry = opts.entry;
     this.previousKeySignature = opts.previousKeySignature;
+    this.metronome = opts.metronome;
   }
 
   /** Creates a Stave. */
@@ -130,6 +136,15 @@ export class Stave {
       });
     }
 
+    const metronome = util.first(
+      measureEntries
+        .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
+        .flatMap((direction) => direction.getTypes())
+        .map((directionType) => directionType.getContent())
+        .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
+        .map((content) => content.metronome)
+    );
+
     return new Stave({
       config,
       measureIndex,
@@ -143,6 +158,7 @@ export class Stave {
       endBarStyle,
       entry,
       previousKeySignature,
+      metronome,
     });
   }
 
@@ -200,6 +216,7 @@ export class Stave {
       endBarStyle: this.endBarStyle,
       entry: this.entry.clone(),
       previousKeySignature: this.previousKeySignature,
+      metronome: this.metronome,
     });
   }
 
@@ -220,6 +237,17 @@ export class Stave {
     return result;
   }
 
+  /** Returns the top padding of the stave. */
+  getTopPadding(): number {
+    let topPadding = 0;
+
+    if (this.metronome) {
+      topPadding += METRONOME_TOP_PADDING;
+    }
+
+    return topPadding;
+  }
+
   /** Renders the Stave. */
   render(opts: {
     x: number;
@@ -229,7 +257,7 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const vfStave = this.toVexflowStave({
+    const vfStave = this.createVexflowStave({
       x: opts.x,
       y: opts.y,
       width: opts.width,
@@ -252,6 +280,7 @@ export class Stave {
         if (vfTickables.length > 0) {
           new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
         }
+
         break;
     }
 
@@ -271,7 +300,7 @@ export class Stave {
   /** Returns the width that the clef takes up. */
   @util.memoize()
   private getClefWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -282,7 +311,7 @@ export class Stave {
   /** Returns the width that the key signature takes up. */
   @util.memoize()
   private getKeySignatureWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -293,7 +322,7 @@ export class Stave {
   /** Returns the width that the time signature takes up. */
   @util.memoize()
   private getTimeSignatureWidth(): number {
-    return this.toVexflowStave({
+    return this.createVexflowStave({
       x: 0,
       y: 0,
       width: this.getMinJustifyWidth(),
@@ -301,7 +330,7 @@ export class Stave {
     }).getNoteStartX();
   }
 
-  private toVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
+  private createVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave =
       this.clef.getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
@@ -325,6 +354,16 @@ export class Stave {
       for (const timeSpec of this.getTimeSpecs()) {
         vfStave.addTimeSignature(timeSpec);
       }
+    }
+    if (this.metronome) {
+      vfStave.setTempo(
+        {
+          bpm: this.metronome.getBeatsPerMinute(),
+          dots: this.metronome.getDotCount(),
+          duration: Voice.toDurationDenominator(this.metronome.getBeatUnit())!,
+        },
+        opts.y
+      );
     }
 
     return vfStave;
