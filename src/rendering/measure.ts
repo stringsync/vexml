@@ -234,6 +234,11 @@ export class Measure {
     return sum;
   }
 
+  /** Returns the top padding required for the Measure. */
+  getTopPadding(): number {
+    return util.max(this.fragments.map((fragment) => fragment.getTopPadding()));
+  }
+
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
     return util.sum(this.fragments.map((fragment) => fragment.getMultiRestCount()));
