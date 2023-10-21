@@ -17,9 +17,9 @@ export type MetronomeDirectionTypeContent = {
   metronome: Metronome;
 };
 
-export type SymbolicDirectionTypeContent = {
-  type: 'symbolic';
-  symbolics: Array<Words | Symbolic>;
+export type TokensDirectionTypeContent = {
+  type: 'tokens';
+  tokens: Array<Words | Symbolic>;
 };
 
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
@@ -27,7 +27,7 @@ export type DirectionTypeContent =
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
   | MetronomeDirectionTypeContent
-  | SymbolicDirectionTypeContent;
+  | TokensDirectionTypeContent;
 
 /**
  * Represents the type of direction.
@@ -55,8 +55,8 @@ export class DirectionType {
 
     if (first.isNamed('words') || first.isNamed('symbol')) {
       return {
-        type: 'symbolic',
-        symbolics: children
+        type: 'tokens',
+        tokens: children
           .filter(
             (child): child is NamedElement<'words'> | NamedElement<'symbol'> =>
               child.isNamed('words') || child.isNamed('symbol')

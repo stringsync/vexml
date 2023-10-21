@@ -509,9 +509,9 @@ export const directionType = createNamedElementFactory<
     codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
     metronome: NamedElement<'metronome'>;
-    symbolics: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
+    tokens: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
   }
->('direction-type', (e, { codas, segnos, metronome, symbolics }) => {
+>('direction-type', (e, { codas, segnos, metronome, tokens }) => {
   if (codas) {
     e.append(...codas);
   }
@@ -521,8 +521,8 @@ export const directionType = createNamedElementFactory<
   if (metronome) {
     e.append(metronome);
   }
-  if (symbolics) {
-    e.append(...symbolics);
+  if (tokens) {
+    e.append(...tokens);
   }
 });
 
