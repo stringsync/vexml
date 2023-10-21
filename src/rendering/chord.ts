@@ -4,6 +4,7 @@ import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
+import { Token } from './token';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -36,6 +37,7 @@ export class Chord {
     config: Config;
     musicXml: {
       note: musicxml.Note;
+      tokens: Token[];
     };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
@@ -46,13 +48,14 @@ export class Chord {
     const clef = opts.clef;
     const durationDenominator = opts.durationDenominator;
     const keySignature = opts.keySignature;
+    const tokens = opts.musicXml.tokens;
 
     const head = opts.musicXml.note;
     const tail = head.getChordTail();
     const notes = [head, ...tail].map((note) =>
       Note.create({
         config,
-        musicXml: { note },
+        musicXml: { note, tokens },
         stem: opts.stem,
         clef,
         durationDenominator,
