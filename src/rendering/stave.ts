@@ -9,6 +9,7 @@ import { KeySignature } from './keysignature';
 import { Clef } from './clef';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
+import { Voice } from './voice';
 
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
@@ -339,6 +340,16 @@ export class Stave {
       for (const timeSpec of this.getTimeSpecs()) {
         vfStave.addTimeSignature(timeSpec);
       }
+    }
+    if (this.metronome) {
+      vfStave.setTempo(
+        {
+          bpm: this.metronome.getBeatsPerMinute(),
+          dots: this.metronome.getDotCount(),
+          duration: Voice.toDurationDenominator(this.metronome.getBeatUnit())!,
+        },
+        opts.y
+      );
     }
 
     return vfStave;
