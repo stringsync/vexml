@@ -5,7 +5,6 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { directionType } from '../util/xml';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
