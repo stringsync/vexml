@@ -41,7 +41,7 @@ export class Score {
     const systemRenderings = new Array<SystemRendering>();
 
     // Create the systems.
-    const systems = this.createSystems(opts.width);
+    const systems = this.getRootSystem().split(opts.width);
 
     // Initialize the rendering coordinates.
     const x = 0;
@@ -163,6 +163,17 @@ export class Score {
   }
 
   @util.memoize()
+  private getRootSystem(): System {
+    return System.create({
+      config: this.config,
+      staveLayouts: this.getStaveLayouts(),
+      musicXml: {
+        parts: this.getParts(),
+      },
+    });
+  }
+
+  @util.memoize()
   private getDefaults() {
     return this.scorePartwise?.getDefaults();
   }
@@ -198,15 +209,5 @@ export class Score {
       config: this.config,
       text: this.scorePartwise?.getTitle() ?? '',
     });
-  }
-
-  private createSystems(width: number): System[] {
-    return System.create({
-      config: this.config,
-      staveLayouts: this.getStaveLayouts(),
-      musicXml: {
-        parts: this.getParts(),
-      },
-    }).split(width);
   }
 }
