@@ -22,3 +22,5 @@ export * from './forward';
 export * from './metronome';
 export * from './directiontype';
 export * from './direction';
+export * from './words';
+export * from './symbolic';
