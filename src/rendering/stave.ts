@@ -11,6 +11,8 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { Voice } from './voice';
 
+const METRONOME_TOP_PADDING = 8;
+
 /** A possible component of a Stave. */
 export type StaveEntry = Chorus | MultiRest | Tablature;
 
@@ -233,6 +235,11 @@ export class Stave {
     }
 
     return result;
+  }
+
+  /** Returns the top padding of the stave. */
+  getTopPadding(): number {
+    return this.metronome ? METRONOME_TOP_PADDING : 0;
   }
 
   /** Renders the Stave. */
