@@ -547,8 +547,9 @@ export const metronome = createNamedElementFactory<
     beatUnit: NamedElement<'beat-unit'>;
     beatUnitDots: NamedElement<'beat-unit-dot'>[];
     perMinute: NamedElement<'per-minute'>;
+    perMinuteDots: NamedElement<'beat-unit-dot'>[];
   }
->('metronome', (e, { beatUnit, beatUnitDots, perMinute }) => {
+>('metronome', (e, { beatUnit, beatUnitDots, perMinute, perMinuteDots }) => {
   if (beatUnit) {
     e.append(beatUnit);
   }
@@ -557,6 +558,9 @@ export const metronome = createNamedElementFactory<
   }
   if (perMinute) {
     e.append(perMinute);
+  }
+  if (perMinuteDots) {
+    e.append(...perMinuteDots);
   }
 });
 
