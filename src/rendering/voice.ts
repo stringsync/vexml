@@ -194,9 +194,10 @@ export class Voice {
     }
 
     if (note.isRest()) {
-      return Rest.create({
+      return new Rest({
         config,
-        musicXml: { note },
+        displayPitch: note.getRestDisplayPitch(),
+        dotCount: note.getDotCount(),
         tokens,
         clef,
         durationDenominator,
@@ -222,22 +223,7 @@ export class Voice {
   clone(): Voice {
     return new Voice({
       config: this.config,
-      entries: this.entries.map((entry) => {
-        if (entry instanceof Note) {
-          return entry;
-        }
-        if (entry instanceof Chord) {
-          return entry;
-        }
-        if (entry instanceof Rest) {
-          return entry.clone();
-        }
-        if (entry instanceof GhostNote) {
-          return entry.clone();
-        }
-        // If this error is thrown, this is a problem with vexml, not the musicXML document.
-        throw new Error(`unexpected voice entry: ${entry}`);
-      }),
+      entries: this.entries,
       timeSignature: this.timeSignature,
     });
   }
