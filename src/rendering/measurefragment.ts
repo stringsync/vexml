@@ -87,10 +87,8 @@ export class MeasureFragment {
 
       const previousStave = opts.previousMeasureFragment?.staves[staveIndex] ?? null;
 
-      staves[staveIndex] = Stave.create({
+      staves[staveIndex] = new Stave({
         config,
-        measureIndex,
-        measureFragmentIndex,
         staveSignature: leadingStaveSignature,
         previousStave,
         staveNumber,
@@ -145,7 +143,7 @@ export class MeasureFragment {
       measureIndex: this.measureIndex,
       measureFragmentIndex: this.measureFragmentIndex,
       systemId,
-      staves: this.staves.map((stave) => stave.clone()),
+      staves: this.staves,
       staveLayouts: this.staveLayouts,
       rightPadding: this.rightPadding,
     });

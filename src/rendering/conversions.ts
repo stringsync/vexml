@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Division } from './division';
@@ -137,5 +138,28 @@ export const fromStemToStemDirection = (stem: musicxml.Stem | null): StemDirecti
       return 'none';
     default:
       return 'auto';
+  }
+};
+
+/** Converts from a `BarStyle` to a `BarlineType`. Defaults to `vexflow.BarlineType.NONE`. */
+export const fromBarStyleToBarlineType = (barStyle: musicxml.BarStyle): vexflow.BarlineType => {
+  switch (barStyle) {
+    case 'regular':
+    case 'short':
+    case 'dashed':
+    case 'dotted':
+    case 'heavy':
+      return vexflow.BarlineType.SINGLE;
+    case 'heavy-light':
+    case 'heavy-heavy':
+    case 'light-light':
+    case 'tick':
+      return vexflow.BarlineType.DOUBLE;
+    case 'light-heavy':
+      return vexflow.BarlineType.END;
+    case 'none':
+      return vexflow.BarlineType.NONE;
+    default:
+      return vexflow.BarlineType.NONE;
   }
 };
