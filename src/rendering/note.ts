@@ -73,15 +73,15 @@ export class Note {
     config: Config;
     musicXml: {
       note: musicxml.Note;
-      tokens: Token[];
     };
+    tokens: Token[];
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
     keySignature: KeySignature;
   }): Note {
     const note = opts.musicXml.note;
-    const tokens = opts.musicXml.tokens;
+    const tokens = opts.tokens;
     const keySignature = opts.keySignature;
 
     let accidental: Accidental | null = null;

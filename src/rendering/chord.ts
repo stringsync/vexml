@@ -37,8 +37,8 @@ export class Chord {
     config: Config;
     musicXml: {
       note: musicxml.Note;
-      tokens: Token[];
     };
+    tokens: Token[];
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
@@ -48,14 +48,15 @@ export class Chord {
     const clef = opts.clef;
     const durationDenominator = opts.durationDenominator;
     const keySignature = opts.keySignature;
-    const tokens = opts.musicXml.tokens;
+    const tokens = opts.tokens;
 
     const head = opts.musicXml.note;
     const tail = head.getChordTail();
     const notes = [head, ...tail].map((note) =>
       Note.create({
         config,
-        musicXml: { note, tokens },
+        musicXml: { note },
+        tokens,
         stem: opts.stem,
         clef,
         durationDenominator,
