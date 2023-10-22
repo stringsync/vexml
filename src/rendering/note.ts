@@ -37,10 +37,10 @@ export class Note {
   private config: Config;
   private note: musicxml.Note;
   private stem: StemDirection;
-  private durationDenominator: NoteDurationDenominator;
-  private clef: Clef;
   private tokens: Token[];
+  private clef: Clef;
   private keySignature: KeySignature;
+  private durationDenominator: NoteDurationDenominator;
 
   constructor(opts: {
     config: Config;

@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { Config } from './config';
 import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
@@ -25,64 +26,58 @@ export type ChordRendering = {
  */
 export class Chord {
   private config: Config;
-  private notes: Note[];
+  private note: musicxml.Note;
+  private tokens: Token[];
+  private stem: StemDirection;
+  private clef: Clef;
+  private keySignature: KeySignature;
+  private durationDenominator: NoteDurationDenominator;
 
-  private constructor(opts: { config: Config; notes: Note[] }) {
-    this.config = opts.config;
-    this.notes = opts.notes;
-  }
-
-  /** Create the Chord. */
-  static create(opts: {
+  constructor(opts: {
     config: Config;
-    musicXml: {
-      note: musicxml.Note;
-    };
+    musicXml: { note: musicxml.Note };
     tokens: Token[];
     stem: StemDirection;
-    durationDenominator: NoteDurationDenominator;
     clef: Clef;
     keySignature: KeySignature;
-  }): Chord {
-    const config = opts.config;
-    const clef = opts.clef;
-    const durationDenominator = opts.durationDenominator;
-    const keySignature = opts.keySignature;
-    const tokens = opts.tokens;
-
-    const head = opts.musicXml.note;
-    const tail = head.getChordTail();
-    const notes = [head, ...tail].map(
-      (note) =>
-        new Note({
-          config,
-          musicXml: { note },
-          tokens,
-          stem: opts.stem,
-          clef,
-          durationDenominator,
-          keySignature,
-        })
-    );
-
-    return new Chord({ config, notes });
-  }
-
-  /** Clones the Chord. */
-  clone(): Chord {
-    return new Chord({
-      config: this.config,
-      notes: this.notes,
-    });
+    durationDenominator: NoteDurationDenominator;
+  }) {
+    this.config = opts.config;
+    this.note = opts.musicXml.note;
+    this.tokens = opts.tokens;
+    this.stem = opts.stem;
+    this.clef = opts.clef;
+    this.keySignature = opts.keySignature;
+    this.durationDenominator = opts.durationDenominator;
   }
 
   /** Renders the Chord. */
   render(): ChordRendering {
-    const noteRenderings = Note.render(this.notes);
+    const notes = this.getNotes();
+    const noteRenderings = Note.render(notes);
 
     return {
       type: 'chord',
       notes: noteRenderings,
     };
+  }
+
+  @util.memoize()
+  private getNotes(): Note[] {
+    const head = this.note;
+    const tail = head.getChordTail();
+
+    return [head, ...tail].map(
+      (note) =>
+        new Note({
+          config: this.config,
+          musicXml: { note },
+          tokens: this.tokens,
+          stem: this.stem,
+          clef: this.clef,
+          keySignature: this.keySignature,
+          durationDenominator: this.durationDenominator,
+        })
+    );
   }
 }
