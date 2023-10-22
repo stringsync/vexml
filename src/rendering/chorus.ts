@@ -2,19 +2,33 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { StemDirection } from './enums';
-import { Voice, VoiceEntryData, VoiceRendering } from './voice';
+import { Voice, VoiceEntry, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
 import { Token } from './token';
+import { GhostNote } from './ghostnote';
+import { Chord } from './chord';
+import { Rest } from './rest';
+import { Note } from './note';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
   type: 'chorus';
   voices: VoiceRendering[];
+};
+
+type VoiceEntryData = {
+  voiceId: string;
+  note: musicxml.Note;
+  tokens: Array<Token>;
+  stem: StemDirection;
+  start: Division;
+  end: Division;
 };
 
 /**
@@ -150,15 +164,78 @@ export class Chorus {
       }
     }
 
-    const voices = voiceIds.map((voiceId) =>
-      Voice.fromEntryData(data[voiceId], {
+    const voices = voiceIds.map((voiceId) => {
+      let divisions = Division.of(0, opts.quarterNoteDivisions);
+      const entries = new Array<VoiceEntry>();
+
+      for (const entry of data[voiceId]) {
+        const ghostNoteStart = divisions;
+        const ghostNoteEnd = entry.start;
+        const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
+
+        if (ghostNoteDuration.toBeats() > 0) {
+          entries.push(
+            new GhostNote({
+              durationDenominator: conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration),
+            })
+          );
+        }
+
+        const note = entry.note;
+        const stem = entry.stem;
+        const tokens = entry.tokens;
+
+        const noteDuration = entry.end.subtract(entry.start);
+        const durationDenominator =
+          conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
+          conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
+
+        if (note.isChordHead()) {
+          entries.push(
+            new Chord({
+              config,
+              musicXml: { note },
+              tokens,
+              stem,
+              clef,
+              durationDenominator,
+              keySignature,
+            })
+          );
+        } else if (note.isRest()) {
+          entries.push(
+            new Rest({
+              config,
+              displayPitch: note.getRestDisplayPitch(),
+              dotCount: note.getDotCount(),
+              tokens,
+              clef,
+              durationDenominator,
+            })
+          );
+        } else {
+          entries.push(
+            new Note({
+              config,
+              musicXml: { note },
+              tokens,
+              stem,
+              clef,
+              durationDenominator,
+              keySignature,
+            })
+          );
+        }
+
+        divisions = entry.end;
+      }
+
+      return new Voice({
         config,
-        quarterNoteDivisions,
+        entries,
         timeSignature,
-        clef,
-        keySignature,
-      })
-    );
+      });
+    });
 
     return new Chorus({ config, voices });
   }
@@ -226,7 +303,7 @@ export class Chorus {
   clone(): Chorus {
     return new Chorus({
       config: this.config,
-      voices: this.voices.map((voice) => voice.clone()),
+      voices: this.voices,
     });
   }
 
