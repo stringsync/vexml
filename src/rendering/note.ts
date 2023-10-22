@@ -34,7 +34,7 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private key: string;
+  private note: musicxml.Note;
   private stem: StemDirection;
   private lyrics: Lyric[];
   private accidental: Accidental | null;
@@ -46,7 +46,7 @@ export class Note {
 
   private constructor(opts: {
     config: Config;
-    key: string;
+    note: musicxml.Note;
     stem: StemDirection;
     lyrics: Lyric[];
     accidental: Accidental | null;
@@ -57,7 +57,7 @@ export class Note {
     tokens: Token[];
   }) {
     this.config = opts.config;
-    this.key = opts.key;
+    this.note = opts.note;
     this.stem = opts.stem;
     this.lyrics = opts.lyrics;
     this.accidental = opts.accidental;
@@ -102,12 +102,6 @@ export class Note {
     const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
 
-    let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
-    const suffix = note.getNoteheadSuffix();
-    if (suffix) {
-      key += `/${suffix}`;
-    }
-
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
     // continues, or stops.
     const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
@@ -115,7 +109,7 @@ export class Note {
 
     return new Note({
       config: opts.config,
-      key,
+      note,
       stem,
       lyrics,
       accidental,
@@ -152,12 +146,12 @@ export class Note {
       throw new Error('all notes must have the same clefTypes');
     }
 
-    const keys = notes.map((note) => note.key);
+    const keys = notes.map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
     const vfStaveNote = new vexflow.StaveNote({
-      keys: notes.map((note) => note.key),
+      keys: notes.map((note) => note.getKey()),
       duration: util.first(notes)!.durationDenominator,
       dots: util.first(notes)!.dotCount,
       clef: util.first(notes)!.clef.getType(),
@@ -273,7 +267,7 @@ export class Note {
   clone(): Note {
     return new Note({
       config: this.config,
-      key: this.key,
+      note: this.note,
       stem: this.stem,
       lyrics: this.lyrics.map((lyric) => lyric.clone()),
       accidental: this.accidental?.clone() ?? null,
@@ -288,5 +282,13 @@ export class Note {
   /** Renders the Note. */
   render(): NoteRendering {
     return util.first(Note.render([this]))!;
+  }
+
+  @util.memoize()
+  private getKey(): string {
+    const step = this.note.getStep();
+    const octave = this.note.getOctave() - this.clef.getOctaveChange();
+    const suffix = this.note.getNoteheadSuffix();
+    return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 }
