@@ -37,7 +37,6 @@ export class Note {
   private config: Config;
   private note: musicxml.Note;
   private stem: StemDirection;
-  private lyrics: Lyric[];
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clef: Clef;
@@ -49,7 +48,6 @@ export class Note {
     config: Config;
     note: musicxml.Note;
     stem: StemDirection;
-    lyrics: Lyric[];
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
@@ -60,7 +58,6 @@ export class Note {
     this.config = opts.config;
     this.note = opts.note;
     this.stem = opts.stem;
-    this.lyrics = opts.lyrics;
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
@@ -86,10 +83,6 @@ export class Note {
     const keySignature = opts.keySignature;
 
     const clef = opts.clef;
-    const lyrics = note
-      .getLyrics()
-      .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => Lyric.create({ lyric }));
     const stem = opts.stem;
     const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
@@ -103,7 +96,6 @@ export class Note {
       config: opts.config,
       note,
       stem,
-      lyrics,
       dotCount,
       durationDenominator,
       clef,
@@ -164,7 +156,7 @@ export class Note {
       }
 
       // Lyrics sorted by ascending verse number.
-      for (const lyric of note.lyrics) {
+      for (const lyric of note.getLyrics()) {
         renderings.push(lyric.render());
       }
 
@@ -219,7 +211,6 @@ export class Note {
       config: this.config,
       note: this.note,
       stem: this.stem,
-      lyrics: this.lyrics.map((lyric) => lyric.clone()),
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clef: this.clef,
@@ -258,5 +249,13 @@ export class Note {
     }
 
     return null;
+  }
+
+  @util.memoize()
+  private getLyrics(): Lyric[] {
+    return this.note
+      .getLyrics()
+      .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
+      .map((lyric) => Lyric.create({ lyric }));
   }
 }
