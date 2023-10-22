@@ -52,16 +52,17 @@ export class Chord {
 
     const head = opts.musicXml.note;
     const tail = head.getChordTail();
-    const notes = [head, ...tail].map((note) =>
-      Note.create({
-        config,
-        musicXml: { note },
-        tokens,
-        stem: opts.stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      })
+    const notes = [head, ...tail].map(
+      (note) =>
+        new Note({
+          config,
+          musicXml: { note },
+          tokens,
+          stem: opts.stem,
+          clef,
+          durationDenominator,
+          keySignature,
+        })
     );
 
     return new Chord({ config, notes });

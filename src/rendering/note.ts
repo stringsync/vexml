@@ -42,9 +42,9 @@ export class Note {
   private tokens: Token[];
   private keySignature: KeySignature;
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
-    note: musicxml.Note;
+    musicXml: { note: musicxml.Note };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
@@ -52,46 +52,12 @@ export class Note {
     keySignature: KeySignature;
   }) {
     this.config = opts.config;
-    this.note = opts.note;
+    this.note = opts.musicXml.note;
     this.stem = opts.stem;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
     this.tokens = opts.tokens;
     this.keySignature = opts.keySignature;
-  }
-
-  /** Creates a Note. */
-  static create(opts: {
-    config: Config;
-    musicXml: {
-      note: musicxml.Note;
-    };
-    tokens: Token[];
-    stem: StemDirection;
-    durationDenominator: NoteDurationDenominator;
-    clef: Clef;
-    keySignature: KeySignature;
-  }): Note {
-    const note = opts.musicXml.note;
-    const tokens = opts.tokens;
-    const keySignature = opts.keySignature;
-
-    const clef = opts.clef;
-    const stem = opts.stem;
-    const durationDenominator = opts.durationDenominator;
-
-    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
-    // continues, or stops.
-
-    return new Note({
-      config: opts.config,
-      note,
-      stem,
-      durationDenominator,
-      clef,
-      tokens,
-      keySignature,
-    });
   }
 
   /**
@@ -198,7 +164,7 @@ export class Note {
   clone(): Note {
     return new Note({
       config: this.config,
-      note: this.note,
+      musicXml: { note: this.note },
       stem: this.stem,
       durationDenominator: this.durationDenominator,
       clef: this.clef,
