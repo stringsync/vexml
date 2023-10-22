@@ -37,7 +37,6 @@ export class Note {
   private config: Config;
   private note: musicxml.Note;
   private stem: StemDirection;
-  private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clef: Clef;
   private tokens: Token[];
@@ -47,7 +46,6 @@ export class Note {
     config: Config;
     note: musicxml.Note;
     stem: StemDirection;
-    dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
     tokens: Token[];
@@ -56,7 +54,6 @@ export class Note {
     this.config = opts.config;
     this.note = opts.note;
     this.stem = opts.stem;
-    this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
     this.tokens = opts.tokens;
@@ -81,7 +78,6 @@ export class Note {
 
     const clef = opts.clef;
     const stem = opts.stem;
-    const dotCount = note.getDotCount();
     const durationDenominator = opts.durationDenominator;
 
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
@@ -91,7 +87,6 @@ export class Note {
       config: opts.config,
       note,
       stem,
-      dotCount,
       durationDenominator,
       clef,
       tokens,
@@ -114,7 +109,7 @@ export class Note {
       throw new Error('all notes must have the same durationDenominator');
     }
 
-    const dotCounts = new Set(notes.map((note) => note.dotCount));
+    const dotCounts = new Set(notes.map((note) => note.getDotCount()));
     if (dotCounts.size > 1) {
       throw new Error('all notes must have the same dotCount');
     }
@@ -131,13 +126,13 @@ export class Note {
     const vfStaveNote = new vexflow.StaveNote({
       keys: notes.map((note) => note.getKey()),
       duration: util.first(notes)!.durationDenominator,
-      dots: util.first(notes)!.dotCount,
+      dots: util.first(notes)!.getDotCount(),
       clef: util.first(notes)!.clef.getType(),
       autoStem,
       stemDirection,
     });
 
-    for (let index = 0; index < util.first(notes)!.dotCount; index++) {
+    for (let index = 0; index < util.first(notes)!.getDotCount(); index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
     }
 
@@ -205,7 +200,6 @@ export class Note {
       config: this.config,
       note: this.note,
       stem: this.stem,
-      dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clef: this.clef,
       tokens: this.tokens,
@@ -258,5 +252,10 @@ export class Note {
     // continues, or stops.
     const beams = util.sortBy(this.note.getBeams(), (beam) => beam.getNumber());
     return util.first(beams)?.getBeamValue() ?? null;
+  }
+
+  @util.memoize()
+  private getDotCount(): number {
+    return this.note.getDotCount();
   }
 }
