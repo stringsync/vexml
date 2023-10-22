@@ -203,7 +203,7 @@ export class Voice {
       });
     }
 
-    return Note.create({
+    return new Note({
       config,
       musicXml: { note },
       tokens,
