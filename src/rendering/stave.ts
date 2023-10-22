@@ -89,7 +89,6 @@ export class Stave {
     config: Config;
     measureIndex: number;
     measureFragmentIndex: number;
-    systemId: symbol;
     staveNumber: number;
     measureEntries: MeasureEntry[];
     beginningBarStyle: musicxml.BarStyle;
@@ -100,7 +99,6 @@ export class Stave {
     const config = opts.config;
     const measureIndex = opts.measureIndex;
     const measureFragmentIndex = opts.measureFragmentIndex;
-    const systemId = opts.systemId;
     const staveNumber = opts.staveNumber;
     const measureEntries = opts.measureEntries;
     const beginningBarStyle = opts.beginningBarStyle;

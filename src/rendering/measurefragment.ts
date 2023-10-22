@@ -91,7 +91,6 @@ export class MeasureFragment {
         config,
         measureIndex,
         measureFragmentIndex,
-        systemId,
         staveSignature: leadingStaveSignature,
         previousStave,
         staveNumber,
