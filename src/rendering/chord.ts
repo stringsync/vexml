@@ -72,7 +72,7 @@ export class Chord {
   clone(): Chord {
     return new Chord({
       config: this.config,
-      notes: this.notes.map((note) => note.clone()),
+      notes: this.notes,
     });
   }
 
