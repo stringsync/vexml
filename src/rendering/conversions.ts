@@ -1,13 +1,13 @@
 import * as musicxml from '@/musicxml';
 import { AccidentalCode } from './accidental';
 import { NoteDurationDenominator } from './enums';
+import { Division } from './division';
 
-/** Converts an `AccidentalType` and an `Alter` to an accidental code. Defaults to 'n'. */
-export const toAccidentalCode = (opts: {
-  accidentalType: musicxml.AccidentalType | null;
-  alter: number | null;
-}): AccidentalCode => {
-  switch (opts.accidentalType) {
+/** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
+export const fromAccidentalTypeToAccidentalCode = (
+  accidentalType: musicxml.AccidentalType | null
+): AccidentalCode | null => {
+  switch (accidentalType) {
     case 'sharp':
       return '#';
     case 'double-sharp':
@@ -22,7 +22,12 @@ export const toAccidentalCode = (opts: {
       return '+';
   }
 
-  switch (opts.alter) {
+  return null;
+};
+
+/** Converts an `alter` to an `AccidentalCode`. Defaults to 'n'. */
+export const fromAlterToAccidentalCode = (alter: number | null): AccidentalCode => {
+  switch (alter) {
     case 1:
       return '#';
     case 2:
@@ -41,13 +46,15 @@ export const toAccidentalCode = (opts: {
       return 'db';
     case 1.5:
       return '++';
+    default:
+      return 'n';
   }
-
-  return 'n';
 };
 
 /** Converts a `NoteType` to a `NoteDurationDenominator`. Defaults to null. */
-export const toNoteDurationDenominator = (noteType: musicxml.NoteType | null): NoteDurationDenominator | null => {
+export const fromNoteTypeToNoteDurationDenominator = (
+  noteType: musicxml.NoteType | null
+): NoteDurationDenominator | null => {
   switch (noteType) {
     case '1024th':
       return '1024';
@@ -80,4 +87,39 @@ export const toNoteDurationDenominator = (noteType: musicxml.NoteType | null): N
     default:
       return null;
   }
+};
+
+/** Converts from a `Division` to a `NoteDurationDenominator`. Defaults to '1'. */
+export const fromDivisionsToNoteDurationDenominator = (divisions: Division): NoteDurationDenominator => {
+  if (divisions.isEqual(Division.of(4, 1))) {
+    return '1';
+  }
+  if (divisions.isEqual(Division.of(2, 1))) {
+    return '2';
+  }
+  if (divisions.isEqual(Division.of(1, 1))) {
+    return '4';
+  }
+  if (divisions.isEqual(Division.of(1, 2))) {
+    return '8';
+  }
+  if (divisions.isEqual(Division.of(1, 8))) {
+    return '32';
+  }
+  if (divisions.isEqual(Division.of(1, 16))) {
+    return '64';
+  }
+  if (divisions.isEqual(Division.of(1, 32))) {
+    return '128';
+  }
+  if (divisions.isEqual(Division.of(1, 64))) {
+    return '256';
+  }
+  if (divisions.isEqual(Division.of(1, 128))) {
+    return '512';
+  }
+  if (divisions.isEqual(Division.of(1, 256))) {
+    return '1024';
+  }
+  return '1';
 };

@@ -8,7 +8,7 @@ import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
-import { toAccidentalCode } from './conversions';
+import * as conversions from './conversions';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
 
@@ -175,10 +175,9 @@ export class Note {
 
   @util.memoize()
   private getAccidental(): Accidental | null {
-    const noteAccidentalCode = toAccidentalCode({
-      accidentalType: this.note.getAccidentalType(),
-      alter: this.note.getAlter(),
-    });
+    const noteAccidentalCode =
+      conversions.fromAccidentalTypeToAccidentalCode(this.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(this.note.getAlter());
 
     const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.note.getStep());
 
