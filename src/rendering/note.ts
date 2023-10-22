@@ -44,6 +44,7 @@ export class Note {
   private clef: Clef;
   private beamValue: musicxml.BeamValue | null;
   private tokens: Token[];
+  private keySignature: KeySignature;
 
   private constructor(opts: {
     config: Config;
@@ -56,6 +57,7 @@ export class Note {
     clef: Clef;
     beamValue: musicxml.BeamValue | null;
     tokens: Token[];
+    keySignature: KeySignature;
   }) {
     this.config = opts.config;
     this.note = opts.note;
@@ -67,6 +69,7 @@ export class Note {
     this.clef = opts.clef;
     this.beamValue = opts.beamValue;
     this.tokens = opts.tokens;
+    this.keySignature = opts.keySignature;
   }
 
   /** Creates a Note. */
@@ -122,6 +125,7 @@ export class Note {
       clef,
       beamValue,
       tokens,
+      keySignature,
     });
   }
 
@@ -237,6 +241,7 @@ export class Note {
       clef: this.clef,
       beamValue: this.beamValue,
       tokens: this.tokens,
+      keySignature: this.keySignature,
     });
   }
 
