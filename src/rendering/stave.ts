@@ -54,7 +54,7 @@ export class Stave {
   private endBarStyle: musicxml.BarStyle;
   private entry: StaveEntry;
   private previousKeySignature: KeySignature | null;
-  private metronome: musicxml.Metronome | null;
+  private measureEntries: MeasureEntry[];
 
   private constructor(opts: {
     config: Config;
@@ -68,7 +68,7 @@ export class Stave {
     endBarStyle: musicxml.BarStyle;
     entry: StaveEntry;
     previousKeySignature: KeySignature | null;
-    metronome: musicxml.Metronome | null;
+    measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
@@ -81,7 +81,7 @@ export class Stave {
     this.clef = opts.clef;
     this.entry = opts.entry;
     this.previousKeySignature = opts.previousKeySignature;
-    this.metronome = opts.metronome;
+    this.measureEntries = opts.measureEntries;
   }
 
   /** Creates a Stave. */
@@ -131,17 +131,6 @@ export class Stave {
       });
     }
 
-    const metronome = util.first(
-      measureEntries
-        .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
-        .flatMap((direction) => direction.getTypes())
-        .map((directionType) => directionType.getContent())
-        .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
-        .map((content) => content.metronome)
-        // Select the first renderable metronome, since there can be only one per vexflow.Stave.
-        .filter((metronome) => metronome.isSupported())
-    );
-
     return new Stave({
       config,
       measureIndex,
@@ -154,7 +143,7 @@ export class Stave {
       endBarStyle,
       entry,
       previousKeySignature,
-      metronome,
+      measureEntries,
     });
   }
 
@@ -211,7 +200,7 @@ export class Stave {
       endBarStyle: this.endBarStyle,
       entry: this.entry,
       previousKeySignature: this.previousKeySignature,
-      metronome: this.metronome,
+      measureEntries: this.measureEntries,
     });
   }
 
@@ -236,7 +225,7 @@ export class Stave {
   getTopPadding(): number {
     let topPadding = 0;
 
-    if (this.metronome) {
+    if (this.getMetronome()) {
       topPadding += METRONOME_TOP_PADDING;
     }
 
@@ -325,6 +314,20 @@ export class Stave {
     }).getNoteStartX();
   }
 
+  @util.memoize()
+  private getMetronome(): musicxml.Metronome | null {
+    return util.first(
+      this.measureEntries
+        .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
+        .flatMap((direction) => direction.getTypes())
+        .map((directionType) => directionType.getContent())
+        .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
+        .map((content) => content.metronome)
+        // Select the first renderable metronome, since there can be only one per vexflow.Stave.
+        .filter((metronome) => metronome.isSupported())
+    );
+  }
+
   private createVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
     const vfStave =
       this.clef.getType() === 'tab'
@@ -351,9 +354,10 @@ export class Stave {
       }
     }
 
-    const beatsPerMinute = this.metronome?.getBeatsPerMinute();
-    const beatUnitDotCount = this.metronome?.getBeatUnitDotCount();
-    const beatUnit = this.metronome?.getBeatUnit();
+    const metronome = this.getMetronome();
+    const beatsPerMinute = metronome?.getBeatsPerMinute();
+    const beatUnitDotCount = metronome?.getBeatUnitDotCount();
+    const beatUnit = metronome?.getBeatUnit();
     const isMetronomeMarkSupported = beatsPerMinute && beatUnitDotCount && beatUnit;
     if (isMetronomeMarkSupported) {
       vfStave.setTempo(
