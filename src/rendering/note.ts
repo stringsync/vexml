@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Accidental, AccidentalCode, AccidentalRendering } from './accidental';
+import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
@@ -84,18 +84,6 @@ export class Note {
     const note = opts.musicXml.note;
     const tokens = opts.tokens;
     const keySignature = opts.keySignature;
-
-    let accidental: Accidental | null = null;
-    const noteAccidentalCode = toAccidentalCode({
-      accidentalType: note.getAccidentalType(),
-      alter: note.getAlter(),
-    });
-    const keySignatureAccidentalCode = keySignature.getAccidentalCode(note.getStep());
-    const hasExplicitAccidental = note.getAccidentalType() !== null;
-    if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
-      const isCautionary = note.hasAccidentalCautionary();
-      accidental = Accidental.create({ code: noteAccidentalCode, isCautionary });
-    }
 
     const clef = opts.clef;
     const lyrics = note
