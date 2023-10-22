@@ -37,7 +37,7 @@ export type VoiceEntryData = {
   end: Division;
 };
 
-const DURATION_DENOMINATOR_CONVERSIONS: Array<{
+const NOTE_DURATION_DENOMINATOR_CONVERSIONS: Array<{
   case: Division;
   value: NoteDurationDenominator;
 }> = [
@@ -122,7 +122,7 @@ export class Voice {
   }
 
   private static createGhostNote(divisions: Division): GhostNote {
-    const durationDenominator = Voice.calculateDurationDenominator(divisions);
+    const durationDenominator = Voice.calculateNoteDurationDenominator(divisions);
     return GhostNote.create({ durationDenominator });
   }
 
@@ -145,7 +145,7 @@ export class Voice {
     // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
     // <duration>.
     const durationDenominator =
-      toNoteDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
+      toNoteDurationDenominator(note.getType()) ?? Voice.calculateNoteDurationDenominator(duration);
 
     if (note.isChordHead()) {
       return new Chord({
@@ -181,8 +181,8 @@ export class Voice {
     });
   }
 
-  private static calculateDurationDenominator(divisions: Division): NoteDurationDenominator {
-    return DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '1';
+  private static calculateNoteDurationDenominator(divisions: Division): NoteDurationDenominator {
+    return NOTE_DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '1';
   }
 
   /** Clones the Voice. */
