@@ -184,7 +184,8 @@ export class Voice {
     if (note.isChordHead()) {
       return Chord.create({
         config,
-        musicXml: { note, tokens },
+        musicXml: { note },
+        tokens,
         stem,
         clef,
         durationDenominator,
@@ -195,7 +196,8 @@ export class Voice {
     if (note.isRest()) {
       return Rest.create({
         config,
-        musicXml: { note, tokens },
+        musicXml: { note },
+        tokens,
         clef,
         durationDenominator,
       });
@@ -203,7 +205,8 @@ export class Voice {
 
     return Note.create({
       config,
-      musicXml: { note, tokens },
+      musicXml: { note },
+      tokens,
       stem,
       clef,
       durationDenominator,

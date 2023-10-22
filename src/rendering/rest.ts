@@ -52,13 +52,13 @@ export class Rest {
     config: Config;
     musicXml: {
       note: musicxml.Note;
-      tokens: Token[];
     };
+    tokens: Token[];
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
   }): Rest {
     const note = opts.musicXml.note;
-    const tokens = opts.musicXml.tokens;
+    const tokens = opts.tokens;
 
     return new Rest({
       config: opts.config,
