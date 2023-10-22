@@ -182,7 +182,7 @@ export class Voice {
       Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
 
     if (note.isChordHead()) {
-      return Chord.create({
+      return new Chord({
         config,
         musicXml: { note },
         tokens,
@@ -227,7 +227,7 @@ export class Voice {
           return entry;
         }
         if (entry instanceof Chord) {
-          return entry.clone();
+          return entry;
         }
         if (entry instanceof Rest) {
           return entry.clone();
