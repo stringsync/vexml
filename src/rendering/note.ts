@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Accidental, AccidentalRendering } from './accidental';
+import { Accidental, AccidentalCode, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
@@ -38,7 +38,6 @@ export class Note {
   private note: musicxml.Note;
   private stem: StemDirection;
   private lyrics: Lyric[];
-  private accidental: Accidental | null;
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clef: Clef;
@@ -51,7 +50,6 @@ export class Note {
     note: musicxml.Note;
     stem: StemDirection;
     lyrics: Lyric[];
-    accidental: Accidental | null;
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
@@ -63,7 +61,6 @@ export class Note {
     this.note = opts.note;
     this.stem = opts.stem;
     this.lyrics = opts.lyrics;
-    this.accidental = opts.accidental;
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
@@ -119,7 +116,6 @@ export class Note {
       note,
       stem,
       lyrics,
-      accidental,
       dotCount,
       durationDenominator,
       clef,
@@ -174,8 +170,9 @@ export class Note {
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
       const renderings = new Array<NoteModifierRendering>();
 
-      if (note.accidental) {
-        renderings.push(note.accidental.render());
+      const accidental = note.getAccidental();
+      if (accidental) {
+        renderings.push(accidental.render());
       }
 
       // Lyrics sorted by ascending verse number.
@@ -235,7 +232,6 @@ export class Note {
       note: this.note,
       stem: this.stem,
       lyrics: this.lyrics.map((lyric) => lyric.clone()),
-      accidental: this.accidental?.clone() ?? null,
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clef: this.clef,
@@ -256,5 +252,23 @@ export class Note {
     const octave = this.note.getOctave() - this.clef.getOctaveChange();
     const suffix = this.note.getNoteheadSuffix();
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
+  }
+
+  @util.memoize()
+  private getAccidental(): Accidental | null {
+    const noteAccidentalCode = toAccidentalCode({
+      accidentalType: this.note.getAccidentalType(),
+      alter: this.note.getAlter(),
+    });
+
+    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.note.getStep());
+
+    const hasExplicitAccidental = this.note.getAccidentalType() !== null;
+    if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
+      const isCautionary = this.note.hasAccidentalCautionary();
+      return Accidental.create({ code: noteAccidentalCode, isCautionary });
+    }
+
+    return null;
   }
 }
