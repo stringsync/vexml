@@ -91,34 +91,36 @@ export const fromNoteTypeToNoteDurationDenominator = (
 
 /** Converts from a `Division` to a `NoteDurationDenominator`. Defaults to '1'. */
 export const fromDivisionsToNoteDurationDenominator = (divisions: Division): NoteDurationDenominator => {
-  if (divisions.isEqual(Division.of(4, 1))) {
+  const equal = (numerator: number, denominator: number) => divisions.isEqual(Division.of(numerator, denominator));
+
+  if (equal(4, 1)) {
     return '1';
   }
-  if (divisions.isEqual(Division.of(2, 1))) {
+  if (equal(2, 1)) {
     return '2';
   }
-  if (divisions.isEqual(Division.of(1, 1))) {
+  if (equal(1, 1)) {
     return '4';
   }
-  if (divisions.isEqual(Division.of(1, 2))) {
+  if (equal(1, 2)) {
     return '8';
   }
-  if (divisions.isEqual(Division.of(1, 8))) {
+  if (equal(1, 8)) {
     return '32';
   }
-  if (divisions.isEqual(Division.of(1, 16))) {
+  if (equal(1, 16)) {
     return '64';
   }
-  if (divisions.isEqual(Division.of(1, 32))) {
+  if (equal(1, 32)) {
     return '128';
   }
-  if (divisions.isEqual(Division.of(1, 64))) {
+  if (equal(1, 64)) {
     return '256';
   }
-  if (divisions.isEqual(Division.of(1, 128))) {
+  if (equal(1, 128)) {
     return '512';
   }
-  if (divisions.isEqual(Division.of(1, 256))) {
+  if (equal(1, 256)) {
     return '1024';
   }
   return '1';
