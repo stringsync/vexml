@@ -10,6 +10,7 @@ import { Clef } from './clef';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { Voice } from './voice';
+import { toNoteDurationDenominator } from './conversions';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -367,7 +368,7 @@ export class Stave {
         {
           bpm: beatsPerMinute,
           dots: beatUnitDotCount,
-          duration: Voice.toDurationDenominator(beatUnit)!,
+          duration: toNoteDurationDenominator(beatUnit)!,
         },
         opts.y
       );
