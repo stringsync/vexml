@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -124,4 +124,18 @@ export const fromDivisionsToNoteDurationDenominator = (divisions: Division): Not
     return '1024';
   }
   return '1';
+};
+
+/** Converts from a `Stem` to a `StemDirection`. Defaults to 'auto'. */
+export const fromStemToStemDirection = (stem: musicxml.Stem | null): StemDirection => {
+  switch (stem) {
+    case 'up':
+      return 'up';
+    case 'down':
+      return 'down';
+    case 'none':
+      return 'none';
+    default:
+      return 'auto';
+  }
 };

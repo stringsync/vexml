@@ -126,13 +126,16 @@ export class Stave {
       // TODO: Render tablature correctly.
       entry = Tablature.create();
     } else {
-      entry = Chorus.create({
+      entry = new Chorus({
         config,
-        measureEntries,
+        data: {
+          type: 'voices',
+          measureEntries,
+          quarterNoteDivisions,
+          keySignature,
+        },
         clef,
         timeSignature,
-        quarterNoteDivisions,
-        keySignature,
       });
     }
 
@@ -216,7 +219,7 @@ export class Stave {
       keySignature: this.keySignature,
       beginningBarStyle: this.beginningBarStyle,
       endBarStyle: this.endBarStyle,
-      entry: this.entry.clone(),
+      entry: this.entry,
       previousKeySignature: this.previousKeySignature,
       metronome: this.metronome,
     });

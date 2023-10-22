@@ -31,6 +31,15 @@ type VoiceEntryData = {
   end: Division;
 };
 
+type ChorusData =
+  | { type: 'wholerest' }
+  | {
+      type: 'voices';
+      quarterNoteDivisions: number;
+      measureEntries: MeasureEntry[];
+      keySignature: KeySignature;
+    };
+
 /**
  * Represents a collection or cluster of musical voices within a single measure.
  *
@@ -41,30 +50,90 @@ type VoiceEntryData = {
  */
 export class Chorus {
   private config: Config;
-  private voices: Voice[];
+  private data: ChorusData;
+  private clef: Clef;
+  private timeSignature: TimeSignature;
 
-  private constructor(opts: { config: Config; voices: Voice[] }) {
+  constructor(opts: { config: Config; data: ChorusData; clef: Clef; timeSignature: TimeSignature }) {
     this.config = opts.config;
-    this.voices = opts.voices;
+    this.data = opts.data;
+    this.clef = opts.clef;
+    this.timeSignature = opts.timeSignature;
   }
 
-  /** Creates a Chorus. */
-  static create(opts: {
-    config: Config;
-    measureEntries: MeasureEntry[];
-    clef: Clef;
-    timeSignature: TimeSignature;
-    quarterNoteDivisions: number;
-    keySignature: KeySignature;
-  }): Chorus {
-    const config = opts.config;
-    const measureEntries = opts.measureEntries;
-    const clef = opts.clef;
-    const timeSignature = opts.timeSignature;
-    const keySignature = opts.keySignature;
+  /**
+   * Creates a Chorus with a single voice that is a single whole note rest.
+   *
+   * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
+   * which is why it's being used.
+   */
+  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
+    return new Chorus({
+      config: opts.config,
+      data: { type: 'wholerest' },
+      timeSignature: opts.timeSignature,
+      clef: opts.clef,
+    });
+  }
+
+  private static toStaveNoteLine(note: musicxml.Note, clef: Clef): number {
+    return new vexflow.StaveNote({
+      duration: '4',
+      keys: [note, ...note.getChordTail()].map((note) => {
+        let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
+
+        const suffix = note.getNoteheadSuffix();
+        if (suffix) {
+          key += `/${suffix}`;
+        }
+
+        return key;
+      }),
+    }).getKeyLine(0);
+  }
+
+  /** Returns the minimum justify width for the stave in a measure context. */
+  @util.memoize()
+  getMinJustifyWidth(): number {
+    const voices = this.getVoices();
+    if (voices.length > 0) {
+      const vfVoices = voices.map((voice) => voice.render().vexflow.voice);
+      const vfFormatter = new vexflow.Formatter();
+      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
+    }
+    return 0;
+  }
+
+  /** Renders the Chorus. */
+  render(): ChorusRendering {
+    const voiceRenderings = this.getVoices().map((voice) => voice.render());
+
+    return {
+      type: 'chorus',
+      voices: voiceRenderings,
+    };
+  }
+
+  @util.memoize()
+  private getVoices(): Voice[] {
+    if (this.data.type === 'wholerest') {
+      return [
+        Voice.wholeRest({
+          config: this.config,
+          timeSignature: this.timeSignature,
+          clef: this.clef,
+        }),
+      ];
+    }
+
+    const config = this.config;
+    const measureEntries = this.data.measureEntries;
+    const clef = this.clef;
+    const timeSignature = this.timeSignature;
+    const keySignature = this.data.keySignature;
 
     const data: { [voiceId: string]: VoiceEntryData[] } = {};
-    let quarterNoteDivisions = opts.quarterNoteDivisions;
+    let quarterNoteDivisions = this.data.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
     let tokens = new Array<Token>();
 
@@ -103,7 +172,7 @@ export class Chorus {
         const startDivision = divisions;
         const endDivision = startDivision.add(noteDuration);
 
-        const stem = Chorus.toStemDirection(note.getStem());
+        const stem = conversions.fromStemToStemDirection(note.getStem());
 
         data[voiceId].push({
           voiceId,
@@ -165,7 +234,7 @@ export class Chorus {
     }
 
     const voices = voiceIds.map((voiceId) => {
-      let divisions = Division.of(0, opts.quarterNoteDivisions);
+      let divisions = Division.of(0, quarterNoteDivisions);
       const entries = new Array<VoiceEntry>();
 
       for (const entry of data[voiceId]) {
@@ -237,83 +306,6 @@ export class Chorus {
       });
     });
 
-    return new Chorus({ config, voices });
-  }
-
-  /**
-   * Creates a Chorus with a single voice that is a single whole note rest.
-   *
-   * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
-   * which is why it's being used.
-   */
-  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
-    const voice = Voice.wholeRest({
-      config: opts.config,
-      timeSignature: opts.timeSignature,
-      clef: opts.clef,
-    });
-
-    return new Chorus({
-      config: opts.config,
-      voices: [voice],
-    });
-  }
-
-  private static toStemDirection(stem: musicxml.Stem | null): StemDirection {
-    switch (stem) {
-      case 'up':
-        return 'up';
-      case 'down':
-        return 'down';
-      case 'none':
-        return 'none';
-      default:
-        return 'auto';
-    }
-  }
-
-  private static toStaveNoteLine(note: musicxml.Note, clef: Clef): number {
-    return new vexflow.StaveNote({
-      duration: '4',
-      keys: [note, ...note.getChordTail()].map((note) => {
-        let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
-
-        const suffix = note.getNoteheadSuffix();
-        if (suffix) {
-          key += `/${suffix}`;
-        }
-
-        return key;
-      }),
-    }).getKeyLine(0);
-  }
-
-  /** Returns the minimum justify width for the stave in a measure context. */
-  @util.memoize()
-  getMinJustifyWidth(): number {
-    if (this.voices.length > 0) {
-      const vfVoices = this.voices.map((voice) => voice.render().vexflow.voice);
-      const vfFormatter = new vexflow.Formatter();
-      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
-    }
-    return 0;
-  }
-
-  /** Clones the Chorus. */
-  clone(): Chorus {
-    return new Chorus({
-      config: this.config,
-      voices: this.voices,
-    });
-  }
-
-  /** Renders the Chorus. */
-  render(): ChorusRendering {
-    const voiceRenderings = this.voices.map((voice) => voice.render());
-
-    return {
-      type: 'chorus',
-      voices: voiceRenderings,
-    };
+    return voices;
   }
 }
