@@ -90,7 +90,7 @@ export class Note {
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
     const vfStaveNote = new vexflow.StaveNote({
-      keys: notes.map((note) => note.getKey()),
+      keys,
       duration: util.first(notes)!.durationDenominator,
       dots: util.first(notes)!.getDotCount(),
       clef: util.first(notes)!.clef.getType(),
