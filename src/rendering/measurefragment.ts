@@ -146,7 +146,7 @@ export class MeasureFragment {
       measureIndex: this.measureIndex,
       measureFragmentIndex: this.measureFragmentIndex,
       systemId,
-      staves: this.staves.map((stave) => stave.clone(systemId)),
+      staves: this.staves.map((stave) => stave.clone()),
       staveLayouts: this.staveLayouts,
       rightPadding: this.rightPadding,
     });
