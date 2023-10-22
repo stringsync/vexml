@@ -126,14 +126,11 @@ export class Stave {
       // TODO: Render tablature correctly.
       entry = Tablature.create();
     } else {
-      entry = new Chorus({
+      entry = Chorus.multiVoice({
         config,
-        data: {
-          type: 'voices',
-          measureEntries,
-          quarterNoteDivisions,
-          keySignature,
-        },
+        measureEntries,
+        quarterNoteDivisions,
+        keySignature,
         clef,
         timeSignature,
       });

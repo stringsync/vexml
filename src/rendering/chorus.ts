@@ -31,14 +31,16 @@ type VoiceEntryData = {
   end: Division;
 };
 
-type ChorusData =
-  | { type: 'wholerest' }
-  | {
-      type: 'voices';
-      quarterNoteDivisions: number;
-      measureEntries: MeasureEntry[];
-      keySignature: KeySignature;
-    };
+type WholeRestChorusData = { type: 'wholerest' };
+
+type MultiVoiceChorusData = {
+  type: 'multivoice';
+  quarterNoteDivisions: number;
+  measureEntries: MeasureEntry[];
+  keySignature: KeySignature;
+};
+
+type ChorusData = WholeRestChorusData | MultiVoiceChorusData;
 
 /**
  * Represents a collection or cluster of musical voices within a single measure.
@@ -54,19 +56,36 @@ export class Chorus {
   private clef: Clef;
   private timeSignature: TimeSignature;
 
-  constructor(opts: { config: Config; data: ChorusData; clef: Clef; timeSignature: TimeSignature }) {
+  private constructor(opts: { config: Config; data: ChorusData; clef: Clef; timeSignature: TimeSignature }) {
     this.config = opts.config;
     this.data = opts.data;
     this.clef = opts.clef;
     this.timeSignature = opts.timeSignature;
   }
 
-  /**
-   * Creates a Chorus with a single voice that is a single whole note rest.
-   *
-   * This is preferred over creating a MultiRest with a length of 1. Chorus also contains the machinery to render voices
-   * which is why it's being used.
-   */
+  /** Creates a Chorus with multiple voices. */
+  static multiVoice(opts: {
+    config: Config;
+    timeSignature: TimeSignature;
+    clef: Clef;
+    quarterNoteDivisions: number;
+    measureEntries: MeasureEntry[];
+    keySignature: KeySignature;
+  }): Chorus {
+    return new Chorus({
+      config: opts.config,
+      data: {
+        type: 'multivoice',
+        keySignature: opts.keySignature,
+        measureEntries: opts.measureEntries,
+        quarterNoteDivisions: opts.quarterNoteDivisions,
+      },
+      timeSignature: opts.timeSignature,
+      clef: opts.clef,
+    });
+  }
+
+  /** Creates a Chorus with a single voice that is a single whole note rest. */
   static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
     return new Chorus({
       config: opts.config,
@@ -74,22 +93,6 @@ export class Chorus {
       timeSignature: opts.timeSignature,
       clef: opts.clef,
     });
-  }
-
-  private static toStaveNoteLine(note: musicxml.Note, clef: Clef): number {
-    return new vexflow.StaveNote({
-      duration: '4',
-      keys: [note, ...note.getChordTail()].map((note) => {
-        let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
-
-        const suffix = note.getNoteheadSuffix();
-        if (suffix) {
-          key += `/${suffix}`;
-        }
-
-        return key;
-      }),
-    }).getKeyLine(0);
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
@@ -116,29 +119,59 @@ export class Chorus {
 
   @util.memoize()
   private getVoices(): Voice[] {
-    if (this.data.type === 'wholerest') {
-      return [
-        Voice.wholeRest({
-          config: this.config,
-          timeSignature: this.timeSignature,
-          clef: this.clef,
-        }),
-      ];
+    switch (this.data.type) {
+      case 'wholerest':
+        return this.createWholeRest();
+      case 'multivoice':
+        return this.createMultiVoice({
+          keySignature: this.data.keySignature,
+          measureEntries: this.data.measureEntries,
+          quarterNoteDivisions: this.data.quarterNoteDivisions,
+        });
     }
+  }
 
-    const config = this.config;
-    const measureEntries = this.data.measureEntries;
-    const clef = this.clef;
-    const timeSignature = this.timeSignature;
-    const keySignature = this.data.keySignature;
+  private createWholeRest(): Voice[] {
+    return [
+      Voice.wholeRest({
+        config: this.config,
+        timeSignature: this.timeSignature,
+        clef: this.clef,
+      }),
+    ];
+  }
 
-    const data: { [voiceId: string]: VoiceEntryData[] } = {};
-    let quarterNoteDivisions = this.data.quarterNoteDivisions;
+  private createMultiVoice(opts: {
+    quarterNoteDivisions: number;
+    measureEntries: MeasureEntry[];
+    keySignature: KeySignature;
+  }): Voice[] {
+    const voiceEntryData = this.computeVoiceEntryData({
+      measureEntries: opts.measureEntries,
+      quarterNoteDivisions: opts.quarterNoteDivisions,
+    });
+
+    this.adjustStems(voiceEntryData);
+
+    return this.computeFullyQualifiedVoices({
+      voiceEntryData,
+      keySignature: opts.keySignature,
+      quarterNoteDivisions: opts.quarterNoteDivisions,
+    });
+  }
+
+  private computeVoiceEntryData(opts: {
+    quarterNoteDivisions: number;
+    measureEntries: MeasureEntry[];
+  }): Record<string, VoiceEntryData[]> {
+    const result: Record<string, VoiceEntryData[]> = {};
+
+    let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
     let tokens = new Array<Token>();
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
-    for (const entry of measureEntries) {
+    for (const entry of opts.measureEntries) {
       if (entry instanceof StaveSignature) {
         quarterNoteDivisions = entry.getQuarterNoteDivisions();
       }
@@ -166,7 +199,7 @@ export class Chorus {
 
         const voiceId = note.getVoice();
 
-        data[voiceId] ??= [];
+        result[voiceId] ??= [];
 
         const noteDuration = Division.of(note.getDuration(), quarterNoteDivisions);
         const startDivision = divisions;
@@ -174,7 +207,7 @@ export class Chorus {
 
         const stem = conversions.fromStemToStemDirection(note.getStem());
 
-        data[voiceId].push({
+        result[voiceId].push({
           voiceId,
           note,
           tokens,
@@ -198,17 +231,24 @@ export class Chorus {
       }
     }
 
-    const voiceIds = Object.keys(data);
+    return result;
+  }
 
-    // Adjust the stems based on the first non-rest note of each voice by mutating the voice entry data in place. Do not
-    // change any stem directions that were explicitly defined in the MusicXML document.
+  /**
+   * Adjusts the stems based on the first non-rest note of each voice by mutating the voice entry data in place.
+   *
+   * This method does _not_ change any stem directions that were explicitly defined in the MusicXML document.
+   */
+  private adjustStems(voiceEntryData: Record<string, VoiceEntryData[]>): void {
+    const voiceIds = Object.keys(voiceEntryData);
+
     const firstNonRestVoiceEntries = voiceIds
-      .map((voiceId) => data[voiceId].find((entry) => !entry.note.isRest()))
+      .map((voiceId) => voiceEntryData[voiceId].find((entry) => !entry.note.isRest()))
       .filter((entry): entry is VoiceEntryData => typeof entry !== 'undefined');
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstNonRestVoiceEntries, (entry) => -Chorus.toStaveNoteLine(entry.note, clef));
+    util.sortBy(firstNonRestVoiceEntries, (entry) => -this.staveNoteLine(entry.note, this.clef));
 
     if (firstNonRestVoiceEntries.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
@@ -224,7 +264,7 @@ export class Chorus {
       }
 
       for (const voiceId of voiceIds) {
-        for (const entry of data[voiceId]) {
+        for (const entry of voiceEntryData[voiceId]) {
           // Only change stems that haven't been explicitly specified.
           if (entry.stem === 'auto') {
             entry.stem = stems[voiceId];
@@ -232,12 +272,40 @@ export class Chorus {
         }
       }
     }
+  }
 
-    const voices = voiceIds.map((voiceId) => {
+  /** Returns the line that the note would be rendered on. */
+  private staveNoteLine(note: musicxml.Note, clef: Clef): number {
+    return new vexflow.StaveNote({
+      duration: '4',
+      keys: [note, ...note.getChordTail()].map((note) => {
+        const step = note.getStep();
+        const octave = note.getOctave() - clef.getOctaveChange();
+        const suffix = note.getNoteheadSuffix();
+        return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
+      }),
+    }).getKeyLine(0);
+  }
+
+  private computeFullyQualifiedVoices(opts: {
+    voiceEntryData: Record<string, VoiceEntryData[]>;
+    quarterNoteDivisions: number;
+    keySignature: KeySignature;
+  }): Voice[] {
+    const result = new Array<Voice>();
+
+    const voiceEntryData = opts.voiceEntryData;
+    const quarterNoteDivisions = opts.quarterNoteDivisions;
+    const keySignature = opts.keySignature;
+    const config = this.config;
+    const clef = this.clef;
+    const timeSignature = this.timeSignature;
+
+    for (const voiceId of Object.keys(voiceEntryData)) {
       let divisions = Division.of(0, quarterNoteDivisions);
       const entries = new Array<VoiceEntry>();
 
-      for (const entry of data[voiceId]) {
+      for (const entry of opts.voiceEntryData[voiceId]) {
         const ghostNoteStart = divisions;
         const ghostNoteEnd = entry.start;
         const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
@@ -299,13 +367,14 @@ export class Chorus {
         divisions = entry.end;
       }
 
-      return new Voice({
+      const voice = new Voice({
         config,
         entries,
         timeSignature,
       });
-    });
+      result.push(voice);
+    }
 
-    return voices;
+    return result;
   }
 }
