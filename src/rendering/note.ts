@@ -160,19 +160,6 @@ export class Note {
     }
   }
 
-  /** Clones the Note. */
-  clone(): Note {
-    return new Note({
-      config: this.config,
-      musicXml: { note: this.note },
-      stem: this.stem,
-      durationDenominator: this.durationDenominator,
-      clef: this.clef,
-      tokens: this.tokens,
-      keySignature: this.keySignature,
-    });
-  }
-
   /** Renders the Note. */
   render(): NoteRendering {
     return util.first(Note.render([this]))!;

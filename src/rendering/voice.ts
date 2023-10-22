@@ -224,7 +224,7 @@ export class Voice {
       config: this.config,
       entries: this.entries.map((entry) => {
         if (entry instanceof Note) {
-          return entry.clone();
+          return entry;
         }
         if (entry instanceof Chord) {
           return entry.clone();
