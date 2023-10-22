@@ -1,13 +1,14 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Accidental, AccidentalCode, AccidentalRendering } from './accidental';
+import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
+import { toAccidentalCode } from './conversions';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
 
@@ -85,7 +86,10 @@ export class Note {
     const keySignature = opts.keySignature;
 
     let accidental: Accidental | null = null;
-    const noteAccidentalCode = Note.getAccidentalCode({ note });
+    const noteAccidentalCode = toAccidentalCode({
+      accidentalType: note.getAccidentalType(),
+      alter: note.getAlter(),
+    });
     const keySignatureAccidentalCode = keySignature.getAccidentalCode(note.getStep());
     const hasExplicitAccidental = note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
@@ -218,49 +222,6 @@ export class Note {
       default:
         return { autoStem: true };
     }
-  }
-
-  private static getAccidentalCode(musicXml: { note: musicxml.Note }): AccidentalCode {
-    const accidentalType = musicXml.note.getAccidentalType();
-    // AccidentalType takes precedence over alter.
-    switch (accidentalType) {
-      case 'sharp':
-        return '#';
-      case 'double-sharp':
-        return '##';
-      case 'flat':
-        return 'b';
-      case 'flat-flat':
-        return 'bb';
-      case 'natural':
-        return 'n';
-      case 'quarter-sharp':
-        return '+';
-    }
-
-    const alter = musicXml.note.getAlter();
-    switch (alter) {
-      case 1:
-        return '#';
-      case 2:
-        return '##';
-      case -1:
-        return 'b';
-      case -2:
-        return 'bb';
-      case 0:
-        return 'n';
-      case -0.5:
-        return 'd';
-      case 0.5:
-        return '+';
-      case -1.5:
-        return 'db';
-      case 1.5:
-        return '++';
-    }
-
-    return 'n';
   }
 
   /** Clones the Note. */
