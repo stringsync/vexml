@@ -123,7 +123,7 @@ export class Voice {
 
   private static createGhostNote(divisions: Division): GhostNote {
     const durationDenominator = Voice.calculateNoteDurationDenominator(divisions);
-    return GhostNote.create({ durationDenominator });
+    return new GhostNote({ durationDenominator });
   }
 
   private static createVoiceEntry(opts: {
