@@ -40,7 +40,6 @@ export class Note {
   private dotCount: number;
   private durationDenominator: NoteDurationDenominator;
   private clef: Clef;
-  private beamValue: musicxml.BeamValue | null;
   private tokens: Token[];
   private keySignature: KeySignature;
 
@@ -51,7 +50,6 @@ export class Note {
     dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
-    beamValue: musicxml.BeamValue | null;
     tokens: Token[];
     keySignature: KeySignature;
   }) {
@@ -61,7 +59,6 @@ export class Note {
     this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
-    this.beamValue = opts.beamValue;
     this.tokens = opts.tokens;
     this.keySignature = opts.keySignature;
   }
@@ -89,8 +86,6 @@ export class Note {
 
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
     // continues, or stops.
-    const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
-    const beamValue = util.first(beams)?.getBeamValue() ?? null;
 
     return new Note({
       config: opts.config,
@@ -99,7 +94,6 @@ export class Note {
       dotCount,
       durationDenominator,
       clef,
-      beamValue,
       tokens,
       keySignature,
     });
@@ -188,7 +182,7 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
-      beamValue: notes[index].beamValue,
+      beamValue: notes[index].getBeamValue(),
     }));
   }
 
@@ -214,7 +208,6 @@ export class Note {
       dotCount: this.dotCount,
       durationDenominator: this.durationDenominator,
       clef: this.clef,
-      beamValue: this.beamValue,
       tokens: this.tokens,
       keySignature: this.keySignature,
     });
@@ -257,5 +250,13 @@ export class Note {
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
       .map((lyric) => Lyric.create({ lyric }));
+  }
+
+  @util.memoize()
+  private getBeamValue(): musicxml.BeamValue | null {
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
+    const beams = util.sortBy(this.note.getBeams(), (beam) => beam.getNumber());
+    return util.first(beams)?.getBeamValue() ?? null;
   }
 }
