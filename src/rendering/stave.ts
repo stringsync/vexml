@@ -46,7 +46,6 @@ export class Stave {
   private config: Config;
   private measureIndex: number;
   private measureFragmentIndex: number;
-  private systemId: symbol;
   private staveNumber: number;
   private clef: Clef;
   private timeSignature: TimeSignature;
@@ -61,7 +60,6 @@ export class Stave {
     config: Config;
     measureIndex: number;
     measureFragmentIndex: number;
-    systemId: symbol;
     staveNumber: number;
     clef: Clef;
     timeSignature: TimeSignature;
@@ -75,7 +73,6 @@ export class Stave {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
     this.measureFragmentIndex = opts.measureFragmentIndex;
-    this.systemId = opts.systemId;
     this.staveNumber = opts.staveNumber;
     this.timeSignature = opts.timeSignature;
     this.keySignature = opts.keySignature;
@@ -151,7 +148,6 @@ export class Stave {
       config,
       measureIndex,
       measureFragmentIndex,
-      systemId,
       staveNumber,
       clef,
       timeSignature,
@@ -204,12 +200,11 @@ export class Stave {
   }
 
   /** Cleans the Stave. */
-  clone(systemId: symbol): Stave {
+  clone(): Stave {
     return new Stave({
       config: this.config,
       measureIndex: this.measureIndex,
       measureFragmentIndex: this.measureFragmentIndex,
-      systemId,
       staveNumber: this.staveNumber,
       clef: this.clef,
       timeSignature: this.timeSignature,
