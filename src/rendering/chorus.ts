@@ -151,9 +151,8 @@ export class Chorus {
     }
 
     const voices = voiceIds.map((voiceId) =>
-      Voice.create({
+      Voice.fromEntryData(data[voiceId], {
         config,
-        data: data[voiceId],
         quarterNoteDivisions,
         timeSignature,
         clef,

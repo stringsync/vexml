@@ -1,18 +1,18 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as conversions from './conversions';
 import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
-import { NoteDurationDenominator, StemDirection } from './enums';
+import { StemDirection } from './enums';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Division } from './division';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
 import { Token } from './token';
-import { toNoteDurationDenominator } from './conversions';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -38,22 +38,6 @@ export type VoiceEntryData = {
   end: Division;
 };
 
-const NOTE_DURATION_DENOMINATOR_CONVERSIONS: Array<{
-  case: Division;
-  value: NoteDurationDenominator;
-}> = [
-  { case: Division.of(4, 1), value: '1' },
-  { case: Division.of(2, 1), value: '2' },
-  { case: Division.of(1, 1), value: '4' },
-  { case: Division.of(1, 2), value: '8' },
-  { case: Division.of(1, 8), value: '32' },
-  { case: Division.of(1, 16), value: '64' },
-  { case: Division.of(1, 32), value: '128' },
-  { case: Division.of(1, 64), value: '256' },
-  { case: Division.of(1, 128), value: '512' },
-  { case: Division.of(1, 256), value: '1024' },
-];
-
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
  *
@@ -72,31 +56,83 @@ export class Voice {
     this.timeSignature = opts.timeSignature;
   }
 
-  static create(opts: {
-    config: Config;
-    data: VoiceEntryData[];
-    quarterNoteDivisions: number;
-    timeSignature: TimeSignature;
-    clef: Clef;
-    keySignature: KeySignature;
-  }): Voice {
+  static fromEntryData(
+    entryData: VoiceEntryData[],
+    opts: {
+      config: Config;
+      quarterNoteDivisions: number;
+      timeSignature: TimeSignature;
+      clef: Clef;
+      keySignature: KeySignature;
+    }
+  ): Voice {
     const config = opts.config;
-    const timeSignature = opts.timeSignature;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
     const clef = opts.clef;
+    const timeSignature = opts.timeSignature;
     const keySignature = opts.keySignature;
+    const quarterNoteDivisions = opts.quarterNoteDivisions;
 
     let divisions = Division.of(0, quarterNoteDivisions);
     const entries = new Array<VoiceEntry>();
-    for (const entry of opts.data) {
+
+    for (const entry of entryData) {
       const ghostNoteStart = divisions;
       const ghostNoteEnd = entry.start;
       const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
 
       if (ghostNoteDuration.toBeats() > 0) {
-        entries.push(Voice.createGhostNote(ghostNoteDuration));
+        entries.push(
+          new GhostNote({
+            durationDenominator: conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration),
+          })
+        );
       }
-      entries.push(Voice.createVoiceEntry({ config, clef, entry, keySignature }));
+
+      const note = entry.note;
+      const stem = entry.stem;
+      const tokens = entry.tokens;
+
+      const noteDuration = entry.end.subtract(entry.start);
+      const durationDenominator =
+        conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
+        conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
+
+      if (note.isChordHead()) {
+        entries.push(
+          new Chord({
+            config,
+            musicXml: { note },
+            tokens,
+            stem,
+            clef,
+            durationDenominator,
+            keySignature,
+          })
+        );
+      } else if (note.isRest()) {
+        entries.push(
+          new Rest({
+            config,
+            displayPitch: note.getRestDisplayPitch(),
+            dotCount: note.getDotCount(),
+            tokens,
+            clef,
+            durationDenominator,
+          })
+        );
+      } else {
+        entries.push(
+          new Note({
+            config,
+            musicXml: { note },
+            tokens,
+            stem,
+            clef,
+            durationDenominator,
+            keySignature,
+          })
+        );
+      }
 
       divisions = entry.end;
     }
@@ -120,70 +156,6 @@ export class Voice {
       timeSignature: opts.timeSignature,
       entries: [wholeRest],
     });
-  }
-
-  private static createGhostNote(divisions: Division): GhostNote {
-    const durationDenominator = Voice.calculateNoteDurationDenominator(divisions);
-    return new GhostNote({ durationDenominator });
-  }
-
-  private static createVoiceEntry(opts: {
-    config: Config;
-    entry: VoiceEntryData;
-    clef: Clef;
-    keySignature: KeySignature;
-  }): VoiceEntry {
-    const config = opts.config;
-    const entry = opts.entry;
-    const clef = opts.clef;
-    const note = entry.note;
-    const stem = entry.stem;
-    const keySignature = opts.keySignature;
-    const tokens = entry.tokens;
-
-    const duration = entry.end.subtract(entry.start);
-
-    // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
-    // <duration>.
-    const durationDenominator =
-      toNoteDurationDenominator(note.getType()) ?? Voice.calculateNoteDurationDenominator(duration);
-
-    if (note.isChordHead()) {
-      return new Chord({
-        config,
-        musicXml: { note },
-        tokens,
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
-    }
-
-    if (note.isRest()) {
-      return new Rest({
-        config,
-        displayPitch: note.getRestDisplayPitch(),
-        dotCount: note.getDotCount(),
-        tokens,
-        clef,
-        durationDenominator,
-      });
-    }
-
-    return new Note({
-      config,
-      musicXml: { note },
-      tokens,
-      stem,
-      clef,
-      durationDenominator,
-      keySignature,
-    });
-  }
-
-  private static calculateNoteDurationDenominator(divisions: Division): NoteDurationDenominator {
-    return NOTE_DURATION_DENOMINATOR_CONVERSIONS.find((conversion) => conversion.case.isEqual(divisions))?.value ?? '1';
   }
 
   /** Clones the Voice. */
