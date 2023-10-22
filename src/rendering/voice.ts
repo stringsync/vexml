@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Note, NoteRendering } from './note';
 import { Chord, ChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
@@ -235,6 +236,11 @@ export class Voice {
       vexflow: { voice: vfVoice },
       entries: voiceEntryRenderings,
     };
+  }
+
+  @util.memoize()
+  private getEntries(): VoiceEntry[] {
+    return [];
   }
 
   private toVexflowVoice(vfTickables: vexflow.Tickable[]): vexflow.Voice {
