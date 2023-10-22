@@ -11,6 +11,7 @@ import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
 import { Token } from './token';
+import { toNoteDurationDenominator } from './conversions';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -120,41 +121,6 @@ export class Voice {
     });
   }
 
-  static toDurationDenominator(noteType: musicxml.NoteType | null): NoteDurationDenominator | null {
-    switch (noteType) {
-      case '1024th':
-        return '1024';
-      case '512th':
-        return '512';
-      case '256th':
-        return '256';
-      case '128th':
-        return '128';
-      case '64th':
-        return '64';
-      case '32nd':
-        return '32';
-      case '16th':
-        return '16';
-      case 'eighth':
-        return '8';
-      case 'quarter':
-        return '4';
-      case 'half':
-        return '2';
-      case 'whole':
-        return '1';
-      case 'breve':
-        return '1/2';
-      case 'long':
-        // VexFlow bug: should be '1/4' but it is not supported
-        // return '1/4';
-        return '1/2';
-      default:
-        return null;
-    }
-  }
-
   private static createGhostNote(divisions: Division): GhostNote {
     const durationDenominator = Voice.calculateDurationDenominator(divisions);
     return GhostNote.create({ durationDenominator });
@@ -179,7 +145,7 @@ export class Voice {
     // Sometimes the <type> of the <note> is omitted. If that's the case, infer the duration denominator from the
     // <duration>.
     const durationDenominator =
-      Voice.toDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
+      toNoteDurationDenominator(note.getType()) ?? Voice.calculateDurationDenominator(duration);
 
     if (note.isChordHead()) {
       return new Chord({
