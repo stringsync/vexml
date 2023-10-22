@@ -88,23 +88,18 @@ export class Voice {
       }
     });
 
-    const vfVoice = this.toVexflowVoice(vfTickables);
+    const fraction = this.timeSignature.toFraction();
+    const vfVoice = new vexflow.Voice({
+      numBeats: fraction.numerator,
+      beatValue: fraction.denominator,
+    })
+      .setStrict(false)
+      .addTickables(vfTickables);
 
     return {
       type: 'voice',
       vexflow: { voice: vfVoice },
       entries: voiceEntryRenderings,
     };
-  }
-
-  private toVexflowVoice(vfTickables: vexflow.Tickable[]): vexflow.Voice {
-    const fraction = this.timeSignature.toFraction();
-
-    return new vexflow.Voice({
-      numBeats: fraction.numerator,
-      beatValue: fraction.denominator,
-    })
-      .setStrict(false)
-      .addTickables(vfTickables);
   }
 }
