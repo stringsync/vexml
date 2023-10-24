@@ -122,10 +122,9 @@ export class Measure {
       beginningBarStyle: musicxml.BarStyle,
       endBarStyle: musicxml.BarStyle
     ) {
-      const fragment = MeasureFragment.create({
+      const fragment = new MeasureFragment({
         config: opts.config,
         measureIndex,
-        measureFragmentIndex: fragments.length,
         systemId: opts.systemId,
         leadingStaveSignature,
         beginningBarStyle: beginningBarStyle,

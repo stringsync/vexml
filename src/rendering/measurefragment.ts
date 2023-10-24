@@ -31,83 +31,38 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
  */
 export class MeasureFragment {
   private config: Config;
+  private leadingStaveSignature: StaveSignature | null;
   private measureIndex: number;
   private measureEntries: MeasureEntry[];
   private systemId: symbol;
-  private staves: Stave[];
   private staveLayouts: musicxml.StaveLayout[];
+  private staveCount: number;
+  private previousMeasureFragment: MeasureFragment | null;
+  private beginningBarStyle: musicxml.BarStyle;
+  private endBarStyle: musicxml.BarStyle;
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
+    leadingStaveSignature: StaveSignature | null;
     measureIndex: number;
     measureEntries: MeasureEntry[];
     systemId: symbol;
-    staves: Stave[];
     staveLayouts: musicxml.StaveLayout[];
+    staveCount: number;
+    previousMeasureFragment: MeasureFragment | null;
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
   }) {
     this.config = opts.config;
+    this.leadingStaveSignature = opts.leadingStaveSignature;
     this.measureIndex = opts.measureIndex;
     this.measureEntries = opts.measureEntries;
     this.systemId = opts.systemId;
-    this.staves = opts.staves;
     this.staveLayouts = opts.staveLayouts;
-  }
-
-  /** Creates a MeasureFragment. */
-  static create(opts: {
-    config: Config;
-    measureIndex: number;
-    measureFragmentIndex: number;
-    systemId: symbol;
-    leadingStaveSignature: StaveSignature | null;
-    beginningBarStyle: musicxml.BarStyle;
-    measureEntries: MeasureEntry[];
-    endBarStyle: musicxml.BarStyle;
-    staveCount: number;
-    staveLayouts: musicxml.StaveLayout[];
-    previousMeasureFragment: MeasureFragment | null;
-  }): MeasureFragment {
-    const config = opts.config;
-    const measureIndex = opts.measureIndex;
-    const measureFragmentIndex = opts.measureFragmentIndex;
-    const systemId = opts.systemId;
-    const leadingStaveSignature = opts.leadingStaveSignature;
-    const measureEntries = opts.measureEntries;
-    const staveCount = opts.staveCount;
-    const staveLayouts = opts.staveLayouts;
-    const beginningBarStyle = opts.beginningBarStyle;
-    const endBarStyle = opts.endBarStyle;
-
-    const staves = new Array<Stave>(staveCount);
-    for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const staveIndex = staveNumber - 1;
-
-      const previousStave = opts.previousMeasureFragment?.staves[staveIndex] ?? null;
-
-      staves[staveIndex] = new Stave({
-        config,
-        staveSignature: leadingStaveSignature,
-        previousStave,
-        staveNumber,
-        beginningBarStyle,
-        endBarStyle,
-        measureEntries: measureEntries.filter((entry) => {
-          if (entry instanceof musicxml.Note) {
-            return entry.getStaveNumber() === staveNumber;
-          }
-          return true;
-        }),
-      });
-    }
-
-    return new MeasureFragment({
-      config,
-      measureIndex,
-      measureEntries,
-      systemId,
-      staves,
-      staveLayouts,
-    });
+    this.staveCount = opts.staveCount;
+    this.previousMeasureFragment = opts.previousMeasureFragment;
+    this.beginningBarStyle = opts.beginningBarStyle;
+    this.endBarStyle = opts.endBarStyle;
   }
 
   /** Returns the minimum required width for the measure fragment. */
@@ -119,23 +74,29 @@ export class MeasureFragment {
 
   /** Returns the top padding for the measure fragment. */
   getTopPadding(): number {
-    return util.max(this.staves.map((stave) => stave.getTopPadding()));
+    return util.max(this.getStaves().map((stave) => stave.getTopPadding()));
   }
 
   getMultiRestCount(): number {
     // TODO: One stave could be a multi measure rest, while another one could have voices.
-    return util.max(this.staves.map((stave) => stave.getMultiRestCount()));
+    return util.max(this.getStaves().map((stave) => stave.getMultiRestCount()));
   }
 
   /** Clones the MeasureFragment and updates the systemId. */
   clone(systemId: symbol): MeasureFragment {
+    // TODO: Remove systemId property by creating a rendering plan that the measure can use at render time to answer
+    // the question "What stave modifiers do I need to "
     return new MeasureFragment({
       config: this.config,
       measureIndex: this.measureIndex,
       measureEntries: this.measureEntries,
       systemId,
-      staves: this.staves,
       staveLayouts: this.staveLayouts,
+      beginningBarStyle: this.beginningBarStyle,
+      endBarStyle: this.endBarStyle,
+      leadingStaveSignature: this.leadingStaveSignature,
+      previousMeasureFragment: this.previousMeasureFragment,
+      staveCount: this.staveCount,
     });
   }
 
@@ -164,12 +125,12 @@ export class MeasureFragment {
     const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
 
     // Render staves.
-    util.forEachTriple(this.staves, ([previousStave, currentStave, nextStave], index) => {
-      if (index === 0) {
-        previousStave = util.last(opts.previousMeasureFragment?.staves ?? []);
+    util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], index, { isFirst, isLast }) => {
+      if (isFirst) {
+        previousStave = util.last(opts.previousMeasureFragment?.getStaves() ?? []);
       }
-      if (index === this.staves.length - 1) {
-        nextStave = util.first(opts.nextMeasureFragment?.staves ?? []);
+      if (isLast) {
+        nextStave = util.first(opts.nextMeasureFragment?.getStaves() ?? []);
       }
 
       const staveRendering = currentStave.render({
@@ -203,10 +164,41 @@ export class MeasureFragment {
     };
   }
 
+  @util.memoize()
+  private getStaves(): Stave[] {
+    const staves = new Array<Stave>(this.staveCount);
+
+    for (let staveIndex = 0; staveIndex < this.staveCount; staveIndex++) {
+      const staveNumber = staveIndex + 1;
+
+      staves[staveIndex] = new Stave({
+        config: this.config,
+        staveSignature: this.leadingStaveSignature,
+        staveNumber,
+        previousStave: this.previousMeasureFragment?.getStave(staveIndex) ?? null,
+        beginningBarStyle: this.beginningBarStyle,
+        endBarStyle: this.endBarStyle,
+        measureEntries: this.measureEntries.filter((entry) => {
+          if (entry instanceof musicxml.Note) {
+            return entry.getStaveNumber() === staveNumber;
+          }
+          return true;
+        }),
+      });
+    }
+
+    return staves;
+  }
+
   /** Returns the minimum justify width. */
   @util.memoize()
   private getMinJustifyWidth(): number {
-    return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
+    return util.max(this.getStaves().map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  private getStave(staveIndex: number): Stave | null {
+    const staves = this.getStaves();
+    return staves[staveIndex] ?? null;
   }
 
   /** Returns the right padding of the measure fragment. */
@@ -247,9 +239,12 @@ export class MeasureFragment {
 
     const staveModifiersChanges = new Set<StaveModifier>();
 
-    for (let index = 0; index < this.staves.length; index++) {
-      const stave1 = this.staves[index];
-      const stave2 = previousMeasureFragment.staves[index];
+    const staves = this.getStaves();
+    const previousStaves = previousMeasureFragment.getStaves();
+
+    for (let index = 0; index < staves.length; index++) {
+      const stave1 = staves[index];
+      const stave2 = previousStaves[index];
       for (const modifier of stave1.getModifierChanges(stave2)) {
         staveModifiersChanges.add(modifier);
       }
@@ -260,7 +255,7 @@ export class MeasureFragment {
 
   /** Returns the modifiers width. */
   private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
-    return util.max(this.staves.map((stave) => stave.getModifiersWidth(staveModifiers)));
+    return util.max(this.getStaves().map((stave) => stave.getModifiersWidth(staveModifiers)));
   }
 
   private extractVfBeams(voice: VoiceRendering): vexflow.Beam[] {
