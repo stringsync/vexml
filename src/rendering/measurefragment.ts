@@ -33,27 +33,27 @@ export class MeasureFragment {
   private config: Config;
   private measureIndex: number;
   private measureFragmentIndex: number;
+  private measureEntries: MeasureEntry[];
   private systemId: symbol;
   private staves: Stave[];
   private staveLayouts: musicxml.StaveLayout[];
-  private rightPadding: number;
 
   private constructor(opts: {
     config: Config;
     measureIndex: number;
     measureFragmentIndex: number;
+    measureEntries: MeasureEntry[];
     systemId: symbol;
     staves: Stave[];
     staveLayouts: musicxml.StaveLayout[];
-    rightPadding: number;
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
     this.measureFragmentIndex = opts.measureFragmentIndex;
+    this.measureEntries = opts.measureEntries;
     this.systemId = opts.systemId;
     this.staves = opts.staves;
     this.staveLayouts = opts.staveLayouts;
-    this.rightPadding = opts.rightPadding;
   }
 
   /** Creates a MeasureFragment. */
@@ -103,19 +103,14 @@ export class MeasureFragment {
       });
     }
 
-    let padding = 0;
-    if (measureEntries.length === 1 && measureEntries[0] instanceof StaveSignature) {
-      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
-    }
-
     return new MeasureFragment({
       config,
       measureIndex,
       measureFragmentIndex,
+      measureEntries,
       systemId,
       staves,
       staveLayouts,
-      rightPadding: padding,
     });
   }
 
@@ -123,7 +118,7 @@ export class MeasureFragment {
   getMinRequiredWidth(previousMeasureFragment: MeasureFragment | null): number {
     const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasureFragment);
     const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
-    return this.getMinJustifyWidth() + staveModifiersWidth + this.rightPadding;
+    return this.getMinJustifyWidth() + staveModifiersWidth + this.getRightPadding();
   }
 
   /** Returns the top padding for the measure fragment. */
@@ -142,10 +137,10 @@ export class MeasureFragment {
       config: this.config,
       measureIndex: this.measureIndex,
       measureFragmentIndex: this.measureFragmentIndex,
+      measureEntries: this.measureEntries,
       systemId,
       staves: this.staves,
       staveLayouts: this.staveLayouts,
-      rightPadding: this.rightPadding,
     });
   }
 
@@ -217,6 +212,17 @@ export class MeasureFragment {
   @util.memoize()
   private getMinJustifyWidth(): number {
     return util.max(this.staves.map((stave) => stave.getMinJustifyWidth()));
+  }
+
+  /** Returns the right padding of the measure fragment. */
+  private getRightPadding(): number {
+    let padding = 0;
+
+    if (this.measureEntries.length === 1 && this.measureEntries[0] instanceof StaveSignature) {
+      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
+    }
+
+    return padding;
   }
 
   /** Returns the width needed to stretch to fit the target width of the System. */
