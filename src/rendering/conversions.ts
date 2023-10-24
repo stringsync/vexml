@@ -163,3 +163,31 @@ export const fromBarStyleToBarlineType = (barStyle: musicxml.BarStyle): vexflow.
       return vexflow.BarlineType.NONE;
   }
 };
+
+/** Converts a `BarlineType` to a _beginning_ `StaveConnectorType`. Defaults to `vexflow.BarlineType.SINGLE`. */
+export const fromBarlineTypeToBeginningStaveConnectorType = (
+  barlineType: vexflow.BarlineType
+): vexflow.StaveConnectorType => {
+  switch (barlineType) {
+    case vexflow.BarlineType.SINGLE:
+      return 'singleLeft';
+    case vexflow.BarlineType.DOUBLE:
+      return 'boldDoubleLeft';
+    default:
+      return vexflow.BarlineType.SINGLE;
+  }
+};
+
+/** Converts a `BarlineType` to an _ending_ `StaveConnectorType`. Defaults to `vexflow.BarlineType.SINGLE`. */
+export const fromBarlineTypeToEndingStaveConnectorType = (
+  barlineType: vexflow.BarlineType
+): vexflow.StaveConnectorType => {
+  switch (barlineType) {
+    case vexflow.BarlineType.SINGLE:
+      return 'singleRight';
+    case vexflow.BarlineType.END:
+      return 'boldDoubleRight';
+    default:
+      return vexflow.BarlineType.SINGLE;
+  }
+};
