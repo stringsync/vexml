@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -292,14 +293,18 @@ export class Measure {
       const topStave = util.first(staveRenderings)!;
       const bottomStave = util.last(staveRenderings)!;
 
-      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.beginningBarlineType);
+      const begginingStaveConnectorType = conversions.fromBarlineTypeToBeginningStaveConnectorType(
+        topStave.vexflow.beginningBarlineType
+      );
       vfStaveConnectors.push(
         new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
           begginingStaveConnectorType
         )
       );
 
-      const endStaveConnectorType = this.toEndStaveConnectorType(topStave.vexflow.endBarlineType);
+      const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(
+        topStave.vexflow.endBarlineType
+      );
       vfStaveConnectors.push(
         new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
       );
@@ -324,27 +329,5 @@ export class Measure {
       fragments: fragmentRenderings,
       width,
     };
-  }
-
-  private toBeginningStaveConnectorType(beginningBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
-    switch (beginningBarlineType) {
-      case vexflow.BarlineType.SINGLE:
-        return 'singleLeft';
-      case vexflow.BarlineType.DOUBLE:
-        return 'boldDoubleLeft';
-      default:
-        return vexflow.BarlineType.SINGLE;
-    }
-  }
-
-  private toEndStaveConnectorType(endBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
-    switch (endBarlineType) {
-      case vexflow.BarlineType.SINGLE:
-        return 'singleRight';
-      case vexflow.BarlineType.END:
-        return 'boldDoubleRight';
-      default:
-        return vexflow.BarlineType.SINGLE;
-    }
   }
 }
