@@ -32,7 +32,6 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
 export class MeasureFragment {
   private config: Config;
   private measureIndex: number;
-  private measureFragmentIndex: number;
   private measureEntries: MeasureEntry[];
   private systemId: symbol;
   private staves: Stave[];
@@ -41,7 +40,6 @@ export class MeasureFragment {
   private constructor(opts: {
     config: Config;
     measureIndex: number;
-    measureFragmentIndex: number;
     measureEntries: MeasureEntry[];
     systemId: symbol;
     staves: Stave[];
@@ -49,7 +47,6 @@ export class MeasureFragment {
   }) {
     this.config = opts.config;
     this.measureIndex = opts.measureIndex;
-    this.measureFragmentIndex = opts.measureFragmentIndex;
     this.measureEntries = opts.measureEntries;
     this.systemId = opts.systemId;
     this.staves = opts.staves;
@@ -106,7 +103,6 @@ export class MeasureFragment {
     return new MeasureFragment({
       config,
       measureIndex,
-      measureFragmentIndex,
       measureEntries,
       systemId,
       staves,
@@ -136,7 +132,6 @@ export class MeasureFragment {
     return new MeasureFragment({
       config: this.config,
       measureIndex: this.measureIndex,
-      measureFragmentIndex: this.measureFragmentIndex,
       measureEntries: this.measureEntries,
       systemId,
       staves: this.staves,
