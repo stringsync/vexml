@@ -91,20 +91,20 @@ export class Part {
 
       const measureEntries = measureEntryGroups[measureIndex];
 
-      const measure = Measure.create({
+      const measure = new Measure({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
         // a single system. Therefore, this index should continue to be correct when a system is split.
         index: measureIndex,
         config: opts.config,
-        musicXml: { measure: xmlMeasure },
+        musicXml: {
+          measure: xmlMeasure,
+          staveLayouts,
+        },
         staveCount,
-        isFirstPartMeasure: measureIndex === 0,
-        isLastPartMeasure: measureIndex === xmlMeasures.length - 1,
         systemId: opts.systemId,
-        previousMeasure,
+        previousMeasure: null,
         leadingStaveSignature,
         measureEntries,
-        staveLayouts,
       });
 
       noopMeasureCount += measure.getMultiRestCount() - 1;
@@ -145,9 +145,13 @@ export class Part {
       );
     }
 
-    const measures = this.measures
-      .slice(opts.measureStartIndex, opts.measureEndIndex)
-      .map((measure) => measure.clone(opts.systemId));
+    let previousMeasure: Measure | null = null;
+
+    const measures = this.measures.slice(opts.measureStartIndex, opts.measureEndIndex).map((measure) => {
+      const nextMeasure = measure.clone(previousMeasure, opts.systemId);
+      previousMeasure = nextMeasure;
+      return nextMeasure;
+    });
 
     return new Part({
       config: this.config,
