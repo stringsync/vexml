@@ -47,20 +47,18 @@ export class Seed {
           continue;
         }
 
-        const measure = Measure.create({
+        const measure: Measure = new Measure({
           config: this.config,
           index: measureIndex,
           musicXml: {
             measure: measures[measureIndex],
+            staveLayouts: this.staveLayouts,
           },
           staveCount,
-          isFirstPartMeasure: measureIndex === 0,
-          isLastPartMeasure: measureIndex === measures.length - 1,
           systemId: DUMMY_SYSTEM_ID,
           previousMeasure,
           leadingStaveSignature: this.getFirstActiveStaveSignature(partId, measureIndex),
           measureEntries: this.getMeasureEntries(partId, measureIndex),
-          staveLayouts: this.staveLayouts,
         });
 
         result[partId].push(measure);
