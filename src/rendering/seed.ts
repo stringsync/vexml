@@ -1,8 +1,8 @@
 import { Config } from './config';
 import { Measure } from './measure';
-import { Part } from './part';
+import { LegacyPart } from './legacypart';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { System } from './system';
+import { LegacySystem } from './legacysystem';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 
@@ -21,8 +21,8 @@ export class Seed {
   }
 
   /** Splits the parts into discrete systems that can fit the given width.  */
-  split(width: number): System[] {
-    const systems = new Array<System>();
+  split(width: number): LegacySystem[] {
+    const systems = new Array<LegacySystem>();
 
     let remainingWidth = width;
     const measureStartIndex = 0;
@@ -32,7 +32,7 @@ export class Seed {
     const commitSystem = () => {
       const parts = this.parts.map((part) => {
         const partId = part.getId();
-        return new Part({
+        return new LegacyPart({
           config: this.config,
           musicXml: { part },
           id: partId,
@@ -42,7 +42,7 @@ export class Seed {
           noopMeasureCount: 0,
         });
       });
-      const system = new System({
+      const system = new LegacySystem({
         config: this.config,
         id: DUMMY_SYSTEM_ID,
         parts,

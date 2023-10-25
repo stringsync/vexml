@@ -1,4 +1,4 @@
-import { System, SystemRendering } from './system';
+import { LegacySystem, SystemRendering } from './legacysystem';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -163,8 +163,8 @@ export class Score {
   }
 
   @util.memoize()
-  private getRootSystem(): System {
-    return System.create({
+  private getRootSystem(): LegacySystem {
+    return LegacySystem.create({
       config: this.config,
       staveLayouts: this.getStaveLayouts(),
       musicXml: {

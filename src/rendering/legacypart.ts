@@ -21,7 +21,7 @@ export type PartRendering = {
  * entire musical content for a specific instrument or voice, potentially spanning multiple systems when rendered in the
  * viewport.
  */
-export class Part {
+export class LegacyPart {
   private config: Config;
   private musicXml: { part: musicxml.Part };
   private id: string;
@@ -53,9 +53,9 @@ export class Part {
     config: Config;
     musicXml: { part: musicxml.Part };
     systemId: symbol;
-    previousPart: Part | null;
+    previousPart: LegacyPart | null;
     staveLayouts: musicxml.StaveLayout[];
-  }): Part {
+  }): LegacyPart {
     const id = opts.musicXml.part.getId();
     const staveLayouts = opts.staveLayouts;
 
@@ -115,7 +115,7 @@ export class Part {
       previousMeasure = measure;
     }
 
-    return new Part({
+    return new LegacyPart({
       config: opts.config,
       musicXml: {
         part: opts.musicXml.part,
@@ -139,7 +139,7 @@ export class Part {
   }
 
   /** Slices the measures of the part using the indexes, clones, them, then creates a new Part from them. */
-  slice(opts: { systemId: symbol; measureStartIndex: number; measureEndIndex: number }): Part {
+  slice(opts: { systemId: symbol; measureStartIndex: number; measureEndIndex: number }): LegacyPart {
     const measureStartIndex = opts.measureStartIndex;
     const measureEndIndex = opts.measureEndIndex;
     if (measureStartIndex < 0) {
@@ -159,7 +159,7 @@ export class Part {
       return nextMeasure;
     });
 
-    return new Part({
+    return new LegacyPart({
       config: this.config,
       id: this.id,
       systemId: opts.systemId,
@@ -177,8 +177,8 @@ export class Part {
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
-    previousPart: Part | null;
-    nextPart: Part | null;
+    previousPart: LegacyPart | null;
+    nextPart: LegacyPart | null;
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
