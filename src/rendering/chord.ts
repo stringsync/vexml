@@ -26,7 +26,9 @@ export type ChordRendering = {
  */
 export class Chord {
   private config: Config;
-  private note: musicxml.Note;
+  private musicXml: {
+    note: musicxml.Note;
+  };
   private tokens: Token[];
   private stem: StemDirection;
   private clef: Clef;
@@ -43,7 +45,7 @@ export class Chord {
     durationDenominator: NoteDurationDenominator;
   }) {
     this.config = opts.config;
-    this.note = opts.musicXml.note;
+    this.musicXml = opts.musicXml;
     this.tokens = opts.tokens;
     this.stem = opts.stem;
     this.clef = opts.clef;
@@ -64,7 +66,7 @@ export class Chord {
 
   @util.memoize()
   private getNotes(): Note[] {
-    const head = this.note;
+    const head = this.musicXml.note;
     const tail = head.getChordTail();
 
     return [head, ...tail].map(
