@@ -35,7 +35,7 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private note: musicxml.Note;
+  private musicXml: { note: musicxml.Note };
   private stem: StemDirection;
   private tokens: Token[];
   private clef: Clef;
@@ -52,7 +52,7 @@ export class Note {
     keySignature: KeySignature;
   }) {
     this.config = opts.config;
-    this.note = opts.musicXml.note;
+    this.musicXml = opts.musicXml;
     this.stem = opts.stem;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
@@ -167,23 +167,23 @@ export class Note {
 
   @util.memoize()
   private getKey(): string {
-    const step = this.note.getStep();
-    const octave = this.note.getOctave() - this.clef.getOctaveChange();
-    const suffix = this.note.getNoteheadSuffix();
+    const step = this.musicXml.note.getStep();
+    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+    const suffix = this.musicXml.note.getNoteheadSuffix();
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 
   @util.memoize()
   private getAccidental(): Accidental | null {
     const noteAccidentalCode =
-      conversions.fromAccidentalTypeToAccidentalCode(this.note.getAccidentalType()) ??
-      conversions.fromAlterToAccidentalCode(this.note.getAlter());
+      conversions.fromAccidentalTypeToAccidentalCode(this.musicXml.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(this.musicXml.note.getAlter());
 
-    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.note.getStep());
+    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.musicXml.note.getStep());
 
-    const hasExplicitAccidental = this.note.getAccidentalType() !== null;
+    const hasExplicitAccidental = this.musicXml.note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
-      const isCautionary = this.note.hasAccidentalCautionary();
+      const isCautionary = this.musicXml.note.hasAccidentalCautionary();
       return Accidental.create({ code: noteAccidentalCode, isCautionary });
     }
 
@@ -192,7 +192,7 @@ export class Note {
 
   @util.memoize()
   private getLyrics(): Lyric[] {
-    return this.note
+    return this.musicXml.note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
       .map((lyric) => Lyric.create({ lyric }));
@@ -202,12 +202,12 @@ export class Note {
   private getBeamValue(): musicxml.BeamValue | null {
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
     // continues, or stops.
-    const beams = util.sortBy(this.note.getBeams(), (beam) => beam.getNumber());
+    const beams = util.sortBy(this.musicXml.note.getBeams(), (beam) => beam.getNumber());
     return util.first(beams)?.getBeamValue() ?? null;
   }
 
   @util.memoize()
   private getDotCount(): number {
-    return this.note.getDotCount();
+    return this.musicXml.note.getDotCount();
   }
 }
