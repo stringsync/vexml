@@ -91,7 +91,7 @@ export class Part {
 
       const measureEntries = measureEntryGroups[measureIndex];
 
-      const measure = new Measure({
+      const measure: Measure = new Measure({
         // When splitting a system into smaller systems, the measure index should be maintained from when it was just
         // a single system. Therefore, this index should continue to be correct when a system is split.
         index: measureIndex,
@@ -102,7 +102,7 @@ export class Part {
         },
         staveCount,
         systemId: opts.systemId,
-        previousMeasure: null,
+        previousMeasure,
         leadingStaveSignature,
         measureEntries,
       });
