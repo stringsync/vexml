@@ -31,14 +31,25 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
-  private label: string;
   private fragments: MeasureFragment[];
+  private musicXml: {
+    measure: musicxml.Measure;
+    staveLayouts: musicxml.StaveLayout[];
+  };
 
-  private constructor(opts: { config: Config; index: number; label: string; fragments: MeasureFragment[] }) {
+  private constructor(opts: {
+    config: Config;
+    index: number;
+    fragments: MeasureFragment[];
+    musicXml: {
+      measure: musicxml.Measure;
+      staveLayouts: musicxml.StaveLayout[];
+    };
+  }) {
     this.config = opts.config;
     this.index = opts.index;
-    this.label = opts.label;
     this.fragments = opts.fragments;
+    this.musicXml = opts.musicXml;
   }
 
   /** Creates a Measure. */
@@ -57,10 +68,6 @@ export class Measure {
     measureEntries: MeasureEntry[];
     staveLayouts: musicxml.StaveLayout[];
   }): Measure {
-    const measure = opts.musicXml.measure;
-
-    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
-
     const fragments = Measure.fragment({
       config: opts.config,
       measureIndex: opts.index,
@@ -78,8 +85,11 @@ export class Measure {
     return new Measure({
       config: opts.config,
       index: opts.index,
-      label,
       fragments,
+      musicXml: {
+        measure: opts.musicXml.measure,
+        staveLayouts: opts.staveLayouts,
+      },
     });
   }
 
@@ -219,9 +229,9 @@ export class Measure {
   clone(systemId: symbol): Measure {
     return new Measure({
       index: this.index,
-      label: this.label,
       config: this.config,
       fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
+      musicXml: this.musicXml,
     });
   }
 
@@ -311,7 +321,7 @@ export class Measure {
     }
 
     const label = new drawables.Text({
-      content: this.label,
+      content: this.getLabel(),
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
@@ -329,5 +339,9 @@ export class Measure {
       fragments: fragmentRenderings,
       width,
     };
+  }
+
+  private getLabel(): string {
+    return this.musicXml.measure.isImplicit() ? '' : this.musicXml.measure.getNumber() || (this.index + 1).toString();
   }
 }
