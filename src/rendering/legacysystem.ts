@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { Part, PartRendering } from './part';
+import { LegacyPart, PartRendering } from './legacypart';
 import { Config } from './config';
 import * as util from '@/util';
 
@@ -14,12 +14,12 @@ export type SystemRendering = {
  * Each system contains a segment of musical content from one or more parts, and multiple systems collectively render
  * the entirety of those parts.
  */
-export class System {
+export class LegacySystem {
   private config: Config;
   private id: symbol;
-  private parts: Part[];
+  private parts: LegacyPart[];
 
-  constructor(opts: { config: Config; id: symbol; parts: Part[] }) {
+  constructor(opts: { config: Config; id: symbol; parts: LegacyPart[] }) {
     this.config = opts.config;
     this.id = opts.id;
     this.parts = opts.parts;
@@ -30,13 +30,13 @@ export class System {
     config: Config;
     staveLayouts: musicxml.StaveLayout[];
     musicXml: { parts: musicxml.Part[] };
-  }): System {
+  }): LegacySystem {
     const id = Symbol();
 
-    let previousPart: Part | null = null;
-    const parts = new Array<Part>();
+    let previousPart: LegacyPart | null = null;
+    const parts = new Array<LegacyPart>();
     for (const xmlPart of opts.musicXml.parts) {
-      const part = Part.create({
+      const part = LegacyPart.create({
         config: opts.config,
         systemId: id,
         musicXml: { part: xmlPart },
@@ -47,12 +47,12 @@ export class System {
       previousPart = part;
     }
 
-    return new System({ config: opts.config, id, parts });
+    return new LegacySystem({ config: opts.config, id, parts });
   }
 
   /** Splits the system into smaller systems that fit in the width. */
-  split(width: number): System[] {
-    const systems = new Array<System>();
+  split(width: number): LegacySystem[] {
+    const systems = new Array<LegacySystem>();
     const measureCount = this.getMeasureCount();
     let measureStartIndex = 0;
     let widthBudget = width;
@@ -68,7 +68,7 @@ export class System {
         })
       );
 
-      const system = new System({ config: this.config, id: systemId, parts });
+      const system = new LegacySystem({ config: this.config, id: systemId, parts });
       systems.push(system);
 
       widthBudget = width;
@@ -116,8 +116,8 @@ export class System {
     y: number;
     width: number;
     isLastSystem: boolean;
-    previousSystem: System | null;
-    nextSystem: System | null;
+    previousSystem: LegacySystem | null;
+    nextSystem: LegacySystem | null;
   }): SystemRendering {
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
