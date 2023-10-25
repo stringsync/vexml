@@ -19,7 +19,7 @@ export class System {
   private id: symbol;
   private parts: Part[];
 
-  private constructor(opts: { config: Config; id: symbol; parts: Part[] }) {
+  constructor(opts: { config: Config; id: symbol; parts: Part[] }) {
     this.config = opts.config;
     this.id = opts.id;
     this.parts = opts.parts;
