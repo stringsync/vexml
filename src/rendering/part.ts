@@ -3,7 +3,7 @@ import { Measure, MeasureRendering } from './measure';
 import { Config } from './config';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
-import { StaveSignature } from './stavesignature';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -23,6 +23,7 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
+  private musicXml: { part: musicxml.Part };
   private id: string;
   private systemId: symbol;
   private measures: Measure[];
@@ -32,6 +33,7 @@ export class Part {
   constructor(opts: {
     config: Config;
     id: string;
+    musicXml: { part: musicxml.Part };
     systemId: symbol;
     measures: Measure[];
     staveCount: number;
@@ -39,6 +41,7 @@ export class Part {
   }) {
     this.config = opts.config;
     this.id = opts.id;
+    this.musicXml = opts.musicXml;
     this.systemId = opts.systemId;
     this.measures = opts.measures;
     this.staveCount = opts.staveCount;
@@ -114,6 +117,9 @@ export class Part {
 
     return new Part({
       config: opts.config,
+      musicXml: {
+        part: opts.musicXml.part,
+      },
       id,
       systemId: opts.systemId,
       measures,
@@ -160,6 +166,7 @@ export class Part {
       measures,
       staveCount: this.staveCount,
       noopMeasureCount: this.noopMeasureCount,
+      musicXml: this.musicXml,
     });
   }
 
@@ -223,6 +230,11 @@ export class Part {
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
     };
+  }
+
+  @util.memoize()
+  private getMeasureEntryGroups(): MeasureEntry[][] {
+    return StaveSignature.toMeasureEntryGroups({ part: this.musicXml.part });
   }
 
   /** Returns the top padding of the part. */

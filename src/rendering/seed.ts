@@ -30,17 +30,18 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = () => {
-      const parts = this.getPartIds().map(
-        (partId) =>
-          new Part({
-            config: this.config,
-            id: partId,
-            systemId: DUMMY_SYSTEM_ID,
-            measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
-            staveCount: this.getStaveCount(partId),
-            noopMeasureCount: 0,
-          })
-      );
+      const parts = this.parts.map((part) => {
+        const partId = part.getId();
+        return new Part({
+          config: this.config,
+          musicXml: { part },
+          id: partId,
+          systemId: DUMMY_SYSTEM_ID,
+          measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
+          staveCount: this.getStaveCount(partId),
+          noopMeasureCount: 0,
+        });
+      });
       const system = new System({
         config: this.config,
         id: DUMMY_SYSTEM_ID,
@@ -151,8 +152,13 @@ export class Seed {
   }
 
   private getMeasureEntries(partId: string, measureIndex: number): MeasureEntry[] {
+    const measureEntryGroups = this.getMeasureEntryGroups(partId);
+    return measureEntryGroups[measureIndex];
+  }
+
+  private getMeasureEntryGroups(partId: string): MeasureEntry[][] {
     const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
-    return measureEntryGroupsByPartId[partId][measureIndex];
+    return measureEntryGroupsByPartId[partId];
   }
 
   private getMeasureCount(): number {
