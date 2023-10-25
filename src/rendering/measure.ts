@@ -64,7 +64,7 @@ export class Measure {
     this.measureEntries = opts.measureEntries;
   }
 
-  /** Deeply clones the Measure, but replaces the systemId and partMeasuresLength. */
+  /** Deeply clones the Measure. */
   clone(previousMeasure: Measure | null, systemId: symbol): Measure {
     return new Measure({
       config: this.config,

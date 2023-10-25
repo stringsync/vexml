@@ -29,7 +29,7 @@ export class Part {
   private staveCount: number;
   private noopMeasureCount: number;
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
     id: string;
     systemId: symbol;
