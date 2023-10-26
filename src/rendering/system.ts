@@ -46,7 +46,7 @@ export class System {
 
     const partRenderings = new Array<PartRendering>();
 
-    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], index, { isFirst, isLast }) => {
+    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast }) => {
       if (isFirst) {
         previousPart = util.last(opts.previousSystem?.parts ?? []);
       }

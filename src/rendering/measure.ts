@@ -118,7 +118,7 @@ export class Measure {
 
     util.forEachTriple(
       this.getFragments(),
-      ([previousFragment, currentFragment, nextFragment], index, { isFirst, isLast }) => {
+      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast }) => {
         if (isFirst) {
           previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
         }
