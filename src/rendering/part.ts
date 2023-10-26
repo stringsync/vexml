@@ -21,6 +21,10 @@ export class Part {
     this.measures = opts.measures;
   }
 
+  getMeasures(): Measure[] {
+    return this.measures;
+  }
+
   render(opts: {
     x: number;
     y: number;
