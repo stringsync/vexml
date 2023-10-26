@@ -41,15 +41,15 @@ export class Part {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], index) => {
-      if (index === 0) {
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast }) => {
+      if (isFirst) {
         previousMeasure = util.last(opts.previousPart?.measures ?? []);
       }
-      if (index === this.measures.length - 1) {
+      if (isLast) {
         nextMeasure = util.first(opts.nextPart?.measures ?? []);
       }
 
-      const hasStaveConnectorBrace = index === 0 && this.getStaveCount() > 1;
+      const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
 
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;

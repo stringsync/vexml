@@ -34,14 +34,13 @@ export const forEachTriple = <T>(
   array: T[],
   callback: (
     triple: [previous: T | null, current: T, next: T | null],
-    index: number,
-    meta: { isFirst: boolean; isLast: boolean }
+    meta: { index: number; isFirst: boolean; isLast: boolean }
   ) => void
 ): void => {
   for (let index = 0; index < array.length; index++) {
     const previous = array[index - 1] ?? null;
     const current = array[index];
     const next = array[index + 1] ?? null;
-    callback([previous, current, next], index, { isFirst: index === 0, isLast: index === array.length - 1 });
+    callback([previous, current, next], { index, isFirst: index === 0, isLast: index === array.length - 1 });
   }
 };

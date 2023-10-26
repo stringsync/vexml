@@ -125,7 +125,7 @@ export class MeasureFragment {
     const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
 
     // Render staves.
-    util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], index, { isFirst, isLast }) => {
+    util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
         previousStave = util.last(opts.previousMeasureFragment?.getStaves() ?? []);
       }

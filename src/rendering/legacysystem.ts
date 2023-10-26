@@ -123,11 +123,11 @@ export class LegacySystem {
 
     const partRenderings = new Array<PartRendering>();
 
-    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], index) => {
-      if (index === 0) {
+    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast }) => {
+      if (isFirst) {
         previousPart = util.last(opts.previousSystem?.parts ?? []);
       }
-      if (index === this.parts.length - 1) {
+      if (isLast) {
         nextPart = util.first(opts.nextSystem?.parts ?? []);
       }
 
