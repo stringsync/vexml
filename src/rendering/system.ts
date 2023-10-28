@@ -2,8 +2,13 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Part } from './part';
 import { Measure } from './measure';
-import { SystemRendering } from './legacysystem';
-import { PartRendering } from './legacypart';
+import { PartRendering } from './part';
+
+/** The result of rendering a System. */
+export type SystemRendering = {
+  type: 'system';
+  parts: PartRendering[];
+};
 
 /**
  * Represents a System in a musical score, a horizontal grouping of staves spanning the width of the viewport or page.
