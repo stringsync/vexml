@@ -83,9 +83,7 @@ export class Seed {
         commitSystem(measureIndex);
         // Recalculate to reflect the new conditions of the measure being on a different system, which is why null
         // is being used.
-        minRequiredWidth = util.max(
-          measures.map(([previousMeasure, currentMeasure]) => currentMeasure.getMinRequiredWidth(null))
-        );
+        minRequiredWidth = util.max(measures.map(([, currentMeasure]) => currentMeasure.getMinRequiredWidth(null)));
         continueSystem(minRequiredWidth);
       }
     }
