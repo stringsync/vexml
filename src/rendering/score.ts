@@ -1,4 +1,4 @@
-import { LegacySystem, SystemRendering } from './legacysystem';
+import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -6,6 +6,7 @@ import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
+import { Seed } from './seed';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -23,7 +24,9 @@ export type ScoreRendering = {
  */
 export class Score {
   private config: Config;
-  private scorePartwise: musicxml.ScorePartwise | null;
+  private musicXml: {
+    scorePartwise: musicxml.ScorePartwise | null;
+  };
 
   constructor(opts: {
     config: Config;
@@ -32,7 +35,7 @@ export class Score {
     };
   }) {
     this.config = opts.config;
-    this.scorePartwise = opts.musicXml.scorePartwise;
+    this.musicXml = opts.musicXml;
   }
 
   /** Renders the Score. */
@@ -41,7 +44,7 @@ export class Score {
     const systemRenderings = new Array<SystemRendering>();
 
     // Create the systems.
-    const systems = this.getRootSystem().split(opts.width);
+    const systems = this.seed().split(opts.width);
 
     // Initialize the rendering coordinates.
     const x = 0;
@@ -163,34 +166,19 @@ export class Score {
   }
 
   @util.memoize()
-  private getRootSystem(): LegacySystem {
-    return LegacySystem.create({
+  private seed(): Seed {
+    return new Seed({
       config: this.config,
-      staveLayouts: this.getStaveLayouts(),
       musicXml: {
-        parts: this.getParts(),
+        parts: this.musicXml.scorePartwise?.getParts() ?? [],
+        staveLayouts: this.musicXml.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
     });
   }
 
   @util.memoize()
-  private getDefaults() {
-    return this.scorePartwise?.getDefaults();
-  }
-
-  @util.memoize()
-  private getParts() {
-    return this.scorePartwise?.getParts() ?? [];
-  }
-
-  @util.memoize()
   private getSystemLayout() {
-    return this.getDefaults()?.getSystemLayout();
-  }
-
-  @util.memoize()
-  private getStaveLayouts() {
-    return this.getDefaults()?.getStaveLayouts() ?? [];
+    return this.musicXml.scorePartwise?.getDefaults()?.getSystemLayout() ?? null;
   }
 
   @util.memoize()
@@ -207,7 +195,7 @@ export class Score {
   private getTitle() {
     return Title.create({
       config: this.config,
-      text: this.scorePartwise?.getTitle() ?? '',
+      text: this.musicXml.scorePartwise?.getTitle() ?? '',
     });
   }
 }

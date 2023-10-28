@@ -16,7 +16,7 @@ export class Seed {
     staveLayouts: musicxml.StaveLayout[];
   };
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
     musicXml: {
       parts: musicxml.Part[];

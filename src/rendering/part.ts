@@ -2,11 +2,19 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Measure, MeasureRendering } from './measure';
-import { PartRendering } from './legacypart';
 import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
+
+/** The result of rendering a Part. */
+export type PartRendering = {
+  id: string;
+  vexflow: {
+    staveConnector: vexflow.StaveConnector | null;
+  };
+  measures: MeasureRendering[];
+};
 
 /**
  * Represents a Part in a musical score, corresponding to the <part> element in MusicXML. This class encompasses the
