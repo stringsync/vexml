@@ -4,7 +4,7 @@
  * When at capacity, this cache will evict the least recently used key-value pair. This is particularly useful if you
  * don't intend a cache to grow in size indefinitely.
  */
-export class LRUCache<K, V> {
+export class LRU<K, V> {
   private capacity: number;
   private map: Map<K, V>;
 
