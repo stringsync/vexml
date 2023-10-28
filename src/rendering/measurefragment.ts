@@ -31,10 +31,9 @@ type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
  */
 export class MeasureFragment {
   private config: Config;
+  private index: number;
   private leadingStaveSignature: StaveSignature | null;
-  private measureIndex: number;
   private measureEntries: MeasureEntry[];
-  private systemId: symbol;
   private staveLayouts: musicxml.StaveLayout[];
   private staveCount: number;
   private previousMeasureFragment: MeasureFragment | null;
@@ -43,10 +42,9 @@ export class MeasureFragment {
 
   constructor(opts: {
     config: Config;
+    index: number;
     leadingStaveSignature: StaveSignature | null;
-    measureIndex: number;
     measureEntries: MeasureEntry[];
-    systemId: symbol;
     staveLayouts: musicxml.StaveLayout[];
     staveCount: number;
     previousMeasureFragment: MeasureFragment | null;
@@ -54,10 +52,9 @@ export class MeasureFragment {
     endBarStyle: musicxml.BarStyle;
   }) {
     this.config = opts.config;
+    this.index = opts.index;
     this.leadingStaveSignature = opts.leadingStaveSignature;
-    this.measureIndex = opts.measureIndex;
     this.measureEntries = opts.measureEntries;
-    this.systemId = opts.systemId;
     this.staveLayouts = opts.staveLayouts;
     this.staveCount = opts.staveCount;
     this.previousMeasureFragment = opts.previousMeasureFragment;
@@ -66,9 +63,21 @@ export class MeasureFragment {
   }
 
   /** Returns the minimum required width for the measure fragment. */
-  getMinRequiredWidth(previousMeasureFragment: MeasureFragment | null): number {
-    const staveModifiersChanges = this.getChangedStaveModifiers(previousMeasureFragment);
-    const staveModifiersWidth = this.getStaveModifiersWidth(staveModifiersChanges);
+  getMinRequiredWidth(systemMeasureIndex: number): number {
+    const isFirstSystemMeasureFragment = this.index === 0 && systemMeasureIndex === 0;
+
+    const staveModifiers = new Set<StaveModifier>(
+      isFirstSystemMeasureFragment ? ['clef', 'keySignature', 'timeSignature'] : []
+    );
+
+    for (const stave of this.getStaves()) {
+      for (const staveModifier of stave.getModifierChanges()) {
+        staveModifiers.add(staveModifier);
+      }
+    }
+
+    const staveModifiersWidth = this.getStaveModifiersWidth(Array.from(staveModifiers));
+
     return this.getMinJustifyWidth() + staveModifiersWidth + this.getRightPadding();
   }
 
@@ -82,24 +91,6 @@ export class MeasureFragment {
     return util.max(this.getStaves().map((stave) => stave.getMultiRestCount()));
   }
 
-  /** Clones the MeasureFragment and updates the systemId. */
-  clone(systemId: symbol): MeasureFragment {
-    // TODO: Remove systemId property by creating a rendering plan that the measure can use at render time to answer
-    // the question "What stave modifiers do I need to "
-    return new MeasureFragment({
-      config: this.config,
-      measureIndex: this.measureIndex,
-      measureEntries: this.measureEntries,
-      systemId,
-      staveLayouts: this.staveLayouts,
-      beginningBarStyle: this.beginningBarStyle,
-      endBarStyle: this.endBarStyle,
-      leadingStaveSignature: this.leadingStaveSignature,
-      previousMeasureFragment: this.previousMeasureFragment,
-      staveCount: this.staveCount,
-    });
-  }
-
   /** Renders the MeasureFragment. */
   render(opts: {
     x: number;
@@ -107,22 +98,23 @@ export class MeasureFragment {
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
+    systemMeasureIndex: number;
     previousMeasureFragment: MeasureFragment | null;
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
     const width = opts.isLastSystem
-      ? this.getMinRequiredWidth(opts.previousMeasureFragment)
+      ? this.getMinRequiredWidth(opts.systemMeasureIndex)
       : this.getSystemFitWidth({
-          previous: opts.previousMeasureFragment,
+          systemMeasureIndex: opts.systemMeasureIndex,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
         });
 
     let y = opts.y;
 
-    const staveModifiers = this.getChangedStaveModifiers(opts.previousMeasureFragment);
+    const staveModifiers = this.getStaveModifiers(opts.systemMeasureIndex);
 
     // Render staves.
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
@@ -214,11 +206,11 @@ export class MeasureFragment {
 
   /** Returns the width needed to stretch to fit the target width of the System. */
   private getSystemFitWidth(opts: {
-    previous: MeasureFragment | null;
+    systemMeasureIndex: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
   }): number {
-    const minRequiredWidth = this.getMinRequiredWidth(opts.previous);
+    const minRequiredWidth = this.getMinRequiredWidth(opts.systemMeasureIndex);
 
     const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
     const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
@@ -227,26 +219,17 @@ export class MeasureFragment {
     return minRequiredWidth + widthDelta;
   }
 
-  /** Returns what modifiers changed _in any stave_. */
-  private getChangedStaveModifiers(previousMeasureFragment: MeasureFragment | null): StaveModifier[] {
-    if (!previousMeasureFragment) {
-      return ['clef', 'keySignature', 'timeSignature'];
-    }
-
-    if (this.systemId !== previousMeasureFragment.systemId) {
+  /** Returns what modifiers to render. */
+  private getStaveModifiers(systemMeasureIndex: number): StaveModifier[] {
+    if (systemMeasureIndex === 0) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const staveModifiersChanges = new Set<StaveModifier>();
 
-    const staves = this.getStaves();
-    const previousStaves = previousMeasureFragment.getStaves();
-
-    for (let index = 0; index < staves.length; index++) {
-      const stave1 = staves[index];
-      const stave2 = previousStaves[index];
-      for (const modifier of stave1.getModifierChanges(stave2)) {
-        staveModifiersChanges.add(modifier);
+    for (const stave of this.getStaves()) {
+      for (const staveModifier of stave.getModifierChanges()) {
+        staveModifiersChanges.add(staveModifier);
       }
     }
 

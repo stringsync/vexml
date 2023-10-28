@@ -110,17 +110,21 @@ export class Stave {
     return this.staveSignature?.getMultiRestCount(this.staveNumber) ?? 0;
   }
 
-  /** Wether the staves have the same modifiers. */
-  getModifierChanges(stave: Stave): StaveModifier[] {
+  /** Returns the stave modifiers that changed. */
+  getModifierChanges(): StaveModifier[] {
+    if (!this.previousStave) {
+      return ['clef', 'keySignature', 'timeSignature'];
+    }
+
     const result = new Array<StaveModifier>();
 
-    if (!this.getClef().isEqual(stave.getClef())) {
+    if (!this.getClef().isEqual(this.previousStave.getClef())) {
       result.push('clef');
     }
-    if (!this.getKeySignature().isEqual(stave.getKeySignature())) {
+    if (!this.getKeySignature().isEqual(this.previousStave.getKeySignature())) {
       result.push('keySignature');
     }
-    if (!this.getTimeSignature().isEqual(stave.getTimeSignature())) {
+    if (!this.getTimeSignature().isEqual(this.previousStave.getTimeSignature())) {
       result.push('timeSignature');
     }
 

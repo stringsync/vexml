@@ -6,8 +6,6 @@ import * as util from '@/util';
 import { Part } from './part';
 import { System } from './system';
 
-const DUMMY_SYSTEM_ID = Symbol('dummy');
-
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
   private config: Config;
@@ -31,6 +29,7 @@ export class Seed {
   split(width: number): System[] {
     const systems = new Array<System>();
 
+    let systemMeasureIndex = 0;
     let remainingWidth = width;
     let measureStartIndex = 0;
 
@@ -53,11 +52,14 @@ export class Seed {
       systems.push(system);
 
       measureStartIndex = measureEndIndex;
+      systemMeasureIndex = 0;
+      remainingWidth = width;
     };
 
-    /** Accounts for a system being added. */
+    /** Accounts for a measure being added to a system. */
     const continueSystem = (width: number) => {
       remainingWidth -= width;
+      systemMeasureIndex++;
     };
 
     const measureCount = this.getMeasureCount();
@@ -67,14 +69,9 @@ export class Seed {
       const measures = this.musicXml.parts
         .map((part) => part.getId())
         .map((partId) => this.getMeasures(partId))
-        .map<[previousMeasure: Measure | null, currentMeasure: Measure]>((measures) => [
-          measures[measureIndex - 1] ?? null,
-          measures[measureIndex],
-        ]);
+        .map((measures) => measures[measureIndex]);
 
-      let minRequiredWidth = util.max(
-        measures.map(([previousMeasure, currentMeasure]) => currentMeasure.getMinRequiredWidth(previousMeasure))
-      );
+      let minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
 
       const isProcessingLastMeasure = measureIndex === measureCount - 1;
       if (isProcessingLastMeasure) {
@@ -88,9 +85,7 @@ export class Seed {
         continueSystem(minRequiredWidth);
       } else {
         commitSystem(measureIndex);
-        // Recalculate to reflect the new conditions of the measure being on a different system, which is why null
-        // is being used.
-        minRequiredWidth = util.max(measures.map(([, currentMeasure]) => currentMeasure.getMinRequiredWidth(null)));
+        minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
         continueSystem(minRequiredWidth);
       }
     }
@@ -127,7 +122,6 @@ export class Seed {
             staveLayouts: this.musicXml.staveLayouts,
           },
           staveCount,
-          systemId: DUMMY_SYSTEM_ID,
           previousMeasure,
           leadingStaveSignature: this.getLeadingStaveSignature(partId, measureIndex),
           measureEntries: this.getMeasureEntries(partId, measureIndex),

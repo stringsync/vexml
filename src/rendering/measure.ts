@@ -31,20 +31,19 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
-  private systemId: symbol;
   private musicXml: {
     measure: musicxml.Measure;
     staveLayouts: musicxml.StaveLayout[];
   };
-  private leadingStaveSignature: StaveSignature | null;
   private previousMeasure: Measure | null;
+  private leadingStaveSignature: StaveSignature | null;
+
   private staveCount: number;
   private measureEntries: MeasureEntry[];
 
   constructor(opts: {
     config: Config;
     index: number;
-    systemId: symbol;
     musicXml: {
       measure: musicxml.Measure;
       staveLayouts: musicxml.StaveLayout[];
@@ -56,7 +55,6 @@ export class Measure {
   }) {
     this.config = opts.config;
     this.index = opts.index;
-    this.systemId = opts.systemId;
     this.musicXml = opts.musicXml;
     this.leadingStaveSignature = opts.leadingStaveSignature;
     this.previousMeasure = opts.previousMeasure;
@@ -64,28 +62,12 @@ export class Measure {
     this.measureEntries = opts.measureEntries;
   }
 
-  /** Deeply clones the Measure. */
-  clone(previousMeasure: Measure | null, systemId: symbol): Measure {
-    return new Measure({
-      config: this.config,
-      index: this.index,
-      leadingStaveSignature: this.leadingStaveSignature,
-      measureEntries: this.measureEntries,
-      musicXml: this.musicXml,
-      previousMeasure,
-      staveCount: this.staveCount,
-      systemId,
-    });
-  }
-
   /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(previousMeasure: Measure | null): number {
+  getMinRequiredWidth(systemMeasureIndex: number): number {
     let sum = 0;
 
-    let previousMeasureFragment = util.last(previousMeasure?.getFragments() ?? []);
     for (const fragment of this.getFragments()) {
-      sum += fragment.getMinRequiredWidth(previousMeasureFragment);
-      previousMeasureFragment = fragment;
+      sum += fragment.getMinRequiredWidth(systemMeasureIndex);
     }
 
     return sum;
@@ -108,6 +90,7 @@ export class Measure {
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
+    systemMeasureIndex: number;
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
@@ -116,31 +99,22 @@ export class Measure {
     let x = opts.x;
     let width = 0;
 
-    util.forEachTriple(
-      this.getFragments(),
-      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast }) => {
-        if (isFirst) {
-          previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
-        }
-        if (isLast) {
-          nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
-        }
+    util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment, nextFragment]) => {
+      const fragmentRendering = currentFragment.render({
+        x,
+        y: opts.y,
+        isLastSystem: opts.isLastSystem,
+        minRequiredSystemWidth: opts.minRequiredSystemWidth,
+        targetSystemWidth: opts.targetSystemWidth,
+        systemMeasureIndex: opts.systemMeasureIndex,
+        previousMeasureFragment: previousFragment,
+        nextMeasureFragment: nextFragment,
+      });
+      fragmentRenderings.push(fragmentRendering);
 
-        const fragmentRendering = currentFragment.render({
-          x,
-          y: opts.y,
-          isLastSystem: opts.isLastSystem,
-          minRequiredSystemWidth: opts.minRequiredSystemWidth,
-          targetSystemWidth: opts.targetSystemWidth,
-          previousMeasureFragment: previousFragment,
-          nextMeasureFragment: nextFragment,
-        });
-        fragmentRenderings.push(fragmentRendering);
-
-        x += fragmentRendering.width;
-        width += fragmentRendering.width;
-      }
-    );
+      x += fragmentRendering.width;
+      width += fragmentRendering.width;
+    });
 
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
 
@@ -211,9 +185,10 @@ export class Measure {
     let previousMeasureFragment = util.last(this.previousMeasure?.getFragments() ?? []);
 
     const config = this.config;
-    const systemId = this.systemId;
     const staveCount = this.staveCount;
     const staveLayouts = this.musicXml.staveLayouts;
+
+    let measureFragmentIndex = 0;
 
     function addFragment(
       leadingStaveSignature: StaveSignature | null,
@@ -223,8 +198,7 @@ export class Measure {
     ) {
       const fragment = new MeasureFragment({
         config,
-        measureIndex,
-        systemId,
+        index: measureFragmentIndex++,
         leadingStaveSignature,
         beginningBarStyle: beginningBarStyle,
         endBarStyle: endBarStyle,

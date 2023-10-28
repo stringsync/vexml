@@ -52,7 +52,11 @@ export class Part {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast }) => {
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
+      // Even though a system has many parts, each part spans the entire system. Therefore the measure index in the
+      // Part object is the systemMeasureIndex.
+      const systemMeasureIndex = index;
+
       if (isFirst) {
         previousMeasure = util.last(opts.previousPart?.measures ?? []);
       }
@@ -72,6 +76,7 @@ export class Part {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
+        systemMeasureIndex,
         previousMeasure,
         nextMeasure,
       });
