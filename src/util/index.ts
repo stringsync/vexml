@@ -7,4 +7,4 @@ export * from './decorators';
 export * from './array';
 export * from './fraction';
 export * from './assert';
-export * from './lrucache';
+export * from './lru';

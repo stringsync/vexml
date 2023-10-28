@@ -108,8 +108,6 @@ export class Seed {
       const partId = part.getId();
       result[partId] = [];
 
-      let previousMeasure: Measure | null = null;
-
       const staveCount = this.getStaveCount(partId);
       const measures = part.getMeasures();
 
@@ -119,22 +117,21 @@ export class Seed {
           continue;
         }
 
-        const measure: Measure = new Measure({
+        const measure = new Measure({
           config: this.config,
           index: measureIndex,
           musicXml: {
             measure: measures[measureIndex],
             staveLayouts: this.musicXml.staveLayouts,
           },
+          previousMeasure: null,
           staveCount,
           systemId: DUMMY_SYSTEM_ID,
-          previousMeasure,
           leadingStaveSignature: this.getLeadingStaveSignature(partId, measureIndex),
           measureEntries: this.getMeasureEntries(partId, measureIndex),
         });
 
         result[partId].push(measure);
-        previousMeasure = measure;
 
         // -1 since this measure is part of the multi rest.
         multiMeasureCount += measure.getMultiRestCount() - 1;
