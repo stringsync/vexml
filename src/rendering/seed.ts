@@ -62,7 +62,9 @@ export class Seed {
       systemMeasureIndex++;
     };
 
-    const measureCount = this.getMeasureCount();
+    const measureCount = util.max(
+      this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
+    );
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Represents a column of measures across each part.
@@ -97,7 +99,7 @@ export class Seed {
   private getMeasuresByPartId(): Record<string, Measure[]> {
     const result: Record<string, Measure[]> = {};
 
-    let multiMeasureCount = 0;
+    let multiRestMeasureCount = 0;
 
     for (const part of this.musicXml.parts) {
       const partId = part.getId();
@@ -109,8 +111,8 @@ export class Seed {
       const measures = part.getMeasures();
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-        if (multiMeasureCount > 0) {
-          multiMeasureCount--;
+        if (multiRestMeasureCount > 0) {
+          multiRestMeasureCount--;
           continue;
         }
 
@@ -131,7 +133,7 @@ export class Seed {
         previousMeasure = measure;
 
         // -1 since this measure is part of the multi rest.
-        multiMeasureCount += measure.getMultiRestCount() - 1;
+        multiRestMeasureCount += measure.getMultiRestCount() - 1;
       }
     }
 
@@ -163,10 +165,6 @@ export class Seed {
   private getMeasureEntryGroups(partId: string): MeasureEntry[][] {
     const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
     return measureEntryGroupsByPartId[partId];
-  }
-
-  private getMeasureCount(): number {
-    return util.max(this.musicXml.parts.map((part) => part.getMeasures().length));
   }
 
   /** Returns the stave signature that is active at the beginning of the measure. */
