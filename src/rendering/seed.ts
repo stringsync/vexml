@@ -11,13 +11,20 @@ const DUMMY_SYSTEM_ID = Symbol('dummy');
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
   private config: Config;
-  private parts: musicxml.Part[];
-  private staveLayouts: musicxml.StaveLayout[];
+  private musicXml: {
+    parts: musicxml.Part[];
+    staveLayouts: musicxml.StaveLayout[];
+  };
 
-  private constructor(opts: { config: Config; parts: musicxml.Part[]; staveLayouts: musicxml.StaveLayout[] }) {
+  private constructor(opts: {
+    config: Config;
+    musicXml: {
+      parts: musicxml.Part[];
+      staveLayouts: musicxml.StaveLayout[];
+    };
+  }) {
     this.config = opts.config;
-    this.parts = opts.parts;
-    this.staveLayouts = opts.staveLayouts;
+    this.musicXml = opts.musicXml;
   }
 
   /** Splits the measures into parts and systems that fit the given width. */
@@ -29,7 +36,7 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
-      const parts = this.parts.map((part) => {
+      const parts = this.musicXml.parts.map((part) => {
         const partId = part.getId();
         return new Part({
           config: this.config,
@@ -57,7 +64,7 @@ export class Seed {
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Represents a column of measures across each part.
-      const measures = this.parts
+      const measures = this.musicXml.parts
         .map((part) => part.getId())
         .map((partId) => this.getMeasures(partId))
         .map<[previousMeasure: Measure | null, currentMeasure: Measure]>((measures) => [
@@ -97,7 +104,7 @@ export class Seed {
 
     let multiMeasureCount = 0;
 
-    for (const part of this.parts) {
+    for (const part of this.musicXml.parts) {
       const partId = part.getId();
       result[partId] = [];
 
@@ -117,7 +124,7 @@ export class Seed {
           index: measureIndex,
           musicXml: {
             measure: measures[measureIndex],
-            staveLayouts: this.staveLayouts,
+            staveLayouts: this.musicXml.staveLayouts,
           },
           staveCount,
           systemId: DUMMY_SYSTEM_ID,
@@ -141,7 +148,7 @@ export class Seed {
   private getMeasureEntryGroupsByPartId(): Record<string, MeasureEntry[][]> {
     const result: Record<string, MeasureEntry[][]> = {};
 
-    for (const part of this.parts) {
+    for (const part of this.musicXml.parts) {
       const partId = part.getId();
       result[partId] = StaveSignature.toMeasureEntryGroups({ part });
     }
@@ -165,7 +172,7 @@ export class Seed {
   }
 
   private getMeasureCount(): number {
-    return util.max(this.parts.map((part) => part.getMeasures().length));
+    return util.max(this.musicXml.parts.map((part) => part.getMeasures().length));
   }
 
   /** Returns the stave signature that is active at the beginning of the measure. */
