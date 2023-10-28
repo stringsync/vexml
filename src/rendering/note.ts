@@ -166,14 +166,6 @@ export class Note {
   }
 
   @util.memoize()
-  private getKey(): string {
-    const step = this.musicXml.note.getStep();
-    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
-    const suffix = this.musicXml.note.getNoteheadSuffix();
-    return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
-  }
-
-  @util.memoize()
   private getAccidental(): Accidental | null {
     const noteAccidentalCode =
       conversions.fromAccidentalTypeToAccidentalCode(this.musicXml.note.getAccidentalType()) ??
@@ -198,7 +190,6 @@ export class Note {
       .map((lyric) => Lyric.create({ lyric }));
   }
 
-  @util.memoize()
   private getBeamValue(): musicxml.BeamValue | null {
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
     // continues, or stops.
@@ -206,8 +197,14 @@ export class Note {
     return util.first(beams)?.getBeamValue() ?? null;
   }
 
-  @util.memoize()
   private getDotCount(): number {
     return this.musicXml.note.getDotCount();
+  }
+
+  private getKey(): string {
+    const step = this.musicXml.note.getStep();
+    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+    const suffix = this.musicXml.note.getNoteheadSuffix();
+    return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 }
