@@ -68,14 +68,11 @@ export class System {
     // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts). We
     // can't take the max of the whole part together, because min required width varies for each _measure_ across all
     // parts.
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+    for (let systemMeasureIndex = 0; systemMeasureIndex < measureCount; systemMeasureIndex++) {
       totalWidth += util.max(
         measureGroups
-          .map((measures): [currentMeasure: Measure, previousMeasure: Measure | null] => [
-            measures[measureIndex],
-            measures[measureIndex - 1],
-          ])
-          .map(([currentMeasure, previousMeasure]) => currentMeasure.getMinRequiredWidth(previousMeasure))
+          .map((measures) => measures[systemMeasureIndex])
+          .map((measure) => measure.getMinRequiredWidth(systemMeasureIndex))
       );
     }
 
