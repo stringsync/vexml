@@ -4,6 +4,7 @@ import * as util from '@/util';
 import { Measure, MeasureRendering } from './measure';
 import { PartRendering } from './legacypart';
 import { StaveSignature } from './stavesignature';
+import { Config } from './config';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -13,10 +14,12 @@ const STAVE_CONNECTOR_BRACE_WIDTH = 16;
  * viewport.
  */
 export class Part {
+  private config: Config;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
 
-  constructor(opts: { musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+  constructor(opts: { config: Config; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+    this.config = opts.config;
     this.musicXml = opts.musicXml;
     this.measures = opts.measures;
   }

@@ -15,22 +15,8 @@ export class System {
   private parts: Part[];
 
   constructor(opts: { config: Config; parts: Part[] }) {
-    System.assertPartsAreValid(opts.parts);
-
     this.config = opts.config;
     this.parts = opts.parts;
-  }
-
-  private static assertPartsAreValid(parts: Part[]): void {
-    // Empty Parts means nothing is render for this system.
-    if (parts.length === 0) {
-      return;
-    }
-
-    const measureCounts = new Set(parts.map((part) => part.getMeasures().length));
-    if (measureCounts.size > 1) {
-      throw new Error('expected parts to have the same measure count');
-    }
   }
 
   render(opts: {
