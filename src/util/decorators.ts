@@ -6,6 +6,9 @@ import { LRU } from './lru';
  * This decorator is backed by an LRU cache to avoid memory leaks. Each argument provided can yield another LRU true if
  * there are arguments after it. The `degree` parameter is the capacity of each LRU cache "level". It must be declared
  * statically.
+ *
+ * NOTE: LRU caches depend on _identity_ for indexing. If you need values to resolve based on _equivalency_, do not use
+ * this decorator.
  */
 export function memoize(opts: { degree: number } = { degree: 1 }): MethodDecorator {
   // eslint-disable-next-line @typescript-eslint/ban-types
