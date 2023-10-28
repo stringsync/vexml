@@ -221,7 +221,7 @@ export class MeasureFragment {
 
   /** Returns what modifiers to render. */
   private getStaveModifiers(systemMeasureIndex: number): StaveModifier[] {
-    if (systemMeasureIndex === 0) {
+    if (systemMeasureIndex === 0 && this.index === 0) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
