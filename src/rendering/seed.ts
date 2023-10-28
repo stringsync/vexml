@@ -1,10 +1,10 @@
 import { Config } from './config';
 import { Measure } from './measure';
-import { LegacyPart } from './legacypart';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { LegacySystem } from './legacysystem';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import { Part } from './part';
+import { System } from './system';
 
 const DUMMY_SYSTEM_ID = Symbol('dummy');
 
@@ -20,34 +20,32 @@ export class Seed {
     this.staveLayouts = opts.staveLayouts;
   }
 
-  /** Splits the parts into discrete systems that can fit the given width.  */
-  split(width: number): LegacySystem[] {
-    const systems = new Array<LegacySystem>();
+  /** Splits the measures into parts and systems that fit the given width. */
+  split(width: number): System[] {
+    const systems = new Array<System>();
 
     let remainingWidth = width;
-    const measureStartIndex = 0;
-    const measureEndIndex = 0;
+    let measureStartIndex = 0;
 
     /** Adds a system to the return value. */
-    const commitSystem = () => {
+    const commitSystem = (measureEndIndex: number) => {
       const parts = this.parts.map((part) => {
         const partId = part.getId();
-        return new LegacyPart({
+        return new Part({
           config: this.config,
           musicXml: { part },
-          id: partId,
-          systemId: DUMMY_SYSTEM_ID,
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
-          staveCount: this.getStaveCount(partId),
-          noopMeasureCount: 0,
         });
       });
-      const system = new LegacySystem({
+
+      const system = new System({
         config: this.config,
-        id: DUMMY_SYSTEM_ID,
         parts,
       });
+
       systems.push(system);
+
+      measureStartIndex = measureEndIndex;
     };
 
     /** Accounts for a system being added. */
@@ -57,33 +55,40 @@ export class Seed {
 
     const measureCount = this.getMeasureCount();
 
-    // TODO: FIX THIS
-    // for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-    //   const measures = this.parts.map((part) => ({
-    //     previous: part.getMeasureAt(measureIndex - 1),
-    //     current: part.getMeasureAt(measureIndex)!,
-    //   }));
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // Represents a column of measures across each part.
+      const measures = this.parts
+        .map((part) => part.getId())
+        .map((partId) => this.getMeasures(partId))
+        .map<[previousMeasure: Measure | null, currentMeasure: Measure]>((measures) => [
+          measures[measureIndex - 1] ?? null,
+          measures[measureIndex],
+        ]);
 
-    //   let minRequiredWidth = util.max(measures.map((measure) => measure.current.getMinRequiredWidth(measure.previous)));
+      let minRequiredWidth = util.max(
+        measures.map(([previousMeasure, currentMeasure]) => currentMeasure.getMinRequiredWidth(previousMeasure))
+      );
 
-    //   const isProcessingLastMeasure = measureIndex === measureCount - 1;
-    //   if (isProcessingLastMeasure) {
-    //     if (minRequiredWidth <= widthBudget) {
-    //       commitSystem(measureIndex + 1);
-    //     } else {
-    //       commitSystem(measureIndex);
-    //       commitSystem(measureIndex + 1);
-    //     }
-    //   } else if (minRequiredWidth <= widthBudget) {
-    //     continueSystem(minRequiredWidth);
-    //   } else {
-    //     commitSystem(measureIndex);
-    //     // Recalculate to reflect the new conditions of the measure being on a different system, which is why null
-    //     // is being used.
-    //     minRequiredWidth = util.max(measures.map((measure) => measure.current.getMinRequiredWidth(null)));
-    //     continueSystem(minRequiredWidth);
-    //   }
-    // }
+      const isProcessingLastMeasure = measureIndex === measureCount - 1;
+      if (isProcessingLastMeasure) {
+        if (minRequiredWidth <= remainingWidth) {
+          commitSystem(measureIndex + 1);
+        } else {
+          commitSystem(measureIndex);
+          commitSystem(measureIndex + 1);
+        }
+      } else if (minRequiredWidth <= remainingWidth) {
+        continueSystem(minRequiredWidth);
+      } else {
+        commitSystem(measureIndex);
+        // Recalculate to reflect the new conditions of the measure being on a different system, which is why null
+        // is being used.
+        minRequiredWidth = util.max(
+          measures.map(([previousMeasure, currentMeasure]) => currentMeasure.getMinRequiredWidth(null))
+        );
+        continueSystem(minRequiredWidth);
+      }
+    }
 
     return systems;
   }
@@ -193,9 +198,5 @@ export class Seed {
         .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
         .map((entry) => entry.getStaveCount())
     );
-  }
-
-  private getPartIds(): string[] {
-    return this.parts.map((part) => part.getId());
   }
 }
