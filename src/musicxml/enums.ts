@@ -259,3 +259,11 @@ export const SLUR_TYPES = new Enum(['start', 'stop', 'continue'] as const);
  */
 export type SlurPlacement = EnumValues<typeof SLUR_PLACEMENTS>;
 export const SLUR_PLACEMENTS = new Enum(['above', 'below'] as const);
+
+/**
+ * The line-type type distinguishes between solid, dashed, dotted, and wavy lines.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/line-type/
+ */
+export type LineType = EnumValues<typeof LINE_TYPES>;
+export const LINE_TYPES = new Enum(['dashed', 'dotted', 'solid', 'wavy'] as const);
