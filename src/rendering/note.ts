@@ -204,7 +204,8 @@ export class Note {
   private getKey(): string {
     const step = this.musicXml.note.getStep();
     const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
-    const suffix = this.musicXml.note.getNoteheadSuffix();
+    const notehead = this.musicXml.note.getNotehead();
+    const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 }

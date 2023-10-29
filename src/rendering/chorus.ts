@@ -281,7 +281,8 @@ export class Chorus {
       keys: [note, ...note.getChordTail()].map((note) => {
         const step = note.getStep();
         const octave = note.getOctave() - clef.getOctaveChange();
-        const suffix = note.getNoteheadSuffix();
+        const notehead = note.getNotehead();
+        const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
         return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
       }),
     }).getKeyLine(0);

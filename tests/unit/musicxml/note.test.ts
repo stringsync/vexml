@@ -354,48 +354,6 @@ describe(Note, () => {
     });
   });
 
-  describe('getNoteheadSuffix', () => {
-    it.each([
-      { notehead: 'circle dot', suffix: '' },
-      { notehead: 'cluster', suffix: '' },
-      { notehead: 'cross', suffix: '' },
-      { notehead: 'inverted triangle', suffix: '' },
-      { notehead: 'left triangle', suffix: '' },
-      { notehead: 'slashed', suffix: '' },
-      { notehead: 'arrow down', suffix: 'TD' },
-      { notehead: 'arrow up', suffix: 'TU' },
-      { notehead: 'back slashed', suffix: 'SB' },
-      { notehead: 'circled', suffix: 'CI' },
-      { notehead: 'diamond', suffix: 'D' },
-      { notehead: 'do', suffix: 'DO' },
-      { notehead: 'fa', suffix: 'FA' },
-      { notehead: 'fa up', suffix: 'FAUP' },
-      { notehead: 'mi', suffix: 'MI' },
-      { notehead: 'normal', suffix: 'N' },
-      { notehead: 'slash', suffix: 'S' },
-      { notehead: 'so', suffix: 'SO' },
-      { notehead: 'ti', suffix: 'TI' },
-      { notehead: 'triangle', suffix: 'TU' },
-      { notehead: 'x', suffix: 'X' },
-    ])(`returns the notehead suffix: '%notehead'`, (t) => {
-      const node = xml.note({ notehead: xml.notehead({ value: t.notehead }) });
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBe(t.suffix);
-    });
-
-    it(`defaults to empty string for invalid noteheads`, () => {
-      const node = xml.note({ notehead: xml.notehead({ value: 'asdf' }) });
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBeEmpty();
-    });
-
-    it('defaults to empty string for missing noteheads', () => {
-      const node = xml.note();
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBeEmpty();
-    });
-  });
-
   describe('isChordHead', () => {
     it('returns true when the next note has a chord element', () => {
       const note1 = xml.note();
