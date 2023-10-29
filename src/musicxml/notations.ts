@@ -1,5 +1,6 @@
 import { VerticalDirection, VERTICAL_DIRECTIONS } from './enums';
 import { NamedElement } from '@/util';
+import { Tuplet } from './tuplet';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -17,5 +18,10 @@ export class Notations {
   /** Returns the direction of the arppegio when appregiated and null otherwise. */
   getArpeggioDirection(): VerticalDirection {
     return this.element.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
+  }
+
+  /** Returns the tuplets of the notations. Defaults to an empty array. */
+  getTuplets(): Tuplet[] {
+    return this.element.all('tuplet').map((element) => new Tuplet(element));
   }
 }

@@ -1,6 +1,5 @@
-import { VERTICAL_DIRECTIONS } from '@/musicxml/enums';
-import { Notations } from '@/musicxml/notations';
 import { xml } from '@/util';
+import { Notations, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -34,6 +33,24 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getArpeggioDirection()).toBe('up');
+    });
+  });
+
+  describe('getTuplets', () => {
+    it('returns the tuplets of the notations', () => {
+      const tuplet1 = xml.tuplet({ type: 'start' });
+      const tuplet2 = xml.tuplet({ type: 'stop' });
+      const node = xml.notations({ tuplets: [tuplet1, tuplet2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getTuplets()).toStrictEqual([new Tuplet(tuplet1), new Tuplet(tuplet2)]);
+    });
+
+    it('defaults to empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getTuplets()).toStrictEqual([]);
     });
   });
 });
