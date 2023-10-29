@@ -11,13 +11,8 @@ export type MultiRestRendering = {
 export class MultiRest {
   private count: number;
 
-  private constructor(opts: { count: number }) {
+  constructor(opts: { count: number }) {
     this.count = opts.count;
-  }
-
-  /** Creates a Multi Measure Rest. */
-  static create(opts: { count: number }): MultiRest {
-    return new MultiRest({ count: opts.count });
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */

@@ -273,7 +273,7 @@ export class Stave {
     }
 
     if (multiRestCount > 1) {
-      return MultiRest.create({ count: multiRestCount });
+      return new MultiRest({ count: multiRestCount });
     }
 
     if (this.getClef().getType() === 'tab') {
