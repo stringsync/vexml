@@ -180,7 +180,7 @@ export class Note {
     const hasExplicitAccidental = this.musicXml.note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
       const isCautionary = this.musicXml.note.hasAccidentalCautionary();
-      return Accidental.create({ code: noteAccidentalCode, isCautionary });
+      return new Accidental({ code: noteAccidentalCode, isCautionary });
     }
 
     return null;

@@ -32,14 +32,9 @@ export class Accidental {
   private code: AccidentalCode;
   private isCautionary: boolean;
 
-  private constructor(opts: { code: AccidentalCode; isCautionary: boolean }) {
+  constructor(opts: { code: AccidentalCode; isCautionary: boolean }) {
     this.code = opts.code;
     this.isCautionary = opts.isCautionary;
-  }
-
-  /** Creates an Accidental. */
-  static create(opts: { code: AccidentalCode; isCautionary: boolean }) {
-    return new Accidental({ code: opts.code, isCautionary: opts.isCautionary });
   }
 
   /** Renders the Accidental. */
