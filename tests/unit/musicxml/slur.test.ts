@@ -1,9 +1,9 @@
-import { SLUR_PLACEMENTS, SLUR_TYPES, Slur } from '@/musicxml';
+import { ABOVE_BELOW, START_STOP_CONTINUE, Slur } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Slur, () => {
   describe('getType', () => {
-    it.each(SLUR_TYPES.values)(`returns the type of slur: '%s'`, (type) => {
+    it.each(START_STOP_CONTINUE.values)(`returns the type of slur: '%s'`, (type) => {
       const node = xml.slur({ type });
       const slur = new Slur(node);
       expect(slur.getType()).toBe(type);
@@ -23,7 +23,7 @@ describe(Slur, () => {
   });
 
   describe('getPlacement', () => {
-    it.each(SLUR_PLACEMENTS.values)(`returns the placement of the slur: %s''`, (placement) => {
+    it.each(ABOVE_BELOW.values)(`returns the placement of the slur: %s''`, (placement) => {
       const node = xml.slur({ placement });
       const slur = new Slur(node);
       expect(slur.getPlacement()).toBe(placement);

@@ -3,10 +3,10 @@ import {
   BARLINE_LOCATIONS,
   BarStyle,
   BAR_STYLES,
-  ENDING_TYPES,
+  START_STOP_DISCONTINUE,
   RepeatDirection,
   REPEAT_DIRECTIONS,
-  EndingType,
+  StartStopDiscontinue,
 } from './enums';
 import { NamedElement } from '@/util';
 
@@ -57,7 +57,7 @@ export class Barline {
   }
 
   /** Returns the ending type. Defaults to 'start'. */
-  getEndingType(): EndingType {
-    return this.element.first('ending')?.attr('type').enum(ENDING_TYPES) ?? 'start';
+  getEndingType(): StartStopDiscontinue {
+    return this.element.first('ending')?.attr('type').enum(START_STOP_DISCONTINUE) ?? 'start';
   }
 }

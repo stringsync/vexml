@@ -237,9 +237,7 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
   }
 };
 
-export const fromTupletPlacementToTupletLocation = (
-  tupletPlacement: musicxml.TupletPlacement
-): vexflow.TupletLocation => {
+export const fromTupletPlacementToTupletLocation = (tupletPlacement: musicxml.AboveBelow): vexflow.TupletLocation => {
   switch (tupletPlacement) {
     case 'above':
       return vexflow.TupletLocation.TOP;
