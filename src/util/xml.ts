@@ -998,9 +998,13 @@ export const elision = createNamedElementFactory<'elision', { value: string }>('
 export const notations = createNamedElementFactory<
   'notations',
   {
+    tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
   }
->('notations', (e, { arpeggiate }) => {
+>('notations', (e, { tuplets, arpeggiate }) => {
+  if (tuplets) {
+    e.append(...tuplets);
+  }
   if (arpeggiate) {
     e.append(arpeggiate);
   }
