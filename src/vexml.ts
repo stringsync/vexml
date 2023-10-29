@@ -15,10 +15,17 @@ export class Vexml {
     const parser = new DOMParser();
     const root = parser.parseFromString(opts.xml, 'application/xml');
 
-    const musicXml = new musicxml.MusicXml(root);
-    const config = opts.config;
+    const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
+    const scorePartwise = new musicxml.MusicXml(root).getScorePartwise();
 
-    return rendering.Score.create({ musicXml, config }).render({
+    const score = new rendering.Score({
+      config,
+      musicXml: {
+        scorePartwise,
+      },
+    });
+
+    return score.render({
       element: opts.element,
       width: opts.width,
     });

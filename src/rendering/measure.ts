@@ -2,6 +2,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -30,91 +31,164 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
-  private label: string;
-  private fragments: MeasureFragment[];
+  private musicXml: {
+    measure: musicxml.Measure;
+    staveLayouts: musicxml.StaveLayout[];
+  };
+  private previousMeasure: Measure | null;
+  private leadingStaveSignature: StaveSignature | null;
 
-  private constructor(opts: { config: Config; index: number; label: string; fragments: MeasureFragment[] }) {
-    this.config = opts.config;
-    this.index = opts.index;
-    this.label = opts.label;
-    this.fragments = opts.fragments;
-  }
+  private staveCount: number;
+  private measureEntries: MeasureEntry[];
 
-  /** Creates a Measure. */
-  static create(opts: {
+  constructor(opts: {
     config: Config;
     index: number;
     musicXml: {
       measure: musicxml.Measure;
+      staveLayouts: musicxml.StaveLayout[];
     };
-    staveCount: number;
-    systemId: symbol;
-    isFirstPartMeasure: boolean;
-    isLastPartMeasure: boolean;
-    previousMeasure: Measure | null;
     leadingStaveSignature: StaveSignature | null;
+    previousMeasure: Measure | null;
+    staveCount: number;
     measureEntries: MeasureEntry[];
-    staveLayouts: musicxml.StaveLayout[];
-  }): Measure {
-    const measure = opts.musicXml.measure;
-
-    const label = measure.isImplicit() ? '' : measure.getNumber() || (opts.index + 1).toString();
-
-    const fragments = Measure.fragment({
-      config: opts.config,
-      measureIndex: opts.index,
-      systemId: opts.systemId,
-      musicXml: {
-        measure: opts.musicXml.measure,
-      },
-      previousMeasure: opts.previousMeasure,
-      leadingStaveSignature: opts.leadingStaveSignature,
-      measureEntries: opts.measureEntries,
-      staveCount: opts.staveCount,
-      staveLayouts: opts.staveLayouts,
-    });
-
-    return new Measure({
-      config: opts.config,
-      index: opts.index,
-      label,
-      fragments,
-    });
+  }) {
+    this.config = opts.config;
+    this.index = opts.index;
+    this.musicXml = opts.musicXml;
+    this.leadingStaveSignature = opts.leadingStaveSignature;
+    this.previousMeasure = opts.previousMeasure;
+    this.staveCount = opts.staveCount;
+    this.measureEntries = opts.measureEntries;
   }
 
-  private static fragment(opts: {
-    config: Config;
-    measureIndex: number;
-    systemId: symbol;
-    musicXml: {
-      measure: musicxml.Measure;
-    };
+  /** Returns the minimum required width for the Measure. */
+  getMinRequiredWidth(systemMeasureIndex: number): number {
+    let sum = 0;
+
+    for (const fragment of this.getFragments()) {
+      sum += fragment.getMinRequiredWidth(systemMeasureIndex);
+    }
+
+    return sum;
+  }
+
+  /** Returns the top padding required for the Measure. */
+  getTopPadding(): number {
+    return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
+  }
+
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    return util.sum(this.getFragments().map((fragment) => fragment.getMultiRestCount()));
+  }
+
+  /** Renders the Measure. */
+  render(opts: {
+    x: number;
+    y: number;
+    isLastSystem: boolean;
+    targetSystemWidth: number;
+    minRequiredSystemWidth: number;
+    systemMeasureIndex: number;
     previousMeasure: Measure | null;
-    leadingStaveSignature: StaveSignature | null;
-    staveCount: number;
-    staveLayouts: musicxml.StaveLayout[];
-    measureEntries: MeasureEntry[];
-  }): MeasureFragment[] {
+    nextMeasure: Measure | null;
+  }): MeasureRendering {
+    const fragmentRenderings = new Array<MeasureFragmentRendering>();
+
+    let x = opts.x;
+    let width = 0;
+
+    util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment, nextFragment]) => {
+      const fragmentRendering = currentFragment.render({
+        x,
+        y: opts.y,
+        isLastSystem: opts.isLastSystem,
+        minRequiredSystemWidth: opts.minRequiredSystemWidth,
+        targetSystemWidth: opts.targetSystemWidth,
+        systemMeasureIndex: opts.systemMeasureIndex,
+        previousMeasureFragment: previousFragment,
+        nextMeasureFragment: nextFragment,
+      });
+      fragmentRenderings.push(fragmentRendering);
+
+      x += fragmentRendering.width;
+      width += fragmentRendering.width;
+    });
+
+    const vfStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    const staveRenderings = util.first(fragmentRenderings)?.staves ?? [];
+    if (staveRenderings.length > 1) {
+      const topStave = util.first(staveRenderings)!;
+      const bottomStave = util.last(staveRenderings)!;
+
+      const begginingStaveConnectorType = conversions.fromBarlineTypeToBeginningStaveConnectorType(
+        topStave.vexflow.beginningBarlineType
+      );
+      vfStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
+          begginingStaveConnectorType
+        )
+      );
+
+      const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(
+        topStave.vexflow.endBarlineType
+      );
+      vfStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
+      );
+    }
+
+    const label = new drawables.Text({
+      content: this.getLabel(),
+      italic: true,
+      x: opts.x + MEASURE_LABEL_OFFSET_X,
+      y: opts.y + MEASURE_LABEL_OFFSET_Y,
+      color: MEASURE_LABEL_COLOR,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
+    });
+
+    return {
+      type: 'measure',
+      vexflow: {
+        staveConnectors: vfStaveConnectors,
+      },
+      index: this.index,
+      label,
+      fragments: fragmentRenderings,
+      width,
+    };
+  }
+
+  @util.memoize()
+  private getFragments(): MeasureFragment[] {
     const fragments = new Array<MeasureFragment>();
 
-    const measureIndex = opts.measureIndex;
+    const measureIndex = this.index;
 
     const beginningBarStyle =
-      opts.musicXml.measure
+      this.musicXml.measure
         .getBarlines()
         .find((barline) => barline.getLocation() === 'left')
         ?.getBarStyle() ?? 'regular';
 
     const endBarStyle =
-      opts.musicXml.measure
+      this.musicXml.measure
         .getEndingMeasure()
         .getBarlines()
         .find((barline) => barline.getLocation() === 'right')
         ?.getBarStyle() ?? 'regular';
 
-    let staveSignature = opts.leadingStaveSignature;
+    let staveSignature = this.leadingStaveSignature;
     let currentMeasureEntries = new Array<MeasureEntry>();
-    let previousMeasureFragment = util.last(opts.previousMeasure?.fragments ?? []);
+    let previousMeasureFragment = util.last(this.previousMeasure?.getFragments() ?? []);
+
+    const config = this.config;
+    const staveCount = this.staveCount;
+    const staveLayouts = this.musicXml.staveLayouts;
+
+    let measureFragmentIndex = 0;
 
     function addFragment(
       leadingStaveSignature: StaveSignature | null,
@@ -122,16 +196,14 @@ export class Measure {
       beginningBarStyle: musicxml.BarStyle,
       endBarStyle: musicxml.BarStyle
     ) {
-      const fragment = MeasureFragment.create({
-        config: opts.config,
-        measureIndex,
-        measureFragmentIndex: fragments.length,
-        systemId: opts.systemId,
+      const fragment = new MeasureFragment({
+        config,
+        index: measureFragmentIndex++,
         leadingStaveSignature,
         beginningBarStyle: beginningBarStyle,
         endBarStyle: endBarStyle,
-        staveCount: opts.staveCount,
-        staveLayouts: opts.staveLayouts,
+        staveCount,
+        staveLayouts,
         measureEntries,
         previousMeasureFragment,
       });
@@ -139,9 +211,9 @@ export class Measure {
       previousMeasureFragment = fragment;
     }
 
-    for (let measureEntryIndex = 0; measureEntryIndex < opts.measureEntries.length; measureEntryIndex++) {
-      const measureEntry = opts.measureEntries[measureEntryIndex];
-      const isLastMeasureEntry = measureEntryIndex === opts.measureEntries.length - 1;
+    for (let measureEntryIndex = 0; measureEntryIndex < this.measureEntries.length; measureEntryIndex++) {
+      const measureEntry = this.measureEntries[measureEntryIndex];
+      const isLastMeasureEntry = measureEntryIndex === this.measureEntries.length - 1;
 
       if (measureEntry instanceof StaveSignature) {
         const didStaveModifiersChange = measureEntry.getChangedStaveModifiers().length > 0;
@@ -215,137 +287,7 @@ export class Measure {
     return fragments;
   }
 
-  /** Deeply clones the Measure, but replaces the systemId and partMeasuresLength. */
-  clone(systemId: symbol): Measure {
-    return new Measure({
-      index: this.index,
-      label: this.label,
-      config: this.config,
-      fragments: this.fragments.map((fragment) => fragment.clone(systemId)),
-    });
-  }
-
-  /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(previousMeasure: Measure | null): number {
-    let sum = 0;
-
-    let previousMeasureFragment = util.last(previousMeasure?.fragments ?? []);
-    for (const fragment of this.fragments) {
-      sum += fragment.getMinRequiredWidth(previousMeasureFragment);
-      previousMeasureFragment = fragment;
-    }
-
-    return sum;
-  }
-
-  /** Returns the top padding required for the Measure. */
-  getTopPadding(): number {
-    return util.max(this.fragments.map((fragment) => fragment.getTopPadding()));
-  }
-
-  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
-  getMultiRestCount(): number {
-    return util.sum(this.fragments.map((fragment) => fragment.getMultiRestCount()));
-  }
-
-  /** Renders the Measure. */
-  render(opts: {
-    x: number;
-    y: number;
-    isLastSystem: boolean;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
-    previousMeasure: Measure | null;
-    nextMeasure: Measure | null;
-  }): MeasureRendering {
-    const fragmentRenderings = new Array<MeasureFragmentRendering>();
-
-    let x = opts.x;
-    let width = 0;
-
-    util.forEachTriple(this.fragments, ([previousFragment, currentFragment, nextFragment], index) => {
-      if (index === 0) {
-        previousFragment = util.last(opts.previousMeasure?.fragments ?? []);
-      }
-      if (index === this.fragments.length - 1) {
-        nextFragment = util.first(opts.nextMeasure?.fragments ?? []);
-      }
-
-      const fragmentRendering = currentFragment.render({
-        x,
-        y: opts.y,
-        isLastSystem: opts.isLastSystem,
-        minRequiredSystemWidth: opts.minRequiredSystemWidth,
-        targetSystemWidth: opts.targetSystemWidth,
-        previousMeasureFragment: previousFragment,
-        nextMeasureFragment: nextFragment,
-      });
-      fragmentRenderings.push(fragmentRendering);
-
-      x += fragmentRendering.width;
-      width += fragmentRendering.width;
-    });
-
-    const vfStaveConnectors = new Array<vexflow.StaveConnector>();
-
-    const staveRenderings = util.first(fragmentRenderings)?.staves ?? [];
-    if (staveRenderings.length > 1) {
-      const topStave = util.first(staveRenderings)!;
-      const bottomStave = util.last(staveRenderings)!;
-
-      const begginingStaveConnectorType = this.toBeginningStaveConnectorType(topStave.vexflow.beginningBarlineType);
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
-          begginingStaveConnectorType
-        )
-      );
-
-      const endStaveConnectorType = this.toEndStaveConnectorType(topStave.vexflow.endBarlineType);
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
-      );
-    }
-
-    const label = new drawables.Text({
-      content: this.label,
-      italic: true,
-      x: opts.x + MEASURE_LABEL_OFFSET_X,
-      y: opts.y + MEASURE_LABEL_OFFSET_Y,
-      color: MEASURE_LABEL_COLOR,
-      size: this.config.MEASURE_NUMBER_FONT_SIZE,
-    });
-
-    return {
-      type: 'measure',
-      vexflow: {
-        staveConnectors: vfStaveConnectors,
-      },
-      index: this.index,
-      label,
-      fragments: fragmentRenderings,
-      width,
-    };
-  }
-
-  private toBeginningStaveConnectorType(beginningBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
-    switch (beginningBarlineType) {
-      case vexflow.BarlineType.SINGLE:
-        return 'singleLeft';
-      case vexflow.BarlineType.DOUBLE:
-        return 'boldDoubleLeft';
-      default:
-        return vexflow.BarlineType.SINGLE;
-    }
-  }
-
-  private toEndStaveConnectorType(endBarlineType: vexflow.BarlineType): vexflow.StaveConnectorType {
-    switch (endBarlineType) {
-      case vexflow.BarlineType.SINGLE:
-        return 'singleRight';
-      case vexflow.BarlineType.END:
-        return 'boldDoubleRight';
-      default:
-        return vexflow.BarlineType.SINGLE;
-    }
+  private getLabel(): string {
+    return this.musicXml.measure.isImplicit() ? '' : this.musicXml.measure.getNumber() || (this.index + 1).toString();
   }
 }

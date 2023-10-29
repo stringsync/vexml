@@ -25,11 +25,6 @@ export class MultiRest {
     return this.count;
   }
 
-  /** Clones the Multi Measure Rest. */
-  clone(): MultiRest {
-    return new MultiRest({ count: this.count });
-  }
-
   /** Renders the Multi Measure Rest */
   render(): MultiRestRendering {
     const vfMultiMeasureRest = new vexflow.MultiMeasureRest(this.count, {

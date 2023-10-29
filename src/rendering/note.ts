@@ -1,13 +1,14 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Accidental, AccidentalCode, AccidentalRendering } from './accidental';
+import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
+import * as conversions from './conversions';
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
 
@@ -34,97 +35,29 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private key: string;
+  private musicXml: { note: musicxml.Note };
   private stem: StemDirection;
-  private lyrics: Lyric[];
-  private accidental: Accidental | null;
-  private dotCount: number;
-  private durationDenominator: NoteDurationDenominator;
-  private clef: Clef;
-  private beamValue: musicxml.BeamValue | null;
   private tokens: Token[];
+  private clef: Clef;
+  private keySignature: KeySignature;
+  private durationDenominator: NoteDurationDenominator;
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
-    key: string;
+    musicXml: { note: musicxml.Note };
     stem: StemDirection;
-    lyrics: Lyric[];
-    accidental: Accidental | null;
-    dotCount: number;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
-    beamValue: musicxml.BeamValue | null;
     tokens: Token[];
+    keySignature: KeySignature;
   }) {
     this.config = opts.config;
-    this.key = opts.key;
+    this.musicXml = opts.musicXml;
     this.stem = opts.stem;
-    this.lyrics = opts.lyrics;
-    this.accidental = opts.accidental;
-    this.dotCount = opts.dotCount;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
-    this.beamValue = opts.beamValue;
     this.tokens = opts.tokens;
-  }
-
-  /** Creates a Note. */
-  static create(opts: {
-    config: Config;
-    musicXml: {
-      note: musicxml.Note;
-      tokens: Token[];
-    };
-    stem: StemDirection;
-    durationDenominator: NoteDurationDenominator;
-    clef: Clef;
-    keySignature: KeySignature;
-  }): Note {
-    const note = opts.musicXml.note;
-    const tokens = opts.musicXml.tokens;
-    const keySignature = opts.keySignature;
-
-    let accidental: Accidental | null = null;
-    const noteAccidentalCode = Note.getAccidentalCode({ note });
-    const keySignatureAccidentalCode = keySignature.getAccidentalCode(note.getStep());
-    const hasExplicitAccidental = note.getAccidentalType() !== null;
-    if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
-      const isCautionary = note.hasAccidentalCautionary();
-      accidental = Accidental.create({ code: noteAccidentalCode, isCautionary });
-    }
-
-    const clef = opts.clef;
-    const lyrics = note
-      .getLyrics()
-      .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => Lyric.create({ lyric }));
-    const stem = opts.stem;
-    const dotCount = note.getDotCount();
-    const durationDenominator = opts.durationDenominator;
-
-    let key = `${note.getStep()}/${note.getOctave() - clef.getOctaveChange()}`;
-    const suffix = note.getNoteheadSuffix();
-    if (suffix) {
-      key += `/${suffix}`;
-    }
-
-    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
-    // continues, or stops.
-    const beams = util.sortBy(note.getBeams(), (beam) => beam.getNumber());
-    const beamValue = util.first(beams)?.getBeamValue() ?? null;
-
-    return new Note({
-      config: opts.config,
-      key,
-      stem,
-      lyrics,
-      accidental,
-      dotCount,
-      durationDenominator,
-      clef,
-      beamValue,
-      tokens,
-    });
+    this.keySignature = opts.keySignature;
   }
 
   /**
@@ -142,7 +75,7 @@ export class Note {
       throw new Error('all notes must have the same durationDenominator');
     }
 
-    const dotCounts = new Set(notes.map((note) => note.dotCount));
+    const dotCounts = new Set(notes.map((note) => note.getDotCount()));
     if (dotCounts.size > 1) {
       throw new Error('all notes must have the same dotCount');
     }
@@ -152,32 +85,33 @@ export class Note {
       throw new Error('all notes must have the same clefTypes');
     }
 
-    const keys = notes.map((note) => note.key);
+    const keys = notes.map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
     const vfStaveNote = new vexflow.StaveNote({
-      keys: notes.map((note) => note.key),
+      keys,
       duration: util.first(notes)!.durationDenominator,
-      dots: util.first(notes)!.dotCount,
+      dots: util.first(notes)!.getDotCount(),
       clef: util.first(notes)!.clef.getType(),
       autoStem,
       stemDirection,
     });
 
-    for (let index = 0; index < util.first(notes)!.dotCount; index++) {
+    for (let index = 0; index < util.first(notes)!.getDotCount(); index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
     }
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
       const renderings = new Array<NoteModifierRendering>();
 
-      if (note.accidental) {
-        renderings.push(note.accidental.render());
+      const accidental = note.getAccidental();
+      if (accidental) {
+        renderings.push(accidental.render());
       }
 
       // Lyrics sorted by ascending verse number.
-      for (const lyric of note.lyrics) {
+      for (const lyric of note.getLyrics()) {
         renderings.push(lyric.render());
       }
 
@@ -209,7 +143,7 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
-      beamValue: notes[index].beamValue,
+      beamValue: notes[index].getBeamValue(),
     }));
   }
 
@@ -226,67 +160,51 @@ export class Note {
     }
   }
 
-  private static getAccidentalCode(musicXml: { note: musicxml.Note }): AccidentalCode {
-    const accidentalType = musicXml.note.getAccidentalType();
-    // AccidentalType takes precedence over alter.
-    switch (accidentalType) {
-      case 'sharp':
-        return '#';
-      case 'double-sharp':
-        return '##';
-      case 'flat':
-        return 'b';
-      case 'flat-flat':
-        return 'bb';
-      case 'natural':
-        return 'n';
-      case 'quarter-sharp':
-        return '+';
-    }
-
-    const alter = musicXml.note.getAlter();
-    switch (alter) {
-      case 1:
-        return '#';
-      case 2:
-        return '##';
-      case -1:
-        return 'b';
-      case -2:
-        return 'bb';
-      case 0:
-        return 'n';
-      case -0.5:
-        return 'd';
-      case 0.5:
-        return '+';
-      case -1.5:
-        return 'db';
-      case 1.5:
-        return '++';
-    }
-
-    return 'n';
-  }
-
-  /** Clones the Note. */
-  clone(): Note {
-    return new Note({
-      config: this.config,
-      key: this.key,
-      stem: this.stem,
-      lyrics: this.lyrics.map((lyric) => lyric.clone()),
-      accidental: this.accidental?.clone() ?? null,
-      dotCount: this.dotCount,
-      durationDenominator: this.durationDenominator,
-      clef: this.clef,
-      beamValue: this.beamValue,
-      tokens: this.tokens,
-    });
-  }
-
   /** Renders the Note. */
   render(): NoteRendering {
     return util.first(Note.render([this]))!;
+  }
+
+  @util.memoize()
+  private getAccidental(): Accidental | null {
+    const noteAccidentalCode =
+      conversions.fromAccidentalTypeToAccidentalCode(this.musicXml.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(this.musicXml.note.getAlter());
+
+    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.musicXml.note.getStep());
+
+    const hasExplicitAccidental = this.musicXml.note.getAccidentalType() !== null;
+    if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
+      const isCautionary = this.musicXml.note.hasAccidentalCautionary();
+      return Accidental.create({ code: noteAccidentalCode, isCautionary });
+    }
+
+    return null;
+  }
+
+  @util.memoize()
+  private getLyrics(): Lyric[] {
+    return this.musicXml.note
+      .getLyrics()
+      .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
+      .map((lyric) => Lyric.create({ lyric }));
+  }
+
+  private getBeamValue(): musicxml.BeamValue | null {
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
+    const beams = util.sortBy(this.musicXml.note.getBeams(), (beam) => beam.getNumber());
+    return util.first(beams)?.getBeamValue() ?? null;
+  }
+
+  private getDotCount(): number {
+    return this.musicXml.note.getDotCount();
+  }
+
+  private getKey(): string {
+    const step = this.musicXml.note.getStep();
+    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+    const suffix = this.musicXml.note.getNoteheadSuffix();
+    return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 }

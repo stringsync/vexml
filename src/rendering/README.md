@@ -21,12 +21,7 @@ The `rendering` library is responsible for transforming `musicxml` structures in
 ### Rendering Lifecycle
 
 1. **parse**: A MusicXML document is parsed using the `musicxml` library.
-2. **create**: A rendering hierarchy is created from the parsed document.
-3. **render**: `vexflow` elements are created from the rendering hierarchy.
-
-**create** is a necessary lifecycle stage because you can't render certain things without looking at the _entire_ MusicXML document.
-
-Think of this stage as a preparation process where you want to know as much as you can about the `musicxml` structure _before_ turning it into `vexflow` elements. When developing in this stage, you should be continously asking the question "What will I need for `vexflow`?", but you won't commit to it yet. You typically don't specify formatting parameters, such as `x`, `y`, or `width` during **create** time.
+2. **render**: `vexflow` elements are created from the rendering hierarchy.
 
 ### Rendering Hierarchy
 
@@ -50,11 +45,13 @@ While developing this library, avoid relationships between distant ancestors and
 - A `Measure`belongs to a `Part`.
 - A `System` has many `Measures` through `Parts`.
 
-[System.split](./system.ts)'s purpose is to take a single system and break it down to smaller ones to accommodate a specific width. In order to do this, it must figure out the width of each measure accounting for each part. Therefore, a `System` ends up querying the `Measure` which breaks encapsulation, but it is necessary for the computation.
-
 ### Immutability
 
 While not a strict requirement, prefer making the state accumulated from the **create** stage private and immutable. Anything that is dynamic can likely be passed down during the **render** stage. This allows the code to be easier to reason about.
+
+### Lazy Load
+
+When possible, prefer to make heavy calculations lazy and memoizable. Use the [util.memoize](../util/decorators.ts) function to make this opaque to callers.
 
 ### Testing
 
@@ -76,7 +73,6 @@ class Stave {
     musicXml: {
       measure: musicxml.Measure;
     };
-    systemId: symbol;
   }): Measure {
     // implementation
   }
@@ -118,3 +114,13 @@ class Stave {
 ```
 
 The `vf` prefix is used to distinguish `vexflow` objects from `rendering` objects. This isn't strictly necessary, but it's preferred where ambiguity could detract from maintainability.
+
+### Seed
+
+[Seed](./seed.ts) does the heavy lifting of determining what measures can fit in a given system.
+
+1. Instantiate all the `Measure` objects. These are the main width-adjustable objects in `vexml`.
+2. For each measure number, check each `Part` and determine which `Measure` takes up the most width. That will be the width for all of measures in that part.
+3. When there is no more width in a given `System`, start a new `System`.
+
+This process is repeated until all the `Measure` objects are accounted for.
