@@ -29,16 +29,16 @@ describe(Tuplet, () => {
       expect(tuplet.getPlacement()).toBe(placement);
     });
 
-    it(`defaults to 'below' when missing`, () => {
+    it(`defaults to null when missing`, () => {
       const node = xml.tuplet();
       const tuplet = new Tuplet(node);
-      expect(tuplet.getPlacement()).toBe('below');
+      expect(tuplet.getPlacement()).toBeNull();
     });
 
-    it(`defaults to 'below' when invalid`, () => {
+    it(`defaults to null when invalid`, () => {
       const node = xml.tuplet({ placement: 'foo' });
       const tuplet = new Tuplet(node);
-      expect(tuplet.getPlacement()).toBe('below');
+      expect(tuplet.getPlacement()).toBeNull();
     });
   });
 });

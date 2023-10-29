@@ -16,7 +16,7 @@ export class Tuplet {
   }
 
   /** Returns the placement of the tuplet. Defaults to 'below'. */
-  getPlacement(): TupletPlacement {
-    return this.element.attr('placement').withDefault<TupletPlacement>('below').enum(TUPLET_PLACEMENTS);
+  getPlacement(): TupletPlacement | null {
+    return this.element.attr('placement').enum(TUPLET_PLACEMENTS);
   }
 }
