@@ -1123,3 +1123,36 @@ export const tuplet = createNamedElementFactory<'tuplet', { type: string }>('tup
     e.setAttribute('type', type);
   }
 });
+
+export const timeModification = createNamedElementFactory<
+  'time-modification',
+  {
+    actualNotes: NamedElement<'actual-notes'>;
+    normalNotes: NamedElement<'normal-notes'>;
+  }
+>('time-modification', (e, { actualNotes, normalNotes }) => {
+  if (actualNotes) {
+    e.append(actualNotes);
+  }
+  if (normalNotes) {
+    e.append(normalNotes);
+  }
+});
+
+export const actualNotes = createNamedElementFactory<'actual-notes', { value: number }>(
+  'actual-notes',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const normalNotes = createNamedElementFactory<'normal-notes', { value: number }>(
+  'normal-notes',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
