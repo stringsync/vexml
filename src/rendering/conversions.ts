@@ -236,3 +236,14 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
       return '';
   }
 };
+
+export const fromTupletPlacementToTupletLocation = (
+  tupletPlacement: musicxml.TupletPlacement
+): vexflow.TupletLocation => {
+  switch (tupletPlacement) {
+    case 'above':
+      return vexflow.TupletLocation.TOP;
+    case 'below':
+      return vexflow.TupletLocation.BOTTOM;
+  }
+};

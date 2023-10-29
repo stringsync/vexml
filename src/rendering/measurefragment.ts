@@ -3,6 +3,7 @@ import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { ChorusRendering } from './chorus';
 import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
@@ -282,34 +283,40 @@ export class MeasureFragment {
     );
 
     let vfNotes = new Array<vexflow.Note>();
+    let vfTupletLocation: vexflow.TupletLocation = vexflow.TupletLocation.BOTTOM;
 
     for (let index = 0; index < tupletables.length; index++) {
       const tupletable = tupletables[index];
       const isLast = index === tupletables.length - 1;
 
-      let type: musicxml.TupletType | null;
+      let tuplet: musicxml.Tuplet | null;
       let vfNote: vexflow.Note | null;
 
       // TODO: Handle multiple (nested?) tuplets.
       switch (tupletable.type) {
         case 'note':
-          type = util.first(tupletable.tuplets)?.getType() ?? null;
+          tuplet = util.first(tupletable.tuplets);
           vfNote = tupletable.vexflow.staveNote;
           break;
         case 'chord':
-          type = util.first(tupletable.notes.flatMap((note) => note.tuplets))?.getType() ?? null;
+          tuplet = util.first(tupletable.notes.flatMap((note) => note.tuplets));
           vfNote = util.first(tupletable.notes)?.vexflow.staveNote ?? null;
           break;
       }
 
+      const tupletType = tuplet?.getType();
+      const tupletPlacement = tuplet?.getPlacement() ?? 'below';
+
       if (!vfNote) {
         continue;
-      } else if (type === 'start') {
+      } else if (tupletType === 'start') {
         vfNotes.push(vfNote);
-      } else if (type === 'stop') {
+        vfTupletLocation = conversions.fromTupletPlacementToTupletLocation(tupletPlacement);
+      } else if (tupletType === 'stop') {
         vfNotes.push(vfNote);
-        vfTuplets.push(new vexflow.Tuplet(vfNotes));
+        vfTuplets.push(new vexflow.Tuplet(vfNotes, { location: vfTupletLocation }));
         vfNotes = [];
+        vfTupletLocation = vexflow.TupletLocation.BOTTOM;
       } else if (vfNotes.length > 0) {
         // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
         // continue if we've come across a "start" (denoted by the vfNotes length).

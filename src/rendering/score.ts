@@ -155,6 +155,14 @@ export class Score {
         vfBeam.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.Tuplet elements.
+    measures
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.vexflow.tuplets)
+      .forEach((vfTuplet) => {
+        vfTuplet.setContext(vfContext).draw();
+      });
+
     // Draw measure labels.
     measures
       .map((measure) => measure.label)
