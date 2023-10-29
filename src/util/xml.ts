@@ -1113,3 +1113,9 @@ export const staffType = createNamedElementFactory<'staff-type', { value: string
     e.setTextContent(value);
   }
 });
+
+export const tuplet = createNamedElementFactory<'tuplet', { type: string }>('tuplet', (e, { type }) => {
+  if (type) {
+    e.setAttribute('type', type);
+  }
+});
