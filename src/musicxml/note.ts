@@ -3,6 +3,7 @@ import { AccidentalType, ACCIDENTAL_TYPES, Notehead, NOTEHEADS, NoteType, NOTE_T
 import { NamedElement } from '@/util';
 import { Notations } from './notations';
 import { Lyric } from './lyric';
+import { TimeModification } from './timemodification';
 
 /**
  * Contains graphical and musical information about a note.
@@ -152,5 +153,11 @@ export class Note {
   /** Returns the beams of the note. */
   getBeams(): Beam[] {
     return this.element.all('beam').map((element) => new Beam(element));
+  }
+
+  /** Returns the time modification of the note. Defaults to null. */
+  getTimeModification(): TimeModification | null {
+    const element = this.element.first('time-modification');
+    return element ? new TimeModification(element) : null;
   }
 }
