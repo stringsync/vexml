@@ -1,4 +1,3 @@
-import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Enum, EnumValues } from '@/util';
 
