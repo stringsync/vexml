@@ -278,7 +278,7 @@ export class Stave {
 
     if (this.getClef().getType() === 'tab') {
       // TODO: Render tablature correctly.
-      return Tablature.create();
+      return new Tablature();
     }
 
     return Chorus.multiVoice({
