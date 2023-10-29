@@ -155,6 +155,14 @@ export class Score {
         vfBeam.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.StaveTie elements.
+    measures
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.vexflow.staveTies)
+      .forEach((vfStaveTie) => {
+        vfStaveTie.setContext(vfContext).draw();
+      });
+
     // Draw vexflow.Tuplet elements.
     measures
       .flatMap((measure) => measure.fragments)
