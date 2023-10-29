@@ -1,4 +1,5 @@
 import * as vexflow from 'vexflow';
+import * as musicxml from '@/musicxml';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
@@ -10,6 +11,8 @@ export type RestRendering = {
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
+  tuplets: musicxml.Tuplet[];
+  slurs: musicxml.Slur[];
 };
 
 /**
@@ -24,6 +27,9 @@ export type RestRendering = {
  */
 export class Rest {
   private config: Config;
+  private musicXml: {
+    note: musicxml.Note | null;
+  };
   private displayPitch: string | null;
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
@@ -32,6 +38,9 @@ export class Rest {
 
   constructor(opts: {
     config: Config;
+    musicXml: {
+      note: musicxml.Note | null;
+    };
     displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
@@ -39,6 +48,7 @@ export class Rest {
     tokens: Token[];
   }) {
     this.config = opts.config;
+    this.musicXml = opts.musicXml;
     this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
@@ -50,6 +60,9 @@ export class Rest {
   static whole(opts: { config: Config; clef: Clef }): Rest {
     return new Rest({
       config: opts.config,
+      musicXml: {
+        note: null,
+      },
       displayPitch: null,
       durationDenominator: '1',
       dotCount: 0,
@@ -78,7 +91,12 @@ export class Rest {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
       });
 
-    return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
+    return {
+      type: 'rest',
+      vexflow: { staveNote: vfStaveNote },
+      slurs: this.getSlurs(),
+      tuplets: this.getTuplets(),
+    };
   }
 
   private getKey(): string {
@@ -108,5 +126,18 @@ export class Rest {
       return true;
     }
     return false;
+  }
+
+  private getTuplets(): musicxml.Tuplet[] {
+    return (
+      this.musicXml.note
+        ?.getNotations()
+        .find((notations) => notations.hasTuplets())
+        ?.getTuplets() ?? []
+    );
+  }
+
+  private getSlurs(): musicxml.Slur[] {
+    return this.musicXml.note?.getNotations().flatMap((notations) => notations.getSlurs()) ?? [];
   }
 }

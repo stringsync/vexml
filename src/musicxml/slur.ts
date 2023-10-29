@@ -18,4 +18,9 @@ export class Slur {
   getPlacement(): AboveBelow | null {
     return this.element.attr('placement').enum(ABOVE_BELOW);
   }
+
+  /** Returns the number of the slur. Defaults to 1. */
+  getNumber(): number {
+    return this.element.attr('number').withDefault(1).int();
+  }
 }
