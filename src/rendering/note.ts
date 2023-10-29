@@ -22,6 +22,7 @@ export type NoteRendering = {
   modifiers: NoteModifierRendering[];
   beamValue: musicxml.BeamValue | null;
   tuplets: musicxml.Tuplet[];
+  timeModification: musicxml.TimeModification | null;
 };
 
 /**
@@ -146,6 +147,7 @@ export class Note {
       vexflow: { staveNote: vfStaveNote },
       beamValue: notes[index].getBeamValue(),
       tuplets: notes[index].getTuplets(),
+      timeModification: notes[index].getTimeModification(),
     }));
   }
 
@@ -218,5 +220,9 @@ export class Note {
         .find((notations) => notations.hasTuplets())
         ?.getTuplets() ?? []
     );
+  }
+
+  private getTimeModification(): musicxml.TimeModification | null {
+    return this.musicXml.note.getTimeModification();
   }
 }
