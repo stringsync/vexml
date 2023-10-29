@@ -201,7 +201,7 @@ export class Score {
 
   @util.memoize()
   private getTitle() {
-    return Title.create({
+    return new Title({
       config: this.config,
       text: this.musicXml.scorePartwise?.getTitle() ?? '',
     });
