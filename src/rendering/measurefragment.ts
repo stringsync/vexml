@@ -64,18 +64,7 @@ export class MeasureFragment {
 
   /** Returns the minimum required width for the measure fragment. */
   getMinRequiredWidth(systemMeasureIndex: number): number {
-    const isFirstSystemMeasureFragment = this.index === 0 && systemMeasureIndex === 0;
-
-    const staveModifiers = new Set<StaveModifier>(
-      isFirstSystemMeasureFragment ? ['clef', 'keySignature', 'timeSignature'] : []
-    );
-
-    for (const stave of this.getStaves()) {
-      for (const staveModifier of stave.getModifierChanges()) {
-        staveModifiers.add(staveModifier);
-      }
-    }
-
+    const staveModifiers = this.getStaveModifiers(systemMeasureIndex);
     const staveModifiersWidth = this.getStaveModifiersWidth(Array.from(staveModifiers));
 
     return this.getMinJustifyWidth() + staveModifiersWidth + this.getRightPadding();
