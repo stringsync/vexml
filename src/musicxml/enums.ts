@@ -158,8 +158,8 @@ export const BARLINE_LOCATIONS = new Enum(['right', 'left', 'middle'] as const);
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-discontinue/
  */
-export type EndingType = EnumValues<typeof ENDING_TYPES>;
-export const ENDING_TYPES = new Enum(['start', 'stop', 'discontinue'] as const);
+export type StartStopDiscontinue = EnumValues<typeof START_STOP_DISCONTINUE>;
+export const START_STOP_DISCONTINUE = new Enum(['start', 'stop', 'discontinue'] as const);
 
 /**
  * Different types of clef symbols.
@@ -229,36 +229,30 @@ export const KEY_MODES = new Enum([
 ] as const);
 
 /**
- * Indicates if this is the start or stop of the tuplet.
+ * The start-stop type is used for an attribute of musical elements that can either start or stop, such as tuplets.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop/
  */
-export type TupletType = EnumValues<typeof TUPLET_TYPES>;
-export const TUPLET_TYPES = new Enum(['start', 'stop'] as const);
+export type StartStop = EnumValues<typeof START_STOP>;
+export const START_STOP = new Enum(['start', 'stop'] as const);
 
 /**
- * The placement of the tuplet.
+ * The above-below type is used to indicate whether one element appears above or below another element.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
  */
-export type TupletPlacement = EnumValues<typeof TUPLET_PLACEMENTS>;
-export const TUPLET_PLACEMENTS = new Enum(['above', 'below'] as const);
+export type AboveBelow = EnumValues<typeof ABOVE_BELOW>;
+export const ABOVE_BELOW = new Enum(['above', 'below'] as const);
 
 /**
- * Inidicates if this is the start, stop, or middle of a slur.
+ * The start-stop-continue type is used for an attribute of musical elements that can either start or stop, but also
+ * need to refer to an intermediate point in the symbol, as for complex slurs or for formatting of symbols across system
+ * breaks.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-continue/
  */
-export type SlurType = EnumValues<typeof SLUR_TYPES>;
-export const SLUR_TYPES = new Enum(['start', 'stop', 'continue'] as const);
-
-/**
- * The placement of the slur.
- *
- * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
- */
-export type SlurPlacement = EnumValues<typeof SLUR_PLACEMENTS>;
-export const SLUR_PLACEMENTS = new Enum(['above', 'below'] as const);
+export type StartStopContinue = EnumValues<typeof START_STOP_CONTINUE>;
+export const START_STOP_CONTINUE = new Enum(['start', 'stop', 'continue'] as const);
 
 /**
  * The line-type type distinguishes between solid, dashed, dotted, and wavy lines.
