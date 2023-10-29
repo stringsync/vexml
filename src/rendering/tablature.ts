@@ -12,11 +12,6 @@ export class Tablature {
     return new Tablature();
   }
 
-  /** Clones a Tablature. */
-  clone(): Tablature {
-    return new Tablature();
-  }
-
   /** Renders a Tablature. */
   render(): TablatureRendering {
     return { type: 'tablature' };
