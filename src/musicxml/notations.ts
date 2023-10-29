@@ -20,6 +20,11 @@ export class Notations {
     return this.element.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
   }
 
+  /** Whether the notations has at least one tuplet. */
+  hasTuplets(): boolean {
+    return this.element.all('tuplet').length > 0;
+  }
+
   /** Returns the tuplets of the notations. Defaults to an empty array. */
   getTuplets(): Tuplet[] {
     return this.element.all('tuplet').map((element) => new Tuplet(element));
