@@ -1123,9 +1123,18 @@ export const staffType = createNamedElementFactory<'staff-type', { value: string
   }
 });
 
-export const tuplet = createNamedElementFactory<'tuplet', { type: string }>('tuplet', (e, { type }) => {
+export const tuplet = createNamedElementFactory<
+  'tuplet',
+  {
+    type: string;
+    placement: string;
+  }
+>('tuplet', (e, { type, placement }) => {
   if (type) {
     e.setAttribute('type', type);
+  }
+  if (placement) {
+    e.setAttribute('placement', placement);
   }
 });
 

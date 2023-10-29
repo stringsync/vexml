@@ -235,3 +235,11 @@ export const KEY_MODES = new Enum([
  */
 export type TupletType = EnumValues<typeof TUPLET_TYPES>;
 export const TUPLET_TYPES = new Enum(['start', 'stop'] as const);
+
+/**
+ * The placement of the tuplet.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
+ */
+export type TupletPlacement = EnumValues<typeof TUPLET_PLACEMENTS>;
+export const TUPLET_PLACEMENTS = new Enum(['above', 'below'] as const);
