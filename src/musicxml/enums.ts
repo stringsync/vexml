@@ -227,3 +227,11 @@ export const KEY_MODES = new Enum([
   'ionian',
   'locrian',
 ] as const);
+
+/**
+ * Indicates if this is the start or stop of the tuplet.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop/.
+ */
+export type TupletType = EnumValues<typeof TUPLET_TYPES>;
+export const TUPLET_TYPES = new Enum(['start', 'stop'] as const);
