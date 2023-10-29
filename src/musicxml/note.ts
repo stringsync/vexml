@@ -1,15 +1,5 @@
 import { Beam } from './beam';
-import {
-  AccidentalType,
-  ACCIDENTAL_TYPES,
-  Notehead,
-  NOTEHEADS,
-  NoteheadSuffix,
-  NoteType,
-  NOTE_TYPES,
-  Stem,
-  STEMS,
-} from './enums';
+import { AccidentalType, ACCIDENTAL_TYPES, Notehead, NOTEHEADS, NoteType, NOTE_TYPES, Stem, STEMS } from './enums';
 import { NamedElement } from '@/util';
 import { Notations } from './notations';
 import { Lyric } from './lyric';
@@ -111,51 +101,6 @@ export class Note {
   /** Returns the notehead of the note. */
   getNotehead(): Notehead | null {
     return this.element.first('notehead')?.content().enum(NOTEHEADS) ?? null;
-  }
-
-  /** Returns the notehead suffix of the note. Defaults to ''. */
-  getNoteheadSuffix(): NoteheadSuffix {
-    switch (this.getNotehead()) {
-      case 'circle dot':
-      case 'cluster':
-      case 'cross':
-      case 'inverted triangle':
-      case 'left triangle':
-      case 'slashed':
-        return '';
-      case 'arrow down':
-        return 'TD';
-      case 'arrow up':
-        return 'TU';
-      case 'back slashed':
-        return 'SB';
-      case 'circled':
-        return 'CI';
-      case 'diamond':
-        return 'D';
-      case 'do':
-        return 'DO';
-      case 'fa':
-        return 'FA';
-      case 'fa up':
-        return 'FAUP';
-      case 'mi':
-        return 'MI';
-      case 'normal':
-        return 'N';
-      case 'slash':
-        return 'S';
-      case 'so':
-        return 'SO';
-      case 'ti':
-        return 'TI';
-      case 'triangle':
-        return 'TU';
-      case 'x':
-        return 'X';
-      default:
-        return '';
-    }
   }
 
   /** Whether or not the note is the first note of a chord. */

@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator, StemDirection } from './enums';
+import { NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -189,5 +189,50 @@ export const fromBarlineTypeToEndingStaveConnectorType = (
       return 'boldDoubleRight';
     default:
       return vexflow.BarlineType.SINGLE;
+  }
+};
+
+/** Converts `Notehead` to a `NoteheadSuffix`. Defaults to ''. */
+export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null): NoteheadSuffix => {
+  switch (notehead) {
+    case 'circle dot':
+    case 'cluster':
+    case 'cross':
+    case 'inverted triangle':
+    case 'left triangle':
+    case 'slashed':
+      return '';
+    case 'arrow down':
+      return 'TD';
+    case 'arrow up':
+      return 'TU';
+    case 'back slashed':
+      return 'SB';
+    case 'circled':
+      return 'CI';
+    case 'diamond':
+      return 'D';
+    case 'do':
+      return 'DO';
+    case 'fa':
+      return 'FA';
+    case 'fa up':
+      return 'FAUP';
+    case 'mi':
+      return 'MI';
+    case 'normal':
+      return 'N';
+    case 'slash':
+      return 'S';
+    case 'so':
+      return 'SO';
+    case 'ti':
+      return 'TI';
+    case 'triangle':
+      return 'TU';
+    case 'x':
+      return 'X';
+    default:
+      return '';
   }
 };
