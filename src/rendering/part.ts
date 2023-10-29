@@ -1,9 +1,9 @@
 import * as musicxml from '@/musicxml';
-import { Measure, MeasureRendering } from './measure';
-import { Config } from './config';
-import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
+import { Measure, MeasureRendering } from './measure';
 import { StaveSignature } from './stavesignature';
+import { Config } from './config';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -23,143 +23,19 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
-  private id: string;
-  private systemId: symbol;
+  private musicXml: { part: musicxml.Part };
   private measures: Measure[];
-  private staveCount: number;
-  private noopMeasureCount: number;
 
-  private constructor(opts: {
-    config: Config;
-    id: string;
-    systemId: symbol;
-    measures: Measure[];
-    staveCount: number;
-    noopMeasureCount: number;
-  }) {
+  constructor(opts: { config: Config; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
     this.config = opts.config;
-    this.id = opts.id;
-    this.systemId = opts.systemId;
+    this.musicXml = opts.musicXml;
     this.measures = opts.measures;
-    this.staveCount = opts.staveCount;
-    this.noopMeasureCount = opts.noopMeasureCount;
   }
 
-  /** Creates a Part. */
-  static create(opts: {
-    config: Config;
-    musicXml: { part: musicxml.Part };
-    systemId: symbol;
-    previousPart: Part | null;
-    staveLayouts: musicxml.StaveLayout[];
-  }): Part {
-    const id = opts.musicXml.part.getId();
-    const staveLayouts = opts.staveLayouts;
-
-    const measureEntryGroups = StaveSignature.toMeasureEntryGroups({ part: opts.musicXml.part });
-    const staveCount = util.max(
-      measureEntryGroups
-        .flat()
-        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
-        .map((entry) => entry.getStaveCount())
-    );
-
-    let previousMeasure: Measure | null = null;
-    let noopMeasureCount = opts.previousPart?.noopMeasureCount ?? 0;
-
-    const measures = new Array<Measure>();
-    const xmlMeasures = opts.musicXml.part.getMeasures();
-
-    for (let measureIndex = 0; measureIndex < xmlMeasures.length; measureIndex++) {
-      const xmlMeasure = xmlMeasures[measureIndex];
-
-      // Don't create noop measures (typically <measures> after a multi measure rest).
-      if (noopMeasureCount > 0) {
-        noopMeasureCount--;
-        continue;
-      }
-
-      // Get the first stave signature that matches the measure index or get the last stave signature seen before this
-      // measure index.
-      const staveSignatures = measureEntryGroups
-        .flat()
-        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
-        .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
-      const leadingStaveSignature =
-        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
-        util.last(staveSignatures);
-
-      const measureEntries = measureEntryGroups[measureIndex];
-
-      const measure = Measure.create({
-        // When splitting a system into smaller systems, the measure index should be maintained from when it was just
-        // a single system. Therefore, this index should continue to be correct when a system is split.
-        index: measureIndex,
-        config: opts.config,
-        musicXml: { measure: xmlMeasure },
-        staveCount,
-        isFirstPartMeasure: measureIndex === 0,
-        isLastPartMeasure: measureIndex === xmlMeasures.length - 1,
-        systemId: opts.systemId,
-        previousMeasure,
-        leadingStaveSignature,
-        measureEntries,
-        staveLayouts,
-      });
-
-      noopMeasureCount += measure.getMultiRestCount() - 1;
-      measures.push(measure);
-      previousMeasure = measure;
-    }
-
-    return new Part({
-      config: opts.config,
-      id,
-      systemId: opts.systemId,
-      measures,
-      staveCount,
-      noopMeasureCount,
-    });
-  }
-
-  /** Returns the measures of the Part. */
   getMeasures(): Measure[] {
     return this.measures;
   }
 
-  /** Returns a measure at a specific index. */
-  getMeasureAt(measureIndex: number): Measure | null {
-    return this.measures[measureIndex] ?? null;
-  }
-
-  /** Slices the measures of the part using the indexes, clones, them, then creates a new Part from them. */
-  slice(opts: { systemId: symbol; measureStartIndex: number; measureEndIndex: number }): Part {
-    const measureStartIndex = opts.measureStartIndex;
-    const measureEndIndex = opts.measureEndIndex;
-    if (measureStartIndex < 0) {
-      throw new Error(`measureStartIndex cannot be less than 0, got: ${measureStartIndex}`);
-    }
-    if (measureEndIndex > this.measures.length) {
-      throw new Error(
-        `measureEndIndex cannot be greater than measures length (${this.measures.length}), got: ${measureEndIndex}`
-      );
-    }
-
-    const measures = this.measures
-      .slice(opts.measureStartIndex, opts.measureEndIndex)
-      .map((measure) => measure.clone(opts.systemId));
-
-    return new Part({
-      config: this.config,
-      id: this.id,
-      systemId: opts.systemId,
-      measures,
-      staveCount: this.staveCount,
-      noopMeasureCount: this.noopMeasureCount,
-    });
-  }
-
-  /** Renders the part. */
   render(opts: {
     x: number;
     y: number;
@@ -176,15 +52,19 @@ export class Part {
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
 
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], index) => {
-      if (index === 0) {
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
+      // Even though a system has many parts, each part spans the entire system. Therefore the measure index in the
+      // Part object is the systemMeasureIndex.
+      const systemMeasureIndex = index;
+
+      if (isFirst) {
         previousMeasure = util.last(opts.previousPart?.measures ?? []);
       }
-      if (index === this.measures.length - 1) {
+      if (isLast) {
         nextMeasure = util.first(opts.nextPart?.measures ?? []);
       }
 
-      const hasStaveConnectorBrace = index === 0 && this.staveCount > 1;
+      const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
 
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
@@ -196,6 +76,7 @@ export class Part {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
+        systemMeasureIndex,
         previousMeasure,
         nextMeasure,
       });
@@ -215,14 +96,27 @@ export class Part {
     });
 
     return {
-      id: this.id,
+      id: this.musicXml.part.getId(),
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
     };
   }
 
-  /** Returns the top padding of the part. */
-  private getTopPadding() {
+  @util.memoize()
+  private getMeasureEntryGroups() {
+    return StaveSignature.toMeasureEntryGroups({ part: this.musicXml.part });
+  }
+
+  private getTopPadding(): number {
     return util.max(this.measures.map((measure) => measure.getTopPadding()));
+  }
+
+  private getStaveCount(): number {
+    return util.max(
+      this.getMeasureEntryGroups()
+        .flat()
+        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
+        .map((entry) => entry.getStaveCount())
+    );
   }
 }

@@ -1,11 +1,12 @@
-import { System, SystemRendering } from './system';
+import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Config, DEFAULT_CONFIG } from './config';
+import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
+import { Seed } from './seed';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -23,36 +24,18 @@ export type ScoreRendering = {
  */
 export class Score {
   private config: Config;
-  private system: System;
-  private systemLayout: musicxml.SystemLayout | null;
-  private title: Title;
+  private musicXml: {
+    scorePartwise: musicxml.ScorePartwise | null;
+  };
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
-    system: System;
-    staveLayouts: musicxml.StaveLayout[];
-    systemLayout: musicxml.SystemLayout | null;
-    title: Title;
+    musicXml: {
+      scorePartwise: musicxml.ScorePartwise | null;
+    };
   }) {
     this.config = opts.config;
-    this.system = opts.system;
-    this.systemLayout = opts.systemLayout;
-    this.title = opts.title;
-  }
-
-  /** Creates a Score. */
-  static create(opts: { musicXml: musicxml.MusicXml; config?: Partial<Config> }): Score {
-    const config = { ...DEFAULT_CONFIG, ...opts.config };
-    const scorePartwise = opts.musicXml.getScorePartwise();
-    const parts = scorePartwise?.getParts() ?? [];
-    const defaults = scorePartwise?.getDefaults() ?? null;
-    const staveLayouts = defaults?.getStaveLayouts() ?? [];
-    const systemLayout = defaults?.getSystemLayout() ?? null;
-
-    const title = Title.create({ config, text: scorePartwise?.getTitle() ?? '' });
-    const system = System.create({ config, staveLayouts, musicXml: { parts } });
-
-    return new Score({ system, staveLayouts, systemLayout, config, title });
+    this.musicXml = opts.musicXml;
   }
 
   /** Renders the Score. */
@@ -60,37 +43,36 @@ export class Score {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
-    // Split the main system into smaller ones to fit in the width.
-    const systems = this.system.split(opts.width);
+    // Create the systems.
+    const systems = this.seed().split(opts.width);
 
+    // Initialize the rendering coordinates.
+    const x = 0;
     let y = 0;
 
-    // Produce the title rendering, but only if it has text.
+    // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
-    if (this.title.hasText()) {
+    const title = this.getTitle();
+    if (title.hasText()) {
       y += this.config.TITLE_TOP_PADDING;
-
-      titleRendering = this.title.render({ y, containerWidth: opts.width });
-
+      titleRendering = title.render({ y, containerWidth: opts.width });
       y += titleRendering.approximateHeight;
     }
 
-    y += this.systemLayout?.topSystemDistance ?? 0;
+    y += this.getTopSystemDistance();
 
     // Render the entire hierarchy.
-    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], index) => {
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isLast }) => {
       const systemRendering = currentSystem.render({
-        x: 0,
+        x,
         y,
         width: opts.width - END_BARLINE_OFFSET,
-        isLastSystem: index === systems.length - 1,
+        isLastSystem: isLast,
         previousSystem,
         nextSystem,
       });
       systemRenderings.push(systemRendering);
 
-      // Height is calculated during render time to avoid duplicate work that would've been done if we were using
-      // instance methods on the rendering.Stave object.
       const maxY = util.max([
         y,
         ...systemRendering.parts
@@ -105,43 +87,44 @@ export class Score {
       const height = maxY - y;
 
       y += height;
-      y += this.systemLayout?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
+      y += this.getSystemDistance();
     });
 
+    // Precalculate different parts of the rendering for readability later.
     const parts = systemRenderings.flatMap((system) => system.parts);
     const measures = parts.flatMap((part) => part.measures);
     const measureFragments = measures.flatMap((measure) => measure.fragments);
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.staves);
 
-    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG);
-    vfRenderer.resize(opts.width, y);
+    // Prepare the vexflow rendering objects.
+    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
-    // Render the title.
+    // Draw the title.
     titleRendering?.text.draw(vfContext);
 
-    // Render vexflow.Stave elements.
+    // Draw vexflow.Stave elements.
     staves
       .map((stave) => stave.vexflow.stave)
       .forEach((vfStave) => {
         vfStave.setContext(vfContext).draw();
       });
 
-    // Render vexflow.StaveConnector elements from measures.
+    // Draw vexflow.StaveConnector elements from measures.
     measures
       .flatMap((measure) => measure.vexflow.staveConnectors)
       .forEach((vfStaveConnector) => {
         vfStaveConnector.setContext(vfContext).draw();
       });
 
-    // Render vexflow.StaveConnector elements from parts.
+    // Draw vexflow.StaveConnector elements from parts.
     parts
       .map((part) => part.vexflow.staveConnector)
       .forEach((vfStaveConnector) => {
         vfStaveConnector?.setContext(vfContext).draw();
       });
 
-    // Render vexflow.MultiMeasureRest elements.
+    // Draw vexflow.MultiMeasureRest elements.
     staves
       .map((stave) => stave.entry)
       .filter((entry): entry is MultiRestRendering => entry.type === 'multirest')
@@ -154,7 +137,7 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Render vexflow.Voice elements.
+    // Draw vexflow.Voice elements.
     staves
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
@@ -164,7 +147,7 @@ export class Score {
         vfVoice.setContext(vfContext).draw();
       });
 
-    // Render vexflow.Beam elements.
+    // Draw vexflow.Beam elements.
     measures
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.vexflow.beams)
@@ -172,7 +155,7 @@ export class Score {
         vfBeam.setContext(vfContext).draw();
       });
 
-    // Render measure labels.
+    // Draw measure labels.
     measures
       .map((measure) => measure.label)
       .forEach((label) => {
@@ -180,5 +163,39 @@ export class Score {
       });
 
     return { type: 'score', systems: systemRenderings };
+  }
+
+  @util.memoize()
+  private seed(): Seed {
+    return new Seed({
+      config: this.config,
+      musicXml: {
+        parts: this.musicXml.scorePartwise?.getParts() ?? [],
+        staveLayouts: this.musicXml.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
+      },
+    });
+  }
+
+  @util.memoize()
+  private getSystemLayout() {
+    return this.musicXml.scorePartwise?.getDefaults()?.getSystemLayout() ?? null;
+  }
+
+  @util.memoize()
+  private getSystemDistance() {
+    return this.getSystemLayout()?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
+  }
+
+  @util.memoize()
+  private getTopSystemDistance() {
+    return this.getSystemLayout()?.topSystemDistance ?? 0;
+  }
+
+  @util.memoize()
+  private getTitle() {
+    return Title.create({
+      config: this.config,
+      text: this.musicXml.scorePartwise?.getTitle() ?? '',
+    });
   }
 }

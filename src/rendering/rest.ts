@@ -1,7 +1,6 @@
-import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
-import { ClefType, NoteDurationDenominator } from './enums';
+import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
 
@@ -31,7 +30,7 @@ export class Rest {
   private clef: Clef;
   private tokens: Token[];
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
     displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
@@ -47,29 +46,6 @@ export class Rest {
     this.tokens = opts.tokens;
   }
 
-  /** Creates the Rest. */
-  static create(opts: {
-    config: Config;
-    musicXml: {
-      note: musicxml.Note;
-      tokens: Token[];
-    };
-    durationDenominator: NoteDurationDenominator;
-    clef: Clef;
-  }): Rest {
-    const note = opts.musicXml.note;
-    const tokens = opts.musicXml.tokens;
-
-    return new Rest({
-      config: opts.config,
-      displayPitch: note.getRestDisplayPitch(),
-      durationDenominator: opts.durationDenominator,
-      dotCount: note.getDotCount(),
-      clef: opts.clef,
-      tokens,
-    });
-  }
-
   /** Creates a whole rest. */
   static whole(opts: { config: Config; clef: Clef }): Rest {
     return new Rest({
@@ -79,18 +55,6 @@ export class Rest {
       dotCount: 0,
       clef: opts.clef,
       tokens: [],
-    });
-  }
-
-  /** Clones the Rest. */
-  clone(): Rest {
-    return new Rest({
-      config: this.config,
-      displayPitch: this.displayPitch,
-      durationDenominator: this.durationDenominator,
-      dotCount: this.dotCount,
-      clef: this.clef,
-      tokens: this.tokens,
     });
   }
 
@@ -107,6 +71,12 @@ export class Rest {
     for (let index = 0; index < this.dotCount; index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote]);
     }
+
+    this.tokens
+      .map((token) => token.render())
+      .forEach((tokenRendering) => {
+        vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
+      });
 
     return { type: 'rest', vexflow: { staveNote: vfStaveNote } };
   }

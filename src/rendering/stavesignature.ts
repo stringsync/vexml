@@ -82,12 +82,7 @@ export class StaveSignature {
           result[measureIndex].push(staveSignature);
 
           previousStaveSignature = staveSignature;
-        } else if (
-          entry instanceof musicxml.Note ||
-          entry instanceof musicxml.Backup ||
-          entry instanceof musicxml.Forward ||
-          entry instanceof musicxml.Direction
-        ) {
+        } else {
           result[measureIndex].push(entry);
         }
       }

@@ -31,9 +31,9 @@ describe('forEachTriple', () => {
     forEachTriple([1, 2, 3], callback);
 
     expect(callback.mock.calls).toStrictEqual([
-      [[null, 1, 2], 0],
-      [[1, 2, 3], 1],
-      [[2, 3, null], 2],
+      [[null, 1, 2], { index: 0, isFirst: true, isLast: false }],
+      [[1, 2, 3], { index: 1, isFirst: false, isLast: false }],
+      [[2, 3, null], { index: 2, isFirst: false, isLast: true }],
     ]);
   });
 
