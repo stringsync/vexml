@@ -16,12 +16,15 @@ export type MeasureFragmentRendering = {
   type: 'measurefragment';
   vexflow: {
     beams: vexflow.Beam[];
+    tuplets: vexflow.Tuplet[];
   };
   staves: StaveRendering[];
   width: number;
 };
 
-type StemmableVoiceEntryRendering = NoteRendering | ChordRendering;
+type StemmableRendering = NoteRendering | ChordRendering;
+
+type TupletableRendering = NoteRendering | ChordRendering;
 
 /**
  * Represents a fragment of a measure.
@@ -131,15 +134,21 @@ export class MeasureFragment {
       y += staveDistance;
     });
 
-    const vfBeams = staveRenderings
+    const vfVoices = staveRenderings
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((chorus) => chorus.voices)
-      .flatMap((voice) => this.extractVfBeams(voice));
+      .flatMap((chorus) => chorus.voices);
+
+    const vfBeams = vfVoices.flatMap((voice) => this.extractVfBeams(voice));
+
+    const vfTuplets = vfVoices.flatMap((voice) => this.extractVfTuplets(voice));
 
     return {
       type: 'measurefragment',
-      vexflow: { beams: vfBeams },
+      vexflow: {
+        beams: vfBeams,
+        tuplets: vfTuplets,
+      },
       staves: staveRenderings,
       width,
     };
@@ -234,7 +243,7 @@ export class MeasureFragment {
     const vfBeams = new Array<vexflow.Beam>();
 
     const stemmables = voice.entries.filter(
-      (entry): entry is StemmableVoiceEntryRendering => entry.type === 'note' || entry.type === 'chord'
+      (entry): entry is StemmableRendering => entry.type === 'note' || entry.type === 'chord'
     );
 
     let vfStemmables = new Array<vexflow.StemmableNote>();
@@ -265,8 +274,58 @@ export class MeasureFragment {
     return vfBeams;
   }
 
+  private extractVfTuplets(voice: VoiceRendering): vexflow.Tuplet[] {
+    const vfTuplets = new Array<vexflow.Tuplet>();
+
+    const tupletables = voice.entries.filter(
+      (entry): entry is TupletableRendering => entry.type === 'note' || entry.type === 'chord'
+    );
+
+    let vfNotes = new Array<vexflow.Note>();
+
+    for (let index = 0; index < tupletables.length; index++) {
+      const tupletable = tupletables[index];
+      const isLast = index === tupletables.length - 1;
+
+      let type: musicxml.TupletType | null;
+      let vfNote: vexflow.Note | null;
+
+      // TODO: Handle multiple (nested?) tuplets.
+      switch (tupletable.type) {
+        case 'note':
+          type = util.first(tupletable.tuplets)?.getType() ?? null;
+          vfNote = tupletable.vexflow.staveNote;
+          break;
+        case 'chord':
+          type = util.first(tupletable.notes.flatMap((note) => note.tuplets))?.getType() ?? null;
+          vfNote = util.first(tupletable.notes)?.vexflow.staveNote ?? null;
+          break;
+      }
+
+      if (!vfNote) {
+        continue;
+      } else if (type === 'start') {
+        vfNotes.push(vfNote);
+      } else if (type === 'stop') {
+        vfNotes.push(vfNote);
+        vfTuplets.push(new vexflow.Tuplet(vfNotes));
+        vfNotes = [];
+      } else if (vfNotes.length > 0) {
+        // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
+        // continue if we've come across a "start" (denoted by the vfNotes length).
+        vfNotes.push(vfNote);
+      }
+
+      if (isLast && vfNotes.length > 0) {
+        vfTuplets.push(new vexflow.Tuplet(vfNotes));
+      }
+    }
+
+    return vfTuplets;
+  }
+
   /** Returns the note that determine beaming behavior. */
-  private getBeamDeterminingNote(stemmable: StemmableVoiceEntryRendering): NoteRendering {
+  private getBeamDeterminingNote(stemmable: StemmableRendering): NoteRendering {
     if (stemmable.type === 'note') {
       return stemmable;
     }
