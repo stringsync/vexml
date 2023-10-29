@@ -193,6 +193,7 @@ export const note = createNamedElementFactory<
     rest: NamedElement<'rest'>;
     pitch: NamedElement<'pitch'>;
     accidental: NamedElement<'accidental'>;
+    timeModification: NamedElement<'time-modification'>;
     notehead: NamedElement<'notehead'>;
     grace: NamedElement<'grace'>;
     duration: NamedElement<'duration'>;
@@ -215,6 +216,7 @@ export const note = createNamedElementFactory<
       rest,
       pitch,
       accidental,
+      timeModification,
       notehead,
       duration,
       notations,
@@ -251,6 +253,9 @@ export const note = createNamedElementFactory<
     }
     if (accidental) {
       e.append(accidental);
+    }
+    if (timeModification) {
+      e.append(timeModification);
     }
     if (stem) {
       e.append(stem);

@@ -1,9 +1,5 @@
-import { Beam } from '@/musicxml/beam';
-import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/musicxml/enums';
-import { Notations } from '@/musicxml/notations';
-import { Note } from '@/musicxml/note';
 import { xml } from '@/util';
-import { Lyric } from '@/musicxml/lyric';
+import { ACCIDENTAL_TYPES, Beam, Lyric, NOTEHEADS, NOTE_TYPES, Notations, Note, TimeModification } from '@/musicxml';
 
 describe(Note, () => {
   describe('getStem', () => {
@@ -500,6 +496,21 @@ describe(Note, () => {
       const lyrics = note.getLyrics();
 
       expect(lyrics).toStrictEqual([]);
+    });
+  });
+
+  describe('getTimeModification', () => {
+    it('returns the time modification of the note', () => {
+      const timeModification = xml.timeModification();
+      const node = xml.note({ timeModification });
+      const note = new Note(node);
+      expect(note.getTimeModification()).toStrictEqual(new TimeModification(timeModification));
+    });
+
+    it('defaults to null when missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getTimeModification()).toBeNull();
     });
   });
 });
