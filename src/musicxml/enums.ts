@@ -231,7 +231,7 @@ export const KEY_MODES = new Enum([
 /**
  * Indicates if this is the start or stop of the tuplet.
  *
- * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop/.
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop/
  */
 export type TupletType = EnumValues<typeof TUPLET_TYPES>;
 export const TUPLET_TYPES = new Enum(['start', 'stop'] as const);
@@ -243,3 +243,19 @@ export const TUPLET_TYPES = new Enum(['start', 'stop'] as const);
  */
 export type TupletPlacement = EnumValues<typeof TUPLET_PLACEMENTS>;
 export const TUPLET_PLACEMENTS = new Enum(['above', 'below'] as const);
+
+/**
+ * Inidicates if this is the start, stop, or middle of a slur.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-continue/
+ */
+export type SlurType = EnumValues<typeof SLUR_TYPES>;
+export const SLUR_TYPES = new Enum(['start', 'stop', 'continue'] as const);
+
+/**
+ * The placement of the slur.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
+ */
+export type SlurPlacement = EnumValues<typeof SLUR_PLACEMENTS>;
+export const SLUR_PLACEMENTS = new Enum(['above', 'below'] as const);

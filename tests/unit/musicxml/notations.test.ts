@@ -1,5 +1,5 @@
 import { xml } from '@/util';
-import { Notations, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
+import { Notations, Slur, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -65,6 +65,24 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getTuplets()).toStrictEqual([]);
+    });
+  });
+
+  describe('getSlurs', () => {
+    it('returns the slurs of the notations', () => {
+      const slur1 = xml.slur({ type: 'stop', placement: 'above' });
+      const slur2 = xml.slur({ type: 'start', placement: 'below' });
+      const node = xml.notations({ slurs: [slur1, slur2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getSlurs()).toStrictEqual([new Slur(slur1), new Slur(slur2)]);
+    });
+
+    it('defaults to empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getSlurs()).toStrictEqual([]);
     });
   });
 });

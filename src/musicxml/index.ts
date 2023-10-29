@@ -19,6 +19,7 @@ export * from './note';
 export * from './part';
 export * from './print';
 export * from './scorepartwise';
+export * from './slur';
 export * from './stavedetails';
 export * from './symbolic';
 export * from './time';
