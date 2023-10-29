@@ -1,5 +1,6 @@
 import { Config } from './config';
 import * as drawables from '@/drawables';
+import * as util from '@/util';
 
 export type TitleRendering = {
   type: 'title';
@@ -11,32 +12,10 @@ export type TitleRendering = {
 export class Title {
   private config: Config;
   private text: string;
-  private width: number;
-  private approximateHeight: number;
 
-  private constructor(opts: { config: Config; text: string; width: number; approximateHeight: number }) {
+  constructor(opts: { config: Config; text: string }) {
     this.config = opts.config;
     this.text = opts.text;
-    this.width = opts.width;
-    this.approximateHeight = opts.approximateHeight;
-  }
-
-  static create(opts: { config: Config; text: string }): Title {
-    const context = document.createElement('canvas').getContext('2d');
-    if (!context) {
-      throw new Error('unable to get canvas rendering context');
-    }
-
-    const config = opts.config;
-    const text = opts.text;
-
-    context.font = `${config.TITLE_FONT_SIZE} ${config.TITLE_FONT_FAMILY}`;
-
-    const textMetrics = context.measureText(text);
-    const width = textMetrics.width;
-    const approximateHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
-
-    return new Title({ config, text, width, approximateHeight });
   }
 
   /** Whether the title has text. */
@@ -46,18 +25,41 @@ export class Title {
 
   /** Renders the title. */
   render(opts: { y: number; containerWidth: number }): TitleRendering {
-    const x = (opts.containerWidth - this.width) / 2;
+    const width = this.getWidth();
+    const x = (opts.containerWidth - width) / 2;
     const y = opts.y;
     const content = this.text;
     const size = this.config.TITLE_FONT_SIZE;
     const family = this.config.TITLE_FONT_FAMILY;
+    const approximateHeight = this.getApproximateHeight();
 
     const text = new drawables.Text({ content, x, y, size, family });
 
     return {
       type: 'title',
       text,
-      approximateHeight: this.approximateHeight,
+      approximateHeight,
     };
+  }
+
+  @util.memoize()
+  private getTextMetrics(): TextMetrics {
+    const context = document.createElement('canvas').getContext('2d');
+    if (!context) {
+      throw new Error('unable to get canvas rendering context');
+    }
+
+    context.font = `${this.config.TITLE_FONT_SIZE} ${this.config.TITLE_FONT_FAMILY}`;
+
+    return context.measureText(this.text);
+  }
+
+  private getWidth(): number {
+    return this.getTextMetrics().width;
+  }
+
+  private getApproximateHeight(): number {
+    const textMetrics = this.getTextMetrics();
+    return textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
   }
 }
