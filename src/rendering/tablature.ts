@@ -5,12 +5,7 @@ export type TablatureRendering = {
 
 /** Represents tablature for stringed instrumented. */
 export class Tablature {
-  private constructor() {}
-
-  /** Creates a Tablature. */
-  static create(): Tablature {
-    return new Tablature();
-  }
+  constructor() {}
 
   /** Renders a Tablature. */
   render(): TablatureRendering {
