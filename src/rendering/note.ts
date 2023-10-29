@@ -21,6 +21,7 @@ export type NoteRendering = {
   };
   modifiers: NoteModifierRendering[];
   beamValue: musicxml.BeamValue | null;
+  tuplets: musicxml.Tuplet[];
 };
 
 /**
@@ -144,6 +145,7 @@ export class Note {
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
       beamValue: notes[index].getBeamValue(),
+      tuplets: notes[index].getTuplets(),
     }));
   }
 
@@ -207,5 +209,14 @@ export class Note {
     const notehead = this.musicXml.note.getNotehead();
     const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
+  }
+
+  private getTuplets(): musicxml.Tuplet[] {
+    return (
+      this.musicXml.note
+        .getNotations()
+        .find((notations) => notations.hasTuplets())
+        ?.getTuplets() ?? []
+    );
   }
 }
