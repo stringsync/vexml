@@ -183,7 +183,7 @@ export class Chorus {
           .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
           .flatMap((content) => content.tokens)
           .forEach((token) => {
-            tokens.push(Token.create({ musicXml: { token } }));
+            tokens.push(new Token({ musicXml: { token } }));
           });
       }
 
