@@ -32,11 +32,6 @@ export class Lyric {
     return new Lyric({ verseNumber, text });
   }
 
-  /** Clones the Lyric. */
-  clone(): Lyric {
-    return new Lyric({ verseNumber: this.verseNumber, text: this.text });
-  }
-
   /** Renders the Lyric. */
   render(): LyricRendering {
     const vfAnnotation = new vexflow.Annotation(this.text).setVerticalJustification(

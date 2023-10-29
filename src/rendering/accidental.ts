@@ -42,14 +42,6 @@ export class Accidental {
     return new Accidental({ code: opts.code, isCautionary: opts.isCautionary });
   }
 
-  /** Clones the Accidental. */
-  clone(): Accidental {
-    return new Accidental({
-      code: this.code,
-      isCautionary: this.isCautionary,
-    });
-  }
-
   /** Renders the Accidental. */
   render(): AccidentalRendering {
     const vfAccidental = this.toVexflowAccidental();
