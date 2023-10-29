@@ -68,7 +68,7 @@ The `musicXml` key serves as a namespace:
 ```ts
 class Stave {
   /** Creates a Measure. */
-  static create(opts: {
+  constructor(opts: {
     config: Config;
     musicXml: {
       measure: musicxml.Measure;
