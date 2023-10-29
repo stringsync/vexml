@@ -1,6 +1,7 @@
 import { VerticalDirection, VERTICAL_DIRECTIONS } from './enums';
 import { NamedElement } from '@/util';
 import { Tuplet } from './tuplet';
+import { Slur } from './slur';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -28,5 +29,10 @@ export class Notations {
   /** Returns the tuplets of the notations. Defaults to an empty array. */
   getTuplets(): Tuplet[] {
     return this.element.all('tuplet').map((element) => new Tuplet(element));
+  }
+
+  /** Returns the slurs of the notations. Defaults to an empty array. */
+  getSlurs(): Slur[] {
+    return this.element.all('slur').map((element) => new Slur(element));
   }
 }

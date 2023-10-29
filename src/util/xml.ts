@@ -1003,10 +1003,14 @@ export const elision = createNamedElementFactory<'elision', { value: string }>('
 export const notations = createNamedElementFactory<
   'notations',
   {
+    slurs: NamedElement<'slur'>[];
     tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
   }
->('notations', (e, { tuplets, arpeggiate }) => {
+>('notations', (e, { slurs, tuplets, arpeggiate }) => {
+  if (slurs) {
+    e.append(...slurs);
+  }
   if (tuplets) {
     e.append(...tuplets);
   }
@@ -1167,6 +1171,18 @@ export const normalNotes = createNamedElementFactory<'normal-notes', { value: nu
   (e, { value }) => {
     if (typeof value === 'number') {
       e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const slur = createNamedElementFactory<'slur', { type: string; placement: string }>(
+  'slur',
+  (e, { type, placement }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (placement) {
+      e.setAttribute('placement', placement);
     }
   }
 );
