@@ -36,6 +36,20 @@ describe(Notations, () => {
     });
   });
 
+  describe('hasTuplets', () => {
+    it('returns true when there is at least one tuplet', () => {
+      const node = xml.notations({ tuplets: [xml.tuplet()] });
+      const notations = new Notations(node);
+      expect(notations.hasTuplets()).toBeTrue();
+    });
+
+    it('returns false when there are no tuplets', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.hasTuplets()).toBeFalse();
+    });
+  });
+
   describe('getTuplets', () => {
     it('returns the tuplets of the notations', () => {
       const tuplet1 = xml.tuplet({ type: 'start' });
