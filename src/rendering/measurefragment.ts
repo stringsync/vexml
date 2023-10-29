@@ -27,7 +27,7 @@ export type MeasureFragmentRendering = {
 
 type StemmableRendering = NoteRendering | ChordRendering;
 
-type TupletableRendering = NoteRendering | ChordRendering;
+type TupletableRendering = NoteRendering | ChordRendering | RestRendering;
 
 type TieableRendering = NoteRendering | ChordRendering | RestRendering;
 
@@ -284,7 +284,7 @@ export class MeasureFragment {
     const vfTuplets = new Array<vexflow.Tuplet>();
 
     const tupletables = voice.entries.filter(
-      (entry): entry is TupletableRendering => entry.type === 'note' || entry.type === 'chord'
+      (entry): entry is TupletableRendering => entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
     );
 
     let vfNotes = new Array<vexflow.Note>();
@@ -306,6 +306,10 @@ export class MeasureFragment {
         case 'chord':
           tuplet = util.first(tupletable.notes.flatMap((note) => note.tuplets));
           vfNote = util.first(tupletable.notes)?.vexflow.staveNote ?? null;
+          break;
+        case 'rest':
+          tuplet = util.first(tupletable.tuplets);
+          vfNote = tupletable.vexflow.staveNote;
           break;
       }
 
@@ -338,6 +342,24 @@ export class MeasureFragment {
 
   private extractVfStaveTies(voice: VoiceRendering): vexflow.StaveTie[] {
     const vfStaveTies = new Array<vexflow.StaveTie>();
+
+    const tieables = voice.entries.filter(
+      (entry): entry is TieableRendering => entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
+    );
+
+    for (let index = 0; index < tieables.length; index++) {
+      const tieable = tieables[index];
+      const isLast = index === tieables.length - 1;
+
+      switch (tieable.type) {
+        case 'note':
+          break;
+        case 'chord':
+          break;
+        case 'rest':
+          break;
+      }
+    }
 
     return vfStaveTies;
   }

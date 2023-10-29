@@ -41,4 +41,24 @@ describe(Slur, () => {
       expect(slur.getPlacement()).toBeNull();
     });
   });
+
+  describe('getNumber', () => {
+    it('returns the number of the slur', () => {
+      const node = xml.slur({ number: 2 });
+      const slur = new Slur(node);
+      expect(slur.getNumber()).toBe(2);
+    });
+
+    it('defaults to 1 when missing', () => {
+      const node = xml.slur();
+      const slur = new Slur(node);
+      expect(slur.getNumber()).toBe(1);
+    });
+
+    it('defaults to 1 when invalid', () => {
+      const node = xml.slur({ number: NaN });
+      const slur = new Slur(node);
+      expect(slur.getNumber()).toBe(1);
+    });
+  });
 });
