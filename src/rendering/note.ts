@@ -191,7 +191,7 @@ export class Note {
     return this.musicXml.note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => Lyric.create({ lyric }));
+      .map((lyric) => new Lyric({ musicXml: { lyric } }));
   }
 
   private getBeamValue(): musicxml.BeamValue | null {

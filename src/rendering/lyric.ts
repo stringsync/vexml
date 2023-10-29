@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 
 export type LyricRendering = {
   type: 'lyric';
@@ -11,40 +12,35 @@ export type LyricRendering = {
 
 /** Represents a lyric attached to a single note. */
 export class Lyric {
-  private verseNumber: number;
-  private text: string;
+  private musicXml: { lyric: musicxml.Lyric };
 
-  private constructor(opts: { verseNumber: number; text: string }) {
-    this.verseNumber = opts.verseNumber;
-    this.text = opts.text;
-  }
-
-  /** Creates a Lyric. */
-  static create(opts: { lyric: musicxml.Lyric }): Lyric {
-    const verseNumber = opts.lyric.getVerseNumber();
-
-    const machine = new TextStateMachine();
-    for (const component of opts.lyric.getComponents()) {
-      machine.process(component);
-    }
-    const text = machine.getText();
-
-    return new Lyric({ verseNumber, text });
+  constructor(opts: { musicXml: { lyric: musicxml.Lyric } }) {
+    this.musicXml = opts.musicXml;
   }
 
   /** Renders the Lyric. */
   render(): LyricRendering {
-    const vfAnnotation = new vexflow.Annotation(this.text).setVerticalJustification(
+    const text = this.getText();
+    const vfAnnotation = new vexflow.Annotation(text).setVerticalJustification(
       vexflow.AnnotationVerticalJustify.BOTTOM
     );
 
     return {
       type: 'lyric',
-      verseNumber: this.verseNumber,
+      verseNumber: this.musicXml.lyric.getVerseNumber(),
       vexflow: {
         annotation: vfAnnotation,
       },
     };
+  }
+
+  @util.memoize()
+  private getText(): string {
+    const machine = new TextStateMachine();
+    for (const component of this.musicXml.lyric.getComponents()) {
+      machine.process(component);
+    }
+    return machine.getText();
   }
 }
 
