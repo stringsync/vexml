@@ -9,6 +9,7 @@ import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { RestRendering } from './rest';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
@@ -18,6 +19,7 @@ export type MeasureFragmentRendering = {
   vexflow: {
     beams: vexflow.Beam[];
     tuplets: vexflow.Tuplet[];
+    staveTies: vexflow.StaveTie[];
   };
   staves: StaveRendering[];
   width: number;
@@ -26,6 +28,8 @@ export type MeasureFragmentRendering = {
 type StemmableRendering = NoteRendering | ChordRendering;
 
 type TupletableRendering = NoteRendering | ChordRendering;
+
+type TieableRendering = NoteRendering | ChordRendering | RestRendering;
 
 /**
  * Represents a fragment of a measure.
@@ -141,14 +145,15 @@ export class MeasureFragment {
       .flatMap((chorus) => chorus.voices);
 
     const vfBeams = vfVoices.flatMap((voice) => this.extractVfBeams(voice));
-
     const vfTuplets = vfVoices.flatMap((voice) => this.extractVfTuplets(voice));
+    const vfStaveTies = vfVoices.flatMap((voice) => this.extractVfStaveTies(voice));
 
     return {
       type: 'measurefragment',
       vexflow: {
         beams: vfBeams,
         tuplets: vfTuplets,
+        staveTies: vfStaveTies,
       },
       staves: staveRenderings,
       width,
@@ -329,6 +334,12 @@ export class MeasureFragment {
     }
 
     return vfTuplets;
+  }
+
+  private extractVfStaveTies(voice: VoiceRendering): vexflow.StaveTie[] {
+    const vfStaveTies = new Array<vexflow.StaveTie>();
+
+    return vfStaveTies;
   }
 
   /** Returns the note that determine beaming behavior. */
