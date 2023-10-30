@@ -344,6 +344,7 @@ export class Chorus {
           entries.push(
             new Rest({
               config,
+              musicXml: { note },
               displayPitch: note.getRestDisplayPitch(),
               dotCount: note.getDotCount(),
               tokens,
