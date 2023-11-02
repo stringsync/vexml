@@ -5,7 +5,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
 import { ChorusRendering } from './chorus';
-import { VoiceRendering } from './voice';
+import { VoiceEntryRendering, VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -320,7 +320,7 @@ export class MeasureFragment {
         continue;
       } else if (tupletType === 'start') {
         vfNotes.push(vfNote);
-        vfTupletLocation = conversions.fromTupletPlacementToTupletLocation(tupletPlacement);
+        vfTupletLocation = conversions.fromAboveBelowToTupletLocation(tupletPlacement);
       } else if (tupletType === 'stop') {
         vfNotes.push(vfNote);
         vfTuplets.push(new vexflow.Tuplet(vfNotes, { location: vfTupletLocation }));
@@ -351,14 +351,7 @@ export class MeasureFragment {
       const tieable = tieables[index];
       const isLast = index === tieables.length - 1;
 
-      switch (tieable.type) {
-        case 'note':
-          break;
-        case 'chord':
-          break;
-        case 'rest':
-          break;
-      }
+      const slurPlacement = this.getSlurPlacement(tieable);
     }
 
     return vfStaveTies;
@@ -371,14 +364,67 @@ export class MeasureFragment {
     }
 
     // Chords are rendering using a single vexflow.StaveNote, so it's ok to just use the first one in a chord.
-    const vfStemDirection = util.first(stemmable.notes.map((note) => note.vexflow.staveNote.getStemDirection()));
+    const stem = util.first(
+      stemmable.notes.map((note) => this.getVfStaveNote(note)).map((vfStaveNote) => this.getStem(vfStaveNote))
+    );
 
     // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is broken,
     // we look at the stem direction to determine which note should be the one to determine the beamining.
-    if (vfStemDirection === vexflow.Stem.DOWN) {
+    if (stem === 'down') {
       return util.last(stemmable.notes)!;
     } else {
       return util.first(stemmable.notes)!;
+    }
+  }
+
+  private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
+    // Calling getStemDirection will throw if there is no stem.
+    // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
+    try {
+      const stemDirection = vfStaveNote.getStemDirection();
+      return conversions.fromVexflowStemDirectionToMusicXmlStem(stemDirection);
+    } catch (e) {
+      return 'none';
+    }
+  }
+
+  private getVfStaveNote(rendering: NoteRendering | ChordRendering | RestRendering): vexflow.StaveNote {
+    switch (rendering.type) {
+      case 'note':
+        return rendering.vexflow.staveNote;
+      case 'rest':
+        return rendering.vexflow.staveNote;
+      case 'chord':
+        return rendering.notes[0]?.vexflow.staveNote;
+    }
+  }
+
+  // TODO: Account for other voices and/or consider whether the voice is ascending or descending.
+  private getSlurPlacement(rendering: NoteRendering | ChordRendering | RestRendering): musicxml.AboveBelow {
+    const vfStaveNote = this.getVfStaveNote(rendering);
+
+    // If the note has a stem, first try the opposite direction.
+    switch (this.getStem(vfStaveNote)) {
+      case 'up':
+        return 'below';
+      case 'down':
+        return 'above';
+    }
+
+    // Otherwise, use the note's placement relative to its stave to determine placement.
+    const line = util.first(vfStaveNote.getKeyProps())?.line ?? null;
+    const numLines = vfStaveNote.getStave()?.getNumLines() ?? 5;
+
+    if (typeof line !== 'number') {
+      return 'above';
+    }
+
+    if (line > numLines / 2) {
+      // The note is above the halfway point on the stave.
+      return 'below';
+    } else {
+      // The note is at or below the halfway point on the stave.
+      return 'above';
     }
   }
 }

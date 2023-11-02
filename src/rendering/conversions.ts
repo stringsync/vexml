@@ -237,11 +237,24 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
   }
 };
 
-export const fromTupletPlacementToTupletLocation = (tupletPlacement: musicxml.AboveBelow): vexflow.TupletLocation => {
-  switch (tupletPlacement) {
+/** Converts `AboveBelow` to a `TupletLocation`. */
+export const fromAboveBelowToTupletLocation = (aboveBelow: musicxml.AboveBelow): vexflow.TupletLocation => {
+  switch (aboveBelow) {
     case 'above':
       return vexflow.TupletLocation.TOP;
     case 'below':
       return vexflow.TupletLocation.BOTTOM;
+  }
+};
+
+/** Converts a vexflow Stem to a `musicxml.Stem`. Defaults to 'none'. */
+export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.Stem => {
+  switch (stem) {
+    case 1:
+      return 'up';
+    case -1:
+      return 'down';
+    default:
+      return 'none';
   }
 };
