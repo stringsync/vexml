@@ -1,4 +1,4 @@
-import { ABOVE_BELOW, START_STOP_CONTINUE, Slur } from '@/musicxml';
+import { ABOVE_BELOW, LINE_TYPES, START_STOP_CONTINUE, Slur } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Slur, () => {
@@ -59,6 +59,26 @@ describe(Slur, () => {
       const node = xml.slur({ number: NaN });
       const slur = new Slur(node);
       expect(slur.getNumber()).toBe(1);
+    });
+  });
+
+  describe('getLineType', () => {
+    it.each(LINE_TYPES.values)(`returns the line type of the slur: '%s'`, (lineType) => {
+      const node = xml.slur({ lineType });
+      const slur = new Slur(node);
+      expect(slur.getLineType()).toBe(lineType);
+    });
+
+    it('defaults to solid when missing', () => {
+      const node = xml.slur();
+      const slur = new Slur(node);
+      expect(slur.getLineType()).toBe('solid');
+    });
+
+    it('defaults to solid when invalid', () => {
+      const node = xml.slur({ lineType: 'foo' });
+      const slur = new Slur(node);
+      expect(slur.getLineType()).toBe('solid');
     });
   });
 });

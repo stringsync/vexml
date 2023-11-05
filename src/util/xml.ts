@@ -1175,17 +1175,20 @@ export const normalNotes = createNamedElementFactory<'normal-notes', { value: nu
   }
 );
 
-export const slur = createNamedElementFactory<'slur', { type: string; placement: string; number: number }>(
+export const slur = createNamedElementFactory<
   'slur',
-  (e, { type, placement, number }) => {
-    if (type) {
-      e.setAttribute('type', type);
-    }
-    if (placement) {
-      e.setAttribute('placement', placement);
-    }
-    if (typeof number === 'number') {
-      e.setAttribute('number', number.toString());
-    }
+  { type: string; placement: string; number: number; lineType: string }
+>('slur', (e, { type, placement, number, lineType }) => {
+  if (type) {
+    e.setAttribute('type', type);
   }
-);
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
+  }
+  if (lineType) {
+    e.setAttribute('line-type', lineType);
+  }
+});
