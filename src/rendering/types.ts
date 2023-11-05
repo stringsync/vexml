@@ -20,7 +20,7 @@ export type BeamFragment = {
   type: 'beam';
   phase: SpannerFragmentPhase;
   vexflow: {
-    stemmableNotes: vexflow.StemmableNote[];
+    stemmableNote: vexflow.StemmableNote;
   };
 };
 

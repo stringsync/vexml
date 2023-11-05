@@ -9,6 +9,30 @@ import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
+import { BeamFragment, SlurFragment, SpannerFragment, TupletFragment } from './types';
+
+const STEP_ORDER = [
+  'Cb',
+  'C',
+  'C#',
+  'Db',
+  'D',
+  'D#',
+  'Eb',
+  'E',
+  'Fb',
+  'F',
+  'F#',
+  'Gb',
+  'G',
+  'G#',
+  'Ab',
+  'A',
+  'A#',
+  'Bb',
+  'B',
+  'B#',
+];
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
 
@@ -24,6 +48,7 @@ export type NoteRendering = {
   tuplets: musicxml.Tuplet[];
   slurs: musicxml.Slur[];
   timeModification: musicxml.TimeModification | null;
+  spannerFragments: SpannerFragment[];
 };
 
 /**
@@ -88,7 +113,7 @@ export class Note {
       throw new Error('all notes must have the same clefTypes');
     }
 
-    const keys = notes.map((note) => note.getKey());
+    const keys = Note.sort(notes).map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
@@ -150,7 +175,28 @@ export class Note {
       tuplets: notes[index].getTuplets(),
       slurs: notes[index].getSlurs(),
       timeModification: notes[index].getTimeModification(),
+      spannerFragments: notes[index].getSpannerFragments(vfStaveNote, index),
     }));
+  }
+
+  private static sort(notes: Note[]): Note[] {
+    return [...notes].sort((note1, note2) => {
+      // Get the pitches and octaves
+      const step1 = note1.getStep();
+      const octave1 = note1.getOctave();
+      const step2 = note2.getStep();
+      const octave2 = note2.getOctave();
+
+      // Compare by octave first
+      if (octave1 < octave2) return -1;
+      if (octave1 > octave2) return 1;
+
+      // If octaves are equal, compare by pitch
+      const indexA = STEP_ORDER.indexOf(step1);
+      const indexB = STEP_ORDER.indexOf(step2);
+
+      return indexA - indexB;
+    });
   }
 
   private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
@@ -207,9 +253,17 @@ export class Note {
     return this.musicXml.note.getDotCount();
   }
 
+  private getStep(): string {
+    return this.musicXml.note.getStep();
+  }
+
+  private getOctave(): number {
+    return this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+  }
+
   private getKey(): string {
-    const step = this.musicXml.note.getStep();
-    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+    const step = this.getStep();
+    const octave = this.getOctave();
     const notehead = this.musicXml.note.getNotehead();
     const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
@@ -230,5 +284,84 @@ export class Note {
 
   private getTimeModification(): musicxml.TimeModification | null {
     return this.musicXml.note.getTimeModification();
+  }
+
+  private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
+    return [
+      ...this.getBeamFragment(vfStaveNote),
+      ...this.getTupletFragment(vfStaveNote),
+      ...this.getSlurFragments(vfStaveNote, keyIndex),
+    ];
+  }
+
+  private getBeamFragment(vfStaveNote: vexflow.StaveNote): BeamFragment[] {
+    const result = new Array<BeamFragment>();
+
+    const beamValue = this.getBeamValue();
+    if (beamValue) {
+      result.push({
+        type: 'beam',
+        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
+        vexflow: {
+          stemmableNote: vfStaveNote,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  private getTupletFragment(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
+    const result = new Array<TupletFragment>();
+
+    // TODO: Support multiple tuplets.
+    const tuplet = util.first(this.getTuplets());
+    const tupletType = tuplet?.getType() ?? null;
+    switch (tupletType) {
+      case 'start':
+        result.push({
+          type: 'tuplet',
+          phase: 'start',
+          vexflow: {
+            location: vexflow.TupletLocation.BOTTOM,
+            note: vfStaveNote,
+          },
+        });
+        break;
+      case 'stop':
+        result.push({
+          type: 'tuplet',
+          phase: 'stop',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+        break;
+    }
+
+    return result;
+  }
+
+  private getSlurFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SlurFragment[] {
+    const result = new Array<SlurFragment>();
+
+    for (const slur of this.getSlurs()) {
+      const slurType = slur.getType();
+      if (!slurType) {
+        continue;
+      }
+
+      result.push({
+        type: 'slur',
+        phase: conversions.fromStartStopContinueToSpannerFragmentPhase(slurType),
+        slurNumber: slur.getNumber(),
+        vexflow: {
+          note: vfStaveNote,
+          keyIndex,
+        },
+      });
+    }
+
+    return result;
   }
 }

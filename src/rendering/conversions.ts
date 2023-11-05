@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
 import { NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
 import { Division } from './division';
+import { SpannerFragmentPhase } from './types';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
 export const fromAccidentalTypeToAccidentalCode = (
@@ -267,5 +268,33 @@ export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.S
       return 'down';
     default:
       return 'none';
+  }
+};
+
+/** Converts a `musicxml.BeamValue` to a `SpannerFragmentPhase`. */
+export const fromBeamValueToSpannerFragmentPhase = (beamValue: musicxml.BeamValue): SpannerFragmentPhase => {
+  switch (beamValue) {
+    case 'begin':
+      return 'start';
+    case 'continue':
+    case 'backward hook':
+    case 'forward hook':
+      return 'continue';
+    case 'end':
+      return 'stop';
+  }
+};
+
+/** Converts a `musicxml.StartStopContinue` to a `SpannerFragmentPhase`.*/
+export const fromStartStopContinueToSpannerFragmentPhase = (
+  startStopContinue: musicxml.StartStopContinue
+): SpannerFragmentPhase => {
+  switch (startStopContinue) {
+    case 'start':
+      return 'start';
+    case 'continue':
+      return 'continue';
+    case 'stop':
+      return 'stop';
   }
 };
