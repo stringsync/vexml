@@ -5,7 +5,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
 import { ChorusRendering } from './chorus';
-import { VoiceEntryRendering, VoiceRendering } from './voice';
+import { VoiceRendering } from './voice';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -393,6 +393,8 @@ export class MeasureFragment {
             const data = vfSlurDataBySlurNumber[slurNumber];
             const firstVfNote = util.first(data.vfNotes);
             const lastVfNote = util.last(data.vfNotes);
+            // TODO: When vexflow supports different types of tie styles, read Slur.getLineType and translate to
+            // vexflow accordingly.
             if (firstVfNote && lastVfNote) {
               vfStaveTies.push(
                 new vexflow.StaveTie({
@@ -400,7 +402,7 @@ export class MeasureFragment {
                   lastNote: lastVfNote,
                   firstIndexes: [0],
                   lastIndexes: [0],
-                }).setDirection(-1)
+                }).setDirection(vfSlurDirection)
               );
             }
 
