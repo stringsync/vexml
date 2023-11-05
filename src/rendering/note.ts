@@ -288,13 +288,13 @@ export class Note {
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
     return [
-      ...this.getBeamFragment(vfStaveNote),
-      ...this.getTupletFragment(vfStaveNote),
+      ...this.getBeamFragments(vfStaveNote),
+      ...this.getTupletFragments(vfStaveNote),
       ...this.getSlurFragments(vfStaveNote, keyIndex),
     ];
   }
 
-  private getBeamFragment(vfStaveNote: vexflow.StaveNote): BeamFragment[] {
+  private getBeamFragments(vfStaveNote: vexflow.StaveNote): BeamFragment[] {
     const result = new Array<BeamFragment>();
 
     const beamValue = this.getBeamValue();
@@ -311,7 +311,7 @@ export class Note {
     return result;
   }
 
-  private getTupletFragment(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
+  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
     const result = new Array<TupletFragment>();
 
     // TODO: Support multiple tuplets.
