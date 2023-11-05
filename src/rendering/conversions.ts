@@ -247,6 +247,17 @@ export const fromAboveBelowToTupletLocation = (aboveBelow: musicxml.AboveBelow):
   }
 };
 
+/** Converts `AboveBelow` to a vexflow slur direction. */
+export const fromAboveBelowToVexflowSlurDirection = (aboveBelow: musicxml.AboveBelow): number => {
+  // This looks upside down, but it's not.
+  switch (aboveBelow) {
+    case 'above':
+      return -1;
+    case 'below':
+      return 1;
+  }
+};
+
 /** Converts a vexflow Stem to a `musicxml.Stem`. Defaults to 'none'. */
 export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.Stem => {
   switch (stem) {

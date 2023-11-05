@@ -340,6 +340,9 @@ export class MeasureFragment {
     return vfTuplets;
   }
 
+  // TODO: This is broken because it only slurs notes within the same measure fragment. This will probably work most of
+  // the time, but there are probably situations where notes can span measure fragments. Formalize a spanner handler,
+  // probably some sort of state machine that can do these kinds of grouping calculations more gracefully.
   private extractVfStaveTies(voice: VoiceRendering): vexflow.StaveTie[] {
     const vfStaveTies = new Array<vexflow.StaveTie>();
 
@@ -347,11 +350,64 @@ export class MeasureFragment {
       (entry): entry is TieableRendering => entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
     );
 
+    const vfSlurDataBySlurNumber: Record<number, { vfSlurDirection: number; vfNotes: Array<vexflow.Note> }> = {};
+
     for (let index = 0; index < tieables.length; index++) {
+      // TODO: Perform reasonable default behavior when
       const tieable = tieables[index];
-      const isLast = index === tieables.length - 1;
 
       const slurPlacement = this.getSlurPlacement(tieable);
+      const vfSlurDirection = conversions.fromAboveBelowToVexflowSlurDirection(slurPlacement);
+
+      let vfNote: vexflow.Note | null;
+      let slurs: musicxml.Slur[];
+
+      switch (tieable.type) {
+        case 'note':
+        case 'rest':
+          vfNote = tieable.vexflow.staveNote;
+          slurs = tieable.slurs;
+          break;
+        case 'chord':
+          vfNote = util.first(tieable.notes)?.vexflow.staveNote ?? null;
+          slurs = util.first(tieable.notes)?.slurs ?? [];
+          break;
+      }
+
+      if (!vfNote) {
+        continue;
+      }
+
+      for (const slur of slurs) {
+        const slurNumber = slur.getNumber();
+        switch (slur.getType()) {
+          case 'start':
+          case 'continue':
+            vfSlurDataBySlurNumber[slurNumber] ??= { vfSlurDirection, vfNotes: [] };
+            vfSlurDataBySlurNumber[slurNumber].vfNotes.push(vfNote);
+            break;
+          case 'stop':
+            vfSlurDataBySlurNumber[slurNumber] ??= { vfSlurDirection, vfNotes: [] };
+            vfSlurDataBySlurNumber[slurNumber].vfNotes.push(vfNote);
+
+            const data = vfSlurDataBySlurNumber[slurNumber];
+            const firstVfNote = util.first(data.vfNotes);
+            const lastVfNote = util.last(data.vfNotes);
+            if (firstVfNote && lastVfNote) {
+              vfStaveTies.push(
+                new vexflow.StaveTie({
+                  firstNote: firstVfNote,
+                  lastNote: lastVfNote,
+                  firstIndexes: [0],
+                  lastIndexes: [0],
+                }).setDirection(-1)
+              );
+            }
+
+            delete vfSlurDataBySlurNumber[slurNumber];
+            break;
+        }
+      }
     }
 
     return vfStaveTies;
