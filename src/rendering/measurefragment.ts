@@ -17,14 +17,11 @@ const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
   vexflow: {
-    tuplets: vexflow.Tuplet[];
     staveTies: vexflow.StaveTie[];
   };
   staves: StaveRendering[];
   width: number;
 };
-
-type TupletableRendering = NoteRendering | ChordRendering | RestRendering;
 
 type TieableRendering = NoteRendering | ChordRendering | RestRendering;
 
@@ -141,14 +138,11 @@ export class MeasureFragment {
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
       .flatMap((chorus) => chorus.voices);
 
-    // const vfBeams = vfVoices.flatMap((voice) => this.extractVfBeams(voice));
-    const vfTuplets = vfVoices.flatMap((voice) => this.extractVfTuplets(voice));
     const vfStaveTies = vfVoices.flatMap((voice) => this.extractVfStaveTies(voice));
 
     return {
       type: 'measurefragment',
       vexflow: {
-        tuplets: vfTuplets,
         staveTies: vfStaveTies,
       },
       staves: staveRenderings,
@@ -239,66 +233,6 @@ export class MeasureFragment {
   /** Returns the modifiers width. */
   private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
     return util.max(this.getStaves().map((stave) => stave.getModifiersWidth(staveModifiers)));
-  }
-
-  private extractVfTuplets(voice: VoiceRendering): vexflow.Tuplet[] {
-    const vfTuplets = new Array<vexflow.Tuplet>();
-
-    const tupletables = voice.entries.filter(
-      (entry): entry is TupletableRendering => entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-    );
-
-    let vfNotes = new Array<vexflow.Note>();
-    let vfTupletLocation: vexflow.TupletLocation = vexflow.TupletLocation.BOTTOM;
-
-    for (let index = 0; index < tupletables.length; index++) {
-      const tupletable = tupletables[index];
-      const isLast = index === tupletables.length - 1;
-
-      let tuplet: musicxml.Tuplet | null;
-      let vfNote: vexflow.Note | null;
-
-      // TODO: Handle multiple (nested?) tuplets.
-      switch (tupletable.type) {
-        case 'note':
-          tuplet = util.first(tupletable.tuplets);
-          vfNote = tupletable.vexflow.staveNote;
-          break;
-        case 'chord':
-          tuplet = util.first(tupletable.notes.flatMap((note) => note.tuplets));
-          vfNote = util.first(tupletable.notes)?.vexflow.staveNote ?? null;
-          break;
-        case 'rest':
-          tuplet = util.first(tupletable.tuplets);
-          vfNote = tupletable.vexflow.staveNote;
-          break;
-      }
-
-      const tupletType = tuplet?.getType();
-      const tupletPlacement = tuplet?.getPlacement() ?? 'below';
-
-      if (!vfNote) {
-        continue;
-      } else if (tupletType === 'start') {
-        vfNotes.push(vfNote);
-        vfTupletLocation = conversions.fromAboveBelowToTupletLocation(tupletPlacement);
-      } else if (tupletType === 'stop') {
-        vfNotes.push(vfNote);
-        vfTuplets.push(new vexflow.Tuplet(vfNotes, { location: vfTupletLocation }));
-        vfNotes = [];
-        vfTupletLocation = vexflow.TupletLocation.BOTTOM;
-      } else if (vfNotes.length > 0) {
-        // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
-        // continue if we've come across a "start" (denoted by the vfNotes length).
-        vfNotes.push(vfNote);
-      }
-
-      if (isLast && vfNotes.length > 0) {
-        vfTuplets.push(new vexflow.Tuplet(vfNotes));
-      }
-    }
-
-    return vfTuplets;
   }
 
   // TODO: This is broken because it only slurs notes within the same measure fragment. This will probably work most of
