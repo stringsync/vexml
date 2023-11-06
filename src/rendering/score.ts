@@ -12,7 +12,7 @@ import { Beam } from './beam';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { RestRendering } from './rest';
-import { BeamFragment } from './types';
+import { BeamFragment, SpannerFragment } from './types';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -96,12 +96,15 @@ export class Score {
       y += this.getSystemDistance();
     });
 
+    // Render the extra elements that
+    const spannerFragments = this.getSpannerFragments(systemRenderings);
+    const beams = this.getBeams(spannerFragments).map((beam) => beam.render());
+
     // Precalculate different parts of the rendering for readability later.
     const parts = systemRenderings.flatMap((system) => system.parts);
     const measures = parts.flatMap((part) => part.measures);
     const measureFragments = measures.flatMap((measure) => measure.fragments);
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.staves);
-    const beams = this.getBeams(systemRenderings).map((beam) => beam.render());
 
     // Prepare the vexflow rendering objects.
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
@@ -221,10 +224,12 @@ export class Score {
     });
   }
 
-  private getBeams(systemRenderings: SystemRendering[]): Beam[] {
+  private getBeams(spannerFragments: SpannerFragment[]): Beam[] {
     const beams = new Array<Beam>();
 
-    const fragments = this.getBeamFragments(systemRenderings);
+    const fragments = spannerFragments.filter(
+      (spannerFragment): spannerFragment is BeamFragment => spannerFragment.type === 'beam'
+    );
     let buffer = new Array<BeamFragment>();
 
     for (let index = 0; index < fragments.length; index++) {
@@ -253,7 +258,7 @@ export class Score {
     return beams;
   }
 
-  private getBeamFragments(systemRenderings: SystemRendering[]): BeamFragment[] {
+  private getSpannerFragments(systemRenderings: SystemRendering[]): SpannerFragment[] {
     return systemRenderings
       .flatMap((system) => system.parts)
       .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
@@ -281,8 +286,7 @@ export class Score {
             }
             return util.first(entry.notes)!.spannerFragments;
         }
-      })
-      .filter((spannerFragment): spannerFragment is BeamFragment => spannerFragment.type === 'beam');
+      });
   }
 
   private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
