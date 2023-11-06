@@ -2,7 +2,6 @@ import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import * as conversions from './conversions';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -163,9 +162,8 @@ export class Score {
       });
 
     // Draw vexflow.StaveTie elements.
-    measures
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.vexflow.staveTies)
+    spanners.slurs
+      .flatMap((slur) => slur.vexflow.tie)
       .forEach((vfStaveTie) => {
         vfStaveTie.setContext(vfContext).draw();
       });

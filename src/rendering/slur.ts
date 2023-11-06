@@ -54,17 +54,22 @@ export class Slur {
   }
 
   private getVfSlurDirection(): number {
+    const slurPlacement = this.getSlurPlacement();
+    return conversions.fromAboveBelowToVexflowSlurDirection(slurPlacement);
+  }
+
+  private getSlurPlacement(): musicxml.AboveBelow {
     const vfNote = util.first(this.fragments)?.vexflow.note;
     if (!vfNote) {
-      return 1;
+      return 'above';
     }
 
     // If the note has a stem, first try the opposite direction.
     switch (this.getStem(vfNote)) {
       case 'up':
-        return -1;
+        return 'below';
       case 'down':
-        return 1;
+        return 'above';
     }
 
     // Otherwise, use the note's placement relative to its stave to determine placement.
@@ -72,15 +77,15 @@ export class Slur {
     const numLines = vfNote.getStave()?.getNumLines() ?? 5;
 
     if (typeof line !== 'number') {
-      return 1;
+      return 'above';
     }
 
     if (line > numLines / 2) {
       // The note is above the halfway point on the stave.
-      return -1;
+      return 'below';
     } else {
       // The note is at or below the halfway point on the stave.
-      return 1;
+      return 'above';
     }
   }
 
