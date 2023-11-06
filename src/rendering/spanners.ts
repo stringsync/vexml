@@ -1,7 +1,7 @@
 import { Beam, BeamRendering } from './beam';
 import { Slur, SlurRendering } from './slur';
 import { Tuplet, TupletRendering } from './tuplet';
-import { BeamFragment, SpannerFragment, TupletFragment } from './types';
+import { BeamFragment, SlurFragment, SpannerFragment, TupletFragment } from './types';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -108,6 +108,30 @@ export class Spanners {
   }
 
   private getSlurs(): Slur[] {
-    return [];
+    const slurs = new Array<Slur>();
+
+    const fragments = this.spannerFragments.filter((entry): entry is SlurFragment => entry.type === 'slur');
+    const data: Record<number, SlurFragment[]> = {};
+
+    for (let index = 0; index < fragments.length; index++) {
+      const fragment = fragments[index];
+
+      const slurNumber = fragment.slurNumber;
+      switch (fragment.phase) {
+        case 'start':
+        case 'continue':
+          data[slurNumber] ??= [];
+          data[slurNumber].push(fragment);
+          break;
+        case 'stop':
+          data[slurNumber] ??= [];
+          data[slurNumber].push(fragment);
+          slurs.push(new Slur({ fragments: data[slurNumber] }));
+          delete data[slurNumber];
+          break;
+      }
+    }
+
+    return slurs;
   }
 }

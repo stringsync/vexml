@@ -240,28 +240,10 @@ export class Score {
           case 'rest':
             return entry.spannerFragments;
           case 'chord':
-            // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is
-            // broken, we look at the stem direction to determine which note should be the one to determine the
-            // beamining.
-            const stem = util.first(entry.notes.map((note) => this.getStem(note.vexflow.staveNote)));
-            if (stem === 'down') {
-              return util.last(entry.notes)!.spannerFragments;
-            }
-            return util.first(entry.notes)!.spannerFragments;
+            return util.first(entry.notes)?.spannerFragments ?? [];
         }
       });
 
     return new Spanners({ spannerFragments });
-  }
-
-  private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
-    // Calling getStemDirection will throw if there is no stem.
-    // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
-    try {
-      const stemDirection = vfStaveNote.getStemDirection();
-      return conversions.fromVexflowStemDirectionToMusicXmlStem(stemDirection);
-    } catch (e) {
-      return 'none';
-    }
   }
 }

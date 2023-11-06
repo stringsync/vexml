@@ -1,4 +1,7 @@
 import * as vexflow from 'vexflow';
+import * as musicxml from '@/musicxml';
+import * as util from '@/util';
+import * as conversions from './conversions';
 import { SlurFragment } from './types';
 
 /** The result of rendering a slur. */
@@ -39,7 +42,8 @@ export class Slur {
       }
     }
 
-    const vfTie = new vexflow.StaveTie(vfTieNotes);
+    const vfSlurDirection = this.getVfSlurDirection();
+    const vfTie = new vexflow.StaveTie(vfTieNotes).setDirection(vfSlurDirection);
 
     return {
       type: 'slur',
@@ -47,5 +51,47 @@ export class Slur {
         tie: vfTie,
       },
     };
+  }
+
+  private getVfSlurDirection(): number {
+    const vfNote = util.first(this.fragments)?.vexflow.note;
+    if (!vfNote) {
+      return 1;
+    }
+
+    // If the note has a stem, first try the opposite direction.
+    switch (this.getStem(vfNote)) {
+      case 'up':
+        return -1;
+      case 'down':
+        return 1;
+    }
+
+    // Otherwise, use the note's placement relative to its stave to determine placement.
+    const line = util.first(vfNote.getKeyProps())?.line ?? null;
+    const numLines = vfNote.getStave()?.getNumLines() ?? 5;
+
+    if (typeof line !== 'number') {
+      return 1;
+    }
+
+    if (line > numLines / 2) {
+      // The note is above the halfway point on the stave.
+      return -1;
+    } else {
+      // The note is at or below the halfway point on the stave.
+      return 1;
+    }
+  }
+
+  private getStem(vfNote: vexflow.Note): musicxml.Stem {
+    // Calling getStemDirection will throw if there is no stem.
+    // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
+    try {
+      const stemDirection = vfNote.getStemDirection();
+      return conversions.fromVexflowStemDirectionToMusicXmlStem(stemDirection);
+    } catch (e) {
+      return 'none';
+    }
   }
 }
