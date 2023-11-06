@@ -14,8 +14,6 @@ export type RestRendering = {
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
-  tuplets: musicxml.Tuplet[];
-  slurs: musicxml.Slur[];
   spannerFragments: SpannerFragment[];
 };
 
@@ -98,8 +96,6 @@ export class Rest {
     return {
       type: 'rest',
       vexflow: { staveNote: vfStaveNote },
-      slurs: this.getSlurs(),
-      tuplets: this.getTuplets(),
       spannerFragments: this.getSpannerFragments(vfStaveNote),
     };
   }
@@ -140,10 +136,6 @@ export class Rest {
         .find((notations) => notations.hasTuplets())
         ?.getTuplets() ?? []
     );
-  }
-
-  private getSlurs(): musicxml.Slur[] {
-    return this.musicXml.note?.getNotations().flatMap((notations) => notations.getSlurs()) ?? [];
   }
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
