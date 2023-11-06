@@ -224,6 +224,37 @@ export class Score {
     });
   }
 
+  private getSpannerFragments(systemRenderings: SystemRendering[]): SpannerFragment[] {
+    return systemRenderings
+      .flatMap((system) => system.parts)
+      .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
+      .flatMap((fragment) => fragment.staves)
+      .flatMap((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((entry) => entry.voices)
+      .flatMap((voice) => voice.entries)
+      .filter(
+        (entry): entry is NoteRendering | ChordRendering | RestRendering =>
+          entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
+      )
+      .flatMap((entry) => {
+        switch (entry.type) {
+          case 'note':
+          case 'rest':
+            return entry.spannerFragments;
+          case 'chord':
+            // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is
+            // broken, we look at the stem direction to determine which note should be the one to determine the
+            // beamining.
+            const stem = util.first(entry.notes.map((note) => this.getStem(note.vexflow.staveNote)));
+            if (stem === 'down') {
+              return util.last(entry.notes)!.spannerFragments;
+            }
+            return util.first(entry.notes)!.spannerFragments;
+        }
+      });
+  }
+
   private getBeams(spannerFragments: SpannerFragment[]): Beam[] {
     const beams = new Array<Beam>();
 
@@ -256,37 +287,6 @@ export class Score {
     }
 
     return beams;
-  }
-
-  private getSpannerFragments(systemRenderings: SystemRendering[]): SpannerFragment[] {
-    return systemRenderings
-      .flatMap((system) => system.parts)
-      .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
-      .flatMap((fragment) => fragment.staves)
-      .flatMap((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((entry) => entry.voices)
-      .flatMap((voice) => voice.entries)
-      .filter(
-        (entry): entry is NoteRendering | ChordRendering | RestRendering =>
-          entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-      )
-      .flatMap((entry) => {
-        switch (entry.type) {
-          case 'note':
-          case 'rest':
-            return entry.spannerFragments;
-          case 'chord':
-            // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is
-            // broken, we look at the stem direction to determine which note should be the one to determine the
-            // beamining.
-            const stem = util.first(entry.notes.map((note) => this.getStem(note.vexflow.staveNote)));
-            if (stem === 'down') {
-              return util.last(entry.notes)!.spannerFragments;
-            }
-            return util.first(entry.notes)!.spannerFragments;
-        }
-      });
   }
 
   private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {

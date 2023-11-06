@@ -315,13 +315,14 @@ export class Note {
     // TODO: Support multiple tuplets.
     const tuplet = util.first(this.getTuplets());
     const tupletType = tuplet?.getType() ?? null;
+    const tupletPlacement = tuplet?.getPlacement() ?? 'below';
     switch (tupletType) {
       case 'start':
         result.push({
           type: 'tuplet',
           phase: 'start',
           vexflow: {
-            location: vexflow.TupletLocation.BOTTOM,
+            location: conversions.fromAboveBelowToTupletLocation(tupletPlacement),
             note: vfStaveNote,
           },
         });
