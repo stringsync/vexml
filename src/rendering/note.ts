@@ -336,6 +336,16 @@ export class Note {
           },
         });
         break;
+      default:
+        // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
+        // continue if we've come across a "start" (denoted by the vfNotes length).
+        result.push({
+          type: 'tuplet',
+          phase: 'unspecified',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
     }
 
     return result;
