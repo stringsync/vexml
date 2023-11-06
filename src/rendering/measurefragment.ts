@@ -2,28 +2,16 @@ import { Config } from './config';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
-import { ChorusRendering } from './chorus';
-import { VoiceRendering } from './voice';
-import { NoteRendering } from './note';
-import { ChordRendering } from './chord';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { RestRendering } from './rest';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
-  vexflow: {
-    staveTies: vexflow.StaveTie[];
-  };
   staves: StaveRendering[];
   width: number;
 };
-
-type TieableRendering = NoteRendering | ChordRendering | RestRendering;
 
 /**
  * Represents a fragment of a measure.
@@ -133,18 +121,8 @@ export class MeasureFragment {
       y += staveDistance;
     });
 
-    const vfVoices = staveRenderings
-      .map((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((chorus) => chorus.voices);
-
-    const vfStaveTies = vfVoices.flatMap((voice) => this.extractVfStaveTies(voice));
-
     return {
       type: 'measurefragment',
-      vexflow: {
-        staveTies: vfStaveTies,
-      },
       staves: staveRenderings,
       width,
     };
@@ -233,131 +211,5 @@ export class MeasureFragment {
   /** Returns the modifiers width. */
   private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
     return util.max(this.getStaves().map((stave) => stave.getModifiersWidth(staveModifiers)));
-  }
-
-  // TODO: This is broken because it only slurs notes within the same measure fragment. This will probably work most of
-  // the time, but there are probably situations where notes can span measure fragments. Formalize a spanner handler,
-  // probably some sort of state machine that can do these kinds of grouping calculations more gracefully.
-  private extractVfStaveTies(voice: VoiceRendering): vexflow.StaveTie[] {
-    const vfStaveTies = new Array<vexflow.StaveTie>();
-
-    const tieables = voice.entries.filter(
-      (entry): entry is TieableRendering => entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-    );
-
-    const vfSlurDataBySlurNumber: Record<number, { vfSlurDirection: number; vfNotes: Array<vexflow.Note> }> = {};
-
-    for (let index = 0; index < tieables.length; index++) {
-      // TODO: Perform reasonable default behavior when
-      const tieable = tieables[index];
-
-      const slurPlacement = this.getSlurPlacement(tieable);
-      const vfSlurDirection = conversions.fromAboveBelowToVexflowSlurDirection(slurPlacement);
-
-      let vfNote: vexflow.Note | null;
-      let slurs: musicxml.Slur[];
-
-      switch (tieable.type) {
-        case 'note':
-        case 'rest':
-          vfNote = tieable.vexflow.staveNote;
-          slurs = tieable.slurs;
-          break;
-        case 'chord':
-          vfNote = util.first(tieable.notes)?.vexflow.staveNote ?? null;
-          slurs = util.first(tieable.notes)?.slurs ?? [];
-          break;
-      }
-
-      if (!vfNote) {
-        continue;
-      }
-
-      for (const slur of slurs) {
-        const slurNumber = slur.getNumber();
-        switch (slur.getType()) {
-          case 'start':
-          case 'continue':
-            vfSlurDataBySlurNumber[slurNumber] ??= { vfSlurDirection, vfNotes: [] };
-            vfSlurDataBySlurNumber[slurNumber].vfNotes.push(vfNote);
-            break;
-          case 'stop':
-            vfSlurDataBySlurNumber[slurNumber] ??= { vfSlurDirection, vfNotes: [] };
-            vfSlurDataBySlurNumber[slurNumber].vfNotes.push(vfNote);
-
-            const data = vfSlurDataBySlurNumber[slurNumber];
-            const firstVfNote = util.first(data.vfNotes);
-            const lastVfNote = util.last(data.vfNotes);
-            // TODO: When vexflow supports different types of tie styles, read Slur.getLineType and translate to
-            // vexflow accordingly.
-            if (firstVfNote && lastVfNote) {
-              vfStaveTies.push(
-                new vexflow.StaveTie({
-                  firstNote: firstVfNote,
-                  lastNote: lastVfNote,
-                  firstIndexes: [0],
-                  lastIndexes: [0],
-                }).setDirection(vfSlurDirection)
-              );
-            }
-
-            delete vfSlurDataBySlurNumber[slurNumber];
-            break;
-        }
-      }
-    }
-
-    return vfStaveTies;
-  }
-
-  private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
-    // Calling getStemDirection will throw if there is no stem.
-    // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
-    try {
-      const stemDirection = vfStaveNote.getStemDirection();
-      return conversions.fromVexflowStemDirectionToMusicXmlStem(stemDirection);
-    } catch (e) {
-      return 'none';
-    }
-  }
-
-  private getVfStaveNote(rendering: NoteRendering | ChordRendering | RestRendering): vexflow.StaveNote {
-    switch (rendering.type) {
-      case 'note':
-        return rendering.vexflow.staveNote;
-      case 'rest':
-        return rendering.vexflow.staveNote;
-      case 'chord':
-        return rendering.notes[0]?.vexflow.staveNote;
-    }
-  }
-
-  // TODO: Account for other voices and/or consider whether the voice is ascending or descending.
-  private getSlurPlacement(rendering: NoteRendering | ChordRendering | RestRendering): musicxml.AboveBelow {
-    const vfStaveNote = this.getVfStaveNote(rendering);
-
-    // If the note has a stem, first try the opposite direction.
-    switch (this.getStem(vfStaveNote)) {
-      case 'up':
-        return 'below';
-      case 'down':
-        return 'above';
-    }
-
-    // Otherwise, use the note's placement relative to its stave to determine placement.
-    const line = util.first(vfStaveNote.getKeyProps())?.line ?? null;
-    const numLines = vfStaveNote.getStave()?.getNumLines() ?? 5;
-
-    if (typeof line !== 'number') {
-      return 'above';
-    }
-
-    if (line > numLines / 2) {
-      // The note is above the halfway point on the stave.
-      return 'below';
-    } else {
-      // The note is at or below the halfway point on the stave.
-      return 'above';
-    }
   }
 }
