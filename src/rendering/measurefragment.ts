@@ -17,7 +17,6 @@ const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
   vexflow: {
-    beams: vexflow.Beam[];
     tuplets: vexflow.Tuplet[];
     staveTies: vexflow.StaveTie[];
   };
@@ -144,14 +143,13 @@ export class MeasureFragment {
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
       .flatMap((chorus) => chorus.voices);
 
-    const vfBeams = vfVoices.flatMap((voice) => this.extractVfBeams(voice));
+    // const vfBeams = vfVoices.flatMap((voice) => this.extractVfBeams(voice));
     const vfTuplets = vfVoices.flatMap((voice) => this.extractVfTuplets(voice));
     const vfStaveTies = vfVoices.flatMap((voice) => this.extractVfStaveTies(voice));
 
     return {
       type: 'measurefragment',
       vexflow: {
-        beams: vfBeams,
         tuplets: vfTuplets,
         staveTies: vfStaveTies,
       },
@@ -243,41 +241,6 @@ export class MeasureFragment {
   /** Returns the modifiers width. */
   private getStaveModifiersWidth(staveModifiers: StaveModifier[]): number {
     return util.max(this.getStaves().map((stave) => stave.getModifiersWidth(staveModifiers)));
-  }
-
-  private extractVfBeams(voice: VoiceRendering): vexflow.Beam[] {
-    const vfBeams = new Array<vexflow.Beam>();
-
-    const stemmables = voice.entries.filter(
-      (entry): entry is StemmableRendering => entry.type === 'note' || entry.type === 'chord'
-    );
-
-    let vfStemmables = new Array<vexflow.StemmableNote>();
-    for (let index = 0; index < stemmables.length; index++) {
-      const stemmable = stemmables[index];
-      const isLast = index === stemmables.length - 1;
-
-      const note = this.getBeamDeterminingNote(stemmable);
-      switch (note.beamValue) {
-        case 'begin':
-        case 'continue':
-        case 'backward hook':
-        case 'forward hook':
-          vfStemmables.push(note.vexflow.staveNote);
-          break;
-        case 'end':
-          vfStemmables.push(note.vexflow.staveNote);
-          vfBeams.push(new vexflow.Beam(vfStemmables));
-          vfStemmables = [];
-          break;
-      }
-
-      if (isLast && vfStemmables.length > 0) {
-        vfBeams.push(new vexflow.Beam(vfStemmables));
-      }
-    }
-
-    return vfBeams;
   }
 
   private extractVfTuplets(voice: VoiceRendering): vexflow.Tuplet[] {
