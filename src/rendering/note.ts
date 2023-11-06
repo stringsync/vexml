@@ -44,7 +44,6 @@ export type NoteRendering = {
     staveNote: vexflow.StaveNote;
   };
   modifiers: NoteModifierRendering[];
-  beamValue: musicxml.BeamValue | null;
   tuplets: musicxml.Tuplet[];
   slurs: musicxml.Slur[];
   timeModification: musicxml.TimeModification | null;
@@ -171,7 +170,6 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
-      beamValue: notes[index].getBeamValue(),
       tuplets: notes[index].getTuplets(),
       slurs: notes[index].getSlurs(),
       timeModification: notes[index].getTimeModification(),
