@@ -1,9 +1,12 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
+import * as conversions from './conversions';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
+import { BeamFragment, SpannerFragment, TupletFragment } from './types';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -13,6 +16,7 @@ export type RestRendering = {
   };
   tuplets: musicxml.Tuplet[];
   slurs: musicxml.Slur[];
+  spannerFragments: SpannerFragment[];
 };
 
 /**
@@ -96,6 +100,7 @@ export class Rest {
       vexflow: { staveNote: vfStaveNote },
       slurs: this.getSlurs(),
       tuplets: this.getTuplets(),
+      spannerFragments: this.getSpannerFragments(vfStaveNote),
     };
   }
 
@@ -139,5 +144,62 @@ export class Rest {
 
   private getSlurs(): musicxml.Slur[] {
     return this.musicXml.note?.getNotations().flatMap((notations) => notations.getSlurs()) ?? [];
+  }
+
+  private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
+    return [...this.getBeamFragments(vfStaveNote), ...this.getTupletFragments(vfStaveNote)];
+  }
+
+  private getBeamValue(): musicxml.BeamValue | null {
+    const beams = util.sortBy(this.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
+    return util.first(beams)?.getBeamValue() ?? null;
+  }
+
+  private getBeamFragments(vfStaveNote: vexflow.StemmableNote): BeamFragment[] {
+    const result = new Array<BeamFragment>();
+
+    const beamValue = this.getBeamValue();
+    if (beamValue) {
+      result.push({
+        type: 'beam',
+        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
+        vexflow: {
+          stemmableNote: vfStaveNote,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
+    const result = new Array<TupletFragment>();
+
+    // TODO: Support multiple tuplets.
+    const tuplet = util.first(this.getTuplets());
+    const tupletType = tuplet?.getType() ?? null;
+    switch (tupletType) {
+      case 'start':
+        result.push({
+          type: 'tuplet',
+          phase: 'start',
+          vexflow: {
+            location: vexflow.TupletLocation.BOTTOM,
+            note: vfStaveNote,
+          },
+        });
+        break;
+      case 'stop':
+        result.push({
+          type: 'tuplet',
+          phase: 'stop',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+        break;
+    }
+
+    return result;
   }
 }
