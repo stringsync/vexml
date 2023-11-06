@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
 
 /** Describes what part of the spanner lifecycle a spanner fragment is in. */
-export type SpannerFragmentPhase = 'start' | 'continue' | 'stop';
+export type SpannerFragmentPhase = 'unspecified' | 'start' | 'continue' | 'stop';
 
 /**
  * Represents a piece of a spanner.
@@ -36,7 +36,7 @@ export type TupletFragment =
     }
   | {
       type: 'tuplet';
-      phase: 'continue' | 'stop';
+      phase: 'unspecified' | 'stop';
       vexflow: {
         note: vexflow.Note;
       };

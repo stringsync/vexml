@@ -12,7 +12,8 @@ import { Beam } from './beam';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { RestRendering } from './rest';
-import { BeamFragment, SpannerFragment } from './types';
+import { BeamFragment, SpannerFragment, TupletFragment } from './types';
+import { Tuplet } from './tuplet';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -99,6 +100,7 @@ export class Score {
     // Render the extra elements that
     const spannerFragments = this.getSpannerFragments(systemRenderings);
     const beams = this.getBeams(spannerFragments).map((beam) => beam.render());
+    const tuplets = this.getTuplets(spannerFragments).map((tuplet) => tuplet.render());
 
     // Precalculate different parts of the rendering for readability later.
     const parts = systemRenderings.flatMap((system) => system.parts);
@@ -173,9 +175,8 @@ export class Score {
       });
 
     // Draw vexflow.Tuplet elements.
-    measures
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.vexflow.tuplets)
+    tuplets
+      .map((tuplet) => tuplet.vexflow.tuplet)
       .forEach((vfTuplet) => {
         vfTuplet.setContext(vfContext).draw();
       });
@@ -268,7 +269,7 @@ export class Score {
       const isLast = index === fragments.length - 1;
 
       // This is a "lenient" state machine where errors in the MusicXML document are silently defaulted to reasonable
-      // behavior.q
+      // behavior.
       switch (fragment.phase) {
         case 'start':
         case 'continue':
@@ -287,6 +288,44 @@ export class Score {
     }
 
     return beams;
+  }
+
+  private getTuplets(spannerFragments: SpannerFragment[]): Tuplet[] {
+    const tuplets = new Array<Tuplet>();
+
+    const fragments = spannerFragments.filter(
+      (spannerFragment): spannerFragment is TupletFragment => spannerFragment.type === 'tuplet'
+    );
+    let buffer = new Array<TupletFragment>();
+
+    for (let index = 0; index < fragments.length; index++) {
+      const fragment = fragments[index];
+      const isLast = index === fragments.length - 1;
+
+      switch (fragment.phase) {
+        case 'start':
+          buffer.push(fragment);
+          break;
+        case 'unspecified':
+          // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
+          // continue if we've come across a "start" (denoted by the vfNotes length).
+          if (buffer.length > 0) {
+            buffer.push(fragment);
+          }
+          break;
+        case 'stop':
+          buffer.push(fragment);
+          tuplets.push(new Tuplet({ fragments: buffer }));
+          buffer = [];
+          break;
+      }
+
+      if (isLast && buffer.length > 0) {
+        tuplets.push(new Tuplet({ fragments: buffer }));
+      }
+    }
+
+    return tuplets;
   }
 
   private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
