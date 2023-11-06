@@ -24,8 +24,6 @@ export type MeasureFragmentRendering = {
   width: number;
 };
 
-type StemmableRendering = NoteRendering | ChordRendering;
-
 type TupletableRendering = NoteRendering | ChordRendering | RestRendering;
 
 type TieableRendering = NoteRendering | ChordRendering | RestRendering;
@@ -376,26 +374,6 @@ export class MeasureFragment {
     }
 
     return vfStaveTies;
-  }
-
-  /** Returns the note that determine beaming behavior. */
-  private getBeamDeterminingNote(stemmable: StemmableRendering): NoteRendering {
-    if (stemmable.type === 'note') {
-      return stemmable;
-    }
-
-    // Chords are rendering using a single vexflow.StaveNote, so it's ok to just use the first one in a chord.
-    const stem = util.first(
-      stemmable.notes.map((note) => this.getVfStaveNote(note)).map((vfStaveNote) => this.getStem(vfStaveNote))
-    );
-
-    // In theory, all of the NoteRenderings should have the same BeamValue. But just in case that invariant is broken,
-    // we look at the stem direction to determine which note should be the one to determine the beamining.
-    if (stem === 'down') {
-      return util.last(stemmable.notes)!;
-    } else {
-      return util.first(stemmable.notes)!;
-    }
   }
 
   private getStem(vfStaveNote: vexflow.StaveNote): musicxml.Stem {
