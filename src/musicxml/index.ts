@@ -26,4 +26,5 @@ export * from './time';
 export * from './timemodification';
 export * from './tuplet';
 export * from './types';
+export * from './wedge';
 export * from './words';

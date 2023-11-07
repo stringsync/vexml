@@ -261,3 +261,11 @@ export const START_STOP_CONTINUE = new Enum(['start', 'stop', 'continue'] as con
  */
 export type LineType = EnumValues<typeof LINE_TYPES>;
 export const LINE_TYPES = new Enum(['dashed', 'dotted', 'solid', 'wavy'] as const);
+
+/**
+ * The wedge-type type is used to specify <wedge> types.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/wedge-type/
+ */
+export type WedgeType = EnumValues<typeof WEDGE_TYPES>;
+export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo', 'stop', 'continue'] as const);

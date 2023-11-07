@@ -1,4 +1,4 @@
-import { Direction, DirectionType } from '@/musicxml';
+import { ABOVE_BELOW, Direction, DirectionType } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Direction, () => {
@@ -23,6 +23,26 @@ describe(Direction, () => {
       const node = xml.direction();
       const direction = new Direction(node);
       expect(direction.getTypes()).toBeEmpty();
+    });
+  });
+
+  describe('getPlacement', () => {
+    it.each(ABOVE_BELOW.values)(`returns the placement of the direction: '%s'`, (placement) => {
+      const node = xml.direction({ placement });
+      const direction = new Direction(node);
+      expect(direction.getPlacement()).toBe(placement);
+    });
+
+    it('defaults to null when the placement is invalid', () => {
+      const node = xml.direction({ placement: 'foo' });
+      const direction = new Direction(node);
+      expect(direction.getPlacement()).toBeNull();
+    });
+
+    it('defaults to null when the placement is missing', () => {
+      const node = xml.direction();
+      const direction = new Direction(node);
+      expect(direction.getPlacement()).toBeNull();
     });
   });
 });
