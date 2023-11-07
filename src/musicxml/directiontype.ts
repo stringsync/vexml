@@ -1,6 +1,7 @@
 import { NamedElement } from '../util';
 import { Metronome } from './metronome';
 import { Symbolic } from './symbolic';
+import { Wedge } from './wedge';
 import { Words } from './words';
 
 export type EmptyDirectionTypeContent = {
@@ -22,10 +23,16 @@ export type TokensDirectionTypeContent = {
   tokens: Array<Words | Symbolic>;
 };
 
+export type WedgeDirectionTypeContent = {
+  type: 'wedge';
+  wedge: Wedge;
+};
+
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
+  | WedgeDirectionTypeContent
   | MetronomeDirectionTypeContent
   | TokensDirectionTypeContent;
 
@@ -50,6 +57,13 @@ export class DirectionType {
       return {
         type: 'metronome',
         metronome: new Metronome(first),
+      };
+    }
+
+    if (first.isNamed('wedge')) {
+      return {
+        type: 'wedge',
+        wedge: new Wedge(first),
       };
     }
 

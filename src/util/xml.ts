@@ -500,9 +500,13 @@ export const topSystemDistance = createNamedElementFactory<
 export const direction = createNamedElementFactory<
   'direction',
   {
+    placement: string;
     types: NamedElement<'direction-type'>[];
   }
->('direction', (e, { types }) => {
+>('direction', (e, { placement, types }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
   if (types) {
     e.append(...types);
   }
@@ -511,17 +515,21 @@ export const direction = createNamedElementFactory<
 export const directionType = createNamedElementFactory<
   'direction-type',
   {
-    codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
+    codas: NamedElement<'coda'>[];
+    wedge: NamedElement<'wedge'>;
     metronome: NamedElement<'metronome'>;
     tokens: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
   }
->('direction-type', (e, { codas, segnos, metronome, tokens }) => {
+>('direction-type', (e, { segnos, codas, wedge, metronome, tokens }) => {
+  if (segnos) {
+    e.append(...segnos);
+  }
   if (codas) {
     e.append(...codas);
   }
-  if (segnos) {
-    e.append(...segnos);
+  if (wedge) {
+    e.append(wedge);
   }
   if (metronome) {
     e.append(metronome);
@@ -1192,3 +1200,15 @@ export const slur = createNamedElementFactory<
     e.setAttribute('line-type', lineType);
   }
 });
+
+export const wedge = createNamedElementFactory<'wedge', { type: string; spread: number }>(
+  'wedge',
+  (e, { type, spread }) => {
+    if (type) {
+      e.setAttribute('wedge-type', type);
+    }
+    if (typeof spread === 'number') {
+      e.setAttribute('spread', spread.toString());
+    }
+  }
+);

@@ -1,4 +1,4 @@
-import { DirectionType, Metronome, Symbolic, Words } from '@/musicxml';
+import { DirectionType, Metronome, Symbolic, Wedge, Words } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(DirectionType, () => {
@@ -12,6 +12,18 @@ describe(DirectionType, () => {
       expect(directionType.getContent()).toStrictEqual({
         type: 'metronome',
         metronome: new Metronome(metronome),
+      });
+    });
+
+    it('returns the wedge when supplied', () => {
+      const wedge = xml.wedge();
+      const node = xml.directionType({ wedge });
+
+      const directionType = new DirectionType(node);
+
+      expect(directionType.getContent()).toStrictEqual({
+        type: 'wedge',
+        wedge: new Wedge(wedge),
       });
     });
 

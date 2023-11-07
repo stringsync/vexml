@@ -1,5 +1,6 @@
 import { NamedElement } from '../util';
 import { DirectionType } from './directiontype';
+import { ABOVE_BELOW, AboveBelow } from './enums';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -16,5 +17,15 @@ export class Direction {
    */
   getTypes(): DirectionType[] {
     return this.element.all('direction-type').map((node) => new DirectionType(node));
+  }
+
+  /**
+   * Returns the placement of the direction. Defaults to null.
+   *
+   * This is not universally applicable to all `<direction>` children. When a child specifies a placement, it overrides
+   * this specification.
+   */
+  getPlacement(): AboveBelow | null {
+    return this.element.attr('placement').enum(ABOVE_BELOW);
   }
 }
