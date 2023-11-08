@@ -46,7 +46,7 @@ if (!fs.existsSync(targetPath)) {
 
     if (downloadTypes.mnx) {
       const mnx = $markups.eq(1).find('.markupcode').text();
-      const fileName = `${title}.json`;
+      const fileName = `${title}.mnx.json`;
       fs.writeFileSync(path.join(targetPath, fileName), mnx.trim());
 
       console.log('Wrote MNX', fileName);
@@ -65,7 +65,7 @@ if (!fs.existsSync(targetPath)) {
         fs.writeFileSync(path.join(targetPath, `${title}.png`), buffer);
       }
     }
-    console.log()
+    console.log();
   }
 
   console.log('See output in:', path.relative(cwd, targetPath));
