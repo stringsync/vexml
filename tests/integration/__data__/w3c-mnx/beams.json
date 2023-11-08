@@ -1,0 +1,321 @@
+{
+   "mnx": {
+      "version": 1
+   },
+   "global": {
+      "measures": [
+         {
+            "time": {
+               "count": 4,
+               "unit": 4
+            }
+         },
+         {}
+      ]
+   },
+   "parts": [
+      {
+         "measures": [
+            {
+               "beams": [
+                  {
+                     "events": [
+                        "ev1",
+                        "ev2",
+                        "ev3",
+                        "ev4"
+                     ]
+                  },
+                  {
+                     "events": [
+                        "ev5",
+                        "ev6",
+                        "ev7",
+                        "ev8"
+                     ]
+                  }
+               ],
+               "clefs": [
+                  {
+                     "clef": {
+                        "line": 2,
+                        "sign": "G"
+                     }
+                  }
+               ],
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "id": "ev1",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "C"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev2",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "D"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev3",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev4",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "F"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev5",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "D"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev6",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev7",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "F"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev8",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "G"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            },
+            {
+               "beams": [
+                  {
+                     "events": [
+                        "ev9",
+                        "ev10",
+                        "ev11",
+                        "ev12",
+                        "ev13"
+                     ],
+                     "inner": [
+                        {
+                           "events": [
+                              "ev11",
+                              "ev12"
+                           ]
+                        }
+                     ]
+                  },
+                  {
+                     "events": [
+                        "ev15",
+                        "ev15"
+                     ]
+                  }
+               ],
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "id": "ev9",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "G"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev10",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "rest": {}
+                        },
+                        {
+                           "id": "ev11",
+                           "type": "event",
+                           "duration": {
+                              "base": "16th"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "D"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev12",
+                           "type": "event",
+                           "duration": {
+                              "base": "16th"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev13",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "G"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev14",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev15",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "D"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "quarter"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "C"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}
