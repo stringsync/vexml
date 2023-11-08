@@ -1,0 +1,145 @@
+{
+   "mnx": {
+      "version": 1
+   },
+   "global": {
+      "measures": [
+         {
+            "repeat-start": {},
+            "time": {
+               "count": 4,
+               "unit": 4
+            }
+         },
+         {
+            "ending": {
+               "duration": 1,
+               "numbers": [
+                  1
+               ]
+            },
+            "repeat-end": {}
+         },
+         {
+            "ending": {
+               "duration": 1,
+               "numbers": [
+                  2
+               ]
+            },
+            "repeat-end": {}
+         },
+         {
+            "ending": {
+               "duration": 1,
+               "numbers": [
+                  3
+               ],
+               "open": true
+            }
+         }
+      ]
+   },
+   "parts": [
+      {
+         "measures": [
+            {
+               "clefs": [
+                  {
+                     "clef": {
+                        "line": 2,
+                        "sign": "G"
+                     }
+                  }
+               ],
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "whole"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "C"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            },
+            {
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "whole"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            },
+            {
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "whole"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 4,
+                                    "step": "G"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            },
+            {
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "whole"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "C"
+                                 }
+                              }
+                           ]
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

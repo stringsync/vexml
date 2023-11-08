@@ -1,0 +1,133 @@
+{
+   "mnx": {
+      "version": 1
+   },
+   "global": {
+      "measures": [
+         {
+            "time": {
+               "count": 4,
+               "unit": 4
+            }
+         }
+      ]
+   },
+   "parts": [
+      {
+         "measures": [
+            {
+               "beams": [
+                  {
+                     "events": [
+                        "ev1",
+                        "ev3",
+                        "ev4",
+                        "ev5"
+                     ]
+                  }
+               ],
+               "clefs": [
+                  {
+                     "clef": {
+                        "line": 2,
+                        "sign": "G"
+                     }
+                  }
+               ],
+               "sequences": [
+                  {
+                     "content": [
+                        {
+                           "id": "ev1",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "C"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "type": "grace",
+                           "content": [
+                              {
+                                 "type": "event",
+                                 "duration": {
+                                    "base": "eighth"
+                                 },
+                                 "notes": [
+                                    {
+                                       "pitch": {
+                                          "octave": 4,
+                                          "step": "B"
+                                       }
+                                    }
+                                 ]
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev3",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "D"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev4",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "E"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "id": "ev5",
+                           "type": "event",
+                           "duration": {
+                              "base": "eighth"
+                           },
+                           "notes": [
+                              {
+                                 "pitch": {
+                                    "octave": 5,
+                                    "step": "F"
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           "type": "event",
+                           "duration": {
+                              "base": "half"
+                           },
+                           "rest": {}
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}
