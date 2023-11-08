@@ -18,6 +18,7 @@
     "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
     "resnap": "node scripts/resnap.js",
+    "extract:w3c-mnx": "node scripts/extract-w3c-mnx-examples.js",
     "debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand",
     "lint": "yarn eslint .",
     "format": "yarn prettier .",
