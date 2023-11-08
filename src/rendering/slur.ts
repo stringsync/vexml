@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as conversions from './conversions';
-import { SlurFragment } from './types';
+import { SlurFragment } from './spanners';
 
 /** The result of rendering a slur. */
 export type SlurRendering = {

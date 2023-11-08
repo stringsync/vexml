@@ -6,7 +6,7 @@ import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
-import { BeamFragment, SpannerFragment, TupletFragment } from './types';
+import { BeamFragment, SpannerFragment, TupletFragment } from './spanners';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {

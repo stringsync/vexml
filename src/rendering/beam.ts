@@ -1,4 +1,4 @@
-import { BeamFragment } from './types';
+import { BeamFragment } from './spanners';
 import * as vexflow from 'vexflow';
 
 /** The result of rendering a beam. */

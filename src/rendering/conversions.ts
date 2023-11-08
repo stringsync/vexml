@@ -3,7 +3,7 @@ import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
 import { NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
 import { Division } from './division';
-import { SpannerFragmentPhase } from './types';
+import { SpannerFragmentPhase } from './spanners';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
 export const fromAccidentalTypeToAccidentalCode = (
