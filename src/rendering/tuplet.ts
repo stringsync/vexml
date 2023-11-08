@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { TupletFragment } from './types';
+import { TupletFragment } from './spanners';
 
 /** The result of rendering a tuplet. */
 export type TupletRendering = {
