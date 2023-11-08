@@ -2,6 +2,7 @@
  * Extract MusicXML examples from the W3C site: MNX specification
  */
 
+/* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const process = require('process');
 const fs = require('fs');
@@ -33,7 +34,7 @@ if (!fs.existsSync(targetPath)) {
 
     console.log(`Extracting ${title}...`);
 
-    $markups = $example.find('.markupexample');
+    const $markups = $example.find('.markupexample');
 
     if (downloadTypes.musicxml) {
       const musicxml = '<?xml version="1.0" encoding="utf-8"?>\n' + $markups.eq(0).find('.markupcode').text().trim();
