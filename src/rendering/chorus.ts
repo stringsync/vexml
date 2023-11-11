@@ -10,7 +10,6 @@ import * as conversions from './conversions';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
-import { Token } from './token';
 import { GhostNote } from './ghostnote';
 import { Chord } from './chord';
 import { Rest } from './rest';
@@ -25,10 +24,10 @@ export type ChorusRendering = {
 type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
-  tokens: Array<Token>;
   stem: StemDirection;
   start: Division;
   end: Division;
+  directions: musicxml.Direction[];
 };
 
 type WholeRestChorusData = { type: 'wholerest' };
@@ -168,7 +167,7 @@ export class Chorus {
 
     let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
-    let tokens = new Array<Token>();
+    let directions = new Array<musicxml.Direction>();
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (const entry of opts.measureEntries) {
@@ -177,14 +176,7 @@ export class Chorus {
       }
 
       if (entry instanceof musicxml.Direction) {
-        entry
-          .getTypes()
-          .map((directionType) => directionType.getContent())
-          .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
-          .flatMap((content) => content.tokens)
-          .forEach((token) => {
-            tokens.push(new Token({ musicXml: { token } }));
-          });
+        directions.push(entry);
       }
 
       if (entry instanceof musicxml.Note) {
@@ -210,14 +202,14 @@ export class Chorus {
         result[voiceId].push({
           voiceId,
           note,
-          tokens,
           start: startDivision,
           end: endDivision,
           stem,
+          directions,
         });
 
         divisions = divisions.add(noteDuration);
-        tokens = [];
+        directions = [];
       }
 
       if (entry instanceof musicxml.Backup) {
@@ -320,8 +312,8 @@ export class Chorus {
         }
 
         const note = entry.note;
+        const directions = entry.directions;
         const stem = entry.stem;
-        const tokens = entry.tokens;
 
         const noteDuration = entry.end.subtract(entry.start);
         const durationDenominator =
@@ -332,8 +324,7 @@ export class Chorus {
           entries.push(
             new Chord({
               config,
-              musicXml: { note },
-              tokens,
+              musicXml: { note, directions },
               stem,
               clef,
               durationDenominator,
@@ -344,10 +335,9 @@ export class Chorus {
           entries.push(
             new Rest({
               config,
-              musicXml: { note },
+              musicXml: { note, directions },
               displayPitch: note.getRestDisplayPitch(),
               dotCount: note.getDotCount(),
-              tokens,
               clef,
               durationDenominator,
             })
@@ -356,8 +346,7 @@ export class Chorus {
           entries.push(
             new Note({
               config,
-              musicXml: { note },
-              tokens,
+              musicXml: { note, directions },
               stem,
               clef,
               durationDenominator,

@@ -33,23 +33,23 @@ export class Rest {
   private config: Config;
   private musicXml: {
     note: musicxml.Note | null;
+    directions: musicxml.Direction[];
   };
   private displayPitch: string | null;
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
   private clef: Clef;
-  private tokens: Token[];
 
   constructor(opts: {
     config: Config;
     musicXml: {
       note: musicxml.Note | null;
+      directions: musicxml.Direction[];
     };
     displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
     clef: Clef;
-    tokens: Token[];
   }) {
     this.config = opts.config;
     this.musicXml = opts.musicXml;
@@ -57,7 +57,6 @@ export class Rest {
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
     this.clef = opts.clef;
-    this.tokens = opts.tokens;
   }
 
   /** Creates a whole rest. */
@@ -66,12 +65,12 @@ export class Rest {
       config: opts.config,
       musicXml: {
         note: null,
+        directions: [],
       },
       displayPitch: null,
       durationDenominator: '1',
       dotCount: 0,
       clef: opts.clef,
-      tokens: [],
     });
   }
 
@@ -89,7 +88,7 @@ export class Rest {
       vexflow.Dot.buildAndAttach([vfStaveNote]);
     }
 
-    this.tokens
+    this.getTokens()
       .map((token) => token.render())
       .forEach((tokenRendering) => {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
@@ -116,6 +115,14 @@ export class Rest {
       return 'D/5';
     }
     return 'B/4';
+  }
+
+  private getTokens(): Token[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
+      .flatMap((content) => content.tokens.map((token) => new Token({ musicXml: { token } })));
   }
 
   private shouldCenter(voiceEntryCount: number): boolean {
