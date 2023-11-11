@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 
 /** The result of rendering a wedge. */
 export type WedgeRendering = {
@@ -10,41 +11,58 @@ export type WedgeRendering = {
 };
 
 /** A piece of a wedge. */
-export type WedgeFragment =
-  | {
-      type: 'wedge';
-      phase: 'start';
-      vexflow: {
-        note: vexflow.Note;
-        position: vexflow.ModifierPosition;
-        dynamicType: number;
-      };
-    }
-  | {
-      type: 'wedge';
-      phase: 'continue' | 'stop';
-      vexflow: {
-        note: vexflow.Note;
-      };
-    };
+export type WedgeFragment = StartWedgeFragment | ContinueWedgeFragment | StopWedgeFragment;
+
+type StartWedgeFragment = {
+  type: 'wedge';
+  phase: 'start';
+  vexflow: {
+    note: vexflow.Note;
+    position: vexflow.ModifierPosition;
+    staveHairpinType: number;
+  };
+};
+
+type ContinueWedgeFragment = {
+  type: 'wedge';
+  phase: 'continue';
+  vexflow: {
+    note: vexflow.Note;
+  };
+};
+
+type StopWedgeFragment = {
+  type: 'wedge';
+  phase: 'stop';
+  vexflow: {
+    note: vexflow.Note;
+  };
+};
 
 /** Represents a crescendo or decrescendo. */
 export class Wedge {
-  private placement: musicxml.AboveBelow;
+  private startFragment: StartWedgeFragment;
   private fragments: WedgeFragment[];
 
-  constructor(opts: { placement: musicxml.AboveBelow; fragments: WedgeFragment[] }) {
-    this.placement = opts.placement;
+  constructor(opts: { placement: musicxml.AboveBelow; startFragment: StartWedgeFragment; fragments: WedgeFragment[] }) {
+    util.assert(opts.fragments.length >= 2, 'must have at least 2 wedge fragments');
+
+    this.startFragment = opts.startFragment;
     this.fragments = opts.fragments;
   }
 
   render(): WedgeRendering {
+    const firstNote = util.first(this.fragments)!.vexflow.note;
+    const lastNote = util.last(this.fragments)!.vexflow.note;
+
+    const vfStaveHairpin = new vexflow.StaveHairpin(
+      { first_note: firstNote, last_note: lastNote },
+      this.startFragment.vexflow.staveHairpinType
+    ).setPosition(this.startFragment.vexflow.position);
+
     return {
       type: 'wedge',
-      vexflow: {
-        // TODO: Figure out how to render crescendos: https://github.com/stringsync/vexml/pull/162#issuecomment-1800602187
-        staveHairpin: undefined as any,
-      },
+      vexflow: { staveHairpin: vfStaveHairpin },
     };
   }
 }
