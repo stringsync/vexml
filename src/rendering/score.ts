@@ -176,6 +176,13 @@ export class Score {
         vfTuplet.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.StaveHairpin elements.
+    spanners.wedges
+      .map((wedge) => wedge.vexflow.staveHairpin)
+      .forEach((vfStaveHairpin) => {
+        vfStaveHairpin.setContext(vfContext).draw();
+      });
+
     // Draw measure labels.
     measures
       .map((measure) => measure.label)

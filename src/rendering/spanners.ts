@@ -1,8 +1,9 @@
+import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
-import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
+import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -95,7 +96,7 @@ export class Spanners {
 
     const fragments = this.entries
       .map((entry) => entry.fragment)
-      .filter((spannerFragment): spannerFragment is TupletFragment => spannerFragment.type === 'tuplet');
+      .filter((fragment): fragment is TupletFragment => fragment.type === 'tuplet');
     let buffer = new Array<TupletFragment>();
 
     for (let index = 0; index < fragments.length; index++) {
@@ -159,6 +160,73 @@ export class Spanners {
   }
 
   private getWedges(): Wedge[] {
-    return [];
+    const wedges = new Array<Wedge>();
+
+    let vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
+    let vfPosition = vexflow.ModifierPosition.BELOW;
+    let address = Address.dummy();
+    let buffer = new Array<WedgeEntry>();
+
+    function reset() {
+      vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
+      vfPosition = vexflow.ModifierPosition.BELOW;
+      address = Address.dummy();
+      buffer = new Array<WedgeEntry>();
+    }
+
+    // NOTE: Underspecified wedges end up getting ignored.
+    function addWedge() {
+      if (buffer.length >= 2) {
+        wedges.push(
+          new Wedge({
+            entries: buffer,
+            vexflow: {
+              position: vfPosition,
+              staveHairpinType: vfStaveHairpinType,
+            },
+          })
+        );
+      }
+    }
+
+    const entries = this.entries.filter((entry): entry is WedgeEntry => entry.fragment.type === 'wedge');
+
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
+      const fragment = entry.fragment;
+      const isLast = index === entries.length - 1;
+
+      switch (fragment.phase) {
+        case 'start':
+          vfStaveHairpinType = fragment.vexflow.staveHairpinType;
+          vfPosition = fragment.vexflow.position;
+          address = entry.address;
+          buffer.push(entry);
+          break;
+        case 'continue':
+          if (entry.address.isSameSystem(address)) {
+            buffer.push(entry);
+          } else {
+            // TODO: When an entry continues or stops on another system, validate that this renders correctly. You
+            // might need to merge 'continue' and 'stop' cases and there might be a need to create a new entry to
+            // satisfy Wedge's preconditions.
+            addWedge();
+            address = entry.address;
+            buffer = [entry];
+          }
+          break;
+        case 'stop':
+          buffer.push(entry);
+          addWedge();
+          reset();
+          break;
+      }
+
+      if (isLast) {
+        addWedge();
+      }
+    }
+
+    return wedges;
   }
 }

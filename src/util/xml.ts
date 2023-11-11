@@ -1205,7 +1205,7 @@ export const wedge = createNamedElementFactory<'wedge', { type: string; spread: 
   'wedge',
   (e, { type, spread }) => {
     if (type) {
-      e.setAttribute('wedge-type', type);
+      e.setAttribute('type', type);
     }
     if (typeof spread === 'number') {
       e.setAttribute('spread', spread.toString());

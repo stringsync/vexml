@@ -92,16 +92,16 @@ export class Note {
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
   static render(notes: Note[]): NoteRendering[] {
-    util.assert(notes.length === 0, 'cannot render empty notes');
+    util.assert(notes.length > 0, 'cannot render empty notes');
 
     const durationDenominators = new Set(notes.map((note) => note.durationDenominator));
-    util.assert(durationDenominators.size > 1, 'all notes must have the same durationDenominator');
+    util.assert(durationDenominators.size === 1, 'all notes must have the same durationDenominator');
 
     const dotCounts = new Set(notes.map((note) => note.getDotCount()));
-    util.assert(dotCounts.size > 1, 'all notes must have the same dotCount');
+    util.assert(dotCounts.size === 1, 'all notes must have the same dotCount');
 
     const clefTypes = new Set(notes.map((note) => note.clef));
-    util.assert(clefTypes.size > 1, 'all notes must have the same clefTypes');
+    util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
     const keys = Note.sort(notes).map((note) => note.getKey());
 
