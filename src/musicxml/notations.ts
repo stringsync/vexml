@@ -2,6 +2,7 @@ import { VerticalDirection, VERTICAL_DIRECTIONS } from './enums';
 import { NamedElement } from '@/util';
 import { Tuplet } from './tuplet';
 import { Slur } from './slur';
+import { Ornaments } from './ornaments';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -34,5 +35,10 @@ export class Notations {
   /** Returns the slurs of the notations. Defaults to an empty array. */
   getSlurs(): Slur[] {
     return this.element.all('slur').map((element) => new Slur(element));
+  }
+
+  /** Returns the ornaments of the notations. Defaults to an empty array. */
+  getOrnaments(): Ornaments[] {
+    return this.element.all('ornaments').map((element) => new Ornaments(element));
   }
 }
