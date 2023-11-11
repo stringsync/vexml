@@ -382,6 +382,10 @@ export class Note {
   }
 
   private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
+    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
+    // associated with the first <note> element that follows it in score order that is not in a different voice.
+    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
+
     const result = new Array<WedgeFragment>();
 
     for (const direction of this.musicXml.directions) {
