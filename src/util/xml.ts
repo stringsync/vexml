@@ -1014,8 +1014,9 @@ export const notations = createNamedElementFactory<
     slurs: NamedElement<'slur'>[];
     tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
+    ornaments: NamedElement<'ornaments'>[];
   }
->('notations', (e, { slurs, tuplets, arpeggiate }) => {
+>('notations', (e, { slurs, tuplets, arpeggiate, ornaments }) => {
   if (slurs) {
     e.append(...slurs);
   }
@@ -1024,6 +1025,9 @@ export const notations = createNamedElementFactory<
   }
   if (arpeggiate) {
     e.append(arpeggiate);
+  }
+  if (ornaments) {
+    e.append(...ornaments);
   }
 });
 
@@ -1209,6 +1213,31 @@ export const wedge = createNamedElementFactory<'wedge', { type: string; spread: 
     }
     if (typeof spread === 'number') {
       e.setAttribute('spread', spread.toString());
+    }
+  }
+);
+
+export const ornaments = createNamedElementFactory<
+  'ornaments',
+  {
+    contents: NamedElement<'trill-mark' | 'wavy-line' | 'accidental-mark'>[];
+  }
+>('ornaments', (e, { contents }) => {
+  if (contents) {
+    e.append(...contents);
+  }
+});
+
+export const trillMark = createNamedElementFactory<'trill-mark', Record<string, never>>('trill-mark', (e) => {});
+
+export const wavyLine = createNamedElementFactory<'wavy-line', { number: number; type: string }>(
+  'wavy-line',
+  (e, { number, type }) => {
+    if (typeof number === 'number') {
+      e.setAttribute('number', number.toString());
+    }
+    if (type) {
+      e.setAttribute('type', type);
     }
   }
 );
