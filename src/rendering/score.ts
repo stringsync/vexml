@@ -11,6 +11,7 @@ import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { RestRendering } from './rest';
 import { Spanners } from './spanners';
+import { Address } from './address';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -220,28 +221,33 @@ export class Score {
   }
 
   private getSpanners(systemRenderings: SystemRendering[]): Spanners {
-    const spannerFragments = systemRenderings
-      .flatMap((system) => system.parts)
-      .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
-      .flatMap((fragment) => fragment.staves)
-      .flatMap((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((entry) => entry.voices)
-      .flatMap((voice) => voice.entries)
-      .filter(
-        (entry): entry is NoteRendering | ChordRendering | RestRendering =>
-          entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-      )
-      .flatMap((entry) => {
-        switch (entry.type) {
-          case 'note':
-          case 'rest':
-            return entry.spannerFragments;
-          case 'chord':
-            return util.first(entry.notes)?.spannerFragments ?? [];
-        }
-      });
+    const entries = systemRenderings.flatMap((system) => {
+      const systemId = Symbol();
+      const address = new Address(systemId);
 
-    return new Spanners({ spannerFragments });
+      return system.parts
+        .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
+        .flatMap((fragment) => fragment.staves)
+        .flatMap((stave) => stave.entry)
+        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+        .flatMap((entry) => entry.voices)
+        .flatMap((voice) => voice.entries)
+        .filter(
+          (entry): entry is NoteRendering | ChordRendering | RestRendering =>
+            entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
+        )
+        .flatMap((entry) => {
+          switch (entry.type) {
+            case 'note':
+            case 'rest':
+              return entry.spannerFragments;
+            case 'chord':
+              return util.first(entry.notes)?.spannerFragments ?? [];
+          }
+        })
+        .map((fragment) => ({ address, fragment }));
+    });
+
+    return new Spanners({ entries });
   }
 }
