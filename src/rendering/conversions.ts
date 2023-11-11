@@ -297,3 +297,40 @@ export const fromStartStopContinueToSpannerFragmentPhase = (
       return 'stop';
   }
 };
+
+/** Converts a `musicxml.WedgeType` to a `SpannerFragmentPhase`. */
+export const fromWedgeTypeToSpannerFragmentPhase = (wedgeType: musicxml.WedgeType): SpannerFragmentPhase => {
+  switch (wedgeType) {
+    case 'crescendo':
+    case 'diminuendo':
+      return 'start';
+    case 'continue':
+      return 'continue';
+    case 'stop':
+      return 'stop';
+  }
+};
+
+/**
+ * Converts a `musicxml.WedgeType` to a `vexflow.StaveHairpin.type` (number).
+ *
+ * Defaults to `vexflow.StaveHairpin.type.CRESC`
+ */
+export const fromWedgeTypeToStaveHairpinType = (wedgeType: musicxml.WedgeType): number => {
+  switch (wedgeType) {
+    case 'diminuendo':
+      return vexflow.StaveHairpin.type.DECRESC;
+    default:
+      return vexflow.StaveHairpin.type.CRESC;
+  }
+};
+
+/** Converts a `musicxml.AboveBelow` to a `vexflow.ModifierPosition`. */
+export const fromAboveBelowToModifierPosition = (aboveBelow: musicxml.AboveBelow): vexflow.ModifierPosition => {
+  switch (aboveBelow) {
+    case 'above':
+      return vexflow.ModifierPosition.ABOVE;
+    case 'below':
+      return vexflow.ModifierPosition.BELOW;
+  }
+};

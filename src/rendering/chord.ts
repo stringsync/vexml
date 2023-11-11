@@ -28,8 +28,8 @@ export class Chord {
   private config: Config;
   private musicXml: {
     note: musicxml.Note;
+    directions: musicxml.Direction[];
   };
-  private tokens: Token[];
   private stem: StemDirection;
   private clef: Clef;
   private keySignature: KeySignature;
@@ -37,8 +37,10 @@ export class Chord {
 
   constructor(opts: {
     config: Config;
-    musicXml: { note: musicxml.Note };
-    tokens: Token[];
+    musicXml: {
+      note: musicxml.Note;
+      directions: musicxml.Direction[];
+    };
     stem: StemDirection;
     clef: Clef;
     keySignature: KeySignature;
@@ -46,7 +48,6 @@ export class Chord {
   }) {
     this.config = opts.config;
     this.musicXml = opts.musicXml;
-    this.tokens = opts.tokens;
     this.stem = opts.stem;
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
@@ -69,17 +70,28 @@ export class Chord {
     const head = this.musicXml.note;
     const tail = head.getChordTail();
 
-    return [head, ...tail].map(
-      (note) =>
-        new Note({
-          config: this.config,
-          musicXml: { note },
-          tokens: this.tokens,
-          stem: this.stem,
-          clef: this.clef,
-          keySignature: this.keySignature,
-          durationDenominator: this.durationDenominator,
-        })
-    );
+    return [
+      new Note({
+        config: this.config,
+        musicXml: { note: head, directions: this.musicXml.directions },
+        stem: this.stem,
+        clef: this.clef,
+        keySignature: this.keySignature,
+        durationDenominator: this.durationDenominator,
+      }),
+      ...tail.map(
+        (note) =>
+          new Note({
+            config: this.config,
+            // We don't want the `<directions>` to be handled multiple times, since it's already handled by the head
+            // note.
+            musicXml: { note, directions: [] },
+            stem: this.stem,
+            clef: this.clef,
+            keySignature: this.keySignature,
+            durationDenominator: this.durationDenominator,
+          })
+      ),
+    ];
   }
 }
