@@ -21,3 +21,13 @@ describe('assertNotNull', () => {
     expect(() => util.assertNotNull(value())).not.toThrow();
   });
 });
+
+describe('assert', () => {
+  it('throws when the value is false', () => {
+    expect(() => util.assert(false, 'foo')).toThrowError(new Error('foo'));
+  });
+
+  it('does not throw when the value is true', () => {
+    expect(() => util.assert(true, 'foo')).not.toThrow();
+  });
+});
