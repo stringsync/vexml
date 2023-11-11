@@ -1,11 +1,20 @@
-import { BeamFragment } from './spanners';
 import * as vexflow from 'vexflow';
+import { SpannerFragmentPhase } from './enums';
 
 /** The result of rendering a beam. */
 export type BeamRendering = {
   type: 'beam';
   vexflow: {
     beam: vexflow.Beam;
+  };
+};
+
+/** Represents a piece of a beam. */
+export type BeamFragment = {
+  type: 'beam';
+  phase: SpannerFragmentPhase;
+  vexflow: {
+    stemmableNote: vexflow.StemmableNote;
   };
 };
 

@@ -9,7 +9,10 @@ import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
-import { BeamFragment, SlurFragment, SpannerFragment, TupletFragment } from './spanners';
+import { SpannerFragment } from './spanners';
+import { BeamFragment } from './beam';
+import { TupletFragment } from './tuplet';
+import { SlurFragment } from './slur';
 
 const STEP_ORDER = [
   'Cb',

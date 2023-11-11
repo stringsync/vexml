@@ -1,9 +1,8 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
+import { NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
 import { Division } from './division';
-import { SpannerFragmentPhase } from './spanners';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
 export const fromAccidentalTypeToAccidentalCode = (

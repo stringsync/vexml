@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { TupletFragment } from './spanners';
 
 /** The result of rendering a tuplet. */
 export type TupletRendering = {
@@ -9,6 +8,24 @@ export type TupletRendering = {
     tuplet: vexflow.Tuplet;
   };
 };
+
+/** Represents a piece of a tuplet. */
+export type TupletFragment =
+  | {
+      type: 'tuplet';
+      phase: 'start';
+      vexflow: {
+        note: vexflow.Note;
+        location: vexflow.TupletLocation;
+      };
+    }
+  | {
+      type: 'tuplet';
+      phase: 'unspecified' | 'stop';
+      vexflow: {
+        note: vexflow.Note;
+      };
+    };
 
 /** Represents a time modification for a group of notes within a measure. */
 export class Tuplet {

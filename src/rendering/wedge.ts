@@ -5,18 +5,37 @@ import * as musicxml from '@/musicxml';
 export type WedgeRendering = {
   type: 'wedge';
   vexflow: {
-    crescendo: vexflow.Crescendo;
+    staveHairpin: vexflow.StaveHairpin;
   };
 };
+
+/** A piece of a wedge. */
+export type WedgeFragment =
+  | {
+      type: 'wedge';
+      phase: 'start';
+      vexflow: {
+        note: vexflow.Note;
+        position: vexflow.ModifierPosition;
+        dynamicType: number;
+      };
+    }
+  | {
+      type: 'wedge';
+      phase: 'continue' | 'stop';
+      vexflow: {
+        note: vexflow.Note;
+      };
+    };
 
 /** Represents a crescendo or decrescendo. */
 export class Wedge {
   private placement: musicxml.AboveBelow;
-  private wedge: musicxml.Wedge;
+  private fragments: WedgeFragment[];
 
-  constructor(opts: { placement: musicxml.AboveBelow; wedge: musicxml.Wedge }) {
+  constructor(opts: { placement: musicxml.AboveBelow; fragments: WedgeFragment[] }) {
     this.placement = opts.placement;
-    this.wedge = opts.wedge;
+    this.fragments = opts.fragments;
   }
 
   render(): WedgeRendering {
@@ -24,7 +43,7 @@ export class Wedge {
       type: 'wedge',
       vexflow: {
         // TODO: Figure out how to render crescendos: https://github.com/stringsync/vexml/pull/162#issuecomment-1800602187
-        crescendo: undefined as any,
+        staveHairpin: undefined as any,
       },
     };
   }
