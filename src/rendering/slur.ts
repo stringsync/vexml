@@ -2,13 +2,24 @@ import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as conversions from './conversions';
-import { SlurFragment } from './spanners';
+import { SpannerFragmentPhase } from './enums';
 
 /** The result of rendering a slur. */
 export type SlurRendering = {
   type: 'slur';
   vexflow: {
     tie: vexflow.StaveTie;
+  };
+};
+
+/** Represents a piece of a slur. */
+export type SlurFragment = {
+  type: 'slur';
+  phase: SpannerFragmentPhase;
+  slurNumber: number;
+  vexflow: {
+    note: vexflow.Note;
+    keyIndex: number;
   };
 };
 

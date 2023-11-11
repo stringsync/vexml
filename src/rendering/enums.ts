@@ -103,3 +103,7 @@ export const NOTEHEAD_SUFFIXES = new Enum([
   'SF',
   'SB',
 ] as const);
+
+/** Describes what part of the spanner lifecycle a spanner fragment is in. */
+export type SpannerFragmentPhase = EnumValues<typeof SPANNER_FRAGMENT_PHASES>;
+export const SPANNER_FRAGMENT_PHASES = new Enum(['unspecified', 'start', 'continue', 'stop'] as const);
