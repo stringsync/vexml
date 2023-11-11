@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import { Address } from './address';
 
 /** The result of rendering a wedge. */
 export type WedgeRendering = {
@@ -12,6 +12,12 @@ export type WedgeRendering = {
 
 /** A piece of a wedge. */
 export type WedgeFragment = StartWedgeFragment | ContinueWedgeFragment | StopWedgeFragment;
+
+/** A `WedgeFragment` with metadata. */
+export type WedgeEntry = {
+  address: Address;
+  fragment: WedgeFragment;
+};
 
 type StartWedgeFragment = {
   type: 'wedge';
@@ -41,24 +47,36 @@ type StopWedgeFragment = {
 
 /** Represents a crescendo or decrescendo. */
 export class Wedge {
-  private startFragment: StartWedgeFragment;
-  private fragments: WedgeFragment[];
+  private vexflow: {
+    staveHairpinType: number;
+    position: vexflow.ModifierPosition;
+  };
+  private entries: WedgeEntry[];
 
-  constructor(opts: { placement: musicxml.AboveBelow; startFragment: StartWedgeFragment; fragments: WedgeFragment[] }) {
-    util.assert(opts.fragments.length >= 2, 'must have at least 2 wedge fragments');
+  constructor(opts: {
+    vexflow: {
+      staveHairpinType: number;
+      position: vexflow.ModifierPosition;
+    };
+    entries: WedgeEntry[];
+  }) {
+    util.assert(opts.entries.length >= 2, 'must have at least 2 wedge fragments');
 
-    this.startFragment = opts.startFragment;
-    this.fragments = opts.fragments;
+    this.vexflow = opts.vexflow;
+    this.entries = opts.entries;
   }
 
   render(): WedgeRendering {
-    const firstNote = util.first(this.fragments)!.vexflow.note;
-    const lastNote = util.last(this.fragments)!.vexflow.note;
+    const firstNote = util.first(this.entries)!.fragment.vexflow.note;
+    const lastNote = util.last(this.entries)!.fragment.vexflow.note;
 
     const vfStaveHairpin = new vexflow.StaveHairpin(
-      { first_note: firstNote, last_note: lastNote },
-      this.startFragment.vexflow.staveHairpinType
-    ).setPosition(this.startFragment.vexflow.position);
+      {
+        firstNote,
+        lastNote,
+      },
+      this.vexflow.staveHairpinType
+    ).setPosition(this.vexflow.position);
 
     return {
       type: 'wedge',
