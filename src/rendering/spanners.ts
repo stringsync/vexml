@@ -1,7 +1,8 @@
+import { Address } from './address';
 import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
-import { WedgeFragment, WedgeRendering } from './wedge';
+import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -24,6 +25,12 @@ export type SpannersRendering = {
  */
 export type SpannerFragment = BeamFragment | TupletFragment | SlurFragment | WedgeFragment;
 
+/** A `SpannerFragment` with metadata. */
+export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
+  address: Address;
+  fragment: T;
+};
+
 /**
  * Houses **all** spanner structures that contain multiple notes.
  *
@@ -32,10 +39,10 @@ export type SpannerFragment = BeamFragment | TupletFragment | SlurFragment | Wed
  * to have to delineate where each spanner stops.
  */
 export class Spanners {
-  private spannerFragments: SpannerFragment[];
+  private entries: SpannerEntry[];
 
-  constructor(opts: { spannerFragments: SpannerFragment[] }) {
-    this.spannerFragments = opts.spannerFragments;
+  constructor(opts: { entries: SpannerEntry[] }) {
+    this.entries = opts.entries;
   }
 
   /** Renders the spanners. */
@@ -45,16 +52,16 @@ export class Spanners {
       beams: this.getBeams().map((beam) => beam.render()),
       tuplets: this.getTuplets().map((tuplet) => tuplet.render()),
       slurs: this.getSlurs().map((slur) => slur.render()),
-      wedges: [],
+      wedges: this.getWedges().map((wedge) => wedge.render()),
     };
   }
 
   private getBeams(): Beam[] {
     const beams = new Array<Beam>();
 
-    const fragments = this.spannerFragments.filter(
-      (spannerFragment): spannerFragment is BeamFragment => spannerFragment.type === 'beam'
-    );
+    const fragments = this.entries
+      .map((entry) => entry.fragment)
+      .filter((fragment): fragment is BeamFragment => fragment.type === 'beam');
     let buffer = new Array<BeamFragment>();
 
     for (let index = 0; index < fragments.length; index++) {
@@ -86,9 +93,9 @@ export class Spanners {
   private getTuplets(): Tuplet[] {
     const tuplets = new Array<Tuplet>();
 
-    const fragments = this.spannerFragments.filter(
-      (spannerFragment): spannerFragment is TupletFragment => spannerFragment.type === 'tuplet'
-    );
+    const fragments = this.entries
+      .map((entry) => entry.fragment)
+      .filter((spannerFragment): spannerFragment is TupletFragment => spannerFragment.type === 'tuplet');
     let buffer = new Array<TupletFragment>();
 
     for (let index = 0; index < fragments.length; index++) {
@@ -124,7 +131,9 @@ export class Spanners {
   private getSlurs(): Slur[] {
     const slurs = new Array<Slur>();
 
-    const fragments = this.spannerFragments.filter((entry): entry is SlurFragment => entry.type === 'slur');
+    const fragments = this.entries
+      .map((entry) => entry.fragment)
+      .filter((fragment): fragment is SlurFragment => fragment.type === 'slur');
     const data: Record<number, SlurFragment[]> = {};
 
     for (let index = 0; index < fragments.length; index++) {
@@ -147,5 +156,9 @@ export class Spanners {
     }
 
     return slurs;
+  }
+
+  private getWedges(): Wedge[] {
+    return [];
   }
 }
