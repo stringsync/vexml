@@ -351,6 +351,33 @@ export class Spanners {
   private getPedals(): Pedal[] {
     const pedals = new Array<Pedal>();
 
+    const fragments = this.entries
+      .map((entry) => entry.fragment)
+      .filter((fragment): fragment is PedalFragment => fragment.type === 'pedal');
+
+    let buffer = new Array<PedalFragment>();
+
+    for (let index = 0; index < fragments.length; index++) {
+      const fragment = fragments[index];
+      const isLast = index === fragments.length - 1;
+
+      switch (fragment.phase) {
+        case 'start':
+        case 'continue':
+          buffer.push(fragment);
+          break;
+        case 'stop':
+          buffer.push(fragment);
+          pedals.push(new Pedal({ fragments: buffer }));
+          buffer = [];
+          break;
+      }
+
+      if (isLast && buffer.length > 0) {
+        pedals.push(new Pedal({ fragments: buffer }));
+      }
+    }
+
     return pedals;
   }
 }

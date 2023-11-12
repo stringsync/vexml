@@ -1262,8 +1262,17 @@ export const octaveShift = createNamedElementFactory<'octave-shift', { type: str
   }
 );
 
-export const pedal = createNamedElementFactory<'pedal', { type: string }>('pedal', (e, { type }) => {
-  if (type) {
-    e.setAttribute('type', type);
+export const pedal = createNamedElementFactory<'pedal', { type: string; line: string; sign: string }>(
+  'pedal',
+  (e, { type, line, sign }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (line) {
+      e.setAttribute('line', line);
+    }
+    if (sign) {
+      e.setAttribute('sign', sign);
+    }
   }
-});
+);
