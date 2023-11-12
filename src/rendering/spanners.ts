@@ -4,6 +4,7 @@ import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
+import { OctaveShift, OctaveShiftRendering } from './octaveshift';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -12,6 +13,7 @@ export type SpannersRendering = {
   tuplets: TupletRendering[];
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
+  octaveShifts: OctaveShiftRendering[];
 };
 
 /**
@@ -54,6 +56,7 @@ export class Spanners {
       tuplets: this.getTuplets().map((tuplet) => tuplet.render()),
       slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
+      octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
     };
   }
 
@@ -228,5 +231,11 @@ export class Spanners {
     }
 
     return wedges;
+  }
+
+  private getOctaveShifts(): OctaveShift[] {
+    const octaveShifts = new Array<OctaveShift>();
+
+    return octaveShifts;
   }
 }
