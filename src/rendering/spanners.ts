@@ -6,7 +6,7 @@ import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
-import { Pedal, PedalRendering } from './pedal';
+import { Pedal, PedalFragment, PedalRendering } from './pedal';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -36,6 +36,7 @@ export type SpannerFragment =
   | SlurFragment
   | WedgeFragment
   | OctaveShiftFragment
+  | PedalFragment
   | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
