@@ -169,12 +169,6 @@ export class Stave {
         for (const vfVoice of vfVoices) {
           vfVoice.setStave(vfStave);
         }
-
-        const vfTickables = vfVoices.flatMap((vfVoice) => vfVoice.getTickables());
-        if (vfTickables.length > 0) {
-          new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
-        }
-
         break;
     }
 

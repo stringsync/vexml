@@ -16,6 +16,7 @@ import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
+import { WavyLineFragment } from './wavyline';
 
 const STEP_ORDER = [
   'Cb',
@@ -312,6 +313,7 @@ export class Note {
       ...this.getTupletFragments(vfStaveNote),
       ...this.getSlurFragments(vfStaveNote, keyIndex),
       ...this.getWedgeFragments(vfStaveNote),
+      ...this.getWavyLineFragments(vfStaveNote, keyIndex),
       ...this.getOctaveShiftFragments(vfStaveNote),
     ];
   }
@@ -445,6 +447,37 @@ export class Note {
     }
 
     return result;
+  }
+
+  private getWavyLineFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): WavyLineFragment[] {
+    const fragments = this.musicXml.note
+      .getNotations()
+      .flatMap((notation) => notation.getOrnaments())
+      .flatMap((ornament) => ornament.getWavyLines())
+      .map<WavyLineFragment>((wavyLine) => {
+        const phase = conversions.fromStartStopContinueToSpannerFragmentPhase(wavyLine.getType());
+        return {
+          type: 'wavyline',
+          phase,
+          keyIndex,
+          vexflow: {
+            note: vfStaveNote,
+          },
+        };
+      });
+
+    return fragments.length > 0
+      ? fragments
+      : [
+          {
+            type: 'wavyline',
+            phase: 'unspecified',
+            keyIndex,
+            vexflow: {
+              note: vfStaveNote,
+            },
+          },
+        ];
   }
 
   private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {

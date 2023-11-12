@@ -145,15 +145,22 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.Voice elements.
-    staves
-      .map((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((entry) => entry.voices)
-      .map((voice) => voice.vexflow.voice)
-      .forEach((vfVoice) => {
+    // Format and draw vexflow.Voice elements.
+    staves.forEach((stave) => {
+      if (stave.entry.type !== 'chorus') {
+        return;
+      }
+      const vfStave = stave.vexflow.stave;
+      const vfVoices = stave.entry.voices.map((voice) => voice.vexflow.voice);
+
+      if (vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
+        new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+      }
+
+      vfVoices.forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
       });
+    });
 
     // Draw vexflow.Beam elements.
     spanners.beams
