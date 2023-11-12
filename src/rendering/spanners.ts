@@ -4,7 +4,7 @@ import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
-import { OctaveShift, OctaveShiftRendering } from './octaveshift';
+import { OctaveShift, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -26,7 +26,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = BeamFragment | TupletFragment | SlurFragment | WedgeFragment;
+export type SpannerFragment = BeamFragment | TupletFragment | SlurFragment | WedgeFragment | OctaveShiftFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
