@@ -1,5 +1,6 @@
 /** The location of a musical object in a score. */
 export class Address {
+  /** Creates a dummy address. */
   static dummy(): Address {
     const systemId = Symbol();
     return new Address(systemId);
