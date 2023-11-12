@@ -440,8 +440,42 @@ export class Note {
   }
 
   private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
-    const result = new Array<OctaveShiftFragment>();
-
-    return result;
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift)
+      .map<OctaveShiftFragment>((octaveShift) => {
+        switch (octaveShift.getType()) {
+          case 'up':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'va',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
+            };
+          case 'down':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'mb',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
+            };
+          case 'continue':
+            return {
+              type: 'octaveshift',
+              phase: 'continue',
+              vexflow: { note: vfStaveNote },
+            };
+          case 'stop':
+            return {
+              type: 'octaveshift',
+              phase: 'stop',
+              vexflow: { note: vfStaveNote },
+            };
+        }
+      });
   }
 }
