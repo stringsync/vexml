@@ -193,6 +193,7 @@ export const note = createNamedElementFactory<
     rest: NamedElement<'rest'>;
     pitch: NamedElement<'pitch'>;
     accidental: NamedElement<'accidental'>;
+    timeModification: NamedElement<'time-modification'>;
     notehead: NamedElement<'notehead'>;
     grace: NamedElement<'grace'>;
     duration: NamedElement<'duration'>;
@@ -215,6 +216,7 @@ export const note = createNamedElementFactory<
       rest,
       pitch,
       accidental,
+      timeModification,
       notehead,
       duration,
       notations,
@@ -251,6 +253,9 @@ export const note = createNamedElementFactory<
     }
     if (accidental) {
       e.append(accidental);
+    }
+    if (timeModification) {
+      e.append(timeModification);
     }
     if (stem) {
       e.append(stem);
@@ -495,9 +500,13 @@ export const topSystemDistance = createNamedElementFactory<
 export const direction = createNamedElementFactory<
   'direction',
   {
+    placement: string;
     types: NamedElement<'direction-type'>[];
   }
->('direction', (e, { types }) => {
+>('direction', (e, { placement, types }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
   if (types) {
     e.append(...types);
   }
@@ -506,20 +515,32 @@ export const direction = createNamedElementFactory<
 export const directionType = createNamedElementFactory<
   'direction-type',
   {
-    codas: NamedElement<'coda'>[];
     segnos: NamedElement<'segno'>[];
+    codas: NamedElement<'coda'>[];
+    wedge: NamedElement<'wedge'>;
+    pedal: NamedElement<'pedal'>;
     metronome: NamedElement<'metronome'>;
+    octaveShift: NamedElement<'octave-shift'>;
     tokens: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
   }
->('direction-type', (e, { codas, segnos, metronome, tokens }) => {
-  if (codas) {
-    e.append(...codas);
-  }
+>('direction-type', (e, { segnos, codas, wedge, pedal, metronome, octaveShift, tokens }) => {
   if (segnos) {
     e.append(...segnos);
   }
+  if (codas) {
+    e.append(...codas);
+  }
+  if (wedge) {
+    e.append(wedge);
+  }
+  if (pedal) {
+    e.append(pedal);
+  }
   if (metronome) {
     e.append(metronome);
+  }
+  if (octaveShift) {
+    e.append(octaveShift);
   }
   if (tokens) {
     e.append(...tokens);
@@ -998,11 +1019,23 @@ export const elision = createNamedElementFactory<'elision', { value: string }>('
 export const notations = createNamedElementFactory<
   'notations',
   {
+    slurs: NamedElement<'slur'>[];
+    tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
+    ornaments: NamedElement<'ornaments'>[];
   }
->('notations', (e, { arpeggiate }) => {
+>('notations', (e, { slurs, tuplets, arpeggiate, ornaments }) => {
+  if (slurs) {
+    e.append(...slurs);
+  }
+  if (tuplets) {
+    e.append(...tuplets);
+  }
   if (arpeggiate) {
     e.append(arpeggiate);
+  }
+  if (ornaments) {
+    e.append(...ornaments);
   }
 });
 
@@ -1113,3 +1146,133 @@ export const staffType = createNamedElementFactory<'staff-type', { value: string
     e.setTextContent(value);
   }
 });
+
+export const tuplet = createNamedElementFactory<
+  'tuplet',
+  {
+    type: string;
+    placement: string;
+  }
+>('tuplet', (e, { type, placement }) => {
+  if (type) {
+    e.setAttribute('type', type);
+  }
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+});
+
+export const timeModification = createNamedElementFactory<
+  'time-modification',
+  {
+    actualNotes: NamedElement<'actual-notes'>;
+    normalNotes: NamedElement<'normal-notes'>;
+  }
+>('time-modification', (e, { actualNotes, normalNotes }) => {
+  if (actualNotes) {
+    e.append(actualNotes);
+  }
+  if (normalNotes) {
+    e.append(normalNotes);
+  }
+});
+
+export const actualNotes = createNamedElementFactory<'actual-notes', { value: number }>(
+  'actual-notes',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const normalNotes = createNamedElementFactory<'normal-notes', { value: number }>(
+  'normal-notes',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const slur = createNamedElementFactory<
+  'slur',
+  { type: string; placement: string; number: number; lineType: string }
+>('slur', (e, { type, placement, number, lineType }) => {
+  if (type) {
+    e.setAttribute('type', type);
+  }
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
+  }
+  if (lineType) {
+    e.setAttribute('line-type', lineType);
+  }
+});
+
+export const wedge = createNamedElementFactory<'wedge', { type: string; spread: number }>(
+  'wedge',
+  (e, { type, spread }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (typeof spread === 'number') {
+      e.setAttribute('spread', spread.toString());
+    }
+  }
+);
+
+export const ornaments = createNamedElementFactory<
+  'ornaments',
+  {
+    contents: NamedElement<'trill-mark' | 'wavy-line' | 'accidental-mark'>[];
+  }
+>('ornaments', (e, { contents }) => {
+  if (contents) {
+    e.append(...contents);
+  }
+});
+
+export const trillMark = createNamedElementFactory<'trill-mark', Record<string, never>>('trill-mark', (e) => {});
+
+export const wavyLine = createNamedElementFactory<'wavy-line', { number: number; type: string }>(
+  'wavy-line',
+  (e, { number, type }) => {
+    if (typeof number === 'number') {
+      e.setAttribute('number', number.toString());
+    }
+    if (type) {
+      e.setAttribute('type', type);
+    }
+  }
+);
+
+export const octaveShift = createNamedElementFactory<'octave-shift', { type: string; size: number }>(
+  'octave-shift',
+  (e, { type, size }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (typeof size === 'number') {
+      e.setAttribute('size', size.toString());
+    }
+  }
+);
+
+export const pedal = createNamedElementFactory<'pedal', { type: string; line: string; sign: string }>(
+  'pedal',
+  (e, { type, line, sign }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (line) {
+      e.setAttribute('line', line);
+    }
+    if (sign) {
+      e.setAttribute('sign', sign);
+    }
+  }
+);

@@ -68,7 +68,7 @@ The `musicXml` key serves as a namespace:
 ```ts
 class Stave {
   /** Creates a Measure. */
-  static create(opts: {
+  constructor(opts: {
     config: Config;
     musicXml: {
       measure: musicxml.Measure;
@@ -124,3 +124,5 @@ The `vf` prefix is used to distinguish `vexflow` objects from `rendering` object
 3. When there is no more width in a given `System`, start a new `System`.
 
 This process is repeated until all the `Measure` objects are accounted for.
+
+> NOTE: We assume that spanners (e.g. beams, slurs, tuplets) do not affect measure width significantly. Spanners are rendered after all the measures have been partitioned into systems.

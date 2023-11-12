@@ -1,7 +1,6 @@
 import * as util from '@/util';
 import { Config } from './config';
 import { Part } from './part';
-import { Measure } from './measure';
 import { PartRendering } from './part';
 
 /** The result of rendering a System. */

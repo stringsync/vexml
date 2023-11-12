@@ -1,9 +1,5 @@
-import { Beam } from '@/musicxml/beam';
-import { ACCIDENTAL_TYPES, NOTEHEADS, NOTE_TYPES } from '@/musicxml/enums';
-import { Notations } from '@/musicxml/notations';
-import { Note } from '@/musicxml/note';
 import { xml } from '@/util';
-import { Lyric } from '@/musicxml/lyric';
+import { ACCIDENTAL_TYPES, Beam, Lyric, NOTEHEADS, NOTE_TYPES, Notations, Note, TimeModification } from '@/musicxml';
 
 describe(Note, () => {
   describe('getStem', () => {
@@ -354,48 +350,6 @@ describe(Note, () => {
     });
   });
 
-  describe('getNoteheadSuffix', () => {
-    it.each([
-      { notehead: 'circle dot', suffix: '' },
-      { notehead: 'cluster', suffix: '' },
-      { notehead: 'cross', suffix: '' },
-      { notehead: 'inverted triangle', suffix: '' },
-      { notehead: 'left triangle', suffix: '' },
-      { notehead: 'slashed', suffix: '' },
-      { notehead: 'arrow down', suffix: 'TD' },
-      { notehead: 'arrow up', suffix: 'TU' },
-      { notehead: 'back slashed', suffix: 'SB' },
-      { notehead: 'circled', suffix: 'CI' },
-      { notehead: 'diamond', suffix: 'D' },
-      { notehead: 'do', suffix: 'DO' },
-      { notehead: 'fa', suffix: 'FA' },
-      { notehead: 'fa up', suffix: 'FAUP' },
-      { notehead: 'mi', suffix: 'MI' },
-      { notehead: 'normal', suffix: 'N' },
-      { notehead: 'slash', suffix: 'S' },
-      { notehead: 'so', suffix: 'SO' },
-      { notehead: 'ti', suffix: 'TI' },
-      { notehead: 'triangle', suffix: 'TU' },
-      { notehead: 'x', suffix: 'X' },
-    ])(`returns the notehead suffix: '%notehead'`, (t) => {
-      const node = xml.note({ notehead: xml.notehead({ value: t.notehead }) });
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBe(t.suffix);
-    });
-
-    it(`defaults to empty string for invalid noteheads`, () => {
-      const node = xml.note({ notehead: xml.notehead({ value: 'asdf' }) });
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBeEmpty();
-    });
-
-    it('defaults to empty string for missing noteheads', () => {
-      const node = xml.note();
-      const note = new Note(node);
-      expect(note.getNoteheadSuffix()).toBeEmpty();
-    });
-  });
-
   describe('isChordHead', () => {
     it('returns true when the next note has a chord element', () => {
       const note1 = xml.note();
@@ -542,6 +496,21 @@ describe(Note, () => {
       const lyrics = note.getLyrics();
 
       expect(lyrics).toStrictEqual([]);
+    });
+  });
+
+  describe('getTimeModification', () => {
+    it('returns the time modification of the note', () => {
+      const timeModification = xml.timeModification();
+      const node = xml.note({ timeModification });
+      const note = new Note(node);
+      expect(note.getTimeModification()).toStrictEqual(new TimeModification(timeModification));
+    });
+
+    it('defaults to null when missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.getTimeModification()).toBeNull();
     });
   });
 });

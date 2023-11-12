@@ -1,4 +1,3 @@
-import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Enum, EnumValues } from '@/util';
 
@@ -33,22 +32,9 @@ export class Accidental {
   private code: AccidentalCode;
   private isCautionary: boolean;
 
-  private constructor(opts: { code: AccidentalCode; isCautionary: boolean }) {
+  constructor(opts: { code: AccidentalCode; isCautionary: boolean }) {
     this.code = opts.code;
     this.isCautionary = opts.isCautionary;
-  }
-
-  /** Creates an Accidental. */
-  static create(opts: { code: AccidentalCode; isCautionary: boolean }) {
-    return new Accidental({ code: opts.code, isCautionary: opts.isCautionary });
-  }
-
-  /** Clones the Accidental. */
-  clone(): Accidental {
-    return new Accidental({
-      code: this.code,
-      isCautionary: this.isCautionary,
-    });
   }
 
   /** Renders the Accidental. */
