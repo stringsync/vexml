@@ -9,6 +9,8 @@ import { Token } from './token';
 import { SpannerFragment } from './spanners';
 import { BeamFragment } from './beam';
 import { TupletFragment } from './tuplet';
+import { OctaveShiftFragment } from './octaveshift';
+import { WedgeFragment } from './wedge';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -147,8 +149,14 @@ export class Rest {
     );
   }
 
+  // TODO: Unify these with Note's implementation, although they may not overlap 1:1.
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
-    return [...this.getBeamFragments(vfStaveNote), ...this.getTupletFragments(vfStaveNote)];
+    return [
+      ...this.getBeamFragments(vfStaveNote),
+      ...this.getTupletFragments(vfStaveNote),
+      ...this.getWedgeFragments(vfStaveNote),
+      ...this.getOctaveShiftFragments(vfStaveNote),
+    ];
   }
 
   private getBeamValue(): musicxml.BeamValue | null {
@@ -202,5 +210,94 @@ export class Rest {
     }
 
     return result;
+  }
+
+  private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
+    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
+    // associated with the first <note> element that follows it in score order that is not in a different voice.
+    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
+
+    const result = new Array<WedgeFragment>();
+
+    for (const direction of this.musicXml.directions) {
+      const directionPlacement = direction.getPlacement() ?? 'below';
+      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
+
+      for (const directionType of direction.getTypes()) {
+        const content = directionType.getContent();
+        if (content.type !== 'wedge') {
+          continue;
+        }
+
+        const wedgeType = content.wedge.getType();
+        const phase = conversions.fromWedgeTypeToSpannerFragmentPhase(wedgeType);
+        const staveHairpinType = conversions.fromWedgeTypeToStaveHairpinType(wedgeType);
+
+        switch (phase) {
+          case 'start':
+            result.push({
+              type: 'wedge',
+              phase,
+              vexflow: {
+                note: vfStaveNote,
+                staveHairpinType,
+                position: modifierPosition,
+              },
+            });
+            break;
+          case 'continue':
+          case 'stop':
+            result.push({
+              type: 'wedge',
+              phase,
+              vexflow: {
+                note: vfStaveNote,
+              },
+            });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift)
+      .map<OctaveShiftFragment>((octaveShift) => {
+        switch (octaveShift.getType()) {
+          case 'up':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'mb',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
+            };
+          case 'down':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'va',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
+            };
+          case 'continue':
+            return {
+              type: 'octaveshift',
+              phase: 'continue',
+              vexflow: { note: vfStaveNote },
+            };
+          case 'stop':
+            return {
+              type: 'octaveshift',
+              phase: 'stop',
+              vexflow: { note: vfStaveNote },
+            };
+        }
+      });
   }
 }
