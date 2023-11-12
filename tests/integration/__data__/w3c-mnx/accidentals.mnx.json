@@ -1,0 +1,183 @@
+{
+  "mnx": {
+    "version": 1
+  },
+  "global": {
+    "measures": [
+      {
+        "key": {
+          "fifths": -2
+        },
+        "time": {
+          "count": 4,
+          "unit": 4
+        }
+      },
+      {},
+      {}
+    ]
+  },
+  "parts": [
+    {
+      "measures": [
+        {
+          "clefs": [
+            {
+              "clef": {
+                "line": 2,
+                "sign": "G"
+              }
+            }
+          ],
+          "sequences": [
+            {
+              "content": [
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "pitch": {
+                        "octave": 4,
+                        "step": "F"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "pitch": {
+                        "octave": 4,
+                        "step": "G"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "accidentalDisplay": {
+                        "show": "true"
+                      },
+                      "pitch": {
+                        "alter": 1,
+                        "octave": 4,
+                        "step": "G"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "pitch": {
+                        "octave": 4,
+                        "step": "A"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "sequences": [
+            {
+              "content": [
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "half"
+                  },
+                  "notes": [
+                    {
+                      "pitch": {
+                        "alter": -1,
+                        "octave": 4,
+                        "step": "B"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "accidentalDisplay": {
+                        "show": "true"
+                      },
+                      "pitch": {
+                        "alter": -1,
+                        "octave": 5,
+                        "step": "D"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "quarter"
+                  },
+                  "notes": [
+                    {
+                      "pitch": {
+                        "alter": -1,
+                        "octave": 5,
+                        "step": "D"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "sequences": [
+            {
+              "content": [
+                {
+                  "type": "event",
+                  "duration": {
+                    "base": "whole"
+                  },
+                  "notes": [
+                    {
+                      "accidentalDisplay": {
+                        "show": "true"
+                      },
+                      "pitch": {
+                        "octave": 5,
+                        "step": "D"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
