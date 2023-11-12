@@ -5,7 +5,7 @@ import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
-import { WavyLine, WavyLineFragment, WavyLineRendering } from './wavyline';
+import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -15,7 +15,7 @@ export type SpannersRendering = {
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
-  wavyLines: WavyLineRendering[];
+  vibratos: VibratoRendering[];
 };
 
 /**
@@ -34,7 +34,7 @@ export type SpannerFragment =
   | SlurFragment
   | WedgeFragment
   | OctaveShiftFragment
-  | WavyLineFragment;
+  | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -65,7 +65,7 @@ export class Spanners {
       slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
-      wavyLines: this.getWavyLines().map((wavyLine) => wavyLine.render()),
+      vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
     };
   }
 
@@ -311,14 +311,14 @@ export class Spanners {
     return octaveShifts;
   }
 
-  private getWavyLines(): WavyLine[] {
-    const wavyLines = new Array<WavyLine>();
+  private getVibratos(): Vibrato[] {
+    const vibratos = new Array<Vibrato>();
 
     const fragments = this.entries
       .map((entry) => entry.fragment)
-      .filter((fragment): fragment is WavyLineFragment => fragment.type === 'wavyline');
+      .filter((fragment): fragment is VibratoFragment => fragment.type === 'vibrato');
 
-    let buffer = new Array<WavyLineFragment>();
+    let buffer = new Array<VibratoFragment>();
 
     for (let index = 0; index < fragments.length; index++) {
       const fragment = fragments[index];
@@ -329,23 +329,18 @@ export class Spanners {
         case 'continue':
           buffer.push(fragment);
           break;
-        case 'unspecified':
-          if (buffer.length > 0) {
-            buffer.push(fragment);
-          }
-          break;
         case 'stop':
           buffer.push(fragment);
-          wavyLines.push(new WavyLine({ fragments: buffer }));
+          vibratos.push(new Vibrato({ fragments: buffer }));
           buffer = [];
           break;
       }
 
       if (isLast && buffer.length > 0) {
-        wavyLines.push(new WavyLine({ fragments: buffer }));
+        vibratos.push(new Vibrato({ fragments: buffer }));
       }
     }
 
-    return wavyLines;
+    return vibratos;
   }
 }
