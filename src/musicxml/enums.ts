@@ -269,3 +269,12 @@ export const LINE_TYPES = new Enum(['dashed', 'dotted', 'solid', 'wavy'] as cons
  */
 export type WedgeType = EnumValues<typeof WEDGE_TYPES>;
 export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo', 'stop', 'continue'] as const);
+
+/**
+ * The up-down-stop-continue type is used for octave-shift elements, indicating the direction of the shift from their
+ * true pitched values because of printing difficulty.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/up-down-stop-continue/
+ */
+export type UpDownStopContinue = EnumValues<typeof UP_DOWN_STOP_CONTINUE>;
+export const UP_DOWN_STOP_CONTINUE = new Enum(['up', 'down', 'stop', 'continue'] as const);

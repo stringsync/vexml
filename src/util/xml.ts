@@ -519,9 +519,10 @@ export const directionType = createNamedElementFactory<
     codas: NamedElement<'coda'>[];
     wedge: NamedElement<'wedge'>;
     metronome: NamedElement<'metronome'>;
+    octaveShift: NamedElement<'octave-shift'>;
     tokens: Array<NamedElement<'words'> | NamedElement<'symbol'>>;
   }
->('direction-type', (e, { segnos, codas, wedge, metronome, tokens }) => {
+>('direction-type', (e, { segnos, codas, wedge, metronome, octaveShift, tokens }) => {
   if (segnos) {
     e.append(...segnos);
   }
@@ -533,6 +534,9 @@ export const directionType = createNamedElementFactory<
   }
   if (metronome) {
     e.append(metronome);
+  }
+  if (octaveShift) {
+    e.append(octaveShift);
   }
   if (tokens) {
     e.append(...tokens);
@@ -1238,6 +1242,18 @@ export const wavyLine = createNamedElementFactory<'wavy-line', { number: number;
     }
     if (type) {
       e.setAttribute('type', type);
+    }
+  }
+);
+
+export const octaveShift = createNamedElementFactory<'octave-shift', { type: string; size: number }>(
+  'octave-shift',
+  (e, { type, size }) => {
+    if (type) {
+      e.setAttribute('type', type);
+    }
+    if (typeof size === 'number') {
+      e.setAttribute('size', size.toString());
     }
   }
 );
