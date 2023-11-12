@@ -6,6 +6,7 @@ import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
+import { Pedal, PedalRendering } from './pedal';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -16,6 +17,7 @@ export type SpannersRendering = {
   wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
   vibratos: VibratoRendering[];
+  pedals: PedalRendering[];
 };
 
 /**
@@ -66,6 +68,7 @@ export class Spanners {
       wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
+      pedals: this.getPedals().map((pedal) => pedal.render()),
     };
   }
 
@@ -342,5 +345,11 @@ export class Spanners {
     }
 
     return vibratos;
+  }
+
+  private getPedals(): Pedal[] {
+    const pedals = new Array<Pedal>();
+
+    return pedals;
   }
 }

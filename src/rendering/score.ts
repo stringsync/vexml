@@ -210,6 +210,13 @@ export class Score {
         vfTextBracket.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.PedalMarking elements.
+    spanners.pedals
+      .map((pedal) => pedal.vexflow.pedalMarking)
+      .forEach((vfPedalMarking) => {
+        vfPedalMarking.setContext(vfContext).draw();
+      });
+
     // Draw measure labels.
     measures
       .map((measure) => measure.label)
