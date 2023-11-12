@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { SpannerFragmentPhase } from './enums';
 import { Address } from './address';
 
 /** The result of rendering an octive shift. */
@@ -12,9 +11,30 @@ export type OctaveShiftRendering = {
 };
 
 /** A piece of an octave shift. */
-export type OctaveShiftFragment = {
+export type OctaveShiftFragment = StartOctaveShiftFragment | ContinueOctaveShiftFragment | StopOctaveShiftFragment;
+
+type StartOctaveShiftFragment = {
   type: 'octaveshift';
-  phase: SpannerFragmentPhase;
+  phase: 'start';
+  text: string;
+  superscript: string;
+  vexflow: {
+    note: vexflow.Note;
+    textBracketPosition: vexflow.TextBracketPosition;
+  };
+};
+
+type ContinueOctaveShiftFragment = {
+  type: 'octaveshift';
+  phase: 'continue';
+  vexflow: {
+    note: vexflow.Note;
+  };
+};
+
+type StopOctaveShiftFragment = {
+  type: 'octaveshift';
+  phase: 'stop';
   vexflow: {
     note: vexflow.Note;
   };
