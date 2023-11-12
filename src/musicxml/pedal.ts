@@ -13,4 +13,14 @@ export class Pedal {
   getType(): PedalType {
     return this.element.attr('type').withDefault<PedalType>('start').enum(PEDAL_TYPES);
   }
+
+  /** Whether to show pedal signs. Defaults to false. */
+  sign(): boolean {
+    return this.element.attr('sign').str() === 'yes';
+  }
+
+  /** Whether to show pedal lines. Defaults to false. */
+  line(): boolean {
+    return this.element.attr('line').str() === 'yes';
+  }
 }
