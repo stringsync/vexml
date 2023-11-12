@@ -12,6 +12,7 @@ import { TupletFragment } from './tuplet';
 import { OctaveShiftFragment } from './octaveshift';
 import { WedgeFragment } from './wedge';
 import { VibratoFragment } from './vibrato';
+import { PedalFragment } from './pedal';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -158,6 +159,7 @@ export class Rest {
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getVibratoFragments(vfStaveNote),
       ...this.getOctaveShiftFragments(vfStaveNote),
+      ...this.getPedalFragments(vfStaveNote),
     ];
   }
 
@@ -315,6 +317,44 @@ export class Rest {
               type: 'octaveshift',
               phase: 'stop',
               vexflow: { note: vfStaveNote },
+            };
+        }
+      });
+  }
+
+  private getPedalFragments(vfStaveNote: vexflow.StaveNote): PedalFragment[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal)
+      .map<PedalFragment>((pedal) => {
+        switch (pedal.getType()) {
+          case 'start':
+          case 'sostenuto':
+          case 'resume':
+            return {
+              type: 'pedal',
+              phase: 'start',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+
+          case 'continue':
+          case 'change':
+            return {
+              type: 'pedal',
+              phase: 'continue',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+          case 'stop':
+          case 'discontinue':
+            return {
+              type: 'pedal',
+              phase: 'stop',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
             };
         }
       });

@@ -17,6 +17,7 @@ import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
 import { VibratoFragment } from './vibrato';
+import { PedalFragment } from './pedal';
 
 const STEP_ORDER = [
   'Cb',
@@ -315,6 +316,7 @@ export class Note {
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getWavyLineFragments(vfStaveNote, keyIndex),
       ...this.getOctaveShiftFragments(vfStaveNote),
+      ...this.getPedalFragments(vfStaveNote),
     ];
   }
 
@@ -502,6 +504,44 @@ export class Note {
               type: 'octaveshift',
               phase: 'stop',
               vexflow: { note: vfStaveNote },
+            };
+        }
+      });
+  }
+
+  private getPedalFragments(vfStaveNote: vexflow.StaveNote): PedalFragment[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal)
+      .map<PedalFragment>((pedal) => {
+        switch (pedal.getType()) {
+          case 'start':
+          case 'sostenuto':
+          case 'resume':
+            return {
+              type: 'pedal',
+              phase: 'start',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+
+          case 'continue':
+          case 'change':
+            return {
+              type: 'pedal',
+              phase: 'continue',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+          case 'stop':
+          case 'discontinue':
+            return {
+              type: 'pedal',
+              phase: 'stop',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
             };
         }
       });
