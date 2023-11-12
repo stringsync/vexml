@@ -16,6 +16,7 @@ export * from './metronome';
 export * from './musicxml';
 export * from './notations';
 export * from './note';
+export * from './octaveshift';
 export * from './ornaments';
 export * from './part';
 export * from './print';

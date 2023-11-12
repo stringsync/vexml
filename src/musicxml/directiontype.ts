@@ -1,5 +1,6 @@
 import { NamedElement } from '../util';
 import { Metronome } from './metronome';
+import { OctaveShift } from './octaveshift';
 import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
 import { Words } from './words';
@@ -28,12 +29,18 @@ export type WedgeDirectionTypeContent = {
   wedge: Wedge;
 };
 
+export type OctaveShiftDirectionTypeContent = {
+  type: 'octaveshift';
+  octaveShift: OctaveShift;
+};
+
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
   | WedgeDirectionTypeContent
   | MetronomeDirectionTypeContent
+  | OctaveShiftDirectionTypeContent
   | TokensDirectionTypeContent;
 
 /**
@@ -57,6 +64,13 @@ export class DirectionType {
       return {
         type: 'metronome',
         metronome: new Metronome(first),
+      };
+    }
+
+    if (first.isNamed('octave-shift')) {
+      return {
+        type: 'octaveshift',
+        octaveShift: new OctaveShift(first),
       };
     }
 
