@@ -183,6 +183,13 @@ export class Score {
         vfStaveHairpin.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.Ornament wavy line elements.
+    spanners.wavyLines
+      .flatMap((wavyLine) => wavyLine.vexflow.ornaments)
+      .forEach((ornament) => {
+        ornament.setContext(vfContext).draw();
+      });
+
     // Draw vexflow.TextBracket elements.
     spanners.octaveShifts
       .map((octaveShift) => octaveShift.vexflow.textBracket)

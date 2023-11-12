@@ -5,6 +5,7 @@ import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
+import { WavyLine, WavyLineRendering } from './wavyline';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -14,6 +15,7 @@ export type SpannersRendering = {
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
+  wavyLines: WavyLineRendering[];
 };
 
 /**
@@ -57,6 +59,7 @@ export class Spanners {
       slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
+      wavyLines: this.getWavyLines().map((wavyLine) => wavyLine.render()),
     };
   }
 
@@ -300,5 +303,11 @@ export class Spanners {
     }
 
     return octaveShifts;
+  }
+
+  private getWavyLines(): WavyLine[] {
+    const wavyLines = new Array<WavyLine>();
+
+    return wavyLines;
   }
 }
