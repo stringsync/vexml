@@ -15,6 +15,7 @@ import { TupletFragment } from './tuplet';
 import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
+import { OctaveShiftFragment } from './octaveshift';
 
 const STEP_ORDER = [
   'Cb',
@@ -303,6 +304,7 @@ export class Note {
       ...this.getTupletFragments(vfStaveNote),
       ...this.getSlurFragments(vfStaveNote, keyIndex),
       ...this.getWedgeFragments(vfStaveNote),
+      ...this.getOctaveShiftFragments(vfStaveNote),
     ];
   }
 
@@ -433,6 +435,12 @@ export class Note {
         }
       }
     }
+
+    return result;
+  }
+
+  private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
+    const result = new Array<OctaveShiftFragment>();
 
     return result;
   }
