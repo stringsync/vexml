@@ -9,8 +9,40 @@ import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
+import { SpannerFragment } from './spanners';
+import { BeamFragment } from './beam';
+import { TupletFragment } from './tuplet';
+import { SlurFragment } from './slur';
+import { WedgeFragment } from './wedge';
+import { Ornament, OrnamentRendering } from './ornament';
+import { OctaveShiftFragment } from './octaveshift';
+import { VibratoFragment } from './vibrato';
+import { PedalFragment } from './pedal';
 
-export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
+const STEP_ORDER = [
+  'Cb',
+  'C',
+  'C#',
+  'Db',
+  'D',
+  'D#',
+  'Eb',
+  'E',
+  'Fb',
+  'F',
+  'F#',
+  'Gb',
+  'G',
+  'G#',
+  'Ab',
+  'A',
+  'A#',
+  'Bb',
+  'B',
+  'B#',
+];
+
+export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
 /** The result rendering a Note. */
 export type NoteRendering = {
@@ -20,7 +52,8 @@ export type NoteRendering = {
     staveNote: vexflow.StaveNote;
   };
   modifiers: NoteModifierRendering[];
-  beamValue: musicxml.BeamValue | null;
+  timeModification: musicxml.TimeModification | null;
+  spannerFragments: SpannerFragment[];
 };
 
 /**
@@ -35,20 +68,22 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private musicXml: { note: musicxml.Note };
+  private musicXml: { note: musicxml.Note; directions: musicxml.Direction[]; octaveShift: musicxml.OctaveShift | null };
   private stem: StemDirection;
-  private tokens: Token[];
   private clef: Clef;
   private keySignature: KeySignature;
   private durationDenominator: NoteDurationDenominator;
 
   constructor(opts: {
     config: Config;
-    musicXml: { note: musicxml.Note };
+    musicXml: {
+      note: musicxml.Note;
+      directions: musicxml.Direction[];
+      octaveShift: musicxml.OctaveShift | null;
+    };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
-    tokens: Token[];
     keySignature: KeySignature;
   }) {
     this.config = opts.config;
@@ -56,7 +91,6 @@ export class Note {
     this.stem = opts.stem;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
-    this.tokens = opts.tokens;
     this.keySignature = opts.keySignature;
   }
 
@@ -66,26 +100,18 @@ export class Note {
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
   static render(notes: Note[]): NoteRendering[] {
-    if (notes.length === 0) {
-      throw new Error('cannot render empty notes');
-    }
+    util.assert(notes.length > 0, 'cannot render empty notes');
 
     const durationDenominators = new Set(notes.map((note) => note.durationDenominator));
-    if (durationDenominators.size > 1) {
-      throw new Error('all notes must have the same durationDenominator');
-    }
+    util.assert(durationDenominators.size === 1, 'all notes must have the same durationDenominator');
 
     const dotCounts = new Set(notes.map((note) => note.getDotCount()));
-    if (dotCounts.size > 1) {
-      throw new Error('all notes must have the same dotCount');
-    }
+    util.assert(dotCounts.size === 1, 'all notes must have the same dotCount');
 
     const clefTypes = new Set(notes.map((note) => note.clef));
-    if (clefTypes.size > 1) {
-      throw new Error('all notes must have the same clefTypes');
-    }
+    util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
-    const keys = notes.map((note) => note.getKey());
+    const keys = Note.sort(notes).map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
@@ -115,8 +141,12 @@ export class Note {
         renderings.push(lyric.render());
       }
 
-      for (const token of note.tokens) {
+      for (const token of note.getTokens()) {
         renderings.push(token.render());
+      }
+
+      for (const ornament of note.getOrnaments()) {
+        renderings.push(ornament.render());
       }
 
       return renderings;
@@ -134,6 +164,9 @@ export class Note {
           case 'token':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
+          case 'ornament':
+            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
+            break;
         }
       }
     }
@@ -143,8 +176,29 @@ export class Note {
       key,
       modifiers: modifierRenderingGroups[index],
       vexflow: { staveNote: vfStaveNote },
-      beamValue: notes[index].getBeamValue(),
+      timeModification: notes[index].getTimeModification(),
+      spannerFragments: notes[index].getSpannerFragments(vfStaveNote, index),
     }));
+  }
+
+  private static sort(notes: Note[]): Note[] {
+    return [...notes].sort((note1, note2) => {
+      // Get the pitches and octaves
+      const step1 = note1.getStep();
+      const octave1 = note1.getOctave();
+      const step2 = note2.getStep();
+      const octave2 = note2.getOctave();
+
+      // Compare by octave first
+      if (octave1 < octave2) return -1;
+      if (octave1 > octave2) return 1;
+
+      // If octaves are equal, compare by pitch
+      const indexA = STEP_ORDER.indexOf(step1);
+      const indexB = STEP_ORDER.indexOf(step2);
+
+      return indexA - indexB;
+    });
   }
 
   private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
@@ -176,7 +230,7 @@ export class Note {
     const hasExplicitAccidental = this.musicXml.note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
       const isCautionary = this.musicXml.note.hasAccidentalCautionary();
-      return Accidental.create({ code: noteAccidentalCode, isCautionary });
+      return new Accidental({ code: noteAccidentalCode, isCautionary });
     }
 
     return null;
@@ -187,7 +241,14 @@ export class Note {
     return this.musicXml.note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => Lyric.create({ lyric }));
+      .map((lyric) => new Lyric({ musicXml: { lyric } }));
+  }
+
+  private getOrnaments(): Ornament[] {
+    return this.musicXml.note
+      .getNotations()
+      .flatMap((notations) => notations.getOrnaments())
+      .flatMap((ornaments) => new Ornament({ musicXml: { ornaments } }));
   }
 
   private getBeamValue(): musicxml.BeamValue | null {
@@ -201,10 +262,288 @@ export class Note {
     return this.musicXml.note.getDotCount();
   }
 
+  private getStep(): string {
+    return this.musicXml.note.getStep();
+  }
+
+  private getOctave(): number {
+    return (
+      this.musicXml.note.getOctave() -
+      this.clef.getOctaveChange() +
+      conversions.fromOctaveShiftToOctaveCount(this.musicXml.octaveShift)
+    );
+  }
+
   private getKey(): string {
-    const step = this.musicXml.note.getStep();
-    const octave = this.musicXml.note.getOctave() - this.clef.getOctaveChange();
-    const suffix = this.musicXml.note.getNoteheadSuffix();
+    const step = this.getStep();
+    const octave = this.getOctave();
+    const notehead = this.musicXml.note.getNotehead();
+    const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
+  }
+
+  private getTuplets(): musicxml.Tuplet[] {
+    return (
+      this.musicXml.note
+        .getNotations()
+        .find((notations) => notations.hasTuplets())
+        ?.getTuplets() ?? []
+    );
+  }
+
+  private getSlurs(): musicxml.Slur[] {
+    return this.musicXml.note.getNotations().flatMap((notations) => notations.getSlurs());
+  }
+
+  private getTimeModification(): musicxml.TimeModification | null {
+    return this.musicXml.note.getTimeModification();
+  }
+
+  private getTokens(): Token[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
+      .flatMap((content) => content.tokens)
+      .map((token) => new Token({ musicXml: { token } }));
+  }
+
+  private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
+    return [
+      ...this.getBeamFragments(vfStaveNote),
+      ...this.getTupletFragments(vfStaveNote),
+      ...this.getSlurFragments(vfStaveNote, keyIndex),
+      ...this.getWedgeFragments(vfStaveNote),
+      ...this.getWavyLineFragments(vfStaveNote, keyIndex),
+      ...this.getOctaveShiftFragments(vfStaveNote),
+      ...this.getPedalFragments(vfStaveNote),
+    ];
+  }
+
+  private getBeamFragments(vfStaveNote: vexflow.StaveNote): BeamFragment[] {
+    const result = new Array<BeamFragment>();
+
+    const beamValue = this.getBeamValue();
+    if (beamValue) {
+      result.push({
+        type: 'beam',
+        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
+        vexflow: {
+          stemmableNote: vfStaveNote,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
+    const result = new Array<TupletFragment>();
+
+    // TODO: Support multiple tuplets.
+    const tuplet = util.first(this.getTuplets());
+    const tupletType = tuplet?.getType() ?? null;
+    const tupletPlacement = tuplet?.getPlacement() ?? 'below';
+    switch (tupletType) {
+      case 'start':
+        result.push({
+          type: 'tuplet',
+          phase: 'start',
+          vexflow: {
+            location: conversions.fromAboveBelowToTupletLocation(tupletPlacement),
+            note: vfStaveNote,
+          },
+        });
+        break;
+      case 'stop':
+        result.push({
+          type: 'tuplet',
+          phase: 'stop',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+        break;
+      default:
+        // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
+        // continue if we've come across a "start" (denoted by the vfNotes length).
+        result.push({
+          type: 'tuplet',
+          phase: 'unspecified',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+    }
+
+    return result;
+  }
+
+  private getSlurFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SlurFragment[] {
+    const result = new Array<SlurFragment>();
+
+    for (const slur of this.getSlurs()) {
+      const slurType = slur.getType();
+      if (!slurType) {
+        continue;
+      }
+
+      result.push({
+        type: 'slur',
+        phase: conversions.fromStartStopContinueToSpannerFragmentPhase(slurType),
+        slurNumber: slur.getNumber(),
+        vexflow: {
+          note: vfStaveNote,
+          keyIndex,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
+    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
+    // associated with the first <note> element that follows it in score order that is not in a different voice.
+    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
+
+    const result = new Array<WedgeFragment>();
+
+    for (const direction of this.musicXml.directions) {
+      const directionPlacement = direction.getPlacement() ?? 'below';
+      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
+
+      for (const directionType of direction.getTypes()) {
+        const content = directionType.getContent();
+        if (content.type !== 'wedge') {
+          continue;
+        }
+
+        const wedgeType = content.wedge.getType();
+        const phase = conversions.fromWedgeTypeToSpannerFragmentPhase(wedgeType);
+        const staveHairpinType = conversions.fromWedgeTypeToStaveHairpinType(wedgeType);
+
+        switch (phase) {
+          case 'start':
+            result.push({
+              type: 'wedge',
+              phase,
+              vexflow: {
+                note: vfStaveNote,
+                staveHairpinType,
+                position: modifierPosition,
+              },
+            });
+            break;
+          case 'continue':
+          case 'stop':
+            result.push({
+              type: 'wedge',
+              phase,
+              vexflow: {
+                note: vfStaveNote,
+              },
+            });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private getWavyLineFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): VibratoFragment[] {
+    return this.musicXml.note
+      .getNotations()
+      .flatMap((notation) => notation.getOrnaments())
+      .flatMap((ornament) => ornament.getWavyLines())
+      .map<VibratoFragment>((wavyLine) => {
+        const phase = conversions.fromStartStopContinueToSpannerFragmentPhase(wavyLine.getType());
+        return {
+          type: 'vibrato',
+          phase,
+          keyIndex,
+          vexflow: {
+            note: vfStaveNote,
+          },
+        };
+      });
+  }
+
+  private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift)
+      .map<OctaveShiftFragment>((octaveShift) => {
+        switch (octaveShift.getType()) {
+          case 'up':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'mb',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
+            };
+          case 'down':
+            return {
+              type: 'octaveshift',
+              phase: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'va',
+              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
+            };
+          case 'continue':
+            return {
+              type: 'octaveshift',
+              phase: 'continue',
+              vexflow: { note: vfStaveNote },
+            };
+          case 'stop':
+            return {
+              type: 'octaveshift',
+              phase: 'stop',
+              vexflow: { note: vfStaveNote },
+            };
+        }
+      });
+  }
+
+  private getPedalFragments(vfStaveNote: vexflow.StaveNote): PedalFragment[] {
+    return this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal)
+      .map<PedalFragment>((pedal) => {
+        switch (pedal.getType()) {
+          case 'start':
+          case 'sostenuto':
+          case 'resume':
+            return {
+              type: 'pedal',
+              phase: 'start',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+
+          case 'continue':
+          case 'change':
+            return {
+              type: 'pedal',
+              phase: 'continue',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+          case 'stop':
+          case 'discontinue':
+            return {
+              type: 'pedal',
+              phase: 'stop',
+              musicXml: { pedal },
+              vexflow: { staveNote: vfStaveNote },
+            };
+        }
+      });
   }
 }

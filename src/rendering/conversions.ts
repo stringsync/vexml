@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator, StemDirection } from './enums';
+import { NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -190,4 +190,169 @@ export const fromBarlineTypeToEndingStaveConnectorType = (
     default:
       return vexflow.BarlineType.SINGLE;
   }
+};
+
+/** Converts `Notehead` to a `NoteheadSuffix`. Defaults to ''. */
+export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null): NoteheadSuffix => {
+  switch (notehead) {
+    case 'circle dot':
+    case 'cluster':
+    case 'cross':
+    case 'inverted triangle':
+    case 'left triangle':
+    case 'slashed':
+      return '';
+    case 'arrow down':
+      return 'TD';
+    case 'arrow up':
+      return 'TU';
+    case 'back slashed':
+      return 'SB';
+    case 'circled':
+      return 'CI';
+    case 'diamond':
+      return 'D';
+    case 'do':
+      return 'DO';
+    case 'fa':
+      return 'FA';
+    case 'fa up':
+      return 'FAUP';
+    case 'mi':
+      return 'MI';
+    case 'normal':
+      return 'N';
+    case 'slash':
+      return 'S';
+    case 'so':
+      return 'SO';
+    case 'ti':
+      return 'TI';
+    case 'triangle':
+      return 'TU';
+    case 'x':
+      return 'X';
+    default:
+      return '';
+  }
+};
+
+/** Converts `AboveBelow` to a `TupletLocation`. */
+export const fromAboveBelowToTupletLocation = (aboveBelow: musicxml.AboveBelow): vexflow.TupletLocation => {
+  switch (aboveBelow) {
+    case 'above':
+      return vexflow.TupletLocation.TOP;
+    case 'below':
+      return vexflow.TupletLocation.BOTTOM;
+  }
+};
+
+/** Converts `AboveBelow` to a vexflow slur direction. */
+export const fromAboveBelowToVexflowSlurDirection = (aboveBelow: musicxml.AboveBelow): number => {
+  // This looks upside down, but it's not.
+  switch (aboveBelow) {
+    case 'above':
+      return -1;
+    case 'below':
+      return 1;
+  }
+};
+
+/** Converts a vexflow Stem to a `musicxml.Stem`. Defaults to 'none'. */
+export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.Stem => {
+  switch (stem) {
+    case 1:
+      return 'up';
+    case -1:
+      return 'down';
+    default:
+      return 'none';
+  }
+};
+
+/** Converts a `musicxml.BeamValue` to a `SpannerFragmentPhase`. */
+export const fromBeamValueToSpannerFragmentPhase = (beamValue: musicxml.BeamValue): SpannerFragmentPhase => {
+  switch (beamValue) {
+    case 'begin':
+      return 'start';
+    case 'continue':
+    case 'backward hook':
+    case 'forward hook':
+      return 'continue';
+    case 'end':
+      return 'stop';
+  }
+};
+
+/** Converts a `musicxml.StartStopContinue` to a `SpannerFragmentPhase`.*/
+export const fromStartStopContinueToSpannerFragmentPhase = (
+  startStopContinue: musicxml.StartStopContinue
+): SpannerFragmentPhase => {
+  switch (startStopContinue) {
+    case 'start':
+      return 'start';
+    case 'continue':
+      return 'continue';
+    case 'stop':
+      return 'stop';
+  }
+};
+
+/** Converts a `musicxml.WedgeType` to a `SpannerFragmentPhase`. */
+export const fromWedgeTypeToSpannerFragmentPhase = (wedgeType: musicxml.WedgeType): SpannerFragmentPhase => {
+  switch (wedgeType) {
+    case 'crescendo':
+    case 'diminuendo':
+      return 'start';
+    case 'continue':
+      return 'continue';
+    case 'stop':
+      return 'stop';
+  }
+};
+
+/**
+ * Converts a `musicxml.WedgeType` to a `vexflow.StaveHairpin.type` (number).
+ *
+ * Defaults to `vexflow.StaveHairpin.type.CRESC`
+ */
+export const fromWedgeTypeToStaveHairpinType = (wedgeType: musicxml.WedgeType): number => {
+  switch (wedgeType) {
+    case 'diminuendo':
+      return vexflow.StaveHairpin.type.DECRESC;
+    default:
+      return vexflow.StaveHairpin.type.CRESC;
+  }
+};
+
+/** Converts a `musicxml.AboveBelow` to a `vexflow.ModifierPosition`. */
+export const fromAboveBelowToModifierPosition = (aboveBelow: musicxml.AboveBelow): vexflow.ModifierPosition => {
+  switch (aboveBelow) {
+    case 'above':
+      return vexflow.ModifierPosition.ABOVE;
+    case 'below':
+      return vexflow.ModifierPosition.BELOW;
+  }
+};
+
+/** Converts a `musicxml.OctaveShift` to the number of octaves it computes to. */
+export const fromOctaveShiftToOctaveCount = (octaveShift: musicxml.OctaveShift | null): number => {
+  if (octaveShift === null) {
+    return 0;
+  }
+
+  // Assuming the size attribute increments in steps of 7 for each octave after the first
+  // and that an octave shift size of 8 corresponds to a single octave.
+  const size = octaveShift.getSize();
+  if (size < 8) {
+    // If size is less than 8, it's not a valid octave-shift value for this context,
+    // or it could represent a shift of less than an octave.
+    return 0;
+  }
+
+  const multiplier = octaveShift.getType() === 'up' ? 1 : -1;
+
+  // The first octave shift starts at size 8 (for 1 octave),
+  // then each subsequent octave adds 7 to the size (15 for 2 octaves, 22 for 3, etc.)
+  return Math.floor((size - 1) / 7) * multiplier;
 };

@@ -169,12 +169,6 @@ export class Stave {
         for (const vfVoice of vfVoices) {
           vfVoice.setStave(vfStave);
         }
-
-        const vfTickables = vfVoices.flatMap((vfVoice) => vfVoice.getTickables());
-        if (vfTickables.length > 0) {
-          new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
-        }
-
         break;
     }
 
@@ -273,12 +267,12 @@ export class Stave {
     }
 
     if (multiRestCount > 1) {
-      return MultiRest.create({ count: multiRestCount });
+      return new MultiRest({ count: multiRestCount });
     }
 
     if (this.getClef().getType() === 'tab') {
       // TODO: Render tablature correctly.
-      return Tablature.create();
+      return new Tablature();
     }
 
     return Chorus.multiVoice({

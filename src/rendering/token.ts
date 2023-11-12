@@ -11,18 +11,16 @@ export type TokenRendering = {
 
 /** Represents a word or a symbol being rendered. */
 export class Token {
-  private content: musicxml.Words | musicxml.Symbolic;
+  private musicXml: {
+    token: musicxml.Words | musicxml.Symbolic;
+  };
 
-  private constructor(opts: { content: musicxml.Words | musicxml.Symbolic }) {
-    this.content = opts.content;
-  }
-
-  static create(opts: {
+  constructor(opts: {
     musicXml: {
       token: musicxml.Words | musicxml.Symbolic;
     };
   }) {
-    return new Token({ content: opts.musicXml.token });
+    this.musicXml = opts.musicXml;
   }
 
   render(): TokenRendering {
@@ -38,11 +36,12 @@ export class Token {
   }
 
   private getContent(): string {
-    if (this.content instanceof musicxml.Words) {
-      return this.content.getContent();
+    const token = this.musicXml.token;
+    if (token instanceof musicxml.Words) {
+      return token.getContent();
     }
-    if (this.content instanceof musicxml.Symbolic) {
-      return this.content.getSmulfGlyphName();
+    if (token instanceof musicxml.Symbolic) {
+      return token.getSmulfGlyphName();
     }
     return '';
   }

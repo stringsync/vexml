@@ -1,6 +1,5 @@
-import { VERTICAL_DIRECTIONS } from '@/musicxml/enums';
-import { Notations } from '@/musicxml/notations';
 import { xml } from '@/util';
+import { Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -34,6 +33,72 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getArpeggioDirection()).toBe('up');
+    });
+  });
+
+  describe('hasTuplets', () => {
+    it('returns true when there is at least one tuplet', () => {
+      const node = xml.notations({ tuplets: [xml.tuplet()] });
+      const notations = new Notations(node);
+      expect(notations.hasTuplets()).toBeTrue();
+    });
+
+    it('returns false when there are no tuplets', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.hasTuplets()).toBeFalse();
+    });
+  });
+
+  describe('getTuplets', () => {
+    it('returns the tuplets of the notations', () => {
+      const tuplet1 = xml.tuplet({ type: 'start' });
+      const tuplet2 = xml.tuplet({ type: 'stop' });
+      const node = xml.notations({ tuplets: [tuplet1, tuplet2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getTuplets()).toStrictEqual([new Tuplet(tuplet1), new Tuplet(tuplet2)]);
+    });
+
+    it('defaults to empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getTuplets()).toStrictEqual([]);
+    });
+  });
+
+  describe('getSlurs', () => {
+    it('returns the slurs of the notations', () => {
+      const slur1 = xml.slur({ type: 'stop', placement: 'above' });
+      const slur2 = xml.slur({ type: 'start', placement: 'below' });
+      const node = xml.notations({ slurs: [slur1, slur2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getSlurs()).toStrictEqual([new Slur(slur1), new Slur(slur2)]);
+    });
+
+    it('defaults to empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getSlurs()).toStrictEqual([]);
+    });
+  });
+
+  describe('getOrnaments', () => {
+    it('returns the ornaments of the notations', () => {
+      const ornaments = xml.ornaments();
+      const node = xml.notations({ ornaments: [ornaments] });
+      const notations = new Notations(node);
+
+      expect(notations.getOrnaments()).toStrictEqual([new Ornaments(ornaments)]);
+    });
+
+    it('defaults to an empty array', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getOrnaments()).toStrictEqual([]);
     });
   });
 });

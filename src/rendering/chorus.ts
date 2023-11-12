@@ -10,7 +10,6 @@ import * as conversions from './conversions';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { TimeSignature } from './timesignature';
 import { KeySignature } from './keysignature';
-import { Token } from './token';
 import { GhostNote } from './ghostnote';
 import { Chord } from './chord';
 import { Rest } from './rest';
@@ -25,10 +24,11 @@ export type ChorusRendering = {
 type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
-  tokens: Array<Token>;
   stem: StemDirection;
   start: Division;
   end: Division;
+  directions: musicxml.Direction[];
+  octaveShift: musicxml.OctaveShift | null;
 };
 
 type WholeRestChorusData = { type: 'wholerest' };
@@ -166,12 +166,17 @@ export class Chorus {
   }): Record<string, VoiceEntryData[]> {
     const result: Record<string, VoiceEntryData[]> = {};
 
+    let voiceId = '';
     let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
-    let tokens = new Array<Token>();
+    let directions = new Array<musicxml.Direction>();
+    let octaveShift: musicxml.OctaveShift | null = null;
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
-    for (const entry of opts.measureEntries) {
+    for (let index = 0; index < opts.measureEntries.length; index++) {
+      const entry = opts.measureEntries[index];
+      const isLast = index === opts.measureEntries.length - 1;
+
       if (entry instanceof StaveSignature) {
         quarterNoteDivisions = entry.getQuarterNoteDivisions();
       }
@@ -180,11 +185,30 @@ export class Chorus {
         entry
           .getTypes()
           .map((directionType) => directionType.getContent())
-          .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
-          .flatMap((content) => content.tokens)
-          .forEach((token) => {
-            tokens.push(Token.create({ musicXml: { token } }));
+          .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+          .map((content) => content.octaveShift)
+          .forEach((o) => {
+            switch (o.getType()) {
+              case 'up':
+              case 'down':
+                octaveShift = o;
+                break;
+              case 'continue':
+                // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
+                // upstream and handle continues correctly.
+                break;
+              case 'stop':
+                octaveShift = null;
+                break;
+            }
           });
+
+        if (isLast) {
+          // We need to attach the direction to some note or it will be ignored.
+          util.last(result[voiceId] ?? [])?.directions.push(entry);
+        } else {
+          directions.push(entry);
+        }
       }
 
       if (entry instanceof musicxml.Note) {
@@ -197,7 +221,7 @@ export class Chorus {
           continue;
         }
 
-        const voiceId = note.getVoice();
+        voiceId = note.getVoice();
 
         result[voiceId] ??= [];
 
@@ -210,14 +234,15 @@ export class Chorus {
         result[voiceId].push({
           voiceId,
           note,
-          tokens,
           start: startDivision,
           end: endDivision,
           stem,
+          directions,
+          octaveShift,
         });
 
         divisions = divisions.add(noteDuration);
-        tokens = [];
+        directions = [];
       }
 
       if (entry instanceof musicxml.Backup) {
@@ -281,7 +306,8 @@ export class Chorus {
       keys: [note, ...note.getChordTail()].map((note) => {
         const step = note.getStep();
         const octave = note.getOctave() - clef.getOctaveChange();
-        const suffix = note.getNoteheadSuffix();
+        const notehead = note.getNotehead();
+        const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
         return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
       }),
     }).getKeyLine(0);
@@ -319,8 +345,9 @@ export class Chorus {
         }
 
         const note = entry.note;
+        const directions = entry.directions;
         const stem = entry.stem;
-        const tokens = entry.tokens;
+        const octaveShift = entry.octaveShift;
 
         const noteDuration = entry.end.subtract(entry.start);
         const durationDenominator =
@@ -331,8 +358,7 @@ export class Chorus {
           entries.push(
             new Chord({
               config,
-              musicXml: { note },
-              tokens,
+              musicXml: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
@@ -343,9 +369,9 @@ export class Chorus {
           entries.push(
             new Rest({
               config,
+              musicXml: { note, directions },
               displayPitch: note.getRestDisplayPitch(),
               dotCount: note.getDotCount(),
-              tokens,
               clef,
               durationDenominator,
             })
@@ -354,8 +380,7 @@ export class Chorus {
           entries.push(
             new Note({
               config,
-              musicXml: { note },
-              tokens,
+              musicXml: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,

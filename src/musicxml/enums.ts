@@ -115,54 +115,6 @@ export const NOTEHEADS = new Enum([
 ] as const);
 
 /**
- * The suffix for a fully qualified key.
- *
- * See https://github.com/0xfe/vexflow/blob/974fe1aaf5bb6270577053200a59c87b32d99d31/src/tables.ts#L817
- */
-export type NoteheadSuffix = EnumValues<typeof NOTEHEAD_SUFFIXES>;
-export const NOTEHEAD_SUFFIXES = new Enum([
-  '',
-  'D0',
-  'D1',
-  'D2',
-  'D3',
-  'T0',
-  'T1',
-  'T2',
-  'T3',
-  'X0',
-  'X1',
-  'X2',
-  'X3',
-  'S1',
-  'S2',
-  'R1',
-  'R2',
-  'DO',
-  'RE',
-  'MI',
-  'FA',
-  'FAUP',
-  'SO',
-  'LA',
-  'TI',
-  'D',
-  'H',
-  'N',
-  'G',
-  'M',
-  'X',
-  'CX',
-  'CI',
-  'S',
-  'SQ',
-  'TU',
-  'TD',
-  'SF',
-  'SB',
-] as const);
-
-/**
  * The bar style of a measure.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/bar-style/
@@ -206,8 +158,8 @@ export const BARLINE_LOCATIONS = new Enum(['right', 'left', 'middle'] as const);
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-discontinue/
  */
-export type EndingType = EnumValues<typeof ENDING_TYPES>;
-export const ENDING_TYPES = new Enum(['start', 'stop', 'discontinue'] as const);
+export type StartStopDiscontinue = EnumValues<typeof START_STOP_DISCONTINUE>;
+export const START_STOP_DISCONTINUE = new Enum(['start', 'stop', 'discontinue'] as const);
 
 /**
  * Different types of clef symbols.
@@ -274,4 +226,71 @@ export const KEY_MODES = new Enum([
   'aeolian',
   'ionian',
   'locrian',
+] as const);
+
+/**
+ * The start-stop type is used for an attribute of musical elements that can either start or stop, such as tuplets.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop/
+ */
+export type StartStop = EnumValues<typeof START_STOP>;
+export const START_STOP = new Enum(['start', 'stop'] as const);
+
+/**
+ * The above-below type is used to indicate whether one element appears above or below another element.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
+ */
+export type AboveBelow = EnumValues<typeof ABOVE_BELOW>;
+export const ABOVE_BELOW = new Enum(['above', 'below'] as const);
+
+/**
+ * The start-stop-continue type is used for an attribute of musical elements that can either start or stop, but also
+ * need to refer to an intermediate point in the symbol, as for complex slurs or for formatting of symbols across system
+ * breaks.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/start-stop-continue/
+ */
+export type StartStopContinue = EnumValues<typeof START_STOP_CONTINUE>;
+export const START_STOP_CONTINUE = new Enum(['start', 'stop', 'continue'] as const);
+
+/**
+ * The line-type type distinguishes between solid, dashed, dotted, and wavy lines.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/line-type/
+ */
+export type LineType = EnumValues<typeof LINE_TYPES>;
+export const LINE_TYPES = new Enum(['dashed', 'dotted', 'solid', 'wavy'] as const);
+
+/**
+ * The wedge-type type is used to specify <wedge> types.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/wedge-type/
+ */
+export type WedgeType = EnumValues<typeof WEDGE_TYPES>;
+export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo', 'stop', 'continue'] as const);
+
+/**
+ * The up-down-stop-continue type is used for octave-shift elements, indicating the direction of the shift from their
+ * true pitched values because of printing difficulty.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/up-down-stop-continue/
+ */
+export type UpDownStopContinue = EnumValues<typeof UP_DOWN_STOP_CONTINUE>;
+export const UP_DOWN_STOP_CONTINUE = new Enum(['up', 'down', 'stop', 'continue'] as const);
+
+/**
+ * The pedal-type distinguishes types of pedal directions.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/pedal-type/
+ */
+export type PedalType = EnumValues<typeof PEDAL_TYPES>;
+export const PEDAL_TYPES = new Enum([
+  'start',
+  'stop',
+  'sostenuto',
+  'change',
+  'continue',
+  'discontinue',
+  'resume',
 ] as const);
