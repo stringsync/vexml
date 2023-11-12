@@ -334,3 +334,25 @@ export const fromAboveBelowToModifierPosition = (aboveBelow: musicxml.AboveBelow
       return vexflow.ModifierPosition.BELOW;
   }
 };
+
+/** Converts a `musicxml.OctaveShift` to the number of octaves it computes to. */
+export const fromOctaveShiftToOctaveCount = (octaveShift: musicxml.OctaveShift | null): number => {
+  if (octaveShift === null) {
+    return 0;
+  }
+
+  // Assuming the size attribute increments in steps of 7 for each octave after the first
+  // and that an octave shift size of 8 corresponds to a single octave.
+  const size = octaveShift.getSize();
+  if (size < 8) {
+    // If size is less than 8, it's not a valid octave-shift value for this context,
+    // or it could represent a shift of less than an octave.
+    return 0;
+  }
+
+  const multiplier = octaveShift.getType() === 'up' ? 1 : -1;
+
+  // The first octave shift starts at size 8 (for 1 octave),
+  // then each subsequent octave adds 7 to the size (15 for 2 octaves, 22 for 3, etc.)
+  return Math.floor((size - 1) / 7) * multiplier;
+};
