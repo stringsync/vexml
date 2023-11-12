@@ -196,7 +196,7 @@ export class Score {
         vfStaveHairpin.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.Ornament wavy line elements.
+    // Draw vexflow.Vibrato elements.
     spanners.vibratos
       .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
       .forEach((vibratoBracket) => {
