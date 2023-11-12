@@ -35,26 +35,26 @@ export class OctaveShift {
   private text: string;
   private superscript: string;
   private position: vexflow.TextBracketPosition;
-  private fragments: OctaveShiftFragment[];
+  private entries: OctaveShiftEntry[];
 
   constructor(opts: {
     text: string;
     superscript: string;
     position: vexflow.TextBracketPosition;
-    fragments: OctaveShiftFragment[];
+    fragments: OctaveShiftEntry[];
   }) {
     util.assert(opts.fragments.length >= 2, 'must have at least 2 octave shift fragments');
 
     this.text = opts.text;
     this.superscript = opts.superscript;
     this.position = opts.position;
-    this.fragments = opts.fragments;
+    this.entries = opts.fragments;
   }
 
   /** Renders the octave shift. */
   render(): OctaveShiftRendering {
-    const startNote = util.first(this.fragments)!.vexflow.note;
-    const stopNote = util.last(this.fragments)!.vexflow.note;
+    const startNote = util.first(this.entries)!.fragment.vexflow.note;
+    const stopNote = util.last(this.entries)!.fragment.vexflow.note;
 
     const vfTextBracket = new vexflow.TextBracket({
       start: startNote,
