@@ -14,6 +14,7 @@ import { BeamFragment } from './beam';
 import { TupletFragment } from './tuplet';
 import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
+import { Ornament, OrnamentRendering } from './ornament';
 
 const STEP_ORDER = [
   'Cb',
@@ -38,7 +39,7 @@ const STEP_ORDER = [
   'B#',
 ];
 
-export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering;
+export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
 /** The result rendering a Note. */
 export type NoteRendering = {
@@ -137,6 +138,10 @@ export class Note {
         renderings.push(token.render());
       }
 
+      for (const ornament of note.getOrnaments()) {
+        renderings.push(ornament.render());
+      }
+
       return renderings;
     });
 
@@ -151,6 +156,9 @@ export class Note {
             break;
           case 'token':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
+            break;
+          case 'ornament':
+            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
             break;
         }
       }
@@ -227,6 +235,13 @@ export class Note {
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
       .map((lyric) => new Lyric({ musicXml: { lyric } }));
+  }
+
+  private getOrnaments(): Ornament[] {
+    return this.musicXml.note
+      .getNotations()
+      .flatMap((notations) => notations.getOrnaments())
+      .flatMap((ornaments) => new Ornament({ musicXml: { ornaments } }));
   }
 
   private getBeamValue(): musicxml.BeamValue | null {
