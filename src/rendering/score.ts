@@ -108,6 +108,19 @@ export class Score {
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
+    // Format vexflow.Voice elements.
+    staves.forEach((stave) => {
+      if (stave.entry.type !== 'chorus') {
+        return;
+      }
+      const vfStave = stave.vexflow.stave;
+      const vfVoices = stave.entry.voices.map((voice) => voice.vexflow.voice);
+
+      if (vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
+        new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
+      }
+    });
+
     // Draw the title.
     titleRendering?.text.draw(vfContext);
 
@@ -145,22 +158,15 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Format and draw vexflow.Voice elements.
-    staves.forEach((stave) => {
-      if (stave.entry.type !== 'chorus') {
-        return;
-      }
-      const vfStave = stave.vexflow.stave;
-      const vfVoices = stave.entry.voices.map((voice) => voice.vexflow.voice);
-
-      if (vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
-        new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
-      }
-
-      vfVoices.forEach((vfVoice) => {
+    // Draw vexflow.Voice elements.
+    staves
+      .map((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((entry) => entry.voices)
+      .map((voice) => voice.vexflow.voice)
+      .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
       });
-    });
 
     // Draw vexflow.Beam elements.
     spanners.beams
@@ -191,10 +197,10 @@ export class Score {
       });
 
     // Draw vexflow.Ornament wavy line elements.
-    spanners.wavyLines
-      .flatMap((wavyLine) => wavyLine.vexflow.ornaments)
-      .forEach((ornament) => {
-        ornament.setContext(vfContext).draw();
+    spanners.vibratos
+      .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
+      .forEach((vibratoBracket) => {
+        vibratoBracket.setContext(vfContext).draw();
       });
 
     // Draw vexflow.TextBracket elements.
