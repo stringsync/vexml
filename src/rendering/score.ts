@@ -183,6 +183,13 @@ export class Score {
         vfStaveHairpin.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.TextBracket elements.
+    spanners.octaveShifts
+      .map((octaveShift) => octaveShift.vexflow.textBracket)
+      .forEach((vfTextBracket) => {
+        vfTextBracket.setContext(vfContext).draw();
+      });
+
     // Draw measure labels.
     measures
       .map((measure) => measure.label)
