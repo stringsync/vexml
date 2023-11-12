@@ -5,7 +5,7 @@ import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
-import { WavyLine, WavyLineRendering } from './wavyline';
+import { WavyLine, WavyLineFragment, WavyLineRendering } from './wavyline';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -28,7 +28,13 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = BeamFragment | TupletFragment | SlurFragment | WedgeFragment | OctaveShiftFragment;
+export type SpannerFragment =
+  | BeamFragment
+  | TupletFragment
+  | SlurFragment
+  | WedgeFragment
+  | OctaveShiftFragment
+  | WavyLineFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -307,6 +313,38 @@ export class Spanners {
 
   private getWavyLines(): WavyLine[] {
     const wavyLines = new Array<WavyLine>();
+
+    const fragments = this.entries
+      .map((entry) => entry.fragment)
+      .filter((fragment): fragment is WavyLineFragment => fragment.type === 'wavyline');
+
+    let buffer = new Array<WavyLineFragment>();
+
+    for (let index = 0; index < fragments.length; index++) {
+      const fragment = fragments[index];
+      const isLast = index === fragments.length - 1;
+
+      switch (fragment.phase) {
+        case 'start':
+        case 'continue':
+          buffer.push(fragment);
+          break;
+        case 'unspecified':
+          if (buffer.length > 0) {
+            buffer.push(fragment);
+          }
+          break;
+        case 'stop':
+          buffer.push(fragment);
+          wavyLines.push(new WavyLine({ fragments: buffer }));
+          buffer = [];
+          break;
+      }
+
+      if (isLast && buffer.length > 0) {
+        wavyLines.push(new WavyLine({ fragments: buffer }));
+      }
+    }
 
     return wavyLines;
   }

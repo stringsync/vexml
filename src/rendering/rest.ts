@@ -11,6 +11,7 @@ import { BeamFragment } from './beam';
 import { TupletFragment } from './tuplet';
 import { OctaveShiftFragment } from './octaveshift';
 import { WedgeFragment } from './wedge';
+import { WavyLineFragment } from './wavyline';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -155,6 +156,7 @@ export class Rest {
       ...this.getBeamFragments(vfStaveNote),
       ...this.getTupletFragments(vfStaveNote),
       ...this.getWedgeFragments(vfStaveNote),
+      ...this.getWavyLineFragments(vfStaveNote),
       ...this.getOctaveShiftFragments(vfStaveNote),
     ];
   }
@@ -259,6 +261,33 @@ export class Rest {
     }
 
     return result;
+  }
+
+  private getWavyLineFragments(vfStaveNote: vexflow.StaveNote): WavyLineFragment[] {
+    return (
+      this.musicXml.note
+        ?.getNotations()
+        .flatMap((notation) => notation.getOrnaments())
+        .flatMap((ornament) => ornament.getWavyLines())
+        .map((wavyLine) => {
+          const phase = conversions.fromStartStopContinueToSpannerFragmentPhase(wavyLine.getType());
+          return {
+            type: 'wavyline',
+            phase,
+            keyIndex: 0,
+            vexflow: {
+              note: vfStaveNote,
+            },
+          };
+        }) ?? [
+        {
+          type: 'wavyline',
+          phase: 'unspecified',
+          keyIndex: 0,
+          vexflow: { note: vfStaveNote },
+        },
+      ]
+    );
   }
 
   private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
