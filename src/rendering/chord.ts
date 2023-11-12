@@ -1,11 +1,9 @@
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
 import { Config } from './config';
 import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
-import { Token } from './token';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -29,6 +27,7 @@ export class Chord {
   private musicXml: {
     note: musicxml.Note;
     directions: musicxml.Direction[];
+    octaveShift: musicxml.OctaveShift | null;
   };
   private stem: StemDirection;
   private clef: Clef;
@@ -40,6 +39,7 @@ export class Chord {
     musicXml: {
       note: musicxml.Note;
       directions: musicxml.Direction[];
+      octaveShift: musicxml.OctaveShift | null;
     };
     stem: StemDirection;
     clef: Clef;
@@ -65,7 +65,6 @@ export class Chord {
     };
   }
 
-  @util.memoize()
   private getNotes(): Note[] {
     const head = this.musicXml.note;
     const tail = head.getChordTail();
@@ -73,7 +72,11 @@ export class Chord {
     return [
       new Note({
         config: this.config,
-        musicXml: { note: head, directions: this.musicXml.directions },
+        musicXml: {
+          note: head,
+          directions: this.musicXml.directions,
+          octaveShift: this.musicXml.octaveShift,
+        },
         stem: this.stem,
         clef: this.clef,
         keySignature: this.keySignature,
@@ -85,7 +88,11 @@ export class Chord {
             config: this.config,
             // We don't want the `<directions>` to be handled multiple times, since it's already handled by the head
             // note.
-            musicXml: { note, directions: [] },
+            musicXml: {
+              note,
+              directions: [],
+              octaveShift: this.musicXml.octaveShift,
+            },
             stem: this.stem,
             clef: this.clef,
             keySignature: this.keySignature,

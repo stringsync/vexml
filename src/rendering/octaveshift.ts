@@ -61,14 +61,14 @@ export class OctaveShift {
     text: string;
     superscript: string;
     position: vexflow.TextBracketPosition;
-    fragments: OctaveShiftEntry[];
+    entries: OctaveShiftEntry[];
   }) {
-    util.assert(opts.fragments.length >= 2, 'must have at least 2 octave shift fragments');
+    util.assert(opts.entries.length >= 2, 'must have at least 2 octave shift entries');
 
     this.text = opts.text;
     this.superscript = opts.superscript;
     this.position = opts.position;
-    this.entries = opts.fragments;
+    this.entries = opts.entries;
   }
 
   /** Renders the octave shift. */

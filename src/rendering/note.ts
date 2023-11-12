@@ -66,7 +66,7 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private musicXml: { note: musicxml.Note; directions: musicxml.Direction[] };
+  private musicXml: { note: musicxml.Note; directions: musicxml.Direction[]; octaveShift: musicxml.OctaveShift | null };
   private stem: StemDirection;
   private clef: Clef;
   private keySignature: KeySignature;
@@ -74,7 +74,11 @@ export class Note {
 
   constructor(opts: {
     config: Config;
-    musicXml: { note: musicxml.Note; directions: musicxml.Direction[] };
+    musicXml: {
+      note: musicxml.Note;
+      directions: musicxml.Direction[];
+      octaveShift: musicxml.OctaveShift | null;
+    };
     stem: StemDirection;
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
@@ -261,7 +265,11 @@ export class Note {
   }
 
   private getOctave(): number {
-    return this.musicXml.note.getOctave() - this.clef.getOctaveChange();
+    return (
+      this.musicXml.note.getOctave() -
+      this.clef.getOctaveChange() +
+      conversions.fromOctaveShiftToOctaveCount(this.musicXml.octaveShift)
+    );
   }
 
   private getKey(): string {
@@ -452,7 +460,7 @@ export class Note {
               type: 'octaveshift',
               phase: 'start',
               text: octaveShift.getSize().toString(),
-              superscript: 'va',
+              superscript: 'mb',
               vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
             };
           case 'down':
@@ -460,7 +468,7 @@ export class Note {
               type: 'octaveshift',
               phase: 'start',
               text: octaveShift.getSize().toString(),
-              superscript: 'mb',
+              superscript: 'va',
               vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
             };
           case 'continue':

@@ -4,7 +4,7 @@ import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
-import { OctaveShift, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
+import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -235,6 +235,69 @@ export class Spanners {
 
   private getOctaveShifts(): OctaveShift[] {
     const octaveShifts = new Array<OctaveShift>();
+
+    let text = '';
+    let superscript = '';
+    let textBracketPosition = vexflow.TextBracketPosition.BOTTOM;
+    let address = Address.dummy();
+    let buffer = new Array<OctaveShiftEntry>();
+
+    function reset() {
+      text = '';
+      superscript = '';
+      textBracketPosition = vexflow.TextBracketPosition.BOTTOM;
+      buffer = [];
+    }
+
+    // NOTE: Underspecified octave shifts end up getting ignored.
+    function addOctaveShift() {
+      if (buffer.length >= 2) {
+        octaveShifts.push(
+          new OctaveShift({
+            text,
+            superscript,
+            entries: buffer,
+            position: textBracketPosition,
+          })
+        );
+      }
+    }
+
+    const entries = this.entries.filter((entry): entry is OctaveShiftEntry => entry.fragment.type === 'octaveshift');
+
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
+      const fragment = entry.fragment;
+      const isLast = index === entries.length - 1;
+
+      switch (fragment.phase) {
+        case 'start':
+          text = fragment.text;
+          superscript = fragment.superscript;
+          textBracketPosition = fragment.vexflow.textBracketPosition;
+          address = entry.address;
+          buffer.push(entry);
+          break;
+        case 'continue':
+          if (entry.address.isSameSystem(address)) {
+            buffer.push(entry);
+          } else {
+            addOctaveShift();
+            address = entry.address;
+            buffer = [entry];
+          }
+          break;
+        case 'stop':
+          buffer.push(entry);
+          addOctaveShift();
+          reset();
+          break;
+      }
+
+      if (isLast) {
+        addOctaveShift();
+      }
+    }
 
     return octaveShifts;
   }
