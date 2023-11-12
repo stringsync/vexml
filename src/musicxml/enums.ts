@@ -278,3 +278,14 @@ export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo', 'stop', 'continu
  */
 export type UpDownStopContinue = EnumValues<typeof UP_DOWN_STOP_CONTINUE>;
 export const UP_DOWN_STOP_CONTINUE = new Enum(['up', 'down', 'stop', 'continue'] as const);
+
+export type PedalType = EnumValues<typeof PEDAL_TYPES>;
+export const PEDAL_TYPES = new Enum([
+  'start',
+  'stop',
+  'sostenuto',
+  'change',
+  'continue',
+  'discontinue',
+  'resume',
+] as const);

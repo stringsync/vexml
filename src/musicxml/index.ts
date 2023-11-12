@@ -19,6 +19,7 @@ export * from './note';
 export * from './octaveshift';
 export * from './ornaments';
 export * from './part';
+export * from './pedal';
 export * from './print';
 export * from './scorepartwise';
 export * from './slur';
