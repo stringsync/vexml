@@ -29,7 +29,7 @@
     "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },
   "dependencies": {
-    "vxflw-early-access": "5.0.0-alpha.3"
+    "vxflw-early-access": "5.0.0-alpha.11"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",
