@@ -35,7 +35,8 @@ export class Pedal {
 
   render(): PedalRendering {
     const vfStaveNotes = this.getVfStaveNotes();
-    const vfPedalMarking = new vexflow.PedalMarking(vfStaveNotes);
+    const vfPedalMarkingType = this.getVfPedalMarkingType();
+    const vfPedalMarking = new vexflow.PedalMarking(vfStaveNotes).setType(vfPedalMarkingType);
 
     return {
       type: 'pedal',
@@ -48,6 +49,35 @@ export class Pedal {
   private getVfStaveNotes(): vexflow.StaveNote[] {
     const result = new Array<vexflow.StaveNote>();
 
+    for (const fragment of this.fragments) {
+      switch (fragment.musicXml.pedal.getType()) {
+        case 'change':
+          // This is required for vexflow to show pedal changes.
+          result.push(fragment.vexflow.staveNote, fragment.vexflow.staveNote);
+          break;
+        default:
+          result.push(fragment.vexflow.staveNote);
+          break;
+      }
+    }
+
     return result;
+  }
+
+  private getVfPedalMarkingType(): number {
+    const fragment = util.first(this.fragments)!;
+
+    const sign = fragment.musicXml.pedal.sign();
+    const line = fragment.musicXml.pedal.line();
+
+    if (line && sign) {
+      return vexflow.PedalMarking.type.MIXED;
+    } else if (line) {
+      return vexflow.PedalMarking.type.BRACKET;
+    } else if (sign) {
+      return vexflow.PedalMarking.type.TEXT;
+    } else {
+      return vexflow.PedalMarking.type.BRACKET;
+    }
   }
 }
