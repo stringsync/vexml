@@ -1,6 +1,9 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
+
+const KEY_SIGNATURE_PADDING = 15;
 
 const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
 const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
@@ -9,20 +12,23 @@ const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
 export class KeySignature {
   private fifths: number;
   private mode: musicxml.KeyMode;
+  private previousKeySignature: KeySignature | null;
 
-  private constructor(fifths: number, mode: musicxml.KeyMode) {
-    this.fifths = fifths;
-    this.mode = mode;
+  private constructor(opts: { fifths: number; mode: musicxml.KeyMode; previousKeySignature: KeySignature | null }) {
+    this.fifths = opts.fifths;
+    this.mode = opts.mode;
+    this.previousKeySignature = opts.previousKeySignature;
   }
 
-  static from(musicXml: { key: musicxml.Key }) {
-    const fifths = musicXml.key.getFifthsCount();
-    const mode = musicXml.key.getMode();
-    return new KeySignature(fifths, mode);
+  static from(opts: { musicXml: { key: musicxml.Key }; previousKeySignature: KeySignature | null }) {
+    const fifths = opts.musicXml.key.getFifthsCount();
+    const mode = opts.musicXml.key.getMode();
+    const previousKeySignature = opts.previousKeySignature;
+    return new KeySignature({ fifths, mode, previousKeySignature });
   }
 
   static Cmajor(): KeySignature {
-    return new KeySignature(0, 'major');
+    return new KeySignature({ fifths: 0, mode: 'major', previousKeySignature: null });
   }
 
   /** Returns the root of the key signature. */
@@ -56,6 +62,17 @@ export class KeySignature {
     }
 
     return alterations;
+  }
+
+  /** Returns the width of the key signature. */
+  getWidth(): number {
+    return (
+      new vexflow.KeySignature(
+        this.getKey(),
+        this.previousKeySignature?.getKey() ?? undefined,
+        this.getAlterations()
+      ).getWidth() + KEY_SIGNATURE_PADDING
+    );
   }
 
   /** Returns the accidental code being applied to the line that the pitch is on based on the key signature. */
