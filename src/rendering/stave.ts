@@ -93,10 +93,10 @@ export class Stave {
     let width = 0;
 
     if (modifiers.includes('clef')) {
-      width += this.getClefWidth();
+      width += this.getClef().getWidth();
     }
     if (modifiers.includes('keySignature')) {
-      width += this.getKeySignatureWidth();
+      width += this.getKeySignature().getWidth();
     }
     if (modifiers.includes('timeSignature')) {
       width += this.getTimeSignatureWidth();
@@ -183,23 +183,6 @@ export class Stave {
       },
       entry: staveEntryRendering,
     };
-  }
-
-  /** Returns the width that the clef takes up. */
-  @util.memoize()
-  private getClefWidth(): number {
-    return this.getClef().getWidth();
-  }
-
-  /** Returns the width that the key signature takes up. */
-  @util.memoize()
-  private getKeySignatureWidth(): number {
-    return this.createVexflowStave({
-      x: 0,
-      y: 0,
-      width: this.getMinJustifyWidth(),
-      modifiers: ['keySignature'],
-    }).getNoteStartX();
   }
 
   /** Returns the width that the time signature takes up. */
