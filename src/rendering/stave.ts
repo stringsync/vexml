@@ -188,12 +188,7 @@ export class Stave {
   /** Returns the width that the clef takes up. */
   @util.memoize()
   private getClefWidth(): number {
-    return this.createVexflowStave({
-      x: 0,
-      y: 0,
-      width: this.getMinJustifyWidth(),
-      modifiers: ['clef'],
-    }).getNoteStartX();
+    return this.getClef().getWidth();
   }
 
   /** Returns the width that the key signature takes up. */

@@ -1,5 +1,8 @@
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
 import { ClefAnnotation, ClefType } from './enums';
+
+const CLEF_PADDING = 5;
 
 /** A musical symbol used to indicate which notes are represented by the lines and spaces on a stave. */
 export class Clef {
@@ -32,6 +35,11 @@ export class Clef {
   /** Returns whether or not the clef is equal with the other. */
   isEqual(other: Clef): boolean {
     return this.sign === other.sign && this.line === other.line && this.octaveChange === other.octaveChange;
+  }
+
+  /** Returns the width of the clef. */
+  getWidth(): number {
+    return new vexflow.Clef(this.getType()).getWidth() + CLEF_PADDING;
   }
 
   /** Returns the type of clef. */
