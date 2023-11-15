@@ -2,8 +2,16 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { StaveModifier } from './stave';
 import { KeySignature } from './keysignature';
-import { Clef } from './clef';
-import { TimeSignature } from './timesignature';
+import { Clef, ClefRendering } from './clef';
+import { TimeSignature, TimeSignatureRendering } from './timesignature';
+
+/** The result of rendering a stave signature. */
+export type StaveSignatureRendering = {
+  type: 'stavesignature';
+  clef: ClefRendering;
+  timeSignatures: TimeSignatureRendering[];
+  keySignature: KeySignature;
+};
 
 /** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
 export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, musicxml.Attributes>;

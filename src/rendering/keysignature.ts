@@ -8,6 +8,14 @@ const KEY_SIGNATURE_PADDING = 15;
 const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
 const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
 
+/** The result of rendering a key signature. */
+export type KeySignatureRendering = {
+  type: 'keysignature';
+  vexflow: {
+    keySignature: vexflow.KeySignature;
+  };
+};
+
 /** Represents a key signature. */
 export class KeySignature {
   private fifths: number;
@@ -67,13 +75,7 @@ export class KeySignature {
   /** Returns the width of the key signature. */
   @util.memoize()
   getWidth(): number {
-    return (
-      new vexflow.KeySignature(
-        this.getKey(),
-        this.previousKeySignature?.getKey() ?? undefined,
-        this.getAlterations()
-      ).getWidth() + KEY_SIGNATURE_PADDING
-    );
+    return this.getVfKeySignature().getWidth() + KEY_SIGNATURE_PADDING;
   }
 
   /** Returns the accidental code being applied to the line that the pitch is on based on the key signature. */
@@ -101,6 +103,24 @@ export class KeySignature {
   /** Returns whether the key signatures are equal. */
   isEqual(other: KeySignature): boolean {
     return this.fifths === other.fifths && this.mode === other.mode;
+  }
+
+  /** Renders the key signature. */
+  render(): KeySignatureRendering {
+    return {
+      type: 'keysignature',
+      vexflow: {
+        keySignature: this.getVfKeySignature(),
+      },
+    };
+  }
+
+  private getVfKeySignature(): vexflow.KeySignature {
+    return new vexflow.KeySignature(
+      this.getKey(),
+      this.previousKeySignature?.getKey() ?? undefined,
+      this.getAlterations()
+    );
   }
 
   private toMajorKey(fifths: number): string {

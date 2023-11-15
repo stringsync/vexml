@@ -3,6 +3,15 @@ import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
+/** The result of rendering a time signature. */
+export type TimeSignatureRendering = {
+  type: 'timesignature';
+  vexflow: {
+    timeSignatures: vexflow.TimeSignature[];
+  };
+};
+
+/** Represents a musical time signature. */
 export class TimeSignature {
   private constructor(private components: Fraction[], private symbol: musicxml.TimeSymbol | null) {}
 
@@ -113,7 +122,7 @@ export class TimeSignature {
   /** Returns the width of the time signature.*/
   @util.memoize()
   getWidth(): number {
-    return util.sum(this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec).getWidth()));
+    return util.sum(this.getVfTimeSignatures().map((vfTimeSignature) => vfTimeSignature.getWidth()));
   }
 
   /** Returns whether the time signatures are equal. */
@@ -163,6 +172,20 @@ export class TimeSignature {
     );
 
     return new Fraction(numerator, denominator);
+  }
+
+  render(): TimeSignatureRendering {
+    return {
+      type: 'timesignature',
+      vexflow: {
+        timeSignatures: this.getVfTimeSignatures(),
+      },
+    };
+  }
+
+  @util.memoize()
+  private getVfTimeSignatures(): vexflow.TimeSignature[] {
+    return this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec));
   }
 
   @util.memoize()
