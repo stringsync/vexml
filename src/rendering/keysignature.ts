@@ -65,6 +65,7 @@ export class KeySignature {
   }
 
   /** Returns the width of the key signature. */
+  @util.memoize()
   getWidth(): number {
     return (
       new vexflow.KeySignature(

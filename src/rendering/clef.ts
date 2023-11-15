@@ -1,5 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { ClefAnnotation, ClefType } from './enums';
 
 const CLEF_PADDING = 5;
@@ -32,14 +33,15 @@ export class Clef {
     return new Clef('G', 2, null);
   }
 
+  /** Returns the width of the clef. */
+  @util.memoize()
+  getWidth(): number {
+    return new vexflow.Clef(this.getType()).getWidth() + CLEF_PADDING;
+  }
+
   /** Returns whether or not the clef is equal with the other. */
   isEqual(other: Clef): boolean {
     return this.sign === other.sign && this.line === other.line && this.octaveChange === other.octaveChange;
-  }
-
-  /** Returns the width of the clef. */
-  getWidth(): number {
-    return new vexflow.Clef(this.getType()).getWidth() + CLEF_PADDING;
   }
 
   /** Returns the type of clef. */
