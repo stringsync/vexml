@@ -174,6 +174,7 @@ export class TimeSignature {
     return new Fraction(numerator, denominator);
   }
 
+  /** Renders the time signature. */
   render(): TimeSignatureRendering {
     return {
       type: 'timesignature',
