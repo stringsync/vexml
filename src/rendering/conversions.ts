@@ -356,3 +356,79 @@ export const fromOctaveShiftToOctaveCount = (octaveShift: musicxml.OctaveShift |
   // then each subsequent octave adds 7 to the size (15 for 2 octaves, 22 for 3, etc.)
   return Math.floor((size - 1) / 7) * multiplier;
 };
+
+/** Converts the number of fifths to a major key. */
+export const fromFifthsToMajorKey = (fifths: number) => {
+  switch (fifths) {
+    case -7:
+      return 'Cb';
+    case -6:
+      return 'Gb';
+    case -5:
+      return 'Db';
+    case -4:
+      return 'Ab';
+    case -3:
+      return 'Eb';
+    case -2:
+      return 'Bb';
+    case -1:
+      return 'F';
+    case 0:
+      return 'C';
+    case 1:
+      return 'G';
+    case 2:
+      return 'D';
+    case 3:
+      return 'A';
+    case 4:
+      return 'E';
+    case 5:
+      return 'B';
+    case 6:
+      return 'F#';
+    case 7:
+      return 'C#';
+    default:
+      throw new Error(`cannot handle fifths: ${fifths}`);
+  }
+};
+
+/** Converts the number of fifths to a minor key. */
+export const fromFifthsToMinorKey = (fifths: number) => {
+  switch (fifths) {
+    case -7:
+      return 'Abm';
+    case -6:
+      return 'Ebm';
+    case -5:
+      return 'Bbm';
+    case -4:
+      return 'Fm';
+    case -3:
+      return 'Cm';
+    case -2:
+      return 'Gm';
+    case -1:
+      return 'Dm';
+    case 0:
+      return 'Am';
+    case 1:
+      return 'Em';
+    case 2:
+      return 'Bm';
+    case 3:
+      return 'F#m';
+    case 4:
+      return 'C#m';
+    case 5:
+      return 'G#m';
+    case 6:
+      return 'D#m';
+    case 7:
+      return 'A#m';
+    default:
+      throw new Error(`cannot handle fifths: ${fifths}`);
+  }
+};
