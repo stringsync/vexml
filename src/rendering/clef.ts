@@ -5,6 +5,14 @@ import { ClefAnnotation, ClefType } from './enums';
 
 const CLEF_PADDING = 5;
 
+/** The result of rendering a clef */
+export type ClefRendering = {
+  type: 'clef';
+  vexflow: {
+    clef: vexflow.Clef;
+  };
+};
+
 /** A musical symbol used to indicate which notes are represented by the lines and spaces on a stave. */
 export class Clef {
   private sign: musicxml.ClefSign | null;
@@ -96,5 +104,17 @@ export class Clef {
       default:
         return null;
     }
+  }
+
+  /** Renders the clef. */
+  render(): ClefRendering {
+    const vfClef = new vexflow.Clef(this.getType());
+
+    return {
+      type: 'clef',
+      vexflow: {
+        clef: vfClef,
+      },
+    };
   }
 }
