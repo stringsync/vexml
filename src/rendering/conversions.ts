@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
+import { ClefType, NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -431,4 +431,38 @@ export const fromFifthsToMinorKey = (fifths: number) => {
     default:
       throw new Error(`cannot handle fifths: ${fifths}`);
   }
+};
+
+/** Converts clef properties to a `ClefType`. Defaults to 'treble'. */
+export const fromClefPropertiesToClefType = (sign: musicxml.ClefSign | null, line: number | null): ClefType => {
+  if (sign === 'G') {
+    // with G line defaults to 2
+    // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
+    if (line === 1) return 'french';
+    return 'treble';
+  }
+
+  if (sign === 'F') {
+    if (line === 5) return 'subbass';
+    if (line === 3) return 'baritone-f';
+    return 'bass';
+  }
+
+  if (sign === 'C') {
+    if (line === 5) return 'baritone-c';
+    if (line === 4) return 'tenor';
+    if (line === 2) return 'mezzo-soprano';
+    if (line === 1) return 'soprano';
+    return 'alto';
+  }
+
+  if (sign === 'percussion') {
+    return 'percussion';
+  }
+
+  if (sign === 'TAB') {
+    return 'tab';
+  }
+
+  return 'treble';
 };
