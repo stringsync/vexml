@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { AccidentalCode } from './accidental';
 
 const KEY_SIGNATURE_PADDING = 15;
@@ -49,11 +50,11 @@ export class KeySignature {
 
     switch (this.mode) {
       case 'major':
-        return this.toMajorKey(fifths);
+        return conversions.fromFifthsToMajorKey(fifths);
       case 'minor':
-        return this.toMinorKey(fifths);
+        return conversions.fromFifthsToMinorKey(fifths);
       default:
-        return this.toMajorKey(fifths);
+        return conversions.fromFifthsToMajorKey(fifths);
     }
   }
 
@@ -121,79 +122,5 @@ export class KeySignature {
       this.previousKeySignature?.getKey() ?? undefined,
       this.getAlterations()
     );
-  }
-
-  private toMajorKey(fifths: number): string {
-    switch (fifths) {
-      case -7:
-        return 'Cb';
-      case -6:
-        return 'Gb';
-      case -5:
-        return 'Db';
-      case -4:
-        return 'Ab';
-      case -3:
-        return 'Eb';
-      case -2:
-        return 'Bb';
-      case -1:
-        return 'F';
-      case 0:
-        return 'C';
-      case 1:
-        return 'G';
-      case 2:
-        return 'D';
-      case 3:
-        return 'A';
-      case 4:
-        return 'E';
-      case 5:
-        return 'B';
-      case 6:
-        return 'F#';
-      case 7:
-        return 'C#';
-      default:
-        throw new Error(`cannot handle fifths: ${fifths}`);
-    }
-  }
-
-  private toMinorKey(fifths: number): string {
-    switch (fifths) {
-      case -7:
-        return 'Abm';
-      case -6:
-        return 'Ebm';
-      case -5:
-        return 'Bbm';
-      case -4:
-        return 'Fm';
-      case -3:
-        return 'Cm';
-      case -2:
-        return 'Gm';
-      case -1:
-        return 'Dm';
-      case 0:
-        return 'Am';
-      case 1:
-        return 'Em';
-      case 2:
-        return 'Bm';
-      case 3:
-        return 'F#m';
-      case 4:
-        return 'C#m';
-      case 5:
-        return 'G#m';
-      case 6:
-        return 'D#m';
-      case 7:
-        return 'A#m';
-      default:
-        throw new Error(`cannot handle fifths: ${fifths}`);
-    }
   }
 }
