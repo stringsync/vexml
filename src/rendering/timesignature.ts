@@ -1,6 +1,7 @@
 import { Fraction } from '@/util';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
 
 export class TimeSignature {
   private constructor(private components: Fraction[], private symbol: musicxml.TimeSymbol | null) {}
@@ -109,6 +110,12 @@ export class TimeSignature {
     return TimeSignature.of(numerators[0], denominator);
   }
 
+  /** Returns the width of the time signature.*/
+  @util.memoize()
+  getWidth(): number {
+    return util.sum(this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec).getWidth()));
+  }
+
   /** Returns whether the time signatures are equal. */
   isEqual(other: TimeSignature): boolean {
     const components1 = this.components;
@@ -164,6 +171,63 @@ export class TimeSignature {
     for (let index = 1; index < this.components.length; index++) {
       result = util.lcm(result, this.components[index].denominator);
     }
+    return result;
+  }
+
+  private getTimeSpecs(): string[] {
+    switch (this.getSymbol()) {
+      case 'common':
+        return ['C'];
+      case 'cut':
+        return ['C|'];
+      case 'single-number':
+        // TODO: If/when vexflow supports this, return the time spec for a single number time signature.
+        return [this.toSimpleTimeSpecs(this.toFraction())];
+      case 'hidden':
+        return [];
+    }
+
+    const components = this.getComponents();
+    if (components.length > 1) {
+      return this.toComplexTimeSpecs(components);
+    }
+
+    return [this.toSimpleTimeSpecs(components[0])];
+  }
+
+  private toSimpleTimeSpecs(component: util.Fraction): string {
+    return `${component.numerator}/${component.denominator}`;
+  }
+
+  private toComplexTimeSpecs(components: util.Fraction[]): string[] {
+    const denominators = new Array<number>();
+    const memo: Record<number, number[]> = {};
+
+    for (const component of components) {
+      const numerator = component.numerator;
+      const denominator = component.denominator;
+
+      if (typeof memo[denominator] === 'undefined') {
+        denominators.push(denominator);
+      }
+
+      memo[denominator] ??= [];
+      memo[denominator].push(numerator);
+    }
+
+    const result = new Array<string>();
+
+    for (let index = 0; index < denominators.length; index++) {
+      const denominator = denominators[index];
+      const isLast = index === denominators.length - 1;
+
+      result.push(`${memo[denominator].join('+')}/${denominator}`);
+
+      if (!isLast) {
+        result.push('+');
+      }
+    }
+
     return result;
   }
 }

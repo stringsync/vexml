@@ -99,7 +99,7 @@ export class Stave {
       width += this.getKeySignature().getWidth();
     }
     if (modifiers.includes('timeSignature')) {
-      width += this.getTimeSignatureWidth();
+      width += this.getTimeSignature().getWidth();
     }
 
     return width;
@@ -183,17 +183,6 @@ export class Stave {
       },
       entry: staveEntryRendering,
     };
-  }
-
-  /** Returns the width that the time signature takes up. */
-  @util.memoize()
-  private getTimeSignatureWidth(): number {
-    return this.createVexflowStave({
-      x: 0,
-      y: 0,
-      width: this.getMinJustifyWidth(),
-      modifiers: ['timeSignature'],
-    }).getNoteStartX();
   }
 
   @util.memoize()
