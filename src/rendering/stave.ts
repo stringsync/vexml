@@ -23,6 +23,7 @@ export type StaveEntryRendering = ChorusRendering | MultiRestRendering | Tablatu
 export type StaveRendering = {
   type: 'stave';
   staveNumber: number;
+  signature: StaveSignature;
   width: number;
   vexflow: {
     stave: vexflow.Stave;
@@ -30,9 +31,6 @@ export type StaveRendering = {
     endBarlineType: vexflow.BarlineType;
   };
   entry: StaveEntryRendering;
-  clef: ClefRendering;
-  keySignature: KeySignatureRendering;
-  timeSignature: TimeSignatureRendering;
 };
 
 /** The modifiers of a stave. */
@@ -48,7 +46,7 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private staveNumber: number;
-  private staveSignature: StaveSignature | null;
+  private staveSignature: StaveSignature;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private measureEntries: MeasureEntry[];
@@ -57,7 +55,7 @@ export class Stave {
   constructor(opts: {
     config: Config;
     staveNumber: number;
-    staveSignature: StaveSignature | null;
+    staveSignature: StaveSignature;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     measureEntries: MeasureEntry[];
@@ -154,17 +152,10 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const clef = this.getClef();
-    const clefRendering = clef.render();
-
-    const keySignature = this.getKeySignature();
-    const keySignatureRendering = keySignature.render();
-
-    const timeSignature = this.getTimeSignature();
-    const timeSignatureRendering = timeSignature.render();
+    const staveSignature = this.staveSignature.render({ staveNumber: this.staveNumber });
 
     const vfStave =
-      clef.getType() === 'tab'
+      this.getClef().getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width);
 
@@ -175,13 +166,13 @@ export class Stave {
     vfStave.setEndBarType(vfEndBarlineType);
 
     if (opts.modifiers.includes('clef')) {
-      vfStave.addModifier(clefRendering.vexflow.clef);
+      vfStave.addModifier(staveSignature.clef.vexflow.clef);
     }
     if (opts.modifiers.includes('keySignature')) {
-      vfStave.addModifier(keySignatureRendering.vexflow.keySignature);
+      vfStave.addModifier(staveSignature.keySignature.vexflow.keySignature);
     }
     if (opts.modifiers.includes('timeSignature')) {
-      for (const timeSignature of timeSignatureRendering.vexflow.timeSignatures) {
+      for (const timeSignature of staveSignature.timeSignature.vexflow.timeSignatures) {
         vfStave.addModifier(timeSignature);
       }
     }
@@ -218,6 +209,7 @@ export class Stave {
 
     return {
       type: 'stave',
+      signature: this.staveSignature,
       staveNumber: this.staveNumber,
       width: opts.width,
       vexflow: {
@@ -226,9 +218,6 @@ export class Stave {
         endBarlineType: vfEndBarlineType,
       },
       entry: staveEntryRendering,
-      clef: clefRendering,
-      keySignature: keySignatureRendering,
-      timeSignature: timeSignatureRendering,
     };
   }
 
@@ -244,26 +233,6 @@ export class Stave {
         // Select the first renderable metronome, since there can be only one per vexflow.Stave.
         .filter((metronome) => metronome.isSupported())
     );
-  }
-
-  @util.memoize()
-  private getClef(): Clef {
-    return this.staveSignature?.getClef(this.staveNumber) ?? Clef.treble();
-  }
-
-  @util.memoize()
-  private getKeySignature(): KeySignature {
-    return this.staveSignature?.getKeySignature(this.staveNumber) ?? KeySignature.Cmajor();
-  }
-
-  @util.memoize()
-  private getTimeSignature(): TimeSignature {
-    return this.staveSignature?.getTimeSignature(this.staveNumber) ?? TimeSignature.common();
-  }
-
-  @util.memoize()
-  private getQuarterNoteDivisions(): number {
-    return this.staveSignature?.getQuarterNoteDivisions() ?? 2;
   }
 
   @util.memoize()
@@ -297,5 +266,21 @@ export class Stave {
       clef,
       timeSignature,
     });
+  }
+
+  private getClef(): Clef {
+    return this.staveSignature.getClef(this.staveNumber);
+  }
+
+  private getKeySignature(): KeySignature {
+    return this.staveSignature.getKeySignature(this.staveNumber);
+  }
+
+  private getTimeSignature(): TimeSignature {
+    return this.staveSignature.getTimeSignature(this.staveNumber);
+  }
+
+  private getQuarterNoteDivisions(): number {
+    return this.staveSignature.getQuarterNoteDivisions();
   }
 }

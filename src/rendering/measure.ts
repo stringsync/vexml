@@ -36,7 +36,7 @@ export class Measure {
     staveLayouts: musicxml.StaveLayout[];
   };
   private previousMeasure: Measure | null;
-  private leadingStaveSignature: StaveSignature | null;
+  private leadingStaveSignature: StaveSignature;
 
   private staveCount: number;
   private measureEntries: MeasureEntry[];
@@ -48,7 +48,7 @@ export class Measure {
       measure: musicxml.Measure;
       staveLayouts: musicxml.StaveLayout[];
     };
-    leadingStaveSignature: StaveSignature | null;
+    leadingStaveSignature: StaveSignature;
     previousMeasure: Measure | null;
     staveCount: number;
     measureEntries: MeasureEntry[];
@@ -191,7 +191,7 @@ export class Measure {
     let measureFragmentIndex = 0;
 
     function addFragment(
-      leadingStaveSignature: StaveSignature | null,
+      leadingStaveSignature: StaveSignature,
       measureEntries: MeasureEntry[],
       beginningBarStyle: musicxml.BarStyle,
       endBarStyle: musicxml.BarStyle
