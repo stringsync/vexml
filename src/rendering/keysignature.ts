@@ -1,28 +1,43 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { AccidentalCode } from './accidental';
+
+const KEY_SIGNATURE_PADDING = 15;
 
 const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
 const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+
+/** The result of rendering a key signature. */
+export type KeySignatureRendering = {
+  type: 'keysignature';
+  vexflow: {
+    keySignature: vexflow.KeySignature;
+  };
+};
 
 /** Represents a key signature. */
 export class KeySignature {
   private fifths: number;
   private mode: musicxml.KeyMode;
+  private previousKeySignature: KeySignature | null;
 
-  private constructor(fifths: number, mode: musicxml.KeyMode) {
-    this.fifths = fifths;
-    this.mode = mode;
+  private constructor(opts: { fifths: number; mode: musicxml.KeyMode; previousKeySignature: KeySignature | null }) {
+    this.fifths = opts.fifths;
+    this.mode = opts.mode;
+    this.previousKeySignature = opts.previousKeySignature;
   }
 
-  static from(musicXml: { key: musicxml.Key }) {
-    const fifths = musicXml.key.getFifthsCount();
-    const mode = musicXml.key.getMode();
-    return new KeySignature(fifths, mode);
+  static from(opts: { musicXml: { key: musicxml.Key }; previousKeySignature: KeySignature | null }) {
+    const fifths = opts.musicXml.key.getFifthsCount();
+    const mode = opts.musicXml.key.getMode();
+    const previousKeySignature = opts.previousKeySignature;
+    return new KeySignature({ fifths, mode, previousKeySignature });
   }
 
   static Cmajor(): KeySignature {
-    return new KeySignature(0, 'major');
+    return new KeySignature({ fifths: 0, mode: 'major', previousKeySignature: null });
   }
 
   /** Returns the root of the key signature. */
@@ -35,11 +50,11 @@ export class KeySignature {
 
     switch (this.mode) {
       case 'major':
-        return this.toMajorKey(fifths);
+        return conversions.fromFifthsToMajorKey(fifths);
       case 'minor':
-        return this.toMinorKey(fifths);
+        return conversions.fromFifthsToMinorKey(fifths);
       default:
-        return this.toMajorKey(fifths);
+        return conversions.fromFifthsToMajorKey(fifths);
     }
   }
 
@@ -56,6 +71,12 @@ export class KeySignature {
     }
 
     return alterations;
+  }
+
+  /** Returns the width of the key signature. */
+  @util.memoize()
+  getWidth(): number {
+    return this.getVfKeySignature().getWidth() + KEY_SIGNATURE_PADDING;
   }
 
   /** Returns the accidental code being applied to the line that the pitch is on based on the key signature. */
@@ -85,77 +106,21 @@ export class KeySignature {
     return this.fifths === other.fifths && this.mode === other.mode;
   }
 
-  private toMajorKey(fifths: number): string {
-    switch (fifths) {
-      case -7:
-        return 'Cb';
-      case -6:
-        return 'Gb';
-      case -5:
-        return 'Db';
-      case -4:
-        return 'Ab';
-      case -3:
-        return 'Eb';
-      case -2:
-        return 'Bb';
-      case -1:
-        return 'F';
-      case 0:
-        return 'C';
-      case 1:
-        return 'G';
-      case 2:
-        return 'D';
-      case 3:
-        return 'A';
-      case 4:
-        return 'E';
-      case 5:
-        return 'B';
-      case 6:
-        return 'F#';
-      case 7:
-        return 'C#';
-      default:
-        throw new Error(`cannot handle fifths: ${fifths}`);
-    }
+  /** Renders the key signature. */
+  render(): KeySignatureRendering {
+    return {
+      type: 'keysignature',
+      vexflow: {
+        keySignature: this.getVfKeySignature(),
+      },
+    };
   }
 
-  private toMinorKey(fifths: number): string {
-    switch (fifths) {
-      case -7:
-        return 'Abm';
-      case -6:
-        return 'Ebm';
-      case -5:
-        return 'Bbm';
-      case -4:
-        return 'Fm';
-      case -3:
-        return 'Cm';
-      case -2:
-        return 'Gm';
-      case -1:
-        return 'Dm';
-      case 0:
-        return 'Am';
-      case 1:
-        return 'Em';
-      case 2:
-        return 'Bm';
-      case 3:
-        return 'F#m';
-      case 4:
-        return 'C#m';
-      case 5:
-        return 'G#m';
-      case 6:
-        return 'D#m';
-      case 7:
-        return 'A#m';
-      default:
-        throw new Error(`cannot handle fifths: ${fifths}`);
-    }
+  private getVfKeySignature(): vexflow.KeySignature {
+    return new vexflow.KeySignature(
+      this.getKey(),
+      this.previousKeySignature?.getKey() ?? undefined,
+      this.getAlterations()
+    ).setPosition(vexflow.StaveModifierPosition.BEGIN);
   }
 }

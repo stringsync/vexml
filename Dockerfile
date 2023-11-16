@@ -1,4 +1,4 @@
-FROM ghcr.io/puppeteer/puppeteer:21.3.8
+FROM ghcr.io/puppeteer/puppeteer:21.5.1
 
 ENV VEXML_CANONICAL_TEST_ENV=true
 

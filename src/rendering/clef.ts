@@ -1,5 +1,18 @@
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
+import * as util from '@/util';
+import * as conversions from './conversions';
 import { ClefAnnotation, ClefType } from './enums';
+
+const CLEF_PADDING = 5;
+
+/** The result of rendering a clef */
+export type ClefRendering = {
+  type: 'clef';
+  vexflow: {
+    clef: vexflow.Clef;
+  };
+};
 
 /** A musical symbol used to indicate which notes are represented by the lines and spaces on a stave. */
 export class Clef {
@@ -29,46 +42,19 @@ export class Clef {
     return new Clef('G', 2, null);
   }
 
+  /** Returns the width of the clef. */
+  @util.memoize()
+  getWidth(): number {
+    return this.getVfClef().getWidth() + CLEF_PADDING;
+  }
+
+  getType(): ClefType {
+    return conversions.fromClefPropertiesToClefType(this.sign, this.line);
+  }
+
   /** Returns whether or not the clef is equal with the other. */
   isEqual(other: Clef): boolean {
     return this.sign === other.sign && this.line === other.line && this.octaveChange === other.octaveChange;
-  }
-
-  /** Returns the type of clef. */
-  getType(): ClefType {
-    const sign = this.sign;
-    const line = this.line;
-
-    if (sign === 'G') {
-      // with G line defaults to 2
-      // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
-      if (line === 1) return 'french';
-      return 'treble';
-    }
-
-    if (sign === 'F') {
-      if (line === 5) return 'subbass';
-      if (line === 3) return 'baritone-f';
-      return 'bass';
-    }
-
-    if (sign === 'C') {
-      if (line === 5) return 'baritone-c';
-      if (line === 4) return 'tenor';
-      if (line === 2) return 'mezzo-soprano';
-      if (line === 1) return 'soprano';
-      return 'alto';
-    }
-
-    if (sign === 'percussion') {
-      return 'percussion';
-    }
-
-    if (sign === 'TAB') {
-      return 'tab';
-    }
-
-    return 'treble';
   }
 
   /** Returns the octave change of the clef. Defaults to 0. */
@@ -86,5 +72,20 @@ export class Clef {
       default:
         return null;
     }
+  }
+
+  /** Renders the clef. */
+  render(): ClefRendering {
+    return {
+      type: 'clef',
+      vexflow: {
+        clef: this.getVfClef(),
+      },
+    };
+  }
+
+  private getVfClef(): vexflow.Clef {
+    const type = this.getType();
+    return new vexflow.Clef(type, 'default', this.getAnnotation() ?? undefined);
   }
 }

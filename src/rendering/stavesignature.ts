@@ -1,9 +1,18 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { StaveModifier } from './stave';
-import { KeySignature } from './keysignature';
-import { Clef } from './clef';
-import { TimeSignature } from './timesignature';
+import { KeySignature, KeySignatureRendering } from './keysignature';
+import { Clef, ClefRendering } from './clef';
+import { TimeSignature, TimeSignatureRendering } from './timesignature';
+
+/** The result of rendering a stave signature. */
+export type StaveSignatureRendering = {
+  type: 'stavesignature';
+  staveNumber: number;
+  clef: ClefRendering;
+  keySignature: KeySignatureRendering;
+  timeSignature: TimeSignatureRendering;
+};
 
 /** Similar to `musicxml.MeasureEntry`, but with the `<attribute>` elements replaced with `StaveSignature` types. */
 export type MeasureEntry = StaveSignature | Exclude<musicxml.MeasureEntry, musicxml.Attributes>;
@@ -116,7 +125,9 @@ export class StaveSignature {
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
       ...opts.musicXml.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
-        map[key.getStaveNumber()] = KeySignature.from({ key });
+        const staveNumber = key.getStaveNumber();
+        const previousKeySignature = previousStaveSignature?.getKeySignature(staveNumber) ?? null;
+        map[staveNumber] = KeySignature.from({ musicXml: { key }, previousKeySignature });
         return map;
       }, {}),
     };
@@ -258,5 +269,16 @@ export class StaveSignature {
   /** Returns the <attributes> that corresponds to this stave signature. */
   getAttributes(): musicxml.Attributes {
     return this.attributes;
+  }
+
+  /** Renders the stave signature. */
+  render(opts: { staveNumber: number }): StaveSignatureRendering {
+    return {
+      type: 'stavesignature',
+      staveNumber: opts.staveNumber,
+      clef: this.getClef(opts.staveNumber).render(),
+      keySignature: this.getKeySignature(opts.staveNumber).render(),
+      timeSignature: this.getTimeSignature(opts.staveNumber).render(),
+    };
   }
 }
