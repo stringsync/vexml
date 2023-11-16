@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
+import { ClefType, NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -241,9 +241,9 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
 export const fromAboveBelowToTupletLocation = (aboveBelow: musicxml.AboveBelow): vexflow.TupletLocation => {
   switch (aboveBelow) {
     case 'above':
-      return vexflow.TupletLocation.TOP;
+      return vexflow.Tuplet.LOCATION_TOP;
     case 'below':
-      return vexflow.TupletLocation.BOTTOM;
+      return vexflow.Tuplet.LOCATION_BOTTOM;
   }
 };
 
@@ -355,4 +355,114 @@ export const fromOctaveShiftToOctaveCount = (octaveShift: musicxml.OctaveShift |
   // The first octave shift starts at size 8 (for 1 octave),
   // then each subsequent octave adds 7 to the size (15 for 2 octaves, 22 for 3, etc.)
   return Math.floor((size - 1) / 7) * multiplier;
+};
+
+/** Converts the number of fifths to a major key. */
+export const fromFifthsToMajorKey = (fifths: number) => {
+  switch (fifths) {
+    case -7:
+      return 'Cb';
+    case -6:
+      return 'Gb';
+    case -5:
+      return 'Db';
+    case -4:
+      return 'Ab';
+    case -3:
+      return 'Eb';
+    case -2:
+      return 'Bb';
+    case -1:
+      return 'F';
+    case 0:
+      return 'C';
+    case 1:
+      return 'G';
+    case 2:
+      return 'D';
+    case 3:
+      return 'A';
+    case 4:
+      return 'E';
+    case 5:
+      return 'B';
+    case 6:
+      return 'F#';
+    case 7:
+      return 'C#';
+    default:
+      throw new Error(`cannot handle fifths: ${fifths}`);
+  }
+};
+
+/** Converts the number of fifths to a minor key. */
+export const fromFifthsToMinorKey = (fifths: number) => {
+  switch (fifths) {
+    case -7:
+      return 'Abm';
+    case -6:
+      return 'Ebm';
+    case -5:
+      return 'Bbm';
+    case -4:
+      return 'Fm';
+    case -3:
+      return 'Cm';
+    case -2:
+      return 'Gm';
+    case -1:
+      return 'Dm';
+    case 0:
+      return 'Am';
+    case 1:
+      return 'Em';
+    case 2:
+      return 'Bm';
+    case 3:
+      return 'F#m';
+    case 4:
+      return 'C#m';
+    case 5:
+      return 'G#m';
+    case 6:
+      return 'D#m';
+    case 7:
+      return 'A#m';
+    default:
+      throw new Error(`cannot handle fifths: ${fifths}`);
+  }
+};
+
+/** Converts clef properties to a `ClefType`. Defaults to 'treble'. */
+export const fromClefPropertiesToClefType = (sign: musicxml.ClefSign | null, line: number | null): ClefType => {
+  if (sign === 'G') {
+    // with G line defaults to 2
+    // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
+    if (line === 1) return 'french';
+    return 'treble';
+  }
+
+  if (sign === 'F') {
+    if (line === 5) return 'subbass';
+    if (line === 3) return 'baritone-f';
+    return 'bass';
+  }
+
+  if (sign === 'C') {
+    if (line === 5) return 'baritone-c';
+    if (line === 4) return 'tenor';
+    if (line === 2) return 'mezzo-soprano';
+    if (line === 1) return 'soprano';
+    return 'alto';
+  }
+
+  if (sign === 'percussion') {
+    return 'percussion';
+  }
+
+  if (sign === 'TAB') {
+    return 'tab';
+  }
+
+  return 'treble';
 };
