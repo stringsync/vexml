@@ -121,6 +121,6 @@ export class KeySignature {
       this.getKey(),
       this.previousKeySignature?.getKey() ?? undefined,
       this.getAlterations()
-    );
+    ).setPosition(vexflow.StaveModifierPosition.BEGIN);
   }
 }

@@ -1,11 +1,11 @@
 import { Chorus, ChorusRendering } from './chorus';
-import { Clef } from './clef';
+import { Clef, ClefRendering } from './clef';
 import { Config } from './config';
-import { KeySignature } from './keysignature';
+import { KeySignature, KeySignatureRendering } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MultiRest, MultiRestRendering } from './multirest';
 import { Tablature, TablatureRendering } from './tablature';
-import { TimeSignature } from './timesignature';
+import { TimeSignature, TimeSignatureRendering } from './timesignature';
 import * as conversions from './conversions';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -30,6 +30,9 @@ export type StaveRendering = {
     endBarlineType: vexflow.BarlineType;
   };
   entry: StaveEntryRendering;
+  clef: ClefRendering;
+  keySignature: KeySignatureRendering;
+  timeSignature: TimeSignatureRendering;
 };
 
 /** The modifiers of a stave. */
@@ -151,12 +154,53 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const vfStave = this.createVexflowStave({
-      x: opts.x,
-      y: opts.y,
-      width: opts.width,
-      modifiers: opts.modifiers,
-    });
+    const clef = this.getClef();
+    const clefRendering = clef.render();
+
+    const keySignature = this.getKeySignature();
+    const keySignatureRendering = keySignature.render();
+
+    const timeSignature = this.getTimeSignature();
+    const timeSignatureRendering = timeSignature.render();
+
+    const vfStave =
+      clef.getType() === 'tab'
+        ? new vexflow.TabStave(opts.x, opts.y, opts.width)
+        : new vexflow.Stave(opts.x, opts.y, opts.width);
+
+    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.beginningBarStyle);
+    vfStave.setBegBarType(vfBeginningBarlineType);
+
+    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.endBarStyle);
+    vfStave.setEndBarType(vfEndBarlineType);
+
+    if (opts.modifiers.includes('clef')) {
+      vfStave.addModifier(clefRendering.vexflow.clef);
+    }
+    if (opts.modifiers.includes('keySignature')) {
+      vfStave.addModifier(keySignatureRendering.vexflow.keySignature);
+    }
+    if (opts.modifiers.includes('timeSignature')) {
+      for (const timeSignature of timeSignatureRendering.vexflow.timeSignatures) {
+        vfStave.addModifier(timeSignature);
+      }
+    }
+
+    const metronome = this.getMetronome();
+    const beatsPerMinute = metronome?.getBeatsPerMinute();
+    const beatUnitDotCount = metronome?.getBeatUnitDotCount();
+    const beatUnit = metronome?.getBeatUnit();
+    const isMetronomeMarkSupported = beatsPerMinute && beatUnitDotCount && beatUnit;
+    if (isMetronomeMarkSupported) {
+      vfStave.setTempo(
+        {
+          bpm: beatsPerMinute,
+          dots: beatUnitDotCount,
+          duration: conversions.fromNoteTypeToNoteDurationDenominator(beatUnit)!,
+        },
+        opts.y
+      );
+    }
 
     const staveEntryRendering = this.getEntry().render();
 
@@ -178,10 +222,13 @@ export class Stave {
       width: opts.width,
       vexflow: {
         stave: vfStave,
-        beginningBarlineType: this.getBeginningBarlineType(),
-        endBarlineType: this.getEndBarlineType(),
+        beginningBarlineType: vfBeginningBarlineType,
+        endBarlineType: vfEndBarlineType,
       },
       entry: staveEntryRendering,
+      clef: clefRendering,
+      keySignature: keySignatureRendering,
+      timeSignature: timeSignatureRendering,
     };
   }
 
@@ -250,121 +297,5 @@ export class Stave {
       clef,
       timeSignature,
     });
-  }
-
-  private createVexflowStave(opts: { x: number; y: number; width: number; modifiers: StaveModifier[] }): vexflow.Stave {
-    const clef = this.getClef();
-    const keySignature = this.getKeySignature();
-    const previousKeySignature = this.previousStave?.getKeySignature() ?? null;
-
-    const vfStave =
-      clef.getType() === 'tab'
-        ? new vexflow.TabStave(opts.x, opts.y, opts.width)
-        : new vexflow.Stave(opts.x, opts.y, opts.width);
-
-    vfStave.setBegBarType(this.getBeginningBarlineType()).setEndBarType(this.getEndBarlineType());
-
-    if (opts.modifiers.includes('clef')) {
-      vfStave.addClef(clef.getType(), 'default', clef.getAnnotation() ?? undefined);
-    }
-    if (opts.modifiers.includes('keySignature')) {
-      new vexflow.KeySignature(
-        keySignature.getKey(),
-        previousKeySignature?.getKey() ?? undefined,
-        keySignature.getAlterations()
-      )
-        .setPosition(vexflow.StaveModifierPosition.BEGIN)
-        .addToStave(vfStave);
-    }
-    if (opts.modifiers.includes('timeSignature')) {
-      for (const timeSpec of this.getTimeSpecs()) {
-        vfStave.addTimeSignature(timeSpec);
-      }
-    }
-
-    const metronome = this.getMetronome();
-    const beatsPerMinute = metronome?.getBeatsPerMinute();
-    const beatUnitDotCount = metronome?.getBeatUnitDotCount();
-    const beatUnit = metronome?.getBeatUnit();
-    const isMetronomeMarkSupported = beatsPerMinute && beatUnitDotCount && beatUnit;
-    if (isMetronomeMarkSupported) {
-      vfStave.setTempo(
-        {
-          bpm: beatsPerMinute,
-          dots: beatUnitDotCount,
-          duration: conversions.fromNoteTypeToNoteDurationDenominator(beatUnit)!,
-        },
-        opts.y
-      );
-    }
-
-    return vfStave;
-  }
-
-  private getBeginningBarlineType(): vexflow.BarlineType {
-    return conversions.fromBarStyleToBarlineType(this.beginningBarStyle);
-  }
-
-  private getEndBarlineType(): vexflow.BarlineType {
-    return conversions.fromBarStyleToBarlineType(this.endBarStyle);
-  }
-
-  private getTimeSpecs(): string[] {
-    const timeSignature = this.getTimeSignature();
-
-    switch (timeSignature.getSymbol()) {
-      case 'common':
-        return ['C'];
-      case 'cut':
-        return ['C|'];
-      case 'single-number':
-        // TODO: If/when vexflow supports this, return the time spec for a single number time signature.
-        return [this.toSimpleTimeSpecs(timeSignature.toFraction())];
-      case 'hidden':
-        return [];
-    }
-
-    const components = timeSignature.getComponents();
-    if (components.length > 1) {
-      return this.toComplexTimeSpecs(components);
-    }
-
-    return [this.toSimpleTimeSpecs(components[0])];
-  }
-
-  private toSimpleTimeSpecs(component: util.Fraction): string {
-    return `${component.numerator}/${component.denominator}`;
-  }
-
-  private toComplexTimeSpecs(components: util.Fraction[]): string[] {
-    const denominators = new Array<number>();
-    const memo: Record<number, number[]> = {};
-
-    for (const component of components) {
-      const numerator = component.numerator;
-      const denominator = component.denominator;
-
-      if (typeof memo[denominator] === 'undefined') {
-        denominators.push(denominator);
-      }
-
-      memo[denominator] ??= [];
-      memo[denominator].push(numerator);
-    }
-
-    const result = new Array<string>();
-
-    for (let index = 0; index < denominators.length; index++) {
-      const denominator = denominators[index];
-      const isLast = index === denominators.length - 1;
-
-      result.push(`${memo[denominator].join('+')}/${denominator}`);
-
-      if (!isLast) {
-        result.push('+');
-      }
-    }
-
-    return result;
   }
 }
