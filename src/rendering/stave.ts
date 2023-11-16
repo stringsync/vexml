@@ -1,11 +1,11 @@
 import { Chorus, ChorusRendering } from './chorus';
-import { Clef, ClefRendering } from './clef';
+import { Clef } from './clef';
 import { Config } from './config';
-import { KeySignature, KeySignatureRendering } from './keysignature';
+import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MultiRest, MultiRestRendering } from './multirest';
 import { Tablature, TablatureRendering } from './tablature';
-import { TimeSignature, TimeSignatureRendering } from './timesignature';
+import { TimeSignature } from './timesignature';
 import * as conversions from './conversions';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
