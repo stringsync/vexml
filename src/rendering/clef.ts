@@ -86,6 +86,6 @@ export class Clef {
 
   private getVfClef(): vexflow.Clef {
     const type = this.getType();
-    return new vexflow.Clef(type);
+    return new vexflow.Clef(type, 'default', this.getAnnotation() ?? undefined);
   }
 }

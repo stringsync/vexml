@@ -122,7 +122,7 @@ export class TimeSignature {
   /** Returns the width of the time signature.*/
   @util.memoize()
   getWidth(): number {
-    return util.sum(this.getVfTimeSignatures().map((vfTimeSignature) => vfTimeSignature.getWidth()));
+    return util.sum(this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec).getWidth()));
   }
 
   /** Returns whether the time signatures are equal. */
@@ -176,17 +176,14 @@ export class TimeSignature {
 
   /** Renders the time signature. */
   render(): TimeSignatureRendering {
+    const vfTimeSignatures = this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec));
+
     return {
       type: 'timesignature',
       vexflow: {
-        timeSignatures: this.getVfTimeSignatures(),
+        timeSignatures: vfTimeSignatures,
       },
     };
-  }
-
-  @util.memoize()
-  private getVfTimeSignatures(): vexflow.TimeSignature[] {
-    return this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec));
   }
 
   @util.memoize()
@@ -198,6 +195,7 @@ export class TimeSignature {
     return result;
   }
 
+  @util.memoize()
   private getTimeSpecs(): string[] {
     switch (this.getSymbol()) {
       case 'common':
