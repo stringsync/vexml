@@ -168,7 +168,7 @@ export class Seed {
   }
 
   /** Returns the stave signature that is active at the beginning of the measure. */
-  private getLeadingStaveSignature(partId: string, measureIndex: number): StaveSignature | null {
+  private getLeadingStaveSignature(partId: string, measureIndex: number): StaveSignature {
     const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
     const measureEntryGroups = measureEntryGroupsByPartId[partId];
 
@@ -179,10 +179,18 @@ export class Seed {
 
     // Get the first stave signature that matches the measure index or get the last stave signature seen before this
     // measure index.
-    return (
+    const leadingStaveSignature =
       staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
-      util.last(staveSignatures)
-    );
+      util.last(staveSignatures);
+
+    // We don't expect this to ever happen since we assume that StaveSignatures are created correctly. However, if this
+    // error ever throws, investigate how StaveSignatures are created. Don't default StaveSignature because it exposes
+    // getPrevious and getNext, which the caller expects to be a well formed linked list.
+    if (!leadingStaveSignature) {
+      throw new Error('expected leading stave signature');
+    }
+
+    return leadingStaveSignature;
   }
 
   private getStaveCount(partId: string): number {

@@ -22,7 +22,7 @@ export type MeasureFragmentRendering = {
 export class MeasureFragment {
   private config: Config;
   private index: number;
-  private leadingStaveSignature: StaveSignature | null;
+  private leadingStaveSignature: StaveSignature;
   private measureEntries: MeasureEntry[];
   private staveLayouts: musicxml.StaveLayout[];
   private staveCount: number;
@@ -33,7 +33,7 @@ export class MeasureFragment {
   constructor(opts: {
     config: Config;
     index: number;
-    leadingStaveSignature: StaveSignature | null;
+    leadingStaveSignature: StaveSignature;
     measureEntries: MeasureEntry[];
     staveLayouts: musicxml.StaveLayout[];
     staveCount: number;
