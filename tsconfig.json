@@ -2,9 +2,10 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "strict": true,
     "declaration": true,
+    "skipLibCheck": true,
     "sourceMap": true,
     "allowJs": true,
     "types": ["node", "jest", "jest-extended"],
@@ -14,6 +15,6 @@
       "vexflow": ["./node_modules/vxflw-early-access"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*", "tests/**/*", "site/src/**/*"],
   "exclude": ["node_modules"]
 }
