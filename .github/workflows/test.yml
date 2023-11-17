@@ -1,4 +1,4 @@
-name: test
+name: Run vexml tests
 on:
   pull_request:
   push:
