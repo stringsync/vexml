@@ -1,6 +1,6 @@
 # Simple workflow for deploying static content to GitHub Pages
 # See https://vitejs.dev/guide/static-deploy#github-pages
-name: Deploy static content to GitHub Pages
+name: deploy
 
 on:
   # Runs on pushes targeting the default branch
