@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 // Adapted from https://jestjs.io/docs/puppeteer.
 
-const JSDOMEnvironment = require('jest-environment-jsdom').TestEnvironment;
-const fs = require('fs');
-const path = require('path');
-const puppeteer = require('puppeteer');
-const os = require('os');
+import { TestEnvironment } from 'jest-environment-jsdom';
+import fs from 'fs';
+import path from 'path';
+import puppeteer from 'puppeteer';
+import os from 'os';
 
 const DIR = path.join(os.tmpdir(), 'jest_puppeteer_global_setup');
 
-class PuppeteerEnvironment extends JSDOMEnvironment {
+export default class PuppeteerEnvironment extends TestEnvironment {
   async setup() {
     await super.setup();
     // get the wsEndpoint
@@ -24,5 +24,3 @@ class PuppeteerEnvironment extends JSDOMEnvironment {
     });
   }
 }
-
-module.exports = PuppeteerEnvironment;
