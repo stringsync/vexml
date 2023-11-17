@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   globalSetup: './globalSetup.js',
   globalTeardown: './globalTeardown.js',
   setupFilesAfterEnv: ['jest-extended/all', './jest.setup.js'],

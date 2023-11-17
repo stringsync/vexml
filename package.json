@@ -5,6 +5,7 @@
   "description": "MusicXML to Vexflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "files": [
     "dist/**/*"
   ],
@@ -15,8 +16,10 @@
   "license": "MIT",
   "scripts": {
     "build": "webpack",
-    "typecheck": "yarn tsc --noEmit",
     "build:image": "docker build . --tag vexml:latest",
+    "build:site": "vite --config site/vite.config.js build",
+    "typecheck": "yarn tsc --noEmit",
+    "dev": "vite --config site/vite.config.js",
     "resnap": "node scripts/resnap.js",
     "extract:w3c-mnx": "node scripts/extract-w3c-mnx-examples.js",
     "debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand",
@@ -59,6 +62,7 @@
     "ts-loader": "^9.2.8",
     "typescript": "5.1.6",
     "vexflow-fonts": "^1.0.6",
+    "vite": "^5.0.0",
     "webpack": "5.88.2",
     "webpack-cli": "5.1.4"
   }
