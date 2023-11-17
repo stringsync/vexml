@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 // Adapted from https://jestjs.io/docs/puppeteer.
 
-const fs = require('fs').promises;
-const os = require('os');
-const path = require('path');
+import { promises } from 'fs';
+import os from 'os';
+import path from 'path';
 
 const DIR = path.join(os.tmpdir(), 'jest_puppeteer_global_setup');
-module.exports = async function () {
+export default async function () {
   // close the browser instance
   await globalThis.__BROWSER_GLOBAL__.close();
 
   // clean-up the wsEndpoint file
-  await fs.rm(DIR, { recursive: true, force: true });
-};
+  await promises.rm(DIR, { recursive: true, force: true });
+}
