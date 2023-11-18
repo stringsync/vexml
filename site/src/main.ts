@@ -54,6 +54,7 @@ resetButton.onClick(() => {
 
 reportButton.onClick(() => {});
 
+// This triggers the initial render.
 vexmlContainer.onWidthChange(
   debounce((newWidth) => {
     width = newWidth;
@@ -97,7 +98,7 @@ function render() {
 
     alert.info().text(`${now()} Rendered in ${ms}ms at ${width}px`);
   } catch (e) {
-    alert.danger().text(`${now()} ${e}`);
+    alert.danger().text(`${now()} ${e instanceof Error && typeof e.stack === 'string' ? e.stack : e}`);
   } finally {
     reportButton.enable();
   }
