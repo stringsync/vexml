@@ -31,16 +31,21 @@
       <!-- Controls -->
       <form>
         <div class="mb-4">
-          <input class="form-control form-control" id="formFileLg" type="file" />
+          <input id="file-input" class="form-control form-control" type="file" />
         </div>
 
         <div class="mb-4">
           <textarea
+            id="musicxml-text-area"
             class="form-control form-control"
-            id="exampleFormControlTextarea1"
             rows="3"
             placeholder="Upload a MusicXML file or put it here"
           ></textarea>
+        </div>
+
+        <div class="mb-4 form-check">
+          <input id="save-checkbox" class="form-check-input" type="checkbox" value="" />
+          <label class="form-check-label" for="flexCheckChecked">Save MusicXML file</label>
         </div>
       </form>
 
@@ -48,19 +53,17 @@
 
       <!-- Result -->
       <div class="mb-4">
-        <button class="btn btn-primary" type="button" disabled>
+        <button id="loading-button" class="btn btn-primary" type="button" disabled>
           <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           Loading...
         </button>
 
-        <button id="report-issue" class="btn btn-primary"><i class="bi bi-github"></i> Report an Issue</button>
+        <button id="report-button" class="btn btn-primary"><i class="bi bi-github"></i> Report an Issue</button>
       </div>
 
-      <div class="alert alert-primary" role="alert">A simple primary alert—check it out!</div>
+      <div id="alert" class="alert alert-primary" role="alert">A simple primary alert—check it out!</div>
 
-      <div class="alert alert-danger" role="alert">A simple danger alert—check it out!</div>
-
-      <div>TODO: Render the MusicXML here</div>
+      <div id="result">TODO: Render the MusicXML here</div>
     </div>
 
     <script
