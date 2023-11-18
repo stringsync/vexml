@@ -24,6 +24,7 @@ const vexmlContainer = VexmlContainer.id('vexmlContainer');
 
 // State
 let musicXml = localStorage.getItem(constants.MUSICXML_LOCAL_STORAGE_KEY) ?? constants.DEFAULT_MUSICXML_DOCUMENT;
+let width = vexmlContainer.getWidth();
 
 // Handlers
 fileInput.onChange((newText) => {
@@ -53,6 +54,13 @@ resetButton.onClick(() => {
 
 reportButton.onClick(() => {});
 
+vexmlContainer.onWidthChange(
+  debounce((newWidth) => {
+    width = newWidth;
+    render();
+  }, 100)
+);
+
 // Render
 function now(): string {
   const now = new Date();
@@ -80,18 +88,17 @@ function render() {
 
   try {
     reportButton.disable();
+    alert.info().text('Loading...');
 
     const start = Date.now();
-    vexmlContainer.render(musicXml);
+    vexmlContainer.render(musicXml, width);
     const stop = Date.now();
     const ms = stop - start;
 
-    alert.info().text(`${now()} Rendered in ${ms}ms`);
+    alert.info().text(`${now()} Rendered in ${ms}ms at ${width}px`);
   } catch (e) {
     alert.danger().text(`${now()} ${e}`);
   } finally {
     reportButton.enable();
   }
 }
-
-render();

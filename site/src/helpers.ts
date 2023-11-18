@@ -10,14 +10,16 @@ export function getById<T extends HTMLElement>(id: string, type: Ctor<T>): T {
   throw new Error(`expected #${id} to be '${type}', got: '${element}'`);
 }
 
-export function debounce<F extends (...args: any[]) => void>(callback: F, waitFor: number): F {
+export function debounce<F extends (...args: any[]) => void>(callback: F, delayMs: number): F {
   let timeout: NodeJS.Timeout | undefined;
 
   const debounced = (...args: Parameters<F>) => {
     if (timeout !== undefined) {
       clearTimeout(timeout);
     }
-    timeout = setTimeout(() => callback(...args), waitFor);
+    timeout = setTimeout(() => {
+      callback(...args);
+    }, delayMs);
   };
 
   return debounced as F;
