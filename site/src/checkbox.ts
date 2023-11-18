@@ -7,9 +7,9 @@ export class Checkbox {
 
   constructor(private checkbox: HTMLInputElement) {}
 
-  onChange(callback: () => void) {
-    this.checkbox.addEventListener('change', (event) => {
-      event.target;
+  onChange(callback: (isChecked: boolean) => void) {
+    this.checkbox.addEventListener('change', () => {
+      callback(this.isChecked());
     });
   }
 
