@@ -1,8 +1,8 @@
-import { $ } from './helpers';
+import { getById } from './helpers';
 
 export class FileInput {
   static id(id: string): FileInput {
-    return new FileInput($(id, HTMLInputElement));
+    return new FileInput(getById(id, HTMLInputElement));
   }
 
   constructor(private input: HTMLInputElement) {}

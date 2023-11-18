@@ -1,18 +1,25 @@
 import { Alert } from './alert';
 import { Button } from './button';
-import { Checkbox } from './checkbox';
 import { FileInput } from './fileinput';
 import { TextArea } from './textarea';
 import { VexmlContainer } from './vexmlcontainer';
 
+// Initialize tooltips for the whole document
+declare const $: any;
+
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip();
+});
+
 // Components
-const fileInput = FileInput.id('file-input');
-const musicxmlTextArea = TextArea.id('musicxml-text-area');
-const saveCheckbox = Checkbox.id('save-checkbox');
-const loadingButton = Button.id('loading-button');
-const reportButton = Button.id('report-button');
+const fileInput = FileInput.id('fileInput');
+const musicxmlTextArea = TextArea.id('musicxmlTextArea');
+const saveButton = Button.id('saveButton');
+const resetButton = Button.id('resetButton');
+const loadingButton = Button.id('loadingButton');
+const reportButton = Button.id('reportButton');
 const alert = Alert.id('alert');
-const vexmlContainer = VexmlContainer.id('vexml-container');
+const vexmlContainer = VexmlContainer.id('vexmlContainer');
 
 // Handlers
 fileInput.onChange((text) => {
@@ -23,8 +30,12 @@ musicxmlTextArea.onChange((text) => {
   console.log(text);
 });
 
-saveCheckbox.onChange((isChecked) => {
-  console.log(isChecked);
+saveButton.onClick(() => {
+  console.log('saved');
+});
+
+resetButton.onClick(() => {
+  console.log('reset');
 });
 
 loadingButton.onClick(() => {
