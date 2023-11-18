@@ -1,8 +1,8 @@
-import { $ } from './helpers';
+import { getById } from './helpers';
 
 export class Button {
   static id(id: string): Button {
-    return new Button($(id, HTMLButtonElement));
+    return new Button(getById(id, HTMLButtonElement));
   }
 
   constructor(private button: HTMLButtonElement) {}

@@ -1,8 +1,8 @@
-import { $ } from './helpers';
+import { getById } from './helpers';
 
 export class TextArea {
   static id(id: string): TextArea {
-    return new TextArea($(id, HTMLTextAreaElement));
+    return new TextArea(getById(id, HTMLTextAreaElement));
   }
 
   constructor(private textArea: HTMLTextAreaElement) {}

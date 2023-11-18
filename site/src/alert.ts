@@ -1,8 +1,8 @@
-import { $ } from './helpers';
+import { getById } from './helpers';
 
 export class Alert {
   static id(id: string): Alert {
-    return new Alert($(id, HTMLDivElement));
+    return new Alert(getById(id, HTMLDivElement));
   }
 
   constructor(private div: HTMLDivElement) {}
