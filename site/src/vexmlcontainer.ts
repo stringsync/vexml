@@ -6,4 +6,6 @@ export class VexmlContainer {
   }
 
   constructor(private div: HTMLDivElement) {}
+
+  render(musicXml: string): void {}
 }

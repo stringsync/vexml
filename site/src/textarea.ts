@@ -8,8 +8,13 @@ export class TextArea {
   constructor(private textArea: HTMLTextAreaElement) {}
 
   onChange(callback: (text: string) => void) {
-    this.textArea.addEventListener('change', () => {
+    this.textArea.addEventListener('input', () => {
       callback(this.textArea.value);
     });
+  }
+
+  setText(text: string): this {
+    this.textArea.value = text;
+    return this;
   }
 }

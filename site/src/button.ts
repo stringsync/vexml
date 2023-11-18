@@ -13,13 +13,13 @@ export class Button {
     });
   }
 
-  show(): this {
-    this.button.classList.remove('d-none');
+  enable(): this {
+    this.button.removeAttribute('disabled');
     return this;
   }
 
-  hide(): this {
-    this.button.classList.add('d-none');
+  disable(): this {
+    this.button.setAttribute('disabled', '');
     return this;
   }
 }
