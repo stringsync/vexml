@@ -5,13 +5,14 @@ import { TextArea } from './textarea';
 import { VexmlContainer } from './vexmlcontainer';
 import * as constants from './constants';
 import { debounce } from './helpers';
+import $ from 'jquery';
 
-// Initialize tooltips for the whole document
-declare const $: any;
-
-$(function () {
+// Enable tooltips
+$(() => {
   $('[data-toggle="tooltip"]').tooltip();
 });
+
+$('#fileInput');
 
 // Components
 const fileInput = FileInput.id('fileInput');
