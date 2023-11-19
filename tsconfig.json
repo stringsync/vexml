@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "allowJs": true,
-    "types": ["node", "jest", "jest-extended"],
+    "types": ["node", "jest", "jest-extended", "bootstrap"],
     "experimentalDecorators": true,
     "paths": {
       "@/*": ["./src/*"],
