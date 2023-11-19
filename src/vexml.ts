@@ -3,7 +3,7 @@ import * as rendering from '@/rendering';
 
 export type RenderOptions = {
   element: HTMLDivElement | HTMLCanvasElement;
-  xml: string;
+  musicXml: string;
   width: number;
   config?: Partial<rendering.Config>;
 };
@@ -13,7 +13,7 @@ export class Vexml {
   /** Renders a MusicXML document to an HTML element. */
   static render(opts: RenderOptions): rendering.ScoreRendering {
     const parser = new DOMParser();
-    const root = parser.parseFromString(opts.xml, 'application/xml');
+    const root = parser.parseFromString(opts.musicXml, 'application/xml');
 
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
     const scorePartwise = new musicxml.MusicXml(root).getScorePartwise();

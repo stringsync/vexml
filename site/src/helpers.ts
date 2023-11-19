@@ -1,26 +1,21 @@
-type Ctor<T> = {
-  new (): T;
-};
-
-export function getById<T extends HTMLElement>(id: string, type: Ctor<T>): T {
-  const element = document.getElementById(id);
-  if (element instanceof type) {
-    return element;
-  }
-  throw new Error(`expected #${id} to be '${type}', got: '${element}'`);
-}
-
-export function debounce<F extends (...args: any[]) => void>(callback: F, delayMs: number): F {
+export function debounce<F extends (...args: any[]) => void>(
+  callback: F,
+  delayMs: number
+): [debouncedCallback: F, cancel: () => void] {
   let timeout: NodeJS.Timeout | undefined;
 
-  const debounced = (...args: Parameters<F>) => {
-    if (timeout !== undefined) {
+  const cancel = () => {
+    if (typeof timeout !== 'undefined') {
       clearTimeout(timeout);
     }
+  };
+
+  const debounced = (...args: Parameters<F>) => {
+    cancel();
     timeout = setTimeout(() => {
       callback(...args);
     }, delayMs);
   };
 
-  return debounced as F;
+  return [debounced as F, cancel];
 }
