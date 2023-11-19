@@ -156,7 +156,7 @@ describe('lilypond', () => {
 
     Vexml.render({
       element: vexmlDiv,
-      xml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
+      musicXml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
       width: t.width,
     });
 
