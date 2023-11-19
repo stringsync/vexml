@@ -39,6 +39,7 @@ function App() {
   }, []);
 
   const value = musicXml.useDefault ? DEFAULT_MUSICXML : musicXml.value;
+  const debouncedValue = musicXml.useDefault ? DEFAULT_MUSICXML : musicXml.debouncedValue;
   const saveDisabled = musicXml.useDefault || musicXml.value === musicXml.storedValue;
   const resetDisabled = musicXml.useDefault;
 
@@ -63,7 +64,7 @@ function App() {
 
       <Stats stats={stats} />
 
-      <Vexml musicXml={value} onRender={onRender} />
+      <Vexml musicXml={debouncedValue} onRender={onRender} />
     </div>
   );
 }
