@@ -1276,3 +1276,33 @@ export const pedal = createNamedElementFactory<'pedal', { type: string; line: st
     }
   }
 );
+
+export const container = createNamedElementFactory<'container', { rootfiles: NamedElement<'rootfiles'> }>(
+  'container',
+  (e, { rootfiles }) => {
+    if (rootfiles) {
+      e.append(rootfiles);
+    }
+  }
+);
+
+export const rootfiles = createNamedElementFactory<'rootfiles', { rootfiles: NamedElement<'rootfile'>[] }>(
+  'rootfiles',
+  (e, { rootfiles }) => {
+    if (rootfiles) {
+      e.append(...rootfiles);
+    }
+  }
+);
+
+export const rootfile = createNamedElementFactory<'rootfile', { fullPath: string; mediaType: string }>(
+  'rootfile',
+  (e, { fullPath, mediaType }) => {
+    if (fullPath) {
+      e.setAttribute('full-path', fullPath);
+    }
+    if (mediaType) {
+      e.setAttribute('media-type', mediaType);
+    }
+  }
+);

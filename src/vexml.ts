@@ -38,13 +38,13 @@ export class Vexml {
     return Vexml.fromMusicXML(musicXML);
   }
 
-  /** Creates an instance from a Blob of a MusicXML string or a .mxl archive (compressed MusicXML). */
+  /** Creates an instance from a Blob of a MusicXML string or a .mxl archive (compressed MusicXML file). */
   static async fromBlob(blob: Blob): Promise<Vexml> {
     // TODO, use a real implementation.
     return Vexml.fromMusicXML('');
   }
 
-  /** Creates an instance from a File of a MusicXML string or a .mxl archive (compressed MusicXML). */
+  /** Creates an instance from a File of a MusicXML string or a .mxl archive (compressed MusicXML file). */
   static async fromFile(file: File): Promise<Vexml> {
     return Vexml.fromBlob(file);
   }
