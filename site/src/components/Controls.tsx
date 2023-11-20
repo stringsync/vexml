@@ -101,7 +101,7 @@ function Controls(props: ControlsProps) {
         <button
           id="reportButton"
           type="button"
-          className="btn btn-primary"
+          className="btn btn-light"
           disabled={props.reportDisabled}
           onClick={props.onReport}
         >
