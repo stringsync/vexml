@@ -1,5 +1,6 @@
 import { Tooltip } from 'bootstrap';
 import { useEffect, useRef } from 'react';
+import DragUpload from './DragUpload';
 
 export type ControlsProps = {
   value: string;
@@ -15,9 +16,8 @@ export type ControlsProps = {
 function Controls(props: ControlsProps) {
   const { onChange } = props;
 
-  const onFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) {
+  const onFileInputChange = (files: File[]) => {
+    if (files.length === 0) {
       return;
     }
 
@@ -56,17 +56,22 @@ function Controls(props: ControlsProps) {
   return (
     <>
       <div className="custom-file mb-4">
-        <input type="file" className="form-control" onChange={onFileInputChange} />
+        <div className="row">
+          <div className="col">
+            <DragUpload placeholder="Select or drop a MusicXML file here" onChange={onFileInputChange} />
+          </div>
+          <div className="col">
+            <textarea
+              className="form-control form-control"
+              style={{ height: '300px' }}
+              value={props.value}
+              onInput={onTextAreaInput}
+            ></textarea>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-4">
-        <textarea
-          className="form-control form-control"
-          rows={6}
-          value={props.value}
-          onInput={onTextAreaInput}
-        ></textarea>
-      </div>
+      <div className="mb-4"></div>
 
       <div className="mb-4 d-flex gap-2">
         <button
