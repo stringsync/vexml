@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { LOCAL_STORAGE_SAVED_MUSICXML_KEY, LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY } from '../constants';
 import { useLocalStorage } from './useLocalStorage';
 import { useDebouncedState } from './useDebouncedState';
@@ -15,7 +15,8 @@ export const useMusicXml = (): {
   reset: () => void;
 } => {
   const [storedMusicXml, setStoredMusicXml] = useLocalStorage(LOCAL_STORAGE_SAVED_MUSICXML_KEY, '');
-  const [useDefault, setUseDefault] = useLocalStorage(LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY, 'true');
+  const [storedUseDefault, setStoredUseDefault] = useLocalStorage(LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY, 'true');
+  const [useDefault, setUseDefault] = useState(storedUseDefault);
   const [musicXml, debouncedMusicXml, setMusicXml] = useDebouncedState(storedMusicXml, SET_DEBOUNCE_DELAY_MS);
 
   const set = useCallback(
@@ -23,18 +24,19 @@ export const useMusicXml = (): {
       setUseDefault('false');
       setMusicXml(nextMusicXml);
     },
-    [setUseDefault, setMusicXml]
+    [setMusicXml]
   );
 
   const save = useCallback(() => {
-    setUseDefault('false');
+    setStoredUseDefault('false');
     setStoredMusicXml(musicXml);
-  }, [setUseDefault, setStoredMusicXml, musicXml]);
+  }, [setStoredUseDefault, setStoredMusicXml, musicXml]);
 
   const reset = useCallback(() => {
     setUseDefault('true');
+    setStoredUseDefault('false');
     setStoredMusicXml('');
-  }, [setUseDefault, setStoredMusicXml]);
+  }, [setStoredUseDefault, setStoredMusicXml]);
 
   return {
     value: musicXml,
