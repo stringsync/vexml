@@ -13,8 +13,8 @@ A clear and concise description of what you expected to happen.
 **Actual behavior**
 A clear and concise description of what actually happened.
 
-**Screenshots**
-A screenshot of the rendering.
+**Screenshot**
+A screenshot of the `vexml` rendering.
 
 **Hints**
 The more you provide, the faster we can fix it.
