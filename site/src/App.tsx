@@ -9,9 +9,13 @@ import { useCallback, useState } from 'react';
 function App() {
   const musicXml = useMusicXml();
 
-  const onMusicXmlChange = (value: string) => {
-    musicXml.set(value);
-  };
+  const setMusicXml = musicXml.set;
+  const onMusicXmlChange = useCallback(
+    (value: string) => {
+      setMusicXml(value);
+    },
+    [setMusicXml]
+  );
 
   const [stats, setStats] = useState<RenderStats>({ type: 'loading' });
   const onRender = useCallback((event: RenderEvent) => {

@@ -36,8 +36,9 @@ export const useMusicXml = (): {
   const reset = useCallback(() => {
     setUseDefault('true');
     setStoredUseDefault('true');
+    setMusicXml('');
     setStoredMusicXml('');
-  }, [setUseDefault, setStoredUseDefault, setStoredMusicXml]);
+  }, [setUseDefault, setStoredUseDefault, setMusicXml, setStoredMusicXml]);
 
   return {
     value: musicXml,

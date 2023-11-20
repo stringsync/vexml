@@ -16,7 +16,7 @@ export type ControlsProps = {
 };
 
 function Controls(props: ControlsProps) {
-  const { onChange } = props;
+  const { value, onChange } = props;
 
   const onFileInputChange = useCallback(
     (files: File[]) => {
@@ -27,13 +27,13 @@ function Controls(props: ControlsProps) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result;
-        if (typeof text === 'string') {
+        if (typeof text === 'string' && text !== value) {
           onChange(text);
         }
       };
       reader.readAsText(files[0]);
     },
-    [onChange]
+    [value, onChange]
   );
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
