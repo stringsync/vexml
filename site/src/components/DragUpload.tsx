@@ -32,20 +32,20 @@ function DragUpload({ placeholder, onChange }: DragUploadProps) {
     setDragging(false);
     const files = event.dataTransfer.files;
     if (files) {
-      setFiles([...files]);
+      const nextFiles = [...files];
+      setFiles(nextFiles);
+      onChange(nextFiles);
     }
   }, []);
 
   const onSelectFile: React.ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
     const files = event.target.files;
     if (files) {
-      setFiles([...files]);
+      const nextFiles = [...files];
+      setFiles(nextFiles);
+      onChange(nextFiles);
     }
   }, []);
-
-  useEffect(() => {
-    onChange(files);
-  }, [onChange, files]);
 
   return (
     <div>
