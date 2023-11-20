@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 
 export type RenderOptions = {
@@ -35,8 +36,36 @@ export class Vexml {
 
   /** Creates an instance from a Blob of a MusicXML string or a .mxl archive (compressed MusicXML file). */
   static async fromBlob(blob: Blob): Promise<Vexml> {
-    // TODO, use a real implementation.
-    return Vexml.fromMusicXML('');
+    const errors = [];
+
+    // Try parsing as MXL.
+    try {
+      const musicXml = await new mxl.MXL(blob).getMusicXml();
+      return Vexml.fromMusicXML(musicXml);
+    } catch (e) {
+      errors.push(`tried to parse as MXL, but got: ${e}`);
+    }
+
+    // Try parsing as MusicXML.
+    try {
+      const musicXml = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result;
+          if (typeof result === 'string') {
+            resolve(result);
+          } else {
+            reject(new Error(`expected string from reading file, got: ${typeof result}`));
+          }
+        };
+        reader.readAsText(blob);
+      });
+      return Vexml.fromMusicXML(musicXml);
+    } catch (e) {
+      errors.push(`tried to parse directly as MusicXML, but got ${e}`);
+    }
+
+    throw new Error(errors.join('\n\n'));
   }
 
   /** Creates an instance from a File of a MusicXML string or a .mxl archive (compressed MusicXML file). */
