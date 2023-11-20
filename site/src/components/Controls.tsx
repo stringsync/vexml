@@ -1,5 +1,5 @@
 import { Tooltip } from 'bootstrap';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import DragUpload from './DragUpload';
 
 export type ControlsProps = {
@@ -16,20 +16,23 @@ export type ControlsProps = {
 function Controls(props: ControlsProps) {
   const { onChange } = props;
 
-  const onFileInputChange = (files: File[]) => {
-    if (files.length === 0) {
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
-      if (typeof text === 'string') {
-        onChange(text);
+  const onFileInputChange = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) {
+        return;
       }
-    };
-    reader.readAsText(files[0]);
-  };
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result;
+        if (typeof text === 'string') {
+          onChange(text);
+        }
+      };
+      reader.readAsText(files[0]);
+    },
+    [onChange]
+  );
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
     onChange(event.currentTarget.value);
