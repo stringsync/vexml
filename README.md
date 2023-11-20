@@ -50,6 +50,16 @@ Before you run any commands, install the dependencies.
 yarn install
 ```
 
+### Running the Dev Server
+
+In order to run a dev server that hot reloads `vexml` changes, run:
+
+```sh
+yarn dev
+```
+
+You should be able to "save" MusicXML documents in localstorage using the dev app, which will cause the documents to survive refreshing the page.
+
 ### Running Tests
 
 In order to run tests on x86 architecture, run:
