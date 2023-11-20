@@ -9,12 +9,22 @@ import { ScorePartwise } from './scorepartwise';
 export class MusicXml {
   constructor(private root: Document) {}
 
-  /** Returns the first <score-partwise> of the document or null when missing. */
-  getScorePartwise(): ScorePartwise | null {
+  /**
+   * Returns the first <score-partwise> of the document.
+   *
+   * @throws {Error} when the root does not contain a <score-partwise> element. It does not check for deep validity.
+   */
+  getScorePartwise(): ScorePartwise {
     const node = this.root.getElementsByTagName('score-partwise').item(0);
     if (!node) {
-      return null;
+      throw new Error('could not find a <score-partwise> element');
     }
     return new ScorePartwise(NamedElement.of(node));
+  }
+
+  /** Returns the string representation of the document. */
+  getDocumentString(): string {
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(this.root);
   }
 }

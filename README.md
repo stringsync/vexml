@@ -28,9 +28,9 @@ const div = document.createElement('div');
 div.style.width = `${width}px`;
 div.style.height = `${height}px`;
 
-const xml = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
+const musicXML = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
 
-vexml.Vexml.render({ element: div, width: width, xml: xml });
+vexml.Vexml.fromMusicXML(musicXML).render({ element: div, width: width });
 ```
 
 This will render a child SVG element whose height will automatically adjust to fit the container. There is currently no option to disable this.
@@ -49,6 +49,16 @@ Before you run any commands, install the dependencies.
 ```sh
 yarn install
 ```
+
+### Running the Dev Server
+
+In order to run a dev server that hot reloads `vexml` changes, run:
+
+```sh
+yarn dev
+```
+
+You should be able to "save" MusicXML documents in localstorage using the dev app, which will cause the documents to survive refreshing the page.
 
 ### Running Tests
 

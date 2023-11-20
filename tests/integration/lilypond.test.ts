@@ -154,9 +154,10 @@ describe('lilypond', () => {
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
-    Vexml.render({
+    const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
+
+    Vexml.fromBuffer(buffer).render({
       element: vexmlDiv,
-      musicXml: fs.readFileSync(path.join(DATA_DIR, t.filename)).toString(),
       width: t.width,
     });
 
