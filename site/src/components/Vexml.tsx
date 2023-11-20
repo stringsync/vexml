@@ -21,12 +21,11 @@ export type RenderEvent =
 
 export type VexmlProps = {
   musicXml: string;
+  containerId: string;
   onRender: (event: RenderEvent) => void;
 };
 
-function Vexml(props: VexmlProps) {
-  const { musicXml, onRender } = props;
-
+function Vexml({ musicXml, containerId, onRender }: VexmlProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useWidth(containerRef, DEBOUNCE_DELAY_MS);
 
@@ -76,7 +75,7 @@ function Vexml(props: VexmlProps) {
     };
   }, [musicXml, width, onRender]);
 
-  return <div id="test" ref={containerRef}></div>;
+  return <div id={containerId} ref={containerRef}></div>;
 }
 
 export default Vexml;
