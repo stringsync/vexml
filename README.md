@@ -28,9 +28,9 @@ const div = document.createElement('div');
 div.style.width = `${width}px`;
 div.style.height = `${height}px`;
 
-const xml = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
+const musicXML = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
 
-vexml.Vexml.render({ element: div, width: width, xml: xml });
+vexml.Vexml.fromMusicXML(musicXML).render({ element: div, width: width });
 ```
 
 This will render a child SVG element whose height will automatically adjust to fit the container. There is currently no option to disable this.
