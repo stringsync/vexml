@@ -14,12 +14,7 @@ export class Vexml {
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
     const doc = new DOMParser().parseFromString(musicXML, 'application/xml');
-
     const root = new musicxml.MusicXml(doc);
-    if (!root.getScorePartwise()) {
-      throw new Error(`invalid MusicXML document: must have a <score-partwise> element`);
-    }
-
     return new Vexml(root);
   }
 
