@@ -19,6 +19,6 @@ A screenshot of the rendering.
 **Hints**
 The more you provide, the faster we can fix it.
 
-- Attach the MusicXML file used to produce the bug.
-- Attach the error messages.
-- Include any `vexml` code references where the bug may be.
+- [ ] Attach the MusicXML file used to produce the bug.
+- [ ] Attach the error messages.
+- [ ] Include any `vexml` code references where the bug may be.
