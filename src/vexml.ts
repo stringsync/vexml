@@ -9,12 +9,17 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  constructor(private musicXml: Document) {}
+  constructor(private musicXml: musicxml.MusicXml) {}
 
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
-    const parser = new DOMParser();
-    const root = parser.parseFromString(musicXML, 'application/xml');
+    const doc = new DOMParser().parseFromString(musicXML, 'application/xml');
+
+    const root = new musicxml.MusicXml(doc);
+    if (!root.getScorePartwise()) {
+      throw new Error(`invalid MusicXML document, could not find a <score-partwise> element`);
+    }
+
     return new Vexml(root);
   }
 
@@ -48,12 +53,10 @@ export class Vexml {
   render(opts: RenderOptions): rendering.ScoreRendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
 
-    const scorePartwise = new musicxml.MusicXml(this.musicXml).getScorePartwise();
-
     const score = new rendering.Score({
       config,
       musicXml: {
-        scorePartwise,
+        scorePartwise: this.musicXml.getScorePartwise(),
       },
     });
 
