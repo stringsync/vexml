@@ -1,7 +1,6 @@
 import Controls from './components/Controls';
 import Title from './components/Title';
 import { DEFAULT_MUSICXML } from './constants';
-import { useReport } from './hooks/useReport';
 import { useMusicXml } from './hooks/useMusicXml';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
@@ -13,8 +12,6 @@ function App() {
   const onMusicXmlChange = (value: string) => {
     musicXml.set(value);
   };
-
-  const report = useReport();
 
   const [stats, setStats] = useState<RenderStats>({ type: 'loading' });
   const onRender = useCallback((event: RenderEvent) => {
@@ -57,7 +54,6 @@ function App() {
         onChange={onMusicXmlChange}
         onSave={musicXml.save}
         onReset={musicXml.reset}
-        onReport={report}
       />
 
       <hr />

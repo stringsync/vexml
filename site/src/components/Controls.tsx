@@ -1,6 +1,9 @@
 import { Tooltip } from 'bootstrap';
 import { useCallback, useEffect, useRef } from 'react';
 import DragUpload from './DragUpload';
+import { VEXML_VERSION } from '../constants';
+
+const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 
 export type ControlsProps = {
   value: string;
@@ -10,7 +13,6 @@ export type ControlsProps = {
   onChange: (value: string) => void;
   onSave: () => void;
   onReset: () => void;
-  onReport: () => void;
 };
 
 function Controls(props: ControlsProps) {
@@ -98,15 +100,9 @@ function Controls(props: ControlsProps) {
           <i className="bi bi-arrow-clockwise"></i> Reset
         </button>
 
-        <button
-          id="reportButton"
-          type="button"
-          className="btn btn-light"
-          disabled={props.reportDisabled}
-          onClick={props.onReport}
-        >
+        <a href={BUG_REPORT_HREF} type="button" target="_blank" className="btn btn-light">
           <i className="bi bi-github"></i> Report an Issue
-        </button>
+        </a>
       </div>
     </>
   );
