@@ -10,7 +10,7 @@ describe(Vexml, () => {
     });
 
     it('runs without crashing', () => {
-      expect(() => Vexml.render({ element: div, xml: XML, width: 2000 })).not.toThrow();
+      expect(() => Vexml.render({ element: div, musicXml: XML, width: 2000 })).not.toThrow();
     });
   });
 });
