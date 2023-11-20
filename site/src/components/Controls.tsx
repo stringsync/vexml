@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import DragUpload from './DragUpload';
 import { VEXML_VERSION } from '../constants';
 import { convertFontToBase64, downloadSvgAsImage } from '../helpers';
+import { Vexml } from '@/vexml';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -21,25 +22,26 @@ export type ControlsProps = {
 };
 
 function Controls(props: ControlsProps) {
-  const { value, onChange } = props;
+  const { onChange } = props;
 
   // MusicXML change handlers
   const onFileInputChange = useCallback(
-    (files: File[]) => {
+    async (files: File[]) => {
       if (files.length === 0) {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result;
-        if (typeof text === 'string' && text !== value) {
-          onChange(text);
-        }
-      };
-      reader.readAsText(files[0]);
+      try {
+        // TODO: Consider propagating the Vexml instance around the application instead of the document string. That
+        // way, we don't need to waste an additional parse downstream. Otherwise, this is probably not that big of a
+        // and this TODO can be deleted.
+        const vexml = await Vexml.fromFile(files[0]);
+        onChange(vexml.getDocumentString());
+      } catch (e) {
+        console.error(`error reading file: ${e}`);
+      }
     },
-    [value, onChange]
+    [onChange]
   );
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
