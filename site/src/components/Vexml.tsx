@@ -46,10 +46,9 @@ function Vexml({ musicXml, containerId, onRender }: VexmlProps) {
     const start = new Date();
 
     try {
-      vexml.Vexml.render({
+      vexml.Vexml.fromMusicXML(musicXml).render({
         element,
         width,
-        musicXml,
       });
       onRender({
         type: 'success',

@@ -10,13 +10,13 @@ describe(Vexml, () => {
     });
 
     it('runs without crashing', () => {
-      expect(() => Vexml.render({ element: div, musicXml: XML, width: 2000 })).not.toThrow();
+      expect(() => Vexml.fromMusicXML(MUSIC_XML).render({ element: div, width: 2000 })).not.toThrow();
     });
   });
 });
 
 // See https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
-const XML = `<?xml version="1.0" encoding="UTF-8"?>
+const MUSIC_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 1.0 Partwise//EN"
                                 "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise>
