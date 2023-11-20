@@ -17,7 +17,7 @@ export class Vexml {
 
     const root = new musicxml.MusicXml(doc);
     if (!root.getScorePartwise()) {
-      throw new Error(`invalid MusicXML document, could not find a <score-partwise> element`);
+      throw new Error(`invalid MusicXML document: must have a <score-partwise> element`);
     }
 
     return new Vexml(root);
