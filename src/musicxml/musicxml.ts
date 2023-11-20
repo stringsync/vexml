@@ -21,4 +21,10 @@ export class MusicXml {
     }
     return new ScorePartwise(NamedElement.of(node));
   }
+
+  /** Returns the string representation of the document. */
+  getDocumentString(): string {
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(this.root);
+  }
 }
