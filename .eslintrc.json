@@ -9,13 +9,14 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:react-hooks/recommended",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest"
   },
-  "plugins": ["@typescript-eslint", "jest"],
+  "plugins": ["@typescript-eslint", "jest", "react-refresh"],
   "ignorePatterns": ["*.xml"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
@@ -40,6 +41,7 @@
           "#private-method"
         ]
       }
-    ]
+    ],
+    "react-refresh/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }

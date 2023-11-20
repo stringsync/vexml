@@ -8,8 +8,9 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "allowJs": true,
-    "types": ["node", "jest", "jest-extended"],
+    "types": ["node", "jest", "jest-extended", "bootstrap"],
     "experimentalDecorators": true,
+    "jsx": "react-jsx",
     "paths": {
       "@/*": ["./src/*"],
       "vexflow": ["./node_modules/vxflw-early-access"]

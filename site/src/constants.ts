@@ -1,6 +1,9 @@
-export const MUSICXML_LOCAL_STORAGE_KEY = 'vexml:saved_musicxml_document';
+export const VEXML_VERSION = VITE_VEXML_VERSION;
 
-export const DEFAULT_MUSICXML_DOCUMENT = `<?xml version="1.0" encoding="UTF-8"?>
+export const LOCAL_STORAGE_SAVED_MUSICXML_KEY = 'vexml:saved_musicxml';
+export const LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY = 'vexml:use_default_musicxml';
+
+export const DEFAULT_MUSICXML = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 1.0 Partwise//EN"
                                 "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise>
