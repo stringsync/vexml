@@ -13,10 +13,10 @@ describe(MusicXml, () => {
       expect(musicXml.getScorePartwise()).toStrictEqual(new ScorePartwise(scorePartwise));
     });
 
-    it('returns null when <score-partwise> is missing', () => {
+    it('throws when <score-partwise> is missing', () => {
       const root = xml.createDocument();
       const musicXml = new MusicXml(root);
-      expect(musicXml.getScorePartwise()).toBeNull();
+      expect(() => musicXml.getScorePartwise()).toThrow();
     });
   });
 });
