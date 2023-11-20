@@ -89,4 +89,9 @@ export class Vexml {
       width: opts.width,
     });
   }
+
+  /** Returns the document string. */
+  getDocumentString(): string {
+    return this.musicXml.getDocumentString();
+  }
 }
