@@ -53,31 +53,37 @@ export class Address<T extends AddressType> {
 
   /** Creates an address for a part. */
   part(): Address<'part'> {
+    this.assertThisHasType('system');
     return Address.create('part', this);
   }
 
   /** Creates an address for a measure. */
   measure(): Address<'measure'> {
+    this.assertThisHasType('part');
     return Address.create('measure', this);
   }
 
   /** Creates an address for a measure fragment. */
   measureFragment(): Address<'measurefragment'> {
+    this.assertThisHasType('measure');
     return Address.create('measurefragment', this);
   }
 
   /** Creates an address for a stave. */
   stave(): Address<'stave'> {
+    this.assertThisHasType('measurefragment');
     return Address.create('stave', this);
   }
 
   /** Creates an address for a chorus. */
   chorus(): Address<'chorus'> {
+    this.assertThisHasType('stave');
     return Address.create('chorus', this);
   }
 
   /** Creates an address for a voice. */
   voice(): Address<'voice'> {
+    this.assertThisHasType('chorus');
     return Address.create('voice', this);
   }
 
@@ -87,12 +93,12 @@ export class Address<T extends AddressType> {
    * @throws {Error} when the type is not part of either address's lineage (including self).
    */
   hasTheSame(type: AddressType, address: AnyAddress): boolean {
-    const address1 = this.getType(type);
+    const address1 = this.getAddress(type);
     if (!address1) {
       throw new Error(`self address must have type '${type}' in its lineage, got null`);
     }
 
-    const address2 = address.getType(type);
+    const address2 = address.getAddress(type);
     if (!address2) {
       throw new Error(`other address must have type '${type}' in its lineage, got null`);
     }
@@ -100,15 +106,21 @@ export class Address<T extends AddressType> {
     return address1.id === address2.id;
   }
 
-  private getType<T extends AddressType>(type: T): Address<T> | null {
+  private getAddress<S extends AddressType>(type: S): Address<S> | null {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let node: AnyAddress | null = this;
     while (node !== null) {
       if (node.type === type) {
-        return node as Address<T>;
+        return node as Address<S>;
       }
       node = node.parent;
     }
     return null;
+  }
+
+  private assertThisHasType<S extends AddressType>(type: S): asserts this is Address<S> {
+    if ((this as AnyAddress).type !== type) {
+      throw new Error(`must be of type '${type}', got: '${this.type}'`);
+    }
   }
 }
