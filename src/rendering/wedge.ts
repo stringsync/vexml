@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Address } from './address';
+import { SystemAddress } from './address';
 
 /** The result of rendering a wedge. */
 export type WedgeRendering = {
@@ -15,7 +15,7 @@ export type WedgeFragment = StartWedgeFragment | ContinueWedgeFragment | StopWed
 
 /** A `WedgeFragment` with metadata. */
 export type WedgeEntry = {
-  address: Address;
+  address: SystemAddress;
   fragment: WedgeFragment;
 };
 

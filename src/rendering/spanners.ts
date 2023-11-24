@@ -1,5 +1,5 @@
 import * as vexflow from 'vexflow';
-import { Address } from './address';
+import { Address, SystemAddress } from './address';
 import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
@@ -41,7 +41,7 @@ export type SpannerFragment =
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
-  address: Address;
+  address: SystemAddress;
   fragment: T;
 };
 
@@ -180,13 +180,13 @@ export class Spanners {
 
     let vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
     let vfPosition = vexflow.ModifierPosition.BELOW;
-    let address = Address.dummy();
+    let address = Address.system();
     let buffer = new Array<WedgeEntry>();
 
     function reset() {
       vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
       vfPosition = vexflow.ModifierPosition.BELOW;
-      address = Address.dummy();
+      address = Address.system();
       buffer = new Array<WedgeEntry>();
     }
 
@@ -220,7 +220,7 @@ export class Spanners {
           buffer.push(entry);
           break;
         case 'continue':
-          if (entry.address.isSameSystem(address)) {
+          if (entry.address.hasTheSame('system', address)) {
             buffer.push(entry);
           } else {
             // TODO: When an entry continues or stops on another system, validate that this renders correctly. You
@@ -252,7 +252,7 @@ export class Spanners {
     let text = '';
     let superscript = '';
     let textBracketPosition = vexflow.TextBracketPosition.BOTTOM;
-    let address = Address.dummy();
+    let address = Address.system();
     let buffer = new Array<OctaveShiftEntry>();
 
     function reset() {
@@ -292,7 +292,7 @@ export class Spanners {
           buffer.push(entry);
           break;
         case 'continue':
-          if (entry.address.isSameSystem(address)) {
+          if (entry.address.hasTheSame('system', address)) {
             buffer.push(entry);
           } else {
             addOctaveShift();
