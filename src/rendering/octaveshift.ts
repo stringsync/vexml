@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Address } from './address';
+import { SystemAddress } from './address';
 
 /** The result of rendering an octive shift. */
 export type OctaveShiftRendering = {
@@ -42,7 +42,7 @@ type StopOctaveShiftFragment = {
 
 /** An `OctaveShift` with metadata. */
 export type OctaveShiftEntry = {
-  address: Address;
+  address: SystemAddress;
   fragment: OctaveShiftFragment;
 };
 

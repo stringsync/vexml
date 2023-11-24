@@ -263,8 +263,7 @@ export class Score {
 
   private getSpanners(systemRenderings: SystemRendering[]): Spanners {
     const entries = systemRenderings.flatMap((system) => {
-      const systemId = Symbol();
-      const address = new Address(systemId);
+      const address = Address.system();
 
       return system.parts
         .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
