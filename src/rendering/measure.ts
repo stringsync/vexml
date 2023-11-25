@@ -6,6 +6,7 @@ import * as conversions from './conversions';
 import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Address } from './address';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -14,6 +15,7 @@ const MEASURE_LABEL_COLOR = '#aaaaaa';
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+  address: Address<'measure'>;
   vexflow: {
     staveConnectors: vexflow.StaveConnector[];
   };
@@ -60,18 +62,23 @@ export class Measure {
   }
 
   /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: { systemMeasureIndex: number; previousMeasure: Measure | null }): number {
+  getMinRequiredWidth(opts: {
+    address: Address<'measure'>;
+    systemMeasureIndex: number;
+    previousMeasure: Measure | null;
+  }): number {
     let sum = 0;
 
-    let previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
-
-    for (const fragment of this.getFragments()) {
-      sum += fragment.getMinRequiredWidth({
+    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
+      if (isFirst) {
+        previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
+      }
+      sum += currentMeasureFragment.getMinRequiredWidth({
+        address: opts.address.measureFragment(),
         systemMeasureIndex: opts.systemMeasureIndex,
         previousMeasureFragment,
       });
-      previousMeasureFragment = fragment;
-    }
+    });
 
     return sum;
   }
@@ -90,6 +97,7 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
+    address: Address<'measure'>;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
@@ -116,6 +124,7 @@ export class Measure {
         const fragmentRendering = currentFragment!.render({
           x,
           y: opts.y,
+          address: opts.address.measureFragment(),
           isLastSystem: opts.isLastSystem,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
@@ -165,6 +174,7 @@ export class Measure {
 
     return {
       type: 'measure',
+      address: opts.address,
       vexflow: {
         staveConnectors: vfStaveConnectors,
       },

@@ -18,12 +18,10 @@ export type SystemRendering = {
  */
 export class System {
   private config: Config;
-  private address: Address<'system'>;
   private parts: Part[];
 
   constructor(opts: { config: Config; address: Address<'system'>; parts: Part[] }) {
     this.config = opts.config;
-    this.address = opts.address;
     this.parts = opts.parts;
   }
 
@@ -35,6 +33,8 @@ export class System {
     previousSystem: System | null;
     nextSystem: System | null;
   }): SystemRendering {
+    const address = Address.system();
+
     const minRequiredSystemWidth = this.getMinRequiredWidth();
 
     const partRenderings = new Array<PartRendering>();
@@ -50,6 +50,7 @@ export class System {
       const partRendering = currentPart.render({
         x: opts.x,
         y: opts.y,
+        address: address.part(),
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
@@ -61,16 +62,21 @@ export class System {
 
     return {
       type: 'system',
-      address: this.address,
+      address,
       parts: partRenderings,
     };
   }
 
   private getMinRequiredWidth(): number {
+    // This is a dummy "seed" address used exclusively for measuring. This should be ok since we're only measuring one
+    // System, which suggests we're past the seed phase. One of the drawbacks is that we may end up missing some special
+    // renderings regarding spanners.
+    const systemAddress = Address.system();
+
     let totalWidth = 0;
     const measureCount = this.getMeasureCount();
 
-    const measureGroups = this.parts.map((part) => part.getMeasures());
+    const measureGroups = this.parts.map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
 
     // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts). We
     // can't take the max of the whole part together, because min required width varies for each _measure_ across all
@@ -78,9 +84,17 @@ export class System {
     for (let systemMeasureIndex = 0; systemMeasureIndex < measureCount; systemMeasureIndex++) {
       totalWidth += util.max(
         measureGroups
-          .map((measures) => [measures[systemMeasureIndex - 1] ?? null, measures[systemMeasureIndex]])
-          .map(([previousMeasure, currentMeasure]) =>
-            currentMeasure.getMinRequiredWidth({ systemMeasureIndex, previousMeasure })
+          .map((data) => ({
+            partAddress: data.address,
+            previous: data.measures[systemMeasureIndex - 1] ?? null,
+            current: data.measures[systemMeasureIndex],
+          }))
+          .map((measures) =>
+            measures.current.getMinRequiredWidth({
+              address: measures.partAddress.measure(),
+              systemMeasureIndex,
+              previousMeasure: measures.previous,
+            })
           )
       );
     }

@@ -42,7 +42,6 @@ export class Seed {
         const partId = part.getId();
         return new Part({
           config: this.config,
-          address: systemAddress.part(),
           musicXml: { part },
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
         });
@@ -71,20 +70,24 @@ export class Seed {
       this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
     );
 
+    const systemAddress = Address.system();
+
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Represents a column of measures across each part.
       const measures = this.musicXml.parts
         .map((part) => part.getId())
-        .map((partId) => this.getMeasures(partId))
-        .map((measures) => ({
-          previous: measures[measureIndex - 1] ?? null,
-          current: measures[measureIndex],
+        .map((partId) => ({ address: systemAddress.part(), measures: this.getMeasures(partId) }))
+        .map((data) => ({
+          address: data.address.measure(),
+          previous: data.measures[measureIndex - 1] ?? null,
+          current: data.measures[measureIndex],
         }));
 
       const getMinRequiredWidth = () =>
         util.max(
           measures.map((measure) =>
             measure.current.getMinRequiredWidth({
+              address: measure.address,
               systemMeasureIndex,
               previousMeasure: measure.previous,
             })

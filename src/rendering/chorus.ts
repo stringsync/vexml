@@ -14,10 +14,12 @@ import { GhostNote } from './ghostnote';
 import { Chord } from './chord';
 import { Rest } from './rest';
 import { Note } from './note';
+import { Address } from './address';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
   type: 'chorus';
+  address: Address<'chorus'>;
   voices: VoiceRendering[];
 };
 
@@ -97,10 +99,10 @@ export class Chorus {
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
-  getMinJustifyWidth(): number {
+  getMinJustifyWidth(address: Address<'chorus'>): number {
     const voices = this.getVoices();
     if (voices.length > 0) {
-      const vfVoices = voices.map((voice) => voice.render().vexflow.voice);
+      const vfVoices = voices.map((voice) => voice.render({ address: address.voice() }).vexflow.voice);
       const vfFormatter = new vexflow.Formatter();
       return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
     }
@@ -108,11 +110,12 @@ export class Chorus {
   }
 
   /** Renders the Chorus. */
-  render(): ChorusRendering {
-    const voiceRenderings = this.getVoices().map((voice) => voice.render());
+  render(opts: { address: Address<'chorus'> }): ChorusRendering {
+    const voiceRenderings = this.getVoices().map((voice) => voice.render({ address: opts.address.voice() }));
 
     return {
       type: 'chorus',
+      address: opts.address,
       voices: voiceRenderings,
     };
   }

@@ -25,20 +25,17 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
-  private address: Address<'part'>;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
 
-  constructor(opts: {
-    config: Config;
-    address: Address<'part'>;
-    musicXml: { part: musicxml.Part };
-    measures: Measure[];
-  }) {
+  constructor(opts: { config: Config; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
     this.config = opts.config;
-    this.address = opts.address;
     this.musicXml = opts.musicXml;
     this.measures = opts.measures;
+  }
+
+  getId(): string {
+    return this.musicXml.part.getId();
   }
 
   getMeasures(): Measure[] {
@@ -48,6 +45,7 @@ export class Part {
   render(opts: {
     x: number;
     y: number;
+    address: Address<'part'>;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;
@@ -82,6 +80,7 @@ export class Part {
       const measureRendering = currentMeasure.render({
         x,
         y,
+        address: opts.address.measure(),
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth: opts.targetSystemWidth,
@@ -106,7 +105,7 @@ export class Part {
 
     return {
       id: this.musicXml.part.getId(),
-      address: this.address,
+      address: opts.address,
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
     };

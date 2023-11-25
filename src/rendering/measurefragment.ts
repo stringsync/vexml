@@ -3,12 +3,14 @@ import { Stave, StaveModifier, StaveRendering } from './stave';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Address } from './address';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
+  address: Address<'measurefragment'>;
   staves: StaveRendering[];
   width: number;
 };
@@ -50,14 +52,18 @@ export class MeasureFragment {
   }
 
   /** Returns the minimum required width for the measure fragment. */
-  getMinRequiredWidth(opts: { systemMeasureIndex: number; previousMeasureFragment: MeasureFragment | null }): number {
+  getMinRequiredWidth(opts: {
+    address: Address<'measurefragment'>;
+    systemMeasureIndex: number;
+    previousMeasureFragment: MeasureFragment | null;
+  }): number {
     const staveModifiers = this.getStaveModifiers({
       systemMeasureIndex: opts.systemMeasureIndex,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
     const staveModifiersWidth = this.getStaveModifiersWidth(Array.from(staveModifiers));
 
-    return this.getMinJustifyWidth() + staveModifiersWidth + this.getRightPadding();
+    return this.getMinJustifyWidth(opts.address) + staveModifiersWidth + this.getRightPadding();
   }
 
   /** Returns the top padding for the measure fragment. */
@@ -74,6 +80,7 @@ export class MeasureFragment {
   render(opts: {
     x: number;
     y: number;
+    address: Address<'measurefragment'>;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
@@ -85,10 +92,12 @@ export class MeasureFragment {
 
     const width = opts.isLastSystem
       ? this.getMinRequiredWidth({
+          address: opts.address,
           systemMeasureIndex: opts.systemMeasureIndex,
           previousMeasureFragment: opts.previousMeasureFragment,
         })
       : this.getSystemFitWidth({
+          address: opts.address,
           systemMeasureIndex: opts.systemMeasureIndex,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
@@ -114,6 +123,7 @@ export class MeasureFragment {
       const staveRendering = currentStave.render({
         x: opts.x,
         y,
+        address: opts.address.stave(),
         width,
         modifiers: staveModifiers,
         previousStave,
@@ -130,6 +140,7 @@ export class MeasureFragment {
 
     return {
       type: 'measurefragment',
+      address: opts.address,
       staves: staveRenderings,
       width,
     };
@@ -162,13 +173,8 @@ export class MeasureFragment {
 
   /** Returns the minimum justify width. */
   @util.memoize()
-  private getMinJustifyWidth(): number {
-    return util.max(this.getStaves().map((stave) => stave.getMinJustifyWidth()));
-  }
-
-  private getStave(staveIndex: number): Stave | null {
-    const staves = this.getStaves();
-    return staves[staveIndex] ?? null;
+  private getMinJustifyWidth(address: Address<'measurefragment'>): number {
+    return util.max(this.getStaves().map((stave) => stave.getMinJustifyWidth(address.stave())));
   }
 
   /** Returns the right padding of the measure fragment. */
@@ -184,12 +190,14 @@ export class MeasureFragment {
 
   /** Returns the width needed to stretch to fit the target width of the System. */
   private getSystemFitWidth(opts: {
+    address: Address<'measurefragment'>;
     systemMeasureIndex: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
     const minRequiredWidth = this.getMinRequiredWidth({
+      address: opts.address,
       systemMeasureIndex: opts.systemMeasureIndex,
       previousMeasureFragment: opts.previousMeasureFragment,
     });

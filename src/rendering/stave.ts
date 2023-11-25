@@ -10,6 +10,7 @@ import * as conversions from './conversions';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import { Address } from './address';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -22,6 +23,7 @@ export type StaveEntryRendering = ChorusRendering | MultiRestRendering | Tablatu
 /** The result of rendering a Stave. */
 export type StaveRendering = {
   type: 'stave';
+  address: Address<'stave'>;
   staveNumber: number;
   signature: StaveSignature;
   width: number;
@@ -69,7 +71,7 @@ export class Stave {
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
-  getMinJustifyWidth(): number {
+  getMinJustifyWidth(address: Address<'stave'>): number {
     const entry = this.getEntry();
 
     if (entry instanceof MultiRest) {
@@ -80,7 +82,7 @@ export class Stave {
     }
 
     if (entry instanceof Chorus) {
-      return entry.getMinJustifyWidth();
+      return entry.getMinJustifyWidth(address.chorus());
     }
 
     return 0;
@@ -144,6 +146,7 @@ export class Stave {
   render(opts: {
     x: number;
     y: number;
+    address: Address<'stave'>;
     width: number;
     modifiers: StaveModifier[];
     previousStave: Stave | null;
@@ -190,7 +193,9 @@ export class Stave {
       );
     }
 
-    const staveEntryRendering = this.getEntry().render();
+    const staveEntryRendering = this.getEntry().render({
+      address: opts.address.chorus(),
+    });
 
     switch (staveEntryRendering.type) {
       case 'multirest':
@@ -206,6 +211,7 @@ export class Stave {
 
     return {
       type: 'stave',
+      address: opts.address,
       signature: this.staveSignature,
       staveNumber: this.staveNumber,
       width: opts.width,
