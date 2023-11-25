@@ -92,7 +92,7 @@ export class Address<T extends AddressType> {
    *
    * @throws {Error} when the type is not part of either address's lineage (including self).
    */
-  hasTheSame(type: AddressType, address: AnyAddress): boolean {
+  isMemberOf(type: AddressType, address: AnyAddress): boolean {
     const address1 = this.getAddress(type);
     if (!address1) {
       throw new Error(`self address must have type '${type}' in its lineage, got null`);
