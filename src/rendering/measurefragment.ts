@@ -26,7 +26,6 @@ export class MeasureFragment {
   private measureEntries: MeasureEntry[];
   private staveLayouts: musicxml.StaveLayout[];
   private staveCount: number;
-  private previousMeasureFragment: MeasureFragment | null;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
 
@@ -37,7 +36,6 @@ export class MeasureFragment {
     measureEntries: MeasureEntry[];
     staveLayouts: musicxml.StaveLayout[];
     staveCount: number;
-    previousMeasureFragment: MeasureFragment | null;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
   }) {
@@ -47,14 +45,16 @@ export class MeasureFragment {
     this.measureEntries = opts.measureEntries;
     this.staveLayouts = opts.staveLayouts;
     this.staveCount = opts.staveCount;
-    this.previousMeasureFragment = opts.previousMeasureFragment;
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
   }
 
   /** Returns the minimum required width for the measure fragment. */
-  getMinRequiredWidth(systemMeasureIndex: number): number {
-    const staveModifiers = this.getStaveModifiers(systemMeasureIndex);
+  getMinRequiredWidth(opts: { systemMeasureIndex: number; previousMeasureFragment: MeasureFragment | null }): number {
+    const staveModifiers = this.getStaveModifiers({
+      systemMeasureIndex: opts.systemMeasureIndex,
+      previousMeasureFragment: opts.previousMeasureFragment,
+    });
     const staveModifiersWidth = this.getStaveModifiersWidth(Array.from(staveModifiers));
 
     return this.getMinJustifyWidth() + staveModifiersWidth + this.getRightPadding();
@@ -84,16 +84,23 @@ export class MeasureFragment {
     const staveRenderings = new Array<StaveRendering>();
 
     const width = opts.isLastSystem
-      ? this.getMinRequiredWidth(opts.systemMeasureIndex)
+      ? this.getMinRequiredWidth({
+          systemMeasureIndex: opts.systemMeasureIndex,
+          previousMeasureFragment: opts.previousMeasureFragment,
+        })
       : this.getSystemFitWidth({
           systemMeasureIndex: opts.systemMeasureIndex,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
+          previousMeasureFragment: opts.previousMeasureFragment,
         });
 
     let y = opts.y;
 
-    const staveModifiers = this.getStaveModifiers(opts.systemMeasureIndex);
+    const staveModifiers = this.getStaveModifiers({
+      systemMeasureIndex: opts.systemMeasureIndex,
+      previousMeasureFragment: opts.previousMeasureFragment,
+    });
 
     // Render staves.
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
@@ -139,7 +146,6 @@ export class MeasureFragment {
         config: this.config,
         staveSignature: this.leadingStaveSignature,
         staveNumber,
-        previousStave: this.previousMeasureFragment?.getStave(staveIndex) ?? null,
         beginningBarStyle: this.beginningBarStyle,
         endBarStyle: this.endBarStyle,
         measureEntries: this.measureEntries.filter((entry) => {
@@ -181,8 +187,12 @@ export class MeasureFragment {
     systemMeasureIndex: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
+    previousMeasureFragment: MeasureFragment | null;
   }): number {
-    const minRequiredWidth = this.getMinRequiredWidth(opts.systemMeasureIndex);
+    const minRequiredWidth = this.getMinRequiredWidth({
+      systemMeasureIndex: opts.systemMeasureIndex,
+      previousMeasureFragment: opts.previousMeasureFragment,
+    });
 
     const widthDeficit = opts.targetSystemWidth - opts.minRequiredSystemWidth;
     const widthFraction = minRequiredWidth / opts.minRequiredSystemWidth;
@@ -192,17 +202,22 @@ export class MeasureFragment {
   }
 
   /** Returns what modifiers to render. */
-  private getStaveModifiers(systemMeasureIndex: number): StaveModifier[] {
-    if (systemMeasureIndex === 0 && this.index === 0) {
+  private getStaveModifiers(opts: {
+    systemMeasureIndex: number;
+    previousMeasureFragment: MeasureFragment | null;
+  }): StaveModifier[] {
+    if (opts.systemMeasureIndex === 0 && this.index === 0) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const staveModifiersChanges = new Set<StaveModifier>();
+    let previousStave = util.last(opts.previousMeasureFragment?.getStaves() ?? []);
 
     for (const stave of this.getStaves()) {
-      for (const staveModifier of stave.getModifierChanges()) {
+      for (const staveModifier of stave.getModifierChanges({ previousStave })) {
         staveModifiersChanges.add(staveModifier);
       }
+      previousStave = stave;
     }
 
     return Array.from(staveModifiersChanges);

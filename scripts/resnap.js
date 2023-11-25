@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { execSync } = require('child_process');
-const readline = require('readline');
+import { execSync } from 'child_process';
+import readline from 'readline';
 
 const rl = readline.createInterface({
   input: process.stdin,

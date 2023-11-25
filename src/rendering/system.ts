@@ -78,8 +78,10 @@ export class System {
     for (let systemMeasureIndex = 0; systemMeasureIndex < measureCount; systemMeasureIndex++) {
       totalWidth += util.max(
         measureGroups
-          .map((measures) => measures[systemMeasureIndex])
-          .map((measure) => measure.getMinRequiredWidth(systemMeasureIndex))
+          .map((measures) => [measures[systemMeasureIndex - 1] ?? null, measures[systemMeasureIndex]])
+          .map(([previousMeasure, currentMeasure]) =>
+            currentMeasure.getMinRequiredWidth({ systemMeasureIndex, previousMeasure })
+          )
       );
     }
 

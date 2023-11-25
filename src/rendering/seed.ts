@@ -76,9 +76,22 @@ export class Seed {
       const measures = this.musicXml.parts
         .map((part) => part.getId())
         .map((partId) => this.getMeasures(partId))
-        .map((measures) => measures[measureIndex]);
+        .map((measures) => ({
+          previous: measures[measureIndex - 1] ?? null,
+          current: measures[measureIndex],
+        }));
 
-      let minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
+      const getMinRequiredWidth = () =>
+        util.max(
+          measures.map((measure) =>
+            measure.current.getMinRequiredWidth({
+              systemMeasureIndex,
+              previousMeasure: measure.previous,
+            })
+          )
+        );
+
+      let minRequiredWidth = getMinRequiredWidth();
 
       const isProcessingLastMeasure = measureIndex === measureCount - 1;
       if (isProcessingLastMeasure) {
@@ -92,7 +105,7 @@ export class Seed {
         continueSystem(minRequiredWidth);
       } else {
         commitSystem(measureIndex);
-        minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
+        minRequiredWidth = getMinRequiredWidth();
         continueSystem(minRequiredWidth);
       }
     }
@@ -109,8 +122,6 @@ export class Seed {
     for (const part of this.musicXml.parts) {
       const partId = part.getId();
       result[partId] = [];
-
-      let previousMeasure: Measure | null = null;
 
       const staveCount = this.getStaveCount(partId);
       const measures = part.getMeasures();
@@ -129,13 +140,11 @@ export class Seed {
             staveLayouts: this.musicXml.staveLayouts,
           },
           staveCount,
-          previousMeasure,
           leadingStaveSignature: this.getLeadingStaveSignature(partId, measureIndex),
           measureEntries: this.getMeasureEntries(partId, measureIndex),
         });
 
         result[partId].push(measure);
-        previousMeasure = measure;
 
         // -1 since this measure is part of the multi rest.
         multiRestMeasureCount += measure.getMultiRestCount() - 1;
