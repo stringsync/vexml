@@ -1,5 +1,5 @@
 import * as vexflow from 'vexflow';
-import { Address, SystemAddress } from './address';
+import { Address } from './address';
 import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
@@ -41,7 +41,7 @@ export type SpannerFragment =
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
-  address: SystemAddress;
+  address: Address<'system'>;
   fragment: T;
 };
 

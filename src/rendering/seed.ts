@@ -5,6 +5,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Part } from './part';
 import { System } from './system';
+import { Address } from './address';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -46,6 +47,7 @@ export class Seed {
 
       const system = new System({
         config: this.config,
+        address: Address.system(),
         parts,
       });
 

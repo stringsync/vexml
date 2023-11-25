@@ -2,10 +2,12 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Part } from './part';
 import { PartRendering } from './part';
+import { Address } from './address';
 
 /** The result of rendering a System. */
 export type SystemRendering = {
   type: 'system';
+  address: Address<'system'>;
   parts: PartRendering[];
 };
 
@@ -16,10 +18,12 @@ export type SystemRendering = {
  */
 export class System {
   private config: Config;
+  private address: Address<'system'>;
   private parts: Part[];
 
-  constructor(opts: { config: Config; parts: Part[] }) {
+  constructor(opts: { config: Config; address: Address<'system'>; parts: Part[] }) {
     this.config = opts.config;
+    this.address = opts.address;
     this.parts = opts.parts;
   }
 
@@ -55,7 +59,11 @@ export class System {
       partRenderings.push(partRendering);
     });
 
-    return { type: 'system', parts: partRenderings };
+    return {
+      type: 'system',
+      address: this.address,
+      parts: partRenderings,
+    };
   }
 
   private getMinRequiredWidth(): number {
