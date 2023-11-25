@@ -4,12 +4,14 @@ import * as util from '@/util';
 import { Measure, MeasureRendering } from './measure';
 import { StaveSignature } from './stavesignature';
 import { Config } from './config';
+import { Address } from './address';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
 /** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
+  address: Address<'part'>;
   vexflow: {
     staveConnector: vexflow.StaveConnector | null;
   };
@@ -23,11 +25,18 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
+  private address: Address<'part'>;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
 
-  constructor(opts: { config: Config; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+  constructor(opts: {
+    config: Config;
+    address: Address<'part'>;
+    musicXml: { part: musicxml.Part };
+    measures: Measure[];
+  }) {
     this.config = opts.config;
+    this.address = opts.address;
     this.musicXml = opts.musicXml;
     this.measures = opts.measures;
   }
@@ -97,6 +106,7 @@ export class Part {
 
     return {
       id: this.musicXml.part.getId(),
+      address: this.address,
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
     };

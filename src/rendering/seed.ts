@@ -36,10 +36,13 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
+      const systemAddress = Address.system();
+
       const parts = this.musicXml.parts.map((part) => {
         const partId = part.getId();
         return new Part({
           config: this.config,
+          address: systemAddress.part(),
           musicXml: { part },
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
         });
@@ -47,7 +50,7 @@ export class Seed {
 
       const system = new System({
         config: this.config,
-        address: Address.system(),
+        address: systemAddress,
         parts,
       });
 
