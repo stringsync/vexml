@@ -6,6 +6,7 @@ import { Config } from './config';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
+import { Address } from './address';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -16,6 +17,7 @@ export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering
 /** The result rendering a Voice. */
 export type VoiceRendering = {
   type: 'voice';
+  address: Address<'voice'>;
   vexflow: {
     voice: vexflow.Voice;
   };
@@ -55,7 +57,7 @@ export class Voice {
   }
 
   /** Renders the Voice. */
-  render(): VoiceRendering {
+  render(opts: { address: Address<'voice'> }): VoiceRendering {
     const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
       if (entry instanceof Note) {
         return entry.render();
@@ -98,6 +100,7 @@ export class Voice {
 
     return {
       type: 'voice',
+      address: opts.address,
       vexflow: { voice: vfVoice },
       entries: voiceEntryRenderings,
     };
