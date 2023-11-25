@@ -220,7 +220,7 @@ export class Spanners {
           buffer.push(entry);
           break;
         case 'continue':
-          if (entry.address.hasTheSame('system', address)) {
+          if (entry.address.isMemberOf('system', address)) {
             buffer.push(entry);
           } else {
             // TODO: When an entry continues or stops on another system, validate that this renders correctly. You
@@ -292,7 +292,7 @@ export class Spanners {
           buffer.push(entry);
           break;
         case 'continue':
-          if (entry.address.hasTheSame('system', address)) {
+          if (entry.address.isMemberOf('system', address)) {
             buffer.push(entry);
           } else {
             addOctaveShift();
