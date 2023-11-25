@@ -1,9 +1,6 @@
 /** The type of address. */
 export type AddressType = 'system' | 'part' | 'measure' | 'measurefragment' | 'stave' | 'chorus' | 'voice';
 
-/** Any type of address. */
-export type AnyAddress = Address<AddressType>;
-
 /** A system address. */
 export type SystemAddress = Address<'system'>;
 
@@ -26,13 +23,13 @@ export type ChorusAddress = Address<'chorus'>;
 export type VoiceAddress = Address<'voice'>;
 
 /** The location of a musical object in the rendering hierarchy. */
-export class Address<T extends AddressType> {
+export class Address<T extends AddressType = AddressType> {
   private type: T;
   private id: symbol;
-  private parent: AnyAddress | null;
-  private children: AnyAddress[];
+  private parent: Address | null;
+  private children: Address[];
 
-  private constructor(opts: { type: T; id: symbol; parent: AnyAddress | null }) {
+  private constructor(opts: { type: T; id: symbol; parent: Address | null }) {
     this.type = opts.type;
     this.id = opts.id;
     this.parent = opts.parent;
@@ -44,7 +41,7 @@ export class Address<T extends AddressType> {
     return Address.create('system', null);
   }
 
-  private static create<T extends AddressType>(type: T, parent: AnyAddress | null): Address<T> {
+  private static create<T extends AddressType>(type: T, parent: Address | null): Address<T> {
     const id = Symbol(type);
     const address = new Address({ type, id, parent });
     parent?.children.push(address);
@@ -92,7 +89,7 @@ export class Address<T extends AddressType> {
    *
    * @throws {Error} when the type is not part of either address's lineage (including self).
    */
-  isMemberOf(type: AddressType, address: AnyAddress): boolean {
+  isMemberOf(type: AddressType, address: Address): boolean {
     const address1 = this.getAddress(type);
     if (!address1) {
       throw new Error(`self address must have type '${type}' in its lineage, got null`);
@@ -108,7 +105,7 @@ export class Address<T extends AddressType> {
 
   private getAddress<S extends AddressType>(type: S): Address<S> | null {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let node: AnyAddress | null = this;
+    let node: Address | null = this;
     while (node !== null) {
       if (node.type === type) {
         return node as Address<S>;
@@ -119,7 +116,7 @@ export class Address<T extends AddressType> {
   }
 
   private assertThisHasType<S extends AddressType>(type: S): asserts this is Address<S> {
-    if ((this as AnyAddress).type !== type) {
+    if ((this as Address).type !== type) {
       throw new Error(`must be of type '${type}', got: '${this.type}'`);
     }
   }
