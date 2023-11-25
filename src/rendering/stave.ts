@@ -50,7 +50,6 @@ export class Stave {
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private measureEntries: MeasureEntry[];
-  private previousStave: Stave | null;
 
   constructor(opts: {
     config: Config;
@@ -59,7 +58,6 @@ export class Stave {
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     measureEntries: MeasureEntry[];
-    previousStave: Stave | null;
   }) {
     this.config = opts.config;
     this.staveNumber = opts.staveNumber;
@@ -67,7 +65,6 @@ export class Stave {
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
     this.measureEntries = opts.measureEntries;
-    this.previousStave = opts.previousStave;
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
@@ -112,20 +109,20 @@ export class Stave {
   }
 
   /** Returns the stave modifiers that changed. */
-  getModifierChanges(): StaveModifier[] {
-    if (!this.previousStave) {
+  getModifierChanges(opts: { previousStave: Stave | null }): StaveModifier[] {
+    if (!opts.previousStave) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const result = new Array<StaveModifier>();
 
-    if (!this.getClef().isEqual(this.previousStave.getClef())) {
+    if (!this.getClef().isEqual(opts.previousStave.getClef())) {
       result.push('clef');
     }
-    if (!this.getKeySignature().isEqual(this.previousStave.getKeySignature())) {
+    if (!this.getKeySignature().isEqual(opts.previousStave.getKeySignature())) {
       result.push('keySignature');
     }
-    if (!this.getTimeSignature().isEqual(this.previousStave.getTimeSignature())) {
+    if (!this.getTimeSignature().isEqual(opts.previousStave.getTimeSignature())) {
       result.push('timeSignature');
     }
 
