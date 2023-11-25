@@ -1,27 +1,6 @@
 /** The type of address. */
 export type AddressType = 'system' | 'part' | 'measure' | 'measurefragment' | 'stave' | 'chorus' | 'voice';
 
-/** A system address. */
-export type SystemAddress = Address<'system'>;
-
-/** A part address. */
-export type PartAddress = Address<'part'>;
-
-/** A measure address. */
-export type MeasureAddress = Address<'measure'>;
-
-/** A measure fragment address. */
-export type MeasureFragmentAddress = Address<'measurefragment'>;
-
-/** A stave address. */
-export type StaveAddress = Address<'stave'>;
-
-/** A chorus address. */
-export type ChorusAddress = Address<'chorus'>;
-
-/** A voice address. */
-export type VoiceAddress = Address<'voice'>;
-
 /** The location of a musical object in the rendering hierarchy. */
 export class Address<T extends AddressType = AddressType> {
   private type: T;
