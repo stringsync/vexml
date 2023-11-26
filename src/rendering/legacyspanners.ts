@@ -2,14 +2,12 @@ import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
-import { Pedal, PedalFragment, PedalRendering } from './pedal';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
   octaveShifts: OctaveShiftRendering[];
   vibratos: VibratoRendering[];
-  pedals: PedalRendering[];
 };
 
 /**
@@ -22,7 +20,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = OctaveShiftFragment | PedalFragment | VibratoFragment;
+export type SpannerFragment = OctaveShiftFragment | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -50,7 +48,6 @@ export class LegacySpanners {
       type: 'spanners',
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
-      pedals: this.getPedals().map((pedal) => pedal.render()),
     };
   }
 
@@ -154,38 +151,5 @@ export class LegacySpanners {
     }
 
     return vibratos;
-  }
-
-  private getPedals(): Pedal[] {
-    const pedals = new Array<Pedal>();
-
-    const fragments = this.entries
-      .map((entry) => entry.fragment)
-      .filter((fragment): fragment is PedalFragment => fragment.type === 'pedal');
-
-    let buffer = new Array<PedalFragment>();
-
-    for (let index = 0; index < fragments.length; index++) {
-      const fragment = fragments[index];
-      const isLast = index === fragments.length - 1;
-
-      switch (fragment.phase) {
-        case 'start':
-        case 'continue':
-          buffer.push(fragment);
-          break;
-        case 'stop':
-          buffer.push(fragment);
-          pedals.push(new Pedal({ fragments: buffer }));
-          buffer = [];
-          break;
-      }
-
-      if (isLast && buffer.length > 0) {
-        pedals.push(new Pedal({ fragments: buffer }));
-      }
-    }
-
-    return pedals;
   }
 }

@@ -3,13 +3,16 @@ import * as util from '@/util';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
+import { Pedal, PedalFragment, PedalRendering } from './pedal';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
+  type: 'spanners';
   beams: BeamRendering[];
   tuplets: TupletRendering[];
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
+  pedals: PedalRendering[];
 };
 
 /** The accounting for all spanners. */
@@ -18,6 +21,7 @@ export class Spanners {
   private tuplets = new Array<Tuplet>();
   private slurs: Record<number, Slur[]> = {};
   private wedges = new Array<Wedge>();
+  private pedals = new Array<Pedal>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
@@ -74,15 +78,27 @@ export class Spanners {
     }
   }
 
+  addPedalFragment(pedalFragment: PedalFragment): void {
+    const pedal = util.last(this.pedals);
+
+    if (pedal?.isAllowed(pedalFragment)) {
+      pedal.addFragment(pedalFragment);
+    } else if (['start', 'sostenuto', 'resume'].includes(pedalFragment.type)) {
+      this.pedals.push(new Pedal({ fragment: pedalFragment }));
+    }
+  }
+
   /** Renders all the spanners. */
   render(): SpannersRendering {
     return {
+      type: 'spanners',
       beams: this.beams.map((beam) => beam.render()),
       tuplets: this.tuplets.map((tuplet) => tuplet.render()),
       slurs: Object.values(this.slurs)
         .flat()
         .map((slur) => slur.render()),
       wedges: this.wedges.map((wedge) => wedge.render()),
+      pedals: this.pedals.map((pedal) => pedal.render()),
     };
   }
 }

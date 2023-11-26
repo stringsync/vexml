@@ -215,7 +215,7 @@ export class Score {
       });
 
     // Draw vexflow.PedalMarking elements.
-    legacySpanners.pedals
+    spannersRendering.pedals
       .map((pedal) => pedal.vexflow.pedalMarking)
       .forEach((vfPedalMarking) => {
         vfPedalMarking.setContext(vfContext).draw();

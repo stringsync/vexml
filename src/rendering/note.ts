@@ -13,7 +13,6 @@ import { SpannerFragment } from './legacyspanners';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
 import { VibratoFragment } from './vibrato';
-import { PedalFragment } from './pedal';
 import { Spanners } from './spanners';
 
 const STEP_ORDER = [
@@ -318,11 +317,7 @@ export class Note {
   }
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
-    return [
-      ...this.getWavyLineFragments(vfStaveNote, keyIndex),
-      ...this.getOctaveShiftFragments(vfStaveNote),
-      ...this.getPedalFragments(vfStaveNote),
-    ];
+    return [...this.getWavyLineFragments(vfStaveNote, keyIndex), ...this.getOctaveShiftFragments(vfStaveNote)];
   }
 
   private getWavyLineFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): VibratoFragment[] {
@@ -383,44 +378,6 @@ export class Note {
       });
   }
 
-  private getPedalFragments(vfStaveNote: vexflow.StaveNote): PedalFragment[] {
-    return this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
-      .map((content) => content.pedal)
-      .map<PedalFragment>((pedal) => {
-        switch (pedal.getType()) {
-          case 'start':
-          case 'sostenuto':
-          case 'resume':
-            return {
-              type: 'pedal',
-              phase: 'start',
-              musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
-
-          case 'continue':
-          case 'change':
-            return {
-              type: 'pedal',
-              phase: 'continue',
-              musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
-          case 'stop':
-          case 'discontinue':
-            return {
-              type: 'pedal',
-              phase: 'stop',
-              musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
-        }
-      });
-  }
-
   private addSpannerFragments(opts: {
     spanners: Spanners;
     keyIndex: number;
@@ -430,6 +387,7 @@ export class Note {
     this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
+    this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
   private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
@@ -538,5 +496,43 @@ export class Note {
         },
       });
     }
+  }
+
+  private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal)
+      .forEach((pedal) => {
+        const pedalType = pedal.getType();
+        switch (pedalType) {
+          case 'start':
+          case 'sostenuto':
+          case 'resume':
+            opts.spanners.addPedalFragment({
+              type: pedalType,
+              musicXml: { pedal },
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
+          case 'continue':
+          case 'change':
+            opts.spanners.addPedalFragment({
+              type: pedalType,
+              musicXml: { pedal },
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
+          case 'stop':
+          case 'discontinue':
+            opts.spanners.addPedalFragment({
+              type: pedalType,
+              musicXml: { pedal },
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
+        }
+      });
   }
 }
