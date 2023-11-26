@@ -14,8 +14,7 @@ export type OctaveShiftRendering = {
 export type OctaveShiftFragment = StartOctaveShiftFragment | ContinueOctaveShiftFragment | StopOctaveShiftFragment;
 
 type StartOctaveShiftFragment = {
-  type: 'octaveshift';
-  phase: 'start';
+  type: 'start';
   text: string;
   superscript: string;
   vexflow: {
@@ -25,16 +24,14 @@ type StartOctaveShiftFragment = {
 };
 
 type ContinueOctaveShiftFragment = {
-  type: 'octaveshift';
-  phase: 'continue';
+  type: 'continue';
   vexflow: {
     note: vexflow.Note;
   };
 };
 
 type StopOctaveShiftFragment = {
-  type: 'octaveshift';
-  phase: 'stop';
+  type: 'stop';
   vexflow: {
     note: vexflow.Note;
   };
@@ -52,36 +49,41 @@ export type OctaveShiftEntry = {
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/octave-shift/
  */
 export class OctaveShift {
-  private text: string;
-  private superscript: string;
-  private position: vexflow.TextBracketPosition;
-  private entries: OctaveShiftEntry[];
+  private fragments: [StartOctaveShiftFragment, ...OctaveShiftFragment[]];
 
-  constructor(opts: {
-    text: string;
-    superscript: string;
-    position: vexflow.TextBracketPosition;
-    entries: OctaveShiftEntry[];
-  }) {
-    util.assert(opts.entries.length >= 2, 'must have at least 2 octave shift entries');
+  constructor(opts: { fragment: StartOctaveShiftFragment }) {
+    this.fragments = [opts.fragment];
+  }
 
-    this.text = opts.text;
-    this.superscript = opts.superscript;
-    this.position = opts.position;
-    this.entries = opts.entries;
+  /** Whether the fragment is allowed to be added to the octave shift. */
+  isAllowed(fragment: OctaveShiftFragment): boolean {
+    switch (util.last(this.fragments)!.type) {
+      case 'start':
+      case 'continue':
+        return fragment.type === 'continue' || fragment.type === 'stop';
+      case 'stop':
+        return false;
+    }
+  }
+
+  /** Adds a fragment to the octave shift. */
+  addFragment(fragment: OctaveShiftFragment): void {
+    this.fragments.push(fragment);
   }
 
   /** Renders the octave shift. */
   render(): OctaveShiftRendering {
-    const startNote = util.first(this.entries)!.fragment.vexflow.note;
-    const stopNote = util.last(this.entries)!.fragment.vexflow.note;
+    const startNote = util.first(this.fragments)!.vexflow.note;
+    const stopNote = util.last(this.fragments)!.vexflow.note;
+
+    const startOctaveShiftFragment = this.getStartOctaveShiftFragment();
 
     const vfTextBracket = new vexflow.TextBracket({
       start: startNote,
       stop: stopNote,
-      position: this.position,
-      text: this.text,
-      superscript: this.superscript,
+      position: startOctaveShiftFragment.vexflow.textBracketPosition,
+      text: startOctaveShiftFragment.text,
+      superscript: startOctaveShiftFragment.superscript,
     });
 
     return {
@@ -90,5 +92,9 @@ export class OctaveShift {
         textBracket: vfTextBracket,
       },
     };
+  }
+
+  private getStartOctaveShiftFragment(): StartOctaveShiftFragment {
+    return this.fragments[0];
   }
 }

@@ -9,9 +9,8 @@ import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
-import { SpannerFragment } from './legacyspanners';
+
 import { Ornament, OrnamentRendering } from './ornament';
-import { OctaveShiftFragment } from './octaveshift';
 import { Spanners } from './spanners';
 
 const STEP_ORDER = [
@@ -48,7 +47,6 @@ export type NoteRendering = {
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
-  spannerFragments: SpannerFragment[];
 };
 
 /**
@@ -183,7 +181,6 @@ export class Note {
         modifiers: modifierRenderingGroups[index],
         vexflow: { staveNote: vfStaveNote },
         timeModification: notes[index].getTimeModification(),
-        spannerFragments: notes[index].getSpannerFragments(vfStaveNote),
       });
     }
 
@@ -315,50 +312,6 @@ export class Note {
       .map((token) => new Token({ musicXml: { token } }));
   }
 
-  private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
-    return [...this.getOctaveShiftFragments(vfStaveNote)];
-  }
-
-  private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
-    return this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
-      .map((content) => content.octaveShift)
-      .map<OctaveShiftFragment>((octaveShift) => {
-        switch (octaveShift.getType()) {
-          case 'up':
-            return {
-              type: 'octaveshift',
-              phase: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'mb',
-              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
-            };
-          case 'down':
-            return {
-              type: 'octaveshift',
-              phase: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'va',
-              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
-            };
-          case 'continue':
-            return {
-              type: 'octaveshift',
-              phase: 'continue',
-              vexflow: { note: vfStaveNote },
-            };
-          case 'stop':
-            return {
-              type: 'octaveshift',
-              phase: 'stop',
-              vexflow: { note: vfStaveNote },
-            };
-        }
-      });
-  }
-
   private addSpannerFragments(opts: {
     spanners: Spanners;
     keyIndex: number;
@@ -370,6 +323,7 @@ export class Note {
     this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
   private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
@@ -529,6 +483,52 @@ export class Note {
           keyIndex: 0,
           vexflow: { note: opts.vexflow.staveNote },
         });
+      });
+  }
+
+  private addOctaveShiftFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift)
+      .forEach((octaveShift) => {
+        switch (octaveShift.getType()) {
+          case 'up':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'mb',
+              vexflow: {
+                note: opts.vexflow.staveNote,
+                textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
+              },
+            });
+            break;
+          case 'down':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'va',
+              vexflow: {
+                note: opts.vexflow.staveNote,
+                textBracketPosition: vexflow.TextBracketPosition.TOP,
+              },
+            });
+            break;
+          case 'continue':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'continue',
+              vexflow: { note: opts.vexflow.staveNote },
+            });
+            break;
+          case 'stop':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'stop',
+              vexflow: { note: opts.vexflow.staveNote },
+            });
+            break;
+        }
       });
   }
 }

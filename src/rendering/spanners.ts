@@ -5,6 +5,7 @@ import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
+import { OctaveShift, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -15,6 +16,7 @@ export type SpannersRendering = {
   wedges: WedgeRendering[];
   pedals: PedalRendering[];
   vibratos: VibratoRendering[];
+  octaveShifts: OctaveShiftRendering[];
 };
 
 /** The accounting for all spanners. */
@@ -25,6 +27,7 @@ export class Spanners {
   private wedges = new Array<Wedge>();
   private pedals = new Array<Pedal>();
   private vibratos = new Array<Vibrato>();
+  private octaveShifts = new Array<OctaveShift>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
@@ -103,6 +106,21 @@ export class Spanners {
     }
   }
 
+  /** Adds an octave shift fragment. */
+  addOctaveShiftFragment(octaveShiftFragment: OctaveShiftFragment): void {
+    const octaveShift = util.last(this.octaveShifts);
+
+    if (octaveShift?.isAllowed(octaveShiftFragment)) {
+      octaveShift.addFragment(octaveShiftFragment);
+    } else if (octaveShiftFragment.type === 'start') {
+      this.octaveShifts.push(
+        new OctaveShift({
+          fragment: octaveShiftFragment,
+        })
+      );
+    }
+  }
+
   /** Renders all the spanners. */
   render(): SpannersRendering {
     return {
@@ -115,6 +133,7 @@ export class Spanners {
       wedges: this.wedges.map((wedge) => wedge.render()),
       pedals: this.pedals.map((pedal) => pedal.render()),
       vibratos: this.vibratos.map((vibrato) => vibrato.render()),
+      octaveShifts: this.octaveShifts.map((octaveShift) => octaveShift.render()),
     };
   }
 }
