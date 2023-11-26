@@ -7,11 +7,6 @@ import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
 import { Seed } from './seed';
-import { NoteRendering } from './note';
-import { ChordRendering } from './chord';
-import { RestRendering } from './rest';
-import { LegacySpanners } from './legacyspanners';
-import { Address } from './address';
 import { Spanners } from './spanners';
 
 // Space needed to be able to show the end barlines.
@@ -101,7 +96,6 @@ export class Score {
     });
 
     // Render spanners.
-    const legacySpanners = this.getSpanners(systemRenderings).render();
     const spannersRendering = spanners.render();
 
     // Precalculate different parts of the rendering for readability later.
@@ -208,7 +202,7 @@ export class Score {
       });
 
     // Draw vexflow.TextBracket elements.
-    legacySpanners.octaveShifts
+    spannersRendering.octaveShifts
       .map((octaveShift) => octaveShift.vexflow.textBracket)
       .forEach((vfTextBracket) => {
         vfTextBracket.setContext(vfContext).draw();
@@ -263,35 +257,5 @@ export class Score {
       config: this.config,
       text: this.musicXml.scorePartwise?.getTitle() ?? '',
     });
-  }
-
-  private getSpanners(systemRenderings: SystemRendering[]): LegacySpanners {
-    const entries = systemRenderings.flatMap((system) => {
-      const address = Address.system();
-
-      return system.parts
-        .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
-        .flatMap((fragment) => fragment.staves)
-        .flatMap((stave) => stave.entry)
-        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-        .flatMap((entry) => entry.voices)
-        .flatMap((voice) => voice.entries)
-        .filter(
-          (entry): entry is NoteRendering | ChordRendering | RestRendering =>
-            entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-        )
-        .flatMap((entry) => {
-          switch (entry.type) {
-            case 'note':
-            case 'rest':
-              return entry.spannerFragments;
-            case 'chord':
-              return util.first(entry.notes)?.spannerFragments ?? [];
-          }
-        })
-        .map((fragment) => ({ address, fragment }));
-    });
-
-    return new LegacySpanners({ entries });
   }
 }
