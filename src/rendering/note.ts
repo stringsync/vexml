@@ -174,16 +174,17 @@ export class Note {
       }
     }
 
-    const beamFragments = notes
-      .flatMap((note) => note.musicXml.note.getBeams())
-      .map<BeamFragment>((beam) => ({
-        number: beam.getNumber(),
-        musicXml: { beam },
-        vexflow: { stemmableNote: vfStaveNote },
-      }));
     // vexflow does the heavy lifting of beam fragments, so we just want to track the lowest number for continuity info.
     const beamFragment = util.first(
-      util.sortBy(beamFragments, (beamFragment) => beamFragment.musicXml.beam.getNumber())
+      util
+        .sortBy(
+          notes.flatMap((note) => note.musicXml.note.getBeams()),
+          (beam) => beam.getNumber()
+        )
+        .map<BeamFragment>((beam) => ({
+          value: beam.getBeamValue(),
+          vexflow: { stemmableNote: vfStaveNote },
+        }))
     );
     if (beamFragment) {
       opts.spanners.addBeamFragment(beamFragment);

@@ -5,7 +5,6 @@ import * as util from '@/util';
 /** The result of rendering a beam. */
 export type BeamRendering = {
   type: 'beam';
-  number: number;
   vexflow: {
     beam: vexflow.Beam;
   };
@@ -13,9 +12,7 @@ export type BeamRendering = {
 
 /** A piece of a beam. */
 export type BeamFragment = {
-  musicXml: {
-    beam: musicxml.Beam;
-  };
+  value: musicxml.BeamValue;
   vexflow: {
     stemmableNote: vexflow.StemmableNote;
   };
@@ -29,15 +26,14 @@ export class Beam {
     this.fragments = [opts.fragment];
   }
 
-  /** Whether the fragment can be added. */
-  canAddFragment(fragment: BeamFragment): boolean {
-    const beam = fragment.musicXml.beam;
-    const last = util.last(this.fragments.map((fragment) => fragment.musicXml.beam.getBeamValue()));
+  /** Whether the fragment can be added to the beam. */
+  isAllowed(fragment: BeamFragment): boolean {
+    const last = util.last(this.fragments.map((fragment) => fragment.value));
     const allowed = this.getAllowedBeamValues(last);
-    return beam.getNumber() === this.getNumber() && allowed.includes(beam.getBeamValue());
+    return allowed.includes(fragment.value);
   }
 
-  /** Adds a fragment to the beam. */
+  /** Adds the fragment to the beam. */
   addFragment(fragment: BeamFragment): void {
     this.fragments.push(fragment);
   }
@@ -49,13 +45,8 @@ export class Beam {
 
     return {
       type: 'beam',
-      number: this.getNumber(),
       vexflow: { beam },
     };
-  }
-
-  private getNumber(): number {
-    return this.fragments[0].musicXml.beam.getNumber();
   }
 
   private getAllowedBeamValues(beamValue: musicxml.BeamValue | null): musicxml.BeamValue[] {

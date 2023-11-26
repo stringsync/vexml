@@ -15,15 +15,13 @@ export class Spanners {
     return 0;
   }
 
-  /** Adds a beam fragment */
+  /** Adds a beam fragment assuming the beam fragment with the lowest number was chosen. */
   addBeamFragment(beamFragment: BeamFragment): void {
-    const value = beamFragment.musicXml.beam.getBeamValue();
-
     const beam = util.last(this.beams);
 
-    if (beam?.canAddFragment(beamFragment)) {
+    if (beam?.isAllowed(beamFragment)) {
       beam.addFragment(beamFragment);
-    } else if (value === 'begin') {
+    } else if (beamFragment.value === 'begin') {
       this.beams.push(new Beam({ fragment: beamFragment }));
     } else {
       console.debug('found invalid beam fragment, skipping');
