@@ -5,7 +5,7 @@ import { Measure, MeasureRendering } from './measure';
 import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -47,7 +47,7 @@ export class Part {
     x: number;
     y: number;
     address: Address<'part'>;
-    spanners: Spanners2;
+    spanners: Spanners;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     isLastSystem: boolean;

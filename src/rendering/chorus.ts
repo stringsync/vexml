@@ -15,7 +15,7 @@ import { Chord } from './chord';
 import { Rest } from './rest';
 import { Note } from './note';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -109,7 +109,7 @@ export class Chorus {
             address: address.voice(),
             // Creating a new Spanners accounting causes it to be ignored. This is probably ok since we're just
             // rendering voices for measuring purposes.
-            spanners: new Spanners2(),
+            spanners: new Spanners(),
           }).vexflow.voice
       );
       const vfFormatter = new vexflow.Formatter();
@@ -119,7 +119,7 @@ export class Chorus {
   }
 
   /** Renders the Chorus. */
-  render(opts: { address: Address<'chorus'>; spanners: Spanners2 }): ChorusRendering {
+  render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
     const voiceRenderings = this.getVoices().map((voice) =>
       voice.render({
         address: opts.address.voice(),

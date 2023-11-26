@@ -9,7 +9,7 @@ import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
-import { SpannerFragment } from './spanners';
+import { SpannerFragment } from './legacyspanners';
 import { TupletFragment } from './tuplet';
 import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
@@ -18,7 +18,7 @@ import { OctaveShiftFragment } from './octaveshift';
 import { VibratoFragment } from './vibrato';
 import { PedalFragment } from './pedal';
 import { BeamFragment } from './beam';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 const STEP_ORDER = [
   'Cb',
@@ -100,7 +100,7 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(opts: { notes: Note[]; spanners: Spanners2 }): NoteRendering[] {
+  static render(opts: { notes: Note[]; spanners: Spanners }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
 
     util.assert(notes.length > 0, 'cannot render empty notes');
@@ -233,7 +233,7 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners2 }): NoteRendering {
+  render(opts: { spanners: Spanners }): NoteRendering {
     return util.first(
       Note.render({
         notes: [this],

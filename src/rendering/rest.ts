@@ -6,7 +6,7 @@ import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
-import { SpannerFragment } from './spanners';
+import { SpannerFragment } from './legacyspanners';
 import { TupletFragment } from './tuplet';
 import { OctaveShiftFragment } from './octaveshift';
 import { WedgeFragment } from './wedge';

@@ -10,9 +10,9 @@ import { Seed } from './seed';
 import { NoteRendering } from './note';
 import { ChordRendering } from './chord';
 import { RestRendering } from './rest';
-import { Spanners } from './spanners';
+import { LegacySpanners } from './legacyspanners';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -57,7 +57,7 @@ export class Score {
     let y = 0;
 
     // Initialize spanners for rendering.
-    const spanners = new Spanners2();
+    const spanners = new Spanners();
 
     // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
@@ -265,7 +265,7 @@ export class Score {
     });
   }
 
-  private getSpanners(systemRenderings: SystemRendering[]): Spanners {
+  private getSpanners(systemRenderings: SystemRendering[]): LegacySpanners {
     const entries = systemRenderings.flatMap((system) => {
       const address = Address.system();
 
@@ -292,6 +292,6 @@ export class Score {
         .map((fragment) => ({ address, fragment }));
     });
 
-    return new Spanners({ entries });
+    return new LegacySpanners({ entries });
   }
 }
