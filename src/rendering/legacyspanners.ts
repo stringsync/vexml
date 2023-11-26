@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import { Address } from './address';
-import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
@@ -9,7 +8,6 @@ import { Pedal, PedalFragment, PedalRendering } from './pedal';
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
-  slurs: SlurRendering[];
   wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
   vibratos: VibratoRendering[];
@@ -26,7 +24,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = SlurFragment | WedgeFragment | OctaveShiftFragment | PedalFragment | VibratoFragment;
+export type SpannerFragment = WedgeFragment | OctaveShiftFragment | PedalFragment | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -52,42 +50,11 @@ export class LegacySpanners {
   render(): SpannersRendering {
     return {
       type: 'spanners',
-      slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
       pedals: this.getPedals().map((pedal) => pedal.render()),
     };
-  }
-
-  private getSlurs(): Slur[] {
-    const slurs = new Array<Slur>();
-
-    const fragments = this.entries
-      .map((entry) => entry.fragment)
-      .filter((fragment): fragment is SlurFragment => fragment.type === 'slur');
-    const data: Record<number, SlurFragment[]> = {};
-
-    for (let index = 0; index < fragments.length; index++) {
-      const fragment = fragments[index];
-
-      const slurNumber = fragment.slurNumber;
-      switch (fragment.phase) {
-        case 'start':
-        case 'continue':
-          data[slurNumber] ??= [];
-          data[slurNumber].push(fragment);
-          break;
-        case 'stop':
-          data[slurNumber] ??= [];
-          data[slurNumber].push(fragment);
-          slurs.push(new Slur({ fragments: data[slurNumber] }));
-          delete data[slurNumber];
-          break;
-      }
-    }
-
-    return slurs;
   }
 
   private getWedges(): Wedge[] {

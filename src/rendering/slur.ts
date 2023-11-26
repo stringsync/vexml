@@ -2,7 +2,6 @@ import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as conversions from './conversions';
-import { SpannerFragmentPhase } from './enums';
 
 /** The result of rendering a slur. */
 export type SlurRendering = {
@@ -14,8 +13,7 @@ export type SlurRendering = {
 
 /** Represents a piece of a slur. */
 export type SlurFragment = {
-  type: 'slur';
-  phase: SpannerFragmentPhase;
+  type: musicxml.StartStopContinue;
   slurNumber: number;
   vexflow: {
     note: vexflow.Note;
@@ -27,10 +25,26 @@ export type SlurFragment = {
  * played legato.
  */
 export class Slur {
-  private fragments: SlurFragment[];
+  private fragments: [SlurFragment, ...SlurFragment[]];
 
-  constructor(opts: { fragments: SlurFragment[] }) {
-    this.fragments = opts.fragments;
+  constructor(opts: { fragment: SlurFragment }) {
+    this.fragments = [opts.fragment];
+  }
+
+  /** Whether the fragment can be added to the slur. */
+  isAllowed(fragment: SlurFragment): boolean {
+    switch (util.last(this.fragments)!.type) {
+      case 'start':
+      case 'continue':
+        return fragment.type === 'continue' || fragment.type === 'stop';
+      case 'stop':
+        return false;
+    }
+  }
+
+  /** Adds the fragment to the slur. */
+  addFragment(fragment: SlurFragment): void {
+    this.fragments.push(fragment);
   }
 
   /** Renders the slur. */
