@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
-import { SpannerFragmentPhase } from './enums';
+import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 
 /** The result of rendering a beam. */
 export type BeamRendering = {
@@ -9,10 +10,9 @@ export type BeamRendering = {
   };
 };
 
-/** Represents a piece of a beam. */
+/** A piece of a beam. */
 export type BeamFragment = {
-  type: 'beam';
-  phase: SpannerFragmentPhase;
+  type: musicxml.BeamValue;
   vexflow: {
     stemmableNote: vexflow.StemmableNote;
   };
@@ -20,10 +20,33 @@ export type BeamFragment = {
 
 /** Represents a stem connector for a group of notes within a measure. */
 export class Beam {
-  private fragments: BeamFragment[];
+  private fragments: [BeamFragment, ...BeamFragment[]];
 
-  constructor(opts: { fragments: BeamFragment[] }) {
-    this.fragments = opts.fragments;
+  constructor(opts: { fragment: BeamFragment }) {
+    this.fragments = [opts.fragment];
+  }
+
+  /** Whether the fragment can be added to the beam. */
+  isAllowed(fragment: BeamFragment): boolean {
+    switch (util.last(this.fragments.map((fragment) => fragment.type))!) {
+      case 'begin':
+      case 'continue':
+      case 'backward hook':
+      case 'forward hook':
+        return (
+          fragment.type === 'continue' ||
+          fragment.type === 'backward hook' ||
+          fragment.type === 'forward hook' ||
+          fragment.type === 'end'
+        );
+      case 'end':
+        return false;
+    }
+  }
+
+  /** Adds the fragment to the beam. */
+  addFragment(fragment: BeamFragment): void {
+    this.fragments.push(fragment);
   }
 
   /** Renders the beam. */
@@ -33,9 +56,7 @@ export class Beam {
 
     return {
       type: 'beam',
-      vexflow: {
-        beam,
-      },
+      vexflow: { beam },
     };
   }
 }

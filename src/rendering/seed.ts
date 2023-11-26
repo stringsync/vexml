@@ -5,6 +5,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Part } from './part';
 import { System } from './system';
+import { Address } from './address';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -35,6 +36,8 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
+      const systemAddress = Address.system();
+
       const parts = this.musicXml.parts.map((part) => {
         const partId = part.getId();
         return new Part({
@@ -46,6 +49,7 @@ export class Seed {
 
       const system = new System({
         config: this.config,
+        address: systemAddress,
         parts,
       });
 
@@ -66,14 +70,31 @@ export class Seed {
       this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
     );
 
+    const systemAddress = Address.system();
+
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Represents a column of measures across each part.
       const measures = this.musicXml.parts
         .map((part) => part.getId())
-        .map((partId) => this.getMeasures(partId))
-        .map((measures) => measures[measureIndex]);
+        .map((partId) => ({ address: systemAddress.part(), measures: this.getMeasures(partId) }))
+        .map((data) => ({
+          address: data.address.measure(),
+          previous: data.measures[measureIndex - 1] ?? null,
+          current: data.measures[measureIndex],
+        }));
 
-      let minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
+      const getMinRequiredWidth = () =>
+        util.max(
+          measures.map((measure) =>
+            measure.current.getMinRequiredWidth({
+              address: measure.address,
+              systemMeasureIndex,
+              previousMeasure: measure.previous,
+            })
+          )
+        );
+
+      let minRequiredWidth = getMinRequiredWidth();
 
       const isProcessingLastMeasure = measureIndex === measureCount - 1;
       if (isProcessingLastMeasure) {
@@ -87,7 +108,7 @@ export class Seed {
         continueSystem(minRequiredWidth);
       } else {
         commitSystem(measureIndex);
-        minRequiredWidth = util.max(measures.map((measure) => measure.getMinRequiredWidth(systemMeasureIndex)));
+        minRequiredWidth = getMinRequiredWidth();
         continueSystem(minRequiredWidth);
       }
     }
@@ -104,8 +125,6 @@ export class Seed {
     for (const part of this.musicXml.parts) {
       const partId = part.getId();
       result[partId] = [];
-
-      let previousMeasure: Measure | null = null;
 
       const staveCount = this.getStaveCount(partId);
       const measures = part.getMeasures();
@@ -124,13 +143,11 @@ export class Seed {
             staveLayouts: this.musicXml.staveLayouts,
           },
           staveCount,
-          previousMeasure,
           leadingStaveSignature: this.getLeadingStaveSignature(partId, measureIndex),
           measureEntries: this.getMeasureEntries(partId, measureIndex),
         });
 
         result[partId].push(measure);
-        previousMeasure = measure;
 
         // -1 since this measure is part of the multi rest.
         multiRestMeasureCount += measure.getMultiRestCount() - 1;

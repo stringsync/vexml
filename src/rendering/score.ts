@@ -7,11 +7,7 @@ import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
 import { Seed } from './seed';
-import { NoteRendering } from './note';
-import { ChordRendering } from './chord';
-import { RestRendering } from './rest';
 import { Spanners } from './spanners';
-import { Address } from './address';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -55,6 +51,9 @@ export class Score {
     const x = 0;
     let y = 0;
 
+    // Initialize spanners for rendering.
+    const spanners = new Spanners();
+
     // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
     const title = this.getTitle();
@@ -75,6 +74,7 @@ export class Score {
         isLastSystem: isLast,
         previousSystem,
         nextSystem,
+        spanners,
       });
       systemRenderings.push(systemRendering);
 
@@ -96,7 +96,7 @@ export class Score {
     });
 
     // Render spanners.
-    const spanners = this.getSpanners(systemRenderings).render();
+    const spannersRendering = spanners.render();
 
     // Precalculate different parts of the rendering for readability later.
     const parts = systemRenderings.flatMap((system) => system.parts);
@@ -169,49 +169,47 @@ export class Score {
       });
 
     // Draw vexflow.Beam elements.
-    spanners.beams
-      .map((beam) => beam.vexflow.beam)
-      .forEach((vfBeam) => {
-        vfBeam.setContext(vfContext).draw();
-      });
+    spannersRendering.beams.forEach((beam) => {
+      beam.vexflow.beam.setContext(vfContext).draw();
+    });
 
     // Draw vexflow.StaveTie elements.
-    spanners.slurs
+    spannersRendering.slurs
       .flatMap((slur) => slur.vexflow.tie)
       .forEach((vfStaveTie) => {
         vfStaveTie.setContext(vfContext).draw();
       });
 
     // Draw vexflow.Tuplet elements.
-    spanners.tuplets
+    spannersRendering.tuplets
       .map((tuplet) => tuplet.vexflow.tuplet)
       .forEach((vfTuplet) => {
         vfTuplet.setContext(vfContext).draw();
       });
 
     // Draw vexflow.StaveHairpin elements.
-    spanners.wedges
+    spannersRendering.wedges
       .map((wedge) => wedge.vexflow.staveHairpin)
       .forEach((vfStaveHairpin) => {
         vfStaveHairpin.setContext(vfContext).draw();
       });
 
     // Draw vexflow.Vibrato elements.
-    spanners.vibratos
+    spannersRendering.vibratos
       .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
       .forEach((vibratoBracket) => {
         vibratoBracket.setContext(vfContext).draw();
       });
 
     // Draw vexflow.TextBracket elements.
-    spanners.octaveShifts
+    spannersRendering.octaveShifts
       .map((octaveShift) => octaveShift.vexflow.textBracket)
       .forEach((vfTextBracket) => {
         vfTextBracket.setContext(vfContext).draw();
       });
 
     // Draw vexflow.PedalMarking elements.
-    spanners.pedals
+    spannersRendering.pedals
       .map((pedal) => pedal.vexflow.pedalMarking)
       .forEach((vfPedalMarking) => {
         vfPedalMarking.setContext(vfContext).draw();
@@ -259,36 +257,5 @@ export class Score {
       config: this.config,
       text: this.musicXml.scorePartwise?.getTitle() ?? '',
     });
-  }
-
-  private getSpanners(systemRenderings: SystemRendering[]): Spanners {
-    const entries = systemRenderings.flatMap((system) => {
-      const systemId = Symbol();
-      const address = new Address(systemId);
-
-      return system.parts
-        .flatMap((part) => part.measures.flatMap((measure) => measure.fragments))
-        .flatMap((fragment) => fragment.staves)
-        .flatMap((stave) => stave.entry)
-        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-        .flatMap((entry) => entry.voices)
-        .flatMap((voice) => voice.entries)
-        .filter(
-          (entry): entry is NoteRendering | ChordRendering | RestRendering =>
-            entry.type === 'note' || entry.type === 'chord' || entry.type === 'rest'
-        )
-        .flatMap((entry) => {
-          switch (entry.type) {
-            case 'note':
-            case 'rest':
-              return entry.spannerFragments;
-            case 'chord':
-              return util.first(entry.notes)?.spannerFragments ?? [];
-          }
-        })
-        .map((fragment) => ({ address, fragment }));
-    });
-
-    return new Spanners({ entries });
   }
 }

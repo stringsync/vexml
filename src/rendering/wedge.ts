@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import { Address } from './address';
 
 /** The result of rendering a wedge. */
 export type WedgeRendering = {
@@ -13,15 +12,8 @@ export type WedgeRendering = {
 /** A piece of a wedge. */
 export type WedgeFragment = StartWedgeFragment | ContinueWedgeFragment | StopWedgeFragment;
 
-/** A `WedgeFragment` with metadata. */
-export type WedgeEntry = {
-  address: Address;
-  fragment: WedgeFragment;
-};
-
 type StartWedgeFragment = {
-  type: 'wedge';
-  phase: 'start';
+  type: 'start';
   vexflow: {
     note: vexflow.Note;
     position: vexflow.ModifierPosition;
@@ -30,16 +22,14 @@ type StartWedgeFragment = {
 };
 
 type ContinueWedgeFragment = {
-  type: 'wedge';
-  phase: 'continue';
+  type: 'continue';
   vexflow: {
     note: vexflow.Note;
   };
 };
 
 type StopWedgeFragment = {
-  type: 'wedge';
-  phase: 'stop';
+  type: 'stop';
   vexflow: {
     note: vexflow.Note;
   };
@@ -47,40 +37,51 @@ type StopWedgeFragment = {
 
 /** Represents a crescendo or decrescendo. */
 export class Wedge {
-  private vexflow: {
-    staveHairpinType: number;
-    position: vexflow.ModifierPosition;
-  };
-  private entries: WedgeEntry[];
+  private fragments: [StartWedgeFragment, ...WedgeFragment[]];
 
-  constructor(opts: {
-    vexflow: {
-      staveHairpinType: number;
-      position: vexflow.ModifierPosition;
-    };
-    entries: WedgeEntry[];
-  }) {
-    util.assert(opts.entries.length >= 2, 'must have at least 2 wedge fragments');
+  constructor(opts: { fragment: StartWedgeFragment }) {
+    this.fragments = [opts.fragment];
+  }
 
-    this.vexflow = opts.vexflow;
-    this.entries = opts.entries;
+  /** Whether the fragment is allowed to be added to the wedge. */
+  isAllowed(fragment: WedgeFragment): boolean {
+    switch (util.last(this.fragments)!.type) {
+      case 'start':
+      case 'continue':
+        return fragment.type === 'continue' || fragment.type === 'stop';
+      case 'stop':
+        return false;
+    }
+  }
+
+  /** Adds the fragment to the wedge. */
+  addFragment(fragment: WedgeFragment): void {
+    this.fragments.push(fragment);
   }
 
   render(): WedgeRendering {
-    const firstNote = util.first(this.entries)!.fragment.vexflow.note;
-    const lastNote = util.last(this.entries)!.fragment.vexflow.note;
+    util.assert(this.fragments.length >= 2, 'must have at least two fragments');
+
+    const firstNote = util.first(this.fragments)!.vexflow.note;
+    const lastNote = util.last(this.fragments)!.vexflow.note;
+
+    const startWedgeFragment = this.getStartWedgeFragment();
 
     const vfStaveHairpin = new vexflow.StaveHairpin(
       {
         firstNote,
         lastNote,
       },
-      this.vexflow.staveHairpinType
-    ).setPosition(this.vexflow.position);
+      startWedgeFragment.vexflow.staveHairpinType
+    ).setPosition(startWedgeFragment.vexflow.position);
 
     return {
       type: 'wedge',
       vexflow: { staveHairpin: vfStaveHairpin },
     };
+  }
+
+  private getStartWedgeFragment(): StartWedgeFragment {
+    return this.fragments[0];
   }
 }
