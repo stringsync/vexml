@@ -10,7 +10,6 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 import { SpannerFragment } from './legacyspanners';
-import { TupletFragment } from './tuplet';
 import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
@@ -102,6 +101,7 @@ export class Note {
    */
   static render(opts: { notes: Note[]; spanners: Spanners }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
+    const spanners = opts.spanners;
 
     util.assert(notes.length > 0, 'cannot render empty notes');
 
@@ -187,7 +187,37 @@ export class Note {
         }))
     );
     if (beamFragment) {
-      opts.spanners.addBeamFragment(beamFragment);
+      spanners.addBeamFragment(beamFragment);
+    }
+
+    // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
+    // come across.
+    const tuplet = util.first(notes.flatMap((note) => note.getTuplets()));
+    switch (tuplet?.getType()) {
+      case 'start':
+        spanners.addTupletFragment({
+          type: 'start',
+          vexflow: {
+            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+            note: vfStaveNote,
+          },
+        });
+        break;
+      case 'stop':
+        spanners.addTupletFragment({
+          type: 'stop',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+        break;
+      default:
+        spanners.addTupletFragment({
+          type: 'unspecified',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
     }
 
     return keys.map((key, index) => ({
@@ -327,55 +357,12 @@ export class Note {
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
     return [
-      ...this.getTupletFragments(vfStaveNote),
       ...this.getSlurFragments(vfStaveNote, keyIndex),
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getWavyLineFragments(vfStaveNote, keyIndex),
       ...this.getOctaveShiftFragments(vfStaveNote),
       ...this.getPedalFragments(vfStaveNote),
     ];
-  }
-
-  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
-    const result = new Array<TupletFragment>();
-
-    // TODO: Support multiple tuplets.
-    const tuplet = util.first(this.getTuplets());
-    const tupletType = tuplet?.getType() ?? null;
-    const tupletPlacement = tuplet?.getPlacement() ?? 'below';
-    switch (tupletType) {
-      case 'start':
-        result.push({
-          type: 'tuplet',
-          phase: 'start',
-          vexflow: {
-            location: conversions.fromAboveBelowToTupletLocation(tupletPlacement),
-            note: vfStaveNote,
-          },
-        });
-        break;
-      case 'stop':
-        result.push({
-          type: 'tuplet',
-          phase: 'stop',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-        break;
-      default:
-        // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
-        // continue if we've come across a "start" (denoted by the vfNotes length).
-        result.push({
-          type: 'tuplet',
-          phase: 'unspecified',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-    }
-
-    return result;
   }
 
   private getSlurFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SlurFragment[] {

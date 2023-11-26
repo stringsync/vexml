@@ -187,7 +187,7 @@ export class Score {
       });
 
     // Draw vexflow.Tuplet elements.
-    legacySpanners.tuplets
+    spannersRendering.tuplets
       .map((tuplet) => tuplet.vexflow.tuplet)
       .forEach((vfTuplet) => {
         vfTuplet.setContext(vfContext).draw();
