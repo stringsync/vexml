@@ -1,7 +1,6 @@
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { Slur, SlurFragment, SlurRendering } from './slur';
-import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
@@ -10,7 +9,6 @@ import { Pedal, PedalFragment, PedalRendering } from './pedal';
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
-  tuplets: TupletRendering[];
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
@@ -28,13 +26,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment =
-  | TupletFragment
-  | SlurFragment
-  | WedgeFragment
-  | OctaveShiftFragment
-  | PedalFragment
-  | VibratoFragment;
+export type SpannerFragment = SlurFragment | WedgeFragment | OctaveShiftFragment | PedalFragment | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -60,51 +52,12 @@ export class LegacySpanners {
   render(): SpannersRendering {
     return {
       type: 'spanners',
-      tuplets: this.getTuplets().map((tuplet) => tuplet.render()),
       slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
       pedals: this.getPedals().map((pedal) => pedal.render()),
     };
-  }
-
-  private getTuplets(): Tuplet[] {
-    const tuplets = new Array<Tuplet>();
-
-    const fragments = this.entries
-      .map((entry) => entry.fragment)
-      .filter((fragment): fragment is TupletFragment => fragment.type === 'tuplet');
-    let buffer = new Array<TupletFragment>();
-
-    for (let index = 0; index < fragments.length; index++) {
-      const fragment = fragments[index];
-      const isLast = index === fragments.length - 1;
-
-      switch (fragment.phase) {
-        case 'start':
-          buffer.push(fragment);
-          break;
-        case 'unspecified':
-          // Tuplets don't have an accounting mechanism of "continue" like beams. Therefore, we need to implicitly
-          // continue if we've come across a "start" (denoted by the vfNotes length).
-          if (buffer.length > 0) {
-            buffer.push(fragment);
-          }
-          break;
-        case 'stop':
-          buffer.push(fragment);
-          tuplets.push(new Tuplet({ fragments: buffer }));
-          buffer = [];
-          break;
-      }
-
-      if (isLast && buffer.length > 0) {
-        tuplets.push(new Tuplet({ fragments: buffer }));
-      }
-    }
-
-    return tuplets;
   }
 
   private getSlurs(): Slur[] {

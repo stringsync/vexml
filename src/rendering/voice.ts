@@ -67,7 +67,7 @@ export class Voice {
         return entry.render({ spanners: opts.spanners });
       }
       if (entry instanceof Rest) {
-        return entry.render({ voiceEntryCount: this.entries.length });
+        return entry.render({ spanners: opts.spanners, voiceEntryCount: this.entries.length });
       }
       if (entry instanceof GhostNote) {
         return entry.render();

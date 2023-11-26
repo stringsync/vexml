@@ -7,11 +7,11 @@ import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
 import { SpannerFragment } from './legacyspanners';
-import { TupletFragment } from './tuplet';
 import { OctaveShiftFragment } from './octaveshift';
 import { WedgeFragment } from './wedge';
 import { VibratoFragment } from './vibrato';
 import { PedalFragment } from './pedal';
+import { Spanners } from './spanners';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -78,7 +78,9 @@ export class Rest {
   }
 
   /** Renders the Rest. */
-  render(opts: { voiceEntryCount: number }): RestRendering {
+  render(opts: { voiceEntryCount: number; spanners: Spanners }): RestRendering {
+    const spanners = opts.spanners;
+
     const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
@@ -96,6 +98,44 @@ export class Rest {
       .forEach((tokenRendering) => {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
       });
+
+    const beam = util.first(this.musicXml.note?.getBeams() ?? []);
+    if (beam) {
+      spanners.addBeamFragment({
+        value: beam.getBeamValue(),
+        vexflow: {
+          stemmableNote: vfStaveNote,
+        },
+      });
+    }
+
+    const tuplet = util.first(this.getTuplets());
+    switch (tuplet?.getType()) {
+      case 'start':
+        spanners.addTupletFragment({
+          type: 'start',
+          vexflow: {
+            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+            note: vfStaveNote,
+          },
+        });
+        break;
+      case 'stop':
+        spanners.addTupletFragment({
+          type: 'stop',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+        break;
+      default:
+        spanners.addTupletFragment({
+          type: 'unspecified',
+          vexflow: {
+            note: vfStaveNote,
+          },
+        });
+    }
 
     return {
       type: 'rest',
@@ -153,48 +193,11 @@ export class Rest {
   // TODO: Unify these with Note's implementation, although they may not overlap 1:1.
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
     return [
-      ...this.getTupletFragments(vfStaveNote),
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getVibratoFragments(vfStaveNote),
       ...this.getOctaveShiftFragments(vfStaveNote),
       ...this.getPedalFragments(vfStaveNote),
     ];
-  }
-
-  private getBeamValue(): musicxml.BeamValue | null {
-    const beams = util.sortBy(this.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
-    return util.first(beams)?.getBeamValue() ?? null;
-  }
-
-  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
-    const result = new Array<TupletFragment>();
-
-    // TODO: Support multiple tuplets.
-    const tuplet = util.first(this.getTuplets());
-    const tupletType = tuplet?.getType() ?? null;
-    switch (tupletType) {
-      case 'start':
-        result.push({
-          type: 'tuplet',
-          phase: 'start',
-          vexflow: {
-            location: vexflow.TupletLocation.BOTTOM,
-            note: vfStaveNote,
-          },
-        });
-        break;
-      case 'stop':
-        result.push({
-          type: 'tuplet',
-          phase: 'stop',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-        break;
-    }
-
-    return result;
   }
 
   private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {

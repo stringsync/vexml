@@ -12,16 +12,14 @@ export type TupletRendering = {
 /** Represents a piece of a tuplet. */
 export type TupletFragment =
   | {
-      type: 'tuplet';
-      phase: 'start';
+      type: 'start';
       vexflow: {
         note: vexflow.Note;
         location: vexflow.TupletLocation;
       };
     }
   | {
-      type: 'tuplet';
-      phase: 'unspecified' | 'stop';
+      type: 'unspecified' | 'stop';
       vexflow: {
         note: vexflow.Note;
       };
@@ -29,10 +27,26 @@ export type TupletFragment =
 
 /** Represents a time modification for a group of notes within a measure. */
 export class Tuplet {
-  private fragments: TupletFragment[];
+  private fragments: [TupletFragment, ...TupletFragment[]];
 
-  constructor(opts: { fragments: TupletFragment[] }) {
-    this.fragments = opts.fragments;
+  constructor(opts: { fragment: TupletFragment }) {
+    this.fragments = [opts.fragment];
+  }
+
+  /** Whether the fragment is allowed to be added to the tuplet. */
+  isAllowed(fragment: TupletFragment): boolean {
+    switch (util.last(this.fragments)!.type) {
+      case 'start':
+      case 'unspecified':
+        return fragment.type === 'unspecified' || fragment.type === 'stop';
+      case 'stop':
+        return false;
+    }
+  }
+
+  /** Adds the fragment to the tuplet. */
+  addFragment(fragment: TupletFragment): void {
+    this.fragments.push(fragment);
   }
 
   /** Renders a tuplet. */
@@ -55,7 +69,7 @@ export class Tuplet {
       return undefined;
     }
 
-    if (fragment.phase !== 'start') {
+    if (fragment.type !== 'start') {
       return undefined;
     }
 

@@ -28,9 +28,20 @@ export class Beam {
 
   /** Whether the fragment can be added to the beam. */
   isAllowed(fragment: BeamFragment): boolean {
-    const last = util.last(this.fragments.map((fragment) => fragment.value));
-    const allowed = this.getAllowedBeamValues(last);
-    return allowed.includes(fragment.value);
+    switch (util.last(this.fragments.map((fragment) => fragment.value))!) {
+      case 'begin':
+      case 'continue':
+      case 'backward hook':
+      case 'forward hook':
+        return (
+          fragment.value === 'continue' ||
+          fragment.value === 'backward hook' ||
+          fragment.value === 'forward hook' ||
+          fragment.value === 'end'
+        );
+      case 'end':
+        return false;
+    }
   }
 
   /** Adds the fragment to the beam. */
@@ -47,19 +58,5 @@ export class Beam {
       type: 'beam',
       vexflow: { beam },
     };
-  }
-
-  private getAllowedBeamValues(beamValue: musicxml.BeamValue | null): musicxml.BeamValue[] {
-    switch (beamValue) {
-      case null:
-        return ['begin'];
-      case 'begin':
-      case 'continue':
-      case 'backward hook':
-      case 'forward hook':
-        return ['continue', 'backward hook', 'forward hook', 'end'];
-      case 'end':
-        return [];
-    }
   }
 }
