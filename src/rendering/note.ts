@@ -12,7 +12,6 @@ import * as conversions from './conversions';
 import { SpannerFragment } from './legacyspanners';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
-import { VibratoFragment } from './vibrato';
 import { Spanners } from './spanners';
 
 const STEP_ORDER = [
@@ -184,7 +183,7 @@ export class Note {
         modifiers: modifierRenderingGroups[index],
         vexflow: { staveNote: vfStaveNote },
         timeModification: notes[index].getTimeModification(),
-        spannerFragments: notes[index].getSpannerFragments(vfStaveNote, index),
+        spannerFragments: notes[index].getSpannerFragments(vfStaveNote),
       });
     }
 
@@ -316,26 +315,8 @@ export class Note {
       .map((token) => new Token({ musicXml: { token } }));
   }
 
-  private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
-    return [...this.getWavyLineFragments(vfStaveNote, keyIndex), ...this.getOctaveShiftFragments(vfStaveNote)];
-  }
-
-  private getWavyLineFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): VibratoFragment[] {
-    return this.musicXml.note
-      .getNotations()
-      .flatMap((notation) => notation.getOrnaments())
-      .flatMap((ornament) => ornament.getWavyLines())
-      .map<VibratoFragment>((wavyLine) => {
-        const phase = conversions.fromStartStopContinueToSpannerFragmentPhase(wavyLine.getType());
-        return {
-          type: 'vibrato',
-          phase,
-          keyIndex,
-          vexflow: {
-            note: vfStaveNote,
-          },
-        };
-      });
+  private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
+    return [...this.getOctaveShiftFragments(vfStaveNote)];
   }
 
   private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
@@ -388,6 +369,7 @@ export class Note {
     this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
   private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
@@ -533,6 +515,20 @@ export class Note {
             });
             break;
         }
+      });
+  }
+
+  private addVibratoFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.note
+      ?.getNotations()
+      .flatMap((notation) => notation.getOrnaments())
+      .flatMap((ornament) => ornament.getWavyLines())
+      .forEach((wavyLine) => {
+        opts.spanners.addVibratoFragment({
+          type: wavyLine.getType(),
+          keyIndex: 0,
+          vexflow: { note: opts.vexflow.staveNote },
+        });
       });
   }
 }
