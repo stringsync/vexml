@@ -201,7 +201,7 @@ export class Score {
       });
 
     // Draw vexflow.Vibrato elements.
-    legacySpanners.vibratos
+    spannersRendering.vibratos
       .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
       .forEach((vibratoBracket) => {
         vibratoBracket.setContext(vfContext).draw();

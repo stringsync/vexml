@@ -1,13 +1,11 @@
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
-import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
   octaveShifts: OctaveShiftRendering[];
-  vibratos: VibratoRendering[];
 };
 
 /**
@@ -20,7 +18,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = OctaveShiftFragment | VibratoFragment;
+export type SpannerFragment = OctaveShiftFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -47,7 +45,6 @@ export class LegacySpanners {
     return {
       type: 'spanners',
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
-      vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
     };
   }
 
@@ -118,38 +115,5 @@ export class LegacySpanners {
     }
 
     return octaveShifts;
-  }
-
-  private getVibratos(): Vibrato[] {
-    const vibratos = new Array<Vibrato>();
-
-    const fragments = this.entries
-      .map((entry) => entry.fragment)
-      .filter((fragment): fragment is VibratoFragment => fragment.type === 'vibrato');
-
-    let buffer = new Array<VibratoFragment>();
-
-    for (let index = 0; index < fragments.length; index++) {
-      const fragment = fragments[index];
-      const isLast = index === fragments.length - 1;
-
-      switch (fragment.phase) {
-        case 'start':
-        case 'continue':
-          buffer.push(fragment);
-          break;
-        case 'stop':
-          buffer.push(fragment);
-          vibratos.push(new Vibrato({ fragments: buffer }));
-          buffer = [];
-          break;
-      }
-
-      if (isLast && buffer.length > 0) {
-        vibratos.push(new Vibrato({ fragments: buffer }));
-      }
-    }
-
-    return vibratos;
   }
 }

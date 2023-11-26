@@ -4,6 +4,7 @@ import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
+import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -13,6 +14,7 @@ export type SpannersRendering = {
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
   pedals: PedalRendering[];
+  vibratos: VibratoRendering[];
 };
 
 /** The accounting for all spanners. */
@@ -22,6 +24,7 @@ export class Spanners {
   private slurs: Record<number, Slur[]> = {};
   private wedges = new Array<Wedge>();
   private pedals = new Array<Pedal>();
+  private vibratos = new Array<Vibrato>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
@@ -78,6 +81,7 @@ export class Spanners {
     }
   }
 
+  /** Adds a pedal fragment. */
   addPedalFragment(pedalFragment: PedalFragment): void {
     const pedal = util.last(this.pedals);
 
@@ -85,6 +89,17 @@ export class Spanners {
       pedal.addFragment(pedalFragment);
     } else if (['start', 'sostenuto', 'resume'].includes(pedalFragment.type)) {
       this.pedals.push(new Pedal({ fragment: pedalFragment }));
+    }
+  }
+
+  /** Adds a vibrato fragment. */
+  addVibratoFragment(vibratoFragment: VibratoFragment): void {
+    const vibrato = util.last(this.vibratos);
+
+    if (vibrato?.isAllowed(vibratoFragment)) {
+      vibrato.addFragment(vibratoFragment);
+    } else if (vibratoFragment.type === 'start') {
+      this.vibratos.push(new Vibrato({ fragment: vibratoFragment }));
     }
   }
 
@@ -99,6 +114,7 @@ export class Spanners {
         .map((slur) => slur.render()),
       wedges: this.wedges.map((wedge) => wedge.render()),
       pedals: this.pedals.map((pedal) => pedal.render()),
+      vibratos: this.vibratos.map((vibrato) => vibrato.render()),
     };
   }
 }
