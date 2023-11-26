@@ -194,7 +194,7 @@ export class Score {
       });
 
     // Draw vexflow.StaveHairpin elements.
-    legacySpanners.wedges
+    spannersRendering.wedges
       .map((wedge) => wedge.vexflow.staveHairpin)
       .forEach((vfStaveHairpin) => {
         vfStaveHairpin.setContext(vfContext).draw();

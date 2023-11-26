@@ -2,12 +2,14 @@ import { Beam, BeamFragment, BeamRendering } from './beam';
 import * as util from '@/util';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Slur, SlurFragment, SlurRendering } from './slur';
+import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   beams: BeamRendering[];
   tuplets: TupletRendering[];
   slurs: SlurRendering[];
+  wedges: WedgeRendering[];
 };
 
 /** The accounting for all spanners. */
@@ -15,6 +17,7 @@ export class Spanners {
   private beams = new Array<Beam>();
   private tuplets = new Array<Tuplet>();
   private slurs: Record<number, Slur[]> = {};
+  private wedges = new Array<Wedge>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
@@ -60,6 +63,17 @@ export class Spanners {
     }
   }
 
+  /** Adds a wedge fragment. */
+  addWedgeFragment(wedgeFragment: WedgeFragment): void {
+    const wedge = util.last(this.wedges);
+
+    if (wedge?.isAllowed(wedgeFragment)) {
+      wedge.addFragment(wedgeFragment);
+    } else if (wedgeFragment.type === 'start') {
+      this.wedges.push(new Wedge({ fragment: wedgeFragment }));
+    }
+  }
+
   /** Renders all the spanners. */
   render(): SpannersRendering {
     return {
@@ -68,6 +82,7 @@ export class Spanners {
       slurs: Object.values(this.slurs)
         .flat()
         .map((slur) => slur.render()),
+      wedges: this.wedges.map((wedge) => wedge.render()),
     };
   }
 }
