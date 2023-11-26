@@ -10,12 +10,10 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 import { SpannerFragment } from './legacyspanners';
-import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
 import { VibratoFragment } from './vibrato';
 import { PedalFragment } from './pedal';
-import { BeamFragment } from './beam';
 import { Spanners } from './spanners';
 
 const STEP_ORDER = [
@@ -100,7 +98,6 @@ export class Note {
    */
   static render(opts: { notes: Note[]; spanners: Spanners }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
-    const spanners = opts.spanners;
 
     util.assert(notes.length > 0, 'cannot render empty notes');
 
@@ -173,68 +170,14 @@ export class Note {
       }
     }
 
-    // vexflow does the heavy lifting of beam fragments, so we just want to track the lowest number for continuity info.
-    const beamFragment = util.first(
-      util
-        .sortBy(
-          notes.flatMap((note) => note.musicXml.note.getBeams()),
-          (beam) => beam.getNumber()
-        )
-        .map<BeamFragment>((beam) => ({
-          type: beam.getBeamValue(),
-          vexflow: { stemmableNote: vfStaveNote },
-        }))
-    );
-    if (beamFragment) {
-      spanners.addBeamFragment(beamFragment);
-    }
-
-    // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
-    // come across.
-    const tuplet = util.first(notes.flatMap((note) => note.getTuplets()));
-    switch (tuplet?.getType()) {
-      case 'start':
-        spanners.addTupletFragment({
-          type: 'start',
-          vexflow: {
-            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
-            note: vfStaveNote,
-          },
-        });
-        break;
-      case 'stop':
-        spanners.addTupletFragment({
-          type: 'stop',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-        break;
-      default:
-        spanners.addTupletFragment({
-          type: 'unspecified',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-    }
-
     const noteRenderings = new Array<NoteRendering>();
 
     for (let index = 0; index < keys.length; index++) {
-      notes[index]
-        .getSlurs()
-        .filter((slur) => !!slur.getType())
-        .forEach((slur) => {
-          spanners.addSlurFragment({
-            slurNumber: slur.getNumber(),
-            type: slur.getType()!,
-            vexflow: {
-              keyIndex: index,
-              note: vfStaveNote,
-            },
-          });
-        });
+      notes[index].addSpannerFragments({
+        spanners: opts.spanners,
+        keyIndex: index,
+        vexflow: { staveNote: vfStaveNote },
+      });
 
       noteRenderings.push({
         type: 'note',
@@ -376,60 +319,10 @@ export class Note {
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
     return [
-      ...this.getWedgeFragments(vfStaveNote),
       ...this.getWavyLineFragments(vfStaveNote, keyIndex),
       ...this.getOctaveShiftFragments(vfStaveNote),
       ...this.getPedalFragments(vfStaveNote),
     ];
-  }
-
-  private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
-    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
-    // associated with the first <note> element that follows it in score order that is not in a different voice.
-    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
-
-    const result = new Array<WedgeFragment>();
-
-    for (const direction of this.musicXml.directions) {
-      const directionPlacement = direction.getPlacement() ?? 'below';
-      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
-
-      for (const directionType of direction.getTypes()) {
-        const content = directionType.getContent();
-        if (content.type !== 'wedge') {
-          continue;
-        }
-
-        const wedgeType = content.wedge.getType();
-        const phase = conversions.fromWedgeTypeToSpannerFragmentPhase(wedgeType);
-        const staveHairpinType = conversions.fromWedgeTypeToStaveHairpinType(wedgeType);
-
-        switch (phase) {
-          case 'start':
-            result.push({
-              type: 'wedge',
-              phase,
-              vexflow: {
-                note: vfStaveNote,
-                staveHairpinType,
-                position: modifierPosition,
-              },
-            });
-            break;
-          case 'continue':
-          case 'stop':
-            result.push({
-              type: 'wedge',
-              phase,
-              vexflow: {
-                note: vfStaveNote,
-              },
-            });
-        }
-      }
-    }
-
-    return result;
   }
 
   private getWavyLineFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): VibratoFragment[] {
@@ -526,5 +419,124 @@ export class Note {
             };
         }
       });
+  }
+
+  private addSpannerFragments(opts: {
+    spanners: Spanners;
+    keyIndex: number;
+    vexflow: { staveNote: vexflow.StaveNote };
+  }): void {
+    this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
+  }
+
+  private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
+    const beams = util.sortBy(this.musicXml.note.getBeams(), (beam) => beam.getNumber());
+    const beamValue = util.first(beams)?.getBeamValue() ?? null;
+
+    if (beamValue) {
+      opts.spanners.addBeamFragment({
+        type: beamValue,
+        vexflow: {
+          stemmableNote: opts.vexflow.staveNote,
+        },
+      });
+    }
+  }
+
+  private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
+    // come across.
+    const tuplet = util.first(this.getTuplets());
+    switch (tuplet?.getType()) {
+      case 'start':
+        opts.spanners.addTupletFragment({
+          type: 'start',
+          vexflow: {
+            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+            note: opts.vexflow.staveNote,
+          },
+        });
+        break;
+      case 'stop':
+        opts.spanners.addTupletFragment({
+          type: 'stop',
+          vexflow: {
+            note: opts.vexflow.staveNote,
+          },
+        });
+        break;
+      default:
+        opts.spanners.addTupletFragment({
+          type: 'unspecified',
+          vexflow: {
+            note: opts.vexflow.staveNote,
+          },
+        });
+    }
+  }
+
+  private addWedgeFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
+    // associated with the first <note> element that follows it in score order that is not in a different voice.
+    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
+
+    for (const direction of this.musicXml.directions) {
+      const directionPlacement = direction.getPlacement() ?? 'below';
+      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
+
+      for (const directionType of direction.getTypes()) {
+        const content = directionType.getContent();
+        if (content.type !== 'wedge') {
+          continue;
+        }
+
+        const wedgeType = content.wedge.getType();
+
+        switch (wedgeType) {
+          case 'crescendo':
+          case 'diminuendo':
+            opts.spanners.addWedgeFragment({
+              type: 'start',
+              vexflow: {
+                note: opts.vexflow.staveNote,
+                staveHairpinType: conversions.fromWedgeTypeToStaveHairpinType(wedgeType),
+                position: modifierPosition,
+              },
+            });
+            break;
+          case 'continue':
+          case 'stop':
+            opts.spanners.addWedgeFragment({
+              type: wedgeType,
+              vexflow: {
+                note: opts.vexflow.staveNote,
+              },
+            });
+        }
+      }
+    }
+  }
+
+  private addSlurFragments(opts: { spanners: Spanners; keyIndex: number; vexflow: { staveNote: vexflow.StaveNote } }) {
+    for (const slur of this.getSlurs()) {
+      const slurType = slur.getType();
+      if (!slurType) {
+        continue;
+      }
+
+      opts.spanners.addSlurFragment({
+        type: slurType,
+        slurNumber: slur.getNumber(),
+        vexflow: {
+          note: opts.vexflow.staveNote,
+          keyIndex: opts.keyIndex,
+        },
+      });
+    }
   }
 }

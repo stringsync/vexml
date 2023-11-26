@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import { Address } from './address';
-import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
 import { OctaveShift, OctaveShiftEntry, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
@@ -8,7 +7,6 @@ import { Pedal, PedalFragment, PedalRendering } from './pedal';
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
-  wedges: WedgeRendering[];
   octaveShifts: OctaveShiftRendering[];
   vibratos: VibratoRendering[];
   pedals: PedalRendering[];
@@ -24,7 +22,7 @@ export type SpannersRendering = {
  *   - tuplets
  *   - slurs
  */
-export type SpannerFragment = WedgeFragment | OctaveShiftFragment | PedalFragment | VibratoFragment;
+export type SpannerFragment = OctaveShiftFragment | PedalFragment | VibratoFragment;
 
 /** A `SpannerFragment` with metadata. */
 export type SpannerEntry<T extends SpannerFragment = SpannerFragment> = {
@@ -50,82 +48,10 @@ export class LegacySpanners {
   render(): SpannersRendering {
     return {
       type: 'spanners',
-      wedges: this.getWedges().map((wedge) => wedge.render()),
       octaveShifts: this.getOctaveShifts().map((octaveShift) => octaveShift.render()),
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
       pedals: this.getPedals().map((pedal) => pedal.render()),
     };
-  }
-
-  private getWedges(): Wedge[] {
-    const wedges = new Array<Wedge>();
-
-    let vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
-    let vfPosition = vexflow.ModifierPosition.BELOW;
-    let address = Address.system();
-    let buffer = new Array<WedgeEntry>();
-
-    function reset() {
-      vfStaveHairpinType = vexflow.StaveHairpin.type.CRESC;
-      vfPosition = vexflow.ModifierPosition.BELOW;
-      address = Address.system();
-      buffer = new Array<WedgeEntry>();
-    }
-
-    // NOTE: Underspecified wedges end up getting ignored.
-    function addWedge() {
-      if (buffer.length >= 2) {
-        wedges.push(
-          new Wedge({
-            entries: buffer,
-            vexflow: {
-              position: vfPosition,
-              staveHairpinType: vfStaveHairpinType,
-            },
-          })
-        );
-      }
-    }
-
-    const entries = this.entries.filter((entry): entry is WedgeEntry => entry.fragment.type === 'wedge');
-
-    for (let index = 0; index < entries.length; index++) {
-      const entry = entries[index];
-      const fragment = entry.fragment;
-      const isLast = index === entries.length - 1;
-
-      switch (fragment.phase) {
-        case 'start':
-          vfStaveHairpinType = fragment.vexflow.staveHairpinType;
-          vfPosition = fragment.vexflow.position;
-          address = entry.address;
-          buffer.push(entry);
-          break;
-        case 'continue':
-          if (entry.address.isMemberOf('system', address)) {
-            buffer.push(entry);
-          } else {
-            // TODO: When an entry continues or stops on another system, validate that this renders correctly. You
-            // might need to merge 'continue' and 'stop' cases and there might be a need to create a new entry to
-            // satisfy Wedge's preconditions.
-            addWedge();
-            address = entry.address;
-            buffer = [entry];
-          }
-          break;
-        case 'stop':
-          buffer.push(entry);
-          addWedge();
-          reset();
-          break;
-      }
-
-      if (isLast) {
-        addWedge();
-      }
-    }
-
-    return wedges;
   }
 
   private getOctaveShifts(): OctaveShift[] {
