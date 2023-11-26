@@ -31,6 +31,7 @@ export class Spanners {
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
+    // TODO: When there are spanners that affect width, use them to determine how much padding to add.
     return 0;
   }
 
