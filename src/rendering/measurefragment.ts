@@ -4,7 +4,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
@@ -82,7 +82,7 @@ export class MeasureFragment {
     x: number;
     y: number;
     address: Address<'measurefragment'>;
-    spanners: Spanners2;
+    spanners: Spanners;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;

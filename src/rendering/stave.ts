@@ -11,7 +11,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -148,7 +148,7 @@ export class Stave {
     x: number;
     y: number;
     address: Address<'stave'>;
-    spanners: Spanners2;
+    spanners: Spanners;
     width: number;
     modifiers: StaveModifier[];
     previousStave: Stave | null;

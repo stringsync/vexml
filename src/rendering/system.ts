@@ -3,7 +3,7 @@ import { Config } from './config';
 import { Part } from './part';
 import { PartRendering } from './part';
 import { Address } from './address';
-import { Spanners2 } from './spanners2';
+import { Spanners } from './spanners';
 
 /** The result of rendering a System. */
 export type SystemRendering = {
@@ -29,7 +29,7 @@ export class System {
   render(opts: {
     x: number;
     y: number;
-    spanners: Spanners2;
+    spanners: Spanners;
     width: number;
     isLastSystem: boolean;
     previousSystem: System | null;
