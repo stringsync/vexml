@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
-import { ClefType, NoteDurationDenominator, NoteheadSuffix, SpannerFragmentPhase, StemDirection } from './enums';
+import { ClefType, NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
 import { Division } from './division';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
@@ -267,47 +267,6 @@ export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.S
       return 'down';
     default:
       return 'none';
-  }
-};
-
-/** Converts a `musicxml.BeamValue` to a `SpannerFragmentPhase`. */
-export const fromBeamValueToSpannerFragmentPhase = (beamValue: musicxml.BeamValue): SpannerFragmentPhase => {
-  switch (beamValue) {
-    case 'begin':
-      return 'start';
-    case 'continue':
-    case 'backward hook':
-    case 'forward hook':
-      return 'continue';
-    case 'end':
-      return 'stop';
-  }
-};
-
-/** Converts a `musicxml.StartStopContinue` to a `SpannerFragmentPhase`.*/
-export const fromStartStopContinueToSpannerFragmentPhase = (
-  startStopContinue: musicxml.StartStopContinue
-): SpannerFragmentPhase => {
-  switch (startStopContinue) {
-    case 'start':
-      return 'start';
-    case 'continue':
-      return 'continue';
-    case 'stop':
-      return 'stop';
-  }
-};
-
-/** Converts a `musicxml.WedgeType` to a `SpannerFragmentPhase`. */
-export const fromWedgeTypeToSpannerFragmentPhase = (wedgeType: musicxml.WedgeType): SpannerFragmentPhase => {
-  switch (wedgeType) {
-    case 'crescendo':
-    case 'diminuendo':
-      return 'start';
-    case 'continue':
-      return 'continue';
-    case 'stop':
-      return 'stop';
   }
 };
 

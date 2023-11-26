@@ -1,7 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { SpannerFragmentPhase } from './enums';
 
 /** The result of rendering a pedal. */
 export type PedalRendering = {
@@ -13,8 +12,7 @@ export type PedalRendering = {
 
 /** A piece of a pedal. */
 export type PedalFragment = {
-  type: 'pedal';
-  phase: SpannerFragmentPhase;
+  type: musicxml.PedalType;
   musicXml: {
     pedal: musicxml.Pedal;
   };
@@ -25,14 +23,38 @@ export type PedalFragment = {
 
 /** Represents piano pedal marks. */
 export class Pedal {
-  private fragments: PedalFragment[];
+  private fragments: [PedalFragment, ...PedalFragment[]];
 
-  constructor(opts: { fragments: PedalFragment[] }) {
-    util.assert(opts.fragments.length >= 2, 'must have at least 2 pedal fragments');
-
-    this.fragments = opts.fragments;
+  constructor(opts: { fragment: PedalFragment }) {
+    this.fragments = [opts.fragment];
   }
 
+  /** Whether the fragment is allowed to be added to the pedal. */
+  isAllowed(fragment: PedalFragment): boolean {
+    switch (util.last(this.fragments)!.type) {
+      case 'start':
+      case 'sostenuto':
+      case 'resume':
+      case 'continue':
+      case 'change':
+        return (
+          fragment.type === 'continue' ||
+          fragment.type === 'change' ||
+          fragment.type === 'stop' ||
+          fragment.type === 'discontinue'
+        );
+      case 'stop':
+      case 'discontinue':
+        return false;
+    }
+  }
+
+  /** Adds the fragment to the pedal. */
+  addFragment(fragment: PedalFragment): void {
+    this.fragments.push(fragment);
+  }
+
+  /** Renders the pedal. */
   render(): PedalRendering {
     const vfStaveNotes = this.getVfStaveNotes();
     const vfPedalMarkingType = this.getVfPedalMarkingType();

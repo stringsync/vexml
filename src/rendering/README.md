@@ -125,4 +125,12 @@ The `vf` prefix is used to distinguish `vexflow` objects from `rendering` object
 
 This process is repeated until all the `Measure` objects are accounted for.
 
-> NOTE: We assume that spanners (e.g. beams, slurs, tuplets) do not affect measure width significantly. Spanners are rendered after all the measures have been partitioned into systems.
+### Spanners
+
+Spanners are special structures that can span across anything in the rendering hierachy. For example, a crescendo can span multiple notes, measures, or even systems.
+
+In order to keep the implementation relatively simple, spanners introduce mutations into the rendering pipeline. The [Spanners](./spanners.ts) class gates those mutations. Future spanners should adhere to this pattern.
+
+In general, invalid spanners are either partially rendered or ignored (depending on the minimum of what's needed to render).
+
+NOTE: At the moment, [Note](./note.ts) and [Rest](./rest.ts) share similar implementations for spanners. However, they don't overlap 1:1 (for example, slurs are applicable to `Note` objects, but not `Rest` objects). As `Spanners` evolves, it may make more sense consolidate these implementations.

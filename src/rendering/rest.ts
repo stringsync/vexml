@@ -6,13 +6,7 @@ import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
-import { SpannerFragment } from './spanners';
-import { BeamFragment } from './beam';
-import { TupletFragment } from './tuplet';
-import { OctaveShiftFragment } from './octaveshift';
-import { WedgeFragment } from './wedge';
-import { VibratoFragment } from './vibrato';
-import { PedalFragment } from './pedal';
+import { Spanners } from './spanners';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -20,7 +14,6 @@ export type RestRendering = {
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
-  spannerFragments: SpannerFragment[];
 };
 
 /**
@@ -79,7 +72,7 @@ export class Rest {
   }
 
   /** Renders the Rest. */
-  render(opts: { voiceEntryCount: number }): RestRendering {
+  render(opts: { voiceEntryCount: number; spanners: Spanners }): RestRendering {
     const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
@@ -98,10 +91,14 @@ export class Rest {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
       });
 
+    this.addSpannerFragments({
+      spanners: opts.spanners,
+      vexflow: { staveNote: vfStaveNote },
+    });
+
     return {
       type: 'rest',
       vexflow: { staveNote: vfStaveNote },
-      spannerFragments: this.getSpannerFragments(vfStaveNote),
     };
   }
 
@@ -151,77 +148,19 @@ export class Rest {
     );
   }
 
-  // TODO: Unify these with Note's implementation, although they may not overlap 1:1.
-  private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
-    return [
-      ...this.getBeamFragments(vfStaveNote),
-      ...this.getTupletFragments(vfStaveNote),
-      ...this.getWedgeFragments(vfStaveNote),
-      ...this.getVibratoFragments(vfStaveNote),
-      ...this.getOctaveShiftFragments(vfStaveNote),
-      ...this.getPedalFragments(vfStaveNote),
-    ];
+  private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
+    this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
-  private getBeamValue(): musicxml.BeamValue | null {
-    const beams = util.sortBy(this.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
-    return util.first(beams)?.getBeamValue() ?? null;
-  }
-
-  private getBeamFragments(vfStaveNote: vexflow.StemmableNote): BeamFragment[] {
-    const result = new Array<BeamFragment>();
-
-    const beamValue = this.getBeamValue();
-    if (beamValue) {
-      result.push({
-        type: 'beam',
-        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
-        vexflow: {
-          stemmableNote: vfStaveNote,
-        },
-      });
-    }
-
-    return result;
-  }
-
-  private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {
-    const result = new Array<TupletFragment>();
-
-    // TODO: Support multiple tuplets.
-    const tuplet = util.first(this.getTuplets());
-    const tupletType = tuplet?.getType() ?? null;
-    switch (tupletType) {
-      case 'start':
-        result.push({
-          type: 'tuplet',
-          phase: 'start',
-          vexflow: {
-            location: vexflow.TupletLocation.BOTTOM,
-            note: vfStaveNote,
-          },
-        });
-        break;
-      case 'stop':
-        result.push({
-          type: 'tuplet',
-          phase: 'stop',
-          vexflow: {
-            note: vfStaveNote,
-          },
-        });
-        break;
-    }
-
-    return result;
-  }
-
-  private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
+  private addWedgeFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
     // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
     // associated with the first <note> element that follows it in score order that is not in a different voice.
     // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
-
-    const result = new Array<WedgeFragment>();
 
     for (const direction of this.musicXml.directions) {
       const directionPlacement = direction.getPlacement() ?? 'below';
@@ -234,128 +173,168 @@ export class Rest {
         }
 
         const wedgeType = content.wedge.getType();
-        const phase = conversions.fromWedgeTypeToSpannerFragmentPhase(wedgeType);
-        const staveHairpinType = conversions.fromWedgeTypeToStaveHairpinType(wedgeType);
 
-        switch (phase) {
-          case 'start':
-            result.push({
-              type: 'wedge',
-              phase,
+        switch (wedgeType) {
+          case 'crescendo':
+          case 'diminuendo':
+            opts.spanners.addWedgeFragment({
+              type: 'start',
               vexflow: {
-                note: vfStaveNote,
-                staveHairpinType,
+                note: opts.vexflow.staveNote,
+                staveHairpinType: conversions.fromWedgeTypeToStaveHairpinType(wedgeType),
                 position: modifierPosition,
               },
             });
             break;
           case 'continue':
           case 'stop':
-            result.push({
-              type: 'wedge',
-              phase,
+            opts.spanners.addWedgeFragment({
+              type: wedgeType,
               vexflow: {
-                note: vfStaveNote,
+                note: opts.vexflow.staveNote,
               },
             });
         }
       }
     }
-
-    return result;
   }
 
-  private getVibratoFragments(vfStaveNote: vexflow.StaveNote): VibratoFragment[] {
-    return (this.musicXml.note?.getNotations() ?? [])
-      .flatMap((notation) => notation.getOrnaments())
-      .flatMap((ornament) => ornament.getWavyLines())
-      .map<VibratoFragment>((wavyLine) => {
-        const phase = conversions.fromStartStopContinueToSpannerFragmentPhase(wavyLine.getType());
-        return {
-          type: 'vibrato',
-          phase,
-          keyIndex: 0,
+  private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    const tuplet = util.first(this.getTuplets());
+    switch (tuplet?.getType()) {
+      case 'start':
+        opts.spanners.addTupletFragment({
+          type: 'start',
           vexflow: {
-            note: vfStaveNote,
+            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+            note: opts.vexflow.staveNote,
           },
-        };
-      });
+        });
+        break;
+      case 'stop':
+        opts.spanners.addTupletFragment({
+          type: 'stop',
+          vexflow: {
+            note: opts.vexflow.staveNote,
+          },
+        });
+        break;
+      default:
+        opts.spanners.addTupletFragment({
+          type: 'unspecified',
+          vexflow: {
+            note: opts.vexflow.staveNote,
+          },
+        });
+    }
   }
 
-  private getOctaveShiftFragments(vfStaveNote: vexflow.StaveNote): OctaveShiftFragment[] {
-    return this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
-      .map((content) => content.octaveShift)
-      .map<OctaveShiftFragment>((octaveShift) => {
-        switch (octaveShift.getType()) {
-          case 'up':
-            return {
-              type: 'octaveshift',
-              phase: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'mb',
-              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.BOTTOM },
-            };
-          case 'down':
-            return {
-              type: 'octaveshift',
-              phase: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'va',
-              vexflow: { note: vfStaveNote, textBracketPosition: vexflow.TextBracketPosition.TOP },
-            };
-          case 'continue':
-            return {
-              type: 'octaveshift',
-              phase: 'continue',
-              vexflow: { note: vfStaveNote },
-            };
-          case 'stop':
-            return {
-              type: 'octaveshift',
-              phase: 'stop',
-              vexflow: { note: vfStaveNote },
-            };
-        }
+  private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    const beam = util.first(this.musicXml.note?.getBeams() ?? []);
+    if (beam) {
+      opts.spanners.addBeamFragment({
+        type: beam.getBeamValue(),
+        vexflow: {
+          stemmableNote: opts.vexflow.staveNote,
+        },
       });
+    }
   }
 
-  private getPedalFragments(vfStaveNote: vexflow.StaveNote): PedalFragment[] {
-    return this.musicXml.directions
+  private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
       .map((content) => content.pedal)
-      .map<PedalFragment>((pedal) => {
-        switch (pedal.getType()) {
+      .forEach((pedal) => {
+        const pedalType = pedal.getType();
+        switch (pedalType) {
           case 'start':
           case 'sostenuto':
           case 'resume':
-            return {
-              type: 'pedal',
-              phase: 'start',
+            opts.spanners.addPedalFragment({
+              type: pedalType,
               musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
-
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
           case 'continue':
           case 'change':
-            return {
-              type: 'pedal',
-              phase: 'continue',
+            opts.spanners.addPedalFragment({
+              type: pedalType,
               musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
           case 'stop':
           case 'discontinue':
-            return {
-              type: 'pedal',
-              phase: 'stop',
+            opts.spanners.addPedalFragment({
+              type: pedalType,
               musicXml: { pedal },
-              vexflow: { staveNote: vfStaveNote },
-            };
+              vexflow: { staveNote: opts.vexflow.staveNote },
+            });
+            break;
+        }
+      });
+  }
+
+  private addVibratoFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.note
+      ?.getNotations()
+      .flatMap((notation) => notation.getOrnaments())
+      .flatMap((ornament) => ornament.getWavyLines())
+      .forEach((wavyLine) => {
+        opts.spanners.addVibratoFragment({
+          type: wavyLine.getType(),
+          keyIndex: 0,
+          vexflow: { note: opts.vexflow.staveNote },
+        });
+      });
+  }
+
+  private addOctaveShiftFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
+    this.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift)
+      .forEach((octaveShift) => {
+        switch (octaveShift.getType()) {
+          case 'up':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'mb',
+              vexflow: {
+                note: opts.vexflow.staveNote,
+                textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
+              },
+            });
+            break;
+          case 'down':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'start',
+              text: octaveShift.getSize().toString(),
+              superscript: 'va',
+              vexflow: {
+                note: opts.vexflow.staveNote,
+                textBracketPosition: vexflow.TextBracketPosition.TOP,
+              },
+            });
+            break;
+          case 'continue':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'continue',
+              vexflow: { note: opts.vexflow.staveNote },
+            });
+            break;
+          case 'stop':
+            opts.spanners.addOctaveShiftFragment({
+              type: 'stop',
+              vexflow: { note: opts.vexflow.staveNote },
+            });
+            break;
         }
       });
   }

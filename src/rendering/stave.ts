@@ -10,6 +10,8 @@ import * as conversions from './conversions';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
+import { Address } from './address';
+import { Spanners } from './spanners';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -22,6 +24,7 @@ export type StaveEntryRendering = ChorusRendering | MultiRestRendering | Tablatu
 /** The result of rendering a Stave. */
 export type StaveRendering = {
   type: 'stave';
+  address: Address<'stave'>;
   staveNumber: number;
   signature: StaveSignature;
   width: number;
@@ -50,7 +53,6 @@ export class Stave {
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
   private measureEntries: MeasureEntry[];
-  private previousStave: Stave | null;
 
   constructor(opts: {
     config: Config;
@@ -59,7 +61,6 @@ export class Stave {
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     measureEntries: MeasureEntry[];
-    previousStave: Stave | null;
   }) {
     this.config = opts.config;
     this.staveNumber = opts.staveNumber;
@@ -67,12 +68,11 @@ export class Stave {
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
     this.measureEntries = opts.measureEntries;
-    this.previousStave = opts.previousStave;
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
-  getMinJustifyWidth(): number {
+  getMinJustifyWidth(address: Address<'stave'>): number {
     const entry = this.getEntry();
 
     if (entry instanceof MultiRest) {
@@ -83,7 +83,7 @@ export class Stave {
     }
 
     if (entry instanceof Chorus) {
-      return entry.getMinJustifyWidth();
+      return entry.getMinJustifyWidth(address.chorus());
     }
 
     return 0;
@@ -112,20 +112,20 @@ export class Stave {
   }
 
   /** Returns the stave modifiers that changed. */
-  getModifierChanges(): StaveModifier[] {
-    if (!this.previousStave) {
+  getModifierChanges(opts: { previousStave: Stave | null }): StaveModifier[] {
+    if (!opts.previousStave) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
     const result = new Array<StaveModifier>();
 
-    if (!this.getClef().isEqual(this.previousStave.getClef())) {
+    if (!this.getClef().isEqual(opts.previousStave.getClef())) {
       result.push('clef');
     }
-    if (!this.getKeySignature().isEqual(this.previousStave.getKeySignature())) {
+    if (!this.getKeySignature().isEqual(opts.previousStave.getKeySignature())) {
       result.push('keySignature');
     }
-    if (!this.getTimeSignature().isEqual(this.previousStave.getTimeSignature())) {
+    if (!this.getTimeSignature().isEqual(opts.previousStave.getTimeSignature())) {
       result.push('timeSignature');
     }
 
@@ -147,6 +147,8 @@ export class Stave {
   render(opts: {
     x: number;
     y: number;
+    address: Address<'stave'>;
+    spanners: Spanners;
     width: number;
     modifiers: StaveModifier[];
     previousStave: Stave | null;
@@ -193,7 +195,10 @@ export class Stave {
       );
     }
 
-    const staveEntryRendering = this.getEntry().render();
+    const staveEntryRendering = this.getEntry().render({
+      address: opts.address.chorus(),
+      spanners: opts.spanners,
+    });
 
     switch (staveEntryRendering.type) {
       case 'multirest':
@@ -209,6 +214,7 @@ export class Stave {
 
     return {
       type: 'stave',
+      address: opts.address,
       signature: this.staveSignature,
       staveNumber: this.staveNumber,
       width: opts.width,
