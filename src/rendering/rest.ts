@@ -102,7 +102,7 @@ export class Rest {
     const beam = util.first(this.musicXml.note?.getBeams() ?? []);
     if (beam) {
       spanners.addBeamFragment({
-        value: beam.getBeamValue(),
+        type: beam.getBeamValue(),
         vexflow: {
           stemmableNote: vfStaveNote,
         },

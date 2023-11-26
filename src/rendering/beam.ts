@@ -12,7 +12,7 @@ export type BeamRendering = {
 
 /** A piece of a beam. */
 export type BeamFragment = {
-  value: musicxml.BeamValue;
+  type: musicxml.BeamValue;
   vexflow: {
     stemmableNote: vexflow.StemmableNote;
   };
@@ -28,16 +28,16 @@ export class Beam {
 
   /** Whether the fragment can be added to the beam. */
   isAllowed(fragment: BeamFragment): boolean {
-    switch (util.last(this.fragments.map((fragment) => fragment.value))!) {
+    switch (util.last(this.fragments.map((fragment) => fragment.type))!) {
       case 'begin':
       case 'continue':
       case 'backward hook':
       case 'forward hook':
         return (
-          fragment.value === 'continue' ||
-          fragment.value === 'backward hook' ||
-          fragment.value === 'forward hook' ||
-          fragment.value === 'end'
+          fragment.type === 'continue' ||
+          fragment.type === 'backward hook' ||
+          fragment.type === 'forward hook' ||
+          fragment.type === 'end'
         );
       case 'end':
         return false;

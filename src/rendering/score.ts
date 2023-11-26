@@ -180,7 +180,7 @@ export class Score {
     });
 
     // Draw vexflow.StaveTie elements.
-    legacySpanners.slurs
+    spannersRendering.slurs
       .flatMap((slur) => slur.vexflow.tie)
       .forEach((vfStaveTie) => {
         vfStaveTie.setContext(vfContext).draw();

@@ -10,7 +10,6 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 import { SpannerFragment } from './legacyspanners';
-import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
 import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
@@ -182,7 +181,7 @@ export class Note {
           (beam) => beam.getNumber()
         )
         .map<BeamFragment>((beam) => ({
-          value: beam.getBeamValue(),
+          type: beam.getBeamValue(),
           vexflow: { stemmableNote: vfStaveNote },
         }))
     );
@@ -220,14 +219,34 @@ export class Note {
         });
     }
 
-    return keys.map((key, index) => ({
-      type: 'note',
-      key,
-      modifiers: modifierRenderingGroups[index],
-      vexflow: { staveNote: vfStaveNote },
-      timeModification: notes[index].getTimeModification(),
-      spannerFragments: notes[index].getSpannerFragments(vfStaveNote, index),
-    }));
+    const noteRenderings = new Array<NoteRendering>();
+
+    for (let index = 0; index < keys.length; index++) {
+      notes[index]
+        .getSlurs()
+        .filter((slur) => !!slur.getType())
+        .forEach((slur) => {
+          spanners.addSlurFragment({
+            slurNumber: slur.getNumber(),
+            type: slur.getType()!,
+            vexflow: {
+              keyIndex: index,
+              note: vfStaveNote,
+            },
+          });
+        });
+
+      noteRenderings.push({
+        type: 'note',
+        key: keys[index],
+        modifiers: modifierRenderingGroups[index],
+        vexflow: { staveNote: vfStaveNote },
+        timeModification: notes[index].getTimeModification(),
+        spannerFragments: notes[index].getSpannerFragments(vfStaveNote, index),
+      });
+    }
+
+    return noteRenderings;
   }
 
   private static sort(notes: Note[]): Note[] {
@@ -357,35 +376,11 @@ export class Note {
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
     return [
-      ...this.getSlurFragments(vfStaveNote, keyIndex),
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getWavyLineFragments(vfStaveNote, keyIndex),
       ...this.getOctaveShiftFragments(vfStaveNote),
       ...this.getPedalFragments(vfStaveNote),
     ];
-  }
-
-  private getSlurFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SlurFragment[] {
-    const result = new Array<SlurFragment>();
-
-    for (const slur of this.getSlurs()) {
-      const slurType = slur.getType();
-      if (!slurType) {
-        continue;
-      }
-
-      result.push({
-        type: 'slur',
-        phase: conversions.fromStartStopContinueToSpannerFragmentPhase(slurType),
-        slurNumber: slur.getNumber(),
-        vexflow: {
-          note: vfStaveNote,
-          keyIndex,
-        },
-      });
-    }
-
-    return result;
   }
 
   private getWedgeFragments(vfStaveNote: vexflow.StaveNote): WedgeFragment[] {
