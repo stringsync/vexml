@@ -101,19 +101,24 @@ export class Chorus {
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(address: Address<'chorus'>): number {
+    const spanners = new Spanners();
     const voices = this.getVoices();
+
     if (voices.length > 0) {
       const vfVoices = voices.map(
         (voice) =>
           voice.render({
             address: address.voice(),
-            // Creating a new Spanners accounting causes it to be ignored. This is probably ok since we're just
-            // rendering voices for measuring purposes.
-            spanners: new Spanners(),
+            spanners,
           }).vexflow.voice
       );
+
       const vfFormatter = new vexflow.Formatter();
-      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
+      return (
+        vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) +
+        spanners.getPadding() +
+        this.config.VOICE_PADDING
+      );
     }
     return 0;
   }
