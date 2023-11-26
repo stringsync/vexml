@@ -10,7 +10,6 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 import { SpannerFragment } from './spanners';
-import { BeamFragment } from './beam';
 import { TupletFragment } from './tuplet';
 import { SlurFragment } from './slur';
 import { WedgeFragment } from './wedge';
@@ -18,6 +17,8 @@ import { Ornament, OrnamentRendering } from './ornament';
 import { OctaveShiftFragment } from './octaveshift';
 import { VibratoFragment } from './vibrato';
 import { PedalFragment } from './pedal';
+import { BeamFragment } from './beam';
+import { Spanners2 } from './spanners2';
 
 const STEP_ORDER = [
   'Cb',
@@ -99,7 +100,9 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(notes: Note[]): NoteRendering[] {
+  static render(opts: { notes: Note[]; spanners: Spanners2 }): NoteRendering[] {
+    const notes = Note.sort(opts.notes);
+
     util.assert(notes.length > 0, 'cannot render empty notes');
 
     const durationDenominators = new Set(notes.map((note) => note.durationDenominator));
@@ -111,7 +114,7 @@ export class Note {
     const clefTypes = new Set(notes.map((note) => note.clef));
     util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
-    const keys = Note.sort(notes).map((note) => note.getKey());
+    const keys = notes.map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
 
@@ -171,6 +174,21 @@ export class Note {
       }
     }
 
+    const beamFragments = notes
+      .flatMap((note) => note.musicXml.note.getBeams())
+      .map<BeamFragment>((beam) => ({
+        number: beam.getNumber(),
+        musicXml: { beam },
+        vexflow: { stemmableNote: vfStaveNote },
+      }));
+    // vexflow does the heavy lifting of beam fragments, so we just want to track the lowest number for continuity info.
+    const beamFragment = util.first(
+      util.sortBy(beamFragments, (beamFragment) => beamFragment.musicXml.beam.getNumber())
+    );
+    if (beamFragment) {
+      opts.spanners.addBeamFragment(beamFragment);
+    }
+
     return keys.map((key, index) => ({
       type: 'note',
       key,
@@ -215,8 +233,13 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(): NoteRendering {
-    return util.first(Note.render([this]))!;
+  render(opts: { spanners: Spanners2 }): NoteRendering {
+    return util.first(
+      Note.render({
+        notes: [this],
+        spanners: opts.spanners,
+      })
+    )!;
   }
 
   @util.memoize()
@@ -249,13 +272,6 @@ export class Note {
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
       .flatMap((ornaments) => new Ornament({ musicXml: { ornaments } }));
-  }
-
-  private getBeamValue(): musicxml.BeamValue | null {
-    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
-    // continues, or stops.
-    const beams = util.sortBy(this.musicXml.note.getBeams(), (beam) => beam.getNumber());
-    return util.first(beams)?.getBeamValue() ?? null;
   }
 
   private getDotCount(): number {
@@ -310,7 +326,6 @@ export class Note {
 
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote, keyIndex: number): SpannerFragment[] {
     return [
-      ...this.getBeamFragments(vfStaveNote),
       ...this.getTupletFragments(vfStaveNote),
       ...this.getSlurFragments(vfStaveNote, keyIndex),
       ...this.getWedgeFragments(vfStaveNote),
@@ -318,23 +333,6 @@ export class Note {
       ...this.getOctaveShiftFragments(vfStaveNote),
       ...this.getPedalFragments(vfStaveNote),
     ];
-  }
-
-  private getBeamFragments(vfStaveNote: vexflow.StaveNote): BeamFragment[] {
-    const result = new Array<BeamFragment>();
-
-    const beamValue = this.getBeamValue();
-    if (beamValue) {
-      result.push({
-        type: 'beam',
-        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
-        vexflow: {
-          stemmableNote: vfStaveNote,
-        },
-      });
-    }
-
-    return result;
   }
 
   private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {

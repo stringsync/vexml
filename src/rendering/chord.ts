@@ -4,6 +4,7 @@ import { Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
+import { Spanners2 } from './spanners2';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -55,9 +56,11 @@ export class Chord {
   }
 
   /** Renders the Chord. */
-  render(): ChordRendering {
-    const notes = this.getNotes();
-    const noteRenderings = Note.render(notes);
+  render(opts: { spanners: Spanners2 }): ChordRendering {
+    const noteRenderings = Note.render({
+      notes: this.getNotes(),
+      spanners: opts.spanners,
+    });
 
     return {
       type: 'chord',

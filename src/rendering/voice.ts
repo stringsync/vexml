@@ -7,6 +7,7 @@ import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { Address } from './address';
+import { Spanners2 } from './spanners2';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -57,13 +58,13 @@ export class Voice {
   }
 
   /** Renders the Voice. */
-  render(opts: { address: Address<'voice'> }): VoiceRendering {
+  render(opts: { address: Address<'voice'>; spanners: Spanners2 }): VoiceRendering {
     const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
       if (entry instanceof Note) {
-        return entry.render();
+        return entry.render({ spanners: opts.spanners });
       }
       if (entry instanceof Chord) {
-        return entry.render();
+        return entry.render({ spanners: opts.spanners });
       }
       if (entry instanceof Rest) {
         return entry.render({ voiceEntryCount: this.entries.length });

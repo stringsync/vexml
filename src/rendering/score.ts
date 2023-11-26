@@ -12,6 +12,7 @@ import { ChordRendering } from './chord';
 import { RestRendering } from './rest';
 import { Spanners } from './spanners';
 import { Address } from './address';
+import { Spanners2 } from './spanners2';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -55,6 +56,9 @@ export class Score {
     const x = 0;
     let y = 0;
 
+    // Initialize spanners for rendering.
+    const spanners = new Spanners2();
+
     // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
     const title = this.getTitle();
@@ -75,6 +79,7 @@ export class Score {
         isLastSystem: isLast,
         previousSystem,
         nextSystem,
+        spanners,
       });
       systemRenderings.push(systemRendering);
 
@@ -96,7 +101,8 @@ export class Score {
     });
 
     // Render spanners.
-    const spanners = this.getSpanners(systemRenderings).render();
+    const legacySpanners = this.getSpanners(systemRenderings).render();
+    const spannersRendering = spanners.render();
 
     // Precalculate different parts of the rendering for readability later.
     const parts = systemRenderings.flatMap((system) => system.parts);
@@ -169,49 +175,47 @@ export class Score {
       });
 
     // Draw vexflow.Beam elements.
-    spanners.beams
-      .map((beam) => beam.vexflow.beam)
-      .forEach((vfBeam) => {
-        vfBeam.setContext(vfContext).draw();
-      });
+    spannersRendering.beams.forEach((beam) => {
+      beam.vexflow.beam.setContext(vfContext).draw();
+    });
 
     // Draw vexflow.StaveTie elements.
-    spanners.slurs
+    legacySpanners.slurs
       .flatMap((slur) => slur.vexflow.tie)
       .forEach((vfStaveTie) => {
         vfStaveTie.setContext(vfContext).draw();
       });
 
     // Draw vexflow.Tuplet elements.
-    spanners.tuplets
+    legacySpanners.tuplets
       .map((tuplet) => tuplet.vexflow.tuplet)
       .forEach((vfTuplet) => {
         vfTuplet.setContext(vfContext).draw();
       });
 
     // Draw vexflow.StaveHairpin elements.
-    spanners.wedges
+    legacySpanners.wedges
       .map((wedge) => wedge.vexflow.staveHairpin)
       .forEach((vfStaveHairpin) => {
         vfStaveHairpin.setContext(vfContext).draw();
       });
 
     // Draw vexflow.Vibrato elements.
-    spanners.vibratos
+    legacySpanners.vibratos
       .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
       .forEach((vibratoBracket) => {
         vibratoBracket.setContext(vfContext).draw();
       });
 
     // Draw vexflow.TextBracket elements.
-    spanners.octaveShifts
+    legacySpanners.octaveShifts
       .map((octaveShift) => octaveShift.vexflow.textBracket)
       .forEach((vfTextBracket) => {
         vfTextBracket.setContext(vfContext).draw();
       });
 
     // Draw vexflow.PedalMarking elements.
-    spanners.pedals
+    legacySpanners.pedals
       .map((pedal) => pedal.vexflow.pedalMarking)
       .forEach((vfPedalMarking) => {
         vfPedalMarking.setContext(vfContext).draw();
