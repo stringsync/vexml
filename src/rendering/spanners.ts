@@ -1,6 +1,5 @@
 import * as vexflow from 'vexflow';
 import { Address } from './address';
-import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Wedge, WedgeEntry, WedgeFragment, WedgeRendering } from './wedge';
@@ -11,7 +10,6 @@ import { Pedal, PedalFragment, PedalRendering } from './pedal';
 /** The result of rendering spanners. */
 export type SpannersRendering = {
   type: 'spanners';
-  beams: BeamRendering[];
   tuplets: TupletRendering[];
   slurs: SlurRendering[];
   wedges: WedgeRendering[];
@@ -31,7 +29,6 @@ export type SpannersRendering = {
  *   - slurs
  */
 export type SpannerFragment =
-  | BeamFragment
   | TupletFragment
   | SlurFragment
   | WedgeFragment
@@ -63,7 +60,6 @@ export class Spanners {
   render(): SpannersRendering {
     return {
       type: 'spanners',
-      beams: this.getBeams().map((beam) => beam.render()),
       tuplets: this.getTuplets().map((tuplet) => tuplet.render()),
       slurs: this.getSlurs().map((slur) => slur.render()),
       wedges: this.getWedges().map((wedge) => wedge.render()),
@@ -71,40 +67,6 @@ export class Spanners {
       vibratos: this.getVibratos().map((wavyLine) => wavyLine.render()),
       pedals: this.getPedals().map((pedal) => pedal.render()),
     };
-  }
-
-  private getBeams(): Beam[] {
-    const beams = new Array<Beam>();
-
-    const fragments = this.entries
-      .map((entry) => entry.fragment)
-      .filter((fragment): fragment is BeamFragment => fragment.type === 'beam');
-    let buffer = new Array<BeamFragment>();
-
-    for (let index = 0; index < fragments.length; index++) {
-      const fragment = fragments[index];
-      const isLast = index === fragments.length - 1;
-
-      // This is a "lenient" state machine where errors in the MusicXML document are silently defaulted to reasonable
-      // behavior.
-      switch (fragment.phase) {
-        case 'start':
-        case 'continue':
-          buffer.push(fragment);
-          break;
-        case 'stop':
-          buffer.push(fragment);
-          beams.push(new Beam({ fragments: buffer }));
-          buffer = [];
-          break;
-      }
-
-      if (isLast && buffer.length > 0) {
-        beams.push(new Beam({ fragments: buffer }));
-      }
-    }
-
-    return beams;
   }
 
   private getTuplets(): Tuplet[] {

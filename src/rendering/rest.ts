@@ -7,7 +7,6 @@ import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
 import { SpannerFragment } from './spanners';
-import { BeamFragment } from './beam';
 import { TupletFragment } from './tuplet';
 import { OctaveShiftFragment } from './octaveshift';
 import { WedgeFragment } from './wedge';
@@ -154,7 +153,6 @@ export class Rest {
   // TODO: Unify these with Note's implementation, although they may not overlap 1:1.
   private getSpannerFragments(vfStaveNote: vexflow.StaveNote): SpannerFragment[] {
     return [
-      ...this.getBeamFragments(vfStaveNote),
       ...this.getTupletFragments(vfStaveNote),
       ...this.getWedgeFragments(vfStaveNote),
       ...this.getVibratoFragments(vfStaveNote),
@@ -166,23 +164,6 @@ export class Rest {
   private getBeamValue(): musicxml.BeamValue | null {
     const beams = util.sortBy(this.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
     return util.first(beams)?.getBeamValue() ?? null;
-  }
-
-  private getBeamFragments(vfStaveNote: vexflow.StemmableNote): BeamFragment[] {
-    const result = new Array<BeamFragment>();
-
-    const beamValue = this.getBeamValue();
-    if (beamValue) {
-      result.push({
-        type: 'beam',
-        phase: conversions.fromBeamValueToSpannerFragmentPhase(beamValue),
-        vexflow: {
-          stemmableNote: vfStaveNote,
-        },
-      });
-    }
-
-    return result;
   }
 
   private getTupletFragments(vfStaveNote: vexflow.StaveNote): TupletFragment[] {

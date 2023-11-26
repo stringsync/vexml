@@ -7,6 +7,7 @@ import { Config } from './config';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Address } from './address';
+import { Spanners2 } from './spanners2';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -98,6 +99,7 @@ export class Measure {
     x: number;
     y: number;
     address: Address<'measure'>;
+    spanners: Spanners2;
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
@@ -131,6 +133,7 @@ export class Measure {
           systemMeasureIndex: opts.systemMeasureIndex,
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
+          spanners: opts.spanners,
         });
         fragmentRenderings.push(fragmentRendering);
 

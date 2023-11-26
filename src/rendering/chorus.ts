@@ -15,6 +15,7 @@ import { Chord } from './chord';
 import { Rest } from './rest';
 import { Note } from './note';
 import { Address } from './address';
+import { Spanners2 } from './spanners2';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -102,7 +103,15 @@ export class Chorus {
   getMinJustifyWidth(address: Address<'chorus'>): number {
     const voices = this.getVoices();
     if (voices.length > 0) {
-      const vfVoices = voices.map((voice) => voice.render({ address: address.voice() }).vexflow.voice);
+      const vfVoices = voices.map(
+        (voice) =>
+          voice.render({
+            address: address.voice(),
+            // Creating a new Spanners accounting causes it to be ignored. This is probably ok since we're just
+            // rendering voices for measuring purposes.
+            spanners: new Spanners2(),
+          }).vexflow.voice
+      );
       const vfFormatter = new vexflow.Formatter();
       return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
     }
@@ -110,8 +119,13 @@ export class Chorus {
   }
 
   /** Renders the Chorus. */
-  render(opts: { address: Address<'chorus'> }): ChorusRendering {
-    const voiceRenderings = this.getVoices().map((voice) => voice.render({ address: opts.address.voice() }));
+  render(opts: { address: Address<'chorus'>; spanners: Spanners2 }): ChorusRendering {
+    const voiceRenderings = this.getVoices().map((voice) =>
+      voice.render({
+        address: opts.address.voice(),
+        spanners: opts.spanners,
+      })
+    );
 
     return {
       type: 'chorus',

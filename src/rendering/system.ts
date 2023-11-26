@@ -3,6 +3,7 @@ import { Config } from './config';
 import { Part } from './part';
 import { PartRendering } from './part';
 import { Address } from './address';
+import { Spanners2 } from './spanners2';
 
 /** The result of rendering a System. */
 export type SystemRendering = {
@@ -28,6 +29,7 @@ export class System {
   render(opts: {
     x: number;
     y: number;
+    spanners: Spanners2;
     width: number;
     isLastSystem: boolean;
     previousSystem: System | null;
@@ -51,6 +53,7 @@ export class System {
         x: opts.x,
         y: opts.y,
         address: address.part(),
+        spanners: opts.spanners,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
@@ -68,9 +71,9 @@ export class System {
   }
 
   private getMinRequiredWidth(): number {
-    // This is a dummy "seed" address used exclusively for measuring. This should be ok since we're only measuring one
-    // System, which suggests we're past the seed phase. One of the drawbacks is that we may end up missing some special
-    // renderings regarding spanners.
+    // This is a dummy "seed" address and spanners used exclusively for measuring. This should be ok since we're only
+    // measuring one System, which suggests we're past the seed phase, since that is the phase where systems are
+    // created.
     const systemAddress = Address.system();
 
     let totalWidth = 0;
