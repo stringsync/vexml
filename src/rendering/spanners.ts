@@ -8,29 +8,32 @@ export type SpannersRendering = {
 
 /** The accounting for all spanners. */
 export class Spanners {
-  private beams: Record<number, Beam[]> = {};
+  private beams = new Array<Beam>();
 
+  /** Returns the additional padding needed to accommodate some spanners. */
+  getPadding(): number {
+    return 0;
+  }
+
+  /** Adds a beam fragment */
   addBeamFragment(beamFragment: BeamFragment): void {
-    const number = beamFragment.musicXml.beam.getNumber();
     const value = beamFragment.musicXml.beam.getBeamValue();
 
-    this.beams[number] ??= [];
-    const beam = util.last(this.beams[number]);
+    const beam = util.last(this.beams);
 
     if (beam?.canAddFragment(beamFragment)) {
       beam.addFragment(beamFragment);
     } else if (value === 'begin') {
-      this.beams[number].push(new Beam({ fragment: beamFragment }));
+      this.beams.push(new Beam({ fragment: beamFragment }));
     } else {
       console.debug('found invalid beam fragment, skipping');
     }
   }
 
+  /** Renders all the spanners. */
   render(): SpannersRendering {
     return {
-      beams: Object.values(this.beams)
-        .flat()
-        .map((beam) => beam.render()),
+      beams: this.beams.map((beam) => beam.render()),
     };
   }
 }
