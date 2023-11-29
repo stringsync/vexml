@@ -61,13 +61,13 @@ export class Voice {
   render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
     const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
       if (entry instanceof Note) {
-        return entry.render({ spanners: opts.spanners });
+        return entry.render({ spanners: opts.spanners, address: opts.address });
       }
       if (entry instanceof Chord) {
-        return entry.render({ spanners: opts.spanners });
+        return entry.render({ spanners: opts.spanners, address: opts.address });
       }
       if (entry instanceof Rest) {
-        return entry.render({ spanners: opts.spanners, voiceEntryCount: this.entries.length });
+        return entry.render({ spanners: opts.spanners, voiceEntryCount: this.entries.length, address: opts.address });
       }
       if (entry instanceof GhostNote) {
         return entry.render();
