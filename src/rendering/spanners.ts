@@ -1,11 +1,13 @@
-import { Beam, BeamFragment, BeamRendering } from './beam';
 import * as util from '@/util';
+import { Beam, BeamFragment, BeamRendering } from './beam';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Slur, SlurFragment, SlurRendering } from './slur';
-import { Wedge, WedgeFragment, WedgeRendering } from './wedge';
+import { Wedge, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
 import { OctaveShift, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
+import { SpannerData } from './types';
+import { SpannerMap } from './spannermap';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -23,8 +25,8 @@ export type SpannersRendering = {
 export class Spanners {
   private beams = new Array<Beam>();
   private tuplets = new Array<Tuplet>();
-  private slurs: Record<number, Slur[]> = {};
-  private wedges = new Array<Wedge>();
+  private slurs = new SpannerMap<number, Slur>();
+  private wedges = SpannerMap.keyless<Wedge>();
   private pedals = new Array<Pedal>();
   private vibratos = new Array<Vibrato>();
   private octaveShifts = new Array<OctaveShift>();
@@ -33,6 +35,11 @@ export class Spanners {
   getPadding(): number {
     // TODO: When there are spanners that affect width, use them to determine how much padding to add.
     return 0;
+  }
+
+  /** Extracts and processes all the spanners within the given data. */
+  process(data: SpannerData): void {
+    Wedge.process(data, this.wedges);
   }
 
   /**
@@ -64,24 +71,12 @@ export class Spanners {
   /** Adds a slur fragment. */
   addSlurFragment(slurFragment: SlurFragment): void {
     const number = slurFragment.slurNumber;
-    this.slurs[number] ??= [];
-    const slur = util.last(this.slurs[number]);
+    const slur = this.slurs.get(number);
 
     if (slur?.isAllowed(slurFragment)) {
       slur.addFragment(slurFragment);
     } else if (slurFragment.type === 'start') {
-      this.slurs[number].push(new Slur({ fragment: slurFragment }));
-    }
-  }
-
-  /** Adds a wedge fragment. */
-  addWedgeFragment(wedgeFragment: WedgeFragment): void {
-    const wedge = util.last(this.wedges);
-
-    if (wedge?.isAllowed(wedgeFragment)) {
-      wedge.addFragment(wedgeFragment);
-    } else if (wedgeFragment.type === 'start') {
-      this.wedges.push(new Wedge({ fragment: wedgeFragment }));
+      this.slurs.push(number, new Slur({ fragment: slurFragment }));
     }
   }
 
@@ -128,10 +123,8 @@ export class Spanners {
       type: 'spanners',
       beams: this.beams.map((beam) => beam.render()),
       tuplets: this.tuplets.map((tuplet) => tuplet.render()),
-      slurs: Object.values(this.slurs)
-        .flat()
-        .map((slur) => slur.render()),
-      wedges: this.wedges.map((wedge) => wedge.render()),
+      slurs: this.slurs.values().map((slur) => slur.render()),
+      wedges: this.wedges.values().map((wedge) => wedge.render()),
       pedals: this.pedals.map((pedal) => pedal.render()),
       vibratos: this.vibratos.map((vibrato) => vibrato.render()),
       octaveShifts: this.octaveShifts.map((octaveShift) => octaveShift.render()),

@@ -7,6 +7,7 @@ import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
 import { Spanners } from './spanners';
+import { Address } from './address';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -72,7 +73,7 @@ export class Rest {
   }
 
   /** Renders the Rest. */
-  render(opts: { voiceEntryCount: number; spanners: Spanners }): RestRendering {
+  render(opts: { voiceEntryCount: number; spanners: Spanners; address: Address<'voice'> }): RestRendering {
     const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
@@ -90,6 +91,19 @@ export class Rest {
       .forEach((tokenRendering) => {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
       });
+
+    opts.spanners.process({
+      keyIndex: 0,
+      address: opts.address,
+      musicXml: {
+        directions: this.musicXml.directions,
+        note: this.musicXml.note,
+        octaveShift: null,
+      },
+      vexflow: {
+        staveNote: vfStaveNote,
+      },
+    });
 
     this.addSpannerFragments({
       spanners: opts.spanners,
@@ -151,52 +165,9 @@ export class Rest {
   private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
     this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addWedgeFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
-    // associated with the first <note> element that follows it in score order that is not in a different voice.
-    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
-
-    for (const direction of this.musicXml.directions) {
-      const directionPlacement = direction.getPlacement() ?? 'below';
-      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
-
-      for (const directionType of direction.getTypes()) {
-        const content = directionType.getContent();
-        if (content.type !== 'wedge') {
-          continue;
-        }
-
-        const wedgeType = content.wedge.getType();
-
-        switch (wedgeType) {
-          case 'crescendo':
-          case 'diminuendo':
-            opts.spanners.addWedgeFragment({
-              type: 'start',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                staveHairpinType: conversions.fromWedgeTypeToStaveHairpinType(wedgeType),
-                position: modifierPosition,
-              },
-            });
-            break;
-          case 'continue':
-          case 'stop':
-            opts.spanners.addWedgeFragment({
-              type: wedgeType,
-              vexflow: {
-                note: opts.vexflow.staveNote,
-              },
-            });
-        }
-      }
-    }
   }
 
   private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
