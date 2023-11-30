@@ -5,7 +5,7 @@ import { Slur, SlurRendering } from './slur';
 import { Wedge, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
 import { Vibrato, VibratoRendering } from './vibrato';
-import { OctaveShift, OctaveShiftFragment, OctaveShiftRendering } from './octaveshift';
+import { OctaveShift, OctaveShiftRendering } from './octaveshift';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
 
@@ -29,7 +29,7 @@ export class Spanners {
   private wedges = SpannerMap.keyless<Wedge>();
   private pedals = new Array<Pedal>();
   private vibratos = SpannerMap.keyless<Vibrato>();
-  private octaveShifts = new Array<OctaveShift>();
+  private octaveShifts = SpannerMap.keyless<OctaveShift>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
@@ -44,6 +44,7 @@ export class Spanners {
     Slur.process(data, this.slurs);
     Wedge.process(data, this.wedges);
     Vibrato.process(data, this.vibratos);
+    OctaveShift.process(data, this.octaveShifts);
   }
 
   /** Adds a pedal fragment. */
@@ -57,21 +58,6 @@ export class Spanners {
     }
   }
 
-  /** Adds an octave shift fragment. */
-  addOctaveShiftFragment(octaveShiftFragment: OctaveShiftFragment): void {
-    const octaveShift = util.last(this.octaveShifts);
-
-    if (octaveShift?.isAllowed(octaveShiftFragment)) {
-      octaveShift.addFragment(octaveShiftFragment);
-    } else if (octaveShiftFragment.type === 'start') {
-      this.octaveShifts.push(
-        new OctaveShift({
-          fragment: octaveShiftFragment,
-        })
-      );
-    }
-  }
-
   /** Renders all the spanners. */
   render(): SpannersRendering {
     return {
@@ -82,7 +68,7 @@ export class Spanners {
       wedges: this.wedges.values().map((wedge) => wedge.render()),
       pedals: this.pedals.map((pedal) => pedal.render()),
       vibratos: this.vibratos.values().map((vibrato) => vibrato.render()),
-      octaveShifts: this.octaveShifts.map((octaveShift) => octaveShift.render()),
+      octaveShifts: this.octaveShifts.values().map((octaveShift) => octaveShift.render()),
     };
   }
 }

@@ -153,7 +153,6 @@ export class Rest {
 
   private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
   private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
@@ -188,52 +187,6 @@ export class Rest {
               type: pedalType,
               musicXml: { pedal },
               vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-        }
-      });
-  }
-
-  private addOctaveShiftFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
-      .map((content) => content.octaveShift)
-      .forEach((octaveShift) => {
-        switch (octaveShift.getType()) {
-          case 'up':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'mb',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
-              },
-            });
-            break;
-          case 'down':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'va',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                textBracketPosition: vexflow.TextBracketPosition.TOP,
-              },
-            });
-            break;
-          case 'continue':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'continue',
-              vexflow: { note: opts.vexflow.staveNote },
-            });
-            break;
-          case 'stop':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'stop',
-              vexflow: { note: opts.vexflow.staveNote },
             });
             break;
         }
