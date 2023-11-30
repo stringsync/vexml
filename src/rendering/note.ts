@@ -301,19 +301,6 @@ export class Note {
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 
-  private getTuplets(): musicxml.Tuplet[] {
-    return (
-      this.musicXml.note
-        .getNotations()
-        .find((notations) => notations.hasTuplets())
-        ?.getTuplets() ?? []
-    );
-  }
-
-  private getSlurs(): musicxml.Slur[] {
-    return this.musicXml.note.getNotations().flatMap((notations) => notations.getSlurs());
-  }
-
   private getTimeModification(): musicxml.TimeModification | null {
     return this.musicXml.note.getTimeModification();
   }
@@ -332,42 +319,9 @@ export class Note {
     keyIndex: number;
     vexflow: { staveNote: vexflow.StaveNote };
   }): void {
-    this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
-    // come across.
-    const tuplet = util.first(this.getTuplets());
-    switch (tuplet?.getType()) {
-      case 'start':
-        opts.spanners.addTupletFragment({
-          type: 'start',
-          vexflow: {
-            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      case 'stop':
-        opts.spanners.addTupletFragment({
-          type: 'stop',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      default:
-        opts.spanners.addTupletFragment({
-          type: 'unspecified',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-    }
   }
 
   private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {

@@ -1,7 +1,5 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
-import * as conversions from './conversions';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
@@ -163,40 +161,9 @@ export class Rest {
   }
 
   private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    const tuplet = util.first(this.getTuplets());
-    switch (tuplet?.getType()) {
-      case 'start':
-        opts.spanners.addTupletFragment({
-          type: 'start',
-          vexflow: {
-            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      case 'stop':
-        opts.spanners.addTupletFragment({
-          type: 'stop',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      default:
-        opts.spanners.addTupletFragment({
-          type: 'unspecified',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-    }
   }
 
   private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
