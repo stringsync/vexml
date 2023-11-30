@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Beam, BeamRendering } from './beam';
-import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
+import { Tuplet, TupletRendering } from './tuplet';
 import { Slur, SlurRendering } from './slur';
 import { Wedge, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
@@ -24,7 +24,7 @@ export type SpannersRendering = {
 /** The accounting for all spanners. */
 export class Spanners {
   private beams = SpannerMap.keyless<Beam>();
-  private tuplets = new Array<Tuplet>();
+  private tuplets = SpannerMap.keyless<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
   private wedges = SpannerMap.keyless<Wedge>();
   private pedals = new Array<Pedal>();
@@ -40,19 +40,9 @@ export class Spanners {
   /** Extracts and processes all the spanners within the given data. */
   process(data: SpannerData): void {
     Beam.process(data, this.beams);
+    Tuplet.process(data, this.tuplets);
     Wedge.process(data, this.wedges);
     Slur.process(data, this.slurs);
-  }
-
-  /** Adds a tuplet fragment. */
-  addTupletFragment(tupletFragment: TupletFragment): void {
-    const tuplet = util.last(this.tuplets);
-
-    if (tuplet?.isAllowed(tupletFragment)) {
-      tuplet.addFragment(tupletFragment);
-    } else if (tupletFragment.type === 'start') {
-      this.tuplets.push(new Tuplet({ fragment: tupletFragment }));
-    }
   }
 
   /** Adds a pedal fragment. */
@@ -97,7 +87,7 @@ export class Spanners {
     return {
       type: 'spanners',
       beams: this.beams.values().map((beam) => beam.render()),
-      tuplets: this.tuplets.map((tuplet) => tuplet.render()),
+      tuplets: this.tuplets.values().map((tuplet) => tuplet.render()),
       slurs: this.slurs.values().map((slur) => slur.render()),
       wedges: this.wedges.values().map((wedge) => wedge.render()),
       pedals: this.pedals.map((pedal) => pedal.render()),
