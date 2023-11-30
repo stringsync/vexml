@@ -1,5 +1,8 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as conversions from './conversions';
+import { SpannerData } from './types';
+import { SpannerMap } from './spannermap';
 
 /** The result of rendering a tuplet. */
 export type TupletRendering = {
@@ -25,28 +28,87 @@ export type TupletFragment =
       };
     };
 
+type TupletFragmentType = TupletFragment['type'];
+
+type TupletContainer = SpannerMap<null, Tuplet>;
+
 /** Represents a time modification for a group of notes within a measure. */
 export class Tuplet {
   private fragments: [TupletFragment, ...TupletFragment[]];
 
-  constructor(opts: { fragment: TupletFragment }) {
+  private constructor(opts: { fragment: TupletFragment }) {
     this.fragments = [opts.fragment];
   }
 
-  /** Whether the fragment is allowed to be added to the tuplet. */
-  isAllowed(fragment: TupletFragment): boolean {
-    switch (util.last(this.fragments)!.type) {
+  static process(data: SpannerData, container: TupletContainer): void {
+    // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
+    // come across.
+    const tuplet = util.first(
+      data.musicXml.note
+        ?.getNotations()
+        .find((notations) => notations.hasTuplets())
+        ?.getTuplets() ?? []
+    );
+
+    switch (tuplet?.getType()) {
       case 'start':
-      case 'unspecified':
-        return fragment.type === 'unspecified' || fragment.type === 'stop';
+        Tuplet.commit(
+          {
+            type: 'start',
+            vexflow: {
+              location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+              note: data.vexflow.staveNote,
+            },
+          },
+          container
+        );
+        break;
       case 'stop':
-        return false;
+        Tuplet.commit(
+          {
+            type: 'stop',
+            vexflow: {
+              note: data.vexflow.staveNote,
+            },
+          },
+          container
+        );
+        break;
+      default:
+        Tuplet.commit(
+          {
+            type: 'unspecified',
+            vexflow: {
+              note: data.vexflow.staveNote,
+            },
+          },
+          container
+        );
     }
   }
 
-  /** Adds the fragment to the tuplet. */
-  addFragment(fragment: TupletFragment): void {
-    this.fragments.push(fragment);
+  static commit(fragment: TupletFragment, container: TupletContainer): void {
+    const tuplet = container.get(null);
+    const last = tuplet?.getLastFragment();
+    const isAllowedType = Tuplet.getAllowedTypes(last?.type).includes(fragment.type);
+
+    if (fragment.type === 'start') {
+      container.push(null, new Tuplet({ fragment }));
+    } else if (tuplet && isAllowedType) {
+      tuplet.fragments.push(fragment);
+    }
+  }
+
+  private static getAllowedTypes(type: TupletFragmentType | undefined): TupletFragmentType[] {
+    switch (type) {
+      case 'start':
+      case 'unspecified':
+        return ['unspecified', 'stop'];
+      case 'stop':
+        return [];
+      default:
+        return [];
+    }
   }
 
   /** Renders a tuplet. */
@@ -61,6 +123,10 @@ export class Tuplet {
         tuplet: vfTuplet,
       },
     };
+  }
+
+  private getLastFragment(): TupletFragment {
+    return util.last(this.fragments)!;
   }
 
   private getVfTupletLocation(): vexflow.TupletLocation | undefined {

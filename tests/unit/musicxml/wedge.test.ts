@@ -12,13 +12,13 @@ describe(Wedge, () => {
     it('defaults to crescendo when invalid', () => {
       const node = xml.wedge({ type: 'foo' });
       const wedge = new Wedge(node);
-      expect(wedge.getType()).toBe('crescendo');
+      expect(wedge.getType()).toBeNull();
     });
 
-    it('defaults to crescendo when missing', () => {
+    it('defaults to null when missing', () => {
       const node = xml.wedge();
       const wedge = new Wedge(node);
-      expect(wedge.getType()).toBe('crescendo');
+      expect(wedge.getType()).toBeNull();
     });
   });
 

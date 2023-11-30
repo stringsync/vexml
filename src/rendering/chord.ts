@@ -5,6 +5,7 @@ import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Spanners } from './spanners';
+import { Address } from './address';
 
 /** The result of rendering a Chord. */
 export type ChordRendering = {
@@ -56,10 +57,11 @@ export class Chord {
   }
 
   /** Renders the Chord. */
-  render(opts: { spanners: Spanners }): ChordRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering {
     const noteRenderings = Note.render({
       notes: this.getNotes(),
       spanners: opts.spanners,
+      address: opts.address,
     });
 
     return {
