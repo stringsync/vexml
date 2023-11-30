@@ -60,7 +60,7 @@ type UnspecifiedWedgeFragment = {
 export class Wedge {
   private fragments: [StartWedgeFragment, ...WedgeFragment[]];
 
-  constructor(opts: { fragment: StartWedgeFragment }) {
+  private constructor(opts: { fragment: StartWedgeFragment }) {
     this.fragments = [opts.fragment];
   }
 
