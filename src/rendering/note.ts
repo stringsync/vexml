@@ -320,7 +320,6 @@ export class Note {
     vexflow: { staveNote: vexflow.StaveNote };
   }): void {
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
   }
 
@@ -359,20 +358,6 @@ export class Note {
             });
             break;
         }
-      });
-  }
-
-  private addVibratoFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.note
-      ?.getNotations()
-      .flatMap((notation) => notation.getOrnaments())
-      .flatMap((ornament) => ornament.getWavyLines())
-      .forEach((wavyLine) => {
-        opts.spanners.addVibratoFragment({
-          type: wavyLine.getType(),
-          keyIndex: 0,
-          vexflow: { note: opts.vexflow.staveNote },
-        });
       });
   }
 
