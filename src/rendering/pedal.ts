@@ -1,6 +1,9 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import { SpannerData } from './types';
+import { SpannerMap } from './spannermap';
+import { Address } from './address';
 
 /** The result of rendering a pedal. */
 export type PedalRendering = {
@@ -10,9 +13,12 @@ export type PedalRendering = {
   };
 };
 
+type PedalContainer = SpannerMap<null, Pedal>;
+
 /** A piece of a pedal. */
 export type PedalFragment = {
-  type: musicxml.PedalType;
+  type: PedalFragmentType;
+  address: Address<'voice'>;
   musicXml: {
     pedal: musicxml.Pedal;
   };
@@ -21,37 +27,95 @@ export type PedalFragment = {
   };
 };
 
+type PedalFragmentType = musicxml.PedalType | 'unspecified';
+
 /** Represents piano pedal marks. */
 export class Pedal {
   private fragments: [PedalFragment, ...PedalFragment[]];
 
-  constructor(opts: { fragment: PedalFragment }) {
+  private constructor(opts: { fragment: PedalFragment }) {
     this.fragments = [opts.fragment];
   }
 
-  /** Whether the fragment is allowed to be added to the pedal. */
-  isAllowed(fragment: PedalFragment): boolean {
-    switch (util.last(this.fragments)!.type) {
+  static process(data: SpannerData, container: PedalContainer): void {
+    data.musicXml.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal)
+      .forEach((pedal) => {
+        const pedalType = pedal.getType();
+        switch (pedalType) {
+          case 'start':
+          case 'sostenuto':
+          case 'resume':
+            Pedal.commit(
+              {
+                type: pedalType,
+                address: data.address,
+                musicXml: { pedal },
+                vexflow: { staveNote: data.vexflow.staveNote },
+              },
+              container
+            );
+            break;
+          case 'continue':
+          case 'change':
+            Pedal.commit(
+              {
+                type: pedalType,
+                address: data.address,
+                musicXml: { pedal },
+                vexflow: { staveNote: data.vexflow.staveNote },
+              },
+              container
+            );
+            break;
+          case 'stop':
+          case 'discontinue':
+            Pedal.commit(
+              {
+                type: pedalType,
+                address: data.address,
+                musicXml: { pedal },
+                vexflow: { staveNote: data.vexflow.staveNote },
+              },
+              container
+            );
+            break;
+        }
+      });
+  }
+
+  private static commit(fragment: PedalFragment, container: PedalContainer): void {
+    const pedal = container.get(null);
+    const last = pedal?.getLastFragment();
+    const isAllowedType = Pedal.getAllowedTypes(last?.type).includes(fragment.type);
+    const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
+
+    if (fragment.type === 'start' || fragment.type === 'sostenuto' || fragment.type === 'resume') {
+      container.push(null, new Pedal({ fragment }));
+    } else if (pedal && isAllowedType && isOnSameSystem) {
+      pedal.fragments.push(fragment);
+    } else if (pedal && isAllowedType && !isOnSameSystem) {
+      container.push(null, new Pedal({ fragment }));
+    }
+  }
+
+  private static getAllowedTypes(type: PedalFragmentType | undefined): PedalFragmentType[] {
+    switch (type) {
       case 'start':
       case 'sostenuto':
       case 'resume':
       case 'continue':
       case 'change':
-        return (
-          fragment.type === 'continue' ||
-          fragment.type === 'change' ||
-          fragment.type === 'stop' ||
-          fragment.type === 'discontinue'
-        );
+        return ['continue', 'change', 'stop', 'discontinue'];
       case 'stop':
       case 'discontinue':
-        return false;
+        return [];
+      default:
+        return [];
     }
-  }
-
-  /** Adds the fragment to the pedal. */
-  addFragment(fragment: PedalFragment): void {
-    this.fragments.push(fragment);
   }
 
   /** Renders the pedal. */
@@ -66,6 +130,10 @@ export class Pedal {
         pedalMarking: vfPedalMarking,
       },
     };
+  }
+
+  private getLastFragment(): PedalFragment {
+    return util.last(this.fragments)!;
   }
 
   private getVfStaveNotes(): vexflow.StaveNote[] {

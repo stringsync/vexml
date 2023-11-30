@@ -1,9 +1,8 @@
-import * as util from '@/util';
 import { Beam, BeamRendering } from './beam';
 import { Tuplet, TupletRendering } from './tuplet';
 import { Slur, SlurRendering } from './slur';
 import { Wedge, WedgeRendering } from './wedge';
-import { Pedal, PedalFragment, PedalRendering } from './pedal';
+import { Pedal, PedalRendering } from './pedal';
 import { Vibrato, VibratoRendering } from './vibrato';
 import { OctaveShift, OctaveShiftRendering } from './octaveshift';
 import { SpannerData } from './types';
@@ -27,7 +26,7 @@ export class Spanners {
   private tuplets = SpannerMap.keyless<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
   private wedges = SpannerMap.keyless<Wedge>();
-  private pedals = new Array<Pedal>();
+  private pedals = SpannerMap.keyless<Pedal>();
   private vibratos = SpannerMap.keyless<Vibrato>();
   private octaveShifts = SpannerMap.keyless<OctaveShift>();
 
@@ -43,19 +42,9 @@ export class Spanners {
     Tuplet.process(data, this.tuplets);
     Slur.process(data, this.slurs);
     Wedge.process(data, this.wedges);
+    Pedal.process(data, this.pedals);
     Vibrato.process(data, this.vibratos);
     OctaveShift.process(data, this.octaveShifts);
-  }
-
-  /** Adds a pedal fragment. */
-  addPedalFragment(pedalFragment: PedalFragment): void {
-    const pedal = util.last(this.pedals);
-
-    if (pedal?.isAllowed(pedalFragment)) {
-      pedal.addFragment(pedalFragment);
-    } else if (['start', 'sostenuto', 'resume'].includes(pedalFragment.type)) {
-      this.pedals.push(new Pedal({ fragment: pedalFragment }));
-    }
   }
 
   /** Renders all the spanners. */
@@ -66,7 +55,7 @@ export class Spanners {
       tuplets: this.tuplets.values().map((tuplet) => tuplet.render()),
       slurs: this.slurs.values().map((slur) => slur.render()),
       wedges: this.wedges.values().map((wedge) => wedge.render()),
-      pedals: this.pedals.map((pedal) => pedal.render()),
+      pedals: this.pedals.values().map((pedal) => pedal.render()),
       vibratos: this.vibratos.values().map((vibrato) => vibrato.render()),
       octaveShifts: this.octaveShifts.values().map((octaveShift) => octaveShift.render()),
     };
