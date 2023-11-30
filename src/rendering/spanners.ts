@@ -1,7 +1,7 @@
 import * as util from '@/util';
 import { Beam, BeamRendering } from './beam';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
-import { Slur, SlurFragment, SlurRendering } from './slur';
+import { Slur, SlurRendering } from './slur';
 import { Wedge, WedgeRendering } from './wedge';
 import { Pedal, PedalFragment, PedalRendering } from './pedal';
 import { Vibrato, VibratoFragment, VibratoRendering } from './vibrato';
@@ -41,6 +41,7 @@ export class Spanners {
   process(data: SpannerData): void {
     Beam.process(data, this.beams);
     Wedge.process(data, this.wedges);
+    Slur.process(data, this.slurs);
   }
 
   /** Adds a tuplet fragment. */
@@ -51,18 +52,6 @@ export class Spanners {
       tuplet.addFragment(tupletFragment);
     } else if (tupletFragment.type === 'start') {
       this.tuplets.push(new Tuplet({ fragment: tupletFragment }));
-    }
-  }
-
-  /** Adds a slur fragment. */
-  addSlurFragment(slurFragment: SlurFragment): void {
-    const number = slurFragment.slurNumber;
-    const slur = this.slurs.get(number);
-
-    if (slur?.isAllowed(slurFragment)) {
-      slur.addFragment(slurFragment);
-    } else if (slurFragment.type === 'start') {
-      this.slurs.push(number, new Slur({ fragment: slurFragment }));
     }
   }
 

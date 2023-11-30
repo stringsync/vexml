@@ -333,7 +333,6 @@ export class Note {
     vexflow: { staveNote: vexflow.StaveNote };
   }): void {
     this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
@@ -368,24 +367,6 @@ export class Note {
             note: opts.vexflow.staveNote,
           },
         });
-    }
-  }
-
-  private addSlurFragments(opts: { spanners: Spanners; keyIndex: number; vexflow: { staveNote: vexflow.StaveNote } }) {
-    for (const slur of this.getSlurs()) {
-      const slurType = slur.getType();
-      if (!slurType) {
-        continue;
-      }
-
-      opts.spanners.addSlurFragment({
-        type: slurType,
-        slurNumber: slur.getNumber(),
-        vexflow: {
-          note: opts.vexflow.staveNote,
-          keyIndex: opts.keyIndex,
-        },
-      });
     }
   }
 
