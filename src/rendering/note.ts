@@ -171,7 +171,7 @@ export class Note {
 
     for (let index = 0; index < keys.length; index++) {
       opts.spanners.process({
-        keyIndex: 0,
+        keyIndex: index,
         address: opts.address,
         musicXml: {
           directions: notes[index].musicXml.directions,
@@ -181,12 +181,6 @@ export class Note {
         vexflow: {
           staveNote: vfStaveNote,
         },
-      });
-
-      notes[index].addSpannerFragments({
-        spanners: opts.spanners,
-        keyIndex: index,
-        vexflow: { staveNote: vfStaveNote },
       });
 
       noteRenderings.push({
@@ -312,51 +306,5 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXml: { token } }));
-  }
-
-  private addSpannerFragments(opts: {
-    spanners: Spanners;
-    keyIndex: number;
-    vexflow: { staveNote: vexflow.StaveNote };
-  }): void {
-    this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
-      .map((content) => content.pedal)
-      .forEach((pedal) => {
-        const pedalType = pedal.getType();
-        switch (pedalType) {
-          case 'start':
-          case 'sostenuto':
-          case 'resume':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-          case 'continue':
-          case 'change':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-          case 'stop':
-          case 'discontinue':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-        }
-      });
   }
 }
