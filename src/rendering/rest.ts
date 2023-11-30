@@ -163,7 +163,6 @@ export class Rest {
   }
 
   private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
@@ -197,18 +196,6 @@ export class Rest {
             note: opts.vexflow.staveNote,
           },
         });
-    }
-  }
-
-  private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    const beam = util.first(this.musicXml.note?.getBeams() ?? []);
-    if (beam) {
-      opts.spanners.addBeamFragment({
-        type: beam.getBeamValue(),
-        vexflow: {
-          stemmableNote: opts.vexflow.staveNote,
-        },
-      });
     }
   }
 

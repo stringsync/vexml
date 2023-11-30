@@ -1,5 +1,5 @@
 import * as util from '@/util';
-import { Beam, BeamFragment, BeamRendering } from './beam';
+import { Beam, BeamRendering } from './beam';
 import { Tuplet, TupletFragment, TupletRendering } from './tuplet';
 import { Slur, SlurFragment, SlurRendering } from './slur';
 import { Wedge, WedgeRendering } from './wedge';
@@ -23,7 +23,7 @@ export type SpannersRendering = {
 
 /** The accounting for all spanners. */
 export class Spanners {
-  private beams = new Array<Beam>();
+  private beams = SpannerMap.keyless<Beam>();
   private tuplets = new Array<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
   private wedges = SpannerMap.keyless<Wedge>();
@@ -39,22 +39,8 @@ export class Spanners {
 
   /** Extracts and processes all the spanners within the given data. */
   process(data: SpannerData): void {
+    Beam.process(data, this.beams);
     Wedge.process(data, this.wedges);
-  }
-
-  /**
-   * Adds a beam fragment.
-   *
-   * NOTE: This assumes the beam fragment with the lowest number was chosen.
-   */
-  addBeamFragment(beamFragment: BeamFragment): void {
-    const beam = util.last(this.beams);
-
-    if (beam?.isAllowed(beamFragment)) {
-      beam.addFragment(beamFragment);
-    } else if (beamFragment.type === 'begin') {
-      this.beams.push(new Beam({ fragment: beamFragment }));
-    }
   }
 
   /** Adds a tuplet fragment. */
@@ -121,7 +107,7 @@ export class Spanners {
   render(): SpannersRendering {
     return {
       type: 'spanners',
-      beams: this.beams.map((beam) => beam.render()),
+      beams: this.beams.values().map((beam) => beam.render()),
       tuplets: this.tuplets.map((tuplet) => tuplet.render()),
       slurs: this.slurs.values().map((slur) => slur.render()),
       wedges: this.wedges.values().map((wedge) => wedge.render()),
