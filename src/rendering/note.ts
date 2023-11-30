@@ -332,28 +332,11 @@ export class Note {
     keyIndex: number;
     vexflow: { staveNote: vexflow.StaveNote };
   }): void {
-    this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addSlurFragments({ spanners: opts.spanners, vexflow: opts.vexflow, keyIndex: opts.keyIndex });
     this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
     this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
-    // continues, or stops.
-    const beams = util.sortBy(this.musicXml.note.getBeams(), (beam) => beam.getNumber());
-    const beamValue = util.first(beams)?.getBeamValue() ?? null;
-
-    if (beamValue) {
-      opts.spanners.addBeamFragment({
-        type: beamValue,
-        vexflow: {
-          stemmableNote: opts.vexflow.staveNote,
-        },
-      });
-    }
   }
 
   private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {

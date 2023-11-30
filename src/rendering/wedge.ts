@@ -17,6 +17,9 @@ export type WedgeRendering = {
 /** A piece of a wedge. */
 export type WedgeFragment = StartWedgeFragment | ContinueWedgeFragment | StopWedgeFragment | UnspecifiedWedgeFragment;
 
+/** A container for wedges. */
+export type WedgeContainer = SpannerMap<null, Wedge>;
+
 type WedgeFragmentType = WedgeFragment['type'];
 
 type StartWedgeFragment = {
@@ -61,7 +64,7 @@ export class Wedge {
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: SpannerMap<null, Wedge>): void {
+  static process(data: SpannerData, container: WedgeContainer): void {
     // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
     // associated with the first <note> element that follows it in score order that is not in a different voice.
     // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
@@ -139,8 +142,8 @@ export class Wedge {
     }
   }
 
-  /** Conditionally commits the fragment when the fragment can be accepted. */
-  private static commit(fragment: WedgeFragment, container: SpannerMap<null, Wedge>): void {
+  /** Conditionally commits the fragment when it can be accepted. */
+  private static commit(fragment: WedgeFragment, container: WedgeContainer): void {
     const wedge = container.get(null);
     const last = wedge?.getLastFragment();
     const isAllowedType = Wedge.getAllowedTypes(last?.type).includes(fragment.type);
