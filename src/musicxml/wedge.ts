@@ -9,9 +9,9 @@ import { WEDGE_TYPES, WedgeType } from './enums';
 export class Wedge {
   constructor(private element: NamedElement<'wedge'>) {}
 
-  /** Returns the type of the wedge. Defaults to crescendo. */
-  getType(): WedgeType {
-    return this.element.attr('type').withDefault<WedgeType>('crescendo').enum(WEDGE_TYPES);
+  /** Returns the type of the wedge. Defaults to null. */
+  getType(): WedgeType | null {
+    return this.element.attr('type').enum(WEDGE_TYPES);
   }
 
   /** Indicates the gap between the top and bottom of the wedge. Defaults to 0. */

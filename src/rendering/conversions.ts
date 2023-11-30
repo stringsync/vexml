@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import { AccidentalCode } from './accidental';
 import { ClefType, NoteDurationDenominator, NoteheadSuffix, StemDirection } from './enums';
 import { Division } from './division';
+import { BeamFragmentType } from './beam';
 
 /** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
 export const fromAccidentalTypeToAccidentalCode = (
@@ -424,4 +425,20 @@ export const fromClefPropertiesToClefType = (sign: musicxml.ClefSign | null, lin
   }
 
   return 'treble';
+};
+
+/** Converts a nullable `musicxml.BeamValue` to a `BeamFragmentType`. Defaults to null. */
+export const fromBeamValueToBeamFragmentType = (beamValue: musicxml.BeamValue | null): BeamFragmentType | null => {
+  switch (beamValue) {
+    case 'begin':
+      return 'start';
+    case 'continue':
+    case 'backward hook':
+    case 'forward hook':
+      return 'continue';
+    case 'end':
+      return 'stop';
+    default:
+      return null;
+  }
 };

@@ -1,6 +1,8 @@
 import * as vexflow from 'vexflow';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as conversions from './conversions';
+import { SpannerData } from './types';
+import { SpannerMap } from './spannermap';
 
 /** The result of rendering a beam. */
 export type BeamRendering = {
@@ -12,41 +14,68 @@ export type BeamRendering = {
 
 /** A piece of a beam. */
 export type BeamFragment = {
-  type: musicxml.BeamValue;
+  type: BeamFragmentType;
   vexflow: {
     stemmableNote: vexflow.StemmableNote;
   };
 };
 
+export type BeamFragmentType = 'start' | 'continue' | 'stop';
+
+/** A container for wedges. */
+export type BeamContainer = SpannerMap<null, Beam>;
+
 /** Represents a stem connector for a group of notes within a measure. */
 export class Beam {
   private fragments: [BeamFragment, ...BeamFragment[]];
 
-  constructor(opts: { fragment: BeamFragment }) {
+  private constructor(opts: { fragment: BeamFragment }) {
     this.fragments = [opts.fragment];
   }
 
-  /** Whether the fragment can be added to the beam. */
-  isAllowed(fragment: BeamFragment): boolean {
-    switch (util.last(this.fragments.map((fragment) => fragment.type))!) {
-      case 'begin':
-      case 'continue':
-      case 'backward hook':
-      case 'forward hook':
-        return (
-          fragment.type === 'continue' ||
-          fragment.type === 'backward hook' ||
-          fragment.type === 'forward hook' ||
-          fragment.type === 'end'
-        );
-      case 'end':
-        return false;
+  static process(data: SpannerData, container: BeamContainer): void {
+    // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
+    // continues, or stops.
+    const beams = util.sortBy(data.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
+    const beamValue = util.first(beams)?.getBeamValue() ?? null;
+    const type = conversions.fromBeamValueToBeamFragmentType(beamValue);
+
+    if (type) {
+      Beam.commit(
+        {
+          type,
+          vexflow: {
+            stemmableNote: data.vexflow.staveNote,
+          },
+        },
+        container
+      );
     }
   }
 
-  /** Adds the fragment to the beam. */
-  addFragment(fragment: BeamFragment): void {
-    this.fragments.push(fragment);
+  /** Conditionally commits the fragment when it can be accepted. */
+  private static commit(fragment: BeamFragment, container: BeamContainer): void {
+    const beam = container.get(null);
+    const last = beam?.getLastFragment();
+    const isAllowedType = Beam.getAllowedTypes(last?.type).includes(fragment.type);
+
+    if (fragment.type === 'start') {
+      container.push(null, new Beam({ fragment }));
+    } else if (beam && isAllowedType) {
+      beam.fragments.push(fragment);
+    }
+  }
+
+  private static getAllowedTypes(type: BeamFragmentType | undefined): BeamFragmentType[] {
+    switch (type) {
+      case 'start':
+      case 'continue':
+        return ['continue', 'stop'];
+      case 'stop':
+        return [];
+      default:
+        return [];
+    }
   }
 
   /** Renders the beam. */
@@ -58,5 +87,9 @@ export class Beam {
       type: 'beam',
       vexflow: { beam },
     };
+  }
+
+  private getLastFragment(): BeamFragment {
+    return util.last(this.fragments)!;
   }
 }

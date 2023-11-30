@@ -1,12 +1,11 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
-import * as conversions from './conversions';
 import { Config } from './config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
 import { Spanners } from './spanners';
+import { Address } from './address';
 
 /** The result of rendering a Rest. */
 export type RestRendering = {
@@ -72,7 +71,7 @@ export class Rest {
   }
 
   /** Renders the Rest. */
-  render(opts: { voiceEntryCount: number; spanners: Spanners }): RestRendering {
+  render(opts: { voiceEntryCount: number; spanners: Spanners; address: Address<'voice'> }): RestRendering {
     const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
@@ -91,9 +90,17 @@ export class Rest {
         vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
       });
 
-    this.addSpannerFragments({
-      spanners: opts.spanners,
-      vexflow: { staveNote: vfStaveNote },
+    opts.spanners.process({
+      keyIndex: 0,
+      address: opts.address,
+      musicXml: {
+        directions: this.musicXml.directions,
+        note: this.musicXml.note,
+        octaveShift: null,
+      },
+      vexflow: {
+        staveNote: vfStaveNote,
+      },
     });
 
     return {
@@ -137,205 +144,5 @@ export class Rest {
       return true;
     }
     return false;
-  }
-
-  private getTuplets(): musicxml.Tuplet[] {
-    return (
-      this.musicXml.note
-        ?.getNotations()
-        .find((notations) => notations.hasTuplets())
-        ?.getTuplets() ?? []
-    );
-  }
-
-  private addSpannerFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.addBeamFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addTupletFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addWedgeFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addPedalFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addVibratoFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-    this.addOctaveShiftFragments({ spanners: opts.spanners, vexflow: opts.vexflow });
-  }
-
-  private addWedgeFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
-    // associated with the first <note> element that follows it in score order that is not in a different voice.
-    // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
-
-    for (const direction of this.musicXml.directions) {
-      const directionPlacement = direction.getPlacement() ?? 'below';
-      const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
-
-      for (const directionType of direction.getTypes()) {
-        const content = directionType.getContent();
-        if (content.type !== 'wedge') {
-          continue;
-        }
-
-        const wedgeType = content.wedge.getType();
-
-        switch (wedgeType) {
-          case 'crescendo':
-          case 'diminuendo':
-            opts.spanners.addWedgeFragment({
-              type: 'start',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                staveHairpinType: conversions.fromWedgeTypeToStaveHairpinType(wedgeType),
-                position: modifierPosition,
-              },
-            });
-            break;
-          case 'continue':
-          case 'stop':
-            opts.spanners.addWedgeFragment({
-              type: wedgeType,
-              vexflow: {
-                note: opts.vexflow.staveNote,
-              },
-            });
-        }
-      }
-    }
-  }
-
-  private addTupletFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    const tuplet = util.first(this.getTuplets());
-    switch (tuplet?.getType()) {
-      case 'start':
-        opts.spanners.addTupletFragment({
-          type: 'start',
-          vexflow: {
-            location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      case 'stop':
-        opts.spanners.addTupletFragment({
-          type: 'stop',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-        break;
-      default:
-        opts.spanners.addTupletFragment({
-          type: 'unspecified',
-          vexflow: {
-            note: opts.vexflow.staveNote,
-          },
-        });
-    }
-  }
-
-  private addBeamFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    const beam = util.first(this.musicXml.note?.getBeams() ?? []);
-    if (beam) {
-      opts.spanners.addBeamFragment({
-        type: beam.getBeamValue(),
-        vexflow: {
-          stemmableNote: opts.vexflow.staveNote,
-        },
-      });
-    }
-  }
-
-  private addPedalFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
-      .map((content) => content.pedal)
-      .forEach((pedal) => {
-        const pedalType = pedal.getType();
-        switch (pedalType) {
-          case 'start':
-          case 'sostenuto':
-          case 'resume':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-          case 'continue':
-          case 'change':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-          case 'stop':
-          case 'discontinue':
-            opts.spanners.addPedalFragment({
-              type: pedalType,
-              musicXml: { pedal },
-              vexflow: { staveNote: opts.vexflow.staveNote },
-            });
-            break;
-        }
-      });
-  }
-
-  private addVibratoFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.note
-      ?.getNotations()
-      .flatMap((notation) => notation.getOrnaments())
-      .flatMap((ornament) => ornament.getWavyLines())
-      .forEach((wavyLine) => {
-        opts.spanners.addVibratoFragment({
-          type: wavyLine.getType(),
-          keyIndex: 0,
-          vexflow: { note: opts.vexflow.staveNote },
-        });
-      });
-  }
-
-  private addOctaveShiftFragments(opts: { spanners: Spanners; vexflow: { staveNote: vexflow.StaveNote } }): void {
-    this.musicXml.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
-      .map((content) => content.octaveShift)
-      .forEach((octaveShift) => {
-        switch (octaveShift.getType()) {
-          case 'up':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'mb',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
-              },
-            });
-            break;
-          case 'down':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'start',
-              text: octaveShift.getSize().toString(),
-              superscript: 'va',
-              vexflow: {
-                note: opts.vexflow.staveNote,
-                textBracketPosition: vexflow.TextBracketPosition.TOP,
-              },
-            });
-            break;
-          case 'continue':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'continue',
-              vexflow: { note: opts.vexflow.staveNote },
-            });
-            break;
-          case 'stop':
-            opts.spanners.addOctaveShiftFragment({
-              type: 'stop',
-              vexflow: { note: opts.vexflow.staveNote },
-            });
-            break;
-        }
-      });
   }
 }

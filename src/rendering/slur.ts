@@ -2,6 +2,9 @@ import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as conversions from './conversions';
+import { SpannerMap } from './spannermap';
+import { SpannerData } from './types';
+import { Address } from './address';
 
 /** The result of rendering a slur. */
 export type SlurRendering = {
@@ -11,15 +14,22 @@ export type SlurRendering = {
   };
 };
 
+/** The types of slur fragments. */
+export type SlurFragmentType = 'start' | 'continue' | 'stop';
+
 /** Represents a piece of a slur. */
 export type SlurFragment = {
-  type: musicxml.StartStopContinue;
-  slurNumber: number;
+  type: SlurFragmentType;
+  number: number;
+  address: Address;
   vexflow: {
     note: vexflow.Note;
     keyIndex: number;
   };
 };
+
+/** The container for slurs. */
+type SlurContainer = SpannerMap<number, Slur>;
 
 /** Represents a curved line that connects two or more different notes of varying pitch to indicate that they should be
  * played legato.
@@ -27,24 +37,61 @@ export type SlurFragment = {
 export class Slur {
   private fragments: [SlurFragment, ...SlurFragment[]];
 
-  constructor(opts: { fragment: SlurFragment }) {
+  private constructor(opts: { fragment: SlurFragment }) {
     this.fragments = [opts.fragment];
   }
 
-  /** Whether the fragment can be added to the slur. */
-  isAllowed(fragment: SlurFragment): boolean {
-    switch (util.last(this.fragments)!.type) {
-      case 'start':
-      case 'continue':
-        return fragment.type === 'continue' || fragment.type === 'stop';
-      case 'stop':
-        return false;
+  static process(data: SpannerData, container: SlurContainer): void {
+    const note = data.musicXml.note;
+    const isRest = note?.isRest() ?? false;
+    if (!note || isRest) {
+      return;
+    }
+
+    const slurs = note.getNotations().flatMap((notations) => notations.getSlurs());
+    for (const slur of slurs) {
+      const slurType = slur.getType();
+      if (!slurType) {
+        continue;
+      }
+
+      Slur.commit(
+        {
+          type: slurType,
+          number: slur.getNumber(),
+          address: data.address,
+          vexflow: {
+            note: data.vexflow.staveNote,
+            keyIndex: data.keyIndex,
+          },
+        },
+        container
+      );
     }
   }
 
-  /** Adds the fragment to the slur. */
-  addFragment(fragment: SlurFragment): void {
-    this.fragments.push(fragment);
+  private static commit(fragment: SlurFragment, container: SlurContainer): void {
+    const slur = container.get(fragment.number);
+    const last = slur?.getLastFragment();
+    const isAllowedType = Slur.getAllowedType(last?.type).includes(fragment.type);
+
+    if (fragment.type === 'start') {
+      container.push(fragment.number, new Slur({ fragment }));
+    } else if (slur && isAllowedType) {
+      slur.fragments.push(fragment);
+    }
+  }
+
+  private static getAllowedType(type: SlurFragmentType | undefined): SlurFragmentType[] {
+    switch (type) {
+      case 'start':
+      case 'continue':
+        return ['continue', 'stop'];
+      case 'stop':
+        return [];
+      default:
+        return [];
+    }
   }
 
   /** Renders the slur. */
@@ -76,6 +123,10 @@ export class Slur {
         tie: vfTie,
       },
     };
+  }
+
+  private getLastFragment(): SlurFragment {
+    return util.last(this.fragments)!;
   }
 
   private getVfSlurDirection(): number {
