@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as conversions from './conversions';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
 
@@ -14,11 +14,13 @@ export type BeamRendering = {
 
 /** A piece of a beam. */
 export type BeamFragment = {
-  type: musicxml.BeamValue;
+  type: BeamFragmentType;
   vexflow: {
     stemmableNote: vexflow.StemmableNote;
   };
 };
+
+export type BeamFragmentType = 'start' | 'continue' | 'stop';
 
 /** A container for wedges. */
 export type BeamContainer = SpannerMap<null, Beam>;
@@ -36,10 +38,12 @@ export class Beam {
     // continues, or stops.
     const beams = util.sortBy(data.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
     const beamValue = util.first(beams)?.getBeamValue() ?? null;
-    if (beamValue) {
+    const type = conversions.fromBeamValueToBeamFragmentType(beamValue);
+
+    if (type) {
       Beam.commit(
         {
-          type: beamValue,
+          type,
           vexflow: {
             stemmableNote: data.vexflow.staveNote,
           },
@@ -55,21 +59,19 @@ export class Beam {
     const last = beam?.getLastFragment();
     const isAllowedType = Beam.getAllowedTypes(last?.type).includes(fragment.type);
 
-    if (fragment.type === 'begin') {
+    if (fragment.type === 'start') {
       container.push(null, new Beam({ fragment }));
     } else if (beam && isAllowedType) {
       beam.fragments.push(fragment);
     }
   }
 
-  private static getAllowedTypes(type: musicxml.BeamValue | undefined): musicxml.BeamValue[] {
+  private static getAllowedTypes(type: BeamFragmentType | undefined): BeamFragmentType[] {
     switch (type) {
-      case 'begin':
+      case 'start':
       case 'continue':
-      case 'backward hook':
-      case 'forward hook':
-        return ['continue', 'backward hook', 'forward hook', 'end'];
-      case 'end':
+        return ['continue', 'stop'];
+      case 'stop':
         return [];
       default:
         return [];
