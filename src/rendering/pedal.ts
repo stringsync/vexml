@@ -45,45 +45,15 @@ export class Pedal {
       .map((content) => content.pedal)
       .forEach((pedal) => {
         const pedalType = pedal.getType();
-        switch (pedalType) {
-          case 'start':
-          case 'sostenuto':
-          case 'resume':
-            Pedal.commit(
-              {
-                type: pedalType,
-                address: data.address,
-                musicXml: { pedal },
-                vexflow: { staveNote: data.vexflow.staveNote },
-              },
-              container
-            );
-            break;
-          case 'continue':
-          case 'change':
-            Pedal.commit(
-              {
-                type: pedalType,
-                address: data.address,
-                musicXml: { pedal },
-                vexflow: { staveNote: data.vexflow.staveNote },
-              },
-              container
-            );
-            break;
-          case 'stop':
-          case 'discontinue':
-            Pedal.commit(
-              {
-                type: pedalType,
-                address: data.address,
-                musicXml: { pedal },
-                vexflow: { staveNote: data.vexflow.staveNote },
-              },
-              container
-            );
-            break;
-        }
+        Pedal.commit(
+          {
+            type: pedalType,
+            address: data.address,
+            musicXml: { pedal },
+            vexflow: { staveNote: data.vexflow.staveNote },
+          },
+          container
+        );
       });
   }
 
@@ -93,7 +63,7 @@ export class Pedal {
     const isAllowedType = Pedal.getAllowedTypes(last?.type).includes(fragment.type);
     const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
 
-    if (fragment.type === 'start' || fragment.type === 'sostenuto' || fragment.type === 'resume') {
+    if (fragment.type === 'start' || fragment.type === 'resume') {
       container.push(null, new Pedal({ fragment }));
     } else if (pedal && isAllowedType && isOnSameSystem) {
       pedal.fragments.push(fragment);
