@@ -29,7 +29,7 @@ export type BeamContainer = SpannerMap<null, Beam>;
 export class Beam {
   private fragments: [BeamFragment, ...BeamFragment[]];
 
-  constructor(opts: { fragment: BeamFragment }) {
+  private constructor(opts: { fragment: BeamFragment }) {
     this.fragments = [opts.fragment];
   }
 

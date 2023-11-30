@@ -36,7 +36,7 @@ type TupletContainer = SpannerMap<null, Tuplet>;
 export class Tuplet {
   private fragments: [TupletFragment, ...TupletFragment[]];
 
-  constructor(opts: { fragment: TupletFragment }) {
+  private constructor(opts: { fragment: TupletFragment }) {
     this.fragments = [opts.fragment];
   }
 

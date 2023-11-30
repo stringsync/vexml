@@ -33,7 +33,7 @@ type VibratoContainer = SpannerMap<null, Vibrato>;
 export class Vibrato {
   private fragments: [VibratoFragment, ...VibratoFragment[]];
 
-  constructor(opts: { fragment: VibratoFragment }) {
+  private constructor(opts: { fragment: VibratoFragment }) {
     this.fragments = [opts.fragment];
   }
 

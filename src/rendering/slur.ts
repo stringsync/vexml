@@ -37,7 +37,7 @@ type SlurContainer = SpannerMap<number, Slur>;
 export class Slur {
   private fragments: [SlurFragment, ...SlurFragment[]];
 
-  constructor(opts: { fragment: SlurFragment }) {
+  private constructor(opts: { fragment: SlurFragment }) {
     this.fragments = [opts.fragment];
   }
 
