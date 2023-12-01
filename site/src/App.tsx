@@ -1,6 +1,6 @@
 import Controls from './components/Controls';
 import Title from './components/Title';
-import { DEFAULT_MUSICXML } from './constants';
+import DEFAULT_MUSICXML from './default.xml?raw';
 import { useMusicXml } from './hooks/useMusicXml';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
