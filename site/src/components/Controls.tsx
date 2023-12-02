@@ -44,6 +44,11 @@ function Controls(props: ControlsProps) {
     [onChange]
   );
 
+  const onSmFileInputChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    onFileInputChange(files);
+  };
+
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
     onChange(event.currentTarget.value);
   };
@@ -106,7 +111,13 @@ function Controls(props: ControlsProps) {
       <div className="custom-file mb-4">
         <div className="row">
           <div className="col-md-6 col-12 mb-4 mb-md-0">
-            <DragUpload placeholder="Select or drop a MusicXML file here" onChange={onFileInputChange} />
+            <div className="d-none d-md-block">
+              <DragUpload placeholder="Select or drop a MusicXML file here" onChange={onFileInputChange} />
+            </div>
+
+            <div className="d-block d-md-none">
+              <input type="file" className="form-control" onChange={onSmFileInputChange} />
+            </div>
           </div>
           <div className="col-md-6 col-12">
             <textarea
