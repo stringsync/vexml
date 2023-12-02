@@ -22,35 +22,28 @@ export type StatsProps = {
 function Stats(props: StatsProps) {
   const { stats } = props;
 
-  let className: string = 'alert';
   switch (stats.type) {
     case 'loading':
+      return (
+        <div className="alert alert-secondary" role="alert">
+          <i className="bi bi-hourglass-split"></i> Loading...
+        </div>
+      );
     case 'success':
-      className = 'alert alert-secondary';
-      break;
+      return (
+        <div className="alert alert-success" role="alert">
+          <i className="bi bi-check2"></i>{' '}
+          {`${timestamp(stats.timestamp)} (${stats.width}px) rendered in ${stats.durationMs}ms`}
+        </div>
+      );
     case 'error':
-      className = 'alert alert-danger';
-      break;
+      return (
+        <div className="alert alert-danger" role="alert">
+          <i className="bi bi-exclamation"></i>{' '}
+          {`${timestamp(stats.timestamp)} (${stats.width}px) ${stats.error.stack}`}
+        </div>
+      );
   }
-
-  let message: string = '';
-  switch (stats.type) {
-    case 'loading':
-      message = 'Loading...';
-      break;
-    case 'success':
-      message = `${timestamp(stats.timestamp)} (${stats.width}px) rendered in ${stats.durationMs}ms`;
-      break;
-    case 'error':
-      message = `${timestamp(stats.timestamp)} (${stats.width}px) ${stats.error.stack}`;
-      break;
-  }
-
-  return (
-    <div id="alert" className={className} role="alert">
-      {message}
-    </div>
-  );
 }
 
 function timestamp(date: Date): string {
