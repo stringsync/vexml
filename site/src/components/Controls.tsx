@@ -1,14 +1,20 @@
 import { Tooltip } from 'bootstrap';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import DragUpload from './DragUpload';
 import { VEXML_VERSION } from '../constants';
 import { convertFontToBase64, downloadSvgAsImage } from '../helpers';
 import { Vexml } from '@/vexml';
+import Select, { SelectEvent, SelectOption } from './Select';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
 const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
+
+const SELECT_OPTIONS: SelectOption<SelectValue>[] = [
+  { key: 0, text: 'default.xml', value: { type: 'asset', url: '/public/examples/default.xml' } },
+  { key: 1, text: 'Custom', value: { type: 'custom' }, disabled: true },
+];
 
 export type ControlsProps = {
   value: string;
@@ -20,6 +26,15 @@ export type ControlsProps = {
   onSave: () => void;
   onReset: () => void;
 };
+
+type SelectValue =
+  | {
+      type: 'custom';
+    }
+  | {
+      type: 'asset';
+      url: string;
+    };
 
 function Controls(props: ControlsProps) {
   const { onChange } = props;
@@ -51,6 +66,19 @@ function Controls(props: ControlsProps) {
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
     onChange(event.currentTarget.value);
+    setSelection(SELECT_OPTIONS[SELECT_OPTIONS.length - 1].key);
+  };
+
+  // Select handler
+  const [selection, setSelection] = useState(() => SELECT_OPTIONS[0].key);
+  const onSelectChange = async (e: SelectEvent<SelectValue>) => {
+    setSelection(e.key);
+
+    const value = e.value;
+    if (value.type === 'asset') {
+      const response = await fetch(value.url);
+      onChange(await response.text());
+    }
   };
 
   // Save
@@ -111,6 +139,10 @@ function Controls(props: ControlsProps) {
       <div className="custom-file mb-4">
         <div className="row">
           <div className="col-md-6 col-12 mb-4 mb-md-0">
+            <div className="mb-4">
+              <Select options={SELECT_OPTIONS} selectedKey={selection} onChange={onSelectChange} />
+            </div>
+
             <div className="d-none d-md-block">
               <DragUpload placeholder="Select or drop a MusicXML file here" onChange={onFileInputChange} />
             </div>
@@ -122,7 +154,7 @@ function Controls(props: ControlsProps) {
           <div className="col-md-6 col-12">
             <textarea
               className="form-control form-control"
-              style={{ height: '300px' }}
+              style={{ height: '361px' }}
               value={props.value}
               onInput={onTextAreaInput}
             ></textarea>
