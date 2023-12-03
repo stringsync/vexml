@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 export type DragUploadProps = {
   placeholder: string;
@@ -9,24 +9,24 @@ function DragUpload({ placeholder, onChange }: DragUploadProps) {
   const [dragging, setDragging] = useState(false);
   const [files, setFiles] = useState(new Array<File>());
 
-  const onDragEnter: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
+  const onDragEnter: React.DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
     event.stopPropagation();
     setDragging(true);
-  }, []);
+  };
 
-  const onDragLeave: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
+  const onDragLeave: React.DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
     event.stopPropagation();
     setDragging(false);
-  }, []);
+  };
 
-  const onDragOver: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
+  const onDragOver: React.DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
     event.stopPropagation();
-  }, []);
+  };
 
-  const onDrop: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
+  const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
     event.stopPropagation();
     setDragging(false);
@@ -36,16 +36,16 @@ function DragUpload({ placeholder, onChange }: DragUploadProps) {
       setFiles(nextFiles);
       onChange(nextFiles);
     }
-  }, []);
+  };
 
-  const onSelectFile: React.ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
+  const onSelectFile: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const files = event.target.files;
     if (files) {
       const nextFiles = [...files];
       setFiles(nextFiles);
       onChange(nextFiles);
     }
-  }, []);
+  };
 
   return (
     <div>
