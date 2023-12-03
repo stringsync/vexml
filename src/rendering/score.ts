@@ -131,6 +131,17 @@ export class Score {
         vfStave.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.StaveConnector elements from systems.
+    systemRenderings
+      .map((system) => system.vexflow.staveConnector)
+      .filter(
+        (vfStaveConnector): vfStaveConnector is vexflow.StaveConnector =>
+          vfStaveConnector instanceof vexflow.StaveConnector
+      )
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector.setContext(vfContext).draw();
+      });
+
     // Draw vexflow.StaveConnector elements from measures.
     measures
       .flatMap((measure) => measure.vexflow.staveConnectors)
