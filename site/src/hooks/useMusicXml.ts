@@ -5,12 +5,12 @@ import { useDebouncedState } from './useDebouncedState';
 
 const SET_DEBOUNCE_DELAY_MS = 100;
 
+type UpdateType = 'default' | 'normal';
+
 export const useMusicXml = (): {
-  value: string;
-  debouncedValue: string;
-  storedValue: string;
+  value: { current: string; debounced: string; stored: string };
   useDefault: boolean;
-  set: (value: string) => void;
+  update: (type: UpdateType, value: string) => void;
   save: () => void;
   reset: () => void;
 } => {
@@ -20,10 +20,14 @@ export const useMusicXml = (): {
   const [storedUseDefault, setStoredUseDefault] = useLocalStorage(LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY, 'true');
   const [useDefault, setUseDefault] = useState(storedUseDefault);
 
-  const set = useCallback(
-    (nextMusicXml: string) => {
-      setUseDefault('false');
-      setMusicXml(nextMusicXml);
+  const update = useCallback(
+    (type: UpdateType, value: string) => {
+      if (type === 'default') {
+        setUseDefault('true');
+      } else {
+        setUseDefault('false');
+      }
+      setMusicXml(value);
     },
     [setUseDefault, setMusicXml]
   );
@@ -41,11 +45,9 @@ export const useMusicXml = (): {
   }, [setUseDefault, setStoredUseDefault, setMusicXml, setStoredMusicXml]);
 
   return {
-    value: musicXml,
-    debouncedValue: debouncedMusicXml,
-    storedValue: storedMusicXml,
+    value: { current: musicXml, debounced: debouncedMusicXml, stored: storedMusicXml },
     useDefault: useDefault === 'true',
-    set,
+    update,
     reset,
     save,
   };
