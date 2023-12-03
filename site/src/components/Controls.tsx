@@ -90,6 +90,7 @@ function Controls(props: ControlsProps) {
       // way, we don't need to waste an additional parse downstream. Otherwise, this is probably not that big of a
       // and this TODO can be deleted.
       const vexml = await Vexml.fromFile(files[0]);
+      setSelection(CUSTOM_OPTION.key);
       props.onChange('normal', vexml.getDocumentString());
     } catch (e) {
       console.error(`error reading file: ${e}`);
