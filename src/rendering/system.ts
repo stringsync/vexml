@@ -41,6 +41,9 @@ export class System {
 
     const partRenderings = new Array<PartRendering>();
 
+    // eslint-disable-next-line prefer-const
+    let y = opts.y;
+
     util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast }) => {
       if (isFirst) {
         previousPart = util.last(opts.previousSystem?.parts ?? []);
@@ -51,7 +54,7 @@ export class System {
 
       const partRendering = currentPart.render({
         x: opts.x,
-        y: opts.y,
+        y,
         address: address.part(),
         spanners: opts.spanners,
         isLastSystem: opts.isLastSystem,
@@ -61,6 +64,8 @@ export class System {
         nextPart,
       });
       partRenderings.push(partRendering);
+
+      y += partRendering.height;
     });
 
     return {
