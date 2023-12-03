@@ -44,7 +44,7 @@ export class System {
     // eslint-disable-next-line prefer-const
     let y = opts.y;
 
-    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast }) => {
+    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast, index }) => {
       if (isFirst) {
         previousPart = util.last(opts.previousSystem?.parts ?? []);
       }
@@ -55,6 +55,7 @@ export class System {
       const partRendering = currentPart.render({
         x: opts.x,
         y,
+        showMeasureLabels: index === 0,
         address: address.part(),
         spanners: opts.spanners,
         isLastSystem: opts.isLastSystem,

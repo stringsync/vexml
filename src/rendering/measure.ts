@@ -98,6 +98,7 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
+    showLabel: boolean;
     address: Address<'measure'>;
     spanners: Spanners;
     isLastSystem: boolean;
@@ -167,7 +168,7 @@ export class Measure {
     }
 
     const label = new drawables.Text({
-      content: this.getLabel(),
+      content: opts.showLabel ? this.getLabel() : '',
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
