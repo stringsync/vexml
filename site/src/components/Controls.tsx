@@ -4,28 +4,56 @@ import DragUpload from './DragUpload';
 import { VEXML_VERSION } from '../constants';
 import { convertFontToBase64, downloadSvgAsImage } from '../helpers';
 import { Vexml } from '@/vexml';
-import Select, { SelectEvent, SelectOption } from './Select';
+import Select, { SelectEvent, SelectOptionGroup } from './Select';
+import { getExamples } from '../examples/examples';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
 const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
 
-const EXAMPLES = Object.entries(import.meta.glob('../examples/*.musicxml', { as: 'raw' }))
-  .sort()
-  .map(([path, get], index) => ({
-    key: index,
-    text: path.replace('../examples/', ''),
-    value: { type: 'asset' as const, get },
-  }));
-
-const SELECT_OPTIONS: SelectOption<SelectValue>[] = [
-  ...EXAMPLES,
-  { key: EXAMPLES.length, text: 'Custom', value: { type: 'custom' }, disabled: true },
+const GROUPS: SelectOptionGroup<SelectValue>[] = [
+  ...Object.entries(getExamples()).flatMap<SelectOptionGroup<SelectValue>>(([directory, values], groupIndex) =>
+    directory
+      ? {
+          type: 'multi',
+          label: directory,
+          options: values.map((value, fileIndex) => ({
+            key: `${groupIndex}-${directory}-${fileIndex}`,
+            label: value.filename,
+            value: { type: 'asset', get: value.get },
+          })),
+        }
+      : values.map((value, fileIndex) => ({
+          type: 'single',
+          option: {
+            key: `${groupIndex}-${directory}-${fileIndex}`,
+            label: value.filename,
+            value: { type: 'asset', get: value.get },
+          },
+        }))
+  ),
+  {
+    type: 'multi',
+    label: 'Other',
+    options: [
+      {
+        key: 'custom',
+        label: 'Custom',
+        value: { type: 'custom' },
+        disabled: true,
+      },
+    ],
+  },
 ];
 
-const DEFAULT_OPTION = SELECT_OPTIONS[0];
-const CUSTOM_OPTION = SELECT_OPTIONS[SELECT_OPTIONS.length - 1];
+const DEFAULT_OPTION_GROUP = GROUPS[0];
+const DEFAULT_OPTION =
+  DEFAULT_OPTION_GROUP.type === 'multi' ? DEFAULT_OPTION_GROUP.options[0] : DEFAULT_OPTION_GROUP.option;
+
+const CUSTOM_OPTION_GROUP = GROUPS[GROUPS.length - 1];
+const CUSTOM_OPTION =
+  CUSTOM_OPTION_GROUP.type === 'multi' ? CUSTOM_OPTION_GROUP.options[0] : CUSTOM_OPTION_GROUP.option;
 
 type ChangeType = 'default' | 'normal';
 
@@ -82,11 +110,12 @@ function Controls(props: ControlsProps) {
   const [selection, setSelection] = useState(() => CUSTOM_OPTION.key);
 
   const onSelectChange = async (e: SelectEvent<SelectValue>) => {
-    setSelection(e.key);
-
     const value = e.value;
     if (value.type === 'asset') {
-      value.get().then((musicXml) => props.onChange('normal', musicXml));
+      value.get().then((musicXml) => {
+        props.onChange('normal', musicXml);
+        setSelection(e.key);
+      });
     }
   };
 
@@ -158,7 +187,7 @@ function Controls(props: ControlsProps) {
         <div className="row">
           <div className="col-md-6 col-12 mb-4 mb-md-0">
             <div className="mb-4">
-              <Select options={SELECT_OPTIONS} selectedKey={selection} onChange={onSelectChange} />
+              <Select groups={GROUPS} selectedKey={selection} onChange={onSelectChange} />
             </div>
 
             <div className="d-none d-md-block">
