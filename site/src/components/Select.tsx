@@ -1,38 +1,79 @@
 export type SelectProps<T> = {
-  options: SelectOption<T>[];
-  selectedKey: React.Key;
+  groups: SelectOptionGroup<T>[];
+  selectedKey: string;
   onChange: (event: SelectEvent<T>) => void;
 };
 
+type OptionGroupProps<T> = {
+  group: MultiSelectOptionGroup<T>;
+};
+
+type OptionProps<T> = {
+  option: SelectOption<T>;
+};
+
 export type SelectEvent<T> = {
-  key: React.Key;
+  key: string;
   value: T;
 };
 
+export type SelectOptionGroup<T> = MultiSelectOptionGroup<T> | SingleSelectOptionGroup<T>;
+
+export type MultiSelectOptionGroup<T> = {
+  type: 'multi';
+  label: string;
+  options: SelectOption<T>[];
+};
+
+export type SingleSelectOptionGroup<T> = {
+  type: 'single';
+  option: SelectOption<T>;
+};
+
 export type SelectOption<T> = {
-  text: string;
-  key: React.Key;
+  label: string;
+  key: string;
   value: T;
   disabled?: boolean;
 };
 
 function Select<T>(props: SelectProps<T>) {
-  const selectedIndex = props.options.findIndex((option) => option.key === props.selectedKey);
-
   const onChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
-    const index = parseInt(e.target.value, 10);
-    const option = props.options[index];
-    props.onChange({ key: option.key, value: option.value });
+    const key = e.target.value;
+    const value = props.groups
+      .flatMap((group) => (group.type === 'multi' ? group.options : group.option))
+      .find((option) => option.key === key)!.value;
+    props.onChange({ key, value });
   };
 
   return (
-    <select className="form-select" onChange={onChange} value={selectedIndex}>
-      {props.options.map((option, index) => (
-        <option key={option.key} value={index} disabled={option.disabled ?? false}>
-          {option.text}
-        </option>
-      ))}
+    <select className="form-select" onChange={onChange} value={props.selectedKey}>
+      {props.groups.map((group) =>
+        group.type === 'multi' ? (
+          <OptionGroup key={group.label} group={group} />
+        ) : (
+          <Option key={group.option.key} option={group.option} />
+        )
+      )}
     </select>
+  );
+}
+
+function OptionGroup<T>({ group }: OptionGroupProps<T>) {
+  return (
+    <optgroup label={group.label}>
+      {group.options.map((option) => (
+        <Option key={option.key} option={option} />
+      ))}
+    </optgroup>
+  );
+}
+
+function Option<T>({ option }: OptionProps<T>) {
+  return (
+    <option key={option.key} value={option.key} disabled={option.disabled ?? false}>
+      {option.label}
+    </option>
   );
 }
 
