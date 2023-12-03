@@ -1,5 +1,5 @@
 import { Tooltip } from 'bootstrap';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DragUpload from './DragUpload';
 import { VEXML_VERSION } from '../constants';
 import { convertFontToBase64, downloadSvgAsImage } from '../helpers';
@@ -52,27 +52,22 @@ type SelectValue =
     };
 
 function Controls(props: ControlsProps) {
-  const { onChange } = props;
-
   // MusicXML change handlers
-  const onFileInputChange = useCallback(
-    async (files: File[]) => {
-      if (files.length === 0) {
-        return;
-      }
+  const onFileInputChange = async (files: File[]) => {
+    if (files.length === 0) {
+      return;
+    }
 
-      try {
-        // TODO: Consider propagating the Vexml instance around the application instead of the document string. That
-        // way, we don't need to waste an additional parse downstream. Otherwise, this is probably not that big of a
-        // and this TODO can be deleted.
-        const vexml = await Vexml.fromFile(files[0]);
-        onChange('normal', vexml.getDocumentString());
-      } catch (e) {
-        console.error(`error reading file: ${e}`);
-      }
-    },
-    [onChange]
-  );
+    try {
+      // TODO: Consider propagating the Vexml instance around the application instead of the document string. That
+      // way, we don't need to waste an additional parse downstream. Otherwise, this is probably not that big of a
+      // and this TODO can be deleted.
+      const vexml = await Vexml.fromFile(files[0]);
+      props.onChange('normal', vexml.getDocumentString());
+    } catch (e) {
+      console.error(`error reading file: ${e}`);
+    }
+  };
 
   const onSmFileInputChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -80,7 +75,7 @@ function Controls(props: ControlsProps) {
   };
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
-    onChange('normal', event.currentTarget.value);
+    props.onChange('normal', event.currentTarget.value);
     setSelection(CUSTOM_OPTION.key);
   };
 
@@ -92,7 +87,7 @@ function Controls(props: ControlsProps) {
 
     const value = e.value;
     if (value.type === 'asset') {
-      Vexml.fromURL(value.url).then((vexml) => onChange('normal', vexml.getDocumentString()));
+      Vexml.fromURL(value.url).then((vexml) => props.onChange('normal', vexml.getDocumentString()));
     }
   };
 
@@ -101,7 +96,7 @@ function Controls(props: ControlsProps) {
     setSelection(DEFAULT_OPTION.key);
 
     if (DEFAULT_OPTION.value.type === 'asset') {
-      Vexml.fromURL(DEFAULT_OPTION.value.url).then((vexml) => onChange('default', vexml.getDocumentString()));
+      Vexml.fromURL(DEFAULT_OPTION.value.url).then((vexml) => props.onChange('default', vexml.getDocumentString()));
     }
   }
 
