@@ -48,6 +48,7 @@ const GROUPS: SelectOptionGroup<SelectValue>[] = [
 ];
 
 const DEFAULT_OPTION_GROUP = GROUPS[0];
+// NOTE: This can be updated to target any option.
 const DEFAULT_OPTION =
   DEFAULT_OPTION_GROUP.type === 'multi' ? DEFAULT_OPTION_GROUP.options[0] : DEFAULT_OPTION_GROUP.option;
 
@@ -111,9 +112,10 @@ function Controls(props: ControlsProps) {
   const [selection, setSelection] = useState(() => CUSTOM_OPTION.key);
 
   const onSelectChange = async (e: SelectEvent<SelectValue>) => {
-    const value = e.value;
-    if (value.type === 'asset') {
-      value.get().then((musicXml) => {
+    if (e.key === DEFAULT_OPTION.key) {
+      props.onReset();
+    } else if (e.value.type === 'asset') {
+      e.value.get().then((musicXml) => {
         props.onChange('normal', musicXml);
         setSelection(e.key);
       });
