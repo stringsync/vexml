@@ -11,18 +11,17 @@ const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
 const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
 
+const EXAMPLES = Object.entries(import.meta.glob('../examples/*.musicxml', { as: 'raw' }))
+  .sort()
+  .map(([path, get], index) => ({
+    key: index,
+    text: path.replace('../examples/', ''),
+    value: { type: 'asset' as const, get },
+  }));
+
 const SELECT_OPTIONS: SelectOption<SelectValue>[] = [
-  {
-    key: 0,
-    text: '01a-Pitches-Pitches.musicxml',
-    value: { type: 'asset', url: '/public/examples/01a-Pitches-Pitches.musicxml' },
-  },
-  {
-    key: 1,
-    text: '01b-Pitches-Intervals.musicxml',
-    value: { type: 'asset', url: '/public/examples/01b-Pitches-Intervals.musicxml' },
-  },
-  { key: 2, text: 'Custom', value: { type: 'custom' }, disabled: true },
+  ...EXAMPLES,
+  { key: EXAMPLES.length, text: 'Custom', value: { type: 'custom' }, disabled: true },
 ];
 
 const DEFAULT_OPTION = SELECT_OPTIONS[0];
@@ -48,7 +47,7 @@ type SelectValue =
     }
   | {
       type: 'asset';
-      url: string;
+      get: () => Promise<string>;
     };
 
 function Controls(props: ControlsProps) {
@@ -87,7 +86,7 @@ function Controls(props: ControlsProps) {
 
     const value = e.value;
     if (value.type === 'asset') {
-      Vexml.fromURL(value.url).then((vexml) => props.onChange('normal', vexml.getDocumentString()));
+      value.get().then((musicXml) => props.onChange('normal', musicXml));
     }
   };
 
@@ -96,7 +95,7 @@ function Controls(props: ControlsProps) {
     setSelection(DEFAULT_OPTION.key);
 
     if (DEFAULT_OPTION.value.type === 'asset') {
-      Vexml.fromURL(DEFAULT_OPTION.value.url).then((vexml) => props.onChange('default', vexml.getDocumentString()));
+      DEFAULT_OPTION.value.get().then((musicXml) => props.onChange('default', musicXml));
     }
   }
 
