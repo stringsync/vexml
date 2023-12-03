@@ -47,6 +47,7 @@ export class Part {
   render(opts: {
     x: number;
     y: number;
+    showMeasureLabels: boolean;
     address: Address<'part'>;
     spanners: Spanners;
     targetSystemWidth: number;
@@ -83,6 +84,7 @@ export class Part {
       const measureRendering = currentMeasure.render({
         x,
         y,
+        showLabel: opts.showMeasureLabels,
         address: opts.address.measure(),
         spanners: opts.spanners,
         isLastSystem: opts.isLastSystem,
