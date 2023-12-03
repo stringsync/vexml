@@ -1,4 +1,5 @@
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Part } from './part';
 import { PartRendering } from './part';
@@ -10,6 +11,7 @@ export type SystemRendering = {
   type: 'system';
   address: Address<'system'>;
   parts: PartRendering[];
+  vexflow: { staveConnector: vexflow.StaveConnector | null };
 };
 
 /**
@@ -69,10 +71,13 @@ export class System {
       y += partRendering.height;
     });
 
+    const vfStaveConnector = this.getVfStaveConnector(partRenderings);
+
     return {
       type: 'system',
       address,
       parts: partRenderings,
+      vexflow: { staveConnector: vfStaveConnector },
     };
   }
 
@@ -113,5 +118,37 @@ export class System {
 
   private getMeasureCount(): number {
     return this.parts[0]?.getMeasures().length ?? 0;
+  }
+
+  private getVfStaveConnector(partRenderings: PartRendering[]): vexflow.StaveConnector | null {
+    if (partRenderings.length <= 1) {
+      return null;
+    }
+
+    const topPart = util.first(partRenderings);
+    const bottomPart = util.last(partRenderings);
+    if (!topPart || !bottomPart) {
+      return null;
+    }
+
+    const topMeasure = util.first(topPart.measures);
+    const bottomMeasure = util.first(bottomPart.measures);
+    if (!topMeasure || !bottomMeasure) {
+      return null;
+    }
+
+    const topMeasureFragment = util.first(topMeasure.fragments);
+    const bottomMeasureFragment = util.first(bottomMeasure.fragments);
+    if (!topMeasureFragment || !bottomMeasureFragment) {
+      return null;
+    }
+
+    const topVfStave = util.first(topMeasureFragment.staves)?.vexflow.stave;
+    const bottomVfStave = util.first(bottomMeasureFragment.staves)?.vexflow.stave;
+    if (!topVfStave || !bottomVfStave) {
+      return null;
+    }
+
+    return new vexflow.StaveConnector(topVfStave, bottomVfStave).setType('singleLeft');
   }
 }
