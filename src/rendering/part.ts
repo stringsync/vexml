@@ -12,6 +12,7 @@ const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 /** The result of rendering a Part. */
 export type PartRendering = {
   id: string;
+  height: number;
   address: Address<'part'>;
   vexflow: {
     staveConnector: vexflow.StaveConnector | null;
@@ -106,8 +107,16 @@ export class Part {
       x += measureRendering.width;
     });
 
+    const height = util.max(
+      measureRenderings
+        .flatMap((measure) => measure.fragments)
+        .flatMap((measureFragment) => measureFragment.staves)
+        .map((stave) => stave.vexflow.stave.getBoundingBox().getH())
+    );
+
     return {
       id: this.musicXml.part.getId(),
+      height,
       address: opts.address,
       vexflow: { staveConnector: vfStaveConnector },
       measures: measureRenderings,
