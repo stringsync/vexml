@@ -12,17 +12,32 @@ const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
 
 const SELECT_OPTIONS: SelectOption<SelectValue>[] = [
-  { key: 0, text: 'default.xml', value: { type: 'asset', url: '/public/examples/default.xml' } },
-  { key: 1, text: 'Custom', value: { type: 'custom' }, disabled: true },
+  {
+    key: 0,
+    text: '01a-Pitches-Pitches.musicxml',
+    value: { type: 'asset', url: '/public/examples/01a-Pitches-Pitches.musicxml' },
+  },
+  {
+    key: 1,
+    text: '01b-Pitches-Intervals.musicxml',
+    value: { type: 'asset', url: '/public/examples/01b-Pitches-Intervals.musicxml' },
+  },
+  { key: 2, text: 'Custom', value: { type: 'custom' }, disabled: true },
 ];
+
+const DEFAULT_OPTION = SELECT_OPTIONS[0];
+const CUSTOM_OPTION = SELECT_OPTIONS[SELECT_OPTIONS.length - 1];
+
+type ChangeType = 'default' | 'normal';
 
 export type ControlsProps = {
   value: string;
+  useDefault: boolean;
   containerId: string;
   saveDisabled: boolean;
   resetDisabled: boolean;
   reportDisabled: boolean;
-  onChange: (value: string) => void;
+  onChange: (type: ChangeType, value: string) => void;
   onSave: () => void;
   onReset: () => void;
 };
@@ -51,7 +66,7 @@ function Controls(props: ControlsProps) {
         // way, we don't need to waste an additional parse downstream. Otherwise, this is probably not that big of a
         // and this TODO can be deleted.
         const vexml = await Vexml.fromFile(files[0]);
-        onChange(vexml.getDocumentString());
+        onChange('normal', vexml.getDocumentString());
       } catch (e) {
         console.error(`error reading file: ${e}`);
       }
@@ -65,21 +80,30 @@ function Controls(props: ControlsProps) {
   };
 
   const onTextAreaInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
-    onChange(event.currentTarget.value);
-    setSelection(SELECT_OPTIONS[SELECT_OPTIONS.length - 1].key);
+    onChange('normal', event.currentTarget.value);
+    setSelection(CUSTOM_OPTION.key);
   };
 
   // Select handler
-  const [selection, setSelection] = useState(() => SELECT_OPTIONS[0].key);
+  const [selection, setSelection] = useState(() => CUSTOM_OPTION.key);
+
   const onSelectChange = async (e: SelectEvent<SelectValue>) => {
     setSelection(e.key);
 
     const value = e.value;
     if (value.type === 'asset') {
-      const response = await fetch(value.url);
-      onChange(await response.text());
+      Vexml.fromURL(value.url).then((vexml) => onChange('normal', vexml.getDocumentString()));
     }
   };
+
+  // Handle useDefault
+  if (props.useDefault && selection !== DEFAULT_OPTION.key) {
+    setSelection(DEFAULT_OPTION.key);
+
+    if (DEFAULT_OPTION.value.type === 'asset') {
+      Vexml.fromURL(DEFAULT_OPTION.value.url).then((vexml) => onChange('default', vexml.getDocumentString()));
+    }
+  }
 
   // Save
   const saveButtonRef = useRef<HTMLButtonElement>(null);
