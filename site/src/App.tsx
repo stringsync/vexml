@@ -1,6 +1,5 @@
 import Controls from './components/Controls';
 import Title from './components/Title';
-import DEFAULT_MUSICXML from './default.xml?raw';
 import { useMusicXml } from './hooks/useMusicXml';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
@@ -33,9 +32,7 @@ function App() {
 
   const containerId = useId();
 
-  const value = musicXml.useDefault ? DEFAULT_MUSICXML : musicXml.value;
-  const debouncedValue = musicXml.useDefault ? DEFAULT_MUSICXML : musicXml.debouncedValue;
-  const saveDisabled = musicXml.useDefault || musicXml.value === musicXml.storedValue;
+  const saveDisabled = musicXml.useDefault || musicXml.value.current === musicXml.value.stored;
   const resetDisabled = musicXml.useDefault;
 
   return (
@@ -45,12 +42,13 @@ function App() {
       <br />
 
       <Controls
-        value={value}
+        value={musicXml.value.current}
+        useDefault={musicXml.useDefault}
         containerId={containerId}
         saveDisabled={saveDisabled}
         resetDisabled={resetDisabled}
         reportDisabled={false}
-        onChange={musicXml.set}
+        onChange={musicXml.update}
         onSave={musicXml.save}
         onReset={musicXml.reset}
       />
@@ -59,7 +57,7 @@ function App() {
 
       <Stats stats={stats} />
 
-      <Vexml musicXml={debouncedValue} containerId={containerId} onRender={onRender} />
+      <Vexml musicXml={musicXml.value.debounced} containerId={containerId} onRender={onRender} />
     </div>
   );
 }
