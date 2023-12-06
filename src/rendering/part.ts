@@ -86,12 +86,11 @@ export class Part {
         nextMeasure = util.first(opts.nextPart?.measures ?? []);
       }
 
-      let targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
+      const targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
       const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
 
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
-        targetSystemWidth -= STAVE_CONNECTOR_BRACE_WIDTH;
       }
 
       const measureRendering = currentMeasure.render({
