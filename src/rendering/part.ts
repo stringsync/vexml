@@ -27,11 +27,13 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
+  private name: string;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
 
-  constructor(opts: { config: Config; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+  constructor(opts: { config: Config; name: string; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
     this.config = opts.config;
+    this.name = opts.name;
     this.musicXml = opts.musicXml;
     this.measures = opts.measures;
   }
