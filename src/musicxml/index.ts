@@ -32,4 +32,3 @@ export * from './types';
 export * from './wavyline';
 export * from './wedge';
 export * from './words';
-export * from './partlist';
