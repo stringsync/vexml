@@ -12,6 +12,7 @@ export class Seed {
   private config: Config;
   private musicXml: {
     parts: musicxml.Part[];
+    partDetails: musicxml.PartDetail[];
     staveLayouts: musicxml.StaveLayout[];
   };
 
@@ -19,6 +20,7 @@ export class Seed {
     config: Config;
     musicXml: {
       parts: musicxml.Part[];
+      partDetails: musicxml.PartDetail[];
       staveLayouts: musicxml.StaveLayout[];
     };
   }) {
@@ -42,6 +44,7 @@ export class Seed {
         const partId = part.getId();
         return new Part({
           config: this.config,
+          name: this.getPartName(partId),
           musicXml: { part },
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
         });
@@ -169,6 +172,17 @@ export class Seed {
     return result;
   }
 
+  @util.memoize()
+  private getPartNameByPartId(): Record<string, string> {
+    const result: Record<string, string> = {};
+
+    for (const partDetail of this.musicXml.partDetails) {
+      result[partDetail.id] = partDetail.name;
+    }
+
+    return result;
+  }
+
   private getMeasures(partId: string): Measure[] {
     const measuresByPartId = this.getMeasuresByPartId();
     return measuresByPartId[partId];
@@ -182,6 +196,11 @@ export class Seed {
   private getMeasureEntryGroups(partId: string): MeasureEntry[][] {
     const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
     return measureEntryGroupsByPartId[partId];
+  }
+
+  private getPartName(partId: string): string {
+    const partNameByPartId = this.getPartNameByPartId();
+    return partNameByPartId[partId] ?? '';
   }
 
   /** Returns the stave signature that is active at the beginning of the measure. */

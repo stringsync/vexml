@@ -242,6 +242,7 @@ export class Score {
       config: this.config,
       musicXml: {
         parts: this.musicXml.scorePartwise?.getParts() ?? [],
+        partDetails: this.musicXml.scorePartwise?.getPartDetails() ?? [],
         staveLayouts: this.musicXml.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
     });
