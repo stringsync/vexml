@@ -44,9 +44,20 @@ export class Part {
     return this.measures;
   }
 
+  getStaveOffset(): number {
+    let result = 0;
+
+    if (this.getStaveCount() > 1) {
+      result += STAVE_CONNECTOR_BRACE_WIDTH;
+    }
+
+    return result;
+  }
+
   render(opts: {
     x: number;
     y: number;
+    maxStaveOffset: number;
     showMeasureLabels: boolean;
     address: Address<'part'>;
     spanners: Spanners;
@@ -58,7 +69,7 @@ export class Part {
   }): PartRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
-    let x = opts.x;
+    let x = opts.x + opts.maxStaveOffset;
     const y = opts.y + this.getTopPadding();
 
     let vfStaveConnector: vexflow.StaveConnector | null = null;
@@ -75,10 +86,12 @@ export class Part {
         nextMeasure = util.first(opts.nextPart?.measures ?? []);
       }
 
+      let targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
       const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
 
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
+        targetSystemWidth -= STAVE_CONNECTOR_BRACE_WIDTH;
       }
 
       const measureRendering = currentMeasure.render({
@@ -89,7 +102,7 @@ export class Part {
         spanners: opts.spanners,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
-        targetSystemWidth: opts.targetSystemWidth,
+        targetSystemWidth,
         systemMeasureIndex,
         previousMeasure,
         nextMeasure,
@@ -130,10 +143,7 @@ export class Part {
     return StaveSignature.toMeasureEntryGroups({ part: this.musicXml.part });
   }
 
-  private getTopPadding(): number {
-    return util.max(this.measures.map((measure) => measure.getTopPadding()));
-  }
-
+  @util.memoize()
   private getStaveCount(): number {
     return util.max(
       this.getMeasureEntryGroups()
@@ -141,5 +151,9 @@ export class Part {
         .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
         .map((entry) => entry.getStaveCount())
     );
+  }
+
+  private getTopPadding(): number {
+    return util.max(this.measures.map((measure) => measure.getTopPadding()));
   }
 }
