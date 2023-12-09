@@ -2,7 +2,6 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Measure, MeasureRendering } from './measure';
-import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Address } from './address';
 import { Spanners } from './spanners';
@@ -32,12 +31,20 @@ export class Part {
   private name: PartName | null;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
+  private staveCount: number;
 
-  constructor(opts: { config: Config; name: PartName | null; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+  constructor(opts: {
+    config: Config;
+    name: PartName | null;
+    musicXml: { part: musicxml.Part };
+    measures: Measure[];
+    staveCount: number;
+  }) {
     this.config = opts.config;
     this.name = opts.name;
     this.musicXml = opts.musicXml;
     this.measures = opts.measures;
+    this.staveCount = opts.staveCount;
   }
 
   getId(): string {
@@ -51,7 +58,7 @@ export class Part {
   getStaveOffset(): number {
     let result = 0;
 
-    if (this.getStaveCount() > 1) {
+    if (this.staveCount > 1) {
       result += STAVE_CONNECTOR_BRACE_WIDTH;
     }
     if (this.name) {
@@ -96,7 +103,7 @@ export class Part {
 
       const targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
 
-      const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
+      const hasStaveConnectorBrace = isFirst && this.staveCount > 1;
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
       }
@@ -156,21 +163,6 @@ export class Part {
       name,
       measures: measureRenderings,
     };
-  }
-
-  @util.memoize()
-  private getMeasureEntryGroups() {
-    return StaveSignature.toMeasureEntryGroups({ part: this.musicXml.part });
-  }
-
-  @util.memoize()
-  private getStaveCount(): number {
-    return util.max(
-      this.getMeasureEntryGroups()
-        .flat()
-        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
-        .map((entry) => entry.getStaveCount())
-    );
   }
 
   private getTopPadding(): number {
