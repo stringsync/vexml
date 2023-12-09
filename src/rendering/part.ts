@@ -133,19 +133,18 @@ export class Part {
       x += measureRendering.width;
     });
 
-    const height = util.max(
-      measureRenderings
-        .flatMap((measure) => measure.fragments)
-        .flatMap((measureFragment) => measureFragment.staves)
-        .map((stave) => stave.vexflow.stave.getBoundingBox().getH())
-    );
+    const firstMeasureRendering = util.first(measureRenderings);
+    const topY = this.getTopY(firstMeasureRendering);
+    const bottomY = this.getBottomY(firstMeasureRendering);
+    const middleY = topY + (bottomY - topY) / 2;
+
+    const height = bottomY - topY;
 
     let name: PartNameRendering | null = null;
-    const firstMeasureRendering = util.first(measureRenderings);
     if (opts.isFirstSystem && firstMeasureRendering && this.name) {
       name = this.name.render({
         x: 0,
-        y: this.getMiddleY(firstMeasureRendering) + this.name.getApproximateHeight() / 2,
+        y: middleY + this.name.getApproximateHeight() / 2,
       });
     }
 
@@ -178,23 +177,40 @@ export class Part {
     return util.max(this.measures.map((measure) => measure.getTopPadding()));
   }
 
-  private getMiddleY(measureRendering: MeasureRendering): number {
+  private getTopY(measureRendering: MeasureRendering | null): number {
+    if (!measureRendering) {
+      return 0;
+    }
+
     const fragment = util.first(measureRendering.fragments);
     if (!fragment) {
       return 0;
     }
 
     const topStave = util.first(fragment.staves);
-    const bottomStave = util.last(fragment.staves);
-    if (!topStave || !bottomStave) {
+    if (!topStave) {
       return 0;
     }
 
-    const topY = topStave.vexflow.stave.getYForLine(0);
+    return topStave.vexflow.stave.getYForLine(0);
+  }
+
+  private getBottomY(measureRendering: MeasureRendering | null): number {
+    if (!measureRendering) {
+      return 0;
+    }
+
+    const fragment = util.first(measureRendering.fragments);
+    if (!fragment) {
+      return 0;
+    }
+
+    const bottomStave = util.last(fragment.staves);
+    if (!bottomStave) {
+      return 0;
+    }
 
     const bottomLine = bottomStave.vexflow.stave.getNumLines() - 1;
-    const bottomY = bottomStave.vexflow.stave.getYForLine(bottomLine);
-
-    return (topY + bottomY) / 2;
+    return bottomStave.vexflow.stave.getYForLine(bottomLine);
   }
 }

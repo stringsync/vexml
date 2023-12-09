@@ -50,10 +50,10 @@ export class System {
 
     util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast, index }) => {
       if (isFirst) {
-        previousPart = util.last(opts.previousSystem?.parts ?? []);
+        previousPart = opts.previousSystem?.parts[index] ?? null;
       }
       if (isLast) {
-        nextPart = util.first(opts.nextSystem?.parts ?? []);
+        nextPart = opts.nextSystem?.parts[index] ?? null;
       }
 
       const partRendering = currentPart.render({
