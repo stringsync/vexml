@@ -45,6 +45,7 @@ export class Seed {
         const partId = part.getId();
         return new Part({
           config: this.config,
+          staveCount: this.getStaveCount(partId),
           name: measureStartIndex === 0 ? this.getPartName(partId) : null,
           musicXml: { part },
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
