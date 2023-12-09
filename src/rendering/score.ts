@@ -66,11 +66,12 @@ export class Score {
     y += this.getTopSystemDistance();
 
     // Render the entire hierarchy.
-    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isLast }) => {
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isFirst, isLast }) => {
       const systemRendering = currentSystem.render({
         x,
         y,
         width: opts.width - END_BARLINE_OFFSET,
+        isFirstSystem: isFirst,
         isLastSystem: isLast,
         previousSystem,
         nextSystem,
@@ -123,6 +124,13 @@ export class Score {
 
     // Draw the title.
     titleRendering?.text.draw(vfContext);
+
+    // Draw the part names.
+    parts
+      .map((part) => part.name)
+      .forEach((partName) => {
+        partName?.text.draw(vfContext);
+      });
 
     // Draw vexflow.Stave elements.
     staves

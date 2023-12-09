@@ -6,6 +6,7 @@ import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Address } from './address';
 import { Spanners } from './spanners';
+import { PartName, PartNameRendering } from './partname';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
@@ -17,6 +18,7 @@ export type PartRendering = {
   vexflow: {
     staveConnector: vexflow.StaveConnector | null;
   };
+  name: PartNameRendering | null;
   measures: MeasureRendering[];
 };
 
@@ -27,11 +29,11 @@ export type PartRendering = {
  */
 export class Part {
   private config: Config;
-  private name: string;
+  private name: PartName | null;
   private musicXml: { part: musicxml.Part };
   private measures: Measure[];
 
-  constructor(opts: { config: Config; name: string; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
+  constructor(opts: { config: Config; name: PartName | null; musicXml: { part: musicxml.Part }; measures: Measure[] }) {
     this.config = opts.config;
     this.name = opts.name;
     this.musicXml = opts.musicXml;
@@ -52,6 +54,9 @@ export class Part {
     if (this.getStaveCount() > 1) {
       result += STAVE_CONNECTOR_BRACE_WIDTH;
     }
+    if (this.name) {
+      result += this.name.getWidth();
+    }
 
     return result;
   }
@@ -65,6 +70,7 @@ export class Part {
     spanners: Spanners;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
+    isFirstSystem: boolean;
     isLastSystem: boolean;
     previousPart: Part | null;
     nextPart: Part | null;
@@ -89,10 +95,14 @@ export class Part {
       }
 
       const targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
-      const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
 
+      const hasStaveConnectorBrace = isFirst && this.getStaveCount() > 1;
       if (hasStaveConnectorBrace) {
         x += STAVE_CONNECTOR_BRACE_WIDTH;
+      }
+
+      if (isFirst && this.name) {
+        x += this.name.getWidth();
       }
 
       const measureRendering = currentMeasure.render({
@@ -130,11 +140,21 @@ export class Part {
         .map((stave) => stave.vexflow.stave.getBoundingBox().getH())
     );
 
+    let name: PartNameRendering | null = null;
+    const firstMeasureRendering = util.first(measureRenderings);
+    if (opts.isFirstSystem && firstMeasureRendering && this.name) {
+      name = this.name.render({
+        x: 0,
+        y: this.getMiddleY(firstMeasureRendering) + this.name.getApproximateHeight() / 2,
+      });
+    }
+
     return {
       id: this.musicXml.part.getId(),
       height,
       address: opts.address,
       vexflow: { staveConnector: vfStaveConnector },
+      name,
       measures: measureRenderings,
     };
   }
@@ -156,5 +176,25 @@ export class Part {
 
   private getTopPadding(): number {
     return util.max(this.measures.map((measure) => measure.getTopPadding()));
+  }
+
+  private getMiddleY(measureRendering: MeasureRendering): number {
+    const fragment = util.first(measureRendering.fragments);
+    if (!fragment) {
+      return 0;
+    }
+
+    const topStave = util.first(fragment.staves);
+    const bottomStave = util.last(fragment.staves);
+    if (!topStave || !bottomStave) {
+      return 0;
+    }
+
+    const topY = topStave.vexflow.stave.getYForLine(0);
+
+    const bottomLine = bottomStave.vexflow.stave.getNumLines() - 1;
+    const bottomY = bottomStave.vexflow.stave.getYForLine(bottomLine);
+
+    return (topY + bottomY) / 2;
   }
 }
