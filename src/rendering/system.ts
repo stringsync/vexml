@@ -48,13 +48,10 @@ export class System {
 
     const maxStaveOffset = util.max(this.parts.map((part) => part.getStaveOffset()));
 
-    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast, index }) => {
-      if (isFirst) {
-        previousPart = opts.previousSystem?.parts[index] ?? null;
-      }
-      if (isLast) {
-        nextPart = opts.nextSystem?.parts[index] ?? null;
-      }
+    for (let index = 0; index < this.parts.length; index++) {
+      const currentPart = this.parts[index];
+      const previousPart = opts.previousSystem?.parts[index] ?? null;
+      const nextPart = opts.nextSystem?.parts[index] ?? null;
 
       const partRendering = currentPart.render({
         x: opts.x - currentPart.getStaveOffset(),
@@ -73,7 +70,7 @@ export class System {
       partRenderings.push(partRendering);
 
       y += partRendering.height + this.config.PART_DISTANCE;
-    });
+    }
 
     const vfStaveConnector = this.getVfStaveConnector(partRenderings);
 
