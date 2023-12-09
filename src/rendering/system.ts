@@ -72,7 +72,7 @@ export class System {
       });
       partRenderings.push(partRendering);
 
-      y += partRendering.height;
+      y += partRendering.height + this.config.PART_DISTANCE;
     });
 
     const vfStaveConnector = this.getVfStaveConnector(partRenderings);
