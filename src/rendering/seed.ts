@@ -6,6 +6,7 @@ import * as util from '@/util';
 import { Part } from './part';
 import { System } from './system';
 import { Address } from './address';
+import { PartName } from './partname';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -44,7 +45,7 @@ export class Seed {
         const partId = part.getId();
         return new Part({
           config: this.config,
-          name: this.getPartName(partId),
+          name: measureStartIndex === 0 ? this.getPartName(partId) : null,
           musicXml: { part },
           measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
         });
@@ -76,6 +77,16 @@ export class Seed {
     const systemAddress = Address.system();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // Account for the width that the part name will take up for the very first measure.
+      if (measureIndex === 0) {
+        remainingWidth -= util.max(
+          this.musicXml.parts
+            .map((part) => part.getId())
+            .map((partId) => this.getPartName(partId))
+            .map((partName) => partName?.getWidth() ?? 0)
+        );
+      }
+
       // Represents a column of measures across each part.
       const measures = this.musicXml.parts
         .map((part) => part.getId())
@@ -173,11 +184,11 @@ export class Seed {
   }
 
   @util.memoize()
-  private getPartNameByPartId(): Record<string, string> {
-    const result: Record<string, string> = {};
+  private getPartNameByPartId(): Record<string, PartName> {
+    const result: Record<string, PartName> = {};
 
     for (const partDetail of this.musicXml.partDetails) {
-      result[partDetail.id] = partDetail.name;
+      result[partDetail.id] = new PartName({ config: this.config, content: partDetail.name });
     }
 
     return result;
@@ -198,9 +209,9 @@ export class Seed {
     return measureEntryGroupsByPartId[partId];
   }
 
-  private getPartName(partId: string): string {
+  private getPartName(partId: string): PartName | null {
     const partNameByPartId = this.getPartNameByPartId();
-    return partNameByPartId[partId] ?? '';
+    return partNameByPartId[partId] ?? null;
   }
 
   /** Returns the stave signature that is active at the beginning of the measure. */

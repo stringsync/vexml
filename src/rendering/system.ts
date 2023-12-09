@@ -33,6 +33,7 @@ export class System {
     y: number;
     spanners: Spanners;
     width: number;
+    isFirstSystem: boolean;
     isLastSystem: boolean;
     previousSystem: System | null;
     nextSystem: System | null;
@@ -62,6 +63,7 @@ export class System {
         showMeasureLabels: index === 0,
         address: address.part(),
         spanners: opts.spanners,
+        isFirstSystem: opts.isFirstSystem,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
