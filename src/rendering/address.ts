@@ -29,37 +29,37 @@ export class Address<T extends AddressType = AddressType> {
 
   /** Creates an address for a part. */
   part(): Address<'part'> {
-    this.assertThisHasType('system');
+    this.assertThisIsA('system');
     return Address.create('part', this);
   }
 
   /** Creates an address for a measure. */
   measure(): Address<'measure'> {
-    this.assertThisHasType('part');
+    this.assertThisIsA('part');
     return Address.create('measure', this);
   }
 
   /** Creates an address for a measure fragment. */
   measureFragment(): Address<'measurefragment'> {
-    this.assertThisHasType('measure');
+    this.assertThisIsA('measure');
     return Address.create('measurefragment', this);
   }
 
   /** Creates an address for a stave. */
   stave(): Address<'stave'> {
-    this.assertThisHasType('measurefragment');
+    this.assertThisIsA('measurefragment');
     return Address.create('stave', this);
   }
 
   /** Creates an address for a chorus. */
   chorus(): Address<'chorus'> {
-    this.assertThisHasType('stave');
+    this.assertThisIsA('stave');
     return Address.create('chorus', this);
   }
 
   /** Creates an address for a voice. */
   voice(): Address<'voice'> {
-    this.assertThisHasType('chorus');
+    this.assertThisIsA('chorus');
     return Address.create('voice', this);
   }
 
@@ -94,7 +94,7 @@ export class Address<T extends AddressType = AddressType> {
     return null;
   }
 
-  private assertThisHasType<S extends AddressType>(type: S): asserts this is Address<S> {
+  private assertThisIsA<S extends AddressType>(type: S): asserts this is Address<S> {
     if ((this as Address).type !== type) {
       throw new Error(`must be of type '${type}', got: '${this.type}'`);
     }
