@@ -61,7 +61,7 @@ export class System {
         y,
         maxStaveOffset,
         showMeasureLabels: index === 0,
-        address: address.part(),
+        address: address.part({ partId: currentPartId }),
         spanners: opts.spanners,
         isFirstSystem: opts.isFirstSystem,
         isLastSystem: opts.isLastSystem,
@@ -96,7 +96,7 @@ export class System {
 
     const measureGroups = this.parts
       .filter((part) => part.getId() === partId)
-      .map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
+      .map((part) => ({ address: systemAddress.part({ partId: part.getId() }), measures: part.getMeasures() }));
 
     // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts). We
     // can't take the max of the whole part together, because min required width varies for each _measure_ across all

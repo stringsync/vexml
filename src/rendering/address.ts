@@ -102,7 +102,7 @@ export class Address<T extends AddressType = AddressType> {
   }
 
   /** Creates an address for a part. */
-  part(context?: AddressContext<'part'>): Address<'part'> {
+  part(context: AddressContext<'part'>): Address<'part'> {
     this.assertThisIsA('system');
     return Address.create('part', this, context);
   }
