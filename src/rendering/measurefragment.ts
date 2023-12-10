@@ -222,13 +222,14 @@ export class MeasureFragment {
     }
 
     const staveModifiersChanges = new Set<StaveModifier>();
-    let previousStave = util.last(opts.previousMeasureFragment?.getStaves() ?? []);
 
-    for (const stave of this.getStaves()) {
-      for (const staveModifier of stave.getModifierChanges({ previousStave })) {
+    for (let staveIndex = 0; staveIndex < this.staveCount; staveIndex++) {
+      const currentStave = this.getStaves()[staveIndex];
+      const previousStave = opts.previousMeasureFragment?.getStaves()[staveIndex] ?? null;
+
+      for (const staveModifier of currentStave.getModifierChanges({ previousStave })) {
         staveModifiersChanges.add(staveModifier);
       }
-      previousStave = stave;
     }
 
     return Array.from(staveModifiersChanges);

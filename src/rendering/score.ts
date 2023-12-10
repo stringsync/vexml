@@ -66,11 +66,12 @@ export class Score {
     y += this.getTopSystemDistance();
 
     // Render the entire hierarchy.
-    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isLast }) => {
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isFirst, isLast }) => {
       const systemRendering = currentSystem.render({
         x,
         y,
         width: opts.width - END_BARLINE_OFFSET,
+        isFirstSystem: isFirst,
         isLastSystem: isLast,
         previousSystem,
         nextSystem,
@@ -124,11 +125,29 @@ export class Score {
     // Draw the title.
     titleRendering?.text.draw(vfContext);
 
+    // Draw the part names.
+    parts
+      .map((part) => part.name)
+      .forEach((partName) => {
+        partName?.text.draw(vfContext);
+      });
+
     // Draw vexflow.Stave elements.
     staves
       .map((stave) => stave.vexflow.stave)
       .forEach((vfStave) => {
         vfStave.setContext(vfContext).draw();
+      });
+
+    // Draw vexflow.StaveConnector elements from systems.
+    systemRenderings
+      .map((system) => system.vexflow.staveConnector)
+      .filter(
+        (vfStaveConnector): vfStaveConnector is vexflow.StaveConnector =>
+          vfStaveConnector instanceof vexflow.StaveConnector
+      )
+      .forEach((vfStaveConnector) => {
+        vfStaveConnector.setContext(vfContext).draw();
       });
 
     // Draw vexflow.StaveConnector elements from measures.
@@ -231,6 +250,7 @@ export class Score {
       config: this.config,
       musicXml: {
         parts: this.musicXml.scorePartwise?.getParts() ?? [],
+        partDetails: this.musicXml.scorePartwise?.getPartDetails() ?? [],
         staveLayouts: this.musicXml.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
     });

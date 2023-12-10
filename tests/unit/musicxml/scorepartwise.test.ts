@@ -44,24 +44,62 @@ describe(ScorePartwise, () => {
     });
   });
 
-  describe('getPartNames', () => {
-    it('returns the part names in the document', () => {
-      const scorePartwise = xml.scorePartwise({
+  describe('getPartDetails', () => {
+    it('returns the details of the parts within the score', () => {
+      const node = xml.scorePartwise({
         partList: xml.partList({
           scoreParts: [
-            xml.scorePart({
-              partName: xml.partName({ textContent: 'foo' }),
-            }),
-            xml.scorePart({
-              partName: xml.partName({ textContent: 'bar' }),
-            }),
+            xml.scorePart({ id: 'P0', partName: xml.partName({ textContent: 'foo' }) }),
+            xml.scorePart({ id: 'P1', partName: xml.partName({ textContent: 'bar' }) }),
           ],
         }),
       });
 
-      const score = new ScorePartwise(scorePartwise);
+      const scorePartwise = new ScorePartwise(node);
 
-      expect(score.getPartNames()).toStrictEqual(['foo', 'bar']);
+      expect(scorePartwise.getPartDetails()).toStrictEqual([
+        { id: 'P0', name: 'foo' },
+        { id: 'P1', name: 'bar' },
+      ]);
+    });
+
+    it('defaults to an empty array when missing', () => {
+      const node = xml.scorePartwise();
+      const partList = new ScorePartwise(node);
+      expect(partList.getPartDetails()).toBeEmpty();
+    });
+
+    it('defaults id to an empty string when missing', () => {
+      const node = xml.scorePartwise({
+        partList: xml.partList({
+          scoreParts: [
+            xml.scorePart({ partName: xml.partName({ textContent: 'foo' }) }),
+            xml.scorePart({ partName: xml.partName({ textContent: 'bar' }) }),
+          ],
+        }),
+      });
+
+      const partList = new ScorePartwise(node);
+
+      expect(partList.getPartDetails()).toStrictEqual([
+        { id: '', name: 'foo' },
+        { id: '', name: 'bar' },
+      ]);
+    });
+
+    it('defaults name to an empty string when missing', () => {
+      const node = xml.scorePartwise({
+        partList: xml.partList({
+          scoreParts: [xml.scorePart({ id: 'P0' }), xml.scorePart({ id: 'P1' })],
+        }),
+      });
+
+      const partList = new ScorePartwise(node);
+
+      expect(partList.getPartDetails()).toStrictEqual([
+        { id: 'P0', name: '' },
+        { id: 'P1', name: '' },
+      ]);
     });
   });
 

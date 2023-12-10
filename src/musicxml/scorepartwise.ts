@@ -2,6 +2,12 @@ import { NamedElement } from '@/util';
 import { Defaults } from './defaults';
 import { Part } from './part';
 
+/** Information about a `Part`. */
+export type PartDetail = {
+  id: string;
+  name: string;
+};
+
 /**
  * ScorePartwise is the entrypoint of a MusicXML document.
  *
@@ -24,11 +30,16 @@ export class ScorePartwise {
   }
 
   /** Returns an array of part names in the score in the order they appear. Part names can be duplicated. */
-  getPartNames(): string[] {
-    return this.element
-      .all('part-name')
-      .map((element) => element.content().str())
-      .filter((content): content is string => typeof content === 'string');
+  getPartDetails(): PartDetail[] {
+    const result = new Array<PartDetail>();
+
+    for (const scorePart of this.element.all('score-part')) {
+      const id = scorePart.attr('id').withDefault('').str();
+      const name = scorePart.first('part-name')?.content().str() ?? '';
+      result.push({ id, name });
+    }
+
+    return result;
   }
 
   /** Returns an array of parts in the order they appear. */
