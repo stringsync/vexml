@@ -39,8 +39,6 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
-      const systemAddress = Address.system();
-
       const parts = this.musicXml.parts.map((part) => {
         const partId = part.getId();
         return new Part({
@@ -54,7 +52,7 @@ export class Seed {
 
       const system = new System({
         config: this.config,
-        address: systemAddress,
+        index: systems.length,
         parts,
       });
 
