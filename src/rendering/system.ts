@@ -21,10 +21,12 @@ export type SystemRendering = {
  */
 export class System {
   private config: Config;
+  private index: number;
   private parts: Part[];
 
-  constructor(opts: { config: Config; address: Address<'system'>; parts: Part[] }) {
+  constructor(opts: { config: Config; index: number; parts: Part[] }) {
     this.config = opts.config;
+    this.index = opts.index;
     this.parts = opts.parts;
   }
 
