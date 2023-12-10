@@ -91,7 +91,7 @@ export class Seed {
         .map((part) => part.getId())
         .map((partId) => ({ address: systemAddress.part({ partId }), measures: this.getMeasures(partId) }))
         .map((data) => ({
-          address: data.address.measure(),
+          address: data.address.measure({ measureIndex, systemMeasureIndex }),
           previous: data.measures[measureIndex - 1] ?? null,
           current: data.measures[measureIndex],
         }));
