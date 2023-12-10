@@ -1,4 +1,5 @@
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Part } from './part';
 import { PartRendering } from './part';
@@ -10,6 +11,7 @@ export type SystemRendering = {
   type: 'system';
   address: Address<'system'>;
   parts: PartRendering[];
+  vexflow: { staveConnector: vexflow.StaveConnector | null };
 };
 
 /**
@@ -31,29 +33,35 @@ export class System {
     y: number;
     spanners: Spanners;
     width: number;
+    isFirstSystem: boolean;
     isLastSystem: boolean;
     previousSystem: System | null;
     nextSystem: System | null;
   }): SystemRendering {
     const address = Address.system();
 
-    const minRequiredSystemWidth = this.getMinRequiredWidth();
-
     const partRenderings = new Array<PartRendering>();
 
-    util.forEachTriple(this.parts, ([previousPart, currentPart, nextPart], { isFirst, isLast }) => {
-      if (isFirst) {
-        previousPart = util.last(opts.previousSystem?.parts ?? []);
-      }
-      if (isLast) {
-        nextPart = util.first(opts.nextSystem?.parts ?? []);
-      }
+    let y = opts.y;
+
+    const maxStaveOffset = util.max(this.parts.map((part) => part.getStaveOffset()));
+
+    for (let index = 0; index < this.parts.length; index++) {
+      const currentPart = this.parts[index];
+      const previousPart = opts.previousSystem?.parts[index] ?? null;
+      const nextPart = opts.nextSystem?.parts[index] ?? null;
+
+      const currentPartId = currentPart.getId();
+      const minRequiredSystemWidth = this.getMinRequiredWidth(currentPartId);
 
       const partRendering = currentPart.render({
-        x: opts.x,
-        y: opts.y,
+        x: opts.x - currentPart.getStaveOffset(),
+        y,
+        maxStaveOffset,
+        showMeasureLabels: index === 0,
         address: address.part(),
         spanners: opts.spanners,
+        isFirstSystem: opts.isFirstSystem,
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
@@ -61,16 +69,21 @@ export class System {
         nextPart,
       });
       partRenderings.push(partRendering);
-    });
+
+      y += partRendering.height + this.config.PART_DISTANCE;
+    }
+
+    const vfStaveConnector = this.getVfStaveConnector(partRenderings);
 
     return {
       type: 'system',
       address,
       parts: partRenderings,
+      vexflow: { staveConnector: vfStaveConnector },
     };
   }
 
-  private getMinRequiredWidth(): number {
+  private getMinRequiredWidth(partId: string): number {
     // This is a dummy "seed" address and spanners used exclusively for measuring. This should be ok since we're only
     // measuring one System, which suggests we're past the seed phase, since that is the phase where systems are
     // created.
@@ -79,7 +92,9 @@ export class System {
     let totalWidth = 0;
     const measureCount = this.getMeasureCount();
 
-    const measureGroups = this.parts.map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
+    const measureGroups = this.parts
+      .filter((part) => part.getId() === partId)
+      .map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
 
     // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts). We
     // can't take the max of the whole part together, because min required width varies for each _measure_ across all
@@ -107,5 +122,37 @@ export class System {
 
   private getMeasureCount(): number {
     return this.parts[0]?.getMeasures().length ?? 0;
+  }
+
+  private getVfStaveConnector(partRenderings: PartRendering[]): vexflow.StaveConnector | null {
+    if (partRenderings.length <= 1) {
+      return null;
+    }
+
+    const topPart = util.first(partRenderings);
+    const bottomPart = util.last(partRenderings);
+    if (!topPart || !bottomPart) {
+      return null;
+    }
+
+    const topMeasure = util.first(topPart.measures);
+    const bottomMeasure = util.first(bottomPart.measures);
+    if (!topMeasure || !bottomMeasure) {
+      return null;
+    }
+
+    const topMeasureFragment = util.first(topMeasure.fragments);
+    const bottomMeasureFragment = util.first(bottomMeasure.fragments);
+    if (!topMeasureFragment || !bottomMeasureFragment) {
+      return null;
+    }
+
+    const topVfStave = util.first(topMeasureFragment.staves)?.vexflow.stave;
+    const bottomVfStave = util.first(bottomMeasureFragment.staves)?.vexflow.stave;
+    if (!topVfStave || !bottomVfStave) {
+      return null;
+    }
+
+    return new vexflow.StaveConnector(topVfStave, bottomVfStave).setType('singleLeft');
   }
 }

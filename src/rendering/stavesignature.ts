@@ -154,8 +154,18 @@ export class StaveSignature {
         return map;
       }, {});
 
-    const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
+    // Make sure that the key signatures and time signatures have entries for each stave number.
     const staveCount = opts.musicXml.attributes.getStaveCount();
+    for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
+      if (!keySignatures[staveNumber]) {
+        keySignatures[staveNumber] = keySignatures[1] ?? KeySignature.Cmajor();
+      }
+      if (!timeSignatures[staveNumber]) {
+        timeSignatures[staveNumber] = timeSignatures[1] ?? TimeSignature.common();
+      }
+    }
+
+    const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
     const attributes = opts.musicXml.attributes;
 
     const staveSignature = new StaveSignature({

@@ -91,7 +91,7 @@ describe('lilypond', () => {
     // { filename: '33g-Slur-ChordedNotes.xml', width: 900 },
     // { filename: '33h-Spanners-Glissando.xml', width: 900 },
     // { filename: '33i-Ties-NotEnded.xml', width: 900 },
-    // { filename: '41a-MultiParts-Partorder.xml', width: 900 },
+    { filename: '41a-MultiParts-Partorder.xml', width: 900 },
     // { filename: '41b-MultiParts-MoreThan10.xml', width: 900 },
     // { filename: '41c-StaffGroups.xml', width: 900 },
     // { filename: '41d-StaffGroups-Nested.xml', width: 900 },
