@@ -70,12 +70,12 @@ export class Measure {
   }): number {
     let sum = 0;
 
-    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
+    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst, index }) => {
       if (isFirst) {
         previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
       sum += currentMeasureFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment(),
+        address: opts.address.measureFragment({ measureFragmentIndex: index }),
         systemMeasureIndex: opts.systemMeasureIndex,
         previousMeasureFragment,
       });
@@ -115,7 +115,7 @@ export class Measure {
 
     util.forEachTriple(
       this.getFragments(),
-      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast }) => {
+      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast, index }) => {
         if (isFirst) {
           previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
         }
@@ -127,7 +127,7 @@ export class Measure {
         const fragmentRendering = currentFragment!.render({
           x,
           y: opts.y,
-          address: opts.address.measureFragment(),
+          address: opts.address.measureFragment({ measureFragmentIndex: index }),
           isLastSystem: opts.isLastSystem,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,

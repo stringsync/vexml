@@ -114,7 +114,7 @@ export class Address<T extends AddressType = AddressType> {
   }
 
   /** Creates an address for a measure fragment. */
-  measureFragment(context?: AddressContext<'measurefragment'>): Address<'measurefragment'> {
+  measureFragment(context: AddressContext<'measurefragment'>): Address<'measurefragment'> {
     this.assertThisIsA('measure');
     return Address.create('measurefragment', this, context);
   }
