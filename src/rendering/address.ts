@@ -37,7 +37,7 @@ export class Address<T extends AddressType = AddressType> {
   }
 
   /** Creates an address for a system. */
-  static system(context?: AddressContext<'system'>): Address<'system'> {
+  static system(context: AddressContext<'system'>): Address<'system'> {
     return Address.create('system', null, context);
   }
 
