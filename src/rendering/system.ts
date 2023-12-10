@@ -40,7 +40,7 @@ export class System {
     previousSystem: System | null;
     nextSystem: System | null;
   }): SystemRendering {
-    const address = Address.system();
+    const address = Address.system({ systemIndex: this.index });
 
     const partRenderings = new Array<PartRendering>();
 
@@ -89,7 +89,7 @@ export class System {
     // This is a dummy "seed" address and spanners used exclusively for measuring. This should be ok since we're only
     // measuring one System, which suggests we're past the seed phase, since that is the phase where systems are
     // created.
-    const systemAddress = Address.system();
+    const systemAddress = Address.system({ systemIndex: this.index });
 
     let totalWidth = 0;
     const measureCount = this.getMeasureCount();

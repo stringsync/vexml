@@ -73,7 +73,7 @@ export class Seed {
       this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
     );
 
-    const systemAddress = Address.system();
+    const systemAddress = Address.system({ systemIndex: 0 });
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Account for the width that the part name will take up for the very first measure.
