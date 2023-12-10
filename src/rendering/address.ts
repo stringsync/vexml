@@ -17,7 +17,7 @@ export type AddressContext<T extends AddressType> = T extends 'system'
   : T extends 'chorus'
   ? Record<never, never>
   : T extends 'voice'
-  ? { voiceNumber: number }
+  ? { voiceIndex: number }
   : never;
 
 /** The location of a musical object in the rendering hierarchy. */
@@ -26,9 +26,9 @@ export class Address<T extends AddressType = AddressType> {
   private id: symbol;
   private parent: Address | null;
   private children: Address[];
-  private context?: AddressContext<T>;
+  private context: AddressContext<T>;
 
-  private constructor(opts: { type: T; id: symbol; parent: Address | null; context?: AddressContext<T> }) {
+  private constructor(opts: { type: T; id: symbol; parent: Address | null; context: AddressContext<T> }) {
     this.type = opts.type;
     this.id = opts.id;
     this.parent = opts.parent;
@@ -44,7 +44,7 @@ export class Address<T extends AddressType = AddressType> {
   private static create<T extends AddressType>(
     type: T,
     parent: Address | null,
-    context?: AddressContext<T>
+    context: AddressContext<T>
   ): Address<T> {
     const id = Symbol(type);
     const address = new Address({ type, id, parent, context });
@@ -98,7 +98,7 @@ export class Address<T extends AddressType = AddressType> {
   getVoiceNumber(): number | undefined {
     const voiceAddress = this.getAddress('voice');
     util.assertNotNull(voiceAddress);
-    return voiceAddress.context?.voiceNumber;
+    return voiceAddress.context?.voiceIndex;
   }
 
   /** Creates an address for a part. */
@@ -132,7 +132,7 @@ export class Address<T extends AddressType = AddressType> {
   }
 
   /** Creates an address for a voice. */
-  voice(context?: AddressContext<'voice'>): Address<'voice'> {
+  voice(context: AddressContext<'voice'>): Address<'voice'> {
     this.assertThisIsA('chorus');
     return Address.create('voice', this, context);
   }
