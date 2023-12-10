@@ -40,8 +40,6 @@ export class System {
   }): SystemRendering {
     const address = Address.system();
 
-    const minRequiredSystemWidth = this.getMinRequiredWidth();
-
     const partRenderings = new Array<PartRendering>();
 
     let y = opts.y;
@@ -52,6 +50,9 @@ export class System {
       const currentPart = this.parts[index];
       const previousPart = opts.previousSystem?.parts[index] ?? null;
       const nextPart = opts.nextSystem?.parts[index] ?? null;
+
+      const currentPartId = currentPart.getId();
+      const minRequiredSystemWidth = this.getMinRequiredWidth(currentPartId);
 
       const partRendering = currentPart.render({
         x: opts.x - currentPart.getStaveOffset(),
@@ -82,7 +83,7 @@ export class System {
     };
   }
 
-  private getMinRequiredWidth(): number {
+  private getMinRequiredWidth(partId: string): number {
     // This is a dummy "seed" address and spanners used exclusively for measuring. This should be ok since we're only
     // measuring one System, which suggests we're past the seed phase, since that is the phase where systems are
     // created.
@@ -91,7 +92,9 @@ export class System {
     let totalWidth = 0;
     const measureCount = this.getMeasureCount();
 
-    const measureGroups = this.parts.map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
+    const measureGroups = this.parts
+      .filter((part) => part.getId() === partId)
+      .map((part) => ({ address: systemAddress.part(), measures: part.getMeasures() }));
 
     // Iterate over each measure index, accumulating the max width from each measure "column" (across all parts). We
     // can't take the max of the whole part together, because min required width varies for each _measure_ across all
