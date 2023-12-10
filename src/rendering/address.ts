@@ -5,7 +5,7 @@ export type AddressType = 'system' | 'part' | 'measure' | 'measurefragment' | 's
 
 /** Additional data attached to the address. */
 export type AddressContext<T extends AddressType> = T extends 'system'
-  ? { systemIndex: number }
+  ? { systemIndex: number; origin: string }
   : T extends 'part'
   ? { partId: string }
   : T extends 'measure'
