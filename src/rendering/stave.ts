@@ -48,7 +48,7 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
  */
 export class Stave {
   private config: Config;
-  private staveNumber: number;
+  private number: number;
   private staveSignature: StaveSignature;
   private beginningBarStyle: musicxml.BarStyle;
   private endBarStyle: musicxml.BarStyle;
@@ -56,14 +56,14 @@ export class Stave {
 
   constructor(opts: {
     config: Config;
-    staveNumber: number;
+    number: number;
     staveSignature: StaveSignature;
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
-    this.staveNumber = opts.staveNumber;
+    this.number = opts.number;
     this.staveSignature = opts.staveSignature;
     this.beginningBarStyle = opts.beginningBarStyle;
     this.endBarStyle = opts.endBarStyle;
@@ -89,6 +89,11 @@ export class Stave {
     return 0;
   }
 
+  /** Returns the stave number. */
+  getNumber(): number {
+    return this.number;
+  }
+
   /** Returns the width that the modifiers take up. */
   getModifiersWidth(modifiers: StaveModifier[]): number {
     let width = 0;
@@ -108,7 +113,7 @@ export class Stave {
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
-    return this.staveSignature?.getMultiRestCount(this.staveNumber) ?? 0;
+    return this.staveSignature?.getMultiRestCount(this.number) ?? 0;
   }
 
   /** Returns the stave modifiers that changed. */
@@ -154,7 +159,7 @@ export class Stave {
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const staveSignature = this.staveSignature.render({ staveNumber: this.staveNumber });
+    const staveSignature = this.staveSignature.render({ staveNumber: this.number });
 
     const vfStave =
       this.getClef().getType() === 'tab'
@@ -216,7 +221,7 @@ export class Stave {
       type: 'stave',
       address: opts.address,
       signature: this.staveSignature,
-      staveNumber: this.staveNumber,
+      staveNumber: this.number,
       width: opts.width,
       vexflow: {
         stave: vfStave,
@@ -275,15 +280,15 @@ export class Stave {
   }
 
   private getClef(): Clef {
-    return this.staveSignature.getClef(this.staveNumber);
+    return this.staveSignature.getClef(this.number);
   }
 
   private getKeySignature(): KeySignature {
-    return this.staveSignature.getKeySignature(this.staveNumber);
+    return this.staveSignature.getKeySignature(this.number);
   }
 
   private getTimeSignature(): TimeSignature {
-    return this.staveSignature.getTimeSignature(this.staveNumber);
+    return this.staveSignature.getTimeSignature(this.number);
   }
 
   private getQuarterNoteDivisions(): number {

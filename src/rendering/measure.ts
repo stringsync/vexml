@@ -70,12 +70,12 @@ export class Measure {
   }): number {
     let sum = 0;
 
-    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst, index }) => {
+    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
       if (isFirst) {
         previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
       sum += currentMeasureFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment({ measureFragmentIndex: index }),
+        address: opts.address.measureFragment({ measureFragmentIndex: currentMeasureFragment.getIndex() }),
         systemMeasureIndex: opts.systemMeasureIndex,
         previousMeasureFragment,
       });
@@ -115,7 +115,7 @@ export class Measure {
 
     util.forEachTriple(
       this.getFragments(),
-      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast, index }) => {
+      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast }) => {
         if (isFirst) {
           previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
         }
@@ -127,7 +127,7 @@ export class Measure {
         const fragmentRendering = currentFragment!.render({
           x,
           y: opts.y,
-          address: opts.address.measureFragment({ measureFragmentIndex: index }),
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
           isLastSystem: opts.isLastSystem,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
