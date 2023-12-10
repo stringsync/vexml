@@ -89,7 +89,7 @@ export class Seed {
       // Represents a column of measures across each part.
       const measures = this.musicXml.parts
         .map((part) => part.getId())
-        .map((partId) => ({ address: systemAddress.part(), measures: this.getMeasures(partId) }))
+        .map((partId) => ({ address: systemAddress.part({ partId }), measures: this.getMeasures(partId) }))
         .map((data) => ({
           address: data.address.measure(),
           previous: data.measures[measureIndex - 1] ?? null,
