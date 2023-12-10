@@ -120,7 +120,7 @@ export class Address<T extends AddressType = AddressType> {
   }
 
   /** Creates an address for a stave. */
-  stave(context?: AddressContext<'stave'>): Address<'stave'> {
+  stave(context: AddressContext<'stave'>): Address<'stave'> {
     this.assertThisIsA('measurefragment');
     return Address.create('stave', this, context);
   }

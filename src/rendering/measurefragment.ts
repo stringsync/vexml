@@ -52,6 +52,11 @@ export class MeasureFragment {
     this.endBarStyle = opts.endBarStyle;
   }
 
+  /** Returns the index of the measure fragment within the measure. */
+  getIndex(): number {
+    return this.index;
+  }
+
   /** Returns the minimum required width for the measure fragment. */
   getMinRequiredWidth(opts: {
     address: Address<'measurefragment'>;
@@ -125,7 +130,7 @@ export class MeasureFragment {
       const staveRendering = currentStave.render({
         x: opts.x,
         y,
-        address: opts.address.stave(),
+        address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
         spanners: opts.spanners,
         width,
         modifiers: staveModifiers,
@@ -159,7 +164,7 @@ export class MeasureFragment {
       staves[staveIndex] = new Stave({
         config: this.config,
         staveSignature: this.leadingStaveSignature,
-        staveNumber,
+        number: staveNumber,
         beginningBarStyle: this.beginningBarStyle,
         endBarStyle: this.endBarStyle,
         measureEntries: this.measureEntries.filter((entry) => {
@@ -177,7 +182,9 @@ export class MeasureFragment {
   /** Returns the minimum justify width. */
   @util.memoize()
   private getMinJustifyWidth(address: Address<'measurefragment'>): number {
-    return util.max(this.getStaves().map((stave) => stave.getMinJustifyWidth(address.stave())));
+    return util.max(
+      this.getStaves().map((stave) => stave.getMinJustifyWidth(address.stave({ staveNumber: stave.getNumber() })))
+    );
   }
 
   /** Returns the right padding of the measure fragment. */
