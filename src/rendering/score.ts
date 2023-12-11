@@ -66,13 +66,12 @@ export class Score {
     y += this.getTopSystemDistance();
 
     // Render the entire hierarchy.
-    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem], { isFirst, isLast }) => {
+    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem]) => {
       const systemRendering = currentSystem.render({
         x,
         y,
         width: opts.width - END_BARLINE_OFFSET,
-        isFirstSystem: isFirst,
-        isLastSystem: isLast,
+        systemCount: systems.length,
         previousSystem,
         nextSystem,
         spanners,

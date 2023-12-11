@@ -77,8 +77,7 @@ export class Part {
     spanners: Spanners;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
-    isFirstSystem: boolean;
-    isLastSystem: boolean;
+    systemCount: number;
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
@@ -116,12 +115,14 @@ export class Part {
         x,
         y,
         showLabel: opts.showMeasureLabels,
-        address: opts.address.measure(),
+        address: opts.address.measure({
+          measureIndex: currentMeasure.getIndex(),
+          systemMeasureIndex,
+        }),
         spanners: opts.spanners,
-        isLastSystem: opts.isLastSystem,
+        systemCount: opts.systemCount,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth,
-        systemMeasureIndex,
         previousMeasure,
         nextMeasure,
       });
@@ -148,7 +149,8 @@ export class Part {
     const height = bottomY - topY;
 
     let name: PartNameRendering | null = null;
-    if (opts.isFirstSystem && firstMeasureRendering && this.name) {
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    if (isFirstSystem && firstMeasureRendering && this.name) {
       name = this.name.render({
         x: 0,
         y: middleY + this.name.getApproximateHeight() / 2,

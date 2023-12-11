@@ -39,8 +39,6 @@ export class Seed {
 
     /** Adds a system to the return value. */
     const commitSystem = (measureEndIndex: number) => {
-      const systemAddress = Address.system();
-
       const parts = this.musicXml.parts.map((part) => {
         const partId = part.getId();
         return new Part({
@@ -54,7 +52,7 @@ export class Seed {
 
       const system = new System({
         config: this.config,
-        address: systemAddress,
+        index: systems.length,
         parts,
       });
 
@@ -75,7 +73,7 @@ export class Seed {
       this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
     );
 
-    const systemAddress = Address.system();
+    const systemAddress = Address.system({ systemIndex: 0, origin: 'Seed.prototype.split' });
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // Account for the width that the part name will take up for the very first measure.
@@ -91,9 +89,9 @@ export class Seed {
       // Represents a column of measures across each part.
       const measures = this.musicXml.parts
         .map((part) => part.getId())
-        .map((partId) => ({ address: systemAddress.part(), measures: this.getMeasures(partId) }))
+        .map((partId) => ({ address: systemAddress.part({ partId }), measures: this.getMeasures(partId) }))
         .map((data) => ({
-          address: data.address.measure(),
+          address: data.address.measure({ measureIndex, systemMeasureIndex }),
           previous: data.measures[measureIndex - 1] ?? null,
           current: data.measures[measureIndex],
         }));
@@ -103,7 +101,6 @@ export class Seed {
           measures.map((measure) =>
             measure.current.getMinRequiredWidth({
               address: measure.address,
-              systemMeasureIndex,
               previousMeasure: measure.previous,
             })
           )
