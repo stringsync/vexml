@@ -101,7 +101,6 @@ export class Seed {
           measures.map((measure) =>
             measure.current.getMinRequiredWidth({
               address: measure.address,
-              systemMeasureIndex,
               previousMeasure: measure.previous,
             })
           )
