@@ -62,12 +62,13 @@ export class Measure {
     this.measureEntries = opts.measureEntries;
   }
 
+  /** Returns the index of the measure. */
+  getIndex(): number {
+    return this.index;
+  }
+
   /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: {
-    address: Address<'measure'>;
-    systemMeasureIndex: number;
-    previousMeasure: Measure | null;
-  }): number {
+  getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
     let sum = 0;
 
     util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
@@ -75,8 +76,7 @@ export class Measure {
         previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
       sum += currentMeasureFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment(),
-        systemMeasureIndex: opts.systemMeasureIndex,
+        address: opts.address.measureFragment({ measureFragmentIndex: currentMeasureFragment.getIndex() }),
         previousMeasureFragment,
       });
     });
@@ -101,10 +101,9 @@ export class Measure {
     showLabel: boolean;
     address: Address<'measure'>;
     spanners: Spanners;
-    isLastSystem: boolean;
+    systemCount: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
-    systemMeasureIndex: number;
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
@@ -123,15 +122,13 @@ export class Measure {
           nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
         }
 
-        // currentFragment can be null for the first or last fragments.
-        const fragmentRendering = currentFragment!.render({
+        const fragmentRendering = currentFragment.render({
           x,
           y: opts.y,
-          address: opts.address.measureFragment(),
-          isLastSystem: opts.isLastSystem,
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+          systemCount: opts.systemCount,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
-          systemMeasureIndex: opts.systemMeasureIndex,
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
           spanners: opts.spanners,
