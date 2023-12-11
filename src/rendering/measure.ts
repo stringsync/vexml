@@ -62,6 +62,11 @@ export class Measure {
     this.measureEntries = opts.measureEntries;
   }
 
+  /** Returns the index of the measure. */
+  getIndex(): number {
+    return this.index;
+  }
+
   /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
     let sum = 0;
