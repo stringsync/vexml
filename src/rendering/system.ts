@@ -113,7 +113,6 @@ export class System {
           .map((measures) =>
             measures.current.getMinRequiredWidth({
               address: measures.partAddress.measure({ measureIndex: measures.index, systemMeasureIndex }),
-              systemMeasureIndex,
               previousMeasure: measures.previous,
             })
           )

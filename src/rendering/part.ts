@@ -122,7 +122,6 @@ export class Part {
         isLastSystem: opts.isLastSystem,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
         targetSystemWidth,
-        systemMeasureIndex,
         previousMeasure,
         nextMeasure,
       });

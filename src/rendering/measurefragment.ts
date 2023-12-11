@@ -60,11 +60,10 @@ export class MeasureFragment {
   /** Returns the minimum required width for the measure fragment. */
   getMinRequiredWidth(opts: {
     address: Address<'measurefragment'>;
-    systemMeasureIndex: number;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
     const staveModifiers = this.getStaveModifiers({
-      systemMeasureIndex: opts.systemMeasureIndex,
+      address: opts.address,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
     const staveModifiersWidth = this.getStaveModifiersWidth(Array.from(staveModifiers));
@@ -91,7 +90,6 @@ export class MeasureFragment {
     isLastSystem: boolean;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
-    systemMeasureIndex: number;
     previousMeasureFragment: MeasureFragment | null;
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
@@ -100,12 +98,10 @@ export class MeasureFragment {
     const width = opts.isLastSystem
       ? this.getMinRequiredWidth({
           address: opts.address,
-          systemMeasureIndex: opts.systemMeasureIndex,
           previousMeasureFragment: opts.previousMeasureFragment,
         })
       : this.getSystemFitWidth({
           address: opts.address,
-          systemMeasureIndex: opts.systemMeasureIndex,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
           previousMeasureFragment: opts.previousMeasureFragment,
@@ -114,7 +110,7 @@ export class MeasureFragment {
     let y = opts.y;
 
     const staveModifiers = this.getStaveModifiers({
-      systemMeasureIndex: opts.systemMeasureIndex,
+      address: opts.address,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
 
@@ -201,14 +197,12 @@ export class MeasureFragment {
   /** Returns the width needed to stretch to fit the target width of the System. */
   private getSystemFitWidth(opts: {
     address: Address<'measurefragment'>;
-    systemMeasureIndex: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
     const minRequiredWidth = this.getMinRequiredWidth({
       address: opts.address,
-      systemMeasureIndex: opts.systemMeasureIndex,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
 
@@ -221,10 +215,10 @@ export class MeasureFragment {
 
   /** Returns what modifiers to render. */
   private getStaveModifiers(opts: {
-    systemMeasureIndex: number;
+    address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): StaveModifier[] {
-    if (opts.systemMeasureIndex === 0 && this.index === 0) {
+    if (opts.address.getSystemMeasureIndex() === 0 && this.index === 0) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
 
