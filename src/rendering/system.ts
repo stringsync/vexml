@@ -102,15 +102,17 @@ export class System {
     for (let systemMeasureIndex = 0; systemMeasureIndex < measureCount; systemMeasureIndex++) {
       totalWidth += util.max(
         measureGroups
-          .map((data, index) => ({
-            index,
+          .map((data) => ({
             partAddress: data.address,
             previous: data.measures[systemMeasureIndex - 1] ?? null,
             current: data.measures[systemMeasureIndex],
           }))
           .map((measures) =>
             measures.current.getMinRequiredWidth({
-              address: measures.partAddress.measure({ measureIndex: measures.index, systemMeasureIndex }),
+              address: measures.partAddress.measure({
+                measureIndex: measures.current.getIndex(),
+                systemMeasureIndex,
+              }),
               previousMeasure: measures.previous,
             })
           )

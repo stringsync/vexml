@@ -92,7 +92,6 @@ export class Part {
       // Even though a system has many parts, each part spans the entire system. Therefore the measure index in the
       // Part object is the systemMeasureIndex.
       const systemMeasureIndex = index;
-      const measureIndex = index;
 
       if (isFirst) {
         previousMeasure = util.last(opts.previousPart?.measures ?? []);
@@ -116,7 +115,10 @@ export class Part {
         x,
         y,
         showLabel: opts.showMeasureLabels,
-        address: opts.address.measure({ measureIndex, systemMeasureIndex }),
+        address: opts.address.measure({
+          measureIndex: currentMeasure.getIndex(),
+          systemMeasureIndex,
+        }),
         spanners: opts.spanners,
         systemCount: opts.systemCount,
         minRequiredSystemWidth: opts.minRequiredSystemWidth,
