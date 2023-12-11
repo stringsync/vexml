@@ -87,7 +87,7 @@ export class MeasureFragment {
     y: number;
     address: Address<'measurefragment'>;
     spanners: Spanners;
-    isLastSystem: boolean;
+    systemCount: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasureFragment: MeasureFragment | null;
@@ -95,7 +95,8 @@ export class MeasureFragment {
   }): MeasureFragmentRendering {
     const staveRenderings = new Array<StaveRendering>();
 
-    const width = opts.isLastSystem
+    const isLastSystem = opts.address.getSystemIndex() === opts.systemCount - 1;
+    const width = isLastSystem
       ? this.getMinRequiredWidth({
           address: opts.address,
           previousMeasureFragment: opts.previousMeasureFragment,
