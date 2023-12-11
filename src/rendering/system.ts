@@ -35,8 +35,7 @@ export class System {
     y: number;
     spanners: Spanners;
     width: number;
-    isFirstSystem: boolean;
-    isLastSystem: boolean;
+    systemCount: number;
     previousSystem: System | null;
     nextSystem: System | null;
   }): SystemRendering {
@@ -63,8 +62,7 @@ export class System {
         showMeasureLabels: index === 0,
         address: address.part({ partId: currentPartId }),
         spanners: opts.spanners,
-        isFirstSystem: opts.isFirstSystem,
-        isLastSystem: opts.isLastSystem,
+        systemCount: opts.systemCount,
         minRequiredSystemWidth,
         targetSystemWidth: opts.width,
         previousPart,

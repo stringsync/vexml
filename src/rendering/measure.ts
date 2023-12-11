@@ -96,7 +96,7 @@ export class Measure {
     showLabel: boolean;
     address: Address<'measure'>;
     spanners: Spanners;
-    isLastSystem: boolean;
+    systemCount: number;
     targetSystemWidth: number;
     minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
@@ -121,7 +121,7 @@ export class Measure {
           x,
           y: opts.y,
           address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
-          isLastSystem: opts.isLastSystem,
+          systemCount: opts.systemCount,
           minRequiredSystemWidth: opts.minRequiredSystemWidth,
           targetSystemWidth: opts.targetSystemWidth,
           previousMeasureFragment: previousFragment,
