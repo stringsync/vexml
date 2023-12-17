@@ -101,12 +101,6 @@ export class Address<T extends AddressType = AddressType> {
     return voiceAddress.context?.voiceIndex;
   }
 
-  /** Creates an address for a part. */
-  part(context: AddressContext<'part'>): Address<'part'> {
-    this.assertThisIsA('system');
-    return Address.create('part', this, context);
-  }
-
   /** Creates an address for a measure. */
   measure(context: AddressContext<'measure'>): Address<'measure'> {
     this.assertThisIsA('part');
@@ -117,6 +111,12 @@ export class Address<T extends AddressType = AddressType> {
   measureFragment(context: AddressContext<'measurefragment'>): Address<'measurefragment'> {
     this.assertThisIsA('measure');
     return Address.create('measurefragment', this, context);
+  }
+
+  /** Creates an address for a part. */
+  part(context: AddressContext<'part'>): Address<'part'> {
+    this.assertThisIsA('measurefragment');
+    return Address.create('part', this, context);
   }
 
   /** Creates an address for a stave. */
