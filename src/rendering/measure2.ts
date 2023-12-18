@@ -36,6 +36,11 @@ export class Measure {
     this.musicXml = opts.musicXml;
   }
 
+  /** Returns the minimum required width for the Measure. */
+  getMinRequiredWidth(opts: { previousMeasure: Measure | null }): number {
+    return 0;
+  }
+
   /** Renders the measure. */
   render(): MeasureRendering {
     return {
