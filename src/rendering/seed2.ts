@@ -4,6 +4,7 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { PartMap } from './types';
 import { Measure } from './measure2';
+import { Address } from './address';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -31,14 +32,29 @@ export class Seed {
 
     let remaining = width;
     let measures = new Array<Measure>();
+    let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
 
-    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
-      const required = currentMeasure.getMinRequiredWidth({ previousMeasure });
+    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast, index }) => {
+      let required = currentMeasure.getMinRequiredWidth({
+        previousMeasure,
+        address: systemAddress.measure({
+          systemMeasureIndex: index,
+          measureIndex: currentMeasure.getIndex(),
+        }),
+      });
 
       if (remaining < required) {
         systems.push(new System({ config: this.config, index: systems.length, measures }));
         remaining = width;
         measures = [];
+        systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+        required = currentMeasure.getMinRequiredWidth({
+          previousMeasure,
+          address: systemAddress.measure({
+            systemMeasureIndex: index,
+            measureIndex: currentMeasure.getIndex(),
+          }),
+        });
       }
 
       remaining -= required;
