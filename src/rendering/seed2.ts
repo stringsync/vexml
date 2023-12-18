@@ -1,4 +1,4 @@
-import { System } from './system';
+import { System } from './system2';
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -27,7 +27,29 @@ export class Seed {
   }
 
   split(width: number): System[] {
-    return [];
+    const systems = new Array<System>();
+
+    let remaining = width;
+    let measures = new Array<Measure>();
+
+    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
+      const required = currentMeasure.getMinRequiredWidth({ previousMeasure });
+
+      if (remaining < required) {
+        systems.push(new System({ config: this.config, index: systems.length, measures }));
+        remaining = width;
+        measures = [];
+      }
+
+      remaining -= required;
+      measures.push(currentMeasure);
+
+      if (isLast) {
+        systems.push(new System({ config: this.config, index: systems.length, measures }));
+      }
+    });
+
+    return systems;
   }
 
   private getMeasures(): Measure[] {
