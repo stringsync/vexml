@@ -1,6 +1,7 @@
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import { PartMap } from './types';
+import { Address } from './address';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -36,8 +37,13 @@ export class Measure {
     this.musicXml = opts.musicXml;
   }
 
+  /** Returns the absolute index of the measure. */
+  getIndex(): number {
+    return this.index;
+  }
+
   /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: { previousMeasure: Measure | null }): number {
+  getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
     return 0;
   }
 
