@@ -1,7 +1,9 @@
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { PartMap } from './types';
 import { Address } from './address';
+import { MeasureFragment } from './measurefragment2';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -52,5 +54,38 @@ export class Measure {
     return {
       type: 'measure',
     };
+  }
+
+  @util.memoize()
+  private getFragments(): MeasureFragment[] {
+    const fragments = new Array<MeasureFragment>();
+
+    return fragments;
+  }
+
+  private getBeginningBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.partIds.map((partId) =>
+          this.musicXml.measure[partId]
+            .getBarlines()
+            .find((barline) => barline.getLocation() === 'left')
+            ?.getBarStyle()
+        )
+      ) ?? 'regular'
+    );
+  }
+
+  private getEndBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.partIds.map((partId) =>
+          this.musicXml.measure[partId]
+            .getBarlines()
+            .find((barline) => barline.getLocation() === 'right')
+            ?.getBarStyle()
+        )
+      ) ?? 'regular'
+    );
   }
 }

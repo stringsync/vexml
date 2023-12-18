@@ -21,30 +21,30 @@ export class MeasureFragment {
   private index: number;
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    beginningBarStyle: PartMap<musicxml.BarStyle>;
+    endBarStyle: PartMap<musicxml.BarStyle>;
   };
   private measureEntries: PartMap<MeasureEntry[]>;
-  private staveSignatures: PartMap<StaveSignature>;
-  private staveCounts: PartMap<number>;
+  private staveSignature: PartMap<StaveSignature>;
+  private staveCount: PartMap<number>;
 
   constructor(opts: {
     config: Config;
     index: number;
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
+      beginningBarStyle: PartMap<musicxml.BarStyle>;
+      endBarStyle: PartMap<musicxml.BarStyle>;
     };
     measureEntries: PartMap<MeasureEntry[]>;
-    staveSignatures: PartMap<StaveSignature>;
-    staveCounts: PartMap<number>;
+    staveSignature: PartMap<StaveSignature>;
+    staveCount: PartMap<number>;
   }) {
     this.config = opts.config;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
-    this.staveSignatures = opts.staveSignatures;
-    this.staveCounts = opts.staveCounts;
+    this.staveSignature = opts.staveSignature;
+    this.staveCount = opts.staveCount;
   }
 }
