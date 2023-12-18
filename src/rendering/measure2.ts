@@ -1,5 +1,6 @@
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
+import { PartMap } from './types';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -14,20 +15,23 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
+  private partIds: string[];
   private musicXml: {
-    measure: musicxml.Measure;
+    measure: PartMap<musicxml.Measure>;
     staveLayouts: musicxml.StaveLayout[];
   };
 
   constructor(opts: {
     config: Config;
     index: number;
+    partIds: string[];
     musicXml: {
-      measure: musicxml.Measure;
+      measure: PartMap<musicxml.Measure>;
       staveLayouts: musicxml.StaveLayout[];
     };
   }) {
     this.config = opts.config;
+    this.partIds = opts.partIds;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
   }
