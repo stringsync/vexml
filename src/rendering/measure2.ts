@@ -1,9 +1,10 @@
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { PartMap } from './types';
+import { PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment } from './measurefragment2';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -20,23 +21,29 @@ export class Measure {
   private index: number;
   private partIds: string[];
   private musicXml: {
-    measure: PartMap<musicxml.Measure>;
+    measures: PartScoped<musicxml.Measure>[];
     staveLayouts: musicxml.StaveLayout[];
   };
+  private leadingStaveSignatures: PartScoped<StaveSignature>[];
+  private entries: PartScoped<MeasureEntry>[];
 
   constructor(opts: {
     config: Config;
     index: number;
     partIds: string[];
     musicXml: {
-      measure: PartMap<musicxml.Measure>;
+      measures: PartScoped<musicxml.Measure>[];
       staveLayouts: musicxml.StaveLayout[];
     };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
   }) {
     this.config = opts.config;
     this.partIds = opts.partIds;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
   }
 
   /** Returns the absolute index of the measure. */
@@ -66,12 +73,10 @@ export class Measure {
   private getBeginningBarStyle(): musicxml.BarStyle {
     return (
       util.first(
-        this.partIds.map((partId) =>
-          this.musicXml.measure[partId]
-            .getBarlines()
-            .find((barline) => barline.getLocation() === 'left')
-            ?.getBarStyle()
-        )
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => barline.getBarStyle())
       ) ?? 'regular'
     );
   }
@@ -79,12 +84,10 @@ export class Measure {
   private getEndBarStyle(): musicxml.BarStyle {
     return (
       util.first(
-        this.partIds.map((partId) =>
-          this.musicXml.measure[partId]
-            .getBarlines()
-            .find((barline) => barline.getLocation() === 'right')
-            ?.getBarStyle()
-        )
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => barline.getBarStyle())
       ) ?? 'regular'
     );
   }

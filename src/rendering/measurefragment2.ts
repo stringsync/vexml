@@ -1,7 +1,7 @@
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { PartMap } from './types';
 import * as musicxml from '@/musicxml';
+import { PartScoped } from './types';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -21,30 +21,30 @@ export class MeasureFragment {
   private index: number;
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyle: PartMap<musicxml.BarStyle>;
-    endBarStyle: PartMap<musicxml.BarStyle>;
+    beginningBarStyle: PartScoped<musicxml.BarStyle>;
+    endBarStyle: PartScoped<musicxml.BarStyle>;
   };
-  private measureEntries: PartMap<MeasureEntry[]>;
-  private staveSignature: PartMap<StaveSignature>;
-  private staveCount: PartMap<number>;
+  private measureEntries: PartScoped<MeasureEntry>[];
+  private staveSignatures: PartScoped<StaveSignature>[];
+  private staveCounts: PartScoped<number>[];
 
   constructor(opts: {
     config: Config;
     index: number;
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyle: PartMap<musicxml.BarStyle>;
-      endBarStyle: PartMap<musicxml.BarStyle>;
+      beginningBarStyle: PartScoped<musicxml.BarStyle>;
+      endBarStyle: PartScoped<musicxml.BarStyle>;
     };
-    measureEntries: PartMap<MeasureEntry[]>;
-    staveSignature: PartMap<StaveSignature>;
-    staveCount: PartMap<number>;
+    measureEntries: PartScoped<MeasureEntry>[];
+    staveSignatures: PartScoped<StaveSignature>[];
+    staveCounts: PartScoped<number>[];
   }) {
     this.config = opts.config;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
-    this.staveSignature = opts.staveSignature;
-    this.staveCount = opts.staveCount;
+    this.staveSignatures = opts.staveSignatures;
+    this.staveCounts = opts.staveCounts;
   }
 }

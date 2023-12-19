@@ -2,9 +2,10 @@ import { System } from './system2';
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { PartMap } from './types';
+import { PartScoped } from './types';
 import { Measure } from './measure2';
 import { Address } from './address';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -68,6 +69,18 @@ export class Seed {
     return systems;
   }
 
+  @util.memoize()
+  private getMeasureEntryGroups(): PartScoped<MeasureEntry[][]>[] {
+    const result = [];
+
+    for (const part of this.musicXml.parts) {
+      const partId = part.getId();
+      result.push({ partId, value: StaveSignature.toMeasureEntryGroups({ part }) });
+    }
+
+    return result;
+  }
+
   private getMeasures(): Measure[] {
     const measures = new Array<Measure>();
 
@@ -80,26 +93,19 @@ export class Seed {
           index: measureIndex,
           partIds: this.getPartIds(),
           musicXml: {
-            measure: this.getMeasurePartMap(measureIndex),
+            measures: this.musicXml.parts.map((part) => ({
+              partId: part.getId(),
+              value: part.getMeasures()[measureIndex],
+            })),
             staveLayouts: this.musicXml.staveLayouts,
           },
+          leadingStaveSignatures: [],
+          entries: [],
         })
       );
     }
 
     return measures;
-  }
-
-  private getMeasurePartMap(measureIndex: number): PartMap<musicxml.Measure> {
-    const result: PartMap<musicxml.Measure> = {};
-
-    for (const part of this.musicXml.parts) {
-      const partId = part.getId();
-      const measures = part.getMeasures();
-      result[partId] = measures[measureIndex];
-    }
-
-    return result;
   }
 
   private getMeasureCount(): number {
@@ -108,5 +114,42 @@ export class Seed {
 
   private getPartIds(): string[] {
     throw this.musicXml.parts.map((part) => part.getId());
+  }
+
+  private getLeadingStaveSignatures(measureIndex: number): PartScoped<StaveSignature>[] {
+    return this.getPartIds().map((partId) => {
+      const measureEntryGroups = this.getMeasureEntryGroups()
+        .filter((measureEntryGroup) => measureEntryGroup.partId === partId)
+        .flatMap((measureEntryGroup) => measureEntryGroup.value);
+
+      const staveSignatures = measureEntryGroups
+        .flat()
+        .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
+        .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
+
+      // Get the first stave signature that matches the measure index or get the last stave signature seen before this
+      // measure index.
+      const leadingStaveSignature =
+        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
+        util.last(staveSignatures);
+
+      // We don't expect this to ever happen since we assume that StaveSignatures are created correctly. However, if this
+      // error ever throws, investigate how StaveSignatures are created. Don't default StaveSignature because it exposes
+      // getPrevious and getNext, which the caller expects to be a well formed linked list.
+      if (!leadingStaveSignature) {
+        throw new Error('expected leading stave signature');
+      }
+
+      return { partId, value: leadingStaveSignature };
+    });
+  }
+
+  private getMeasureEntries(measureIndex: number): PartScoped<MeasureEntry>[] {
+    return this.getMeasureEntryGroups().flatMap((measureEntryGroup) =>
+      measureEntryGroup.value[measureIndex].map((measureEntry) => ({
+        partId: measureEntryGroup.partId,
+        value: measureEntry,
+      }))
+    );
   }
 }
