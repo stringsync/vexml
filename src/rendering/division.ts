@@ -12,6 +12,10 @@ import { Fraction } from '@/util';
 export class Division {
   private constructor(private fraction: Fraction) {}
 
+  static zero() {
+    return new Division(new Fraction(0));
+  }
+
   /**
    * Creates a Division.
    *

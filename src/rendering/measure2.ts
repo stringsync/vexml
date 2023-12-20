@@ -5,10 +5,19 @@ import { PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment } from './measurefragment2';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Division } from './division';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+};
+
+type MeasureFragmentData = {
+  divisions: Division;
+  staveSignature: StaveSignature;
+  entries: PartScoped<MeasureEntry>[];
+  beginningBarStyle: musicxml.BarStyle;
+  endBarStyle: musicxml.BarStyle;
 };
 
 /**
@@ -65,9 +74,120 @@ export class Measure {
 
   @util.memoize()
   private getFragments(): MeasureFragment[] {
-    const fragments = new Array<MeasureFragment>();
+    const result = new Array<MeasureFragment>();
 
-    return fragments;
+    const data = new Array<PartScoped<MeasureFragmentData>>();
+
+    for (const partId of this.partIds) {
+      const entries = this.entries.filter((entry) => entry.partId === partId);
+
+      const staveSignature = this.leadingStaveSignatures.find((staveSignature) => staveSignature.partId === partId);
+      if (!staveSignature) {
+        throw new Error(`Stave signature not found for part: ${partId}`);
+      }
+
+      data.push(...this.getFragmentData(partId, staveSignature.value, entries));
+    }
+
+    util.sortBy(data, (data) => data.value.divisions.toBeats());
+
+    return result;
+  }
+
+  private getFragmentData(
+    partId: string,
+    staveSignature: StaveSignature,
+    entries: PartScoped<MeasureEntry>[]
+  ): PartScoped<MeasureFragmentData>[] {
+    const result = new Array<MeasureFragmentData>();
+
+    const beginningBarStyle = this.getBeginningBarStyle();
+    const endBarStyle = this.getEndBarStyle();
+
+    let current = new Array<PartScoped<MeasureEntry>>();
+    let divisions = Division.zero();
+
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
+      const isLast = index === entries.length - 1;
+
+      if (entry instanceof StaveSignature) {
+        if (entry.getChangedStaveModifiers().length > 0 && current.length > 0) {
+          result.push({
+            divisions,
+            staveSignature,
+            entries: current,
+            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
+            endBarStyle: 'none',
+          });
+          current = [];
+        }
+
+        staveSignature = entry;
+      }
+
+      if (this.isSupportedMetronome(entry.value) && current.length > 0) {
+        result.push({
+          divisions,
+          staveSignature,
+          entries: current,
+          beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
+          endBarStyle: 'none',
+        });
+        current = [];
+      }
+
+      if (entry instanceof musicxml.Note) {
+        divisions = divisions.add(Division.of(entry.getDuration(), staveSignature.getQuarterNoteDivisions()));
+      }
+
+      current.push(entry);
+
+      if (isLast) {
+        const nextStaveSignature = staveSignature.getNext();
+        const hasClefChangeAtMeasureBoundary =
+          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
+          nextStaveSignature?.getMeasureIndex() === this.index + 1 &&
+          nextStaveSignature?.getMeasureEntryIndex() === 0;
+
+        if (hasClefChangeAtMeasureBoundary) {
+          result.push({
+            divisions,
+            staveSignature,
+            entries: current,
+            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
+            endBarStyle: 'none',
+          });
+          result.push({
+            divisions,
+            staveSignature,
+            entries: current,
+            beginningBarStyle: 'none',
+            endBarStyle: endBarStyle,
+          });
+        } else {
+          result.push({
+            divisions,
+            staveSignature,
+            entries: current,
+            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
+            endBarStyle: endBarStyle,
+          });
+        }
+      }
+    }
+
+    return result.map((value) => ({ partId, value }));
+  }
+
+  private isSupportedMetronome(entry: MeasureEntry): boolean {
+    return (
+      entry instanceof musicxml.Direction &&
+      entry
+        .getTypes()
+        .map((directionType) => directionType.getContent())
+        .some((content) => content.type === 'metronome' && content.metronome.isSupported())
+    );
   }
 
   private getBeginningBarStyle(): musicxml.BarStyle {
