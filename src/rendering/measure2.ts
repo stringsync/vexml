@@ -164,8 +164,20 @@ export class Measure {
           events.push({ at: divisions });
         }
 
+        const quarterNoteDivisions = staveSignature.getQuarterNoteDivisions();
+
         if (entry instanceof musicxml.Note) {
-          const duration = Division.of(entry.getDuration(), staveSignature.getQuarterNoteDivisions());
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+          divisions = divisions.add(duration);
+        }
+
+        if (entry instanceof musicxml.Backup) {
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+          divisions = divisions.subtract(duration);
+        }
+
+        if (entry instanceof musicxml.Forward) {
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
           divisions = divisions.add(duration);
         }
 
@@ -261,15 +273,28 @@ class MeasureEntryCursor {
     // robustness.
     const staveSignature = this.staveSignature;
 
-    while (this.divisions.isLessThan(division) && this.index < this.entries.length) {
+    while (this.divisions.isLessThanOrEqualTo(division) && this.index < this.entries.length) {
       const entry = this.entries[this.index];
 
       if (entry instanceof StaveSignature) {
         this.staveSignature = entry;
+        continue;
       }
 
+      const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
+
       if (entry instanceof musicxml.Note) {
-        const duration = Division.of(entry.getDuration(), this.staveSignature.getQuarterNoteDivisions());
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        this.divisions = this.divisions.add(duration);
+      }
+
+      if (entry instanceof musicxml.Backup) {
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        this.divisions = this.divisions.subtract(duration);
+      }
+
+      if (entry instanceof musicxml.Forward) {
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
         this.divisions = this.divisions.add(duration);
       }
 
