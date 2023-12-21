@@ -1,8 +1,10 @@
+import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import * as musicxml from '@/musicxml';
 import { PartScoped } from './types';
 import { Address } from './address';
+import { Part } from './part2';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -20,6 +22,7 @@ export type MeasureFragmentRendering = {
 export class MeasureFragment {
   private config: Config;
   private index: number;
+  private partIds: string[];
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -31,6 +34,7 @@ export class MeasureFragment {
   constructor(opts: {
     config: Config;
     index: number;
+    partIds: string[];
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -41,6 +45,7 @@ export class MeasureFragment {
   }) {
     this.config = opts.config;
     this.index = opts.index;
+    this.partIds = opts.partIds;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
@@ -54,5 +59,47 @@ export class MeasureFragment {
   /** Returns the minimum required width for the measure fragment. */
   getMinRequiredWidth(opts: { address: Address<'measurefragment'> }): number {
     return 0;
+  }
+
+  /** Renders the measure fragment. */
+  render(): MeasureFragmentRendering {
+    return {
+      type: 'measurefragment',
+    };
+  }
+
+  @util.memoize()
+  private getParts(): Part[] {
+    return this.partIds.map((partId) => {
+      const measureEntries = this.measureEntries
+        .filter((measureEntry) => measureEntry.partId === partId)
+        .map((measureEntry) => measureEntry.value);
+
+      const staveSignature = this.staveSignatures.find((staveSignature) => staveSignature.partId === partId)?.value;
+      if (!staveSignature) {
+        throw new Error(`Could not find stave signature for part ${partId}`);
+      }
+
+      const beginningBarStyle = this.musicXml.beginningBarStyles.find((barStyle) => barStyle.partId === partId)?.value;
+      if (!beginningBarStyle) {
+        throw new Error(`Could not find beginning bar style for part ${partId}`);
+      }
+
+      const endBarStyle = this.musicXml.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value;
+      if (!endBarStyle) {
+        throw new Error(`Could not find end bar style for part ${partId}`);
+      }
+
+      return new Part({
+        id: partId,
+        musicXml: {
+          staveLayouts: this.musicXml.staveLayouts,
+          beginningBarStyle,
+          endBarStyle,
+        },
+        measureEntries,
+        staveSignature,
+      });
+    });
   }
 }

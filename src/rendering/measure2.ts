@@ -119,6 +119,7 @@ export class Measure {
         new MeasureFragment({
           config: this.config,
           index: result.length,
+          partIds: this.partIds,
           musicXml: {
             staveLayouts: this.musicXml.staveLayouts,
             beginningBarStyles,
