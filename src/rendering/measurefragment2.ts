@@ -1,10 +1,13 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part } from './part2';
+import { ChorusRendering } from './chorus';
+import { Spanners } from './spanners';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -57,8 +60,39 @@ export class MeasureFragment {
   }
 
   /** Returns the minimum required width for the measure fragment. */
-  getMinRequiredWidth(opts: { address: Address<'measurefragment'> }): number {
-    return 0;
+  getMinRequiredWidth(opts: {
+    address: Address<'measurefragment'>;
+    previousMeasureFragment: MeasureFragment | null;
+  }): number {
+    const spanners = new Spanners();
+    const vfFormatter = new vexflow.Formatter();
+    const vfStaves = new Array<vexflow.Stave>();
+    const vfVoices = new Array<vexflow.Voice>();
+
+    for (const part of this.getParts()) {
+      const staves = part.render().staves;
+
+      const vfPartVoices = staves
+        .flatMap((stave) => stave.entry)
+        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+        .flatMap((chorus) => chorus.voices)
+        .map((voice) => voice.vexflow.voice);
+
+      vfFormatter.joinVoices(vfPartVoices);
+
+      vfVoices.push(...vfPartVoices);
+      vfStaves.push(...staves.map((stave) => stave.vexflow.stave));
+    }
+
+    if (vfStaves.length === 0 || vfVoices.length === 0) {
+      return 0;
+    }
+
+    return (
+      vfFormatter.formatToStave(vfVoices, vfStaves[0]).preCalculateMinTotalWidth(vfVoices) +
+      spanners.getPadding() +
+      this.config.VOICE_PADDING
+    );
   }
 
   /** Renders the measure fragment. */
