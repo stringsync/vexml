@@ -91,6 +91,7 @@ export class MeasureFragment {
       }
 
       return new Part({
+        config: this.config,
         id: partId,
         musicXml: {
           staveLayouts: this.musicXml.staveLayouts,

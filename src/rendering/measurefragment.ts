@@ -162,8 +162,10 @@ export class MeasureFragment {
         config: this.config,
         staveSignature: this.leadingStaveSignature,
         number: staveNumber,
-        beginningBarStyle: this.beginningBarStyle,
-        endBarStyle: this.endBarStyle,
+        musicXml: {
+          beginningBarStyle: this.beginningBarStyle,
+          endBarStyle: this.endBarStyle,
+        },
         measureEntries: this.measureEntries.filter((entry) => {
           if (entry instanceof musicxml.Note) {
             return entry.getStaveNumber() === staveNumber;

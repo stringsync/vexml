@@ -49,24 +49,27 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private number: number;
+  private musicXml: {
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
+  };
   private staveSignature: StaveSignature;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
   private measureEntries: MeasureEntry[];
 
   constructor(opts: {
     config: Config;
     number: number;
     staveSignature: StaveSignature;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    musicXml: {
+      beginningBarStyle: musicxml.BarStyle;
+      endBarStyle: musicxml.BarStyle;
+    };
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
+    this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
   }
 
@@ -166,10 +169,10 @@ export class Stave {
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width);
 
-    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.beginningBarStyle);
+    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.beginningBarStyle);
     vfStave.setBegBarType(vfBeginningBarlineType);
 
-    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.endBarStyle);
+    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.endBarStyle);
     vfStave.setEndBarType(vfEndBarlineType);
 
     if (opts.modifiers.includes('clef')) {
