@@ -92,6 +92,39 @@ export class Stave {
     return 0;
   }
 
+  @util.memoize()
+  getEntry(): StaveEntry {
+    const config = this.config;
+    const timeSignature = this.getTimeSignature();
+    const clef = this.getClef();
+    const multiRestCount = this.getMultiRestCount();
+    const measureEntries = this.measureEntries;
+    const quarterNoteDivisions = this.getQuarterNoteDivisions();
+    const keySignature = this.getKeySignature();
+
+    if (multiRestCount === 1) {
+      return Chorus.wholeRest({ config, clef, timeSignature });
+    }
+
+    if (multiRestCount > 1) {
+      return new MultiRest({ count: multiRestCount });
+    }
+
+    if (this.getClef().getType() === 'tab') {
+      // TODO: Render tablature correctly.
+      return new Tablature();
+    }
+
+    return Chorus.multiVoice({
+      config,
+      measureEntries,
+      quarterNoteDivisions,
+      keySignature,
+      clef,
+      timeSignature,
+    });
+  }
+
   /** Returns the stave number. */
   getNumber(): number {
     return this.number;
@@ -247,39 +280,6 @@ export class Stave {
         // Select the first renderable metronome, since there can be only one per vexflow.Stave.
         .filter((metronome) => metronome.isSupported())
     );
-  }
-
-  @util.memoize()
-  private getEntry(): StaveEntry {
-    const config = this.config;
-    const timeSignature = this.getTimeSignature();
-    const clef = this.getClef();
-    const multiRestCount = this.getMultiRestCount();
-    const measureEntries = this.measureEntries;
-    const quarterNoteDivisions = this.getQuarterNoteDivisions();
-    const keySignature = this.getKeySignature();
-
-    if (multiRestCount === 1) {
-      return Chorus.wholeRest({ config, clef, timeSignature });
-    }
-
-    if (multiRestCount > 1) {
-      return new MultiRest({ count: multiRestCount });
-    }
-
-    if (this.getClef().getType() === 'tab') {
-      // TODO: Render tablature correctly.
-      return new Tablature();
-    }
-
-    return Chorus.multiVoice({
-      config,
-      measureEntries,
-      quarterNoteDivisions,
-      keySignature,
-      clef,
-      timeSignature,
-    });
   }
 
   private getClef(): Clef {

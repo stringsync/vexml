@@ -6,7 +6,7 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part } from './part2';
-import { ChorusRendering } from './chorus';
+import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 
 /** The result of rendering a measure fragment. */
@@ -66,33 +66,33 @@ export class MeasureFragment {
   }): number {
     const spanners = new Spanners();
     const vfFormatter = new vexflow.Formatter();
-    const vfStaves = new Array<vexflow.Stave>();
     const vfVoices = new Array<vexflow.Voice>();
 
-    for (const part of this.getParts()) {
-      const staves = part.render().staves;
+    const staves = this.getParts().flatMap((part) => part.getStaves());
 
-      const vfPartVoices = staves
-        .flatMap((stave) => stave.entry)
-        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-        .flatMap((chorus) => chorus.voices)
-        .map((voice) => voice.vexflow.voice);
+    for (const stave of staves) {
+      const entry = stave.getEntry();
 
-      vfFormatter.joinVoices(vfPartVoices);
+      let vfPartStaveVoices = new Array<vexflow.Voice>();
 
-      vfVoices.push(...vfPartVoices);
-      vfStaves.push(...staves.map((stave) => stave.vexflow.stave));
+      if (entry instanceof Chorus) {
+        const address = opts.address.stave({ staveNumber: stave.getNumber() }).chorus();
+        const chorusRendering = entry.render({ address, spanners });
+        vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
+      }
+
+      if (vfPartStaveVoices.length > 0) {
+        vfFormatter.joinVoices(vfPartStaveVoices);
+      }
+
+      vfVoices.push(...vfPartStaveVoices);
     }
 
-    if (vfStaves.length === 0 || vfVoices.length === 0) {
+    if (vfVoices.length === 0) {
       return 0;
     }
 
-    return (
-      vfFormatter.formatToStave(vfVoices, vfStaves[0]).preCalculateMinTotalWidth(vfVoices) +
-      spanners.getPadding() +
-      this.config.VOICE_PADDING
-    );
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
   }
 
   /** Renders the measure fragment. */

@@ -41,17 +41,8 @@ export class Part {
     this.staveSignature = opts.staveSignature;
   }
 
-  /** Renders the part. */
-  render(): PartRendering {
-    return {
-      type: 'part',
-      id: this.id,
-      staves: [],
-    };
-  }
-
   @util.memoize()
-  private getStaves(): Stave[] {
+  getStaves(): Stave[] {
     const result = new Array<Stave>();
 
     const staveCount = this.staveSignature.getStaveCount();
@@ -81,5 +72,14 @@ export class Part {
     }
 
     return result;
+  }
+
+  /** Renders the part. */
+  render(): PartRendering {
+    return {
+      type: 'part',
+      id: this.id,
+      staves: [],
+    };
   }
 }

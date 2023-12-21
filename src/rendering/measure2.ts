@@ -59,15 +59,19 @@ export class Measure {
 
   /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
-    let result = 0;
+    let sum = 0;
 
-    for (const fragment of this.getFragments()) {
-      const measureFragmentIndex = fragment.getIndex();
-      const address = opts.address.measureFragment({ measureFragmentIndex });
-      result += fragment.getMinRequiredWidth({ address });
-    }
+    util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment], { isFirst }) => {
+      if (isFirst) {
+        previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
+      }
+      sum += currentFragment.getMinRequiredWidth({
+        address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+        previousMeasureFragment: previousFragment,
+      });
+    });
 
-    return result;
+    return sum;
   }
 
   /** Renders the measure. */
@@ -278,6 +282,7 @@ class MeasureEntryCursor {
 
       if (entry instanceof StaveSignature) {
         this.staveSignature = entry;
+        // The stave signature will be accounted for via the staveSignature params.
         continue;
       }
 
