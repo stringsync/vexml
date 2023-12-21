@@ -2,6 +2,7 @@ import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import { Stave, StaveRendering } from './stave';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Config } from './config';
 
 /** The result of rendering a part. */
 export type PartRendering = {
@@ -12,6 +13,7 @@ export type PartRendering = {
 
 /** A part in a musical score. */
 export class Part {
+  private config: Config;
   private id: string;
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
@@ -22,6 +24,7 @@ export class Part {
   private staveSignature: StaveSignature;
 
   constructor(opts: {
+    config: Config;
     id: string;
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
@@ -31,6 +34,7 @@ export class Part {
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
   }) {
+    this.config = opts.config;
     this.id = opts.id;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
@@ -48,6 +52,34 @@ export class Part {
 
   @util.memoize()
   private getStaves(): Stave[] {
-    return [];
+    const result = new Array<Stave>();
+
+    const staveCount = this.staveSignature.getStaveCount();
+
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const staveNumber = staveIndex + 1;
+
+      const measureEntries = this.measureEntries.filter((entry) => {
+        if (entry instanceof musicxml.Note) {
+          return entry.getStaveNumber() === staveNumber;
+        }
+        return true;
+      });
+
+      result.push(
+        new Stave({
+          config: this.config,
+          staveSignature: this.staveSignature,
+          number: staveNumber,
+          musicXml: {
+            beginningBarStyle: this.musicXml.beginningBarStyle,
+            endBarStyle: this.musicXml.endBarStyle,
+          },
+          measureEntries,
+        })
+      );
+    }
+
+    return result;
   }
 }
