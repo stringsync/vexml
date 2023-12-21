@@ -32,6 +32,16 @@ export class Division {
     return this.fraction.isEquivalent(value.fraction);
   }
 
+  /** Returns if the other divisions is less than this. */
+  isLessThan(value: Division): boolean {
+    return this.toBeats() < value.toBeats();
+  }
+
+  /** Returns if the other divisions is greater than this. */
+  isGreaterThan(value: Division): boolean {
+    return this.toBeats() > value.toBeats();
+  }
+
   /** Returns the sum as a new Division. */
   add(value: Division) {
     const fraction = this.fraction.add(value.fraction);
