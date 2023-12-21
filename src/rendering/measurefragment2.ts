@@ -6,8 +6,11 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part } from './part2';
-import { Chorus, ChorusRendering } from './chorus';
+import { Chorus } from './chorus';
 import { Spanners } from './spanners';
+import { StaveModifier } from './stave';
+
+const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -64,35 +67,11 @@ export class MeasureFragment {
     address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
-    const spanners = new Spanners();
-    const vfFormatter = new vexflow.Formatter();
-    const vfVoices = new Array<vexflow.Voice>();
-
-    const staves = this.getParts().flatMap((part) => part.getStaves());
-
-    for (const stave of staves) {
-      const entry = stave.getEntry();
-
-      let vfPartStaveVoices = new Array<vexflow.Voice>();
-
-      if (entry instanceof Chorus) {
-        const address = opts.address.stave({ staveNumber: stave.getNumber() }).chorus();
-        const chorusRendering = entry.render({ address, spanners });
-        vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
-      }
-
-      if (vfPartStaveVoices.length > 0) {
-        vfFormatter.joinVoices(vfPartStaveVoices);
-      }
-
-      vfVoices.push(...vfPartStaveVoices);
-    }
-
-    if (vfVoices.length === 0) {
-      return 0;
-    }
-
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
+    return (
+      this.getStaveModifiersWidth({ address: opts.address, previousMeasureFragment: opts.previousMeasureFragment }) +
+      this.getMinVoiceJustifyWidth({ address: opts.address }) +
+      this.getRightPadding()
+    );
   }
 
   /** Renders the measure fragment. */
@@ -136,5 +115,105 @@ export class MeasureFragment {
         staveSignature,
       });
     });
+  }
+
+  private getStaveModifiersWidth(opts: {
+    address: Address<'measurefragment'>;
+    previousMeasureFragment: MeasureFragment | null;
+  }): number {
+    const staveModifiers = this.getStaveModifiers({
+      address: opts.address,
+      previousMeasureFragment: opts.previousMeasureFragment,
+    });
+
+    return util.max(
+      this.getParts()
+        .flatMap((part) => part.getStaves())
+        .map((stave) => stave.getModifiersWidth(staveModifiers))
+    );
+  }
+
+  /** Returns what modifiers to render. */
+  private getStaveModifiers(opts: {
+    address: Address<'measurefragment'>;
+    previousMeasureFragment: MeasureFragment | null;
+  }): StaveModifier[] {
+    if (opts.address.getSystemMeasureIndex() === 0 && this.index === 0) {
+      return ['clef', 'keySignature', 'timeSignature'];
+    }
+
+    const staveModifiersChanges = new Set<StaveModifier>();
+
+    for (const partId of this.partIds) {
+      const staveSignature = this.staveSignatures.find((staveSignature) => staveSignature.partId === partId)?.value;
+      if (!staveSignature) {
+        continue;
+      }
+
+      const staveCount = staveSignature.getStaveCount();
+
+      for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+        const currentStave =
+          this.getParts()
+            ?.find((part) => part.getId() === partId)
+            ?.getStaves()[staveIndex] ?? null;
+
+        const previousStave =
+          opts.previousMeasureFragment
+            ?.getParts()
+            .find((part) => part.getId() === partId)
+            ?.getStaves()[staveIndex] ?? null;
+
+        const staveModifiers = currentStave?.getModifierChanges({ previousStave }) ?? [];
+
+        for (const staveModifier of staveModifiers) {
+          staveModifiersChanges.add(staveModifier);
+        }
+      }
+    }
+
+    return Array.from(staveModifiersChanges);
+  }
+
+  private getMinVoiceJustifyWidth(opts: { address: Address<'measurefragment'> }): number {
+    const spanners = new Spanners();
+    const vfFormatter = new vexflow.Formatter();
+    const vfVoices = new Array<vexflow.Voice>();
+
+    const staves = this.getParts().flatMap((part) => part.getStaves());
+
+    for (const stave of staves) {
+      const entry = stave.getEntry();
+
+      let vfPartStaveVoices = new Array<vexflow.Voice>();
+
+      if (entry instanceof Chorus) {
+        const address = opts.address.stave({ staveNumber: stave.getNumber() }).chorus();
+        const chorusRendering = entry.render({ address, spanners });
+        vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
+      }
+
+      if (vfPartStaveVoices.length > 0) {
+        vfFormatter.joinVoices(vfPartStaveVoices);
+      }
+
+      vfVoices.push(...vfPartStaveVoices);
+    }
+
+    if (vfVoices.length === 0) {
+      return 0;
+    }
+
+    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
+  }
+
+  private getRightPadding(): number {
+    let padding = 0;
+
+    if (this.measureEntries.length === 1 && this.measureEntries[0] instanceof StaveSignature) {
+      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
+    }
+
+    return padding;
   }
 }
