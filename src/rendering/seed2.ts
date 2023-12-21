@@ -28,6 +28,7 @@ export class Seed {
     this.musicXml = opts.musicXml;
   }
 
+  /** Splits the measures into parts and systems that fit the given width. */
   split(width: number): System[] {
     const systems = new Array<System>();
 
@@ -99,8 +100,8 @@ export class Seed {
             })),
             staveLayouts: this.musicXml.staveLayouts,
           },
-          leadingStaveSignatures: [],
-          entries: [],
+          leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
+          entries: this.getMeasureEntries(measureIndex),
         })
       );
     }
@@ -113,7 +114,7 @@ export class Seed {
   }
 
   private getPartIds(): string[] {
-    throw this.musicXml.parts.map((part) => part.getId());
+    return this.musicXml.parts.map((part) => part.getId());
   }
 
   private getLeadingStaveSignatures(measureIndex: number): PartScoped<StaveSignature>[] {
