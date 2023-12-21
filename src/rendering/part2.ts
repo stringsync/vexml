@@ -74,6 +74,11 @@ export class Part {
     return result;
   }
 
+  /** Returns the ID of the part. */
+  getId(): string {
+    return this.id;
+  }
+
   /** Renders the part. */
   render(): PartRendering {
     return {
