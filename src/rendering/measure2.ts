@@ -1,15 +1,29 @@
-import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as vexflow from 'vexflow';
+import * as drawables from '@/drawables';
+import { Config } from './config';
 import { PartScoped } from './types';
 import { Address } from './address';
-import { MeasureFragment } from './measurefragment2';
+import { MeasureFragment, MeasureFragmentRendering } from './measurefragment2';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Division } from './division';
+import { Spanners } from './spanners';
+
+const MEASURE_LABEL_OFFSET_X = 0;
+const MEASURE_LABEL_OFFSET_Y = 24;
+const MEASURE_LABEL_COLOR = '#aaaaaa';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
+  address: Address<'measure'>;
+  vexflow: {
+    staveConnectors: vexflow.StaveConnector[];
+  };
+  index: number;
+  label: drawables.Text;
+  fragments: MeasureFragmentRendering[];
 };
 
 /** Describes when a measure fragment should be instantiated.  */
@@ -75,9 +89,36 @@ export class Measure {
   }
 
   /** Renders the measure. */
-  render(): MeasureRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    showLabel: boolean;
+    address: Address<'measure'>;
+    spanners: Spanners;
+    systemCount: number;
+    targetSystemWidth: number;
+    minRequiredSystemWidth: number;
+    previousMeasure: Measure | null;
+    nextMeasure: Measure | null;
+  }): MeasureRendering {
+    const label = new drawables.Text({
+      content: opts.showLabel ? this.getLabel() : '',
+      italic: true,
+      x: opts.x + MEASURE_LABEL_OFFSET_X,
+      y: opts.y + MEASURE_LABEL_OFFSET_Y,
+      color: MEASURE_LABEL_COLOR,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
+    });
+
     return {
       type: 'measure',
+      address: opts.address,
+      fragments: [],
+      index: this.index,
+      label,
+      vexflow: {
+        staveConnectors: [],
+      },
     };
   }
 
@@ -253,6 +294,24 @@ export class Measure {
       ) ?? 'regular'
     );
   }
+
+  private getLabel(): string {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return '';
+    }
+
+    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return '';
+    }
+
+    if (measure.isImplicit()) {
+      return '';
+    }
+
+    return measure.getNumber() || (this.index + 1).toString();
+  }
 }
 
 class MeasureEntryCursor {
@@ -278,7 +337,7 @@ class MeasureEntryCursor {
     const staveSignature = this.staveSignature;
 
     while (this.divisions.isLessThanOrEqualTo(division) && this.index < this.entries.length) {
-      const entry = this.entries[this.index];
+      const entry = this.entries[this.index++];
 
       if (entry instanceof StaveSignature) {
         this.staveSignature = entry;
@@ -304,7 +363,6 @@ class MeasureEntryCursor {
       }
 
       entries.push(entry);
-      this.index++;
     }
 
     return { staveSignature, entries };

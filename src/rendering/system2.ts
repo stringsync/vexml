@@ -1,9 +1,15 @@
+import * as vexflow from 'vexflow';
+import { Address } from './address';
 import { Config } from './config';
-import { Measure } from './measure2';
+import { Measure, MeasureRendering } from './measure2';
+import { Spanners } from './spanners';
 
 /** The result of rendering a system. */
 export type SystemRendering = {
   type: 'system';
+  address: Address<'system'>;
+  measures: MeasureRendering[];
+  vexflow: { staveConnector: vexflow.StaveConnector | null };
 };
 
 /**
@@ -23,9 +29,22 @@ export class System {
   }
 
   /** Renders the system. */
-  render(): SystemRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    systemCount: number;
+    previousSystem: System | null;
+    nextSystem: System | null;
+    spanners: Spanners;
+  }): SystemRendering {
+    const address = Address.system({ systemIndex: this.index, origin: 'System.prototype.render' });
+
     return {
       type: 'system',
+      address,
+      measures: [],
+      vexflow: { staveConnector: null },
     };
   }
 }

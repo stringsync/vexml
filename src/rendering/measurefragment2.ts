@@ -5,7 +5,7 @@ import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
-import { Part } from './part2';
+import { Part, PartRendering } from './part2';
 import { Chorus } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
@@ -15,6 +15,8 @@ const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
+  address: Address<'measurefragment'>;
+  parts: PartRendering[];
 };
 
 /**
@@ -75,9 +77,21 @@ export class MeasureFragment {
   }
 
   /** Renders the measure fragment. */
-  render(): MeasureFragmentRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    address: Address<'measurefragment'>;
+    spanners: Spanners;
+    systemCount: number;
+    targetSystemWidth: number;
+    minRequiredSystemWidth: number;
+    previousMeasureFragment: MeasureFragment | null;
+    nextMeasureFragment: MeasureFragment | null;
+  }): MeasureFragmentRendering {
     return {
       type: 'measurefragment',
+      address: opts.address,
+      parts: [],
     };
   }
 
@@ -180,24 +194,26 @@ export class MeasureFragment {
     const vfFormatter = new vexflow.Formatter();
     const vfVoices = new Array<vexflow.Voice>();
 
-    const staves = this.getParts().flatMap((part) => part.getStaves());
+    for (const part of this.getParts()) {
+      const partAddress = opts.address.part({ partId: part.getId() });
 
-    for (const stave of staves) {
-      const entry = stave.getEntry();
+      for (const stave of part.getStaves()) {
+        const entry = stave.getEntry();
 
-      let vfPartStaveVoices = new Array<vexflow.Voice>();
+        let vfPartStaveVoices = new Array<vexflow.Voice>();
 
-      if (entry instanceof Chorus) {
-        const address = opts.address.stave({ staveNumber: stave.getNumber() }).chorus();
-        const chorusRendering = entry.render({ address, spanners });
-        vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
+        if (entry instanceof Chorus) {
+          const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
+          const chorusRendering = entry.render({ address, spanners });
+          vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
+        }
+
+        if (vfPartStaveVoices.length > 0) {
+          vfFormatter.joinVoices(vfPartStaveVoices);
+        }
+
+        vfVoices.push(...vfPartStaveVoices);
       }
-
-      if (vfPartStaveVoices.length > 0) {
-        vfFormatter.joinVoices(vfPartStaveVoices);
-      }
-
-      vfVoices.push(...vfPartStaveVoices);
     }
 
     if (vfVoices.length === 0) {

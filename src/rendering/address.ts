@@ -25,7 +25,6 @@ export class Address<T extends AddressType = AddressType> {
   private type: T;
   private id: symbol;
   private parent: Address | null;
-  private children: Address[];
   private context: AddressContext<T>;
 
   private constructor(opts: { type: T; id: symbol; parent: Address | null; context: AddressContext<T> }) {
@@ -33,7 +32,6 @@ export class Address<T extends AddressType = AddressType> {
     this.id = opts.id;
     this.parent = opts.parent;
     this.context = opts.context;
-    this.children = [];
   }
 
   /** Creates an address for a system. */
@@ -48,7 +46,6 @@ export class Address<T extends AddressType = AddressType> {
   ): Address<T> {
     const id = Symbol(type);
     const address = new Address({ type, id, parent, context });
-    parent?.children.push(address);
     return address;
   }
 
@@ -103,7 +100,7 @@ export class Address<T extends AddressType = AddressType> {
 
   /** Creates an address for a measure. */
   measure(context: AddressContext<'measure'>): Address<'measure'> {
-    this.assertThisIsA('part');
+    this.assertThisIsA('system');
     return Address.create('measure', this, context);
   }
 
@@ -121,7 +118,7 @@ export class Address<T extends AddressType = AddressType> {
 
   /** Creates an address for a stave. */
   stave(context: AddressContext<'stave'>): Address<'stave'> {
-    this.assertThisIsA('measurefragment');
+    this.assertThisIsA('part');
     return Address.create('stave', this, context);
   }
 

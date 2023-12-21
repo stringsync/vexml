@@ -1,4 +1,4 @@
-import { SystemRendering } from './system';
+import { SystemRendering } from './system2';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -6,7 +6,7 @@ import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
-import { Seed } from './seed';
+import { Seed } from './seed2';
 import { Spanners } from './spanners';
 
 // Space needed to be able to show the end barlines.
@@ -80,10 +80,10 @@ export class Score {
 
       const maxY = util.max([
         y,
-        ...systemRendering.parts
-          .flatMap((part) => part.measures)
+        ...systemRendering.measures
           .flatMap((measure) => measure.fragments)
-          .flatMap((measureFragment) => measureFragment.staves)
+          .flatMap((measureFragment) => measureFragment.parts)
+          .flatMap((part) => part.staves)
           .map((stave) => {
             const box = stave.vexflow.stave.getBoundingBox();
             return box.getY() + box.getH();
@@ -99,10 +99,9 @@ export class Score {
     const spannersRendering = spanners.render();
 
     // Precalculate different parts of the rendering for readability later.
-    const parts = systemRenderings.flatMap((system) => system.parts);
-    const measures = parts.flatMap((part) => part.measures);
+    const measures = systemRenderings.flatMap((system) => system.measures);
     const measureFragments = measures.flatMap((measure) => measure.fragments);
-    const staves = measureFragments.flatMap((measureFragment) => measureFragment.staves);
+    const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
@@ -123,13 +122,6 @@ export class Score {
 
     // Draw the title.
     titleRendering?.text.draw(vfContext);
-
-    // Draw the part names.
-    parts
-      .map((part) => part.name)
-      .forEach((partName) => {
-        partName?.text.draw(vfContext);
-      });
 
     // Draw vexflow.Stave elements.
     staves
@@ -154,13 +146,6 @@ export class Score {
       .flatMap((measure) => measure.vexflow.staveConnectors)
       .forEach((vfStaveConnector) => {
         vfStaveConnector.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveConnector elements from parts.
-    parts
-      .map((part) => part.vexflow.staveConnector)
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector?.setContext(vfContext).draw();
       });
 
     // Draw vexflow.MultiMeasureRest elements.
