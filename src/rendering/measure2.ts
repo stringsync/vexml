@@ -12,12 +12,9 @@ export type MeasureRendering = {
   type: 'measure';
 };
 
-type MeasureFragmentData = {
-  divisions: Division;
-  staveSignature: StaveSignature;
-  entries: PartScoped<MeasureEntry>[];
-  beginningBarStyle: musicxml.BarStyle;
-  endBarStyle: musicxml.BarStyle;
+/** Describes when a measure fragment should be instantiated.  */
+type MeasureFragmentEvent = {
+  at: Division;
 };
 
 /**
@@ -62,7 +59,15 @@ export class Measure {
 
   /** Returns the minimum required width for the Measure. */
   getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
-    return 0;
+    let result = 0;
+
+    for (const fragment of this.getFragments()) {
+      const measureFragmentIndex = fragment.getIndex();
+      const address = opts.address.measureFragment({ measureFragmentIndex });
+      result += fragment.getMinRequiredWidth({ address });
+    }
+
+    return result;
   }
 
   /** Renders the measure. */
@@ -76,108 +81,128 @@ export class Measure {
   private getFragments(): MeasureFragment[] {
     const result = new Array<MeasureFragment>();
 
-    const data = new Array<PartScoped<MeasureFragmentData>>();
+    const beginningBarStyle = this.getBeginningBarStyle();
+    const endBarStyle = this.getEndBarStyle();
+    const events = this.getFragmentEvents();
+    const cursors = this.getEntryCursors();
 
-    for (const partId of this.partIds) {
-      const entries = this.entries.filter((entry) => entry.partId === partId);
+    for (let index = 0; index < events.length; index++) {
+      const event = events[index];
+      const isFirst = index === 0;
+      const isLast = index === events.length - 1;
 
-      const staveSignature = this.leadingStaveSignatures.find((staveSignature) => staveSignature.partId === partId);
-      if (!staveSignature) {
-        throw new Error(`Stave signature not found for part: ${partId}`);
+      const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const measureEntries = new Array<PartScoped<MeasureEntry>>();
+      const staveSignatures = new Array<PartScoped<StaveSignature>>();
+
+      for (const partId of this.partIds) {
+        let upperBound = event.at;
+        if (isLast) {
+          // We add 1 to the upper bound to ensure that the last fragment gets created.
+          upperBound = upperBound.add(Division.of(1, 1));
+        }
+
+        const { entries, staveSignature } = cursors[partId].takeEntriesUpTo(upperBound);
+
+        measureEntries.push(...entries.map((entry) => ({ partId, value: entry })));
+        staveSignatures.push({ partId, value: staveSignature });
+
+        // TODO: It may be possible to render barlines in the middle of a measure fragment. We might need to update
+        // event to contain the barline data. If we don't need it, update MeasureFragment to take a single
+        // part-agonistic beginningBarStyle and endBarStyle.
+        beginningBarStyles.push({ partId, value: isFirst ? beginningBarStyle : 'none' });
+        endBarStyles.push({ partId, value: isLast ? endBarStyle : 'none' });
       }
 
-      data.push(...this.getFragmentData(partId, staveSignature.value, entries));
+      result.push(
+        new MeasureFragment({
+          config: this.config,
+          index: result.length,
+          musicXml: {
+            staveLayouts: this.musicXml.staveLayouts,
+            beginningBarStyles,
+            endBarStyles,
+          },
+          measureEntries,
+          staveSignatures,
+        })
+      );
     }
-
-    util.sortBy(data, (data) => data.value.divisions.toBeats());
 
     return result;
   }
 
-  private getFragmentData(
-    partId: string,
-    staveSignature: StaveSignature,
-    entries: PartScoped<MeasureEntry>[]
-  ): PartScoped<MeasureFragmentData>[] {
-    const result = new Array<MeasureFragmentData>();
+  private getFragmentEvents(): MeasureFragmentEvent[] {
+    const events = new Array<MeasureFragmentEvent>();
 
-    const beginningBarStyle = this.getBeginningBarStyle();
-    const endBarStyle = this.getEndBarStyle();
+    for (const partId of this.partIds) {
+      let divisions = Division.zero();
 
-    let current = new Array<PartScoped<MeasureEntry>>();
-    let divisions = Division.zero();
+      const entries = this.entries.filter((entry) => entry.partId === partId);
 
-    for (let index = 0; index < entries.length; index++) {
-      const entry = entries[index];
-      const isLast = index === entries.length - 1;
+      let staveSignature = this.leadingStaveSignatures.find(
+        (staveSignature) => staveSignature.partId === partId
+      )?.value;
+      if (!staveSignature) {
+        throw new Error(`Stave signature not found for part: ${partId}`);
+      }
 
-      if (entry instanceof StaveSignature) {
-        if (entry.getChangedStaveModifiers().length > 0 && current.length > 0) {
-          result.push({
-            divisions,
-            staveSignature,
-            entries: current,
-            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
-            endBarStyle: 'none',
-          });
-          current = [];
+      for (let index = 0; index < entries.length; index++) {
+        const entry = entries[index];
+        const isLast = index === entries.length - 1;
+
+        if (entry instanceof StaveSignature) {
+          if (entry.getChangedStaveModifiers().length > 0 && index > 0) {
+            events.push({ at: divisions });
+          }
+          staveSignature = entry;
         }
 
-        staveSignature = entry;
-      }
+        if (this.isSupportedMetronome(entry.value) && index > 0) {
+          events.push({ at: divisions });
+        }
 
-      if (this.isSupportedMetronome(entry.value) && current.length > 0) {
-        result.push({
-          divisions,
-          staveSignature,
-          entries: current,
-          beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
-          endBarStyle: 'none',
-        });
-        current = [];
-      }
+        if (entry instanceof musicxml.Note) {
+          const duration = Division.of(entry.getDuration(), staveSignature.getQuarterNoteDivisions());
+          divisions = divisions.add(duration);
+        }
 
-      if (entry instanceof musicxml.Note) {
-        divisions = divisions.add(Division.of(entry.getDuration(), staveSignature.getQuarterNoteDivisions()));
-      }
-
-      current.push(entry);
-
-      if (isLast) {
-        const nextStaveSignature = staveSignature.getNext();
-        const hasClefChangeAtMeasureBoundary =
-          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
-          nextStaveSignature?.getMeasureIndex() === this.index + 1 &&
-          nextStaveSignature?.getMeasureEntryIndex() === 0;
-
-        if (hasClefChangeAtMeasureBoundary) {
-          result.push({
-            divisions,
-            staveSignature,
-            entries: current,
-            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
-            endBarStyle: 'none',
-          });
-          result.push({
-            divisions,
-            staveSignature,
-            entries: current,
-            beginningBarStyle: 'none',
-            endBarStyle: endBarStyle,
-          });
-        } else {
-          result.push({
-            divisions,
-            staveSignature,
-            entries: current,
-            beginningBarStyle: result.length === 0 ? beginningBarStyle : 'none',
-            endBarStyle: endBarStyle,
-          });
+        if (isLast) {
+          events.push({ at: divisions });
         }
       }
     }
 
-    return result.map((value) => ({ partId, value }));
+    const seen = new Set<number>();
+    const unique = new Array<MeasureFragmentEvent>();
+    for (const event of events) {
+      if (!seen.has(event.at.toBeats())) {
+        seen.add(event.at.toBeats());
+        unique.push(event);
+      }
+    }
+
+    return util.sortBy(unique, (event) => event.at.toBeats());
+  }
+
+  private getEntryCursors(): { [partId: string]: MeasureEntryCursor } {
+    const result: Record<string, MeasureEntryCursor> = {};
+
+    for (const partId of this.partIds) {
+      const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
+
+      const staveSignature = this.leadingStaveSignatures.find(
+        (staveSignature) => staveSignature.partId === partId
+      )?.value;
+      if (!staveSignature) {
+        throw new Error(`Stave signature not found for part: ${partId}`);
+      }
+
+      result[partId] = new MeasureEntryCursor(entries, staveSignature);
+    }
+
+    return result;
   }
 
   private isSupportedMetronome(entry: MeasureEntry): boolean {
@@ -210,5 +235,47 @@ export class Measure {
           .map((barline) => barline.getBarStyle())
       ) ?? 'regular'
     );
+  }
+}
+
+class MeasureEntryCursor {
+  private entries: MeasureEntry[];
+  private index: number;
+  private divisions: Division;
+  private staveSignature: StaveSignature;
+
+  constructor(entries: MeasureEntry[], staveSignature: StaveSignature) {
+    this.entries = entries;
+    this.index = 0;
+    this.divisions = Division.zero();
+    this.staveSignature = staveSignature;
+  }
+
+  /** Returns all the entries up to a division, exclusive at boundary. */
+  takeEntriesUpTo(division: Division): { staveSignature: StaveSignature; entries: MeasureEntry[] } {
+    const entries = new Array<MeasureEntry>();
+
+    // We use the *leading* stave signature in the result, because it is the one that dictates downstream behavior.
+    // In practice, we should only ever have one stave signature per measure fragment, but we support multiple for
+    // robustness.
+    const staveSignature = this.staveSignature;
+
+    while (this.divisions.isLessThan(division) && this.index < this.entries.length) {
+      const entry = this.entries[this.index];
+
+      if (entry instanceof StaveSignature) {
+        this.staveSignature = entry;
+      }
+
+      if (entry instanceof musicxml.Note) {
+        const duration = Division.of(entry.getDuration(), this.staveSignature.getQuarterNoteDivisions());
+        this.divisions = this.divisions.add(duration);
+      }
+
+      entries.push(entry);
+      this.index++;
+    }
+
+    return { staveSignature, entries };
   }
 }

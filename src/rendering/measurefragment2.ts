@@ -2,6 +2,7 @@ import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import * as musicxml from '@/musicxml';
 import { PartScoped } from './types';
+import { Address } from './address';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -21,30 +22,37 @@ export class MeasureFragment {
   private index: number;
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyle: PartScoped<musicxml.BarStyle>;
-    endBarStyle: PartScoped<musicxml.BarStyle>;
+    beginningBarStyles: PartScoped<musicxml.BarStyle>[];
+    endBarStyles: PartScoped<musicxml.BarStyle>[];
   };
   private measureEntries: PartScoped<MeasureEntry>[];
   private staveSignatures: PartScoped<StaveSignature>[];
-  private staveCounts: PartScoped<number>[];
 
   constructor(opts: {
     config: Config;
     index: number;
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyle: PartScoped<musicxml.BarStyle>;
-      endBarStyle: PartScoped<musicxml.BarStyle>;
+      beginningBarStyles: PartScoped<musicxml.BarStyle>[];
+      endBarStyles: PartScoped<musicxml.BarStyle>[];
     };
     measureEntries: PartScoped<MeasureEntry>[];
     staveSignatures: PartScoped<StaveSignature>[];
-    staveCounts: PartScoped<number>[];
   }) {
     this.config = opts.config;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
-    this.staveCounts = opts.staveCounts;
+  }
+
+  /** Returns the index of the measure fragment, which is relative to its parent measure. */
+  getIndex(): number {
+    return this.index;
+  }
+
+  /** Returns the minimum required width for the measure fragment. */
+  getMinRequiredWidth(opts: { address: Address<'measurefragment'> }): number {
+    return 0;
   }
 }
