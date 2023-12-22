@@ -1,6 +1,5 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import * as vexflow from 'vexflow';
 import * as drawables from '@/drawables';
 import { Config } from './config';
 import { MeasureFragmentWidth, PartScoped } from './types';
@@ -18,9 +17,6 @@ const MEASURE_LABEL_COLOR = '#aaaaaa';
 export type MeasureRendering = {
   type: 'measure';
   address: Address<'measure'>;
-  vexflow: {
-    staveConnectors: vexflow.StaveConnector[];
-  };
   index: number;
   label: drawables.Text;
   fragments: MeasureFragmentRendering[];
@@ -141,7 +137,6 @@ export class Measure {
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
         });
-
         fragmentRenderings.push(fragmentRendering);
       }
     );
@@ -161,9 +156,6 @@ export class Measure {
       fragments: fragmentRenderings,
       index: this.index,
       label,
-      vexflow: {
-        staveConnectors: [],
-      },
       width: util.sum(fragmentRenderings.map((fragment) => fragment.width)),
     };
   }

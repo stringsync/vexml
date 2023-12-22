@@ -133,13 +133,6 @@ export class Score {
         vfStave.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.StaveConnector elements from measures.
-    measures
-      .flatMap((measure) => measure.vexflow.staveConnectors)
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector.setContext(vfContext).draw();
-      });
-
     // Draw vexflow.MultiMeasureRest elements.
     staves
       .map((stave) => stave.entry)
