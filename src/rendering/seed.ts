@@ -38,7 +38,7 @@ export class Seed {
     let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
 
-    const addSystem = () => {
+    const addSystem = (opts: { stretch: boolean }) => {
       const minRequiredSystemWidth = util.sum(minRequiredFragmentWidths.map(({ value }) => value));
 
       const widths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
@@ -55,7 +55,7 @@ export class Seed {
           config: this.config,
           index: systems.length,
           measures,
-          measureFragmentWidths: widths,
+          measureFragmentWidths: opts.stretch ? widths : minRequiredFragmentWidths,
         })
       );
     };
@@ -71,7 +71,7 @@ export class Seed {
       let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
 
       if (remaining < required) {
-        addSystem();
+        addSystem({ stretch: true });
 
         // Reset state.
         remaining = width;
@@ -95,7 +95,7 @@ export class Seed {
       minRequiredFragmentWidths.push(...measureMinRequiredFragmentWidths);
 
       if (isLast) {
-        addSystem();
+        addSystem({ stretch: false });
       }
     });
 
