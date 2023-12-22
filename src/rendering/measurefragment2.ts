@@ -17,6 +17,7 @@ export type MeasureFragmentRendering = {
   type: 'measurefragment';
   address: Address<'measurefragment'>;
   parts: PartRendering[];
+  width: number;
 };
 
 /**
@@ -76,6 +77,11 @@ export class MeasureFragment {
     );
   }
 
+  /** Returns the top padding of the fragment. */
+  getTopPadding(): number {
+    return util.max(this.getParts().map((part) => part.getTopPadding()));
+  }
+
   /** Renders the measure fragment. */
   render(opts: {
     x: number;
@@ -90,6 +96,7 @@ export class MeasureFragment {
       type: 'measurefragment',
       address: opts.address,
       parts: [],
+      width: opts.width.value,
     };
   }
 

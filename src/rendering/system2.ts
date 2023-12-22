@@ -51,6 +51,9 @@ export class System {
   }): SystemRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
+    let x = opts.x;
+    const y = opts.y + this.getTopPadding();
+
     util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast }) => {
       if (isFirst) {
         previousMeasure = util.last(opts.previousSystem?.measures ?? []);
@@ -69,16 +72,17 @@ export class System {
       );
 
       const measureRendering = currentMeasure.render({
-        x: opts.x,
-        y: opts.y,
+        x,
+        y,
         address,
         fragmentWidths,
         previousMeasure,
         nextMeasure,
         spanners: opts.spanners,
       });
-
       measureRenderings.push(measureRendering);
+
+      x += measureRendering.width;
     });
 
     return {
@@ -86,5 +90,9 @@ export class System {
       address: opts.address,
       measures: measureRenderings,
     };
+  }
+
+  private getTopPadding(): number {
+    return util.max(this.measures.map((measure) => measure.getTopPadding()));
   }
 }

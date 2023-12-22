@@ -24,6 +24,7 @@ export type MeasureRendering = {
   index: number;
   label: drawables.Text;
   fragments: MeasureFragmentRendering[];
+  width: number;
 };
 
 /** Describes when a measure fragment should be instantiated.  */
@@ -95,6 +96,11 @@ export class Measure {
     return widths;
   }
 
+  /** Returns the top padding for the measure. */
+  getTopPadding(): number {
+    return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
+  }
+
   /** Renders the measure. */
   render(opts: {
     x: number;
@@ -158,6 +164,7 @@ export class Measure {
       vexflow: {
         staveConnectors: [],
       },
+      width: util.sum(fragmentRenderings.map((fragment) => fragment.width)),
     };
   }
 
