@@ -376,7 +376,8 @@ class MeasureEntryCursor {
     const staveSignature = this.staveSignature;
 
     while (this.divisions.isLessThanOrEqualTo(division) && this.index < this.entries.length) {
-      const entry = this.entries[this.index++];
+      const entry = this.entries[this.index];
+      this.index++;
 
       if (entry instanceof StaveSignature) {
         this.staveSignature = entry;
