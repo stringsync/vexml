@@ -66,7 +66,7 @@ export class Seed {
       let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
         previousMeasure,
         address: systemAddress.measure({
-          systemMeasureIndex: index,
+          systemMeasureIndex: measures.length,
           measureIndex: currentMeasure.getIndex(),
         }),
       });
@@ -85,7 +85,7 @@ export class Seed {
         measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
           previousMeasure,
           address: systemAddress.measure({
-            systemMeasureIndex: index,
+            systemMeasureIndex: 0,
             measureIndex: currentMeasure.getIndex(),
           }),
         });
