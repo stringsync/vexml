@@ -3,7 +3,7 @@ import { Address } from './address';
 import { Config } from './config';
 import { Measure, MeasureRendering } from './measure2';
 import { Spanners } from './spanners';
-import { MeasureFragmentWidth } from './types';
+import { MeasureFragmentWidth } from './measurefragment2';
 
 /** The result of rendering a system. */
 export type SystemRendering = {

@@ -2,10 +2,11 @@ import { System } from './system2';
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { MeasureFragmentWidth, PartScoped } from './types';
+import { PartScoped } from './types';
 import { Measure } from './measure2';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
+import { MeasureFragmentWidth } from './measurefragment2';
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
