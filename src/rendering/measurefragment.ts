@@ -5,7 +5,7 @@ import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
-import { Part, PartRendering } from './part2';
+import { Part, PartRendering } from './part';
 import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
