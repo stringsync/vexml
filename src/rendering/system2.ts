@@ -3,18 +3,13 @@ import { Address } from './address';
 import { Config } from './config';
 import { Measure, MeasureRendering } from './measure2';
 import { Spanners } from './spanners';
+import { MeasureFragmentWidth } from './types';
 
 /** The result of rendering a system. */
 export type SystemRendering = {
   type: 'system';
   address: Address<'system'>;
   measures: MeasureRendering[];
-};
-
-/** The data needed to render a measure. */
-export type MeasureData = {
-  measure: Measure;
-  width: number;
 };
 
 /**
@@ -25,12 +20,19 @@ export type MeasureData = {
 export class System {
   private config: Config;
   private index: number;
-  private data: MeasureData[];
+  private measures: Measure[];
+  private measureFragmentWidths: MeasureFragmentWidth[];
 
-  constructor(opts: { config: Config; index: number; data: MeasureData[] }) {
+  constructor(opts: {
+    config: Config;
+    index: number;
+    measures: Measure[];
+    measureFragmentWidths: MeasureFragmentWidth[];
+  }) {
     this.config = opts.config;
     this.index = opts.index;
-    this.data = opts.data;
+    this.measures = opts.measures;
+    this.measureFragmentWidths = opts.measureFragmentWidths;
   }
 
   /** Returns the index of the system. */
@@ -49,30 +51,28 @@ export class System {
   }): SystemRendering {
     const measureRenderings = new Array<MeasureRendering>();
 
-    util.forEachTriple(this.data, ([previousData, currentData, nextData], { isFirst, isLast }) => {
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast }) => {
       if (isFirst) {
-        previousData = util.last(opts.previousSystem?.data ?? []);
+        previousMeasure = util.last(opts.previousSystem?.measures ?? []);
       }
       if (isLast) {
-        nextData = util.first(opts.nextSystem?.data ?? []);
+        nextMeasure = util.first(opts.nextSystem?.measures ?? []);
       }
-
-      const previousMeasure = previousData?.measure ?? null;
-      const currentMeasure = currentData.measure;
-      const nextMeasure = nextData?.measure ?? null;
-
-      const width = currentData.width;
 
       const address = opts.address.measure({
         systemMeasureIndex: this.index,
         measureIndex: currentMeasure.getIndex(),
       });
 
+      const fragmentWidths = this.measureFragmentWidths.filter(
+        ({ measureIndex }) => measureIndex === currentMeasure.getIndex()
+      );
+
       const measureRendering = currentMeasure.render({
         x: opts.x,
         y: opts.y,
         address,
-        width,
+        fragmentWidths,
         previousMeasure,
         nextMeasure,
         spanners: opts.spanners,

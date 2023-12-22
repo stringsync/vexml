@@ -3,7 +3,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { PartScoped } from './types';
+import { MeasureFragmentWidth, PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part2';
 import { Chorus } from './chorus';
@@ -82,9 +82,7 @@ export class MeasureFragment {
     y: number;
     address: Address<'measurefragment'>;
     spanners: Spanners;
-    systemCount: number;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
+    width: MeasureFragmentWidth;
     previousMeasureFragment: MeasureFragment | null;
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
