@@ -11,6 +11,7 @@ import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
+const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -70,9 +71,12 @@ export class MeasureFragment {
     address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
+    const address = opts.address;
+
     return (
-      this.getStaveModifiersWidth({ address: opts.address, previousMeasureFragment: opts.previousMeasureFragment }) +
-      this.getMinVoiceJustifyWidth({ address: opts.address }) +
+      this.getStaveModifiersWidth({ address, previousMeasureFragment: opts.previousMeasureFragment }) +
+      this.getMinVoiceJustifyWidth({ address }) +
+      this.getLeftPadding({ address }) +
       this.getRightPadding()
     );
   }
@@ -226,6 +230,20 @@ export class MeasureFragment {
     }
 
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
+  }
+
+  private getLeftPadding(opts: { address: Address<'measurefragment'> }): number {
+    let padding = 0;
+
+    const hasStaveConnectorBrace =
+      opts.address.getSystemMeasureIndex() === 0 &&
+      this.index === 0 &&
+      this.staveSignatures.some((staveSignature) => staveSignature.value.getStaveCount() > 1);
+    if (hasStaveConnectorBrace) {
+      padding += STAVE_CONNECTOR_BRACE_WIDTH;
+    }
+
+    return padding;
   }
 
   private getRightPadding(): number {
