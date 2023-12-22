@@ -1,12 +1,12 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
-import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
 import { Config } from './config';
-import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
-import { MeasureEntry, StaveSignature } from './stavesignature';
+import { PartScoped } from './types';
 import { Address } from './address';
+import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
+import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Division } from './division';
 import { Spanners } from './spanners';
 
 const MEASURE_LABEL_OFFSET_X = 0;
@@ -17,13 +17,15 @@ const MEASURE_LABEL_COLOR = '#aaaaaa';
 export type MeasureRendering = {
   type: 'measure';
   address: Address<'measure'>;
-  vexflow: {
-    staveConnectors: vexflow.StaveConnector[];
-  };
   index: number;
   label: drawables.Text;
   fragments: MeasureFragmentRendering[];
   width: number;
+};
+
+/** Describes when a measure fragment should be instantiated.  */
+type MeasureFragmentEvent = {
+  at: Division;
 };
 
 /**
@@ -34,83 +36,78 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
+  private partIds: string[];
   private musicXml: {
-    measure: musicxml.Measure;
+    measures: PartScoped<musicxml.Measure>[];
     staveLayouts: musicxml.StaveLayout[];
   };
-  private leadingStaveSignature: StaveSignature;
-
-  private staveCount: number;
-  private measureEntries: MeasureEntry[];
+  private leadingStaveSignatures: PartScoped<StaveSignature>[];
+  private entries: PartScoped<MeasureEntry>[];
 
   constructor(opts: {
     config: Config;
     index: number;
+    partIds: string[];
     musicXml: {
-      measure: musicxml.Measure;
+      measures: PartScoped<musicxml.Measure>[];
       staveLayouts: musicxml.StaveLayout[];
     };
-    leadingStaveSignature: StaveSignature;
-    staveCount: number;
-    measureEntries: MeasureEntry[];
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
   }) {
     this.config = opts.config;
+    this.partIds = opts.partIds;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
-    this.leadingStaveSignature = opts.leadingStaveSignature;
-    this.staveCount = opts.staveCount;
-    this.measureEntries = opts.measureEntries;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
   }
 
-  /** Returns the index of the measure. */
+  /** Returns the absolute index of the measure. */
   getIndex(): number {
     return this.index;
   }
 
-  /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
-    let sum = 0;
+  /** Returns the minimum required width for each measure fragment. */
+  getMinRequiredFragmentWidths(opts: {
+    address: Address<'measure'>;
+    previousMeasure: Measure | null;
+  }): MeasureFragmentWidth[] {
+    const widths = new Array<MeasureFragmentWidth>();
 
-    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
+    util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment], { isFirst }) => {
       if (isFirst) {
-        previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
+        previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
-      sum += currentMeasureFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment({ measureFragmentIndex: currentMeasureFragment.getIndex() }),
-        previousMeasureFragment,
+      widths.push({
+        measureIndex: this.index,
+        measureFragmentIndex: currentFragment.getIndex(),
+        value: currentFragment.getMinRequiredWidth({
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+          previousMeasureFragment: previousFragment,
+        }),
       });
     });
 
-    return sum;
+    return widths;
   }
 
-  /** Returns the top padding required for the Measure. */
+  /** Returns the top padding for the measure. */
   getTopPadding(): number {
     return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
   }
 
-  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
-  getMultiRestCount(): number {
-    return util.sum(this.getFragments().map((fragment) => fragment.getMultiRestCount()));
-  }
-
-  /** Renders the Measure. */
+  /** Renders the measure. */
   render(opts: {
     x: number;
     y: number;
-    showLabel: boolean;
+    fragmentWidths: MeasureFragmentWidth[];
     address: Address<'measure'>;
     spanners: Spanners;
-    systemCount: number;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
-
-    let x = opts.x;
-    let width = 0;
 
     util.forEachTriple(
       this.getFragments(),
@@ -122,50 +119,31 @@ export class Measure {
           nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
         }
 
+        const width = opts.fragmentWidths.find(
+          ({ measureFragmentIndex }) => measureFragmentIndex === currentFragment.getIndex()
+        );
+        if (!width) {
+          const address = opts.address.toDebugString();
+          const widths = JSON.stringify(opts.fragmentWidths);
+          throw new Error(`Width not found for measure fragment: ${address}, got: ${widths}`);
+        }
+
         const fragmentRendering = currentFragment.render({
-          x,
+          x: opts.x,
           y: opts.y,
+          width,
           address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
-          systemCount: opts.systemCount,
-          minRequiredSystemWidth: opts.minRequiredSystemWidth,
-          targetSystemWidth: opts.targetSystemWidth,
+          spanners: opts.spanners,
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
-          spanners: opts.spanners,
         });
-        fragmentRenderings.push(fragmentRendering);
 
-        x += fragmentRendering.width;
-        width += fragmentRendering.width;
+        fragmentRenderings.push(fragmentRendering);
       }
     );
 
-    const vfStaveConnectors = new Array<vexflow.StaveConnector>();
-
-    const staveRenderings = util.first(fragmentRenderings)?.staves ?? [];
-    if (staveRenderings.length > 1) {
-      const topStave = util.first(staveRenderings)!;
-      const bottomStave = util.last(staveRenderings)!;
-
-      const begginingStaveConnectorType = conversions.fromBarlineTypeToBeginningStaveConnectorType(
-        topStave.vexflow.beginningBarlineType
-      );
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
-          begginingStaveConnectorType
-        )
-      );
-
-      const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(
-        topStave.vexflow.endBarlineType
-      );
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
-      );
-    }
-
     const label = new drawables.Text({
-      content: opts.showLabel ? this.getLabel() : '',
+      content: this.getLabelTextContent(),
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
@@ -176,140 +154,256 @@ export class Measure {
     return {
       type: 'measure',
       address: opts.address,
-      vexflow: {
-        staveConnectors: vfStaveConnectors,
-      },
+      fragments: fragmentRenderings,
       index: this.index,
       label,
-      fragments: fragmentRenderings,
-      width,
+      width: util.sum(fragmentRenderings.map((fragment) => fragment.width)),
     };
   }
 
   @util.memoize()
   private getFragments(): MeasureFragment[] {
-    const fragments = new Array<MeasureFragment>();
+    const result = new Array<MeasureFragment>();
 
-    const measureIndex = this.index;
+    const beginningBarStyle = this.getBeginningBarStyle();
+    const endBarStyle = this.getEndBarStyle();
+    const events = this.getFragmentEvents();
+    const cursors = this.getEntryCursors();
 
-    const beginningBarStyle =
-      this.musicXml.measure
-        .getBarlines()
-        .find((barline) => barline.getLocation() === 'left')
-        ?.getBarStyle() ?? 'regular';
+    for (let index = 0; index < events.length; index++) {
+      const event = events[index];
+      const isFirst = index === 0;
+      const isLast = index === events.length - 1;
 
-    const endBarStyle =
-      this.musicXml.measure
-        .getEndingMeasure()
-        .getBarlines()
-        .find((barline) => barline.getLocation() === 'right')
-        ?.getBarStyle() ?? 'regular';
+      const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const measureEntries = new Array<PartScoped<MeasureEntry>>();
+      const staveSignatures = new Array<PartScoped<StaveSignature>>();
 
-    let staveSignature = this.leadingStaveSignature;
-    let currentMeasureEntries = new Array<MeasureEntry>();
-
-    const config = this.config;
-    const staveCount = this.staveCount;
-    const staveLayouts = this.musicXml.staveLayouts;
-
-    let measureFragmentIndex = 0;
-
-    function addFragment(
-      leadingStaveSignature: StaveSignature,
-      measureEntries: MeasureEntry[],
-      beginningBarStyle: musicxml.BarStyle,
-      endBarStyle: musicxml.BarStyle
-    ) {
-      const fragment = new MeasureFragment({
-        config,
-        index: measureFragmentIndex++,
-        leadingStaveSignature,
-        beginningBarStyle: beginningBarStyle,
-        endBarStyle: endBarStyle,
-        staveCount,
-        staveLayouts,
-        measureEntries,
-      });
-      fragments.push(fragment);
-    }
-
-    for (let measureEntryIndex = 0; measureEntryIndex < this.measureEntries.length; measureEntryIndex++) {
-      const measureEntry = this.measureEntries[measureEntryIndex];
-      const isLastMeasureEntry = measureEntryIndex === this.measureEntries.length - 1;
-
-      if (measureEntry instanceof StaveSignature) {
-        const didStaveModifiersChange = measureEntry.getChangedStaveModifiers().length > 0;
-        if (didStaveModifiersChange && currentMeasureEntries.length > 0) {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries,
-            fragments.length === 0 ? beginningBarStyle : 'none',
-            'none'
-          );
-          currentMeasureEntries = [];
+      for (const partId of this.partIds) {
+        let upperBound = event.at;
+        if (isLast) {
+          // We add 1 to the upper bound to ensure that the last fragment gets created.
+          upperBound = upperBound.add(Division.of(1, 1));
         }
 
-        staveSignature = measureEntry;
-      } else if (
-        measureEntry instanceof musicxml.Direction &&
-        measureEntry.getTypes().some((directionType) => {
-          const content = directionType.getContent();
-          return content.type === 'metronome' && content.metronome.isSupported();
-        }) &&
-        currentMeasureEntries.length > 0
-      ) {
-        // prettier-ignore
-        addFragment(
-          staveSignature,
-          currentMeasureEntries,
-          fragments.length === 0 ? beginningBarStyle : 'none',
-          'none'
-        )
-        currentMeasureEntries = [];
+        const { entries, staveSignature } = cursors[partId].takeEntriesUpTo(upperBound);
+
+        measureEntries.push(...entries.map((entry) => ({ partId, value: entry })));
+        staveSignatures.push({ partId, value: staveSignature });
+
+        // TODO: It may be possible to render barlines in the middle of a measure fragment. We might need to update
+        // event to contain the barline data. If we don't need it, update MeasureFragment to take a single
+        // part-agonistic beginningBarStyle and endBarStyle.
+        beginningBarStyles.push({ partId, value: isFirst ? beginningBarStyle : 'none' });
+        endBarStyles.push({ partId, value: isLast ? endBarStyle : 'none' });
       }
 
-      currentMeasureEntries.push(measureEntry);
-
-      if (isLastMeasureEntry) {
-        const nextStaveSignature = staveSignature?.getNext();
-        const hasClefChangeAtMeasureBoundary =
-          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
-          nextStaveSignature?.getMeasureIndex() === measureIndex + 1 &&
-          nextStaveSignature?.getMeasureEntryIndex() === 0;
-
-        if (hasClefChangeAtMeasureBoundary) {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries, 
-            fragments.length === 0 ? beginningBarStyle : 'none', 
-            'none',
-          );
-
-          // prettier-ignore
-          addFragment(
-            nextStaveSignature,
-            [nextStaveSignature],
-            'none',
-            endBarStyle
-          );
-        } else {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries,
-            fragments.length === 0 ? beginningBarStyle : 'none',
-            endBarStyle
-          );
-        }
-      }
+      result.push(
+        new MeasureFragment({
+          config: this.config,
+          index: result.length,
+          partIds: this.partIds,
+          musicXml: {
+            staveLayouts: this.musicXml.staveLayouts,
+            beginningBarStyles,
+            endBarStyles,
+          },
+          measureEntries,
+          staveSignatures,
+        })
+      );
     }
 
-    return fragments;
+    return result;
   }
 
-  private getLabel(): string {
-    return this.musicXml.measure.isImplicit() ? '' : this.musicXml.measure.getNumber() || (this.index + 1).toString();
+  private getLabelTextContent(): string {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return '';
+    }
+
+    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return '';
+    }
+
+    if (measure.isImplicit()) {
+      return '';
+    }
+
+    return measure.getNumber() || (this.index + 1).toString();
+  }
+
+  private getFragmentEvents(): MeasureFragmentEvent[] {
+    const events = new Array<MeasureFragmentEvent>();
+
+    for (const partId of this.partIds) {
+      let divisions = Division.zero();
+
+      const entries = this.entries.filter((entry) => entry.partId === partId);
+
+      let staveSignature = this.leadingStaveSignatures.find(
+        (staveSignature) => staveSignature.partId === partId
+      )?.value;
+      if (!staveSignature) {
+        throw new Error(`Stave signature not found for part: ${partId}`);
+      }
+
+      for (let index = 0; index < entries.length; index++) {
+        const entry = entries[index];
+        const isLast = index === entries.length - 1;
+
+        if (entry instanceof StaveSignature) {
+          if (entry.getChangedStaveModifiers().length > 0 && index > 0) {
+            events.push({ at: divisions });
+          }
+          staveSignature = entry;
+        }
+
+        if (this.isSupportedMetronome(entry.value) && index > 0) {
+          events.push({ at: divisions });
+        }
+
+        const quarterNoteDivisions = staveSignature.getQuarterNoteDivisions();
+
+        if (entry instanceof musicxml.Note) {
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+          divisions = divisions.add(duration);
+        }
+
+        if (entry instanceof musicxml.Backup) {
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+          divisions = divisions.subtract(duration);
+        }
+
+        if (entry instanceof musicxml.Forward) {
+          const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+          divisions = divisions.add(duration);
+        }
+
+        if (isLast) {
+          events.push({ at: divisions });
+        }
+      }
+    }
+
+    const seen = new Set<number>();
+    const unique = new Array<MeasureFragmentEvent>();
+    for (const event of events) {
+      if (!seen.has(event.at.toBeats())) {
+        seen.add(event.at.toBeats());
+        unique.push(event);
+      }
+    }
+
+    return util.sortBy(unique, (event) => event.at.toBeats());
+  }
+
+  private getEntryCursors(): { [partId: string]: MeasureEntryCursor } {
+    const result: Record<string, MeasureEntryCursor> = {};
+
+    for (const partId of this.partIds) {
+      const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
+
+      const staveSignature = this.leadingStaveSignatures.find(
+        (staveSignature) => staveSignature.partId === partId
+      )?.value;
+      if (!staveSignature) {
+        throw new Error(`Stave signature not found for part: ${partId}`);
+      }
+
+      result[partId] = new MeasureEntryCursor(entries, staveSignature);
+    }
+
+    return result;
+  }
+
+  private isSupportedMetronome(entry: MeasureEntry): boolean {
+    return (
+      entry instanceof musicxml.Direction &&
+      entry
+        .getTypes()
+        .map((directionType) => directionType.getContent())
+        .some((content) => content.type === 'metronome' && content.metronome.isSupported())
+    );
+  }
+
+  private getBeginningBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
+    );
+  }
+
+  private getEndBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
+    );
+  }
+}
+
+class MeasureEntryCursor {
+  private entries: MeasureEntry[];
+  private index: number;
+  private divisions: Division;
+  private staveSignature: StaveSignature;
+
+  constructor(entries: MeasureEntry[], staveSignature: StaveSignature) {
+    this.entries = entries;
+    this.index = 0;
+    this.divisions = Division.zero();
+    this.staveSignature = staveSignature;
+  }
+
+  /** Returns all the entries up to a division, exclusive at boundary. */
+  takeEntriesUpTo(division: Division): { staveSignature: StaveSignature; entries: MeasureEntry[] } {
+    const entries = new Array<MeasureEntry>();
+
+    // We use the *leading* stave signature in the result, because it is the one that dictates downstream behavior.
+    // In practice, we should only ever have one stave signature per measure fragment, but we support multiple for
+    // robustness.
+    const staveSignature = this.staveSignature;
+
+    while (this.divisions.isLessThanOrEqualTo(division) && this.index < this.entries.length) {
+      const entry = this.entries[this.index++];
+
+      if (entry instanceof StaveSignature) {
+        this.staveSignature = entry;
+        // The stave signature will be accounted for via the staveSignature params.
+        continue;
+      }
+
+      const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
+
+      if (entry instanceof musicxml.Note) {
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        this.divisions = this.divisions.add(duration);
+      }
+
+      if (entry instanceof musicxml.Backup) {
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        this.divisions = this.divisions.subtract(duration);
+      }
+
+      if (entry instanceof musicxml.Forward) {
+        const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
+        this.divisions = this.divisions.add(duration);
+      }
+
+      entries.push(entry);
+    }
+
+    return { staveSignature, entries };
   }
 }

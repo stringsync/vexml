@@ -1,4 +1,4 @@
-import { SystemRendering } from './system2';
+import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -6,7 +6,7 @@ import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
-import { Seed } from './seed2';
+import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 
