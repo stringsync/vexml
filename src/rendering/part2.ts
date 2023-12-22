@@ -79,6 +79,11 @@ export class Part {
     return this.id;
   }
 
+  /** Returns the top padding of the part. */
+  getTopPadding(): number {
+    return util.max(this.getStaves().map((stave) => stave.getTopPadding()));
+  }
+
   /** Renders the part. */
   render(): PartRendering {
     return {
