@@ -2,7 +2,7 @@ import { System } from './system2';
 import { Config } from './config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { PartScoped } from './types';
+import { MeasureFragmentWidth, PartScoped } from './types';
 import { Measure } from './measure2';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -33,51 +33,65 @@ export class Seed {
     const systems = new Array<System>();
 
     let remaining = width;
-    let data = new Array<{ measure: Measure; minRequiredWidth: number }>();
+    let measures = new Array<Measure>();
+    let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
 
     const addSystem = () => {
-      const minRequiredSystemWidth = util.sum(data.map(({ minRequiredWidth }) => minRequiredWidth));
+      const minRequiredSystemWidth = util.sum(minRequiredFragmentWidths.map(({ value }) => value));
+
+      const widths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
+        ({ measureIndex, measureFragmentIndex, value }) => {
+          const widthDeficit = width - minRequiredSystemWidth;
+          const widthFraction = value / minRequiredSystemWidth;
+          const widthDelta = widthDeficit * widthFraction;
+          return { measureIndex, measureFragmentIndex, value: value + widthDelta };
+        }
+      );
 
       systems.push(
         new System({
           config: this.config,
           index: systems.length,
-          data: data.map(({ measure, minRequiredWidth }) => {
-            const widthDeficit = width - minRequiredSystemWidth;
-            const widthFraction = minRequiredWidth / minRequiredSystemWidth;
-            const widthDelta = widthDeficit * widthFraction;
-            return { measure, width: minRequiredWidth + widthDelta };
-          }),
+          measures,
+          measureFragmentWidths: widths,
         })
       );
     };
 
     util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast, index }) => {
-      let required = currentMeasure.getMinRequiredWidth({
+      let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
         previousMeasure,
         address: systemAddress.measure({
           systemMeasureIndex: index,
           measureIndex: currentMeasure.getIndex(),
         }),
       });
+      let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
 
       if (remaining < required) {
         addSystem();
+
+        // Reset state.
         remaining = width;
-        data = [];
+        measures = [];
+        minRequiredFragmentWidths = [];
+
+        // Start a new system and re-measure.
         systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
-        required = currentMeasure.getMinRequiredWidth({
+        measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
           previousMeasure,
           address: systemAddress.measure({
             systemMeasureIndex: index,
             measureIndex: currentMeasure.getIndex(),
           }),
         });
+        required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
       }
 
       remaining -= required;
-      data.push({ measure: currentMeasure, minRequiredWidth: required });
+      measures.push(currentMeasure);
+      minRequiredFragmentWidths.push(...measureMinRequiredFragmentWidths);
 
       if (isLast) {
         addSystem();

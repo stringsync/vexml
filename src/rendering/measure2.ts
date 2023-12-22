@@ -3,7 +3,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import * as drawables from '@/drawables';
 import { Config } from './config';
-import { PartScoped } from './types';
+import { MeasureFragmentWidth, PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering } from './measurefragment2';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -71,28 +71,35 @@ export class Measure {
     return this.index;
   }
 
-  /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
-    let sum = 0;
+  /** Returns the minimum required width for each measure fragment. */
+  getMinRequiredFragmentWidths(opts: {
+    address: Address<'measure'>;
+    previousMeasure: Measure | null;
+  }): MeasureFragmentWidth[] {
+    const widths = new Array<MeasureFragmentWidth>();
 
     util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment], { isFirst }) => {
       if (isFirst) {
         previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
-      sum += currentFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
-        previousMeasureFragment: previousFragment,
+      widths.push({
+        measureIndex: this.index,
+        measureFragmentIndex: currentFragment.getIndex(),
+        value: currentFragment.getMinRequiredWidth({
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+          previousMeasureFragment: previousFragment,
+        }),
       });
     });
 
-    return sum;
+    return widths;
   }
 
   /** Renders the measure. */
   render(opts: {
     x: number;
     y: number;
-    width: number;
+    fragmentWidths: MeasureFragmentWidth[];
     address: Address<'measure'>;
     spanners: Spanners;
     previousMeasure: Measure | null;
@@ -109,6 +116,27 @@ export class Measure {
         if (isLast) {
           nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
         }
+
+        const width = opts.fragmentWidths.find(
+          ({ measureFragmentIndex }) => measureFragmentIndex === currentFragment.getIndex()
+        );
+        if (!width) {
+          const address = opts.address.toDebugString();
+          const widths = JSON.stringify(opts.fragmentWidths);
+          throw new Error(`Width not found for measure fragment: ${address}, got: ${widths}`);
+        }
+
+        const fragmentRendering = currentFragment.render({
+          x: opts.x,
+          y: opts.y,
+          width,
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+          spanners: opts.spanners,
+          previousMeasureFragment: previousFragment,
+          nextMeasureFragment: nextFragment,
+        });
+
+        fragmentRenderings.push(fragmentRendering);
       }
     );
 
