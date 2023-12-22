@@ -110,19 +110,6 @@ export class Score {
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
-    // Format vexflow.Voice elements.
-    staves.forEach((stave) => {
-      if (stave.entry.type !== 'chorus') {
-        return;
-      }
-      const vfStave = stave.vexflow.stave;
-      const vfVoices = stave.entry.voices.map((voice) => voice.vexflow.voice);
-
-      if (vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
-        new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
-      }
-    });
-
     // Draw the title.
     titleRendering?.text.draw(vfContext);
 

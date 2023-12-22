@@ -188,6 +188,7 @@ export class Stave {
   render(opts: {
     x: number;
     y: number;
+    vexflow: { formatter: vexflow.Formatter };
     address: Address<'stave'>;
     spanners: Spanners;
     width: number;
@@ -247,6 +248,7 @@ export class Stave {
         break;
       case 'chorus':
         const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
+        opts.vexflow.formatter.joinVoices(vfVoices);
         for (const vfVoice of vfVoices) {
           vfVoice.setStave(vfStave);
         }
