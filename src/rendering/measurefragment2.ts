@@ -3,7 +3,7 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { MeasureFragmentWidth, PartScoped } from './types';
+import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part2';
 import { Chorus } from './chorus';
@@ -19,6 +19,13 @@ export type MeasureFragmentRendering = {
   address: Address<'measurefragment'>;
   parts: PartRendering[];
   width: number;
+};
+
+/** The width of a measure fragment. */
+export type MeasureFragmentWidth = {
+  measureIndex: number;
+  measureFragmentIndex: number;
+  value: number;
 };
 
 /**

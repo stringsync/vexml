@@ -18,10 +18,3 @@ export type SpannerData = {
 
 /** A value that is scoped to a specific part. */
 export type PartScoped<T> = { partId: string; value: T };
-
-/** The width of a measure fragment. */
-export type MeasureFragmentWidth = {
-  measureIndex: number;
-  measureFragmentIndex: number;
-  value: number;
-};

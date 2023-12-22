@@ -2,9 +2,9 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import { Config } from './config';
-import { MeasureFragmentWidth, PartScoped } from './types';
+import { PartScoped } from './types';
 import { Address } from './address';
-import { MeasureFragment, MeasureFragmentRendering } from './measurefragment2';
+import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment2';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Division } from './division';
 import { Spanners } from './spanners';
@@ -137,6 +137,7 @@ export class Measure {
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
         });
+
         fragmentRenderings.push(fragmentRendering);
       }
     );
