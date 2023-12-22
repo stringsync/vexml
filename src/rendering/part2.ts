@@ -100,7 +100,7 @@ export class Part {
     const staveRenderings = new Array<StaveRendering>();
 
     const x = opts.x;
-    const y = opts.y;
+    let y = opts.y;
 
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
@@ -122,6 +122,12 @@ export class Part {
       });
 
       staveRenderings.push(staveRendering);
+
+      const staveDistance =
+        this.musicXml.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
+          ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
+
+      y += staveDistance;
     });
 
     return {
