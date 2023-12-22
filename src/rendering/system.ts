@@ -54,7 +54,7 @@ export class System {
     let x = opts.x;
     const y = opts.y + this.getTopPadding();
 
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast }) => {
+    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
       if (isFirst) {
         previousMeasure = util.last(opts.previousSystem?.measures ?? []);
       }
@@ -63,7 +63,7 @@ export class System {
       }
 
       const address = opts.address.measure({
-        systemMeasureIndex: this.index,
+        systemMeasureIndex: index,
         measureIndex: currentMeasure.getIndex(),
       });
 
