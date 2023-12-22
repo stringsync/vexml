@@ -8,6 +8,8 @@ import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MeasureFragmentWidth } from './measurefragment';
 
+// Space needed to be able to show the end barlines.
+const END_BARLINE_OFFSET = 1;
 const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
@@ -45,7 +47,7 @@ export class Seed {
 
       const widths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
         ({ measureIndex, measureFragmentIndex, value }) => {
-          const widthDeficit = width - minRequiredSystemWidth;
+          const widthDeficit = width - minRequiredSystemWidth - END_BARLINE_OFFSET;
           const widthFraction = value / minRequiredSystemWidth;
           const widthDelta = widthDeficit * widthFraction;
           return { measureIndex, measureFragmentIndex, value: value + widthDelta };
@@ -62,7 +64,7 @@ export class Seed {
       );
     };
 
-    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast, index }) => {
+    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
       let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
         previousMeasure,
         address: systemAddress.measure({
