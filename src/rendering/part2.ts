@@ -1,8 +1,10 @@
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
-import { Stave, StaveRendering } from './stave';
+import { Stave, StaveModifier, StaveRendering } from './stave';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Config } from './config';
+import { Address } from './address';
+import { Spanners } from './spanners';
 
 /** The result of rendering a part. */
 export type PartRendering = {
@@ -85,11 +87,47 @@ export class Part {
   }
 
   /** Renders the part. */
-  render(): PartRendering {
+  render(opts: {
+    x: number;
+    y: number;
+    width: number;
+    address: Address<'part'>;
+    spanners: Spanners;
+    staveModifiers: StaveModifier[];
+    previousPart: Part | null;
+    nextPart: Part | null;
+  }): PartRendering {
+    const staveRenderings = new Array<StaveRendering>();
+
+    const x = opts.x;
+    const y = opts.y;
+
+    util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
+      if (isFirst) {
+        previousStave = util.last(opts.previousPart?.getStaves() ?? []);
+      }
+      if (isLast) {
+        nextStave = util.first(opts.nextPart?.getStaves() ?? []);
+      }
+
+      const staveRendering = currentStave.render({
+        x,
+        y,
+        address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
+        spanners: opts.spanners,
+        width: opts.width,
+        modifiers: opts.staveModifiers,
+        previousStave,
+        nextStave,
+      });
+
+      staveRenderings.push(staveRendering);
+    });
+
     return {
       type: 'part',
       id: this.id,
-      staves: [],
+      staves: staveRenderings,
     };
   }
 }
