@@ -12,6 +12,12 @@ export type SystemRendering = {
   vexflow: { staveConnector: vexflow.StaveConnector | null };
 };
 
+/** The data needed to render a measure. */
+export type MeasureData = {
+  measure: Measure;
+  width: number;
+};
+
 /**
  * Represents a System in a musical score, a horizontal grouping of staves spanning the width of the viewport or page.
  * Each system contains a segment of musical content from one or more parts, and multiple systems collectively render
@@ -20,12 +26,12 @@ export type SystemRendering = {
 export class System {
   private config: Config;
   private index: number;
-  private measures: Measure[];
+  private data: MeasureData[];
 
-  constructor(opts: { config: Config; index: number; measures: Measure[] }) {
+  constructor(opts: { config: Config; index: number; data: MeasureData[] }) {
     this.config = opts.config;
     this.index = opts.index;
-    this.measures = opts.measures;
+    this.data = opts.data;
   }
 
   /** Renders the system. */

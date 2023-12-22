@@ -33,8 +33,25 @@ export class Seed {
     const systems = new Array<System>();
 
     let remaining = width;
-    let measures = new Array<Measure>();
+    let data = new Array<{ measure: Measure; minRequiredWidth: number }>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+
+    const addSystem = () => {
+      const minRequiredSystemWidth = util.sum(data.map(({ minRequiredWidth }) => minRequiredWidth));
+
+      systems.push(
+        new System({
+          config: this.config,
+          index: systems.length,
+          data: data.map(({ measure, minRequiredWidth }) => {
+            const widthDeficit = width - minRequiredSystemWidth;
+            const widthFraction = minRequiredWidth / minRequiredSystemWidth;
+            const widthDelta = widthDeficit * widthFraction;
+            return { measure, width: minRequiredWidth + widthDelta };
+          }),
+        })
+      );
+    };
 
     util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast, index }) => {
       let required = currentMeasure.getMinRequiredWidth({
@@ -46,9 +63,9 @@ export class Seed {
       });
 
       if (remaining < required) {
-        systems.push(new System({ config: this.config, index: systems.length, measures }));
+        addSystem();
         remaining = width;
-        measures = [];
+        data = [];
         systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
         required = currentMeasure.getMinRequiredWidth({
           previousMeasure,
@@ -60,10 +77,10 @@ export class Seed {
       }
 
       remaining -= required;
-      measures.push(currentMeasure);
+      data.push({ measure: currentMeasure, minRequiredWidth: required });
 
       if (isLast) {
-        systems.push(new System({ config: this.config, index: systems.length, measures }));
+        addSystem();
       }
     });
 
