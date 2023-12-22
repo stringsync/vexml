@@ -252,7 +252,7 @@ export class Measure {
       }
 
       for (let index = 0; index < entries.length; index++) {
-        const entry = entries[index];
+        const entry = entries[index].value;
         const isLast = index === entries.length - 1;
 
         if (entry instanceof StaveSignature) {
@@ -262,7 +262,7 @@ export class Measure {
           staveSignature = entry;
         }
 
-        if (this.isSupportedMetronome(entry.value) && index > 0) {
+        if (this.isSupportedMetronome(entry) && index > 0) {
           events.push({ at: divisions });
         }
 
