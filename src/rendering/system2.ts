@@ -68,7 +68,7 @@ export class System {
         measureIndex: currentMeasure.getIndex(),
       });
 
-      const measureRendering = currentData.measure.render({
+      const measureRendering = currentMeasure.render({
         x: opts.x,
         y: opts.y,
         address,
