@@ -98,8 +98,22 @@ export class Measure {
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
+    const fragmentRenderings = new Array<MeasureFragmentRendering>();
+
+    util.forEachTriple(
+      this.getFragments(),
+      ([previousFragment, currentFragment, nextFragment], { isFirst, isLast }) => {
+        if (isFirst) {
+          previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
+        }
+        if (isLast) {
+          nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
+        }
+      }
+    );
+
     const label = new drawables.Text({
-      content: this.getLabel(),
+      content: this.getLabelTextContent(),
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
@@ -110,7 +124,7 @@ export class Measure {
     return {
       type: 'measure',
       address: opts.address,
-      fragments: [],
+      fragments: fragmentRenderings,
       index: this.index,
       label,
       vexflow: {
@@ -174,6 +188,24 @@ export class Measure {
     }
 
     return result;
+  }
+
+  private getLabelTextContent(): string {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return '';
+    }
+
+    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return '';
+    }
+
+    if (measure.isImplicit()) {
+      return '';
+    }
+
+    return measure.getNumber() || (this.index + 1).toString();
   }
 
   private getFragmentEvents(): MeasureFragmentEvent[] {
@@ -290,24 +322,6 @@ export class Measure {
           .map((barline) => barline.getBarStyle())
       ) ?? 'regular'
     );
-  }
-
-  private getLabel(): string {
-    const partId = util.first(this.partIds);
-    if (!partId) {
-      return '';
-    }
-
-    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
-    if (!measure) {
-      return '';
-    }
-
-    if (measure.isImplicit()) {
-      return '';
-    }
-
-    return measure.getNumber() || (this.index + 1).toString();
   }
 }
 
