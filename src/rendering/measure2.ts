@@ -92,17 +92,14 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
-    showLabel: boolean;
+    width: number;
     address: Address<'measure'>;
     spanners: Spanners;
-    systemCount: number;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
     const label = new drawables.Text({
-      content: opts.showLabel ? this.getLabel() : '',
+      content: this.getLabel(),
       italic: true,
       x: opts.x + MEASURE_LABEL_OFFSET_X,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,

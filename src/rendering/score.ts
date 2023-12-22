@@ -8,9 +8,7 @@ import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
 import { Seed } from './seed2';
 import { Spanners } from './spanners';
-
-// Space needed to be able to show the end barlines.
-const END_BARLINE_OFFSET = 1;
+import { Address } from './address';
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
@@ -67,17 +65,22 @@ export class Score {
 
     // Render the entire hierarchy.
     util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem]) => {
+      const address = Address.system({
+        systemIndex: currentSystem.getIndex(),
+        origin: 'Score.prototype.render',
+      });
+
       const systemRendering = currentSystem.render({
         x,
         y,
-        width: opts.width - END_BARLINE_OFFSET,
-        systemCount: systems.length,
+        address,
         previousSystem,
         nextSystem,
         spanners,
       });
       systemRenderings.push(systemRendering);
 
+      // TODO: Add height property to SystemRendering instead.
       const maxY = util.max([
         y,
         ...systemRendering.measures
@@ -128,17 +131,6 @@ export class Score {
       .map((stave) => stave.vexflow.stave)
       .forEach((vfStave) => {
         vfStave.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveConnector elements from systems.
-    systemRenderings
-      .map((system) => system.vexflow.staveConnector)
-      .filter(
-        (vfStaveConnector): vfStaveConnector is vexflow.StaveConnector =>
-          vfStaveConnector instanceof vexflow.StaveConnector
-      )
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector.setContext(vfContext).draw();
       });
 
     // Draw vexflow.StaveConnector elements from measures.
