@@ -1,5 +1,6 @@
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Config } from './config';
@@ -11,6 +12,7 @@ export type PartRendering = {
   type: 'part';
   id: string;
   staves: StaveRendering[];
+  height: number;
 };
 
 /** A part in a musical score. */
@@ -90,6 +92,7 @@ export class Part {
   render(opts: {
     x: number;
     y: number;
+    vexflow: { formatter: vexflow.Formatter };
     width: number;
     address: Address<'part'>;
     spanners: Spanners;
@@ -113,6 +116,7 @@ export class Part {
       const staveRendering = currentStave.render({
         x,
         y,
+        vexflow: { formatter: opts.vexflow.formatter },
         address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
         spanners: opts.spanners,
         width: opts.width,
@@ -130,10 +134,18 @@ export class Part {
       y += staveDistance;
     });
 
+    const topStave = util.first(staveRenderings)?.vexflow.stave;
+    const bottomStave = util.last(staveRenderings)?.vexflow.stave;
+
+    const topY = topStave?.getTopLineTopY() ?? 0;
+    const bottomY = bottomStave?.getBottomLineBottomY() ?? 0;
+    const height = util.max([bottomY - topY, 0]);
+
     return {
       type: 'part',
       id: this.id,
       staves: staveRenderings,
+      height,
     };
   }
 }

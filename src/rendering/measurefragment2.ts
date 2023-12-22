@@ -6,7 +6,7 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part2';
-import { Chorus } from './chorus';
+import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 
@@ -103,10 +103,59 @@ export class MeasureFragment {
     previousMeasureFragment: MeasureFragment | null;
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
+    const partRenderings = new Array<PartRendering>();
+
+    const x = opts.x;
+    let y = opts.y;
+
+    const staveModifiers = this.getStaveModifiers({
+      address: opts.address,
+      previousMeasureFragment: opts.previousMeasureFragment,
+    });
+
+    const vfFormatter = new vexflow.Formatter();
+
+    const previousParts = opts.previousMeasureFragment?.getParts() ?? [];
+    const currentParts = this.getParts();
+    const nextParts = opts.nextMeasureFragment?.getParts() ?? [];
+
+    for (let partIndex = 0; partIndex < currentParts.length; partIndex++) {
+      const previousPart = previousParts[partIndex] ?? null;
+      const currentPart = currentParts[partIndex];
+      const nextPart = nextParts[partIndex] ?? null;
+
+      const partRendering = currentPart.render({
+        x,
+        y,
+        vexflow: { formatter: vfFormatter },
+        address: opts.address.part({ partId: currentPart.getId() }),
+        spanners: opts.spanners,
+        nextPart,
+        previousPart,
+        staveModifiers,
+        width: opts.width.value,
+      });
+
+      partRenderings.push(partRendering);
+
+      y += partRendering.height + this.config.PART_DISTANCE;
+    }
+
+    const vfStave = util.first(partRenderings)?.staves[0]?.vexflow.stave ?? null;
+    const vfVoices = partRenderings
+      .flatMap((partRendering) => partRendering.staves)
+      .map((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((chorusRendering) => chorusRendering.voices)
+      .map((voice) => voice.vexflow.voice);
+    if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
+      vfFormatter.formatToStave(vfVoices, vfStave);
+    }
+
     return {
       type: 'measurefragment',
       address: opts.address,
-      parts: [],
+      parts: partRenderings,
       width: opts.width.value,
     };
   }
