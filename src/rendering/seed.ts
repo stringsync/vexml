@@ -8,6 +8,8 @@ import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MeasureFragmentWidth } from './measurefragment';
 
+const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
+
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
   private config: Config;
@@ -95,7 +97,7 @@ export class Seed {
       minRequiredFragmentWidths.push(...measureMinRequiredFragmentWidths);
 
       if (isLast) {
-        addSystem({ stretch: false });
+        addSystem({ stretch: remaining / width <= LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD });
       }
     });
 
