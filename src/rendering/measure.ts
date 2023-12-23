@@ -146,10 +146,12 @@ export class Measure {
       }
     );
 
+    const labelOffsetX = util.first(fragmentRenderings)?.staveOffsetX ?? 0;
+
     const label = new drawables.Text({
       content: this.getLabelTextContent(),
       italic: true,
-      x: opts.x + MEASURE_LABEL_OFFSET_X + (util.first(fragmentRenderings)?.staveOffset ?? 0),
+      x: opts.x + MEASURE_LABEL_OFFSET_X + labelOffsetX,
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
       color: MEASURE_LABEL_COLOR,
       size: this.config.MEASURE_NUMBER_FONT_SIZE,
