@@ -101,7 +101,8 @@ export class Part {
     width: number;
     address: Address<'part'>;
     spanners: Spanners;
-    staveModifiers: StaveModifier[];
+    beginningStaveModifiers: StaveModifier[];
+    endStaveModifiers: StaveModifier[];
     staveOffsetX: number;
     previousPart: Part | null;
     nextPart: Part | null;
@@ -127,7 +128,8 @@ export class Part {
         address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
         spanners: opts.spanners,
         width,
-        modifiers: opts.staveModifiers,
+        beginningModifiers: opts.beginningStaveModifiers,
+        endModifiers: opts.endStaveModifiers,
         previousStave,
         nextStave,
       });
