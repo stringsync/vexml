@@ -20,7 +20,7 @@ export type MeasureFragmentRendering = {
   address: Address<'measurefragment'>;
   parts: PartRendering[];
   width: number;
-  staveOffset: number;
+  staveOffsetX: number;
 };
 
 /** The width of a measure fragment. */
@@ -88,7 +88,7 @@ export class MeasureFragment {
     return (
       this.getStaveModifiersWidth({ address, previousMeasureFragment: opts.previousMeasureFragment }) +
       this.getMinVoiceJustifyWidth({ address }) +
-      this.getStaveOffset({ address }) +
+      this.getStaveOffsetX({ address }) +
       this.getRightPadding()
     );
   }
@@ -110,7 +110,7 @@ export class MeasureFragment {
   }): MeasureFragmentRendering {
     const partRenderings = new Array<PartRendering>();
 
-    const staveOffset = this.getStaveOffset({ address: opts.address });
+    const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
 
     const x = opts.x;
     let y = opts.y;
@@ -140,7 +140,7 @@ export class MeasureFragment {
         nextPart,
         previousPart,
         staveModifiers,
-        staveOffset,
+        staveOffsetX,
         width: opts.width.value,
       });
 
@@ -165,7 +165,7 @@ export class MeasureFragment {
       address: opts.address,
       parts: partRenderings,
       width: opts.width.value,
-      staveOffset,
+      staveOffsetX: staveOffsetX,
     };
   }
 
@@ -303,7 +303,7 @@ export class MeasureFragment {
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
   }
 
-  private getStaveOffset(opts: { address: Address<'measurefragment'> }): number {
+  private getStaveOffsetX(opts: { address: Address<'measurefragment'> }): number {
     let result = 0;
 
     const isFirstSystem = opts.address.getSystemIndex() === 0;

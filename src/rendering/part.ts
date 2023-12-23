@@ -102,15 +102,15 @@ export class Part {
     address: Address<'part'>;
     spanners: Spanners;
     staveModifiers: StaveModifier[];
-    staveOffset: number;
+    staveOffsetX: number;
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
     const staveRenderings = new Array<StaveRendering>();
 
-    const x = opts.x + opts.staveOffset;
+    const x = opts.x + opts.staveOffsetX;
     let y = opts.y;
-    const width = opts.width - opts.staveOffset;
+    const width = opts.width - opts.staveOffsetX;
 
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
