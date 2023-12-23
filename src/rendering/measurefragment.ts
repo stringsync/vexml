@@ -179,6 +179,18 @@ export class MeasureFragment {
       y += partRendering.height + this.config.PART_DISTANCE;
     }
 
+    if (this.index === 0 && partRenderings.length > 0) {
+      const topPart = util.first(partRenderings)!;
+      const bottomPart = util.last(partRenderings)!;
+
+      const vfTopStave = util.first(topPart.staves)?.vexflow.stave;
+      const vfBottomStave = util.last(bottomPart.staves)?.vexflow.stave;
+
+      if (vfTopStave && vfBottomStave) {
+        vfStaveConnectors.push(new vexflow.StaveConnector(vfTopStave, vfBottomStave).setType('singleLeft'));
+      }
+    }
+
     const vfStave = util.first(partRenderings)?.staves[0]?.vexflow.stave ?? null;
     const vfVoices = partRenderings
       .flatMap((partRendering) => partRendering.staves)
