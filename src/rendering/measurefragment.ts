@@ -246,15 +246,50 @@ export class MeasureFragment {
     address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
-    const staveModifiers = this.getBeginningStaveModifiers({
+    const beginningStaveModifiers = this.getBeginningStaveModifiers({
       address: opts.address,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
 
+    const endStaveModifiers = this.getEndStaveModifiers();
+
     return util.max(
       this.getParts()
         .flatMap((part) => part.getStaves())
-        .map((stave) => stave.getModifiersWidth(staveModifiers))
+        .map((stave) => {
+          const staveNumber = stave.getNumber();
+          const staveSignature = stave.getSignature();
+          const nextStaveSignature = staveSignature.getNext();
+          return {
+            current: {
+              clef: staveSignature.getClef(staveNumber),
+              keySignature: staveSignature.getKeySignature(staveNumber),
+              timeSignature: staveSignature.getTimeSignature(staveNumber),
+            },
+            next: {
+              clef: nextStaveSignature?.getClef(staveNumber) ?? null,
+            },
+          };
+        })
+        .map(({ current, next }) => {
+          let width = 0;
+
+          if (beginningStaveModifiers.includes('clef')) {
+            width += current.clef.getWidth();
+          }
+          if (beginningStaveModifiers.includes('keySignature')) {
+            width += current.keySignature.getWidth();
+          }
+          if (beginningStaveModifiers.includes('timeSignature')) {
+            width += current.timeSignature.getWidth();
+          }
+
+          if (endStaveModifiers.includes('clef')) {
+            width += next.clef?.getWidth() ?? 0;
+          }
+
+          return width;
+        })
     );
   }
 

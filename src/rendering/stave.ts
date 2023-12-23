@@ -125,26 +125,14 @@ export class Stave {
     });
   }
 
+  /** Returns the stave signature. */
+  getSignature(): StaveSignature {
+    return this.staveSignature;
+  }
+
   /** Returns the stave number. */
   getNumber(): number {
     return this.number;
-  }
-
-  /** Returns the width that the modifiers take up. */
-  getModifiersWidth(modifiers: StaveModifier[]): number {
-    let width = 0;
-
-    if (modifiers.includes('clef')) {
-      width += this.getClef().getWidth();
-    }
-    if (modifiers.includes('keySignature')) {
-      width += this.getKeySignature().getWidth();
-    }
-    if (modifiers.includes('timeSignature')) {
-      width += this.getTimeSignature().getWidth();
-    }
-
-    return width;
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
