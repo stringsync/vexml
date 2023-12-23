@@ -290,6 +290,10 @@ export class Measure {
           divisions = divisions.add(duration);
         }
 
+        if (divisions.isLessThan(Division.zero())) {
+          divisions = Division.zero();
+        }
+
         if (isLast) {
           events.push({ at: divisions });
         }
@@ -407,6 +411,10 @@ class MeasureEntryCursor {
       if (entry instanceof musicxml.Forward) {
         const duration = Division.of(entry.getDuration(), quarterNoteDivisions);
         this.divisions = this.divisions.add(duration);
+      }
+
+      if (this.divisions.isLessThan(Division.zero())) {
+        this.divisions = Division.zero();
       }
 
       entries.push(entry);
