@@ -12,7 +12,6 @@ import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
 
-const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 
 /** The result of rendering a measure fragment. */
@@ -90,8 +89,7 @@ export class MeasureFragment {
     return (
       this.getStaveModifiersWidth({ address, previousMeasureFragment: opts.previousMeasureFragment }) +
       this.getMinVoiceJustifyWidth({ address }) +
-      this.getStaveOffsetX({ address }) +
-      this.getRightPadding()
+      this.getStaveOffsetX({ address })
     );
   }
 
@@ -117,10 +115,11 @@ export class MeasureFragment {
     const x = opts.x;
     let y = opts.y;
 
-    const staveModifiers = this.getStaveModifiers({
+    const beginningStaveModifiers = this.getBeginningStaveModifiers({
       address: opts.address,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
+    const endStaveModifiers = this.getEndStaveModifiers();
 
     const vfFormatter = new vexflow.Formatter();
     const vfStaveConnectors = new Array<vexflow.StaveConnector>();
@@ -144,7 +143,8 @@ export class MeasureFragment {
         spanners: opts.spanners,
         nextPart,
         previousPart,
-        staveModifiers,
+        beginningStaveModifiers,
+        endStaveModifiers,
         staveOffsetX,
         width: opts.width.value,
       });
@@ -246,7 +246,7 @@ export class MeasureFragment {
     address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): number {
-    const staveModifiers = this.getStaveModifiers({
+    const staveModifiers = this.getBeginningStaveModifiers({
       address: opts.address,
       previousMeasureFragment: opts.previousMeasureFragment,
     });
@@ -258,8 +258,33 @@ export class MeasureFragment {
     );
   }
 
-  /** Returns what modifiers to render. */
-  private getStaveModifiers(opts: {
+  /** Returns what modifiers to render at the end of the stave. */
+  private getEndStaveModifiers(): StaveModifier[] {
+    const result = new Set<StaveModifier>();
+
+    for (const partId of this.partIds) {
+      const staveSignature = this.staveSignatures.find((staveSignature) => staveSignature.partId === partId)?.value;
+      if (!staveSignature) {
+        continue;
+      }
+
+      const nextStaveSignature = staveSignature.getNext();
+      if (!nextStaveSignature) {
+        continue;
+      }
+
+      const isAtMeasureBoundary = staveSignature.isAtMeasureBoundary();
+      const didClefChange = nextStaveSignature.getChangedStaveModifiers().includes('clef');
+      if (isAtMeasureBoundary && didClefChange) {
+        result.add('clef');
+      }
+    }
+
+    return Array.from(result);
+  }
+
+  /** Returns what modifiers to render at the beginning of the stave. */
+  private getBeginningStaveModifiers(opts: {
     address: Address<'measurefragment'>;
     previousMeasureFragment: MeasureFragment | null;
   }): StaveModifier[] {
@@ -295,6 +320,12 @@ export class MeasureFragment {
           staveModifiersChanges.add(staveModifier);
         }
       }
+    }
+
+    // Avoid rendering stave modifiers that changed in the previous one.
+    const previousEndStaveModifiers = opts.previousMeasureFragment?.getEndStaveModifiers() ?? [];
+    for (const staveModifier of previousEndStaveModifiers) {
+      staveModifiersChanges.delete(staveModifier);
     }
 
     return Array.from(staveModifiersChanges);
@@ -354,15 +385,5 @@ export class MeasureFragment {
     }
 
     return result;
-  }
-
-  private getRightPadding(): number {
-    let padding = 0;
-
-    if (this.measureEntries.length === 1 && this.measureEntries[0] instanceof StaveSignature) {
-      padding += STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING;
-    }
-
-    return padding;
   }
 }

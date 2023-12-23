@@ -303,24 +303,6 @@
     <measure number="16">
       <attributes>
         <clef>
-          <sign>TAB</sign>
-          <line>5</line>
-        </clef>
-      </attributes>
-      <note>
-        <pitch>
-          <step>C</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>4</duration>
-        <voice>1</voice>
-        <type>whole</type>
-      </note>
-    </measure>
-    <!--=======================================================-->
-    <measure number="17">
-      <attributes>
-        <clef>
           <sign>none</sign>
         </clef>
       </attributes>
@@ -335,7 +317,7 @@
       </note>
     </measure>
     <!--=======================================================-->
-    <measure number="18">
+    <measure number="17">
       <attributes>
         <clef>
           <sign>G</sign>

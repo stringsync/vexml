@@ -1,5 +1,5 @@
 import { Chorus, ChorusRendering } from './chorus';
-import { Clef } from './clef';
+import { Clef, ClefRendering } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -192,11 +192,12 @@ export class Stave {
     address: Address<'stave'>;
     spanners: Spanners;
     width: number;
-    modifiers: StaveModifier[];
+    beginningModifiers: StaveModifier[];
+    endModifiers: StaveModifier[];
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const staveSignature = this.staveSignature.render({ staveNumber: this.number });
+    const staveSignatureRendering = this.staveSignature.render({ staveNumber: this.number });
 
     const vfStave =
       this.getClef().getType() === 'tab'
@@ -209,16 +210,22 @@ export class Stave {
     const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.endBarStyle);
     vfStave.setEndBarType(vfEndBarlineType);
 
-    if (opts.modifiers.includes('clef')) {
-      vfStave.addModifier(staveSignature.clef.vexflow.clef);
+    if (opts.beginningModifiers.includes('clef')) {
+      vfStave.addModifier(staveSignatureRendering.clef.vexflow.clef);
     }
-    if (opts.modifiers.includes('keySignature')) {
-      vfStave.addModifier(staveSignature.keySignature.vexflow.keySignature);
+    if (opts.beginningModifiers.includes('keySignature')) {
+      vfStave.addModifier(staveSignatureRendering.keySignature.vexflow.keySignature);
     }
-    if (opts.modifiers.includes('timeSignature')) {
-      for (const timeSignature of staveSignature.timeSignature.vexflow.timeSignatures) {
+    if (opts.beginningModifiers.includes('timeSignature')) {
+      for (const timeSignature of staveSignatureRendering.timeSignature.vexflow.timeSignatures) {
         vfStave.addModifier(timeSignature);
       }
+    }
+
+    const nextStaveSignature = this.staveSignature.getNext();
+    if (opts.endModifiers.includes('clef') && nextStaveSignature) {
+      const nextStaveSignatureRendering = nextStaveSignature.render({ staveNumber: this.number });
+      vfStave.addEndModifier(nextStaveSignatureRendering.clef.vexflow.clef);
     }
 
     const metronome = this.getMetronome();
