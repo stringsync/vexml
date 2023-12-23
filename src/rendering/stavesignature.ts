@@ -281,35 +281,13 @@ export class StaveSignature {
     return this.attributes;
   }
 
-  /** Whether _only_ the clef will change at a measure boundary. */
-  willOnlyClefChangeAtMeasureBoundary(): boolean {
-    if (!this.next) {
-      return false;
-    }
-
-    if (this.next.getMeasureIndex() !== this.getMeasureIndex() + 1) {
-      return false;
-    }
-
-    if (this.next.getMeasureEntryIndex() !== 0) {
-      return false;
-    }
-
-    const changedStaveModifiers = this.next.getChangedStaveModifiers();
-    if (changedStaveModifiers.length !== 1) {
-      return false;
-    }
-
-    return changedStaveModifiers[0] === 'clef';
-  }
-
-  /** Whether _only_ the clef changed at a measure boundary. */
-  didOnlyClefChangeAtMeasureBoundary(): boolean {
-    if (!this.previous) {
-      return false;
-    }
-
-    return this.previous.willOnlyClefChangeAtMeasureBoundary();
+  /** Whether the stave signature will change at a measure boundary. */
+  isAtMeasureBoundary(): boolean {
+    return (
+      !!this.next &&
+      this.next.getMeasureIndex() === this.getMeasureIndex() + 1 &&
+      this.next.getMeasureEntryIndex() === 0
+    );
   }
 
   /** Renders the stave signature. */
