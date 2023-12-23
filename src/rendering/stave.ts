@@ -1,5 +1,5 @@
 import { Chorus, ChorusRendering } from './chorus';
-import { Clef, ClefRendering } from './clef';
+import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
