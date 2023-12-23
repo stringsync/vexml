@@ -7,6 +7,7 @@ import { Measure } from './measure';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MeasureFragmentWidth } from './measurefragment';
+import { PartName } from './partname';
 
 // Space needed to be able to show the end barlines.
 const END_BARLINE_OFFSET = 1;
@@ -118,6 +119,19 @@ export class Seed {
     return result;
   }
 
+  @util.memoize()
+  private getPartNames(): PartScoped<PartName>[] {
+    const result = new Array<PartScoped<PartName>>();
+
+    for (const partDetail of this.musicXml.partDetails) {
+      const partId = partDetail.id;
+      const partName = new PartName({ config: this.config, content: partDetail.name });
+      result.push({ partId, value: partName });
+    }
+
+    return result;
+  }
+
   private getMeasures(): Measure[] {
     const measures = new Array<Measure>();
 
@@ -129,6 +143,7 @@ export class Seed {
           config: this.config,
           index: measureIndex,
           partIds: this.getPartIds(),
+          partNames: this.getPartNames(),
           musicXml: {
             measures: this.musicXml.parts.map((part) => ({
               partId: part.getId(),

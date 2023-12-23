@@ -2,6 +2,7 @@ import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -104,6 +105,7 @@ export class Score {
     // Precalculate different parts of the rendering for readability later.
     const measures = systemRenderings.flatMap((system) => system.measures);
     const measureFragments = measures.flatMap((measure) => measure.fragments);
+    const parts = measureFragments.flatMap((measureFragment) => measureFragment.parts);
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
@@ -112,6 +114,14 @@ export class Score {
 
     // Draw the title.
     titleRendering?.text.draw(vfContext);
+
+    // Draw the part names.
+    parts
+      .map((part) => part.name?.text)
+      .filter((text): text is drawables.Text => text instanceof drawables.Text)
+      .forEach((text) => {
+        text.draw(vfContext);
+      });
 
     // Draw vexflow.Stave elements.
     staves
