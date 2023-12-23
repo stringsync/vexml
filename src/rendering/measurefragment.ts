@@ -9,6 +9,7 @@ import { Part, PartRendering } from './part';
 import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
+import { PartName } from './partname';
 
 const STAVE_SIGNATURE_ONLY_MEASURE_FRAGMENT_PADDING = 8;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
@@ -19,6 +20,7 @@ export type MeasureFragmentRendering = {
   address: Address<'measurefragment'>;
   parts: PartRendering[];
   width: number;
+  staveOffset: number;
 };
 
 /** The width of a measure fragment. */
@@ -40,6 +42,7 @@ export class MeasureFragment {
   private config: Config;
   private index: number;
   private partIds: string[];
+  private partNames: PartScoped<PartName>[];
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -52,6 +55,7 @@ export class MeasureFragment {
     config: Config;
     index: number;
     partIds: string[];
+    partNames: PartScoped<PartName>[];
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -63,6 +67,7 @@ export class MeasureFragment {
     this.config = opts.config;
     this.index = opts.index;
     this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
@@ -83,7 +88,7 @@ export class MeasureFragment {
     return (
       this.getStaveModifiersWidth({ address, previousMeasureFragment: opts.previousMeasureFragment }) +
       this.getMinVoiceJustifyWidth({ address }) +
-      this.getLeftPadding({ address }) +
+      this.getStaveOffset({ address }) +
       this.getRightPadding()
     );
   }
@@ -104,6 +109,8 @@ export class MeasureFragment {
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
     const partRenderings = new Array<PartRendering>();
+
+    const staveOffset = this.getStaveOffset({ address: opts.address });
 
     const x = opts.x;
     let y = opts.y;
@@ -133,6 +140,7 @@ export class MeasureFragment {
         nextPart,
         previousPart,
         staveModifiers,
+        staveOffset,
         width: opts.width.value,
       });
 
@@ -157,6 +165,7 @@ export class MeasureFragment {
       address: opts.address,
       parts: partRenderings,
       width: opts.width.value,
+      staveOffset,
     };
   }
 
@@ -182,9 +191,15 @@ export class MeasureFragment {
         throw new Error(`Could not find end bar style for part ${partId}`);
       }
 
+      const partName = this.partNames.find((partName) => partName.partId === partId)?.value ?? null;
+      if (!partName) {
+        throw new Error(`Could not find part name for part ${partId}`);
+      }
+
       return new Part({
         config: this.config,
         id: partId,
+        name: partName,
         musicXml: {
           staveLayouts: this.musicXml.staveLayouts,
           beginningBarStyle,
@@ -288,18 +303,26 @@ export class MeasureFragment {
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
   }
 
-  private getLeftPadding(opts: { address: Address<'measurefragment'> }): number {
-    let padding = 0;
+  private getStaveOffset(opts: { address: Address<'measurefragment'> }): number {
+    let result = 0;
+
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+    const isFirstMeasureFragment = this.index === 0;
 
     const hasStaveConnectorBrace =
-      opts.address.getSystemMeasureIndex() === 0 &&
-      this.index === 0 &&
+      isFirstMeasure &&
+      isFirstMeasureFragment &&
       this.staveSignatures.some((staveSignature) => staveSignature.value.getStaveCount() > 1);
     if (hasStaveConnectorBrace) {
-      padding += STAVE_CONNECTOR_BRACE_WIDTH;
+      result += STAVE_CONNECTOR_BRACE_WIDTH;
     }
 
-    return padding;
+    if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
+      result += util.max(this.partNames.map((partName) => partName.value.getWidth()));
+    }
+
+    return result;
   }
 
   private getRightPadding(): number {

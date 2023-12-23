@@ -8,6 +8,7 @@ import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from 
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Division } from './division';
 import { Spanners } from './spanners';
+import { PartName } from './partname';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -37,6 +38,7 @@ export class Measure {
   private config: Config;
   private index: number;
   private partIds: string[];
+  private partNames: PartScoped<PartName>[];
   private musicXml: {
     measures: PartScoped<musicxml.Measure>[];
     staveLayouts: musicxml.StaveLayout[];
@@ -48,6 +50,7 @@ export class Measure {
     config: Config;
     index: number;
     partIds: string[];
+    partNames: PartScoped<PartName>[];
     musicXml: {
       measures: PartScoped<musicxml.Measure>[];
       staveLayouts: musicxml.StaveLayout[];
@@ -57,6 +60,7 @@ export class Measure {
   }) {
     this.config = opts.config;
     this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
@@ -145,7 +149,7 @@ export class Measure {
     const label = new drawables.Text({
       content: this.getLabelTextContent(),
       italic: true,
-      x: opts.x + MEASURE_LABEL_OFFSET_X,
+      x: opts.x + MEASURE_LABEL_OFFSET_X + (util.first(fragmentRenderings)?.staveOffset ?? 0),
       y: opts.y + MEASURE_LABEL_OFFSET_Y,
       color: MEASURE_LABEL_COLOR,
       size: this.config.MEASURE_NUMBER_FONT_SIZE,
@@ -204,6 +208,7 @@ export class Measure {
           config: this.config,
           index: result.length,
           partIds: this.partIds,
+          partNames: this.partNames,
           musicXml: {
             staveLayouts: this.musicXml.staveLayouts,
             beginningBarStyles,

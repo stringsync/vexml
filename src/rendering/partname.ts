@@ -7,6 +7,7 @@ const PART_NAME_PADDING_RIGHT = 8;
 export type PartNameRendering = {
   type: 'partname';
   text: drawables.Text;
+  width: number;
 };
 
 /** Represents a part name within a score. */
@@ -40,9 +41,12 @@ export class PartName {
       family: this.config.PART_NAME_FONT_FAMILY,
     });
 
+    const width = this.getWidth();
+
     return {
       type: 'partname',
       text,
+      width,
     };
   }
 

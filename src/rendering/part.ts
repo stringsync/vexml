@@ -6,11 +6,13 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Address } from './address';
 import { Spanners } from './spanners';
+import { PartName, PartNameRendering } from './partname';
 
 /** The result of rendering a part. */
 export type PartRendering = {
   type: 'part';
   id: string;
+  name: PartNameRendering | null;
   staves: StaveRendering[];
   height: number;
 };
@@ -19,6 +21,7 @@ export type PartRendering = {
 export class Part {
   private config: Config;
   private id: string;
+  private name: PartName;
   private musicXml: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyle: musicxml.BarStyle;
@@ -30,6 +33,7 @@ export class Part {
   constructor(opts: {
     config: Config;
     id: string;
+    name: PartName;
     musicXml: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyle: musicxml.BarStyle;
@@ -40,6 +44,7 @@ export class Part {
   }) {
     this.config = opts.config;
     this.id = opts.id;
+    this.name = opts.name;
     this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
@@ -97,13 +102,15 @@ export class Part {
     address: Address<'part'>;
     spanners: Spanners;
     staveModifiers: StaveModifier[];
+    staveOffset: number;
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
     const staveRenderings = new Array<StaveRendering>();
 
-    const x = opts.x;
+    const x = opts.x + opts.staveOffset;
     let y = opts.y;
+    const width = opts.width - opts.staveOffset;
 
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
@@ -119,7 +126,7 @@ export class Part {
         vexflow: { formatter: opts.vexflow.formatter },
         address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
         spanners: opts.spanners,
-        width: opts.width,
+        width,
         modifiers: opts.staveModifiers,
         previousStave,
         nextStave,
@@ -139,11 +146,22 @@ export class Part {
 
     const topY = topStave?.getTopLineTopY() ?? 0;
     const bottomY = bottomStave?.getBottomLineBottomY() ?? 0;
+    const middleY = (topY + bottomY) / 2;
     const height = util.max([bottomY - topY, 0]);
+
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+    const isFirstMeasureFragment = opts.address.getMeasureFragmentIndex() === 0;
+
+    let name: PartNameRendering | null = null;
+    if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
+      name = this.name.render({ x: opts.x, y: middleY + this.name.getApproximateHeight() / 2 });
+    }
 
     return {
       type: 'part',
       id: this.id,
+      name,
       staves: staveRenderings,
       height,
     };
