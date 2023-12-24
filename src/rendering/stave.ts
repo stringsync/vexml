@@ -140,9 +140,14 @@ export class Stave {
     return this.staveSignature?.getMultiRestCount(this.number) ?? 0;
   }
 
-  /** Returns the stave modifiers that changed. */
+  /**
+   * Returns the stave modifiers that changed.
+   *
+   * The same StaveSignature can be used across multiple measures/measure fragments/staves/etc. If you use
+   * `StaveSignature.getChangedStaveModifiers`, it may not be applicable to the current stave. Therefore, we need to
+   * check the Stave objects directly to see what modifiers changed across them.
+   */
   getModifierChanges(opts: { previousStave: Stave | null }): StaveModifier[] {
-    // TODO: See if we can remove this.
     if (!opts.previousStave) {
       return ['clef', 'keySignature', 'timeSignature'];
     }
