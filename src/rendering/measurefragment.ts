@@ -12,15 +12,12 @@ import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
 
-const STAVE_CONNECTOR_BRACE_WIDTH = 16;
-
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
   type: 'measurefragment';
   address: Address<'measurefragment'>;
   parts: PartRendering[];
   width: number;
-  staveOffsetX: number;
   vexflow: { staveConnectors: vexflow.StaveConnector[] };
 };
 
@@ -85,11 +82,10 @@ export class MeasureFragment {
     previousMeasureFragment: MeasureFragment | null;
   }): number {
     const address = opts.address;
+    const previousMeasureFragment = opts.previousMeasureFragment;
 
     return (
-      this.getStaveModifiersWidth({ address, previousMeasureFragment: opts.previousMeasureFragment }) +
-      this.getMinVoiceJustifyWidth({ address }) +
-      this.getStaveOffsetX({ address })
+      this.getStaveModifiersWidth({ address, previousMeasureFragment }) + this.getMinVoiceJustifyWidth({ address })
     );
   }
 
@@ -109,8 +105,6 @@ export class MeasureFragment {
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
     const partRenderings = new Array<PartRendering>();
-
-    const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
 
     const x = opts.x;
     let y = opts.y;
@@ -145,7 +139,6 @@ export class MeasureFragment {
         previousPart,
         beginningStaveModifiers,
         endStaveModifiers,
-        staveOffsetX,
         width: opts.width.value,
       });
 
@@ -207,7 +200,6 @@ export class MeasureFragment {
       address: opts.address,
       parts: partRenderings,
       width: opts.width.value,
-      staveOffsetX,
       vexflow: { staveConnectors: vfStaveConnectors },
     };
   }
@@ -410,27 +402,5 @@ export class MeasureFragment {
     }
 
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
-  }
-
-  private getStaveOffsetX(opts: { address: Address<'measurefragment'> }): number {
-    let result = 0;
-
-    const isFirstSystem = opts.address.getSystemIndex() === 0;
-    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
-    const isFirstMeasureFragment = this.index === 0;
-
-    const hasStaveConnectorBrace =
-      isFirstMeasure &&
-      isFirstMeasureFragment &&
-      this.staveSignatures.some((staveSignature) => staveSignature.value.getStaveCount() > 1);
-    if (hasStaveConnectorBrace) {
-      result += STAVE_CONNECTOR_BRACE_WIDTH;
-    }
-
-    if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
-      result += util.max(this.partNames.map((partName) => partName.value.getWidth()));
-    }
-
-    return result;
   }
 }
