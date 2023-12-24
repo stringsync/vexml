@@ -38,7 +38,7 @@ export class Seed {
     const systems = new Array<System>();
 
     let remaining = width;
-    let staveOffsetX = 0;
+    let totalStaveOffsetX = 0;
     let measures = new Array<Measure>();
     let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
@@ -49,7 +49,7 @@ export class Seed {
 
       const stretchedWidths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
         ({ measureIndex, measureFragmentIndex, value }) => {
-          const targetWidth = width - endBarlineWidth - staveOffsetX;
+          const targetWidth = width - endBarlineWidth - totalStaveOffsetX;
           const widthDeficit = targetWidth - minRequiredSystemWidth;
           const widthFraction = value / minRequiredSystemWidth;
           const widthDelta = widthDeficit * widthFraction;
@@ -79,11 +79,15 @@ export class Seed {
         address: measureAddress,
       });
 
+      remaining += endBarlineWidth; // cancel out the previous end barline width
       endBarlineWidth = currentMeasure.getEndBarlineWidth();
-      staveOffsetX += currentMeasure.getStaveOffsetX({ address: measureAddress });
+      remaining -= endBarlineWidth;
 
-      let required =
-        util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value)) + endBarlineWidth + staveOffsetX;
+      const staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+      remaining -= staveOffsetX;
+      totalStaveOffsetX += staveOffsetX;
+
+      let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
 
       if (remaining < required) {
         addSystem({ stretch: true });
@@ -97,7 +101,10 @@ export class Seed {
         systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
 
         endBarlineWidth = currentMeasure.getEndBarlineWidth();
-        staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+        remaining -= endBarlineWidth;
+
+        totalStaveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+        remaining -= totalStaveOffsetX;
 
         measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
           previousMeasure,
@@ -107,8 +114,7 @@ export class Seed {
           }),
         });
 
-        required =
-          util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value)) + endBarlineWidth + staveOffsetX;
+        required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
       }
 
       remaining -= required;
