@@ -10,7 +10,6 @@ import { MeasureFragmentWidth } from './measurefragment';
 import { PartName } from './partname';
 
 // Space needed to be able to show the end barlines.
-const END_BARLINE_OFFSET = 1;
 const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
@@ -43,15 +42,18 @@ export class Seed {
     let measures = new Array<Measure>();
     let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+    let endBarlineWidth = 0;
 
     const addSystem = (opts: { stretch: boolean }) => {
       const minRequiredSystemWidth = util.sum(minRequiredFragmentWidths.map(({ value }) => value));
 
-      const widths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
+      const stretchedWidths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
         ({ measureIndex, measureFragmentIndex, value }) => {
-          const widthDeficit = util.max([0, width - minRequiredSystemWidth - staveOffsetX - END_BARLINE_OFFSET]);
+          const targetWidth = width - endBarlineWidth - staveOffsetX;
+          const widthDeficit = targetWidth - minRequiredSystemWidth;
           const widthFraction = value / minRequiredSystemWidth;
           const widthDelta = widthDeficit * widthFraction;
+
           return { measureIndex, measureFragmentIndex, value: value + widthDelta };
         }
       );
@@ -61,7 +63,7 @@ export class Seed {
           config: this.config,
           index: systems.length,
           measures,
-          measureFragmentWidths: opts.stretch ? widths : minRequiredFragmentWidths,
+          measureFragmentWidths: opts.stretch ? stretchedWidths : minRequiredFragmentWidths,
         })
       );
     };
@@ -76,10 +78,12 @@ export class Seed {
         previousMeasure,
         address: measureAddress,
       });
-      let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
 
-      staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
-      remaining -= staveOffsetX;
+      endBarlineWidth = currentMeasure.getEndBarlineWidth();
+      staveOffsetX += currentMeasure.getStaveOffsetX({ address: measureAddress });
+
+      let required =
+        util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value)) + endBarlineWidth + staveOffsetX;
 
       if (remaining < required) {
         addSystem({ stretch: true });
@@ -91,6 +95,10 @@ export class Seed {
 
         // Start a new system and re-measure.
         systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+
+        endBarlineWidth = currentMeasure.getEndBarlineWidth();
+        staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+
         measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
           previousMeasure,
           address: systemAddress.measure({
@@ -98,7 +106,9 @@ export class Seed {
             measureIndex: currentMeasure.getIndex(),
           }),
         });
-        required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
+
+        required =
+          util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value)) + endBarlineWidth + staveOffsetX;
       }
 
       remaining -= required;
