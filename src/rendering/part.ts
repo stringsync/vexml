@@ -103,15 +103,14 @@ export class Part {
     spanners: Spanners;
     beginningStaveModifiers: StaveModifier[];
     endStaveModifiers: StaveModifier[];
-    staveOffsetX: number;
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
     const staveRenderings = new Array<StaveRendering>();
 
-    const x = opts.x + opts.staveOffsetX;
+    const x = opts.x;
     let y = opts.y;
-    const width = opts.width - opts.staveOffsetX;
+    const width = opts.width;
 
     util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
@@ -157,7 +156,7 @@ export class Part {
 
     let name: PartNameRendering | null = null;
     if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
-      name = this.name.render({ x: opts.x, y: middleY + this.name.getApproximateHeight() / 2 });
+      name = this.name.render({ x: 0, y: middleY + this.name.getApproximateHeight() / 2 });
     }
 
     return {

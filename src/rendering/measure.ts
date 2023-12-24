@@ -14,6 +14,8 @@ const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
 const MEASURE_LABEL_COLOR = '#aaaaaa';
 
+const STAVE_CONNECTOR_BRACE_WIDTH = 16;
+
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
@@ -101,6 +103,28 @@ export class Measure {
     return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
   }
 
+  /** Returns how much to offset the measure by. */
+  getStaveOffsetX(opts: { address: Address<'measure'> }): number {
+    let result = 0;
+
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+    const isFirstSystemMeasure = opts.address.getSystemMeasureIndex() === 0;
+
+    const hasMultipleStaves = this.leadingStaveSignatures.some(
+      (staveSignature) => staveSignature.value.getStaveCount() > 1
+    );
+    if (isFirstSystemMeasure && hasMultipleStaves) {
+      result += STAVE_CONNECTOR_BRACE_WIDTH;
+    }
+
+    if (isFirstSystem && isFirstMeasure) {
+      result += util.max(this.partNames.map((partName) => partName.value.getWidth()));
+    }
+
+    return result;
+  }
+
   /** Renders the measure. */
   render(opts: {
     x: number;
@@ -112,6 +136,20 @@ export class Measure {
     nextMeasure: Measure | null;
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
+
+    const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
+
+    let x = opts.x + staveOffsetX;
+    const y = opts.y;
+
+    const label = new drawables.Text({
+      content: this.getLabelTextContent(),
+      italic: true,
+      x: x + MEASURE_LABEL_OFFSET_X,
+      y: y + MEASURE_LABEL_OFFSET_Y,
+      color: MEASURE_LABEL_COLOR,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
+    });
 
     util.forEachTriple(
       this.getFragments(),
@@ -133,29 +171,19 @@ export class Measure {
         }
 
         const fragmentRendering = currentFragment.render({
-          x: opts.x,
-          y: opts.y,
+          x,
+          y,
           width,
           address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
           spanners: opts.spanners,
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
         });
-
         fragmentRenderings.push(fragmentRendering);
+
+        x += fragmentRendering.width;
       }
     );
-
-    const labelOffsetX = util.first(fragmentRenderings)?.staveOffsetX ?? 0;
-
-    const label = new drawables.Text({
-      content: this.getLabelTextContent(),
-      italic: true,
-      x: opts.x + MEASURE_LABEL_OFFSET_X + labelOffsetX,
-      y: opts.y + MEASURE_LABEL_OFFSET_Y,
-      color: MEASURE_LABEL_COLOR,
-      size: this.config.MEASURE_NUMBER_FONT_SIZE,
-    });
 
     return {
       type: 'measure',
@@ -163,7 +191,7 @@ export class Measure {
       fragments: fragmentRenderings,
       index: this.index,
       label,
-      width: util.sum(fragmentRenderings.map((fragment) => fragment.width)),
+      width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
     };
   }
 

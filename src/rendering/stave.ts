@@ -142,6 +142,7 @@ export class Stave {
 
   /** Returns the stave modifiers that changed. */
   getModifierChanges(opts: { previousStave: Stave | null }): StaveModifier[] {
+    // TODO: See if we can remove this.
     if (!opts.previousStave) {
       return ['clef', 'keySignature', 'timeSignature'];
     }

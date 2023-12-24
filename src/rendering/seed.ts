@@ -39,6 +39,7 @@ export class Seed {
     const systems = new Array<System>();
 
     let remaining = width;
+    let staveOffsetX = 0;
     let measures = new Array<Measure>();
     let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
     let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
@@ -48,7 +49,7 @@ export class Seed {
 
       const widths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
         ({ measureIndex, measureFragmentIndex, value }) => {
-          const widthDeficit = width - minRequiredSystemWidth - END_BARLINE_OFFSET;
+          const widthDeficit = util.max([0, width - minRequiredSystemWidth - staveOffsetX - END_BARLINE_OFFSET]);
           const widthFraction = value / minRequiredSystemWidth;
           const widthDelta = widthDeficit * widthFraction;
           return { measureIndex, measureFragmentIndex, value: value + widthDelta };
@@ -66,14 +67,19 @@ export class Seed {
     };
 
     util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
+      const measureAddress = systemAddress.measure({
+        systemMeasureIndex: measures.length,
+        measureIndex: currentMeasure.getIndex(),
+      });
+
       let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
         previousMeasure,
-        address: systemAddress.measure({
-          systemMeasureIndex: measures.length,
-          measureIndex: currentMeasure.getIndex(),
-        }),
+        address: measureAddress,
       });
       let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
+
+      staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+      remaining -= staveOffsetX;
 
       if (remaining < required) {
         addSystem({ stretch: true });
