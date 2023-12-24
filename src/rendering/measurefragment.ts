@@ -144,15 +144,14 @@ export class MeasureFragment {
 
       partRenderings.push(partRendering);
 
-      const isFirstSystem = opts.address.getSystemIndex() === 0;
-      const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+      const isFirstSystemMeasure = opts.address.getSystemMeasureIndex() === 0;
       const isFirstMeasureFragment = this.index === 0;
 
       if (partRendering.staves.length > 1) {
         const topStave = util.first(partRendering.staves)!.vexflow.stave;
         const bottomStave = util.last(partRendering.staves)!.vexflow.stave;
 
-        if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
+        if (isFirstSystemMeasure && isFirstMeasureFragment) {
           vfStaveConnectors.push(new vexflow.StaveConnector(topStave, bottomStave).setType('brace'));
         }
 

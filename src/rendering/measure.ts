@@ -125,6 +125,11 @@ export class Measure {
     return result;
   }
 
+  /** Returns the width of the end barline. */
+  getEndBarlineWidth(): number {
+    return this.getEndBarStyle() === 'none' ? 0 : 1;
+  }
+
   /** Renders the measure. */
   render(opts: {
     x: number;
