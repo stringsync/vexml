@@ -227,40 +227,25 @@ export class Measure {
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
 
-        const upper = isLastEvent ? Division.max() : event.at;
+        staveSignatures.push({ partId, value: iterator.current.staveSignature });
 
-        staveSignatures.push({ partId, value: iterator.current().staveSignature });
-
-        while (iterator.hasNext()) {
-          measureEntries.push({ partId, value: iterator.current().entry });
-
-          if (isFirstEvent) {
-            beginningBarStyles.push({ partId, value: beginningBarStyle });
-          } else {
-            beginningBarStyles.push({ partId, value: 'none' });
-          }
-
-          if (isLastEvent) {
-            endBarStyles.push({ partId, value: endBarStyle });
-          } else {
-            endBarStyles.push({ partId, value: 'none' });
-          }
-
-          iterator.next();
-
-          if (iterator.current().divisions.isGreaterThan(upper)) {
-            break;
-          }
-          if (iterator.current().entry instanceof StaveSignature) {
-            break;
-          }
-          if (this.isSupportedMetronome(iterator.current().entry)) {
-            break;
-          }
+        if (isFirstEvent) {
+          beginningBarStyles.push({ partId, value: beginningBarStyle });
         }
-      }
 
-      console.log(staveSignatures, measureEntries);
+        if (isLastEvent) {
+          endBarStyles.push({ partId, value: endBarStyle });
+        }
+
+        do {
+          measureEntries.push({ partId, value: iterator.current.entry });
+          iterator.next();
+        } while (
+          iterator.hasNext() &&
+          iterator.current.divisions.isLessThanOrEqualTo(event.at) &&
+          iterator.current.type === 'fallthrough'
+        );
+      }
 
       result.push(
         new MeasureFragment({
@@ -302,48 +287,32 @@ export class Measure {
 
   private getFragmentEvents(): MeasureFragmentEvent[] {
     const events = new Array<MeasureFragmentEvent>();
-    const seen = new Set<number>();
-
-    function addEvent(event: MeasureFragmentEvent): void {
-      const beats = event.at.toBeats();
-      if (!seen.has(beats)) {
-        seen.add(beats);
-        events.push(event);
-      }
-    }
 
     for (const partId of this.partIds) {
       const iterator = this.getMeasureEntryIterator(partId);
 
-      let previous = Division.zero();
-
       while (iterator.hasNext()) {
-        const { entry, divisions } = iterator.current();
-
-        if (entry instanceof StaveSignature) {
-          addEvent({ at: previous });
+        if (iterator.current.type === 'boundary') {
+          events.push({ at: iterator.current.divisions });
         }
-
-        if (this.isSupportedMetronome(entry)) {
-          addEvent({ at: previous });
-        }
-
-        previous = divisions;
         iterator.next();
+      }
+
+      // Ensure that we end up capturing all measure entries.
+      events.push({ at: iterator.current.divisions });
+    }
+
+    const seen = new Set<number>();
+    const unique = new Array<MeasureFragmentEvent>();
+    for (const event of events) {
+      const beats = event.at.toBeats();
+      if (!seen.has(beats)) {
+        unique.push(event);
+        seen.add(beats);
       }
     }
 
-    return util.sortBy(events, (event) => event.at.toBeats());
-  }
-
-  private isSupportedMetronome(entry: MeasureEntry): boolean {
-    return (
-      entry instanceof musicxml.Direction &&
-      entry
-        .getTypes()
-        .map((directionType) => directionType.getContent())
-        .some((content) => content.type === 'metronome' && content.metronome.isSupported())
-    );
+    return util.sortBy(unique, (event) => event.at.toBeats());
   }
 
   private getBeginningBarStyle(): musicxml.BarStyle {
