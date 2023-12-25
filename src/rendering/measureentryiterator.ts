@@ -2,6 +2,15 @@ import * as musicxml from '@/musicxml';
 import { Division } from './division';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 
+/** A single iteration of measure entries. */
+export type MeasureEntryIteration = {
+  type: 'fallthrough' | 'boundary';
+  entry: MeasureEntry;
+  divisions: Division;
+  staveSignature: StaveSignature;
+};
+
+/** Iterates over an array of measure entries, accounting for the active stave signature and divisions. */
 export class MeasureEntryIterator {
   private entries: MeasureEntry[];
   private index: number;
@@ -16,9 +25,12 @@ export class MeasureEntryIterator {
   }
 
   /** Returns the current entry. */
-  current(): { entry: MeasureEntry; divisions: Division; staveSignature: StaveSignature } {
+  get current(): MeasureEntryIteration {
+    const entry = this.entries[this.index];
+
     return {
-      entry: this.entries[this.index],
+      type: this.getType(entry),
+      entry,
       divisions: this.divisions,
       staveSignature: this.staveSignature,
     };
@@ -37,20 +49,24 @@ export class MeasureEntryIterator {
       this.staveSignature = entry;
     }
 
+    let duration = 0;
+
     if (entry instanceof musicxml.Note) {
-      this.addDuration(entry.getDuration());
+      duration = entry.getDuration();
     }
 
     if (entry instanceof musicxml.Backup) {
-      this.addDuration(-entry.getDuration());
+      duration = -entry.getDuration();
     }
 
     if (entry instanceof musicxml.Forward) {
-      this.addDuration(entry.getDuration());
+      duration = entry.getDuration();
     }
+
+    this.addDuration(duration);
   }
 
-  /** Whether there is another entry or not. */
+  /** Whether there is another entry. */
   hasNext(): boolean {
     return this.index < this.entries.length;
   }
@@ -63,5 +79,19 @@ export class MeasureEntryIterator {
     if (this.divisions.isLessThan(Division.zero())) {
       this.divisions = Division.zero();
     }
+  }
+
+  private getType(entry: MeasureEntry): 'fallthrough' | 'boundary' {
+    return entry instanceof StaveSignature || this.isSupportedMetronome(entry) ? 'boundary' : 'fallthrough';
+  }
+
+  private isSupportedMetronome(entry: MeasureEntry): boolean {
+    return (
+      entry instanceof musicxml.Direction &&
+      entry
+        .getTypes()
+        .map((directionType) => directionType.getContent())
+        .some((content) => content.type === 'metronome' && content.metronome.isSupported())
+    );
   }
 }
