@@ -12,8 +12,14 @@ import { Fraction } from '@/util';
 export class Division {
   private constructor(private fraction: Fraction) {}
 
+  /** Creates an empty division. */
   static zero() {
     return new Division(new Fraction(0));
+  }
+
+  /** Creates a division with the maximum safe value. */
+  static max() {
+    return new Division(new Fraction(Number.MAX_SAFE_INTEGER));
   }
 
   /**
