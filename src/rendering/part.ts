@@ -93,6 +93,12 @@ export class Part {
     return util.max(this.getStaves().map((stave) => stave.getTopPadding()));
   }
 
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    // TODO: One stave could be a multi measure rest, while another one could have voices.
+    return util.max(this.getStaves().map((stave) => stave.getMultiRestCount()));
+  }
+
   /** Renders the part. */
   render(opts: {
     x: number;

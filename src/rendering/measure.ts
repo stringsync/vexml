@@ -99,6 +99,11 @@ export class Measure {
     return widths;
   }
 
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    return util.sum(this.getFragments().map((fragment) => fragment.getMultiRestCount()));
+  }
+
   /** Returns the top padding for the measure. */
   getTopPadding(): number {
     return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
@@ -227,14 +232,18 @@ export class Measure {
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
 
-        staveSignatures.push({ partId, value: iterator.getStaveSignature() });
+        const staveSignature = iterator.getStaveSignature();
+
+        staveSignatures.push({ partId, value: staveSignature });
 
         if (isFirstEvent) {
           beginningBarStyles.push({ partId, value: beginningBarStyle });
         }
+
         if (isLastEvent) {
           endBarStyles.push({ partId, value: endBarStyle });
         }
+
         if (iterator.isEmpty()) {
           continue;
         }
@@ -264,6 +273,8 @@ export class Measure {
         })
       );
     }
+
+    console.log(result);
 
     return result;
   }

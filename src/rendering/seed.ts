@@ -158,25 +158,34 @@ export class Seed {
     const measures = new Array<Measure>();
 
     const measureCount = this.getMeasureCount();
+    let multiRestMeasureCount = 0;
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      measures.push(
-        new Measure({
-          config: this.config,
-          index: measureIndex,
-          partIds: this.getPartIds(),
-          partNames: this.getPartNames(),
-          musicXml: {
-            measures: this.musicXml.parts.map((part) => ({
-              partId: part.getId(),
-              value: part.getMeasures()[measureIndex],
-            })),
-            staveLayouts: this.musicXml.staveLayouts,
-          },
-          leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
-          entries: this.getMeasureEntries(measureIndex),
-        })
-      );
+      if (multiRestMeasureCount > 0) {
+        multiRestMeasureCount--;
+        continue;
+      }
+
+      const measure = new Measure({
+        config: this.config,
+        index: measureIndex,
+        partIds: this.getPartIds(),
+        partNames: this.getPartNames(),
+        musicXml: {
+          measures: this.musicXml.parts.map((part) => ({
+            partId: part.getId(),
+            value: part.getMeasures()[measureIndex],
+          })),
+          staveLayouts: this.musicXml.staveLayouts,
+        },
+        leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
+        entries: this.getMeasureEntries(measureIndex),
+      });
+
+      measures.push(measure);
+
+      // -1 since this measure is part of the multi rest.
+      multiRestMeasureCount += measure.getMultiRestCount() - 1;
     }
 
     return measures;

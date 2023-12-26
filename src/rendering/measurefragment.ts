@@ -11,6 +11,7 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
+import { MultiRest } from './multirest';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -85,13 +86,22 @@ export class MeasureFragment {
     const previousMeasureFragment = opts.previousMeasureFragment;
 
     return (
-      this.getStaveModifiersWidth({ address, previousMeasureFragment }) + this.getMinVoiceJustifyWidth({ address })
+      this.getStaveModifiersWidth({ address, previousMeasureFragment }) +
+      this.getMinVoiceJustifyWidth({ address }) +
+      this.getNonVoiceWidth()
     );
   }
 
   /** Returns the top padding of the fragment. */
   getTopPadding(): number {
     return util.max(this.getParts().map((part) => part.getTopPadding()));
+  }
+
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    // TODO: One stave could be a multi measure rest, while another one could have voices. Handle the discrepancy using
+    // whole measure rests.
+    return util.max(this.getParts().map((part) => part.getMultiRestCount()));
   }
 
   /** Renders the measure fragment. */
@@ -403,5 +413,16 @@ export class MeasureFragment {
     }
 
     return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
+  }
+
+  private getNonVoiceWidth(): number {
+    const hasMultiRest = this.getParts()
+      .flatMap((part) => part.getStaves())
+      .some((stave) => stave.getEntry() instanceof MultiRest);
+
+    // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
+    // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
+    // the moment.
+    return hasMultiRest ? this.config.MULTI_MEASURE_REST_WIDTH : 0;
   }
 }
