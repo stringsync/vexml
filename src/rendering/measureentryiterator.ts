@@ -2,27 +2,35 @@ import * as musicxml from '@/musicxml';
 import { Division } from './division';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 
-export type MeasureEntryIteration = {
-  type: 'fallthrough' | 'boundary';
-  entry: MeasureEntry;
-  start: Division;
-  end: Division;
-};
+export type MeasureEntryFragmentation = 'none' | 'new';
+
+/** An iteration value of the iterator. */
+export type MeasureEntryIteration =
+  | {
+      done: true;
+      value: null;
+    }
+  | {
+      done: false;
+      value: {
+        entry: MeasureEntry;
+        start: Division;
+        end: Division;
+        fragmentation: MeasureEntryFragmentation;
+      };
+    };
 
 /** Iterates over an array of measure entries, accounting for the active stave signature and divisions. */
 export class MeasureEntryIterator {
   private entries: MeasureEntry[];
   private index: number;
   private staveSignature: StaveSignature;
-  private start: Division;
-  private end: Division;
+  private iteration?: MeasureEntryIteration;
 
   constructor(opts: { entries: MeasureEntry[]; staveSignature: StaveSignature }) {
     this.entries = opts.entries;
-    this.index = 0;
+    this.index = -1;
     this.staveSignature = opts.staveSignature;
-    this.start = Division.zero();
-    this.end = Division.zero();
   }
 
   /** Returns the current stave signature of the iterator. */
@@ -30,31 +38,18 @@ export class MeasureEntryIterator {
     return this.staveSignature;
   }
 
-  /** The current iteration. */
-  current(): MeasureEntryIteration {
-    if (this.isEmpty()) {
-      throw new Error('iterator exhausted');
+  /** Returns the current iteration of the iterator or throws if there isn't one. */
+  peek(): MeasureEntryIteration {
+    if (typeof this.iteration === 'undefined') {
+      throw new Error('must initialize before peeking');
     }
-
-    const entry = this.entries[this.index];
-    const type = this.getType(entry);
-    return { type, entry, start: this.start, end: this.end };
-  }
-
-  /** Whether there are any entries at all. */
-  isEmpty(): boolean {
-    return this.entries.length === 0;
-  }
-
-  /** Whether there is another iteration. */
-  hasNext(): boolean {
-    return this.index < this.entries.length;
+    return this.iteration;
   }
 
   /** Moves the cursor to the next iteration or throws if there isn't one. */
-  next(): void {
-    if (!this.hasNext()) {
-      throw new Error('iterator exhausted');
+  next(): MeasureEntryIteration {
+    if (this.index >= this.entries.length) {
+      return this.update({ done: true, value: null });
     }
 
     const entry = this.entries[this.index++];
@@ -77,21 +72,19 @@ export class MeasureEntryIterator {
       duration = entry.getDuration();
     }
 
-    this.addDuration(duration);
-  }
-
-  private addDuration(duration: number): void {
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
+    const start = this.iteration?.value?.end ?? Division.zero();
+    const end = start.add(Division.of(duration, quarterNoteDivisions));
 
-    this.start = this.end;
-    this.end = this.start.add(Division.of(duration, quarterNoteDivisions));
-    if (this.end.isLessThan(Division.zero())) {
-      this.end = Division.zero();
-    }
+    const fragmentation = entry instanceof StaveSignature || this.isSupportedMetronome(entry) ? 'new' : 'none';
+
+    return this.update({ done: false, value: { entry, start, end, fragmentation } });
   }
 
-  private getType(entry: MeasureEntry): 'fallthrough' | 'boundary' {
-    return entry instanceof StaveSignature || this.isSupportedMetronome(entry) ? 'boundary' : 'fallthrough';
+  /** Syntactic sugar for setting iteration and returning in the same expression. */
+  private update(iteration: MeasureEntryIteration): MeasureEntryIteration {
+    this.iteration = iteration;
+    return iteration;
   }
 
   private isSupportedMetronome(entry: MeasureEntry): boolean {

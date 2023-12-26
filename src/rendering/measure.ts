@@ -27,11 +27,6 @@ export type MeasureRendering = {
   width: number;
 };
 
-/** Describes when a measure fragment should be instantiated in a given part. */
-type MeasureFragmentEvent = {
-  boundary: Division;
-};
-
 /**
  * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
  * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
@@ -212,17 +207,18 @@ export class Measure {
 
     const beginningBarStyle = this.getBeginningBarStyle();
     const endBarStyle = this.getEndBarStyle();
-    const events = this.getFragmentEvents();
+    const boundaries = this.getFragmentBoundaries();
 
     const iterators: Record<string, MeasureEntryIterator> = {};
     for (const partId of this.partIds) {
       iterators[partId] = this.getMeasureEntryIterator(partId);
+      iterators[partId].next(); // initialize iterator
     }
 
-    for (let index = 0; index < events.length; index++) {
-      const event = events[index];
-      const isFirstEvent = index === 0;
-      const isLastEvent = index === events.length - 1;
+    for (let index = 0; index < boundaries.length; index++) {
+      const boundary = boundaries[index];
+      const isFirstBoundary = index === 0;
+      const isLastBoundary = index === boundaries.length - 1;
 
       const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
       const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
@@ -232,29 +228,27 @@ export class Measure {
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
 
-        const staveSignature = iterator.getStaveSignature();
+        staveSignatures.push({ partId, value: iterator.getStaveSignature() });
 
-        staveSignatures.push({ partId, value: staveSignature });
-
-        if (isFirstEvent) {
+        if (isFirstBoundary) {
           beginningBarStyles.push({ partId, value: beginningBarStyle });
         }
-
-        if (isLastEvent) {
+        if (isLastBoundary) {
           endBarStyles.push({ partId, value: endBarStyle });
         }
 
-        if (iterator.isEmpty()) {
-          continue;
+        let iteration = iterator.peek();
+
+        while (!iteration.done && iteration.value.start.isLessThan(boundary)) {
+          measureEntries.push({ partId, value: iteration.value.entry });
+          iteration = iterator.next();
+          console.log(boundary, iteration);
         }
+      }
 
-        let current = iterator.current();
-
-        do {
-          measureEntries.push({ partId, value: current.entry });
-          iterator.next();
-          current = iterator.current();
-        } while (iterator.hasNext() && current.start.isLessThan(event.boundary) && current.type !== 'boundary');
+      // Ignore completely empty fragments.
+      if (!measureEntries.length && !beginningBarStyles.length && !endBarStyles.length) {
+        continue;
       }
 
       result.push(
@@ -273,8 +267,6 @@ export class Measure {
         })
       );
     }
-
-    console.log(result);
 
     return result;
   }
@@ -297,35 +289,35 @@ export class Measure {
     return measure.getNumber() || (this.index + 1).toString();
   }
 
-  private getFragmentEvents(): MeasureFragmentEvent[] {
-    const events = new Array<MeasureFragmentEvent>();
+  private getFragmentBoundaries(): Division[] {
+    const boundaries = new Array<Division>();
 
     for (const partId of this.partIds) {
       const iterator = this.getMeasureEntryIterator(partId);
 
-      while (iterator.hasNext()) {
-        const current = iterator.current();
-        if (current.type === 'boundary') {
-          events.push({ boundary: current.end });
+      let iteration = iterator.next();
+
+      while (!iteration.done) {
+        if (iteration.value.fragmentation === 'new') {
+          boundaries.push(iteration.value.end);
         }
-        iterator.next();
+        iteration = iterator.next();
       }
     }
 
-    // Mechanism to capture all events.
-    events.push({ boundary: Division.max() });
+    boundaries.push(Division.max());
 
     const seen = new Set<number>();
-    const unique = new Array<MeasureFragmentEvent>();
-    for (const event of events) {
-      const beats = event.boundary.toBeats();
+    const unique = new Array<Division>();
+    for (const boundary of boundaries) {
+      const beats = boundary.toBeats();
       if (!seen.has(beats)) {
-        unique.push(event);
+        unique.push(boundary);
         seen.add(beats);
       }
     }
 
-    return util.sortBy(unique, (event) => event.boundary.toBeats());
+    return util.sortBy(unique, (boundary) => boundary.toBeats());
   }
 
   private getBeginningBarStyle(): musicxml.BarStyle {
