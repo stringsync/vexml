@@ -57,14 +57,13 @@ export class MeasureEntryIterator {
       throw new Error('iterator exhausted');
     }
 
-    this.index++;
-    const entry = this.entries[this.index];
+    const entry = this.entries[this.index++];
+
+    let duration = 0;
 
     if (entry instanceof StaveSignature) {
       this.staveSignature = entry;
     }
-
-    let duration = 0;
 
     if (entry instanceof musicxml.Note) {
       duration = entry.getDuration();

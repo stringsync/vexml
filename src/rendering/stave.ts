@@ -73,25 +73,6 @@ export class Stave {
     this.measureEntries = opts.measureEntries;
   }
 
-  /** Returns the minimum justify width for the stave in a measure context. */
-  @util.memoize()
-  getMinJustifyWidth(address: Address<'stave'>): number {
-    const entry = this.getEntry();
-
-    if (entry instanceof MultiRest) {
-      // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
-      // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
-      // the moment.
-      return this.config.MULTI_MEASURE_REST_WIDTH;
-    }
-
-    if (entry instanceof Chorus) {
-      return entry.getMinJustifyWidth(address.chorus());
-    }
-
-    return 0;
-  }
-
   @util.memoize()
   getEntry(): StaveEntry {
     const config = this.config;
