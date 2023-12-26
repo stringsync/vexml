@@ -2,12 +2,11 @@ import * as musicxml from '@/musicxml';
 import { Division } from './division';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 
-/** A single iteration of measure entries. */
 export type MeasureEntryIteration = {
   type: 'fallthrough' | 'boundary';
   entry: MeasureEntry;
-  divisions: Division;
-  staveSignature: StaveSignature;
+  start: Division;
+  end: Division;
 };
 
 /** Iterates over an array of measure entries, accounting for the active stave signature and divisions. */
@@ -15,31 +14,47 @@ export class MeasureEntryIterator {
   private entries: MeasureEntry[];
   private index: number;
   private staveSignature: StaveSignature;
-  private divisions: Division;
+  private start: Division;
+  private end: Division;
 
   constructor(opts: { entries: MeasureEntry[]; staveSignature: StaveSignature }) {
     this.entries = opts.entries;
     this.index = 0;
     this.staveSignature = opts.staveSignature;
-    this.divisions = Division.zero();
+    this.start = Division.zero();
+    this.end = Division.zero();
   }
 
-  /** Returns the current entry. */
-  get current(): MeasureEntryIteration {
+  /** Returns the current stave signature of the iterator. */
+  getStaveSignature(): StaveSignature {
+    return this.staveSignature;
+  }
+
+  /** The current iteration. */
+  current(): MeasureEntryIteration {
+    if (this.isEmpty()) {
+      throw new Error('iterator exhausted');
+    }
+
     const entry = this.entries[this.index];
-
-    return {
-      type: this.getType(entry),
-      entry,
-      divisions: this.divisions,
-      staveSignature: this.staveSignature,
-    };
+    const type = this.getType(entry);
+    return { type, entry, start: this.start, end: this.end };
   }
 
-  /** Moves the cursor to the next entry or throws if there isn't one. */
+  /** Whether there are any entries at all. */
+  isEmpty(): boolean {
+    return this.entries.length === 0;
+  }
+
+  /** Whether there is another iteration. */
+  hasNext(): boolean {
+    return this.index < this.entries.length;
+  }
+
+  /** Moves the cursor to the next iteration or throws if there isn't one. */
   next(): void {
     if (!this.hasNext()) {
-      throw new Error('No next entry');
+      throw new Error('iterator exhausted');
     }
 
     this.index++;
@@ -66,18 +81,13 @@ export class MeasureEntryIterator {
     this.addDuration(duration);
   }
 
-  /** Whether there is another entry. */
-  hasNext(): boolean {
-    return this.index < this.entries.length;
-  }
-
   private addDuration(duration: number): void {
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
 
-    this.divisions = this.divisions.add(Division.of(duration, quarterNoteDivisions));
-
-    if (this.divisions.isLessThan(Division.zero())) {
-      this.divisions = Division.zero();
+    this.start = this.end;
+    this.end = this.start.add(Division.of(duration, quarterNoteDivisions));
+    if (this.end.isLessThan(Division.zero())) {
+      this.end = Division.zero();
     }
   }
 

@@ -29,7 +29,7 @@ export type MeasureRendering = {
 
 /** Describes when a measure fragment should be instantiated in a given part. */
 type MeasureFragmentEvent = {
-  at: Division;
+  boundary: Division;
 };
 
 /**
@@ -227,24 +227,25 @@ export class Measure {
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
 
-        staveSignatures.push({ partId, value: iterator.current.staveSignature });
+        staveSignatures.push({ partId, value: iterator.getStaveSignature() });
 
         if (isFirstEvent) {
           beginningBarStyles.push({ partId, value: beginningBarStyle });
         }
-
         if (isLastEvent) {
           endBarStyles.push({ partId, value: endBarStyle });
         }
+        if (iterator.isEmpty()) {
+          continue;
+        }
+
+        let current = iterator.current();
 
         do {
-          measureEntries.push({ partId, value: iterator.current.entry });
+          measureEntries.push({ partId, value: current.entry });
           iterator.next();
-        } while (
-          iterator.hasNext() &&
-          iterator.current.divisions.isLessThanOrEqualTo(event.at) &&
-          iterator.current.type === 'fallthrough'
-        );
+          current = iterator.current();
+        } while (iterator.hasNext() && current.start.isLessThan(event.boundary) && current.type !== 'boundary');
       }
 
       result.push(
@@ -292,27 +293,28 @@ export class Measure {
       const iterator = this.getMeasureEntryIterator(partId);
 
       while (iterator.hasNext()) {
-        if (iterator.current.type === 'boundary') {
-          events.push({ at: iterator.current.divisions });
+        const current = iterator.current();
+        if (current.type === 'boundary') {
+          events.push({ boundary: current.end });
         }
         iterator.next();
       }
-
-      // Ensure that we end up capturing all measure entries.
-      events.push({ at: iterator.current.divisions });
     }
+
+    // Mechanism to capture all events.
+    events.push({ boundary: Division.max() });
 
     const seen = new Set<number>();
     const unique = new Array<MeasureFragmentEvent>();
     for (const event of events) {
-      const beats = event.at.toBeats();
+      const beats = event.boundary.toBeats();
       if (!seen.has(beats)) {
         unique.push(event);
         seen.add(beats);
       }
     }
 
-    return util.sortBy(unique, (event) => event.at.toBeats());
+    return util.sortBy(unique, (event) => event.boundary.toBeats());
   }
 
   private getBeginningBarStyle(): musicxml.BarStyle {
