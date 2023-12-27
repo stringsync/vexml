@@ -39,11 +39,11 @@ The rendering hierarachy is also intended to break down the rendering logic in r
 
 While developing this library, avoid relationships between distant ancestors and descendants. However, sometimes this is necessary. For example, a relationship in `rendering` is:
 
-- A `System` has many `Parts`.
-- A `Part` belongs to a `System`.
-- A `Part` has many `Measures`.
-- A `Measure`belongs to a `Part`.
-- A `System` has many `Measures` through `Parts`.
+- A `System` has many `Measures`.
+- A `Measure` belongs to a `System`.
+- A `Measure` has many `MeasureFragments`.
+- A `MeasureFragment`belongs to a `Measure`.
+- A `System` has many `MeasureFragments` through `Measures`.
 
 ### Immutability
 
@@ -61,7 +61,7 @@ When possible, prefer to make heavy calculations lazy and memoizable. Use the [u
 
 ### Object Namespaces
 
-You may notice how some **create** and **render** types use namespaces.
+You may notice how some types use namespaces.
 
 The `musicXml` key serves as a namespace:
 
@@ -119,9 +119,9 @@ The `vf` prefix is used to distinguish `vexflow` objects from `rendering` object
 
 [Seed](./seed.ts) does the heavy lifting of determining what measures can fit in a given system.
 
-1. Instantiate all the `Measure` objects. These are the main width-adjustable objects in `vexml`.
-2. For each measure number, check each `Part` and determine which `Measure` takes up the most width. That will be the width for all of measures in that part.
-3. When there is no more width in a given `System`, start a new `System`.
+1. Instantiate all the `Measure` objects and record their widths. These are the width-adjustable objects in `vexml`.
+2. Determine what measures can fit in a single `System`.
+3. When there is no more width in a given `System`, start a new `System` and stretch out the widths of the measures of the previous system.
 
 This process is repeated until all the `Measure` objects are accounted for.
 
