@@ -2,15 +2,14 @@ import { SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { ChorusRendering } from './chorus';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
-
-// Space needed to be able to show the end barlines.
-const END_BARLINE_OFFSET = 1;
+import { Address } from './address';
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
@@ -67,23 +66,28 @@ export class Score {
 
     // Render the entire hierarchy.
     util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem]) => {
+      const address = Address.system({
+        systemIndex: currentSystem.getIndex(),
+        origin: 'Score.prototype.render',
+      });
+
       const systemRendering = currentSystem.render({
         x,
         y,
-        width: opts.width - END_BARLINE_OFFSET,
-        systemCount: systems.length,
+        address,
         previousSystem,
         nextSystem,
         spanners,
       });
       systemRenderings.push(systemRendering);
 
+      // TODO: Add height property to SystemRendering instead.
       const maxY = util.max([
         y,
-        ...systemRendering.parts
-          .flatMap((part) => part.measures)
+        ...systemRendering.measures
           .flatMap((measure) => measure.fragments)
-          .flatMap((measureFragment) => measureFragment.staves)
+          .flatMap((measureFragment) => measureFragment.parts)
+          .flatMap((part) => part.staves)
           .map((stave) => {
             const box = stave.vexflow.stave.getBoundingBox();
             return box.getY() + box.getH();
@@ -99,36 +103,24 @@ export class Score {
     const spannersRendering = spanners.render();
 
     // Precalculate different parts of the rendering for readability later.
-    const parts = systemRenderings.flatMap((system) => system.parts);
-    const measures = parts.flatMap((part) => part.measures);
+    const measures = systemRenderings.flatMap((system) => system.measures);
     const measureFragments = measures.flatMap((measure) => measure.fragments);
-    const staves = measureFragments.flatMap((measureFragment) => measureFragment.staves);
+    const parts = measureFragments.flatMap((measureFragment) => measureFragment.parts);
+    const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
     const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
-
-    // Format vexflow.Voice elements.
-    staves.forEach((stave) => {
-      if (stave.entry.type !== 'chorus') {
-        return;
-      }
-      const vfStave = stave.vexflow.stave;
-      const vfVoices = stave.entry.voices.map((voice) => voice.vexflow.voice);
-
-      if (vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
-        new vexflow.Formatter().joinVoices(vfVoices).formatToStave(vfVoices, vfStave);
-      }
-    });
 
     // Draw the title.
     titleRendering?.text.draw(vfContext);
 
     // Draw the part names.
     parts
-      .map((part) => part.name)
-      .forEach((partName) => {
-        partName?.text.draw(vfContext);
+      .map((part) => part.name?.text)
+      .filter((text): text is drawables.Text => text instanceof drawables.Text)
+      .forEach((text) => {
+        text.draw(vfContext);
       });
 
     // Draw vexflow.Stave elements.
@@ -138,29 +130,11 @@ export class Score {
         vfStave.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.StaveConnector elements from systems.
-    systemRenderings
-      .map((system) => system.vexflow.staveConnector)
-      .filter(
-        (vfStaveConnector): vfStaveConnector is vexflow.StaveConnector =>
-          vfStaveConnector instanceof vexflow.StaveConnector
-      )
+    // Draw vexflow.StaveConnector elements.
+    measureFragments
+      .flatMap((measureFragment) => measureFragment.vexflow.staveConnectors)
       .forEach((vfStaveConnector) => {
         vfStaveConnector.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveConnector elements from measures.
-    measures
-      .flatMap((measure) => measure.vexflow.staveConnectors)
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveConnector elements from parts.
-    parts
-      .map((part) => part.vexflow.staveConnector)
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector?.setContext(vfContext).draw();
       });
 
     // Draw vexflow.MultiMeasureRest elements.

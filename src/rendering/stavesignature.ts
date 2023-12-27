@@ -281,6 +281,15 @@ export class StaveSignature {
     return this.attributes;
   }
 
+  /** Whether the stave signature will change at a measure boundary. */
+  isAtMeasureBoundary(): boolean {
+    return (
+      !!this.next &&
+      this.next.getMeasureIndex() === this.getMeasureIndex() + 1 &&
+      this.next.getMeasureEntryIndex() === 0
+    );
+  }
+
   /** Renders the stave signature. */
   render(opts: { staveNumber: number }): StaveSignatureRendering {
     return {

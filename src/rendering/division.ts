@@ -12,6 +12,16 @@ import { Fraction } from '@/util';
 export class Division {
   private constructor(private fraction: Fraction) {}
 
+  /** Creates an empty division. */
+  static zero() {
+    return new Division(new Fraction(0));
+  }
+
+  /** Creates a division with the maximum safe value. */
+  static max() {
+    return new Division(new Fraction(Number.MAX_SAFE_INTEGER));
+  }
+
   /**
    * Creates a Division.
    *
@@ -26,6 +36,26 @@ export class Division {
   /** Returns if the other divisions is equal to this. */
   isEqual(value: Division): boolean {
     return this.fraction.isEquivalent(value.fraction);
+  }
+
+  /** Returns if the other divisions is less than this. */
+  isLessThan(value: Division): boolean {
+    return this.toBeats() < value.toBeats();
+  }
+
+  /** Returns if the other divisions is greater than this. */
+  isGreaterThan(value: Division): boolean {
+    return this.toBeats() > value.toBeats();
+  }
+
+  /** Returns if the other divisions is less than or equal to this. */
+  isLessThanOrEqualTo(value: Division): boolean {
+    return this.isLessThan(value) || this.isEqual(value);
+  }
+
+  /** Returns if the other divisions is greater than or equal to this. */
+  isGreaterThanOrEqualTo(value: Division): boolean {
+    return this.isGreaterThan(value) || this.isEqual(value);
   }
 
   /** Returns the sum as a new Division. */
