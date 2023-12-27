@@ -242,7 +242,6 @@ export class Measure {
         while (!iteration.done && iteration.value.start.isLessThan(boundary)) {
           measureEntries.push({ partId, value: iteration.value.entry });
           iteration = iterator.next();
-          console.log(boundary, iteration);
         }
       }
 
