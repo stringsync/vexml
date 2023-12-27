@@ -228,20 +228,24 @@ export class Measure {
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
 
-        staveSignatures.push({ partId, value: iterator.getStaveSignature() });
-
-        if (isFirstBoundary) {
-          beginningBarStyles.push({ partId, value: beginningBarStyle });
-        }
-        if (isLastBoundary) {
-          endBarStyles.push({ partId, value: endBarStyle });
-        }
+        const staveSignature = iterator.getStaveSignature();
 
         let iteration = iterator.peek();
 
         while (!iteration.done && iteration.value.start.isLessThan(boundary)) {
           measureEntries.push({ partId, value: iteration.value.entry });
           iteration = iterator.next();
+        }
+
+        if (measureEntries.length > 0) {
+          staveSignatures.push({ partId, value: staveSignature });
+
+          if (isFirstBoundary) {
+            beginningBarStyles.push({ partId, value: beginningBarStyle });
+          }
+          if (isLastBoundary) {
+            endBarStyles.push({ partId, value: endBarStyle });
+          }
         }
       }
 
