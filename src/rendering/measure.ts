@@ -1,25 +1,26 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
-import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
 import { Config } from './config';
-import { MeasureFragment, MeasureFragmentRendering } from './measurefragment';
-import { MeasureEntry, StaveSignature } from './stavesignature';
+import { PartScoped } from './types';
 import { Address } from './address';
+import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
+import { MeasureEntry, StaveSignature } from './stavesignature';
+import { Division } from './division';
 import { Spanners } from './spanners';
+import { PartName } from './partname';
+import { MeasureEntryIterator } from './measureentryiterator';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
 const MEASURE_LABEL_COLOR = '#aaaaaa';
 
+const STAVE_CONNECTOR_BRACE_WIDTH = 16;
+
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
   address: Address<'measure'>;
-  vexflow: {
-    staveConnectors: vexflow.StaveConnector[];
-  };
   index: number;
   label: drawables.Text;
   fragments: MeasureFragmentRendering[];
@@ -34,59 +35,63 @@ export type MeasureRendering = {
 export class Measure {
   private config: Config;
   private index: number;
+  private partIds: string[];
+  private partNames: PartScoped<PartName>[];
   private musicXml: {
-    measure: musicxml.Measure;
+    measures: PartScoped<musicxml.Measure>[];
     staveLayouts: musicxml.StaveLayout[];
   };
-  private leadingStaveSignature: StaveSignature;
-
-  private staveCount: number;
-  private measureEntries: MeasureEntry[];
+  private leadingStaveSignatures: PartScoped<StaveSignature>[];
+  private entries: PartScoped<MeasureEntry>[];
 
   constructor(opts: {
     config: Config;
     index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
     musicXml: {
-      measure: musicxml.Measure;
+      measures: PartScoped<musicxml.Measure>[];
       staveLayouts: musicxml.StaveLayout[];
     };
-    leadingStaveSignature: StaveSignature;
-    staveCount: number;
-    measureEntries: MeasureEntry[];
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
   }) {
     this.config = opts.config;
+    this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
     this.index = opts.index;
     this.musicXml = opts.musicXml;
-    this.leadingStaveSignature = opts.leadingStaveSignature;
-    this.staveCount = opts.staveCount;
-    this.measureEntries = opts.measureEntries;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
   }
 
-  /** Returns the index of the measure. */
+  /** Returns the absolute index of the measure. */
   getIndex(): number {
     return this.index;
   }
 
-  /** Returns the minimum required width for the Measure. */
-  getMinRequiredWidth(opts: { address: Address<'measure'>; previousMeasure: Measure | null }): number {
-    let sum = 0;
+  /** Returns the minimum required width for each measure fragment. */
+  getMinRequiredFragmentWidths(opts: {
+    address: Address<'measure'>;
+    previousMeasure: Measure | null;
+  }): MeasureFragmentWidth[] {
+    const widths = new Array<MeasureFragmentWidth>();
 
-    util.forEachTriple(this.getFragments(), ([previousMeasureFragment, currentMeasureFragment], { isFirst }) => {
+    util.forEachTriple(this.getFragments(), ([previousFragment, currentFragment], { isFirst }) => {
       if (isFirst) {
-        previousMeasureFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
+        previousFragment = util.last(opts.previousMeasure?.getFragments() ?? []);
       }
-      sum += currentMeasureFragment.getMinRequiredWidth({
-        address: opts.address.measureFragment({ measureFragmentIndex: currentMeasureFragment.getIndex() }),
-        previousMeasureFragment,
+      widths.push({
+        measureIndex: this.index,
+        measureFragmentIndex: currentFragment.getIndex(),
+        value: currentFragment.getMinRequiredWidth({
+          address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
+          previousMeasureFragment: previousFragment,
+        }),
       });
     });
 
-    return sum;
-  }
-
-  /** Returns the top padding required for the Measure. */
-  getTopPadding(): number {
-    return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
+    return widths;
   }
 
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
@@ -94,23 +99,63 @@ export class Measure {
     return util.sum(this.getFragments().map((fragment) => fragment.getMultiRestCount()));
   }
 
-  /** Renders the Measure. */
+  /** Returns the top padding for the measure. */
+  getTopPadding(): number {
+    return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
+  }
+
+  /** Returns how much to offset the measure by. */
+  getStaveOffsetX(opts: { address: Address<'measure'> }): number {
+    let result = 0;
+
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+    const isFirstSystemMeasure = opts.address.getSystemMeasureIndex() === 0;
+
+    const hasMultipleStaves = this.leadingStaveSignatures.some(
+      (staveSignature) => staveSignature.value.getStaveCount() > 1
+    );
+    if (isFirstSystemMeasure && hasMultipleStaves) {
+      result += STAVE_CONNECTOR_BRACE_WIDTH;
+    }
+
+    if (isFirstSystem && isFirstMeasure) {
+      result += util.max(this.partNames.map((partName) => partName.value.getWidth()));
+    }
+
+    return result;
+  }
+
+  /** Returns the width of the end barline. */
+  getEndBarlineWidth(): number {
+    return this.getEndBarStyle() === 'none' ? 0 : 1;
+  }
+
+  /** Renders the measure. */
   render(opts: {
     x: number;
     y: number;
-    showLabel: boolean;
+    fragmentWidths: MeasureFragmentWidth[];
     address: Address<'measure'>;
     spanners: Spanners;
-    systemCount: number;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
-    let x = opts.x;
-    let width = 0;
+    const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
+
+    let x = opts.x + staveOffsetX;
+    const y = opts.y;
+
+    const label = new drawables.Text({
+      content: this.getLabelTextContent(),
+      italic: true,
+      x: x + MEASURE_LABEL_OFFSET_X,
+      y: y + MEASURE_LABEL_OFFSET_Y,
+      color: MEASURE_LABEL_COLOR,
+      size: this.config.MEASURE_NUMBER_FONT_SIZE,
+    });
 
     util.forEachTriple(
       this.getFragments(),
@@ -122,194 +167,194 @@ export class Measure {
           nextFragment = util.first(opts.nextMeasure?.getFragments() ?? []);
         }
 
+        const width = opts.fragmentWidths.find(
+          ({ measureFragmentIndex }) => measureFragmentIndex === currentFragment.getIndex()
+        );
+        if (!width) {
+          const address = opts.address.toDebugString();
+          const widths = JSON.stringify(opts.fragmentWidths);
+          throw new Error(`Width not found for measure fragment: ${address}, got: ${widths}`);
+        }
+
         const fragmentRendering = currentFragment.render({
           x,
-          y: opts.y,
+          y,
+          width,
           address: opts.address.measureFragment({ measureFragmentIndex: currentFragment.getIndex() }),
-          systemCount: opts.systemCount,
-          minRequiredSystemWidth: opts.minRequiredSystemWidth,
-          targetSystemWidth: opts.targetSystemWidth,
+          spanners: opts.spanners,
           previousMeasureFragment: previousFragment,
           nextMeasureFragment: nextFragment,
-          spanners: opts.spanners,
         });
         fragmentRenderings.push(fragmentRendering);
 
         x += fragmentRendering.width;
-        width += fragmentRendering.width;
       }
     );
-
-    const vfStaveConnectors = new Array<vexflow.StaveConnector>();
-
-    const staveRenderings = util.first(fragmentRenderings)?.staves ?? [];
-    if (staveRenderings.length > 1) {
-      const topStave = util.first(staveRenderings)!;
-      const bottomStave = util.last(staveRenderings)!;
-
-      const begginingStaveConnectorType = conversions.fromBarlineTypeToBeginningStaveConnectorType(
-        topStave.vexflow.beginningBarlineType
-      );
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
-          begginingStaveConnectorType
-        )
-      );
-
-      const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(
-        topStave.vexflow.endBarlineType
-      );
-      vfStaveConnectors.push(
-        new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(endStaveConnectorType)
-      );
-    }
-
-    const label = new drawables.Text({
-      content: opts.showLabel ? this.getLabel() : '',
-      italic: true,
-      x: opts.x + MEASURE_LABEL_OFFSET_X,
-      y: opts.y + MEASURE_LABEL_OFFSET_Y,
-      color: MEASURE_LABEL_COLOR,
-      size: this.config.MEASURE_NUMBER_FONT_SIZE,
-    });
 
     return {
       type: 'measure',
       address: opts.address,
-      vexflow: {
-        staveConnectors: vfStaveConnectors,
-      },
+      fragments: fragmentRenderings,
       index: this.index,
       label,
-      fragments: fragmentRenderings,
-      width,
+      width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
     };
   }
 
   @util.memoize()
   private getFragments(): MeasureFragment[] {
-    const fragments = new Array<MeasureFragment>();
+    const result = new Array<MeasureFragment>();
 
-    const measureIndex = this.index;
+    const beginningBarStyle = this.getBeginningBarStyle();
+    const endBarStyle = this.getEndBarStyle();
+    const boundaries = this.getFragmentBoundaries();
 
-    const beginningBarStyle =
-      this.musicXml.measure
-        .getBarlines()
-        .find((barline) => barline.getLocation() === 'left')
-        ?.getBarStyle() ?? 'regular';
-
-    const endBarStyle =
-      this.musicXml.measure
-        .getEndingMeasure()
-        .getBarlines()
-        .find((barline) => barline.getLocation() === 'right')
-        ?.getBarStyle() ?? 'regular';
-
-    let staveSignature = this.leadingStaveSignature;
-    let currentMeasureEntries = new Array<MeasureEntry>();
-
-    const config = this.config;
-    const staveCount = this.staveCount;
-    const staveLayouts = this.musicXml.staveLayouts;
-
-    let measureFragmentIndex = 0;
-
-    function addFragment(
-      leadingStaveSignature: StaveSignature,
-      measureEntries: MeasureEntry[],
-      beginningBarStyle: musicxml.BarStyle,
-      endBarStyle: musicxml.BarStyle
-    ) {
-      const fragment = new MeasureFragment({
-        config,
-        index: measureFragmentIndex++,
-        leadingStaveSignature,
-        beginningBarStyle: beginningBarStyle,
-        endBarStyle: endBarStyle,
-        staveCount,
-        staveLayouts,
-        measureEntries,
-      });
-      fragments.push(fragment);
+    const iterators: Record<string, MeasureEntryIterator> = {};
+    for (const partId of this.partIds) {
+      iterators[partId] = this.getMeasureEntryIterator(partId);
+      iterators[partId].next(); // initialize iterator
     }
 
-    for (let measureEntryIndex = 0; measureEntryIndex < this.measureEntries.length; measureEntryIndex++) {
-      const measureEntry = this.measureEntries[measureEntryIndex];
-      const isLastMeasureEntry = measureEntryIndex === this.measureEntries.length - 1;
+    for (let index = 0; index < boundaries.length; index++) {
+      const boundary = boundaries[index];
+      const isFirstBoundary = index === 0;
+      const isLastBoundary = index === boundaries.length - 1;
 
-      if (measureEntry instanceof StaveSignature) {
-        const didStaveModifiersChange = measureEntry.getChangedStaveModifiers().length > 0;
-        if (didStaveModifiersChange && currentMeasureEntries.length > 0) {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries,
-            fragments.length === 0 ? beginningBarStyle : 'none',
-            'none'
-          );
-          currentMeasureEntries = [];
+      const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
+      const measureEntries = new Array<PartScoped<MeasureEntry>>();
+      const staveSignatures = new Array<PartScoped<StaveSignature>>();
+
+      for (const partId of this.partIds) {
+        const iterator = iterators[partId];
+
+        const staveSignature = iterator.getStaveSignature();
+
+        let iteration = iterator.peek();
+
+        while (!iteration.done && iteration.value.start.isLessThan(boundary)) {
+          measureEntries.push({ partId, value: iteration.value.entry });
+          iteration = iterator.next();
         }
 
-        staveSignature = measureEntry;
-      } else if (
-        measureEntry instanceof musicxml.Direction &&
-        measureEntry.getTypes().some((directionType) => {
-          const content = directionType.getContent();
-          return content.type === 'metronome' && content.metronome.isSupported();
-        }) &&
-        currentMeasureEntries.length > 0
-      ) {
-        // prettier-ignore
-        addFragment(
-          staveSignature,
-          currentMeasureEntries,
-          fragments.length === 0 ? beginningBarStyle : 'none',
-          'none'
-        )
-        currentMeasureEntries = [];
-      }
+        if (measureEntries.length > 0) {
+          staveSignatures.push({ partId, value: staveSignature });
 
-      currentMeasureEntries.push(measureEntry);
-
-      if (isLastMeasureEntry) {
-        const nextStaveSignature = staveSignature?.getNext();
-        const hasClefChangeAtMeasureBoundary =
-          nextStaveSignature?.getChangedStaveModifiers().includes('clef') &&
-          nextStaveSignature?.getMeasureIndex() === measureIndex + 1 &&
-          nextStaveSignature?.getMeasureEntryIndex() === 0;
-
-        if (hasClefChangeAtMeasureBoundary) {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries, 
-            fragments.length === 0 ? beginningBarStyle : 'none', 
-            'none',
-          );
-
-          // prettier-ignore
-          addFragment(
-            nextStaveSignature,
-            [nextStaveSignature],
-            'none',
-            endBarStyle
-          );
-        } else {
-          // prettier-ignore
-          addFragment(
-            staveSignature,
-            currentMeasureEntries,
-            fragments.length === 0 ? beginningBarStyle : 'none',
-            endBarStyle
-          );
+          if (isFirstBoundary) {
+            beginningBarStyles.push({ partId, value: beginningBarStyle });
+          }
+          if (isLastBoundary) {
+            endBarStyles.push({ partId, value: endBarStyle });
+          }
         }
       }
+
+      // Ignore completely empty fragments.
+      if (!measureEntries.length && !beginningBarStyles.length && !endBarStyles.length) {
+        continue;
+      }
+
+      result.push(
+        new MeasureFragment({
+          config: this.config,
+          index: result.length,
+          partIds: this.partIds,
+          partNames: this.partNames,
+          musicXml: {
+            staveLayouts: this.musicXml.staveLayouts,
+            beginningBarStyles,
+            endBarStyles,
+          },
+          measureEntries,
+          staveSignatures,
+        })
+      );
     }
 
-    return fragments;
+    return result;
   }
 
-  private getLabel(): string {
-    return this.musicXml.measure.isImplicit() ? '' : this.musicXml.measure.getNumber() || (this.index + 1).toString();
+  private getLabelTextContent(): string {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return '';
+    }
+
+    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return '';
+    }
+
+    if (measure.isImplicit()) {
+      return '';
+    }
+
+    return measure.getNumber() || (this.index + 1).toString();
+  }
+
+  private getFragmentBoundaries(): Division[] {
+    const boundaries = new Array<Division>();
+
+    for (const partId of this.partIds) {
+      const iterator = this.getMeasureEntryIterator(partId);
+
+      let iteration = iterator.next();
+
+      while (!iteration.done) {
+        if (iteration.value.fragmentation === 'new') {
+          boundaries.push(iteration.value.end);
+        }
+        iteration = iterator.next();
+      }
+    }
+
+    boundaries.push(Division.max());
+
+    const seen = new Set<number>();
+    const unique = new Array<Division>();
+    for (const boundary of boundaries) {
+      const beats = boundary.toBeats();
+      if (!seen.has(beats)) {
+        unique.push(boundary);
+        seen.add(beats);
+      }
+    }
+
+    return util.sortBy(unique, (boundary) => boundary.toBeats());
+  }
+
+  private getBeginningBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
+    );
+  }
+
+  private getEndBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXml.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
+    );
+  }
+
+  private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
+    const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
+
+    const staveSignature = this.leadingStaveSignatures.find(
+      (staveSignature) => staveSignature.partId === partId
+    )?.value;
+    if (!staveSignature) {
+      throw new Error(`Stave signature not found for part: ${partId}`);
+    }
+
+    return new MeasureEntryIterator({ entries, staveSignature });
   }
 }

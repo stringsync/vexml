@@ -3,6 +3,8 @@ import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
+const COMPLEX_TIME_SIGNATURE_COMPONENT_PADDING = 12;
+
 /** The result of rendering a time signature. */
 export type TimeSignatureRendering = {
   type: 'timesignature';
@@ -122,7 +124,9 @@ export class TimeSignature {
   /** Returns the width of the time signature.*/
   @util.memoize()
   getWidth(): number {
-    return util.sum(this.getTimeSpecs().map((timeSpec) => new vexflow.TimeSignature(timeSpec).getWidth()));
+    const timeSpecs = this.getTimeSpecs();
+    const padding = COMPLEX_TIME_SIGNATURE_COMPONENT_PADDING * (timeSpecs.length - 1);
+    return padding + util.sum(timeSpecs.map((timeSpec) => new vexflow.TimeSignature(timeSpec).getWidth()));
   }
 
   /** Returns whether the time signatures are equal. */

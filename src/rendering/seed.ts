@@ -1,12 +1,16 @@
+import { System } from './system';
 import { Config } from './config';
-import { Measure } from './measure';
-import { MeasureEntry, StaveSignature } from './stavesignature';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { Part } from './part';
-import { System } from './system';
+import { PartScoped } from './types';
+import { Measure } from './measure';
 import { Address } from './address';
+import { MeasureEntry, StaveSignature } from './stavesignature';
+import { MeasureFragmentWidth } from './measurefragment';
 import { PartName } from './partname';
+
+// Space needed to be able to show the end barlines.
+const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -33,220 +37,202 @@ export class Seed {
   split(width: number): System[] {
     const systems = new Array<System>();
 
-    let systemMeasureIndex = 0;
-    let remainingWidth = width;
-    let measureStartIndex = 0;
+    let remaining = width;
+    let totalStaveOffsetX = 0;
+    let measures = new Array<Measure>();
+    let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
+    let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+    let endBarlineWidth = 0;
 
-    /** Adds a system to the return value. */
-    const commitSystem = (measureEndIndex: number) => {
-      const parts = this.musicXml.parts.map((part) => {
-        const partId = part.getId();
-        return new Part({
-          config: this.config,
-          staveCount: this.getStaveCount(partId),
-          name: measureStartIndex === 0 ? this.getPartName(partId) : null,
-          musicXml: { part },
-          measures: this.getMeasures(partId).slice(measureStartIndex, measureEndIndex),
-        });
-      });
+    const addSystem = (opts: { stretch: boolean }) => {
+      const minRequiredSystemWidth = util.sum(minRequiredFragmentWidths.map(({ value }) => value));
 
-      const system = new System({
-        config: this.config,
-        index: systems.length,
-        parts,
-      });
+      const stretchedWidths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
+        ({ measureIndex, measureFragmentIndex, value }) => {
+          const targetWidth = width - endBarlineWidth - totalStaveOffsetX;
+          const widthDeficit = targetWidth - minRequiredSystemWidth;
+          const widthFraction = value / minRequiredSystemWidth;
+          const widthDelta = widthDeficit * widthFraction;
 
-      systems.push(system);
-
-      measureStartIndex = measureEndIndex;
-      systemMeasureIndex = 0;
-      remainingWidth = width;
-    };
-
-    /** Accounts for a measure being added to a system. */
-    const continueSystem = (width: number) => {
-      remainingWidth -= width;
-      systemMeasureIndex++;
-    };
-
-    const measureCount = util.max(
-      this.musicXml.parts.map((part) => part.getId()).map((partId) => this.getMeasures(partId).length)
-    );
-
-    const systemAddress = Address.system({ systemIndex: 0, origin: 'Seed.prototype.split' });
-
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      // Account for the width that the part name will take up for the very first measure.
-      if (measureIndex === 0) {
-        remainingWidth -= util.max(
-          this.musicXml.parts
-            .map((part) => part.getId())
-            .map((partId) => this.getPartName(partId))
-            .map((partName) => partName?.getWidth() ?? 0)
-        );
-      }
-
-      // Represents a column of measures across each part.
-      const measures = this.musicXml.parts
-        .map((part) => part.getId())
-        .map((partId) => ({ address: systemAddress.part({ partId }), measures: this.getMeasures(partId) }))
-        .map((data) => ({
-          address: data.address.measure({ measureIndex, systemMeasureIndex }),
-          previous: data.measures[measureIndex - 1] ?? null,
-          current: data.measures[measureIndex],
-        }));
-
-      const getMinRequiredWidth = () =>
-        util.max(
-          measures.map((measure) =>
-            measure.current.getMinRequiredWidth({
-              address: measure.address,
-              previousMeasure: measure.previous,
-            })
-          )
-        );
-
-      let minRequiredWidth = getMinRequiredWidth();
-
-      const isProcessingLastMeasure = measureIndex === measureCount - 1;
-      if (isProcessingLastMeasure) {
-        if (minRequiredWidth <= remainingWidth) {
-          commitSystem(measureIndex + 1);
-        } else {
-          commitSystem(measureIndex);
-          commitSystem(measureIndex + 1);
+          return { measureIndex, measureFragmentIndex, value: value + widthDelta };
         }
-      } else if (minRequiredWidth <= remainingWidth) {
-        continueSystem(minRequiredWidth);
-      } else {
-        commitSystem(measureIndex);
-        minRequiredWidth = getMinRequiredWidth();
-        continueSystem(minRequiredWidth);
+      );
+
+      systems.push(
+        new System({
+          config: this.config,
+          index: systems.length,
+          measures,
+          measureFragmentWidths: opts.stretch ? stretchedWidths : minRequiredFragmentWidths,
+        })
+      );
+    };
+
+    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
+      const measureAddress = systemAddress.measure({
+        systemMeasureIndex: measures.length,
+        measureIndex: currentMeasure.getIndex(),
+      });
+
+      let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
+        previousMeasure,
+        address: measureAddress,
+      });
+
+      remaining += endBarlineWidth; // cancel out the previous end barline width
+      endBarlineWidth = currentMeasure.getEndBarlineWidth();
+      remaining -= endBarlineWidth;
+
+      const staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+      remaining -= staveOffsetX;
+      totalStaveOffsetX += staveOffsetX;
+
+      let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
+
+      if (remaining < required) {
+        addSystem({ stretch: true });
+
+        // Reset state.
+        remaining = width;
+        measures = [];
+        minRequiredFragmentWidths = [];
+
+        // Start a new system and re-measure.
+        systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+
+        endBarlineWidth = currentMeasure.getEndBarlineWidth();
+        remaining -= endBarlineWidth;
+
+        totalStaveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
+        remaining -= totalStaveOffsetX;
+
+        measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
+          previousMeasure,
+          address: systemAddress.measure({
+            systemMeasureIndex: 0,
+            measureIndex: currentMeasure.getIndex(),
+          }),
+        });
+
+        required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
       }
-    }
+
+      remaining -= required;
+      measures.push(currentMeasure);
+      minRequiredFragmentWidths.push(...measureMinRequiredFragmentWidths);
+
+      if (isLast) {
+        addSystem({ stretch: remaining / width <= LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD });
+      }
+    });
 
     return systems;
   }
 
   @util.memoize()
-  private getMeasuresByPartId(): Record<string, Measure[]> {
-    const result: Record<string, Measure[]> = {};
-
-    let multiRestMeasureCount = 0;
+  private getMeasureEntryGroups(): PartScoped<MeasureEntry[][]>[] {
+    const result = [];
 
     for (const part of this.musicXml.parts) {
       const partId = part.getId();
-      result[partId] = [];
-
-      const staveCount = this.getStaveCount(partId);
-      const measures = part.getMeasures();
-
-      for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-        if (multiRestMeasureCount > 0) {
-          multiRestMeasureCount--;
-          continue;
-        }
-
-        const measure: Measure = new Measure({
-          config: this.config,
-          index: measureIndex,
-          musicXml: {
-            measure: measures[measureIndex],
-            staveLayouts: this.musicXml.staveLayouts,
-          },
-          staveCount,
-          leadingStaveSignature: this.getLeadingStaveSignature(partId, measureIndex),
-          measureEntries: this.getMeasureEntries(partId, measureIndex),
-        });
-
-        result[partId].push(measure);
-
-        // -1 since this measure is part of the multi rest.
-        multiRestMeasureCount += measure.getMultiRestCount() - 1;
-      }
+      result.push({ partId, value: StaveSignature.toMeasureEntryGroups({ part }) });
     }
 
     return result;
   }
 
   @util.memoize()
-  private getMeasureEntryGroupsByPartId(): Record<string, MeasureEntry[][]> {
-    const result: Record<string, MeasureEntry[][]> = {};
-
-    for (const part of this.musicXml.parts) {
-      const partId = part.getId();
-      result[partId] = StaveSignature.toMeasureEntryGroups({ part });
-    }
-
-    return result;
-  }
-
-  @util.memoize()
-  private getPartNameByPartId(): Record<string, PartName> {
-    const result: Record<string, PartName> = {};
+  private getPartNames(): PartScoped<PartName>[] {
+    const result = new Array<PartScoped<PartName>>();
 
     for (const partDetail of this.musicXml.partDetails) {
-      result[partDetail.id] = new PartName({ config: this.config, content: partDetail.name });
+      const partId = partDetail.id;
+      const partName = new PartName({ config: this.config, content: partDetail.name });
+      result.push({ partId, value: partName });
     }
 
     return result;
   }
 
-  private getMeasures(partId: string): Measure[] {
-    const measuresByPartId = this.getMeasuresByPartId();
-    return measuresByPartId[partId];
-  }
+  private getMeasures(): Measure[] {
+    const measures = new Array<Measure>();
 
-  private getMeasureEntries(partId: string, measureIndex: number): MeasureEntry[] {
-    const measureEntryGroups = this.getMeasureEntryGroups(partId);
-    return measureEntryGroups[measureIndex];
-  }
+    const measureCount = this.getMeasureCount();
+    let multiRestMeasureCount = 0;
 
-  private getMeasureEntryGroups(partId: string): MeasureEntry[][] {
-    const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
-    return measureEntryGroupsByPartId[partId];
-  }
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      if (multiRestMeasureCount > 0) {
+        multiRestMeasureCount--;
+        continue;
+      }
 
-  private getPartName(partId: string): PartName | null {
-    const partNameByPartId = this.getPartNameByPartId();
-    return partNameByPartId[partId] ?? null;
-  }
+      const measure = new Measure({
+        config: this.config,
+        index: measureIndex,
+        partIds: this.getPartIds(),
+        partNames: this.getPartNames(),
+        musicXml: {
+          measures: this.musicXml.parts.map((part) => ({
+            partId: part.getId(),
+            value: part.getMeasures()[measureIndex],
+          })),
+          staveLayouts: this.musicXml.staveLayouts,
+        },
+        leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
+        entries: this.getMeasureEntries(measureIndex),
+      });
 
-  /** Returns the stave signature that is active at the beginning of the measure. */
-  private getLeadingStaveSignature(partId: string, measureIndex: number): StaveSignature {
-    const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
-    const measureEntryGroups = measureEntryGroupsByPartId[partId];
+      measures.push(measure);
 
-    const staveSignatures = measureEntryGroups
-      .flat()
-      .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
-      .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
-
-    // Get the first stave signature that matches the measure index or get the last stave signature seen before this
-    // measure index.
-    const leadingStaveSignature =
-      staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
-      util.last(staveSignatures);
-
-    // We don't expect this to ever happen since we assume that StaveSignatures are created correctly. However, if this
-    // error ever throws, investigate how StaveSignatures are created. Don't default StaveSignature because it exposes
-    // getPrevious and getNext, which the caller expects to be a well formed linked list.
-    if (!leadingStaveSignature) {
-      throw new Error('expected leading stave signature');
+      // -1 since this measure is part of the multi rest.
+      multiRestMeasureCount += measure.getMultiRestCount() - 1;
     }
 
-    return leadingStaveSignature;
+    return measures;
   }
 
-  private getStaveCount(partId: string): number {
-    const measureEntryGroupsByPartId = this.getMeasureEntryGroupsByPartId();
-    const measureEntryGroups = measureEntryGroupsByPartId[partId];
+  private getMeasureCount(): number {
+    return util.max(this.musicXml.parts.map((part) => part.getMeasures().length));
+  }
 
-    return util.max(
-      measureEntryGroups
+  private getPartIds(): string[] {
+    return this.musicXml.parts.map((part) => part.getId());
+  }
+
+  private getLeadingStaveSignatures(measureIndex: number): PartScoped<StaveSignature>[] {
+    return this.getPartIds().map((partId) => {
+      const measureEntryGroups = this.getMeasureEntryGroups()
+        .filter((measureEntryGroup) => measureEntryGroup.partId === partId)
+        .flatMap((measureEntryGroup) => measureEntryGroup.value);
+
+      const staveSignatures = measureEntryGroups
         .flat()
         .filter((entry): entry is StaveSignature => entry instanceof StaveSignature)
-        .map((entry) => entry.getStaveCount())
+        .filter((staveSignature) => staveSignature.getMeasureIndex() <= measureIndex);
+
+      // Get the first stave signature that matches the measure index or get the last stave signature seen before this
+      // measure index.
+      const leadingStaveSignature =
+        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
+        util.last(staveSignatures);
+
+      // We don't expect this to ever happen since we assume that StaveSignatures are created correctly. However, if this
+      // error ever throws, investigate how StaveSignatures are created. Don't default StaveSignature because it exposes
+      // getPrevious and getNext, which the caller expects to be a well formed linked list.
+      if (!leadingStaveSignature) {
+        throw new Error('expected leading stave signature');
+      }
+
+      return { partId, value: leadingStaveSignature };
+    });
+  }
+
+  private getMeasureEntries(measureIndex: number): PartScoped<MeasureEntry>[] {
+    return this.getMeasureEntryGroups().flatMap((measureEntryGroup) =>
+      measureEntryGroup.value[measureIndex].map((measureEntry) => ({
+        partId: measureEntryGroup.partId,
+        value: measureEntry,
+      }))
     );
   }
 }

@@ -1,210 +1,176 @@
+import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import * as util from '@/util';
-import { Measure, MeasureRendering } from './measure';
+import { Stave, StaveModifier, StaveRendering } from './stave';
+import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { PartName, PartNameRendering } from './partname';
 
-const STAVE_CONNECTOR_BRACE_WIDTH = 16;
-
-/** The result of rendering a Part. */
+/** The result of rendering a part. */
 export type PartRendering = {
+  type: 'part';
   id: string;
-  height: number;
-  address: Address<'part'>;
-  vexflow: {
-    staveConnector: vexflow.StaveConnector | null;
-  };
   name: PartNameRendering | null;
-  measures: MeasureRendering[];
+  staves: StaveRendering[];
+  height: number;
 };
 
-/**
- * Represents a Part in a musical score, corresponding to the <part> element in MusicXML. This class encompasses the
- * entire musical content for a specific instrument or voice, potentially spanning multiple systems when rendered in the
- * viewport.
- */
+/** A part in a musical score. */
 export class Part {
   private config: Config;
-  private name: PartName | null;
-  private musicXml: { part: musicxml.Part };
-  private measures: Measure[];
-  private staveCount: number;
+  private id: string;
+  private name: PartName;
+  private musicXml: {
+    staveLayouts: musicxml.StaveLayout[];
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
+  };
+  private measureEntries: MeasureEntry[];
+  private staveSignature: StaveSignature;
 
   constructor(opts: {
     config: Config;
-    name: PartName | null;
-    musicXml: { part: musicxml.Part };
-    measures: Measure[];
-    staveCount: number;
+    id: string;
+    name: PartName;
+    musicXml: {
+      staveLayouts: musicxml.StaveLayout[];
+      beginningBarStyle: musicxml.BarStyle;
+      endBarStyle: musicxml.BarStyle;
+    };
+    measureEntries: MeasureEntry[];
+    staveSignature: StaveSignature;
   }) {
     this.config = opts.config;
+    this.id = opts.id;
     this.name = opts.name;
     this.musicXml = opts.musicXml;
-    this.measures = opts.measures;
-    this.staveCount = opts.staveCount;
+    this.measureEntries = opts.measureEntries;
+    this.staveSignature = opts.staveSignature;
   }
 
-  getId(): string {
-    return this.musicXml.part.getId();
-  }
+  @util.memoize()
+  getStaves(): Stave[] {
+    const result = new Array<Stave>();
 
-  getMeasures(): Measure[] {
-    return this.measures;
-  }
+    const staveCount = this.staveSignature.getStaveCount();
 
-  getStaveOffset(): number {
-    let result = 0;
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const staveNumber = staveIndex + 1;
 
-    if (this.staveCount > 1) {
-      result += STAVE_CONNECTOR_BRACE_WIDTH;
-    }
-    if (this.name) {
-      result += this.name.getWidth();
+      const measureEntries = this.measureEntries.filter((entry) => {
+        if (entry instanceof musicxml.Note) {
+          return entry.getStaveNumber() === staveNumber;
+        }
+        return true;
+      });
+
+      result.push(
+        new Stave({
+          config: this.config,
+          staveSignature: this.staveSignature,
+          number: staveNumber,
+          musicXml: {
+            beginningBarStyle: this.musicXml.beginningBarStyle,
+            endBarStyle: this.musicXml.endBarStyle,
+          },
+          measureEntries,
+        })
+      );
     }
 
     return result;
   }
 
+  /** Returns the ID of the part. */
+  getId(): string {
+    return this.id;
+  }
+
+  /** Returns the top padding of the part. */
+  getTopPadding(): number {
+    return util.max(this.getStaves().map((stave) => stave.getTopPadding()));
+  }
+
+  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
+  getMultiRestCount(): number {
+    // TODO: One stave could be a multi measure rest, while another one could have voices.
+    return util.max(this.getStaves().map((stave) => stave.getMultiRestCount()));
+  }
+
+  /** Renders the part. */
   render(opts: {
     x: number;
     y: number;
-    maxStaveOffset: number;
-    showMeasureLabels: boolean;
+    vexflow: { formatter: vexflow.Formatter };
+    width: number;
     address: Address<'part'>;
     spanners: Spanners;
-    targetSystemWidth: number;
-    minRequiredSystemWidth: number;
-    systemCount: number;
+    beginningStaveModifiers: StaveModifier[];
+    endStaveModifiers: StaveModifier[];
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
-    const measureRenderings = new Array<MeasureRendering>();
+    const staveRenderings = new Array<StaveRendering>();
 
-    let x = opts.x + opts.maxStaveOffset;
-    const y = opts.y + this.getTopPadding();
+    const x = opts.x;
+    let y = opts.y;
+    const width = opts.width;
 
-    let vfStaveConnector: vexflow.StaveConnector | null = null;
-
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
-      // Even though a system has many parts, each part spans the entire system. Therefore the measure index in the
-      // Part object is the systemMeasureIndex.
-      const systemMeasureIndex = index;
-
+    util.forEachTriple(this.getStaves(), ([previousStave, currentStave, nextStave], { isFirst, isLast }) => {
       if (isFirst) {
-        previousMeasure = util.last(opts.previousPart?.measures ?? []);
+        previousStave = util.last(opts.previousPart?.getStaves() ?? []);
       }
       if (isLast) {
-        nextMeasure = util.first(opts.nextPart?.measures ?? []);
+        nextStave = util.first(opts.nextPart?.getStaves() ?? []);
       }
 
-      const targetSystemWidth = opts.targetSystemWidth - opts.maxStaveOffset;
-
-      const hasStaveConnectorBrace = isFirst && this.staveCount > 1;
-      if (hasStaveConnectorBrace) {
-        x += STAVE_CONNECTOR_BRACE_WIDTH;
-      }
-
-      if (isFirst && this.name) {
-        x += this.name.getWidth();
-      }
-
-      const measureRendering = currentMeasure.render({
+      const staveRendering = currentStave.render({
         x,
         y,
-        showLabel: opts.showMeasureLabels,
-        address: opts.address.measure({
-          measureIndex: currentMeasure.getIndex(),
-          systemMeasureIndex,
-        }),
+        vexflow: { formatter: opts.vexflow.formatter },
+        address: opts.address.stave({ staveNumber: currentStave.getNumber() }),
         spanners: opts.spanners,
-        systemCount: opts.systemCount,
-        minRequiredSystemWidth: opts.minRequiredSystemWidth,
-        targetSystemWidth,
-        previousMeasure,
-        nextMeasure,
+        width,
+        beginningModifiers: opts.beginningStaveModifiers,
+        endModifiers: opts.endStaveModifiers,
+        previousStave,
+        nextStave,
       });
-      measureRenderings.push(measureRendering);
 
-      const staves = measureRendering.fragments.flatMap((fragment) => fragment.staves);
-      if (hasStaveConnectorBrace) {
-        const topStave = util.first(staves)!;
-        const bottomStave = util.last(staves)!;
+      staveRenderings.push(staveRendering);
 
-        vfStaveConnector = new vexflow.StaveConnector(topStave.vexflow.stave, bottomStave.vexflow.stave).setType(
-          'brace'
-        );
-      }
+      const staveDistance =
+        this.musicXml.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
+          ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
-      x += measureRendering.width;
+      y += staveDistance;
     });
 
-    const firstMeasureRendering = util.first(measureRenderings);
-    const topY = this.getTopY(firstMeasureRendering);
-    const bottomY = this.getBottomY(firstMeasureRendering);
-    const middleY = topY + (bottomY - topY) / 2;
+    const topStave = util.first(staveRenderings)?.vexflow.stave;
+    const bottomStave = util.last(staveRenderings)?.vexflow.stave;
 
-    const height = bottomY - topY;
+    const topY = topStave?.getTopLineTopY() ?? 0;
+    const bottomY = bottomStave?.getBottomLineBottomY() ?? 0;
+    const middleY = (topY + bottomY) / 2;
+    const height = util.max([bottomY - topY, 0]);
+
+    const isFirstSystem = opts.address.getSystemIndex() === 0;
+    const isFirstMeasure = opts.address.getMeasureIndex() === 0;
+    const isFirstMeasureFragment = opts.address.getMeasureFragmentIndex() === 0;
 
     let name: PartNameRendering | null = null;
-    const isFirstSystem = opts.address.getSystemIndex() === 0;
-    if (isFirstSystem && firstMeasureRendering && this.name) {
-      name = this.name.render({
-        x: 0,
-        y: middleY + this.name.getApproximateHeight() / 2,
-      });
+    if (isFirstSystem && isFirstMeasure && isFirstMeasureFragment) {
+      name = this.name.render({ x: 0, y: middleY + this.name.getApproximateHeight() / 2 });
     }
 
     return {
-      id: this.musicXml.part.getId(),
-      height,
-      address: opts.address,
-      vexflow: { staveConnector: vfStaveConnector },
+      type: 'part',
+      id: this.id,
       name,
-      measures: measureRenderings,
+      staves: staveRenderings,
+      height,
     };
-  }
-
-  private getTopPadding(): number {
-    return util.max(this.measures.map((measure) => measure.getTopPadding()));
-  }
-
-  private getTopY(measureRendering: MeasureRendering | null): number {
-    if (!measureRendering) {
-      return 0;
-    }
-
-    const fragment = util.first(measureRendering.fragments);
-    if (!fragment) {
-      return 0;
-    }
-
-    const topStave = util.first(fragment.staves);
-    if (!topStave) {
-      return 0;
-    }
-
-    return topStave.vexflow.stave.getYForLine(0);
-  }
-
-  private getBottomY(measureRendering: MeasureRendering | null): number {
-    if (!measureRendering) {
-      return 0;
-    }
-
-    const fragment = util.first(measureRendering.fragments);
-    if (!fragment) {
-      return 0;
-    }
-
-    const bottomStave = util.last(fragment.staves);
-    if (!bottomStave) {
-      return 0;
-    }
-
-    const bottomLine = bottomStave.vexflow.stave.getNumLines() - 1;
-    return bottomStave.vexflow.stave.getYForLine(bottomLine);
   }
 }

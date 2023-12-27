@@ -49,44 +49,66 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private number: number;
+  private musicXml: {
+    beginningBarStyle: musicxml.BarStyle;
+    endBarStyle: musicxml.BarStyle;
+  };
   private staveSignature: StaveSignature;
-  private beginningBarStyle: musicxml.BarStyle;
-  private endBarStyle: musicxml.BarStyle;
   private measureEntries: MeasureEntry[];
 
   constructor(opts: {
     config: Config;
     number: number;
     staveSignature: StaveSignature;
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
+    musicXml: {
+      beginningBarStyle: musicxml.BarStyle;
+      endBarStyle: musicxml.BarStyle;
+    };
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
-    this.beginningBarStyle = opts.beginningBarStyle;
-    this.endBarStyle = opts.endBarStyle;
+    this.musicXml = opts.musicXml;
     this.measureEntries = opts.measureEntries;
   }
 
-  /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
-  getMinJustifyWidth(address: Address<'stave'>): number {
-    const entry = this.getEntry();
+  getEntry(): StaveEntry {
+    const config = this.config;
+    const timeSignature = this.getTimeSignature();
+    const clef = this.getClef();
+    const multiRestCount = this.getMultiRestCount();
+    const measureEntries = this.measureEntries;
+    const quarterNoteDivisions = this.getQuarterNoteDivisions();
+    const keySignature = this.getKeySignature();
 
-    if (entry instanceof MultiRest) {
-      // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
-      // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at
-      // the moment.
-      return this.config.MULTI_MEASURE_REST_WIDTH;
+    if (multiRestCount === 1) {
+      return Chorus.wholeRest({ config, clef, timeSignature });
     }
 
-    if (entry instanceof Chorus) {
-      return entry.getMinJustifyWidth(address.chorus());
+    if (multiRestCount > 1) {
+      return new MultiRest({ count: multiRestCount });
     }
 
-    return 0;
+    if (this.getClef().getType() === 'tab') {
+      // TODO: Render tablature correctly.
+      return new Tablature();
+    }
+
+    return Chorus.multiVoice({
+      config,
+      measureEntries,
+      quarterNoteDivisions,
+      keySignature,
+      clef,
+      timeSignature,
+    });
+  }
+
+  /** Returns the stave signature. */
+  getSignature(): StaveSignature {
+    return this.staveSignature;
   }
 
   /** Returns the stave number. */
@@ -94,29 +116,18 @@ export class Stave {
     return this.number;
   }
 
-  /** Returns the width that the modifiers take up. */
-  getModifiersWidth(modifiers: StaveModifier[]): number {
-    let width = 0;
-
-    if (modifiers.includes('clef')) {
-      width += this.getClef().getWidth();
-    }
-    if (modifiers.includes('keySignature')) {
-      width += this.getKeySignature().getWidth();
-    }
-    if (modifiers.includes('timeSignature')) {
-      width += this.getTimeSignature().getWidth();
-    }
-
-    return width;
-  }
-
   /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
   getMultiRestCount(): number {
     return this.staveSignature?.getMultiRestCount(this.number) ?? 0;
   }
 
-  /** Returns the stave modifiers that changed. */
+  /**
+   * Returns the stave modifiers that changed.
+   *
+   * The same StaveSignature can be used across multiple measures/measure fragments/staves/etc. If you use
+   * `StaveSignature.getChangedStaveModifiers`, it may not be applicable to the current stave. Therefore, we need to
+   * check the Stave objects directly to see what modifiers changed across them.
+   */
   getModifierChanges(opts: { previousStave: Stave | null }): StaveModifier[] {
     if (!opts.previousStave) {
       return ['clef', 'keySignature', 'timeSignature'];
@@ -152,36 +163,44 @@ export class Stave {
   render(opts: {
     x: number;
     y: number;
+    vexflow: { formatter: vexflow.Formatter };
     address: Address<'stave'>;
     spanners: Spanners;
     width: number;
-    modifiers: StaveModifier[];
+    beginningModifiers: StaveModifier[];
+    endModifiers: StaveModifier[];
     previousStave: Stave | null;
     nextStave: Stave | null;
   }): StaveRendering {
-    const staveSignature = this.staveSignature.render({ staveNumber: this.number });
+    const staveSignatureRendering = this.staveSignature.render({ staveNumber: this.number });
 
     const vfStave =
       this.getClef().getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width);
 
-    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.beginningBarStyle);
+    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.beginningBarStyle);
     vfStave.setBegBarType(vfBeginningBarlineType);
 
-    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.endBarStyle);
+    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.endBarStyle);
     vfStave.setEndBarType(vfEndBarlineType);
 
-    if (opts.modifiers.includes('clef')) {
-      vfStave.addModifier(staveSignature.clef.vexflow.clef);
+    if (opts.beginningModifiers.includes('clef')) {
+      vfStave.addModifier(staveSignatureRendering.clef.vexflow.clef);
     }
-    if (opts.modifiers.includes('keySignature')) {
-      vfStave.addModifier(staveSignature.keySignature.vexflow.keySignature);
+    if (opts.beginningModifiers.includes('keySignature')) {
+      vfStave.addModifier(staveSignatureRendering.keySignature.vexflow.keySignature);
     }
-    if (opts.modifiers.includes('timeSignature')) {
-      for (const timeSignature of staveSignature.timeSignature.vexflow.timeSignatures) {
+    if (opts.beginningModifiers.includes('timeSignature')) {
+      for (const timeSignature of staveSignatureRendering.timeSignature.vexflow.timeSignatures) {
         vfStave.addModifier(timeSignature);
       }
+    }
+
+    const nextStaveSignature = this.staveSignature.getNext();
+    if (opts.endModifiers.includes('clef') && nextStaveSignature) {
+      const nextStaveSignatureRendering = nextStaveSignature.render({ staveNumber: this.number });
+      vfStave.addEndModifier(nextStaveSignatureRendering.clef.vexflow.clef);
     }
 
     const metronome = this.getMetronome();
@@ -211,6 +230,7 @@ export class Stave {
         break;
       case 'chorus':
         const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
+        opts.vexflow.formatter.joinVoices(vfVoices);
         for (const vfVoice of vfVoices) {
           vfVoice.setStave(vfStave);
         }
@@ -244,39 +264,6 @@ export class Stave {
         // Select the first renderable metronome, since there can be only one per vexflow.Stave.
         .filter((metronome) => metronome.isSupported())
     );
-  }
-
-  @util.memoize()
-  private getEntry(): StaveEntry {
-    const config = this.config;
-    const timeSignature = this.getTimeSignature();
-    const clef = this.getClef();
-    const multiRestCount = this.getMultiRestCount();
-    const measureEntries = this.measureEntries;
-    const quarterNoteDivisions = this.getQuarterNoteDivisions();
-    const keySignature = this.getKeySignature();
-
-    if (multiRestCount === 1) {
-      return Chorus.wholeRest({ config, clef, timeSignature });
-    }
-
-    if (multiRestCount > 1) {
-      return new MultiRest({ count: multiRestCount });
-    }
-
-    if (this.getClef().getType() === 'tab') {
-      // TODO: Render tablature correctly.
-      return new Tablature();
-    }
-
-    return Chorus.multiVoice({
-      config,
-      measureEntries,
-      quarterNoteDivisions,
-      keySignature,
-      clef,
-      timeSignature,
-    });
   }
 
   private getClef(): Clef {

@@ -1,3 +1,6 @@
+import { Measure } from './measure';
+import { Part } from './part';
+
 /**
  * StaveLayout describes how a stave is positioned.
  *
@@ -18,4 +21,10 @@ export type SystemLayout = {
   rightMargin: number | null;
   topSystemDistance: number | null;
   systemDistance: number | null;
+};
+
+/** A part and measure. */
+export type PartMeasure = {
+  part: Part;
+  measure: Measure;
 };

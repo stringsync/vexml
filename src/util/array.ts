@@ -29,6 +29,19 @@ export const sortBy = <T, S>(array: T[], transform: (item: T) => S): T[] => {
   });
 };
 
+/** Groups the elements in the array using the transform. */
+export const groupBy = <T, S extends string | number | symbol>(
+  array: T[],
+  transform: (item: T) => S
+): Record<S, T[]> => {
+  return array.reduce((memo, item) => {
+    const key = transform(item);
+    memo[key] ??= [];
+    memo[key].push(item);
+    return memo;
+  }, {} as Record<S, T[]>);
+};
+
 /** Iterates over each [previous, current, next] triple. */
 export const forEachTriple = <T>(
   array: T[],
