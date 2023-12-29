@@ -37,7 +37,7 @@ export class Measure {
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
-  private musicXml: {
+  private musicXML: {
     measures: PartScoped<musicxml.Measure>[];
     staveLayouts: musicxml.StaveLayout[];
   };
@@ -49,7 +49,7 @@ export class Measure {
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
-    musicXml: {
+    musicXML: {
       measures: PartScoped<musicxml.Measure>[];
       staveLayouts: musicxml.StaveLayout[];
     };
@@ -60,7 +60,7 @@ export class Measure {
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
     this.index = opts.index;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
   }
@@ -260,8 +260,8 @@ export class Measure {
           index: result.length,
           partIds: this.partIds,
           partNames: this.partNames,
-          musicXml: {
-            staveLayouts: this.musicXml.staveLayouts,
+          musicXML: {
+            staveLayouts: this.musicXML.staveLayouts,
             beginningBarStyles,
             endBarStyles,
           },
@@ -280,7 +280,7 @@ export class Measure {
       return '';
     }
 
-    const measure = this.musicXml.measures.find((measure) => measure.partId === partId)?.value;
+    const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
     if (!measure) {
       return '';
     }
@@ -326,7 +326,7 @@ export class Measure {
   private getBeginningBarStyle(): musicxml.BarStyle {
     return (
       util.first(
-        this.musicXml.measures
+        this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'left')
           .map((barline) => barline.getBarStyle())
@@ -337,7 +337,7 @@ export class Measure {
   private getEndBarStyle(): musicxml.BarStyle {
     return (
       util.first(
-        this.musicXml.measures
+        this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'right')
           .map((barline) => barline.getBarStyle())

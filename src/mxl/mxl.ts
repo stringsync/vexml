@@ -42,11 +42,11 @@ export class MXL {
       throw new Error(`could not find a <rootfile> with type: ${MUSICXML_MIME_TYPES.join(',')}`);
     }
 
-    const musicXml = await zip.file(path)?.async('string');
-    if (typeof musicXml !== 'string') {
+    const musicXML = await zip.file(path)?.async('string');
+    if (typeof musicXML !== 'string') {
       throw new Error(`could not find file with path: ${path}`);
     }
 
-    return musicXml;
+    return musicXML;
   }
 }

@@ -10,7 +10,7 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  constructor(private musicXml: musicxml.MusicXml) {}
+  constructor(private musicXML: musicxml.MusicXml) {}
 
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
@@ -40,15 +40,15 @@ export class Vexml {
 
     // Try parsing as MXL.
     try {
-      const musicXml = await new mxl.MXL(blob).getMusicXml();
-      return Vexml.fromMusicXML(musicXml);
+      const musicXML = await new mxl.MXL(blob).getMusicXml();
+      return Vexml.fromMusicXML(musicXML);
     } catch (e) {
       errors.push(`tried to parse as MXL, but got: ${e}`);
     }
 
     // Try parsing as MusicXML.
     try {
-      const musicXml = await new Promise<string>((resolve, reject) => {
+      const musicXML = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => {
           const result = event.target?.result;
@@ -60,7 +60,7 @@ export class Vexml {
         };
         reader.readAsText(blob);
       });
-      return Vexml.fromMusicXML(musicXml);
+      return Vexml.fromMusicXML(musicXML);
     } catch (e) {
       errors.push(`tried to parse directly as MusicXML, but got ${e}`);
     }
@@ -79,8 +79,8 @@ export class Vexml {
 
     const score = new rendering.Score({
       config,
-      musicXml: {
-        scorePartwise: this.musicXml.getScorePartwise(),
+      musicXML: {
+        scorePartwise: this.musicXML.getScorePartwise(),
       },
     });
 
@@ -92,6 +92,6 @@ export class Vexml {
 
   /** Returns the document string. */
   getDocumentString(): string {
-    return this.musicXml.getDocumentString();
+    return this.musicXML.getDocumentString();
   }
 }

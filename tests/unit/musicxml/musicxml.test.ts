@@ -6,17 +6,17 @@ describe(MusicXml, () => {
   describe('getScorePartwise', () => {
     it('returns the score of the musicxml document', () => {
       const scorePartwise = xml.scorePartwise();
-      const document = xml.musicXml(scorePartwise);
+      const document = xml.musicXML(scorePartwise);
 
-      const musicXml = new MusicXml(document);
+      const musicXML = new MusicXml(document);
 
-      expect(musicXml.getScorePartwise()).toStrictEqual(new ScorePartwise(scorePartwise));
+      expect(musicXML.getScorePartwise()).toStrictEqual(new ScorePartwise(scorePartwise));
     });
 
     it('throws when <score-partwise> is missing', () => {
       const root = xml.createDocument();
-      const musicXml = new MusicXml(root);
-      expect(() => musicXml.getScorePartwise()).toThrow();
+      const musicXML = new MusicXml(root);
+      expect(() => musicXML.getScorePartwise()).toThrow();
     });
   });
 });

@@ -11,10 +11,10 @@ export type OrnamentRendering = {
 
 /** Represents a note ornament. */
 export class Ornament {
-  private musicXml: { ornaments: musicxml.Ornaments };
+  private musicXML: { ornaments: musicxml.Ornaments };
 
-  constructor(opts: { musicXml: { ornaments: musicxml.Ornaments } }) {
-    this.musicXml = opts.musicXml;
+  constructor(opts: { musicXML: { ornaments: musicxml.Ornaments } }) {
+    this.musicXML = opts.musicXML;
   }
 
   render(): OrnamentRendering {
@@ -30,7 +30,7 @@ export class Ornament {
   }
 
   private getOrnamentType(): string {
-    if (this.musicXml.ornaments.hasTrillMark()) {
+    if (this.musicXML.ornaments.hasTrillMark()) {
       return 'tr';
     }
     return '';

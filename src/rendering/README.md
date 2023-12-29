@@ -63,14 +63,14 @@ When possible, prefer to make heavy calculations lazy and memoizable. Use the [u
 
 You may notice how some types use namespaces.
 
-The `musicXml` key serves as a namespace:
+The `musicXML` key serves as a namespace:
 
 ```ts
 class Stave {
   /** Creates a Measure. */
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       measure: musicxml.Measure;
     };
   }): Measure {

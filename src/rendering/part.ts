@@ -22,7 +22,7 @@ export class Part {
   private config: Config;
   private id: string;
   private name: PartName;
-  private musicXml: {
+  private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
@@ -34,7 +34,7 @@ export class Part {
     config: Config;
     id: string;
     name: PartName;
-    musicXml: {
+    musicXML: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
@@ -45,7 +45,7 @@ export class Part {
     this.config = opts.config;
     this.id = opts.id;
     this.name = opts.name;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
   }
@@ -71,9 +71,9 @@ export class Part {
           config: this.config,
           staveSignature: this.staveSignature,
           number: staveNumber,
-          musicXml: {
-            beginningBarStyle: this.musicXml.beginningBarStyle,
-            endBarStyle: this.musicXml.endBarStyle,
+          musicXML: {
+            beginningBarStyle: this.musicXML.beginningBarStyle,
+            endBarStyle: this.musicXML.endBarStyle,
           },
           measureEntries,
         })
@@ -142,7 +142,7 @@ export class Part {
       staveRenderings.push(staveRendering);
 
       const staveDistance =
-        this.musicXml.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
+        this.musicXML.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
           ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;
