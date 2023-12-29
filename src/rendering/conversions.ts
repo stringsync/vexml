@@ -260,7 +260,7 @@ export const fromAboveBelowToVexflowSlurDirection = (aboveBelow: musicxml.AboveB
 };
 
 /** Converts a vexflow Stem to a `musicxml.Stem`. Defaults to 'none'. */
-export const fromVexflowStemDirectionToMusicXmlStem = (stem: number): musicxml.Stem => {
+export const fromVexflowStemDirectionToMusicXMLStem = (stem: number): musicxml.Stem => {
   switch (stem) {
     case 1:
       return 'up';

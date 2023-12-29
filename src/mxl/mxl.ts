@@ -18,7 +18,7 @@ export class MXL {
    * Returns the MusicXML string.
    * @throws {Error} when the blob cannot be handled like a MXL file.
    */
-  async getMusicXml(): Promise<string> {
+  async getMusicXML(): Promise<string> {
     const zip = await JSZip.loadAsync(this.blob);
 
     const xml = await zip.file(META_PATH)?.async('string');

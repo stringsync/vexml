@@ -170,7 +170,7 @@ export class Slur {
     // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
     try {
       const stemDirection = vfNote.getStemDirection();
-      return conversions.fromVexflowStemDirectionToMusicXmlStem(stemDirection);
+      return conversions.fromVexflowStemDirectionToMusicXMLStem(stemDirection);
     } catch (e) {
       return 'none';
     }

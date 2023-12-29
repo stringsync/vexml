@@ -10,12 +10,12 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  constructor(private musicXML: musicxml.MusicXml) {}
+  constructor(private musicXML: musicxml.MusicXML) {}
 
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
     const doc = new DOMParser().parseFromString(musicXML, 'application/xml');
-    const root = new musicxml.MusicXml(doc);
+    const root = new musicxml.MusicXML(doc);
     return new Vexml(root);
   }
 
@@ -40,7 +40,7 @@ export class Vexml {
 
     // Try parsing as MXL.
     try {
-      const musicXML = await new mxl.MXL(blob).getMusicXml();
+      const musicXML = await new mxl.MXL(blob).getMusicXML();
       return Vexml.fromMusicXML(musicXML);
     } catch (e) {
       errors.push(`tried to parse as MXL, but got: ${e}`);
