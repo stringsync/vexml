@@ -15,7 +15,7 @@ const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
   private config: Config;
-  private musicXml: {
+  private musicXML: {
     parts: musicxml.Part[];
     partDetails: musicxml.PartDetail[];
     staveLayouts: musicxml.StaveLayout[];
@@ -23,14 +23,14 @@ export class Seed {
 
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       parts: musicxml.Part[];
       partDetails: musicxml.PartDetail[];
       staveLayouts: musicxml.StaveLayout[];
     };
   }) {
     this.config = opts.config;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
   }
 
   /** Splits the measures into parts and systems that fit the given width. */
@@ -133,7 +133,7 @@ export class Seed {
   private getMeasureEntryGroups(): PartScoped<MeasureEntry[][]>[] {
     const result = [];
 
-    for (const part of this.musicXml.parts) {
+    for (const part of this.musicXML.parts) {
       const partId = part.getId();
       result.push({ partId, value: StaveSignature.toMeasureEntryGroups({ part }) });
     }
@@ -145,7 +145,7 @@ export class Seed {
   private getPartNames(): PartScoped<PartName>[] {
     const result = new Array<PartScoped<PartName>>();
 
-    for (const partDetail of this.musicXml.partDetails) {
+    for (const partDetail of this.musicXML.partDetails) {
       const partId = partDetail.id;
       const partName = new PartName({ config: this.config, content: partDetail.name });
       result.push({ partId, value: partName });
@@ -171,12 +171,12 @@ export class Seed {
         index: measureIndex,
         partIds: this.getPartIds(),
         partNames: this.getPartNames(),
-        musicXml: {
-          measures: this.musicXml.parts.map((part) => ({
+        musicXML: {
+          measures: this.musicXML.parts.map((part) => ({
             partId: part.getId(),
             value: part.getMeasures()[measureIndex],
           })),
-          staveLayouts: this.musicXml.staveLayouts,
+          staveLayouts: this.musicXML.staveLayouts,
         },
         leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
         entries: this.getMeasureEntries(measureIndex),
@@ -192,11 +192,11 @@ export class Seed {
   }
 
   private getMeasureCount(): number {
-    return util.max(this.musicXml.parts.map((part) => part.getMeasures().length));
+    return util.max(this.musicXML.parts.map((part) => part.getMeasures().length));
   }
 
   private getPartIds(): string[] {
-    return this.musicXml.parts.map((part) => part.getId());
+    return this.musicXML.parts.map((part) => part.getId());
   }
 
   private getLeadingStaveSignatures(measureIndex: number): PartScoped<StaveSignature>[] {

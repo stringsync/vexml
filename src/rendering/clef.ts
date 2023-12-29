@@ -27,8 +27,8 @@ export class Clef {
   }
 
   /** Creates a clef from a MusicXML element. */
-  static from(musicXml: { clef: musicxml.Clef }): Clef {
-    const clef = musicXml.clef;
+  static from(musicXML: { clef: musicxml.Clef }): Clef {
+    const clef = musicXML.clef;
 
     const sign = clef.getSign();
     const line = clef.getLine();

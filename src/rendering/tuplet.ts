@@ -44,7 +44,7 @@ export class Tuplet {
     // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
     // come across.
     const tuplet = util.first(
-      data.musicXml.note
+      data.musicXML.note
         ?.getNotations()
         .find((notations) => notations.hasTuplets())
         ?.getTuplets() ?? []

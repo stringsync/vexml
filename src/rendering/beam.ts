@@ -36,7 +36,7 @@ export class Beam {
   static process(data: SpannerData, container: BeamContainer): void {
     // vexflow does the heavy lifting of figuring out the specific beams. We just need to know when a beam starts,
     // continues, or stops.
-    const beams = util.sortBy(data.musicXml.note?.getBeams() ?? [], (beam) => beam.getNumber());
+    const beams = util.sortBy(data.musicXML.note?.getBeams() ?? [], (beam) => beam.getNumber());
     const beamValue = util.first(beams)?.getBeamValue() ?? null;
     const type = conversions.fromBeamValueToBeamFragmentType(beamValue);
 

@@ -6,7 +6,7 @@ import { ScorePartwise } from './scorepartwise';
  *
  * See https://www.w3.org/2021/06/musicxml40/
  */
-export class MusicXml {
+export class MusicXML {
   constructor(private root: Document) {}
 
   /**

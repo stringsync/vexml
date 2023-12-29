@@ -26,7 +26,7 @@ export type ChordRendering = {
  */
 export class Chord {
   private config: Config;
-  private musicXml: {
+  private musicXML: {
     note: musicxml.Note;
     directions: musicxml.Direction[];
     octaveShift: musicxml.OctaveShift | null;
@@ -38,7 +38,7 @@ export class Chord {
 
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       note: musicxml.Note;
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
@@ -49,7 +49,7 @@ export class Chord {
     durationDenominator: NoteDurationDenominator;
   }) {
     this.config = opts.config;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.stem = opts.stem;
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
@@ -71,16 +71,16 @@ export class Chord {
   }
 
   private getNotes(): Note[] {
-    const head = this.musicXml.note;
+    const head = this.musicXML.note;
     const tail = head.getChordTail();
 
     return [
       new Note({
         config: this.config,
-        musicXml: {
+        musicXML: {
           note: head,
-          directions: this.musicXml.directions,
-          octaveShift: this.musicXml.octaveShift,
+          directions: this.musicXML.directions,
+          octaveShift: this.musicXML.octaveShift,
         },
         stem: this.stem,
         clef: this.clef,
@@ -93,10 +93,10 @@ export class Chord {
             config: this.config,
             // We don't want the `<directions>` to be handled multiple times, since it's already handled by the head
             // note.
-            musicXml: {
+            musicXML: {
               note,
               directions: [],
-              octaveShift: this.musicXml.octaveShift,
+              octaveShift: this.musicXML.octaveShift,
             },
             stem: this.stem,
             clef: this.clef,
