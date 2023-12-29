@@ -62,7 +62,7 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private musicXml: { note: musicxml.Note; directions: musicxml.Direction[]; octaveShift: musicxml.OctaveShift | null };
+  private musicXML: { note: musicxml.Note; directions: musicxml.Direction[]; octaveShift: musicxml.OctaveShift | null };
   private stem: StemDirection;
   private clef: Clef;
   private keySignature: KeySignature;
@@ -70,7 +70,7 @@ export class Note {
 
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       note: musicxml.Note;
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
@@ -81,7 +81,7 @@ export class Note {
     keySignature: KeySignature;
   }) {
     this.config = opts.config;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.stem = opts.stem;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
@@ -173,10 +173,10 @@ export class Note {
       opts.spanners.process({
         keyIndex: index,
         address: opts.address,
-        musicXml: {
-          directions: notes[index].musicXml.directions,
-          note: notes[index].musicXml.note,
-          octaveShift: notes[index].musicXml.octaveShift,
+        musicXML: {
+          directions: notes[index].musicXML.directions,
+          note: notes[index].musicXML.note,
+          octaveShift: notes[index].musicXML.octaveShift,
         },
         vexflow: {
           staveNote: vfStaveNote,
@@ -242,14 +242,14 @@ export class Note {
   @util.memoize()
   private getAccidental(): Accidental | null {
     const noteAccidentalCode =
-      conversions.fromAccidentalTypeToAccidentalCode(this.musicXml.note.getAccidentalType()) ??
-      conversions.fromAlterToAccidentalCode(this.musicXml.note.getAlter());
+      conversions.fromAccidentalTypeToAccidentalCode(this.musicXML.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(this.musicXML.note.getAlter());
 
-    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.musicXml.note.getStep());
+    const keySignatureAccidentalCode = this.keySignature.getAccidentalCode(this.musicXML.note.getStep());
 
-    const hasExplicitAccidental = this.musicXml.note.getAccidentalType() !== null;
+    const hasExplicitAccidental = this.musicXML.note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
-      const isCautionary = this.musicXml.note.hasAccidentalCautionary();
+      const isCautionary = this.musicXML.note.hasAccidentalCautionary();
       return new Accidental({ code: noteAccidentalCode, isCautionary });
     }
 
@@ -258,53 +258,53 @@ export class Note {
 
   @util.memoize()
   private getLyrics(): Lyric[] {
-    return this.musicXml.note
+    return this.musicXML.note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => new Lyric({ musicXml: { lyric } }));
+      .map((lyric) => new Lyric({ musicXML: { lyric } }));
   }
 
   private getOrnaments(): Ornament[] {
-    return this.musicXml.note
+    return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
-      .flatMap((ornaments) => new Ornament({ musicXml: { ornaments } }));
+      .flatMap((ornaments) => new Ornament({ musicXML: { ornaments } }));
   }
 
   private getDotCount(): number {
-    return this.musicXml.note.getDotCount();
+    return this.musicXML.note.getDotCount();
   }
 
   private getStep(): string {
-    return this.musicXml.note.getStep();
+    return this.musicXML.note.getStep();
   }
 
   private getOctave(): number {
     return (
-      this.musicXml.note.getOctave() -
+      this.musicXML.note.getOctave() -
       this.clef.getOctaveChange() +
-      conversions.fromOctaveShiftToOctaveCount(this.musicXml.octaveShift)
+      conversions.fromOctaveShiftToOctaveCount(this.musicXML.octaveShift)
     );
   }
 
   private getKey(): string {
     const step = this.getStep();
     const octave = this.getOctave();
-    const notehead = this.musicXml.note.getNotehead();
+    const notehead = this.musicXML.note.getNotehead();
     const suffix = conversions.fromNoteheadToNoteheadSuffix(notehead);
     return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
   }
 
   private getTimeModification(): musicxml.TimeModification | null {
-    return this.musicXml.note.getTimeModification();
+    return this.musicXML.note.getTimeModification();
   }
 
   private getTokens(): Token[] {
-    return this.musicXml.directions
+    return this.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
-      .map((token) => new Token({ musicXml: { token } }));
+      .map((token) => new Token({ musicXML: { token } }));
   }
 }

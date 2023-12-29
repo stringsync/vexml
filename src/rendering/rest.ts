@@ -27,7 +27,7 @@ export type RestRendering = {
  */
 export class Rest {
   private config: Config;
-  private musicXml: {
+  private musicXML: {
     note: musicxml.Note | null;
     directions: musicxml.Direction[];
   };
@@ -38,7 +38,7 @@ export class Rest {
 
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       note: musicxml.Note | null;
       directions: musicxml.Direction[];
     };
@@ -48,7 +48,7 @@ export class Rest {
     clef: Clef;
   }) {
     this.config = opts.config;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
@@ -59,7 +59,7 @@ export class Rest {
   static whole(opts: { config: Config; clef: Clef }): Rest {
     return new Rest({
       config: opts.config,
-      musicXml: {
+      musicXML: {
         note: null,
         directions: [],
       },
@@ -93,9 +93,9 @@ export class Rest {
     opts.spanners.process({
       keyIndex: 0,
       address: opts.address,
-      musicXml: {
-        directions: this.musicXml.directions,
-        note: this.musicXml.note,
+      musicXML: {
+        directions: this.musicXML.directions,
+        note: this.musicXML.note,
         octaveShift: null,
       },
       vexflow: {
@@ -126,11 +126,11 @@ export class Rest {
   }
 
   private getTokens(): Token[] {
-    return this.musicXml.directions
+    return this.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
-      .flatMap((content) => content.tokens.map((token) => new Token({ musicXml: { token } })));
+      .flatMap((content) => content.tokens.map((token) => new Token({ musicXML: { token } })));
   }
 
   private shouldCenter(voiceEntryCount: number): boolean {

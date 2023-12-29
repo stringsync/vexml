@@ -42,7 +42,7 @@ export class MeasureFragment {
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
-  private musicXml: {
+  private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyles: PartScoped<musicxml.BarStyle>[];
     endBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -55,7 +55,7 @@ export class MeasureFragment {
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
-    musicXml: {
+    musicXML: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyles: PartScoped<musicxml.BarStyle>[];
       endBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -67,7 +67,7 @@ export class MeasureFragment {
     this.index = opts.index;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
   }
@@ -165,7 +165,7 @@ export class MeasureFragment {
           vfStaveConnectors.push(new vexflow.StaveConnector(topStave, bottomStave).setType('brace'));
         }
 
-        const beginningBarStyle = this.musicXml.beginningBarStyles.find(
+        const beginningBarStyle = this.musicXML.beginningBarStyles.find(
           (barStyle) => barStyle.partId === partId
         )?.value;
         if (beginningBarStyle) {
@@ -177,7 +177,7 @@ export class MeasureFragment {
           );
         }
 
-        const endBarStyle = this.musicXml.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value;
+        const endBarStyle = this.musicXML.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value;
         if (endBarStyle) {
           const endBarlineType = conversions.fromBarStyleToBarlineType(endBarStyle);
           const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(endBarlineType);
@@ -233,9 +233,9 @@ export class MeasureFragment {
       }
 
       const beginningBarStyle =
-        this.musicXml.beginningBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
+        this.musicXML.beginningBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
 
-      const endBarStyle = this.musicXml.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
+      const endBarStyle = this.musicXML.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
 
       const partName = this.partNames.find((partName) => partName.partId === partId)?.value ?? null;
       if (!partName) {
@@ -246,8 +246,8 @@ export class MeasureFragment {
         config: this.config,
         id: partId,
         name: partName,
-        musicXml: {
-          staveLayouts: this.musicXml.staveLayouts,
+        musicXML: {
+          staveLayouts: this.musicXML.staveLayouts,
           beginningBarStyle,
           endBarStyle,
         },

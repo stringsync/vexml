@@ -62,7 +62,7 @@ const createNamedElementFactory = <T extends string, A extends Record<any, any>>
   };
 };
 
-export const musicXml = (scorePartwise: NamedElement<'score-partwise'>): Document => {
+export const musicXML = (scorePartwise: NamedElement<'score-partwise'>): Document => {
   const root = createDocument();
   root.appendChild(scorePartwise.native());
   return root;

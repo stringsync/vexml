@@ -38,7 +38,7 @@ export class Vibrato {
   }
 
   static process(data: SpannerData, container: VibratoContainer): void {
-    data.musicXml.note
+    data.musicXML.note
       ?.getNotations()
       .flatMap((notation) => notation.getOrnaments())
       .flatMap((ornament) => ornament.getWavyLines())

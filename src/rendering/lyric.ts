@@ -12,10 +12,10 @@ export type LyricRendering = {
 
 /** Represents a lyric attached to a single note. */
 export class Lyric {
-  private musicXml: { lyric: musicxml.Lyric };
+  private musicXML: { lyric: musicxml.Lyric };
 
-  constructor(opts: { musicXml: { lyric: musicxml.Lyric } }) {
-    this.musicXml = opts.musicXml;
+  constructor(opts: { musicXML: { lyric: musicxml.Lyric } }) {
+    this.musicXML = opts.musicXML;
   }
 
   /** Renders the Lyric. */
@@ -27,7 +27,7 @@ export class Lyric {
 
     return {
       type: 'lyric',
-      verseNumber: this.musicXml.lyric.getVerseNumber(),
+      verseNumber: this.musicXML.lyric.getVerseNumber(),
       vexflow: {
         annotation: vfAnnotation,
       },
@@ -37,7 +37,7 @@ export class Lyric {
   @util.memoize()
   private getText(): string {
     const machine = new TextStateMachine();
-    for (const component of this.musicXml.lyric.getComponents()) {
+    for (const component of this.musicXML.lyric.getComponents()) {
       machine.process(component);
     }
     return machine.getText();

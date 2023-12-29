@@ -17,8 +17,8 @@ export type TimeSignatureRendering = {
 export class TimeSignature {
   private constructor(private components: Fraction[], private symbol: musicxml.TimeSymbol | null) {}
 
-  static from(musicXml: { time: musicxml.Time }): TimeSignature | null {
-    const time = musicXml.time;
+  static from(musicXML: { time: musicxml.Time }): TimeSignature | null {
+    const time = musicXML.time;
     if (time.isHidden()) {
       return TimeSignature.hidden();
     }

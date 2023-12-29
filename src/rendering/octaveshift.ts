@@ -72,7 +72,7 @@ export class OctaveShift {
   }
 
   static process(data: SpannerData, container: OctaveShiftContainer): void {
-    data.musicXml.directions
+    data.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')

@@ -24,18 +24,18 @@ export type ScoreRendering = {
  */
 export class Score {
   private config: Config;
-  private musicXml: {
+  private musicXML: {
     scorePartwise: musicxml.ScorePartwise | null;
   };
 
   constructor(opts: {
     config: Config;
-    musicXml: {
+    musicXML: {
       scorePartwise: musicxml.ScorePartwise | null;
     };
   }) {
     this.config = opts.config;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
   }
 
   /** Renders the Score. */
@@ -221,17 +221,17 @@ export class Score {
   private seed(): Seed {
     return new Seed({
       config: this.config,
-      musicXml: {
-        parts: this.musicXml.scorePartwise?.getParts() ?? [],
-        partDetails: this.musicXml.scorePartwise?.getPartDetails() ?? [],
-        staveLayouts: this.musicXml.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
+      musicXML: {
+        parts: this.musicXML.scorePartwise?.getParts() ?? [],
+        partDetails: this.musicXML.scorePartwise?.getPartDetails() ?? [],
+        staveLayouts: this.musicXML.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
     });
   }
 
   @util.memoize()
   private getSystemLayout() {
-    return this.musicXml.scorePartwise?.getDefaults()?.getSystemLayout() ?? null;
+    return this.musicXML.scorePartwise?.getDefaults()?.getSystemLayout() ?? null;
   }
 
   @util.memoize()
@@ -248,7 +248,7 @@ export class Score {
   private getTitle() {
     return new Title({
       config: this.config,
-      text: this.musicXml.scorePartwise?.getTitle() ?? '',
+      text: this.musicXML.scorePartwise?.getTitle() ?? '',
     });
   }
 }

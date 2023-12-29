@@ -380,7 +380,7 @@ export class Chorus {
           entries.push(
             new Chord({
               config,
-              musicXml: { note, directions, octaveShift },
+              musicXML: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
@@ -391,7 +391,7 @@ export class Chorus {
           entries.push(
             new Rest({
               config,
-              musicXml: { note, directions },
+              musicXML: { note, directions },
               displayPitch: note.getRestDisplayPitch(),
               dotCount: note.getDotCount(),
               clef,
@@ -402,7 +402,7 @@ export class Chorus {
           entries.push(
             new Note({
               config,
-              musicXml: { note, directions, octaveShift },
+              musicXML: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,

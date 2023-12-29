@@ -18,7 +18,7 @@ export class MXL {
    * Returns the MusicXML string.
    * @throws {Error} when the blob cannot be handled like a MXL file.
    */
-  async getMusicXml(): Promise<string> {
+  async getMusicXML(): Promise<string> {
     const zip = await JSZip.loadAsync(this.blob);
 
     const xml = await zip.file(META_PATH)?.async('string');
@@ -42,11 +42,11 @@ export class MXL {
       throw new Error(`could not find a <rootfile> with type: ${MUSICXML_MIME_TYPES.join(',')}`);
     }
 
-    const musicXml = await zip.file(path)?.async('string');
-    if (typeof musicXml !== 'string') {
+    const musicXML = await zip.file(path)?.async('string');
+    if (typeof musicXML !== 'string') {
       throw new Error(`could not find file with path: ${path}`);
     }
 
-    return musicXml;
+    return musicXML;
   }
 }

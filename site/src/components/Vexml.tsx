@@ -20,17 +20,17 @@ export type RenderEvent =
     };
 
 export type VexmlProps = {
-  musicXml: string;
+  musicXML: string;
   containerId: string;
   onRender: (event: RenderEvent) => void;
 };
 
-function Vexml({ musicXml, containerId, onRender }: VexmlProps) {
+function Vexml({ musicXML, containerId, onRender }: VexmlProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useWidth(containerRef, DEBOUNCE_DELAY_MS);
 
   useEffect(() => {
-    if (!musicXml) {
+    if (!musicXML) {
       return;
     }
 
@@ -46,7 +46,7 @@ function Vexml({ musicXml, containerId, onRender }: VexmlProps) {
     const start = new Date();
 
     try {
-      vexml.Vexml.fromMusicXML(musicXml).render({
+      vexml.Vexml.fromMusicXML(musicXML).render({
         element,
         width,
       });
@@ -72,7 +72,7 @@ function Vexml({ musicXml, containerId, onRender }: VexmlProps) {
         element.removeChild(firstChild);
       }
     };
-  }, [musicXml, width, onRender]);
+  }, [musicXML, width, onRender]);
 
   return <div id={containerId} ref={containerRef}></div>;
 }
