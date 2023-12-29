@@ -11,16 +11,16 @@ export type TokenRendering = {
 
 /** Represents a word or a symbol being rendered. */
 export class Token {
-  private musicXml: {
+  private musicXML: {
     token: musicxml.Words | musicxml.Symbolic;
   };
 
   constructor(opts: {
-    musicXml: {
+    musicXML: {
       token: musicxml.Words | musicxml.Symbolic;
     };
   }) {
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
   }
 
   render(): TokenRendering {
@@ -36,7 +36,7 @@ export class Token {
   }
 
   private getContent(): string {
-    const token = this.musicXml.token;
+    const token = this.musicXML.token;
     if (token instanceof musicxml.Words) {
       return token.getContent();
     }

@@ -69,7 +69,7 @@ export class Wedge {
     // associated with the first <note> element that follows it in score order that is not in a different voice.
     // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
 
-    if (data.musicXml.directions.length === 0) {
+    if (data.musicXML.directions.length === 0) {
       Wedge.commit(
         {
           type: 'unspecified',
@@ -80,7 +80,7 @@ export class Wedge {
       );
     }
 
-    for (const direction of data.musicXml.directions) {
+    for (const direction of data.musicXML.directions) {
       const directionPlacement = direction.getPlacement() ?? 'below';
       const modifierPosition = conversions.fromAboveBelowToModifierPosition(directionPlacement);
 

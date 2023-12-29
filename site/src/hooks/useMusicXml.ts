@@ -15,7 +15,7 @@ export const useMusicXml = (): {
   reset: () => void;
 } => {
   const [storedMusicXml, setStoredMusicXml] = useLocalStorage(LOCAL_STORAGE_SAVED_MUSICXML_KEY, '');
-  const [musicXml, debouncedMusicXml, setMusicXml] = useDebouncedState(storedMusicXml, SET_DEBOUNCE_DELAY_MS);
+  const [musicXML, debouncedMusicXml, setMusicXml] = useDebouncedState(storedMusicXml, SET_DEBOUNCE_DELAY_MS);
 
   const [storedUseDefault, setStoredUseDefault] = useLocalStorage(LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY, 'true');
   const [useDefault, setUseDefault] = useState(storedUseDefault);
@@ -31,7 +31,7 @@ export const useMusicXml = (): {
 
   const save = () => {
     setStoredUseDefault('false');
-    setStoredMusicXml(musicXml);
+    setStoredMusicXml(musicXML);
   };
 
   const reset = () => {
@@ -42,7 +42,7 @@ export const useMusicXml = (): {
   };
 
   return {
-    value: { current: musicXml, debounced: debouncedMusicXml, stored: storedMusicXml },
+    value: { current: musicXML, debounced: debouncedMusicXml, stored: storedMusicXml },
     useDefault: useDefault === 'true',
     update,
     reset,

@@ -115,8 +115,8 @@ function Controls(props: ControlsProps) {
     if (e.key === DEFAULT_OPTION.key) {
       props.onReset();
     } else if (e.value.type === 'asset') {
-      e.value.get().then((musicXml) => {
-        props.onChange('normal', musicXml);
+      e.value.get().then((musicXML) => {
+        props.onChange('normal', musicXML);
         setSelection(e.key);
       });
     }
@@ -127,7 +127,7 @@ function Controls(props: ControlsProps) {
     setSelection(DEFAULT_OPTION.key);
 
     if (DEFAULT_OPTION.value.type === 'asset') {
-      DEFAULT_OPTION.value.get().then((musicXml) => props.onChange('default', musicXml));
+      DEFAULT_OPTION.value.get().then((musicXML) => props.onChange('default', musicXML));
     }
   }
 

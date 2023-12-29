@@ -42,7 +42,7 @@ export class Slur {
   }
 
   static process(data: SpannerData, container: SlurContainer): void {
-    const note = data.musicXml.note;
+    const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
     if (!note || isRest) {
       return;

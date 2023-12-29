@@ -49,7 +49,7 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private number: number;
-  private musicXml: {
+  private musicXML: {
     beginningBarStyle: musicxml.BarStyle;
     endBarStyle: musicxml.BarStyle;
   };
@@ -60,7 +60,7 @@ export class Stave {
     config: Config;
     number: number;
     staveSignature: StaveSignature;
-    musicXml: {
+    musicXML: {
       beginningBarStyle: musicxml.BarStyle;
       endBarStyle: musicxml.BarStyle;
     };
@@ -69,7 +69,7 @@ export class Stave {
     this.config = opts.config;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
-    this.musicXml = opts.musicXml;
+    this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
   }
 
@@ -179,10 +179,10 @@ export class Stave {
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width);
 
-    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.beginningBarStyle);
+    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXML.beginningBarStyle);
     vfStave.setBegBarType(vfBeginningBarlineType);
 
-    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXml.endBarStyle);
+    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXML.endBarStyle);
     vfStave.setEndBarType(vfEndBarlineType);
 
     if (opts.beginningModifiers.includes('clef')) {

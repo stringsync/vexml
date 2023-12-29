@@ -19,7 +19,7 @@ type PedalContainer = SpannerMap<null, Pedal>;
 export type PedalFragment = {
   type: PedalFragmentType;
   address: Address<'voice'>;
-  musicXml: {
+  musicXML: {
     pedal: musicxml.Pedal;
   };
   vexflow: {
@@ -38,7 +38,7 @@ export class Pedal {
   }
 
   static process(data: SpannerData, container: PedalContainer): void {
-    data.musicXml.directions
+    data.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
@@ -49,7 +49,7 @@ export class Pedal {
           {
             type: pedalType,
             address: data.address,
-            musicXml: { pedal },
+            musicXML: { pedal },
             vexflow: { staveNote: data.vexflow.staveNote },
           },
           container
@@ -110,7 +110,7 @@ export class Pedal {
     const result = new Array<vexflow.StaveNote>();
 
     for (const fragment of this.fragments) {
-      switch (fragment.musicXml.pedal.getType()) {
+      switch (fragment.musicXML.pedal.getType()) {
         case 'change':
           // This is required for vexflow to show pedal changes.
           result.push(fragment.vexflow.staveNote, fragment.vexflow.staveNote);
@@ -127,8 +127,8 @@ export class Pedal {
   private getVfPedalMarkingType(): number {
     const fragment = util.first(this.fragments)!;
 
-    const sign = fragment.musicXml.pedal.sign();
-    const line = fragment.musicXml.pedal.line();
+    const sign = fragment.musicXML.pedal.sign();
+    const line = fragment.musicXML.pedal.line();
 
     if (line && sign) {
       return vexflow.PedalMarking.type.MIXED;

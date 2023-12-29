@@ -6,7 +6,7 @@ import Stats, { RenderStats } from './components/Stats';
 import { useCallback, useId, useState } from 'react';
 
 function App() {
-  const musicXml = useMusicXml();
+  const musicXML = useMusicXml();
 
   const [stats, setStats] = useState<RenderStats>({ type: 'loading' });
   const onRender = useCallback((event: RenderEvent) => {
@@ -32,8 +32,8 @@ function App() {
 
   const containerId = useId();
 
-  const saveDisabled = musicXml.useDefault || musicXml.value.current === musicXml.value.stored;
-  const resetDisabled = musicXml.useDefault;
+  const saveDisabled = musicXML.useDefault || musicXML.value.current === musicXML.value.stored;
+  const resetDisabled = musicXML.useDefault;
 
   return (
     <div className="container mt-4">
@@ -42,22 +42,22 @@ function App() {
       <br />
 
       <Controls
-        value={musicXml.value.current}
-        useDefault={musicXml.useDefault}
+        value={musicXML.value.current}
+        useDefault={musicXML.useDefault}
         containerId={containerId}
         saveDisabled={saveDisabled}
         resetDisabled={resetDisabled}
         reportDisabled={false}
-        onChange={musicXml.update}
-        onSave={musicXml.save}
-        onReset={musicXml.reset}
+        onChange={musicXML.update}
+        onSave={musicXML.save}
+        onReset={musicXML.reset}
       />
 
       <hr />
 
       <Stats stats={stats} />
 
-      <Vexml musicXml={musicXml.value.debounced} containerId={containerId} onRender={onRender} />
+      <Vexml musicXML={musicXML.value.debounced} containerId={containerId} onRender={onRender} />
     </div>
   );
 }

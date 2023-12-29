@@ -66,12 +66,12 @@ export class StaveSignature {
   }
 
   /** Creates a matrix of `StaveSignature` objects from a `musicxml.Part`, grouped by measure index. */
-  static toMeasureEntryGroups(musicXml: { part: musicxml.Part }): MeasureEntry[][] {
+  static toMeasureEntryGroups(musicXML: { part: musicxml.Part }): MeasureEntry[][] {
     const result = new Array<MeasureEntry[]>();
 
     let previousStaveSignature: StaveSignature | null = null;
 
-    const measures = musicXml.part.getMeasures();
+    const measures = musicXML.part.getMeasures();
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
@@ -86,7 +86,7 @@ export class StaveSignature {
             measureIndex,
             measureEntryIndex,
             previousStaveSignature,
-            musicXml: { attributes: entry },
+            musicXML: { attributes: entry },
           });
           result[measureIndex].push(staveSignature);
 
@@ -105,7 +105,7 @@ export class StaveSignature {
     measureIndex: number;
     measureEntryIndex: number;
     previousStaveSignature: StaveSignature | null;
-    musicXml: {
+    musicXML: {
       attributes: musicxml.Attributes;
     };
   }): StaveSignature {
@@ -113,7 +113,7 @@ export class StaveSignature {
 
     const clefs = {
       ...previousStaveSignature?.clefs,
-      ...opts.musicXml.attributes
+      ...opts.musicXML.attributes
         .getClefs()
         .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.from({ clef })])
         .reduce<StaveMap<Clef>>((map, [staveNumber, clef]) => {
@@ -124,17 +124,17 @@ export class StaveSignature {
 
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
-      ...opts.musicXml.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
+      ...opts.musicXML.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
         const staveNumber = key.getStaveNumber();
         const previousKeySignature = previousStaveSignature?.getKeySignature(staveNumber) ?? null;
-        map[staveNumber] = KeySignature.from({ musicXml: { key }, previousKeySignature });
+        map[staveNumber] = KeySignature.from({ musicXML: { key }, previousKeySignature });
         return map;
       }, {}),
     };
 
     const timeSignatures = {
       ...previousStaveSignature?.timeSignatures,
-      ...opts.musicXml.attributes
+      ...opts.musicXML.attributes
         .getTimes()
         .map((time): [staveNumber: number, timeSignature: TimeSignature | null] => [
           time.getStaveNumber(),
@@ -147,7 +147,7 @@ export class StaveSignature {
         }, {}),
     };
 
-    const multiRestCounts = opts.musicXml.attributes
+    const multiRestCounts = opts.musicXML.attributes
       .getMeasureStyles()
       .reduce<StaveMap<number>>((map, measureStyle) => {
         map[measureStyle.getStaveNumber()] = measureStyle.getMultipleRestCount();
@@ -155,7 +155,7 @@ export class StaveSignature {
       }, {});
 
     // Make sure that the key signatures and time signatures have entries for each stave number.
-    const staveCount = opts.musicXml.attributes.getStaveCount();
+    const staveCount = opts.musicXML.attributes.getStaveCount();
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
       if (!keySignatures[staveNumber]) {
         keySignatures[staveNumber] = keySignatures[1] ?? KeySignature.Cmajor();
@@ -165,8 +165,8 @@ export class StaveSignature {
       }
     }
 
-    const quarterNoteDivisions = opts.musicXml.attributes.getQuarterNoteDivisions();
-    const attributes = opts.musicXml.attributes;
+    const quarterNoteDivisions = opts.musicXML.attributes.getQuarterNoteDivisions();
+    const attributes = opts.musicXML.attributes;
 
     const staveSignature = new StaveSignature({
       measureIndex: opts.measureIndex,

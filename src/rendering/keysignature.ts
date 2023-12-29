@@ -29,9 +29,9 @@ export class KeySignature {
     this.previousKeySignature = opts.previousKeySignature;
   }
 
-  static from(opts: { musicXml: { key: musicxml.Key }; previousKeySignature: KeySignature | null }) {
-    const fifths = opts.musicXml.key.getFifthsCount();
-    const mode = opts.musicXml.key.getMode();
+  static from(opts: { musicXML: { key: musicxml.Key }; previousKeySignature: KeySignature | null }) {
+    const fifths = opts.musicXML.key.getFifthsCount();
+    const mode = opts.musicXML.key.getMode();
     const previousKeySignature = opts.previousKeySignature;
     return new KeySignature({ fifths, mode, previousKeySignature });
   }
