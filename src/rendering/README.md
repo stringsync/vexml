@@ -94,9 +94,9 @@ export type StaveRendering = {
 };
 ```
 
-This is intentionally done because a lot of objects from different libraries use the same name. The namespace makes the calling code easier to understand.
+This is intentionally done to make it easier to use objects from different libraries use the same name. The namespace makes the calling code easier to understand.
 
-Another example is with variable names:
+A contribed example that uses variable names:
 
 ```ts
 class Stave {
@@ -132,3 +132,13 @@ Spanners are special structures that can span across _anything_ in the rendering
 In order to keep the implementation relatively simple, spanners introduce mutations into the rendering pipeline. The [Spanners](./spanners.ts) class isolates those mutations. Future spanners should adhere to this pattern.
 
 In general, invalid spanners are either partially rendered or ignored (depending on the minimum of what's needed to render).
+
+### Measure Fragments and Formatting
+
+`vexflow` requires that all the staves and voices of a measure are created before formatting them. This is because an accidental of a note in one stave may influence the positioning of notes in other staves. Accidentals are only one of many examples.
+
+`vexml` employs measure fragmentation to work around the limit of one `X` per `vexflow.Stave`, where `X` is any `vexflow` object that has a 1:1 relationship with `vexflow.Stave`. An example of this is how there can only be 1 `vexflow.StaveTempo` per `vexflow.Stave` ([code](https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stave.ts#L325)). Measure fragments are essentially invisible to the music sheet reader because they end up blending with the other fragments and look like a single continuous stave.
+
+When `vexml` formats, it first finds measure fragment "events" in all parts. It coalesces these events using divisions (aka the beats of the notes), and creates fragments using the algorithm discussed in https://github.com/stringsync/vexml/pull/183#issuecomment-1870242110. When it formats, it does it for each fragment.
+
+There may be some odd spacing in exceptional cases. If you do come across this, validate if there are multiple fragments being rendered for a given measure. If not, consider making a small reproducible case in `vexflow` and file a bug.
