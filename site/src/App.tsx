@@ -1,12 +1,12 @@
 import Controls from './components/Controls';
 import Title from './components/Title';
-import { useMusicXml } from './hooks/useMusicXml';
+import { useMusicXML } from './hooks/useMusicXML';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
 import { useCallback, useId, useState } from 'react';
 
 function App() {
-  const musicXML = useMusicXml();
+  const musicXML = useMusicXML();
 
   const [stats, setStats] = useState<RenderStats>({ type: 'loading' });
   const onRender = useCallback((event: RenderEvent) => {
