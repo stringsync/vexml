@@ -1,6 +1,6 @@
 import Controls from './components/Controls';
 import Title from './components/Title';
-import { useMusicXML } from './hooks/useMusicXML2';
+import { useMusicXML } from './hooks/useMusicXML';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
 import { useCallback, useId, useState } from 'react';
