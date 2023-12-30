@@ -229,6 +229,7 @@ export class Measure {
         const iterator = iterators[partId];
 
         const staveSignature = iterator.getStaveSignature();
+        staveSignatures.push({ partId, value: staveSignature });
 
         let iteration = iterator.peek();
 
@@ -236,10 +237,10 @@ export class Measure {
           measureEntries.push({ partId, value: iteration.value.entry });
           iteration = iterator.next();
         }
+      }
 
-        if (measureEntries.length > 0) {
-          staveSignatures.push({ partId, value: staveSignature });
-
+      if (measureEntries.length > 0) {
+        for (const partId of this.partIds) {
           if (isFirstBoundary) {
             beginningBarStyles.push({ partId, value: beginningBarStyle });
           }
@@ -250,7 +251,7 @@ export class Measure {
       }
 
       // Ignore completely empty fragments.
-      if (!measureEntries.length && !beginningBarStyles.length && !endBarStyles.length) {
+      if (measureEntries.length === 0) {
         continue;
       }
 
