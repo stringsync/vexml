@@ -225,9 +225,11 @@ export class Measure {
       const measureEntries = new Array<PartScoped<MeasureEntry>>();
       const staveSignatures = new Array<PartScoped<StaveSignature>>();
 
-      // Collect measure entries across all parts.
       for (const partId of this.partIds) {
         const iterator = iterators[partId];
+
+        const staveSignature = iterator.getStaveSignature();
+        staveSignatures.push({ partId, value: staveSignature });
 
         let iteration = iterator.peek();
 
@@ -237,15 +239,8 @@ export class Measure {
         }
       }
 
-      // If any of the parts have a measure entry, we need to ensure that all parts have a stave signature.
       if (measureEntries.length > 0) {
         for (const partId of this.partIds) {
-          const iterator = iterators[partId];
-
-          const staveSignature = iterator.getStaveSignature();
-
-          staveSignatures.push({ partId, value: staveSignature });
-
           if (isFirstBoundary) {
             beginningBarStyles.push({ partId, value: beginningBarStyle });
           }
@@ -256,7 +251,7 @@ export class Measure {
       }
 
       // Ignore completely empty fragments.
-      if (!measureEntries.length) {
+      if (measureEntries.length === 0) {
         continue;
       }
 
