@@ -213,7 +213,11 @@ export class Seed {
       // Get the first stave signature that matches the measure index or get the last stave signature seen before this
       // measure index.
       const leadingStaveSignature =
-        staveSignatures.find((staveSignature) => staveSignature.getMeasureIndex() === measureIndex) ??
+        staveSignatures.find(
+          (staveSignature) =>
+            staveSignature.getMeasureIndex() === measureIndex && staveSignature.getMeasureEntryIndex() === 0
+        ) ??
+        staveSignatures.findLast((staveSignature) => staveSignature.getMeasureIndex() < measureIndex) ??
         util.last(staveSignatures);
 
       // We don't expect this to ever happen since we assume that StaveSignatures are created correctly. However, if this

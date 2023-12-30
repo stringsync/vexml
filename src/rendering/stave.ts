@@ -177,7 +177,7 @@ export class Stave {
     const vfStave =
       this.getClef().getType() === 'tab'
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
-        : new vexflow.Stave(opts.x, opts.y, opts.width);
+        : new vexflow.Stave(opts.x, opts.y, opts.width, { numLines: this.getStaveLineCount() });
 
     const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXML.beginningBarStyle);
     vfStave.setBegBarType(vfBeginningBarlineType);
@@ -276,6 +276,10 @@ export class Stave {
 
   private getTimeSignature(): TimeSignature {
     return this.staveSignature.getTimeSignature(this.number);
+  }
+
+  private getStaveLineCount(): number {
+    return this.staveSignature.getStaveLineCount(this.number);
   }
 
   private getQuarterNoteDivisions(): number {
