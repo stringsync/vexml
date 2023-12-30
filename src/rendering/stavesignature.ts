@@ -35,6 +35,7 @@ export class StaveSignature {
   private keySignatures: StaveMap<KeySignature>;
   private timeSignatures: StaveMap<TimeSignature>;
   private multiRestCounts: StaveMap<number>;
+  private staveLineCounts: StaveMap<number>;
   private quarterNoteDivisions: number;
   private staveCount: number;
   private attributes: musicxml.Attributes;
@@ -48,6 +49,7 @@ export class StaveSignature {
     keySignatures: StaveMap<KeySignature>;
     timeSignatures: StaveMap<TimeSignature>;
     multiRestCounts: StaveMap<number>;
+    staveLineCounts: StaveMap<number>;
     quarterNoteDivisions: number;
     staveCount: number;
     attributes: musicxml.Attributes;
@@ -57,6 +59,7 @@ export class StaveSignature {
     this.clefs = opts.clefs;
     this.keySignatures = opts.keySignatures;
     this.timeSignatures = opts.timeSignatures;
+    this.staveLineCounts = opts.staveLineCounts;
     this.multiRestCounts = opts.multiRestCounts;
     this.quarterNoteDivisions = opts.quarterNoteDivisions;
     this.staveCount = opts.staveCount;
@@ -154,6 +157,14 @@ export class StaveSignature {
         return map;
       }, {});
 
+    const staveLineCounts = {
+      ...previousStaveSignature?.staveLineCounts,
+      ...opts.musicXML.attributes.getStaveDetails().reduce<StaveMap<number>>((map, staveDetails) => {
+        map[staveDetails.getStaveNumber()] = staveDetails.getStaveLines();
+        return map;
+      }, {}),
+    };
+
     // Make sure that the key signatures and time signatures have entries for each stave number.
     const staveCount = opts.musicXML.attributes.getStaveCount();
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
@@ -175,6 +186,7 @@ export class StaveSignature {
       keySignatures,
       timeSignatures,
       multiRestCounts,
+      staveLineCounts,
       quarterNoteDivisions,
       staveCount,
       attributes,
@@ -269,6 +281,11 @@ export class StaveSignature {
   /** Returns the multiple rest count. */
   getMultiRestCount(staveNumber: number): number {
     return this.multiRestCounts[staveNumber] ?? 0;
+  }
+
+  /** Returns the number of stave lines for a given stave number. */
+  getStaveLineCount(staveNumber: number): number {
+    return this.staveLineCounts[staveNumber] ?? 5;
   }
 
   /** Returns the number of staves the measure should have. */
