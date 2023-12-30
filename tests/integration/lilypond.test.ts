@@ -53,7 +53,7 @@ describe('lilypond', () => {
     { filename: '13b-KeySignatures-ChurchModes.musicxml', width: 900 },
     { filename: '13c-KeySignatures-NonTraditional.musicxml', width: 900 },
     { filename: '13d-KeySignatures-Microtones.musicxml', width: 900 },
-    // { filename: '14a-StaffDetails-LineChanges.musicxml', width: 900 },
+    { filename: '14a-StaffDetails-LineChanges.musicxml', width: 900 },
     // { filename: '21a-Chord-Basic.musicxml', width: 900 },
     // { filename: '21b-Chords-TwoNotes.musicxml', width: 900 },
     // { filename: '21c-Chords-ThreeNotesDuration.musicxml', width: 900 },
