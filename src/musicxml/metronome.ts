@@ -3,21 +3,20 @@ import { NOTE_TYPES, NoteType } from './enums';
 
 /** The details of a metronome mark. */
 export type MetronomeMark = {
-  left: MetronomeOperand;
-  right: MetronomeOperand;
+  left: NoteMetronomeOperand;
+  right: NoteMetronomeOperand | BpmMetronomeOperand;
 };
 
-/** Part of a metronome mark. */
-export type MetronomeOperand =
-  | {
-      type: 'note';
-      unit: NoteType;
-      dotCount: number;
-    }
-  | {
-      type: 'bpm';
-      bpm: number;
-    };
+type NoteMetronomeOperand = {
+  type: 'note';
+  unit: NoteType;
+  dotCount: number;
+};
+
+type BpmMetronomeOperand = {
+  type: 'bpm';
+  bpm: number;
+};
 
 /**
  * Represents metronome marks and other metric relationships.
@@ -64,20 +63,23 @@ export class Metronome {
       }
     }
 
-    const leftOperandType = this.isWellFormedNote(leftElements) ? 'note' : 'invalid';
+    if (!this.isWellFormedNote(leftElements)) {
+      return null;
+    }
+
     const rightOperandType = this.isWellFormedNote(rightElements)
       ? 'note'
       : this.isWellFormedBpm(rightElements)
       ? 'bpm'
       : 'invalid';
 
-    if (leftOperandType === 'invalid' || rightOperandType === 'invalid') {
+    if (rightOperandType === 'invalid') {
       return null;
     }
 
     return {
-      left: this.operand(leftOperandType, leftElements),
-      right: this.operand(rightOperandType, rightElements),
+      left: this.noteOperand(leftElements),
+      right: rightOperandType === 'note' ? this.noteOperand(rightElements) : this.bpmOperand(rightElements),
     };
   }
 
@@ -117,16 +119,15 @@ export class Metronome {
     return this.element.first('per-minute')?.content().int() ?? null;
   }
 
-  private operand(type: MetronomeOperand['type'], elements: NamedElement<string>[]): MetronomeOperand {
-    switch (type) {
-      case 'note':
-        const unit = elements[0].content().enum(NOTE_TYPES) ?? 'quarter';
-        const dotCount = elements.slice(1).filter((child) => child.isNamed('beat-unit-dot')).length;
-        return { type, unit, dotCount };
-      case 'bpm':
-        const bpm = elements[0].content().int() ?? 120;
-        return { type, bpm };
-    }
+  private noteOperand(elements: NamedElement<string>[]): NoteMetronomeOperand {
+    const unit = elements[0].content().enum(NOTE_TYPES) ?? 'quarter';
+    const dotCount = elements.slice(1).filter((child) => child.isNamed('beat-unit-dot')).length;
+    return { type: 'note', unit, dotCount };
+  }
+
+  private bpmOperand(elements: NamedElement<string>[]): BpmMetronomeOperand {
+    const bpm = elements[0].content().int() ?? 120;
+    return { type: 'bpm', bpm };
   }
 
   private isWellFormedNote(elements: NamedElement<string>[]): boolean {
