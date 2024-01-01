@@ -64,7 +64,7 @@ describe('lilypond', () => {
     // { filename: '22b-Staff-Notestyles.musicxml', width: 900 },
     { filename: '22c-Noteheads-Chords.musicxml', width: 900 },
     { filename: '22d-Parenthesized-Noteheads.musicxml', width: 900 },
-    // { filename: '23a-Tuplets.musicxml', width: 900 },
+    { filename: '23a-Tuplets.musicxml', width: 900 },
     // { filename: '23b-Tuplets-Styles.musicxml', width: 900 },
     // { filename: '23c-Tuplet-Display-NonStandard.musicxml', width: 900 },
     // { filename: '23d-Tuplets-Nested.musicxml', width: 900 },
