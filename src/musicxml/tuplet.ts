@@ -16,8 +16,8 @@ export class Tuplet {
   }
 
   /** Returns the placement of the tuplet. Defaults to 'below'. */
-  getPlacement(): AboveBelow | null {
-    return this.element.attr('placement').enum(ABOVE_BELOW);
+  getPlacement(): AboveBelow {
+    return this.element.attr('placement').enum(ABOVE_BELOW) ?? 'below';
   }
 
   /** Returns how the tuplet number should be displayed. */

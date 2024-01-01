@@ -4,6 +4,8 @@ import * as conversions from './conversions';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
 
+const TUPLET_PADDING_PER_NOTE = 10;
+
 /** The result of rendering a tuplet. */
 export type TupletRendering = {
   type: 'tuplet';
@@ -19,6 +21,7 @@ export type TupletFragment =
       vexflow: {
         note: vexflow.Note;
         location: vexflow.TupletLocation;
+        ratioed: boolean;
       };
     }
   | {
@@ -52,12 +55,14 @@ export class Tuplet {
 
     switch (tuplet?.getType()) {
       case 'start':
+        const showNumber = tuplet.getShowNumber();
         Tuplet.commit(
           {
             type: 'start',
             vexflow: {
-              location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()!),
+              location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()),
               note: data.vexflow.staveNote,
+              ratioed: showNumber === 'both',
             },
           },
           container
@@ -111,11 +116,17 @@ export class Tuplet {
     }
   }
 
+  /** Returns the padding required by the tuplet based on its size. */
+  getPadding(): number {
+    return this.fragments.length * TUPLET_PADDING_PER_NOTE;
+  }
+
   /** Renders a tuplet. */
   render(): TupletRendering {
     const vfTupletLocation = this.getVfTupletLocation();
     const vfNotes = this.fragments.map((fragment) => fragment.vexflow.note);
-    const vfTuplet = new vexflow.Tuplet(vfNotes, { location: vfTupletLocation });
+    const ratioed = this.getRatioed();
+    const vfTuplet = new vexflow.Tuplet(vfNotes, { location: vfTupletLocation, ratioed });
 
     return {
       type: 'tuplet',
@@ -140,5 +151,18 @@ export class Tuplet {
     }
 
     return fragment.vexflow.location;
+  }
+
+  private getRatioed(): boolean {
+    const fragment = util.first(this.fragments);
+    if (!fragment) {
+      return false;
+    }
+
+    if (fragment.type !== 'start') {
+      return false;
+    }
+
+    return fragment.vexflow.ratioed;
   }
 }
