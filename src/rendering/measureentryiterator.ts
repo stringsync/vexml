@@ -76,7 +76,7 @@ export class MeasureEntryIterator {
     const start = this.iteration?.value?.end ?? Division.zero();
     const end = start.add(Division.of(duration, quarterNoteDivisions));
 
-    const fragmentation = entry instanceof StaveSignature || this.isSupportedMetronome(entry) ? 'new' : 'none';
+    const fragmentation = entry instanceof StaveSignature || this.isMetronome(entry) ? 'new' : 'none';
 
     return this.update({ done: false, value: { entry, start, end, fragmentation } });
   }
@@ -87,13 +87,13 @@ export class MeasureEntryIterator {
     return iteration;
   }
 
-  private isSupportedMetronome(entry: MeasureEntry): boolean {
+  private isMetronome(entry: MeasureEntry): boolean {
     return (
       entry instanceof musicxml.Direction &&
       entry
         .getTypes()
         .map((directionType) => directionType.getContent())
-        .some((content) => content.type === 'metronome' && content.metronome.isSupported())
+        .some((content) => content.type === 'metronome')
     );
   }
 }

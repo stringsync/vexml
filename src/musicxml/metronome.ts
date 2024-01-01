@@ -11,11 +11,6 @@ import { NOTE_TYPES, NoteType } from './enums';
 export class Metronome {
   constructor(private element: NamedElement<'metronome'>) {}
 
-  /** Returns whether the metronome is supported in vexml. */
-  isSupported(): boolean {
-    return typeof this.getBeatsPerMinute() === 'number';
-  }
-
   /** Returns the first beat unit. Defaults to 'quarter'. */
   getBeatUnit(): NoteType {
     return this.element.first('beat-unit')?.content().enum(NOTE_TYPES) ?? 'quarter';

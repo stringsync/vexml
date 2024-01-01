@@ -2,26 +2,6 @@ import { Metronome } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Metronome, () => {
-  describe('isSupported', () => {
-    it('returns true when per-minute is numeric', () => {
-      const node = xml.metronome({ perMinute: xml.perMinute({ value: '100' }) });
-      const metronome = new Metronome(node);
-      expect(metronome.isSupported()).toBeTrue();
-    });
-
-    it('returns false when per-minute is not numeric', () => {
-      const node = xml.metronome({ perMinute: xml.perMinute({ value: 'half' }) });
-      const metronome = new Metronome(node);
-      expect(metronome.isSupported()).toBeFalse();
-    });
-
-    it('returns false when per-minute is not provided', () => {
-      const node = xml.metronome();
-      const metronome = new Metronome(node);
-      expect(metronome.isSupported()).toBeFalse();
-    });
-  });
-
   describe('getBeatUnit', () => {
     it('returns the beat unit of the metronome', () => {
       const beatUnit = xml.beatUnit({ noteTypeValue: 'half' });
