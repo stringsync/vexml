@@ -198,21 +198,25 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
   switch (notehead) {
     case 'circle dot':
     case 'cluster':
-    case 'cross':
-    case 'inverted triangle':
     case 'left triangle':
-    case 'slashed':
-      return '';
+    case 'cross':
     case 'arrow down':
-      return 'TD';
     case 'arrow up':
-      return 'TU';
+      return '';
+    case 'slashed':
+      return 'SF';
+    case 'inverted triangle':
+      return 'TI';
+    case 'square':
+      return 'S2';
+    case 'circle-x':
+      return 'CX';
     case 'back slashed':
       return 'SB';
     case 'circled':
       return 'CI';
     case 'diamond':
-      return 'D';
+      return 'D2';
     case 'do':
       return 'DO';
     case 'fa':
