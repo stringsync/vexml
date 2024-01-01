@@ -565,12 +565,20 @@ export const symbolic = createNamedElementFactory<'symbol', { smuflGlyphName: st
 export const metronome = createNamedElementFactory<
   'metronome',
   {
+    parentheses: string;
+    content: NamedElement<'beat-unit' | 'beat-unit-dot' | 'per-minute'>[];
     beatUnit: NamedElement<'beat-unit'>;
     beatUnitDots: NamedElement<'beat-unit-dot'>[];
     perMinute: NamedElement<'per-minute'>;
     perMinuteDots: NamedElement<'beat-unit-dot'>[];
   }
->('metronome', (e, { beatUnit, beatUnitDots, perMinute, perMinuteDots }) => {
+>('metronome', (e, { parentheses, content, beatUnit, beatUnitDots, perMinute, perMinuteDots }) => {
+  if (typeof parentheses === 'string') {
+    e.setAttribute('parentheses', parentheses);
+  }
+  if (content) {
+    e.append(...content);
+  }
   if (beatUnit) {
     e.append(beatUnit);
   }
