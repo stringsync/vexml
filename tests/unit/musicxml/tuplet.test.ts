@@ -1,4 +1,4 @@
-import { ABOVE_BELOW, START_STOP, Tuplet } from '@/musicxml';
+import { ABOVE_BELOW, SHOW_TUPLET, START_STOP, Tuplet } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Tuplet, () => {
@@ -29,16 +29,36 @@ describe(Tuplet, () => {
       expect(tuplet.getPlacement()).toBe(placement);
     });
 
-    it(`defaults to null when missing`, () => {
+    it(`defaults to 'below' when missing`, () => {
       const node = xml.tuplet();
       const tuplet = new Tuplet(node);
-      expect(tuplet.getPlacement()).toBeNull();
+      expect(tuplet.getPlacement()).toBe('below');
     });
 
-    it(`defaults to null when invalid`, () => {
+    it(`defaults to 'below' when invalid`, () => {
       const node = xml.tuplet({ placement: 'foo' });
       const tuplet = new Tuplet(node);
-      expect(tuplet.getPlacement()).toBeNull();
+      expect(tuplet.getPlacement()).toBe('below');
+    });
+  });
+
+  describe('getShowNumber', () => {
+    it.each(SHOW_TUPLET.values)('returns the show-number attribute', (showNumber) => {
+      const node = xml.tuplet({ showNumber });
+      const tuplet = new Tuplet(node);
+      expect(tuplet.getShowNumber()).toBe(showNumber);
+    });
+
+    it(`defaults to 'actual' when missing`, () => {
+      const node = xml.tuplet();
+      const tuplet = new Tuplet(node);
+      expect(tuplet.getShowNumber()).toBe('actual');
+    });
+
+    it(`defaults to 'actual' when invalid`, () => {
+      const node = xml.tuplet({ showNumber: 'foo' });
+      const tuplet = new Tuplet(node);
+      expect(tuplet.getShowNumber()).toBe('actual');
     });
   });
 });

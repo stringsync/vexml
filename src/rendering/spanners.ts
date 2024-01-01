@@ -7,6 +7,7 @@ import { Vibrato, VibratoRendering } from './vibrato';
 import { OctaveShift, OctaveShiftRendering } from './octaveshift';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
+import * as util from '@/util';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -32,8 +33,7 @@ export class Spanners {
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getPadding(): number {
-    // TODO: When there are spanners that affect width, use them to determine how much padding to add.
-    return 0;
+    return util.sum(this.tuplets.values().map((tuplet) => tuplet.getPadding()));
   }
 
   /** Extracts and processes all the spanners within the given data. */
