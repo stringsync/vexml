@@ -261,8 +261,6 @@ export class Stave {
         .map((directionType) => directionType.getContent())
         .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
         .map((content) => content.metronome)
-        // Select the first renderable metronome, since there can be only one per vexflow.Stave.
-        .filter((metronome) => metronome.isSupported())
     );
   }
 
