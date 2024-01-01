@@ -204,19 +204,29 @@ export class Stave {
     }
 
     const metronome = this.getMetronome();
-    const beatsPerMinute = metronome?.getBeatsPerMinute();
-    const beatUnitDotCount = metronome?.getBeatUnitDotCount();
-    const beatUnit = metronome?.getBeatUnit();
-    const isMetronomeMarkSupported = beatsPerMinute && beatUnitDotCount && beatUnit;
-    if (isMetronomeMarkSupported) {
-      vfStave.setTempo(
-        {
-          bpm: beatsPerMinute,
-          dots: beatUnitDotCount,
-          duration: conversions.fromNoteTypeToNoteDurationDenominator(beatUnit)!,
-        },
-        opts.y
-      );
+    const metronomeMark = metronome?.getMark();
+
+    if (metronomeMark) {
+      const vfStaveTempoOpts: vexflow.StaveTempoOptions = {};
+
+      vfStaveTempoOpts.parenthesis = metronome?.parentheses() ?? undefined;
+
+      vfStaveTempoOpts.duration =
+        conversions.fromNoteTypeToNoteDurationDenominator(metronomeMark.left.unit) ?? undefined;
+      vfStaveTempoOpts.dots = metronomeMark.left.dotCount;
+
+      switch (metronomeMark.right.type) {
+        case 'note':
+          vfStaveTempoOpts.duration2 =
+            conversions.fromNoteTypeToNoteDurationDenominator(metronomeMark.right.unit) ?? undefined;
+          vfStaveTempoOpts.dots2 = metronomeMark.right.dotCount;
+          break;
+        case 'bpm':
+          vfStaveTempoOpts.bpm = metronomeMark.right.bpm;
+          break;
+      }
+
+      vfStave.setTempo(vfStaveTempoOpts, opts.y - METRONOME_TOP_PADDING);
     }
 
     const staveEntryRendering = this.getEntry().render({
@@ -261,8 +271,6 @@ export class Stave {
         .map((directionType) => directionType.getContent())
         .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
         .map((content) => content.metronome)
-        // Select the first renderable metronome, since there can be only one per vexflow.Stave.
-        .filter((metronome) => metronome.isSupported())
     );
   }
 
