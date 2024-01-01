@@ -1,5 +1,5 @@
 import { NamedElement } from '@/util';
-import { ABOVE_BELOW, START_STOP, AboveBelow, StartStop } from './enums';
+import { ABOVE_BELOW, START_STOP, AboveBelow, StartStop, ShowTuplet, SHOW_TUPLET } from './enums';
 
 /**
  * A <tuplet> element is present when a tuplet is to be displayed graphically, in addition to the sound data provided by
@@ -18,5 +18,10 @@ export class Tuplet {
   /** Returns the placement of the tuplet. Defaults to 'below'. */
   getPlacement(): AboveBelow | null {
     return this.element.attr('placement').enum(ABOVE_BELOW);
+  }
+
+  /** Returns how the tuplet number should be displayed. */
+  getShowNumber(): ShowTuplet {
+    return this.element.attr('show-number').withDefault<ShowTuplet>('actual').enum(SHOW_TUPLET);
   }
 }

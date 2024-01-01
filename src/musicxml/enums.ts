@@ -294,3 +294,11 @@ export const PEDAL_TYPES = new Enum([
   'discontinue',
   'resume',
 ] as const);
+
+/**
+ * The show-tuplet type indicates whether to show a part of a tuplet relating to the tuplet-actual element.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/show-tuplet/
+ */
+export type ShowTuplet = EnumValues<typeof SHOW_TUPLET>;
+export const SHOW_TUPLET = new Enum(['actual', 'both', 'none'] as const);
