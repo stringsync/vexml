@@ -567,29 +567,13 @@ export const metronome = createNamedElementFactory<
   {
     parentheses: string;
     content: NamedElement<'beat-unit' | 'beat-unit-dot' | 'per-minute'>[];
-    beatUnit: NamedElement<'beat-unit'>;
-    beatUnitDots: NamedElement<'beat-unit-dot'>[];
-    perMinute: NamedElement<'per-minute'>;
-    perMinuteDots: NamedElement<'beat-unit-dot'>[];
   }
->('metronome', (e, { parentheses, content, beatUnit, beatUnitDots, perMinute, perMinuteDots }) => {
+>('metronome', (e, { parentheses, content }) => {
   if (typeof parentheses === 'string') {
     e.setAttribute('parentheses', parentheses);
   }
   if (content) {
     e.append(...content);
-  }
-  if (beatUnit) {
-    e.append(beatUnit);
-  }
-  if (beatUnitDots) {
-    e.append(...beatUnitDots);
-  }
-  if (perMinute) {
-    e.append(perMinute);
-  }
-  if (perMinuteDots) {
-    e.append(...perMinuteDots);
   }
 });
 
@@ -1160,13 +1144,17 @@ export const tuplet = createNamedElementFactory<
   {
     type: string;
     placement: string;
+    showNumber: string;
   }
->('tuplet', (e, { type, placement }) => {
+>('tuplet', (e, { type, placement, showNumber }) => {
   if (type) {
     e.setAttribute('type', type);
   }
   if (placement) {
     e.setAttribute('placement', placement);
+  }
+  if (showNumber) {
+    e.setAttribute('show-number', showNumber);
   }
 });
 
