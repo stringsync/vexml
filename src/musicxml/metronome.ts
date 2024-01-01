@@ -83,42 +83,6 @@ export class Metronome {
     };
   }
 
-  /** Returns the first beat unit. Defaults to 'quarter'. */
-  getBeatUnit(): NoteType {
-    return this.element.first('beat-unit')?.content().enum(NOTE_TYPES) ?? 'quarter';
-  }
-
-  /**
-   * Returns how many dots are applied to the beat unit, which are only the ones right after the <beat-unit>.
-   *
-   * Defaults to 0.
-   */
-  getBeatUnitDotCount(): number {
-    let count = 0;
-
-    for (const child of this.element.children()) {
-      if (child.isNamed('beat-unit')) {
-        continue;
-      } else if (child.isNamed('beat-unit-dot')) {
-        count++;
-      } else {
-        // The other <beat-unit-dots> do not apply to the beat-unit.
-        break;
-      }
-    }
-
-    return count;
-  }
-
-  /**
-   * Returns the beats per minute.
-   *
-   * Only supports integer values. Defaults to null.
-   */
-  getBeatsPerMinute(): number | null {
-    return this.element.first('per-minute')?.content().int() ?? null;
-  }
-
   private noteOperand(elements: NamedElement<string>[]): NoteMetronomeOperand {
     const unit = elements[0].content().enum(NOTE_TYPES) ?? 'quarter';
     const dotCount = elements.slice(1).filter((child) => child.isNamed('beat-unit-dot')).length;
