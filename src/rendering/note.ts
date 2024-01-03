@@ -72,6 +72,7 @@ export class Note {
     config: Config;
     musicXML: {
       note: musicxml.Note;
+      graceNotes: musicxml.Note[];
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
     };

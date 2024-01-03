@@ -28,6 +28,7 @@ export class Chord {
   private config: Config;
   private musicXML: {
     note: musicxml.Note;
+    graceNotes: musicxml.Note[];
     directions: musicxml.Direction[];
     octaveShift: musicxml.OctaveShift | null;
   };
@@ -40,6 +41,7 @@ export class Chord {
     config: Config;
     musicXML: {
       note: musicxml.Note;
+      graceNotes: musicxml.Note[];
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
     };
@@ -73,12 +75,14 @@ export class Chord {
   private getNotes(): Note[] {
     const head = this.musicXML.note;
     const tail = head.getChordTail();
+    const graceNotes = this.musicXML.graceNotes;
 
     return [
       new Note({
         config: this.config,
         musicXML: {
           note: head,
+          graceNotes,
           directions: this.musicXML.directions,
           octaveShift: this.musicXML.octaveShift,
         },
@@ -95,6 +99,7 @@ export class Chord {
             // note.
             musicXML: {
               note,
+              graceNotes,
               directions: [],
               octaveShift: this.musicXML.octaveShift,
             },
