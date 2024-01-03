@@ -8,6 +8,7 @@ import { OctaveShift, OctaveShiftRendering } from './octaveshift';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
 import * as util from '@/util';
+import { Address } from './address';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -32,8 +33,8 @@ export class Spanners {
   private octaveShifts = SpannerMap.keyless<OctaveShift>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
-  getPadding(): number {
-    return util.sum(this.tuplets.values().map((tuplet) => tuplet.getPadding()));
+  getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
+    return util.sum(this.tuplets.values().map((tuplet) => tuplet.getExtraMeasureFragmentWidth(address)));
   }
 
   /** Extracts and processes all the spanners within the given data. */
