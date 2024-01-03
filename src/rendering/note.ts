@@ -83,7 +83,6 @@ export class Note {
   private clef: Clef;
   private keySignature: KeySignature;
   private durationDenominator: NoteDurationDenominator;
-  private graceNotes: Note[];
 
   constructor(opts: {
     config: Config;
@@ -96,7 +95,6 @@ export class Note {
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
     keySignature: KeySignature;
-    graceNotes: Note[];
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
@@ -104,7 +102,6 @@ export class Note {
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
-    this.graceNotes = opts.graceNotes;
   }
 
   /**
@@ -145,7 +142,8 @@ export class Note {
 
     // All the notes should have the same grace notes, so we just look at the first. We don't perform an assertion as
     // an attempt to tame the complexity of this method.
-    const graceNotes = util.first(notes)!.graceNotes;
+    // TODO: Use grace note data from musicxml.Note.
+    const graceNotes = new Array<Note>();
     const vfGraceNotes = graceNotes.map(
       (note) =>
         new vexflow.GraceNote({
