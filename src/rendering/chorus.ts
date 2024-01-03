@@ -368,6 +368,7 @@ export class Chorus {
         }
 
         const note = entry.note;
+        const graceNotes = entry.graceNotes;
         const directions = entry.directions;
         const stem = entry.stem;
         const octaveShift = entry.octaveShift;
@@ -381,7 +382,7 @@ export class Chorus {
           entries.push(
             new Chord({
               config,
-              musicXML: { note, directions, octaveShift },
+              musicXML: { note, graceNotes, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
@@ -403,7 +404,7 @@ export class Chorus {
           entries.push(
             new Note({
               config,
-              musicXML: { note, directions, octaveShift },
+              musicXML: { note, graceNotes, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
