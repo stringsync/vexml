@@ -368,7 +368,6 @@ export class Chorus {
         }
 
         const note = entry.note;
-        const graceNotes = entry.graceNotes;
         const directions = entry.directions;
         const stem = entry.stem;
         const octaveShift = entry.octaveShift;
@@ -378,15 +377,32 @@ export class Chorus {
           conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
           conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
 
+        const graceNotes = entry.graceNotes.map((note) => {
+          const durationDenominator =
+            conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
+            conversions.fromDivisionsToNoteDurationDenominator(Division.of(note.getDuration(), quarterNoteDivisions));
+
+          return new Note({
+            config,
+            musicXML: { note, directions: [], octaveShift },
+            stem: 'auto',
+            clef,
+            durationDenominator,
+            keySignature,
+            graceNotes: [],
+          });
+        });
+
         if (note.isChordHead()) {
           entries.push(
             new Chord({
               config,
-              musicXML: { note, graceNotes, directions, octaveShift },
+              musicXML: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
               keySignature,
+              graceNotes,
             })
           );
         } else if (note.isRest()) {
@@ -404,11 +420,12 @@ export class Chorus {
           entries.push(
             new Note({
               config,
-              musicXML: { note, graceNotes, directions, octaveShift },
+              musicXML: { note, directions, octaveShift },
               stem,
               clef,
               durationDenominator,
               keySignature,
+              graceNotes,
             })
           );
         }

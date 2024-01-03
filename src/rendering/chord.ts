@@ -28,7 +28,6 @@ export class Chord {
   private config: Config;
   private musicXML: {
     note: musicxml.Note;
-    graceNotes: musicxml.Note[];
     directions: musicxml.Direction[];
     octaveShift: musicxml.OctaveShift | null;
   };
@@ -36,12 +35,12 @@ export class Chord {
   private clef: Clef;
   private keySignature: KeySignature;
   private durationDenominator: NoteDurationDenominator;
+  private graceNotes: Note[];
 
   constructor(opts: {
     config: Config;
     musicXML: {
       note: musicxml.Note;
-      graceNotes: musicxml.Note[];
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
     };
@@ -49,6 +48,7 @@ export class Chord {
     clef: Clef;
     keySignature: KeySignature;
     durationDenominator: NoteDurationDenominator;
+    graceNotes: Note[];
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
@@ -56,6 +56,7 @@ export class Chord {
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
     this.durationDenominator = opts.durationDenominator;
+    this.graceNotes = opts.graceNotes;
   }
 
   /** Renders the Chord. */
@@ -75,14 +76,13 @@ export class Chord {
   private getNotes(): Note[] {
     const head = this.musicXML.note;
     const tail = head.getChordTail();
-    const graceNotes = this.musicXML.graceNotes;
+    const graceNotes = this.graceNotes;
 
     return [
       new Note({
         config: this.config,
         musicXML: {
           note: head,
-          graceNotes,
           directions: this.musicXML.directions,
           octaveShift: this.musicXML.octaveShift,
         },
@@ -90,6 +90,7 @@ export class Chord {
         clef: this.clef,
         keySignature: this.keySignature,
         durationDenominator: this.durationDenominator,
+        graceNotes,
       }),
       ...tail.map(
         (note) =>
@@ -99,7 +100,6 @@ export class Chord {
             // note.
             musicXML: {
               note,
-              graceNotes,
               directions: [],
               octaveShift: this.musicXML.octaveShift,
             },
@@ -107,6 +107,7 @@ export class Chord {
             clef: this.clef,
             keySignature: this.keySignature,
             durationDenominator: this.durationDenominator,
+            graceNotes,
           })
       ),
     ];
