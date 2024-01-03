@@ -27,7 +27,6 @@ export type ChorusRendering = {
 type VoiceEntryData = {
   voiceId: string;
   note: musicxml.Note;
-  graceNotes: musicxml.Note[];
   stem: StemDirection;
   start: Division;
   end: Division;
@@ -190,7 +189,6 @@ export class Chorus {
     let divisions = Division.of(0, quarterNoteDivisions);
     let directions = new Array<musicxml.Direction>();
     let octaveShift: musicxml.OctaveShift | null = null;
-    let graceNotes = new Array<musicxml.Note>();
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (let index = 0; index < opts.measureEntries.length; index++) {
@@ -235,7 +233,6 @@ export class Chorus {
         const note = entry;
 
         if (note.isGrace()) {
-          graceNotes.push(note);
           continue;
         }
         if (note.isChordTail()) {
@@ -255,7 +252,6 @@ export class Chorus {
         result[voiceId].push({
           voiceId,
           note,
-          graceNotes,
           start: startDivision,
           end: endDivision,
           stem,
@@ -265,7 +261,6 @@ export class Chorus {
 
         divisions = divisions.add(noteDuration);
         directions = [];
-        graceNotes = [];
       }
 
       if (entry instanceof musicxml.Backup) {
