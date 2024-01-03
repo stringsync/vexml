@@ -37,6 +37,17 @@ const STEP_ORDER = [
   'B#',
 ];
 
+const DURATIONS_SHORTER_THAN_QUARTER_NOTE: NoteDurationDenominator[] = [
+  '1024',
+  '512',
+  '256',
+  '128',
+  '64',
+  '32',
+  '16',
+  '8',
+];
+
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
 /** The result rendering a Note. */
@@ -63,17 +74,21 @@ export type NoteRendering = {
  */
 export class Note {
   private config: Config;
-  private musicXML: { note: musicxml.Note; directions: musicxml.Direction[]; octaveShift: musicxml.OctaveShift | null };
+  private musicXML: {
+    note: musicxml.Note;
+    directions: musicxml.Direction[];
+    octaveShift: musicxml.OctaveShift | null;
+  };
   private stem: StemDirection;
   private clef: Clef;
   private keySignature: KeySignature;
   private durationDenominator: NoteDurationDenominator;
+  private graceNotes: Note[];
 
   constructor(opts: {
     config: Config;
     musicXML: {
       note: musicxml.Note;
-      graceNotes: musicxml.Note[];
       directions: musicxml.Direction[];
       octaveShift: musicxml.OctaveShift | null;
     };
@@ -81,6 +96,7 @@ export class Note {
     durationDenominator: NoteDurationDenominator;
     clef: Clef;
     keySignature: KeySignature;
+    graceNotes: Note[];
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
@@ -88,6 +104,7 @@ export class Note {
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
+    this.graceNotes = opts.graceNotes;
   }
 
   /**
@@ -124,6 +141,29 @@ export class Note {
 
     for (let index = 0; index < util.first(notes)!.getDotCount(); index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
+    }
+
+    // All the notes should have the same grace notes, so we just look at the first. We don't perform an assertion as
+    // an attempt to tame the complexity of this method.
+    const graceNotes = util.first(notes)!.graceNotes;
+    const vfGraceNotes = graceNotes.map(
+      (note) =>
+        new vexflow.GraceNote({
+          keys: [note.getKey()],
+          duration: note.durationDenominator,
+        })
+    );
+    if (vfGraceNotes.length > 0) {
+      const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes);
+
+      const areAllNotesShorterThanQuarterNote = graceNotes.every((note) =>
+        DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator)
+      );
+      if (vfGraceNotes.length > 1 && areAllNotesShorterThanQuarterNote) {
+        vfGraceNoteGroup.beamNotes();
+      }
+
+      vfStaveNote.addModifier(vfGraceNoteGroup, 0);
     }
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
