@@ -412,7 +412,11 @@ export class MeasureFragment {
       return 0;
     }
 
-    return vfFormatter.preCalculateMinTotalWidth(vfVoices) + spanners.getPadding() + this.config.VOICE_PADDING;
+    return (
+      vfFormatter.preCalculateMinTotalWidth(vfVoices) +
+      spanners.getExtraMeasureFragmentWidth(opts.address) +
+      this.config.VOICE_PADDING
+    );
   }
 
   private getNonVoiceWidth(): number {

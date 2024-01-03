@@ -3,6 +3,7 @@ import * as util from '@/util';
 import * as conversions from './conversions';
 import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
+import { Address } from './address';
 
 const TUPLET_PADDING_PER_NOTE = 10;
 
@@ -18,6 +19,7 @@ export type TupletRendering = {
 export type TupletFragment =
   | {
       type: 'start';
+      address: Address<'voice'>;
       vexflow: {
         note: vexflow.Note;
         location: vexflow.TupletLocation;
@@ -26,6 +28,7 @@ export type TupletFragment =
     }
   | {
       type: 'unspecified' | 'stop';
+      address: Address<'voice'>;
       vexflow: {
         note: vexflow.Note;
       };
@@ -59,6 +62,7 @@ export class Tuplet {
         Tuplet.commit(
           {
             type: 'start',
+            address: data.address,
             vexflow: {
               location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()),
               note: data.vexflow.staveNote,
@@ -72,6 +76,7 @@ export class Tuplet {
         Tuplet.commit(
           {
             type: 'stop',
+            address: data.address,
             vexflow: {
               note: data.vexflow.staveNote,
             },
@@ -83,6 +88,7 @@ export class Tuplet {
         Tuplet.commit(
           {
             type: 'unspecified',
+            address: data.address,
             vexflow: {
               note: data.vexflow.staveNote,
             },
@@ -117,8 +123,11 @@ export class Tuplet {
   }
 
   /** Returns the padding required by the tuplet based on its size. */
-  getPadding(): number {
-    return this.fragments.length * TUPLET_PADDING_PER_NOTE;
+  getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
+    return (
+      this.fragments.filter((fragment) => fragment.address.isMemberOf('measurefragment', address)).length *
+      TUPLET_PADDING_PER_NOTE
+    );
   }
 
   /** Renders a tuplet. */

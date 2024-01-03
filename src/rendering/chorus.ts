@@ -114,11 +114,7 @@ export class Chorus {
       );
 
       const vfFormatter = new vexflow.Formatter();
-      return (
-        vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) +
-        spanners.getPadding() +
-        this.config.VOICE_PADDING
-      );
+      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
     }
     return 0;
   }
