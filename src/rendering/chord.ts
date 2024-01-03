@@ -35,7 +35,6 @@ export class Chord {
   private clef: Clef;
   private keySignature: KeySignature;
   private durationDenominator: NoteDurationDenominator;
-  private graceNotes: Note[];
 
   constructor(opts: {
     config: Config;
@@ -48,7 +47,6 @@ export class Chord {
     clef: Clef;
     keySignature: KeySignature;
     durationDenominator: NoteDurationDenominator;
-    graceNotes: Note[];
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
@@ -56,7 +54,6 @@ export class Chord {
     this.clef = opts.clef;
     this.keySignature = opts.keySignature;
     this.durationDenominator = opts.durationDenominator;
-    this.graceNotes = opts.graceNotes;
   }
 
   /** Renders the Chord. */
@@ -76,7 +73,6 @@ export class Chord {
   private getNotes(): Note[] {
     const head = this.musicXML.note;
     const tail = head.getChordTail();
-    const graceNotes = this.graceNotes;
 
     return [
       new Note({
@@ -90,7 +86,6 @@ export class Chord {
         clef: this.clef,
         keySignature: this.keySignature,
         durationDenominator: this.durationDenominator,
-        graceNotes,
       }),
       ...tail.map(
         (note) =>
@@ -107,7 +102,6 @@ export class Chord {
             clef: this.clef,
             keySignature: this.keySignature,
             durationDenominator: this.durationDenominator,
-            graceNotes,
           })
       ),
     ];
