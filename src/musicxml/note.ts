@@ -48,6 +48,58 @@ export class Note {
     return this.element.first('grace')?.attr('slash').str() === 'yes';
   }
 
+  /**
+   * Returns the preceding grace notes.
+   *
+   * When the note itself is a grace note, this method will return an empty array.
+   */
+  getPrecedingGraceNotes(): Note[] {
+    if (this.isGrace()) {
+      return [];
+    }
+
+    const notes = new Array<Note>();
+
+    let sibling = this.element.previous('note');
+    while (sibling) {
+      const note = new Note(sibling);
+      if (!note.isGrace()) {
+        break;
+      }
+      notes.unshift(note);
+      sibling = sibling.previous('note');
+    }
+
+    return notes;
+  }
+
+  /**
+   * Returns the succeeding grace notes.
+   *
+   * When the note itself is a grace note or there are non-grace notes after this note, this method will return an empty
+   * array.
+   */
+  getSucceedingGraceNotes(): Note[] {
+    if (this.isGrace()) {
+      return [];
+    }
+
+    const notes = new Array<Note>();
+
+    let sibling = this.element.next('note');
+    while (sibling) {
+      const note = new Note(sibling);
+      if (!note.isGrace()) {
+        // There is a non-grace note after this note, so we assume that any grace notes we've seen belongs to it.
+        return [];
+      }
+      notes.push(note);
+      sibling = sibling.next('note');
+    }
+
+    return notes;
+  }
+
   /** Returns the notations of the note. */
   getNotations(): Notations[] {
     return this.element.all('notations').map((element) => new Notations(element));
