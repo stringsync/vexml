@@ -45,6 +45,7 @@ export type NoteRendering = {
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
+    graceNoteGroup: vexflow.GraceNoteGroup | null;
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
@@ -188,7 +189,7 @@ export class Note {
         type: 'note',
         key: keys[index],
         modifiers: modifierRenderingGroups[index],
-        vexflow: { staveNote: vfStaveNote },
+        vexflow: { staveNote: vfStaveNote, graceNoteGroup: null },
         timeModification: notes[index].getTimeModification(),
       });
     }
