@@ -50,7 +50,7 @@ const DURATIONS_SHORTER_THAN_QUARTER_NOTE: NoteDurationDenominator[] = [
 
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
-/** The result rendering a Note. */
+/** The result of rendering a Note. */
 export type NoteRendering = {
   type: 'note';
   key: string;
@@ -61,6 +61,15 @@ export type NoteRendering = {
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
+};
+
+/** The result of rendering a grace Note. */
+export type GraceNoteRendering = {
+  type: 'gracenote';
+  vexflow: {
+    graceNote: vexflow.GraceNote;
+  };
+  modifiers: NoteModifierRendering[];
 };
 
 /**
@@ -110,7 +119,11 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(opts: { notes: Note[]; spanners: Spanners; address: Address<'voice'> }): NoteRendering[] {
+  static render(opts: {
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): Array<NoteRendering | GraceNoteRendering> {
     const notes = Note.sort(opts.notes);
 
     util.assert(notes.length > 0, 'cannot render empty notes');
@@ -270,7 +283,7 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): NoteRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): NoteRendering | GraceNoteRendering {
     return util.first(
       Note.render({
         notes: [this],
