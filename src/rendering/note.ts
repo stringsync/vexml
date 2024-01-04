@@ -56,8 +56,6 @@ export type NoteRendering = {
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
-    precedingGraceNoteGroup: vexflow.GraceNoteGroup;
-    succeedingGraceNoteGroup: vexflow.GraceNoteGroup;
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
@@ -154,26 +152,6 @@ export class Note {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
     }
 
-    // All the notes should have the same grace notes, so we just look at the first. We don't perform an assertion as
-    // an attempt to tame the complexity of this method.
-    const probe = util.first(notes)!;
-
-    const vfPrecedingGraceNoteGroup = probe.getVfGraceNoteGroup({
-      musicXML: { notes: probe.musicXML.note.getPrecedingGraceNotes() },
-      vexflow: { modifierPosition: vexflow.ModifierPosition.LEFT },
-    });
-    if (vfPrecedingGraceNoteGroup.getGraceNotes().length > 0) {
-      vfStaveNote.addModifier(vfPrecedingGraceNoteGroup, 0);
-    }
-
-    const vfSucceedingGraceNoteGroup = probe.getVfGraceNoteGroup({
-      musicXML: { notes: probe.musicXML.note.getSucceedingGraceNotes() },
-      vexflow: { modifierPosition: vexflow.ModifierPosition.RIGHT },
-    });
-    if (vfSucceedingGraceNoteGroup.getGraceNotes().length > 0) {
-      vfStaveNote.addModifier(vfSucceedingGraceNoteGroup, 0);
-    }
-
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
       const renderings = new Array<NoteModifierRendering>();
 
@@ -239,8 +217,6 @@ export class Note {
         modifiers: modifierRenderingGroups[index],
         vexflow: {
           staveNote: vfStaveNote,
-          precedingGraceNoteGroup: vfPrecedingGraceNoteGroup,
-          succeedingGraceNoteGroup: vfSucceedingGraceNoteGroup,
         },
         timeModification: notes[index].getTimeModification(),
       });
