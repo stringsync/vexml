@@ -145,8 +145,7 @@ export class Note {
     // an attempt to tame the complexity of this method.
     const probe = util.first(notes)!;
 
-    const vfPrecedingGraceNoteGroup = Note.getVfGraceNoteGroup({
-      probe,
+    const vfPrecedingGraceNoteGroup = probe.getVfGraceNoteGroup({
       musicXML: { notes: probe.musicXML.note.getPrecedingGraceNotes() },
       vexflow: { modifierPosition: vexflow.ModifierPosition.LEFT },
     });
@@ -154,8 +153,7 @@ export class Note {
       vfStaveNote.addModifier(vfPrecedingGraceNoteGroup, 0);
     }
 
-    const vfSucceedingGraceNoteGroup = Note.getVfGraceNoteGroup({
-      probe,
+    const vfSucceedingGraceNoteGroup = probe.getVfGraceNoteGroup({
       musicXML: { notes: probe.musicXML.note.getSucceedingGraceNotes() },
       vexflow: { modifierPosition: vexflow.ModifierPosition.RIGHT },
     });
@@ -236,56 +234,6 @@ export class Note {
     }
 
     return noteRenderings;
-  }
-
-  private static getVfGraceNoteGroup(opts: {
-    probe: Note;
-    musicXML: { notes: musicxml.Note[] };
-    vexflow: { modifierPosition: vexflow.ModifierPosition };
-  }): vexflow.GraceNoteGroup {
-    const graceNotes = opts.musicXML.notes.map(
-      (note) =>
-        new Note({
-          config: opts.probe.config,
-          clef: opts.probe.clef,
-          durationDenominator: conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ?? '8',
-          musicXML: { note, directions: [], octaveShift: opts.probe.musicXML.octaveShift },
-          keySignature: opts.probe.keySignature,
-          stem: opts.probe.stem,
-        })
-    );
-
-    const vfGraceNotes = graceNotes.map((note) => {
-      const vfGraceNote = new vexflow.GraceNote({
-        keys: [note.getKey()],
-        slash: note.musicXML.note.hasGraceSlash(),
-        duration: note.durationDenominator,
-      });
-
-      const vfAccidental = note.getAccidental()?.render().vexflow.accidental;
-      if (vfAccidental) {
-        vfGraceNote.addModifier(vfAccidental, 0);
-      }
-
-      return vfGraceNote;
-    });
-
-    const hasGraceSlur = graceNotes
-      .flatMap((note) => note.musicXML.note.getNotations())
-      .some((notation) => notation.getSlurs().length > 0);
-
-    const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasGraceSlur).setPosition(
-      opts.vexflow.modifierPosition
-    );
-
-    if (
-      graceNotes.length > 1 &&
-      graceNotes.every((note) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator))
-    ) {
-      vfGraceNoteGroup.beamNotes();
-    }
-
-    return vfGraceNoteGroup;
   }
 
   private static sort(notes: Note[]): Note[] {
@@ -399,5 +347,54 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXML: { token } }));
+  }
+
+  private getVfGraceNoteGroup(opts: {
+    musicXML: { notes: musicxml.Note[] };
+    vexflow: { modifierPosition: vexflow.ModifierPosition };
+  }): vexflow.GraceNoteGroup {
+    const graceNotes = opts.musicXML.notes.map(
+      (note) =>
+        new Note({
+          config: this.config,
+          clef: this.clef,
+          durationDenominator: conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ?? '8',
+          musicXML: { note, directions: [], octaveShift: this.musicXML.octaveShift },
+          keySignature: this.keySignature,
+          stem: this.stem,
+        })
+    );
+
+    const vfGraceNotes = graceNotes.map((note) => {
+      const vfGraceNote = new vexflow.GraceNote({
+        keys: [note.getKey()],
+        slash: note.musicXML.note.hasGraceSlash(),
+        duration: note.durationDenominator,
+      });
+
+      const vfAccidental = note.getAccidental()?.render().vexflow.accidental;
+      if (vfAccidental) {
+        vfGraceNote.addModifier(vfAccidental, 0);
+      }
+
+      return vfGraceNote;
+    });
+
+    const hasGraceSlur = graceNotes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
+    const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasGraceSlur).setPosition(
+      opts.vexflow.modifierPosition
+    );
+
+    if (
+      graceNotes.length > 1 &&
+      graceNotes.every((note) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator))
+    ) {
+      vfGraceNoteGroup.beamNotes();
+    }
+
+    return vfGraceNoteGroup;
   }
 }
