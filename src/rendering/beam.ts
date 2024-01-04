@@ -8,7 +8,7 @@ import { SpannerMap } from './spannermap';
 export type BeamRendering = {
   type: 'beam';
   vexflow: {
-    beam: vexflow.Beam;
+    beam: vexflow.Beam | null;
   };
 };
 
@@ -81,7 +81,7 @@ export class Beam {
   /** Renders the beam. */
   render(): BeamRendering {
     const vfStemmableNotes = this.fragments.map((fragment) => fragment.vexflow.stemmableNote);
-    const beam = new vexflow.Beam(vfStemmableNotes);
+    const beam = vfStemmableNotes.length > 1 ? new vexflow.Beam(vfStemmableNotes) : null;
 
     return {
       type: 'beam',
