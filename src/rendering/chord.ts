@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Config } from './config';
-import { GraceNoteRendering, Note, NoteRendering } from './note';
+import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
@@ -8,9 +8,12 @@ import { Spanners } from './spanners';
 import { Address } from './address';
 
 /** The result of rendering a Chord. */
-export type ChordRendering = {
-  type: 'chord';
-  notes: NoteRendering[];
+export type ChordRendering = StaveChordRendering | GraceChordRendering;
+
+/** The result of rendering a stave Chord. */
+export type StaveChordRendering = {
+  type: 'stavechord';
+  notes: StaveNoteRendering[];
 };
 
 /** The result of rendering a grace Chord. */
@@ -63,19 +66,19 @@ export class Chord {
   }
 
   /** Renders the Chord. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering | GraceChordRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering {
     const noteRenderings = Note.render({
       notes: this.getNotes(),
       spanners: opts.spanners,
       address: opts.address,
     });
 
-    const isChord = noteRenderings.every((noteRendering) => noteRendering.type === 'note');
+    const isChord = noteRenderings.every((noteRendering) => noteRendering.type === 'stavenote');
 
     if (isChord) {
       return {
-        type: 'chord',
-        notes: noteRenderings as NoteRendering[],
+        type: 'stavechord',
+        notes: noteRenderings as StaveNoteRendering[],
       };
     } else {
       throw new Error('Grace chords are not yet supported');

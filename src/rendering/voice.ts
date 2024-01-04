@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import { GraceNoteRendering, Note, NoteRendering } from './note';
-import { Chord, ChordRendering, GraceChordRendering } from './chord';
+import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
+import { Chord, StaveChordRendering, GraceChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
@@ -14,8 +14,8 @@ export type VoiceEntry = Note | Chord | Rest | GhostNote;
 
 /** The result rendering a VoiceEntry. */
 export type VoiceEntryRendering =
-  | NoteRendering
-  | ChordRendering
+  | StaveNoteRendering
+  | StaveChordRendering
   | GraceNoteRendering
   | GraceChordRendering
   | RestRendering
@@ -84,9 +84,9 @@ export class Voice {
 
     const vfTickables = voiceEntryRenderings.map((voiceEntryRendering) => {
       switch (voiceEntryRendering.type) {
-        case 'note':
+        case 'stavenote':
           return voiceEntryRendering.vexflow.staveNote;
-        case 'chord':
+        case 'stavechord':
           return voiceEntryRendering.notes[0].vexflow.staveNote;
         case 'rest':
           return voiceEntryRendering.vexflow.staveNote;
