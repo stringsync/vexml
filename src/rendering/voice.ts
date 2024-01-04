@@ -82,20 +82,24 @@ export class Voice {
       throw new Error(`unexpected voice entry: ${entry}`);
     });
 
-    const vfTickables = voiceEntryRenderings.map((voiceEntryRendering) => {
+    const vfTickables = new Array<vexflow.Tickable>();
+
+    for (const voiceEntryRendering of voiceEntryRenderings) {
       switch (voiceEntryRendering.type) {
         case 'stavenote':
-          return voiceEntryRendering.vexflow.staveNote;
+          vfTickables.push(voiceEntryRendering.vexflow.staveNote);
+          break;
         case 'stavechord':
-          return voiceEntryRendering.notes[0].vexflow.staveNote;
+          vfTickables.push(voiceEntryRendering.notes[0].vexflow.staveNote);
+          break;
         case 'rest':
-          return voiceEntryRendering.vexflow.staveNote;
+          vfTickables.push(voiceEntryRendering.vexflow.staveNote);
+          break;
         case 'ghostnote':
-          return voiceEntryRendering.vexflow.ghostNote;
-        default:
-          throw new Error(`unexpected voice entry rendering: ${voiceEntryRendering}`);
+          vfTickables.push(voiceEntryRendering.vexflow.ghostNote);
+          break;
       }
-    });
+    }
 
     const fraction = this.timeSignature.toFraction();
     const vfVoice = new vexflow.Voice({

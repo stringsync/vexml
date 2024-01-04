@@ -120,12 +120,10 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(opts: {
-    notes: Note[];
-    spanners: Spanners;
-    address: Address<'voice'>;
-  }): Array<StaveNoteRendering | GraceNoteRendering> {
+  static render(opts: { notes: Note[]; spanners: Spanners; address: Address<'voice'> }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
+    const spanners = opts.spanners;
+    const address = opts.address;
 
     util.assert(notes.length > 0, 'cannot render empty notes');
 
@@ -138,6 +136,24 @@ export class Note {
     const clefTypes = new Set(notes.map((note) => note.clef));
     util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
+    const isStave = notes.every((note) => !note.musicXML.note.isGrace());
+    const isGrace = notes.every((note) => note.musicXML.note.isGrace());
+
+    if (isStave) {
+      return Note.renderStaveNotes({ notes, spanners, address });
+    } else if (isGrace) {
+      return Note.renderGraceNotes({ notes });
+    } else {
+      throw new Error('cannot render grace notes and stave notes together');
+    }
+  }
+
+  private static renderStaveNotes(opts: {
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): StaveNoteRendering[] {
+    const notes = opts.notes;
     const keys = notes.map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
@@ -198,7 +214,7 @@ export class Note {
       }
     }
 
-    const noteRenderings = new Array<StaveNoteRendering>();
+    const staveNoteRenderings = new Array<StaveNoteRendering>();
 
     for (let index = 0; index < keys.length; index++) {
       opts.spanners.process({
@@ -214,7 +230,7 @@ export class Note {
         },
       });
 
-      noteRenderings.push({
+      staveNoteRenderings.push({
         type: 'stavenote',
         key: keys[index],
         modifiers: modifierRenderingGroups[index],
@@ -225,7 +241,67 @@ export class Note {
       });
     }
 
-    return noteRenderings;
+    return staveNoteRenderings;
+  }
+
+  private static renderGraceNotes(opts: { notes: Note[] }): GraceNoteRendering[] {
+    const notes = opts.notes;
+    const keys = notes.map((note) => note.getKey());
+
+    const vfGraceNote = new vexflow.GraceNote({
+      keys,
+      duration: util.first(notes)!.durationDenominator,
+      dots: util.first(notes)!.getDotCount(),
+      clef: util.first(notes)!.clef.getType(),
+    });
+
+    const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
+      const renderings = new Array<NoteModifierRendering>();
+
+      const accidental = note.getAccidental();
+      if (accidental) {
+        renderings.push(accidental.render());
+      }
+
+      // Lyrics sorted by ascending verse number.
+      for (const lyric of note.getLyrics()) {
+        renderings.push(lyric.render());
+      }
+
+      for (const token of note.getTokens()) {
+        renderings.push(token.render());
+      }
+
+      for (const ornament of note.getOrnaments()) {
+        renderings.push(ornament.render());
+      }
+
+      return renderings;
+    });
+
+    for (let index = 0; index < modifierRenderingGroups.length; index++) {
+      for (const modifierRendering of modifierRenderingGroups[index]) {
+        switch (modifierRendering.type) {
+          case 'accidental':
+            vfGraceNote.addModifier(modifierRendering.vexflow.accidental, index);
+            break;
+        }
+      }
+    }
+
+    const graceNoteRenderings = new Array<GraceNoteRendering>();
+
+    for (let index = 0; index < keys.length; index++) {
+      graceNoteRenderings.push({
+        type: 'gracenote',
+        modifiers: modifierRenderingGroups[index],
+        vexflow: {
+          graceNote: vfGraceNote,
+        },
+      });
+    }
+
+    return graceNoteRenderings;
   }
 
   private static sort(notes: Note[]): Note[] {

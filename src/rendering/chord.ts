@@ -73,15 +73,18 @@ export class Chord {
       address: opts.address,
     });
 
-    const isChord = noteRenderings.every((noteRendering) => noteRendering.type === 'stavenote');
+    const isStave = noteRenderings.every((noteRendering) => noteRendering.type === 'stavenote');
+    const isGrace = noteRenderings.every((noteRendering) => noteRendering.type === 'gracenote');
 
-    if (isChord) {
+    if (isStave) {
       return {
         type: 'stavechord',
         notes: noteRenderings as StaveNoteRendering[],
       };
-    } else {
+    } else if (isGrace) {
       throw new Error('Grace chords are not yet supported');
+    } else {
+      throw new Error('chord renderings cannot contain both grace notes and stave notes');
     }
   }
 

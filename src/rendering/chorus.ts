@@ -232,35 +232,42 @@ export class Chorus {
       if (entry instanceof musicxml.Note) {
         const note = entry;
 
-        if (note.isGrace()) {
-          continue;
-        }
-        if (note.isChordTail()) {
-          continue;
-        }
-
         voiceId = note.getVoice();
-
         result[voiceId] ??= [];
 
-        const noteDuration = Division.of(note.getDuration(), quarterNoteDivisions);
-        const startDivision = divisions;
-        const endDivision = startDivision.add(noteDuration);
+        if (note.isChordTail()) {
+          continue;
+        } else if (note.isGrace()) {
+          result[voiceId].push({
+            voiceId,
+            note,
+            start: divisions,
+            end: divisions,
+            stem: 'auto',
+            // Directions are handled by stave notes. We don't want to process them multiple times.
+            directions: [],
+            octaveShift,
+          });
+        } else {
+          const noteDuration = Division.of(note.getDuration(), quarterNoteDivisions);
+          const startDivision = divisions;
+          const endDivision = startDivision.add(noteDuration);
 
-        const stem = conversions.fromStemToStemDirection(note.getStem());
+          const stem = conversions.fromStemToStemDirection(note.getStem());
 
-        result[voiceId].push({
-          voiceId,
-          note,
-          start: startDivision,
-          end: endDivision,
-          stem,
-          directions,
-          octaveShift,
-        });
+          result[voiceId].push({
+            voiceId,
+            note,
+            start: startDivision,
+            end: endDivision,
+            stem,
+            directions,
+            octaveShift,
+          });
 
-        divisions = divisions.add(noteDuration);
-        directions = [];
+          divisions = divisions.add(noteDuration);
+          directions = [];
+        }
       }
 
       if (entry instanceof musicxml.Backup) {
@@ -285,20 +292,20 @@ export class Chorus {
   private adjustStems(voiceEntryData: Record<string, VoiceEntryData[]>): void {
     const voiceIds = Object.keys(voiceEntryData);
 
-    const firstNonRestVoiceEntries = voiceIds
-      .map((voiceId) => voiceEntryData[voiceId].find((entry) => !entry.note.isRest()))
+    const firstElgibleVoiceEntries = voiceIds
+      .map((voiceId) => voiceEntryData[voiceId].find((entry) => !entry.note.isRest() && !entry.note.isGrace()))
       .filter((entry): entry is VoiceEntryData => typeof entry !== 'undefined');
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstNonRestVoiceEntries, (entry) => -this.staveNoteLine(entry.note, this.clef));
+    util.sortBy(firstElgibleVoiceEntries, (entry) => -this.staveNoteLine(entry.note, this.clef));
 
-    if (firstNonRestVoiceEntries.length > 1) {
+    if (firstElgibleVoiceEntries.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
 
-      const top = util.first(firstNonRestVoiceEntries)!;
-      const middle = firstNonRestVoiceEntries.slice(1, -1);
-      const bottom = util.last(firstNonRestVoiceEntries)!;
+      const top = util.first(firstElgibleVoiceEntries)!;
+      const middle = firstElgibleVoiceEntries.slice(1, -1);
+      const bottom = util.last(firstElgibleVoiceEntries)!;
 
       stems[top.voiceId] = 'up';
       stems[bottom.voiceId] = 'down';
