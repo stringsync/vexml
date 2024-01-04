@@ -56,7 +56,8 @@ export type NoteRendering = {
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
-    graceNoteGroup: vexflow.GraceNoteGroup | null;
+    precedingGraceNoteGroup: vexflow.GraceNoteGroup;
+    succeedingGraceNoteGroup: vexflow.GraceNoteGroup;
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
@@ -142,26 +143,24 @@ export class Note {
 
     // All the notes should have the same grace notes, so we just look at the first. We don't perform an assertion as
     // an attempt to tame the complexity of this method.
-    // TODO: Use grace note data from musicxml.Note.
-    const graceNotes = new Array<Note>();
-    const vfGraceNotes = graceNotes.map(
-      (note) =>
-        new vexflow.GraceNote({
-          keys: [note.getKey()],
-          duration: note.durationDenominator,
-        })
-    );
-    if (vfGraceNotes.length > 0) {
-      const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes);
+    const probe = util.first(notes)!;
 
-      const areAllNotesShorterThanQuarterNote = graceNotes.every((note) =>
-        DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator)
-      );
-      if (vfGraceNotes.length > 1 && areAllNotesShorterThanQuarterNote) {
-        vfGraceNoteGroup.beamNotes();
-      }
+    const vfPrecedingGraceNoteGroup = Note.getVfGraceNoteGroup({
+      probe,
+      musicXML: { notes: probe.musicXML.note.getPrecedingGraceNotes() },
+      vexflow: { modifierPosition: vexflow.ModifierPosition.LEFT },
+    });
+    if (vfPrecedingGraceNoteGroup.getGraceNotes().length > 0) {
+      vfStaveNote.addModifier(vfPrecedingGraceNoteGroup, 0);
+    }
 
-      vfStaveNote.addModifier(vfGraceNoteGroup, 0);
+    const vfSucceedingGraceNoteGroup = Note.getVfGraceNoteGroup({
+      probe,
+      musicXML: { notes: probe.musicXML.note.getSucceedingGraceNotes() },
+      vexflow: { modifierPosition: vexflow.ModifierPosition.RIGHT },
+    });
+    if (vfSucceedingGraceNoteGroup.getGraceNotes().length > 0) {
+      vfStaveNote.addModifier(vfSucceedingGraceNoteGroup, 0);
     }
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
@@ -227,12 +226,66 @@ export class Note {
         type: 'note',
         key: keys[index],
         modifiers: modifierRenderingGroups[index],
-        vexflow: { staveNote: vfStaveNote, graceNoteGroup: null },
+        vexflow: {
+          staveNote: vfStaveNote,
+          precedingGraceNoteGroup: vfPrecedingGraceNoteGroup,
+          succeedingGraceNoteGroup: vfSucceedingGraceNoteGroup,
+        },
         timeModification: notes[index].getTimeModification(),
       });
     }
 
     return noteRenderings;
+  }
+
+  private static getVfGraceNoteGroup(opts: {
+    probe: Note;
+    musicXML: { notes: musicxml.Note[] };
+    vexflow: { modifierPosition: vexflow.ModifierPosition };
+  }): vexflow.GraceNoteGroup {
+    const graceNotes = opts.musicXML.notes.map(
+      (note) =>
+        new Note({
+          config: opts.probe.config,
+          clef: opts.probe.clef,
+          durationDenominator: conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ?? '8',
+          musicXML: { note, directions: [], octaveShift: opts.probe.musicXML.octaveShift },
+          keySignature: opts.probe.keySignature,
+          stem: opts.probe.stem,
+        })
+    );
+
+    const vfGraceNotes = graceNotes.map((note) => {
+      const vfGraceNote = new vexflow.GraceNote({
+        keys: [note.getKey()],
+        slash: note.musicXML.note.hasGraceSlash(),
+        duration: note.durationDenominator,
+      });
+
+      const vfAccidental = note.getAccidental()?.render().vexflow.accidental;
+      if (vfAccidental) {
+        vfGraceNote.addModifier(vfAccidental, 0);
+      }
+
+      return vfGraceNote;
+    });
+
+    const hasGraceSlur = graceNotes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
+    const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasGraceSlur).setPosition(
+      opts.vexflow.modifierPosition
+    );
+
+    if (
+      graceNotes.length > 1 &&
+      graceNotes.every((note) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator))
+    ) {
+      vfGraceNoteGroup.beamNotes();
+    }
+
+    return vfGraceNoteGroup;
   }
 
   private static sort(notes: Note[]): Note[] {
