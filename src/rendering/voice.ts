@@ -31,6 +31,8 @@ export type VoiceRendering = {
   entries: VoiceEntryRendering[];
 };
 
+const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
+
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
  *
@@ -84,6 +86,7 @@ export class Voice {
 
     const vfTickables = new Array<vexflow.Tickable>();
 
+    // Accumulate tickables.
     for (const voiceEntryRendering of voiceEntryRenderings) {
       switch (voiceEntryRendering.type) {
         case 'stavenote':
@@ -98,6 +101,42 @@ export class Voice {
         case 'ghostnote':
           vfTickables.push(voiceEntryRendering.vexflow.ghostNote);
           break;
+      }
+    }
+
+    let vfGraceNotes = new Array<vexflow.GraceNote>();
+
+    // Attach preceding grace notes to the nearest stave note.
+    for (const voiceEntryRendering of voiceEntryRenderings) {
+      let vfStaveNote: vexflow.StaveNote | null = null;
+
+      switch (voiceEntryRendering.type) {
+        case 'gracenote':
+          vfGraceNotes.push(voiceEntryRendering.vexflow.graceNote);
+          break;
+        case 'gracechord':
+          vfGraceNotes.push(voiceEntryRendering.graceNotes[0].vexflow.graceNote);
+          break;
+        case 'stavenote':
+          vfStaveNote = voiceEntryRendering.vexflow.staveNote;
+          break;
+        case 'stavechord':
+          vfStaveNote = voiceEntryRendering.notes[0].vexflow.staveNote;
+          break;
+      }
+
+      if (vfStaveNote && vfGraceNotes.length > 0) {
+        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes).setPosition(vexflow.ModifierPosition.LEFT);
+
+        if (
+          vfGraceNotes.length > 1 &&
+          vfGraceNotes.every((vfGraceNote) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration()))
+        ) {
+          vfGraceNoteGroup.beamNotes();
+        }
+
+        vfStaveNote.addModifier(vfGraceNoteGroup);
+        vfGraceNotes = [];
       }
     }
 
