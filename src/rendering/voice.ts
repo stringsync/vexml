@@ -105,6 +105,7 @@ export class Voice {
     }
 
     let vfGraceNotes = new Array<vexflow.GraceNote>();
+    let hasSlur = false;
 
     // Attach preceding grace notes to the nearest stave note.
     for (const voiceEntryRendering of voiceEntryRenderings) {
@@ -113,9 +114,11 @@ export class Voice {
       switch (voiceEntryRendering.type) {
         case 'gracenote':
           vfGraceNotes.push(voiceEntryRendering.vexflow.graceNote);
+          hasSlur = hasSlur || voiceEntryRendering.hasSlur;
           break;
         case 'gracechord':
           vfGraceNotes.push(voiceEntryRendering.graceNotes[0].vexflow.graceNote);
+          hasSlur = hasSlur || voiceEntryRendering.graceNotes[0].hasSlur;
           break;
         case 'stavenote':
           vfStaveNote = voiceEntryRendering.vexflow.staveNote;
@@ -137,6 +140,7 @@ export class Voice {
 
         vfStaveNote.addModifier(vfGraceNoteGroup);
         vfGraceNotes = [];
+        hasSlur = false;
       }
     }
 

@@ -56,6 +56,7 @@ export type StaveNoteRendering = {
 /** The result of rendering a grace Note. */
 export type GraceNoteRendering = {
   type: 'gracenote';
+  hasSlur: boolean;
   vexflow: {
     graceNote: vexflow.GraceNote;
   };
@@ -242,6 +243,7 @@ export class Note {
       duration: util.first(notes)!.durationDenominator,
       dots: util.first(notes)!.getDotCount(),
       clef: util.first(notes)!.clef.getType(),
+      slash: notes.some((note) => note.musicXML.note.hasGraceSlash()),
     });
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
@@ -267,10 +269,15 @@ export class Note {
 
     const graceNoteRenderings = new Array<GraceNoteRendering>();
 
+    const hasSlur = notes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
     for (let index = 0; index < keys.length; index++) {
       graceNoteRenderings.push({
         type: 'gracenote',
         modifiers: modifierRenderingGroups[index],
+        hasSlur,
         vexflow: {
           graceNote: vfGraceNote,
         },
