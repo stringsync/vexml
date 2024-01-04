@@ -37,17 +37,6 @@ const STEP_ORDER = [
   'B#',
 ];
 
-const DURATIONS_SHORTER_THAN_QUARTER_NOTE: NoteDurationDenominator[] = [
-  '1024',
-  '512',
-  '256',
-  '128',
-  '64',
-  '32',
-  '16',
-  '8',
-];
-
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
 /** The result of rendering a Note. */
@@ -263,19 +252,6 @@ export class Note {
         renderings.push(accidental.render());
       }
 
-      // Lyrics sorted by ascending verse number.
-      for (const lyric of note.getLyrics()) {
-        renderings.push(lyric.render());
-      }
-
-      for (const token of note.getTokens()) {
-        renderings.push(token.render());
-      }
-
-      for (const ornament of note.getOrnaments()) {
-        renderings.push(ornament.render());
-      }
-
       return renderings;
     });
 
@@ -415,54 +391,5 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXML: { token } }));
-  }
-
-  private getVfGraceNoteGroup(opts: {
-    musicXML: { notes: musicxml.Note[] };
-    vexflow: { modifierPosition: vexflow.ModifierPosition };
-  }): vexflow.GraceNoteGroup {
-    const graceNotes = opts.musicXML.notes.map(
-      (note) =>
-        new Note({
-          config: this.config,
-          clef: this.clef,
-          durationDenominator: conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ?? '8',
-          musicXML: { note, directions: [], octaveShift: this.musicXML.octaveShift },
-          keySignature: this.keySignature,
-          stem: this.stem,
-        })
-    );
-
-    const vfGraceNotes = graceNotes.map((note) => {
-      const vfGraceNote = new vexflow.GraceNote({
-        keys: [note.getKey()],
-        slash: note.musicXML.note.hasGraceSlash(),
-        duration: note.durationDenominator,
-      });
-
-      const vfAccidental = note.getAccidental()?.render().vexflow.accidental;
-      if (vfAccidental) {
-        vfGraceNote.addModifier(vfAccidental, 0);
-      }
-
-      return vfGraceNote;
-    });
-
-    const hasGraceSlur = graceNotes
-      .flatMap((note) => note.musicXML.note.getNotations())
-      .some((notation) => notation.getSlurs().length > 0);
-
-    const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasGraceSlur).setPosition(
-      opts.vexflow.modifierPosition
-    );
-
-    if (
-      graceNotes.length > 1 &&
-      graceNotes.every((note) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator))
-    ) {
-      vfGraceNoteGroup.beamNotes();
-    }
-
-    return vfGraceNoteGroup;
   }
 }
