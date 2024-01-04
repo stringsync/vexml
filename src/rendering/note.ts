@@ -51,8 +51,11 @@ const DURATIONS_SHORTER_THAN_QUARTER_NOTE: NoteDurationDenominator[] = [
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
 /** The result of rendering a Note. */
-export type NoteRendering = {
-  type: 'note';
+export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
+
+/** The result of rendering a stave Note. */
+export type StaveNoteRendering = {
+  type: 'stavenote';
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
@@ -121,7 +124,7 @@ export class Note {
     notes: Note[];
     spanners: Spanners;
     address: Address<'voice'>;
-  }): Array<NoteRendering | GraceNoteRendering> {
+  }): Array<StaveNoteRendering | GraceNoteRendering> {
     const notes = Note.sort(opts.notes);
 
     util.assert(notes.length > 0, 'cannot render empty notes');
@@ -195,7 +198,7 @@ export class Note {
       }
     }
 
-    const noteRenderings = new Array<NoteRendering>();
+    const noteRenderings = new Array<StaveNoteRendering>();
 
     for (let index = 0; index < keys.length; index++) {
       opts.spanners.process({
@@ -212,7 +215,7 @@ export class Note {
       });
 
       noteRenderings.push({
-        type: 'note',
+        type: 'stavenote',
         key: keys[index],
         modifiers: modifierRenderingGroups[index],
         vexflow: {
@@ -259,7 +262,7 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): NoteRendering | GraceNoteRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): StaveNoteRendering | GraceNoteRendering {
     return util.first(
       Note.render({
         notes: [this],
