@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import { Note, NoteRendering } from './note';
-import { Chord, ChordRendering } from './chord';
+import { GraceNoteRendering, Note, NoteRendering } from './note';
+import { Chord, ChordRendering, GraceChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
@@ -13,7 +13,13 @@ import { Spanners } from './spanners';
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
 
 /** The result rendering a VoiceEntry. */
-export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering | GhostNoteRendering;
+export type VoiceEntryRendering =
+  | NoteRendering
+  | ChordRendering
+  | GraceNoteRendering
+  | GraceChordRendering
+  | RestRendering
+  | GhostNoteRendering;
 
 /** The result rendering a Voice. */
 export type VoiceRendering = {

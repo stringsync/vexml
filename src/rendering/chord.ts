@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Config } from './config';
-import { Note, NoteRendering } from './note';
+import { GraceNoteRendering, Note, NoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
@@ -11,6 +11,12 @@ import { Address } from './address';
 export type ChordRendering = {
   type: 'chord';
   notes: NoteRendering[];
+};
+
+/** The result of rendering a grace Chord. */
+export type GraceChordRendering = {
+  type: 'gracechord';
+  graceNotes: GraceNoteRendering[];
 };
 
 /**
@@ -57,17 +63,23 @@ export class Chord {
   }
 
   /** Renders the Chord. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering | GraceChordRendering {
     const noteRenderings = Note.render({
       notes: this.getNotes(),
       spanners: opts.spanners,
       address: opts.address,
     });
 
-    return {
-      type: 'chord',
-      notes: noteRenderings,
-    };
+    const isChord = noteRenderings.every((noteRendering) => noteRendering.type === 'note');
+
+    if (isChord) {
+      return {
+        type: 'chord',
+        notes: noteRenderings as NoteRendering[],
+      };
+    } else {
+      throw new Error('Grace chords are not yet supported');
+    }
   }
 
   private getNotes(): Note[] {
