@@ -162,7 +162,7 @@ export class Score {
 
     // Draw vexflow.Beam elements.
     spannersRendering.beams.forEach((beam) => {
-      beam.vexflow.beam.setContext(vfContext).draw();
+      beam.vexflow.beam?.setContext(vfContext).draw();
     });
 
     // Draw vexflow.StaveTie elements.
