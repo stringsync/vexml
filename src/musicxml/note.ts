@@ -160,4 +160,9 @@ export class Note {
     const element = this.element.first('time-modification');
     return element ? new TimeModification(element) : null;
   }
+
+  /** Whether to print the object. Defaults to true. */
+  printObject(): boolean {
+    return this.element.attr('print-object').withDefault('yes').str() !== 'no';
+  }
 }
