@@ -347,7 +347,15 @@ export class Measure {
   }
 
   private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
-    const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
+    const entries = this.entries
+      .filter((entry) => entry.partId === partId)
+      .map((entry) => entry.value)
+      .filter((entry) => {
+        if (entry instanceof musicxml.Note) {
+          return entry.printObject();
+        }
+        return true;
+      });
 
     const staveSignature = this.leadingStaveSignatures.find(
       (staveSignature) => staveSignature.partId === partId
