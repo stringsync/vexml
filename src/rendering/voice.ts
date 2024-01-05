@@ -129,7 +129,9 @@ export class Voice {
       }
 
       if (vfStaveNote && vfGraceNotes.length > 0) {
-        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes).setPosition(vexflow.ModifierPosition.LEFT);
+        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasSlur).setPosition(
+          vexflow.ModifierPosition.LEFT
+        );
 
         if (
           vfGraceNotes.length > 1 &&
