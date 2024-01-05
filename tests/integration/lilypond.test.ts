@@ -71,7 +71,7 @@ describe('lilypond', () => {
     // { filename: '23e-Tuplets-Tremolo.musicxml', width: 900 },
     // { filename: '23f-Tuplets-DurationButNoBracket.musicxml', width: 900 },
     { filename: '24a-GraceNotes.musicxml', width: 900 },
-    // { filename: '24b-ChordAsGraceNote.musicxml', width: 900 },
+    { filename: '24b-ChordAsGraceNote.musicxml', width: 900 },
     // { filename: '24c-GraceNote-MeasureEnd.musicxml', width: 900 },
     // { filename: '24d-AfterGrace.musicxml', width: 900 },
     // { filename: '24e-GraceNote-StaffChange.musicxml', width: 900 },
