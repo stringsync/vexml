@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import { Note, NoteRendering } from './note';
-import { Chord, ChordRendering } from './chord';
+import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
+import { Chord, StaveChordRendering, GraceChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { Config } from './config';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
@@ -13,7 +13,13 @@ import { Spanners } from './spanners';
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
 
 /** The result rendering a VoiceEntry. */
-export type VoiceEntryRendering = NoteRendering | ChordRendering | RestRendering | GhostNoteRendering;
+export type VoiceEntryRendering =
+  | StaveNoteRendering
+  | StaveChordRendering
+  | GraceNoteRendering
+  | GraceChordRendering
+  | RestRendering
+  | GhostNoteRendering;
 
 /** The result rendering a Voice. */
 export type VoiceRendering = {
@@ -24,6 +30,8 @@ export type VoiceRendering = {
   };
   entries: VoiceEntryRendering[];
 };
+
+const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical symbols.
@@ -76,20 +84,67 @@ export class Voice {
       throw new Error(`unexpected voice entry: ${entry}`);
     });
 
-    const vfTickables = voiceEntryRenderings.map((voiceEntryRendering) => {
+    const vfTickables = new Array<vexflow.Tickable>();
+
+    // Accumulate tickables.
+    for (const voiceEntryRendering of voiceEntryRenderings) {
       switch (voiceEntryRendering.type) {
-        case 'note':
-          return voiceEntryRendering.vexflow.staveNote;
-        case 'chord':
-          return voiceEntryRendering.notes[0].vexflow.staveNote;
+        case 'stavenote':
+          vfTickables.push(voiceEntryRendering.vexflow.staveNote);
+          break;
+        case 'stavechord':
+          vfTickables.push(voiceEntryRendering.notes[0].vexflow.staveNote);
+          break;
         case 'rest':
-          return voiceEntryRendering.vexflow.staveNote;
+          vfTickables.push(voiceEntryRendering.vexflow.staveNote);
+          break;
         case 'ghostnote':
-          return voiceEntryRendering.vexflow.ghostNote;
-        default:
-          throw new Error(`unexpected voice entry rendering: ${voiceEntryRendering}`);
+          vfTickables.push(voiceEntryRendering.vexflow.ghostNote);
+          break;
       }
-    });
+    }
+
+    let vfGraceNotes = new Array<vexflow.GraceNote>();
+    let hasSlur = false;
+
+    // Attach preceding grace notes to the nearest stave note.
+    for (const voiceEntryRendering of voiceEntryRenderings) {
+      let vfStaveNote: vexflow.StaveNote | null = null;
+
+      switch (voiceEntryRendering.type) {
+        case 'gracenote':
+          vfGraceNotes.push(voiceEntryRendering.vexflow.graceNote);
+          hasSlur = hasSlur || voiceEntryRendering.hasSlur;
+          break;
+        case 'gracechord':
+          vfGraceNotes.push(voiceEntryRendering.graceNotes[0].vexflow.graceNote);
+          hasSlur = hasSlur || voiceEntryRendering.graceNotes[0].hasSlur;
+          break;
+        case 'stavenote':
+          vfStaveNote = voiceEntryRendering.vexflow.staveNote;
+          break;
+        case 'stavechord':
+          vfStaveNote = voiceEntryRendering.notes[0].vexflow.staveNote;
+          break;
+      }
+
+      if (vfStaveNote && vfGraceNotes.length > 0) {
+        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasSlur).setPosition(
+          vexflow.ModifierPosition.LEFT
+        );
+
+        if (
+          vfGraceNotes.length > 1 &&
+          vfGraceNotes.every((vfGraceNote) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration()))
+        ) {
+          vfGraceNoteGroup.beamNotes();
+        }
+
+        vfStaveNote.addModifier(vfGraceNoteGroup);
+        vfGraceNotes = [];
+        hasSlur = false;
+      }
+    }
 
     const fraction = this.timeSignature.toFraction();
     const vfVoice = new vexflow.Voice({

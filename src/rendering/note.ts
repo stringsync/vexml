@@ -37,30 +37,30 @@ const STEP_ORDER = [
   'B#',
 ];
 
-const DURATIONS_SHORTER_THAN_QUARTER_NOTE: NoteDurationDenominator[] = [
-  '1024',
-  '512',
-  '256',
-  '128',
-  '64',
-  '32',
-  '16',
-  '8',
-];
-
 export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
 
-/** The result rendering a Note. */
-export type NoteRendering = {
-  type: 'note';
+/** The result of rendering a Note. */
+export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
+
+/** The result of rendering a stave Note. */
+export type StaveNoteRendering = {
+  type: 'stavenote';
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
-    precedingGraceNoteGroup: vexflow.GraceNoteGroup;
-    succeedingGraceNoteGroup: vexflow.GraceNoteGroup;
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
+};
+
+/** The result of rendering a grace Note. */
+export type GraceNoteRendering = {
+  type: 'gracenote';
+  hasSlur: boolean;
+  vexflow: {
+    graceNote: vexflow.GraceNote;
+  };
+  modifiers: NoteModifierRendering[];
 };
 
 /**
@@ -112,6 +112,8 @@ export class Note {
    */
   static render(opts: { notes: Note[]; spanners: Spanners; address: Address<'voice'> }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
+    const spanners = opts.spanners;
+    const address = opts.address;
 
     util.assert(notes.length > 0, 'cannot render empty notes');
 
@@ -124,6 +126,24 @@ export class Note {
     const clefTypes = new Set(notes.map((note) => note.clef));
     util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
+    const isStave = notes.every((note) => !note.musicXML.note.isGrace());
+    const isGrace = notes.every((note) => note.musicXML.note.isGrace());
+
+    if (isStave) {
+      return Note.renderStaveNotes({ notes, spanners, address });
+    } else if (isGrace) {
+      return Note.renderGraceNotes({ notes });
+    } else {
+      throw new Error('cannot render grace notes and stave notes together');
+    }
+  }
+
+  private static renderStaveNotes(opts: {
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): StaveNoteRendering[] {
+    const notes = opts.notes;
     const keys = notes.map((note) => note.getKey());
 
     const { autoStem, stemDirection } = Note.getStemParams(notes);
@@ -139,26 +159,6 @@ export class Note {
 
     for (let index = 0; index < util.first(notes)!.getDotCount(); index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote], { all: true });
-    }
-
-    // All the notes should have the same grace notes, so we just look at the first. We don't perform an assertion as
-    // an attempt to tame the complexity of this method.
-    const probe = util.first(notes)!;
-
-    const vfPrecedingGraceNoteGroup = probe.getVfGraceNoteGroup({
-      musicXML: { notes: probe.musicXML.note.getPrecedingGraceNotes() },
-      vexflow: { modifierPosition: vexflow.ModifierPosition.LEFT },
-    });
-    if (vfPrecedingGraceNoteGroup.getGraceNotes().length > 0) {
-      vfStaveNote.addModifier(vfPrecedingGraceNoteGroup, 0);
-    }
-
-    const vfSucceedingGraceNoteGroup = probe.getVfGraceNoteGroup({
-      musicXML: { notes: probe.musicXML.note.getSucceedingGraceNotes() },
-      vexflow: { modifierPosition: vexflow.ModifierPosition.RIGHT },
-    });
-    if (vfSucceedingGraceNoteGroup.getGraceNotes().length > 0) {
-      vfStaveNote.addModifier(vfSucceedingGraceNoteGroup, 0);
     }
 
     const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
@@ -204,7 +204,7 @@ export class Note {
       }
     }
 
-    const noteRenderings = new Array<NoteRendering>();
+    const staveNoteRenderings = new Array<StaveNoteRendering>();
 
     for (let index = 0; index < keys.length; index++) {
       opts.spanners.process({
@@ -220,20 +220,71 @@ export class Note {
         },
       });
 
-      noteRenderings.push({
-        type: 'note',
+      staveNoteRenderings.push({
+        type: 'stavenote',
         key: keys[index],
         modifiers: modifierRenderingGroups[index],
         vexflow: {
           staveNote: vfStaveNote,
-          precedingGraceNoteGroup: vfPrecedingGraceNoteGroup,
-          succeedingGraceNoteGroup: vfSucceedingGraceNoteGroup,
         },
         timeModification: notes[index].getTimeModification(),
       });
     }
 
-    return noteRenderings;
+    return staveNoteRenderings;
+  }
+
+  private static renderGraceNotes(opts: { notes: Note[] }): GraceNoteRendering[] {
+    const notes = opts.notes;
+    const keys = notes.map((note) => note.getKey());
+
+    const vfGraceNote = new vexflow.GraceNote({
+      keys,
+      duration: util.first(notes)!.durationDenominator,
+      dots: util.first(notes)!.getDotCount(),
+      clef: util.first(notes)!.clef.getType(),
+      slash: notes.some((note) => note.musicXML.note.hasGraceSlash()),
+    });
+
+    const modifierRenderingGroups = notes.map<NoteModifierRendering[]>((note) => {
+      const renderings = new Array<NoteModifierRendering>();
+
+      const accidental = note.getAccidental();
+      if (accidental) {
+        renderings.push(accidental.render());
+      }
+
+      return renderings;
+    });
+
+    for (let index = 0; index < modifierRenderingGroups.length; index++) {
+      for (const modifierRendering of modifierRenderingGroups[index]) {
+        switch (modifierRendering.type) {
+          case 'accidental':
+            vfGraceNote.addModifier(modifierRendering.vexflow.accidental, index);
+            break;
+        }
+      }
+    }
+
+    const graceNoteRenderings = new Array<GraceNoteRendering>();
+
+    const hasSlur = notes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
+    for (let index = 0; index < keys.length; index++) {
+      graceNoteRenderings.push({
+        type: 'gracenote',
+        modifiers: modifierRenderingGroups[index],
+        hasSlur,
+        vexflow: {
+          graceNote: vfGraceNote,
+        },
+      });
+    }
+
+    return graceNoteRenderings;
   }
 
   private static sort(notes: Note[]): Note[] {
@@ -270,7 +321,7 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): NoteRendering {
+  render(opts: { spanners: Spanners; address: Address<'voice'> }): StaveNoteRendering | GraceNoteRendering {
     return util.first(
       Note.render({
         notes: [this],
@@ -347,54 +398,5 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXML: { token } }));
-  }
-
-  private getVfGraceNoteGroup(opts: {
-    musicXML: { notes: musicxml.Note[] };
-    vexflow: { modifierPosition: vexflow.ModifierPosition };
-  }): vexflow.GraceNoteGroup {
-    const graceNotes = opts.musicXML.notes.map(
-      (note) =>
-        new Note({
-          config: this.config,
-          clef: this.clef,
-          durationDenominator: conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ?? '8',
-          musicXML: { note, directions: [], octaveShift: this.musicXML.octaveShift },
-          keySignature: this.keySignature,
-          stem: this.stem,
-        })
-    );
-
-    const vfGraceNotes = graceNotes.map((note) => {
-      const vfGraceNote = new vexflow.GraceNote({
-        keys: [note.getKey()],
-        slash: note.musicXML.note.hasGraceSlash(),
-        duration: note.durationDenominator,
-      });
-
-      const vfAccidental = note.getAccidental()?.render().vexflow.accidental;
-      if (vfAccidental) {
-        vfGraceNote.addModifier(vfAccidental, 0);
-      }
-
-      return vfGraceNote;
-    });
-
-    const hasGraceSlur = graceNotes
-      .flatMap((note) => note.musicXML.note.getNotations())
-      .some((notation) => notation.getSlurs().length > 0);
-
-    const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasGraceSlur).setPosition(
-      opts.vexflow.modifierPosition
-    );
-
-    if (
-      graceNotes.length > 1 &&
-      graceNotes.every((note) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(note.durationDenominator))
-    ) {
-      vfGraceNoteGroup.beamNotes();
-    }
-
-    return vfGraceNoteGroup;
   }
 }

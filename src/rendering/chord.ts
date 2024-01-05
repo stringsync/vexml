@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Config } from './config';
-import { Note, NoteRendering } from './note';
+import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
@@ -8,9 +8,18 @@ import { Spanners } from './spanners';
 import { Address } from './address';
 
 /** The result of rendering a Chord. */
-export type ChordRendering = {
-  type: 'chord';
-  notes: NoteRendering[];
+export type ChordRendering = StaveChordRendering | GraceChordRendering;
+
+/** The result of rendering a stave Chord. */
+export type StaveChordRendering = {
+  type: 'stavechord';
+  notes: StaveNoteRendering[];
+};
+
+/** The result of rendering a grace Chord. */
+export type GraceChordRendering = {
+  type: 'gracechord';
+  graceNotes: GraceNoteRendering[];
 };
 
 /**
@@ -64,10 +73,26 @@ export class Chord {
       address: opts.address,
     });
 
-    return {
-      type: 'chord',
-      notes: noteRenderings,
-    };
+    const isStave = noteRenderings.every(
+      (noteRendering): noteRendering is StaveNoteRendering => noteRendering.type === 'stavenote'
+    );
+    const isGrace = noteRenderings.every(
+      (noteRendering): noteRendering is GraceNoteRendering => noteRendering.type === 'gracenote'
+    );
+
+    if (isStave) {
+      return {
+        type: 'stavechord',
+        notes: noteRenderings,
+      };
+    } else if (isGrace) {
+      return {
+        type: 'gracechord',
+        graceNotes: noteRenderings,
+      };
+    } else {
+      throw new Error('chord renderings cannot contain both grace notes and stave notes');
+    }
   }
 
   private getNotes(): Note[] {
