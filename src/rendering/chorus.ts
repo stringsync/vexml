@@ -279,6 +279,10 @@ export class Chorus {
         const forwardDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
         divisions = divisions.add(forwardDuration);
       }
+
+      if (divisions.isLessThan(Division.zero())) {
+        divisions = Division.zero();
+      }
     }
 
     return result;
@@ -379,7 +383,13 @@ export class Chorus {
           conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
           conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
 
-        if (note.isChordHead()) {
+        if (!note.printObject()) {
+          entries.push(
+            new GhostNote({
+              durationDenominator,
+            })
+          );
+        } else if (note.isChordHead()) {
           entries.push(
             new Chord({
               config,
