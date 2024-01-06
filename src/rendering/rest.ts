@@ -31,7 +31,6 @@ export class Rest {
     note: musicxml.Note | null;
     directions: musicxml.Direction[];
   };
-  private displayPitch: string | null;
   private durationDenominator: NoteDurationDenominator;
   private dotCount: number;
   private clef: Clef;
@@ -42,14 +41,12 @@ export class Rest {
       note: musicxml.Note | null;
       directions: musicxml.Direction[];
     };
-    displayPitch: string | null;
     durationDenominator: NoteDurationDenominator;
     dotCount: number;
     clef: Clef;
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
-    this.displayPitch = opts.displayPitch;
     this.durationDenominator = opts.durationDenominator;
     this.dotCount = opts.dotCount;
     this.clef = opts.clef;
@@ -63,7 +60,6 @@ export class Rest {
         note: null,
         directions: [],
       },
-      displayPitch: null,
       durationDenominator: '1',
       dotCount: 0,
       clef: opts.clef,
@@ -110,8 +106,9 @@ export class Rest {
   }
 
   private getKey(): string {
-    if (this.displayPitch) {
-      return this.displayPitch;
+    const displayPitch = this.musicXML.note?.getRestDisplayPitch();
+    if (displayPitch) {
+      return displayPitch;
     }
     if (this.clef.getType() === 'bass') {
       return 'D/3';
