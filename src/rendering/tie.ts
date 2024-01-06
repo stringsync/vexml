@@ -1,5 +1,5 @@
 import * as vexflow from 'vexflow';
-import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { Address } from './address';
 import { SpannerMap } from './spannermap';
 import { SpannerData } from './types';
@@ -13,15 +13,13 @@ export type TieRendering = {
 };
 
 /** The types of tie fragments. */
-export type TieFragmentType = 'start' | 'stop';
+export type TieFragmentType = 'start' | 'stop' | 'continue' | 'let-ring';
 
 /** Represents a piece of a tie. */
 export type TieFragment = {
   type: TieFragmentType;
+  number: number;
   address: Address;
-  musicXML: {
-    note: musicxml.Note;
-  };
   vexflow: {
     note: vexflow.Note;
     keyIndex: number;
@@ -29,7 +27,7 @@ export type TieFragment = {
 };
 
 /** The container for ties. */
-type TieContainer = SpannerMap<null, Tie>;
+type TieContainer = SpannerMap<number, Tie>;
 
 /** Represents a curved line that connects two notes of the same pitch. */
 export class Tie {
@@ -40,17 +38,58 @@ export class Tie {
   }
 
   static process(data: SpannerData, container: TieContainer): void {
-    // TODO(jared): Implement tie processing after musicxml.Note exposes tie information.
+    const note = data.musicXML.note;
+    const isRest = note?.isRest() ?? false;
+    const isGrace = note?.isGrace() ?? false;
+    if (!note || isRest || isGrace) {
+      return;
+    }
+
+    const ties = note.getNotations().flatMap((notations) => notations.getTieds());
+    for (const tie of ties) {
+      const tieType = tie.getType();
+      if (!tieType) {
+        continue;
+      }
+
+      Tie.commit(
+        {
+          type: tieType,
+          number: tie.getNumber(),
+          address: data.address,
+          vexflow: {
+            note: data.vexflow.staveNote,
+            keyIndex: data.keyIndex,
+          },
+        },
+        container
+      );
+    }
   }
 
   private static commit(fragment: TieFragment, container: TieContainer): void {
-    switch (fragment.type) {
+    const slur = container.get(fragment.number);
+    const last = slur?.getLastFragment();
+    const isAllowedType = Tie.getAllowedTypes(last?.type).includes(fragment.type);
+
+    if (fragment.type === 'start') {
+      container.push(fragment.number, new Tie({ fragment }));
+    } else if (slur && isAllowedType) {
+      slur.fragments.push(fragment);
+    }
+  }
+
+  private static getAllowedTypes(type: TieFragmentType | undefined): TieFragmentType[] {
+    switch (type) {
       case 'start':
-        container.push(null, new Tie({ fragment }));
-        break;
+      case 'continue':
+        return ['continue', 'stop', 'let-ring'];
+      case 'let-ring':
+        return ['stop'];
       case 'stop':
-        container.get(null)?.fragments.push(fragment);
-        break;
+        return [];
+      default:
+        return [];
     }
   }
 
@@ -85,15 +124,19 @@ export class Tie {
     };
   }
 
+  private getLastFragment(): TieFragment {
+    return util.last(this.fragments)!;
+  }
+
   private getVfSlurDirection(): number {
     const first = this.fragments[0];
     const vfStemDirection = first.vexflow.note.getStemDirection();
 
     switch (vfStemDirection) {
       case vexflow.Stem.UP:
-        return -1;
-      case vexflow.Stem.DOWN:
         return 1;
+      case vexflow.Stem.DOWN:
+        return -1;
       default:
         return 1;
     }
