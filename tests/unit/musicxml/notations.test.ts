@@ -1,5 +1,5 @@
 import { xml } from '@/util';
-import { Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
+import { Tied, Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS } from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -65,6 +65,24 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getTuplets()).toStrictEqual([]);
+    });
+  });
+
+  describe('getTieds', () => {
+    it('returns the tieds of the notations', () => {
+      const tied1 = xml.tied({ type: 'start', placement: 'above' });
+      const tied2 = xml.tied({ type: 'stop', placement: 'below' });
+      const node = xml.notations({ tieds: [tied1, tied2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getTieds()).toStrictEqual([new Tied(tied1), new Tied(tied2)]);
+    });
+
+    it('defaults to empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getTieds()).toStrictEqual([]);
     });
   });
 

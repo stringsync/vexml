@@ -1,4 +1,4 @@
-import { NamedElement } from '../util';
+import { NamedElement } from '@/util';
 import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType, START_STOP_CONTINUE, StartStopContinue } from './enums';
 
 /**

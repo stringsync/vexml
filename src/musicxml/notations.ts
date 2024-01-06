@@ -3,6 +3,7 @@ import { NamedElement } from '@/util';
 import { Tuplet } from './tuplet';
 import { Slur } from './slur';
 import { Ornaments } from './ornaments';
+import { Tied } from './tied';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -35,6 +36,11 @@ export class Notations {
   /** Returns the slurs of the notations. Defaults to an empty array. */
   getSlurs(): Slur[] {
     return this.element.all('slur').map((element) => new Slur(element));
+  }
+
+  /** Returns the tieds of the notations. Defaults to an empty array. */
+  getTieds(): Tied[] {
+    return this.element.all('tied').map((element) => new Tied(element));
   }
 
   /** Returns the ornaments of the notations. Defaults to an empty array. */
