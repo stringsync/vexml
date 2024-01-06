@@ -187,6 +187,7 @@ export const measure = createNamedElementFactory<
 export const note = createNamedElementFactory<
   'note',
   {
+    printObject: string;
     type: NamedElement<'type'>;
     stem: NamedElement<'stem'>;
     dots: NamedElement<'dot'>[];
@@ -209,6 +210,7 @@ export const note = createNamedElementFactory<
   (
     e,
     {
+      printObject,
       type,
       grace,
       stem,
@@ -227,6 +229,9 @@ export const note = createNamedElementFactory<
       lyrics,
     }
   ) => {
+    if (typeof printObject === 'string') {
+      e.setAttribute('print-object', printObject);
+    }
     if (grace) {
       e.append(grace);
     }

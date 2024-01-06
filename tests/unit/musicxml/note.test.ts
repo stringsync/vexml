@@ -513,4 +513,30 @@ describe(Note, () => {
       expect(note.getTimeModification()).toBeNull();
     });
   });
+
+  describe('printObject', () => {
+    it('returns true when print object is yes', () => {
+      const node = xml.note({ printObject: 'yes' });
+      const note = new Note(node);
+      expect(note.printObject()).toBeTrue();
+    });
+
+    it('returns false when print object is no', () => {
+      const node = xml.note({ printObject: 'no' });
+      const note = new Note(node);
+      expect(note.printObject()).toBeFalse();
+    });
+
+    it('returns true when print object is invalid', () => {
+      const node = xml.note({ printObject: 'foo' });
+      const note = new Note(node);
+      expect(note.printObject()).toBeTrue();
+    });
+
+    it('returns true when print object is missing', () => {
+      const node = xml.note();
+      const note = new Note(node);
+      expect(note.printObject()).toBeTrue();
+    });
+  });
 });
