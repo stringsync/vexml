@@ -1016,12 +1016,16 @@ export const elision = createNamedElementFactory<'elision', { value: string }>('
 export const notations = createNamedElementFactory<
   'notations',
   {
+    tieds: NamedElement<'tied'>[];
     slurs: NamedElement<'slur'>[];
     tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
     ornaments: NamedElement<'ornaments'>[];
   }
->('notations', (e, { slurs, tuplets, arpeggiate, ornaments }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments }) => {
+  if (tieds) {
+    e.append(...tieds);
+  }
   if (slurs) {
     e.append(...slurs);
   }
@@ -1200,6 +1204,24 @@ export const slur = createNamedElementFactory<
   'slur',
   { type: string; placement: string; number: number; lineType: string }
 >('slur', (e, { type, placement, number, lineType }) => {
+  if (type) {
+    e.setAttribute('type', type);
+  }
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+  if (typeof number === 'number') {
+    e.setAttribute('number', number.toString());
+  }
+  if (lineType) {
+    e.setAttribute('line-type', lineType);
+  }
+});
+
+export const tied = createNamedElementFactory<
+  'tied',
+  { type: string; placement: string; number: number; lineType: string }
+>('tied', (e, { type, placement, number, lineType }) => {
   if (type) {
     e.setAttribute('type', type);
   }
