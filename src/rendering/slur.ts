@@ -74,7 +74,7 @@ export class Slur {
   private static commit(fragment: SlurFragment, container: SlurContainer): void {
     const slur = container.get(fragment.number);
     const last = slur?.getLastFragment();
-    const isAllowedType = Slur.getAllowedType(last?.type).includes(fragment.type);
+    const isAllowedType = Slur.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
       container.push(fragment.number, new Slur({ fragment }));
@@ -83,7 +83,7 @@ export class Slur {
     }
   }
 
-  private static getAllowedType(type: SlurFragmentType | undefined): SlurFragmentType[] {
+  private static getAllowedTypes(type: SlurFragmentType | undefined): SlurFragmentType[] {
     switch (type) {
       case 'start':
       case 'continue':

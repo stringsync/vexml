@@ -29,7 +29,7 @@ export class Spanners {
   private beams = SpannerMap.keyless<Beam>();
   private tuplets = SpannerMap.keyless<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
-  private ties = SpannerMap.keyless<Tie>();
+  private ties = new SpannerMap<number, Tie>();
   private wedges = SpannerMap.keyless<Wedge>();
   private pedals = SpannerMap.keyless<Pedal>();
   private vibratos = SpannerMap.keyless<Vibrato>();

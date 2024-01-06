@@ -310,4 +310,4 @@ export const SHOW_TUPLET = new Enum(['actual', 'both', 'none'] as const);
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/tied-type/
  */
 export type TiedType = EnumValues<typeof TIED_TYPES>;
-export const TIED_TYPES = new Enum(['start', 'stop', 'continue', 'left-ring'] as const);
+export const TIED_TYPES = new Enum(['start', 'stop', 'continue', 'let-ring'] as const);
