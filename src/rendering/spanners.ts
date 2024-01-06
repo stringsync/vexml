@@ -9,6 +9,7 @@ import { SpannerData } from './types';
 import { SpannerMap } from './spannermap';
 import * as util from '@/util';
 import { Address } from './address';
+import { Tie, TieRendering } from './tie';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -16,6 +17,7 @@ export type SpannersRendering = {
   beams: BeamRendering[];
   tuplets: TupletRendering[];
   slurs: SlurRendering[];
+  ties: TieRendering[];
   wedges: WedgeRendering[];
   pedals: PedalRendering[];
   vibratos: VibratoRendering[];
@@ -27,6 +29,7 @@ export class Spanners {
   private beams = SpannerMap.keyless<Beam>();
   private tuplets = SpannerMap.keyless<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
+  private ties = SpannerMap.keyless<Tie>();
   private wedges = SpannerMap.keyless<Wedge>();
   private pedals = SpannerMap.keyless<Pedal>();
   private vibratos = SpannerMap.keyless<Vibrato>();
@@ -42,6 +45,7 @@ export class Spanners {
     Beam.process(data, this.beams);
     Tuplet.process(data, this.tuplets);
     Slur.process(data, this.slurs);
+    Tie.process(data, this.ties);
     Wedge.process(data, this.wedges);
     Pedal.process(data, this.pedals);
     Vibrato.process(data, this.vibratos);
@@ -55,6 +59,7 @@ export class Spanners {
       beams: this.beams.values().map((beam) => beam.render()),
       tuplets: this.tuplets.values().map((tuplet) => tuplet.render()),
       slurs: this.slurs.values().map((slur) => slur.render()),
+      ties: this.ties.values().map((tie) => tie.render()),
       wedges: this.wedges.values().map((wedge) => wedge.render()),
       pedals: this.pedals.values().map((pedal) => pedal.render()),
       vibratos: this.vibratos.values().map((vibrato) => vibrato.render()),
