@@ -25,6 +25,7 @@ export * from './scorepartwise';
 export * from './slur';
 export * from './stavedetails';
 export * from './symbolic';
+export * from './tied';
 export * from './time';
 export * from './timemodification';
 export * from './tuplet';

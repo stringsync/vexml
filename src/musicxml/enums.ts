@@ -302,3 +302,12 @@ export const PEDAL_TYPES = new Enum([
  */
 export type ShowTuplet = EnumValues<typeof SHOW_TUPLET>;
 export const SHOW_TUPLET = new Enum(['actual', 'both', 'none'] as const);
+
+/**
+ * The tied-type type is used as an attribute of the tied element to specify where the visual representation of a tie
+ * begins and ends.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/tied-type/
+ */
+export type TiedType = EnumValues<typeof TIED_TYPES>;
+export const TIED_TYPES = new Enum(['start', 'stop', 'continue', 'let-ring'] as const);
