@@ -405,7 +405,6 @@ export class Chorus {
             new Rest({
               config,
               musicXML: { note, directions },
-              displayPitch: note.getRestDisplayPitch(),
               dotCount: note.getDotCount(),
               clef,
               durationDenominator,
