@@ -165,9 +165,16 @@ export class Score {
       beam.vexflow.beam?.setContext(vfContext).draw();
     });
 
-    // Draw vexflow.StaveTie elements.
+    // Draw vexflow.StaveTie elements for slurs.
     spannersRendering.slurs
       .flatMap((slur) => slur.vexflow.tie)
+      .forEach((vfStaveTie) => {
+        vfStaveTie.setContext(vfContext).draw();
+      });
+
+    // Draw vexflow.StaveTie elements for ties.
+    spannersRendering.ties
+      .flatMap((tie) => tie.vexflow.tie)
       .forEach((vfStaveTie) => {
         vfStaveTie.setContext(vfContext).draw();
       });
