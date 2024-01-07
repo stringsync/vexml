@@ -22,6 +22,9 @@ export type SlurFragment = {
   type: SlurFragmentType;
   number: number;
   address: Address;
+  musicXML: {
+    slur: musicxml.Slur;
+  };
   vexflow: {
     note: vexflow.Note;
     keyIndex: number;
@@ -61,6 +64,7 @@ export class Slur {
           type: slurType,
           number: slur.getNumber(),
           address: data.address,
+          musicXML: { slur },
           vexflow: {
             note: data.vexflow.staveNote,
             keyIndex: data.keyIndex,
@@ -136,6 +140,11 @@ export class Slur {
   }
 
   private getSlurPlacement(): musicxml.AboveBelow {
+    const placement = this.fragments[0].musicXML.slur.getPlacement();
+    if (placement) {
+      return placement;
+    }
+
     const vfNote = util.first(this.fragments)?.vexflow.note;
     if (!vfNote) {
       return 'above';
