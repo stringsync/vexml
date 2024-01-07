@@ -3,10 +3,17 @@ import Title from './components/Title';
 import { useMusicXML } from './hooks/useMusicXML';
 import Vexml, { RenderEvent } from './components/Vexml';
 import Stats, { RenderStats } from './components/Stats';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { DEPRECATED_LOCAL_STORAGE_KEYS } from './constants';
 
 function App() {
   const musicXML = useMusicXML();
+
+  useEffect(() => {
+    for (const key of DEPRECATED_LOCAL_STORAGE_KEYS) {
+      localStorage.removeItem(key);
+    }
+  }, []);
 
   const [stats, setStats] = useState<RenderStats>({ type: 'loading' });
   const onRender = useCallback((event: RenderEvent) => {
