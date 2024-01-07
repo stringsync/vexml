@@ -1,7 +1,5 @@
 import { VEXML_VERSION } from '../constants';
 
-// TODO, add a version picker to this component.
-
 function Title() {
   return (
     <div className="container-fluid py-5">

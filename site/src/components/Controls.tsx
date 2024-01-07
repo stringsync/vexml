@@ -112,9 +112,7 @@ function Controls(props: ControlsProps) {
   const [selection, setSelection] = useState(() => CUSTOM_OPTION.key);
 
   const onSelectChange = async (e: SelectEvent<SelectValue>) => {
-    if (e.key === DEFAULT_OPTION.key) {
-      props.onReset();
-    } else if (e.value.type === 'asset') {
+    if (e.value.type === 'asset') {
       e.value.get().then((musicXML) => {
         props.onChange('normal', musicXML);
         setSelection(e.key);
