@@ -6,11 +6,13 @@ import { SpannerMap } from './spannermap';
 import { SpannerData } from './types';
 import { Address } from './address';
 
+const SLUR_PADDING_PER_NOTE = 10;
+
 /** The result of rendering a slur. */
 export type SlurRendering = {
   type: 'slur';
   vexflow: {
-    tie: vexflow.StaveTie;
+    curve: vexflow.Curve;
   };
 };
 
@@ -99,33 +101,26 @@ export class Slur {
     }
   }
 
+  getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
+    return (
+      this.fragments.filter((fragment) => fragment.address.isMemberOf('measurefragment', address)).length *
+      SLUR_PADDING_PER_NOTE
+    );
+  }
+
   /** Renders the slur. */
   render(): SlurRendering {
-    const vfTieNotes: vexflow.TieNotes = {};
+    const vfStartNote = util.first(this.fragments)!.vexflow.note;
+    const vfStopNote = util.last(this.fragments)!.vexflow.note;
 
-    for (let index = 0; index < this.fragments.length; index++) {
-      const fragment = this.fragments[index];
-      const isFirst = index === 0;
-      const isLast = index === this.fragments.length - 1;
+    const vfCurveOptions = this.getVfCurveOptions(vfStartNote, vfStopNote);
 
-      // Iterating is not necessary, but it is cleaner than dealing with nulls.
-      if (isFirst) {
-        vfTieNotes.firstNote = fragment.vexflow.note;
-        vfTieNotes.firstIndexes = [fragment.vexflow.keyIndex];
-      }
-      if (isLast) {
-        vfTieNotes.lastNote = fragment.vexflow.note;
-        vfTieNotes.lastIndexes = [fragment.vexflow.keyIndex];
-      }
-    }
-
-    const vfSlurDirection = this.getVfSlurDirection();
-    const vfTie = new vexflow.StaveTie(vfTieNotes).setDirection(vfSlurDirection);
+    const vfCurve = new vexflow.Curve(vfStartNote, vfStopNote, vfCurveOptions);
 
     return {
       type: 'slur',
       vexflow: {
-        tie: vfTie,
+        curve: vfCurve,
       },
     };
   }
@@ -134,9 +129,44 @@ export class Slur {
     return util.last(this.fragments)!;
   }
 
-  private getVfSlurDirection(): number {
-    const slurPlacement = this.getSlurPlacement();
-    return conversions.fromAboveBelowToVexflowSlurDirection(slurPlacement);
+  private getVfCurveOptions(vfStartNote: vexflow.Note, vfStopNote: vexflow.Note): vexflow.CurveOptions {
+    const startStem = this.getStem(vfStartNote);
+    const stopStem = this.getStem(vfStopNote);
+
+    let vfStartPosition: vexflow.CurvePosition | undefined = undefined;
+    let vfStopPosition: vexflow.CurvePosition | undefined = undefined;
+
+    switch (this.getSlurPlacement()) {
+      case 'above':
+        if (startStem === 'up') {
+          vfStartPosition = vexflow.CurvePosition.NEAR_TOP;
+        } else if (startStem === 'down') {
+          vfStartPosition = vexflow.CurvePosition.NEAR_HEAD;
+        }
+
+        if (stopStem === 'up') {
+          vfStopPosition = vexflow.CurvePosition.NEAR_TOP;
+        } else if (stopStem === 'down') {
+          vfStopPosition = vexflow.CurvePosition.NEAR_HEAD;
+        }
+        break;
+
+      case 'below':
+        if (startStem === 'up') {
+          vfStartPosition = vexflow.CurvePosition.NEAR_HEAD;
+        } else if (startStem === 'down') {
+          vfStartPosition = vexflow.CurvePosition.NEAR_TOP;
+        }
+
+        if (stopStem === 'up') {
+          vfStopPosition = vexflow.CurvePosition.NEAR_HEAD;
+        } else if (stopStem === 'down') {
+          vfStopPosition = vexflow.CurvePosition.NEAR_TOP;
+        }
+        break;
+    }
+
+    return { position: vfStartPosition, positionEnd: vfStopPosition };
   }
 
   private getSlurPlacement(): musicxml.AboveBelow {
