@@ -169,7 +169,7 @@ export class Score {
     spannersRendering.slurs
       .flatMap((slur) => slur.vexflow.curve)
       .forEach((vfCurve) => {
-        vfCurve.setContext(vfContext).draw();
+        vfCurve?.setContext(vfContext).draw();
       });
 
     // Draw vexflow.StaveTie elements for ties.
