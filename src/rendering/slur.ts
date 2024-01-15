@@ -6,11 +6,13 @@ import { SpannerMap } from './spannermap';
 import { SpannerData } from './types';
 import { Address } from './address';
 
+const SLUR_PADDING_PER_NOTE = 20;
+
 /** The result of rendering a slur. */
 export type SlurRendering = {
   type: 'slur';
   vexflow: {
-    tie: vexflow.StaveTie;
+    curve: vexflow.Curve | null;
   };
 };
 
@@ -22,6 +24,9 @@ export type SlurFragment = {
   type: SlurFragmentType;
   number: number;
   address: Address;
+  musicXML: {
+    slur: musicxml.Slur;
+  };
   vexflow: {
     note: vexflow.Note;
     keyIndex: number;
@@ -30,6 +35,8 @@ export type SlurFragment = {
 
 /** The container for slurs. */
 type SlurContainer = SpannerMap<number, Slur>;
+
+type CurveOpeningDirection = 'up' | 'down' | 'unknown';
 
 /** Represents a curved line that connects two or more different notes of varying pitch to indicate that they should be
  * played legato.
@@ -61,6 +68,7 @@ export class Slur {
           type: slurType,
           number: slur.getNumber(),
           address: data.address,
+          musicXML: { slur },
           vexflow: {
             note: data.vexflow.staveNote,
             keyIndex: data.keyIndex,
@@ -95,33 +103,35 @@ export class Slur {
     }
   }
 
+  getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
+    return (
+      this.fragments.filter((fragment) => fragment.address.isMemberOf('measurefragment', address)).length *
+      SLUR_PADDING_PER_NOTE
+    );
+  }
+
   /** Renders the slur. */
   render(): SlurRendering {
-    const vfTieNotes: vexflow.TieNotes = {};
+    const vfStartNote = this.fragments.find((fragment) => fragment.type === 'start')?.vexflow.note;
+    const vfStopNote = this.fragments.find((fragment) => fragment.type === 'stop')?.vexflow.note;
 
-    for (let index = 0; index < this.fragments.length; index++) {
-      const fragment = this.fragments[index];
-      const isFirst = index === 0;
-      const isLast = index === this.fragments.length - 1;
-
-      // Iterating is not necessary, but it is cleaner than dealing with nulls.
-      if (isFirst) {
-        vfTieNotes.firstNote = fragment.vexflow.note;
-        vfTieNotes.firstIndexes = [fragment.vexflow.keyIndex];
-      }
-      if (isLast) {
-        vfTieNotes.lastNote = fragment.vexflow.note;
-        vfTieNotes.lastIndexes = [fragment.vexflow.keyIndex];
-      }
+    if (!vfStartNote && !vfStopNote) {
+      return {
+        type: 'slur',
+        vexflow: { curve: null },
+      };
     }
 
-    const vfSlurDirection = this.getVfSlurDirection();
-    const vfTie = new vexflow.StaveTie(vfTieNotes).setDirection(vfSlurDirection);
+    const vfCurveOptions = this.getVfCurveOptions({ vexflow: { startNote: vfStartNote, stopNote: vfStopNote } });
+
+    // Partial curves are allowed, but the types disallow it:
+    // https://github.com/0xfe/vexflow/blob/8ddc8fa1a6d304a879e73830919fa17f3a9bdef4/src/curve.ts#L87
+    const vfCurve = new vexflow.Curve(vfStartNote as any, vfStopNote as any, vfCurveOptions);
 
     return {
       type: 'slur',
       vexflow: {
-        tie: vfTie,
+        curve: vfCurve,
       },
     };
   }
@@ -130,12 +140,79 @@ export class Slur {
     return util.last(this.fragments)!;
   }
 
-  private getVfSlurDirection(): number {
-    const slurPlacement = this.getSlurPlacement();
-    return conversions.fromAboveBelowToVexflowSlurDirection(slurPlacement);
+  private getVfCurveOptions(opts: {
+    vexflow: { startNote: vexflow.Note | undefined; stopNote: vexflow.Note | undefined };
+  }): vexflow.CurveOptions {
+    const placement = this.getSlurPlacement();
+
+    const startStem = this.getStem(opts.vexflow.startNote);
+    const stopStem = this.getStem(opts.vexflow.stopNote);
+
+    const startPosition = this.getVfCurvePosition(placement, startStem);
+    const stopPosition = this.getVfCurvePosition(placement, stopStem);
+
+    const openingDirection = this.getCurveOpeningDirection(opts.vexflow.startNote, opts.vexflow.stopNote);
+    const invert =
+      (openingDirection === 'up' && placement === 'above') || (openingDirection === 'down' && placement === 'below');
+
+    return {
+      position: startPosition,
+      positionEnd: stopPosition,
+      invert,
+    };
+  }
+
+  private getVfCurvePosition(
+    placement: musicxml.AboveBelow,
+    stem: musicxml.Stem | undefined
+  ): vexflow.CurvePosition | undefined {
+    if (placement === 'above' && stem === 'up') {
+      return vexflow.CurvePosition.NEAR_TOP;
+    }
+    if (placement === 'above' && stem === 'down') {
+      return vexflow.CurvePosition.NEAR_HEAD;
+    }
+    if (placement === 'below' && stem === 'up') {
+      return vexflow.CurvePosition.NEAR_HEAD;
+    }
+    if (placement === 'below' && stem === 'down') {
+      return vexflow.CurvePosition.NEAR_TOP;
+    }
+    return undefined;
+  }
+
+  private getCurveOpeningDirection(
+    startNote: vexflow.Note | undefined,
+    stopNote: vexflow.Note | undefined
+  ): CurveOpeningDirection {
+    let note: vexflow.Note;
+
+    if (startNote && stopNote) {
+      note = stopNote;
+    } else if (startNote) {
+      note = startNote;
+    } else if (stopNote) {
+      note = stopNote;
+    } else {
+      return 'unknown';
+    }
+
+    switch (this.getStem(note)) {
+      case 'up':
+        return 'up';
+      case 'down':
+        return 'down';
+      default:
+        return 'unknown';
+    }
   }
 
   private getSlurPlacement(): musicxml.AboveBelow {
+    const placement = this.fragments[0].musicXML.slur.getPlacement();
+    if (placement) {
+      return placement;
+    }
+
     const vfNote = util.first(this.fragments)?.vexflow.note;
     if (!vfNote) {
       return 'above';
@@ -166,7 +243,11 @@ export class Slur {
     }
   }
 
-  private getStem(vfNote: vexflow.Note): musicxml.Stem {
+  private getStem(vfNote: vexflow.Note | undefined): musicxml.Stem | undefined {
+    if (!vfNote) {
+      return undefined;
+    }
+
     // Calling getStemDirection will throw if there is no stem.
     // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
     try {
