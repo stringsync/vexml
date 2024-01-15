@@ -9,6 +9,9 @@ const customSnapshotsDir =
 
 const toMatchImageSnapshot = configureToMatchImageSnapshot({
   customSnapshotsDir,
+  customDiffConfig: {
+    threshold: 0.01,
+  },
 });
 
 expect.extend({ toMatchImageSnapshot });
