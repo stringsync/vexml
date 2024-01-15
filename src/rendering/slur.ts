@@ -6,13 +6,13 @@ import { SpannerMap } from './spannermap';
 import { SpannerData } from './types';
 import { Address } from './address';
 
-const SLUR_PADDING_PER_NOTE = 10;
+const SLUR_PADDING_PER_NOTE = 20;
 
 /** The result of rendering a slur. */
 export type SlurRendering = {
   type: 'slur';
   vexflow: {
-    curve: vexflow.Curve;
+    curve: vexflow.Curve | null;
   };
 };
 
@@ -35,6 +35,8 @@ export type SlurFragment = {
 
 /** The container for slurs. */
 type SlurContainer = SpannerMap<number, Slur>;
+
+type CurveOpeningDirection = 'up' | 'down' | 'unknown';
 
 /** Represents a curved line that connects two or more different notes of varying pitch to indicate that they should be
  * played legato.
@@ -110,12 +112,21 @@ export class Slur {
 
   /** Renders the slur. */
   render(): SlurRendering {
-    const vfStartNote = util.first(this.fragments)!.vexflow.note;
-    const vfStopNote = util.last(this.fragments)!.vexflow.note;
+    const vfStartNote = this.fragments.find((fragment) => fragment.type === 'start')?.vexflow.note;
+    const vfStopNote = this.fragments.find((fragment) => fragment.type === 'stop')?.vexflow.note;
 
-    const vfCurveOptions = this.getVfCurveOptions(vfStartNote, vfStopNote);
+    if (!vfStartNote && !vfStopNote) {
+      return {
+        type: 'slur',
+        vexflow: { curve: null },
+      };
+    }
 
-    const vfCurve = new vexflow.Curve(vfStartNote, vfStopNote, vfCurveOptions);
+    const vfCurveOptions = this.getVfCurveOptions({ vexflow: { startNote: vfStartNote, stopNote: vfStopNote } });
+
+    // Partial curves are allowed, but the types disallow it:
+    // https://github.com/0xfe/vexflow/blob/8ddc8fa1a6d304a879e73830919fa17f3a9bdef4/src/curve.ts#L87
+    const vfCurve = new vexflow.Curve(vfStartNote as any, vfStopNote as any, vfCurveOptions);
 
     return {
       type: 'slur',
@@ -129,44 +140,71 @@ export class Slur {
     return util.last(this.fragments)!;
   }
 
-  private getVfCurveOptions(vfStartNote: vexflow.Note, vfStopNote: vexflow.Note): vexflow.CurveOptions {
-    const startStem = this.getStem(vfStartNote);
-    const stopStem = this.getStem(vfStopNote);
+  private getVfCurveOptions(opts: {
+    vexflow: { startNote: vexflow.Note | undefined; stopNote: vexflow.Note | undefined };
+  }): vexflow.CurveOptions {
+    const placement = this.getSlurPlacement();
 
-    let vfStartPosition: vexflow.CurvePosition | undefined = undefined;
-    let vfStopPosition: vexflow.CurvePosition | undefined = undefined;
+    const startStem = this.getStem(opts.vexflow.startNote);
+    const stopStem = this.getStem(opts.vexflow.stopNote);
 
-    switch (this.getSlurPlacement()) {
-      case 'above':
-        if (startStem === 'up') {
-          vfStartPosition = vexflow.CurvePosition.NEAR_TOP;
-        } else if (startStem === 'down') {
-          vfStartPosition = vexflow.CurvePosition.NEAR_HEAD;
-        }
+    const startPosition = this.getVfCurvePosition(placement, startStem);
+    const stopPosition = this.getVfCurvePosition(placement, stopStem);
 
-        if (stopStem === 'up') {
-          vfStopPosition = vexflow.CurvePosition.NEAR_TOP;
-        } else if (stopStem === 'down') {
-          vfStopPosition = vexflow.CurvePosition.NEAR_HEAD;
-        }
-        break;
+    const openingDirection = this.getCurveOpeningDirection(opts.vexflow.startNote, opts.vexflow.stopNote);
+    const invert =
+      (openingDirection === 'up' && placement === 'above') || (openingDirection === 'down' && placement === 'below');
 
-      case 'below':
-        if (startStem === 'up') {
-          vfStartPosition = vexflow.CurvePosition.NEAR_HEAD;
-        } else if (startStem === 'down') {
-          vfStartPosition = vexflow.CurvePosition.NEAR_TOP;
-        }
+    return {
+      position: startPosition,
+      positionEnd: stopPosition,
+      invert,
+    };
+  }
 
-        if (stopStem === 'up') {
-          vfStopPosition = vexflow.CurvePosition.NEAR_HEAD;
-        } else if (stopStem === 'down') {
-          vfStopPosition = vexflow.CurvePosition.NEAR_TOP;
-        }
-        break;
+  private getVfCurvePosition(
+    placement: musicxml.AboveBelow,
+    stem: musicxml.Stem | undefined
+  ): vexflow.CurvePosition | undefined {
+    if (placement === 'above' && stem === 'up') {
+      return vexflow.CurvePosition.NEAR_TOP;
+    }
+    if (placement === 'above' && stem === 'down') {
+      return vexflow.CurvePosition.NEAR_HEAD;
+    }
+    if (placement === 'below' && stem === 'up') {
+      return vexflow.CurvePosition.NEAR_HEAD;
+    }
+    if (placement === 'below' && stem === 'down') {
+      return vexflow.CurvePosition.NEAR_TOP;
+    }
+    return undefined;
+  }
+
+  private getCurveOpeningDirection(
+    startNote: vexflow.Note | undefined,
+    stopNote: vexflow.Note | undefined
+  ): CurveOpeningDirection {
+    let note: vexflow.Note;
+
+    if (startNote && stopNote) {
+      note = stopNote;
+    } else if (startNote) {
+      note = startNote;
+    } else if (stopNote) {
+      note = stopNote;
+    } else {
+      return 'unknown';
     }
 
-    return { position: vfStartPosition, positionEnd: vfStopPosition };
+    switch (this.getStem(note)) {
+      case 'up':
+        return 'up';
+      case 'down':
+        return 'down';
+      default:
+        return 'unknown';
+    }
   }
 
   private getSlurPlacement(): musicxml.AboveBelow {
@@ -205,7 +243,11 @@ export class Slur {
     }
   }
 
-  private getStem(vfNote: vexflow.Note): musicxml.Stem {
+  private getStem(vfNote: vexflow.Note | undefined): musicxml.Stem | undefined {
+    if (!vfNote) {
+      return undefined;
+    }
+
     // Calling getStemDirection will throw if there is no stem.
     // https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/stemmablenote.ts#L118
     try {
