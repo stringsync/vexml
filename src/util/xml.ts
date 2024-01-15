@@ -1329,3 +1329,21 @@ export const rootfile = createNamedElementFactory<'rootfile', { fullPath: string
     }
   }
 );
+
+export const fermata = createNamedElementFactory<'fermata', { shape: NamedElement<'fermata-shape'> }>(
+  'fermata',
+  (e, { shape }) => {
+    if (shape) {
+      e.append(shape);
+    }
+  }
+);
+
+export const fermataShape = createNamedElementFactory<'fermata-shape', { value: string }>(
+  'fermata-shape',
+  (e, { value }) => {
+    if (value) {
+      e.setTextContent(value);
+    }
+  }
+);
