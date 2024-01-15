@@ -37,7 +37,13 @@ export class Spanners {
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
-    return util.sum(this.tuplets.values().map((tuplet) => tuplet.getExtraMeasureFragmentWidth(address)));
+    const tupletExtraWidth = util.sum(
+      this.tuplets.values().map((tuplet) => tuplet.getExtraMeasureFragmentWidth(address))
+    );
+
+    const slurExtraWidth = util.sum(this.slurs.values().map((slur) => slur.getExtraMeasureFragmentWidth(address)));
+
+    return tupletExtraWidth + slurExtraWidth;
   }
 
   /** Extracts and processes all the spanners within the given data. */
