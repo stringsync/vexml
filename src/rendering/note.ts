@@ -14,6 +14,7 @@ import { Ornament, OrnamentRendering } from './ornament';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
+import { Arpeggio, ArpeggioRendering } from './arpeggio';
 
 const STEP_ORDER = [
   'Cb',
@@ -43,7 +44,8 @@ export type NoteModifierRendering =
   | LyricRendering
   | TokenRendering
   | OrnamentRendering
-  | FermataRendering;
+  | FermataRendering
+  | ArpeggioRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -192,6 +194,10 @@ export class Note {
         renderings.push(fermata.render());
       }
 
+      for (const arpeggio of note.getArpeggios()) {
+        renderings.push(arpeggio.render());
+      }
+
       return renderings;
     });
 
@@ -212,6 +218,9 @@ export class Note {
             break;
           case 'fermata':
             vfStaveNote.addModifier(modifierRendering.vexflow.articulation, index);
+            break;
+          case 'arpeggio':
+            vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
             break;
         }
       }
@@ -381,6 +390,13 @@ export class Note {
       .getNotations()
       .flatMap((notations) => notations.getFermatas())
       .map((fermata) => new Fermata({ musicXML: { fermata } }));
+  }
+
+  private getArpeggios(): Arpeggio[] {
+    return this.musicXML.note
+      .getNotations()
+      .filter((notations) => notations.isArpeggiated())
+      .map((notations) => new Arpeggio({ musicXML: { notations } }));
   }
 
   private getDotCount(): number {
