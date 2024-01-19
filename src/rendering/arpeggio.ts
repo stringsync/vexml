@@ -16,8 +16,8 @@ export type ArpeggioRendering = {
 export class Arpeggio {
   private musicXML: { notations: musicxml.Notations };
 
-  constructor(musicXML: { notations: musicxml.Notations }) {
-    this.musicXML = musicXML;
+  constructor(opts: { musicXML: { notations: musicxml.Notations } }) {
+    this.musicXML = opts.musicXML;
   }
 
   /** Renders the Arpeggio. */
