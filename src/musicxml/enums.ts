@@ -311,3 +311,28 @@ export const SHOW_TUPLET = new Enum(['actual', 'both', 'none'] as const);
  */
 export type TiedType = EnumValues<typeof TIED_TYPES>;
 export const TIED_TYPES = new Enum(['start', 'stop', 'continue', 'let-ring'] as const);
+
+/**
+ * The fermata-shape type represents the shape of the fermata sign.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/fermata-shape/
+ */
+export type FermataShape = EnumValues<typeof FERMATA_SHAPES>;
+export const FERMATA_SHAPES = new Enum([
+  'normal',
+  'angled',
+  'square',
+  'double-angled',
+  'double-square',
+  'double-dot',
+  'half-curve',
+  'curlew',
+] as const);
+
+/**
+ * The upright-inverted type describes the appearance of a fermata element.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/upright-inverted/
+ */
+export type FermataType = EnumValues<typeof FERMATA_TYPES>;
+export const FERMATA_TYPES = new Enum(['upright', 'inverted'] as const);

@@ -1021,8 +1021,9 @@ export const notations = createNamedElementFactory<
     tuplets: NamedElement<'tuplet'>[];
     arpeggiate: NamedElement<'arpeggiate'>;
     ornaments: NamedElement<'ornaments'>[];
+    fermatas: NamedElement<'fermata'>[];
   }
->('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas }) => {
   if (tieds) {
     e.append(...tieds);
   }
@@ -1037,6 +1038,9 @@ export const notations = createNamedElementFactory<
   }
   if (ornaments) {
     e.append(...ornaments);
+  }
+  if (fermatas) {
+    e.append(...fermatas);
   }
 });
 
@@ -1326,6 +1330,18 @@ export const rootfile = createNamedElementFactory<'rootfile', { fullPath: string
     }
     if (mediaType) {
       e.setAttribute('media-type', mediaType);
+    }
+  }
+);
+
+export const fermata = createNamedElementFactory<'fermata', { shape: string; type: string }>(
+  'fermata',
+  (e, { shape, type }) => {
+    if (shape) {
+      e.setTextContent(shape);
+    }
+    if (type) {
+      e.setAttribute('type', type);
     }
   }
 );

@@ -7,6 +7,7 @@ export * from './defaults';
 export * from './direction';
 export * from './directiontype';
 export * from './enums';
+export * from './fermata';
 export * from './forward';
 export * from './key';
 export * from './lyric';
