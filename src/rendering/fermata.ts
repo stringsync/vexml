@@ -18,12 +18,22 @@ export class Fermata {
   }
 
   render(): FermataRendering {
-    // TODO(jared): Make a real fermata.
     return {
       type: 'fermata',
       vexflow: {
-        articulation: new vexflow.Articulation('a'),
+        articulation: this.getVfArticulation(),
       },
     };
+  }
+
+  private getVfArticulation(): vexflow.Articulation {
+    const type = this.musicXML.fermata.getType();
+
+    switch (type) {
+      case 'upright':
+        return new vexflow.Articulation('a@a');
+      case 'inverted':
+        return new vexflow.Articulation('a@u').setPosition(vexflow.ModifierPosition.BELOW);
+    }
   }
 }
