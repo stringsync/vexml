@@ -13,6 +13,8 @@ import * as conversions from './conversions';
 import { Ornament, OrnamentRendering } from './ornament';
 import { Spanners } from './spanners';
 import { Address } from './address';
+import { Fermata, FermataRendering } from './fermata';
+import { fermata } from '../util/xml';
 
 const STEP_ORDER = [
   'Cb',
@@ -37,7 +39,12 @@ const STEP_ORDER = [
   'B#',
 ];
 
-export type NoteModifierRendering = AccidentalRendering | LyricRendering | TokenRendering | OrnamentRendering;
+export type NoteModifierRendering =
+  | AccidentalRendering
+  | LyricRendering
+  | TokenRendering
+  | OrnamentRendering
+  | FermataRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -182,6 +189,10 @@ export class Note {
         renderings.push(ornament.render());
       }
 
+      for (const fermata of note.getFermatas()) {
+        renderings.push(fermata.render());
+      }
+
       return renderings;
     });
 
@@ -199,6 +210,9 @@ export class Note {
             break;
           case 'ornament':
             vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
+            break;
+          case 'fermata':
+            vfStaveNote.addModifier(modifierRendering.vexflow.articulation, index);
             break;
         }
       }
@@ -360,7 +374,14 @@ export class Note {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
-      .flatMap((ornaments) => new Ornament({ musicXML: { ornaments } }));
+      .map((ornaments) => new Ornament({ musicXML: { ornaments } }));
+  }
+
+  private getFermatas(): Fermata[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getFermatas())
+      .map((fermata) => new Fermata({ musicXML: { fermata } }));
   }
 
   private getDotCount(): number {

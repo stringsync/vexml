@@ -11,7 +11,7 @@ export class Fermata {
 
   /** Returns the shape of the fermata. Defaults to normal. */
   getShape(): FermataShape {
-    return this.element.first('fermata-shape')?.content().enum(FERMATA_SHAPES) ?? 'normal';
+    return this.element.content().enum(FERMATA_SHAPES) ?? 'normal';
   }
 
   /** Returns the type of fermata. Defaults to upright. */
