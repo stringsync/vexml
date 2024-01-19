@@ -23,16 +23,16 @@ describe(Notations, () => {
       expect(notations.getArpeggioDirection()).toBe(direction);
     });
 
-    it(`defaults 'up' when the arpeggio direction is invalid`, () => {
+    it(`defaults to null when the arpeggio direction is invalid`, () => {
       const node = xml.notations({ arpeggiate: xml.arpeggiate({ direction: 'foo' }) });
       const notations = new Notations(node);
-      expect(notations.getArpeggioDirection()).toBe('up');
+      expect(notations.getArpeggioDirection()).toBeNull();
     });
 
-    it(`defaults 'up' when the arpeggio direction is missing`, () => {
+    it(`defaults to null when the arpeggio direction is missing`, () => {
       const node = xml.notations();
       const notations = new Notations(node);
-      expect(notations.getArpeggioDirection()).toBe('up');
+      expect(notations.getArpeggioDirection()).toBeNull();
     });
   });
 
