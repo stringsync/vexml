@@ -4,6 +4,7 @@ import { Tuplet } from './tuplet';
 import { Slur } from './slur';
 import { Ornaments } from './ornaments';
 import { Tied } from './tied';
+import { Fermata } from './fermata';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -46,5 +47,10 @@ export class Notations {
   /** Returns the ornaments of the notations. Defaults to an empty array. */
   getOrnaments(): Ornaments[] {
     return this.element.all('ornaments').map((element) => new Ornaments(element));
+  }
+
+  /** Returns the fermatas of the notations. Defaults to an empty array. */
+  getFermatas(): Fermata[] {
+    return this.element.all('fermata').map((element) => new Fermata(element));
   }
 }
