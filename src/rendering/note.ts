@@ -15,6 +15,7 @@ import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
 import { Arpeggio, ArpeggioRendering } from './arpeggio';
+import { Accent, AccentRendering } from './accent';
 
 const STEP_ORDER = [
   'Cb',
@@ -45,7 +46,8 @@ export type NoteModifierRendering =
   | TokenRendering
   | OrnamentRendering
   | FermataRendering
-  | ArpeggioRendering;
+  | ArpeggioRendering
+  | AccentRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -198,6 +200,10 @@ export class Note {
         renderings.push(arpeggio.render());
       }
 
+      for (const accent of note.getAccents()) {
+        renderings.push(accent.render());
+      }
+
       return renderings;
     });
 
@@ -221,6 +227,9 @@ export class Note {
             break;
           case 'arpeggio':
             vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
+            break;
+          case 'accent':
+            vfStaveNote.addModifier(modifierRendering.vexflow.articulation, index);
             break;
         }
       }
@@ -393,14 +402,21 @@ export class Note {
   }
 
   private getArpeggios(): Arpeggio[] {
-    if (this.musicXML.note.isChordTail()) {
-      return [];
-    }
+    return this.musicXML.note.isChordTail()
+      ? []
+      : this.musicXML.note
+          .getNotations()
+          .filter((notations) => notations.isArpeggiated())
+          .map((notations) => new Arpeggio({ musicXML: { notations } }));
+  }
 
-    return this.musicXML.note
-      .getNotations()
-      .filter((notations) => notations.isArpeggiated())
-      .map((notations) => new Arpeggio({ musicXML: { notations } }));
+  private getAccents(): Accent[] {
+    return this.musicXML.note.isChordTail()
+      ? []
+      : this.musicXML.note
+          .getNotations()
+          .flatMap((notations) => notations.getAccents())
+          .map((accent) => new Accent({ musicXML: { accent } }));
   }
 
   private getDotCount(): number {
