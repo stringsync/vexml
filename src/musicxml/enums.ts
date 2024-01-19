@@ -328,3 +328,11 @@ export const FERMATA_SHAPES = new Enum([
   'half-curve',
   'curlew',
 ] as const);
+
+/**
+ * The upright-inverted type describes the appearance of a fermata element.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/upright-inverted/
+ */
+export type FermataType = EnumValues<typeof FERMATA_TYPES>;
+export const FERMATA_TYPES = new Enum(['upright', 'inverted'] as const);
