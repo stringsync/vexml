@@ -1,3 +1,4 @@
+export * from './accent';
 export * from './attributes';
 export * from './backup';
 export * from './barline';
