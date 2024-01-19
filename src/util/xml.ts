@@ -1334,11 +1334,14 @@ export const rootfile = createNamedElementFactory<'rootfile', { fullPath: string
   }
 );
 
-export const fermata = createNamedElementFactory<'fermata', { shape: NamedElement<'fermata-shape'> }>(
+export const fermata = createNamedElementFactory<'fermata', { shape: NamedElement<'fermata-shape'>; type: string }>(
   'fermata',
-  (e, { shape }) => {
+  (e, { shape, type }) => {
     if (shape) {
       e.append(shape);
+    }
+    if (type) {
+      e.setAttribute('type', type);
     }
   }
 );
