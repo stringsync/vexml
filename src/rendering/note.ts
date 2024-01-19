@@ -393,6 +393,10 @@ export class Note {
   }
 
   private getArpeggios(): Arpeggio[] {
+    if (this.musicXML.note.isChordTail()) {
+      return [];
+    }
+
     return this.musicXML.note
       .getNotations()
       .filter((notations) => notations.isArpeggiated())
