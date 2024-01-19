@@ -19,9 +19,9 @@ export class Notations {
     return this.element.all('arpeggiate').length > 0;
   }
 
-  /** Returns the direction of the arppegio when appregiated and null otherwise. */
-  getArpeggioDirection(): VerticalDirection {
-    return this.element.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? 'up';
+  /** Returns the direction of the arppegio. Defaults to null. */
+  getArpeggioDirection(): VerticalDirection | null {
+    return this.element.first('arpeggiate')?.attr('direction').enum(VERTICAL_DIRECTIONS) ?? null;
   }
 
   /** Whether the notations has at least one tuplet. */
