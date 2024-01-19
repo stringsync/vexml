@@ -5,6 +5,7 @@ import { Slur } from './slur';
 import { Ornaments } from './ornaments';
 import { Tied } from './tied';
 import { Fermata } from './fermata';
+import { Accent } from './accent';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -52,5 +53,10 @@ export class Notations {
   /** Returns the fermatas of the notations. Defaults to an empty array. */
   getFermatas(): Fermata[] {
     return this.element.all('fermata').map((element) => new Fermata(element));
+  }
+
+  /** Returns the accents of the notations. Defaults to an empty array. */
+  getAccents(): Accent[] {
+    return this.element.all('accent').map((element) => new Accent(element));
   }
 }

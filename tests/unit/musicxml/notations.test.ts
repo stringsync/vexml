@@ -1,5 +1,5 @@
 import { xml } from '@/util';
-import { Tied, Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS, Fermata } from '@/musicxml';
+import { Tied, Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS, Fermata, Accent } from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -132,6 +132,24 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getFermatas()).toStrictEqual([]);
+    });
+  });
+
+  describe('getAccents', () => {
+    it('returns the accents of the notations', () => {
+      const accent1 = xml.accent({ placement: 'above' });
+      const accent2 = xml.accent({ placement: 'below' });
+      const node = xml.notations({ accents: [accent1, accent2] });
+
+      const notations = new Notations(node);
+
+      expect(notations.getAccents()).toStrictEqual([new Accent(accent1), new Accent(accent2)]);
+    });
+
+    it('defaults to an empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getAccents()).toBeEmpty();
     });
   });
 });

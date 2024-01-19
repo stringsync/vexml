@@ -1027,8 +1027,9 @@ export const notations = createNamedElementFactory<
     arpeggiate: NamedElement<'arpeggiate'>;
     ornaments: NamedElement<'ornaments'>[];
     fermatas: NamedElement<'fermata'>[];
+    accents: NamedElement<'accent'>[];
   }
->('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas, accents }) => {
   if (tieds) {
     e.append(...tieds);
   }
@@ -1046,6 +1047,9 @@ export const notations = createNamedElementFactory<
   }
   if (fermatas) {
     e.append(...fermatas);
+  }
+  if (accents) {
+    e.append(...accents);
   }
 });
 
