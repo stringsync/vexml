@@ -17,6 +17,7 @@ export class Fermata {
     this.musicXML = opts.musicXML;
   }
 
+  /** Renders the Fermata. */
   render(): FermataRendering {
     return {
       type: 'fermata',
