@@ -25,8 +25,23 @@ export class Arpeggio {
     return {
       type: 'arpeggio',
       vexflow: {
-        stroke: new vexflow.Stroke(vexflow.Stroke.Type.ARPEGGIO_DIRECTIONLESS),
+        stroke: this.getVfStroke(),
       },
     };
+  }
+
+  private getVfStroke(): vexflow.Stroke {
+    const direction = this.musicXML.notations.getArpeggioDirection();
+
+    switch (direction) {
+      case 'up':
+        // Yes, ROLL_DOWN is correct.
+        return new vexflow.Stroke(vexflow.Stroke.Type.ROLL_DOWN);
+      case 'down':
+        // Yes, ROLL_UP is correct.
+        return new vexflow.Stroke(vexflow.Stroke.Type.ROLL_UP);
+      default:
+        return new vexflow.Stroke(vexflow.Stroke.Type.ARPEGGIO_DIRECTIONLESS);
+    }
   }
 }
