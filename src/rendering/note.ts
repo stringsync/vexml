@@ -14,7 +14,6 @@ import { Ornament, OrnamentRendering } from './ornament';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
-import { fermata } from '../util/xml';
 
 const STEP_ORDER = [
   'Cb',
