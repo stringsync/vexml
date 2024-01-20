@@ -19,6 +19,12 @@ export type Staccato = {
   placement: AboveBelow | null;
 };
 
+/** Represents a tenuto mark. */
+export type Tenuto = {
+  type: 'tenuto';
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -47,6 +53,14 @@ export class Articulations {
   getStaccatos(): Staccato[] {
     return this.element.all('staccato').map((element) => ({
       type: 'staccato',
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the tenuto articulations. */
+  getTenutos(): Tenuto[] {
+    return this.element.all('tenuto').map((element) => ({
+      type: 'tenuto',
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }

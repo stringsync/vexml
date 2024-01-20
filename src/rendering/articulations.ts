@@ -3,9 +3,16 @@ import * as musicxml from '@/musicxml';
 
 /** The result of rendering Articulations. */
 export type ArticulationsRendering = {
-  type: 'articulation';
+  type: 'articulations';
+  values: Articulation[];
+};
+
+type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto';
+
+type Articulation<T extends ArticulationType = ArticulationType> = {
+  type: T;
   vexflow: {
-    articulations: vexflow.Articulation[];
+    articulation: vexflow.Articulation;
   };
 };
 
@@ -22,56 +29,90 @@ export class Articulations {
 
   /** Renders the articulations. */
   render(): ArticulationsRendering {
-    const vfArticulations = new Array<vexflow.Articulation>();
+    const values = new Array<Articulation>();
 
-    vfArticulations.push(...this.getVfAccents());
-    vfArticulations.push(...this.getVfStrongAccents());
-    vfArticulations.push(...this.getVfStaccatos());
+    values.push(...this.getAccents());
+    values.push(...this.getStrongAccents());
+    values.push(...this.getStaccatos());
+    values.push(...this.getTenutos());
 
-    return {
-      type: 'articulation',
-      vexflow: {
-        articulations: vfArticulations,
-      },
-    };
+    return { type: 'articulations', values };
   }
 
-  private getVfAccents(): vexflow.Articulation[] {
+  private getAccents(): Articulation<'accent'>[] {
     return this.musicXML.articulations.getAccents().map((accent) => {
+      let vfArticulation: vexflow.Articulation;
+
       switch (accent.placement) {
         case 'above':
-          return new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a>');
+          break;
         case 'below':
-          return new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          vfArticulation = new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          break;
         default:
-          return new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a>');
+          break;
       }
+
+      return { type: 'accent', vexflow: { articulation: vfArticulation } };
     });
   }
 
-  private getVfStrongAccents(): vexflow.Articulation[] {
+  private getStrongAccents(): Articulation<'strongaccent'>[] {
     return this.musicXML.articulations.getStrongAccents().map((strongAccent) => {
+      let vfArticulation: vexflow.Articulation;
+
       switch (strongAccent.placement) {
         case 'above':
-          return new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a>');
+          break;
         case 'below':
-          return new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          vfArticulation = new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          break;
         default:
-          return new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a>');
       }
+
+      return { type: 'strongaccent', vexflow: { articulation: vfArticulation } };
     });
   }
 
-  private getVfStaccatos(): vexflow.Articulation[] {
+  private getStaccatos(): Articulation<'staccato'>[] {
     return this.musicXML.articulations.getStaccatos().map((staccato) => {
+      let vfArticulation: vexflow.Articulation;
+
       switch (staccato.placement) {
         case 'above':
-          return new vexflow.Articulation('a.');
+          vfArticulation = new vexflow.Articulation('a.');
+          break;
         case 'below':
-          return new vexflow.Articulation('a.').setPosition(vexflow.Modifier.Position.BELOW);
+          vfArticulation = new vexflow.Articulation('a.').setPosition(vexflow.Modifier.Position.BELOW);
+          break;
         default:
-          return new vexflow.Articulation('a.');
+          vfArticulation = new vexflow.Articulation('a.');
       }
+
+      return { type: 'staccato', vexflow: { articulation: vfArticulation } };
+    });
+  }
+
+  private getTenutos(): Articulation<'tenuto'>[] {
+    return this.musicXML.articulations.getTenutos().map((tenuto) => {
+      let vfArticulation: vexflow.Articulation;
+
+      switch (tenuto.placement) {
+        case 'above':
+          vfArticulation = new vexflow.Articulation('a-');
+          break;
+        case 'below':
+          vfArticulation = new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          break;
+        default:
+          vfArticulation = new vexflow.Articulation('a-');
+      }
+
+      return { type: 'tenuto', vexflow: { articulation: vfArticulation } };
     });
   }
 }
