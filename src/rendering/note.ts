@@ -228,10 +228,12 @@ export class Note {
           case 'arpeggio':
             vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
             break;
-          case 'articulation':
-            for (const vfArticulation of modifierRendering.vexflow.articulations) {
-              vfStaveNote.addModifier(vfArticulation, index);
-            }
+          case 'articulations':
+            modifierRendering.values
+              .flatMap((value) => value.vexflow.articulation)
+              .forEach((vfArticulation) => {
+                vfStaveNote.addModifier(vfArticulation, index);
+              });
             break;
         }
       }
