@@ -29,14 +29,10 @@ export class Articulations {
 
   /** Renders the articulations. */
   render(): ArticulationsRendering {
-    const values = new Array<Articulation>();
-
-    values.push(...this.getAccents());
-    values.push(...this.getStrongAccents());
-    values.push(...this.getStaccatos());
-    values.push(...this.getTenutos());
-
-    return { type: 'articulations', values };
+    return {
+      type: 'articulations',
+      values: [...this.getAccents(), ...this.getStrongAccents(), ...this.getStaccatos(), ...this.getTenutos()],
+    };
   }
 
   private getAccents(): Articulation<'accent'>[] {
