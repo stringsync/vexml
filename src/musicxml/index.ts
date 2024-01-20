@@ -1,4 +1,5 @@
 export * from './attributes';
+export * from './articulations';
 export * from './backup';
 export * from './barline';
 export * from './beam';
