@@ -80,4 +80,46 @@ describe(Articulations, () => {
       expect(articulations.getStaccatos()).toBeEmpty();
     });
   });
+
+  describe('getTenutos', () => {
+    it('returns the tenutos of the articulations', () => {
+      const tenuto1 = xml.tenuto({ placement: 'above' });
+      const tenuto2 = xml.tenuto({ placement: 'below' });
+      const node = xml.articulations({ tenutos: [tenuto1, tenuto2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getTenutos()).toStrictEqual([
+        { type: 'tenuto', placement: 'above' },
+        { type: 'tenuto', placement: 'below' },
+      ]);
+    });
+
+    it('returns an empty array if there are no tenutos', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getTenutos()).toBeEmpty();
+    });
+  });
+
+  describe('getStaccatissimos', () => {
+    it('returns the staccatissimos of the articulations', () => {
+      const staccatissimo1 = xml.staccatissimo({ placement: 'above' });
+      const staccatissimo2 = xml.staccatissimo({ placement: 'below' });
+      const node = xml.articulations({ staccatissimos: [staccatissimo1, staccatissimo2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getStaccatissimos()).toStrictEqual([
+        { type: 'staccatissimo', placement: 'above' },
+        { type: 'staccatissimo', placement: 'below' },
+      ]);
+    });
+
+    it('returns an empty array if there are no staccatissimos', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getStaccatissimos()).toBeEmpty();
+    });
+  });
 });

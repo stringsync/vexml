@@ -25,6 +25,12 @@ export type Tenuto = {
   placement: AboveBelow | null;
 };
 
+/** Represents a staccatissimo mark. */
+export type Staccatissimo = {
+  type: 'staccatissimo';
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -61,6 +67,14 @@ export class Articulations {
   getTenutos(): Tenuto[] {
     return this.element.all('tenuto').map((element) => ({
       type: 'tenuto',
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the staccatissimo articulations. */
+  getStaccatissimos(): Staccatissimo[] {
+    return this.element.all('staccatissimo').map((element) => ({
+      type: 'staccatissimo',
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }
