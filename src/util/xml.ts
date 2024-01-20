@@ -1351,17 +1351,32 @@ export const fermata = createNamedElementFactory<'fermata', { shape: string; typ
   }
 );
 
-export const articulations = createNamedElementFactory<'articulations', { accents: NamedElement<'accent'>[] }>(
+export const articulations = createNamedElementFactory<
   'articulations',
-  (e, { accents }) => {
-    if (accents) {
-      e.append(...accents);
-    }
+  {
+    accents: NamedElement<'accent'>[];
+    strongAccents: NamedElement<'strong-accent'>[];
   }
-);
+>('articulations', (e, { accents, strongAccents }) => {
+  if (accents) {
+    e.append(...accents);
+  }
+  if (strongAccents) {
+    e.append(...strongAccents);
+  }
+});
 
 export const accent = createNamedElementFactory<'accent', { placement: string }>('accent', (e, { placement }) => {
   if (placement) {
     e.setAttribute('placement', placement);
   }
 });
+
+export const strongAccent = createNamedElementFactory<'strong-accent', { placement: string }>(
+  'strong-accent',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+  }
+);
