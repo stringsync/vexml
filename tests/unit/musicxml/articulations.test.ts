@@ -66,12 +66,18 @@ describe(Articulations, () => {
       const staccato2 = xml.staccato({ placement: 'below' });
       const node = xml.articulations({ staccatos: [staccato1, staccato2] });
 
-      const articulaton = new Articulations(node);
+      const articulations = new Articulations(node);
 
-      expect(articulaton.getStaccatos()).toStrictEqual([
+      expect(articulations.getStaccatos()).toStrictEqual([
         { type: 'staccato', placement: 'above' },
         { type: 'staccato', placement: 'below' },
       ]);
+    });
+
+    it('returns an empty array if there are no staccatos', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getStaccatos()).toBeEmpty();
     });
   });
 });
