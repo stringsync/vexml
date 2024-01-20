@@ -204,6 +204,7 @@ export const note = createNamedElementFactory<
     beams: NamedElement<'beam'>[];
     chord: NamedElement<'chord'>;
     lyrics: NamedElement<'lyric'>[];
+    articulations: NamedElement<'articulations'>[];
   }
 >(
   'note',
@@ -227,6 +228,7 @@ export const note = createNamedElementFactory<
       beams,
       chord,
       lyrics,
+      articulations,
     }
   ) => {
     if (typeof printObject === 'string') {
@@ -279,6 +281,9 @@ export const note = createNamedElementFactory<
     }
     if (lyrics) {
       e.append(...lyrics);
+    }
+    if (articulations) {
+      e.append(...articulations);
     }
   }
 );
@@ -1345,3 +1350,18 @@ export const fermata = createNamedElementFactory<'fermata', { shape: string; typ
     }
   }
 );
+
+export const articulations = createNamedElementFactory<'articulations', { accents: NamedElement<'accent'>[] }>(
+  'articulations',
+  (e, { accents }) => {
+    if (accents) {
+      e.append(...accents);
+    }
+  }
+);
+
+export const accent = createNamedElementFactory<'accent', { placement: string }>('accent', (e, { placement }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+});
