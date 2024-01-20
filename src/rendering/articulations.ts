@@ -26,6 +26,7 @@ export class Articulations {
 
     vfArticulations.push(...this.getVfAccents());
     vfArticulations.push(...this.getVfStrongAccents());
+    vfArticulations.push(...this.getVfStaccatos());
 
     return {
       type: 'articulation',
@@ -57,6 +58,19 @@ export class Articulations {
           return new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
         default:
           return new vexflow.Articulation('a>');
+      }
+    });
+  }
+
+  private getVfStaccatos(): vexflow.Articulation[] {
+    return this.musicXML.articulations.getStaccatos().map((staccato) => {
+      switch (staccato.placement) {
+        case 'above':
+          return new vexflow.Articulation('a.');
+        case 'below':
+          return new vexflow.Articulation('a.').setPosition(vexflow.Modifier.Position.BELOW);
+        default:
+          return new vexflow.Articulation('a.');
       }
     });
   }
