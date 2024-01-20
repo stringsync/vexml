@@ -204,7 +204,6 @@ export const note = createNamedElementFactory<
     beams: NamedElement<'beam'>[];
     chord: NamedElement<'chord'>;
     lyrics: NamedElement<'lyric'>[];
-    articulations: NamedElement<'articulations'>[];
   }
 >(
   'note',
@@ -228,7 +227,6 @@ export const note = createNamedElementFactory<
       beams,
       chord,
       lyrics,
-      articulations,
     }
   ) => {
     if (typeof printObject === 'string') {
@@ -281,9 +279,6 @@ export const note = createNamedElementFactory<
     }
     if (lyrics) {
       e.append(...lyrics);
-    }
-    if (articulations) {
-      e.append(...articulations);
     }
   }
 );
@@ -1027,8 +1022,9 @@ export const notations = createNamedElementFactory<
     arpeggiate: NamedElement<'arpeggiate'>;
     ornaments: NamedElement<'ornaments'>[];
     fermatas: NamedElement<'fermata'>[];
+    articulations: NamedElement<'articulations'>[];
   }
->('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas, articulations }) => {
   if (tieds) {
     e.append(...tieds);
   }
@@ -1043,6 +1039,9 @@ export const notations = createNamedElementFactory<
   }
   if (ornaments) {
     e.append(...ornaments);
+  }
+  if (articulations) {
+    e.append(...articulations);
   }
   if (fermatas) {
     e.append(...fermatas);
