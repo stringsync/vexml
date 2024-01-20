@@ -7,7 +7,7 @@ export type ArticulationsRendering = {
   values: Articulation[];
 };
 
-type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto';
+type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto' | 'staccatissimo';
 
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
@@ -31,7 +31,13 @@ export class Articulations {
   render(): ArticulationsRendering {
     return {
       type: 'articulations',
-      values: [...this.getAccents(), ...this.getStrongAccents(), ...this.getStaccatos(), ...this.getTenutos()],
+      values: [
+        ...this.getAccents(),
+        ...this.getStrongAccents(),
+        ...this.getStaccatos(),
+        ...this.getTenutos(),
+        ...this.getStaccatissimos(),
+      ],
     };
   }
 
@@ -95,20 +101,25 @@ export class Articulations {
 
   private getTenutos(): Articulation<'tenuto'>[] {
     return this.musicXML.articulations.getTenutos().map((tenuto) => {
-      let vfArticulation: vexflow.Articulation;
+      const vfArticulation = new vexflow.Articulation('a-');
 
-      switch (tenuto.placement) {
-        case 'above':
-          vfArticulation = new vexflow.Articulation('a-');
-          break;
-        case 'below':
-          vfArticulation = new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
-          break;
-        default:
-          vfArticulation = new vexflow.Articulation('a-');
+      if (tenuto.placement === 'below') {
+        vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
       }
 
       return { type: 'tenuto', vexflow: { articulation: vfArticulation } };
+    });
+  }
+
+  private getStaccatissimos(): Articulation<'staccatissimo'>[] {
+    return this.musicXML.articulations.getStaccatissimos().map((staccatissimo) => {
+      const vfArticulation = new vexflow.Articulation('av');
+
+      if (staccatissimo.placement === 'below') {
+        vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
+      }
+
+      return { type: 'staccatissimo', vexflow: { articulation: vfArticulation } };
     });
   }
 }
