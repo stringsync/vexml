@@ -13,6 +13,12 @@ export type StrongAccent = {
   placement: AboveBelow | null;
 };
 
+/** Represents a staccato mark. */
+export type Staccato = {
+  type: 'staccato';
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -33,6 +39,14 @@ export class Articulations {
   getStrongAccents(): StrongAccent[] {
     return this.element.all('strong-accent').map((element) => ({
       type: 'strongaccent',
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the staccato articulations. */
+  getStaccatos(): Staccato[] {
+    return this.element.all('staccato').map((element) => ({
+      type: 'staccato',
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }
