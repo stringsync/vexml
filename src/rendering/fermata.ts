@@ -32,9 +32,39 @@ export class Fermata {
 
     switch (type) {
       case 'upright':
-        return new vexflow.Articulation('a@a');
+        return this.getUprightVfArticulation();
       case 'inverted':
-        return new vexflow.Articulation('a@u').setPosition(vexflow.ModifierPosition.BELOW);
+        return this.getInvertedVfArticulation();
+    }
+  }
+
+  private getUprightVfArticulation(): vexflow.Articulation {
+    const shape = this.musicXML.fermata.getShape();
+
+    switch (shape) {
+      case 'normal':
+        return new vexflow.Articulation('a@a');
+      case 'angled':
+        return new vexflow.Articulation('a@s');
+      case 'square':
+        return new vexflow.Articulation('a@l');
+      default:
+        return new vexflow.Articulation('a@a');
+    }
+  }
+
+  private getInvertedVfArticulation(): vexflow.Articulation {
+    const shape = this.musicXML.fermata.getShape();
+
+    switch (shape) {
+      case 'normal':
+        return new vexflow.Articulation('a@u').setPosition(vexflow.Modifier.Position.BELOW);
+      case 'angled':
+        return new vexflow.Articulation('a@us').setPosition(vexflow.Modifier.Position.BELOW);
+      case 'square':
+        return new vexflow.Articulation('a@ul').setPosition(vexflow.Modifier.Position.BELOW);
+      default:
+        return new vexflow.Articulation('a@u').setPosition(vexflow.Modifier.Position.BELOW);
     }
   }
 }
