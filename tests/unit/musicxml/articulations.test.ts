@@ -59,4 +59,19 @@ describe(Articulations, () => {
       expect(articulations.getStrongAccents()).toBeEmpty();
     });
   });
+
+  describe('getStaccatos', () => {
+    it('returns the staccatos of the articulations', () => {
+      const staccato1 = xml.staccato({ placement: 'above' });
+      const staccato2 = xml.staccato({ placement: 'below' });
+      const node = xml.articulations({ staccatos: [staccato1, staccato2] });
+
+      const articulaton = new Articulations(node);
+
+      expect(articulaton.getStaccatos()).toStrictEqual([
+        { type: 'staccato', placement: 'above' },
+        { type: 'staccato', placement: 'below' },
+      ]);
+    });
+  });
 });
