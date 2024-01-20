@@ -229,9 +229,9 @@ export class Note {
             vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
             break;
           case 'articulation':
-            modifierRendering.vexflow.articulations.forEach((vfArticulation) => {
+            for (const vfArticulation of modifierRendering.vexflow.articulations) {
               vfStaveNote.addModifier(vfArticulation, index);
-            });
+            }
             break;
         }
       }
