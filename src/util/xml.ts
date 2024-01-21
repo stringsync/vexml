@@ -1023,8 +1023,9 @@ export const notations = createNamedElementFactory<
     ornaments: NamedElement<'ornaments'>[];
     fermatas: NamedElement<'fermata'>[];
     articulations: NamedElement<'articulations'>[];
+    accidentalMarks: NamedElement<'accidental-mark'>[];
   }
->('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas, articulations }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas, articulations, accidentalMarks }) => {
   if (tieds) {
     e.append(...tieds);
   }
@@ -1045,6 +1046,9 @@ export const notations = createNamedElementFactory<
   }
   if (fermatas) {
     e.append(...fermatas);
+  }
+  if (accidentalMarks) {
+    e.append(...accidentalMarks);
   }
 });
 
@@ -1517,6 +1521,15 @@ export const breathMark = createNamedElementFactory<'breath-mark', { placement: 
   (e, { placement }) => {
     if (placement) {
       e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const accidentalMark = createNamedElementFactory<'accidental-mark', { type: string }>(
+  'accidental-mark',
+  (e, { type }) => {
+    if (type) {
+      e.setTextContent(type);
     }
   }
 );
