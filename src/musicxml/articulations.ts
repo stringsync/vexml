@@ -1,6 +1,8 @@
 import { NamedElement } from '@/util';
 import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType } from './enums';
 
+// Articulations were expressed as types instead of classes because there is a lot of overlap between them.
+
 /** Indicates a regular horizontal accent mark. */
 export type Accent = {
   type: 'accent';
