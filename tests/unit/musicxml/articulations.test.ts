@@ -224,4 +224,31 @@ describe(Articulations, () => {
       expect(articulations.getDoits()).toBeEmpty();
     });
   });
+
+  describe('getFalloffs', () => {
+    it('returns the falloffs of the articulations: %s', () => {
+      const falloff1 = xml.falloff({ placement: 'above' });
+      const falloff2 = xml.falloff({ placement: 'below' });
+      const node = xml.articulations({ falloffs: [falloff1, falloff2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getFalloffs()).toStrictEqual([
+        { type: 'falloff', placement: 'above', lineType: 'solid' },
+        { type: 'falloff', placement: 'below', lineType: 'solid' },
+      ]);
+    });
+
+    it.each(LINE_TYPES.values)('returns the correct line-type: %s', (lineType) => {
+      const node = xml.articulations({ falloffs: [xml.falloff({ lineType })] });
+      const articulations = new Articulations(node);
+      expect(articulations.getFalloffs()).toStrictEqual([{ type: 'falloff', placement: null, lineType }]);
+    });
+
+    it('returns an empty array if there are no falloffs', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getFalloffs()).toBeEmpty();
+    });
+  });
 });
