@@ -25,6 +25,12 @@ export type Tenuto = {
   placement: AboveBelow | null;
 };
 
+/** Represents a detached legato mark. */
+export type DetachedLegato = {
+  type: 'detachedlegato';
+  placement: AboveBelow | null;
+};
+
 /** Represents a staccatissimo mark. */
 export type Staccatissimo = {
   type: 'staccatissimo';
@@ -67,6 +73,14 @@ export class Articulations {
   getTenutos(): Tenuto[] {
     return this.element.all('tenuto').map((element) => ({
       type: 'tenuto',
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the detached legato articulations. */
+  getDetachedLegatos(): DetachedLegato[] {
+    return this.element.all('detached-legato').map((element) => ({
+      type: 'detachedlegato',
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }

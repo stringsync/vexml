@@ -7,12 +7,12 @@ export type ArticulationsRendering = {
   values: Articulation[];
 };
 
-type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto' | 'staccatissimo';
+type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto' | 'detachedlegato' | 'staccatissimo';
 
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
   vexflow: {
-    articulation: vexflow.Articulation;
+    articulations: vexflow.Articulation[];
   };
 };
 
@@ -36,6 +36,7 @@ export class Articulations {
         ...this.getStrongAccents(),
         ...this.getStaccatos(),
         ...this.getTenutos(),
+        ...this.getDetachedLegatos(),
         ...this.getStaccatissimos(),
       ],
     };
@@ -57,7 +58,7 @@ export class Articulations {
           break;
       }
 
-      return { type: 'accent', vexflow: { articulation: vfArticulation } };
+      return { type: 'accent', vexflow: { articulations: [vfArticulation] } };
     });
   }
 
@@ -76,7 +77,7 @@ export class Articulations {
           vfArticulation = new vexflow.Articulation('a>');
       }
 
-      return { type: 'strongaccent', vexflow: { articulation: vfArticulation } };
+      return { type: 'strongaccent', vexflow: { articulations: [vfArticulation] } };
     });
   }
 
@@ -95,7 +96,7 @@ export class Articulations {
           vfArticulation = new vexflow.Articulation('a.');
       }
 
-      return { type: 'staccato', vexflow: { articulation: vfArticulation } };
+      return { type: 'staccato', vexflow: { articulations: [vfArticulation] } };
     });
   }
 
@@ -107,7 +108,25 @@ export class Articulations {
         vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
       }
 
-      return { type: 'tenuto', vexflow: { articulation: vfArticulation } };
+      return { type: 'tenuto', vexflow: { articulations: [vfArticulation] } };
+    });
+  }
+
+  private getDetachedLegatos(): Articulation<'detachedlegato'>[] {
+    return this.musicXML.articulations.getDetachedLegatos().map((detachedLegato) => {
+      const vfArticulations = new Array<vexflow.Articulation>();
+
+      switch (detachedLegato.placement) {
+        case 'below':
+          vfArticulations.push(new vexflow.Articulation('a.').setPosition(vexflow.Modifier.Position.BELOW));
+          vfArticulations.push(new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW));
+          break;
+        default:
+          vfArticulations.push(new vexflow.Articulation('a.'));
+          vfArticulations.push(new vexflow.Articulation('a-'));
+      }
+
+      return { type: 'detachedlegato', vexflow: { articulations: vfArticulations } };
     });
   }
 
@@ -119,7 +138,7 @@ export class Articulations {
         vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
       }
 
-      return { type: 'staccatissimo', vexflow: { articulation: vfArticulation } };
+      return { type: 'staccatissimo', vexflow: { articulations: [vfArticulation] } };
     });
   }
 }

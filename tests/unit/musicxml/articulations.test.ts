@@ -102,6 +102,27 @@ describe(Articulations, () => {
     });
   });
 
+  describe('getDetactedLegatos', () => {
+    it('returns the detached legatos of the articulations', () => {
+      const detachedLegato1 = xml.detachedLegato({ placement: 'above' });
+      const detachedLegato2 = xml.detachedLegato({ placement: 'below' });
+      const node = xml.articulations({ detachedLegatos: [detachedLegato1, detachedLegato2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getDetachedLegatos()).toStrictEqual([
+        { type: 'detachedlegato', placement: 'above' },
+        { type: 'detachedlegato', placement: 'below' },
+      ]);
+    });
+
+    it('returns an empty array if there are no detached legatos', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getDetachedLegatos()).toBeEmpty();
+    });
+  });
+
   describe('getStaccatissimos', () => {
     it('returns the staccatissimos of the articulations', () => {
       const staccatissimo1 = xml.staccatissimo({ placement: 'above' });
