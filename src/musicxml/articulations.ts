@@ -44,6 +44,13 @@ export type Scoop = {
   placement: AboveBelow | null;
 };
 
+/** Represents a plop mark. */
+export type Plop = {
+  type: 'plop';
+  lineType: LineType;
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -104,6 +111,15 @@ export class Articulations {
   getScoops(): Scoop[] {
     return this.element.all('scoop').map((element) => ({
       type: 'scoop',
+      lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the plop articulations. */
+  getPlops(): Plop[] {
+    return this.element.all('plop').map((element) => ({
+      type: 'plop',
       lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));

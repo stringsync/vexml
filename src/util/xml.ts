@@ -1360,30 +1360,37 @@ export const articulations = createNamedElementFactory<
     detachedLegatos: NamedElement<'detached-legato'>[];
     staccatissimos: NamedElement<'staccatissimo'>[];
     scoops: NamedElement<'scoop'>[];
+    plops: NamedElement<'plop'>[];
   }
->('articulations', (e, { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops }) => {
-  if (accents) {
-    e.append(...accents);
+>(
+  'articulations',
+  (e, { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops, plops }) => {
+    if (accents) {
+      e.append(...accents);
+    }
+    if (strongAccents) {
+      e.append(...strongAccents);
+    }
+    if (staccatos) {
+      e.append(...staccatos);
+    }
+    if (tenutos) {
+      e.append(...tenutos);
+    }
+    if (detachedLegatos) {
+      e.append(...detachedLegatos);
+    }
+    if (staccatissimos) {
+      e.append(...staccatissimos);
+    }
+    if (scoops) {
+      e.append(...scoops);
+    }
+    if (plops) {
+      e.append(...plops);
+    }
   }
-  if (strongAccents) {
-    e.append(...strongAccents);
-  }
-  if (staccatos) {
-    e.append(...staccatos);
-  }
-  if (tenutos) {
-    e.append(...tenutos);
-  }
-  if (detachedLegatos) {
-    e.append(...detachedLegatos);
-  }
-  if (staccatissimos) {
-    e.append(...staccatissimos);
-  }
-  if (scoops) {
-    e.append(...scoops);
-  }
-});
+);
 
 export const accent = createNamedElementFactory<'accent', { placement: string }>('accent', (e, { placement }) => {
   if (placement) {
@@ -1432,6 +1439,18 @@ export const staccatissimo = createNamedElementFactory<'staccatissimo', { placem
 
 export const scoop = createNamedElementFactory<'scoop', { placement: string; lineType: string }>(
   'scoop',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const plop = createNamedElementFactory<'plop', { placement: string; lineType: string }>(
+  'plop',
   (e, { placement, lineType }) => {
     if (placement) {
       e.setAttribute('placement', placement);
