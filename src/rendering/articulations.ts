@@ -12,7 +12,16 @@ type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto' | 'det
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
   vexflow: {
-    articulations: vexflow.Articulation[];
+    values: Array<
+      | {
+          type: 'articulation';
+          articulation: vexflow.Articulation;
+        }
+      | {
+          type: 'ornament';
+          ornament: vexflow.Ornament;
+        }
+    >;
   };
 };
 
@@ -58,7 +67,12 @@ export class Articulations {
           break;
       }
 
-      return { type: 'accent', vexflow: { articulations: [vfArticulation] } };
+      return {
+        type: 'accent',
+        vexflow: {
+          values: [{ type: 'articulation', articulation: vfArticulation }],
+        },
+      };
     });
   }
 
@@ -77,7 +91,10 @@ export class Articulations {
           vfArticulation = new vexflow.Articulation('a>');
       }
 
-      return { type: 'strongaccent', vexflow: { articulations: [vfArticulation] } };
+      return {
+        type: 'strongaccent',
+        vexflow: { values: [{ type: 'articulation', articulation: vfArticulation }] },
+      };
     });
   }
 
@@ -96,7 +113,12 @@ export class Articulations {
           vfArticulation = new vexflow.Articulation('a.');
       }
 
-      return { type: 'staccato', vexflow: { articulations: [vfArticulation] } };
+      return {
+        type: 'staccato',
+        vexflow: {
+          values: [{ type: 'articulation', articulation: vfArticulation }],
+        },
+      };
     });
   }
 
@@ -108,7 +130,12 @@ export class Articulations {
         vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
       }
 
-      return { type: 'tenuto', vexflow: { articulations: [vfArticulation] } };
+      return {
+        type: 'tenuto',
+        vexflow: {
+          values: [{ type: 'articulation', articulation: vfArticulation }],
+        },
+      };
     });
   }
 
@@ -126,7 +153,12 @@ export class Articulations {
           vfArticulations.push(new vexflow.Articulation('a-'));
       }
 
-      return { type: 'detachedlegato', vexflow: { articulations: vfArticulations } };
+      return {
+        type: 'detachedlegato',
+        vexflow: {
+          values: vfArticulations.map((vfArticulation) => ({ type: 'articulation', articulation: vfArticulation })),
+        },
+      };
     });
   }
 
@@ -138,7 +170,10 @@ export class Articulations {
         vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
       }
 
-      return { type: 'staccatissimo', vexflow: { articulations: [vfArticulation] } };
+      return {
+        type: 'staccatissimo',
+        vexflow: { values: [{ type: 'articulation', articulation: vfArticulation }] },
+      };
     });
   }
 }
