@@ -15,6 +15,8 @@ import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
 import { Arpeggio, ArpeggioRendering } from './arpeggio';
+import { Articulations, ArticulationsRendering } from './articulations';
+import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 
 const STEP_ORDER = [
   'Cb',
@@ -41,11 +43,13 @@ const STEP_ORDER = [
 
 export type NoteModifierRendering =
   | AccidentalRendering
+  | AccidentalMarkRendering
   | LyricRendering
   | TokenRendering
   | OrnamentRendering
   | FermataRendering
-  | ArpeggioRendering;
+  | ArpeggioRendering
+  | ArticulationsRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -177,6 +181,11 @@ export class Note {
         renderings.push(accidental.render());
       }
 
+      const accidentalMark = note.getAccidentalMark();
+      if (accidentalMark) {
+        renderings.push(accidentalMark.render());
+      }
+
       // Lyrics sorted by ascending verse number.
       for (const lyric of note.getLyrics()) {
         renderings.push(lyric.render());
@@ -198,6 +207,10 @@ export class Note {
         renderings.push(arpeggio.render());
       }
 
+      for (const articulation of note.getArticulations()) {
+        renderings.push(articulation.render());
+      }
+
       return renderings;
     });
 
@@ -206,6 +219,9 @@ export class Note {
         switch (modifierRendering.type) {
           case 'accidental':
             vfStaveNote.addModifier(modifierRendering.vexflow.accidental, index);
+            break;
+          case 'accidentalmark':
+            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
             break;
           case 'lyric':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
@@ -221,6 +237,20 @@ export class Note {
             break;
           case 'arpeggio':
             vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
+            break;
+          case 'articulations':
+            modifierRendering.values
+              .flatMap((value) => value.vexflow.values)
+              .forEach((value) => {
+                switch (value.type) {
+                  case 'articulation':
+                    vfStaveNote.addModifier(value.articulation, index);
+                    break;
+                  case 'ornament':
+                    vfStaveNote.addModifier(value.ornament, index);
+                    break;
+                }
+              });
             break;
         }
       }
@@ -370,7 +400,6 @@ export class Note {
     return null;
   }
 
-  @util.memoize()
   private getLyrics(): Lyric[] {
     return this.musicXML.note
       .getLyrics()
@@ -401,6 +430,13 @@ export class Note {
       .getNotations()
       .filter((notations) => notations.isArpeggiated())
       .map((notations) => new Arpeggio({ musicXML: { notations } }));
+  }
+
+  private getArticulations(): Articulations[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getArticulations())
+      .map((articulations) => new Articulations({ musicXML: { articulations } }));
   }
 
   private getDotCount(): number {
@@ -438,5 +474,15 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXML: { token } }));
+  }
+
+  /** Returns the accidental mark to be placed above or below (not next) the note. */
+  private getAccidentalMark(): AccidentalMark | null {
+    return util.first(
+      this.musicXML.note
+        .getNotations()
+        .flatMap((notations) => notations.getAccidentalMarks())
+        .map((accidentalMark) => new AccidentalMark({ musicXML: { accidentalMark } }))
+    );
   }
 }

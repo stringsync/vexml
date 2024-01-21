@@ -1022,8 +1022,10 @@ export const notations = createNamedElementFactory<
     arpeggiate: NamedElement<'arpeggiate'>;
     ornaments: NamedElement<'ornaments'>[];
     fermatas: NamedElement<'fermata'>[];
+    articulations: NamedElement<'articulations'>[];
+    accidentalMarks: NamedElement<'accidental-mark'>[];
   }
->('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas }) => {
+>('notations', (e, { tieds, slurs, tuplets, arpeggiate, ornaments, fermatas, articulations, accidentalMarks }) => {
   if (tieds) {
     e.append(...tieds);
   }
@@ -1039,8 +1041,14 @@ export const notations = createNamedElementFactory<
   if (ornaments) {
     e.append(...ornaments);
   }
+  if (articulations) {
+    e.append(...articulations);
+  }
   if (fermatas) {
     e.append(...fermatas);
+  }
+  if (accidentalMarks) {
+    e.append(...accidentalMarks);
   }
 });
 
@@ -1342,6 +1350,186 @@ export const fermata = createNamedElementFactory<'fermata', { shape: string; typ
     }
     if (type) {
       e.setAttribute('type', type);
+    }
+  }
+);
+
+export const articulations = createNamedElementFactory<
+  'articulations',
+  {
+    accents: NamedElement<'accent'>[];
+    strongAccents: NamedElement<'strong-accent'>[];
+    staccatos: NamedElement<'staccato'>[];
+    tenutos: NamedElement<'tenuto'>[];
+    detachedLegatos: NamedElement<'detached-legato'>[];
+    staccatissimos: NamedElement<'staccatissimo'>[];
+    scoops: NamedElement<'scoop'>[];
+    plops: NamedElement<'plop'>[];
+    doits: NamedElement<'doit'>[];
+    falloffs: NamedElement<'falloff'>[];
+    breathMarks: NamedElement<'breath-mark'>[];
+  }
+>(
+  'articulations',
+  (
+    e,
+    {
+      accents,
+      strongAccents,
+      staccatos,
+      tenutos,
+      detachedLegatos,
+      staccatissimos,
+      scoops,
+      plops,
+      doits,
+      falloffs,
+      breathMarks,
+    }
+  ) => {
+    if (accents) {
+      e.append(...accents);
+    }
+    if (strongAccents) {
+      e.append(...strongAccents);
+    }
+    if (staccatos) {
+      e.append(...staccatos);
+    }
+    if (tenutos) {
+      e.append(...tenutos);
+    }
+    if (detachedLegatos) {
+      e.append(...detachedLegatos);
+    }
+    if (staccatissimos) {
+      e.append(...staccatissimos);
+    }
+    if (scoops) {
+      e.append(...scoops);
+    }
+    if (plops) {
+      e.append(...plops);
+    }
+    if (doits) {
+      e.append(...doits);
+    }
+    if (falloffs) {
+      e.append(...falloffs);
+    }
+    if (breathMarks) {
+      e.append(...breathMarks);
+    }
+  }
+);
+
+export const accent = createNamedElementFactory<'accent', { placement: string }>('accent', (e, { placement }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+});
+
+export const strongAccent = createNamedElementFactory<'strong-accent', { placement: string }>(
+  'strong-accent',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const staccato = createNamedElementFactory<'staccato', { placement: string }>('staccato', (e, { placement }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+});
+
+export const tenuto = createNamedElementFactory<'tenuto', { placement: string }>('tenuto', (e, { placement }) => {
+  if (placement) {
+    e.setAttribute('placement', placement);
+  }
+});
+
+export const detachedLegato = createNamedElementFactory<'detached-legato', { placement: string }>(
+  'detached-legato',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const staccatissimo = createNamedElementFactory<'staccatissimo', { placement: string }>(
+  'staccatissimo',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const scoop = createNamedElementFactory<'scoop', { placement: string; lineType: string }>(
+  'scoop',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const plop = createNamedElementFactory<'plop', { placement: string; lineType: string }>(
+  'plop',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const doit = createNamedElementFactory<'doit', { placement: string; lineType: string }>(
+  'doit',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const falloff = createNamedElementFactory<'falloff', { placement: string; lineType: string }>(
+  'falloff',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const breathMark = createNamedElementFactory<'breath-mark', { placement: string }>(
+  'breath-mark',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const accidentalMark = createNamedElementFactory<'accidental-mark', { type: string }>(
+  'accidental-mark',
+  (e, { type }) => {
+    if (type) {
+      e.setTextContent(type);
     }
   }
 );
