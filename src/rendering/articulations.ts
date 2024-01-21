@@ -16,7 +16,8 @@ type ArticulationType =
   | 'staccatissimo'
   | 'scoop'
   | 'doit'
-  | 'falloff';
+  | 'falloff'
+  | 'breathmark';
 
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
@@ -59,6 +60,7 @@ export class Articulations {
         ...this.getScoops(),
         ...this.getDoits(),
         ...this.getFalloffs(),
+        ...this.getBreathmarks(),
       ],
     };
   }
@@ -230,6 +232,21 @@ export class Articulations {
       return {
         type: 'falloff',
         vexflow: { values: [{ type: 'ornament', ornament: vfOrnament }] },
+      };
+    });
+  }
+
+  private getBreathmarks(): Articulation<'breathmark'>[] {
+    return this.musicXML.articulations.getBreathMarks().map((breathmark) => {
+      const vfArticulation = new vexflow.Articulation('a,');
+
+      if (breathmark.placement === 'below') {
+        vfArticulation.setPosition(vexflow.Modifier.Position.BELOW);
+      }
+
+      return {
+        type: 'breathmark',
+        vexflow: { values: [{ type: 'articulation', articulation: vfArticulation }] },
       };
     });
   }

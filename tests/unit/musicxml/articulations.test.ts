@@ -251,4 +251,25 @@ describe(Articulations, () => {
       expect(articulations.getFalloffs()).toBeEmpty();
     });
   });
+
+  describe('getBreathMarks', () => {
+    it('returns the breath marks of the articulations', () => {
+      const breathMark1 = xml.breathMark({ placement: 'above' });
+      const breathMark2 = xml.breathMark({ placement: 'below' });
+      const node = xml.articulations({ breathMarks: [breathMark1, breathMark2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getBreathMarks()).toStrictEqual([
+        { type: 'breathmark', placement: 'above' },
+        { type: 'breathmark', placement: 'below' },
+      ]);
+    });
+
+    it('returns an empty array if there are no breath marks', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getBreathMarks()).toBeEmpty();
+    });
+  });
 });
