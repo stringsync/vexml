@@ -65,6 +65,12 @@ export type Falloff = {
   placement: AboveBelow | null;
 };
 
+/** Represents a breath mark. */
+export type BreathMark = {
+  type: 'breathmark';
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -153,6 +159,14 @@ export class Articulations {
     return this.element.all('falloff').map((element) => ({
       type: 'falloff',
       lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the breath mark articulations. */
+  getBreathMarks(): BreathMark[] {
+    return this.element.all('breath-mark').map((element) => ({
+      type: 'breathmark',
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }

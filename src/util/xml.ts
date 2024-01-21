@@ -1363,12 +1363,25 @@ export const articulations = createNamedElementFactory<
     plops: NamedElement<'plop'>[];
     doits: NamedElement<'doit'>[];
     falloffs: NamedElement<'falloff'>[];
+    breathMarks: NamedElement<'breath-mark'>[];
   }
 >(
   'articulations',
   (
     e,
-    { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops, plops, doits, falloffs }
+    {
+      accents,
+      strongAccents,
+      staccatos,
+      tenutos,
+      detachedLegatos,
+      staccatissimos,
+      scoops,
+      plops,
+      doits,
+      falloffs,
+      breathMarks,
+    }
   ) => {
     if (accents) {
       e.append(...accents);
@@ -1399,6 +1412,9 @@ export const articulations = createNamedElementFactory<
     }
     if (falloffs) {
       e.append(...falloffs);
+    }
+    if (breathMarks) {
+      e.append(...breathMarks);
     }
   }
 );
@@ -1492,6 +1508,15 @@ export const falloff = createNamedElementFactory<'falloff', { placement: string;
     }
     if (lineType) {
       e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const breathMark = createNamedElementFactory<'breath-mark', { placement: string }>(
+  'breath-mark',
+  (e, { placement }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
     }
   }
 );
