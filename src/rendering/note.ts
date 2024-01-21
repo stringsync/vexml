@@ -16,6 +16,7 @@ import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
 import { Arpeggio, ArpeggioRendering } from './arpeggio';
 import { Articulations, ArticulationsRendering } from './articulations';
+import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 
 const STEP_ORDER = [
   'Cb',
@@ -42,6 +43,7 @@ const STEP_ORDER = [
 
 export type NoteModifierRendering =
   | AccidentalRendering
+  | AccidentalMarkRendering
   | LyricRendering
   | TokenRendering
   | OrnamentRendering
@@ -179,6 +181,11 @@ export class Note {
         renderings.push(accidental.render());
       }
 
+      const accidentalMark = note.getAccidentalMark();
+      if (accidentalMark) {
+        renderings.push(accidentalMark.render());
+      }
+
       // Lyrics sorted by ascending verse number.
       for (const lyric of note.getLyrics()) {
         renderings.push(lyric.render());
@@ -212,6 +219,9 @@ export class Note {
         switch (modifierRendering.type) {
           case 'accidental':
             vfStaveNote.addModifier(modifierRendering.vexflow.accidental, index);
+            break;
+          case 'accidentalmark':
+            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
             break;
           case 'lyric':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
@@ -390,7 +400,6 @@ export class Note {
     return null;
   }
 
-  @util.memoize()
   private getLyrics(): Lyric[] {
     return this.musicXML.note
       .getLyrics()
@@ -465,5 +474,15 @@ export class Note {
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
       .map((token) => new Token({ musicXML: { token } }));
+  }
+
+  /** Returns the accidental mark to be placed above or below (not next) the note. */
+  private getAccidentalMark(): AccidentalMark | null {
+    return util.first(
+      this.musicXML.note
+        .getNotations()
+        .flatMap((notations) => notations.getAccidentalMarks())
+        .map((accidentalMark) => new AccidentalMark({ musicXML: { accidentalMark } }))
+    );
   }
 }
