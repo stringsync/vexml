@@ -51,6 +51,13 @@ export type Plop = {
   placement: AboveBelow | null;
 };
 
+/** Represents a doit mark. */
+export type Doit = {
+  type: 'doit';
+  lineType: LineType;
+  placement: AboveBelow | null;
+};
+
 /**
  * The `<articulations>` element groups together articulations and accents.
  *
@@ -120,6 +127,15 @@ export class Articulations {
   getPlops(): Plop[] {
     return this.element.all('plop').map((element) => ({
       type: 'plop',
+      lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the doit articulations. */
+  getDoits(): Doit[] {
+    return this.element.all('doit').map((element) => ({
+      type: 'doit',
       lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));

@@ -197,4 +197,31 @@ describe(Articulations, () => {
       expect(articulations.getPlops()).toBeEmpty();
     });
   });
+
+  describe('getDoits', () => {
+    it('returns the doits of the articulations: %s', () => {
+      const doit1 = xml.doit({ placement: 'above' });
+      const doit2 = xml.doit({ placement: 'below' });
+      const node = xml.articulations({ doits: [doit1, doit2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getDoits()).toStrictEqual([
+        { type: 'doit', placement: 'above', lineType: 'solid' },
+        { type: 'doit', placement: 'below', lineType: 'solid' },
+      ]);
+    });
+
+    it.each(LINE_TYPES.values)('returns the correct line-type: %s', (lineType) => {
+      const node = xml.articulations({ doits: [xml.doit({ lineType })] });
+      const articulations = new Articulations(node);
+      expect(articulations.getDoits()).toStrictEqual([{ type: 'doit', placement: null, lineType }]);
+    });
+
+    it('returns an empty array if there are no doits', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getDoits()).toBeEmpty();
+    });
+  });
 });
