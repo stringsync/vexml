@@ -230,9 +230,16 @@ export class Note {
             break;
           case 'articulations':
             modifierRendering.values
-              .flatMap((value) => value.vexflow.articulations)
-              .forEach((vfArticulation) => {
-                vfStaveNote.addModifier(vfArticulation, index);
+              .flatMap((value) => value.vexflow.values)
+              .forEach((value) => {
+                switch (value.type) {
+                  case 'articulation':
+                    vfStaveNote.addModifier(value.articulation, index);
+                    break;
+                  case 'ornament':
+                    vfStaveNote.addModifier(value.ornament, index);
+                    break;
+                }
               });
             break;
         }
