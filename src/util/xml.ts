@@ -1362,10 +1362,14 @@ export const articulations = createNamedElementFactory<
     scoops: NamedElement<'scoop'>[];
     plops: NamedElement<'plop'>[];
     doits: NamedElement<'doit'>[];
+    falloffs: NamedElement<'falloff'>[];
   }
 >(
   'articulations',
-  (e, { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops, plops, doits }) => {
+  (
+    e,
+    { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops, plops, doits, falloffs }
+  ) => {
     if (accents) {
       e.append(...accents);
     }
@@ -1392,6 +1396,9 @@ export const articulations = createNamedElementFactory<
     }
     if (doits) {
       e.append(...doits);
+    }
+    if (falloffs) {
+      e.append(...falloffs);
     }
   }
 );
@@ -1467,6 +1474,18 @@ export const plop = createNamedElementFactory<'plop', { placement: string; lineT
 
 export const doit = createNamedElementFactory<'doit', { placement: string; lineType: string }>(
   'doit',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
+    }
+  }
+);
+
+export const falloff = createNamedElementFactory<'falloff', { placement: string; lineType: string }>(
+  'falloff',
   (e, { placement, lineType }) => {
     if (placement) {
       e.setAttribute('placement', placement);

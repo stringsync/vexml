@@ -15,7 +15,8 @@ type ArticulationType =
   | 'detachedlegato'
   | 'staccatissimo'
   | 'scoop'
-  | 'doit';
+  | 'doit'
+  | 'falloff';
 
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
@@ -57,6 +58,7 @@ export class Articulations {
         ...this.getStaccatissimos(),
         ...this.getScoops(),
         ...this.getDoits(),
+        ...this.getFalloffs(),
       ],
     };
   }
@@ -212,6 +214,21 @@ export class Articulations {
 
       return {
         type: 'doit',
+        vexflow: { values: [{ type: 'ornament', ornament: vfOrnament }] },
+      };
+    });
+  }
+
+  private getFalloffs(): Articulation<'falloff'>[] {
+    return this.musicXML.articulations.getFalloffs().map((falloff) => {
+      const vfOrnament = new vexflow.Ornament('fall');
+
+      if (falloff.placement === 'below') {
+        vfOrnament.setPosition(vexflow.Modifier.Position.BELOW);
+      }
+
+      return {
+        type: 'falloff',
         vexflow: { values: [{ type: 'ornament', ornament: vfOrnament }] },
       };
     });
