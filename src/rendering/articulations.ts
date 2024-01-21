@@ -96,13 +96,13 @@ export class Articulations {
 
       switch (strongAccent.placement) {
         case 'above':
-          vfArticulation = new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a^');
           break;
         case 'below':
-          vfArticulation = new vexflow.Articulation('a-').setPosition(vexflow.Modifier.Position.BELOW);
+          vfArticulation = new vexflow.Articulation('a^').setPosition(vexflow.Modifier.Position.BELOW);
           break;
         default:
-          vfArticulation = new vexflow.Articulation('a>');
+          vfArticulation = new vexflow.Articulation('a^');
       }
 
       return {
