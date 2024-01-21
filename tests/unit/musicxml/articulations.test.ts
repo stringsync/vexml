@@ -1,4 +1,4 @@
-import { Articulations } from '@/musicxml/';
+import { Articulations, LINE_TYPES } from '@/musicxml/';
 import { xml } from '@/util';
 
 describe(Articulations, () => {
@@ -141,6 +141,33 @@ describe(Articulations, () => {
       const node = xml.articulations();
       const articulations = new Articulations(node);
       expect(articulations.getStaccatissimos()).toBeEmpty();
+    });
+  });
+
+  describe('getScoops', () => {
+    it('returns the scoops of the articulations: %s', () => {
+      const scoop1 = xml.scoop({ placement: 'above' });
+      const scoop2 = xml.scoop({ placement: 'below' });
+      const node = xml.articulations({ scoops: [scoop1, scoop2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getScoops()).toStrictEqual([
+        { type: 'scoop', placement: 'above', lineType: 'solid' },
+        { type: 'scoop', placement: 'below', lineType: 'solid' },
+      ]);
+    });
+
+    it.each(LINE_TYPES.values)('returns the correct line-type: %s', (lineType) => {
+      const node = xml.articulations({ scoops: [xml.scoop({ lineType })] });
+      const articulations = new Articulations(node);
+      expect(articulations.getScoops()).toStrictEqual([{ type: 'scoop', placement: null, lineType }]);
+    });
+
+    it('returns an empty array if there are no scoops', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getScoops()).toBeEmpty();
     });
   });
 });

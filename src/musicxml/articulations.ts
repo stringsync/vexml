@@ -1,5 +1,5 @@
 import { NamedElement } from '@/util';
-import { ABOVE_BELOW, AboveBelow } from './enums';
+import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType } from './enums';
 
 /** Indicates a regular horizontal accent mark. */
 export type Accent = {
@@ -34,6 +34,13 @@ export type DetachedLegato = {
 /** Represents a staccatissimo mark. */
 export type Staccatissimo = {
   type: 'staccatissimo';
+  placement: AboveBelow | null;
+};
+
+/** Represents a scoop mark. */
+export type Scoop = {
+  type: 'scoop';
+  lineType: LineType;
   placement: AboveBelow | null;
 };
 
@@ -89,6 +96,15 @@ export class Articulations {
   getStaccatissimos(): Staccatissimo[] {
     return this.element.all('staccatissimo').map((element) => ({
       type: 'staccatissimo',
+      placement: element.attr('placement').enum(ABOVE_BELOW),
+    }));
+  }
+
+  /** Returns the scoop articulations. */
+  getScoops(): Scoop[] {
+    return this.element.all('scoop').map((element) => ({
+      type: 'scoop',
+      lineType: element.attr('line-type').withDefault<LineType>('solid').enum(LINE_TYPES),
       placement: element.attr('placement').enum(ABOVE_BELOW),
     }));
   }
