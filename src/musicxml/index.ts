@@ -1,3 +1,4 @@
+export * from './accidentalmark';
 export * from './attributes';
 export * from './articulations';
 export * from './backup';
