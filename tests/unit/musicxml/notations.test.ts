@@ -1,5 +1,15 @@
 import { xml } from '@/util';
-import { Tied, Notations, Ornaments, Slur, Tuplet, VERTICAL_DIRECTIONS, Fermata } from '@/musicxml';
+import {
+  Tied,
+  Notations,
+  Ornaments,
+  Slur,
+  Tuplet,
+  VERTICAL_DIRECTIONS,
+  Fermata,
+  Articulations,
+  AccidentalMark,
+} from '@/musicxml';
 
 describe(Notations, () => {
   describe('isArpeggiated', () => {
@@ -132,6 +142,42 @@ describe(Notations, () => {
       const node = xml.notations();
       const notations = new Notations(node);
       expect(notations.getFermatas()).toStrictEqual([]);
+    });
+  });
+
+  describe('getNotations', () => {
+    it('returns the articulations of the notations', () => {
+      const articulations = xml.articulations();
+      const node = xml.notations({ articulations: [articulations] });
+      const notations = new Notations(node);
+      expect(notations.getArticulations()).toStrictEqual([new Articulations(articulations)]);
+    });
+
+    it('defaults to an empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getArticulations()).toBeEmpty();
+    });
+  });
+
+  describe('getAccidentalMarks', () => {
+    it('returns the accidental marks of the notations', () => {
+      const accidentalMark = xml.accidentalMark({ type: 'sharp' });
+      const node = xml.notations({ accidentalMarks: [accidentalMark] });
+      const notations = new Notations(node);
+      expect(notations.getAccidentalMarks()).toStrictEqual([new AccidentalMark(accidentalMark)]);
+    });
+
+    it('defaults to an empty array when missing', () => {
+      const node = xml.notations();
+      const notations = new Notations(node);
+      expect(notations.getAccidentalMarks()).toBeEmpty();
+    });
+
+    it('does not return ornament accidental marks', () => {
+      const node = xml.notations({ ornaments: [xml.ornaments({ contents: [xml.accidentalMark()] })] });
+      const notations = new Notations(node);
+      expect(notations.getAccidentalMarks()).toBeEmpty();
     });
   });
 });
