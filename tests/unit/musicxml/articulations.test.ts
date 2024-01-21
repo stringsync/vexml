@@ -170,4 +170,31 @@ describe(Articulations, () => {
       expect(articulations.getScoops()).toBeEmpty();
     });
   });
+
+  describe('getPlops', () => {
+    it('returns the plops of the articulations: %s', () => {
+      const plop1 = xml.plop({ placement: 'above' });
+      const plop2 = xml.plop({ placement: 'below' });
+      const node = xml.articulations({ plops: [plop1, plop2] });
+
+      const articulations = new Articulations(node);
+
+      expect(articulations.getPlops()).toStrictEqual([
+        { type: 'plop', placement: 'above', lineType: 'solid' },
+        { type: 'plop', placement: 'below', lineType: 'solid' },
+      ]);
+    });
+
+    it.each(LINE_TYPES.values)('returns the correct line-type: %s', (lineType) => {
+      const node = xml.articulations({ plops: [xml.plop({ lineType })] });
+      const articulations = new Articulations(node);
+      expect(articulations.getPlops()).toStrictEqual([{ type: 'plop', placement: null, lineType }]);
+    });
+
+    it('returns an empty array if there are no plops', () => {
+      const node = xml.articulations();
+      const articulations = new Articulations(node);
+      expect(articulations.getPlops()).toBeEmpty();
+    });
+  });
 });
