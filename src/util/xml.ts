@@ -1359,8 +1359,9 @@ export const articulations = createNamedElementFactory<
     tenutos: NamedElement<'tenuto'>[];
     detachedLegatos: NamedElement<'detached-legato'>[];
     staccatissimos: NamedElement<'staccatissimo'>[];
+    scoops: NamedElement<'scoop'>[];
   }
->('articulations', (e, { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos }) => {
+>('articulations', (e, { accents, strongAccents, staccatos, tenutos, detachedLegatos, staccatissimos, scoops }) => {
   if (accents) {
     e.append(...accents);
   }
@@ -1378,6 +1379,9 @@ export const articulations = createNamedElementFactory<
   }
   if (staccatissimos) {
     e.append(...staccatissimos);
+  }
+  if (scoops) {
+    e.append(...scoops);
   }
 });
 
@@ -1422,6 +1426,18 @@ export const staccatissimo = createNamedElementFactory<'staccatissimo', { placem
   (e, { placement }) => {
     if (placement) {
       e.setAttribute('placement', placement);
+    }
+  }
+);
+
+export const scoop = createNamedElementFactory<'scoop', { placement: string; lineType: string }>(
+  'scoop',
+  (e, { placement, lineType }) => {
+    if (placement) {
+      e.setAttribute('placement', placement);
+    }
+    if (lineType) {
+      e.setAttribute('line-type', lineType);
     }
   }
 );
