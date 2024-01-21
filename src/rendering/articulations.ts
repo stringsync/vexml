@@ -7,7 +7,14 @@ export type ArticulationsRendering = {
   values: Articulation[];
 };
 
-type ArticulationType = 'accent' | 'strongaccent' | 'staccato' | 'tenuto' | 'detachedlegato' | 'staccatissimo';
+type ArticulationType =
+  | 'accent'
+  | 'strongaccent'
+  | 'staccato'
+  | 'tenuto'
+  | 'detachedlegato'
+  | 'staccatissimo'
+  | 'scoop';
 
 type Articulation<T extends ArticulationType = ArticulationType> = {
   type: T;
@@ -47,6 +54,7 @@ export class Articulations {
         ...this.getTenutos(),
         ...this.getDetachedLegatos(),
         ...this.getStaccatissimos(),
+        ...this.getScoops(),
       ],
     };
   }
@@ -173,6 +181,21 @@ export class Articulations {
       return {
         type: 'staccatissimo',
         vexflow: { values: [{ type: 'articulation', articulation: vfArticulation }] },
+      };
+    });
+  }
+
+  private getScoops(): Articulation<'scoop'>[] {
+    return this.musicXML.articulations.getScoops().map((scoop) => {
+      const vfOrnament = new vexflow.Ornament('scoop');
+
+      if (scoop.placement === 'below') {
+        vfOrnament.setPosition(vexflow.Modifier.Position.BELOW);
+      }
+
+      return {
+        type: 'scoop',
+        vexflow: { values: [{ type: 'ornament', ornament: vfOrnament }] },
       };
     });
   }
