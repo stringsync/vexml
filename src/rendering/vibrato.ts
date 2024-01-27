@@ -45,7 +45,7 @@ export class Vibrato {
       .forEach((wavyLine) => {
         Vibrato.commit(
           {
-            type: wavyLine.getType(),
+            type: wavyLine.value.getType(),
             address: data.address,
             vexflow: { note: data.vexflow.staveNote },
           },
