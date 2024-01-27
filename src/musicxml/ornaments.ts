@@ -7,6 +7,8 @@ import { Turn } from './turn';
 import { DelayedTurn } from './delayedturn';
 import { InvertedTurn } from './invertedturn';
 import { Mordent } from './mordent';
+import { InvertedMordent } from './invertedmordent';
+import { Tremolo } from './tremolo';
 
 /** A grouping of elements that fully define an ornament. */
 export type OrnamentEntry<T> = {
@@ -67,6 +69,21 @@ export class Ornaments {
     return this.getEntries('mordent').map((entry) => ({
       ...entry,
       value: new Mordent(entry.value),
+    }));
+  }
+
+  /** Returns the inverted mordents of the ornaments. Defaults to an empty array. */
+  getInvertedMordents(): OrnamentEntry<InvertedMordent>[] {
+    return this.getEntries('inverted-mordent').map((entry) => ({
+      ...entry,
+      value: new InvertedMordent(entry.value),
+    }));
+  }
+
+  getTremolos(): OrnamentEntry<Tremolo>[] {
+    return this.getEntries('tremolo').map((entry) => ({
+      ...entry,
+      value: new Tremolo(entry.value),
     }));
   }
 
