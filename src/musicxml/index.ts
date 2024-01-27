@@ -6,6 +6,7 @@ export * from './barline';
 export * from './beam';
 export * from './clef';
 export * from './defaults';
+export * from './delayedturn';
 export * from './direction';
 export * from './directiontype';
 export * from './enums';
