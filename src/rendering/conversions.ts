@@ -22,6 +22,12 @@ export const fromAccidentalTypeToAccidentalCode = (
       return 'n';
     case 'quarter-sharp':
       return '+';
+    case 'quarter-flat':
+      return 'd';
+    case 'three-quarters-sharp':
+      return '++';
+    case 'three-quarters-flat':
+      return 'db';
   }
 
   return null;
