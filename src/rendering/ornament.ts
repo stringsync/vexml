@@ -30,7 +30,7 @@ export class Ornament {
   }
 
   private getOrnamentType(): string {
-    if (this.musicXML.ornaments.hasTrillMark()) {
+    if (this.musicXML.ornaments.getTrillMarks().length > 0) {
       return 'tr';
     }
     return '';
