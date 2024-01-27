@@ -12,6 +12,7 @@ export * from './directiontype';
 export * from './enums';
 export * from './fermata';
 export * from './forward';
+export * from './invertedturn';
 export * from './key';
 export * from './lyric';
 export * from './measure';

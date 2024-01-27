@@ -5,6 +5,7 @@ import { WavyLine } from './wavyline';
 import { TrillMark } from './trillmark';
 import { Turn } from './turn';
 import { DelayedTurn } from './delayedturn';
+import { InvertedTurn } from './invertedturn';
 
 /** A grouping of elements that fully define an ornament. */
 export type OrnamentEntry<T> = {
@@ -49,6 +50,14 @@ export class Ornaments {
     return this.getEntries('delayed-turn').map((entry) => ({
       ...entry,
       value: new DelayedTurn(entry.value),
+    }));
+  }
+
+  /** Returns the inverted turns of the ornaments. Defaults to an empty array. */
+  getInvertedTurns(): OrnamentEntry<InvertedTurn>[] {
+    return this.getEntries('inverted-turn').map((entry) => ({
+      ...entry,
+      value: new InvertedTurn(entry.value),
     }));
   }
 
