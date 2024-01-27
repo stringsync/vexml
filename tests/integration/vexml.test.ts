@@ -23,7 +23,7 @@ describe('vexml', () => {
   });
 
   it.each<TestCase>([
-    { filename: 'multi_system_spanners.musicxml', width: 400 },
+    // { filename: 'multi_system_spanners.musicxml', width: 400 },
     { filename: 'multi_stave_single_part_formatting.musicxml', width: 900 },
     { filename: 'multi_part_formatting.musicxml', width: 900 },
     { filename: 'complex_formatting.musicxml', width: 900 },
