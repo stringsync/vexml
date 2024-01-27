@@ -230,7 +230,9 @@ export class Note {
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
           case 'ornaments':
-            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
+            modifierRendering.vexflow.ornaments.forEach((vfOrnament) => {
+              vfStaveNote.addModifier(vfOrnament, index);
+            });
             break;
           case 'fermata':
             vfStaveNote.addModifier(modifierRendering.vexflow.articulation, index);

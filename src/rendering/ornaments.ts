@@ -5,7 +5,7 @@ import * as vexflow from 'vexflow';
 export type OrnamentsRendering = {
   type: 'ornaments';
   vexflow: {
-    ornament: vexflow.Ornament;
+    ornaments: vexflow.Ornament[];
   };
 };
 
@@ -24,7 +24,7 @@ export class Ornaments {
     return {
       type: 'ornaments',
       vexflow: {
-        ornament: vfOrnament,
+        ornaments: [vfOrnament],
       },
     };
   }
