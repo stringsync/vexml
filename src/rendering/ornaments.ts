@@ -2,27 +2,27 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
 /** The result of rendering an ornament. */
-export type OrnamentRendering = {
-  type: 'ornament';
+export type OrnamentsRendering = {
+  type: 'ornaments';
   vexflow: {
     ornament: vexflow.Ornament;
   };
 };
 
-/** Represents a note ornament. */
-export class Ornament {
+/** Represents multiple note ornaments. */
+export class Ornaments {
   private musicXML: { ornaments: musicxml.Ornaments };
 
   constructor(opts: { musicXML: { ornaments: musicxml.Ornaments } }) {
     this.musicXML = opts.musicXML;
   }
 
-  render(): OrnamentRendering {
+  render(): OrnamentsRendering {
     const vfOrnamentType = this.getOrnamentType();
     const vfOrnament = new vexflow.Ornament(vfOrnamentType);
 
     return {
-      type: 'ornament',
+      type: 'ornaments',
       vexflow: {
         ornament: vfOrnament,
       },
