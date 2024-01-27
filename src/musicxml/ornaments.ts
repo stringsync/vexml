@@ -3,6 +3,7 @@ import * as util from '@/util';
 import { AccidentalMark } from './accidentalmark';
 import { WavyLine } from './wavyline';
 import { TrillMark } from './trillmark';
+import { Turn } from './turn';
 
 /** A grouping of elements that fully define an ornament. */
 export type OrnamentEntry<T> = {
@@ -23,6 +24,14 @@ export class Ornaments {
     return this.getEntries('trill-mark').map((entry) => ({
       ...entry,
       value: new TrillMark(entry.value),
+    }));
+  }
+
+  /** Returns turn entries. Defaults to an empty array. */
+  getTurns(): OrnamentEntry<Turn>[] {
+    return this.getEntries('turn').map((entry) => ({
+      ...entry,
+      value: new Turn(entry.value),
     }));
   }
 
