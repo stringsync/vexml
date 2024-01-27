@@ -32,6 +32,7 @@ export * from './tied';
 export * from './time';
 export * from './timemodification';
 export * from './trillmark';
+export * from './turn';
 export * from './tuplet';
 export * from './types';
 export * from './wavyline';
