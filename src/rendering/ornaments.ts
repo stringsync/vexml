@@ -27,12 +27,16 @@ export class Ornaments {
     };
   }
 
-  private getOrnament(type: string, accidentalMarks: musicxml.AccidentalMark[]): vexflow.Ornament {
-    const vfOrnament = new vexflow.Ornament(type);
+  private getOrnament(opts: {
+    type: string;
+    accidentalMarks: musicxml.AccidentalMark[];
+    delayed: boolean;
+  }): vexflow.Ornament {
+    const vfOrnament = new vexflow.Ornament(opts.type).setDelayed(opts.delayed);
 
     // TODO: Provide a warning when there are more than two accidental marks.
 
-    const [accidental1, accidental2] = accidentalMarks.map((accidentalMark) =>
+    const [accidental1, accidental2] = opts.accidentalMarks.map((accidentalMark) =>
       conversions.fromAccidentalTypeToAccidentalCode(accidentalMark.getType())
     );
     if (accidental1) {
@@ -46,12 +50,22 @@ export class Ornaments {
   }
 
   private getTrillMarks(): vexflow.Ornament[] {
-    return this.musicXML.ornaments
-      .getTrillMarks()
-      .map((trillMark) => this.getOrnament('tr', trillMark.accidentalMarks));
+    return this.musicXML.ornaments.getTrillMarks().map((trillMark) =>
+      this.getOrnament({
+        type: 'tr',
+        accidentalMarks: trillMark.accidentalMarks,
+        delayed: false,
+      })
+    );
   }
 
   private getTurns(): vexflow.Ornament[] {
-    return this.musicXML.ornaments.getTurns().map((turn) => this.getOrnament('turn', turn.accidentalMarks));
+    return this.musicXML.ornaments.getTurns().map((turn) =>
+      this.getOrnament({
+        type: 'turn',
+        accidentalMarks: turn.accidentalMarks,
+        delayed: false,
+      })
+    );
   }
 }
