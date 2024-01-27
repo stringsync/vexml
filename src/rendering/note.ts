@@ -10,13 +10,14 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 
-import { Ornament, OrnamentRendering } from './ornament';
+import { Ornaments, OrnamentsRendering } from './ornaments';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
 import { Arpeggio, ArpeggioRendering } from './arpeggio';
 import { Articulations, ArticulationsRendering } from './articulations';
 import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
+import { Tremolo, TremoloRendering } from './tremolo';
 
 const STEP_ORDER = [
   'Cb',
@@ -46,10 +47,11 @@ export type NoteModifierRendering =
   | AccidentalMarkRendering
   | LyricRendering
   | TokenRendering
-  | OrnamentRendering
+  | OrnamentsRendering
   | FermataRendering
   | ArpeggioRendering
-  | ArticulationsRendering;
+  | ArticulationsRendering
+  | TremoloRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -181,6 +183,11 @@ export class Note {
         renderings.push(accidental.render());
       }
 
+      const tremolo = note.getTremolo();
+      if (tremolo) {
+        renderings.push(tremolo.render());
+      }
+
       const accidentalMark = note.getAccidentalMark();
       if (accidentalMark) {
         renderings.push(accidentalMark.render());
@@ -229,8 +236,10 @@ export class Note {
           case 'token':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
-          case 'ornament':
-            vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
+          case 'ornaments':
+            modifierRendering.vexflow.ornaments.forEach((vfOrnament) => {
+              vfStaveNote.addModifier(vfOrnament, index);
+            });
             break;
           case 'fermata':
             vfStaveNote.addModifier(modifierRendering.vexflow.articulation, index);
@@ -251,6 +260,9 @@ export class Note {
                     break;
                 }
               });
+            break;
+          case 'tremolo':
+            vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
             break;
         }
       }
@@ -407,11 +419,11 @@ export class Note {
       .map((lyric) => new Lyric({ musicXML: { lyric } }));
   }
 
-  private getOrnaments(): Ornament[] {
+  private getOrnaments(): Ornaments[] {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
-      .map((ornaments) => new Ornament({ musicXML: { ornaments } }));
+      .map((ornaments) => new Ornaments({ musicXML: { ornaments } }));
   }
 
   private getFermatas(): Fermata[] {
@@ -483,6 +495,16 @@ export class Note {
         .getNotations()
         .flatMap((notations) => notations.getAccidentalMarks())
         .map((accidentalMark) => new AccidentalMark({ musicXML: { accidentalMark } }))
+    );
+  }
+
+  private getTremolo(): Tremolo | null {
+    return util.first(
+      this.musicXML.note
+        .getNotations()
+        .flatMap((notations) => notations.getOrnaments())
+        .flatMap((ornaments) => ornaments.getTremolos())
+        .map((tremolo) => new Tremolo({ musicXML: { tremolo: tremolo.value } }))
     );
   }
 }

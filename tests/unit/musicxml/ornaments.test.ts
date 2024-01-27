@@ -1,19 +1,35 @@
-import { Ornaments, WavyLine } from '@/musicxml';
+import { AccidentalMark, Ornaments, TrillMark, WavyLine } from '@/musicxml';
 import { xml } from '@/util';
 
 describe(Ornaments, () => {
-  describe('hasTrillMark', () => {
-    it('returns true when there is at least one trill mark', () => {
+  describe('getTrillMarks', () => {
+    it('returns the trill mark entries of the ornaments', () => {
       const trillMark = xml.trillMark();
       const node = xml.ornaments({ contents: [trillMark] });
       const ornaments = new Ornaments(node);
-      expect(ornaments.hasTrillMark()).toBeTrue();
+      expect(ornaments.getTrillMarks()).toStrictEqual([{ value: new TrillMark(trillMark), accidentalMarks: [] }]);
     });
 
-    it('returns false when there are no trill marks', () => {
+    it('includes accidental marks after the trill mark', () => {
+      const trillMark = xml.trillMark();
+      const accidentalMark1 = xml.accidentalMark();
+      const accidentalMark2 = xml.accidentalMark();
+      const node = xml.ornaments({ contents: [accidentalMark1, trillMark, accidentalMark2] });
+
+      const ornaments = new Ornaments(node);
+
+      expect(ornaments.getTrillMarks()).toStrictEqual([
+        {
+          value: new TrillMark(trillMark),
+          accidentalMarks: [new AccidentalMark(accidentalMark2)],
+        },
+      ]);
+    });
+
+    it('defaults to an empty array', () => {
       const node = xml.ornaments();
       const ornaments = new Ornaments(node);
-      expect(ornaments.hasTrillMark()).toBeFalse();
+      expect(ornaments.getTrillMarks()).toStrictEqual([]);
     });
   });
 
@@ -22,8 +38,13 @@ describe(Ornaments, () => {
       const wavyLine1 = xml.wavyLine({ type: 'start' });
       const wavyLine2 = xml.wavyLine({ type: 'stop' });
       const node = xml.ornaments({ contents: [wavyLine1, wavyLine2] });
+
       const ornaments = new Ornaments(node);
-      expect(ornaments.getWavyLines()).toStrictEqual([new WavyLine(wavyLine1), new WavyLine(wavyLine2)]);
+
+      expect(ornaments.getWavyLines()).toStrictEqual([
+        { value: new WavyLine(wavyLine1), accidentalMarks: [] },
+        { value: new WavyLine(wavyLine2), accidentalMarks: [] },
+      ]);
     });
 
     it('defaults to an empty array', () => {
