@@ -10,7 +10,7 @@ import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
 import * as conversions from './conversions';
 
-import { Ornament, OrnamentRendering } from './ornament';
+import { Ornaments, OrnamentsRendering } from './ornaments';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { Fermata, FermataRendering } from './fermata';
@@ -46,7 +46,7 @@ export type NoteModifierRendering =
   | AccidentalMarkRendering
   | LyricRendering
   | TokenRendering
-  | OrnamentRendering
+  | OrnamentsRendering
   | FermataRendering
   | ArpeggioRendering
   | ArticulationsRendering;
@@ -229,7 +229,7 @@ export class Note {
           case 'token':
             vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
-          case 'ornament':
+          case 'ornaments':
             vfStaveNote.addModifier(modifierRendering.vexflow.ornament, index);
             break;
           case 'fermata':
@@ -407,11 +407,11 @@ export class Note {
       .map((lyric) => new Lyric({ musicXML: { lyric } }));
   }
 
-  private getOrnaments(): Ornament[] {
+  private getOrnaments(): Ornaments[] {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
-      .map((ornaments) => new Ornament({ musicXML: { ornaments } }));
+      .map((ornaments) => new Ornaments({ musicXML: { ornaments } }));
   }
 
   private getFermatas(): Fermata[] {
