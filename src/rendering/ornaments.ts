@@ -22,7 +22,7 @@ export class Ornaments {
     return {
       type: 'ornaments',
       vexflow: {
-        ornaments: [...this.getTrillMarks()],
+        ornaments: [...this.getTrillMarks(), ...this.getTurns()],
       },
     };
   }
@@ -49,5 +49,9 @@ export class Ornaments {
     return this.musicXML.ornaments
       .getTrillMarks()
       .map((trillMark) => this.getOrnament('tr', trillMark.accidentalMarks));
+  }
+
+  private getTurns(): vexflow.Ornament[] {
+    return this.musicXML.ornaments.getTurns().map((turn) => this.getOrnament('turn', turn.accidentalMarks));
   }
 }
