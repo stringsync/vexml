@@ -4,6 +4,7 @@ import { AccidentalMark } from './accidentalmark';
 import { WavyLine } from './wavyline';
 import { TrillMark } from './trillmark';
 import { Turn } from './turn';
+import { DelayedTurn } from './delayedturn';
 
 /** A grouping of elements that fully define an ornament. */
 export type OrnamentEntry<T> = {
@@ -40,6 +41,14 @@ export class Ornaments {
     return this.getEntries('wavy-line').map((entry) => ({
       ...entry,
       value: new WavyLine(entry.value),
+    }));
+  }
+
+  /** Returns the delayed turns of the ornaments. Defaults to an empty array. */
+  getDelayedTurns(): OrnamentEntry<DelayedTurn>[] {
+    return this.getEntries('delayed-turn').map((entry) => ({
+      ...entry,
+      value: new DelayedTurn(entry.value),
     }));
   }
 
