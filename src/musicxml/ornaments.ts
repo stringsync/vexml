@@ -6,6 +6,7 @@ import { TrillMark } from './trillmark';
 import { Turn } from './turn';
 import { DelayedTurn } from './delayedturn';
 import { InvertedTurn } from './invertedturn';
+import { Mordent } from './mordent';
 
 /** A grouping of elements that fully define an ornament. */
 export type OrnamentEntry<T> = {
@@ -58,6 +59,14 @@ export class Ornaments {
     return this.getEntries('inverted-turn').map((entry) => ({
       ...entry,
       value: new InvertedTurn(entry.value),
+    }));
+  }
+
+  /** Returns the mordents of the ornaments. Defaults to an empty array. */
+  getMordents(): OrnamentEntry<Mordent>[] {
+    return this.getEntries('mordent').map((entry) => ({
+      ...entry,
+      value: new Mordent(entry.value),
     }));
   }
 

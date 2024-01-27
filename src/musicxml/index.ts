@@ -18,6 +18,7 @@ export * from './lyric';
 export * from './measure';
 export * from './measurestyle';
 export * from './metronome';
+export * from './mordent';
 export * from './musicxml';
 export * from './notations';
 export * from './note';
