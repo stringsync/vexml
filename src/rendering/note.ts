@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as conversions from './conversions';
 import { Accidental, AccidentalRendering } from './accidental';
 import { Config } from './config';
 import { Lyric, LyricRendering } from './lyric';
@@ -8,8 +9,6 @@ import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
 import { Token, TokenRendering } from './token';
-import * as conversions from './conversions';
-
 import { Ornaments, OrnamentsRendering } from './ornaments';
 import { Spanners } from './spanners';
 import { Address } from './address';
@@ -18,6 +17,7 @@ import { Arpeggio, ArpeggioRendering } from './arpeggio';
 import { Articulations, ArticulationsRendering } from './articulations';
 import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 import { Tremolo, TremoloRendering } from './tremolo';
+import { Technicals, TechnicalsRendering } from './technicals';
 
 const STEP_ORDER = [
   'Cb',
@@ -51,7 +51,8 @@ export type NoteModifierRendering =
   | FermataRendering
   | ArpeggioRendering
   | ArticulationsRendering
-  | TremoloRendering;
+  | TremoloRendering
+  | TechnicalsRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -218,6 +219,10 @@ export class Note {
         renderings.push(articulation.render());
       }
 
+      for (const technical of note.getTechnicals()) {
+        renderings.push(technical.render());
+      }
+
       return renderings;
     });
 
@@ -263,6 +268,11 @@ export class Note {
             break;
           case 'tremolo':
             vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
+            break;
+          case 'technicals':
+            modifierRendering.vexflow.articulations.forEach((vfArticulation) => {
+              vfStaveNote.addModifier(vfArticulation, index);
+            });
             break;
         }
       }
@@ -505,5 +515,12 @@ export class Note {
         .flatMap((ornaments) => ornaments.getTremolos())
         .map((tremolo) => new Tremolo({ musicXML: { tremolo: tremolo.value } }))
     );
+  }
+
+  private getTechnicals(): Technicals[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getTechnicals())
+      .map((technical) => new Technicals({ musicXML: { technical } }));
   }
 }
