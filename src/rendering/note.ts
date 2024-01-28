@@ -395,7 +395,6 @@ export class Note {
     )!;
   }
 
-  @util.memoize()
   private getAccidental(): Accidental | null {
     const noteAccidentalCode =
       conversions.fromAccidentalTypeToAccidentalCode(this.musicXML.note.getAccidentalType()) ??
