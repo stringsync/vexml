@@ -336,3 +336,27 @@ export const FERMATA_SHAPES = new Enum([
  */
 export type FermataType = EnumValues<typeof FERMATA_TYPES>;
 export const FERMATA_TYPES = new Enum(['upright', 'inverted'] as const);
+
+/**
+ * The type of the harmonic.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/harmonic/
+ */
+export type HarmonicType = EnumValues<typeof HARMONIC_TYPES>;
+export const HARMONIC_TYPES = new Enum(['unspecified', 'natural', 'artificial'] as const);
+
+/**
+ * The type of the harmonic pitch.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/harmonic/
+ */
+export type HarmonicPitchType = EnumValues<typeof HARMONIC_PITCH_TYPES>;
+export const HARMONIC_PITCH_TYPES = new Enum(['unspecified', 'base', 'touching', 'sounding'] as const);
+
+/**
+ * The type of bend.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/bend/
+ */
+export type BendType = EnumValues<typeof BEND_TYPES>;
+export const BEND_TYPES = new Enum(['normal', 'pre-bend', 'release'] as const);
