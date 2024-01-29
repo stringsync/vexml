@@ -25,12 +25,16 @@ export class Technicals {
     return {
       type: 'technicals',
       vexflow: {
-        articulations: [...this.getUpBows()],
+        articulations: [...this.getUpBows(), ...this.getDownBows()],
       },
     };
   }
 
   private getUpBows(): vexflow.Articulation[] {
     return this.musicXML.technical.getUpBows().map(() => new vexflow.Articulation('a|'));
+  }
+
+  private getDownBows(): vexflow.Articulation[] {
+    return this.musicXML.technical.getDownBows().map(() => new vexflow.Articulation('am'));
   }
 }
