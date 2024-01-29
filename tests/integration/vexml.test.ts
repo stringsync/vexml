@@ -14,11 +14,11 @@ const DATA_DIR = path.join(__dirname, '__data__', 'vexml');
 describe('vexml', () => {
   let page: Page;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     page = await (globalThis as any).__BROWSER_GLOBAL__.newPage();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await page.close();
   });
 
