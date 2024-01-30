@@ -36,6 +36,8 @@ export class Technicals {
           ...this.getTripleTongues(),
           ...this.getStopped(),
           ...this.getSnapPizzicatos(),
+          ...this.getFrets(),
+          ...this.getStrings(),
         ],
       },
     };
@@ -88,5 +90,23 @@ export class Technicals {
 
   private getSnapPizzicatos(): vexflow.Articulation[] {
     return this.musicXML.technical.getSnapPizzicatos().map(() => new vexflow.Articulation('ao'));
+  }
+
+  private getFrets(): vexflow.StringNumber[] {
+    return this.musicXML.technical
+      .getFrets()
+      .map((fret) => fret.getNumber())
+      .filter((x): x is number => typeof x === 'number')
+      .map((number) =>
+        new vexflow.StringNumber(number.toString()).setPosition(vexflow.Modifier.Position.LEFT).setDrawCircle(false)
+      );
+  }
+
+  private getStrings(): vexflow.StringNumber[] {
+    return this.musicXML.technical
+      .getTabStrings()
+      .map((string) => string.getNumber())
+      .filter((x): x is number => typeof x === 'number')
+      .map((number) => new vexflow.StringNumber(number.toString()).setPosition(vexflow.Modifier.Position.RIGHT));
   }
 }
