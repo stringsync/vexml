@@ -31,6 +31,7 @@ export class Technicals {
           ...this.getHarmonics(),
           ...this.getOpenStrings(),
           ...this.getFingerings(),
+          ...this.getPlucks(),
         ],
       },
     };
@@ -59,5 +60,13 @@ export class Technicals {
       .map((fingering) => fingering.getNumber())
       .filter((x): x is number => typeof x === 'number')
       .map((number) => new vexflow.Annotation(number.toString()));
+  }
+
+  private getPlucks(): vexflow.Annotation[] {
+    return this.musicXML.technical
+      .getPlucks()
+      .map((pluck) => pluck.getFinger())
+      .filter((finger): finger is string => typeof finger === 'string')
+      .map((finger) => new vexflow.Annotation(finger));
   }
 }
