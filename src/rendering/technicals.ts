@@ -25,7 +25,7 @@ export class Technicals {
     return {
       type: 'technicals',
       vexflow: {
-        articulations: [...this.getUpBows(), ...this.getDownBows()],
+        articulations: [...this.getUpBows(), ...this.getDownBows(), ...this.getHarmonics(), ...this.getOpenStrings()],
       },
     };
   }
@@ -36,5 +36,14 @@ export class Technicals {
 
   private getDownBows(): vexflow.Articulation[] {
     return this.musicXML.technical.getDownBows().map(() => new vexflow.Articulation('am'));
+  }
+
+  private getHarmonics(): vexflow.Articulation[] {
+    // TODO: Support other types of harmonics when they are supported by VexFlow.
+    return this.musicXML.technical.getHarmonics().map(() => new vexflow.Articulation('ah'));
+  }
+
+  private getOpenStrings(): vexflow.Articulation[] {
+    return this.musicXML.technical.getOpenStrings().map(() => new vexflow.Articulation('ah'));
   }
 }
