@@ -32,6 +32,10 @@ export class Technicals {
           ...this.getOpenStrings(),
           ...this.getFingerings(),
           ...this.getPlucks(),
+          ...this.getDoubleTongues(),
+          ...this.getTripleTongues(),
+          ...this.getStopped(),
+          ...this.getSnapPizzicatos(),
         ],
       },
     };
@@ -68,5 +72,21 @@ export class Technicals {
       .map((pluck) => pluck.getFinger())
       .filter((finger): finger is string => typeof finger === 'string')
       .map((finger) => new vexflow.Annotation(finger));
+  }
+
+  private getDoubleTongues(): vexflow.Annotation[] {
+    return this.musicXML.technical.getDoubleTongues().map(() => new vexflow.Annotation('..'));
+  }
+
+  private getTripleTongues(): vexflow.Annotation[] {
+    return this.musicXML.technical.getTripleTongues().map(() => new vexflow.Annotation('...'));
+  }
+
+  private getStopped(): vexflow.Articulation[] {
+    return this.musicXML.technical.getStopped().map(() => new vexflow.Articulation('a+'));
+  }
+
+  private getSnapPizzicatos(): vexflow.Articulation[] {
+    return this.musicXML.technical.getSnapPizzicatos().map(() => new vexflow.Articulation('ao'));
   }
 }
