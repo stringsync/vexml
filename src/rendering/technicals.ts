@@ -4,7 +4,7 @@ import * as vexflow from 'vexflow';
 export type TechnicalsRendering = {
   type: 'technicals';
   vexflow: {
-    articulations: vexflow.Articulation[];
+    modifiers: vexflow.Modifier[];
   };
 };
 
@@ -25,7 +25,13 @@ export class Technicals {
     return {
       type: 'technicals',
       vexflow: {
-        articulations: [...this.getUpBows(), ...this.getDownBows(), ...this.getHarmonics(), ...this.getOpenStrings()],
+        modifiers: [
+          ...this.getUpBows(),
+          ...this.getDownBows(),
+          ...this.getHarmonics(),
+          ...this.getOpenStrings(),
+          ...this.getFingerings(),
+        ],
       },
     };
   }
@@ -45,5 +51,13 @@ export class Technicals {
 
   private getOpenStrings(): vexflow.Articulation[] {
     return this.musicXML.technical.getOpenStrings().map(() => new vexflow.Articulation('ah'));
+  }
+
+  private getFingerings(): vexflow.Annotation[] {
+    return this.musicXML.technical
+      .getFingerings()
+      .map((fingering) => fingering.getNumber())
+      .filter((x): x is number => typeof x === 'number')
+      .map((number) => new vexflow.Annotation(number.toString()));
   }
 }
