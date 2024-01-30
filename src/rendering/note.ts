@@ -261,7 +261,7 @@ export class Note {
             vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
             break;
           case 'technicals':
-            modifierRendering.vexflow.articulations.forEach((vfArticulation) => {
+            modifierRendering.vexflow.modifiers.forEach((vfArticulation) => {
               vfStaveNote.addModifier(vfArticulation, index);
             });
             break;
