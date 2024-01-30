@@ -253,18 +253,9 @@ export class Note {
             vfStaveNote.addStroke(index, modifierRendering.vexflow.stroke);
             break;
           case 'articulations':
-            modifierRendering.values
-              .flatMap((value) => value.vexflow.values)
-              .forEach((value) => {
-                switch (value.type) {
-                  case 'articulation':
-                    vfStaveNote.addModifier(value.articulation, index);
-                    break;
-                  case 'ornament':
-                    vfStaveNote.addModifier(value.ornament, index);
-                    break;
-                }
-              });
+            modifierRendering.vexflow.modifiers.forEach((vfModifier) => {
+              vfStaveNote.addModifier(vfModifier, index);
+            });
             break;
           case 'tremolo':
             vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
