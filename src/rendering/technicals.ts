@@ -1,6 +1,10 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 
+const BEND_WIDTH = 32;
+
+/** The result of rendering all technicals. */
 export type TechnicalsRendering = {
   type: 'technicals';
   vexflow: {
@@ -38,6 +42,7 @@ export class Technicals {
           ...this.getSnapPizzicatos(),
           ...this.getFrets(),
           ...this.getStrings(),
+          ...this.getBends(),
         ],
       },
     };
@@ -108,5 +113,37 @@ export class Technicals {
       .map((string) => string.getNumber())
       .filter((x): x is number => typeof x === 'number')
       .map((number) => new vexflow.StringNumber(number.toString()).setPosition(vexflow.Modifier.Position.RIGHT));
+  }
+
+  private getBends(): vexflow.Bend[] {
+    const phrase = this.musicXML.technical.getBends().map<vexflow.BendPhrase>((bend) => {
+      const semitones = bend.getAlter();
+
+      let text = '';
+      if (semitones === 2) {
+        text = 'full';
+      } else if (semitones === 1) {
+        text = '1/2';
+      } else if (semitones === 0.5) {
+        text = '1/4';
+      } else {
+        const fraction = util.Fraction.fromDecimal(semitones).toMixed();
+        text = `${fraction.whole} ${fraction.remainder.numerator}/${fraction.remainder.denominator}`;
+      }
+
+      let type: number;
+      switch (bend.getType()) {
+        case 'release':
+          type = vexflow.Bend.DOWN;
+          break;
+        default:
+          type = vexflow.Bend.UP;
+          break;
+      }
+
+      return { text, type, width: BEND_WIDTH, drawWidth: BEND_WIDTH };
+    });
+
+    return phrase.length > 0 ? [new vexflow.Bend(phrase)] : [];
   }
 }
