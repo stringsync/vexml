@@ -10,7 +10,7 @@ const customSnapshotsDir =
 const toMatchImageSnapshot = configureToMatchImageSnapshot({
   customSnapshotsDir,
   customDiffConfig: {
-    threshold: 1,
+    threshold: 0.01, // 1%
   },
 });
 

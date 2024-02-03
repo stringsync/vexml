@@ -179,6 +179,20 @@ export class Score {
         vfStaveTie.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.StaveTie elements for hammer-ons.
+    spannersRendering.hammerOns
+      .flatMap((hammerOn) => hammerOn.vexflow.tie)
+      .forEach((vfStaveTie) => {
+        vfStaveTie.setContext(vfContext).draw();
+      });
+
+    // Draw vexflow.StaveTie elements for pull-offs.
+    spannersRendering.pullOffs
+      .flatMap((pullOff) => pullOff.vexflow.tie)
+      .forEach((vfStaveTie) => {
+        vfStaveTie.setContext(vfContext).draw();
+      });
+
     // Draw vexflow.Tuplet elements.
     spannersRendering.tuplets
       .map((tuplet) => tuplet.vexflow.tuplet)
