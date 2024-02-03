@@ -7,4 +7,9 @@ import { NamedElement } from '@/util';
  */
 export class Tap {
   constructor(private element: NamedElement<'tap'>) {}
+
+  /** Returns the symbol for the tap. Defaults to 'T'. */
+  getSymbol(): string {
+    return this.element.content().withDefault('T').str();
+  }
 }

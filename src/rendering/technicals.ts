@@ -43,6 +43,7 @@ export class Technicals {
           ...this.getFrets(),
           ...this.getStrings(),
           ...this.getBends(),
+          ...this.getTaps(),
         ],
       },
     };
@@ -145,5 +146,9 @@ export class Technicals {
     });
 
     return phrase.length > 0 ? [new vexflow.Bend(phrase)] : [];
+  }
+
+  private getTaps(): vexflow.Annotation[] {
+    return this.musicXML.technical.getTaps().map((tap) => new vexflow.Annotation(tap.getSymbol()));
   }
 }
