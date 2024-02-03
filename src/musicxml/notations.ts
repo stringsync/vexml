@@ -7,6 +7,7 @@ import { Tied } from './tied';
 import { Fermata } from './fermata';
 import { Articulations } from './articulations';
 import { AccidentalMark } from './accidentalmark';
+import { Technical } from './technical';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -64,5 +65,10 @@ export class Notations {
   /** Returns the accidental marks of the notations (not ornaments). */
   getAccidentalMarks(): AccidentalMark[] {
     return this.element.children('accidental-mark').map((element) => new AccidentalMark(element));
+  }
+
+  /** Returns the technicals of the notations. */
+  getTechnicals(): Technical[] {
+    return this.element.children('technical').map((element) => new Technical(element));
   }
 }

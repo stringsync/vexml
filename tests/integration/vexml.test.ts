@@ -14,16 +14,16 @@ const DATA_DIR = path.join(__dirname, '__data__', 'vexml');
 describe('vexml', () => {
   let page: Page;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     page = await (globalThis as any).__BROWSER_GLOBAL__.newPage();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await page.close();
   });
 
   it.each<TestCase>([
-    // { filename: 'multi_system_spanners.musicxml', width: 400 },
+    { filename: 'multi_system_spanners.musicxml', width: 400 },
     { filename: 'multi_stave_single_part_formatting.musicxml', width: 900 },
     { filename: 'multi_part_formatting.musicxml', width: 900 },
     { filename: 'complex_formatting.musicxml', width: 900 },
