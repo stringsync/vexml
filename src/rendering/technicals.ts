@@ -44,6 +44,8 @@ export class Technicals {
           ...this.getStrings(),
           ...this.getBends(),
           ...this.getTaps(),
+          ...this.getHeels(),
+          ...this.getToes(),
         ],
       },
     };
@@ -150,5 +152,13 @@ export class Technicals {
 
   private getTaps(): vexflow.Annotation[] {
     return this.musicXML.technical.getTaps().map((tap) => new vexflow.Annotation(tap.getSymbol()));
+  }
+
+  private getHeels(): vexflow.Annotation[] {
+    return this.musicXML.technical.getHeels().map(() => new vexflow.Annotation('U'));
+  }
+
+  private getToes(): vexflow.Annotation[] {
+    return this.musicXML.technical.getToes().map(() => new vexflow.Annotation('^'));
   }
 }
