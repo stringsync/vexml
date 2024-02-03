@@ -37,6 +37,7 @@ export class Tie {
     this.fragments = [opts.fragment];
   }
 
+  /** Processes spanner data for ties. */
   static process(data: SpannerData, container: TieContainer): void {
     const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
