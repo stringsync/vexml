@@ -100,7 +100,7 @@ export class Technical {
   }
 
   /** Returns the pull-offs of the technical. */
-  getPulloffs(): PullOff[] {
+  getPullOffs(): PullOff[] {
     return this.element.children('pull-off').map((element) => new PullOff(element));
   }
 

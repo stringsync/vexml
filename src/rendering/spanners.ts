@@ -11,6 +11,7 @@ import * as util from '@/util';
 import { Address } from './address';
 import { Tie, TieRendering } from './tie';
 import { HammerOn, HammerOnRendering } from './hammeron';
+import { PullOff, PullOffRendering } from './pulloff';
 
 /** The result of rendering spanners. */
 export type SpannersRendering = {
@@ -24,6 +25,7 @@ export type SpannersRendering = {
   vibratos: VibratoRendering[];
   octaveShifts: OctaveShiftRendering[];
   hammerOns: HammerOnRendering[];
+  pullOffs: PullOffRendering[];
 };
 
 /** The accounting for all spanners. */
@@ -37,6 +39,7 @@ export class Spanners {
   private vibratos = SpannerMap.keyless<Vibrato>();
   private octaveShifts = SpannerMap.keyless<OctaveShift>();
   private hammerOns = new SpannerMap<number, HammerOn>();
+  private pullOffs = new SpannerMap<number, PullOff>();
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
@@ -60,6 +63,7 @@ export class Spanners {
     Vibrato.process(data, this.vibratos);
     OctaveShift.process(data, this.octaveShifts);
     HammerOn.process(data, this.hammerOns);
+    PullOff.process(data, this.pullOffs);
   }
 
   /** Renders all the spanners. */
@@ -75,6 +79,7 @@ export class Spanners {
       vibratos: this.vibratos.values().map((vibrato) => vibrato.render()),
       octaveShifts: this.octaveShifts.values().map((octaveShift) => octaveShift.render()),
       hammerOns: this.hammerOns.values().map((hammerOn) => hammerOn.render()),
+      pullOffs: this.pullOffs.values().map((pullOff) => pullOff.render()),
     };
   }
 }
