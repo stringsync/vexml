@@ -17,6 +17,8 @@ import { Note } from './note';
 import { Address } from './address';
 import { Spanners } from './spanners';
 
+const UNDEFINED_VOICE_ID = '';
+
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
   type: 'chorus';
@@ -184,22 +186,25 @@ export class Chorus {
   }): Record<string, VoiceEntryData[]> {
     const result: Record<string, VoiceEntryData[]> = {};
 
-    let voiceId = '';
+    let voiceId = UNDEFINED_VOICE_ID;
     let quarterNoteDivisions = opts.quarterNoteDivisions;
     let divisions = Division.of(0, quarterNoteDivisions);
-    let directions = new Array<musicxml.Direction>();
+    const directionsByVoiceId: Record<string, musicxml.Direction[]> = {};
     let octaveShift: musicxml.OctaveShift | null = null;
 
     // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
     for (let index = 0; index < opts.measureEntries.length; index++) {
       const entry = opts.measureEntries[index];
-      const isLast = index === opts.measureEntries.length - 1;
 
       if (entry instanceof StaveSignature) {
         quarterNoteDivisions = entry.getQuarterNoteDivisions();
       }
 
       if (entry instanceof musicxml.Direction) {
+        const voiceId = entry.getVoice() ?? UNDEFINED_VOICE_ID;
+        directionsByVoiceId[voiceId] ??= [];
+        directionsByVoiceId[voiceId].push(entry);
+
         entry
           .getTypes()
           .map((directionType) => directionType.getContent())
@@ -220,19 +225,12 @@ export class Chorus {
                 break;
             }
           });
-
-        if (isLast) {
-          // We need to attach the direction to some note or it will be ignored.
-          util.last(result[voiceId] ?? [])?.directions.push(entry);
-        } else {
-          directions.push(entry);
-        }
       }
 
       if (entry instanceof musicxml.Note) {
         const note = entry;
 
-        voiceId = note.getVoice();
+        voiceId = note.getVoice() ?? voiceId ?? UNDEFINED_VOICE_ID;
         result[voiceId] ??= [];
 
         if (note.isChordTail()) {
@@ -255,6 +253,14 @@ export class Chorus {
 
           const stem = conversions.fromStemToStemDirection(note.getStem());
 
+          const directions = [
+            ...(directionsByVoiceId[voiceId] ?? []),
+            ...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []),
+          ];
+
+          delete directionsByVoiceId[voiceId];
+          delete directionsByVoiceId[UNDEFINED_VOICE_ID];
+
           result[voiceId].push({
             voiceId,
             note,
@@ -266,16 +272,23 @@ export class Chorus {
           });
 
           divisions = divisions.add(noteDuration);
-          directions = [];
         }
       }
 
       if (entry instanceof musicxml.Backup) {
+        directionsByVoiceId[voiceId] ??= [];
+        directionsByVoiceId[voiceId].push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
+        delete directionsByVoiceId[UNDEFINED_VOICE_ID];
+
         const backupDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
         divisions = divisions.subtract(backupDuration);
       }
 
       if (entry instanceof musicxml.Forward) {
+        directionsByVoiceId[voiceId] ??= [];
+        directionsByVoiceId[voiceId].push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
+        delete directionsByVoiceId[UNDEFINED_VOICE_ID];
+
         const forwardDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
         divisions = divisions.add(forwardDuration);
       }
@@ -283,6 +296,16 @@ export class Chorus {
       if (divisions.isLessThan(Division.zero())) {
         divisions = Division.zero();
       }
+    }
+
+    // Move all the undefined voice directions to the last voice.
+    directionsByVoiceId[voiceId]?.push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
+    delete directionsByVoiceId[UNDEFINED_VOICE_ID];
+
+    // Handle any leftover directions that weren't attached to a succeeding note _in the same voice_ by attaching them
+    // to the last note in each voice. If there are no notes in a voice, the directions are discarded.
+    for (const [voiceId, directions] of Object.entries(directionsByVoiceId)) {
+      util.last(result[voiceId] ?? [])?.directions.push(...directions);
     }
 
     return result;
