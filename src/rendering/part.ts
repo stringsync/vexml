@@ -63,6 +63,9 @@ export class Part {
         if (entry instanceof musicxml.Note) {
           return entry.getStaveNumber() === staveNumber;
         }
+        if (entry instanceof musicxml.Direction) {
+          return entry.getStaveNumber() === staveNumber;
+        }
         return true;
       });
 

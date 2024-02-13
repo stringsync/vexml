@@ -28,4 +28,14 @@ export class Direction {
   getPlacement(): AboveBelow | null {
     return this.element.attr('placement').enum(ABOVE_BELOW);
   }
+
+  /** Returns the voice this direction belongs to. Defaults to null. */
+  getVoice(): string | null {
+    return this.element.first('voice')?.content().str() ?? null;
+  }
+
+  /** Returns the staff this direction belongs to. Defaults to 1. */
+  getStaveNumber(): number | null {
+    return this.element.first('staff')?.content().int() ?? 1;
+  }
 }
