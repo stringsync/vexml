@@ -87,7 +87,8 @@ export class Seed {
       remaining -= staveOffsetX;
       totalStaveOffsetX += staveOffsetX;
 
-      let required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
+      let required =
+        currentMeasure.getMaxSpecifiedWidth() ?? util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
 
       if (remaining < required) {
         addSystem({ stretch: true });
@@ -114,7 +115,8 @@ export class Seed {
           }),
         });
 
-        required = util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
+        required =
+          currentMeasure.getMaxSpecifiedWidth() ?? util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
       }
 
       remaining -= required;
