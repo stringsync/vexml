@@ -43,20 +43,6 @@ describe(Measure, () => {
     });
   });
 
-  describe('hasWidth', () => {
-    it('returns true when the measure width is set', () => {
-      const node = xml.measure({ width: 42 });
-      const measure = new Measure(node);
-      expect(measure.hasWidth()).toBeTrue();
-    });
-
-    it('returns false when the measure width is not set', () => {
-      const node = xml.measure();
-      const measure = new Measure(node);
-      expect(measure.hasWidth()).toBeFalse();
-    });
-  });
-
   describe('getWidth', () => {
     it('returns the measure width', () => {
       const node = xml.measure({ width: 42 });
