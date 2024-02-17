@@ -27,11 +27,6 @@ export class Measure {
     return this.element.attr('number').withDefault('').str();
   }
 
-  /** Returns whether or not the measure has a specified width */
-  hasWidth(): boolean {
-    return typeof this.getWidth() === 'number';
-  }
-
   /** Returns the specified measured width in tenths. Defaults to null. */
   getWidth(): number | null {
     return this.element.attr('width').int();
