@@ -100,6 +100,10 @@ export class Seed {
 
         // Start a new system and re-measure.
         systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
+        const measureAddress = systemAddress.measure({
+          systemMeasureIndex: measures.length,
+          measureIndex: currentMeasure.getIndex(),
+        });
 
         endBarlineWidth = currentMeasure.getEndBarlineWidth();
         remaining -= endBarlineWidth;
