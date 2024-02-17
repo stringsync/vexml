@@ -70,6 +70,17 @@ export class Measure {
     return this.index;
   }
 
+  /** Returns the max specified width of the measure across all parts. */
+  getMaxSpecifiedWidth(): number | null {
+    return (
+      util.max(
+        this.musicXML.measures
+          .map((measure) => measure.value.getWidth())
+          .filter((width): width is number => typeof width === 'number')
+      ) || null // Disallow 0 width.
+    );
+  }
+
   /** Returns the minimum required width for each measure fragment. */
   getMinRequiredFragmentWidths(opts: {
     address: Address<'measure'>;
