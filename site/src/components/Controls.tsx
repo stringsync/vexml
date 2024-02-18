@@ -5,7 +5,7 @@ import { VEXML_VERSION } from '../constants';
 import { convertFontToBase64, downloadSvgAsImage } from '../helpers';
 import { Vexml } from '@/vexml';
 import Select, { SelectEvent, SelectOptionGroup } from './Select';
-import { getExamples } from '../examples/examples';
+import { getExamples } from '../examples';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
