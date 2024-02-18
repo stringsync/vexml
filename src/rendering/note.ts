@@ -530,6 +530,6 @@ export class Note {
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.RehearsalDirectionTypeContent => content.type === 'rehearsal')
       .flatMap((content) => content.rehearsals)
-      .map((rehearsal) => new Rehearsal({ musicXML: { rehearsal } }));
+      .map((rehearsal) => new Rehearsal({ config: this.config, musicXML: { rehearsal } }));
   }
 }
