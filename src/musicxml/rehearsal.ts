@@ -10,7 +10,7 @@ export class Rehearsal {
   constructor(private element: NamedElement<'rehearsal'>) {}
 
   /** Returns the content of the element. */
-  getContent(): string {
+  getText(): string {
     return this.element.content().withDefault('').str();
   }
 }
