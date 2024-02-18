@@ -168,6 +168,10 @@ export class Part {
       name = this.name.render({ x: 0, y: middleY + this.name.getApproximateHeight() / 2 });
     }
 
+    if (this.hasSegno()) {
+      topStave?.setRepetitionType(vexflow.Repetition.type.SEGNO_LEFT);
+    }
+
     return {
       type: 'part',
       id: this.id,
@@ -175,5 +179,15 @@ export class Part {
       staves: staveRenderings,
       height,
     };
+  }
+
+  private hasSegno(): boolean {
+    return (
+      this.measureEntries
+        .filter((entry): entry is musicxml.Direction => entry instanceof musicxml.Direction)
+        .flatMap((direction) => direction.getTypes())
+        .flatMap((directionType) => directionType.getContent())
+        .filter((content) => content.type === 'segno').length > 0
+    );
   }
 }
