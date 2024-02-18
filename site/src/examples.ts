@@ -1,5 +1,7 @@
+console.log(import.meta.glob('./examples/**/*.musicxml', { as: 'raw' }));
+
 export function getExamples() {
-  const examples = Object.entries(import.meta.glob('./**/*.musicxml', { as: 'raw' }))
+  const examples = Object.entries(import.meta.glob('./examples/**/*.musicxml', { as: 'raw' }))
     .sort()
     .map(([path, get]) => {
       const parts = path.substring('./'.length).split('/');
