@@ -7,7 +7,7 @@ import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
 import { Words } from './words';
 
-export type RehearsalTypeContent = {
+export type RehearsalDirectionTypeContent = {
   type: 'rehearsal';
   rehearsals: Array<Rehearsal>;
 };
@@ -48,7 +48,7 @@ export type PedalDirectionTypeContent = {
 
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
-  | RehearsalTypeContent
+  | RehearsalDirectionTypeContent
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
   | WedgeDirectionTypeContent
