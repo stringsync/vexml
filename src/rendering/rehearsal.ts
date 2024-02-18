@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
+import { Config } from './config';
 
 /** The result of rendering a rehearsal. */
 export type RehearsalRendering = {
@@ -11,9 +12,11 @@ export type RehearsalRendering = {
 
 /** Represents an indicator denoting a certain point in a score. */
 export class Rehearsal {
+  private config: Config;
   private musicXML: { rehearsal: musicxml.Rehearsal };
 
-  constructor(opts: { musicXML: { rehearsal: musicxml.Rehearsal } }) {
+  constructor(opts: { config: Config; musicXML: { rehearsal: musicxml.Rehearsal } }) {
+    this.config = opts.config;
     this.musicXML = opts.musicXML;
   }
 
@@ -23,7 +26,7 @@ export class Rehearsal {
       type: 'rehearsal',
       vexflow: {
         annotation: new vexflow.Annotation(this.musicXML.rehearsal.getText())
-          .setFont('Times New Roman', 16)
+          .setFont(this.config.REHEARSAL_FONT_FAMILY, this.config.REHEARSAL_FONT_SIZE)
           .setVerticalJustification(vexflow.Annotation.VerticalJustify.TOP),
       },
     };
