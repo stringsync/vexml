@@ -2,9 +2,15 @@ import { NamedElement } from '../util';
 import { Metronome } from './metronome';
 import { OctaveShift } from './octaveshift';
 import { Pedal } from './pedal';
+import { Rehearsal } from './rehearsal';
 import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
 import { Words } from './words';
+
+export type RehearsalTypeContent = {
+  type: 'rehearsal';
+  rehearsals: Array<Rehearsal>;
+};
 
 export type EmptyDirectionTypeContent = {
   type: 'empty';
@@ -42,6 +48,7 @@ export type PedalDirectionTypeContent = {
 
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
+  | RehearsalTypeContent
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
   | WedgeDirectionTypeContent
@@ -65,6 +72,15 @@ export class DirectionType {
 
     if (typeof first === 'undefined') {
       return { type: 'empty' };
+    }
+
+    if (first.isNamed('rehearsal')) {
+      return {
+        type: 'rehearsal',
+        rehearsals: children
+          .filter((child): child is NamedElement<'rehearsal'> => child.isNamed('rehearsal'))
+          .map((child) => new Rehearsal(child)),
+      };
     }
 
     if (first.isNamed('metronome')) {

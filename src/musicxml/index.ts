@@ -40,6 +40,7 @@ export * from './pedal';
 export * from './pluck';
 export * from './print';
 export * from './pulloff';
+export * from './rehearsal';
 export * from './scorepartwise';
 export * from './slur';
 export * from './snappizzicato';
