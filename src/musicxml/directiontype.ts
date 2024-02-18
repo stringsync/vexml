@@ -3,6 +3,7 @@ import { Metronome } from './metronome';
 import { OctaveShift } from './octaveshift';
 import { Pedal } from './pedal';
 import { Rehearsal } from './rehearsal';
+import { Segno } from './segno';
 import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
 import { Words } from './words';
@@ -10,6 +11,11 @@ import { Words } from './words';
 export type RehearsalDirectionTypeContent = {
   type: 'rehearsal';
   rehearsals: Array<Rehearsal>;
+};
+
+export type SegnoDirectionTypeContent = {
+  type: 'segno';
+  segnos: Array<Segno>;
 };
 
 export type EmptyDirectionTypeContent = {
@@ -55,7 +61,8 @@ export type DirectionTypeContent =
   | MetronomeDirectionTypeContent
   | OctaveShiftDirectionTypeContent
   | PedalDirectionTypeContent
-  | TokensDirectionTypeContent;
+  | TokensDirectionTypeContent
+  | SegnoDirectionTypeContent;
 
 /**
  * Represents the type of direction.
@@ -80,6 +87,15 @@ export class DirectionType {
         rehearsals: children
           .filter((child): child is NamedElement<'rehearsal'> => child.isNamed('rehearsal'))
           .map((child) => new Rehearsal(child)),
+      };
+    }
+
+    if (first.isNamed('segno')) {
+      return {
+        type: 'segno',
+        segnos: children
+          .filter((child): child is NamedElement<'segno'> => child.isNamed('segno'))
+          .map((child) => new Segno(child)),
       };
     }
 

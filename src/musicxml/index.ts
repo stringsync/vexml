@@ -42,6 +42,7 @@ export * from './print';
 export * from './pulloff';
 export * from './rehearsal';
 export * from './scorepartwise';
+export * from './segno';
 export * from './slur';
 export * from './snappizzicato';
 export * from './stavedetails';
