@@ -172,6 +172,10 @@ export class Part {
       topStave?.setRepetitionType(vexflow.Repetition.type.SEGNO_LEFT);
     }
 
+    if (this.hasCoda()) {
+      topStave?.setRepetitionType(vexflow.Repetition.type.CODA_LEFT);
+    }
+
     return {
       type: 'part',
       id: this.id,
@@ -188,6 +192,16 @@ export class Part {
         .flatMap((direction) => direction.getTypes())
         .flatMap((directionType) => directionType.getContent())
         .filter((content) => content.type === 'segno').length > 0
+    );
+  }
+
+  private hasCoda(): boolean {
+    return (
+      this.measureEntries
+        .filter((entry): entry is musicxml.Direction => entry instanceof musicxml.Direction)
+        .flatMap((direction) => direction.getTypes())
+        .flatMap((directionType) => directionType.getContent())
+        .filter((content) => content.type === 'coda').length > 0
     );
   }
 }
