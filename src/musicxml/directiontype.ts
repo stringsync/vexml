@@ -1,5 +1,6 @@
 import { NamedElement } from '../util';
 import { Coda } from './coda';
+import { Dynamics } from './dynamics';
 import { Metronome } from './metronome';
 import { OctaveShift } from './octaveshift';
 import { Pedal } from './pedal';
@@ -22,6 +23,11 @@ export type SegnoDirectionTypeContent = {
 export type CodaDirectionTypeContent = {
   type: 'coda';
   codas: Array<Coda>;
+};
+
+export type DynamicsDirectionTypeContent = {
+  type: 'dynamics';
+  dynamics: Array<Dynamics>;
 };
 
 export type EmptyDirectionTypeContent = {
@@ -69,7 +75,8 @@ export type DirectionTypeContent =
   | PedalDirectionTypeContent
   | TokensDirectionTypeContent
   | SegnoDirectionTypeContent
-  | CodaDirectionTypeContent;
+  | CodaDirectionTypeContent
+  | DynamicsDirectionTypeContent;
 
 /**
  * Represents the type of direction.
@@ -112,6 +119,15 @@ export class DirectionType {
         codas: children
           .filter((child): child is NamedElement<'coda'> => child.isNamed('coda'))
           .map((child) => new Coda(child)),
+      };
+    }
+
+    if (first.isNamed('dynamics')) {
+      return {
+        type: 'dynamics',
+        dynamics: children
+          .filter((child): child is NamedElement<'dynamics'> => child.isNamed('dynamics'))
+          .map((child) => new Dynamics(child)),
       };
     }
 
