@@ -360,3 +360,38 @@ export const HARMONIC_PITCH_TYPES = new Enum(['unspecified', 'base', 'touching',
  */
 export type BendType = EnumValues<typeof BEND_TYPES>;
 export const BEND_TYPES = new Enum(['normal', 'pre-bend', 'release'] as const);
+
+/**
+ * The different kinds of dynamics.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/dynamics/
+ */
+export type DynamicType = EnumValues<typeof DYNAMIC_TYPES>;
+export const DYNAMIC_TYPES = new Enum([
+  'p',
+  'pp',
+  'ppp',
+  'pppp',
+  'ppppp',
+  'pppppp',
+  'f',
+  'ff',
+  'fff',
+  'ffff',
+  'fffff',
+  'ffffff',
+  'mp',
+  'mf',
+  'sf',
+  'sfp',
+  'sfpp',
+  'fp',
+  'rf',
+  'rfz',
+  'sfz',
+  'sffz',
+  'fz',
+  'n',
+  'pf',
+  'sfzp',
+] as const);
