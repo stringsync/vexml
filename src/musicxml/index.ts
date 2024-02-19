@@ -12,6 +12,7 @@ export * from './direction';
 export * from './directiontype';
 export * from './doubletongue';
 export * from './downbow';
+export * from './dynamics';
 export * from './enums';
 export * from './fermata';
 export * from './fingering';
