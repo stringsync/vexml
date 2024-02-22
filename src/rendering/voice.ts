@@ -31,6 +31,7 @@ export type VoiceRendering = {
     voice: vexflow.Voice;
   };
   entries: VoiceEntryRendering[];
+  isPlaceholder: boolean;
 };
 
 export type VoicePlaceholderEntry = {
@@ -68,6 +69,7 @@ export class Voice {
     this.parent = opts.parent;
   }
 
+  /** Creates a root voice, which can be used to spawn child placeholder voices. */
   static root(opts: {
     config: Config;
     entries: VoiceEntry[];
@@ -101,11 +103,17 @@ export class Voice {
   /**
    * Creates a placeholder voice that mirrors the current voice using GhostNotes.
    *
+   * NOTE: You cannot create a placeholder voice from a placeholder voice. Use the root voice.
+   *
    * This is particularly useful for vexflow structures that cannot be attached to a note, but needs to be associated
    * with a note. For example, a `vexflow.TextDynamics` is a `vexflow.Note`, not a `vexflow.Modifier`. It needs to be
    * rendered in its own voice.
    */
   toPlaceholder(): Voice {
+    if (this.isPlaceholder()) {
+      throw new Error('cannot create a placeholder voice from a placeholder voice');
+    }
+
     const placeholderEntries = this.placeholderEntries.map((entry) => ({ ...entry }));
     const entries = this.placeholderEntries.map(
       (entry) => new GhostNote({ durationDenominator: entry.durationDenominator })
@@ -214,6 +222,11 @@ export class Voice {
       address: opts.address,
       vexflow: { voice: vfVoice },
       entries: voiceEntryRenderings,
+      isPlaceholder: this.isPlaceholder(),
     };
+  }
+
+  private isPlaceholder(): boolean {
+    return this.parent !== null;
   }
 }
