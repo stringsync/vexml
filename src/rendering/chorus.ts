@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { NoteDurationDenominator, StemDirection } from './enums';
-import { Voice, VoiceEntry, VoiceRendering } from './voice';
+import { VoicePlaceholderEntry, Voice, VoiceEntry, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
@@ -382,7 +382,7 @@ export class Chorus {
     for (const voiceId of Object.keys(voiceEntryData)) {
       let divisions = Division.of(0, quarterNoteDivisions);
       const entries = new Array<VoiceEntry>();
-      const durationDenominators = new Array<NoteDurationDenominator>();
+      const placeholderEntries = new Array<VoicePlaceholderEntry>();
 
       for (const entry of opts.voiceEntryData[voiceId]) {
         const ghostNoteStart = divisions;
@@ -390,11 +390,18 @@ export class Chorus {
         const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
 
         if (ghostNoteDuration.toBeats() > 0) {
+          const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
+
           entries.push(
             new GhostNote({
-              durationDenominator: conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration),
+              durationDenominator,
             })
           );
+
+          placeholderEntries.push({
+            division: ghostNoteStart,
+            durationDenominator,
+          });
         }
 
         const note = entry.note;
@@ -406,7 +413,11 @@ export class Chorus {
         const durationDenominator =
           conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
           conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
-        durationDenominators.push(durationDenominator);
+
+        placeholderEntries.push({
+          division: entry.start,
+          durationDenominator,
+        });
 
         if (!note.printObject()) {
           entries.push(
@@ -455,7 +466,7 @@ export class Chorus {
         config,
         entries,
         timeSignature,
-        durationDenominators,
+        placeholderEntries,
       });
       result.push(voice);
     }
