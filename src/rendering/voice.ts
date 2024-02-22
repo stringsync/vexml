@@ -52,17 +52,35 @@ export class Voice {
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
   private placeholderEntries: VoicePlaceholderEntry[];
+  private parent: Voice | null;
 
-  constructor(opts: {
+  private constructor(opts: {
     config: Config;
     entries: VoiceEntry[];
     timeSignature: TimeSignature;
     placeholderEntries: VoicePlaceholderEntry[];
+    parent: Voice | null;
   }) {
     this.config = opts.config;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
     this.placeholderEntries = opts.placeholderEntries;
+    this.parent = opts.parent;
+  }
+
+  static root(opts: {
+    config: Config;
+    entries: VoiceEntry[];
+    timeSignature: TimeSignature;
+    placeholderEntries: VoicePlaceholderEntry[];
+  }): Voice {
+    return new Voice({
+      config: opts.config,
+      entries: opts.entries,
+      timeSignature: opts.timeSignature,
+      placeholderEntries: opts.placeholderEntries,
+      parent: null,
+    });
   }
 
   /** Creates a voice with a single whole note rest. */
@@ -72,7 +90,7 @@ export class Voice {
       clef: opts.clef,
     });
 
-    return new Voice({
+    return Voice.root({
       config: opts.config,
       timeSignature: opts.timeSignature,
       entries: [wholeRest],
@@ -98,6 +116,7 @@ export class Voice {
       entries,
       timeSignature: this.timeSignature,
       placeholderEntries: placeholderEntries,
+      parent: this,
     });
   }
 

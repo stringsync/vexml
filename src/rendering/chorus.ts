@@ -1,7 +1,7 @@
 import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
-import { NoteDurationDenominator, StemDirection } from './enums';
+import { StemDirection } from './enums';
 import { VoicePlaceholderEntry, Voice, VoiceEntry, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -462,7 +462,7 @@ export class Chorus {
         divisions = entry.end;
       }
 
-      const voice = new Voice({
+      const voice = Voice.root({
         config,
         entries,
         timeSignature,
