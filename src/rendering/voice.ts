@@ -9,6 +9,7 @@ import { TimeSignature } from './timesignature';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { NoteDurationDenominator } from './enums';
+import { Division } from './division';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -32,6 +33,11 @@ export type VoiceRendering = {
   entries: VoiceEntryRendering[];
 };
 
+export type VoicePlaceholderEntry = {
+  division: Division;
+  durationDenominator: NoteDurationDenominator;
+};
+
 const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
 /**
@@ -45,18 +51,18 @@ export class Voice {
   private config: Config;
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
-  private durationDenominators: NoteDurationDenominator[];
+  private placeholderEntries: VoicePlaceholderEntry[];
 
   constructor(opts: {
     config: Config;
     entries: VoiceEntry[];
     timeSignature: TimeSignature;
-    durationDenominators: NoteDurationDenominator[];
+    placeholderEntries: VoicePlaceholderEntry[];
   }) {
     this.config = opts.config;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
-    this.durationDenominators = opts.durationDenominators;
+    this.placeholderEntries = opts.placeholderEntries;
   }
 
   /** Creates a voice with a single whole note rest. */
@@ -70,7 +76,7 @@ export class Voice {
       config: opts.config,
       timeSignature: opts.timeSignature,
       entries: [wholeRest],
-      durationDenominators: ['1'],
+      placeholderEntries: [{ division: Division.zero(), durationDenominator: '1' }],
     });
   }
 
