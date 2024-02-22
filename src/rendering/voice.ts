@@ -80,6 +80,27 @@ export class Voice {
     });
   }
 
+  /**
+   * Creates a placeholder voice that mirrors the current voice using GhostNotes.
+   *
+   * This is particularly useful for vexflow structures that cannot be attached to a note, but needs to be associated
+   * with a note. For example, a `vexflow.TextDynamics` is a `vexflow.Note`, not a `vexflow.Modifier`. It needs to be
+   * rendered in its own voice.
+   */
+  toPlaceholder(): Voice {
+    const placeholderEntries = this.placeholderEntries.map((entry) => ({ ...entry }));
+    const entries = this.placeholderEntries.map(
+      (entry) => new GhostNote({ durationDenominator: entry.durationDenominator })
+    );
+
+    return new Voice({
+      config: this.config,
+      entries,
+      timeSignature: this.timeSignature,
+      placeholderEntries: placeholderEntries,
+    });
+  }
+
   /** Renders the Voice. */
   render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
     const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
