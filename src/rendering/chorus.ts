@@ -1,7 +1,7 @@
 import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
-import { StemDirection } from './enums';
+import { NoteDurationDenominator, StemDirection } from './enums';
 import { Voice, VoiceEntry, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -382,6 +382,7 @@ export class Chorus {
     for (const voiceId of Object.keys(voiceEntryData)) {
       let divisions = Division.of(0, quarterNoteDivisions);
       const entries = new Array<VoiceEntry>();
+      const durationDenominators = new Array<NoteDurationDenominator>();
 
       for (const entry of opts.voiceEntryData[voiceId]) {
         const ghostNoteStart = divisions;
@@ -405,6 +406,7 @@ export class Chorus {
         const durationDenominator =
           conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
           conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
+        durationDenominators.push(durationDenominator);
 
         if (!note.printObject()) {
           entries.push(
@@ -453,6 +455,7 @@ export class Chorus {
         config,
         entries,
         timeSignature,
+        durationDenominators,
       });
       result.push(voice);
     }

@@ -8,6 +8,7 @@ import { Clef } from './clef';
 import { TimeSignature } from './timesignature';
 import { Address } from './address';
 import { Spanners } from './spanners';
+import { NoteDurationDenominator } from './enums';
 
 /** A component of a Voice. */
 export type VoiceEntry = Note | Chord | Rest | GhostNote;
@@ -44,11 +45,18 @@ export class Voice {
   private config: Config;
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
+  private durationDenominators: NoteDurationDenominator[];
 
-  constructor(opts: { config: Config; entries: VoiceEntry[]; timeSignature: TimeSignature }) {
+  constructor(opts: {
+    config: Config;
+    entries: VoiceEntry[];
+    timeSignature: TimeSignature;
+    durationDenominators: NoteDurationDenominator[];
+  }) {
     this.config = opts.config;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
+    this.durationDenominators = opts.durationDenominators;
   }
 
   /** Creates a voice with a single whole note rest. */
@@ -62,6 +70,7 @@ export class Voice {
       config: opts.config,
       timeSignature: opts.timeSignature,
       entries: [wholeRest],
+      durationDenominators: ['1'],
     });
   }
 
