@@ -7,7 +7,7 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
-import { LegacyChorus, ChorusRendering } from './chorus';
+import { LegacyChorus, ChorusRendering } from './legacychorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';

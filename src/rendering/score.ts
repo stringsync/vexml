@@ -6,7 +6,7 @@ import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
-import { ChorusRendering } from './chorus';
+import { ChorusRendering } from './legacychorus';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
