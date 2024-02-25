@@ -48,19 +48,19 @@ const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', 
  * stream. Especially in polyphonic settings, where multiple voices might exist simultaneously on a single stave, the
  * `Voice` class enables the separation and distinct representation of each of these melodic lines.
  */
-export class Voice {
+export class LegacyVoice {
   private config: Config;
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
   private placeholderEntries: VoicePlaceholderEntry[];
-  private parent: Voice | null;
+  private parent: LegacyVoice | null;
 
   private constructor(opts: {
     config: Config;
     entries: VoiceEntry[];
     timeSignature: TimeSignature;
     placeholderEntries: VoicePlaceholderEntry[];
-    parent: Voice | null;
+    parent: LegacyVoice | null;
   }) {
     this.config = opts.config;
     this.entries = opts.entries;
@@ -75,8 +75,8 @@ export class Voice {
     entries: VoiceEntry[];
     timeSignature: TimeSignature;
     placeholderEntries: VoicePlaceholderEntry[];
-  }): Voice {
-    return new Voice({
+  }): LegacyVoice {
+    return new LegacyVoice({
       config: opts.config,
       entries: opts.entries,
       timeSignature: opts.timeSignature,
@@ -86,13 +86,13 @@ export class Voice {
   }
 
   /** Creates a voice with a single whole note rest. */
-  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Voice {
+  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): LegacyVoice {
     const wholeRest = Rest.whole({
       config: opts.config,
       clef: opts.clef,
     });
 
-    return Voice.root({
+    return LegacyVoice.root({
       config: opts.config,
       timeSignature: opts.timeSignature,
       entries: [wholeRest],
@@ -109,7 +109,7 @@ export class Voice {
    * with a note. For example, a `vexflow.TextDynamics` is a `vexflow.Note`, not a `vexflow.Modifier`. It needs to be
    * rendered in its own voice.
    */
-  toPlaceholder(): Voice {
+  toPlaceholder(): LegacyVoice {
     if (this.isPlaceholder()) {
       throw new Error('cannot create a placeholder voice from a placeholder voice');
     }
@@ -119,7 +119,7 @@ export class Voice {
       (entry) => new GhostNote({ durationDenominator: entry.durationDenominator })
     );
 
-    return new Voice({
+    return new LegacyVoice({
       config: this.config,
       entries,
       timeSignature: this.timeSignature,

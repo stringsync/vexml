@@ -1,4 +1,4 @@
-import { Chorus, ChorusRendering } from './chorus';
+import { LegacyChorus, ChorusRendering } from './chorus';
 import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
@@ -16,7 +16,7 @@ import { Spanners } from './spanners';
 const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | MultiRest | Tablature;
+export type StaveEntry = LegacyChorus | MultiRest | Tablature;
 
 /** The result of rendering a Stave entry. */
 export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
@@ -84,7 +84,7 @@ export class Stave {
     const keySignature = this.getKeySignature();
 
     if (multiRestCount === 1) {
-      return Chorus.wholeRest({ config, clef, timeSignature });
+      return LegacyChorus.wholeRest({ config, clef, timeSignature });
     }
 
     if (multiRestCount > 1) {
@@ -96,7 +96,7 @@ export class Stave {
       return new Tablature();
     }
 
-    return Chorus.multiVoice({
+    return LegacyChorus.multiVoice({
       config,
       measureEntries,
       quarterNoteDivisions,

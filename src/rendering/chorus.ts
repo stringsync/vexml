@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { StemDirection } from './enums';
-import { VoicePlaceholderEntry, Voice, VoiceEntry, VoiceRendering } from './voice';
+import { VoicePlaceholderEntry, LegacyVoice, VoiceEntry, VoiceRendering } from './voice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
@@ -55,7 +55,7 @@ type ChorusData = WholeRestChorusData | MultiVoiceChorusData;
  * The `Chorus` class encapsulates the harmonization and interaction of multiple voices, ensuring that the voices can be
  * interpreted, rendered, and managed cohesively.
  */
-export class Chorus {
+export class LegacyChorus {
   private config: Config;
   private data: ChorusData;
   private clef: Clef;
@@ -76,8 +76,8 @@ export class Chorus {
     quarterNoteDivisions: number;
     measureEntries: MeasureEntry[];
     keySignature: KeySignature;
-  }): Chorus {
-    return new Chorus({
+  }): LegacyChorus {
+    return new LegacyChorus({
       config: opts.config,
       data: {
         type: 'multivoice',
@@ -91,8 +91,8 @@ export class Chorus {
   }
 
   /** Creates a Chorus with a single voice that is a single whole note rest. */
-  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
-    return new Chorus({
+  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): LegacyChorus {
+    return new LegacyChorus({
       config: opts.config,
       data: { type: 'wholerest' },
       timeSignature: opts.timeSignature,
@@ -138,7 +138,7 @@ export class Chorus {
   }
 
   @util.memoize()
-  private getVoices(): Voice[] {
+  private getVoices(): LegacyVoice[] {
     switch (this.data.type) {
       case 'wholerest':
         return this.createWholeRest();
@@ -151,9 +151,9 @@ export class Chorus {
     }
   }
 
-  private createWholeRest(): Voice[] {
+  private createWholeRest(): LegacyVoice[] {
     return [
-      Voice.wholeRest({
+      LegacyVoice.wholeRest({
         config: this.config,
         timeSignature: this.timeSignature,
         clef: this.clef,
@@ -165,7 +165,7 @@ export class Chorus {
     quarterNoteDivisions: number;
     measureEntries: MeasureEntry[];
     keySignature: KeySignature;
-  }): Voice[] {
+  }): LegacyVoice[] {
     const voiceEntryData = this.computeVoiceEntryData({
       measureEntries: opts.measureEntries,
       quarterNoteDivisions: opts.quarterNoteDivisions,
@@ -369,8 +369,8 @@ export class Chorus {
     voiceEntryData: Record<string, VoiceEntryData[]>;
     quarterNoteDivisions: number;
     keySignature: KeySignature;
-  }): Voice[] {
-    const result = new Array<Voice>();
+  }): LegacyVoice[] {
+    const result = new Array<LegacyVoice>();
 
     const voiceEntryData = opts.voiceEntryData;
     const quarterNoteDivisions = opts.quarterNoteDivisions;
@@ -462,7 +462,7 @@ export class Chorus {
         divisions = entry.end;
       }
 
-      const voice = Voice.root({
+      const voice = LegacyVoice.root({
         config,
         entries,
         timeSignature,

@@ -7,7 +7,7 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
-import { Chorus, ChorusRendering } from './chorus';
+import { LegacyChorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
@@ -394,7 +394,7 @@ export class MeasureFragment {
 
         let vfPartStaveVoices = new Array<vexflow.Voice>();
 
-        if (entry instanceof Chorus) {
+        if (entry instanceof LegacyChorus) {
           const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
           const chorusRendering = entry.render({ address, spanners });
           vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
