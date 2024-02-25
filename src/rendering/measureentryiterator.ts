@@ -74,7 +74,11 @@ export class MeasureEntryIterator {
 
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
     const start = this.iteration?.value?.end ?? Division.zero();
-    const end = start.add(Division.of(duration, quarterNoteDivisions));
+
+    let end = start.add(Division.of(duration, quarterNoteDivisions));
+    if (end.isLessThan(Division.zero())) {
+      end = Division.zero();
+    }
 
     const fragmentation = entry instanceof StaveSignature || this.isMetronome(entry) ? 'new' : 'none';
 
