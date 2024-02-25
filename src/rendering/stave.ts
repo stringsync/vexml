@@ -1,4 +1,4 @@
-import { LegacyChorus, ChorusRendering } from './chorus';
+import { LegacyChorus, ChorusRendering } from './legacychorus';
 import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';

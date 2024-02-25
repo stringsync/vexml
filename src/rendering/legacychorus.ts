@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { StemDirection } from './enums';
-import { VoicePlaceholderEntry, LegacyVoice, VoiceEntry, VoiceRendering } from './voice';
+import { VoicePlaceholderEntry, LegacyVoice, VoiceEntry, VoiceRendering } from './legacyvoice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
