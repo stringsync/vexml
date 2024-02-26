@@ -106,7 +106,17 @@ export class Chorus {
         if (note.isChordTail()) {
           continue;
         } else if (note.isGrace()) {
-          // TODO: Handle grace notes.
+          voiceEntries[voiceId] ??= [];
+          voiceEntries[voiceId].push({
+            voiceId,
+            note,
+            start: iteration.value.start,
+            end: iteration.value.end,
+            stem: 'auto',
+            // Directions are handled by stave notes. We don't want to process them multiple times.
+            directions: [],
+            staveSignature,
+          });
         } else {
           voiceEntries[voiceId] ??= [];
           voiceEntries[voiceId].push({
