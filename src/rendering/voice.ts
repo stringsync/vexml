@@ -1,12 +1,18 @@
 import { Division } from './division';
 import * as musicxml from '@/musicxml';
+import * as vexflow from 'vexflow';
 import { StemDirection } from './enums';
 import { StaveSignature } from './stavesignature';
-import { Config } from '.';
+import { Config } from './config';
+import { Spanners } from './spanners';
+import { Address } from './address';
 
 /** The result of rendering a voice. */
 export type VoiceRendering = {
   type: 'voice';
+  vexflow: {
+    voice: vexflow.Voice;
+  };
 };
 
 export type VoiceEntry = {
@@ -33,9 +39,14 @@ export class Voice {
   }
 
   /** Renders the voice. */
-  render(): VoiceRendering {
+  render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
+    const vfVoice = new vexflow.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+
     return {
       type: 'voice',
+      vexflow: {
+        voice: vfVoice,
+      },
     };
   }
 }

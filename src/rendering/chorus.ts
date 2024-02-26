@@ -2,13 +2,14 @@ import { Config } from './config';
 import { MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Voice, VoiceEntry, VoiceRendering } from './voice';
-import { Division } from './division';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 import * as vexflow from 'vexflow';
 import { Clef } from './clef';
 import { StemDirection } from './enums';
+import { Address } from './address';
+import { Spanners } from './spanners';
 
 const UNDEFINED_VOICE_ID = '';
 
@@ -30,9 +31,36 @@ export class Chorus {
     this.staveSignature = opts.staveSignature;
   }
 
+  /** Returns the minimum justify width for the stave in a measure context. */
+  @util.memoize()
+  getMinJustifyWidth(address: Address<'chorus'>): number {
+    const spanners = new Spanners();
+    const voices = this.getVoices();
+
+    if (voices.length > 0) {
+      const vfVoices = voices.map(
+        (voice, index) =>
+          voice.render({
+            address: address.voice({ voiceIndex: index }),
+            spanners,
+          }).vexflow.voice
+      );
+
+      const vfFormatter = new vexflow.Formatter();
+      return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
+    }
+
+    return 0;
+  }
+
   /** Renders the chorus. */
-  render(): ChorusRendering {
-    const voiceRenderings = this.getVoices().map((voice) => voice.render());
+  render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
+    const voiceRenderings = this.getVoices().map((voice, index) =>
+      voice.render({
+        address: opts.address.voice({ voiceIndex: index }),
+        spanners: opts.spanners,
+      })
+    );
 
     return {
       type: 'chorus',
