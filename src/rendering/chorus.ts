@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { MeasureEntryIterator } from './measureentryiterator';
+import { MeasureEntryIteration, MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { Voice, VoiceEntry, VoiceRendering } from './voice';
 import * as util from '@/util';
@@ -10,8 +10,6 @@ import { Clef } from './clef';
 import { StemDirection } from './enums';
 import { Address } from './address';
 import { Spanners } from './spanners';
-
-const UNDEFINED_VOICE_ID = '';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
@@ -70,90 +68,96 @@ export class Chorus {
 
   @util.memoize()
   private getVoices(): Voice[] {
-    // Calculate initial voice entry data.
-    const directions: Record<string, musicxml.Direction[]> = {};
-    const voiceEntries: Record<string, VoiceEntry[]> = {};
+    return new VoiceCalculator({
+      config: this.config,
+      measureEntries: this.measureEntries,
+      staveSignature: this.staveSignature,
+    }).calculate();
+  }
+}
 
-    let staveSignature = this.staveSignature;
-    let voiceId = UNDEFINED_VOICE_ID;
+/** A utility that calculates the voices from a list of measure entries. */
+class VoiceCalculator {
+  private static readonly UNDEFINED_VOICE_ID = '';
 
+  private config: Config;
+  private measureEntries: MeasureEntry[];
+  private staveSignature: StaveSignature;
+  private voiceId = VoiceCalculator.UNDEFINED_VOICE_ID;
+  private directions: Record<string, musicxml.Direction[]> = {};
+  private voiceEntries: Record<string, VoiceEntry[]> = {};
+  private iteration: MeasureEntryIteration = { done: true, value: null };
+
+  constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
+    this.config = opts.config;
+    this.measureEntries = opts.measureEntries;
+    this.staveSignature = opts.staveSignature;
+  }
+
+  /**
+   * Calculates the voices from the given data.
+   *
+   * Since this class is stateful, this method is memoized to prevent multiple calculations.
+   */
+  @util.memoize()
+  calculate(): Voice[] {
     const iterator = new MeasureEntryIterator({
       entries: this.measureEntries,
-      staveSignature,
+      staveSignature: this.staveSignature,
     });
 
-    let iteration = iterator.next();
+    this.iteration = iterator.next();
 
-    while (!iteration.done) {
-      if (iteration.value.entry instanceof StaveSignature) {
-        staveSignature = iteration.value.entry;
+    while (!this.iteration.done) {
+      const entry = this.iteration.value.entry;
+
+      if (entry instanceof StaveSignature) {
+        this.handleStaveSignature(entry);
+      } else if (entry instanceof musicxml.Direction) {
+        this.handleDirection(entry);
+      } else if (entry instanceof musicxml.Note) {
+        this.handleNote(entry);
+      } else if (entry instanceof musicxml.Backup) {
+        this.handleBackup(entry);
+      } else if (entry instanceof musicxml.Forward) {
+        this.handleForward(entry);
       }
 
-      if (iteration.value.entry instanceof musicxml.Direction) {
-        const direction = iteration.value.entry;
-        const voiceId = direction.getVoice() || UNDEFINED_VOICE_ID;
-        directions[voiceId] ??= [];
-        directions[voiceId].push(direction);
-
-        // TODO: Handle octave shifts.
-      }
-
-      if (iteration.value.entry instanceof musicxml.Note) {
-        const note = iteration.value.entry;
-
-        voiceId = note.getVoice() ?? voiceId ?? UNDEFINED_VOICE_ID;
-
-        if (note.isChordTail()) {
-          continue;
-        } else if (note.isGrace()) {
-          voiceEntries[voiceId] ??= [];
-          voiceEntries[voiceId].push({
-            voiceId,
-            note,
-            start: iteration.value.start,
-            end: iteration.value.end,
-            stem: 'auto',
-            // Directions are handled by stave notes. We don't want to process them multiple times.
-            directions: [],
-            staveSignature,
-          });
-        } else {
-          voiceEntries[voiceId] ??= [];
-          voiceEntries[voiceId].push({
-            voiceId,
-            note,
-            start: iteration.value.start,
-            end: iteration.value.end,
-            stem: conversions.fromStemToStemDirection(note.getStem()),
-            directions: [...(directions[voiceId] ?? []), ...(directions[UNDEFINED_VOICE_ID] ?? [])],
-            staveSignature,
-          });
-          delete directions[voiceId];
-          delete directions[UNDEFINED_VOICE_ID];
-        }
-      }
-
-      if (iteration.value.entry instanceof musicxml.Backup || iteration.value.entry instanceof musicxml.Forward) {
-        directions[voiceId] ??= [];
-        directions[voiceId].push(...(directions[UNDEFINED_VOICE_ID] ?? []));
-        delete directions[UNDEFINED_VOICE_ID];
-      }
-
-      iteration = iterator.next();
+      this.iteration = iterator.next();
     }
 
+    this.consumeDanglingDirections();
+    this.adjustStems();
+
+    return Object.values(this.voiceEntries).map((entries) => new Voice({ config: this.config, entries }));
+  }
+
+  /**
+   * Assigns remaining directions such that `this.directions` will be empty and completely accounted for.
+   *
+   * This is intended to only be used after all measure entries have been processed. "Dangling" refers to directions
+   * whose note association is ambiguous.
+   */
+  private consumeDanglingDirections() {
     // Move all the undefined voice directions to the last voice.
-    directions[voiceId]?.push(...(directions[UNDEFINED_VOICE_ID] ?? []));
-    delete directions[UNDEFINED_VOICE_ID];
+    const directions = this.takeDirections(VoiceCalculator.UNDEFINED_VOICE_ID);
+    this.getLastVoiceEntry(this.voiceId)?.directions.push(...directions);
 
     // Handle any leftover directions that weren't attached to a succeeding note _in the same voice_ by attaching them
     // to the last note in each voice. If there are no notes in a voice, the directions are discarded.
     for (const voiceId of Object.keys(directions)) {
-      util.last(voiceEntries[voiceId] ?? [])?.directions.push(...directions[voiceId]);
+      const directions = this.takeDirections(voiceId);
+      this.getLastVoiceEntry(voiceId)?.directions.push(...directions);
     }
+  }
 
-    // Adjust the voice entry data stems.
-    const firstElgibleVoiceEntries = Object.values(voiceEntries)
+  /**
+   * Adjusts the stems based on the first non-rest note of each voice by mutating the voice entry data in place.
+   *
+   * This method does _not_ change any stem directions that were explicitly defined in the MusicXML document.
+   */
+  private adjustStems() {
+    const firstElgibleVoiceEntries = Object.values(this.voiceEntries)
       .map((voiceEntry) => voiceEntry.find((entry) => !entry.note.isRest() && !entry.note.isGrace()))
       .filter((entry): entry is VoiceEntry => typeof entry !== 'undefined');
 
@@ -179,22 +183,100 @@ export class Chorus {
         stems[entry.voiceId] = 'none';
       }
 
-      for (const entry of Object.values(voiceEntries).flat()) {
+      for (const entry of Object.values(this.voiceEntries).flat()) {
         // Only change stems that haven't been explicitly specified.
         if (entry.stem === 'auto') {
-          entry.stem = stems[voiceId];
+          entry.stem = stems[entry.voiceId];
         }
       }
     }
+  }
 
-    // Create the voices.
-    return Object.values(voiceEntries).map(
-      (entries) =>
-        new Voice({
-          config: this.config,
-          entries,
-        })
-    );
+  private handleStaveSignature(staveSignature: StaveSignature) {
+    this.staveSignature = staveSignature;
+  }
+
+  private handleDirection(direction: musicxml.Direction) {
+    // Directions should not change the current voice ID, nor should they default to the current voice ID.
+    const voiceId = direction.getVoice() || VoiceCalculator.UNDEFINED_VOICE_ID;
+    this.pushDirections(voiceId, direction);
+  }
+
+  private handleNote(note: musicxml.Note) {
+    if (note.isChordTail()) {
+      this.handleChordTail(note);
+    } else if (note.isGrace()) {
+      this.handleGrace(note);
+    } else {
+      this.handleStaveNote(note);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleChordTail(note: musicxml.Note) {
+    // noop
+  }
+
+  private handleGrace(note: musicxml.Note) {
+    const voiceEntry = this.createVoiceEntry({ note, directions: [] });
+    this.pushVoiceEntries(this.voiceId, voiceEntry);
+  }
+
+  private handleStaveNote(note: musicxml.Note) {
+    const directions = this.takeDirections(this.voiceId, VoiceCalculator.UNDEFINED_VOICE_ID);
+    const voiceEntry = this.createVoiceEntry({ note, directions });
+    this.pushVoiceEntries(this.voiceId, voiceEntry);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleBackup(backup: musicxml.Backup) {
+    this.moveDirections(VoiceCalculator.UNDEFINED_VOICE_ID, this.voiceId);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleForward(forward: musicxml.Forward) {
+    this.moveDirections(VoiceCalculator.UNDEFINED_VOICE_ID, this.voiceId);
+  }
+
+  private takeDirections(...voiceIds: string[]): musicxml.Direction[] {
+    const directions = new Array<musicxml.Direction>();
+    for (const voiceId of voiceIds) {
+      const voiceDirections = this.directions[voiceId] ?? [];
+      directions.push(...voiceDirections);
+      delete this.directions[voiceId];
+    }
+    return directions;
+  }
+
+  private pushDirections(voiceId: string, ...directions: musicxml.Direction[]) {
+    this.directions[voiceId] ??= [];
+    this.directions[voiceId].push(...directions);
+  }
+
+  private moveDirections(srcVoiceId: string, dstVoiceId: string) {
+    const directions = this.takeDirections(srcVoiceId);
+    this.pushDirections(dstVoiceId, ...directions);
+  }
+
+  private getLastVoiceEntry(voiceId: string): VoiceEntry | null {
+    return util.last(this.voiceEntries[voiceId]);
+  }
+
+  private createVoiceEntry(opts: { note: musicxml.Note; directions: musicxml.Direction[] }): VoiceEntry {
+    return {
+      voiceId: this.voiceId,
+      note: opts.note,
+      start: this.iteration.value!.start,
+      end: this.iteration.value!.end,
+      stem: conversions.fromStemToStemDirection(opts.note.getStem()),
+      directions: opts.directions,
+      staveSignature: this.staveSignature,
+    };
+  }
+
+  private pushVoiceEntries(voiceId: string, ...voiceEntries: VoiceEntry[]) {
+    this.voiceEntries[voiceId] ??= [];
+    this.voiceEntries[voiceId].push(...voiceEntries);
   }
 
   /** Returns the line that the note would be rendered on. */
