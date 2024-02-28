@@ -8,10 +8,10 @@ import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Spanners } from './spanners';
 import { Address } from './address';
-import { Note } from './note';
-import { Chord } from './chord';
-import { Rest } from './rest';
-import { GhostNote } from './ghostnote';
+import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
+import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
+import { Rest, RestRendering } from './rest';
+import { GhostNote, GhostNoteRendering } from './ghostnote';
 
 const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
@@ -22,7 +22,17 @@ export type VoiceRendering = {
   vexflow: {
     voice: vexflow.Voice;
   };
+  entries: VoiceEntryRendering[];
 };
+
+/** The result rendering a VoiceEntry. */
+export type VoiceEntryRendering =
+  | StaveNoteRendering
+  | StaveChordRendering
+  | GraceNoteRendering
+  | GraceChordRendering
+  | RestRendering
+  | GhostNoteRendering;
 
 /** The input data of a Voice. */
 export type VoiceInput = {
@@ -153,6 +163,7 @@ export class Voice {
       vexflow: {
         voice: vfVoice,
       },
+      entries: voiceEntryRenderings,
     };
   }
 
