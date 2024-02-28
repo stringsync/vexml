@@ -1,10 +1,10 @@
-console.log(import.meta.glob('./examples/**/*.musicxml', { as: 'raw' }));
+import.meta.glob('./examples/**/*.musicxml', { as: 'raw' });
 
 export function getExamples() {
   const examples = Object.entries(import.meta.glob('./examples/**/*.musicxml', { as: 'raw' }))
     .sort()
     .map(([path, get]) => {
-      const parts = path.substring('./'.length).split('/');
+      const parts = path.substring('./examples/'.length).split('/');
       const directory = parts.length === 2 ? parts[0] : '';
       const filename = parts[parts.length - 1];
       return { directory, filename, get };
