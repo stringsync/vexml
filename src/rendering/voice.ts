@@ -13,9 +13,12 @@ import { Chord } from './chord';
 import { Rest } from './rest';
 import { GhostNote } from './ghostnote';
 
+const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
+
 /** The result of rendering a voice. */
 export type VoiceRendering = {
   type: 'voice';
+  address: Address<'voice'>;
   vexflow: {
     voice: vexflow.Voice;
   };
@@ -52,10 +55,101 @@ export class Voice {
 
   /** Renders the voice. */
   render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
-    const vfVoice = new vexflow.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+    const address = opts.address;
+    const spanners = opts.spanners;
+
+    const voiceComponentRenderings = this.getComponents().map((component) => {
+      if (component instanceof Note) {
+        return component.render({ address, spanners });
+      }
+      if (component instanceof Chord) {
+        return component.render({ address, spanners });
+      }
+      if (component instanceof Rest) {
+        return component.render({ address, spanners, voiceEntryCount: this.entries.length });
+      }
+      if (component instanceof GhostNote) {
+        return component.render();
+      }
+      // If this error is thrown, this is a problem with vexml, not the musicXML document.
+      throw new Error(`unexpected voice component: ${component}`);
+    });
+
+    const vfTickables = new Array<vexflow.Tickable>();
+
+    for (const voiceComponentRendering of voiceComponentRenderings) {
+      switch (voiceComponentRendering.type) {
+        case 'stavenote':
+          vfTickables.push(voiceComponentRendering.vexflow.staveNote);
+          break;
+        case 'stavechord':
+          vfTickables.push(voiceComponentRendering.notes[0].vexflow.staveNote);
+          break;
+        case 'rest':
+          vfTickables.push(voiceComponentRendering.vexflow.staveNote);
+          break;
+        case 'ghostnote':
+          vfTickables.push(voiceComponentRendering.vexflow.ghostNote);
+          break;
+      }
+    }
+
+    let vfGraceNotes = new Array<vexflow.GraceNote>();
+    let hasSlur = false;
+
+    // Attach preceding grace notes to the nearest stave note.
+    for (const voiceComponentRendering of voiceComponentRenderings) {
+      let vfStaveNote: vexflow.StaveNote | null = null;
+
+      switch (voiceComponentRendering.type) {
+        case 'gracenote':
+          vfGraceNotes.push(voiceComponentRendering.vexflow.graceNote);
+          hasSlur = hasSlur || voiceComponentRendering.hasSlur;
+          break;
+        case 'gracechord':
+          vfGraceNotes.push(voiceComponentRendering.graceNotes[0].vexflow.graceNote);
+          hasSlur = hasSlur || voiceComponentRendering.graceNotes[0].hasSlur;
+          break;
+        case 'stavenote':
+          vfStaveNote = voiceComponentRendering.vexflow.staveNote;
+          break;
+        case 'stavechord':
+          vfStaveNote = voiceComponentRendering.notes[0].vexflow.staveNote;
+          break;
+      }
+
+      if (vfStaveNote && vfGraceNotes.length > 0) {
+        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasSlur).setPosition(
+          vexflow.ModifierPosition.LEFT
+        );
+
+        if (
+          vfGraceNotes.length > 1 &&
+          vfGraceNotes.every((vfGraceNote) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration()))
+        ) {
+          vfGraceNoteGroup.beamNotes();
+        }
+
+        vfStaveNote.addModifier(vfGraceNoteGroup);
+        vfGraceNotes = [];
+        hasSlur = false;
+      }
+    }
+
+    // TODO: It's incorrect for the Voice to have a single stave number. It should have a list of stave numbers.
+    const staveNumber = util.first(this.entries)?.note.getStaveNumber() ?? 1;
+    const timeSignature = util.first(this.entries)!.staveSignature.getTimeSignature(staveNumber);
+    const fraction = timeSignature.toFraction();
+    const vfVoice = new vexflow.Voice({
+      numBeats: fraction.numerator,
+      beatValue: fraction.denominator,
+    })
+      .setStrict(false)
+      .addTickables(vfTickables);
 
     return {
       type: 'voice',
+      address,
       vexflow: {
         voice: vfVoice,
       },
