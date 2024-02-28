@@ -25,7 +25,7 @@ export type VoiceRendering = {
 };
 
 /** The input data of a Voice. */
-export type VoiceEntry = {
+export type VoiceInput = {
   voiceId: string;
   staveSignature: StaveSignature;
   note: musicxml.Note;
@@ -36,7 +36,7 @@ export type VoiceEntry = {
 };
 
 /** The renderable objects of a Voice. */
-export type VoiceComponent = Note | Chord | Rest | GhostNote;
+export type VoiceEntry = Note | Chord | Rest | GhostNote;
 
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical
@@ -45,12 +45,12 @@ export type VoiceComponent = Note | Chord | Rest | GhostNote;
 export class Voice {
   private config: Config;
   private id: string;
-  private entries: VoiceEntry[];
+  private inputs: VoiceInput[];
 
-  constructor(opts: { config: Config; id: string; entries: VoiceEntry[] }) {
+  constructor(opts: { config: Config; id: string; inputs: VoiceInput[] }) {
     this.config = opts.config;
     this.id = opts.id;
-    this.entries = opts.entries;
+    this.inputs = opts.inputs;
   }
 
   /** Renders the voice. */
@@ -58,38 +58,38 @@ export class Voice {
     const address = opts.address;
     const spanners = opts.spanners;
 
-    const voiceComponentRenderings = this.getComponents().map((component) => {
-      if (component instanceof Note) {
-        return component.render({ address, spanners });
+    const voiceEntryRenderings = this.getEntries().map((entry) => {
+      if (entry instanceof Note) {
+        return entry.render({ address, spanners });
       }
-      if (component instanceof Chord) {
-        return component.render({ address, spanners });
+      if (entry instanceof Chord) {
+        return entry.render({ address, spanners });
       }
-      if (component instanceof Rest) {
-        return component.render({ address, spanners, voiceEntryCount: this.entries.length });
+      if (entry instanceof Rest) {
+        return entry.render({ address, spanners, voiceEntryCount: this.inputs.length });
       }
-      if (component instanceof GhostNote) {
-        return component.render();
+      if (entry instanceof GhostNote) {
+        return entry.render();
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
-      throw new Error(`unexpected voice component: ${component}`);
+      throw new Error(`unexpected voice entry: ${entry}`);
     });
 
     const vfTickables = new Array<vexflow.Tickable>();
 
-    for (const voiceComponentRendering of voiceComponentRenderings) {
-      switch (voiceComponentRendering.type) {
+    for (const rendering of voiceEntryRenderings) {
+      switch (rendering.type) {
         case 'stavenote':
-          vfTickables.push(voiceComponentRendering.vexflow.staveNote);
+          vfTickables.push(rendering.vexflow.staveNote);
           break;
         case 'stavechord':
-          vfTickables.push(voiceComponentRendering.notes[0].vexflow.staveNote);
+          vfTickables.push(rendering.notes[0].vexflow.staveNote);
           break;
         case 'rest':
-          vfTickables.push(voiceComponentRendering.vexflow.staveNote);
+          vfTickables.push(rendering.vexflow.staveNote);
           break;
         case 'ghostnote':
-          vfTickables.push(voiceComponentRendering.vexflow.ghostNote);
+          vfTickables.push(rendering.vexflow.ghostNote);
           break;
       }
     }
@@ -98,23 +98,23 @@ export class Voice {
     let hasSlur = false;
 
     // Attach preceding grace notes to the nearest stave note.
-    for (const voiceComponentRendering of voiceComponentRenderings) {
+    for (const rendering of voiceEntryRenderings) {
       let vfStaveNote: vexflow.StaveNote | null = null;
 
-      switch (voiceComponentRendering.type) {
+      switch (rendering.type) {
         case 'gracenote':
-          vfGraceNotes.push(voiceComponentRendering.vexflow.graceNote);
-          hasSlur = hasSlur || voiceComponentRendering.hasSlur;
+          vfGraceNotes.push(rendering.vexflow.graceNote);
+          hasSlur = hasSlur || rendering.hasSlur;
           break;
         case 'gracechord':
-          vfGraceNotes.push(voiceComponentRendering.graceNotes[0].vexflow.graceNote);
-          hasSlur = hasSlur || voiceComponentRendering.graceNotes[0].hasSlur;
+          vfGraceNotes.push(rendering.graceNotes[0].vexflow.graceNote);
+          hasSlur = hasSlur || rendering.graceNotes[0].hasSlur;
           break;
         case 'stavenote':
-          vfStaveNote = voiceComponentRendering.vexflow.staveNote;
+          vfStaveNote = rendering.vexflow.staveNote;
           break;
         case 'stavechord':
-          vfStaveNote = voiceComponentRendering.notes[0].vexflow.staveNote;
+          vfStaveNote = rendering.notes[0].vexflow.staveNote;
           break;
       }
 
@@ -137,8 +137,8 @@ export class Voice {
     }
 
     // TODO: It's incorrect for the Voice to have a single stave number. It should have a list of stave numbers.
-    const staveNumber = util.first(this.entries)?.note.getStaveNumber() ?? 1;
-    const timeSignature = util.first(this.entries)!.staveSignature.getTimeSignature(staveNumber);
+    const staveNumber = util.first(this.inputs)?.note.getStaveNumber() ?? 1;
+    const timeSignature = util.first(this.inputs)!.staveSignature.getTimeSignature(staveNumber);
     const fraction = timeSignature.toFraction();
     const vfVoice = new vexflow.Voice({
       numBeats: fraction.numerator,
@@ -157,14 +157,14 @@ export class Voice {
   }
 
   @util.memoize()
-  private getComponents(): VoiceComponent[] {
-    const result = new Array<VoiceComponent>();
+  private getEntries(): VoiceEntry[] {
+    const result = new Array<VoiceEntry>();
 
     let divisions = Division.zero();
 
-    for (const entry of this.entries) {
+    for (const input of this.inputs) {
       const ghostNoteStart = divisions;
-      const ghostNoteEnd = entry.start;
+      const ghostNoteEnd = input.start;
       const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
 
       if (ghostNoteDuration.isGreaterThan(Division.zero())) {
@@ -173,10 +173,10 @@ export class Voice {
         result.push(ghostNote);
       }
 
-      const component = this.toComponent(entry);
-      result.push(component);
+      const entry = this.toEntry(input);
+      result.push(entry);
 
-      divisions = entry.end;
+      divisions = input.end;
     }
 
     // TODO: Check to see if we need to fill the remaining duration of the measure with a ghost note.
@@ -184,14 +184,14 @@ export class Voice {
     return result;
   }
 
-  private toComponent(entry: VoiceEntry): VoiceComponent {
-    const note = entry.note;
-    const stem = entry.stem;
-    const directions = entry.directions;
-    const duration = entry.end.subtract(entry.start);
+  private toEntry(input: VoiceInput): VoiceEntry {
+    const note = input.note;
+    const stem = input.stem;
+    const directions = input.directions;
+    const duration = input.end.subtract(input.start);
     const staveNumber = note.getStaveNumber();
-    const clef = entry.staveSignature.getClef(staveNumber);
-    const keySignature = entry.staveSignature.getKeySignature(staveNumber);
+    const clef = input.staveSignature.getClef(staveNumber);
+    const keySignature = input.staveSignature.getKeySignature(staveNumber);
 
     const durationDenominator =
       conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
