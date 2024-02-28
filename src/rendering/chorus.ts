@@ -1,7 +1,7 @@
 import { Config } from './config';
 import { MeasureEntryIteration, MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { Voice, VoiceEntry, VoiceRendering } from './voice';
+import { Voice, VoiceInput, VoiceRendering } from './voice';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
@@ -85,7 +85,7 @@ class VoiceCalculator {
   private staveSignature: StaveSignature;
   private voiceId = VoiceCalculator.UNDEFINED_VOICE_ID;
   private directions: Record<string, musicxml.Direction[]> = {};
-  private voiceEntries: Record<string, VoiceEntry[]> = {};
+  private voiceInputs: Record<string, VoiceInput[]> = {};
   private iteration: MeasureEntryIteration = { done: true, value: null };
 
   constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
@@ -129,7 +129,9 @@ class VoiceCalculator {
     this.consumeDanglingDirections();
     this.adjustStems();
 
-    return Object.entries(this.voiceEntries).map(([id, entries]) => new Voice({ config: this.config, id, entries }));
+    return Object.entries(this.voiceInputs).map(
+      ([id, entries]) => new Voice({ config: this.config, id, inputs: entries })
+    );
   }
 
   /**
@@ -141,13 +143,13 @@ class VoiceCalculator {
   private consumeDanglingDirections() {
     // Move all the undefined voice directions to the last voice.
     const directions = this.takeDirections(VoiceCalculator.UNDEFINED_VOICE_ID);
-    this.getLastVoiceEntry(this.voiceId)?.directions.push(...directions);
+    this.getLastVoiceInput(this.voiceId)?.directions.push(...directions);
 
     // Handle any leftover directions that weren't attached to a succeeding note _in the same voice_ by attaching them
     // to the last note in each voice. If there are no notes in a voice, the directions are discarded.
     for (const voiceId of Object.keys(directions)) {
       const directions = this.takeDirections(voiceId);
-      this.getLastVoiceEntry(voiceId)?.directions.push(...directions);
+      this.getLastVoiceInput(voiceId)?.directions.push(...directions);
     }
   }
 
@@ -157,36 +159,36 @@ class VoiceCalculator {
    * This method does _not_ change any stem directions that were explicitly defined in the MusicXML document.
    */
   private adjustStems() {
-    const firstElgibleVoiceEntries = Object.values(this.voiceEntries)
-      .map((voiceEntry) => voiceEntry.find((entry) => !entry.note.isRest() && !entry.note.isGrace()))
-      .filter((entry): entry is VoiceEntry => typeof entry !== 'undefined');
+    const firstElgibleVoiceInput = Object.values(this.voiceInputs)
+      .map((voiceInputs) => voiceInputs.find((input) => !input.note.isRest() && !input.note.isGrace()))
+      .filter((input): input is VoiceInput => typeof input !== 'undefined');
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstElgibleVoiceEntries, (entry) => {
-      const note = entry.note;
+    util.sortBy(firstElgibleVoiceInput, (input) => {
+      const note = input.note;
       const staveNumber = note.getStaveNumber();
-      const clef = entry.staveSignature.getClef(staveNumber);
+      const clef = input.staveSignature.getClef(staveNumber);
       return -this.staveNoteLine(note, clef);
     });
 
-    if (firstElgibleVoiceEntries.length > 1) {
+    if (firstElgibleVoiceInput.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
 
-      const top = util.first(firstElgibleVoiceEntries)!;
-      const middle = firstElgibleVoiceEntries.slice(1, -1);
-      const bottom = util.last(firstElgibleVoiceEntries)!;
+      const top = util.first(firstElgibleVoiceInput)!;
+      const middle = firstElgibleVoiceInput.slice(1, -1);
+      const bottom = util.last(firstElgibleVoiceInput)!;
 
       stems[top.voiceId] = 'up';
       stems[bottom.voiceId] = 'down';
-      for (const entry of middle) {
-        stems[entry.voiceId] = 'none';
+      for (const input of middle) {
+        stems[input.voiceId] = 'none';
       }
 
-      for (const entry of Object.values(this.voiceEntries).flat()) {
+      for (const input of Object.values(this.voiceInputs).flat()) {
         // Only change stems that haven't been explicitly specified.
-        if (entry.stem === 'auto') {
-          entry.stem = stems[entry.voiceId];
+        if (input.stem === 'auto') {
+          input.stem = stems[input.voiceId];
         }
       }
     }
@@ -218,14 +220,14 @@ class VoiceCalculator {
   }
 
   private handleGrace(note: musicxml.Note) {
-    const voiceEntry = this.createVoiceEntry({ note, directions: [] });
-    this.pushVoiceEntries(this.voiceId, voiceEntry);
+    const voiceInput = this.createVoiceInput({ note, directions: [] });
+    this.pushVoiceInputs(this.voiceId, voiceInput);
   }
 
   private handleStaveNote(note: musicxml.Note) {
     const directions = this.takeDirections(this.voiceId, VoiceCalculator.UNDEFINED_VOICE_ID);
-    const voiceEntry = this.createVoiceEntry({ note, directions });
-    this.pushVoiceEntries(this.voiceId, voiceEntry);
+    const voiceInput = this.createVoiceInput({ note, directions });
+    this.pushVoiceInputs(this.voiceId, voiceInput);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -258,11 +260,11 @@ class VoiceCalculator {
     this.pushDirections(dstVoiceId, ...directions);
   }
 
-  private getLastVoiceEntry(voiceId: string): VoiceEntry | null {
-    return util.last(this.voiceEntries[voiceId]);
+  private getLastVoiceInput(voiceId: string): VoiceInput | null {
+    return util.last(this.voiceInputs[voiceId]);
   }
 
-  private createVoiceEntry(opts: { note: musicxml.Note; directions: musicxml.Direction[] }): VoiceEntry {
+  private createVoiceInput(opts: { note: musicxml.Note; directions: musicxml.Direction[] }): VoiceInput {
     return {
       voiceId: this.voiceId,
       note: opts.note,
@@ -274,9 +276,9 @@ class VoiceCalculator {
     };
   }
 
-  private pushVoiceEntries(voiceId: string, ...voiceEntries: VoiceEntry[]) {
-    this.voiceEntries[voiceId] ??= [];
-    this.voiceEntries[voiceId].push(...voiceEntries);
+  private pushVoiceInputs(voiceId: string, ...voiceInputs: VoiceInput[]) {
+    this.voiceInputs[voiceId] ??= [];
+    this.voiceInputs[voiceId].push(...voiceInputs);
   }
 
   /** Returns the line that the note would be rendered on. */
