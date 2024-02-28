@@ -129,7 +129,7 @@ class VoiceCalculator {
     this.consumeDanglingDirections();
     this.adjustStems();
 
-    return Object.values(this.voiceEntries).map((entries) => new Voice({ config: this.config, entries }));
+    return Object.entries(this.voiceEntries).map(([id, entries]) => new Voice({ config: this.config, id, entries }));
   }
 
   /**
