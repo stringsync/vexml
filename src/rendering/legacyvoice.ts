@@ -24,8 +24,8 @@ export type VoiceEntryRendering =
   | GhostNoteRendering;
 
 /** The result rendering a Voice. */
-export type VoiceRendering = {
-  type: 'voice';
+export type LegacyVoiceRendering = {
+  type: 'legacyvoice';
   address: Address<'voice'>;
   vexflow: {
     voice: vexflow.Voice;
@@ -129,7 +129,7 @@ export class LegacyVoice {
   }
 
   /** Renders the Voice. */
-  render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
+  render(opts: { address: Address<'voice'>; spanners: Spanners }): LegacyVoiceRendering {
     const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>((entry) => {
       if (entry instanceof Note) {
         return entry.render({ spanners: opts.spanners, address: opts.address });
@@ -218,7 +218,7 @@ export class LegacyVoice {
       .addTickables(vfTickables);
 
     return {
-      type: 'voice',
+      type: 'legacyvoice',
       address: opts.address,
       vexflow: { voice: vfVoice },
       entries: voiceEntryRenderings,

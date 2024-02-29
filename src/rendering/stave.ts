@@ -1,4 +1,4 @@
-import { LegacyChorus, ChorusRendering } from './legacychorus';
+import { LegacyChorus, LegacyChorusRendering } from './legacychorus';
 import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
@@ -12,14 +12,15 @@ import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { Spanners } from './spanners';
+import { Chorus, ChorusRendering } from './chorus';
 
 const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
-export type StaveEntry = LegacyChorus | MultiRest | Tablature;
+export type StaveEntry = Chorus | LegacyChorus | MultiRest | Tablature;
 
 /** The result of rendering a Stave entry. */
-export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
+export type StaveEntryRendering = ChorusRendering | LegacyChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -96,13 +97,10 @@ export class Stave {
       return new Tablature();
     }
 
-    return LegacyChorus.multiVoice({
+    return new Chorus({
       config,
       measureEntries,
-      quarterNoteDivisions,
-      keySignature,
-      clef,
-      timeSignature,
+      staveSignature: this.staveSignature,
     });
   }
 
@@ -239,6 +237,7 @@ export class Stave {
         staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
         break;
       case 'chorus':
+      case 'legacychorus':
         const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
         opts.vexflow.formatter.joinVoices(vfVoices);
         for (const vfVoice of vfVoices) {

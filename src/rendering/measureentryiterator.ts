@@ -60,7 +60,7 @@ export class MeasureEntryIterator {
       this.staveSignature = entry;
     }
 
-    if (entry instanceof musicxml.Note) {
+    if (entry instanceof musicxml.Note && !entry.isChordTail() && !entry.isGrace()) {
       duration = entry.getDuration();
     }
 
