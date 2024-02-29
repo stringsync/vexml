@@ -190,8 +190,6 @@ export class Voice {
       divisions = input.end;
     }
 
-    // TODO: Check to see if we need to fill the remaining duration of the measure with a ghost note.
-
     return result;
   }
 

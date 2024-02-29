@@ -23,7 +23,7 @@ export class Chorus {
   private measureEntries: MeasureEntry[];
   private staveSignature: StaveSignature;
 
-  private constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
+  constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
     this.config = opts.config;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
@@ -205,6 +205,8 @@ class VoiceCalculator {
   }
 
   private handleNote(note: musicxml.Note) {
+    this.voiceId = note.getVoice() || this.voiceId;
+
     if (note.isChordTail()) {
       this.handleChordTail(note);
     } else if (note.isGrace()) {
@@ -261,7 +263,7 @@ class VoiceCalculator {
   }
 
   private getLastVoiceInput(voiceId: string): VoiceInput | null {
-    return util.last(this.voiceInputs[voiceId]);
+    return util.last(this.voiceInputs[voiceId] ?? []);
   }
 
   private createVoiceInput(opts: { note: musicxml.Note; directions: musicxml.Direction[] }): VoiceInput {

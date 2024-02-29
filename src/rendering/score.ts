@@ -6,10 +6,11 @@ import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
-import { ChorusRendering } from './legacychorus';
+import { LegacyChorusRendering } from './legacychorus';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
+import { ChorusRendering } from './chorus';
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
@@ -150,7 +151,17 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.Voice elements.
+    // Draw vexflow.Voice elements from LegacyChorusRendering.
+    staves
+      .map((stave) => stave.entry)
+      .filter((entry): entry is LegacyChorusRendering => entry.type === 'legacychorus')
+      .flatMap((entry) => entry.voices)
+      .map((voice) => voice.vexflow.voice)
+      .forEach((vfVoice) => {
+        vfVoice.setContext(vfContext).draw();
+      });
+
+    // Draw vexflow.Voice elements from ChorusRendering.
     staves
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')

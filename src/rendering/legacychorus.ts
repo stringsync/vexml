@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { Division } from './division';
 import { StemDirection } from './enums';
-import { VoicePlaceholderEntry, LegacyVoice, VoiceEntry, VoiceRendering } from './legacyvoice';
+import { VoicePlaceholderEntry, LegacyVoice, VoiceEntry, LegacyVoiceRendering } from './legacyvoice';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
@@ -20,10 +20,10 @@ import { Spanners } from './spanners';
 const UNDEFINED_VOICE_ID = '';
 
 /** The result of rendering a chorus. */
-export type ChorusRendering = {
-  type: 'chorus';
+export type LegacyChorusRendering = {
+  type: 'legacychorus';
   address: Address<'chorus'>;
-  voices: VoiceRendering[];
+  voices: LegacyVoiceRendering[];
 };
 
 type VoiceEntryData = {
@@ -122,7 +122,7 @@ export class LegacyChorus {
   }
 
   /** Renders the Chorus. */
-  render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
+  render(opts: { address: Address<'chorus'>; spanners: Spanners }): LegacyChorusRendering {
     const voiceRenderings = this.getVoices().map((voice, index) =>
       voice.render({
         address: opts.address.voice({ voiceIndex: index }),
@@ -131,7 +131,7 @@ export class LegacyChorus {
     );
 
     return {
-      type: 'chorus',
+      type: 'legacychorus',
       address: opts.address,
       voices: voiceRenderings,
     };

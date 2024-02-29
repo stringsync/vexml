@@ -7,11 +7,14 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
-import { LegacyChorus, ChorusRendering } from './legacychorus';
+import { LegacyChorus, LegacyChorusRendering } from './legacychorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
 import { MultiRest } from './multirest';
+import { Chorus, ChorusRendering } from './chorus';
+import { VoiceRendering } from './voice';
+import { LegacyVoiceRendering } from './legacyvoice';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -204,9 +207,19 @@ export class MeasureFragment {
     const vfVoices = partRenderings
       .flatMap((partRendering) => partRendering.staves)
       .map((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((chorusRendering) => chorusRendering.voices)
-      .map((voice) => voice.vexflow.voice);
+      .filter(
+        (entry): entry is ChorusRendering | LegacyChorusRendering =>
+          entry.type === 'chorus' || entry.type === 'legacychorus'
+      )
+      .flatMap((chorusRendering) => {
+        switch (chorusRendering.type) {
+          case 'chorus':
+            return chorusRendering.voices.map((voice) => voice.vexflow.voice);
+          case 'legacychorus':
+            return chorusRendering.voices.map((voice) => voice.vexflow.voice);
+        }
+      });
+
     if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
       vfFormatter.formatToStave(vfVoices, vfStave);
     }
@@ -394,7 +407,7 @@ export class MeasureFragment {
 
         let vfPartStaveVoices = new Array<vexflow.Voice>();
 
-        if (entry instanceof LegacyChorus) {
+        if (entry instanceof Chorus || entry instanceof LegacyChorus) {
           const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
           const chorusRendering = entry.render({ address, spanners });
           vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
