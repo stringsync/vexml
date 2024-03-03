@@ -32,7 +32,6 @@ export class Rest {
     directions: musicxml.Direction[];
   };
   private durationDenominator: NoteDurationDenominator;
-  private dotCount: number;
   private clef: Clef;
 
   constructor(opts: {
@@ -42,13 +41,11 @@ export class Rest {
       directions: musicxml.Direction[];
     };
     durationDenominator: NoteDurationDenominator;
-    dotCount: number;
     clef: Clef;
   }) {
     this.config = opts.config;
     this.musicXML = opts.musicXML;
     this.durationDenominator = opts.durationDenominator;
-    this.dotCount = opts.dotCount;
     this.clef = opts.clef;
   }
 
@@ -61,22 +58,23 @@ export class Rest {
         directions: [],
       },
       durationDenominator: '1',
-      dotCount: 0,
       clef: opts.clef,
     });
   }
 
   /** Renders the Rest. */
   render(opts: { voiceEntryCount: number; spanners: Spanners; address: Address<'voice'> }): RestRendering {
+    const dotCount = this.musicXML.note?.getDotCount() ?? 0;
+
     const vfStaveNote = new vexflow.StaveNote({
       keys: [this.getKey()],
       duration: `${this.durationDenominator}r`,
-      dots: this.dotCount,
+      dots: dotCount,
       alignCenter: this.shouldCenter(opts.voiceEntryCount),
       clef: this.clef.getType(),
     });
 
-    for (let index = 0; index < this.dotCount; index++) {
+    for (let index = 0; index < dotCount; index++) {
       vexflow.Dot.buildAndAttach([vfStaveNote]);
     }
 

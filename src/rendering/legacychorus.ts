@@ -441,7 +441,6 @@ export class LegacyChorus {
             new Rest({
               config,
               musicXML: { note, directions },
-              dotCount: note.getDotCount(),
               clef,
               durationDenominator,
             })
