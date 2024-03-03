@@ -234,7 +234,6 @@ export class Voice {
     } else if (note.isChordHead()) {
       return new Chord({
         config: this.config,
-        // TODO: Calculate octave shifts from the stave signature.
         musicXML: { note, directions, octaveShift },
         stem,
         clef,
@@ -245,15 +244,12 @@ export class Voice {
       return new Rest({
         config: this.config,
         musicXML: { note, directions },
-        // TODO: Remove dotCount since it can be inferred from the musicxml.Note.
-        dotCount: note.getDotCount(),
         clef,
         durationDenominator,
       });
     } else {
       return new Note({
         config: this.config,
-        // TODO: Calculate octave shifts from the stave signature.
         musicXML: { note, directions, octaveShift },
         stem,
         clef,
