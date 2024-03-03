@@ -172,6 +172,7 @@ export class Voice {
     const result = new Array<VoiceEntry>();
 
     let divisions = Division.zero();
+    let openOctaveShift: musicxml.OctaveShift | null = null;
 
     for (const input of this.inputs) {
       const ghostNoteStart = divisions;
@@ -184,8 +185,30 @@ export class Voice {
         result.push(ghostNote);
       }
 
-      const entry = this.toEntry(input);
+      let shouldCloseOctaveShift = false;
+      const octaveShifts = input.directions.flatMap((direction) => direction.getOctaveShifts());
+      for (const octaveShift of octaveShifts) {
+        switch (octaveShift.getType()) {
+          case 'up':
+          case 'down':
+            openOctaveShift = octaveShift;
+            break;
+          case 'continue':
+            // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
+            // upstream and handle continues correctly.
+            break;
+          case 'stop':
+            shouldCloseOctaveShift = true;
+            break;
+        }
+      }
+
+      const entry = this.toEntry(input, openOctaveShift);
       result.push(entry);
+
+      if (shouldCloseOctaveShift) {
+        openOctaveShift = null;
+      }
 
       divisions = input.end;
     }
@@ -193,7 +216,7 @@ export class Voice {
     return result;
   }
 
-  private toEntry(input: VoiceInput): VoiceEntry {
+  private toEntry(input: VoiceInput, octaveShift: musicxml.OctaveShift | null): VoiceEntry {
     const note = input.note;
     const stem = input.stem;
     const directions = input.directions;
@@ -212,7 +235,7 @@ export class Voice {
       return new Chord({
         config: this.config,
         // TODO: Calculate octave shifts from the stave signature.
-        musicXML: { note, directions, octaveShift: null },
+        musicXML: { note, directions, octaveShift },
         stem,
         clef,
         durationDenominator,
@@ -231,7 +254,7 @@ export class Voice {
       return new Note({
         config: this.config,
         // TODO: Calculate octave shifts from the stave signature.
-        musicXML: { note, directions, octaveShift: null },
+        musicXML: { note, directions, octaveShift },
         stem,
         clef,
         durationDenominator,
