@@ -313,7 +313,20 @@ export class Measure {
       let iteration = iterator.next();
 
       while (!iteration.done) {
-        if (iteration.value.fragmentation === 'new') {
+        const entry = iteration.value.entry;
+
+        const isStaveSignature = entry instanceof StaveSignature;
+
+        const hasMetronome =
+          entry instanceof musicxml.Direction &&
+          entry
+            .getTypes()
+            .map((type) => type.getContent())
+            .some((content) => content.type === 'metronome');
+
+        const shouldFragment = isStaveSignature || hasMetronome;
+
+        if (shouldFragment) {
           boundaries.push(iteration.value.end);
         }
         iteration = iterator.next();

@@ -1,5 +1,6 @@
-import { NamedElement } from '../util';
-import { DirectionType } from './directiontype';
+import { OctaveShift } from './octaveshift';
+import { NamedElement } from '@/util';
+import { DirectionType, OctaveShiftDirectionTypeContent } from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
 
 /**
@@ -17,6 +18,16 @@ export class Direction {
    */
   getTypes(): DirectionType[] {
     return this.element.all('direction-type').map((node) => new DirectionType(node));
+  }
+
+  /**
+   * Returns the octave shifts of the direction.
+   */
+  getOctaveShifts(): OctaveShift[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
+      .map((content) => content.octaveShift);
   }
 
   /**
