@@ -147,7 +147,7 @@ class VoiceCalculator {
 
     // Handle any leftover directions that weren't attached to a succeeding note _in the same voice_ by attaching them
     // to the last note in each voice. If there are no notes in a voice, the directions are discarded.
-    for (const voiceId of Object.keys(directions)) {
+    for (const voiceId of Object.keys(this.directions)) {
       const directions = this.takeDirections(voiceId);
       this.getLastVoiceInput(voiceId)?.directions.push(...directions);
     }
