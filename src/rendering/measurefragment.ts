@@ -13,8 +13,6 @@ import { StaveModifier } from './stave';
 import { PartName } from './partname';
 import { MultiRest } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
-import { VoiceRendering } from './voice';
-import { LegacyVoiceRendering } from './legacyvoice';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
