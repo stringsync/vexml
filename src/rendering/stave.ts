@@ -81,8 +81,6 @@ export class Stave {
     const clef = this.getClef();
     const multiRestCount = this.getMultiRestCount();
     const measureEntries = this.measureEntries;
-    const quarterNoteDivisions = this.getQuarterNoteDivisions();
-    const keySignature = this.getKeySignature();
 
     if (multiRestCount === 1) {
       return LegacyChorus.wholeRest({ config, clef, timeSignature });
