@@ -296,4 +296,35 @@ export class Voice {
       entries: voiceEntryRenderings,
     };
   }
+
+  private toPlaceholderVoice(): Voice {
+    if (this.parent) {
+      throw new Error(`cannot create a placeholder voice for a voice that is not a top-level voice`);
+    }
+
+    const entries = this.entries.map((entry) => this.toPlaceholderEntry(entry));
+
+    return new Voice({
+      config: this.config,
+      id: this.id,
+      entries,
+      timeSignature: this.timeSignature,
+      parent: this,
+    });
+  }
+
+  private toPlaceholderEntry(entry: VoiceEntry): VoiceEntry {
+    const start = entry.start;
+    const end = entry.end;
+    const directions = entry.directions;
+
+    const duration = end.subtract(start);
+    const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(duration);
+    return {
+      start,
+      end,
+      value: new GhostNote({ durationDenominator }),
+      directions,
+    };
+  }
 }
