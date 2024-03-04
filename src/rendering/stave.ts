@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { MeasureRest, MeasureRestRendering } from './measurerest';
+import { MultiRest, MultiRestRendering } from './multirest';
 import { Tablature, TablatureRendering } from './tablature';
 import { TimeSignature } from './timesignature';
 import * as conversions from './conversions';
@@ -12,14 +12,16 @@ import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { Chorus, ChorusRendering } from './chorus';
+import { Voice } from './voice';
+import { Rest } from './rest';
 
 const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | MeasureRest | Tablature;
+export type StaveEntry = Chorus | MultiRest | Tablature;
 
 /** The result of rendering a Stave entry. */
-export type StaveEntryRendering = ChorusRendering | MeasureRestRendering | TablatureRendering;
+export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -81,8 +83,22 @@ export class Stave {
     const multiRestCount = this.getMultiRestCount();
     const measureEntries = this.measureEntries;
 
-    if (multiRestCount > 0) {
-      return new MeasureRest({ config, count: multiRestCount, timeSignature, clef });
+    if (multiRestCount === 1) {
+      return new Chorus({
+        config,
+        voices: [
+          new Voice({
+            config,
+            id: '-1',
+            entries: [Rest.whole({ config, clef })],
+            timeSignature,
+          }),
+        ],
+      });
+    }
+
+    if (multiRestCount > 1) {
+      return new MultiRest({ count: multiRestCount });
     }
 
     if (this.getClef().getType() === 'tab') {
@@ -90,7 +106,7 @@ export class Stave {
       return new Tablature();
     }
 
-    return new Chorus({
+    return Chorus.fromMusicXML({
       config,
       measureEntries,
       staveSignature: this.staveSignature,
@@ -227,15 +243,7 @@ export class Stave {
 
     switch (staveEntryRendering.type) {
       case 'measurerest':
-        switch (staveEntryRendering.coverage) {
-          case 'single':
-            const vfVoice = staveEntryRendering.voice.vexflow.voice;
-            vfVoice.setStave(vfStave);
-            break;
-          case 'multi':
-            staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
-            break;
-        }
+        staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
         break;
       case 'chorus':
         const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
