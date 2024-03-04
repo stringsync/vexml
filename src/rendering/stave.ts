@@ -1,9 +1,8 @@
-import { LegacyChorus, LegacyChorusRendering } from './legacychorus';
 import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { MultiRest, MultiRestRendering } from './multirest';
+import { MeasureRest, MeasureRestRendering } from './multirest';
 import { Tablature, TablatureRendering } from './tablature';
 import { TimeSignature } from './timesignature';
 import * as conversions from './conversions';
@@ -17,10 +16,10 @@ import { Chorus, ChorusRendering } from './chorus';
 const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | LegacyChorus | MultiRest | Tablature;
+export type StaveEntry = Chorus | MeasureRest | Tablature;
 
 /** The result of rendering a Stave entry. */
-export type StaveEntryRendering = ChorusRendering | LegacyChorusRendering | MultiRestRendering | TablatureRendering;
+export type StaveEntryRendering = ChorusRendering | MeasureRestRendering | TablatureRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -82,12 +81,8 @@ export class Stave {
     const multiRestCount = this.getMultiRestCount();
     const measureEntries = this.measureEntries;
 
-    if (multiRestCount === 1) {
-      return LegacyChorus.wholeRest({ config, clef, timeSignature });
-    }
-
-    if (multiRestCount > 1) {
-      return new MultiRest({ count: multiRestCount });
+    if (multiRestCount > 0) {
+      return new MeasureRest({ config, count: multiRestCount, timeSignature, clef });
     }
 
     if (this.getClef().getType() === 'tab') {
@@ -231,11 +226,18 @@ export class Stave {
     });
 
     switch (staveEntryRendering.type) {
-      case 'multirest':
-        staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
+      case 'measurerest':
+        switch (staveEntryRendering.coverage) {
+          case 'single':
+            const vfVoice = staveEntryRendering.voice.vexflow.voice;
+            vfVoice.setStave(vfStave);
+            break;
+          case 'multi':
+            staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
+            break;
+        }
         break;
       case 'chorus':
-      case 'legacychorus':
         const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
         opts.vexflow.formatter.joinVoices(vfVoices);
         for (const vfVoice of vfVoices) {
@@ -285,9 +287,5 @@ export class Stave {
 
   private getStaveLineCount(): number {
     return this.staveSignature.getStaveLineCount(this.number);
-  }
-
-  private getQuarterNoteDivisions(): number {
-    return this.staveSignature.getQuarterNoteDivisions();
   }
 }

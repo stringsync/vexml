@@ -7,11 +7,10 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
-import { LegacyChorus, LegacyChorusRendering } from './legacychorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
-import { MultiRest } from './multirest';
+import { MeasureRest, SingleMeasureRestRendering } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
 
 /** The result of rendering a measure fragment. */
@@ -202,21 +201,21 @@ export class MeasureFragment {
     }
 
     const vfStave = util.first(partRenderings)?.staves[0]?.vexflow.stave ?? null;
-    const vfVoices = partRenderings
-      .flatMap((partRendering) => partRendering.staves)
-      .map((stave) => stave.entry)
-      .filter(
-        (entry): entry is ChorusRendering | LegacyChorusRendering =>
-          entry.type === 'chorus' || entry.type === 'legacychorus'
-      )
-      .flatMap((chorusRendering) => {
-        switch (chorusRendering.type) {
-          case 'chorus':
-            return chorusRendering.voices.map((voice) => voice.vexflow.voice);
-          case 'legacychorus':
-            return chorusRendering.voices.map((voice) => voice.vexflow.voice);
-        }
-      });
+    const vfVoices = [
+      ...partRenderings
+        .flatMap((partRendering) => partRendering.staves)
+        .map((stave) => stave.entry)
+        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+        .flatMap((chorusRendering) => chorusRendering.voices)
+        .map((voice) => voice.vexflow.voice),
+      ...partRenderings
+        .flatMap((partRendering) => partRendering.staves)
+        .map((stave) => stave.entry)
+        .filter(
+          (entry): entry is SingleMeasureRestRendering => entry.type === 'measurerest' && entry.coverage === 'single'
+        )
+        .map((singleMeasureRestRendering) => singleMeasureRestRendering.voice.vexflow.voice),
+    ];
 
     if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
       vfFormatter.formatToStave(vfVoices, vfStave);
@@ -405,10 +404,17 @@ export class MeasureFragment {
 
         let vfPartStaveVoices = new Array<vexflow.Voice>();
 
-        if (entry instanceof Chorus || entry instanceof LegacyChorus) {
+        if (entry instanceof Chorus) {
           const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
           const chorusRendering = entry.render({ address, spanners });
           vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
+        }
+        if (entry instanceof MeasureRest) {
+          const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
+          const measureRestRendering = entry.render({ address, spanners });
+          if (measureRestRendering.coverage === 'single') {
+            vfPartStaveVoices = [measureRestRendering.voice.vexflow.voice];
+          }
         }
 
         if (vfPartStaveVoices.length > 0) {
@@ -433,7 +439,9 @@ export class MeasureFragment {
   private getNonVoiceWidth(): number {
     const hasMultiRest = this.getParts()
       .flatMap((part) => part.getStaves())
-      .some((stave) => stave.getEntry() instanceof MultiRest);
+      .map((stave) => stave.getEntry())
+      .filter((entry): entry is MeasureRest => entry instanceof MeasureRest)
+      .some((measureRest) => measureRest.getCount() > 1);
 
     // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
     // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at

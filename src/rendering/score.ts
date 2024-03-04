@@ -5,8 +5,7 @@ import * as util from '@/util';
 import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
-import { MultiRestRendering } from './multirest';
-import { LegacyChorusRendering } from './legacychorus';
+import { MultiMeasureRestRendering, SingleMeasureRestRendering } from './multirest';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
@@ -141,7 +140,7 @@ export class Score {
     // Draw vexflow.MultiMeasureRest elements.
     staves
       .map((stave) => stave.entry)
-      .filter((entry): entry is MultiRestRendering => entry.type === 'multirest')
+      .filter((entry): entry is MultiMeasureRestRendering => entry.type === 'measurerest' && entry.coverage === 'multi')
       .map((entry) => entry.vexflow.multiMeasureRest)
       .filter(
         (vfMultiMeasureRest): vfMultiMeasureRest is vexflow.MultiMeasureRest =>
@@ -151,12 +150,13 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.Voice elements from LegacyChorusRendering.
+    // Draw vexflow.Voice elements from SingleMeasureRestRendering.
     staves
       .map((stave) => stave.entry)
-      .filter((entry): entry is LegacyChorusRendering => entry.type === 'legacychorus')
-      .flatMap((entry) => entry.voices)
-      .map((voice) => voice.vexflow.voice)
+      .filter(
+        (entry): entry is SingleMeasureRestRendering => entry.type === 'measurerest' && entry.coverage === 'single'
+      )
+      .map((entry) => entry.voice.vexflow.voice)
       .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
       });
