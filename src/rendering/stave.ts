@@ -14,6 +14,7 @@ import { Spanners } from './spanners';
 import { Chorus, ChorusRendering } from './chorus';
 import { Voice } from './voice';
 import { Rest } from './rest';
+import { Division } from './division';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -90,7 +91,14 @@ export class Stave {
           new Voice({
             config,
             id: '-1',
-            entries: [Rest.whole({ config, clef })],
+            entries: [
+              {
+                start: Division.zero(),
+                end: Division.of(1, 1),
+                value: Rest.whole({ config, clef }),
+                directions: [],
+              },
+            ],
             timeSignature,
           }),
         ],
