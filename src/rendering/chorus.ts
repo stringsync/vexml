@@ -129,9 +129,11 @@ class VoiceCalculator {
     this.consumeDanglingDirections();
     this.adjustStems();
 
-    return Object.entries(this.voiceInputs).map(
-      ([id, entries]) => new Voice({ config: this.config, id, inputs: entries })
-    );
+    return Object.entries(this.voiceInputs).map(([id, inputs]) => {
+      const staveNumber = util.first(inputs)?.note.getStaveNumber() ?? 1;
+      const timeSignature = util.first(inputs)!.staveSignature.getTimeSignature(staveNumber);
+      return Voice.fromInputs({ config: this.config, id, inputs, timeSignature });
+    });
   }
 
   /**

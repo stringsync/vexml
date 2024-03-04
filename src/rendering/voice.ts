@@ -1,6 +1,5 @@
 import { Division } from './division';
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
 import { StemDirection } from './enums';
@@ -12,6 +11,7 @@ import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
 import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
+import { TimeSignature } from './timesignature';
 
 const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
@@ -55,12 +55,112 @@ export type VoiceEntry = Note | Chord | Rest | GhostNote;
 export class Voice {
   private config: Config;
   private id: string;
-  private inputs: VoiceInput[];
+  private entries: VoiceEntry[];
+  private timeSignature: TimeSignature;
 
-  constructor(opts: { config: Config; id: string; inputs: VoiceInput[] }) {
+  constructor(opts: { config: Config; id: string; entries: VoiceEntry[]; timeSignature: TimeSignature }) {
     this.config = opts.config;
     this.id = opts.id;
-    this.inputs = opts.inputs;
+    this.entries = opts.entries;
+    this.timeSignature = opts.timeSignature;
+  }
+
+  static fromInputs(opts: { config: Config; id: string; inputs: VoiceInput[]; timeSignature: TimeSignature }): Voice {
+    const entries = new Array<VoiceEntry>();
+
+    let divisions = Division.zero();
+    let openOctaveShift: musicxml.OctaveShift | null = null;
+
+    for (const input of opts.inputs) {
+      const ghostNoteStart = divisions;
+      const ghostNoteEnd = input.start;
+      const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
+
+      if (ghostNoteDuration.isGreaterThan(Division.zero())) {
+        const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
+        const ghostNote = new GhostNote({ durationDenominator });
+        entries.push(ghostNote);
+      }
+
+      let shouldCloseOctaveShift = false;
+      const octaveShifts = input.directions.flatMap((direction) => direction.getOctaveShifts());
+      for (const octaveShift of octaveShifts) {
+        switch (octaveShift.getType()) {
+          case 'up':
+          case 'down':
+            openOctaveShift = octaveShift;
+            break;
+          case 'continue':
+            // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
+            // upstream and handle continues correctly.
+            break;
+          case 'stop':
+            shouldCloseOctaveShift = true;
+            break;
+        }
+      }
+
+      const entry = this.toEntry({ config: opts.config, input, octaveShift: openOctaveShift });
+      entries.push(entry);
+
+      if (shouldCloseOctaveShift) {
+        openOctaveShift = null;
+      }
+
+      divisions = input.end;
+    }
+
+    return new Voice({ config: opts.config, id: opts.id, entries, timeSignature: opts.timeSignature });
+  }
+
+  private static toEntry(opts: {
+    config: Config;
+    input: VoiceInput;
+    octaveShift: musicxml.OctaveShift | null;
+  }): VoiceEntry {
+    const input = opts.input;
+    const config = opts.config;
+    const octaveShift = opts.octaveShift;
+    const note = input.note;
+    const stem = input.stem;
+    const directions = input.directions;
+    const duration = input.end.subtract(input.start);
+    const staveNumber = note.getStaveNumber();
+    const clef = input.staveSignature.getClef(staveNumber);
+    const keySignature = input.staveSignature.getKeySignature(staveNumber);
+
+    const durationDenominator =
+      conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
+      conversions.fromDivisionsToNoteDurationDenominator(duration);
+
+    if (!note.printObject()) {
+      return new GhostNote({ durationDenominator });
+    } else if (note.isChordHead()) {
+      return new Chord({
+        config,
+        musicXML: { note, directions, octaveShift },
+        stem,
+        clef,
+        durationDenominator,
+        keySignature,
+      });
+    } else if (note.isRest()) {
+      return new Rest({
+        config,
+        musicXML: { note, directions },
+        clef,
+        durationDenominator,
+      });
+    } else {
+      return new Note({
+        config,
+        musicXML: { note, directions, octaveShift },
+        stem,
+        clef,
+        durationDenominator,
+        keySignature,
+      });
+    }
   }
 
   /** Renders the voice. */
@@ -68,7 +168,7 @@ export class Voice {
     const address = opts.address;
     const spanners = opts.spanners;
 
-    const voiceEntryRenderings = this.getEntries().map((entry) => {
+    const voiceEntryRenderings = this.entries.map((entry) => {
       if (entry instanceof Note) {
         return entry.render({ address, spanners });
       }
@@ -76,7 +176,7 @@ export class Voice {
         return entry.render({ address, spanners });
       }
       if (entry instanceof Rest) {
-        return entry.render({ address, spanners, voiceEntryCount: this.inputs.length });
+        return entry.render({ address, spanners, voiceEntryCount: this.entries.length });
       }
       if (entry instanceof GhostNote) {
         return entry.render();
@@ -146,10 +246,7 @@ export class Voice {
       }
     }
 
-    // TODO: It's incorrect for the Voice to have a single stave number. It should have a list of stave numbers.
-    const staveNumber = util.first(this.inputs)?.note.getStaveNumber() ?? 1;
-    const timeSignature = util.first(this.inputs)!.staveSignature.getTimeSignature(staveNumber);
-    const fraction = timeSignature.toFraction();
+    const fraction = this.timeSignature.toFraction();
     const vfVoice = new vexflow.Voice({
       numBeats: fraction.numerator,
       beatValue: fraction.denominator,
@@ -165,97 +262,5 @@ export class Voice {
       },
       entries: voiceEntryRenderings,
     };
-  }
-
-  @util.memoize()
-  private getEntries(): VoiceEntry[] {
-    const result = new Array<VoiceEntry>();
-
-    let divisions = Division.zero();
-    let openOctaveShift: musicxml.OctaveShift | null = null;
-
-    for (const input of this.inputs) {
-      const ghostNoteStart = divisions;
-      const ghostNoteEnd = input.start;
-      const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
-
-      if (ghostNoteDuration.isGreaterThan(Division.zero())) {
-        const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
-        const ghostNote = new GhostNote({ durationDenominator });
-        result.push(ghostNote);
-      }
-
-      let shouldCloseOctaveShift = false;
-      const octaveShifts = input.directions.flatMap((direction) => direction.getOctaveShifts());
-      for (const octaveShift of octaveShifts) {
-        switch (octaveShift.getType()) {
-          case 'up':
-          case 'down':
-            openOctaveShift = octaveShift;
-            break;
-          case 'continue':
-            // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
-            // upstream and handle continues correctly.
-            break;
-          case 'stop':
-            shouldCloseOctaveShift = true;
-            break;
-        }
-      }
-
-      const entry = this.toEntry(input, openOctaveShift);
-      result.push(entry);
-
-      if (shouldCloseOctaveShift) {
-        openOctaveShift = null;
-      }
-
-      divisions = input.end;
-    }
-
-    return result;
-  }
-
-  private toEntry(input: VoiceInput, octaveShift: musicxml.OctaveShift | null): VoiceEntry {
-    const note = input.note;
-    const stem = input.stem;
-    const directions = input.directions;
-    const duration = input.end.subtract(input.start);
-    const staveNumber = note.getStaveNumber();
-    const clef = input.staveSignature.getClef(staveNumber);
-    const keySignature = input.staveSignature.getKeySignature(staveNumber);
-
-    const durationDenominator =
-      conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
-      conversions.fromDivisionsToNoteDurationDenominator(duration);
-
-    if (!note.printObject()) {
-      return new GhostNote({ durationDenominator });
-    } else if (note.isChordHead()) {
-      return new Chord({
-        config: this.config,
-        musicXML: { note, directions, octaveShift },
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
-    } else if (note.isRest()) {
-      return new Rest({
-        config: this.config,
-        musicXML: { note, directions },
-        clef,
-        durationDenominator,
-      });
-    } else {
-      return new Note({
-        config: this.config,
-        musicXML: { note, directions, octaveShift },
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
-    }
   }
 }
