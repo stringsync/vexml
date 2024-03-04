@@ -5,7 +5,7 @@ import * as util from '@/util';
 import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
-import { MultiMeasureRestRendering, SingleMeasureRestRendering } from './multirest';
+import { MultiMeasureRestRendering, SingleMeasureRestRendering } from './measurerest';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';

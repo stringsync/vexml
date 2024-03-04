@@ -10,7 +10,7 @@ import { Part, PartRendering } from './part';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
-import { MeasureRest, SingleMeasureRestRendering } from './multirest';
+import { MeasureRest, SingleMeasureRestRendering } from './measurerest';
 import { Chorus, ChorusRendering } from './chorus';
 
 /** The result of rendering a measure fragment. */
