@@ -1,7 +1,8 @@
 import { OctaveShift } from './octaveshift';
 import { NamedElement } from '@/util';
-import { DirectionType, OctaveShiftDirectionTypeContent } from './directiontype';
+import { DirectionType, DynamicsDirectionTypeContent, OctaveShiftDirectionTypeContent } from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
+import { Dynamics } from './dynamics';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -20,14 +21,20 @@ export class Direction {
     return this.element.all('direction-type').map((node) => new DirectionType(node));
   }
 
-  /**
-   * Returns the octave shifts of the direction.
-   */
+  /** Returns the octave shifts of the direction. */
   getOctaveShifts(): OctaveShift[] {
     return this.getTypes()
       .map((type) => type.getContent())
       .filter((content): content is OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
       .map((content) => content.octaveShift);
+  }
+
+  /** Returns the dynamics of the direction. */
+  getDynamics(): Dynamics[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is DynamicsDirectionTypeContent => content.type === 'dynamics')
+      .flatMap((content) => content.dynamics);
   }
 
   /**

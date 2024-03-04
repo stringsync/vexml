@@ -2,6 +2,7 @@ import { Division } from './division';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
+import * as util from '@/util';
 import { StemDirection } from './enums';
 import { StaveSignature } from './stavesignature';
 import { Config } from './config';
@@ -287,6 +288,9 @@ export class Voice {
       .setStrict(false)
       .addTickables(vfTickables);
 
+    // TODO: Finish placeholder implementation.
+    this.getPlaceholderVoices();
+
     return {
       type: 'voice',
       address,
@@ -295,6 +299,52 @@ export class Voice {
       },
       entries: voiceEntryRenderings,
     };
+  }
+
+  private getPlaceholderVoices(): Voice[] {
+    // First, cluster directions that need to rendered on placeholder voices by the division start time.
+    const directionsByStartBeat: Record<number, musicxml.Direction[]> = {};
+    for (const entry of this.entries) {
+      const startBeat = entry.start.toBeats();
+      const directions = entry.directions.filter((direction) => this.isPlaceholderVoiceRequired(direction));
+      if (directions.length > 0) {
+        directionsByStartBeat[startBeat] ??= [];
+        directionsByStartBeat[startBeat].push(...directions);
+      }
+    }
+
+    // The maximum number of placeholder voices we need to accommodate all the special directions.
+    const placeholderVoiceCount = util.max(Object.values(directionsByStartBeat).map((directions) => directions.length));
+    const placeholderVoices = new Array<Voice>();
+    for (let ndx = 0; ndx < placeholderVoiceCount; ndx++) {
+      const placeholderVoice = this.toPlaceholderVoice();
+      placeholderVoices.push(placeholderVoice);
+    }
+
+    // Lastly, go through the direction clusters and determine where in the placeholder voices they should live.
+    for (const [startBeat, directions] of Object.entries(directionsByStartBeat)) {
+      for (let ndx = 0; ndx < directions.length; ndx++) {
+        const placeholderVoice = placeholderVoices[ndx];
+        const division = Division.of(parseFloat(startBeat), 1);
+        // TODO: When Note supports TextNote renderings, call replaceEntry.
+      }
+    }
+
+    return placeholderVoices;
+  }
+
+  private replaceEntry(at: Division, voiceEntry: VoiceEntry): void {
+    // NOTE: This is inefficient, but we don't expect Voice.entries to exceed 10 elements so we opt for simplicity.
+    const index = this.entries.findIndex((entry) => entry.start.isEqual(at));
+    if (index < 0) {
+      throw new Error(`could not find somewhere to replace placeholder voice entry at beat: ${at.toBeats()}`);
+    }
+
+    this.entries[index] = voiceEntry;
+  }
+
+  private isPlaceholderVoiceRequired(direction: musicxml.Direction): boolean {
+    return direction.getDynamics().length > 0;
   }
 
   private toPlaceholderVoice(): Voice {

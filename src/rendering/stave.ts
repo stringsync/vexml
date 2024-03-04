@@ -100,6 +100,7 @@ export class Stave {
               },
             ],
             timeSignature,
+            parent: null,
           }),
         ],
       });
