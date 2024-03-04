@@ -46,7 +46,12 @@ export type VoiceInput = {
 };
 
 /** The renderable objects of a Voice. */
-export type VoiceEntry = Note | Chord | Rest | GhostNote;
+export type VoiceEntry = {
+  start: Division;
+  end: Division;
+  value: Note | Chord | Rest | GhostNote;
+  directions: musicxml.Direction[];
+};
 
 /**
  * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical
@@ -79,7 +84,7 @@ export class Voice {
       if (ghostNoteDuration.isGreaterThan(Division.zero())) {
         const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
         const ghostNote = new GhostNote({ durationDenominator });
-        entries.push(ghostNote);
+        entries.push({ start: ghostNoteStart, end: ghostNoteEnd, value: ghostNote, directions: [] });
       }
 
       let shouldCloseOctaveShift = false;
@@ -134,32 +139,52 @@ export class Voice {
       conversions.fromDivisionsToNoteDurationDenominator(duration);
 
     if (!note.printObject()) {
-      return new GhostNote({ durationDenominator });
+      return {
+        start: input.start,
+        end: input.end,
+        value: new GhostNote({ durationDenominator }),
+        directions,
+      };
     } else if (note.isChordHead()) {
-      return new Chord({
-        config,
-        musicXML: { note, directions, octaveShift },
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
+      return {
+        start: input.start,
+        end: input.end,
+        value: new Chord({
+          config,
+          musicXML: { note, directions, octaveShift },
+          stem,
+          clef,
+          durationDenominator,
+          keySignature,
+        }),
+        directions,
+      };
     } else if (note.isRest()) {
-      return new Rest({
-        config,
-        musicXML: { note, directions },
-        clef,
-        durationDenominator,
-      });
+      return {
+        start: input.start,
+        end: input.end,
+        value: new Rest({
+          config,
+          musicXML: { note, directions },
+          clef,
+          durationDenominator,
+        }),
+        directions,
+      };
     } else {
-      return new Note({
-        config,
-        musicXML: { note, directions, octaveShift },
-        stem,
-        clef,
-        durationDenominator,
-        keySignature,
-      });
+      return {
+        start: input.start,
+        end: input.end,
+        value: new Note({
+          config,
+          musicXML: { note, directions, octaveShift },
+          stem,
+          clef,
+          durationDenominator,
+          keySignature,
+        }),
+        directions,
+      };
     }
   }
 
@@ -168,21 +193,21 @@ export class Voice {
     const address = opts.address;
     const spanners = opts.spanners;
 
-    const voiceEntryRenderings = this.entries.map((entry) => {
-      if (entry instanceof Note) {
-        return entry.render({ address, spanners });
+    const voiceEntryRenderings = this.entries.map(({ value }) => {
+      if (value instanceof Note) {
+        return value.render({ address, spanners });
       }
-      if (entry instanceof Chord) {
-        return entry.render({ address, spanners });
+      if (value instanceof Chord) {
+        return value.render({ address, spanners });
       }
-      if (entry instanceof Rest) {
-        return entry.render({ address, spanners, voiceEntryCount: this.entries.length });
+      if (value instanceof Rest) {
+        return value.render({ address, spanners, voiceEntryCount: this.entries.length });
       }
-      if (entry instanceof GhostNote) {
-        return entry.render();
+      if (value instanceof GhostNote) {
+        return value.render();
       }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
-      throw new Error(`unexpected voice entry: ${entry}`);
+      throw new Error(`unexpected voice entry: ${value}`);
     });
 
     const vfTickables = new Array<vexflow.Tickable>();
