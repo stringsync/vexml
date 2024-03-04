@@ -2,7 +2,7 @@ import { Clef } from './clef';
 import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { MeasureRest, MeasureRestRendering } from './multirest';
+import { MeasureRest, MeasureRestRendering } from './measurerest';
 import { Tablature, TablatureRendering } from './tablature';
 import { TimeSignature } from './timesignature';
 import * as conversions from './conversions';
