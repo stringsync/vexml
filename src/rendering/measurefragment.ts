@@ -10,7 +10,7 @@ import { Part, PartRendering } from './part';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
-import { MeasureRest, SingleMeasureRestRendering } from './measurerest';
+import { MultiRest } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
 
 /** The result of rendering a measure fragment. */
@@ -201,21 +201,12 @@ export class MeasureFragment {
     }
 
     const vfStave = util.first(partRenderings)?.staves[0]?.vexflow.stave ?? null;
-    const vfVoices = [
-      ...partRenderings
-        .flatMap((partRendering) => partRendering.staves)
-        .map((stave) => stave.entry)
-        .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-        .flatMap((chorusRendering) => chorusRendering.voices)
-        .map((voice) => voice.vexflow.voice),
-      ...partRenderings
-        .flatMap((partRendering) => partRendering.staves)
-        .map((stave) => stave.entry)
-        .filter(
-          (entry): entry is SingleMeasureRestRendering => entry.type === 'measurerest' && entry.coverage === 'single'
-        )
-        .map((singleMeasureRestRendering) => singleMeasureRestRendering.voice.vexflow.voice),
-    ];
+    const vfVoices = partRenderings
+      .flatMap((partRendering) => partRendering.staves)
+      .map((stave) => stave.entry)
+      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
+      .flatMap((chorusRendering) => chorusRendering.voices)
+      .map((voice) => voice.vexflow.voice);
 
     if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
       vfFormatter.formatToStave(vfVoices, vfStave);
@@ -409,13 +400,6 @@ export class MeasureFragment {
           const chorusRendering = entry.render({ address, spanners });
           vfPartStaveVoices = chorusRendering.voices.map((voice) => voice.vexflow.voice);
         }
-        if (entry instanceof MeasureRest) {
-          const address = partAddress.stave({ staveNumber: stave.getNumber() }).chorus();
-          const measureRestRendering = entry.render({ address, spanners });
-          if (measureRestRendering.coverage === 'single') {
-            vfPartStaveVoices = [measureRestRendering.voice.vexflow.voice];
-          }
-        }
 
         if (vfPartStaveVoices.length > 0) {
           vfFormatter.joinVoices(vfPartStaveVoices);
@@ -439,9 +423,7 @@ export class MeasureFragment {
   private getNonVoiceWidth(): number {
     const hasMultiRest = this.getParts()
       .flatMap((part) => part.getStaves())
-      .map((stave) => stave.getEntry())
-      .filter((entry): entry is MeasureRest => entry instanceof MeasureRest)
-      .some((measureRest) => measureRest.getCount() > 1);
+      .some((stave) => stave.getEntry() instanceof MultiRest);
 
     // This is much easier being configurable. Otherwise, we would have to create a dummy context to render it, then
     // get the width via MultiMeasureRest.getBoundingBox. There is no "preCalculateMinTotalWidth" for non-voices at

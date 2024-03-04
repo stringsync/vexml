@@ -20,23 +20,37 @@ export type ChorusRendering = {
 /** Houses the coordination of several voices. */
 export class Chorus {
   private config: Config;
-  private measureEntries: MeasureEntry[];
-  private staveSignature: StaveSignature;
+  private voices: Voice[];
 
-  constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
+  constructor(opts: { config: Config; voices: Voice[] }) {
     this.config = opts.config;
-    this.measureEntries = opts.measureEntries;
-    this.staveSignature = opts.staveSignature;
+    this.voices = opts.voices;
+  }
+
+  static fromMusicXML(opts: {
+    config: Config;
+    measureEntries: MeasureEntry[];
+    staveSignature: StaveSignature;
+  }): Chorus {
+    const calculator = new VoiceCalculator({
+      config: opts.config,
+      measureEntries: opts.measureEntries,
+      staveSignature: opts.staveSignature,
+    });
+
+    return new Chorus({
+      config: opts.config,
+      voices: calculator.calculate(),
+    });
   }
 
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(address: Address<'chorus'>): number {
     const spanners = new Spanners();
-    const voices = this.getVoices();
 
-    if (voices.length > 0) {
-      const vfVoices = voices.map(
+    if (this.voices.length > 0) {
+      const vfVoices = this.voices.map(
         (voice, index) =>
           voice.render({
             address: address.voice({ voiceIndex: index }),
@@ -53,7 +67,7 @@ export class Chorus {
 
   /** Renders the chorus. */
   render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
-    const voiceRenderings = this.getVoices().map((voice, index) =>
+    const voiceRenderings = this.voices.map((voice, index) =>
       voice.render({
         address: opts.address.voice({ voiceIndex: index }),
         spanners: opts.spanners,
@@ -64,15 +78,6 @@ export class Chorus {
       type: 'chorus',
       voices: voiceRenderings,
     };
-  }
-
-  @util.memoize()
-  private getVoices(): Voice[] {
-    return new VoiceCalculator({
-      config: this.config,
-      measureEntries: this.measureEntries,
-      staveSignature: this.staveSignature,
-    }).calculate();
   }
 }
 
