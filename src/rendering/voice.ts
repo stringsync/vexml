@@ -62,12 +62,20 @@ export class Voice {
   private id: string;
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
+  private parent: Voice | null;
 
-  constructor(opts: { config: Config; id: string; entries: VoiceEntry[]; timeSignature: TimeSignature }) {
+  constructor(opts: {
+    config: Config;
+    id: string;
+    entries: VoiceEntry[];
+    timeSignature: TimeSignature;
+    parent: Voice | null;
+  }) {
     this.config = opts.config;
     this.id = opts.id;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
+    this.parent = opts.parent;
   }
 
   static fromInputs(opts: { config: Config; id: string; inputs: VoiceInput[]; timeSignature: TimeSignature }): Voice {
@@ -115,7 +123,7 @@ export class Voice {
       divisions = input.end;
     }
 
-    return new Voice({ config: opts.config, id: opts.id, entries, timeSignature: opts.timeSignature });
+    return new Voice({ config: opts.config, id: opts.id, entries, timeSignature: opts.timeSignature, parent: null });
   }
 
   private static toEntry(opts: {
