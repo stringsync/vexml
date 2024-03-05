@@ -2,8 +2,8 @@ import * as vexflow from 'vexflow';
 import { DynamicsCharacter, NoteDurationDenominator } from './enums';
 
 /** The result of rendering a symbolic note. */
-export type SymbolicNoteRendering = {
-  type: 'symbolicnote';
+export type SymbolNoteRendering = {
+  type: 'symbolnote';
   vexflow: {
     type: 'textdynamics';
     textDynamics: vexflow.TextDynamics;
@@ -17,22 +17,19 @@ type DynamicsNoteData = {
 };
 
 /** The different types of data that can be used to render a symbolic note. */
-type SymbolicNoteData = DynamicsNoteData;
+type SymbolNoteData = DynamicsNoteData;
 
 /** A symbol that is associated with the stave like a note. */
-export class SymbolicNote {
-  data: SymbolicNoteData;
+export class SymbolNote {
+  data: SymbolNoteData;
 
-  private constructor(data: SymbolicNoteData) {
+  private constructor(data: SymbolNoteData) {
     this.data = data;
   }
 
   /** Creates a dynamics symbolic note. */
-  static dynamics(opts: {
-    characters: DynamicsCharacter[];
-    durationDenominator: NoteDurationDenominator;
-  }): SymbolicNote {
-    return new SymbolicNote({
+  static dynamics(opts: { characters: DynamicsCharacter[]; durationDenominator: NoteDurationDenominator }): SymbolNote {
+    return new SymbolNote({
       type: 'dynamics',
       characters: opts.characters,
       durationDenominator: opts.durationDenominator,
@@ -40,16 +37,16 @@ export class SymbolicNote {
   }
 
   /** Renders the symbolic note. */
-  render(): SymbolicNoteRendering {
+  render(): SymbolNoteRendering {
     switch (this.data.type) {
       case 'dynamics':
         return this.renderDynamics(this.data);
     }
   }
 
-  private renderDynamics(data: DynamicsNoteData): SymbolicNoteRendering {
+  private renderDynamics(data: DynamicsNoteData): SymbolNoteRendering {
     return {
-      type: 'symbolicnote',
+      type: 'symbolnote',
       vexflow: {
         type: 'textdynamics',
         textDynamics: new vexflow.TextDynamics({
