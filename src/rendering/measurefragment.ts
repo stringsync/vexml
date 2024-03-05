@@ -205,8 +205,8 @@ export class MeasureFragment {
       .flatMap((partRendering) => partRendering.staves)
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((chorusRendering) => chorusRendering.voices)
-      .map((voice) => voice.vexflow.voice);
+      .flatMap((chorusRendering) => [...chorusRendering.voices])
+      .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.map((voice) => voice.vexflow.voice)]);
 
     if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
       vfFormatter.formatToStave(vfVoices, vfStave);

@@ -255,7 +255,10 @@ export class Stave {
         staveEntryRendering.vexflow.multiMeasureRest.setStave(vfStave);
         break;
       case 'chorus':
-        const vfVoices = staveEntryRendering.voices.map((voice) => voice.vexflow.voice);
+        const vfVoices = staveEntryRendering.voices.flatMap((voice) => [
+          voice.vexflow.voice,
+          ...voice.placeholders.map((voice) => voice.vexflow.voice),
+        ]);
         opts.vexflow.formatter.joinVoices(vfVoices);
         for (const vfVoice of vfVoices) {
           vfVoice.setStave(vfStave);
