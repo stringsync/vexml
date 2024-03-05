@@ -7,11 +7,11 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
-import { Chorus, ChorusRendering } from './chorus';
 import { Spanners } from './spanners';
 import { StaveModifier } from './stave';
 import { PartName } from './partname';
 import { MultiRest } from './multirest';
+import { Chorus, ChorusRendering } from './chorus';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -205,8 +205,9 @@ export class MeasureFragment {
       .flatMap((partRendering) => partRendering.staves)
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((chorusRendering) => chorusRendering.voices)
-      .map((voice) => voice.vexflow.voice);
+      .flatMap((chorusRendering) => [...chorusRendering.voices])
+      .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.map((voice) => voice.vexflow.voice)]);
+
     if (vfStave && vfVoices.some((vfVoice) => vfVoice.getTickables().length > 0)) {
       vfFormatter.formatToStave(vfVoices, vfStave);
     }

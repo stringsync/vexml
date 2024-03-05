@@ -6,10 +6,10 @@ import * as drawables from '@/drawables';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
-import { ChorusRendering } from './chorus';
 import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
+import { ChorusRendering } from './chorus';
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
@@ -140,7 +140,7 @@ export class Score {
     // Draw vexflow.MultiMeasureRest elements.
     staves
       .map((stave) => stave.entry)
-      .filter((entry): entry is MultiRestRendering => entry.type === 'multirest')
+      .filter((entry): entry is MultiRestRendering => entry.type === 'measurerest' && entry.coverage === 'multi')
       .map((entry) => entry.vexflow.multiMeasureRest)
       .filter(
         (vfMultiMeasureRest): vfMultiMeasureRest is vexflow.MultiMeasureRest =>
@@ -155,7 +155,7 @@ export class Score {
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
       .flatMap((entry) => entry.voices)
-      .map((voice) => voice.vexflow.voice)
+      .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.map((voice) => voice.vexflow.voice)])
       .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
       });

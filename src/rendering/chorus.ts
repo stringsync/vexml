@@ -1,102 +1,46 @@
-import { Clef } from './clef';
 import { Config } from './config';
-import { Division } from './division';
-import { StemDirection } from './enums';
-import { Voice, VoiceEntry, VoiceRendering } from './voice';
-import * as musicxml from '@/musicxml';
-import * as util from '@/util';
-import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
+import { MeasureEntryIteration, MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { TimeSignature } from './timesignature';
-import { KeySignature } from './keysignature';
-import { GhostNote } from './ghostnote';
-import { Chord } from './chord';
-import { Rest } from './rest';
-import { Note } from './note';
+import { Voice, VoiceInput, VoiceRendering } from './voice';
+import * as util from '@/util';
+import * as musicxml from '@/musicxml';
+import * as conversions from './conversions';
+import * as vexflow from 'vexflow';
+import { Clef } from './clef';
+import { StemDirection } from './enums';
 import { Address } from './address';
 import { Spanners } from './spanners';
-
-const UNDEFINED_VOICE_ID = '';
 
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
   type: 'chorus';
-  address: Address<'chorus'>;
   voices: VoiceRendering[];
 };
 
-type VoiceEntryData = {
-  voiceId: string;
-  note: musicxml.Note;
-  stem: StemDirection;
-  start: Division;
-  end: Division;
-  directions: musicxml.Direction[];
-  octaveShift: musicxml.OctaveShift | null;
-};
-
-type WholeRestChorusData = { type: 'wholerest' };
-
-type MultiVoiceChorusData = {
-  type: 'multivoice';
-  quarterNoteDivisions: number;
-  measureEntries: MeasureEntry[];
-  keySignature: KeySignature;
-};
-
-type ChorusData = WholeRestChorusData | MultiVoiceChorusData;
-
-/**
- * Represents a collection or cluster of musical voices within a single measure.
- *
- * This is *not* the same as a chorus from songwriting.
- *
- * The `Chorus` class encapsulates the harmonization and interaction of multiple voices, ensuring that the voices can be
- * interpreted, rendered, and managed cohesively.
- */
+/** Houses the coordination of several voices. */
 export class Chorus {
   private config: Config;
-  private data: ChorusData;
-  private clef: Clef;
-  private timeSignature: TimeSignature;
+  private voices: Voice[];
 
-  private constructor(opts: { config: Config; data: ChorusData; clef: Clef; timeSignature: TimeSignature }) {
+  constructor(opts: { config: Config; voices: Voice[] }) {
     this.config = opts.config;
-    this.data = opts.data;
-    this.clef = opts.clef;
-    this.timeSignature = opts.timeSignature;
+    this.voices = opts.voices;
   }
 
-  /** Creates a Chorus with multiple voices. */
-  static multiVoice(opts: {
+  static fromMusicXML(opts: {
     config: Config;
-    timeSignature: TimeSignature;
-    clef: Clef;
-    quarterNoteDivisions: number;
     measureEntries: MeasureEntry[];
-    keySignature: KeySignature;
+    staveSignature: StaveSignature;
   }): Chorus {
-    return new Chorus({
+    const calculator = new VoiceCalculator({
       config: opts.config,
-      data: {
-        type: 'multivoice',
-        keySignature: opts.keySignature,
-        measureEntries: opts.measureEntries,
-        quarterNoteDivisions: opts.quarterNoteDivisions,
-      },
-      timeSignature: opts.timeSignature,
-      clef: opts.clef,
+      measureEntries: opts.measureEntries,
+      staveSignature: opts.staveSignature,
     });
-  }
 
-  /** Creates a Chorus with a single voice that is a single whole note rest. */
-  static wholeRest(opts: { config: Config; timeSignature: TimeSignature; clef: Clef }): Chorus {
     return new Chorus({
       config: opts.config,
-      data: { type: 'wholerest' },
-      timeSignature: opts.timeSignature,
-      clef: opts.clef,
+      voices: calculator.calculate(),
     });
   }
 
@@ -104,10 +48,9 @@ export class Chorus {
   @util.memoize()
   getMinJustifyWidth(address: Address<'chorus'>): number {
     const spanners = new Spanners();
-    const voices = this.getVoices();
 
-    if (voices.length > 0) {
-      const vfVoices = voices.map(
+    if (this.voices.length > 0) {
+      const vfVoices = this.voices.map(
         (voice, index) =>
           voice.render({
             address: address.voice({ voiceIndex: index }),
@@ -118,12 +61,13 @@ export class Chorus {
       const vfFormatter = new vexflow.Formatter();
       return vfFormatter.joinVoices(vfVoices).preCalculateMinTotalWidth(vfVoices) + this.config.VOICE_PADDING;
     }
+
     return 0;
   }
 
-  /** Renders the Chorus. */
+  /** Renders the chorus. */
   render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
-    const voiceRenderings = this.getVoices().map((voice, index) =>
+    const voiceRenderings = this.voices.map((voice, index) =>
       voice.render({
         address: opts.address.voice({ voiceIndex: index }),
         spanners: opts.spanners,
@@ -132,183 +76,88 @@ export class Chorus {
 
     return {
       type: 'chorus',
-      address: opts.address,
       voices: voiceRenderings,
     };
   }
+}
 
+/** A utility that calculates the voices from a list of measure entries. */
+class VoiceCalculator {
+  private static readonly UNDEFINED_VOICE_ID = '';
+
+  private config: Config;
+  private measureEntries: MeasureEntry[];
+  private staveSignature: StaveSignature;
+  private voiceId = VoiceCalculator.UNDEFINED_VOICE_ID;
+  private directions: Record<string, musicxml.Direction[]> = {};
+  private voiceInputs: Record<string, VoiceInput[]> = {};
+  private iteration: MeasureEntryIteration = { done: true, value: null };
+
+  constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
+    this.config = opts.config;
+    this.measureEntries = opts.measureEntries;
+    this.staveSignature = opts.staveSignature;
+  }
+
+  /**
+   * Calculates the voices from the given data.
+   *
+   * Since this class is stateful, this method is memoized to prevent multiple calculations.
+   */
   @util.memoize()
-  private getVoices(): Voice[] {
-    switch (this.data.type) {
-      case 'wholerest':
-        return this.createWholeRest();
-      case 'multivoice':
-        return this.createMultiVoice({
-          keySignature: this.data.keySignature,
-          measureEntries: this.data.measureEntries,
-          quarterNoteDivisions: this.data.quarterNoteDivisions,
-        });
-    }
-  }
-
-  private createWholeRest(): Voice[] {
-    return [
-      Voice.wholeRest({
-        config: this.config,
-        timeSignature: this.timeSignature,
-        clef: this.clef,
-      }),
-    ];
-  }
-
-  private createMultiVoice(opts: {
-    quarterNoteDivisions: number;
-    measureEntries: MeasureEntry[];
-    keySignature: KeySignature;
-  }): Voice[] {
-    const voiceEntryData = this.computeVoiceEntryData({
-      measureEntries: opts.measureEntries,
-      quarterNoteDivisions: opts.quarterNoteDivisions,
+  calculate(): Voice[] {
+    const iterator = new MeasureEntryIterator({
+      entries: this.measureEntries,
+      staveSignature: this.staveSignature,
     });
 
-    this.adjustStems(voiceEntryData);
+    this.iteration = iterator.next();
 
-    return this.computeFullyQualifiedVoices({
-      voiceEntryData,
-      keySignature: opts.keySignature,
-      quarterNoteDivisions: opts.quarterNoteDivisions,
-    });
-  }
-
-  private computeVoiceEntryData(opts: {
-    quarterNoteDivisions: number;
-    measureEntries: MeasureEntry[];
-  }): Record<string, VoiceEntryData[]> {
-    const result: Record<string, VoiceEntryData[]> = {};
-
-    let voiceId = UNDEFINED_VOICE_ID;
-    let quarterNoteDivisions = opts.quarterNoteDivisions;
-    let divisions = Division.of(0, quarterNoteDivisions);
-    const directionsByVoiceId: Record<string, musicxml.Direction[]> = {};
-    let octaveShift: musicxml.OctaveShift | null = null;
-
-    // Create the initial voice data. We won't be able to know the stem directions until it's fully populated.
-    for (let index = 0; index < opts.measureEntries.length; index++) {
-      const entry = opts.measureEntries[index];
+    while (!this.iteration.done) {
+      const entry = this.iteration.value.entry;
 
       if (entry instanceof StaveSignature) {
-        quarterNoteDivisions = entry.getQuarterNoteDivisions();
+        this.handleStaveSignature(entry);
+      } else if (entry instanceof musicxml.Direction) {
+        this.handleDirection(entry);
+      } else if (entry instanceof musicxml.Note) {
+        this.handleNote(entry);
+      } else if (entry instanceof musicxml.Backup) {
+        this.handleBackup(entry);
+      } else if (entry instanceof musicxml.Forward) {
+        this.handleForward(entry);
       }
 
-      if (entry instanceof musicxml.Direction) {
-        const voiceId = entry.getVoice() ?? UNDEFINED_VOICE_ID;
-        directionsByVoiceId[voiceId] ??= [];
-        directionsByVoiceId[voiceId].push(entry);
-
-        entry
-          .getTypes()
-          .map((directionType) => directionType.getContent())
-          .filter((content): content is musicxml.OctaveShiftDirectionTypeContent => content.type === 'octaveshift')
-          .map((content) => content.octaveShift)
-          .forEach((o) => {
-            switch (o.getType()) {
-              case 'up':
-              case 'down':
-                octaveShift = o;
-                break;
-              case 'continue':
-                // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
-                // upstream and handle continues correctly.
-                break;
-              case 'stop':
-                octaveShift = null;
-                break;
-            }
-          });
-      }
-
-      if (entry instanceof musicxml.Note) {
-        const note = entry;
-
-        voiceId = note.getVoice() ?? voiceId ?? UNDEFINED_VOICE_ID;
-        result[voiceId] ??= [];
-
-        if (note.isChordTail()) {
-          continue;
-        } else if (note.isGrace()) {
-          result[voiceId].push({
-            voiceId,
-            note,
-            start: divisions,
-            end: divisions,
-            stem: 'auto',
-            // Directions are handled by stave notes. We don't want to process them multiple times.
-            directions: [],
-            octaveShift,
-          });
-        } else {
-          const noteDuration = Division.of(note.getDuration(), quarterNoteDivisions);
-          const startDivision = divisions;
-          const endDivision = startDivision.add(noteDuration);
-
-          const stem = conversions.fromStemToStemDirection(note.getStem());
-
-          const directions = [
-            ...(directionsByVoiceId[voiceId] ?? []),
-            ...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []),
-          ];
-
-          delete directionsByVoiceId[voiceId];
-          delete directionsByVoiceId[UNDEFINED_VOICE_ID];
-
-          result[voiceId].push({
-            voiceId,
-            note,
-            start: startDivision,
-            end: endDivision,
-            stem,
-            directions,
-            octaveShift,
-          });
-
-          divisions = divisions.add(noteDuration);
-        }
-      }
-
-      if (entry instanceof musicxml.Backup) {
-        directionsByVoiceId[voiceId] ??= [];
-        directionsByVoiceId[voiceId].push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
-        delete directionsByVoiceId[UNDEFINED_VOICE_ID];
-
-        const backupDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
-        divisions = divisions.subtract(backupDuration);
-      }
-
-      if (entry instanceof musicxml.Forward) {
-        directionsByVoiceId[voiceId] ??= [];
-        directionsByVoiceId[voiceId].push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
-        delete directionsByVoiceId[UNDEFINED_VOICE_ID];
-
-        const forwardDuration = Division.of(entry.getDuration(), quarterNoteDivisions);
-        divisions = divisions.add(forwardDuration);
-      }
-
-      if (divisions.isLessThan(Division.zero())) {
-        divisions = Division.zero();
-      }
+      this.iteration = iterator.next();
     }
 
+    this.consumeDanglingDirections();
+    this.adjustStems();
+
+    return Object.entries(this.voiceInputs).map(([id, inputs]) => {
+      const staveNumber = util.first(inputs)?.note.getStaveNumber() ?? 1;
+      const timeSignature = util.first(inputs)!.staveSignature.getTimeSignature(staveNumber);
+      return Voice.fromInputs({ config: this.config, id, inputs, timeSignature });
+    });
+  }
+
+  /**
+   * Assigns remaining directions such that `this.directions` will be empty and completely accounted for.
+   *
+   * This is intended to only be used after all measure entries have been processed. "Dangling" refers to directions
+   * whose note association is ambiguous.
+   */
+  private consumeDanglingDirections() {
     // Move all the undefined voice directions to the last voice.
-    directionsByVoiceId[voiceId]?.push(...(directionsByVoiceId[UNDEFINED_VOICE_ID] ?? []));
-    delete directionsByVoiceId[UNDEFINED_VOICE_ID];
+    const directions = this.takeDirections(VoiceCalculator.UNDEFINED_VOICE_ID);
+    this.getLastVoiceInput(this.voiceId)?.directions.push(...directions);
 
     // Handle any leftover directions that weren't attached to a succeeding note _in the same voice_ by attaching them
     // to the last note in each voice. If there are no notes in a voice, the directions are discarded.
-    for (const [voiceId, directions] of Object.entries(directionsByVoiceId)) {
-      util.last(result[voiceId] ?? [])?.directions.push(...directions);
+    for (const voiceId of Object.keys(this.directions)) {
+      const directions = this.takeDirections(voiceId);
+      this.getLastVoiceInput(voiceId)?.directions.push(...directions);
     }
-
-    return result;
   }
 
   /**
@@ -316,39 +165,129 @@ export class Chorus {
    *
    * This method does _not_ change any stem directions that were explicitly defined in the MusicXML document.
    */
-  private adjustStems(voiceEntryData: Record<string, VoiceEntryData[]>): void {
-    const voiceIds = Object.keys(voiceEntryData);
-
-    const firstElgibleVoiceEntries = voiceIds
-      .map((voiceId) => voiceEntryData[voiceId].find((entry) => !entry.note.isRest() && !entry.note.isGrace()))
-      .filter((entry): entry is VoiceEntryData => typeof entry !== 'undefined');
+  private adjustStems() {
+    const firstElgibleVoiceInput = Object.values(this.voiceInputs)
+      .map((voiceInputs) => voiceInputs.find((input) => !input.note.isRest() && !input.note.isGrace()))
+      .filter((input): input is VoiceInput => typeof input !== 'undefined');
 
     // Sort the notes by descending line based on the entry's highest note. This allows us to figure out which voice
     // should be on top, middle, and bottom easily.
-    util.sortBy(firstElgibleVoiceEntries, (entry) => -this.staveNoteLine(entry.note, this.clef));
+    util.sortBy(firstElgibleVoiceInput, (input) => {
+      const note = input.note;
+      const staveNumber = note.getStaveNumber();
+      const clef = input.staveSignature.getClef(staveNumber);
+      return -this.staveNoteLine(note, clef);
+    });
 
-    if (firstElgibleVoiceEntries.length > 1) {
+    if (firstElgibleVoiceInput.length > 1) {
       const stems: { [voiceId: string]: StemDirection } = {};
 
-      const top = util.first(firstElgibleVoiceEntries)!;
-      const middle = firstElgibleVoiceEntries.slice(1, -1);
-      const bottom = util.last(firstElgibleVoiceEntries)!;
+      const top = util.first(firstElgibleVoiceInput)!;
+      const middle = firstElgibleVoiceInput.slice(1, -1);
+      const bottom = util.last(firstElgibleVoiceInput)!;
 
       stems[top.voiceId] = 'up';
       stems[bottom.voiceId] = 'down';
-      for (const entry of middle) {
-        stems[entry.voiceId] = 'none';
+      for (const input of middle) {
+        stems[input.voiceId] = 'none';
       }
 
-      for (const voiceId of voiceIds) {
-        for (const entry of voiceEntryData[voiceId]) {
-          // Only change stems that haven't been explicitly specified.
-          if (entry.stem === 'auto') {
-            entry.stem = stems[voiceId];
-          }
+      for (const input of Object.values(this.voiceInputs).flat()) {
+        // Only change stems that haven't been explicitly specified.
+        if (input.stem === 'auto') {
+          input.stem = stems[input.voiceId];
         }
       }
     }
+  }
+
+  private handleStaveSignature(staveSignature: StaveSignature) {
+    this.staveSignature = staveSignature;
+  }
+
+  private handleDirection(direction: musicxml.Direction) {
+    // Directions should not change the current voice ID, nor should they default to the current voice ID.
+    const voiceId = direction.getVoice() || VoiceCalculator.UNDEFINED_VOICE_ID;
+    this.pushDirections(voiceId, direction);
+  }
+
+  private handleNote(note: musicxml.Note) {
+    this.voiceId = note.getVoice() || this.voiceId;
+
+    if (note.isChordTail()) {
+      this.handleChordTail(note);
+    } else if (note.isGrace()) {
+      this.handleGrace(note);
+    } else {
+      this.handleStaveNote(note);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleChordTail(note: musicxml.Note) {
+    // noop
+  }
+
+  private handleGrace(note: musicxml.Note) {
+    const voiceInput = this.createVoiceInput({ note, directions: [] });
+    this.pushVoiceInputs(this.voiceId, voiceInput);
+  }
+
+  private handleStaveNote(note: musicxml.Note) {
+    const directions = this.takeDirections(this.voiceId, VoiceCalculator.UNDEFINED_VOICE_ID);
+    const voiceInput = this.createVoiceInput({ note, directions });
+    this.pushVoiceInputs(this.voiceId, voiceInput);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleBackup(backup: musicxml.Backup) {
+    this.moveDirections(VoiceCalculator.UNDEFINED_VOICE_ID, this.voiceId);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleForward(forward: musicxml.Forward) {
+    this.moveDirections(VoiceCalculator.UNDEFINED_VOICE_ID, this.voiceId);
+  }
+
+  private takeDirections(...voiceIds: string[]): musicxml.Direction[] {
+    const directions = new Array<musicxml.Direction>();
+    for (const voiceId of voiceIds) {
+      const voiceDirections = this.directions[voiceId] ?? [];
+      directions.push(...voiceDirections);
+      delete this.directions[voiceId];
+    }
+    return directions;
+  }
+
+  private pushDirections(voiceId: string, ...directions: musicxml.Direction[]) {
+    this.directions[voiceId] ??= [];
+    this.directions[voiceId].push(...directions);
+  }
+
+  private moveDirections(srcVoiceId: string, dstVoiceId: string) {
+    const directions = this.takeDirections(srcVoiceId);
+    this.pushDirections(dstVoiceId, ...directions);
+  }
+
+  private getLastVoiceInput(voiceId: string): VoiceInput | null {
+    return util.last(this.voiceInputs[voiceId] ?? []);
+  }
+
+  private createVoiceInput(opts: { note: musicxml.Note; directions: musicxml.Direction[] }): VoiceInput {
+    return {
+      voiceId: this.voiceId,
+      note: opts.note,
+      start: this.iteration.value!.start,
+      end: this.iteration.value!.end,
+      stem: conversions.fromStemToStemDirection(opts.note.getStem()),
+      directions: opts.directions,
+      staveSignature: this.staveSignature,
+    };
+  }
+
+  private pushVoiceInputs(voiceId: string, ...voiceInputs: VoiceInput[]) {
+    this.voiceInputs[voiceId] ??= [];
+    this.voiceInputs[voiceId].push(...voiceInputs);
   }
 
   /** Returns the line that the note would be rendered on. */
@@ -363,100 +302,5 @@ export class Chorus {
         return suffix ? `${step}/${octave}/${suffix}` : `${step}/${octave}`;
       }),
     }).getKeyLine(0);
-  }
-
-  private computeFullyQualifiedVoices(opts: {
-    voiceEntryData: Record<string, VoiceEntryData[]>;
-    quarterNoteDivisions: number;
-    keySignature: KeySignature;
-  }): Voice[] {
-    const result = new Array<Voice>();
-
-    const voiceEntryData = opts.voiceEntryData;
-    const quarterNoteDivisions = opts.quarterNoteDivisions;
-    const keySignature = opts.keySignature;
-    const config = this.config;
-    const clef = this.clef;
-    const timeSignature = this.timeSignature;
-
-    for (const voiceId of Object.keys(voiceEntryData)) {
-      let divisions = Division.of(0, quarterNoteDivisions);
-      const entries = new Array<VoiceEntry>();
-
-      for (const entry of opts.voiceEntryData[voiceId]) {
-        const ghostNoteStart = divisions;
-        const ghostNoteEnd = entry.start;
-        const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
-
-        if (ghostNoteDuration.toBeats() > 0) {
-          entries.push(
-            new GhostNote({
-              durationDenominator: conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration),
-            })
-          );
-        }
-
-        const note = entry.note;
-        const directions = entry.directions;
-        const stem = entry.stem;
-        const octaveShift = entry.octaveShift;
-
-        const noteDuration = entry.end.subtract(entry.start);
-        const durationDenominator =
-          conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
-          conversions.fromDivisionsToNoteDurationDenominator(noteDuration);
-
-        if (!note.printObject()) {
-          entries.push(
-            new GhostNote({
-              durationDenominator,
-            })
-          );
-        } else if (note.isChordHead()) {
-          entries.push(
-            new Chord({
-              config,
-              musicXML: { note, directions, octaveShift },
-              stem,
-              clef,
-              durationDenominator,
-              keySignature,
-            })
-          );
-        } else if (note.isRest()) {
-          entries.push(
-            new Rest({
-              config,
-              musicXML: { note, directions },
-              dotCount: note.getDotCount(),
-              clef,
-              durationDenominator,
-            })
-          );
-        } else {
-          entries.push(
-            new Note({
-              config,
-              musicXML: { note, directions, octaveShift },
-              stem,
-              clef,
-              durationDenominator,
-              keySignature,
-            })
-          );
-        }
-
-        divisions = entry.end;
-      }
-
-      const voice = new Voice({
-        config,
-        entries,
-        timeSignature,
-      });
-      result.push(voice);
-    }
-
-    return result;
   }
 }

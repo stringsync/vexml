@@ -76,7 +76,7 @@ describe('lilypond', () => {
     // { filename: '24d-AfterGrace.musicxml', width: 900 },
     // { filename: '24e-GraceNote-StaffChange.musicxml', width: 900 },
     { filename: '24f-GraceNote-Slur.musicxml', width: 900 },
-    // { filename: '31a-Directions.musicxml', width: 900 },
+    { filename: '31a-Directions.musicxml', width: 900 },
     { filename: '31c-MetronomeMarks.musicxml', width: 900 },
     { filename: '32a-Notations.musicxml', width: 900 },
     // { filename: '32b-Articulations-Texts.musicxml', width: 900 },

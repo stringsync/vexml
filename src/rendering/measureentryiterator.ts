@@ -2,8 +2,6 @@ import * as musicxml from '@/musicxml';
 import { Division } from './division';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 
-export type MeasureEntryFragmentation = 'none' | 'new';
-
 /** An iteration value of the iterator. */
 export type MeasureEntryIteration =
   | {
@@ -16,7 +14,6 @@ export type MeasureEntryIteration =
         entry: MeasureEntry;
         start: Division;
         end: Division;
-        fragmentation: MeasureEntryFragmentation;
       };
     };
 
@@ -60,7 +57,7 @@ export class MeasureEntryIterator {
       this.staveSignature = entry;
     }
 
-    if (entry instanceof musicxml.Note) {
+    if (entry instanceof musicxml.Note && !entry.isChordTail() && !entry.isGrace()) {
       duration = entry.getDuration();
     }
 
@@ -74,26 +71,18 @@ export class MeasureEntryIterator {
 
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions();
     const start = this.iteration?.value?.end ?? Division.zero();
-    const end = start.add(Division.of(duration, quarterNoteDivisions));
 
-    const fragmentation = entry instanceof StaveSignature || this.isMetronome(entry) ? 'new' : 'none';
+    let end = start.add(Division.of(duration, quarterNoteDivisions));
+    if (end.isLessThan(Division.zero())) {
+      end = Division.zero();
+    }
 
-    return this.update({ done: false, value: { entry, start, end, fragmentation } });
+    return this.update({ done: false, value: { entry, start, end } });
   }
 
   /** Syntactic sugar for setting iteration and returning in the same expression. */
   private update(iteration: MeasureEntryIteration): MeasureEntryIteration {
     this.iteration = iteration;
     return iteration;
-  }
-
-  private isMetronome(entry: MeasureEntry): boolean {
-    return (
-      entry instanceof musicxml.Direction &&
-      entry
-        .getTypes()
-        .map((directionType) => directionType.getContent())
-        .some((content) => content.type === 'metronome')
-    );
   }
 }

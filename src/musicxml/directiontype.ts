@@ -1,10 +1,34 @@
 import { NamedElement } from '../util';
+import { Coda } from './coda';
+import { Dynamics } from './dynamics';
 import { Metronome } from './metronome';
 import { OctaveShift } from './octaveshift';
 import { Pedal } from './pedal';
+import { Rehearsal } from './rehearsal';
+import { Segno } from './segno';
 import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
 import { Words } from './words';
+
+export type RehearsalDirectionTypeContent = {
+  type: 'rehearsal';
+  rehearsals: Array<Rehearsal>;
+};
+
+export type SegnoDirectionTypeContent = {
+  type: 'segno';
+  segnos: Array<Segno>;
+};
+
+export type CodaDirectionTypeContent = {
+  type: 'coda';
+  codas: Array<Coda>;
+};
+
+export type DynamicsDirectionTypeContent = {
+  type: 'dynamics';
+  dynamics: Array<Dynamics>;
+};
 
 export type EmptyDirectionTypeContent = {
   type: 'empty';
@@ -42,13 +66,17 @@ export type PedalDirectionTypeContent = {
 
 /** Non-exhaustive _supported_ options that the `<direction-type>` can contain. */
 export type DirectionTypeContent =
+  | RehearsalDirectionTypeContent
   | EmptyDirectionTypeContent
   | UnsupportedDirectionTypeContent
   | WedgeDirectionTypeContent
   | MetronomeDirectionTypeContent
   | OctaveShiftDirectionTypeContent
   | PedalDirectionTypeContent
-  | TokensDirectionTypeContent;
+  | TokensDirectionTypeContent
+  | SegnoDirectionTypeContent
+  | CodaDirectionTypeContent
+  | DynamicsDirectionTypeContent;
 
 /**
  * Represents the type of direction.
@@ -65,6 +93,42 @@ export class DirectionType {
 
     if (typeof first === 'undefined') {
       return { type: 'empty' };
+    }
+
+    if (first.isNamed('rehearsal')) {
+      return {
+        type: 'rehearsal',
+        rehearsals: children
+          .filter((child): child is NamedElement<'rehearsal'> => child.isNamed('rehearsal'))
+          .map((child) => new Rehearsal(child)),
+      };
+    }
+
+    if (first.isNamed('segno')) {
+      return {
+        type: 'segno',
+        segnos: children
+          .filter((child): child is NamedElement<'segno'> => child.isNamed('segno'))
+          .map((child) => new Segno(child)),
+      };
+    }
+
+    if (first.isNamed('coda')) {
+      return {
+        type: 'coda',
+        codas: children
+          .filter((child): child is NamedElement<'coda'> => child.isNamed('coda'))
+          .map((child) => new Coda(child)),
+      };
+    }
+
+    if (first.isNamed('dynamics')) {
+      return {
+        type: 'dynamics',
+        dynamics: children
+          .filter((child): child is NamedElement<'dynamics'> => child.isNamed('dynamics'))
+          .map((child) => new Dynamics(child)),
+      };
     }
 
     if (first.isNamed('metronome')) {

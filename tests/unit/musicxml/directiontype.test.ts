@@ -57,17 +57,6 @@ describe(DirectionType, () => {
       expect(directionType.getContent()).toStrictEqual({ type: 'empty' });
     });
 
-    it('returns an unsupported content when the content is not supported', () => {
-      const node = xml.directionType({
-        codas: [xml.coda()],
-      });
-      const directionType = new DirectionType(node);
-      expect(directionType.getContent()).toStrictEqual({
-        type: 'unsupported',
-        tagNames: ['coda'],
-      });
-    });
-
     it('returns tokens when the first child is a words', () => {
       const words = xml.words();
       const node = xml.directionType({
