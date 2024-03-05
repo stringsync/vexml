@@ -13,6 +13,7 @@ import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { TimeSignature } from './timesignature';
+import { SymbolNote } from './symbolnote';
 
 const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
@@ -50,7 +51,7 @@ export type VoiceInput = {
 export type VoiceEntry = {
   start: Division;
   end: Division;
-  value: Note | Chord | Rest | GhostNote;
+  value: Note | Chord | Rest | GhostNote | SymbolNote;
   directions: musicxml.Direction[];
 };
 
