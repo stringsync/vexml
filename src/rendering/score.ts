@@ -150,12 +150,12 @@ export class Score {
         vfMultiMeasureRest.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.Voice elements from ChorusRendering.
+    // Draw vexflow.Voice elements.
     staves
       .map((stave) => stave.entry)
       .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
       .flatMap((entry) => entry.voices)
-      .map((voice) => voice.vexflow.voice)
+      .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.map((voice) => voice.vexflow.voice)])
       .forEach((vfVoice) => {
         vfVoice.setContext(vfContext).draw();
       });

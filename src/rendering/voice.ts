@@ -18,7 +18,7 @@ import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { TimeSignature } from './timesignature';
-import { SymbolNote } from './symbolnote';
+import { SymbolNote, SymbolNoteRendering } from './symbolnote';
 
 const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
 
@@ -40,7 +40,8 @@ export type VoiceEntryRendering =
   | GraceNoteRendering
   | GraceChordRendering
   | RestRendering
-  | GhostNoteRendering;
+  | GhostNoteRendering
+  | SymbolNoteRendering;
 
 /** The input data of a Voice. */
 export type VoiceInput = {
@@ -222,6 +223,9 @@ export class Voice {
       if (value instanceof GhostNote) {
         return value.render();
       }
+      if (value instanceof SymbolNote) {
+        return value.render();
+      }
       // If this error is thrown, this is a problem with vexml, not the musicXML document.
       throw new Error(`unexpected voice entry: ${value}`);
     });
@@ -241,6 +245,9 @@ export class Voice {
           break;
         case 'ghostnote':
           vfTickables.push(rendering.vexflow.ghostNote);
+          break;
+        case 'symbolnote':
+          vfTickables.push(rendering.vexflow.textDynamics);
           break;
       }
     }
@@ -362,9 +369,9 @@ export class Voice {
   }
 
   private toDynamicsSymbolNote(dynamics: musicxml.Dynamics, durationDenominator: NoteDurationDenominator): SymbolNote {
-    const type = util.first(dynamics.getTypes());
+    const type = util.first(dynamics.getTypes()) ?? '?';
     if (!type) {
-      throw new Error(`dynamics direction is missing a type`);
+      throw new Error('dynamics direction is missing a type');
     }
     const characters = type.split('').filter((char): char is DynamicsCharacter => DYNAMICS_CHARACTERS.includes(char));
     return SymbolNote.dynamics({ characters, durationDenominator });
