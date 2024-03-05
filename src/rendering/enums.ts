@@ -103,3 +103,7 @@ export const NOTEHEAD_SUFFIXES = new Enum([
   'SF',
   'SB',
 ] as const);
+
+/** The allow characters for dynamic markings. */
+export type DynamicsCharacter = EnumValues<typeof DYNAMICS_CHARACETERS>;
+export const DYNAMICS_CHARACETERS = new Enum(['f', 'p', 'm', 's', 'z', 'r'] as const);

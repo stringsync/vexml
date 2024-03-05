@@ -311,6 +311,10 @@ export const fromOctaveShiftToOctaveCount = (octaveShift: musicxml.OctaveShift |
     return 0;
   }
 
+  if (octaveShift.getType() === 'stop') {
+    return 0;
+  }
+
   // Assuming the size attribute increments in steps of 7 for each octave after the first
   // and that an octave shift size of 8 corresponds to a single octave.
   const size = octaveShift.getSize();

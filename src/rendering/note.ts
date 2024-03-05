@@ -18,6 +18,7 @@ import { Articulations, ArticulationsRendering } from './articulations';
 import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 import { Tremolo, TremoloRendering } from './tremolo';
 import { Technicals, TechnicalsRendering } from './technicals';
+import { Rehearsal, RehearsalRendering } from './rehearsal';
 
 const STEP_ORDER = [
   'Cb',
@@ -52,7 +53,8 @@ export type NoteModifierRendering =
   | ArpeggioRendering
   | ArticulationsRendering
   | TremoloRendering
-  | TechnicalsRendering;
+  | TechnicalsRendering
+  | RehearsalRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
@@ -223,6 +225,10 @@ export class Note {
         renderings.push(technical.render());
       }
 
+      for (const rehearsal of note.getRehearsals()) {
+        renderings.push(rehearsal.render());
+      }
+
       return renderings;
     });
 
@@ -264,6 +270,9 @@ export class Note {
             modifierRendering.vexflow.modifiers.forEach((vfArticulation) => {
               vfStaveNote.addModifier(vfArticulation, index);
             });
+            break;
+          case 'rehearsal':
+            vfStaveNote.addModifier(modifierRendering.vexflow.annotation, index);
             break;
         }
       }
@@ -513,5 +522,14 @@ export class Note {
       .getNotations()
       .flatMap((notations) => notations.getTechnicals())
       .map((technical) => new Technicals({ musicXML: { technical } }));
+  }
+
+  private getRehearsals(): Rehearsal[] {
+    return this.musicXML.directions
+      .flatMap((direction) => direction.getTypes())
+      .flatMap((directionType) => directionType.getContent())
+      .filter((content): content is musicxml.RehearsalDirectionTypeContent => content.type === 'rehearsal')
+      .flatMap((content) => content.rehearsals)
+      .map((rehearsal) => new Rehearsal({ config: this.config, musicXML: { rehearsal } }));
   }
 }

@@ -1,23 +1,19 @@
 import * as vexflow from 'vexflow';
 
 export type MultiRestRendering = {
-  type: 'multirest';
+  type: 'measurerest';
+  coverage: 'multi';
   vexflow: {
     multiMeasureRest: vexflow.MultiMeasureRest;
   };
 };
 
-/** Represents a rest that spans multiple measures. */
+/** Represents a rest that spans at least one measure. */
 export class MultiRest {
   private count: number;
 
   constructor(opts: { count: number }) {
     this.count = opts.count;
-  }
-
-  /** Returns the number of measures the multi rest is active for. 0 means there's no multi rest. */
-  getCount(): number {
-    return this.count;
   }
 
   /** Renders the Multi Measure Rest */
@@ -27,7 +23,8 @@ export class MultiRest {
     });
 
     return {
-      type: 'multirest',
+      type: 'measurerest',
+      coverage: 'multi',
       vexflow: {
         multiMeasureRest: vfMultiMeasureRest,
       },

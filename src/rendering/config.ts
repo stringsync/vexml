@@ -4,6 +4,8 @@ export type Config = {
   TITLE_TOP_PADDING: number;
   TITLE_FONT_FAMILY: string;
   TITLE_FONT_SIZE: string;
+  REHEARSAL_FONT_FAMILY: string;
+  REHEARSAL_FONT_SIZE: string;
   PART_NAME_FONT_SIZE: string;
   PART_NAME_FONT_FAMILY: string;
   PART_DISTANCE: number;
@@ -18,6 +20,8 @@ export const DEFAULT_CONFIG: Config = {
   TITLE_TOP_PADDING: 40,
   TITLE_FONT_FAMILY: 'Arial',
   TITLE_FONT_SIZE: '36px',
+  REHEARSAL_FONT_FAMILY: 'Times New Roman',
+  REHEARSAL_FONT_SIZE: '16px',
   PART_NAME_FONT_FAMILY: 'Arial',
   PART_NAME_FONT_SIZE: '13px',
   PART_DISTANCE: 60,
