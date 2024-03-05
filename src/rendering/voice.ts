@@ -3,7 +3,12 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
 import * as util from '@/util';
-import { StemDirection } from './enums';
+import {
+  DYNAMICS_CHARACETERS as DYNAMICS_CHARACTERS,
+  DynamicsCharacter,
+  NoteDurationDenominator,
+  StemDirection,
+} from './enums';
 import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Spanners } from './spanners';
@@ -24,6 +29,7 @@ export type VoiceRendering = {
   vexflow: {
     voice: vexflow.Voice;
   };
+  placeholders: VoiceRendering[];
   entries: VoiceEntryRendering[];
 };
 
@@ -289,8 +295,7 @@ export class Voice {
       .setStrict(false)
       .addTickables(vfTickables);
 
-    // TODO: Finish placeholder implementation.
-    this.getPlaceholderVoices();
+    const placeholderVoiceRenderings = this.getPlaceholderVoices().map((voice) => voice.render({ address, spanners }));
 
     return {
       type: 'voice',
@@ -299,6 +304,7 @@ export class Voice {
         voice: vfVoice,
       },
       entries: voiceEntryRenderings,
+      placeholders: placeholderVoiceRenderings,
     };
   }
 
@@ -326,19 +332,53 @@ export class Voice {
     for (const [startBeat, directions] of Object.entries(directionsByStartBeat)) {
       for (let ndx = 0; ndx < directions.length; ndx++) {
         const placeholderVoice = placeholderVoices[ndx];
-        const division = Division.of(parseFloat(startBeat), 1);
-        // TODO: When Note supports TextNote renderings, call replaceEntry.
+
+        const start = Division.of(parseFloat(startBeat), 1);
+
+        const entry = placeholderVoice.getEntry(start);
+        if (!entry) {
+          throw new Error(`could not find a placeholder voice entry at beat: ${startBeat}`);
+        }
+
+        const duration = entry.end.subtract(entry.start);
+        const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(duration);
+
+        placeholderVoice.replaceEntry(start, {
+          ...entry,
+          value: this.toSymbolNote(directions[ndx], durationDenominator),
+        });
       }
     }
 
     return placeholderVoices;
   }
 
-  private replaceEntry(at: Division, voiceEntry: VoiceEntry): void {
+  private toSymbolNote(direction: musicxml.Direction, durationDenominator: NoteDurationDenominator): SymbolNote {
+    const dynamics = util.first(direction.getDynamics());
+    if (dynamics) {
+      return this.toDynamicsSymbolNote(dynamics, durationDenominator);
+    }
+    throw new Error(`unsupported direction`);
+  }
+
+  private toDynamicsSymbolNote(dynamics: musicxml.Dynamics, durationDenominator: NoteDurationDenominator): SymbolNote {
+    const type = util.first(dynamics.getTypes());
+    if (!type) {
+      throw new Error(`dynamics direction is missing a type`);
+    }
+    const characters = type.split('').filter((char): char is DynamicsCharacter => DYNAMICS_CHARACTERS.includes(char));
+    return SymbolNote.dynamics({ characters, durationDenominator });
+  }
+
+  private getEntry(end: Division): VoiceEntry | null {
+    return this.entries.find((entry) => entry.start.isEqual(end)) ?? null;
+  }
+
+  private replaceEntry(start: Division, voiceEntry: VoiceEntry): void {
     // NOTE: This is inefficient, but we don't expect Voice.entries to exceed 10 elements so we opt for simplicity.
-    const index = this.entries.findIndex((entry) => entry.start.isEqual(at));
+    const index = this.entries.findIndex((entry) => entry.start.isEqual(start));
     if (index < 0) {
-      throw new Error(`could not find somewhere to replace placeholder voice entry at beat: ${at.toBeats()}`);
+      throw new Error(`could not find somewhere to replace placeholder voice entry at beat: ${start.toBeats()}`);
     }
 
     this.entries[index] = voiceEntry;
@@ -367,7 +407,6 @@ export class Voice {
   private toPlaceholderEntry(entry: VoiceEntry): VoiceEntry {
     const start = entry.start;
     const end = entry.end;
-    const directions = entry.directions;
 
     const duration = end.subtract(start);
     const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(duration);
@@ -375,7 +414,7 @@ export class Voice {
       start,
       end,
       value: new GhostNote({ durationDenominator }),
-      directions,
+      directions: [], // avoid processing directions multiple times
     };
   }
 }
