@@ -242,7 +242,7 @@ export class Stave {
           break;
       }
 
-      vfStave.setTempo(vfStaveTempoOpts, opts.y - METRONOME_TOP_PADDING);
+      vfStave.setTempo(vfStaveTempoOpts, -METRONOME_TOP_PADDING);
     }
 
     const staveEntryRendering = this.getEntry().render({
@@ -286,10 +286,7 @@ export class Stave {
     return util.first(
       this.measureEntries
         .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
-        .flatMap((direction) => direction.getTypes())
-        .map((directionType) => directionType.getContent())
-        .filter((content): content is musicxml.MetronomeDirectionTypeContent => content.type === 'metronome')
-        .map((content) => content.metronome)
+        .flatMap((direction) => direction.getMetronomes())
     );
   }
 
