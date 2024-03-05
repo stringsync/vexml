@@ -1,8 +1,14 @@
 import { OctaveShift } from './octaveshift';
 import { NamedElement } from '@/util';
-import { DirectionType, DynamicsDirectionTypeContent, OctaveShiftDirectionTypeContent } from './directiontype';
+import {
+  DirectionType,
+  DynamicsDirectionTypeContent,
+  MetronomeDirectionTypeContent,
+  OctaveShiftDirectionTypeContent,
+} from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
 import { Dynamics } from './dynamics';
+import { Metronome } from './metronome';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -35,6 +41,14 @@ export class Direction {
       .map((type) => type.getContent())
       .filter((content): content is DynamicsDirectionTypeContent => content.type === 'dynamics')
       .flatMap((content) => content.dynamics);
+  }
+
+  /** Returns the metronomes of the direction. */
+  getMetronomes(): Metronome[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is MetronomeDirectionTypeContent => content.type === 'metronome')
+      .flatMap((content) => content.metronome);
   }
 
   /**
