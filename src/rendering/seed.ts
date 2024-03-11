@@ -9,8 +9,7 @@ import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MeasureFragmentWidth } from './measurefragment';
 import { PartName } from './partname';
 
-// Space needed to be able to show the end barlines.
-const LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD = 0.25;
+const LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD = 0.75;
 
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
@@ -35,104 +34,12 @@ export class Seed {
 
   /** Splits the measures into parts and systems that fit the given width. */
   split(width: number): System[] {
-    const systems = new Array<System>();
-
-    let remaining = width;
-    let totalStaveOffsetX = 0;
-    let measures = new Array<Measure>();
-    let minRequiredFragmentWidths = new Array<MeasureFragmentWidth>();
-    let systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
-    let endBarlineWidth = 0;
-
-    const addSystem = (opts: { stretch: boolean }) => {
-      const minRequiredSystemWidth = util.sum(minRequiredFragmentWidths.map(({ value }) => value));
-
-      const stretchedWidths = minRequiredFragmentWidths.map<MeasureFragmentWidth>(
-        ({ measureIndex, measureFragmentIndex, value }) => {
-          const targetWidth = width - endBarlineWidth - totalStaveOffsetX;
-          const widthDeficit = targetWidth - minRequiredSystemWidth;
-          const widthFraction = value / minRequiredSystemWidth;
-          const widthDelta = widthDeficit * widthFraction;
-
-          return { measureIndex, measureFragmentIndex, value: value + widthDelta };
-        }
-      );
-
-      systems.push(
-        new System({
-          config: this.config,
-          index: systems.length,
-          measures,
-          measureFragmentWidths: opts.stretch ? stretchedWidths : minRequiredFragmentWidths,
-        })
-      );
-    };
-
-    util.forEachTriple(this.getMeasures(), ([previousMeasure, currentMeasure], { isLast }) => {
-      const measureAddress = systemAddress.measure({
-        systemMeasureIndex: measures.length,
-        measureIndex: currentMeasure.getIndex(),
-      });
-
-      let measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
-        previousMeasure,
-        address: measureAddress,
-      });
-
-      remaining += endBarlineWidth; // cancel out the previous end barline width
-      endBarlineWidth = currentMeasure.getEndBarlineWidth();
-      remaining -= endBarlineWidth;
-
-      const staveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
-      remaining -= staveOffsetX;
-      totalStaveOffsetX += staveOffsetX;
-
-      let required =
-        currentMeasure.getMaxSpecifiedWidth() ?? util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
-
-      if (remaining < required) {
-        addSystem({ stretch: true });
-
-        // Reset state.
-        remaining = width;
-        measures = [];
-        minRequiredFragmentWidths = [];
-
-        // Start a new system and re-measure.
-        systemAddress = Address.system({ systemIndex: systems.length, origin: 'Seed.prototype.split' });
-        const measureAddress = systemAddress.measure({
-          systemMeasureIndex: measures.length,
-          measureIndex: currentMeasure.getIndex(),
-        });
-
-        endBarlineWidth = currentMeasure.getEndBarlineWidth();
-        remaining -= endBarlineWidth;
-
-        totalStaveOffsetX = currentMeasure.getStaveOffsetX({ address: measureAddress });
-        remaining -= totalStaveOffsetX;
-
-        measureMinRequiredFragmentWidths = currentMeasure.getMinRequiredFragmentWidths({
-          previousMeasure,
-          address: systemAddress.measure({
-            systemMeasureIndex: 0,
-            measureIndex: currentMeasure.getIndex(),
-          }),
-        });
-
-        required =
-          currentMeasure.getMaxSpecifiedWidth() ?? util.sum(measureMinRequiredFragmentWidths.map(({ value }) => value));
-      }
-
-      remaining -= required;
-      measures.push(currentMeasure);
-      minRequiredFragmentWidths.push(...measureMinRequiredFragmentWidths);
-
-      if (isLast) {
-        addSystem({ stretch: remaining / width <= LAST_SYSTEM_REMAINING_WIDTH_STRETCH_THRESHOLD });
-      }
+    const calculator = new SystemCalculator({
+      config: this.config,
+      width,
+      measures: this.getMeasures(),
     });
-
-    return systems;
+    return calculator.calculate();
   }
 
   @util.memoize()
@@ -244,5 +151,142 @@ export class Seed {
         value: measureEntry,
       }))
     );
+  }
+}
+
+/** A private utility to calculate systems for Seed. */
+class SystemCalculator {
+  private config: Config;
+  private width: number;
+  private measures: Measure[];
+  private systems = new Array<System>();
+  private buffer = new Array<{ measure: Measure; width: MeasureWidth }>();
+  private required = 0;
+  private shiftX = 0;
+  private endBarlineWidth = 0;
+  private systemAddress = Address.system({ systemIndex: 0, origin: 'SystemCalculator.constructor' });
+
+  constructor(opts: { config: Config; width: number; measures: Measure[] }) {
+    this.config = opts.config;
+    this.width = opts.width;
+    this.measures = opts.measures;
+  }
+
+  /** Calculates the systems targeting a specific container width. */
+  calculate(): System[] {
+    this.systems = [];
+
+    this.reset();
+
+    util.forEachTriple(this.measures, ([previousMeasure, measure], { isLast, index }) => {
+      let measureAddress = this.measureAddress(index);
+      let measureWidth = MeasureWidth.create({ measure, previousMeasure, address: measureAddress });
+      let measureShiftX = measure.getStaveOffsetX({ address: measureAddress });
+      let measureEndBarlineWidth = measure.getEndBarlineWidth();
+
+      const projectedWidth = this.required + measureWidth.getValue() + measureShiftX + measureEndBarlineWidth;
+
+      if (projectedWidth > this.width && this.buffer.length > 0) {
+        this.addSystem({ stretch: true });
+        this.reset();
+
+        measureAddress = this.measureAddress(index);
+        measureWidth = MeasureWidth.create({ measure, previousMeasure, address: measureAddress });
+        measureShiftX = measure.getStaveOffsetX({ address: measureAddress });
+        measureEndBarlineWidth = measure.getEndBarlineWidth();
+      }
+
+      this.buffer.push({ measure, width: measureWidth });
+      this.required += measureWidth.getValue() + measureShiftX + measureEndBarlineWidth;
+      this.shiftX += measureShiftX;
+      this.endBarlineWidth = measureEndBarlineWidth;
+
+      if (isLast) {
+        const stretch = this.isAboveStretchThreshold();
+        this.addSystem({ stretch });
+      }
+    });
+
+    return this.systems;
+  }
+
+  private reset(): void {
+    this.buffer = [];
+    this.required = 0;
+    this.shiftX = 0;
+    this.endBarlineWidth = 0;
+    this.systemAddress = Address.system({
+      systemIndex: this.systems.length,
+      origin: 'SystemCalculator.prototype.reset',
+    });
+  }
+
+  private measureAddress(measureIndex: number): Address<'measure'> {
+    return this.systemAddress.measure({ systemMeasureIndex: this.buffer.length, measureIndex });
+  }
+
+  private addSystem(opts: { stretch: boolean }): void {
+    let measureFragmentWidths = this.buffer.flatMap(({ width }) => width.getFragments());
+
+    if (opts.stretch) {
+      const minRequiredSystemWidth = util.sum(
+        this.buffer.flatMap(({ width }) => width.getFragments()).map((fragment) => fragment.value)
+      );
+      const targetWidth = this.width - this.shiftX - this.endBarlineWidth;
+      const widthDeficit = targetWidth - minRequiredSystemWidth;
+
+      measureFragmentWidths = measureFragmentWidths.map(({ measureIndex, measureFragmentIndex, value }) => {
+        const widthFraction = value / minRequiredSystemWidth;
+        const widthDelta = widthDeficit * widthFraction;
+        return { measureIndex, measureFragmentIndex, value: value + widthDelta };
+      });
+    }
+
+    this.systems.push(
+      new System({
+        config: this.config,
+        index: this.systems.length,
+        measures: this.buffer.map(({ measure }) => measure),
+        measureFragmentWidths,
+      })
+    );
+  }
+
+  private isAboveStretchThreshold(): boolean {
+    return this.required / this.width >= LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD;
+  }
+}
+
+/** Describes the width of a measure including a breakdown of its components. */
+class MeasureWidth {
+  private measure: Measure;
+  private fragments: MeasureFragmentWidth[];
+
+  constructor(opts: { measure: Measure; fragments: MeasureFragmentWidth[] }) {
+    this.measure = opts.measure;
+    this.fragments = opts.fragments;
+  }
+
+  static create(opts: {
+    measure: Measure;
+    previousMeasure: Measure | null;
+    address: Address<'measure'>;
+  }): MeasureWidth {
+    const measure = opts.measure;
+    const fragments = measure.getMinRequiredFragmentWidths({
+      previousMeasure: opts.previousMeasure,
+      address: opts.address,
+    });
+    return new MeasureWidth({ measure, fragments });
+  }
+
+  /** Returns the value of the measure width. */
+  getValue(): number {
+    return this.measure.getMaxSpecifiedWidth() ?? util.sum(this.fragments.map(({ value }) => value));
+  }
+
+  /** Returns the fragments of the measure width. */
+  getFragments(): MeasureFragmentWidth[] {
+    return this.fragments;
   }
 }
