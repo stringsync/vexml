@@ -65,7 +65,6 @@ export type StaveNoteRendering = {
   key: string;
   vexflow: {
     staveNote: vexflow.StaveNote;
-    tabNote: vexflow.TabNote | null;
   };
   modifiers: NoteModifierRendering[];
   timeModification: musicxml.TimeModification | null;
@@ -77,7 +76,6 @@ export type GraceNoteRendering = {
   hasSlur: boolean;
   vexflow: {
     graceNote: vexflow.GraceNote;
-    tabNote: vexflow.TabNote | null;
   };
   modifiers: NoteModifierRendering[];
 };
@@ -302,7 +300,6 @@ export class Note {
         modifiers: modifierRenderingGroups[index],
         vexflow: {
           staveNote: vfStaveNote,
-          tabNote: null,
         },
         timeModification: notes[index].getTimeModification(),
       });
@@ -357,7 +354,6 @@ export class Note {
         hasSlur,
         vexflow: {
           graceNote: vfGraceNote,
-          tabNote: null,
         },
       });
     }
