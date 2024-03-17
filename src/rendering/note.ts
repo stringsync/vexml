@@ -19,6 +19,7 @@ import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 import { Tremolo, TremoloRendering } from './tremolo';
 import { Technicals, TechnicalsRendering } from './technicals';
 import { Rehearsal, RehearsalRendering } from './rehearsal';
+import { TabPosition } from './types';
 
 const STEP_ORDER = [
   'Cb',
@@ -93,7 +94,7 @@ export type TabGraceNoteRendering = {
   type: 'tabgracenote';
   hasSlur: boolean;
   vexflow: {
-    graceNote: vexflow.GraceNote;
+    graceNote: vexflow.GraceTabNote;
   };
 };
 
@@ -408,11 +409,56 @@ export class Note {
     spanners: Spanners;
     address: Address<'voice'>;
   }): TabNoteRendering[] {
-    return [];
+    const notes = opts.notes;
+
+    const positions = notes.flatMap((note) => note.getTabPositions());
+
+    const vfTabNote = new vexflow.TabNote({
+      positions: positions.map((position) => ({ str: position.string, fret: position.fret })),
+      duration: util.first(notes)!.durationDenominator,
+    });
+
+    const tabNoteRenderings = new Array<TabNoteRendering>();
+
+    for (let index = 0; index < positions.length; index++) {
+      tabNoteRenderings.push({
+        type: 'tabnote',
+        vexflow: {
+          tabNote: vfTabNote,
+        },
+      });
+    }
+
+    return tabNoteRenderings;
   }
 
   private static renderTabGraceNotes(opts: { notes: Note[] }): TabGraceNoteRendering[] {
-    return [];
+    const notes = opts.notes;
+
+    const positions = notes.flatMap((note) => note.getTabPositions());
+
+    const vfGraceTabNote = new vexflow.GraceTabNote({
+      positions: positions.map((position) => ({ str: position.string, fret: position.fret })),
+      duration: util.first(notes)!.durationDenominator,
+    });
+
+    const graceTabNoteRenderings = new Array<TabGraceNoteRendering>();
+
+    const hasSlur = notes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
+    for (let index = 0; index < positions.length; index++) {
+      graceTabNoteRenderings.push({
+        type: 'tabgracenote',
+        hasSlur,
+        vexflow: {
+          graceNote: vfGraceTabNote,
+        },
+      });
+    }
+
+    return graceTabNoteRenderings;
   }
 
   private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
@@ -568,5 +614,22 @@ export class Note {
       .filter((content): content is musicxml.RehearsalDirectionTypeContent => content.type === 'rehearsal')
       .flatMap((content) => content.rehearsals)
       .map((rehearsal) => new Rehearsal({ config: this.config, musicXML: { rehearsal } }));
+  }
+
+  private getTabPositions(): TabPosition[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getTechnicals())
+      .flatMap((technical) => {
+        const frets = technical.getFrets().map((fret) => fret.getNumber() ?? 0);
+        const strings = technical.getTabStrings().map((string) => string.getNumber() ?? 1);
+
+        const length = Math.min(frets.length, strings.length);
+        const positions = new Array<TabPosition>(length);
+        for (let index = 0; index < length; index++) {
+          positions[index] = { fret: frets[index], string: strings[index] };
+        }
+        return positions;
+      });
   }
 }
