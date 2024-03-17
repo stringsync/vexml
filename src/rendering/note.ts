@@ -57,7 +57,7 @@ export type NoteModifierRendering =
   | RehearsalRendering;
 
 /** The result of rendering a Note. */
-export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
+export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering;
 
 /** The result of rendering a stave Note. */
 export type StaveNoteRendering = {
@@ -78,6 +78,23 @@ export type GraceNoteRendering = {
     graceNote: vexflow.GraceNote;
   };
   modifiers: NoteModifierRendering[];
+};
+
+/** The result of rendering a tab Note. */
+export type TabNoteRendering = {
+  type: 'tabnote';
+  vexflow: {
+    tabNote: vexflow.TabNote;
+  };
+};
+
+/** The result of rendering a tab grace Note. */
+export type TabGraceNoteRendering = {
+  type: 'tabgracenote';
+  hasSlur: boolean;
+  vexflow: {
+    graceNote: vexflow.GraceNote;
+  };
 };
 
 /**
@@ -143,10 +160,15 @@ export class Note {
     const clefTypes = new Set(notes.map((note) => note.clef));
     util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
+    const isTab = util.first(notes)!.clef.getType() === 'tab';
     const isStave = notes.every((note) => !note.musicXML.note.isGrace());
     const isGrace = notes.every((note) => note.musicXML.note.isGrace());
 
-    if (isStave) {
+    if (isTab && isGrace) {
+      return Note.renderTabGraceNotes({ notes });
+    } else if (isTab) {
+      return Note.renderTabNotes({ notes, spanners, address });
+    } else if (isStave) {
       return Note.renderStaveNotes({ notes, spanners, address });
     } else if (isGrace) {
       return Note.renderGraceNotes({ notes });
@@ -381,6 +403,18 @@ export class Note {
     });
   }
 
+  private static renderTabNotes(opts: {
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): TabNoteRendering[] {
+    return [];
+  }
+
+  private static renderTabGraceNotes(opts: { notes: Note[] }): TabGraceNoteRendering[] {
+    return [];
+  }
+
   private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
     switch (notes[0]?.stem) {
       case 'up':
@@ -395,7 +429,10 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): StaveNoteRendering | GraceNoteRendering {
+  render(opts: {
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering {
     return util.first(
       Note.render({
         notes: [this],

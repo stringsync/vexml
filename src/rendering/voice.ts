@@ -13,7 +13,7 @@ import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Spanners } from './spanners';
 import { Address } from './address';
-import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
+import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
@@ -39,6 +39,8 @@ export type VoiceEntryRendering =
   | StaveChordRendering
   | GraceNoteRendering
   | GraceChordRendering
+  | TabNoteRendering
+  | TabGraceNoteRendering
   | RestRendering
   | GhostNoteRendering
   | SymbolNoteRendering;
