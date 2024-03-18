@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import { Config } from './config';
-import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
+import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';
 import { KeySignature } from './keysignature';
@@ -8,7 +8,7 @@ import { Spanners } from './spanners';
 import { Address } from './address';
 
 /** The result of rendering a Chord. */
-export type ChordRendering = StaveChordRendering | GraceChordRendering;
+export type ChordRendering = StaveChordRendering | GraceChordRendering | TabChordRendering | TabGraceChordRendering;
 
 /** The result of rendering a stave Chord. */
 export type StaveChordRendering = {
@@ -20,6 +20,18 @@ export type StaveChordRendering = {
 export type GraceChordRendering = {
   type: 'gracechord';
   graceNotes: GraceNoteRendering[];
+};
+
+/** The result of rendering a grace Tab Chord. */
+export type TabChordRendering = {
+  type: 'tabchord';
+  tabNotes: TabNoteRendering[];
+};
+
+/** The result of rendering a tab grace chord. */
+export type TabGraceChordRendering = {
+  type: 'tabgracechord';
+  tabGraceNotes: TabGraceNoteRendering[];
 };
 
 /**
@@ -73,6 +85,12 @@ export class Chord {
       address: opts.address,
     });
 
+    const isTabGrace = noteRenderings.every(
+      (noteRendering): noteRendering is TabGraceNoteRendering => noteRendering.type === 'tabgracenote'
+    );
+    const isTab = noteRenderings.every(
+      (noteRendering): noteRendering is TabNoteRendering => noteRendering.type === 'tabnote'
+    );
     const isStave = noteRenderings.every(
       (noteRendering): noteRendering is StaveNoteRendering => noteRendering.type === 'stavenote'
     );
@@ -80,7 +98,17 @@ export class Chord {
       (noteRendering): noteRendering is GraceNoteRendering => noteRendering.type === 'gracenote'
     );
 
-    if (isStave) {
+    if (isTabGrace) {
+      return {
+        type: 'tabgracechord',
+        tabGraceNotes: noteRenderings,
+      };
+    } else if (isTab) {
+      return {
+        type: 'tabchord',
+        tabNotes: noteRenderings,
+      };
+    } else if (isStave) {
       return {
         type: 'stavechord',
         notes: noteRenderings,

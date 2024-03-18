@@ -14,7 +14,7 @@ import { Config } from './config';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
-import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
+import { Chord, GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { TimeSignature } from './timesignature';
@@ -41,6 +41,8 @@ export type VoiceEntryRendering =
   | GraceChordRendering
   | TabNoteRendering
   | TabGraceNoteRendering
+  | TabChordRendering
+  | TabGraceChordRendering
   | RestRendering
   | GhostNoteRendering
   | SymbolNoteRendering;
@@ -241,6 +243,12 @@ export class Voice {
           break;
         case 'stavechord':
           vfTickables.push(rendering.notes[0].vexflow.staveNote);
+          break;
+        case 'tabnote':
+          vfTickables.push(rendering.vexflow.tabNote);
+          break;
+        case 'tabchord':
+          vfTickables.push(rendering.tabNotes[0].vexflow.tabNote);
           break;
         case 'rest':
           vfTickables.push(rendering.vexflow.staveNote);
