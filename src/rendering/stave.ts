@@ -3,7 +3,6 @@ import { Config } from './config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MultiRest, MultiRestRendering } from './multirest';
-import { Tablature, TablatureRendering } from './tablature';
 import { TimeSignature } from './timesignature';
 import * as conversions from './conversions';
 import * as musicxml from '@/musicxml';
@@ -19,10 +18,10 @@ import { Division } from './division';
 const METRONOME_TOP_PADDING = 8;
 
 /** A possible component of a Stave. */
-export type StaveEntry = Chorus | MultiRest | Tablature;
+export type StaveEntry = Chorus | MultiRest;
 
 /** The result of rendering a Stave entry. */
-export type StaveEntryRendering = ChorusRendering | MultiRestRendering | TablatureRendering;
+export type StaveEntryRendering = ChorusRendering | MultiRestRendering;
 
 /** The result of rendering a Stave. */
 export type StaveRendering = {
@@ -108,11 +107,6 @@ export class Stave {
 
     if (multiRestCount > 1) {
       return new MultiRest({ count: multiRestCount });
-    }
-
-    if (this.getClef().getType() === 'tab') {
-      // TODO: Render tablature correctly.
-      return new Tablature();
     }
 
     return Chorus.fromMusicXML({
