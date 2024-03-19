@@ -350,7 +350,8 @@ export class Voice {
       for (let ndx = 0; ndx < directions.length; ndx++) {
         const placeholderVoice = placeholderVoices[ndx];
 
-        const start = Division.of(parseFloat(startBeat), 1);
+        const fraction = util.Fraction.fromDecimal(parseFloat(startBeat));
+        const start = new Division(fraction);
 
         const entry = placeholderVoice.getEntry(start);
         if (!entry) {
