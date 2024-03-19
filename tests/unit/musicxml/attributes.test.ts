@@ -14,22 +14,22 @@ describe(Attributes, () => {
       expect(attributes.getStaveCount()).toBe(4);
     });
 
-    it('returns 1 when there is no staves element', () => {
+    it('returns null when there is no staves element', () => {
       const node = xml.attributes();
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(1);
+      expect(attributes.getStaveCount()).toBeNull();
     });
 
-    it('returns 1 when the staves element is empty', () => {
+    it('returns null when the staves element is empty', () => {
       const node = xml.attributes({ staves: xml.staves() });
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(1);
+      expect(attributes.getStaveCount()).toBeNull();
     });
 
-    it('returns 1 when the staves text content is invalid', () => {
+    it('returns null when the staves text content is invalid', () => {
       const node = xml.attributes({ staves: xml.staves({ staveCount: NaN }) });
       const attributes = new Attributes(node);
-      expect(attributes.getStaveCount()).toBe(1);
+      expect(attributes.getStaveCount()).toBeNull();
     });
   });
 

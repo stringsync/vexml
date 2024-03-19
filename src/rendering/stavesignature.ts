@@ -166,7 +166,7 @@ export class StaveSignature {
     };
 
     // Make sure that the key signatures and time signatures have entries for each stave number.
-    const staveCount = opts.musicXML.attributes.getStaveCount();
+    const staveCount = opts.musicXML.attributes.getStaveCount() ?? opts.previousStaveSignature?.staveCount ?? 1;
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
       if (!keySignatures[staveNumber]) {
         keySignatures[staveNumber] = keySignatures[1] ?? KeySignature.Cmajor();

@@ -15,8 +15,8 @@ export class Attributes {
   constructor(private element: NamedElement<'attributes'>) {}
 
   /** Returns the number of staves. */
-  getStaveCount(): number {
-    return this.element.first('staves')?.content().withDefault(1).int() ?? 1;
+  getStaveCount(): number | null {
+    return this.element.first('staves')?.content().int() ?? null;
   }
 
   /** Returns the stave details. */
