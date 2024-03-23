@@ -57,7 +57,7 @@ export class PullOff {
           number: pullOff.getNumber(),
           address: data.address,
           vexflow: {
-            note: data.vexflow.staveNote,
+            note: data.vexflow.note,
             keyIndex: data.keyIndex,
           },
         },

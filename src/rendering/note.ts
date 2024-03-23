@@ -313,7 +313,8 @@ export class Note {
           octaveShift: notes[index].musicXML.octaveShift,
         },
         vexflow: {
-          staveNote: vfStaveNote,
+          type: 'stavenote',
+          note: vfStaveNote,
         },
       });
 

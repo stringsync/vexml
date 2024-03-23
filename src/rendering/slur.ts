@@ -70,7 +70,7 @@ export class Slur {
           address: data.address,
           musicXML: { slur },
           vexflow: {
-            note: data.vexflow.staveNote,
+            note: data.vexflow.note,
             keyIndex: data.keyIndex,
           },
         },
