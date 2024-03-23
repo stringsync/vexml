@@ -38,6 +38,10 @@ export class HammerOn {
 
   /** Processes spanner data for hammer-ons. */
   static process(data: SpannerData, container: HammerOnContainer): void {
+    if (data.vexflow.type !== 'tabnote') {
+      return;
+    }
+
     const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
     const isGrace = note?.isGrace() ?? false;
@@ -111,8 +115,7 @@ export class HammerOn {
       }
     }
 
-    const vfSlurDirection = this.getVfSlurDirection();
-    const vfTie = new vexflow.StaveTie(vfTieNotes, 'H').setDirection(vfSlurDirection);
+    const vfTie = new vexflow.StaveTie(vfTieNotes, 'H').setDirection(-1);
 
     return {
       type: 'hammeron',
@@ -124,19 +127,5 @@ export class HammerOn {
 
   private getLastFragment(): HammerOnFragment {
     return this.fragments[this.fragments.length - 1];
-  }
-
-  private getVfSlurDirection(): number {
-    const first = this.fragments[0];
-    const vfStemDirection = first.vexflow.note.getStemDirection();
-
-    switch (vfStemDirection) {
-      case vexflow.Stem.UP:
-        return 1;
-      case vexflow.Stem.DOWN:
-        return -1;
-      default:
-        return 1;
-    }
   }
 }

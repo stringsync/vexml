@@ -30,6 +30,7 @@ describe('vexml', () => {
     { filename: 'prelude_no_1_snippet.musicxml', width: 900 },
     { filename: 'basic_tabs.musicxml', width: 900 },
     { filename: 'tabs_with_stave.musicxml', width: 900 },
+    { filename: 'tabs_slurs.musicxml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
