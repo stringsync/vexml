@@ -11,9 +11,15 @@ export type SpannerData = {
     directions: musicxml.Direction[];
     octaveShift: musicxml.OctaveShift | null;
   };
-  vexflow: {
-    staveNote: vexflow.StaveNote;
-  };
+  vexflow:
+    | {
+        type: 'stavenote';
+        note: vexflow.StaveNote;
+      }
+    | {
+        type: 'tabnote';
+        note: vexflow.TabNote;
+      };
 };
 
 /** A value that is scoped to a specific part. */

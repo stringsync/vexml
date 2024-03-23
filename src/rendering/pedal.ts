@@ -38,6 +38,12 @@ export class Pedal {
   }
 
   static process(data: SpannerData, container: PedalContainer): void {
+    if (data.vexflow.type !== 'stavenote') {
+      return;
+    }
+
+    const vfStaveNote = data.vexflow.note;
+
     data.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
@@ -50,7 +56,7 @@ export class Pedal {
             type: pedalType,
             address: data.address,
             musicXML: { pedal },
-            vexflow: { staveNote: data.vexflow.staveNote },
+            vexflow: { staveNote: vfStaveNote },
           },
           container
         );

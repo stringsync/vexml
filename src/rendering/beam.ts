@@ -45,7 +45,7 @@ export class Beam {
         {
           type,
           vexflow: {
-            stemmableNote: data.vexflow.staveNote,
+            stemmableNote: data.vexflow.note,
           },
         },
         container

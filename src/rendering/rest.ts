@@ -93,7 +93,8 @@ export class Rest {
         octaveShift: null,
       },
       vexflow: {
-        staveNote: vfStaveNote,
+        type: 'stavenote',
+        note: vfStaveNote,
       },
     });
 

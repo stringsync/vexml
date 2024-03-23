@@ -59,7 +59,7 @@ export class Tie {
           number: tie.getNumber(),
           address: data.address,
           vexflow: {
-            note: data.vexflow.staveNote,
+            note: data.vexflow.note,
             keyIndex: data.keyIndex,
           },
         },
