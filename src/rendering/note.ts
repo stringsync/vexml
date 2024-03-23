@@ -422,6 +422,20 @@ export class Note {
     const tabNoteRenderings = new Array<TabNoteRendering>();
 
     for (let index = 0; index < positions.length; index++) {
+      opts.spanners.process({
+        keyIndex: index,
+        address: opts.address,
+        musicXML: {
+          directions: notes[index].musicXML.directions,
+          note: notes[index].musicXML.note,
+          octaveShift: notes[index].musicXML.octaveShift,
+        },
+        vexflow: {
+          type: 'tabnote',
+          note: vfTabNote,
+        },
+      });
+
       tabNoteRenderings.push({
         type: 'tabnote',
         vexflow: {

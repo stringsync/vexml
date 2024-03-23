@@ -100,7 +100,7 @@
     <stem>up</stem>
     <notations>
      <technical>
-      <hammer-on number="1" type="start">H</hammer-on>
+      <pull-off number="1" type="start">H</pull-off>
       <string>1</string>
       <fret>2</fret>
      </technical>
@@ -119,7 +119,7 @@
     <stem>up</stem>
     <notations>
      <technical>
-      <hammer-on number="1" type="stop"/>
+      <pull-off number="1" type="stop"/>
       <string>1</string>
       <fret>1</fret>
      </technical>

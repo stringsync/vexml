@@ -38,6 +38,10 @@ export class PullOff {
 
   /** Processes spanner data for pull-offs. */
   static process(data: SpannerData, container: PullOffContainer): void {
+    if (data.vexflow.type !== 'tabnote') {
+      return;
+    }
+
     const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
     const isGrace = note?.isGrace() ?? false;
@@ -111,8 +115,7 @@ export class PullOff {
       }
     }
 
-    const vfSlurDirection = this.getVfSlurDirection();
-    const vfTie = new vexflow.StaveTie(vfTieNotes, 'P').setDirection(vfSlurDirection);
+    const vfTie = new vexflow.StaveTie(vfTieNotes, 'P').setDirection(-1);
 
     return {
       type: 'pulloff',
@@ -124,19 +127,5 @@ export class PullOff {
 
   private getLastFragment(): PullOffFragment {
     return this.fragments[this.fragments.length - 1];
-  }
-
-  private getVfSlurDirection(): number {
-    const first = this.fragments[0];
-    const vfStemDirection = first.vexflow.note.getStemDirection();
-
-    switch (vfStemDirection) {
-      case vexflow.Stem.UP:
-        return 1;
-      case vexflow.Stem.DOWN:
-        return -1;
-      default:
-        return 1;
-    }
   }
 }
