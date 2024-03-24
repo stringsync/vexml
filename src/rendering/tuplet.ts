@@ -65,7 +65,7 @@ export class Tuplet {
             address: data.address,
             vexflow: {
               location: conversions.fromAboveBelowToTupletLocation(tuplet.getPlacement()),
-              note: data.vexflow.staveNote,
+              note: data.vexflow.note,
               ratioed: showNumber === 'both',
             },
           },
@@ -78,7 +78,7 @@ export class Tuplet {
             type: 'stop',
             address: data.address,
             vexflow: {
-              note: data.vexflow.staveNote,
+              note: data.vexflow.note,
             },
           },
           container
@@ -90,7 +90,7 @@ export class Tuplet {
             type: 'unspecified',
             address: data.address,
             vexflow: {
-              note: data.vexflow.staveNote,
+              note: data.vexflow.note,
             },
           },
           container

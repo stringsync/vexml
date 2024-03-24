@@ -47,7 +47,7 @@ export class Vibrato {
           {
             type: wavyLine.value.getType(),
             address: data.address,
-            vexflow: { note: data.vexflow.staveNote },
+            vexflow: { note: data.vexflow.note },
           },
           container
         );

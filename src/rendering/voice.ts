@@ -13,8 +13,8 @@ import { StaveSignature } from './stavesignature';
 import { Config } from './config';
 import { Spanners } from './spanners';
 import { Address } from './address';
-import { GraceNoteRendering, Note, StaveNoteRendering } from './note';
-import { Chord, GraceChordRendering, StaveChordRendering } from './chord';
+import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
+import { Chord, GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { Rest, RestRendering } from './rest';
 import { GhostNote, GhostNoteRendering } from './ghostnote';
 import { TimeSignature } from './timesignature';
@@ -39,6 +39,10 @@ export type VoiceEntryRendering =
   | StaveChordRendering
   | GraceNoteRendering
   | GraceChordRendering
+  | TabNoteRendering
+  | TabGraceNoteRendering
+  | TabChordRendering
+  | TabGraceChordRendering
   | RestRendering
   | GhostNoteRendering
   | SymbolNoteRendering;
@@ -240,6 +244,12 @@ export class Voice {
         case 'stavechord':
           vfTickables.push(rendering.notes[0].vexflow.staveNote);
           break;
+        case 'tabnote':
+          vfTickables.push(rendering.vexflow.tabNote);
+          break;
+        case 'tabchord':
+          vfTickables.push(rendering.tabNotes[0].vexflow.tabNote);
+          break;
         case 'rest':
           vfTickables.push(rendering.vexflow.staveNote);
           break;
@@ -340,7 +350,8 @@ export class Voice {
       for (let ndx = 0; ndx < directions.length; ndx++) {
         const placeholderVoice = placeholderVoices[ndx];
 
-        const start = Division.of(parseFloat(startBeat), 1);
+        const fraction = util.Fraction.fromDecimal(parseFloat(startBeat));
+        const start = new Division(fraction);
 
         const entry = placeholderVoice.getEntry(start);
         if (!entry) {

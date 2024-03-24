@@ -49,6 +49,10 @@ export class Slur {
   }
 
   static process(data: SpannerData, container: SlurContainer): void {
+    if (data.vexflow.type !== 'stavenote') {
+      return;
+    }
+
     const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
     const isGrace = note?.isGrace() ?? false;
@@ -70,7 +74,7 @@ export class Slur {
           address: data.address,
           musicXML: { slur },
           vexflow: {
-            note: data.vexflow.staveNote,
+            note: data.vexflow.note,
             keyIndex: data.keyIndex,
           },
         },
