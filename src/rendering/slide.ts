@@ -1,5 +1,4 @@
 import * as vexflow from 'vexflow';
-import * as util from '@/util';
 import { Address } from './address';
 import { SpannerMap } from './spannermap';
 import { SpannerData } from './types';
@@ -49,7 +48,50 @@ export class Slide {
       return;
     }
 
-    // TODO: Collect musicxml.Slide objects from the note and commit to the container accordingly.
+    const slides = note
+      .getNotations()
+      .flatMap((notations) => notations)
+      .flatMap((notation) => notation.getSlides());
+    for (const slide of slides) {
+      Slide.commit(
+        {
+          type: slide.getType() ?? 'unspecified',
+          number: slide.getNumber(),
+          address: data.address,
+          vexflow: {
+            note: data.vexflow.note,
+            keyIndex: data.keyIndex,
+          },
+        },
+        container
+      );
+    }
+  }
+
+  /** Commits a slide fragment to a container. */
+  private static commit(fragment: SlideFragment, container: SlideContainer): void {
+    const slide = container.get(fragment.number);
+    const last = slide?.getLastFragment();
+    const isAllowedType = Slide.getAllowedTypes(last?.type).includes(fragment.type);
+
+    if (fragment.type === 'start') {
+      container.push(fragment.number, new Slide({ fragment }));
+    } else if (slide && isAllowedType) {
+      slide.fragments.push(fragment);
+    }
+  }
+
+  private static getAllowedTypes(type: SlideFragmentType | undefined): SlideFragmentType[] {
+    switch (type) {
+      case 'unspecified':
+        return ['start'];
+      case 'start':
+        return ['start', 'stop'];
+      case 'stop':
+        return [];
+      default:
+        return [];
+    }
   }
 
   /** Renders the slide. */
