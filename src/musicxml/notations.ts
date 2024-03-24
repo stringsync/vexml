@@ -8,6 +8,7 @@ import { Fermata } from './fermata';
 import { Articulations } from './articulations';
 import { AccidentalMark } from './accidentalmark';
 import { Technical } from './technical';
+import { Slide } from './slide';
 
 /**
  * Musical notations that apply to a specific note or chord.
@@ -70,5 +71,10 @@ export class Notations {
   /** Returns the technicals of the notations. */
   getTechnicals(): Technical[] {
     return this.element.children('technical').map((element) => new Technical(element));
+  }
+
+  /** Returns the slides of the notations. */
+  getSlides(): Slide[] {
+    return this.element.children('slide').map((element) => new Slide(element));
   }
 }

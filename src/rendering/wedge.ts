@@ -74,7 +74,7 @@ export class Wedge {
         {
           type: 'unspecified',
           address: data.address,
-          vexflow: { note: data.vexflow.staveNote },
+          vexflow: { note: data.vexflow.note },
         },
         container
       );
@@ -100,7 +100,7 @@ export class Wedge {
                 type: 'start',
                 address: data.address,
                 vexflow: {
-                  note: data.vexflow.staveNote,
+                  note: data.vexflow.note,
                   staveHairpinType: conversions.fromWedgeTypeToStaveHairpinType(wedgeType),
                   position: modifierPosition,
                 },
@@ -113,7 +113,7 @@ export class Wedge {
               {
                 type: 'continue',
                 address: data.address,
-                vexflow: { note: data.vexflow.staveNote },
+                vexflow: { note: data.vexflow.note },
               },
               container
             );
@@ -123,7 +123,7 @@ export class Wedge {
               {
                 type: 'stop',
                 address: data.address,
-                vexflow: { note: data.vexflow.staveNote },
+                vexflow: { note: data.vexflow.note },
               },
               container
             );
@@ -133,7 +133,7 @@ export class Wedge {
               {
                 type: 'unspecified',
                 address: data.address,
-                vexflow: { note: data.vexflow.staveNote },
+                vexflow: { note: data.vexflow.note },
               },
               container
             );

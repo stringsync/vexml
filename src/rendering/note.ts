@@ -19,6 +19,7 @@ import { AccidentalMark, AccidentalMarkRendering } from './accidentalmark';
 import { Tremolo, TremoloRendering } from './tremolo';
 import { Technicals, TechnicalsRendering } from './technicals';
 import { Rehearsal, RehearsalRendering } from './rehearsal';
+import { TabPosition } from './types';
 
 const STEP_ORDER = [
   'Cb',
@@ -57,7 +58,7 @@ export type NoteModifierRendering =
   | RehearsalRendering;
 
 /** The result of rendering a Note. */
-export type NoteRendering = StaveNoteRendering | GraceNoteRendering;
+export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering;
 
 /** The result of rendering a stave Note. */
 export type StaveNoteRendering = {
@@ -78,6 +79,28 @@ export type GraceNoteRendering = {
     graceNote: vexflow.GraceNote;
   };
   modifiers: NoteModifierRendering[];
+};
+
+/** The result of rendering a tab Note. */
+export type TabNoteRendering = {
+  type: 'tabnote';
+  vexflow: {
+    tabNote: vexflow.TabNote;
+  };
+};
+
+/** The result of rendering a tab grace Note. */
+export type TabGraceNoteRendering = {
+  type: 'tabgracenote';
+  hasSlur: boolean;
+  vexflow: {
+    graceNote: vexflow.GraceTabNote;
+  };
+};
+
+type TabEntry = {
+  position: TabPosition;
+  harmonicType: musicxml.HarmonicType | null;
 };
 
 /**
@@ -143,10 +166,15 @@ export class Note {
     const clefTypes = new Set(notes.map((note) => note.clef));
     util.assert(clefTypes.size === 1, 'all notes must have the same clefTypes');
 
+    const isTab = util.first(notes)!.clef.getType() === 'tab';
     const isStave = notes.every((note) => !note.musicXML.note.isGrace());
     const isGrace = notes.every((note) => note.musicXML.note.isGrace());
 
-    if (isStave) {
+    if (isTab && isGrace) {
+      return Note.renderTabGraceNotes({ notes });
+    } else if (isTab) {
+      return Note.renderTabNotes({ notes, spanners, address });
+    } else if (isStave) {
       return Note.renderStaveNotes({ notes, spanners, address });
     } else if (isGrace) {
       return Note.renderGraceNotes({ notes });
@@ -290,7 +318,8 @@ export class Note {
           octaveShift: notes[index].musicXML.octaveShift,
         },
         vexflow: {
-          staveNote: vfStaveNote,
+          type: 'stavenote',
+          note: vfStaveNote,
         },
       });
 
@@ -381,6 +410,99 @@ export class Note {
     });
   }
 
+  private static renderTabNotes(opts: {
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): TabNoteRendering[] {
+    const notes = opts.notes;
+
+    const entries = notes.flatMap((note) => note.getTabEntries());
+
+    const vfTabNote = new vexflow.TabNote({
+      positions: entries.map((entry) => {
+        const str = entry.position.string;
+
+        let fret: string | number;
+        if (entry.harmonicType === 'natural') {
+          fret = `<${entry.position.fret}>`;
+        } else {
+          fret = entry.position.fret;
+        }
+
+        return { str, fret };
+      }),
+      duration: util.first(notes)!.durationDenominator,
+    });
+
+    const tabNoteRenderings = new Array<TabNoteRendering>();
+
+    for (let index = 0; index < entries.length; index++) {
+      opts.spanners.process({
+        keyIndex: index,
+        address: opts.address,
+        musicXML: {
+          directions: notes[index].musicXML.directions,
+          note: notes[index].musicXML.note,
+          octaveShift: notes[index].musicXML.octaveShift,
+        },
+        vexflow: {
+          type: 'tabnote',
+          note: vfTabNote,
+        },
+      });
+
+      tabNoteRenderings.push({
+        type: 'tabnote',
+        vexflow: {
+          tabNote: vfTabNote,
+        },
+      });
+    }
+
+    return tabNoteRenderings;
+  }
+
+  private static renderTabGraceNotes(opts: { notes: Note[] }): TabGraceNoteRendering[] {
+    const notes = opts.notes;
+
+    const entries = notes.flatMap((note) => note.getTabEntries());
+
+    const vfGraceTabNote = new vexflow.GraceTabNote({
+      positions: entries.map((entry) => {
+        const str = entry.position.string;
+
+        let fret: string | number;
+        if (entry.harmonicType === 'natural') {
+          fret = `<${entry.position.fret}>`;
+        } else {
+          fret = entry.position.fret;
+        }
+
+        return { str, fret };
+      }),
+      duration: util.first(notes)!.durationDenominator,
+    });
+
+    const graceTabNoteRenderings = new Array<TabGraceNoteRendering>();
+
+    const hasSlur = notes
+      .flatMap((note) => note.musicXML.note.getNotations())
+      .some((notation) => notation.getSlurs().length > 0);
+
+    for (let index = 0; index < entries.length; index++) {
+      graceTabNoteRenderings.push({
+        type: 'tabgracenote',
+        hasSlur,
+        vexflow: {
+          graceNote: vfGraceTabNote,
+        },
+      });
+    }
+
+    return graceTabNoteRenderings;
+  }
+
   private static getStemParams(notes: Note[]): { autoStem?: boolean; stemDirection?: number } {
     switch (notes[0]?.stem) {
       case 'up':
@@ -395,7 +517,10 @@ export class Note {
   }
 
   /** Renders the Note. */
-  render(opts: { spanners: Spanners; address: Address<'voice'> }): StaveNoteRendering | GraceNoteRendering {
+  render(opts: {
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering {
     return util.first(
       Note.render({
         notes: [this],
@@ -531,5 +656,26 @@ export class Note {
       .filter((content): content is musicxml.RehearsalDirectionTypeContent => content.type === 'rehearsal')
       .flatMap((content) => content.rehearsals)
       .map((rehearsal) => new Rehearsal({ config: this.config, musicXML: { rehearsal } }));
+  }
+
+  private getTabEntries(): TabEntry[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getTechnicals())
+      .flatMap((technical) => {
+        const frets = technical.getFrets().map((fret) => fret.getNumber() ?? 0);
+        const strings = technical.getTabStrings().map((string) => string.getNumber() ?? 1);
+        const harmonicType = util.first(technical.getHarmonics())?.getType() ?? null;
+
+        const length = Math.min(frets.length, strings.length);
+        const entries = new Array<TabEntry>(length);
+        for (let index = 0; index < length; index++) {
+          entries[index] = {
+            position: { fret: frets[index], string: strings[index] },
+            harmonicType: harmonicType,
+          };
+        }
+        return entries;
+      });
   }
 }

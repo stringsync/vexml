@@ -10,7 +10,7 @@ import { Fraction } from '@/util';
  * scope of the `Fraction` class and provide meaningful labels to the value.
  */
 export class Division {
-  private constructor(private fraction: Fraction) {}
+  constructor(private fraction: Fraction) {}
 
   /** Creates an empty division. */
   static zero() {

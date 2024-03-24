@@ -228,6 +228,13 @@ export class Score {
         vfPedalMarking.setContext(vfContext).draw();
       });
 
+    // Draw vexflow.TabSlide elements.
+    spannersRendering.slides
+      .map((slide) => slide.vexflow.tabSlide)
+      .forEach((vfTabSlide) => {
+        vfTabSlide.setContext(vfContext).draw();
+      });
+
     // Draw measure labels.
     measures
       .map((measure) => measure.label)

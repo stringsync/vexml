@@ -11,10 +11,22 @@ export type SpannerData = {
     directions: musicxml.Direction[];
     octaveShift: musicxml.OctaveShift | null;
   };
-  vexflow: {
-    staveNote: vexflow.StaveNote;
-  };
+  vexflow:
+    | {
+        type: 'stavenote';
+        note: vexflow.StaveNote;
+      }
+    | {
+        type: 'tabnote';
+        note: vexflow.TabNote;
+      };
 };
 
 /** A value that is scoped to a specific part. */
 export type PartScoped<T> = { partId: string; value: T };
+
+/** Describes the coordinates of a tablature component. */
+export type TabPosition = {
+  string: number;
+  fret: number;
+};

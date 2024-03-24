@@ -87,7 +87,7 @@ export class OctaveShift {
                 text: octaveShift.getSize().toString(),
                 superscript: 'mb',
                 vexflow: {
-                  note: data.vexflow.staveNote,
+                  note: data.vexflow.note,
                   textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
                 },
               },
@@ -102,7 +102,7 @@ export class OctaveShift {
                 text: octaveShift.getSize().toString(),
                 superscript: 'va',
                 vexflow: {
-                  note: data.vexflow.staveNote,
+                  note: data.vexflow.note,
                   textBracketPosition: vexflow.TextBracketPosition.TOP,
                 },
               },
@@ -114,7 +114,7 @@ export class OctaveShift {
               {
                 type: 'continue',
                 address: data.address,
-                vexflow: { note: data.vexflow.staveNote },
+                vexflow: { note: data.vexflow.note },
               },
               container
             );
@@ -124,7 +124,7 @@ export class OctaveShift {
               {
                 type: 'stop',
                 address: data.address,
-                vexflow: { note: data.vexflow.staveNote },
+                vexflow: { note: data.vexflow.note },
               },
               container
             );
