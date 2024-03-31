@@ -70,7 +70,7 @@ export class Technicals {
       type: 'technicals',
       vexflow: {
         modifiers: [
-          ...this.getHarmonics(),
+          // Tab harmonics are rendered with angle brackets around the fret number instead.
           ...this.getFingerings(),
           ...this.getBends(),
           ...this.getTaps(),
