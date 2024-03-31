@@ -54,6 +54,8 @@ export class Technicals {
           ...this.getTripleTongues(),
           ...this.getStopped(),
           ...this.getSnapPizzicatos(),
+          ...this.getFrets(),
+          ...this.getStrings(),
           ...this.getBends(),
           ...this.getTaps(),
           ...this.getHeels(),
