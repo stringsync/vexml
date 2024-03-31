@@ -20,6 +20,7 @@ import { Tremolo, TremoloRendering } from './tremolo';
 import { Technicals, TechnicalsRendering } from './technicals';
 import { Rehearsal, RehearsalRendering } from './rehearsal';
 import { TabPosition } from './types';
+import { Tap, TapRendering } from './tap';
 
 const STEP_ORDER = [
   'Cb',
@@ -56,6 +57,8 @@ export type NoteModifierRendering =
   | TremoloRendering
   | TechnicalsRendering
   | RehearsalRendering;
+
+export type TabNoteModifierRendering = TapRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering;
@@ -435,6 +438,26 @@ export class Note {
       duration: util.first(notes)!.durationDenominator,
     });
 
+    const modifierRenderingGroups = notes.map<TabNoteModifierRendering[]>((note) => {
+      const renderings = new Array<TabNoteModifierRendering>();
+
+      for (const tap of note.getTaps()) {
+        renderings.push(tap.render());
+      }
+
+      return renderings;
+    });
+
+    for (let index = 0; index < modifierRenderingGroups.length; index++) {
+      for (const modifierRendering of modifierRenderingGroups[index]) {
+        switch (modifierRendering.type) {
+          case 'tap':
+            vfTabNote.addModifier(modifierRendering.vexflow.annotation, index);
+            break;
+        }
+      }
+    }
+
     const tabNoteRenderings = new Array<TabNoteRendering>();
 
     for (let index = 0; index < entries.length; index++) {
@@ -677,5 +700,13 @@ export class Note {
         }
         return entries;
       });
+  }
+
+  private getTaps(): Tap[] {
+    return this.musicXML.note
+      .getNotations()
+      .flatMap((notations) => notations.getTechnicals())
+      .flatMap((technical) => technical.getTaps())
+      .map(() => new Tap());
   }
 }
