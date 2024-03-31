@@ -71,6 +71,7 @@ export class Technicals {
       vexflow: {
         modifiers: [
           ...this.getHarmonics(),
+          ...this.getFingerings(),
           ...this.getBends(),
           ...this.getTaps(),
           ...this.getHeels(),
