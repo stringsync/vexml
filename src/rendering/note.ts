@@ -20,7 +20,6 @@ import { Tremolo, TremoloRendering } from './tremolo';
 import { Technicals, TechnicalsRendering } from './technicals';
 import { Rehearsal, RehearsalRendering } from './rehearsal';
 import { TabPosition } from './types';
-import { Tap, TapRendering } from './tap';
 
 const STEP_ORDER = [
   'Cb',
@@ -58,7 +57,7 @@ export type NoteModifierRendering =
   | TechnicalsRendering
   | RehearsalRendering;
 
-export type TabNoteModifierRendering = TapRendering;
+export type TabNoteModifierRendering = TechnicalsRendering;
 
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering;
@@ -253,7 +252,7 @@ export class Note {
       }
 
       for (const technical of note.getTechnicals()) {
-        renderings.push(technical.render());
+        renderings.push(technical.render({ anchor: 'stave' }));
       }
 
       for (const rehearsal of note.getRehearsals()) {
@@ -298,8 +297,8 @@ export class Note {
             vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
             break;
           case 'technicals':
-            modifierRendering.vexflow.modifiers.forEach((vfArticulation) => {
-              vfStaveNote.addModifier(vfArticulation, index);
+            modifierRendering.vexflow.modifiers.forEach((vfModifier) => {
+              vfStaveNote.addModifier(vfModifier, index);
             });
             break;
           case 'rehearsal':
@@ -441,8 +440,8 @@ export class Note {
     const modifierRenderingGroups = notes.map<TabNoteModifierRendering[]>((note) => {
       const renderings = new Array<TabNoteModifierRendering>();
 
-      for (const tap of note.getTaps()) {
-        renderings.push(tap.render());
+      for (const technicals of note.getTechnicals()) {
+        renderings.push(technicals.render({ anchor: 'tab' }));
       }
 
       return renderings;
@@ -451,8 +450,10 @@ export class Note {
     for (let index = 0; index < modifierRenderingGroups.length; index++) {
       for (const modifierRendering of modifierRenderingGroups[index]) {
         switch (modifierRendering.type) {
-          case 'tap':
-            vfTabNote.addModifier(modifierRendering.vexflow.annotation, index);
+          case 'technicals':
+            modifierRendering.vexflow.modifiers.forEach((vfModifier) => {
+              vfTabNote.addModifier(vfModifier, index);
+            });
             break;
         }
       }
@@ -700,13 +701,5 @@ export class Note {
         }
         return entries;
       });
-  }
-
-  private getTaps(): Tap[] {
-    return this.musicXML.note
-      .getNotations()
-      .flatMap((notations) => notations.getTechnicals())
-      .flatMap((technical) => technical.getTaps())
-      .map(() => new Tap());
   }
 }

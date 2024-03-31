@@ -12,6 +12,9 @@ export type TechnicalsRendering = {
   };
 };
 
+/** What the technical is attached to. */
+export type TechnicalsAnchor = 'stave' | 'tab';
+
 /**
  * Performance information for specific instruments.
  *
@@ -25,7 +28,18 @@ export class Technicals {
   }
 
   /** Renders the technicals. */
-  render(): TechnicalsRendering {
+  render(opts: { anchor: TechnicalsAnchor }): TechnicalsRendering {
+    switch (opts.anchor) {
+      case 'stave':
+        return this.renderStave();
+      case 'tab':
+        return this.renderTab();
+      default:
+        throw new Error(`unsupported technicals anchor: ${opts.anchor}`);
+    }
+  }
+
+  private renderStave(): TechnicalsRendering {
     return {
       type: 'technicals',
       vexflow: {
@@ -40,8 +54,21 @@ export class Technicals {
           ...this.getTripleTongues(),
           ...this.getStopped(),
           ...this.getSnapPizzicatos(),
-          ...this.getFrets(),
-          ...this.getStrings(),
+          ...this.getBends(),
+          ...this.getTaps(),
+          ...this.getHeels(),
+          ...this.getToes(),
+        ],
+      },
+    };
+  }
+
+  private renderTab(): TechnicalsRendering {
+    return {
+      type: 'technicals',
+      vexflow: {
+        modifiers: [
+          ...this.getHarmonics(),
           ...this.getBends(),
           ...this.getTaps(),
           ...this.getHeels(),
