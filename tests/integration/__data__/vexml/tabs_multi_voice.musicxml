@@ -119,7 +119,7 @@
     </notations>
    </note>
    <backup>
-    <duration>2</duration>
+    <duration>3</duration>
    </backup>
    <note>
     <pitch>
@@ -128,7 +128,7 @@
      <octave>4</octave>
     </pitch>
     <duration>1</duration>
-    <voice>1</voice>
+    <voice>2</voice>
     <type>quarter</type>
     <accidental>sharp</accidental>
     <stem>up</stem>
@@ -145,7 +145,7 @@
      <octave>4</octave>
     </pitch>
     <duration>1</duration>
-    <voice>1</voice>
+    <voice>2</voice>
     <type>quarter</type>
     <stem>up</stem>
     <notations>
