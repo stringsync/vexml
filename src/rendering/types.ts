@@ -28,5 +28,5 @@ export type PartScoped<T> = { partId: string; value: T };
 /** Describes the coordinates of a tablature component. */
 export type TabPosition = {
   string: number;
-  fret: number;
+  fret: number | 'X';
 };
