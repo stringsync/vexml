@@ -28,7 +28,7 @@ describe('vexml', () => {
     { filename: 'multi_part_formatting.musicxml', width: 900 },
     { filename: 'complex_formatting.musicxml', width: 900 },
     { filename: 'prelude_no_1_snippet.musicxml', width: 900 },
-    { filename: 'basic_tabs.musicxml', width: 900 },
+    { filename: 'tabs_basic.musicxml', width: 900 },
     { filename: 'tabs_with_stave.musicxml', width: 900 },
     { filename: 'tabs_slurs.musicxml', width: 900 },
     { filename: 'tabs_natural_harmonics.musicxml', width: 900 },
