@@ -34,6 +34,7 @@ describe('vexml', () => {
     { filename: 'tabs_natural_harmonics.musicxml', width: 900 },
     { filename: 'tabs_slides.musicxml', width: 900 },
     { filename: 'tabs_taps.musicxml', width: 900 },
+    { filename: 'tabs_dead_notes.musicxml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 

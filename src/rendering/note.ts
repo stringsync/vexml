@@ -683,6 +683,9 @@ export class Note {
   }
 
   private getTabEntries(): TabEntry[] {
+    // Dead notes are rendered as X's.
+    const notehead = this.musicXML.note.getNotehead() === 'cross' ? 'X' : null;
+
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getTechnicals())
@@ -695,7 +698,7 @@ export class Note {
         const entries = new Array<TabEntry>(length);
         for (let index = 0; index < length; index++) {
           entries[index] = {
-            position: { fret: frets[index], string: strings[index] },
+            position: { fret: notehead ?? frets[index], string: strings[index] },
             harmonicType: harmonicType,
           };
         }
