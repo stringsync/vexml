@@ -96,7 +96,7 @@ export type TabGraceNoteRendering = {
   type: 'tabgracenote';
   hasSlur: boolean;
   vexflow: {
-    graceNote: vexflow.GraceTabNote;
+    graceTabNote: vexflow.GraceTabNote;
   };
 };
 
@@ -519,7 +519,7 @@ export class Note {
         type: 'tabgracenote',
         hasSlur,
         vexflow: {
-          graceNote: vfGraceTabNote,
+          graceTabNote: vfGraceTabNote,
         },
       });
     }
