@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as conversions from './conversions';
 
 const BEND_WIDTH = 32;
 
@@ -76,6 +77,8 @@ export class Technicals {
           ...this.getTaps(),
           ...this.getHeels(),
           ...this.getToes(),
+          ...this.getUpStrokes(),
+          ...this.getDownStrokes(),
         ],
       },
     };
@@ -190,5 +193,21 @@ export class Technicals {
 
   private getToes(): vexflow.Annotation[] {
     return this.musicXML.technical.getToes().map(() => new vexflow.Annotation('^'));
+  }
+
+  private getUpStrokes(): vexflow.Articulation[] {
+    return this.musicXML.technical.getUpBows().map((upBow) => {
+      const placement = upBow.getPlacement();
+      const position = conversions.fromAboveBelowToModifierPosition(placement);
+      return new vexflow.Articulation('a|').setPosition(position);
+    });
+  }
+
+  private getDownStrokes(): vexflow.Articulation[] {
+    return this.musicXML.technical.getDownBows().map((downBow) => {
+      const placement = downBow.getPlacement();
+      const position = conversions.fromAboveBelowToModifierPosition(placement);
+      return new vexflow.Articulation('am').setPosition(position);
+    });
   }
 }
