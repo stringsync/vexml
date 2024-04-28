@@ -35,6 +35,29 @@ vexml.Vexml.fromMusicXML(musicXML).render({ element: div, width: width });
 
 This will render a child SVG element whose height will automatically adjust to fit the container. There is currently no option to disable this.
 
+## Motivation
+
+> [!NOTE]
+> At the time of writing, most of these features are aspirational. Please see the [Usage](#Usage) section for a list of available features.
+
+### Render MusicXML in Any Web Browser 🌐🎶
+
+MusicXML is the standard for digital sheet music, butvisualizing it often requires specialized desktop software.
+This library empowers you to bring musical notation to the web, making it accessible on any device with a browser.
+
+### Navigate Musical Renderings 🎼🗺️
+
+- Programmatic scrolling and zooming to specific sections.
+- Jumping between measures or movements.
+- Synchronizing the visual score with audio playback.
+- Navigating based on musical events (e.g., chord changes).
+  
+### Interactive User Experience 🖱️🎹
+
+- Built-in hooks for reacting to user input (clicks, keyboard events, MIDI).
+- Customizable interactions (e.g., highlighting notes, changing playback speed).
+- Opportunities to build educational tools, interactive performances, or adaptive learning experiences.
+
 ## Development
 
 ### Prerequisites
