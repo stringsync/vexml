@@ -51,7 +51,7 @@ This library empowers you to bring musical notation to the web, making it access
 - Jumping between measures or movements.
 - Synchronizing the visual score with audio playback.
 - Navigating based on musical events (e.g., chord changes).
-  
+
 ### Interactive User Experience 🖱️🎹
 
 - Built-in hooks for reacting to user input (clicks, keyboard events, MIDI).
