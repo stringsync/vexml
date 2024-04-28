@@ -42,7 +42,7 @@ This will render a child SVG element whose height will automatically adjust to f
 
 ### Render MusicXML in Any Web Browser 🌐🎶
 
-MusicXML is the standard for digital sheet music, butvisualizing it often requires specialized desktop software.
+MusicXML is the standard for digital sheet music, but visualizing it often requires specialized desktop software.
 This library empowers you to bring musical notation to the web, making it accessible on any device with a browser.
 
 ### Navigate Musical Renderings 🎼🗺️
