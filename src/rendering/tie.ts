@@ -130,9 +130,13 @@ export class Tie {
   }
 
   private getVfSlurDirection(): number {
-    const first = this.fragments[0];
-    const vfStemDirection = first.vexflow.note.getStemDirection();
+    const vfNote = this.fragments[0].vexflow.note;
 
+    if (vfNote instanceof vexflow.TabNote) {
+      return -1;
+    }
+
+    const vfStemDirection = vfNote.getStemDirection();
     switch (vfStemDirection) {
       case vexflow.Stem.UP:
         return 1;
