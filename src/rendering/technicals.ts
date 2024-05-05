@@ -163,12 +163,22 @@ export class Technicals {
       } else if (semitones === 0.5) {
         text = '1/4';
       } else {
-        const fraction = util.Fraction.fromDecimal(semitones).toMixed();
-        text = `${fraction.whole} ${fraction.remainder.numerator}/${fraction.remainder.denominator}`;
+        const { whole, remainder } = util.Fraction.fromDecimal(semitones).toMixed();
+        if (whole > 0 && remainder.numerator > 0) {
+          text = `${whole} ${remainder.numerator}/${remainder.denominator}`;
+        } else if (whole > 0) {
+          text = `${whole}`;
+        } else if (remainder.numerator > 0) {
+          text = `${remainder.numerator}/${remainder.denominator}`;
+        }
       }
 
       let type: number;
       switch (bend.getType()) {
+        case 'pre-bend':
+          // TODO: Support pre-bends when they are supported by VexFlow.
+          type = vexflow.Bend.UP;
+          break;
         case 'release':
           type = vexflow.Bend.DOWN;
           break;
