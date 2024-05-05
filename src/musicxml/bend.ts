@@ -12,7 +12,7 @@ export class Bend {
 
   /** Returns the number of semitones to bend. */
   getAlter(): number {
-    return this.element.attr('alter').withDefault(1).float();
+    return this.element.first('bend-alter')?.content().float() ?? 1;
   }
 
   /** Returns the type of bend. */
