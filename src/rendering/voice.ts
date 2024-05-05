@@ -214,7 +214,7 @@ export class Voice {
     const address = opts.address;
     const spanners = opts.spanners;
 
-    const voiceEntryRenderings = this.entries.map(({ value }) => {
+    const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>(({ value }) => {
       if (value instanceof Note) {
         return value.render({ address, spanners });
       }
@@ -262,10 +262,35 @@ export class Voice {
       }
     }
 
+    this.attachStaveGraceNotes(voiceEntryRenderings);
+    this.attachTabGraceNotes(voiceEntryRenderings);
+
+    const fraction = this.timeSignature.toFraction();
+    const vfVoice = new vexflow.Voice({
+      numBeats: fraction.numerator,
+      beatValue: fraction.denominator,
+    })
+      .setStrict(false)
+      .addTickables(vfTickables);
+
+    const placeholderVoiceRenderings = this.getPlaceholderVoices().map((voice) => voice.render({ address, spanners }));
+
+    return {
+      type: 'voice',
+      address,
+      vexflow: {
+        voice: vfVoice,
+      },
+      entries: voiceEntryRenderings,
+      placeholders: placeholderVoiceRenderings,
+    };
+  }
+
+  private attachStaveGraceNotes(voiceEntryRenderings: VoiceEntryRendering[]) {
     let vfGraceNotes = new Array<vexflow.GraceNote>();
     let hasSlur = false;
 
-    // Attach preceding grace notes to the nearest stave note.
+    // Attach preceding stave grace notes to the nearest stave note.
     for (const rendering of voiceEntryRenderings) {
       let vfStaveNote: vexflow.StaveNote | null = null;
 
@@ -303,26 +328,52 @@ export class Voice {
         hasSlur = false;
       }
     }
+  }
 
-    const fraction = this.timeSignature.toFraction();
-    const vfVoice = new vexflow.Voice({
-      numBeats: fraction.numerator,
-      beatValue: fraction.denominator,
-    })
-      .setStrict(false)
-      .addTickables(vfTickables);
+  private attachTabGraceNotes(voiceEntryRenderings: VoiceEntryRendering[]) {
+    let vfGraceTabNotes = new Array<vexflow.GraceTabNote>();
+    let hasSlur = false;
 
-    const placeholderVoiceRenderings = this.getPlaceholderVoices().map((voice) => voice.render({ address, spanners }));
+    // Attach preceding stave grace notes to the nearest stave note.
+    for (const rendering of voiceEntryRenderings) {
+      let vfTabNote: vexflow.TabNote | null = null;
 
-    return {
-      type: 'voice',
-      address,
-      vexflow: {
-        voice: vfVoice,
-      },
-      entries: voiceEntryRenderings,
-      placeholders: placeholderVoiceRenderings,
-    };
+      switch (rendering.type) {
+        case 'tabgracenote':
+          vfGraceTabNotes.push(rendering.vexflow.graceTabNote);
+          hasSlur = hasSlur || rendering.hasSlur;
+          break;
+        case 'tabgracechord':
+          vfGraceTabNotes.push(rendering.tabGraceNotes[0].vexflow.graceTabNote);
+          hasSlur = hasSlur || rendering.tabGraceNotes[0].hasSlur;
+          break;
+        case 'tabnote':
+          vfTabNote = rendering.vexflow.tabNote;
+          break;
+        case 'tabchord':
+          vfTabNote = rendering.tabNotes[0].vexflow.tabNote;
+          break;
+      }
+
+      if (vfTabNote && vfGraceTabNotes.length > 0) {
+        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceTabNotes, hasSlur).setPosition(
+          vexflow.ModifierPosition.LEFT
+        );
+
+        if (
+          vfGraceTabNotes.length > 1 &&
+          vfGraceTabNotes.every((vfGraceNote) =>
+            DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration())
+          )
+        ) {
+          vfGraceNoteGroup.beamNotes();
+        }
+
+        vfTabNote.addModifier(vfGraceNoteGroup);
+        vfGraceTabNotes = [];
+        hasSlur = false;
+      }
+    }
   }
 
   private getPlaceholderVoices(): Voice[] {

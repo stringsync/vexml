@@ -28,11 +28,19 @@ describe('vexml', () => {
     { filename: 'multi_part_formatting.musicxml', width: 900 },
     { filename: 'complex_formatting.musicxml', width: 900 },
     { filename: 'prelude_no_1_snippet.musicxml', width: 900 },
-    { filename: 'basic_tabs.musicxml', width: 900 },
+    { filename: 'tabs_basic.musicxml', width: 900 },
     { filename: 'tabs_with_stave.musicxml', width: 900 },
     { filename: 'tabs_slurs.musicxml', width: 900 },
     { filename: 'tabs_natural_harmonics.musicxml', width: 900 },
     { filename: 'tabs_slides.musicxml', width: 900 },
+    { filename: 'tabs_taps.musicxml', width: 900 },
+    { filename: 'tabs_dead_notes.musicxml', width: 900 },
+    { filename: 'tabs_multi_voice.musicxml', width: 900 },
+    { filename: 'tabs_grace_notes.musicxml', width: 900 },
+    { filename: 'tabs_stroke_direction.musicxml', width: 900 },
+    { filename: 'tabs_ties.musicxml', width: 900 },
+    { filename: 'tabs_vibrato.musicxml', width: 900 },
+    { filename: 'tabs_bends.musicxml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 

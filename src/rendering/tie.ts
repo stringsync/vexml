@@ -8,7 +8,7 @@ import { SpannerData } from './types';
 export type TieRendering = {
   type: 'tie';
   vexflow: {
-    tie: vexflow.StaveTie;
+    tie: vexflow.StaveTie | vexflow.TabTie;
   };
 };
 
@@ -115,7 +115,12 @@ export class Tie {
     }
 
     const vfSlurDirection = this.getVfSlurDirection();
-    const vfTie = new vexflow.StaveTie(vfTieNotes).setDirection(vfSlurDirection);
+
+    const vfNote = this.fragments[0].vexflow.note;
+    const vfTie =
+      vfNote instanceof vexflow.TabNote
+        ? new vexflow.TabTie(vfTieNotes).setDirection(vfSlurDirection)
+        : new vexflow.StaveTie(vfTieNotes).setDirection(vfSlurDirection);
 
     return {
       type: 'tie',
@@ -130,9 +135,13 @@ export class Tie {
   }
 
   private getVfSlurDirection(): number {
-    const first = this.fragments[0];
-    const vfStemDirection = first.vexflow.note.getStemDirection();
+    const vfNote = this.fragments[0].vexflow.note;
 
+    if (vfNote instanceof vexflow.TabNote) {
+      return -1;
+    }
+
+    const vfStemDirection = vfNote.getStemDirection();
     switch (vfStemDirection) {
       case vexflow.Stem.UP:
         return 1;

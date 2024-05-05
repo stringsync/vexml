@@ -200,7 +200,7 @@ export const fromBarlineTypeToEndingStaveConnectorType = (
 };
 
 /** Converts `Notehead` to a `NoteheadSuffix`. Defaults to ''. */
-export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null): NoteheadSuffix => {
+export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null): NoteheadSuffix | null => {
   switch (notehead) {
     case 'circle dot':
     case 'cluster':
@@ -244,7 +244,7 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
     case 'x':
       return 'X';
     default:
-      return '';
+      return null;
   }
 };
 
