@@ -1,6 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as conversions from './conversions';
 
 const BEND_WIDTH = 32;
 
@@ -11,6 +12,9 @@ export type TechnicalsRendering = {
     modifiers: vexflow.Modifier[];
   };
 };
+
+/** What the technical is attached to. */
+export type TechnicalsAnchor = 'stave' | 'tab';
 
 /**
  * Performance information for specific instruments.
@@ -25,7 +29,18 @@ export class Technicals {
   }
 
   /** Renders the technicals. */
-  render(): TechnicalsRendering {
+  render(opts: { anchor: TechnicalsAnchor }): TechnicalsRendering {
+    switch (opts.anchor) {
+      case 'stave':
+        return this.renderStave();
+      case 'tab':
+        return this.renderTab();
+      default:
+        throw new Error(`unsupported technicals anchor: ${opts.anchor}`);
+    }
+  }
+
+  private renderStave(): TechnicalsRendering {
     return {
       type: 'technicals',
       vexflow: {
@@ -46,6 +61,24 @@ export class Technicals {
           ...this.getTaps(),
           ...this.getHeels(),
           ...this.getToes(),
+        ],
+      },
+    };
+  }
+
+  private renderTab(): TechnicalsRendering {
+    return {
+      type: 'technicals',
+      vexflow: {
+        modifiers: [
+          // Tab harmonics are rendered with angle brackets around the fret number instead.
+          ...this.getFingerings(),
+          ...this.getBends(),
+          ...this.getTaps(),
+          ...this.getHeels(),
+          ...this.getToes(),
+          ...this.getUpStrokes(),
+          ...this.getDownStrokes(),
         ],
       },
     };
@@ -130,12 +163,22 @@ export class Technicals {
       } else if (semitones === 0.5) {
         text = '1/4';
       } else {
-        const fraction = util.Fraction.fromDecimal(semitones).toMixed();
-        text = `${fraction.whole} ${fraction.remainder.numerator}/${fraction.remainder.denominator}`;
+        const { whole, remainder } = util.Fraction.fromDecimal(semitones).toMixed();
+        if (whole > 0 && remainder.numerator > 0) {
+          text = `${whole} ${remainder.numerator}/${remainder.denominator}`;
+        } else if (whole > 0) {
+          text = `${whole}`;
+        } else if (remainder.numerator > 0) {
+          text = `${remainder.numerator}/${remainder.denominator}`;
+        }
       }
 
       let type: number;
       switch (bend.getType()) {
+        case 'pre-bend':
+          // TODO: Support pre-bends when they are supported by VexFlow.
+          type = vexflow.Bend.UP;
+          break;
         case 'release':
           type = vexflow.Bend.DOWN;
           break;
@@ -160,5 +203,21 @@ export class Technicals {
 
   private getToes(): vexflow.Annotation[] {
     return this.musicXML.technical.getToes().map(() => new vexflow.Annotation('^'));
+  }
+
+  private getUpStrokes(): vexflow.Articulation[] {
+    return this.musicXML.technical.getUpBows().map((upBow) => {
+      const placement = upBow.getPlacement();
+      const position = conversions.fromAboveBelowToModifierPosition(placement);
+      return new vexflow.Articulation('a|').setPosition(position);
+    });
+  }
+
+  private getDownStrokes(): vexflow.Articulation[] {
+    return this.musicXML.technical.getDownBows().map((downBow) => {
+      const placement = downBow.getPlacement();
+      const position = conversions.fromAboveBelowToModifierPosition(placement);
+      return new vexflow.Articulation('am').setPosition(position);
+    });
   }
 }

@@ -172,7 +172,7 @@ export class Score {
         vfCurve?.setContext(vfContext).draw();
       });
 
-    // Draw vexflow.StaveTie elements for ties.
+    // Draw vexflow.StaveTie and vexflow.TabTie elements.
     spannersRendering.ties
       .flatMap((tie) => tie.vexflow.tie)
       .forEach((vfStaveTie) => {

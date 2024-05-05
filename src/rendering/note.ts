@@ -57,6 +57,8 @@ export type NoteModifierRendering =
   | TechnicalsRendering
   | RehearsalRendering;
 
+export type TabNoteModifierRendering = TechnicalsRendering;
+
 /** The result of rendering a Note. */
 export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering;
 
@@ -94,7 +96,7 @@ export type TabGraceNoteRendering = {
   type: 'tabgracenote';
   hasSlur: boolean;
   vexflow: {
-    graceNote: vexflow.GraceTabNote;
+    graceTabNote: vexflow.GraceTabNote;
   };
 };
 
@@ -250,7 +252,7 @@ export class Note {
       }
 
       for (const technical of note.getTechnicals()) {
-        renderings.push(technical.render());
+        renderings.push(technical.render({ anchor: 'stave' }));
       }
 
       for (const rehearsal of note.getRehearsals()) {
@@ -295,8 +297,8 @@ export class Note {
             vfStaveNote.addModifier(modifierRendering.vexflow.tremolo, index);
             break;
           case 'technicals':
-            modifierRendering.vexflow.modifiers.forEach((vfArticulation) => {
-              vfStaveNote.addModifier(vfArticulation, index);
+            modifierRendering.vexflow.modifiers.forEach((vfModifier) => {
+              vfStaveNote.addModifier(vfModifier, index);
             });
             break;
           case 'rehearsal':
@@ -435,6 +437,28 @@ export class Note {
       duration: util.first(notes)!.durationDenominator,
     });
 
+    const modifierRenderingGroups = notes.map<TabNoteModifierRendering[]>((note) => {
+      const renderings = new Array<TabNoteModifierRendering>();
+
+      for (const technicals of note.getTechnicals()) {
+        renderings.push(technicals.render({ anchor: 'tab' }));
+      }
+
+      return renderings;
+    });
+
+    for (let index = 0; index < modifierRenderingGroups.length; index++) {
+      for (const modifierRendering of modifierRenderingGroups[index]) {
+        switch (modifierRendering.type) {
+          case 'technicals':
+            modifierRendering.vexflow.modifiers.forEach((vfModifier) => {
+              vfTabNote.addModifier(vfModifier, index);
+            });
+            break;
+        }
+      }
+    }
+
     const tabNoteRenderings = new Array<TabNoteRendering>();
 
     for (let index = 0; index < entries.length; index++) {
@@ -495,7 +519,7 @@ export class Note {
         type: 'tabgracenote',
         hasSlur,
         vexflow: {
-          graceNote: vfGraceTabNote,
+          graceTabNote: vfGraceTabNote,
         },
       });
     }
@@ -659,6 +683,9 @@ export class Note {
   }
 
   private getTabEntries(): TabEntry[] {
+    // Dead notes are rendered as X's.
+    const notehead = this.musicXML.note.getNotehead() === 'cross' ? 'X' : null;
+
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getTechnicals())
@@ -671,7 +698,7 @@ export class Note {
         const entries = new Array<TabEntry>(length);
         for (let index = 0; index < length; index++) {
           entries[index] = {
-            position: { fret: frets[index], string: strings[index] },
+            position: { fret: notehead ?? frets[index], string: strings[index] },
             harmonicType: harmonicType,
           };
         }
