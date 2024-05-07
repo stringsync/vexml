@@ -1,7 +1,13 @@
-import React from 'react';
+import Title from './components/Title';
 
 function App() {
-  return <div>Hello, world!</div>;
+  return (
+    <div className="container mt-4">
+      <Title />
+
+      <br />
+    </div>
+  );
 }
 
 export default App;
