@@ -1,8 +1,9 @@
-import { RefObject, useLayoutEffect, useState } from 'react';
-import { debounce } from '../helpers';
+import { RefObject, useLayoutEffect } from 'react';
+import { useDebouncedState } from './useDebouncedState';
 
 export const useWidth = (elementRef: RefObject<HTMLElement>, debounceDelayMs: number): number => {
-  const [width, setWidth] = useState(() => elementRef.current?.clientWidth ?? 0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, debouncedWidth, setWidth] = useDebouncedState(elementRef.current?.clientWidth ?? 0, debounceDelayMs);
 
   useLayoutEffect(() => {
     const element = elementRef.current;
@@ -13,19 +14,16 @@ export const useWidth = (elementRef: RefObject<HTMLElement>, debounceDelayMs: nu
 
     setWidth(element.clientWidth);
 
-    const [callback, cancel] = debounce((entries) => {
+    const resizeObserver = new ResizeObserver((entries) => {
       setWidth(entries[0].contentRect.width);
-    }, debounceDelayMs);
-
-    const resizeObserver = new ResizeObserver(callback);
+    });
 
     resizeObserver.observe(element);
 
     return () => {
-      cancel();
       resizeObserver.disconnect();
     };
-  }, [elementRef, debounceDelayMs]);
+  }, [elementRef, setWidth]);
 
-  return width;
+  return debouncedWidth;
 };
