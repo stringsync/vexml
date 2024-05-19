@@ -1,17 +1,16 @@
-/**
- * A source of MusicXML data.
- */
+/** A MusicXML data source. */
 export type Source =
   | {
-      type: 'none';
-    }
-  | {
       type: 'remote';
-      key: string;
       url: string;
     }
   | {
       type: 'raw';
-      key: string;
       musicXML: string;
     };
+
+/** A wrapper for keying values. */
+export type Keyed<T> = {
+  key: string;
+  value: T;
+};
