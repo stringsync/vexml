@@ -1,5 +1,3 @@
-import.meta.glob('./examples/**/*.musicxml', { as: 'raw' });
-
 export function getExamples() {
   const examples = Object.entries(import.meta.glob('./examples/**/*.musicxml', { as: 'raw' }))
     .sort()

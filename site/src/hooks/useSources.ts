@@ -2,8 +2,17 @@ import { LOCAL_STORAGE_VEXML_SOURCES_KEY } from '../constants';
 import { Source } from '../types';
 import { useJsonLocalStorage } from './useJsonLocalStorage';
 
+const PITCHES_MUSICXML_URL = new URL('../examples/lilypond/01a-Pitches-Pitches.musicxml', import.meta.url);
+
+const DEFAULT_SOURCES: Source[] = [{ type: 'remote', url: PITCHES_MUSICXML_URL.href }];
+
 export const useSources = () => {
   const [sources, setSources] = useJsonLocalStorage(LOCAL_STORAGE_VEXML_SOURCES_KEY, [], isSources);
+
+  if (sources.length === 0) {
+    setSources(DEFAULT_SOURCES);
+  }
+
   return [sources, setSources] as const;
 };
 
@@ -14,12 +23,10 @@ const isSources = (data: unknown): data is Source[] =>
       return false;
     }
     switch (item.type) {
-      case 'none':
-        return true;
       case 'remote':
-        return typeof item.key === 'string' && typeof item.url === 'string';
+        return typeof item.url === 'string';
       case 'raw':
-        return typeof item.key === 'string' && typeof item.musicXML === 'string';
+        return typeof item.musicXML === 'string';
       default:
         return false;
     }

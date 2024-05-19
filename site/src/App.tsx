@@ -1,5 +1,5 @@
 import { Title } from './components/Title';
-import { Workspace } from './components/Workspace';
+import { SourceWorkspace } from './components/SourceWorkspace';
 import { DEPRECATED_LOCAL_STORAGE_KEYS } from './constants';
 import { useLocalStorageCleanup } from './hooks/useLocalStorageCleanup';
 import { useSources } from './hooks/useSources';
@@ -19,7 +19,7 @@ export const App = () => {
 
       <br />
 
-      <Workspace sources={sources} onSourcesChange={onSourcesChange} />
+      <SourceWorkspace sources={sources} onSourcesChange={onSourcesChange} />
     </div>
   );
 };
