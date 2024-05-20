@@ -5,7 +5,7 @@ export type SourceInputProps = {
 };
 
 export const SourceInput = (props: SourceInputProps) => {
-  const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const onClick = () => {
     props.onAdd({
       type: 'raw',
       musicXML: '',

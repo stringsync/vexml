@@ -65,12 +65,10 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
     <div className="d-grid gap-2">
       <SourceInput onAdd={onSourceUnshift} />
 
-      {keyedSources.map(({ key, value: source }, index) => (
+      {keyedSources.map(({ key, value: source }) => (
         <SourceDisplay
           key={key}
           source={source}
-          hasPrevious={index > 0}
-          hasNext={index < keyedSources.length - 1}
           removable={removable}
           onUpdate={onSourceUpdate(key)}
           onRemove={onSourceRemove(key)}
