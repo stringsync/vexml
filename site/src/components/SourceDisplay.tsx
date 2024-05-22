@@ -24,6 +24,9 @@ export const SourceDisplay = (props: SourceProps) => {
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(nextButtonRef, 'top', 'Next');
 
+  const lockIconRef = useRef<HTMLElement>(null);
+  useTooltip(lockIconRef, 'right', 'There are no other vexml versions available');
+
   const [vexmlResult, setVexmlResult] = useState<VexmlResult>({ type: 'none' });
 
   return (
@@ -49,7 +52,15 @@ export const SourceDisplay = (props: SourceProps) => {
           </button>
         </div>
 
-        <div className="text-center mt-3">
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex align-items-center">
+            <select disabled className="form-select form-select-sm">
+              <option selected>0.0.0</option>
+            </select>
+
+            <i ref={lockIconRef} className="bi bi-lock-fill ms-2"></i>
+          </div>
+
           {props.source.type === 'remote' && (
             <small className="text-muted">
               <a href={props.source.url} target="_blank" rel="noopener noreferrer">
