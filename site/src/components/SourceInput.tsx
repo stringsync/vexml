@@ -9,19 +9,19 @@ export type SourceInputProps = {
 
 export const SourceInput = (props: SourceInputProps) => {
   const sourceTypeRadioName = useId();
-  const rawRadioId = useId();
+  const localRadioId = useId();
   const exampleRadioId = useId();
   const remoteRadioId = useId();
 
   const modalRef = useRef<HTMLDivElement>(null);
   const modal = useModal(modalRef);
 
-  const [nextSource, setNextSource] = useState<Source>(() => getDefaultSource('raw'));
+  const [nextSource, setNextSource] = useState<Source>(() => getDefaultSource('local'));
 
   const onModalContinue = () => {
     props.onUpdate(nextSource);
     modal.hide();
-    setNextSource(getDefaultSource('raw'));
+    setNextSource(getDefaultSource('local'));
   };
 
   const onRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ export const SourceInput = (props: SourceInputProps) => {
     setNextSource(source);
 
     const isEmpty =
-      (props.source.type === 'raw' && props.source.musicXML.length === 0) ||
+      (props.source.type === 'local' && props.source.musicXML.length === 0) ||
       (props.source.type === 'remote' && props.source.url.length === 0) ||
       (props.source.type === 'example' && props.source.example.type === 'none');
 
@@ -51,12 +51,12 @@ export const SourceInput = (props: SourceInputProps) => {
           className="form-check-input"
           type="radio"
           name={sourceTypeRadioName}
-          id={rawRadioId}
-          value="raw"
-          checked={props.source.type === 'raw'}
+          id={localRadioId}
+          value="local"
+          checked={props.source.type === 'local'}
           onChange={onRadioChange}
         />
-        <label className="form-check-label" htmlFor={rawRadioId}>
+        <label className="form-check-label" htmlFor={localRadioId}>
           local
         </label>
       </div>
@@ -113,11 +113,11 @@ export const SourceInput = (props: SourceInputProps) => {
 };
 
 const isSourceType = (value: any): value is Source['type'] =>
-  value === 'raw' || value === 'remote' || value === 'example';
+  value === 'local' || value === 'remote' || value === 'example';
 
 const getDefaultSource = (type: Source['type']): Source => {
   switch (type) {
-    case 'raw':
+    case 'local':
       return { type, musicXML: '' };
     case 'remote':
       return { type, url: '' };

@@ -1,7 +1,7 @@
 /** A MusicXML data source. */
 export type Source =
   | {
-      type: 'raw';
+      type: 'local';
       musicXML: string;
     }
   | {

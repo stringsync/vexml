@@ -25,7 +25,7 @@ const isSources = (data: unknown): data is Source[] =>
     switch (item.type) {
       case 'remote':
         return typeof item.url === 'string';
-      case 'raw':
+      case 'local':
         return typeof item.musicXML === 'string';
       case 'example':
         switch (item.example.type) {

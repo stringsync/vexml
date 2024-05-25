@@ -20,7 +20,7 @@ export const useMusicXML = (source: Source) => {
             .catch((e) => (e instanceof Error ? setError(e) : setError(new Error(String(e)))))
         );
         break;
-      case 'raw':
+      case 'local':
         setMusicXML(source.musicXML);
         break;
     }
