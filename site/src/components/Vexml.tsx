@@ -1,8 +1,9 @@
 import * as vexml from '@/vexml';
+import * as errors from '../util/errors';
 import { useEffect, useRef } from 'react';
 import { useWidth } from '../hooks/useWidth';
 
-const DEBOUNCE_DELAY_MS = 100;
+const THROTTLE_DELAY_MS = 50;
 
 export type VexmlProps = {
   musicXML: string;
@@ -19,7 +20,7 @@ export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
   const onResult = props.onResult;
   const containerRef = useRef<HTMLDivElement>(null);
-  const width = useWidth(containerRef, DEBOUNCE_DELAY_MS);
+  const width = useWidth(containerRef, THROTTLE_DELAY_MS);
 
   useEffect(() => {
     onResult({ type: 'none' });
@@ -54,7 +55,7 @@ export const Vexml = (props: VexmlProps) => {
     } catch (e) {
       onResult({
         type: 'error',
-        error: e instanceof Error ? e : new Error(String(e)),
+        error: errors.wrap(e),
         start,
         end: new Date(),
         width,
