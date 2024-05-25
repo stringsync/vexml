@@ -66,7 +66,7 @@ export const SourceDisplay = (props: SourceProps) => {
             </div>
           </div>
 
-          <button type="button" className="btn btn-outline-danger" onClick={props.onRemove} disabled={!props.removable}>
+          <button type="button" className="btn btn-danger" onClick={props.onRemove} disabled={!props.removable}>
             <i className="bi bi-trash"></i> Remove
           </button>
         </div>
@@ -74,7 +74,7 @@ export const SourceDisplay = (props: SourceProps) => {
         <br />
 
         <div id={sourceInputCardId} className={sourceInputCardClassName}>
-          <SourceInput source={props.source} onUpdate={props.onUpdate} />
+          <SourceInput source={props.source} musicXML={musicXML} onUpdate={props.onUpdate} />
         </div>
 
         <br />

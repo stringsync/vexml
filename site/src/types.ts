@@ -10,14 +10,17 @@ export type Source =
     }
   | {
       type: 'example';
-      example:
-        | {
-            type: 'none';
-          }
-        | {
-            type: 'single';
-            path: string;
-          };
+      example: Example;
+    };
+
+/** An example from integration tests */
+export type Example =
+  | {
+      type: 'none';
+    }
+  | {
+      type: 'single';
+      path: string;
     };
 
 /** A wrapper for keying values. */
