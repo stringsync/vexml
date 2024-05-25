@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
 import { Vexml, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
+import { SourceInput } from './SourceInput';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 
@@ -17,6 +18,7 @@ export type SourceProps = {
 
 export const SourceDisplay = (props: SourceProps) => {
   const [musicXML, isMusicXMLLoading, musicXMLError] = useMusicXML(props.source);
+  const isMusicXMLEmpty = !isMusicXMLLoading && !musicXMLError && musicXML.length === 0;
 
   const previousButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(previousButtonRef, 'top', 'Previous');
@@ -29,12 +31,22 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const [vexmlResult, setVexmlResult] = useState<VexmlResult>({ type: 'none' });
 
+  const sourceInputCardId = useId();
+  const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
+  const [sourceInputCardClassName] = useState(() => (isMusicXMLEmpty ? 'show' : 'collapse'));
+
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
         <div className="d-flex justify-content-between">
           <div className="d-flex gap-2">
-            <button type="button" className="btn btn-primary">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={isMusicXMLEmpty}
+              data-bs-toggle="collapse"
+              data-bs-target={sourceInputCardSelector}
+            >
               <i className="bi bi-pencil-square"></i> Edit
             </button>
 
@@ -45,6 +57,13 @@ export const SourceDisplay = (props: SourceProps) => {
             <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
               <i className="bi bi-github"></i> Report an Issue
             </a>
+
+            <div className="d-flex align-items-center">
+              <select disabled className="form-select" defaultValue="0.0.0">
+                <option value="0.0.0">0.0.0</option>
+              </select>
+              <i ref={lockIconRef} className="bi bi-lock-fill ms-2"></i>
+            </div>
           </div>
 
           <button type="button" className="btn btn-outline-danger" onClick={props.onRemove} disabled={!props.removable}>
@@ -52,24 +71,10 @@ export const SourceDisplay = (props: SourceProps) => {
           </button>
         </div>
 
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div className="d-flex align-items-center">
-            <select disabled className="form-select form-select-sm">
-              <option selected>0.0.0</option>
-            </select>
+        <br />
 
-            <i ref={lockIconRef} className="bi bi-lock-fill ms-2"></i>
-          </div>
-
-          {props.source.type === 'remote' && (
-            <small className="text-muted">
-              <a href={props.source.url} target="_blank" rel="noopener noreferrer">
-                {props.source.url}
-              </a>
-            </small>
-          )}
-
-          {props.source.type === 'raw' && <small className="text-muted">local</small>}
+        <div id={sourceInputCardId} className={sourceInputCardClassName}>
+          <SourceInput source={props.source} onUpdate={props.onUpdate} />
         </div>
 
         <br />

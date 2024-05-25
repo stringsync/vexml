@@ -27,6 +27,15 @@ const isSources = (data: unknown): data is Source[] =>
         return typeof item.url === 'string';
       case 'raw':
         return typeof item.musicXML === 'string';
+      case 'example':
+        switch (item.example.type) {
+          case 'none':
+            return true;
+          case 'single':
+            return typeof item.example.path === 'string';
+          default:
+            return false;
+        }
       default:
         return false;
     }

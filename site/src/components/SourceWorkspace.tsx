@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNextKey } from '../hooks/useNextKey';
 import { Keyed, Source } from '../types';
 import { SourceDisplay } from './SourceDisplay';
-import { SourceInput } from './SourceInput';
 import { isEqual } from '../util/isEqual';
 
 export type SourceWorkspaceProps = {
@@ -33,14 +32,10 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
     props.onSourcesChange(keyedSources.map(({ value }) => value));
   };
 
-  const onSourceUnshift = (source: Source) => {
-    const nextKeyedSources = [{ key: nextKey(), value: source }, ...keyedSources];
-    setKeyedSources(nextKeyedSources);
-    onSourcesChange(nextKeyedSources);
-  };
-
-  const onSourcePush = (source: Source) => {
-    const nextKeyedSources = [...keyedSources, { key: nextKey(), value: source }];
+  const onAddClick = (index: number) => () => {
+    const keyedSource: Keyed<Source> = { key: nextKey(), value: { type: 'raw', musicXML: '' } };
+    const nextKeyedSources = [...keyedSources];
+    nextKeyedSources.splice(index, 0, keyedSource);
     setKeyedSources(nextKeyedSources);
     onSourcesChange(nextKeyedSources);
   };
@@ -63,19 +58,26 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
 
   return (
     <div className="d-grid gap-2">
-      <SourceInput onAdd={onSourceUnshift} />
+      {keyedSources.map(({ key, value: source }, index) => (
+        <Fragment key={key}>
+          <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index)}>
+            <i className="bi bi-plus"></i>
+          </button>
 
-      {keyedSources.map(({ key, value: source }) => (
-        <SourceDisplay
-          key={key}
-          source={source}
-          removable={removable}
-          onUpdate={onSourceUpdate(key)}
-          onRemove={onSourceRemove(key)}
-        />
+          <SourceDisplay
+            source={source}
+            removable={removable}
+            onUpdate={onSourceUpdate(key)}
+            onRemove={onSourceRemove(key)}
+          />
+
+          {index === keyedSources.length - 1 && (
+            <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index + 1)}>
+              <i className="bi bi-plus"></i>
+            </button>
+          )}
+        </Fragment>
       ))}
-
-      <SourceInput onAdd={onSourcePush} />
     </div>
   );
 };

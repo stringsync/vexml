@@ -53,9 +53,9 @@ export const SourceInfo = (props: SourceInfoProps) => {
       )}
 
       {state.type === 'musicxmlempty' && (
-        <div className="alert alert-light d-flex align-items-center" role="alert">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          <div>Click "Edit" or drop a MusicXML file anywhere on this card</div>
+        <div className="alert alert-warning d-flex align-items-center" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>MusicXML document is empty</div>
         </div>
       )}
 
