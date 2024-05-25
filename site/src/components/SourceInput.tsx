@@ -13,9 +13,16 @@ export const SourceInput = (props: SourceInputProps) => {
   const [source, setSource] = useState<Source>(props.source);
 
   const timeoutRef = useRef(0);
-  const update = (source: Source) => {
-    setSource(source);
+
+  const updateNow = (source: Source) => {
     window.clearTimeout(timeoutRef.current);
+    setSource(source);
+    props.onUpdate(source);
+  };
+
+  const updateLater = (source: Source) => {
+    window.clearTimeout(timeoutRef.current);
+    setSource(source);
     timeoutRef.current = window.setTimeout(() => {
       props.onUpdate(source);
     }, 500);
@@ -24,14 +31,14 @@ export const SourceInput = (props: SourceInputProps) => {
   const musicXML = source.type === 'local' ? source.musicXML : props.musicXML;
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
-      update({ type: 'local', musicXML: e.target.value });
+      updateLater({ type: 'local', musicXML: e.target.value });
     }
   };
 
   const url = source.type === 'remote' ? source.url : '';
   const onUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (source.type === 'remote') {
-      update({ type: 'remote', url: e.target.value });
+      updateLater({ type: 'remote', url: e.target.value });
     }
   };
 
@@ -39,14 +46,11 @@ export const SourceInput = (props: SourceInputProps) => {
   const modal = useModal(modalRef);
   const [modalSource, setModalSource] = useState<Source>({ type: 'local', musicXML: '' });
   const onModalContinue = () => {
-    setSource(modalSource);
-    props.onUpdate(modalSource);
+    updateNow(modalSource);
     modal.hide();
   };
 
   const onRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    window.clearTimeout(timeoutRef.current);
-
     const type = e.target.value;
     if (!isSourceType(type)) {
       throw new Error(`Invalid source type: ${type}`);
@@ -69,11 +73,9 @@ export const SourceInput = (props: SourceInputProps) => {
   };
 
   const onConvertToLocalClick = () => {
-    window.clearTimeout(timeoutRef.current);
     const source = getDefaultSource('local');
     source.musicXML = props.musicXML;
-    setSource(source);
-    props.onUpdate(source);
+    updateNow(source);
   };
 
   const sourceTypeRadioName = useId();
@@ -87,7 +89,7 @@ export const SourceInput = (props: SourceInputProps) => {
 
   return (
     <div>
-      <div className="d-flex justify-content-between">
+      <div className="d-flex justify-content-between align-items-center">
         <div>
           <div className="form-check form-check-inline">
             <input
@@ -195,7 +197,7 @@ export const SourceInput = (props: SourceInputProps) => {
               <h1 className="modal-title fs-5">Warning</h1>
               <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div className="modal-body">You will lose the changes you've made!</div>
+            <div className="modal-body">When changing source types, you may lose the changes you made.</div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
                 Cancel
