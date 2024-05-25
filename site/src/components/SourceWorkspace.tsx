@@ -33,7 +33,7 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
   };
 
   const onAddClick = (index: number) => () => {
-    const keyedSource: Keyed<Source> = { key: nextKey(), value: { type: 'raw', musicXML: '' } };
+    const keyedSource: Keyed<Source> = { key: nextKey(), value: { type: 'local', musicXML: '' } };
     const nextKeyedSources = [...keyedSources];
     nextKeyedSources.splice(index, 0, keyedSource);
     setKeyedSources(nextKeyedSources);
