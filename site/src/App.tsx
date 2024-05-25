@@ -4,6 +4,7 @@ import { DEPRECATED_LOCAL_STORAGE_KEYS } from './constants';
 import { useLocalStorageCleanup } from './hooks/useLocalStorageCleanup';
 import { useSources } from './hooks/useSources';
 import { Source } from './types';
+import './style.css';
 
 export const App = () => {
   useLocalStorageCleanup(DEPRECATED_LOCAL_STORAGE_KEYS);
