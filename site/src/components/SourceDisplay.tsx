@@ -18,7 +18,6 @@ export type SourceProps = {
 
 export const SourceDisplay = (props: SourceProps) => {
   const [musicXML, isMusicXMLLoading, musicXMLError] = useMusicXML(props.source);
-  const isMusicXMLEmpty = !isMusicXMLLoading && !musicXMLError && musicXML.length === 0;
 
   const previousButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(previousButtonRef, 'top', 'Previous');
@@ -33,7 +32,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const sourceInputCardId = useId();
   const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
-  const [sourceInputCardClassName] = useState(() => (isMusicXMLEmpty ? 'show' : 'collapse'));
+  const [sourceInputCardClassName] = useState(() => (props.source.type === 'local' ? 'show' : 'collapse'));
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -43,7 +42,6 @@ export const SourceDisplay = (props: SourceProps) => {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={isMusicXMLEmpty}
               data-bs-toggle="collapse"
               data-bs-target={sourceInputCardSelector}
             >

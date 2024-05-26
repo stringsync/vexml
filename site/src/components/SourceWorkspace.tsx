@@ -32,6 +32,11 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
     props.onSourcesChange(keyedSources.map(({ value }) => value));
   };
 
+  const onResetAllClick = () => {
+    setKeyedSources([]);
+    onSourcesChange([]);
+  };
+
   const onAddClick = (index: number) => () => {
     const keyedSource: Keyed<Source> = { key: nextKey(), value: { type: 'local', musicXML: '' } };
     const nextKeyedSources = [...keyedSources];
@@ -57,27 +62,35 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
   const removable = keyedSources.length > 1;
 
   return (
-    <div className="d-grid gap-2">
-      {keyedSources.map(({ key, value: source }, index) => (
-        <Fragment key={key}>
-          <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index)}>
-            <i className="bi bi-plus"></i>
-          </button>
+    <div>
+      <div className="d-flex justify-content-end">
+        <button className="btn btn-light btn-sm mb-3" onClick={onResetAllClick}>
+          <i className="bi bi-arrow-counterclockwise"></i> Reset all
+        </button>
+      </div>
 
-          <SourceDisplay
-            source={source}
-            removable={removable}
-            onUpdate={onSourceUpdate(key)}
-            onRemove={onSourceRemove(key)}
-          />
-
-          {index === keyedSources.length - 1 && (
-            <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index + 1)}>
+      <div className="d-grid gap-2">
+        {keyedSources.map(({ key, value: source }, index) => (
+          <Fragment key={key}>
+            <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index)}>
               <i className="bi bi-plus"></i>
             </button>
-          )}
-        </Fragment>
-      ))}
+
+            <SourceDisplay
+              source={source}
+              removable={removable}
+              onUpdate={onSourceUpdate(key)}
+              onRemove={onSourceRemove(key)}
+            />
+
+            {index === keyedSources.length - 1 && (
+              <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index + 1)}>
+                <i className="bi bi-plus"></i>
+              </button>
+            )}
+          </Fragment>
+        ))}
+      </div>
     </div>
   );
 };
