@@ -1,10 +1,8 @@
-import { LOCAL_STORAGE_VEXML_SOURCES_KEY } from '../constants';
+import { EXAMPLES, DEFAULT_EXAMPLE_PATH, LOCAL_STORAGE_VEXML_SOURCES_KEY } from '../constants';
 import { Source } from '../types';
 import { useJsonLocalStorage } from './useJsonLocalStorage';
 
-const PITCHES_MUSICXML_URL = new URL('../examples/lilypond/01a-Pitches-Pitches.musicxml', import.meta.url);
-
-const DEFAULT_SOURCES: Source[] = [{ type: 'remote', url: PITCHES_MUSICXML_URL.href }];
+const DEFAULT_SOURCES: Source[] = [{ type: 'example', path: DEFAULT_EXAMPLE_PATH }];
 
 export const useSources = () => {
   const [sources, setSources] = useJsonLocalStorage(LOCAL_STORAGE_VEXML_SOURCES_KEY, [], isSources);
@@ -28,14 +26,7 @@ const isSources = (data: unknown): data is Source[] =>
       case 'local':
         return typeof item.musicXML === 'string';
       case 'example':
-        switch (item.example.type) {
-          case 'none':
-            return true;
-          case 'single':
-            return typeof item.example.path === 'string';
-          default:
-            return false;
-        }
+        return EXAMPLES.some((example) => example.path === item.path);
       default:
         return false;
     }
