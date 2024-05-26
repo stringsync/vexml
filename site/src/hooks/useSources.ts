@@ -26,7 +26,7 @@ const isSources = (data: unknown): data is Source[] =>
       case 'local':
         return typeof item.musicXML === 'string';
       case 'example':
-        return EXAMPLES.some((example) => example.path === item.path);
+        return typeof item.path === 'string';
       default:
         return false;
     }

@@ -2,7 +2,8 @@ import React, { useId, useRef, useState } from 'react';
 import { Source } from '../types';
 import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
-import { DEFAULT_EXAMPLE_PATH } from '../constants';
+import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
+import { Select, SelectEvent, SelectOptionGroup } from './Select';
 
 export type SourceInputProps = {
   source: Source;
@@ -33,6 +34,14 @@ export const SourceInput = (props: SourceInputProps) => {
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
       updateLater({ type: 'local', musicXML: e.target.value });
+    }
+  };
+
+  const path = source.type === 'example' ? source.path : DEFAULT_EXAMPLE_PATH;
+  const pathKey = EXAMPLE_OPTION_KEY_BY_PATH[path] ?? '';
+  const onPathChange = (e: SelectEvent<string>) => {
+    if (source.type === 'example') {
+      updateNow({ type: 'example', path: e.value });
     }
   };
 
@@ -158,10 +167,14 @@ export const SourceInput = (props: SourceInputProps) => {
             </>
           )}
 
-          {props.source.type === 'example' && <div>Example</div>}
+          {props.source.type === 'example' && (
+            <div>
+              <Select groups={EXAMPLE_GROUPS} selectedKey={pathKey} onChange={onPathChange} />
+            </div>
+          )}
 
           {props.source.type === 'remote' && (
-            <div className="mb-3">
+            <div>
               <div className="input-group">
                 <span className="input-group-text" id="inputGroup-sizing-lg">
                   URL
@@ -169,8 +182,7 @@ export const SourceInput = (props: SourceInputProps) => {
                 <input type="url" className="form-control" value={url} onChange={onUrlChange} />
               </div>
               <div className="callout">
-                This must be a <strong>direct</strong>
-                URL to a <code>.musicxml</code> or <code>.mxl</code> file.
+                This must be a <strong>direct</strong> URL to a <code>.musicxml</code> or <code>.mxl</code> file.
               </div>
             </div>
           )}
@@ -226,3 +238,47 @@ const getDefaultSource = <T extends Source['type']>(type: T): Extract<Source, { 
       throw new Error(`Invalid source type: ${type}`);
   }
 };
+
+const EXAMPLE_GROUPS = Object.entries(
+  EXAMPLES.reduce<Record<string, { filename: string; path: string }[]>>((memo, { path }) => {
+    const parts = path.substring('./examples/'.length).split('/');
+    const directory = parts.length === 2 ? parts[0] : '';
+    const filename = parts[parts.length - 1];
+    memo[directory] ??= [];
+    memo[directory].push({ filename, path });
+    return memo;
+  }, {})
+).flatMap<SelectOptionGroup<string>>(([directory, files], groupIndex) =>
+  directory
+    ? {
+        type: 'multi',
+        label: directory,
+        options: files.map(({ filename, path }, fileIndex) => ({
+          key: `${groupIndex}-${directory}-${fileIndex}`,
+          label: filename,
+          value: path,
+        })),
+      }
+    : files.map(({ path }, fileIndex) => ({
+        type: 'single',
+        option: {
+          key: `${groupIndex}-${directory}-${fileIndex}`,
+          label: path,
+          value: path,
+        },
+      }))
+);
+
+const EXAMPLE_OPTION_KEY_BY_PATH = EXAMPLE_GROUPS.reduce<Record<string, string>>((memo, group) => {
+  switch (group.type) {
+    case 'single':
+      memo[group.option.value] = group.option.key;
+      break;
+    case 'multi':
+      for (const option of group.options) {
+        memo[option.value] = option.key;
+      }
+      break;
+  }
+  return memo;
+}, {});
