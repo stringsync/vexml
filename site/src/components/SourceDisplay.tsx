@@ -68,7 +68,7 @@ export const SourceDisplay = (props: SourceProps) => {
               data-bs-toggle="collapse"
               data-bs-target={sourceInputCardSelector}
             >
-              <i className="bi bi-pencil-square"></i> Edit
+              <i className="bi bi-pencil-square"></i> <p className="d-md-inline d-none">Edit</p>
             </button>
 
             <button
@@ -78,7 +78,7 @@ export const SourceDisplay = (props: SourceProps) => {
               onClick={onSnapshotClick}
               disabled={snapshotButtonDisabled}
             >
-              <i className="bi bi-camera"></i> Snapshot
+              <i className="bi bi-camera"></i> <p className="d-md-inline d-none">Snapshot</p>
             </button>
 
             <button
@@ -87,7 +87,7 @@ export const SourceDisplay = (props: SourceProps) => {
               onClick={props.onRemove}
               disabled={!props.removable}
             >
-              <i className="bi bi-trash"></i> Remove
+              <i className="bi bi-trash"></i> <p className="d-md-inline d-none">Remove</p>
             </button>
           </div>
 
