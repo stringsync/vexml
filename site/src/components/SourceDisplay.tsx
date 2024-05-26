@@ -61,28 +61,35 @@ export const SourceDisplay = (props: SourceProps) => {
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
         <div className="d-flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-outline-primary"
-            data-bs-toggle="collapse"
-            data-bs-target={sourceInputCardSelector}
-          >
-            <i className="bi bi-pencil-square"></i> Edit
-          </button>
+          <div className="btn-group" role="group">
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              data-bs-toggle="collapse"
+              data-bs-target={sourceInputCardSelector}
+            >
+              <i className="bi bi-pencil-square"></i> Edit
+            </button>
 
-          <button
-            ref={snapshotButtonRef}
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={onSnapshotClick}
-            disabled={snapshotButtonDisabled}
-          >
-            <i className="bi bi-camera"></i> Snapshot
-          </button>
+            <button
+              ref={snapshotButtonRef}
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onSnapshotClick}
+              disabled={snapshotButtonDisabled}
+            >
+              <i className="bi bi-camera"></i> Snapshot
+            </button>
 
-          <button type="button" className="btn btn-outline-danger" onClick={props.onRemove} disabled={!props.removable}>
-            <i className="bi bi-trash"></i> Remove
-          </button>
+            <button
+              type="button"
+              className="btn btn-outline-danger"
+              onClick={props.onRemove}
+              disabled={!props.removable}
+            >
+              <i className="bi bi-trash"></i> Remove
+            </button>
+          </div>
 
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
             <i className="bi bi-github"></i> Report an Issue

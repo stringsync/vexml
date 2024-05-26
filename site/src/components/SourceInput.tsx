@@ -112,62 +112,53 @@ export const SourceInput = (props: SourceInputProps) => {
   const exampleRadioId = useId();
   const remoteRadioId = useId();
 
-  const isConvertToLocalDisabled = props.musicXML.length === 0 || props.source.type === 'local';
   const isTextareaDisabled = props.source.type !== 'local';
   const textareaPlaceholder = props.source.type === 'local' ? 'Write or paste MusicXML here' : '';
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center">
-        <div>
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="radio"
-              name={sourceTypeRadioName}
-              id={localRadioId}
-              value="local"
-              checked={props.source.type === 'local'}
-              onChange={onRadioChange}
-            />
-            <label className="form-check-label" htmlFor={localRadioId}>
-              local
-            </label>
-          </div>
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="radio"
-              name={sourceTypeRadioName}
-              id={exampleRadioId}
-              value="example"
-              checked={props.source.type === 'example'}
-              onChange={onRadioChange}
-            />
-            <label className="form-check-label" htmlFor={exampleRadioId}>
-              example
-            </label>
-          </div>
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="radio"
-              name={sourceTypeRadioName}
-              id={remoteRadioId}
-              value="remote"
-              checked={props.source.type === 'remote'}
-              onChange={onRadioChange}
-            />
-            <label className="form-check-label" htmlFor={remoteRadioId}>
-              remote
-            </label>
-          </div>
+      <div>
+        <div className="form-check form-check-inline">
+          <input
+            className="form-check-input"
+            type="radio"
+            name={sourceTypeRadioName}
+            id={localRadioId}
+            value="local"
+            checked={props.source.type === 'local'}
+            onChange={onRadioChange}
+          />
+          <label className="form-check-label" htmlFor={localRadioId}>
+            local
+          </label>
         </div>
-
-        <div>
-          <button className="btn btn-warning" disabled={isConvertToLocalDisabled} onClick={onConvertToLocalClick}>
-            <i className="bi bi-cloud-arrow-down"></i> Convert to local
-          </button>
+        <div className="form-check form-check-inline">
+          <input
+            className="form-check-input"
+            type="radio"
+            name={sourceTypeRadioName}
+            id={exampleRadioId}
+            value="example"
+            checked={props.source.type === 'example'}
+            onChange={onRadioChange}
+          />
+          <label className="form-check-label" htmlFor={exampleRadioId}>
+            example
+          </label>
+        </div>
+        <div className="form-check form-check-inline">
+          <input
+            className="form-check-input"
+            type="radio"
+            name={sourceTypeRadioName}
+            id={remoteRadioId}
+            value="remote"
+            checked={props.source.type === 'remote'}
+            onChange={onRadioChange}
+          />
+          <label className="form-check-label" htmlFor={remoteRadioId}>
+            remote
+          </label>
         </div>
       </div>
 
@@ -189,6 +180,17 @@ export const SourceInput = (props: SourceInputProps) => {
           {props.source.type === 'example' && (
             <div>
               <Select groups={EXAMPLE_GROUPS} selectedKey={pathKey} onChange={onPathChange} />
+
+              <div className="callout">
+                <span>
+                  <strong>NOTE:</strong> The MusicXML text is readonly
+                </span>
+              </div>
+              <div className="d-grid">
+                <button className="btn btn-outline-warning" onClick={onConvertToLocalClick}>
+                  <i className="bi bi-cloud-arrow-down"></i> Convert to local
+                </button>
+              </div>
             </div>
           )}
 
@@ -202,6 +204,17 @@ export const SourceInput = (props: SourceInputProps) => {
               </div>
               <div className="callout">
                 This must be a <strong>direct</strong> URL to a <code>.musicxml</code> or <code>.mxl</code> file.
+              </div>
+
+              <div className="callout">
+                <span>
+                  <strong>NOTE:</strong> The MusicXML text is readonly
+                </span>
+              </div>
+              <div className="d-grid">
+                <button className="btn btn-outline-warning" onClick={onConvertToLocalClick}>
+                  <i className="bi bi-cloud-arrow-down"></i> Convert to local
+                </button>
               </div>
             </div>
           )}
