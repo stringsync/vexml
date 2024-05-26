@@ -32,7 +32,9 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const sourceInputCardId = useId();
   const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
-  const [sourceInputCardClassName] = useState(() => (props.source.type === 'local' ? 'show' : 'collapse'));
+  const [sourceInputCardClassName] = useState(() =>
+    props.source.type === 'local' && props.source.musicXML.length === 0 ? 'show' : 'collapse'
+  );
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">

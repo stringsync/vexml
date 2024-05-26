@@ -1,9 +1,10 @@
-import React, { useId, useRef, useState } from 'react';
+import React, { ChangeEvent, useId, useRef, useState } from 'react';
 import { Source } from '../types';
 import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
+import { Vexml } from '@/vexml';
 
 export type SourceInputProps = {
   source: Source;
@@ -88,6 +89,24 @@ export const SourceInput = (props: SourceInputProps) => {
     updateNow(source);
   };
 
+  const onFileInputChange = async (files: File[]) => {
+    if (files.length === 0) {
+      return;
+    }
+
+    try {
+      const vexml = await Vexml.fromFile(files[0]);
+      updateNow({ type: 'local', musicXML: vexml.getDocumentString() });
+    } catch (e) {
+      console.error(`error reading file: ${e}`);
+    }
+  };
+
+  const onNativeFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    onFileInputChange(files);
+  };
+
   const sourceTypeRadioName = useId();
   const localRadioId = useId();
   const exampleRadioId = useId();
@@ -159,10 +178,10 @@ export const SourceInput = (props: SourceInputProps) => {
           {props.source.type === 'local' && (
             <>
               <div className="d-none d-md-block">
-                <DragUpload placeholder="Select or drop a MusicXML file here" onChange={() => {}} />
+                <DragUpload placeholder="Select or drop a MusicXML file here" onChange={onFileInputChange} />
               </div>
               <div className="d-block d-md-none">
-                <input type="file" className="form-control" />
+                <input type="file" className="form-control" onChange={onNativeFileInputChange} />
               </div>
             </>
           )}
