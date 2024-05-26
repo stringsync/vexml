@@ -60,42 +60,33 @@ export const SourceDisplay = (props: SourceProps) => {
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
-        <div className="d-flex justify-content-between">
-          <div className="d-flex gap-2">
-            <button
-              type="button"
-              className="btn btn-primary"
-              data-bs-toggle="collapse"
-              data-bs-target={sourceInputCardSelector}
-            >
-              <i className="bi bi-pencil-square"></i> Edit
-            </button>
+        <div className="d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn btn-outline-primary"
+            data-bs-toggle="collapse"
+            data-bs-target={sourceInputCardSelector}
+          >
+            <i className="bi bi-pencil-square"></i> Edit
+          </button>
 
-            <button
-              ref={snapshotButtonRef}
-              type="button"
-              className="btn btn-light"
-              onClick={onSnapshotClick}
-              disabled={snapshotButtonDisabled}
-            >
-              <i className="bi bi-camera"></i> Snapshot
-            </button>
+          <button
+            ref={snapshotButtonRef}
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onSnapshotClick}
+            disabled={snapshotButtonDisabled}
+          >
+            <i className="bi bi-camera"></i> Snapshot
+          </button>
 
-            <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
-              <i className="bi bi-github"></i> Report an Issue
-            </a>
-
-            <div className="d-flex align-items-center">
-              <select disabled className="form-select" defaultValue="0.0.0">
-                <option value="0.0.0">0.0.0</option>
-              </select>
-              <i ref={lockIconRef} className="bi bi-lock-fill ms-2"></i>
-            </div>
-          </div>
-
-          <button type="button" className="btn btn-danger" onClick={props.onRemove} disabled={!props.removable}>
+          <button type="button" className="btn btn-outline-danger" onClick={props.onRemove} disabled={!props.removable}>
             <i className="bi bi-trash"></i> Remove
           </button>
+
+          <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
+            <i className="bi bi-github"></i> Report an Issue
+          </a>
         </div>
 
         <br />
