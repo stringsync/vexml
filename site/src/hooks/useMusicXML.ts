@@ -18,7 +18,7 @@ export const useMusicXML = (source: Source) => {
   const onExample = (path: string) => {
     const example = EXAMPLES.find((example) => example.path === path);
     if (example) {
-      example.get().then(setMusicXML);
+      withPending(() => example.get().then(setMusicXML));
     } else {
       setMusicXML('');
     }
