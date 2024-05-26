@@ -63,9 +63,10 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
 
   return (
     <div>
-      <div className="d-flex justify-content-end">
+      <div className="d-flex gap-2">
         <button className="btn btn-light btn-sm mb-3" onClick={onResetAllClick}>
-          <i className="bi bi-arrow-counterclockwise"></i> Reset all
+          <i className="bi bi-arrow-counterclockwise"></i> Reset all{' '}
+          <span className="badge text-secondary">{keyedSources.length}</span>
         </button>
       </div>
 
@@ -73,7 +74,7 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
         {keyedSources.map(({ key, value: source }, index) => (
           <Fragment key={key}>
             <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index)}>
-              <i className="bi bi-plus"></i>
+              <i className="bi bi-plus-lg"></i>
             </button>
 
             <SourceDisplay
@@ -82,14 +83,12 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
               onUpdate={onSourceUpdate(key)}
               onRemove={onSourceRemove(key)}
             />
-
-            {index === keyedSources.length - 1 && (
-              <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(index + 1)}>
-                <i className="bi bi-plus"></i>
-              </button>
-            )}
           </Fragment>
         ))}
+
+        <button type="button" className="btn btn-light btn-lg" onClick={onAddClick(keyedSources.length)}>
+          <i className="bi bi-plus-lg"></i>
+        </button>
       </div>
     </div>
   );
