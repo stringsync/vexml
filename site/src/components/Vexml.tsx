@@ -13,7 +13,7 @@ export type VexmlProps = {
 export type VexmlResult =
   | { type: 'none' }
   | { type: 'empty' }
-  | { type: 'success'; start: Date; end: Date; width: number }
+  | { type: 'success'; start: Date; end: Date; width: number; svg: SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
 export const Vexml = (props: VexmlProps) => {
@@ -46,10 +46,13 @@ export const Vexml = (props: VexmlProps) => {
         element,
         width,
       });
+      const svg = element.firstChild as SVGElement;
+      svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
       onResult({
         type: 'success',
         start,
         end: new Date(),
+        svg,
         width,
       });
     } catch (e) {
