@@ -1,51 +1,56 @@
 import { useState } from 'react';
-import { LOCAL_STORAGE_SAVED_MUSICXML_KEY, LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY } from '../constants';
-import { useLocalStorage } from './useLocalStorage';
-import { useDebouncedState } from './useDebouncedState';
+import { Source } from '../types';
+import { isEqual } from '../util/isEqual';
+import { usePending } from './usePending';
+import * as errors from '../util/errors';
+import { EXAMPLES } from '../constants';
 
-const SET_DEBOUNCE_DELAY_MS = 100;
+export const useMusicXML = (source: Source) => {
+  const [currentSource, setCurrentSource] = useState<Source | null>(null);
+  const [musicXML, setMusicXML] = useState('');
+  const [error, setError] = useState<Error | null>(null);
+  const [isPending, withPending] = usePending();
 
-type UpdateType = 'default' | 'normal';
+  const onLocal = (musicXML: string) => {
+    setMusicXML(musicXML);
+  };
 
-export const useMusicXML = (): {
-  value: { current: string; debounced: string; stored: string };
-  useDefault: boolean;
-  update: (type: UpdateType, value: string) => void;
-  save: () => void;
-  reset: () => void;
-} => {
-  const [storedMusicXML, setStoredMusicXML] = useLocalStorage(LOCAL_STORAGE_SAVED_MUSICXML_KEY, '');
-  const [musicXML, debouncedMusicXML, setMusicXML] = useDebouncedState(storedMusicXML, SET_DEBOUNCE_DELAY_MS);
-
-  const [storedUseDefault, setStoredUseDefault] = useLocalStorage(LOCAL_STORAGE_USE_DEFAULT_MUSICXML_KEY, 'true');
-  const [useDefault, setUseDefault] = useState(storedUseDefault);
-
-  const update = (type: UpdateType, value: string) => {
-    if (type === 'default') {
-      setUseDefault('true');
+  const onExample = (path: string) => {
+    const example = EXAMPLES.find((example) => example.path === path);
+    if (example) {
+      withPending(() => example.get().then(setMusicXML));
     } else {
-      setUseDefault('false');
+      setMusicXML('');
     }
-    setMusicXML(value);
   };
 
-  const save = () => {
-    setStoredUseDefault('false');
-    setStoredMusicXML(musicXML);
+  const onRemote = (url: string) => {
+    if (url.length > 0) {
+      withPending(() =>
+        fetch(url)
+          .then((response) => response.text())
+          .then(setMusicXML)
+          .catch((e) => setError(errors.wrap(e)))
+      );
+    } else {
+      setMusicXML('');
+    }
   };
 
-  const reset = () => {
-    setUseDefault('true');
-    setStoredUseDefault('true');
-    setMusicXML('');
-    setStoredMusicXML('');
-  };
+  if (!isEqual(currentSource, source)) {
+    setCurrentSource(source);
+    switch (source.type) {
+      case 'local':
+        onLocal(source.musicXML);
+        break;
+      case 'example':
+        onExample(source.path);
+        break;
+      case 'remote':
+        onRemote(source.url);
+        break;
+    }
+  }
 
-  return {
-    value: { current: musicXML, debounced: debouncedMusicXML, stored: storedMusicXML },
-    useDefault: useDefault === 'true',
-    update,
-    reset,
-    save,
-  };
+  return [musicXML, isPending, error] as const;
 };

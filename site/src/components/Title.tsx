@@ -1,6 +1,6 @@
 import { VEXML_VERSION } from '../constants';
 
-function Title() {
+export const Title = () => {
   return (
     <div className="container-fluid py-5">
       <h1 className="display-4">vexml {VEXML_VERSION}</h1>
@@ -11,6 +11,4 @@ function Title() {
       </a>
     </div>
   );
-}
-
-export default Title;
+};

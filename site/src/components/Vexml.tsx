@@ -1,36 +1,32 @@
 import * as vexml from '@/vexml';
+import * as errors from '../util/errors';
 import { useEffect, useRef } from 'react';
 import { useWidth } from '../hooks/useWidth';
 
-const DEBOUNCE_DELAY_MS = 100;
-
-export type RenderEvent =
-  | {
-      type: 'success';
-      start: Date;
-      stop: Date;
-      width: number;
-    }
-  | {
-      type: 'error';
-      start: Date;
-      stop: Date;
-      error: Error;
-      width: number;
-    };
+const THROTTLE_DELAY_MS = 50;
 
 export type VexmlProps = {
   musicXML: string;
-  containerId: string;
-  onRender: (event: RenderEvent) => void;
+  onResult: (result: VexmlResult) => void;
 };
 
-function Vexml({ musicXML, containerId, onRender }: VexmlProps) {
+export type VexmlResult =
+  | { type: 'none' }
+  | { type: 'empty' }
+  | { type: 'success'; start: Date; end: Date; width: number; svg: SVGElement }
+  | { type: 'error'; error: Error; start: Date; end: Date; width: number };
+
+export const Vexml = (props: VexmlProps) => {
+  const musicXML = props.musicXML;
+  const onResult = props.onResult;
   const containerRef = useRef<HTMLDivElement>(null);
-  const width = useWidth(containerRef, DEBOUNCE_DELAY_MS);
+  const width = useWidth(containerRef, THROTTLE_DELAY_MS);
 
   useEffect(() => {
+    onResult({ type: 'none' });
+
     if (!musicXML) {
+      onResult({ type: 'empty' });
       return;
     }
 
@@ -50,18 +46,21 @@ function Vexml({ musicXML, containerId, onRender }: VexmlProps) {
         element,
         width,
       });
-      onRender({
+      const svg = element.firstChild as SVGElement;
+      svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
+      onResult({
         type: 'success',
         start,
-        stop: new Date(),
+        end: new Date(),
+        svg,
         width,
       });
     } catch (e) {
-      onRender({
+      onResult({
         type: 'error',
+        error: errors.wrap(e),
         start,
-        stop: new Date(),
-        error: e instanceof Error ? e : new Error(String(e)),
+        end: new Date(),
         width,
       });
     }
@@ -72,9 +71,7 @@ function Vexml({ musicXML, containerId, onRender }: VexmlProps) {
         element.removeChild(firstChild);
       }
     };
-  }, [musicXML, width, onRender]);
+  }, [musicXML, width, onResult]);
 
-  return <div id={containerId} ref={containerRef}></div>;
-}
-
-export default Vexml;
+  return <div className="w-100" ref={containerRef}></div>;
+};
