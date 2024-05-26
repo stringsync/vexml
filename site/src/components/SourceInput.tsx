@@ -2,6 +2,7 @@ import React, { useId, useRef, useState } from 'react';
 import { Source } from '../types';
 import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
+import { DEFAULT_EXAMPLE_PATH } from '../constants';
 
 export type SourceInputProps = {
   source: Source;
@@ -61,7 +62,7 @@ export const SourceInput = (props: SourceInputProps) => {
     const isSourceEmpty =
       (props.source.type === 'local' && props.source.musicXML.length === 0) ||
       (props.source.type === 'remote' && props.source.url.length === 0) ||
-      (props.source.type === 'example' && props.source.example.type === 'none');
+      props.source.type === 'example';
 
     if (isSourceEmpty) {
       setSource(source);
@@ -168,10 +169,7 @@ export const SourceInput = (props: SourceInputProps) => {
                 <input type="url" className="form-control" value={url} onChange={onUrlChange} />
               </div>
               <div className="callout">
-                This must be a{' '}
-                <u>
-                  <strong>direct</strong>
-                </u>{' '}
+                This must be a <strong>direct</strong>
                 URL to a <code>.musicxml</code> or <code>.mxl</code> file.
               </div>
             </div>
@@ -223,7 +221,7 @@ const getDefaultSource = <T extends Source['type']>(type: T): Extract<Source, { 
     case 'remote':
       return { type, url: '' } as Extract<Source, { type: T }>;
     case 'example':
-      return { type, example: { type: 'none' } } as Extract<Source, { type: T }>;
+      return { type, path: DEFAULT_EXAMPLE_PATH } as Extract<Source, { type: T }>;
     default:
       throw new Error(`Invalid source type: ${type}`);
   }

@@ -10,16 +10,6 @@ export type Source =
     }
   | {
       type: 'example';
-      example: Example;
-    };
-
-/** An example from integration tests */
-export type Example =
-  | {
-      type: 'none';
-    }
-  | {
-      type: 'single';
       path: string;
     };
 

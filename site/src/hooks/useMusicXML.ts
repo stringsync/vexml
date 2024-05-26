@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Example, Source } from '../types';
+import { Source } from '../types';
 import { isEqual } from '../util/isEqual';
 import { usePending } from './usePending';
 import * as errors from '../util/errors';
+import { EXAMPLES } from '../constants';
 
 export const useMusicXML = (source: Source) => {
   const [currentSource, setCurrentSource] = useState<Source | null>(null);
@@ -14,15 +15,12 @@ export const useMusicXML = (source: Source) => {
     setMusicXML(musicXML);
   };
 
-  const onExample = (example: Example) => {
-    switch (example.type) {
-      case 'none':
-        setMusicXML('');
-        break;
-      case 'single':
-        // TODO: Fix this.
-        setMusicXML(example.path);
-        break;
+  const onExample = (path: string) => {
+    const example = EXAMPLES.find((example) => example.path === path);
+    if (example) {
+      example.get().then(setMusicXML);
+    } else {
+      setMusicXML('');
     }
   };
 
@@ -46,7 +44,7 @@ export const useMusicXML = (source: Source) => {
         onLocal(source.musicXML);
         break;
       case 'example':
-        onExample(source.example);
+        onExample(source.path);
         break;
       case 'remote':
         onRemote(source.url);
