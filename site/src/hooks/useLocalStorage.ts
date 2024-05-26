@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
 
 // Adapted from https://usehooks.com/useLocalStorage/
-export const useLocalStorage = (key: string, initialValue: string): [string, (value: string) => void] => {
-  const [storedValue, setStoredValue] = useState(() => {
+export const useLocalStorage = (
+  key: string,
+  initialValue: string
+): [value: string, setValue: (value: string) => void] => {
+  const [stored, setStored] = useState(() => {
     const value = window.localStorage.getItem(key);
     return typeof value === 'string' ? value : initialValue;
   });
@@ -10,10 +13,10 @@ export const useLocalStorage = (key: string, initialValue: string): [string, (va
   const setValue = useCallback(
     (value: string) => {
       window.localStorage.setItem(key, value);
-      setStoredValue(value);
+      setStored(value);
     },
     [key]
   );
 
-  return [storedValue, setValue];
+  return [stored, setValue];
 };

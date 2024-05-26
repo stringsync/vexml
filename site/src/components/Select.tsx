@@ -37,7 +37,7 @@ export type SelectOption<T> = {
   disabled?: boolean;
 };
 
-function Select<T>(props: SelectProps<T>) {
+export function Select<T>(props: SelectProps<T>) {
   const onChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
     const key = e.target.value;
     const value = props.groups
@@ -76,5 +76,3 @@ function Option<T>({ option }: OptionProps<T>) {
     </option>
   );
 }
-
-export default Select;
