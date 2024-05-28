@@ -254,9 +254,14 @@ export class Stave {
           ...voice.placeholders.map((voice) => voice.vexflow.voice),
         ]);
         opts.vexflow.formatter.joinVoices(vfVoices);
-        for (const vfVoice of vfVoices) {
+        vfVoices.forEach((vfVoice) => {
           vfVoice.setStave(vfStave);
-        }
+        });
+        vfVoices
+          .flatMap((vfVoice) => vfVoice.getTickables())
+          .forEach((vfTickable) => {
+            vfTickable.setStave(vfStave);
+          });
         break;
     }
 
