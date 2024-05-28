@@ -1,4 +1,4 @@
-import { SystemRendering } from './system';
+import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -10,6 +10,8 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
+
+const Y_SHIFT_PADDING = 10;
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
@@ -62,7 +64,7 @@ export class Score {
       y += titleRendering.approximateHeight;
     }
 
-    y += this.getTopSystemDistance();
+    y += this.getTopSystemDistance(systems);
 
     // Render the entire hierarchy.
     util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem]) => {
@@ -268,15 +270,44 @@ export class Score {
   }
 
   @util.memoize()
-  private getTopSystemDistance() {
-    return this.getSystemLayout()?.topSystemDistance ?? 0;
-  }
-
-  @util.memoize()
   private getTitle() {
     return new Title({
       config: this.config,
       text: this.musicXML.scorePartwise?.getTitle() ?? '',
     });
+  }
+
+  private getTopSystemDistance(systems: System[]) {
+    let result = 0;
+
+    result += this.getSystemLayout()?.topSystemDistance ?? 0;
+
+    if (systems.length > 0) {
+      const systemRendering = systems[0].render({
+        address: Address.system({ systemIndex: 0, origin: 'Score.prototype.getTopSystemDistance' }),
+        x: 0,
+        y: 0,
+        previousSystem: null,
+        nextSystem: systems[1] ?? null,
+        spanners: new Spanners(),
+      });
+      // Calculate how much we need to shift the system down to make it fully visible. This should still work even when
+      // there is a title, because we don't want the notes clashing with the title.
+      result += util.max(
+        systemRendering.measures
+          .flatMap((measure) => measure.fragments)
+          .flatMap((measureFragment) => measureFragment.parts)
+          .flatMap((part) => part.staves)
+          .map((stave) => stave.entry)
+          .filter((staveEntry): staveEntry is ChorusRendering => staveEntry.type === 'chorus')
+          .flatMap((chorus) => chorus.voices)
+          .map((voice) => voice.vexflow.voice)
+          .map((vfVoice) => vfVoice.getBoundingBox().getY())
+          .filter((y) => y < 0)
+          .map((y) => Math.abs(y) + Y_SHIFT_PADDING)
+      );
+    }
+
+    return result;
   }
 }
