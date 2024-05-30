@@ -139,7 +139,7 @@ export class Measure {
 
   /** Returns the width of the end barline. */
   getEndBarlineWidth(): number {
-    return this.getEndBarStyle() === 'none' ? 0 : 1;
+    return this.getEndBarline()?.getBarStyle() === 'none' ? 0 : 1;
   }
 
   /** Renders the measure. */
@@ -216,8 +216,8 @@ export class Measure {
   private getFragments(): MeasureFragment[] {
     const result = new Array<MeasureFragment>();
 
-    const beginningBarStyle = this.getBeginningBarStyle();
-    const endBarStyle = this.getEndBarStyle();
+    const startBarline = this.getStartBarline();
+    const endBarline = this.getEndBarline();
     const boundaries = this.getFragmentBoundaries();
 
     const iterators: Record<string, MeasureEntryIterator> = {};
@@ -253,10 +253,10 @@ export class Measure {
       if (measureEntries.length > 0) {
         for (const partId of this.partIds) {
           if (isFirstBoundary) {
-            beginningBarStyles.push({ partId, value: beginningBarStyle });
+            beginningBarStyles.push({ partId, value: startBarline?.getBarStyle() ?? 'regular' });
           }
           if (isLastBoundary) {
-            endBarStyles.push({ partId, value: endBarStyle });
+            endBarStyles.push({ partId, value: endBarline?.getBarStyle() ?? 'regular' });
           }
         }
       }
@@ -340,25 +340,19 @@ export class Measure {
     return util.sortBy(unique, (boundary) => boundary.toBeats());
   }
 
-  private getBeginningBarStyle(): musicxml.BarStyle {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'left')
-          .map((barline) => barline.getBarStyle())
-      ) ?? 'regular'
+  private getStartBarline(): musicxml.Barline | null {
+    return util.first(
+      this.musicXML.measures
+        .flatMap((measure) => measure.value.getBarlines())
+        .filter((barline) => barline.getLocation() === 'left')
     );
   }
 
-  private getEndBarStyle(): musicxml.BarStyle {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'right')
-          .map((barline) => barline.getBarStyle())
-      ) ?? 'regular'
+  private getEndBarline(): musicxml.Barline | null {
+    return util.first(
+      this.musicXML.measures
+        .flatMap((measure) => measure.value.getBarlines())
+        .filter((barline) => barline.getLocation() === 'right')
     );
   }
 
