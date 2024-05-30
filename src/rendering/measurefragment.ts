@@ -158,8 +158,21 @@ export class MeasureFragment {
         endStaveModifiers,
         width: opts.width.value,
       });
-
       partRenderings.push(partRendering);
+
+      const startBarline =
+        this.startBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+      const startBarlineRendering = startBarline.render();
+      for (const stave of partRendering.staves) {
+        stave.vexflow.stave.setBegBarType(startBarlineRendering.vexflow.barlineType);
+      }
+
+      const endBarline =
+        this.endBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+      const endBarlineRendering = endBarline.render();
+      for (const stave of partRendering.staves) {
+        stave.vexflow.stave.setEndBarType(endBarlineRendering.vexflow.barlineType);
+      }
 
       const isFirstSystemMeasure = opts.address.getSystemMeasureIndex() === 0;
       const isFirstMeasureFragment = this.index === 0;
@@ -240,17 +253,6 @@ export class MeasureFragment {
         throw new Error(`Could not find stave signature for part ${partId}`);
       }
 
-      const startBarline =
-        this.startBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
-
-      const endBarline =
-        this.endBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
-
-      const beginningBarStyle =
-        this.musicXML.beginningBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
-
-      const endBarStyle = this.musicXML.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
-
       const partName = this.partNames.find((partName) => partName.partId === partId)?.value ?? null;
       if (!partName) {
         throw new Error(`Could not find part name for part ${partId}`);
@@ -260,12 +262,8 @@ export class MeasureFragment {
         config: this.config,
         id: partId,
         name: partName,
-        startBarline,
-        endBarline,
         musicXML: {
           staveLayouts: this.musicXML.staveLayouts,
-          beginningBarStyle,
-          endBarStyle,
         },
         measureEntries,
         staveSignature,

@@ -7,7 +7,6 @@ import { Config } from './config';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { PartName, PartNameRendering } from './partname';
-import { Barline } from './barline';
 
 /** The result of rendering a part. */
 export type PartRendering = {
@@ -23,12 +22,8 @@ export class Part {
   private config: Config;
   private id: string;
   private name: PartName;
-  private startBarline: Barline;
-  private endBarline: Barline;
   private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
   };
   private measureEntries: MeasureEntry[];
   private staveSignature: StaveSignature;
@@ -37,12 +32,8 @@ export class Part {
     config: Config;
     id: string;
     name: PartName;
-    startBarline: Barline;
-    endBarline: Barline;
     musicXML: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
     };
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
@@ -50,8 +41,6 @@ export class Part {
     this.config = opts.config;
     this.id = opts.id;
     this.name = opts.name;
-    this.startBarline = opts.startBarline;
-    this.endBarline = opts.endBarline;
     this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
@@ -81,8 +70,6 @@ export class Part {
           config: this.config,
           staveSignature: this.staveSignature,
           number: staveNumber,
-          startBarline: this.startBarline,
-          endBarline: this.endBarline,
           measureEntries,
         })
       );
