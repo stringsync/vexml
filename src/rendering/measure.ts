@@ -10,6 +10,7 @@ import { Division } from './division';
 import { Spanners } from './spanners';
 import { PartName } from './partname';
 import { MeasureEntryIterator } from './measureentryiterator';
+import { Barline } from './barline';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -139,7 +140,7 @@ export class Measure {
 
   /** Returns the width of the end barline. */
   getEndBarlineWidth(): number {
-    return this.getEndBarline()?.getBarStyle() === 'none' ? 0 : 1;
+    return this.getEndBarline().getWidth();
   }
 
   /** Renders the measure. */
@@ -218,6 +219,8 @@ export class Measure {
 
     const startBarline = this.getStartBarline();
     const endBarline = this.getEndBarline();
+    const beginningBarStyle = this.getBeginningBarStyle();
+    const endBarStyle = this.getEndBarStyle();
     const boundaries = this.getFragmentBoundaries();
 
     const iterators: Record<string, MeasureEntryIterator> = {};
@@ -231,6 +234,8 @@ export class Measure {
       const isFirstBoundary = index === 0;
       const isLastBoundary = index === boundaries.length - 1;
 
+      const startBarlines = new Array<PartScoped<Barline>>();
+      const endBarlines = new Array<PartScoped<Barline>>();
       const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
       const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
       const measureEntries = new Array<PartScoped<MeasureEntry>>();
@@ -253,10 +258,12 @@ export class Measure {
       if (measureEntries.length > 0) {
         for (const partId of this.partIds) {
           if (isFirstBoundary) {
-            beginningBarStyles.push({ partId, value: startBarline?.getBarStyle() ?? 'regular' });
+            startBarlines.push({ partId, value: startBarline });
+            beginningBarStyles.push({ partId, value: beginningBarStyle });
           }
           if (isLastBoundary) {
-            endBarStyles.push({ partId, value: endBarline?.getBarStyle() ?? 'regular' });
+            endBarlines.push({ partId, value: endBarline });
+            endBarStyles.push({ partId, value: endBarStyle });
           }
         }
       }
@@ -340,19 +347,47 @@ export class Measure {
     return util.sortBy(unique, (boundary) => boundary.toBeats());
   }
 
-  private getStartBarline(): musicxml.Barline | null {
-    return util.first(
-      this.musicXML.measures
-        .flatMap((measure) => measure.value.getBarlines())
-        .filter((barline) => barline.getLocation() === 'left')
+  private getBeginningBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
     );
   }
 
-  private getEndBarline(): musicxml.Barline | null {
-    return util.first(
-      this.musicXML.measures
-        .flatMap((measure) => measure.value.getBarlines())
-        .filter((barline) => barline.getLocation() === 'right')
+  private getEndBarStyle(): musicxml.BarStyle {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => barline.getBarStyle())
+      ) ?? 'regular'
+    );
+  }
+
+  private getStartBarline(): Barline {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, barlineType: 'single' })
+    );
+  }
+
+  private getEndBarline(): Barline {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, barlineType: 'single' })
     );
   }
 
