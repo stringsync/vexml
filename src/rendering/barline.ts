@@ -7,6 +7,7 @@ export type BarlineRendering = {
   type: 'barline';
   vexflow: {
     barlineType: vexflow.BarlineType;
+    staveConnectorType: vexflow.StaveConnectorType | null;
   };
 };
 
@@ -85,6 +86,7 @@ export class Barline {
       type: 'barline',
       vexflow: {
         barlineType: this.getVfBarlineType(),
+        staveConnectorType: this.getVfStaveConnectorType(),
       },
     };
   }
@@ -105,6 +107,17 @@ export class Barline {
         return vexflow.Barline.type.REPEAT_BOTH;
       case 'none':
         return vexflow.Barline.type.NONE;
+    }
+  }
+
+  private getVfStaveConnectorType(): vexflow.StaveConnectorType | null {
+    switch (this.barlineType) {
+      case 'single':
+        return 'singleLeft';
+      case 'double':
+        return 'boldDoubleLeft';
+      default:
+        return null;
     }
   }
 }
