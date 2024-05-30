@@ -61,6 +61,11 @@ export class Barline {
     });
   }
 
+  /** Returns the width of the barline. */
+  getWidth(): number {
+    return this.barlineType === 'none' ? 0 : 1;
+  }
+
   /** Renders the barline. */
   render(): BarlineRendering {
     return {
