@@ -14,7 +14,6 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Voice } from './voice';
 import { Rest } from './rest';
 import { Division } from './division';
-import { Barline, BarlineRendering } from './barline';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -34,8 +33,6 @@ export type StaveRendering = {
   vexflow: {
     stave: vexflow.Stave;
   };
-  startBarline: BarlineRendering;
-  endBarline: BarlineRendering;
   entry: StaveEntryRendering;
 };
 
@@ -52,8 +49,6 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private number: number;
-  private startBarline: Barline;
-  private endBarline: Barline;
   private staveSignature: StaveSignature;
   private measureEntries: MeasureEntry[];
 
@@ -61,15 +56,11 @@ export class Stave {
     config: Config;
     number: number;
     staveSignature: StaveSignature;
-    startBarline: Barline;
-    endBarline: Barline;
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
-    this.startBarline = opts.startBarline;
-    this.endBarline = opts.endBarline;
     this.measureEntries = opts.measureEntries;
   }
 
@@ -187,12 +178,6 @@ export class Stave {
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width, { numLines: this.getStaveLineCount() });
 
-    const startBarlineRendering = this.startBarline.render();
-    vfStave.setBegBarType(startBarlineRendering.vexflow.barlineType);
-
-    const endBarlineRendering = this.endBarline.render();
-    vfStave.setEndBarType(endBarlineRendering.vexflow.barlineType);
-
     if (opts.beginningModifiers.includes('clef')) {
       vfStave.addModifier(staveSignatureRendering.clef.vexflow.clef);
     }
@@ -272,8 +257,6 @@ export class Stave {
       vexflow: {
         stave: vfStave,
       },
-      startBarline: startBarlineRendering,
-      endBarline: endBarlineRendering,
       entry: staveEntryRendering,
     };
   }
