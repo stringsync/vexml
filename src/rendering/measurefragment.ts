@@ -12,6 +12,7 @@ import { StaveModifier } from './stave';
 import { PartName } from './partname';
 import { MultiRest } from './multirest';
 import { Chorus, ChorusRendering } from './chorus';
+import { Barline } from './barline';
 
 /** The result of rendering a measure fragment. */
 export type MeasureFragmentRendering = {
@@ -42,6 +43,8 @@ export class MeasureFragment {
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
+  private startBarlines: PartScoped<Barline>[];
+  private endBarlines: PartScoped<Barline>[];
   private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
     beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -55,6 +58,8 @@ export class MeasureFragment {
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
+    startBarlines: PartScoped<Barline>[];
+    endBarlines: PartScoped<Barline>[];
     musicXML: {
       staveLayouts: musicxml.StaveLayout[];
       beginningBarStyles: PartScoped<musicxml.BarStyle>[];
@@ -67,6 +72,8 @@ export class MeasureFragment {
     this.index = opts.index;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
+    this.startBarlines = opts.startBarlines;
+    this.endBarlines = opts.endBarlines;
     this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
@@ -233,6 +240,12 @@ export class MeasureFragment {
         throw new Error(`Could not find stave signature for part ${partId}`);
       }
 
+      const startBarline =
+        this.startBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+
+      const endBarline =
+        this.endBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+
       const beginningBarStyle =
         this.musicXML.beginningBarStyles.find((barStyle) => barStyle.partId === partId)?.value ?? 'none';
 
@@ -247,6 +260,8 @@ export class MeasureFragment {
         config: this.config,
         id: partId,
         name: partName,
+        startBarline,
+        endBarline,
         musicXML: {
           staveLayouts: this.musicXML.staveLayouts,
           beginningBarStyle,

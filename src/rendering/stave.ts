@@ -14,6 +14,7 @@ import { Chorus, ChorusRendering } from './chorus';
 import { Voice } from './voice';
 import { Rest } from './rest';
 import { Division } from './division';
+import { Barline, BarlineRendering } from './barline';
 
 const METRONOME_TOP_PADDING = 8;
 
@@ -32,9 +33,9 @@ export type StaveRendering = {
   width: number;
   vexflow: {
     stave: vexflow.Stave;
-    beginningBarlineType: vexflow.BarlineType;
-    endBarlineType: vexflow.BarlineType;
   };
+  startBarline: BarlineRendering;
+  endBarline: BarlineRendering;
   entry: StaveEntryRendering;
 };
 
@@ -51,10 +52,8 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
 export class Stave {
   private config: Config;
   private number: number;
-  private musicXML: {
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
-  };
+  private startBarline: Barline;
+  private endBarline: Barline;
   private staveSignature: StaveSignature;
   private measureEntries: MeasureEntry[];
 
@@ -62,16 +61,15 @@ export class Stave {
     config: Config;
     number: number;
     staveSignature: StaveSignature;
-    musicXML: {
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
-    };
+    startBarline: Barline;
+    endBarline: Barline;
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
-    this.musicXML = opts.musicXML;
+    this.startBarline = opts.startBarline;
+    this.endBarline = opts.endBarline;
     this.measureEntries = opts.measureEntries;
   }
 
@@ -189,11 +187,11 @@ export class Stave {
         ? new vexflow.TabStave(opts.x, opts.y, opts.width)
         : new vexflow.Stave(opts.x, opts.y, opts.width, { numLines: this.getStaveLineCount() });
 
-    const vfBeginningBarlineType = conversions.fromBarStyleToBarlineType(this.musicXML.beginningBarStyle);
-    vfStave.setBegBarType(vfBeginningBarlineType);
+    const startBarlineRendering = this.startBarline.render();
+    vfStave.setBegBarType(startBarlineRendering.vexflow.barlineType);
 
-    const vfEndBarlineType = conversions.fromBarStyleToBarlineType(this.musicXML.endBarStyle);
-    vfStave.setEndBarType(vfEndBarlineType);
+    const endBarlineRendering = this.endBarline.render();
+    vfStave.setEndBarType(endBarlineRendering.vexflow.barlineType);
 
     if (opts.beginningModifiers.includes('clef')) {
       vfStave.addModifier(staveSignatureRendering.clef.vexflow.clef);
@@ -273,9 +271,9 @@ export class Stave {
       width: opts.width,
       vexflow: {
         stave: vfStave,
-        beginningBarlineType: vfBeginningBarlineType,
-        endBarlineType: vfEndBarlineType,
       },
+      startBarline: startBarlineRendering,
+      endBarline: endBarlineRendering,
       entry: staveEntryRendering,
     };
   }

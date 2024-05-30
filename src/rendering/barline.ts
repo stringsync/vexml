@@ -65,6 +65,10 @@ export class Barline {
     return new Barline({ config: opts.config, barlineType: 'single' });
   }
 
+  static none(opts: { config: Config }) {
+    return new Barline({ config: opts.config, barlineType: 'none' });
+  }
+
   /** Returns the width of the barline. */
   getWidth(): number {
     return this.barlineType === 'none' ? 0 : 1;

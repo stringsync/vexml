@@ -279,6 +279,8 @@ export class Measure {
           index: result.length,
           partIds: this.partIds,
           partNames: this.partNames,
+          startBarlines,
+          endBarlines,
           musicXML: {
             staveLayouts: this.musicXML.staveLayouts,
             beginningBarStyles,
