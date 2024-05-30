@@ -69,6 +69,11 @@ export class Barline {
     return new Barline({ config: opts.config, barlineType: 'none' });
   }
 
+  /** Returns the type of the barline. */
+  getType(): BarlineType {
+    return this.barlineType;
+  }
+
   /** Returns the width of the barline. */
   getWidth(): number {
     return this.barlineType === 'none' ? 0 : 1;
