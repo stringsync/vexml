@@ -20,10 +20,17 @@ export type TieFragment = {
   type: TieFragmentType;
   number: number;
   address: Address;
-  vexflow: {
-    note: vexflow.Note;
-    keyIndex: number;
-  };
+  vexflow:
+    | {
+        type: 'note';
+        note: vexflow.Note;
+        keyIndex: number;
+      }
+    // Indicates that the note is on another system.
+    | {
+        type: 'none';
+        keyIndex: number;
+      };
 };
 
 /** The container for ties. */
@@ -59,6 +66,7 @@ export class Tie {
           number: tie.getNumber(),
           address: data.address,
           vexflow: {
+            type: 'note',
             note: data.vexflow.note,
             keyIndex: data.keyIndex,
           },
@@ -69,14 +77,38 @@ export class Tie {
   }
 
   private static commit(fragment: TieFragment, container: TieContainer): void {
-    const slur = container.get(fragment.number);
-    const last = slur?.getLastFragment();
+    let tie = container.get(fragment.number);
+    const last = tie?.getLastFragment();
     const isAllowedType = Tie.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
       container.push(fragment.number, new Tie({ fragment }));
-    } else if (slur && isAllowedType) {
-      slur.fragments.push(fragment);
+    } else if (tie && isAllowedType) {
+      if (last && last.address.getSystemIndex() === fragment.address.getSystemIndex()) {
+        tie.fragments.push(fragment);
+      } else if (last) {
+        // End the tie with a null end note on the previous system.
+        tie.fragments.push({
+          type: 'stop',
+          address: last.address,
+          number: last.number,
+          vexflow: { type: 'none', keyIndex: last.vexflow.keyIndex },
+        });
+
+        // Start a tie with a null start note on the next system.
+        tie = new Tie({
+          fragment: {
+            type: 'start',
+            address: fragment.address,
+            number: fragment.number,
+            vexflow: { type: 'none', keyIndex: fragment.vexflow.keyIndex },
+          },
+        });
+        container.push(fragment.number, tie);
+        tie.fragments.push(fragment);
+      } else {
+        throw new Error('Unexpected tie fragment');
+      }
     }
   }
 
@@ -96,27 +128,44 @@ export class Tie {
 
   /** Renders the tie. */
   render(): TieRendering {
+    const firstFragment = this.getFirstFragment();
+    const lastFragment = this.getLastFragment();
+
+    const vfNotes = new Array<vexflow.Note>();
+
     const vfTieNotes: vexflow.TieNotes = {};
 
-    for (let index = 0; index < this.fragments.length; index++) {
-      const fragment = this.fragments[index];
-      const isFirst = index === 0;
-      const isLast = index === this.fragments.length - 1;
-
-      // Iterating is not necessary, but it is cleaner than dealing with nulls.
-      if (isFirst) {
-        vfTieNotes.firstNote = fragment.vexflow.note;
-        vfTieNotes.firstIndexes = [fragment.vexflow.keyIndex];
-      }
-      if (isLast) {
-        vfTieNotes.lastNote = fragment.vexflow.note;
-        vfTieNotes.lastIndexes = [fragment.vexflow.keyIndex];
-      }
+    switch (firstFragment.vexflow.type) {
+      case 'note':
+        vfNotes.push(firstFragment.vexflow.note);
+        vfTieNotes.firstNote = firstFragment.vexflow.note;
+        vfTieNotes.firstIndexes = [firstFragment.vexflow.keyIndex];
+        break;
+      case 'none':
+        vfTieNotes.firstNote = null;
+        vfTieNotes.firstIndexes = [firstFragment.vexflow.keyIndex];
+        break;
     }
 
-    const vfSlurDirection = this.getVfSlurDirection();
+    switch (lastFragment.vexflow.type) {
+      case 'note':
+        vfNotes.push(lastFragment.vexflow.note);
+        vfTieNotes.lastNote = lastFragment.vexflow.note;
+        vfTieNotes.lastIndexes = [lastFragment.vexflow.keyIndex];
+        break;
+      case 'none':
+        vfTieNotes.lastNote = null;
+        vfTieNotes.lastIndexes = [lastFragment.vexflow.keyIndex];
+        break;
+    }
 
-    const vfNote = this.fragments[0].vexflow.note;
+    if (vfNotes.length === 0) {
+      throw new Error('Unexpected tie with no notes');
+    }
+    const vfNote = vfNotes[0];
+
+    const vfSlurDirection = this.getVfSlurDirection(vfNote);
+
     const vfTie =
       vfNote instanceof vexflow.TabNote
         ? new vexflow.TabTie(vfTieNotes).setDirection(vfSlurDirection)
@@ -130,13 +179,15 @@ export class Tie {
     };
   }
 
+  private getFirstFragment(): TieFragment {
+    return util.first(this.fragments)!;
+  }
+
   private getLastFragment(): TieFragment {
     return util.last(this.fragments)!;
   }
 
-  private getVfSlurDirection(): number {
-    const vfNote = this.fragments[0].vexflow.note;
-
+  private getVfSlurDirection(vfNote: vexflow.Note): number {
     if (vfNote instanceof vexflow.TabNote) {
       return -1;
     }
