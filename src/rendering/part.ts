@@ -24,8 +24,6 @@ export class Part {
   private name: PartName;
   private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyle: musicxml.BarStyle;
-    endBarStyle: musicxml.BarStyle;
   };
   private measureEntries: MeasureEntry[];
   private staveSignature: StaveSignature;
@@ -36,8 +34,6 @@ export class Part {
     name: PartName;
     musicXML: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyle: musicxml.BarStyle;
-      endBarStyle: musicxml.BarStyle;
     };
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
@@ -74,10 +70,6 @@ export class Part {
           config: this.config,
           staveSignature: this.staveSignature,
           number: staveNumber,
-          musicXML: {
-            beginningBarStyle: this.musicXML.beginningBarStyle,
-            endBarStyle: this.musicXML.endBarStyle,
-          },
           measureEntries,
         })
       );
