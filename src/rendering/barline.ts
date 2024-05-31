@@ -136,7 +136,16 @@ export class Barline {
         }
         break;
       case 'double-same':
-        return 'double';
+        switch (this.location) {
+          case 'left':
+            return 'thinDouble';
+          case 'middle':
+            return 'double';
+          case 'right':
+            // vexflow doesn't have a thin double right barline, so we show nothing instead.
+            return 'none';
+        }
+        break;
       case 'double-different':
         switch (this.location) {
           case 'left':
