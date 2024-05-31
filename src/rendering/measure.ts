@@ -219,8 +219,6 @@ export class Measure {
 
     const startBarline = this.getStartBarline();
     const endBarline = this.getEndBarline();
-    const beginningBarStyle = this.getBeginningBarStyle();
-    const endBarStyle = this.getEndBarStyle();
     const boundaries = this.getFragmentBoundaries();
 
     const iterators: Record<string, MeasureEntryIterator> = {};
@@ -259,11 +257,9 @@ export class Measure {
         for (const partId of this.partIds) {
           if (isFirstBoundary) {
             startBarlines.push({ partId, value: startBarline });
-            beginningBarStyles.push({ partId, value: beginningBarStyle });
           }
           if (isLastBoundary) {
             endBarlines.push({ partId, value: endBarline });
-            endBarStyles.push({ partId, value: endBarStyle });
           }
         }
       }
@@ -349,28 +345,6 @@ export class Measure {
     return util.sortBy(unique, (boundary) => boundary.toBeats());
   }
 
-  private getBeginningBarStyle(): musicxml.BarStyle {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'left')
-          .map((barline) => barline.getBarStyle())
-      ) ?? 'regular'
-    );
-  }
-
-  private getEndBarStyle(): musicxml.BarStyle {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'right')
-          .map((barline) => barline.getBarStyle())
-      ) ?? 'regular'
-    );
-  }
-
   private getStartBarline(): Barline {
     return (
       util.first(
@@ -378,7 +352,7 @@ export class Measure {
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'left')
           .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? Barline.single({ config: this.config })
+      ) ?? new Barline({ config: this.config, type: 'single', location: 'left' })
     );
   }
 
@@ -389,7 +363,7 @@ export class Measure {
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'right')
           .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? Barline.single({ config: this.config })
+      ) ?? new Barline({ config: this.config, type: 'single', location: 'right' })
     );
   }
 

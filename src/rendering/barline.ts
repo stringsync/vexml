@@ -7,20 +7,23 @@ export type BarlineRendering = {
   type: 'barline';
   vexflow: {
     barlineType: vexflow.BarlineType;
-    staveConnectorType: vexflow.StaveConnectorType | null;
+    staveConnectorType: vexflow.StaveConnectorType;
   };
 };
 
-/** The type of barline. */
-export type BarlineType = 'single' | 'double' | 'end' | 'repeat-begin' | 'repeat-end' | 'repeat-both' | 'none';
+export type BarlineType = 'single' | 'double-same' | 'double-different' | 'repeat' | 'none';
+
+export type BarlineLocation = 'left' | 'middle' | 'right';
 
 export class Barline {
   private config: Config;
-  private barlineType: BarlineType;
+  private type: BarlineType;
+  private location: BarlineLocation;
 
-  constructor(opts: { config: Config; barlineType: BarlineType }) {
+  constructor(opts: { config: Config; type: BarlineType; location: BarlineLocation }) {
     this.config = opts.config;
-    this.barlineType = opts.barlineType;
+    this.type = opts.type;
+    this.location = opts.location;
   }
 
   static fromMusicXML(opts: { config: Config; musicXML: { barline: musicxml.Barline } }) {
@@ -28,56 +31,55 @@ export class Barline {
 
     const barline = opts.musicXML.barline;
     if (barline.isRepeat()) {
-      switch (barline.getRepeatDirection()) {
-        case 'forward':
-          barlineType = 'repeat-begin';
+      barlineType = 'repeat';
+    } else {
+      switch (barline.getBarStyle()) {
+        case 'regular':
+        case 'short':
+        case 'dashed':
+        case 'dotted':
+        case 'heavy':
+          barlineType = 'single';
           break;
-        case 'backward':
-          barlineType = 'repeat-end';
+        case 'heavy-heavy':
+        case 'light-light':
+          barlineType = 'double-same';
+          break;
+        case 'heavy-light':
+        case 'light-heavy':
+          barlineType = 'double-different';
           break;
       }
     }
-    switch (barline.getBarStyle()) {
-      case 'regular':
-      case 'short':
-      case 'dashed':
-      case 'dotted':
-      case 'heavy':
-        barlineType = 'single';
+
+    let location: BarlineLocation;
+    switch (barline.getLocation()) {
+      case 'left':
+        location = 'left';
         break;
-      case 'heavy-light':
-      case 'heavy-heavy':
-      case 'light-light':
-      case 'tick':
-        barlineType = 'double';
+      case 'middle':
+        location = 'middle';
         break;
-      case 'light-heavy':
-        barlineType = 'end';
+      case 'right':
+        location = 'right';
         break;
     }
 
     return new Barline({
       config: opts.config,
-      barlineType,
+      type: barlineType,
+      location: location,
     });
-  }
-
-  static single(opts: { config: Config }) {
-    return new Barline({ config: opts.config, barlineType: 'single' });
-  }
-
-  static none(opts: { config: Config }) {
-    return new Barline({ config: opts.config, barlineType: 'none' });
   }
 
   /** Returns the type of the barline. */
   getType(): BarlineType {
-    return this.barlineType;
+    return this.type;
   }
 
   /** Returns the width of the barline. */
   getWidth(): number {
-    return this.barlineType === 'none' ? 0 : 1;
+    return this.type === 'none' ? 0 : 1;
   }
 
   /** Renders the barline. */
@@ -92,32 +94,71 @@ export class Barline {
   }
 
   private getVfBarlineType(): vexflow.BarlineType {
-    switch (this.barlineType) {
+    switch (this.type) {
       case 'single':
         return vexflow.Barline.type.SINGLE;
-      case 'double':
+      case 'double-same':
         return vexflow.Barline.type.DOUBLE;
-      case 'end':
-        return vexflow.Barline.type.END;
-      case 'repeat-begin':
-        return vexflow.Barline.type.REPEAT_BEGIN;
-      case 'repeat-end':
-        return vexflow.Barline.type.REPEAT_END;
-      case 'repeat-both':
-        return vexflow.Barline.type.REPEAT_BOTH;
+      case 'double-different':
+        switch (this.location) {
+          case 'left':
+          case 'middle':
+            return vexflow.Barline.type.DOUBLE;
+          case 'right':
+            return vexflow.Barline.type.END;
+        }
+        break;
+      case 'repeat':
+        switch (this.location) {
+          case 'left':
+            return vexflow.Barline.type.REPEAT_BEGIN;
+          case 'middle':
+            return vexflow.Barline.type.REPEAT_BOTH;
+          case 'right':
+            return vexflow.Barline.type.REPEAT_END;
+        }
+        break;
       case 'none':
         return vexflow.Barline.type.NONE;
     }
   }
 
-  private getVfStaveConnectorType(): vexflow.StaveConnectorType | null {
-    switch (this.barlineType) {
+  private getVfStaveConnectorType(): vexflow.StaveConnectorType {
+    switch (this.type) {
       case 'single':
-        return 'singleLeft';
-      case 'double':
-        return 'boldDoubleLeft';
+        switch (this.location) {
+          case 'left':
+            return 'singleLeft';
+          case 'middle':
+            return 'single';
+          case 'right':
+            return 'singleRight';
+        }
+        break;
+      case 'double-same':
+        return 'double';
+      case 'double-different':
+        switch (this.location) {
+          case 'left':
+            return 'boldDoubleLeft';
+          case 'middle':
+            return 'double';
+          case 'right':
+            return 'boldDoubleRight';
+        }
+        break;
+      case 'repeat':
+        switch (this.location) {
+          case 'left':
+            return 'boldDoubleLeft';
+          case 'middle':
+            return 'double';
+          case 'right':
+            return 'boldDoubleRight';
+        }
+        break;
       default:
-        return null;
+        return 'none';
     }
   }
 }
