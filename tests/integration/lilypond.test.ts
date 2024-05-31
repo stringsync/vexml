@@ -102,7 +102,7 @@ describe('lilypond', () => {
     // { filename: '41i-PartNameDisplay-Override.musicxml', width: 900 },
     // { filename: '42a-MultiVoice-TwoVoicesOnStaff-Lyrics.musicxml', width: 900 },
     // { filename: '42b-MultiVoice-MidMeasureClefChange.musicxml', width: 900 },
-    // { filename: '43a-PianoStaff.musicxml', width: 900 },
+    { filename: '43a-PianoStaff.musicxml', width: 900 },
     // { filename: '43b-MultiStaff-DifferentKeys.musicxml', width: 900 },
     // { filename: '43c-MultiStaff-DifferentKeysAfterBackup.musicxml', width: 900 },
     // { filename: '43d-MultiStaff-StaffChange.musicxml', width: 900 },
