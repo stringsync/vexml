@@ -1,7 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
 import { Config } from './config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { PartScoped } from './types';
@@ -47,8 +46,6 @@ export class MeasureFragment {
   private endBarlines: PartScoped<Barline>[];
   private musicXML: {
     staveLayouts: musicxml.StaveLayout[];
-    beginningBarStyles: PartScoped<musicxml.BarStyle>[];
-    endBarStyles: PartScoped<musicxml.BarStyle>[];
   };
   private measureEntries: PartScoped<MeasureEntry>[];
   private staveSignatures: PartScoped<StaveSignature>[];
@@ -161,14 +158,16 @@ export class MeasureFragment {
       partRenderings.push(partRendering);
 
       const startBarline =
-        this.startBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+        this.startBarlines.find((barline) => barline.partId === partId)?.value ??
+        new Barline({ config: this.config, type: 'none', location: 'left' });
       const startBarlineRendering = startBarline.render();
       for (const stave of partRendering.staves) {
         stave.vexflow.stave.setBegBarType(startBarlineRendering.vexflow.barlineType);
       }
 
       const endBarline =
-        this.endBarlines.find((barline) => barline.partId === partId)?.value ?? Barline.none({ config: this.config });
+        this.endBarlines.find((barline) => barline.partId === partId)?.value ??
+        new Barline({ config: this.config, type: 'none', location: 'right' });
       const endBarlineRendering = endBarline.render();
       for (const stave of partRendering.staves) {
         stave.vexflow.stave.setEndBarType(endBarlineRendering.vexflow.barlineType);
@@ -185,22 +184,13 @@ export class MeasureFragment {
           vfStaveConnectors.push(new vexflow.StaveConnector(topStave, bottomStave).setType('brace'));
         }
 
-        const beginningBarStyle = this.musicXML.beginningBarStyles.find(
-          (barStyle) => barStyle.partId === partId
-        )?.value;
-        if (beginningBarStyle) {
-          const beginningBarlineType = conversions.fromBarStyleToBarlineType(beginningBarStyle);
-          const beginningStaveConnectorType =
-            conversions.fromBarlineTypeToBeginningStaveConnectorType(beginningBarlineType);
-          vfStaveConnectors.push(
-            new vexflow.StaveConnector(topStave, bottomStave).setType(beginningStaveConnectorType)
-          );
+        const startStaveConnectorType = startBarlineRendering.vexflow.staveConnectorType;
+        if (startStaveConnectorType) {
+          vfStaveConnectors.push(new vexflow.StaveConnector(topStave, bottomStave).setType(startStaveConnectorType));
         }
 
-        const endBarStyle = this.musicXML.endBarStyles.find((barStyle) => barStyle.partId === partId)?.value;
-        if (endBarStyle) {
-          const endBarlineType = conversions.fromBarStyleToBarlineType(endBarStyle);
-          const endStaveConnectorType = conversions.fromBarlineTypeToEndingStaveConnectorType(endBarlineType);
+        const endStaveConnectorType = endBarlineRendering.vexflow.staveConnectorType;
+        if (endStaveConnectorType) {
           vfStaveConnectors.push(new vexflow.StaveConnector(topStave, bottomStave).setType(endStaveConnectorType));
         }
       }
