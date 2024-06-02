@@ -1,6 +1,5 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import * as drawables from '@/drawables';
 import { Config } from './config';
 import { PartScoped } from './types';
 import { Address } from './address';
@@ -14,18 +13,14 @@ import { Barline } from './barline';
 import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
 
-const MEASURE_LABEL_OFFSET_X = 0;
-const MEASURE_LABEL_OFFSET_Y = 24;
-const MEASURE_LABEL_COLOR = '#aaaaaa';
-
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
+const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
   type: 'measure';
   address: Address<'measure'>;
   index: number;
-  label: drawables.Text;
   fragments: MeasureFragmentRendering[];
   width: number;
   endingBracket: EndingBracketRendering | null;
@@ -138,6 +133,11 @@ export class Measure {
       result += util.max(this.partNames.map((partName) => partName.value.getWidth()));
     }
 
+    if (isFirstSystemMeasure) {
+      // We need to nudge the first measure to the right to make room for the measure number.
+      result += FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT;
+    }
+
     return result;
   }
 
@@ -164,15 +164,6 @@ export class Measure {
 
     let x = opts.x + staveOffsetX;
     const y = opts.y;
-
-    const label = new drawables.Text({
-      content: this.getLabelTextContent(),
-      italic: true,
-      x: x + MEASURE_LABEL_OFFSET_X,
-      y: y + MEASURE_LABEL_OFFSET_Y,
-      color: MEASURE_LABEL_COLOR,
-      size: this.config.MEASURE_NUMBER_FONT_SIZE,
-    });
 
     util.forEachTriple(
       this.getFragments(),
@@ -204,12 +195,18 @@ export class Measure {
         });
         fragmentRenderings.push(fragmentRendering);
 
-        if (isFirst && endingBracketRendering) {
-          const vfStaves = fragmentRendering.parts
-            .flatMap((part) => util.first(part.staves))
-            .filter((stave): stave is StaveRendering => stave?.type === 'stave')
-            .map((stave) => stave.vexflow.stave);
+        const vfStaves = fragmentRendering.parts
+          .flatMap((part) => util.first(part.staves))
+          .filter((stave): stave is StaveRendering => stave?.type === 'stave')
+          .map((stave) => stave.vexflow.stave);
 
+        const vfStave = util.first(vfStaves);
+        const measureNumber = this.getMeasureNumber();
+        if (isFirst && vfStave && typeof measureNumber === 'number') {
+          vfStave.setMeasure(measureNumber);
+        }
+
+        if (isFirst && endingBracketRendering) {
           // Render the ending brackets for the top staves only.
           for (const vfStave of vfStaves) {
             vfStave.setVoltaType(endingBracketRendering.vexflow.voltaType, endingBracketRendering.label, 0);
@@ -225,7 +222,6 @@ export class Measure {
       address: opts.address,
       fragments: fragmentRenderings,
       index: this.index,
-      label,
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
       endingBracket: endingBracketRendering,
     };
@@ -305,22 +301,27 @@ export class Measure {
     return result;
   }
 
-  private getLabelTextContent(): string {
+  private getMeasureNumber(): number | null {
     const partId = util.first(this.partIds);
     if (!partId) {
-      return '';
+      return null;
     }
 
     const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
     if (!measure) {
-      return '';
+      return null;
     }
 
     if (measure.isImplicit()) {
-      return '';
+      return null;
     }
 
-    return measure.getNumber() || (this.index + 1).toString();
+    const number = parseInt(measure.getNumber(), 0);
+    if (Number.isInteger(number) && !Number.isNaN(number)) {
+      return number;
+    }
+
+    return this.index + 1;
   }
 
   private getFragmentBoundaries(): Division[] {
