@@ -251,7 +251,7 @@ export class Voice {
           vfTickables.push(rendering.tabNotes[0].vexflow.tabNote);
           break;
         case 'rest':
-          vfTickables.push(rendering.vexflow.staveNote);
+          vfTickables.push(rendering.vexflow.note);
           break;
         case 'ghostnote':
           vfTickables.push(rendering.vexflow.ghostNote);
