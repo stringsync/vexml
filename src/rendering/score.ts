@@ -291,18 +291,27 @@ export class Score {
         nextSystem: systems[1] ?? null,
         spanners: new Spanners(),
       });
-      // Calculate how much we need to shift the system down to make it fully visible. This should still work even when
-      // there is a title, because we don't want the notes clashing with the title.
-      result += util.max(
-        systemRendering.measures
-          .flatMap((measure) => measure.fragments)
-          .flatMap((measureFragment) => measureFragment.parts)
-          .flatMap((part) => part.staves)
+
+      const staves = systemRendering.measures
+        .flatMap((measure) => measure.fragments)
+        .flatMap((measureFragment) => measureFragment.parts)
+        .flatMap((part) => part.staves);
+
+      const vfElements: vexflow.Element[] = [
+        ...staves.map((stave) => stave.vexflow.stave),
+        ...staves.map((stave) => stave.vexflow.stave).flatMap((vfStave) => vfStave.getModifiers()),
+        ...staves
           .map((stave) => stave.entry)
           .filter((staveEntry): staveEntry is ChorusRendering => staveEntry.type === 'chorus')
           .flatMap((chorus) => chorus.voices)
-          .map((voice) => voice.vexflow.voice)
-          .map((vfVoice) => vfVoice.getBoundingBox().getY())
+          .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.flatMap((voice) => voice.vexflow.voice)]),
+      ];
+
+      // Calculate how much we need to shift the system down to make it fully visible. This should still work even when
+      // there is a title, because we don't want the notes clashing with the title.
+      result += util.max(
+        vfElements
+          .map((vfElement) => vfElement.getBoundingBox().getY())
           .filter((y) => y < 0)
           .map((y) => Math.abs(y) + Y_SHIFT_PADDING)
       );
