@@ -14,7 +14,7 @@ import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
-const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 4;
+const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
