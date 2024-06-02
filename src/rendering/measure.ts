@@ -11,6 +11,8 @@ import { Spanners } from './spanners';
 import { PartName } from './partname';
 import { MeasureEntryIterator } from './measureentryiterator';
 import { Barline } from './barline';
+import { EndingBracket, EndingBracketRendering } from './endingbracket';
+import { StaveRendering } from './stave';
 
 const MEASURE_LABEL_OFFSET_X = 0;
 const MEASURE_LABEL_OFFSET_Y = 24;
@@ -26,6 +28,7 @@ export type MeasureRendering = {
   label: drawables.Text;
   fragments: MeasureFragmentRendering[];
   width: number;
+  endingBracket: EndingBracketRendering | null;
 };
 
 /**
@@ -155,6 +158,8 @@ export class Measure {
   }): MeasureRendering {
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
+    const endingBracketRendering = this.getEndingBracket()?.render() ?? null;
+
     const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
 
     let x = opts.x + staveOffsetX;
@@ -199,6 +204,18 @@ export class Measure {
         });
         fragmentRenderings.push(fragmentRendering);
 
+        if (isFirst && endingBracketRendering) {
+          const vfStaves = fragmentRendering.parts
+            .flatMap((part) => util.first(part.staves))
+            .filter((stave): stave is StaveRendering => stave?.type === 'stave')
+            .map((stave) => stave.vexflow.stave);
+
+          // Render the ending brackets for the top staves only.
+          for (const vfStave of vfStaves) {
+            vfStave.setVoltaType(endingBracketRendering.vexflow.voltaType, endingBracketRendering.label, 0);
+          }
+        }
+
         x += fragmentRendering.width;
       }
     );
@@ -210,6 +227,7 @@ export class Measure {
       index: this.index,
       label,
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
+      endingBracket: endingBracketRendering,
     };
   }
 
@@ -234,8 +252,6 @@ export class Measure {
 
       const startBarlines = new Array<PartScoped<Barline>>();
       const endBarlines = new Array<PartScoped<Barline>>();
-      const beginningBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
-      const endBarStyles = new Array<PartScoped<musicxml.BarStyle>>();
       const measureEntries = new Array<PartScoped<MeasureEntry>>();
       const staveSignatures = new Array<PartScoped<StaveSignature>>();
 
@@ -279,8 +295,6 @@ export class Measure {
           endBarlines,
           musicXML: {
             staveLayouts: this.musicXML.staveLayouts,
-            beginningBarStyles,
-            endBarStyles,
           },
           measureEntries,
           staveSignatures,
@@ -365,6 +379,13 @@ export class Measure {
           .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
       ) ?? new Barline({ config: this.config, type: 'single', location: 'right' })
     );
+  }
+
+  private getEndingBracket(): EndingBracket | null {
+    const barline = util.first(
+      this.musicXML.measures.flatMap((measure) => measure.value.getBarlines()).filter((barline) => barline.isEnding())
+    );
+    return barline ? EndingBracket.fromMusicXML({ config: this.config, musicXML: { barline: barline } }) : null;
   }
 
   private getMeasureEntryIterator(partId: string): MeasureEntryIterator {

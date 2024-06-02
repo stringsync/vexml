@@ -59,8 +59,6 @@ export class MeasureFragment {
     endBarlines: PartScoped<Barline>[];
     musicXML: {
       staveLayouts: musicxml.StaveLayout[];
-      beginningBarStyles: PartScoped<musicxml.BarStyle>[];
-      endBarStyles: PartScoped<musicxml.BarStyle>[];
     };
     measureEntries: PartScoped<MeasureEntry>[];
     staveSignatures: PartScoped<StaveSignature>[];
