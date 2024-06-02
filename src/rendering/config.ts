@@ -10,7 +10,6 @@ export type Config = {
   PART_NAME_FONT_FAMILY: string;
   PART_DISTANCE: number;
   VOICE_PADDING: number;
-  MEASURE_NUMBER_FONT_SIZE: string;
   MULTI_MEASURE_REST_WIDTH: number;
 };
 
@@ -26,6 +25,5 @@ export const DEFAULT_CONFIG: Config = {
   PART_NAME_FONT_SIZE: '13px',
   PART_DISTANCE: 80,
   VOICE_PADDING: 80,
-  MEASURE_NUMBER_FONT_SIZE: '10px',
   MULTI_MEASURE_REST_WIDTH: 200,
 } as const;

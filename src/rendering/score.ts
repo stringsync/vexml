@@ -237,13 +237,6 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    // Draw measure labels.
-    measures
-      .map((measure) => measure.label)
-      .forEach((label) => {
-        label.draw(vfContext);
-      });
-
     return { type: 'score', systems: systemRenderings };
   }
 
