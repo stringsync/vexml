@@ -11,6 +11,7 @@ export type Config = {
   PART_DISTANCE: number;
   VOICE_PADDING: number;
   MULTI_MEASURE_REST_WIDTH: number;
+  ENABLE_MEASURE_NUMBERS: boolean;
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -26,4 +27,5 @@ export const DEFAULT_CONFIG: Config = {
   PART_DISTANCE: 80,
   VOICE_PADDING: 80,
   MULTI_MEASURE_REST_WIDTH: 200,
+  ENABLE_MEASURE_NUMBERS: true,
 } as const;
