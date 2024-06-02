@@ -11,7 +11,7 @@ import { Address } from './address';
 export type RestRendering = {
   type: 'rest';
   vexflow: {
-    staveNote: vexflow.StaveNote;
+    note: vexflow.Note;
   };
 };
 
@@ -100,7 +100,7 @@ export class Rest {
 
     return {
       type: 'rest',
-      vexflow: { staveNote: vfStaveNote },
+      vexflow: { note: vfStaveNote },
     };
   }
 
