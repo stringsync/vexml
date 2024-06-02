@@ -31,7 +31,6 @@ export type MeasureRendering = {
   endingBracket: EndingBracketRendering | null;
 };
 
-const ENDING_BRACKET_Y_SHIFT = -50;
 /**
  * Represents a Measure in a musical score, corresponding to the <measure> element in MusicXML. A Measure contains a
  * specific segment of musical content, defined by its beginning and ending beats, and is the primary unit of time in a
