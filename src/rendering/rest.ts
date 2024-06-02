@@ -102,9 +102,8 @@ export class Rest {
         note: this.musicXML.note,
         octaveShift: null,
       },
-      vexflow: {
-        note: vfNote,
-      },
+      vexflow:
+        vfNote instanceof vexflow.TabNote ? { type: 'tabnote', note: vfNote } : { type: 'stavenote', note: vfNote },
     });
 
     return {
