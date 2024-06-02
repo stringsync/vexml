@@ -175,7 +175,7 @@ export class Stave {
 
     const vfStave =
       this.getClef().getType() === 'tab'
-        ? new vexflow.TabStave(opts.x, opts.y, opts.width)
+        ? new vexflow.TabStave(opts.x, opts.y, opts.width, { numLines: this.getStaveLineCount() })
         : new vexflow.Stave(opts.x, opts.y, opts.width, { numLines: this.getStaveLineCount() });
 
     if (opts.beginningModifiers.includes('clef')) {

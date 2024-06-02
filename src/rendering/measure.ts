@@ -202,7 +202,7 @@ export class Measure {
 
         const vfStave = util.first(vfStaves);
         const measureNumber = this.getMeasureNumber();
-        if (isFirst && vfStave && typeof measureNumber === 'number') {
+        if (isFirst && this.config.ENABLE_MEASURE_NUMBERS && vfStave && typeof measureNumber === 'number') {
           vfStave.setMeasure(measureNumber);
         }
 
