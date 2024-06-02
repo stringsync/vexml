@@ -11,7 +11,7 @@ import { Address } from './address';
 export type RestRendering = {
   type: 'rest';
   vexflow: {
-    staveNote: vexflow.StaveNote;
+    note: vexflow.Note;
   };
 };
 
@@ -66,22 +66,32 @@ export class Rest {
   render(opts: { voiceEntryCount: number; spanners: Spanners; address: Address<'voice'> }): RestRendering {
     const dotCount = this.musicXML.note?.getDotCount() ?? 0;
 
-    const vfStaveNote = new vexflow.StaveNote({
-      keys: [this.getKey()],
-      duration: `${this.durationDenominator}r`,
-      dots: dotCount,
-      alignCenter: this.shouldCenter(opts.voiceEntryCount),
-      clef: this.clef.getType(),
-    });
+    const vfNote =
+      this.clef.getType() === 'tab'
+        ? new vexflow.TabNote({
+            keys: [this.getKey()],
+            duration: `${this.durationDenominator}r`,
+            dots: dotCount,
+            alignCenter: this.shouldCenter(opts.voiceEntryCount),
+            clef: this.clef.getType(),
+            positions: [{ str: 0, fret: '' }],
+          })
+        : new vexflow.StaveNote({
+            keys: [this.getKey()],
+            duration: `${this.durationDenominator}r`,
+            dots: dotCount,
+            alignCenter: this.shouldCenter(opts.voiceEntryCount),
+            clef: this.clef.getType(),
+          });
 
     for (let index = 0; index < dotCount; index++) {
-      vexflow.Dot.buildAndAttach([vfStaveNote]);
+      vexflow.Dot.buildAndAttach([vfNote]);
     }
 
     this.getTokens()
       .map((token) => token.render())
       .forEach((tokenRendering) => {
-        vfStaveNote.addModifier(tokenRendering.vexflow.annotation);
+        vfNote.addModifier(tokenRendering.vexflow.annotation);
       });
 
     opts.spanners.process({
@@ -92,15 +102,13 @@ export class Rest {
         note: this.musicXML.note,
         octaveShift: null,
       },
-      vexflow: {
-        type: 'stavenote',
-        note: vfStaveNote,
-      },
+      vexflow:
+        vfNote instanceof vexflow.TabNote ? { type: 'tabnote', note: vfNote } : { type: 'stavenote', note: vfNote },
     });
 
     return {
       type: 'rest',
-      vexflow: { staveNote: vfStaveNote },
+      vexflow: { note: vfNote },
     };
   }
 
