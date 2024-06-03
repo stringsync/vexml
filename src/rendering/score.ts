@@ -17,6 +17,7 @@ const Y_SHIFT_PADDING = 10;
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
+  container: HTMLDivElement | HTMLCanvasElement;
 };
 
 /**
@@ -237,7 +238,7 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return { type: 'score', systems: systemRenderings };
+    return { type: 'score', systems: systemRenderings, container: opts.element };
   }
 
   @util.memoize()

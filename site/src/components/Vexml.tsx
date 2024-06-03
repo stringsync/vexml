@@ -43,7 +43,7 @@ export const Vexml = (props: VexmlProps) => {
 
     try {
       vexml.Vexml.fromMusicXML(musicXML).render({
-        element,
+        container: element,
         width,
       });
       const svg = element.firstChild as SVGElement;

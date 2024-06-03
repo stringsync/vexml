@@ -3,7 +3,7 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 
 export type RenderOptions = {
-  element: HTMLDivElement | HTMLCanvasElement;
+  container: HTMLDivElement | HTMLCanvasElement;
   config?: Partial<rendering.Config>;
   width: number;
 };
@@ -85,7 +85,7 @@ export class Vexml {
     });
 
     return score.render({
-      element: opts.element,
+      element: opts.container,
       width: opts.width,
     });
   }
