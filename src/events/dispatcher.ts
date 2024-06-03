@@ -12,28 +12,31 @@ const ELEMENT_QUAD_TREE_CAPACITY = 4;
 
 /** Broadcasts UI interaction events from a vexml rendering. */
 export class Dispatcher {
+  private source: Element;
   private tree: spatial.QuadTree<vexflow.Element>;
 
-  private constructor(tree: spatial.QuadTree<vexflow.Element>) {
+  private constructor(source: Element, tree: spatial.QuadTree<vexflow.Element>) {
+    this.source = source;
     this.tree = tree;
   }
 
   /** Creates an instance from a rendering.ScoreRendering. */
   static fromScoreRendering(scoreRendering: rendering.ScoreRendering) {
-    const boundary = Dispatcher.getBoundary(scoreRendering.container);
+    const source = Dispatcher.getSource(scoreRendering.container);
+    const boundary = spatial.Rectangle.origin(source.clientWidth, source.clientHeight);
     const tree = new spatial.QuadTree<vexflow.Element>(boundary, ELEMENT_QUAD_TREE_CAPACITY);
-    return new Dispatcher(tree);
+    return new Dispatcher(source, tree);
   }
 
-  private static getBoundary(container: HTMLDivElement | HTMLCanvasElement): spatial.Rectangle {
+  private static getSource(container: HTMLDivElement | HTMLCanvasElement): Element {
     if (container instanceof HTMLDivElement) {
       const svg = container.firstChild;
       if (!(svg instanceof SVGElement)) {
         throw new Error('ScoreRendering does not contain a rendered SVG element, did it get deleted?');
       }
-      return spatial.Rectangle.origin(svg.clientWidth, svg.clientHeight);
+      return svg;
     } else if (container instanceof HTMLCanvasElement) {
-      return spatial.Rectangle.origin(container.clientWidth, container.clientHeight);
+      return container;
     } else {
       throw new Error('Invalid container element type');
     }
