@@ -12,23 +12,27 @@ const ELEMENT_QUAD_TREE_CAPACITY = 4;
 
 /** Broadcasts UI interaction events from a vexml rendering. */
 export class Dispatcher {
-  private source: Element;
+  /** The HTML Element that hosts the native event listeners. */
+  private host: Element;
+
+  /** The data structure that provide efficient lookup of elements. */
   private tree: spatial.QuadTree<vexflow.Element>;
 
-  private constructor(source: Element, tree: spatial.QuadTree<vexflow.Element>) {
-    this.source = source;
+  private constructor(host: Element, tree: spatial.QuadTree<vexflow.Element>) {
+    this.host = host;
     this.tree = tree;
   }
 
   /** Creates an instance from a rendering.ScoreRendering. */
   static fromScoreRendering(scoreRendering: rendering.ScoreRendering) {
-    const source = Dispatcher.getSource(scoreRendering.container);
+    const source = Dispatcher.getHost(scoreRendering.container);
     const boundary = spatial.Rectangle.origin(source.clientWidth, source.clientHeight);
     const tree = new spatial.QuadTree<vexflow.Element>(boundary, ELEMENT_QUAD_TREE_CAPACITY);
     return new Dispatcher(source, tree);
   }
 
-  private static getSource(container: HTMLDivElement | HTMLCanvasElement): Element {
+  /** Returns the element that will host the event listeners. */
+  private static getHost(container: HTMLDivElement | HTMLCanvasElement): Element {
     if (container instanceof HTMLDivElement) {
       const svg = container.firstChild;
       if (!(svg instanceof SVGElement)) {
@@ -38,7 +42,7 @@ export class Dispatcher {
     } else if (container instanceof HTMLCanvasElement) {
       return container;
     } else {
-      throw new Error('Invalid container element type');
+      throw new Error('Invalid container element type, is the ScoreRendering authentic and untampered?');
     }
   }
 }
