@@ -15,7 +15,7 @@ export class Dispatcher {
   /** The HTML Element that hosts the native event listeners. */
   private host: Element;
 
-  /** The data structure that provide efficient lookup of elements. */
+  /** The data structure that provides efficient spatial lookup of vexflow.Elements. */
   private tree: spatial.QuadTree<vexflow.Element>;
 
   private constructor(host: Element, tree: spatial.QuadTree<vexflow.Element>) {
