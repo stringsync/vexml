@@ -63,20 +63,11 @@ export class QuadTree<T> {
   getDepth(): number {
     let maxDepth = 1;
 
-    const dfs = (tree: QuadTree<T>, depth: number) => {
-      if (depth > maxDepth) {
-        maxDepth = depth;
+    this.dfs((_, meta) => {
+      if (meta.depth > maxDepth) {
+        maxDepth = meta.depth;
       }
-
-      if (tree.divided) {
-        dfs(tree.northeast!, depth + 1);
-        dfs(tree.northwest!, depth + 1);
-        dfs(tree.southeast!, depth + 1);
-        dfs(tree.southwest!, depth + 1);
-      }
-    };
-
-    dfs(this, 0);
+    });
 
     return maxDepth;
   }
@@ -114,21 +105,19 @@ export class QuadTree<T> {
     return found;
   }
 
-  dfs(callback: (tree: QuadTree<T>) => void) {
-    const stack: QuadTree<T>[] = [this];
-
-    while (stack.length > 0) {
-      const tree = stack.pop()!;
-
-      callback(tree);
-
-      if (tree.divided) {
-        stack.push(tree.northeast!);
-        stack.push(tree.northwest!);
-        stack.push(tree.southeast!);
-        stack.push(tree.southwest!);
+  /** Performs an in-order depth-first search on the quad tree. */
+  dfs(callback: (tree: QuadTree<T>, meta: { depth: number }) => void) {
+    const dfs = (node: QuadTree<T>, meta: { depth: number }) => {
+      if (node.divided) {
+        const nextMeta = { depth: meta.depth + 1 };
+        dfs(node.northeast!, nextMeta);
+        dfs(node.northwest!, nextMeta);
+        dfs(node.southeast!, nextMeta);
+        dfs(node.southwest!, nextMeta);
       }
-    }
+      callback(node, meta);
+    };
+    dfs(this, { depth: 0 });
   }
 
   /** Subdivides the QuadTree into four quadrants. */
