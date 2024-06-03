@@ -1,24 +1,30 @@
 import { Point } from './point';
 import { Rectangle } from './rectangle';
 
+/** Data and a point that are associated with each other. */
+export type DataPoint<T> = {
+  data: T;
+  point: Point;
+};
+
 /**
  * Represents a QuadTree data structure.
  * @link https://en.wikipedia.org/wiki/Quadtree
  */
-export class QuadTree {
+export class QuadTree<T> {
   private boundary: Rectangle;
   private capacity: number;
   private divided: boolean;
-  private points: Point[];
-  private northeast: QuadTree | undefined;
-  private northwest: QuadTree | undefined;
-  private southeast: QuadTree | undefined;
-  private southwest: QuadTree | undefined;
+  private dataPoints: DataPoint<T>[];
+  private northeast: QuadTree<T> | undefined;
+  private northwest: QuadTree<T> | undefined;
+  private southeast: QuadTree<T> | undefined;
+  private southwest: QuadTree<T> | undefined;
 
   constructor(boundary: Rectangle, capacity: number) {
     this.boundary = boundary;
     this.capacity = capacity;
-    this.points = [];
+    this.dataPoints = [];
     this.divided = false;
   }
 
@@ -26,26 +32,26 @@ export class QuadTree {
    * Inserts a point into the QuadTree.
    * @returns true if the point was successfully inserted, false otherwise.
    */
-  insert(point: Point): boolean {
+  insert(point: Point, data: T): boolean {
     if (!this.boundary.contains(point)) {
       return false;
     }
 
-    if (this.points.length < this.capacity) {
-      this.points.push(point);
+    if (this.dataPoints.length < this.capacity) {
+      this.dataPoints.push({ data, point });
       return true;
     } else {
       if (!this.divided) {
         this.subdivide();
       }
 
-      if (this.northeast!.insert(point)) {
+      if (this.northeast!.insert(point, data)) {
         return true;
-      } else if (this.northwest!.insert(point)) {
+      } else if (this.northwest!.insert(point, data)) {
         return true;
-      } else if (this.southeast!.insert(point)) {
+      } else if (this.southeast!.insert(point, data)) {
         return true;
-      } else if (this.southwest!.insert(point)) {
+      } else if (this.southwest!.insert(point, data)) {
         return true;
       }
     }
@@ -57,7 +63,7 @@ export class QuadTree {
   getDepth(): number {
     let maxDepth = 1;
 
-    const dfs = (tree: QuadTree, depth: number) => {
+    const dfs = (tree: QuadTree<T>, depth: number) => {
       if (depth > maxDepth) {
         maxDepth = depth;
       }
@@ -75,23 +81,23 @@ export class QuadTree {
     return maxDepth;
   }
 
-  /** Returns the points of the QuadTree node. */
-  getPoints(): Point[] {
-    return this.points;
+  /** Returns the data points of the QuadTree node. */
+  getDataPoints(): DataPoint<T>[] {
+    return this.dataPoints;
   }
 
   /**
    * Queries the QuadTree for points within a given range.
    * @returns An array of points within the rectangle.
    */
-  query(rectangle: Rectangle): Point[] {
-    const found = new Array<Point>();
+  query(rectangle: Rectangle): DataPoint<T>[] {
+    const found = new Array<DataPoint<T>>();
 
-    const recurse = (tree: QuadTree) => {
+    const recurse = (tree: QuadTree<T>) => {
       if (tree.boundary.intersects(rectangle)) {
-        for (const point of tree.points) {
-          if (rectangle.contains(point)) {
-            found.push(point);
+        for (const dataPoint of tree.dataPoints) {
+          if (rectangle.contains(dataPoint.point)) {
+            found.push(dataPoint);
           }
         }
         if (this.divided) {
@@ -108,9 +114,8 @@ export class QuadTree {
     return found;
   }
 
-  dfs(callback: (tree: QuadTree) => void) {
-    const stack: QuadTree[] = [];
-    stack.push(this);
+  dfs(callback: (tree: QuadTree<T>) => void) {
+    const stack: QuadTree<T>[] = [this];
 
     while (stack.length > 0) {
       const tree = stack.pop()!;
@@ -134,13 +139,13 @@ export class QuadTree {
     const h = this.boundary.h / 2;
 
     const ne = new Rectangle(x + w, y, w, h);
-    this.northeast = new QuadTree(ne, this.capacity);
+    this.northeast = new QuadTree<T>(ne, this.capacity);
     const nw = new Rectangle(x, y, w, h);
-    this.northwest = new QuadTree(nw, this.capacity);
+    this.northwest = new QuadTree<T>(nw, this.capacity);
     const se = new Rectangle(x + w, y + h, w, h);
-    this.southeast = new QuadTree(se, this.capacity);
+    this.southeast = new QuadTree<T>(se, this.capacity);
     const sw = new Rectangle(x, y + h, w, h);
-    this.southwest = new QuadTree(sw, this.capacity);
+    this.southwest = new QuadTree<T>(sw, this.capacity);
 
     this.divided = true;
   }
