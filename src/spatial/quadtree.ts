@@ -32,26 +32,26 @@ export class QuadTree<T> {
    * Inserts a point into the QuadTree.
    * @returns true if the point was successfully inserted, false otherwise.
    */
-  insert(point: Point, data: T): boolean {
-    if (!this.boundary.contains(point)) {
+  insert(dataPoint: DataPoint<T>): boolean {
+    if (!this.boundary.contains(dataPoint.point)) {
       return false;
     }
 
     if (this.dataPoints.length < this.capacity) {
-      this.dataPoints.push({ data, point });
+      this.dataPoints.push(dataPoint);
       return true;
     } else {
       if (!this.divided) {
         this.subdivide();
       }
 
-      if (this.northeast!.insert(point, data)) {
+      if (this.northeast!.insert(dataPoint)) {
         return true;
-      } else if (this.northwest!.insert(point, data)) {
+      } else if (this.northwest!.insert(dataPoint)) {
         return true;
-      } else if (this.southeast!.insert(point, data)) {
+      } else if (this.southeast!.insert(dataPoint)) {
         return true;
-      } else if (this.southwest!.insert(point, data)) {
+      } else if (this.southwest!.insert(dataPoint)) {
         return true;
       }
     }
