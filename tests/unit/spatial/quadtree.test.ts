@@ -12,50 +12,47 @@ describe(QuadTree, () => {
 
   describe('insert', () => {
     it('should insert points correctly', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
 
-      expect(tree.insert(point1, 1)).toBeTrue();
-      expect(tree.insert(point2, 2)).toBeTrue();
-      expect(tree.insert(point3, 3)).toBeTrue();
+      expect(tree.insert(dataPoint1)).toBeTrue();
+      expect(tree.insert(dataPoint2)).toBeTrue();
+      expect(tree.insert(dataPoint3)).toBeTrue();
     });
 
     it('should not insert points outside the boundary', () => {
-      const point = new Point(110, 110);
+      const dataPoint = { point: new Point(110, 110), data: 0 };
 
-      expect(tree.insert(point, 0)).toBeFalse();
+      expect(tree.insert(dataPoint)).toBeFalse();
     });
 
     it('should query points within a given range', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
 
       const result = tree.query(new Rectangle(0, 0, 25, 25));
 
-      expect(result).toStrictEqual([
-        { point: point1, data: 1 },
-        { point: point2, data: 2 },
-      ]);
+      expect(result).toStrictEqual([dataPoint1, dataPoint2]);
     });
 
     it('should return an empty array when no points are found within the range', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
 
       const result = tree.query(new Rectangle(100, 100, 150, 150));
 
@@ -63,27 +60,27 @@ describe(QuadTree, () => {
     });
 
     it('should respect the capacity of child quad trees', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
-      const point5 = new Point(50, 50);
-      const point6 = new Point(60, 60);
-      const point7 = new Point(70, 70);
-      const point8 = new Point(80, 80);
-      const point9 = new Point(90, 90);
-      const point10 = new Point(100, 100);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
+      const dataPoint5 = { point: new Point(50, 50), data: 5 };
+      const dataPoint6 = { point: new Point(60, 60), data: 6 };
+      const dataPoint7 = { point: new Point(70, 70), data: 7 };
+      const dataPoint8 = { point: new Point(80, 80), data: 8 };
+      const dataPoint9 = { point: new Point(90, 90), data: 9 };
+      const dataPoint10 = { point: new Point(100, 100), data: 10 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
-      tree.insert(point5, 5);
-      tree.insert(point6, 6);
-      tree.insert(point7, 7);
-      tree.insert(point8, 8);
-      tree.insert(point9, 9);
-      tree.insert(point10, 10);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
+      tree.insert(dataPoint5);
+      tree.insert(dataPoint6);
+      tree.insert(dataPoint7);
+      tree.insert(dataPoint8);
+      tree.insert(dataPoint9);
+      tree.insert(dataPoint10);
 
       expect(tree.getDepth()).toBeGreaterThan(1);
 
@@ -93,27 +90,27 @@ describe(QuadTree, () => {
     });
 
     it('should respect the capacity of nested child quad trees', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
-      const point5 = new Point(50, 50);
-      const point6 = new Point(60, 60);
-      const point7 = new Point(70, 70);
-      const point8 = new Point(80, 80);
-      const point9 = new Point(90, 90);
-      const point10 = new Point(100, 100);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
+      const dataPoint5 = { point: new Point(50, 50), data: 5 };
+      const dataPoint6 = { point: new Point(60, 60), data: 6 };
+      const dataPoint7 = { point: new Point(70, 70), data: 7 };
+      const dataPoint8 = { point: new Point(80, 80), data: 8 };
+      const dataPoint9 = { point: new Point(90, 90), data: 9 };
+      const dataPoint10 = { point: new Point(100, 100), data: 10 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
-      tree.insert(point5, 5);
-      tree.insert(point6, 6);
-      tree.insert(point7, 7);
-      tree.insert(point8, 8);
-      tree.insert(point9, 9);
-      tree.insert(point10, 10);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
+      tree.insert(dataPoint5);
+      tree.insert(dataPoint6);
+      tree.insert(dataPoint7);
+      tree.insert(dataPoint8);
+      tree.insert(dataPoint9);
+      tree.insert(dataPoint10);
 
       expect(tree.getDepth()).toBeGreaterThan(1);
 
@@ -125,27 +122,27 @@ describe(QuadTree, () => {
 
   describe('getDepth', () => {
     it('should return the correct depth of the quad tree', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
-      const point5 = new Point(50, 50);
-      const point6 = new Point(60, 60);
-      const point7 = new Point(70, 70);
-      const point8 = new Point(80, 80);
-      const point9 = new Point(90, 90);
-      const point10 = new Point(100, 100);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
+      const dataPoint5 = { point: new Point(50, 50), data: 5 };
+      const dataPoint6 = { point: new Point(60, 60), data: 6 };
+      const dataPoint7 = { point: new Point(70, 70), data: 7 };
+      const dataPoint8 = { point: new Point(80, 80), data: 8 };
+      const dataPoint9 = { point: new Point(90, 90), data: 9 };
+      const dataPoint10 = { point: new Point(100, 100), data: 10 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
-      tree.insert(point5, 5);
-      tree.insert(point6, 6);
-      tree.insert(point7, 7);
-      tree.insert(point8, 8);
-      tree.insert(point9, 9);
-      tree.insert(point10, 10);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
+      tree.insert(dataPoint5);
+      tree.insert(dataPoint6);
+      tree.insert(dataPoint7);
+      tree.insert(dataPoint8);
+      tree.insert(dataPoint9);
+      tree.insert(dataPoint10);
 
       expect(tree.getDepth()).toBe(2);
     });
@@ -157,101 +154,88 @@ describe(QuadTree, () => {
     });
 
     it('should return all the inserted data points', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
 
-      expect(tree.getDataPoints()).toStrictEqual([
-        { point: point1, data: 1 },
-        { point: point2, data: 2 },
-        { point: point3, data: 3 },
-      ]);
+      expect(tree.getDataPoints()).toStrictEqual([dataPoint1, dataPoint2, dataPoint3]);
     });
   });
 
   describe('query', () => {
     it('should return an empty array when no points are found within the range', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
 
       const result = tree.query(new Rectangle(50, 50, 60, 60));
       expect(result).toBeEmpty();
     });
 
     it('should return all points within the range when the range covers the entire quad tree', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
 
       const result = tree.query(new Rectangle(0, 0, 100, 100));
-      expect(result).toStrictEqual([
-        { point: point1, data: 1 },
-        { point: point2, data: 2 },
-        { point: point3, data: 3 },
-        { point: point4, data: 4 },
-      ]);
+      expect(result).toStrictEqual([dataPoint1, dataPoint2, dataPoint3, dataPoint4]);
     });
 
     it('should return points within the range when the range partially overlaps with the quad tree', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
 
       const result = tree.query(new Rectangle(15, 15, 35, 35));
-      expect(result).toStrictEqual([
-        { point: point2, data: 2 },
-        { point: point3, data: 3 },
-        { point: point4, data: 4 },
-      ]);
+      expect(result).toStrictEqual([dataPoint2, dataPoint3, dataPoint4]);
     });
   });
 
   describe('dfs', () => {
     it('should traverse the quad tree', () => {
-      const point1 = new Point(10, 10);
-      const point2 = new Point(20, 20);
-      const point3 = new Point(30, 30);
-      const point4 = new Point(40, 40);
-      const point5 = new Point(50, 50);
-      const point6 = new Point(60, 60);
-      const point7 = new Point(70, 70);
-      const point8 = new Point(80, 80);
-      const point9 = new Point(90, 90);
-      const point10 = new Point(100, 100);
+      const dataPoint1 = { point: new Point(10, 10), data: 1 };
+      const dataPoint2 = { point: new Point(20, 20), data: 2 };
+      const dataPoint3 = { point: new Point(30, 30), data: 3 };
+      const dataPoint4 = { point: new Point(40, 40), data: 4 };
+      const dataPoint5 = { point: new Point(50, 50), data: 5 };
+      const dataPoint6 = { point: new Point(60, 60), data: 6 };
+      const dataPoint7 = { point: new Point(70, 70), data: 7 };
+      const dataPoint8 = { point: new Point(80, 80), data: 8 };
+      const dataPoint9 = { point: new Point(90, 90), data: 9 };
+      const dataPoint10 = { point: new Point(100, 100), data: 10 };
 
-      tree.insert(point1, 1);
-      tree.insert(point2, 2);
-      tree.insert(point3, 3);
-      tree.insert(point4, 4);
-      tree.insert(point5, 5);
-      tree.insert(point6, 6);
-      tree.insert(point7, 7);
-      tree.insert(point8, 8);
-      tree.insert(point9, 9);
-      tree.insert(point10, 10);
+      tree.insert(dataPoint1);
+      tree.insert(dataPoint2);
+      tree.insert(dataPoint3);
+      tree.insert(dataPoint4);
+      tree.insert(dataPoint5);
+      tree.insert(dataPoint6);
+      tree.insert(dataPoint7);
+      tree.insert(dataPoint8);
+      tree.insert(dataPoint9);
+      tree.insert(dataPoint10);
 
       const points = new Array<DataPoint<number>>();
 
@@ -260,16 +244,16 @@ describe(QuadTree, () => {
       });
 
       expect(points).toIncludeSameMembers([
-        { point: point1, data: 1 },
-        { point: point2, data: 2 },
-        { point: point3, data: 3 },
-        { point: point4, data: 4 },
-        { point: point5, data: 5 },
-        { point: point6, data: 6 },
-        { point: point7, data: 7 },
-        { point: point8, data: 8 },
-        { point: point9, data: 9 },
-        { point: point10, data: 10 },
+        dataPoint1,
+        dataPoint2,
+        dataPoint3,
+        dataPoint4,
+        dataPoint5,
+        dataPoint6,
+        dataPoint7,
+        dataPoint8,
+        dataPoint9,
+        dataPoint10,
       ]);
     });
   });
