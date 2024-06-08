@@ -1,1 +1,1 @@
-export * from './dispatcher';
+export * from './topic';
