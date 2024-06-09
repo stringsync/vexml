@@ -10,7 +10,6 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
-import { Rendering } from './rendering';
 
 const Y_SHIFT_PADDING = 10;
 
@@ -43,7 +42,7 @@ export class Score {
   }
 
   /** Renders the Score. */
-  render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): Rendering {
+  render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
@@ -239,7 +238,7 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return new Rendering({ type: 'score', systems: systemRenderings, container: opts.element });
+    return { type: 'score', systems: systemRenderings, container: opts.element };
   }
 
   @util.memoize()
