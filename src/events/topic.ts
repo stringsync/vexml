@@ -24,4 +24,8 @@ export class Topic<T extends Events> {
   unsubscribe(id: number): void {
     this.subscriptions = this.subscriptions.filter((s) => s.id !== id);
   }
+
+  getSubscriberCount(): number {
+    return this.subscriptions.length;
+  }
 }
