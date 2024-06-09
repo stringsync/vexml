@@ -74,7 +74,7 @@ export class Vexml {
   }
 
   /** Renders the vexml instance to an HTML element. */
-  render(opts: RenderOptions): rendering.ScoreRendering {
+  render(opts: RenderOptions): rendering.Rendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
 
     const score = new rendering.Score({

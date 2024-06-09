@@ -1,3 +1,3 @@
-export type EventMap = Record<string, any>;
+export type Events = Record<string, any>;
 
-export type EventCallback<P> = P extends undefined ? () => void : (payload: P) => void;
+export type Callback<P> = P extends undefined ? () => void : (payload: P) => void;
