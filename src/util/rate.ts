@@ -11,14 +11,14 @@
  */
 export const throttle = <F extends (...args: any[]) => void>(f: F, ms: number): F => {
   let timeout: NodeJS.Timeout | null = null;
-  let shouldFire = false;
-  let storedArgs = [];
+  let storedArgs: Parameters<F> | null = null;
+  let isFireEnqueued = false;
 
   /** Handles the timeout and triggers the function execution. */
   const maybeFire = () => {
     timeout = null;
-    if (shouldFire) {
-      shouldFire = false;
+    if (isFireEnqueued) {
+      isFireEnqueued = false;
       fire();
     }
   };
@@ -27,7 +27,7 @@ export const throttle = <F extends (...args: any[]) => void>(f: F, ms: number): 
   const fire = () => {
     timeout = setTimeout(maybeFire, ms);
     const args = storedArgs;
-    storedArgs = []; // Avoid a space leak by clearing stored arguments.
+    storedArgs = null; // Avoid a space leak by clearing stored arguments.
     f(args);
   };
 
@@ -37,7 +37,7 @@ export const throttle = <F extends (...args: any[]) => void>(f: F, ms: number): 
     if (timeout === null) {
       fire();
     } else {
-      shouldFire = true;
+      isFireEnqueued = true;
     }
   };
 

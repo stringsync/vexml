@@ -6,6 +6,7 @@ export type RenderingEvents = {
   click: { src: Event };
 };
 
+const MOVE_THROTTLE_MS = 30;
 const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
 const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 
@@ -105,13 +106,13 @@ export class Rendering {
 
   private onNativeMouseDown = (e: Event) => {};
 
-  private onNativeMouseMove = (e: Event) => {};
+  private onNativeMouseMove = util.throttle((e: Event) => {}, MOVE_THROTTLE_MS);
 
   private onNativeMouseUp = (e: Event) => {};
 
   private onNativeTouchStart = (e: Event) => {};
 
-  private onNativeTouchMove = (e: Event) => {};
+  private onNativeTouchMove = util.throttle((e: Event) => {}, MOVE_THROTTLE_MS);
 
   private onNativeTouchEnd = (e: Event) => {};
 }
