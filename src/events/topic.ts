@@ -1,13 +1,13 @@
-import { EventCallback, EventMap } from './types';
+import { Callback, Events } from './types';
 
-type Subscription<T extends EventMap, N extends keyof T> = {
+type Subscription<T extends Events, N extends keyof T> = {
   id: number;
   name: N;
-  callback: EventCallback<T[N]>;
+  callback: Callback<T[N]>;
 };
 
 /** Class that tracks pubsub subscribers. */
-export class Topic<T extends EventMap> {
+export class Topic<T extends Events> {
   private id = 0;
   private subscriptions = new Array<Subscription<T, keyof T>>();
 
@@ -15,9 +15,9 @@ export class Topic<T extends EventMap> {
     this.subscriptions.filter((s) => s.name === name).forEach((s) => s.callback(payload));
   }
 
-  subscribe<N extends keyof T>(name: N, callback: EventCallback<T[N]>): number {
+  subscribe<N extends keyof T>(name: N, callback: Callback<T[N]>): number {
     const id = this.id++;
-    this.subscriptions.push({ id, name, callback: callback as EventCallback<T[keyof T]> });
+    this.subscriptions.push({ id, name, callback: callback as Callback<T[keyof T]> });
     return id;
   }
 
