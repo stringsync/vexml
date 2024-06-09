@@ -84,23 +84,15 @@ export class QuadTree<T> {
   query(rectangle: Rectangle): DataPoint<T>[] {
     const found = new Array<DataPoint<T>>();
 
-    const recurse = (tree: QuadTree<T>) => {
+    this.dfs((tree: QuadTree<T>) => {
       if (tree.boundary.intersects(rectangle)) {
         for (const dataPoint of tree.dataPoints) {
           if (rectangle.contains(dataPoint.point)) {
             found.push(dataPoint);
           }
         }
-        if (this.divided) {
-          this.northwest!.dfs(recurse);
-          this.northeast!.dfs(recurse);
-          this.southwest!.dfs(recurse);
-          this.southeast!.dfs(recurse);
-        }
       }
-    };
-
-    this.dfs(recurse);
+    });
 
     return found;
   }

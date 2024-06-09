@@ -32,4 +32,8 @@ export class Rectangle {
       rect.y + rect.h < this.y
     );
   }
+
+  center(): Point {
+    return new Point(this.x + this.w / 2, this.y + this.h / 2);
+  }
 }
