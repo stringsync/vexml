@@ -84,10 +84,12 @@ export class Vexml {
       },
     });
 
-    return score.render({
+    const scoreRendering = score.render({
       element: opts.container,
       width: opts.width,
     });
+
+    return new rendering.Rendering(scoreRendering);
   }
 
   /** Returns the document string. */
