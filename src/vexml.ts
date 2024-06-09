@@ -1,7 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
-import * as events from '@/events';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
