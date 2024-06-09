@@ -26,9 +26,9 @@ export const throttle = <F extends (...args: any[]) => void>(f: F, ms: number): 
   /** Triggers the function execution and sets the timeout in case there's another call during the timeout. */
   const fire = () => {
     timeout = setTimeout(maybeFire, ms);
-    const args = storedArgs;
+    const args = storedArgs as Parameters<F>;
     storedArgs = null; // Avoid a space leak by clearing stored arguments.
-    f(args);
+    f(...args);
   };
 
   /** The throttled function that will be returned. */

@@ -40,12 +40,25 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     const start = new Date();
+    let cleanup = () => {};
 
     try {
-      vexml.Vexml.fromMusicXML(musicXML).render({
+      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         container: element,
         width,
       });
+
+      const handle = rendering.addEventListener('click', (e) => {
+        const target = e.targets[0];
+        if (!target) {
+          return;
+        }
+        const vfStaveNote = target.staveNote.vexflow.staveNote;
+        vfStaveNote.setStyle({ fillStyle: 'red  ', strokeStyle: 'blue' });
+        vfStaveNote.drawWithStyle();
+      });
+      cleanup = () => rendering.removeEventListener(handle);
+
       const svg = element.firstChild as SVGElement;
       svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
       onResult({
@@ -66,6 +79,8 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     return () => {
+      cleanup();
+
       const firstChild = element.firstChild;
       if (firstChild) {
         element.removeChild(firstChild);
@@ -73,5 +88,5 @@ export const Vexml = (props: VexmlProps) => {
     };
   }, [musicXML, width, onResult]);
 
-  return <div className="w-100" ref={containerRef}></div>;
+  return <div className="w-100 position-relative" ref={containerRef}></div>;
 };

@@ -1,6 +1,9 @@
 import * as musicxml from '@/musicxml';
 import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
+import * as cursors from '@/cursors';
+import * as events from '@/events';
+import * as spatial from '@/spatial';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
@@ -77,23 +80,68 @@ export class Vexml {
   render(opts: RenderOptions): rendering.Rendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
 
-    const score = new rendering.Score({
-      config,
-      musicXML: {
-        scorePartwise: this.musicXML.getScorePartwise(),
-      },
-    });
+    const scorePartwise = this.musicXML.getScorePartwise();
+    const score = new rendering.Score({ config, musicXML: { scorePartwise } });
+    const scoreRendering = score.render({ element: opts.container, width: opts.width });
 
-    const scoreRendering = score.render({
-      element: opts.container,
-      width: opts.width,
-    });
+    const tree = this.getTree(scoreRendering);
+    const cursor = new cursors.PointCursor(tree);
 
-    return new rendering.Rendering(scoreRendering);
+    const topic = new events.Topic<rendering.RenderingEvents>();
+
+    return new rendering.Rendering({ scoreRendering, cursor, topic });
   }
 
   /** Returns the document string. */
   getDocumentString(): string {
     return this.musicXML.getDocumentString();
+  }
+
+  private getTree(scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
+    const domRect = scoreRendering.container.getBoundingClientRect();
+    const rect = spatial.Rectangle.origin(domRect.width, domRect.height);
+    const tree = new spatial.QuadTree(rect, 4);
+
+    const staveNotes = scoreRendering.systems
+      .flatMap((system) => system.measures)
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.parts)
+      .flatMap((part) => part.staves)
+      .flatMap((stave) => stave.entry)
+      .flatMap((staveEntry) => {
+        if (staveEntry.type === 'chorus') {
+          return staveEntry.voices;
+        }
+        return [];
+      })
+      .flatMap((voice) => voice.entries)
+      .flatMap((voiceEntry) => {
+        if (voiceEntry.type === 'stavenote') {
+          return voiceEntry;
+        }
+        return [];
+      });
+
+    for (const staveNote of staveNotes) {
+      const rects = new Array<spatial.Rectangle>();
+
+      const box = staveNote.vexflow.staveNote.getBoundingBox();
+      rects.push(new spatial.Rectangle(box.x, box.y, box.w, box.h));
+
+      rects.push(
+        ...staveNote.vexflow.staveNote.noteHeads.map((notehead) => {
+          const box = notehead.getBoundingBox();
+          return new spatial.Rectangle(box.x, box.y, box.w, box.h);
+        })
+      );
+
+      const anchors = rects.map((rect) => rect.center());
+      const region = new spatial.Region(rect, anchors);
+      for (const anchor of anchors) {
+        tree.insert({ point: anchor, data: { region, staveNote } });
+      }
+    }
+
+    return tree;
   }
 }
