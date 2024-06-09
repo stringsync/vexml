@@ -1,9 +1,26 @@
+import * as util from '@/util';
 import { Topic, Callback } from '@/events';
 import { ScoreRendering } from './score';
 
 export type RenderingEvents = {
   click: { src: Event };
 };
+
+const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
+const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
+
+let EVENT_NAMES = new Array<keyof HTMLElementEventMap>();
+switch (util.device.inputType) {
+  case 'mouseonly':
+    EVENT_NAMES = [...MOUSE_EVENT_NAMES];
+    break;
+  case 'touchonly':
+    EVENT_NAMES = [...TOUCH_EVENT_NAMES];
+    break;
+  case 'hybrid':
+    EVENT_NAMES = [...MOUSE_EVENT_NAMES, ...TOUCH_EVENT_NAMES];
+    break;
+}
 
 export class Rendering {
   private score: ScoreRendering;
@@ -15,32 +32,86 @@ export class Rendering {
   }
 
   addEventListener<N extends keyof RenderingEvents>(name: N, callback: Callback<RenderingEvents[N]>): number {
-    this.install();
+    if (!this.installed) {
+      this.install();
+    }
     return this.topic.subscribe(name, callback);
   }
 
   removeEventListener(id: number): void {
     this.topic.unsubscribe(id);
-    if (this.topic.getSubscriberCount() === 0) {
+    if (this.topic.getSubscriberCount() === 0 && this.installed) {
       this.uninstall();
     }
   }
 
   private install() {
-    if (!this.installed) {
-      this.score.container.addEventListener('click', this.onNativeClick);
-      this.installed = true;
+    util.assert(!this.installed, 'Rendering has already installed native events');
+
+    for (const eventName of EVENT_NAMES) {
+      switch (eventName) {
+        case 'mousedown':
+          this.score.container.addEventListener('mousedown', this.onNativeMouseDown);
+          break;
+        case 'mousemove':
+          this.score.container.addEventListener('mousemove', this.onNativeMouseMove);
+          break;
+        case 'mouseup':
+          this.score.container.addEventListener('mouseup', this.onNativeMouseUp);
+          break;
+        case 'touchstart':
+          this.score.container.addEventListener('touchstart', this.onNativeTouchStart);
+          break;
+        case 'touchmove':
+          this.score.container.addEventListener('touchmove', this.onNativeTouchMove);
+          break;
+        case 'touchend':
+          this.score.container.addEventListener('touchend', this.onNativeTouchEnd);
+          break;
+      }
     }
+
+    this.installed = true;
   }
 
   private uninstall() {
-    if (this.installed) {
-      this.score.container.removeEventListener('click', this.onNativeClick);
-      this.installed = false;
+    util.assert(this.installed, 'Rendering does not have native events installed');
+
+    for (const eventName of EVENT_NAMES) {
+      switch (eventName) {
+        case 'mousedown':
+          this.score.container.removeEventListener('mousedown', this.onNativeMouseDown);
+          break;
+        case 'mousemove':
+          this.score.container.removeEventListener('mousemove', this.onNativeMouseMove);
+          break;
+        case 'mouseup':
+          this.score.container.removeEventListener('mouseup', this.onNativeMouseDown);
+          break;
+        case 'touchstart':
+          this.score.container.removeEventListener('touchstart', this.onNativeTouchStart);
+          break;
+        case 'touchmove':
+          this.score.container.removeEventListener('touchmove', this.onNativeTouchMove);
+          break;
+        case 'touchend':
+          this.score.container.removeEventListener('touchend', this.onNativeTouchEnd);
+          break;
+      }
     }
+
+    this.installed = false;
   }
 
-  private onNativeClick = (e: Event) => {
-    this.topic.publish('click', { src: e });
-  };
+  private onNativeMouseDown = (e: Event) => {};
+
+  private onNativeMouseMove = (e: Event) => {};
+
+  private onNativeMouseUp = (e: Event) => {};
+
+  private onNativeTouchStart = (e: Event) => {};
+
+  private onNativeTouchMove = (e: Event) => {};
+
+  private onNativeTouchEnd = (e: Event) => {};
 }
