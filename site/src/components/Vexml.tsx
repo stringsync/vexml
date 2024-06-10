@@ -1,4 +1,4 @@
-import * as vexml from '@/vexml';
+import * as vexml from '@/index';
 import * as errors from '../util/errors';
 import { useEffect, useRef } from 'react';
 import { useWidth } from '../hooks/useWidth';
@@ -8,6 +8,7 @@ const THROTTLE_DELAY_MS = 50;
 export type VexmlProps = {
   musicXML: string;
   onResult: (result: VexmlResult) => void;
+  onClick: vexml.ClickEventListener;
 };
 
 export type VexmlResult =
@@ -19,6 +20,7 @@ export type VexmlResult =
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
   const onResult = props.onResult;
+  const onClick = props.onClick;
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useWidth(containerRef, THROTTLE_DELAY_MS);
 
@@ -40,24 +42,16 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     const start = new Date();
-    let cleanup = () => {};
+
+    let rendering: vexml.Rendering | undefined;
 
     try {
-      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+      rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         container: element,
         width,
       });
 
-      const handle = rendering.addEventListener('click', (e) => {
-        const target = e.targets[0];
-        if (!target) {
-          return;
-        }
-        const vfStaveNote = target.staveNote.vexflow.staveNote;
-        vfStaveNote.setStyle({ fillStyle: 'red  ', strokeStyle: 'blue' });
-        vfStaveNote.drawWithStyle();
-      });
-      cleanup = () => rendering.removeEventListener(handle);
+      rendering.addEventListener('click', onClick);
 
       const svg = element.firstChild as SVGElement;
       svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
@@ -79,14 +73,14 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     return () => {
-      cleanup();
+      rendering?.removeAllEventListeners();
 
       const firstChild = element.firstChild;
       if (firstChild) {
         element.removeChild(firstChild);
       }
     };
-  }, [musicXML, width, onResult]);
+  }, [musicXML, width, onResult, onClick]);
 
   return <div className="w-100 position-relative" ref={containerRef}></div>;
 };

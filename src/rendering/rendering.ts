@@ -3,10 +3,7 @@ import * as cursors from '@/cursors';
 import * as spatial from '@/spatial';
 import { Topic, Callback } from '@/events';
 import { ScoreRendering } from './score';
-
-export type RenderingEvents = {
-  click: { targets: any[]; point: spatial.Point; src: Event };
-};
+import { Events } from './events';
 
 const MOVE_THROTTLE_MS = 30;
 const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
@@ -27,22 +24,18 @@ switch (util.device.inputType) {
 
 export class Rendering {
   private scoreRendering: ScoreRendering;
-  private topic: Topic<RenderingEvents>;
+  private topic: Topic<Events>;
   private cursor: cursors.PointCursor<any>;
   private installed: boolean;
 
-  constructor(opts: {
-    scoreRendering: ScoreRendering;
-    topic: Topic<RenderingEvents>;
-    cursor: cursors.PointCursor<any>;
-  }) {
+  constructor(opts: { scoreRendering: ScoreRendering; topic: Topic<Events>; cursor: cursors.PointCursor<any> }) {
     this.scoreRendering = opts.scoreRendering;
     this.topic = opts.topic;
     this.cursor = opts.cursor;
     this.installed = false;
   }
 
-  addEventListener<N extends keyof RenderingEvents>(name: N, callback: Callback<RenderingEvents[N]>): number {
+  addEventListener<N extends keyof Events>(name: N, callback: Callback<Events[N]>): number {
     if (!this.installed) {
       this.install();
     }
@@ -52,6 +45,13 @@ export class Rendering {
   removeEventListener(id: number): void {
     this.topic.unsubscribe(id);
     if (this.topic.getSubscriberCount() === 0 && this.installed) {
+      this.uninstall();
+    }
+  }
+
+  removeAllEventListeners(): void {
+    this.topic.unsubscribeAll();
+    if (this.installed) {
       this.uninstall();
     }
   }
@@ -131,6 +131,7 @@ export class Rendering {
 
   private onNativeMouseDown = (e: Event) => {
     this.topic.publish('click', {
+      type: 'click',
       targets: this.cursor.getTargets(),
       point: this.cursor.getPoint(),
       src: e,
