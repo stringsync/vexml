@@ -83,10 +83,7 @@ export class Vexml {
 
     const scorePartwise = this.musicXML.getScorePartwise();
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
-    const scoreRendering = score.render({ element: opts.container, width: opts.width });
-
-    const tree = this.getTree(scoreRendering);
-    const cursor = new cursors.PointCursor(tree);
+    const scoreRendering = score.render({ container: opts.container, width: opts.width });
 
     const topic = new events.Topic<rendering.Events>();
     const device = util.device();
@@ -96,7 +93,10 @@ export class Vexml {
       host = host.firstElementChild!;
     }
 
-    return new rendering.Rendering({ host, cursor, topic, device });
+    const tree = this.getTree(host, scoreRendering);
+    const cursor = new cursors.PointCursor(tree);
+
+    return new rendering.Rendering({ config, host, cursor, topic, device });
   }
 
   /** Returns the document string. */
@@ -104,8 +104,8 @@ export class Vexml {
     return this.musicXML.getDocumentString();
   }
 
-  private getTree(scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
-    const domRect = scoreRendering.container.getBoundingClientRect();
+  private getTree(host: Element, scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
+    const domRect = host.getBoundingClientRect();
     const rect = spatial.Rectangle.origin(domRect.width, domRect.height);
     const tree = new spatial.QuadTree(rect, 4);
 
