@@ -2,7 +2,6 @@ import * as util from '@/util';
 import * as cursors from '@/cursors';
 import * as spatial from '@/spatial';
 import * as events from '@/events';
-import { ScoreRendering } from './score';
 import { Events } from './events';
 
 const MOVE_THROTTLE_MS = 30;
@@ -11,7 +10,7 @@ const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
 const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 
 export class Rendering {
-  private scoreRendering: ScoreRendering;
+  private host: Element;
   private topic: events.Topic<Events>;
   private cursor: cursors.PointCursor<any>;
   private device: util.Device;
@@ -19,12 +18,12 @@ export class Rendering {
   private installed: boolean;
 
   constructor(opts: {
-    scoreRendering: ScoreRendering;
+    host: Element;
     topic: events.Topic<Events>;
     cursor: cursors.PointCursor<any>;
     device: util.Device;
   }) {
-    this.scoreRendering = opts.scoreRendering;
+    this.host = opts.host;
     this.topic = opts.topic;
     this.cursor = opts.cursor;
     this.device = opts.device;
@@ -58,22 +57,22 @@ export class Rendering {
     for (const eventName of this.getNativeEventNames()) {
       switch (eventName) {
         case 'mousedown':
-          this.scoreRendering.container.addEventListener('mousedown', this.onNativeMouseDown);
+          this.host.addEventListener('mousedown', this.onNativeMouseDown);
           break;
         case 'mousemove':
-          this.scoreRendering.container.addEventListener('mousemove', this.onNativeMouseMove);
+          this.host.addEventListener('mousemove', this.onNativeMouseMove);
           break;
         case 'mouseup':
-          this.scoreRendering.container.addEventListener('mouseup', this.onNativeMouseUp);
+          this.host.addEventListener('mouseup', this.onNativeMouseUp);
           break;
         case 'touchstart':
-          this.scoreRendering.container.addEventListener('touchstart', this.onNativeTouchStart, { passive: true });
+          this.host.addEventListener('touchstart', this.onNativeTouchStart, { passive: true });
           break;
         case 'touchmove':
-          this.scoreRendering.container.addEventListener('touchmove', this.onNativeTouchMove, { passive: true });
+          this.host.addEventListener('touchmove', this.onNativeTouchMove, { passive: true });
           break;
         case 'touchend':
-          this.scoreRendering.container.addEventListener('touchend', this.onNativeTouchEnd, { passive: true });
+          this.host.addEventListener('touchend', this.onNativeTouchEnd, { passive: true });
           break;
       }
     }
@@ -87,22 +86,22 @@ export class Rendering {
     for (const eventName of this.getNativeEventNames()) {
       switch (eventName) {
         case 'mousedown':
-          this.scoreRendering.container.removeEventListener('mousedown', this.onNativeMouseDown);
+          this.host.removeEventListener('mousedown', this.onNativeMouseDown);
           break;
         case 'mousemove':
-          this.scoreRendering.container.removeEventListener('mousemove', this.onNativeMouseMove);
+          this.host.removeEventListener('mousemove', this.onNativeMouseMove);
           break;
         case 'mouseup':
-          this.scoreRendering.container.removeEventListener('mouseup', this.onNativeMouseDown);
+          this.host.removeEventListener('mouseup', this.onNativeMouseDown);
           break;
         case 'touchstart':
-          this.scoreRendering.container.removeEventListener('touchstart', this.onNativeTouchStart);
+          this.host.removeEventListener('touchstart', this.onNativeTouchStart);
           break;
         case 'touchmove':
-          this.scoreRendering.container.removeEventListener('touchmove', this.onNativeTouchMove);
+          this.host.removeEventListener('touchmove', this.onNativeTouchMove);
           break;
         case 'touchend':
-          this.scoreRendering.container.removeEventListener('touchend', this.onNativeTouchEnd);
+          this.host.removeEventListener('touchend', this.onNativeTouchEnd);
           break;
       }
     }
@@ -110,18 +109,10 @@ export class Rendering {
     this.installed = false;
   }
 
-  private getPoint(clientX: number, clientY: number): spatial.Point {
-    const container = this.scoreRendering.container;
-
-    let host: Element = container;
-    if (container instanceof HTMLDivElement) {
-      host = container.firstElementChild!;
-    }
-
-    const rect = host.getBoundingClientRect();
+  private point(clientX: number, clientY: number): spatial.Point {
+    const rect = this.host.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-
     return new spatial.Point(x, y);
   }
 
@@ -131,7 +122,6 @@ export class Rendering {
         return [...MOUSE_EVENT_NAMES];
       case 'touchonly':
         return [...TOUCH_EVENT_NAMES];
-        break;
       case 'hybrid':
         return [...MOUSE_EVENT_NAMES, ...TOUCH_EVENT_NAMES];
     }
@@ -148,7 +138,7 @@ export class Rendering {
 
   private onNativeMouseMove = util.throttle((e: Event) => {
     util.assert(e instanceof MouseEvent, 'e must be a MouseEvent');
-    const point = this.getPoint(e.clientX, e.clientY);
+    const point = this.point(e.clientX, e.clientY);
     this.cursor.update(point);
   }, MOVE_THROTTLE_MS);
 
