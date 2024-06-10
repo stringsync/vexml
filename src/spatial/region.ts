@@ -17,11 +17,6 @@ export class Region {
     this.anchors = anchors;
 
     util.assert(this.anchors.length > 0, 'must have at least one anchor');
-
-    util.assert(
-      this.anchors.every((anchor) => this.boundingBox.contains(anchor)),
-      'all anchors must be inside the box'
-    );
   }
 
   /** Returns whether the point is contained within the region's bounding box. */
