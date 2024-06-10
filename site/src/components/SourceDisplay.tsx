@@ -15,9 +15,9 @@ const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignee
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
 const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
-const EVENT_LOG_CAPACITY = 10;
 
-const CARD_STYLE = { maxHeight: '400px' } as const;
+const EVENT_LOG_CAPACITY = 10;
+const EVENT_LOG_CARD_STYLE = { maxHeight: '400px' };
 
 export type SourceProps = {
   source: Source;
@@ -82,6 +82,11 @@ export const SourceDisplay = (props: SourceProps) => {
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
 
+  const opacity = (index: number): number => {
+    const easing = 0.33;
+    return 1 - Math.pow(index / EVENT_LOG_CAPACITY, easing);
+  };
+
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
@@ -145,10 +150,17 @@ export const SourceDisplay = (props: SourceProps) => {
 
           <div className="d-flex overflow-x-auto gap-3">
             {logs.map((log, index) => (
-              <div key={log.key} className="card rounded flex-grow-0 flex-shrink-0 overflow-y-auto" style={CARD_STYLE}>
+              <div
+                key={log.key}
+                className="card rounded flex-grow-0 flex-shrink-0 overflow-y-auto"
+                style={EVENT_LOG_CARD_STYLE}
+              >
                 <div className="card-body">
                   <h5 className="card-title d-flex justify-content-between align-items-center">
-                    {log.type} {index === 0 && <span className="badge text-bg-primary">new</span>}
+                    {log.type}{' '}
+                    <span className="badge text-bg-primary" style={{ opacity: opacity(index) }}>
+                      new
+                    </span>
                   </h5>
                   <h6 className="card-subtitle mb-2 text-body-secondary">ID {log.key}</h6>
                   <p className="card-text">
