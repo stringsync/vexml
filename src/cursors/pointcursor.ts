@@ -11,7 +11,7 @@ export class PointCursor<T> {
 
   update(point: spatial.Point) {
     this.point = point;
-    const rect = new spatial.Rectangle(this.point.x - 10, this.point.y - 10, 20, 20);
+    const rect = new spatial.Rect(this.point.x - 10, this.point.y - 10, 20, 20);
     this.targets = this.tree.query(rect).map((dataPoint) => dataPoint.data);
   }
 

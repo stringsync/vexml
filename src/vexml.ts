@@ -106,7 +106,7 @@ export class Vexml {
 
   private getTree(host: Element, scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
     const domRect = host.getBoundingClientRect();
-    const rect = spatial.Rectangle.origin(domRect.width, domRect.height);
+    const rect = spatial.Rect.origin(domRect.width, domRect.height);
     const tree = new spatial.QuadTree(rect, 4);
 
     const staveNotes = scoreRendering.systems
@@ -130,15 +130,15 @@ export class Vexml {
       });
 
     for (const staveNote of staveNotes) {
-      const rects = new Array<spatial.Rectangle>();
+      const rects = new Array<spatial.Rect>();
 
       const box = staveNote.vexflow.staveNote.getBoundingBox();
-      rects.push(new spatial.Rectangle(box.x, box.y, box.w, box.h));
+      rects.push(new spatial.Rect(box.x, box.y, box.w, box.h));
 
       rects.push(
         ...staveNote.vexflow.staveNote.noteHeads.map((notehead) => {
           const box = notehead.getBoundingBox();
-          return new spatial.Rectangle(box.x, box.y, box.w, box.h);
+          return new spatial.Rect(box.x, box.y, box.w, box.h);
         })
       );
 

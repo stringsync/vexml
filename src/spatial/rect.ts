@@ -1,7 +1,7 @@
 import { Point } from './point';
 
 /** Represents a rectangle in a 2D coordinate system. */
-export class Rectangle {
+export class Rect {
   constructor(
     /** Upper-left corner x coordinate */
     public readonly x: number,
@@ -15,7 +15,7 @@ export class Rectangle {
 
   /** Creates a Rectangle at (0, 0) with the specified width and height. */
   static origin(w: number, h: number) {
-    return new Rectangle(0, 0, w, h);
+    return new Rect(0, 0, w, h);
   }
 
   /** Checks if a given point is inside the rectangle. */
@@ -24,7 +24,7 @@ export class Rectangle {
   }
 
   /** Checks if the rectangle intersects with another rectangle. */
-  intersects(rect: Rectangle): boolean {
+  intersects(rect: Rect): boolean {
     return !(
       rect.x > this.x + this.w ||
       rect.x + rect.w < this.x ||

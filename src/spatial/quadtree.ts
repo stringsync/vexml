@@ -1,5 +1,5 @@
 import { Point } from './point';
-import { Rectangle } from './rectangle';
+import { Rect } from './rect';
 
 /** Data and a point that are associated with each other. */
 export type DataPoint<T> = {
@@ -12,7 +12,7 @@ export type DataPoint<T> = {
  * @link https://en.wikipedia.org/wiki/Quadtree
  */
 export class QuadTree<T> {
-  private boundary: Rectangle;
+  private boundary: Rect;
   private capacity: number;
   private divided: boolean;
   private dataPoints: DataPoint<T>[];
@@ -21,7 +21,7 @@ export class QuadTree<T> {
   private southeast: QuadTree<T> | undefined;
   private southwest: QuadTree<T> | undefined;
 
-  constructor(boundary: Rectangle, capacity: number) {
+  constructor(boundary: Rect, capacity: number) {
     this.boundary = boundary;
     this.capacity = capacity;
     this.dataPoints = [];
@@ -81,7 +81,7 @@ export class QuadTree<T> {
    * Queries the QuadTree for points within a given range.
    * @returns An array of points within the rectangle.
    */
-  query(rectangle: Rectangle): DataPoint<T>[] {
+  query(rectangle: Rect): DataPoint<T>[] {
     const found = new Array<DataPoint<T>>();
 
     this.dfs((tree: QuadTree<T>) => {
@@ -119,13 +119,13 @@ export class QuadTree<T> {
     const w = this.boundary.w / 2;
     const h = this.boundary.h / 2;
 
-    const ne = new Rectangle(x + w, y, w, h);
+    const ne = new Rect(x + w, y, w, h);
     this.northeast = new QuadTree<T>(ne, this.capacity);
-    const nw = new Rectangle(x, y, w, h);
+    const nw = new Rect(x, y, w, h);
     this.northwest = new QuadTree<T>(nw, this.capacity);
-    const se = new Rectangle(x + w, y + h, w, h);
+    const se = new Rect(x + w, y + h, w, h);
     this.southeast = new QuadTree<T>(se, this.capacity);
-    const sw = new Rectangle(x, y + h, w, h);
+    const sw = new Rect(x, y + h, w, h);
     this.southwest = new QuadTree<T>(sw, this.capacity);
 
     this.divided = true;
