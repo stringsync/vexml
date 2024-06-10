@@ -3,33 +3,40 @@ import * as cursors from '@/cursors';
 import * as spatial from '@/spatial';
 import * as events from '@/events';
 import { Events } from './events';
-
-const MOVE_THROTTLE_MS = 30;
+import { Config } from './config';
 
 const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
 const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 
 export class Rendering {
+  private config: Config;
   private host: Element;
   private hostRect: DOMRect;
   private topic: events.Topic<Events>;
   private cursor: cursors.PointCursor<any>;
   private device: util.Device;
-
   private installed: boolean;
 
+  private onNativeMouseMove: (e: Event) => void;
+  private onNativeTouchMove: (e: Event) => void;
+
   constructor(opts: {
+    config: Config;
     host: Element;
     topic: events.Topic<Events>;
     cursor: cursors.PointCursor<any>;
     device: util.Device;
   }) {
+    this.config = opts.config;
     this.host = opts.host;
     this.hostRect = this.host.getBoundingClientRect();
     this.topic = opts.topic;
     this.cursor = opts.cursor;
     this.device = opts.device;
     this.installed = false;
+
+    this.onNativeMouseMove = util.throttle(this._onNativeMouseMove, this.config.MOUSEMOVE_THROTTLE_INTERVAL_MS);
+    this.onNativeTouchMove = util.throttle(this._onNativeTouchMove, this.config.TOUCHMOVE_THROTTLE_INTERVAL_MS);
   }
 
   addEventListener<N extends keyof Events>(name: N, listener: events.Listener<Events[N]>): number {
@@ -137,17 +144,19 @@ export class Rendering {
     });
   };
 
-  private onNativeMouseMove = util.throttle((e: Event) => {
+  /** Unthrottled version of onNativeMouseMove. */
+  private _onNativeMouseMove = (e: Event) => {
     util.assert(e instanceof MouseEvent, 'e must be a MouseEvent');
     const point = this.point(e.clientX, e.clientY);
     this.cursor.update(point);
-  }, MOVE_THROTTLE_MS);
+  };
 
   private onNativeMouseUp = () => {};
 
   private onNativeTouchStart = () => {};
 
-  private onNativeTouchMove = util.throttle((e: Event) => {
+  /** Unthrottled version of onNativeTouchMove. */
+  private _onNativeTouchMove = (e: Event) => {
     util.assert(e instanceof TouchEvent, 'e must be a TouchEvent');
 
     if (e.touches.length > 1) {
@@ -162,7 +171,7 @@ export class Rendering {
     const point = new spatial.Point(touch.clientX, touch.clientY);
 
     this.cursor.update(point);
-  }, MOVE_THROTTLE_MS);
+  };
 
   private onNativeTouchEnd = () => {};
 }

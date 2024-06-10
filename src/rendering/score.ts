@@ -17,7 +17,6 @@ const Y_SHIFT_PADDING = 10;
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
-  container: HTMLDivElement | HTMLCanvasElement;
 };
 
 /**
@@ -42,7 +41,7 @@ export class Score {
   }
 
   /** Renders the Score. */
-  render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
+  render(opts: { container: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
@@ -112,7 +111,7 @@ export class Score {
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
-    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
+    const vfRenderer = new vexflow.Renderer(opts.container, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
     // Draw the title.
@@ -238,7 +237,7 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return { type: 'score', systems: systemRenderings, container: opts.element };
+    return { type: 'score', systems: systemRenderings };
   }
 
   @util.memoize()
