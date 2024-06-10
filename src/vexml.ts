@@ -91,7 +91,12 @@ export class Vexml {
     const topic = new events.Topic<rendering.Events>();
     const device = util.device();
 
-    return new rendering.Rendering({ scoreRendering, cursor, topic, device });
+    let host: Element = opts.container;
+    if (host instanceof HTMLDivElement) {
+      host = host.firstElementChild!;
+    }
+
+    return new rendering.Rendering({ host, cursor, topic, device });
   }
 
   /** Returns the document string. */
