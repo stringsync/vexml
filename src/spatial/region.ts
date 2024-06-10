@@ -1,5 +1,5 @@
 import { Point } from './point';
-import { Rectangle } from './rectangle';
+import { Rect } from './rect';
 import * as util from '@/util';
 
 /**
@@ -9,10 +9,10 @@ import * as util from '@/util';
  * should be ordered in descending importance.
  */
 export class Region {
-  private boundingBox: Rectangle;
+  private boundingBox: Rect;
   private anchors: Point[];
 
-  constructor(boundingBox: Rectangle, anchors: Point[]) {
+  constructor(boundingBox: Rect, anchors: Point[]) {
     this.boundingBox = boundingBox;
     this.anchors = anchors;
 

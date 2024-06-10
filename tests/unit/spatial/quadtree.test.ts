@@ -1,12 +1,12 @@
 import { DataPoint, QuadTree } from '@/spatial/quadtree';
 import { Point } from '@/spatial/point';
-import { Rectangle } from '@/spatial/rectangle';
+import { Rect } from '@/spatial/rect';
 
 describe(QuadTree, () => {
   let tree: QuadTree<number>;
 
   beforeEach(() => {
-    const boundary = new Rectangle(0, 0, 100, 100);
+    const boundary = new Rect(0, 0, 100, 100);
     tree = new QuadTree(boundary, 4);
   });
 
@@ -38,7 +38,7 @@ describe(QuadTree, () => {
       tree.insert(dataPoint3);
       tree.insert(dataPoint4);
 
-      const result = tree.query(new Rectangle(0, 0, 25, 25));
+      const result = tree.query(new Rect(0, 0, 25, 25));
 
       expect(result).toStrictEqual([dataPoint1, dataPoint2]);
     });
@@ -54,7 +54,7 @@ describe(QuadTree, () => {
       tree.insert(dataPoint3);
       tree.insert(dataPoint4);
 
-      const result = tree.query(new Rectangle(100, 100, 150, 150));
+      const result = tree.query(new Rect(100, 100, 150, 150));
 
       expect(result).toBeEmpty();
     });
@@ -178,7 +178,7 @@ describe(QuadTree, () => {
       tree.insert(dataPoint3);
       tree.insert(dataPoint4);
 
-      const result = tree.query(new Rectangle(50, 50, 60, 60));
+      const result = tree.query(new Rect(50, 50, 60, 60));
       expect(result).toBeEmpty();
     });
 
@@ -193,7 +193,7 @@ describe(QuadTree, () => {
       tree.insert(dataPoint3);
       tree.insert(dataPoint4);
 
-      const result = tree.query(new Rectangle(0, 0, 100, 100));
+      const result = tree.query(new Rect(0, 0, 100, 100));
       expect(result).toStrictEqual([dataPoint1, dataPoint2, dataPoint3, dataPoint4]);
     });
 
@@ -208,7 +208,7 @@ describe(QuadTree, () => {
       tree.insert(dataPoint3);
       tree.insert(dataPoint4);
 
-      const result = tree.query(new Rectangle(15, 15, 35, 35));
+      const result = tree.query(new Rect(15, 15, 35, 35));
       expect(result).toStrictEqual([dataPoint2, dataPoint3, dataPoint4]);
     });
   });
