@@ -36,4 +36,13 @@ export class Rect {
   center(): Point {
     return new Point(this.x + this.w / 2, this.y + this.h / 2);
   }
+
+  corners(): [Point, Point, Point, Point] {
+    return [
+      new Point(this.x, this.y),
+      new Point(this.x + this.w, this.y),
+      new Point(this.x + this.w, this.y + this.h),
+      new Point(this.x, this.y + this.h),
+    ];
+  }
 }
