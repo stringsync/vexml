@@ -4,6 +4,7 @@ import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
 import * as spatial from '@/spatial';
+import * as util from '@/util';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
@@ -88,8 +89,9 @@ export class Vexml {
     const cursor = new cursors.PointCursor(tree);
 
     const topic = new events.Topic<rendering.Events>();
+    const device = util.device();
 
-    return new rendering.Rendering({ scoreRendering, cursor, topic });
+    return new rendering.Rendering({ scoreRendering, cursor, topic, device });
   }
 
   /** Returns the document string. */

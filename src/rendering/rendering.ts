@@ -1,45 +1,41 @@
 import * as util from '@/util';
 import * as cursors from '@/cursors';
 import * as spatial from '@/spatial';
-import { Topic, Callback } from '@/events';
+import * as events from '@/events';
 import { ScoreRendering } from './score';
 import { Events } from './events';
 
 const MOVE_THROTTLE_MS = 30;
+
 const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
 const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 
-let EVENT_NAMES = new Array<keyof HTMLElementEventMap>();
-switch (util.device.inputType) {
-  case 'mouseonly':
-    EVENT_NAMES = [...MOUSE_EVENT_NAMES];
-    break;
-  case 'touchonly':
-    EVENT_NAMES = [...TOUCH_EVENT_NAMES];
-    break;
-  case 'hybrid':
-    EVENT_NAMES = [...MOUSE_EVENT_NAMES, ...TOUCH_EVENT_NAMES];
-    break;
-}
-
 export class Rendering {
   private scoreRendering: ScoreRendering;
-  private topic: Topic<Events>;
+  private topic: events.Topic<Events>;
   private cursor: cursors.PointCursor<any>;
+  private device: util.Device;
+
   private installed: boolean;
 
-  constructor(opts: { scoreRendering: ScoreRendering; topic: Topic<Events>; cursor: cursors.PointCursor<any> }) {
+  constructor(opts: {
+    scoreRendering: ScoreRendering;
+    topic: events.Topic<Events>;
+    cursor: cursors.PointCursor<any>;
+    device: util.Device;
+  }) {
     this.scoreRendering = opts.scoreRendering;
     this.topic = opts.topic;
     this.cursor = opts.cursor;
+    this.device = opts.device;
     this.installed = false;
   }
 
-  addEventListener<N extends keyof Events>(name: N, callback: Callback<Events[N]>): number {
+  addEventListener<N extends keyof Events>(name: N, listener: events.Listener<Events[N]>): number {
     if (!this.installed) {
       this.install();
     }
-    return this.topic.subscribe(name, callback);
+    return this.topic.subscribe(name, listener);
   }
 
   removeEventListener(id: number): void {
@@ -59,7 +55,7 @@ export class Rendering {
   private install() {
     util.assert(!this.installed, 'Rendering has already installed native events');
 
-    for (const eventName of EVENT_NAMES) {
+    for (const eventName of this.getNativeEventNames()) {
       switch (eventName) {
         case 'mousedown':
           this.scoreRendering.container.addEventListener('mousedown', this.onNativeMouseDown);
@@ -88,7 +84,7 @@ export class Rendering {
   private uninstall() {
     util.assert(this.installed, 'Rendering does not have native events installed');
 
-    for (const eventName of EVENT_NAMES) {
+    for (const eventName of this.getNativeEventNames()) {
       switch (eventName) {
         case 'mousedown':
           this.scoreRendering.container.removeEventListener('mousedown', this.onNativeMouseDown);
@@ -129,6 +125,18 @@ export class Rendering {
     return new spatial.Point(x, y);
   }
 
+  private getNativeEventNames() {
+    switch (this.device.inputType) {
+      case 'mouseonly':
+        return [...MOUSE_EVENT_NAMES];
+      case 'touchonly':
+        return [...TOUCH_EVENT_NAMES];
+        break;
+      case 'hybrid':
+        return [...MOUSE_EVENT_NAMES, ...TOUCH_EVENT_NAMES];
+    }
+  }
+
   private onNativeMouseDown = (e: Event) => {
     this.topic.publish('click', {
       type: 'click',
@@ -144,9 +152,9 @@ export class Rendering {
     this.cursor.update(point);
   }, MOVE_THROTTLE_MS);
 
-  private onNativeMouseUp = (e: Event) => {};
+  private onNativeMouseUp = () => {};
 
-  private onNativeTouchStart = (e: Event) => {};
+  private onNativeTouchStart = () => {};
 
   private onNativeTouchMove = util.throttle((e: Event) => {
     util.assert(e instanceof TouchEvent, 'e must be a TouchEvent');
@@ -165,5 +173,5 @@ export class Rendering {
     this.cursor.update(point);
   }, MOVE_THROTTLE_MS);
 
-  private onNativeTouchEnd = (e: Event) => {};
+  private onNativeTouchEnd = () => {};
 }

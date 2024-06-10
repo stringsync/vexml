@@ -1,9 +1,9 @@
-import { Callback, Events } from './types';
+import { Listener, Events } from './types';
 
 type Subscription<T extends Events, N extends keyof T> = {
   id: number;
   name: N;
-  callback: Callback<T[N]>;
+  listener: Listener<T[N]>;
 };
 
 /** Class that tracks pubsub subscribers. */
@@ -12,12 +12,12 @@ export class Topic<T extends Events> {
   private subscriptions = new Array<Subscription<T, keyof T>>();
 
   publish<N extends keyof T>(name: N, payload: T[N]): void {
-    this.subscriptions.filter((s) => s.name === name).forEach((s) => s.callback(payload));
+    this.subscriptions.filter((s) => s.name === name).forEach((s) => s.listener(payload));
   }
 
-  subscribe<N extends keyof T>(name: N, callback: Callback<T[N]>): number {
+  subscribe<N extends keyof T>(name: N, listener: Listener<T[N]>): number {
     const id = this.id++;
-    this.subscriptions.push({ id, name, callback: callback as Callback<T[keyof T]> });
+    this.subscriptions.push({ id, name, listener: listener as Listener<T[keyof T]> });
     return id;
   }
 
