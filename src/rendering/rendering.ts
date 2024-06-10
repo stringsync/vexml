@@ -11,6 +11,7 @@ const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 
 export class Rendering {
   private host: Element;
+  private hostRect: DOMRect;
   private topic: events.Topic<Events>;
   private cursor: cursors.PointCursor<any>;
   private device: util.Device;
@@ -24,6 +25,7 @@ export class Rendering {
     device: util.Device;
   }) {
     this.host = opts.host;
+    this.hostRect = this.host.getBoundingClientRect();
     this.topic = opts.topic;
     this.cursor = opts.cursor;
     this.device = opts.device;
@@ -110,9 +112,8 @@ export class Rendering {
   }
 
   private point(clientX: number, clientY: number): spatial.Point {
-    const rect = this.host.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const x = clientX - this.hostRect.left;
+    const y = clientY - this.hostRect.top;
     return new spatial.Point(x, y);
   }
 
