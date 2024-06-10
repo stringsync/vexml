@@ -87,7 +87,7 @@ export class Vexml {
     const tree = this.getTree(scoreRendering);
     const cursor = new cursors.PointCursor(tree);
 
-    const topic = new events.Topic<rendering.RenderingEvents>();
+    const topic = new events.Topic<rendering.Events>();
 
     return new rendering.Rendering({ scoreRendering, cursor, topic });
   }
