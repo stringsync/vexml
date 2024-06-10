@@ -3,6 +3,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
+import * as spatial from '@/spatial';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -17,6 +18,7 @@ const Y_SHIFT_PADDING = 10;
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
+  rect: spatial.Rect;
 };
 
 /**
@@ -100,6 +102,8 @@ export class Score {
       y += height;
       y += this.getSystemDistance();
     });
+
+    const rect = spatial.Rect.origin(opts.width, y);
 
     // Render spanners.
     const spannersRendering = spanners.render();
@@ -237,7 +241,7 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return { type: 'score', systems: systemRenderings };
+    return { type: 'score', systems: systemRenderings, rect };
   }
 
   @util.memoize()
