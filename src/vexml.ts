@@ -93,7 +93,7 @@ export class Vexml {
       host = host.firstElementChild!;
     }
 
-    const tree = this.getTree(host, scoreRendering);
+    const tree = this.getTree(scoreRendering);
     const cursor = new cursors.PointCursor(tree);
 
     return new rendering.Rendering({ config, host, cursor, topic, device });
@@ -104,10 +104,8 @@ export class Vexml {
     return this.musicXML.getDocumentString();
   }
 
-  private getTree(host: Element, scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
-    const domRect = host.getBoundingClientRect();
-    const rect = spatial.Rect.origin(domRect.width, domRect.height);
-    const tree = new spatial.QuadTree(rect, 4);
+  private getTree(scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
+    const tree = new spatial.QuadTree(scoreRendering.rect, 4);
 
     const staveNotes = scoreRendering.systems
       .flatMap((system) => system.measures)
@@ -143,7 +141,7 @@ export class Vexml {
       );
 
       const anchors = rects.map((rect) => rect.center());
-      const region = new spatial.Region(rect, anchors);
+      const region = new spatial.Region(scoreRendering.rect, anchors);
       for (const anchor of anchors) {
         tree.insert({ point: anchor, data: { region, staveNote } });
       }

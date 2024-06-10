@@ -11,7 +11,6 @@ const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
 export class Rendering {
   private config: Config;
   private host: Element;
-  private hostRect: DOMRect;
   private topic: events.Topic<Events>;
   private cursor: cursors.PointCursor<any>;
   private device: util.Device;
@@ -29,7 +28,6 @@ export class Rendering {
   }) {
     this.config = opts.config;
     this.host = opts.host;
-    this.hostRect = this.host.getBoundingClientRect();
     this.topic = opts.topic;
     this.cursor = opts.cursor;
     this.device = opts.device;
@@ -119,8 +117,10 @@ export class Rendering {
   }
 
   private point(clientX: number, clientY: number): spatial.Point {
-    const x = clientX - this.hostRect.left;
-    const y = clientY - this.hostRect.top;
+    // This rect needs to be used to account for the host scroll position.
+    const rect = this.host.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     return new spatial.Point(x, y);
   }
 

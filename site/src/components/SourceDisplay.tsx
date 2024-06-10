@@ -163,9 +163,7 @@ export const SourceDisplay = (props: SourceProps) => {
                     </span>
                   </h5>
                   <h6 className="card-subtitle mb-2 text-body-secondary">ID {log.key}</h6>
-                  <p className="card-text">
-                    <pre>{log.payload}</pre>
-                  </p>
+                  <pre className="card-text">{log.payload}</pre>
                 </div>
               </div>
             ))}
