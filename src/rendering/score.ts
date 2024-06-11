@@ -18,7 +18,7 @@ const Y_SHIFT_PADDING = 10;
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
-  rect: spatial.Rect;
+  rect: spatial.LegacyRect;
 };
 
 /**
@@ -103,7 +103,7 @@ export class Score {
       y += this.getSystemDistance();
     });
 
-    const rect = spatial.Rect.origin(opts.width, y);
+    const rect = spatial.LegacyRect.origin(opts.width, y);
 
     // Render spanners.
     const spannersRendering = spanners.render();

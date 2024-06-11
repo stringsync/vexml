@@ -7,7 +7,6 @@
  *
  * @param f The function to be throttled.
  * @param ms The time in milliseconds to throttle the function execution.
- * @returns The throttled function.
  */
 export const throttle = <F extends (...args: any[]) => void>(f: F, ms: number): F => {
   let timeout: NodeJS.Timeout | null = null;
