@@ -128,15 +128,15 @@ export class Vexml {
       });
 
     for (const staveNote of staveNotes) {
-      const rects = new Array<spatial.Rect>();
+      const rects = new Array<spatial.LegacyRect>();
 
       const box = staveNote.vexflow.staveNote.getBoundingBox();
-      rects.push(new spatial.Rect(box.x, box.y, box.w, box.h));
+      rects.push(new spatial.LegacyRect(box.x, box.y, box.w, box.h));
 
       rects.push(
         ...staveNote.vexflow.staveNote.noteHeads.map((notehead) => {
           const box = notehead.getBoundingBox();
-          return new spatial.Rect(box.x, box.y, box.w, box.h);
+          return new spatial.LegacyRect(box.x, box.y, box.w, box.h);
         })
       );
 
