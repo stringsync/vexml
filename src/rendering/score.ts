@@ -11,15 +11,29 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
+import { NoteRendering, StaveNoteRendering } from './note';
 
 const Y_SHIFT_PADDING = 10;
+
+/**
+ * How many entries a quad tree node should hold before subdividing.
+ *
+ * This is intentionally not configurable because it is a low level detail that should not be exposed to the caller.
+ */
+const QUAD_TREE_THRESHOLD = 10;
 
 /** The result of rendering a Score. */
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
-  rect: spatial.LegacyRect;
+  boundary: spatial.Shape;
+  locator: RenderingLocator;
 };
+
+export interface RenderingLocator {
+  // TODO: Fix the return type.
+  locate(point: spatial.Point): NoteRendering[];
+}
 
 /**
  * Represents a Score in a musical composition, serving as the top-level container for all musical elements and
@@ -102,8 +116,6 @@ export class Score {
       y += height;
       y += this.getSystemDistance();
     });
-
-    const rect = spatial.LegacyRect.origin(opts.width, y);
 
     // Render spanners.
     const spannersRendering = spanners.render();
@@ -241,7 +253,11 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return { type: 'score', systems: systemRenderings, rect };
+    // Now that everything is drawn, we expect the bounding boxes to be correct.
+    const boundary = new spatial.Rect(0, 0, opts.width, y);
+
+    // TODO: Get the locator.
+    return { type: 'score', systems: systemRenderings, boundary, locator: undefined as any };
   }
 
   @util.memoize()
@@ -272,6 +288,37 @@ export class Score {
       config: this.config,
       text: this.musicXML.scorePartwise?.getTitle() ?? '',
     });
+  }
+
+  private getTree(boundary: spatial.Rect, systems: SystemRendering[]) {
+    const tree = new spatial.QuadTree(boundary, QUAD_TREE_THRESHOLD);
+
+    // TODO: Use the staveNotes to populate the quad tree.
+    systems
+      .flatMap((system) => system.measures)
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.parts)
+      .flatMap((part) => part.staves)
+      .flatMap((stave) => stave.entry)
+      .flatMap((staveEntry) => {
+        switch (staveEntry.type) {
+          case 'chorus':
+            return staveEntry.voices;
+          default:
+            return [];
+        }
+      })
+      .flatMap((voice) => voice.entries)
+      .flatMap<StaveNoteRendering>((voiceEntry) => {
+        switch (voiceEntry.type) {
+          case 'stavenote':
+            return voiceEntry;
+          default:
+            return [];
+        }
+      });
+
+    return tree;
   }
 
   private getTopSystemDistance(systems: System[]) {

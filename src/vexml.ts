@@ -3,7 +3,6 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
-import * as spatial from '@/spatial';
 import * as util from '@/util';
 
 export type RenderOptions = {
@@ -92,9 +91,7 @@ export class Vexml {
     if (host instanceof HTMLDivElement) {
       host = host.firstElementChild!;
     }
-
-    const tree = this.getTree(scoreRendering);
-    const cursor = new cursors.PointCursor(tree);
+    const cursor = new cursors.PointCursor(scoreRendering.locator);
 
     return new rendering.Rendering({ config, host, cursor, topic, device });
   }
@@ -102,51 +99,5 @@ export class Vexml {
   /** Returns the document string. */
   getDocumentString(): string {
     return this.musicXML.getDocumentString();
-  }
-
-  private getTree(scoreRendering: rendering.ScoreRendering): spatial.QuadTree<any> {
-    const tree = new spatial.QuadTree(scoreRendering.rect, 4);
-
-    const staveNotes = scoreRendering.systems
-      .flatMap((system) => system.measures)
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves)
-      .flatMap((stave) => stave.entry)
-      .flatMap((staveEntry) => {
-        if (staveEntry.type === 'chorus') {
-          return staveEntry.voices;
-        }
-        return [];
-      })
-      .flatMap((voice) => voice.entries)
-      .flatMap((voiceEntry) => {
-        if (voiceEntry.type === 'stavenote') {
-          return voiceEntry;
-        }
-        return [];
-      });
-
-    for (const staveNote of staveNotes) {
-      const rects = new Array<spatial.LegacyRect>();
-
-      const box = staveNote.vexflow.staveNote.getBoundingBox();
-      rects.push(new spatial.LegacyRect(box.x, box.y, box.w, box.h));
-
-      rects.push(
-        ...staveNote.vexflow.staveNote.noteHeads.map((notehead) => {
-          const box = notehead.getBoundingBox();
-          return new spatial.LegacyRect(box.x, box.y, box.w, box.h);
-        })
-      );
-
-      const anchors = rects.map((rect) => rect.center());
-      const region = new spatial.Region(scoreRendering.rect, anchors);
-      for (const anchor of anchors) {
-        tree.insert({ point: anchor, data: { region, staveNote } });
-      }
-    }
-
-    return tree;
   }
 }
