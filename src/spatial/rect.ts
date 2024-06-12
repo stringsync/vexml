@@ -22,12 +22,22 @@ export class Rect implements Shape {
     return new Point(this.x + this.w / 2, this.y + this.h / 2);
   }
 
-  corners(): [Point, Point, Point, Point] {
+  corners(): [upperLeft: Point, upperRight: Point, bottomRight: Point, bottomLeft: Point] {
     return [
       new Point(this.x, this.y),
       new Point(this.x + this.w, this.y),
       new Point(this.x + this.w, this.y + this.h),
       new Point(this.x, this.y + this.h),
+    ];
+  }
+
+  quadrants(): [upperRight: Rect, upperLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
+    const [upperLeft, upperRight, bottomRight, bottomLeft] = this.corners();
+    return [
+      new Rect(upperRight.x, upperRight.y, upperRight.x - upperLeft.x, bottomRight.y - upperRight.y),
+      new Rect(upperLeft.x, upperLeft.y, upperRight.x - upperLeft.x, bottomLeft.y - upperLeft.y),
+      new Rect(bottomLeft.x, bottomLeft.y, upperRight.x - upperLeft.x, bottomRight.y - bottomLeft.y),
+      new Rect(bottomRight.x, bottomRight.y, upperRight.x - upperLeft.x, bottomRight.y - bottomLeft.y),
     ];
   }
 
