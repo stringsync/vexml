@@ -2,29 +2,69 @@ import { Circle } from './circle';
 import { Rect } from './rect';
 import { Shape } from './types';
 
-// NOTE: This was modeled as a class instead of a collection of functions because we may need to create Collision
-// instances with additional data and _methods_. For now, we just need to know a boolean.
-
 /** Represents a collision between two shapes. */
 export class Collision {
-  /** Returns whether a collision exists between the two shapes. */
-  static detect(shape1: Shape, shape2: Shape): boolean {
+  /** Creates a CollisionSubject for fluent APIs. */
+  static is(shape: Shape) {
+    return new CollisionSubject(shape);
+  }
+}
+
+/**
+ * A collision calculator that enables fluent APIs.
+ *
+ * This is done to reduce ambiguity of the semantics behind the collision checks.
+ *
+ * @example Collision.is(rect).collidingWith(circle); // boolean
+ * @example Collision.is(circle).surroundedBy(rect); // boolean
+ */
+class CollisionSubject {
+  private shape: Shape;
+
+  constructor(shape: Shape) {
+    this.shape = shape;
+  }
+
+  collidingWith(shape: Shape): boolean {
+    const shape1 = this.shape;
+    const shape2 = shape;
+
     if (shape1 instanceof Rect && shape2 instanceof Rect) {
-      return Collision.rectRect(shape1, shape2);
+      return this.isRectCollidingWithRect(shape1, shape2);
     }
     if (shape1 instanceof Rect && shape2 instanceof Circle) {
-      return Collision.rectCircle(shape1, shape2);
+      return this.isRectCollidingWithCircle(shape1, shape2);
     }
     if (shape1 instanceof Circle && shape2 instanceof Rect) {
-      return Collision.rectCircle(shape2, shape1);
+      return this.isRectCollidingWithCircle(shape2, shape1);
     }
     if (shape1 instanceof Circle && shape2 instanceof Circle) {
-      return Collision.circleCircle(shape1, shape2);
+      return this.isCircleCollidingWithCircle(shape1, shape2);
     }
     throw new Error(`unsupported collision between ${shape1.constructor.name} and ${shape2.constructor.name}`);
   }
 
-  private static rectRect(rect1: Rect, rect2: Rect) {
+  surroundedBy(shape: Shape): boolean {
+    const shape1 = this.shape;
+    const shape2 = shape;
+
+    if (shape1 instanceof Rect && shape2 instanceof Rect) {
+      return this.isRectSurroundedByRect(shape1, shape2);
+    }
+    if (shape1 instanceof Rect && shape2 instanceof Circle) {
+      return this.isRectSurroundedByCircle(shape1, shape2);
+    }
+    if (shape1 instanceof Circle && shape2 instanceof Rect) {
+      return this.isCircleSurroundedByRect(shape1, shape2);
+    }
+    if (shape1 instanceof Circle && shape2 instanceof Circle) {
+      return this.isCircleSurroundedByCircle(shape1, shape2);
+    }
+
+    return false;
+  }
+
+  private isRectCollidingWithRect(rect1: Rect, rect2: Rect) {
     return !(
       rect2.x > rect1.x + rect1.w ||
       rect2.x + rect2.w < rect1.x ||
@@ -33,11 +73,11 @@ export class Collision {
     );
   }
 
-  private static circleCircle(circle1: Circle, circle2: Circle): boolean {
+  private isCircleCollidingWithCircle(circle1: Circle, circle2: Circle): boolean {
     return circle1.center().distance(circle2.center()) <= circle1.r + circle2.r;
   }
 
-  private static rectCircle(rect: Rect, circle: Circle): boolean {
+  private isRectCollidingWithCircle(rect: Rect, circle: Circle): boolean {
     if (rect.contains(circle.center())) {
       return true;
     }
@@ -50,5 +90,57 @@ export class Collision {
     const dx = circle.x - x;
     const dy = circle.y - y;
     return dx * dx + dy * dy <= circle.r * circle.r;
+  }
+
+  private isRectSurroundedByRect(rect1: Rect, rect2: Rect) {
+    return (
+      rect1.x > rect2.x &&
+      rect1.y > rect2.y &&
+      rect1.x + rect1.w < rect2.x + rect2.w &&
+      rect1.y + rect1.h < rect2.y + rect2.h
+    );
+  }
+
+  private isCircleSurroundedByCircle(circle1: Circle, circle2: Circle) {
+    const distance = circle1.center().distance(circle2.center());
+    return distance + circle1.r < circle2.r;
+  }
+
+  private isRectSurroundedByCircle(rect: Rect, circle: Circle) {
+    const circleCenter = circle.center();
+    const rectCenter = rect.center();
+    const distanceX = Math.abs(circleCenter.x - rectCenter.x);
+    const distanceY = Math.abs(circleCenter.y - rectCenter.y);
+    const halfRectWidth = rect.w / 2;
+    const halfRectHeight = rect.h / 2;
+
+    if (distanceX > halfRectWidth + circle.r || distanceY > halfRectHeight + circle.r) {
+      return false;
+    }
+
+    if (distanceX <= halfRectWidth || distanceY <= halfRectHeight) {
+      return true;
+    }
+
+    const cornerDistanceSq = (distanceX - halfRectWidth) ** 2 + (distanceY - halfRectHeight) ** 2;
+
+    return cornerDistanceSq <= circle.r ** 2;
+  }
+
+  private isCircleSurroundedByRect(circle: Circle, rect: Rect) {
+    const circleCenter = circle.center();
+    const rectCenter = rect.center();
+    const distanceX = Math.abs(circleCenter.x - rectCenter.x);
+    const distanceY = Math.abs(circleCenter.y - rectCenter.y);
+    const halfRectWidth = rect.w / 2;
+    const halfRectHeight = rect.h / 2;
+    if (distanceX > halfRectWidth || distanceY > halfRectHeight) {
+      return false;
+    }
+    if (distanceX <= halfRectWidth - circle.r && distanceY <= halfRectHeight - circle.r) {
+      return true;
+    }
+    const cornerDistanceSq = (distanceX - halfRectWidth) ** 2 + (distanceY - halfRectHeight) ** 2;
+    return cornerDistanceSq <= circle.r ** 2;
   }
 }

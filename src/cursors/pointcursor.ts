@@ -1,18 +1,17 @@
 import * as spatial from '@/spatial';
 
-export class PointCursor<T> {
-  private tree: spatial.QuadTree<T>;
+export class PointCursor<T extends any[]> {
+  private locator: spatial.PointLocator<T>;
   private targets = new Array<T>();
   private point = spatial.Point.origin();
 
-  constructor(tree: spatial.QuadTree<T>) {
-    this.tree = tree;
+  constructor(locator: spatial.PointLocator<T>) {
+    this.locator = locator;
   }
 
   update(point: spatial.Point) {
     this.point = point;
-    const rect = new spatial.LegacyRect(this.point.x - 10, this.point.y - 10, 20, 20);
-    this.targets = this.tree.query(rect).map((dataPoint) => dataPoint.data);
+    this.targets = this.locator.locate(point);
   }
 
   getPoint(): spatial.Point {
