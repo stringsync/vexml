@@ -1,4 +1,4 @@
-import { DataPoint, QuadTree } from '@/spatial/quadtree';
+import { DataPoint, QuadTree } from '@/spatial/legacyquadtree';
 import { Point } from '@/spatial/point';
 import { LegacyRect } from '@/spatial/legacyrect';
 
