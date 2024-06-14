@@ -14,6 +14,10 @@ export class Rect implements Shape {
     public readonly h: number
   ) {}
 
+  static fromRectLike(rectLike: { x: number; y: number; w: number; h: number }): Rect {
+    return new Rect(rectLike.x, rectLike.y, rectLike.w, rectLike.h);
+  }
+
   origin(): Point {
     return new Point(this.x, this.y);
   }

@@ -83,15 +83,16 @@ export class Vexml {
     const scorePartwise = this.musicXML.getScorePartwise();
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ container: opts.container, width: opts.width });
-
+    const locator = rendering.Locator.fromScoreRendering(scoreRendering);
+    const cursor = new cursors.PointCursor(locator);
     const topic = new events.Topic<rendering.Events>();
     const device = util.device();
 
+    // TODO(jared): When canvas support is added, we won't need to check instanceof.
     let host: Element = opts.container;
     if (host instanceof HTMLDivElement) {
       host = host.firstElementChild!;
     }
-    const cursor = new cursors.PointCursor(scoreRendering.locator);
 
     return new rendering.Rendering({ config, host, cursor, topic, device });
   }

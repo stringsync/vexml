@@ -1,8 +1,8 @@
 import * as spatial from '@/spatial';
 
-export class PointCursor<T extends any[]> {
+/** A object that tracks a spatial cursor, and returns the targets under it. */
+export class PointCursor<T> {
   private locator: spatial.PointLocator<T>;
-  private targets = new Array<T>();
   private point = spatial.Point.origin();
 
   constructor(locator: spatial.PointLocator<T>) {
@@ -11,7 +11,6 @@ export class PointCursor<T extends any[]> {
 
   update(point: spatial.Point) {
     this.point = point;
-    this.targets = this.locator.locate(point);
   }
 
   getPoint(): spatial.Point {
@@ -19,6 +18,6 @@ export class PointCursor<T extends any[]> {
   }
 
   getTargets(): T[] {
-    return this.targets;
+    return this.locator.locate(this.point);
   }
 }

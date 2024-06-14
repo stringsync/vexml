@@ -4,6 +4,7 @@ import * as spatial from '@/spatial';
 import * as events from '@/events';
 import { Events } from './events';
 import { Config } from './config';
+import { LocatorTarget } from './locator';
 
 const MOUSE_EVENT_NAMES = ['mousedown', 'mousemove', 'mouseup'] as const;
 const TOUCH_EVENT_NAMES = ['touchstart', 'touchmove', 'touchend'] as const;
@@ -12,7 +13,7 @@ export class Rendering {
   private config: Config;
   private host: Element;
   private topic: events.Topic<Events>;
-  private cursor: cursors.PointCursor<any>;
+  private cursor: cursors.PointCursor<LocatorTarget>;
   private device: util.Device;
   private installed: boolean;
 
@@ -23,7 +24,7 @@ export class Rendering {
     config: Config;
     host: Element;
     topic: events.Topic<Events>;
-    cursor: cursors.PointCursor<any>;
+    cursor: cursors.PointCursor<LocatorTarget>;
     device: util.Device;
   }) {
     this.config = opts.config;

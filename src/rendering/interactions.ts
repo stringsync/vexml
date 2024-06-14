@@ -1,14 +1,26 @@
 import * as spatial from '@/spatial';
 import * as util from '@/util';
+import { StaveNoteRendering } from './note';
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
   private handles: InteractionHandle[];
   private value: T;
 
-  constructor(handles: InteractionHandle[], value: T) {
+  private constructor(handles: InteractionHandle[], value: T) {
     this.handles = handles;
     this.value = value;
+  }
+
+  static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
+    const vfStaveNote = staveNote.vexflow.staveNote;
+
+    // TODO(jared): Break this up into a circle for the notehead, and a rectangle for the stem if present.
+    const staveNoteRect = spatial.Rect.fromRectLike(vfStaveNote.getBoundingBox());
+    const staveNotePoint = staveNoteRect.center();
+    const staveNoteHandle = new InteractionHandle(staveNoteRect, staveNotePoint);
+
+    return new InteractionModel([staveNoteHandle], staveNote);
   }
 
   /** Returns the interaction handles for this model. */
@@ -19,6 +31,16 @@ export class InteractionModel<T> {
   /** Returns the value associated with this model. */
   getValue(): T {
     return this.value;
+  }
+
+  /** Returns the shapes that compose this model. */
+  getShapes(): spatial.Shape[] {
+    return this.handles.map((handle) => handle.getShape());
+  }
+
+  /** Returns whether the model contains a point. */
+  contains(point: spatial.Point): boolean {
+    return this.handles.some((handle) => handle.contains(point));
   }
 
   /**
@@ -67,10 +89,17 @@ export class InteractionHandle {
     this.point = point;
   }
 
+  /** Returns the shape of the handle. */
+  getShape(): spatial.Shape {
+    return this.shape;
+  }
+
+  /** Returns the distance from a point. */
   distance(point: spatial.Point): number {
     return this.point.distance(point);
   }
 
+  /** Returns whether the model contains a point. */
   contains(point: spatial.Point) {
     return this.shape.contains(point);
   }
