@@ -7,7 +7,7 @@ export const useTimeAgo = (since: Date) => {
     const interval = setInterval(() => {
       const nextTimeAgo = getTimeAgo(since);
       setTimeAgo(nextTimeAgo);
-    }, 1000);
+    }, 60000);
 
     return () => {
       clearInterval(interval);
