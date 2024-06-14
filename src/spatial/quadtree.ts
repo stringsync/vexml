@@ -38,7 +38,7 @@ export class QuadTree<T> {
   insert(shape: Shape, data: T): boolean {
     // If the shape is not completely surrounded by the boundary, do not insert it. We want to make sure that when we
     // query a quad tree, we are able to find the shape.
-    if (!Collision.is(shape).surroundedBy(this.boundary)) {
+    if (!Collision.is(shape).surrounding(this.boundary)) {
       return false;
     }
 
@@ -82,7 +82,7 @@ export class QuadTree<T> {
           found.push(data);
         }
       }
-      if (tree?.isDivided()) {
+      if (tree.isDivided()) {
         dfs(tree.northeast!);
         dfs(tree.northwest!);
         dfs(tree.southwest!);
@@ -106,7 +106,7 @@ export class QuadTree<T> {
    * that suggests the query performance will be O(N). At this extreme, the caller should consider a different threshold
    * or a different data structure.
    */
-  maxTreeEntryCount(): number {
+  getMaxTreeEntryCount(): number {
     let max = this.entries.length;
 
     const dfs = (tree: QuadTree<T>) => {
