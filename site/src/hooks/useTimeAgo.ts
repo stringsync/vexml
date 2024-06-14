@@ -29,7 +29,7 @@ export const useTimeAgo = (since: Date) => {
 };
 
 const getTimeAgo = (dt: number) => {
-  if (dt < 30 * 1000) {
+  if (dt < 10 * 1000) {
     return 'just now';
   } else if (dt < 60 * 1000) {
     const seconds = Math.floor(dt / 1000);
