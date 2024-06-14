@@ -10,14 +10,12 @@ import { SourceInput } from './SourceInput';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
 import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
+import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
 const FONT_FAMILY = 'Bravura';
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/vexflow-fonts@1.0.6/bravura/Bravura_1.392.otf';
-
-const EVENT_LOG_CAPACITY = 10;
-const EVENT_LOG_CARD_STYLE = { maxHeight: '400px' };
 
 export type SourceProps = {
   source: Source;
@@ -25,8 +23,6 @@ export type SourceProps = {
   onUpdate: (source: Source) => void;
   onRemove: () => void;
 };
-
-type EventLog = { key: string; type: string; timestamp: Date; payload: string };
 
 export const SourceDisplay = (props: SourceProps) => {
   const [musicXML, isMusicXMLLoading, musicXMLError] = useMusicXML(props.source);
@@ -72,7 +68,7 @@ export const SourceDisplay = (props: SourceProps) => {
         key: nextKey(),
         type: payload.type,
         timestamp: new Date(),
-        payload: shallowStringify(payload),
+        payload,
       };
       setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
     },
@@ -81,11 +77,6 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
-
-  const opacity = (index: number): number => {
-    const easing = 0.33;
-    return 1 - Math.pow(index / EVENT_LOG_CAPACITY, easing);
-  };
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -150,22 +141,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
           <div className="d-flex overflow-x-auto gap-3">
             {logs.map((log, index) => (
-              <div
-                key={log.key}
-                className="card rounded flex-grow-0 flex-shrink-0 overflow-y-auto"
-                style={EVENT_LOG_CARD_STYLE}
-              >
-                <div className="card-body">
-                  <h5 className="card-title d-flex justify-content-between align-items-center">
-                    {log.type}{' '}
-                    <span className="badge text-bg-primary" style={{ opacity: opacity(index) }}>
-                      new
-                    </span>
-                  </h5>
-                  <h6 className="card-subtitle mb-2 text-body-secondary">ID {log.key}</h6>
-                  <pre className="card-text">{log.payload}</pre>
-                </div>
-              </div>
+              <EventLogCard key={log.key} index={index} log={log} />
             ))}
           </div>
         </div>
@@ -188,17 +164,3 @@ export const SourceDisplay = (props: SourceProps) => {
     </div>
   );
 };
-
-const shallowStringify = <T extends object>(payload: T) =>
-  JSON.stringify(
-    payload,
-    (key, value) => {
-      const isComplexObject =
-        typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor !== Object;
-      if (isComplexObject) {
-        return `[${value.constructor.name}]`;
-      }
-      return value;
-    },
-    2
-  );

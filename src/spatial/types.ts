@@ -8,5 +8,5 @@ export interface Shape {
 
 /** Represents something that can take a point, and return something.  */
 export interface PointLocator<T> {
-  locate(point: Point): T;
+  locate(point: Point): T[];
 }
