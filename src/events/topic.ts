@@ -11,6 +11,10 @@ export class Topic<T extends Events> {
   private id = 0;
   private subscriptions = new Array<Subscription<T, keyof T>>();
 
+  hasSubscribers<N extends keyof T>(name: N): boolean {
+    return this.subscriptions.some((s) => s.name === name);
+  }
+
   publish<N extends keyof T>(name: N, payload: T[N]): void {
     this.subscriptions.filter((s) => s.name === name).forEach((s) => s.listener(payload));
   }
@@ -29,9 +33,5 @@ export class Topic<T extends Events> {
 
   unsubscribeAll(): void {
     this.subscriptions = [];
-  }
-
-  getSubscriberCount(): number {
-    return this.subscriptions.length;
   }
 }

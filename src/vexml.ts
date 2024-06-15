@@ -91,7 +91,7 @@ export class Vexml {
 
     // Initialize event routing.
     const topic = new events.Topic<rendering.Events>();
-    const bridge = events.NativeBridge.forSVG<keyof rendering.Events>(
+    const bridge = events.LegacyNativeBridge.forSVG<keyof rendering.Events>(
       host,
       [{ vexml: 'click', native: ['mousedown'] }],
       {

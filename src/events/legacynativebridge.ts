@@ -28,7 +28,7 @@ export type NativeEventListenerMap<T extends SVGElement | HTMLCanvasElement> = {
  * If a vexml user is not interested in a particular event, we should not add the corresponding native event listeners
  * if no other vexml events listen to it.
  */
-export class NativeBridge<T extends SVGElement | HTMLCanvasElement, V extends string> {
+export class LegacyNativeBridge<T extends SVGElement | HTMLCanvasElement, V extends string> {
   private host: T;
   private mappings: EventMapping<T, V>[];
   private listeners: NativeEventListenerMap<T>;
@@ -52,7 +52,7 @@ export class NativeBridge<T extends SVGElement | HTMLCanvasElement, V extends st
     mappings: EventMapping<SVGElement, V>[],
     listeners: NativeEventListenerMap<SVGElement>
   ) {
-    return new NativeBridge(host, mappings, listeners);
+    return new LegacyNativeBridge(host, mappings, listeners);
   }
 
   /** Creates a NativeBridge for a canvas element. */
@@ -61,7 +61,7 @@ export class NativeBridge<T extends SVGElement | HTMLCanvasElement, V extends st
     mappings: EventMapping<HTMLCanvasElement, V>[],
     listeners: NativeEventListenerMap<HTMLCanvasElement>
   ) {
-    return new NativeBridge(host, mappings, listeners);
+    return new LegacyNativeBridge(host, mappings, listeners);
   }
 
   /** Activates a Vexml event, updating the native dependency tally as needed. */
