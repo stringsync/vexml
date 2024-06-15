@@ -46,7 +46,7 @@ export const Vexml = (props: VexmlProps) => {
     let rendering: vexml.Rendering | undefined;
 
     try {
-      rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+      rendering = vexml.Vexml.fromMusicXML(musicXML).renderSVG({
         container: element,
         width,
       });

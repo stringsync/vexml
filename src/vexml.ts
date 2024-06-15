@@ -3,7 +3,6 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
-import * as util from '@/util';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
@@ -76,25 +75,36 @@ export class Vexml {
     return Vexml.fromBlob(file);
   }
 
-  /** Renders the vexml instance to an HTML element. */
-  render(opts: RenderOptions): rendering.Rendering {
+  /** Renders the vexml instance to an SVG element. */
+  renderSVG(opts: RenderOptions): rendering.Rendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
 
+    // Render score.
     const scorePartwise = this.musicXML.getScorePartwise();
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ container: opts.container, width: opts.width });
+
+    // Make a cursor.
+    const host = opts.container.firstElementChild! as SVGElement;
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
-    const cursor = new cursors.PointCursor(locator);
+    const cursor = new cursors.PointCursor(host, locator);
+
+    // Initialize event routing.
     const topic = new events.Topic<rendering.Events>();
-    const device = util.device();
+    const bridge = events.NativeBridge.forSVG<keyof rendering.Events>(
+      host,
+      [{ vexml: 'click', native: ['mousedown'] }],
+      {
+        mousedown: {
+          callback: (event) => {
+            const { point, targets } = cursor.get(event);
+            topic.publish('click', { type: 'click', point, targets, src: event });
+          },
+        },
+      }
+    );
 
-    // TODO(jared): When canvas support is added, we won't need to check instanceof.
-    let host: Element = opts.container;
-    if (host instanceof HTMLDivElement) {
-      host = host.firstElementChild!;
-    }
-
-    return new rendering.Rendering({ config, host, cursor, topic, device });
+    return new rendering.Rendering({ config, topic, bridge });
   }
 
   /** Returns the document string. */

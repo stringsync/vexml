@@ -1,6 +1,6 @@
 import { Listener, Events } from './types';
 
-type Subscription<T extends Events, N extends keyof T> = {
+export type Subscription<T extends Events, N extends keyof T> = {
   id: number;
   name: N;
   listener: Listener<T[N]>;
@@ -21,8 +21,10 @@ export class Topic<T extends Events> {
     return id;
   }
 
-  unsubscribe(id: number): void {
+  unsubscribe(id: number): Subscription<T, keyof T> | null {
+    const subscription = this.subscriptions.find((s) => s.id === id) ?? null;
     this.subscriptions = this.subscriptions.filter((s) => s.id !== id);
+    return subscription;
   }
 
   unsubscribeAll(): void {
