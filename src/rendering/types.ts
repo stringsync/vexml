@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
+import * as spatial from '@/spatial';
 import { Address } from './address';
 
 /** Data for a spanner. */

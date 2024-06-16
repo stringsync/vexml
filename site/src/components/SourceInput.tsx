@@ -4,7 +4,7 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { Vexml } from '@/vexml';
+import { Vexml } from '@/index';
 
 export type SourceInputProps = {
   source: Source;

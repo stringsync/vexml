@@ -3,6 +3,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
+import * as spatial from '@/spatial';
 import { Config } from './config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -17,6 +18,7 @@ const Y_SHIFT_PADDING = 10;
 export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
+  boundary: spatial.Rect;
 };
 
 /**
@@ -41,7 +43,7 @@ export class Score {
   }
 
   /** Renders the Score. */
-  render(opts: { element: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
+  render(opts: { container: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
@@ -111,7 +113,7 @@ export class Score {
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
-    const vfRenderer = new vexflow.Renderer(opts.element, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
+    const vfRenderer = new vexflow.Renderer(opts.container, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
     // Draw the title.
@@ -237,7 +239,11 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
-    return { type: 'score', systems: systemRenderings };
+    // Now that everything is drawn, we expect the bounding boxes to be correct.
+    const boundary = new spatial.Rect(0, 0, opts.width, y);
+
+    // TODO: Get the locator.
+    return { type: 'score', systems: systemRenderings, boundary };
   }
 
   @util.memoize()

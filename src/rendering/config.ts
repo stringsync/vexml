@@ -1,3 +1,5 @@
+export type InputType = 'mouse' | 'touch' | 'hybrid' | 'auto' | 'none';
+
 export type Config = {
   DEFAULT_SYSTEM_DISTANCE: number;
   DEFAULT_STAVE_DISTANCE: number;
@@ -12,6 +14,9 @@ export type Config = {
   VOICE_PADDING: number;
   MULTI_MEASURE_REST_WIDTH: number;
   ENABLE_MEASURE_NUMBERS: boolean;
+  TOUCHMOVE_THROTTLE_INTERVAL_MS: number;
+  MOUSEMOVE_THROTTLE_INTERVAL_MS: number;
+  INPUT_TYPE: InputType;
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -28,4 +33,7 @@ export const DEFAULT_CONFIG: Config = {
   VOICE_PADDING: 80,
   MULTI_MEASURE_REST_WIDTH: 200,
   ENABLE_MEASURE_NUMBERS: true,
+  TOUCHMOVE_THROTTLE_INTERVAL_MS: 30,
+  MOUSEMOVE_THROTTLE_INTERVAL_MS: 30,
+  INPUT_TYPE: 'auto',
 } as const;
