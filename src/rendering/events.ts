@@ -14,6 +14,13 @@ export type EventMap = {
     point: spatial.Point;
     native: MouseEvent;
   };
+  hover: {
+    type: 'hover';
+    closestTarget: LocatorTarget | null;
+    targets: LocatorTarget[];
+    point: spatial.Point;
+    native: MouseEvent;
+  };
 };
 
 export type ClickEventListener = (event: EventMap['click']) => void;
@@ -30,11 +37,11 @@ export class EventMappingFactory {
   create(inputType: InputType): events.EventMapping<events.HostElement, keyof EventMap>[] {
     switch (inputType) {
       case 'mouse':
-        return [this.click()];
+        return [this.click(), this.hover()];
       case 'touch':
         return [this.click()];
       case 'hybrid':
-        return [this.click()];
+        return [this.click(), this.hover()];
       case 'auto':
         switch (util.device().inputType) {
           case 'mouseonly':
@@ -58,6 +65,18 @@ export class EventMappingFactory {
         click: (event) => {
           const { point, targets, closestTarget } = this.cursor.get(event);
           this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
+        },
+      },
+    };
+  }
+
+  private hover(): events.EventMapping<events.HostElement, 'hover'> {
+    return {
+      vexml: 'hover',
+      native: {
+        mousemove: (event) => {
+          const { point, targets, closestTarget } = this.cursor.get(event);
+          this.topic.publish('hover', { type: 'hover', closestTarget, targets, point, native: event });
         },
       },
     };
