@@ -64,25 +64,51 @@ export const SourceDisplay = (props: SourceProps) => {
   );
 
   const [logs, setLogs] = useState(new Array<EventLog>());
+  const nextKey = useNextKey('event-log');
 
   const vexmlClickCheckboxId = useId();
   const [isVexmlClickEnabled, setVexmlClickEnabled] = useState(true);
   const onVexmlClickCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setVexmlClickEnabled(event.target.checked);
   };
-
-  const nextKey = useNextKey('event-log');
   const onVexmlClick = useCallback<vexml.ClickEventListener>(
-    (payload) => {
+    (event) => {
+      if (!isVexmlClickEnabled) {
+        return;
+      }
+
       const log = {
         key: nextKey(),
-        type: payload.type,
+        type: event.type,
         timestamp: new Date(),
-        payload,
+        event,
       };
       setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
     },
-    [nextKey]
+    [isVexmlClickEnabled, nextKey]
+  );
+
+  const vexmlHoverCheckboxId = useId();
+  const [isVexmlHoverEnabled, setVexmlHoverEnabled] = useState(false);
+  const onVexmlHoverCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setVexmlHoverEnabled(event.target.checked);
+  };
+
+  const onVexmlHover = useCallback<vexml.HoverEventListener>(
+    (event) => {
+      if (!isVexmlHoverEnabled) {
+        return;
+      }
+
+      const log = {
+        key: nextKey(),
+        type: event.type,
+        timestamp: new Date(),
+        event,
+      };
+      setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
+    },
+    [isVexmlHoverEnabled, nextKey]
   );
 
   const eventCardId = useId();
@@ -185,18 +211,34 @@ export const SourceDisplay = (props: SourceProps) => {
         <div id={eventCardId} className="collapse mb-3">
           <h3 className="mb-3">Events</h3>
 
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              id={vexmlClickCheckboxId}
-              type="checkbox"
-              value="click"
-              checked={isVexmlClickEnabled}
-              onChange={onVexmlClickCheckboxChange}
-            />
-            <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
-              click
-            </label>
+          <div>
+            <div className="form-check form-check-inline">
+              <input
+                className="form-check-input"
+                id={vexmlClickCheckboxId}
+                type="checkbox"
+                value="click"
+                checked={isVexmlClickEnabled}
+                onChange={onVexmlClickCheckboxChange}
+              />
+              <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
+                click
+              </label>
+            </div>
+
+            <div className="form-check form-check-inline">
+              <input
+                className="form-check-input"
+                id={vexmlHoverCheckboxId}
+                type="checkbox"
+                value="click"
+                checked={isVexmlHoverEnabled}
+                onChange={onVexmlHoverCheckboxChange}
+              />
+              <label className="form-check-label" htmlFor={vexmlHoverCheckboxId}>
+                hover
+              </label>
+            </div>
           </div>
 
           <hr />
@@ -223,7 +265,8 @@ export const SourceDisplay = (props: SourceProps) => {
               musicXML={musicXML}
               mode={props.source.vexmlMode}
               onResult={setVexmlResult}
-              onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
+              onClick={onVexmlClick}
+              onHover={onVexmlHover}
             />
           </div>
         )}

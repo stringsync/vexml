@@ -9,7 +9,8 @@ export type VexmlProps = {
   musicXML: string;
   mode: VexmlMode;
   onResult: (result: VexmlResult) => void;
-  onClick?: vexml.ClickEventListener;
+  onClick: vexml.ClickEventListener;
+  onHover: vexml.HoverEventListener;
 };
 
 export type VexmlMode = 'svg' | 'canvas';
@@ -25,6 +26,7 @@ export const Vexml = (props: VexmlProps) => {
   const mode = props.mode;
   const onResult = props.onResult;
   const onClick = props.onClick;
+  const onHover = props.onHover;
 
   const divContainerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLCanvasElement>(null);
@@ -40,18 +42,14 @@ export const Vexml = (props: VexmlProps) => {
       return;
     }
 
-    const handles = new Array<number>();
-
-    if (onClick) {
-      handles.push(rendering.addEventListener('click', onClick));
-    }
+    const handles = [rendering.addEventListener('click', onClick), rendering.addEventListener('hover', onHover)];
 
     return () => {
       for (const handle of handles) {
         rendering.removeEventListener(handle);
       }
     };
-  }, [rendering, onClick]);
+  }, [rendering, onClick, onHover]);
 
   useEffect(() => {
     onResult({ type: 'none' });
