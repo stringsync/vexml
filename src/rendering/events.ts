@@ -9,7 +9,7 @@ import { InputType } from './config';
 export type EventMap = {
   click: {
     type: 'click';
-    currentTarget: LocatorTarget | null;
+    closestTarget: LocatorTarget | null;
     targets: LocatorTarget[];
     point: spatial.Point;
     native: MouseEvent;
@@ -56,8 +56,8 @@ export class EventMappingFactory {
       vexml: 'click',
       native: {
         click: (event) => {
-          const { point, targets, currentTarget } = this.cursor.get(event);
-          this.topic.publish('click', { type: 'click', currentTarget, targets, point, native: event });
+          const { point, targets, closestTarget } = this.cursor.get(event);
+          this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
         },
       },
     };

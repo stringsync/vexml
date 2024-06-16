@@ -13,13 +13,13 @@ export class PointCursor<T> {
   get(positional: { clientX: number; clientY: number }): {
     point: spatial.Point;
     targets: T[];
-    currentTarget: T | null;
+    closestTarget: T | null;
   } {
     const point = this.point(positional.clientX, positional.clientY);
     let targets = this.locator.locate(point);
     targets = this.locator.sort(point, targets);
-    const currentTarget = targets[0] ?? null;
-    return { point, targets, currentTarget };
+    const closestTarget = targets[0] ?? null;
+    return { point, targets, closestTarget };
   }
 
   private point(clientX: number, clientY: number): spatial.Point {
