@@ -94,7 +94,7 @@ export class Vexml {
     const cursor = new cursors.PointCursor(host, locator);
     const eventMappingFactory = new rendering.EventMappingFactory(cursor, vexmlEventTopic);
     const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>(host, {
-      mappings: eventMappingFactory.create('auto'),
+      mappings: eventMappingFactory.create(config.INPUT_TYPE),
       native: { topic: nativeEventTopic, opts: { touchstart: { passive: true }, touchend: { passive: true } } },
     });
 
