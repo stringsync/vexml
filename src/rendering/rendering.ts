@@ -1,17 +1,17 @@
 import * as events from '@/events';
-import { Events } from './events';
+import { EventMap } from './events';
 import { Config } from './config';
 
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
-  private bridge: events.LegacyNativeBridge<SVGElement | HTMLCanvasElement, keyof Events>;
-  private topic: events.Topic<Events>;
+  private bridge: events.NativeBridge<SVGElement | HTMLCanvasElement, keyof EventMap>;
+  private topic: events.Topic<EventMap>;
 
   constructor(opts: {
     config: Config;
-    bridge: events.LegacyNativeBridge<SVGElement | HTMLCanvasElement, keyof Events>;
-    topic: events.Topic<Events>;
+    bridge: events.NativeBridge<SVGElement | HTMLCanvasElement, keyof EventMap>;
+    topic: events.Topic<EventMap>;
   }) {
     this.config = opts.config;
     this.bridge = opts.bridge;
@@ -19,7 +19,7 @@ export class Rendering {
   }
 
   /** Adds a vexml event listener. */
-  addEventListener<N extends keyof Events>(name: N, listener: events.Listener<Events[N]>): number {
+  addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
     const handle = this.topic.subscribe(name, listener);
     this.bridge.activate(name);
     return handle;

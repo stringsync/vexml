@@ -1,3 +1,3 @@
-export type Events = Record<string, any>;
+export type AnyEventMap = { [eventName: string]: any };
 
-export type Listener<P> = P extends undefined ? () => void : (payload: P) => void;
+export type EventListener<E> = E extends undefined ? () => void : (event: E) => void;

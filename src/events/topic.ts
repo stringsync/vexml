@@ -1,13 +1,13 @@
-import { Listener, Events } from './types';
+import { EventListener, AnyEventMap } from './types';
 
-export type Subscription<T extends Events, N extends keyof T> = {
+export type Subscription<T extends AnyEventMap, N extends keyof T> = {
   id: number;
   name: N;
-  listener: Listener<T[N]>;
+  listener: EventListener<T[N]>;
 };
 
 /** Class that tracks pubsub subscribers. */
-export class Topic<T extends Events> {
+export class Topic<T extends AnyEventMap> {
   private id = 0;
   private subscriptions = new Array<Subscription<T, keyof T>>();
 
@@ -19,9 +19,9 @@ export class Topic<T extends Events> {
     this.subscriptions.filter((s) => s.name === name).forEach((s) => s.listener(payload));
   }
 
-  subscribe<N extends keyof T>(name: N, listener: Listener<T[N]>): number {
+  subscribe<N extends keyof T>(name: N, listener: EventListener<T[N]>): number {
     const id = this.id++;
-    this.subscriptions.push({ id, name, listener: listener as Listener<T[keyof T]> });
+    this.subscriptions.push({ id, name, listener: listener as EventListener<T[keyof T]> });
     return id;
   }
 
