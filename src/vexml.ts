@@ -87,24 +87,37 @@ export class Vexml {
     // Make a cursor.
     const host = opts.container.firstElementChild! as SVGElement;
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
-    const cursor = new cursors.PointCursor(host, locator);
 
     // Initialize event routing.
-    const topic = new events.Topic<rendering.Events>();
-    const bridge = events.LegacyNativeBridge.forSVG<keyof rendering.Events>(
+    const vexmlEventTopic = new events.Topic<rendering.EventMap>();
+    const nativeEventTopic = new events.Topic<events.NativeEventMap<SVGElement>>();
+    const cursor = new cursors.PointCursor(host, locator);
+    const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>({
       host,
-      [{ vexml: 'click', native: ['mousedown'] }],
-      {
-        mousedown: {
-          callback: (event) => {
-            const { point, targets } = cursor.get(event);
-            topic.publish('click', { type: 'click', point, targets, src: event });
-          },
+      mappings: [
+        {
+          vexmlEventName: 'click',
+          nativeEventListeners: [
+            {
+              eventName: 'click',
+              callback: (event: MouseEvent) => {
+                const { point, targets } = cursor.get(event);
+                vexmlEventTopic.publish('click', { type: 'click', targets, point, src: event });
+              },
+            },
+          ],
         },
-      }
-    );
+      ],
+      native: {
+        topic: nativeEventTopic,
+        opts: {
+          touchstart: { passive: true },
+          touchend: { passive: true },
+        },
+      },
+    });
 
-    return new rendering.Rendering({ config, topic, bridge });
+    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });
   }
 
   /** Returns the document string. */

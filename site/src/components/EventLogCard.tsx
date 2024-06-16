@@ -8,7 +8,7 @@ export type EventLog = {
   key: string;
   type: string;
   timestamp: Date;
-  payload: vexml.Events[keyof vexml.Events];
+  payload: vexml.EventMap[keyof vexml.EventMap];
 };
 
 export type EventLogCardProps = {

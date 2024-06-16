@@ -2,7 +2,7 @@ import * as spatial from '@/spatial';
 import { LocatorTarget } from './locator';
 
 /** Events that vexml dispatches to listeners. */
-export type Events = {
+export type EventMap = {
   click: {
     type: 'click';
     targets: LocatorTarget[];
@@ -11,4 +11,4 @@ export type Events = {
   };
 };
 
-export type ClickEventListener = (event: Events['click']) => void;
+export type ClickEventListener = (event: EventMap['click']) => void;
