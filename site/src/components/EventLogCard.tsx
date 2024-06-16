@@ -45,22 +45,27 @@ const opacity = (index: number): number => {
   return 1 - Math.pow(index / EVENT_LOG_CAPACITY, easing);
 };
 
-const stringify = <T extends object>(payload: T) =>
-  JSON.stringify(
+const stringify = <T extends object>(payload: T): string => {
+  const seen = new Set();
+
+  return JSON.stringify(
     payload,
     (key, value) => {
       const isComplexObject =
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value) &&
-        value.constructor !== Object &&
-        // TODO(jared): This might not work when building. Find a different way to check for vexflow objects.
-        // Avoid expanding vexflow objects.
-        value.constructor.name.startsWith('_');
+        typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor !== Object;
       if (isComplexObject) {
         return `<${value.constructor.name}>`;
       }
+
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '<Circular>';
+        }
+        seen.add(value);
+      }
+
       return value;
     },
     2
   );
+};
