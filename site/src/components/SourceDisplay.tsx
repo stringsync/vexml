@@ -87,9 +87,8 @@ export const SourceDisplay = (props: SourceProps) => {
   const svgButtonId = useId();
   const canvasButtonId = useId();
   const vexmlModeName = useId();
-  const [vexmlMode, setVexmlMode] = useState<VexmlMode>('svg');
   const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setVexmlMode(e.target.value as VexmlMode);
+    props.onUpdate({ ...props.source, vexmlMode: e.target.value as VexmlMode });
   };
 
   return (
@@ -145,7 +144,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="svg"
               id={svgButtonId}
-              checked={vexmlMode === 'svg'}
+              checked={props.source.vexmlMode === 'svg'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={svgButtonId}>
@@ -158,7 +157,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="canvas"
               id={canvasButtonId}
-              checked={vexmlMode === 'canvas'}
+              checked={props.source.vexmlMode === 'canvas'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
@@ -218,7 +217,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              mode={vexmlMode}
+              mode={props.source.vexmlMode}
               onResult={setVexmlResult}
               onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
             />
