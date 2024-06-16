@@ -17,7 +17,7 @@ export const useModal = (ref: RefObject<Element>) => {
       modal.dispose();
       setModal(new NoopModal());
     };
-  }, [ref, setModal]);
+  }, [ref]);
 
   return modal;
 };

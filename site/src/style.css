@@ -12,3 +12,11 @@
   background-color: var(--bd-callout-bg, var(--bs-gray-100));
   border-left: 0.25rem solid var(--bd-callout-border, var(--bs-gray-300));
 }
+
+.btn-ghost {
+  opacity: 0.5;
+}
+
+.btn-ghost:hover {
+  opacity: 1;
+}
