@@ -23,7 +23,6 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
   }
 
   static fromScoreRendering(score: ScoreRendering): Locator {
-    const tree = new spatial.QuadTree<LocatorTarget>(score.boundary, QUAD_TREE_THRESHOLD);
     const targets = new Array<LocatorTarget>();
 
     const models = score.systems
@@ -50,6 +49,8 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
         }
       });
 
+    // First attempt to insert all the shapes into the tree.
+    const tree = new spatial.QuadTree<LocatorTarget>(score.boundary, QUAD_TREE_THRESHOLD);
     for (const model of models) {
       for (const shape of model.getShapes()) {
         if (!tree.insert(shape, model)) {
@@ -61,8 +62,17 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
     return new Locator(tree, targets);
   }
 
-  /** Locates all the targets that contain the given point. */
+  /** Locates all the targets that contain the given point, sorted by descending distance tot he point. */
   locate(point: spatial.Point): LocatorTarget[] {
     return [...this.tree.query(point), ...this.targets.filter((target) => target.contains(point))];
+  }
+
+  /** Sorts the targets by descending distance to the given point. */
+  sort(point: spatial.Point, targets: LocatorTarget[]): LocatorTarget[] {
+    return targets.sort((a, b) => {
+      const distanceA = a.getNearestHandleThatContains(point)?.distance(point) ?? Infinity;
+      const distanceB = b.getNearestHandleThatContains(point)?.distance(point) ?? Infinity;
+      return distanceA - distanceB;
+    });
   }
 }
