@@ -45,6 +45,7 @@ export class Rendering {
   removeAllEventListeners(): void {
     this.topic.unsubscribeAll();
     this.bridge.deactivateAll();
+    this.tally = {};
   }
 
   private increment<N extends keyof EventMap>(name: N): number {

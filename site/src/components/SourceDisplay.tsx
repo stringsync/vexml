@@ -78,6 +78,16 @@ export const SourceDisplay = (props: SourceProps) => {
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
 
+  const [enabledEvents, setEnabledEvents] = useState<Array<keyof vexml.EventMap>>(['click']);
+  const clickCheckboxId = useId();
+  const toggleEvent = (event: keyof vexml.EventMap) => () => {
+    setEnabledEvents((enabledEvents) =>
+      enabledEvents.includes(event)
+        ? enabledEvents.filter((enabledEvent) => enabledEvent !== event)
+        : [...enabledEvents, event]
+    );
+  };
+
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
@@ -140,6 +150,22 @@ export const SourceDisplay = (props: SourceProps) => {
         <div id={eventCardId} className="collapse mb-3">
           <h3 className="mb-3">Events</h3>
 
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              id={clickCheckboxId}
+              type="checkbox"
+              value="click"
+              checked={enabledEvents.includes('click')}
+              onChange={toggleEvent('click')}
+            />
+            <label className="form-check-label" htmlFor={clickCheckboxId}>
+              click
+            </label>
+          </div>
+
+          <hr />
+
           <div className="d-flex overflow-x-auto gap-3">
             {logs.map((log, index) => (
               <EventLogCard key={log.key} index={index} log={log} />
@@ -158,7 +184,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
         {!isMusicXMLLoading && !musicXMLError && (
           <div className="d-flex justify-content-center">
-            <Vexml musicXML={musicXML} onResult={setVexmlResult} onClick={onVexmlClick} />
+            <Vexml musicXML={musicXML} enabledEvents={enabledEvents} onResult={setVexmlResult} onClick={onVexmlClick} />
           </div>
         )}
       </div>
