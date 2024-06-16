@@ -14,13 +14,23 @@ export class InteractionModel<T> {
 
   static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
     const vfStaveNote = staveNote.vexflow.staveNote;
+    const vfBoundingBox = vfStaveNote.getBoundingBox();
+    const vfNoteheadBounds = vfStaveNote.getNoteHeadBounds();
 
     // TODO(jared): Break this up into a circle for the notehead, and a rectangle for the stem if present.
-    const staveNoteRect = spatial.Rect.fromRectLike(vfStaveNote.getBoundingBox());
+    const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
     const staveNotePoint = staveNoteRect.center();
     const staveNoteHandle = new InteractionHandle(staveNoteRect, staveNotePoint);
 
-    return new InteractionModel([staveNoteHandle], staveNote);
+    const staveNoteheadCircle = new spatial.Circle(
+      vfBoundingBox.x + vfBoundingBox.w / 2,
+      vfNoteheadBounds.yBottom,
+      vfBoundingBox.w
+    );
+    const staveNoteheadPoint = staveNoteheadCircle.center();
+    const staveNoteheadHandle = new InteractionHandle(staveNoteheadCircle, staveNoteheadPoint);
+
+    return new InteractionModel([staveNoteHandle, staveNoteheadHandle], staveNote);
   }
 
   /** Returns the interaction handles for this model. */
