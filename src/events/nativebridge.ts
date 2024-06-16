@@ -34,63 +34,25 @@ export type EventMapping<T extends HostElement, V extends string> = {
  * - Deactivation is the process of cleaning up the native event machinery when a given vexml event is no longer needed.
  * - Native events are only added to the host element when they are needed.
  */
-export class NativeBridge<T extends HostElement, V extends string> {
+export class NativeBridge<V extends string> {
   private host: HostElement;
-  private mappings: EventMapping<T, V>[];
-  private nativeEventTopic: Topic<NativeEventMap<T>>;
-  private nativeEventOpts: NativeEventOpts<T>;
+  private mappings: EventMapping<HostElement, V>[];
+  private nativeEventTopic: Topic<NativeEventMap<HostElement>>;
+  private nativeEventOpts: NativeEventOpts<HostElement>;
 
   // Handles for native event topic subscribers indexed by the vexml event name.
   private handles: { [K in V]?: number[] } = {};
 
   constructor(opts: {
     host: HostElement;
-    mappings: EventMapping<T, V>[];
-    nativeEventTopic: Topic<NativeEventMap<T>>;
-    nativeEventOpts: NativeEventOpts<T>;
+    mappings: EventMapping<HostElement, V>[];
+    nativeEventTopic: Topic<NativeEventMap<HostElement>>;
+    nativeEventOpts: NativeEventOpts<HostElement>;
   }) {
     this.host = opts.host;
     this.mappings = opts.mappings;
     this.nativeEventTopic = opts.nativeEventTopic;
     this.nativeEventOpts = opts.nativeEventOpts;
-  }
-
-  /** Creates a NativeBridge for an SVG element. */
-  static forSVG<V extends string>(
-    host: HostElement,
-    opts: {
-      mappings: EventMapping<SVGElement, V>[];
-      native: {
-        topic: Topic<NativeEventMap<SVGElement>>;
-        opts: NativeEventOpts<SVGElement>;
-      };
-    }
-  ): NativeBridge<SVGElement, V> {
-    return new NativeBridge({
-      host,
-      mappings: opts.mappings,
-      nativeEventTopic: opts.native.topic,
-      nativeEventOpts: opts.native.opts,
-    });
-  }
-
-  /** Creates a NativeBridge for a canvas element. */
-  static forCanvas<V extends string>(
-    host: HostElement,
-    opts: {
-      mappings: EventMapping<HTMLCanvasElement, V>[];
-      native: {
-        topic: Topic<NativeEventMap<HTMLCanvasElement>>;
-        opts: NativeEventOpts<HTMLCanvasElement>;
-      };
-    }
-  ): NativeBridge<HTMLCanvasElement, V> {
-    return new NativeBridge({
-      host,
-      mappings: opts.mappings,
-      nativeEventTopic: opts.native.topic,
-      nativeEventOpts: opts.native.opts,
-    });
   }
 
   /**
@@ -110,13 +72,13 @@ export class NativeBridge<T extends HostElement, V extends string> {
     this.handles[vexmlEventName] ??= [];
 
     for (const native of Object.entries(mapping.native)) {
-      const nativeEventName = native[0] as NativeEventName<T>;
-      const nativeEventListener = native[1] as EventListener<NativeEvent<T, NativeEventName<T>>>;
+      const nativeEventName = native[0] as NativeEventName<HostElement>;
+      const nativeEventListener = native[1] as EventListener<NativeEvent<HostElement, NativeEventName<HostElement>>>;
 
       // Enforce only a single listener per native event. vexml is intended to consume the event through the
       // nativeEventTopic. That way, we only run the native callbacks that we need to run.
       if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
-        this.host.addEventListener(nativeEventName, this.publishNativeEvent);
+        this.host.addEventListener(nativeEventName, this.publishNativeEvent, this.nativeEventOpts[nativeEventName]);
       }
       const handle = this.nativeEventTopic.subscribe(nativeEventName, nativeEventListener);
       this.handles[vexmlEventName]!.push(handle);
@@ -143,10 +105,10 @@ export class NativeBridge<T extends HostElement, V extends string> {
     delete this.handles[vexmlEventName];
 
     for (const native of Object.entries(mapping.native)) {
-      const nativeEventName = native[0] as NativeEventName<T>;
+      const nativeEventName = native[0] as NativeEventName<HostElement>;
 
       if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
-        this.host.removeEventListener(nativeEventName, this.publishNativeEvent);
+        this.host.removeEventListener(nativeEventName, this.publishNativeEvent, this.nativeEventOpts[nativeEventName]);
       }
     }
   }
@@ -166,7 +128,10 @@ export class NativeBridge<T extends HostElement, V extends string> {
    * deactivated.
    */
   private publishNativeEvent = (event: Event) => {
-    this.nativeEventTopic.publish(event.type as NativeEventName<T>, event as NativeEvent<T, NativeEventName<T>>);
+    this.nativeEventTopic.publish(
+      event.type as NativeEventName<HostElement>,
+      event as NativeEvent<HostElement, NativeEventName<HostElement>>
+    );
   };
 
   /** Returns whether the vexml event is currently active. */
