@@ -76,26 +76,38 @@ export class Vexml {
   }
 
   /** Renders the vexml instance to an SVG element. */
-  renderSVG(opts: RenderOptions): rendering.Rendering {
+  render(opts: RenderOptions): rendering.Rendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
+    const container = opts.container;
+    const width = opts.width;
 
     // Render score.
     const scorePartwise = this.musicXML.getScorePartwise();
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
-    const scoreRendering = score.render({ container: opts.container, width: opts.width });
+    const scoreRendering = score.render({ container, width });
 
     // Make a cursor.
-    const host = opts.container.firstElementChild! as SVGElement;
+    let host: HTMLCanvasElement | SVGElement;
+    if (container instanceof HTMLCanvasElement) {
+      host = container;
+    } else if (container instanceof HTMLDivElement) {
+      host = container.firstElementChild as SVGElement;
+    } else {
+      throw new Error(`expected container to be a canvas or div, got: ${container}`);
+    }
+
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
 
     // Initialize event routing.
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<events.NativeEventMap<SVGElement>>();
     const cursor = new cursors.PointCursor(host, locator);
-    const eventMappingFactory = new rendering.EventMappingFactory(cursor, vexmlEventTopic);
-    const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>(host, {
-      mappings: eventMappingFactory.create(config.INPUT_TYPE),
-      native: { topic: nativeEventTopic, opts: { touchstart: { passive: true }, touchend: { passive: true } } },
+    const mappings = new rendering.EventMappingFactory(cursor, vexmlEventTopic).create(config.INPUT_TYPE);
+    const bridge = new events.NativeBridge<keyof rendering.EventMap>({
+      host,
+      mappings,
+      nativeEventTopic,
+      nativeEventOpts: { touchstart: { passive: true }, touchend: { passive: true } },
     });
 
     return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });

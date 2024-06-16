@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useId, useRef, useState } from 'react';
-import { Source } from '../types';
+import { Source, VexmlMode } from '../types';
 import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
@@ -34,7 +34,7 @@ export const SourceInput = (props: SourceInputProps) => {
   const musicXML = source.type === 'local' ? source.musicXML : props.musicXML;
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
-      updateLater({ type: 'local', musicXML: e.target.value });
+      updateLater({ type: 'local', musicXML: e.target.value, vexmlMode: source.vexmlMode });
     }
   };
 
@@ -42,20 +42,20 @@ export const SourceInput = (props: SourceInputProps) => {
   const pathKey = EXAMPLE_OPTION_KEY_BY_PATH[path] ?? '';
   const onPathChange = (e: SelectEvent<string>) => {
     if (source.type === 'example') {
-      updateNow({ type: 'example', path: e.value });
+      updateNow({ type: 'example', path: e.value, vexmlMode: source.vexmlMode });
     }
   };
 
   const url = source.type === 'remote' ? source.url : '';
   const onUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (source.type === 'remote') {
-      updateLater({ type: 'remote', url: e.target.value });
+      updateLater({ type: 'remote', url: e.target.value, vexmlMode: source.vexmlMode });
     }
   };
 
   const modalRef = useRef<HTMLDivElement>(null);
   const modal = useModal(modalRef);
-  const [modalSource, setModalSource] = useState<Source>({ type: 'local', musicXML: '' });
+  const [modalSource, setModalSource] = useState<Source>({ type: 'local', musicXML: '', vexmlMode: 'svg' });
   const onModalContinue = () => {
     updateNow(modalSource);
     modal.hide();
@@ -67,7 +67,7 @@ export const SourceInput = (props: SourceInputProps) => {
       throw new Error(`Invalid source type: ${type}`);
     }
 
-    const source = getDefaultSource(type);
+    const source = getDefaultSource(type, props.source.vexmlMode);
 
     const isSourceEmpty =
       (props.source.type === 'local' && props.source.musicXML.length === 0) ||
@@ -84,7 +84,7 @@ export const SourceInput = (props: SourceInputProps) => {
   };
 
   const onConvertToLocalClick = () => {
-    const source = getDefaultSource('local');
+    const source = getDefaultSource('local', props.source.vexmlMode) as Extract<Source, { type: 'local' }>;
     source.musicXML = props.musicXML;
     updateNow(source);
   };
@@ -96,7 +96,7 @@ export const SourceInput = (props: SourceInputProps) => {
 
     try {
       const vexml = await Vexml.fromFile(files[0]);
-      updateNow({ type: 'local', musicXML: vexml.getDocumentString() });
+      updateNow({ type: 'local', musicXML: vexml.getDocumentString(), vexmlMode: source.vexmlMode });
     } catch (e) {
       console.error(`error reading file: ${e}`);
     }
@@ -258,14 +258,14 @@ export const SourceInput = (props: SourceInputProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = <T extends Source['type']>(type: T): Extract<Source, { type: T }> => {
+const getDefaultSource = (type: Source['type'], vexmlMode: VexmlMode): Source => {
   switch (type) {
     case 'local':
-      return { type, musicXML: '' } as Extract<Source, { type: T }>;
+      return { type, musicXML: '', vexmlMode };
     case 'remote':
-      return { type, url: '' } as Extract<Source, { type: T }>;
+      return { type, url: '', vexmlMode };
     case 'example':
-      return { type, path: DEFAULT_EXAMPLE_PATH } as Extract<Source, { type: T }>;
+      return { type, path: DEFAULT_EXAMPLE_PATH, vexmlMode };
     default:
       throw new Error(`Invalid source type: ${type}`);
   }

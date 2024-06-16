@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
-import { Vexml, VexmlResult } from './Vexml';
+import { Vexml, VexmlMode, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -11,6 +11,7 @@ import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
 import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
 import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
+import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -41,17 +42,19 @@ export const SourceDisplay = (props: SourceProps) => {
   const snapshotButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(snapshotButtonRef, 'top', SNAPSHOT_NAME);
 
-  const svg = vexmlResult.type === 'success' ? vexmlResult.svg : null;
-  const snapshotButtonDisabled = !svg;
+  const element = vexmlResult.type === 'success' ? vexmlResult.element : null;
+  const snapshotButtonDisabled = !(element instanceof SVGElement) && !(element instanceof HTMLCanvasElement);
   const onSnapshotClick = async () => {
-    if (!svg) {
-      return;
+    if (element instanceof SVGElement) {
+      downloadSvgAsImage(element, {
+        imageName: SNAPSHOT_NAME,
+        fontFamily: FONT_FAMILY,
+        fontBase64: await convertFontToBase64(FONT_URL),
+      });
     }
-    downloadSvgAsImage(svg, {
-      imageName: SNAPSHOT_NAME,
-      fontFamily: FONT_FAMILY,
-      fontBase64: await convertFontToBase64(FONT_URL),
-    });
+    if (element instanceof HTMLCanvasElement) {
+      downloadCanvasAsImage(element, SNAPSHOT_NAME);
+    }
   };
 
   const sourceInputCardId = useId();
@@ -84,6 +87,13 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
+
+  const svgButtonId = useId();
+  const canvasButtonId = useId();
+  const vexmlModeName = useId();
+  const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.onUpdate({ ...props.source, vexmlMode: e.target.value as VexmlMode });
+  };
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -129,6 +139,34 @@ export const SourceDisplay = (props: SourceProps) => {
             >
               <i className="bi bi-trash"></i> <p className="d-md-inline d-none">Remove</p>
             </button>
+          </div>
+
+          <div className="btn-group" role="group">
+            <input
+              type="radio"
+              className="btn-check"
+              name={vexmlModeName}
+              value="svg"
+              id={svgButtonId}
+              checked={props.source.vexmlMode === 'svg'}
+              onChange={onVexmlModeChange}
+            />
+            <label className="btn btn-outline-info" htmlFor={svgButtonId}>
+              SVG
+            </label>
+
+            <input
+              type="radio"
+              className="btn-check"
+              name={vexmlModeName}
+              value="canvas"
+              id={canvasButtonId}
+              checked={props.source.vexmlMode === 'canvas'}
+              onChange={onVexmlModeChange}
+            />
+            <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
+              Canvas
+            </label>
           </div>
 
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
@@ -183,6 +221,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
+              mode={props.source.vexmlMode}
               onResult={setVexmlResult}
               onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
             />
