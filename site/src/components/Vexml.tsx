@@ -1,12 +1,13 @@
 import * as vexml from '@/index';
 import * as errors from '../util/errors';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 
 const THROTTLE_DELAY_MS = 50;
 
 export type VexmlProps = {
   musicXML: string;
+  enabledEvents: Array<keyof vexml.EventMap>;
   onResult: (result: VexmlResult) => void;
   onClick: vexml.ClickEventListener;
 };
@@ -19,10 +20,31 @@ export type VexmlResult =
 
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
+  const enabledEvents = props.enabledEvents;
   const onResult = props.onResult;
   const onClick = props.onClick;
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useWidth(containerRef, THROTTLE_DELAY_MS);
+
+  const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
+
+  useEffect(() => {
+    if (!rendering) {
+      return;
+    }
+
+    for (const event of enabledEvents) {
+      switch (event) {
+        case 'click':
+          rendering.addEventListener('click', onClick);
+          break;
+      }
+    }
+
+    return () => {
+      rendering.removeAllEventListeners();
+    };
+  }, [rendering, enabledEvents, onClick]);
 
   useEffect(() => {
     onResult({ type: 'none' });
@@ -43,15 +65,12 @@ export const Vexml = (props: VexmlProps) => {
 
     const start = new Date();
 
-    let rendering: vexml.Rendering | undefined;
-
     try {
-      rendering = vexml.Vexml.fromMusicXML(musicXML).renderSVG({
+      const rendering = vexml.Vexml.fromMusicXML(musicXML).renderSVG({
         container: element,
         width,
       });
-
-      rendering.addEventListener('click', onClick);
+      setRendering(rendering);
 
       const svg = element.firstChild as SVGElement;
       svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
@@ -73,14 +92,12 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     return () => {
-      rendering?.removeAllEventListeners();
-
       const firstChild = element.firstChild;
       if (firstChild) {
         element.removeChild(firstChild);
       }
     };
-  }, [musicXML, width, onResult, onClick]);
+  }, [musicXML, width, onResult]);
 
   return <div className="w-100 position-relative" ref={containerRef}></div>;
 };
