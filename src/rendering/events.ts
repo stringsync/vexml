@@ -25,6 +25,8 @@ export type EventMap = {
 
 export type ClickEventListener = (event: EventMap['click']) => void;
 
+export type HoverEventListener = (event: EventMap['hover']) => void;
+
 export class EventMappingFactory {
   private cursor: cursors.PointCursor<LocatorTarget>;
   private topic: events.Topic<EventMap>;
