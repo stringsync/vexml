@@ -10,7 +10,7 @@ describe(Vexml, () => {
     });
 
     it('runs without crashing', () => {
-      expect(() => Vexml.fromMusicXML(MUSIC_XML).renderSVG({ container: div, width: 2000 })).not.toThrow();
+      expect(() => Vexml.fromMusicXML(MUSIC_XML).render({ container: div, width: 2000 })).not.toThrow();
     });
   });
 });

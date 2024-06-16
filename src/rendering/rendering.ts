@@ -5,16 +5,12 @@ import { Config } from './config';
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
-  private bridge: events.NativeBridge<SVGElement | HTMLCanvasElement, keyof EventMap>;
+  private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
 
   private tally: { [K in keyof EventMap]?: number } = {};
 
-  constructor(opts: {
-    config: Config;
-    bridge: events.NativeBridge<SVGElement | HTMLCanvasElement, keyof EventMap>;
-    topic: events.Topic<EventMap>;
-  }) {
+  constructor(opts: { config: Config; bridge: events.NativeBridge<keyof EventMap>; topic: events.Topic<EventMap> }) {
     this.config = opts.config;
     this.bridge = opts.bridge;
     this.topic = opts.topic;
