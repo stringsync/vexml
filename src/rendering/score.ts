@@ -113,7 +113,7 @@ export class Score {
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
-    const vfRenderer = new vexflow.Renderer(opts.container, vexflow.Renderer.Backends.SVG).resize(opts.width, y);
+    const vfRenderer = this.getVfRenderer(opts.container).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
     // Draw the title.
@@ -274,6 +274,13 @@ export class Score {
       config: this.config,
       text: this.musicXML.scorePartwise?.getTitle() ?? '',
     });
+  }
+
+  private getVfRenderer(container: HTMLDivElement | HTMLCanvasElement) {
+    if (container instanceof HTMLCanvasElement) {
+      return new vexflow.Renderer(container, vexflow.Renderer.Backends.CANVAS);
+    }
+    return new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
   }
 
   private getTopSystemDistance(systems: System[]) {

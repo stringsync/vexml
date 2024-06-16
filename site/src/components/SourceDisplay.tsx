@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
-import { Vexml, VexmlResult } from './Vexml';
+import { Vexml, VexmlMode, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -41,17 +41,16 @@ export const SourceDisplay = (props: SourceProps) => {
   const snapshotButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(snapshotButtonRef, 'top', SNAPSHOT_NAME);
 
-  const svg = vexmlResult.type === 'success' ? vexmlResult.svg : null;
-  const snapshotButtonDisabled = !svg;
+  const element = vexmlResult.type === 'success' ? vexmlResult.element : null;
+  const snapshotButtonDisabled = !(element instanceof SVGElement);
   const onSnapshotClick = async () => {
-    if (!svg) {
-      return;
+    if (element instanceof SVGElement) {
+      downloadSvgAsImage(element, {
+        imageName: SNAPSHOT_NAME,
+        fontFamily: FONT_FAMILY,
+        fontBase64: await convertFontToBase64(FONT_URL),
+      });
     }
-    downloadSvgAsImage(svg, {
-      imageName: SNAPSHOT_NAME,
-      fontFamily: FONT_FAMILY,
-      fontBase64: await convertFontToBase64(FONT_URL),
-    });
   };
 
   const sourceInputCardId = useId();
@@ -84,6 +83,14 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
+
+  const svgButtonId = useId();
+  const canvasButtonId = useId();
+  const vexmlModeName = useId();
+  const [vexmlMode, setVexmlMode] = useState<VexmlMode>('svg');
+  const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVexmlMode(e.target.value as VexmlMode);
+  };
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -129,6 +136,34 @@ export const SourceDisplay = (props: SourceProps) => {
             >
               <i className="bi bi-trash"></i> <p className="d-md-inline d-none">Remove</p>
             </button>
+          </div>
+
+          <div className="btn-group" role="group">
+            <input
+              type="radio"
+              className="btn-check"
+              name={vexmlModeName}
+              value="svg"
+              id={svgButtonId}
+              checked={vexmlMode === 'svg'}
+              onChange={onVexmlModeChange}
+            />
+            <label className="btn btn-outline-info" htmlFor={svgButtonId}>
+              SVG
+            </label>
+
+            <input
+              type="radio"
+              className="btn-check"
+              name={vexmlModeName}
+              value="canvas"
+              id={canvasButtonId}
+              checked={vexmlMode === 'canvas'}
+              onChange={onVexmlModeChange}
+            />
+            <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
+              Canvas
+            </label>
           </div>
 
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
@@ -183,6 +218,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
+              mode={vexmlMode}
               onResult={setVexmlResult}
               onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
             />
