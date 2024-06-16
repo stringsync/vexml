@@ -7,9 +7,8 @@ const THROTTLE_DELAY_MS = 50;
 
 export type VexmlProps = {
   musicXML: string;
-  enabledEvents: Array<keyof vexml.EventMap>;
   onResult: (result: VexmlResult) => void;
-  onClick: vexml.ClickEventListener;
+  onClick?: vexml.ClickEventListener;
 };
 
 export type VexmlResult =
@@ -20,7 +19,6 @@ export type VexmlResult =
 
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
-  const enabledEvents = props.enabledEvents;
   const onResult = props.onResult;
   const onClick = props.onClick;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,18 +31,18 @@ export const Vexml = (props: VexmlProps) => {
       return;
     }
 
-    for (const event of enabledEvents) {
-      switch (event) {
-        case 'click':
-          rendering.addEventListener('click', onClick);
-          break;
-      }
+    const handles = new Array<number>();
+
+    if (onClick) {
+      handles.push(rendering.addEventListener('click', onClick));
     }
 
     return () => {
-      rendering.removeAllEventListeners();
+      for (const handle of handles) {
+        rendering.removeEventListener(handle);
+      }
     };
-  }, [rendering, enabledEvents, onClick]);
+  }, [rendering, onClick]);
 
   useEffect(() => {
     onResult({ type: 'none' });

@@ -61,6 +61,13 @@ export const SourceDisplay = (props: SourceProps) => {
   );
 
   const [logs, setLogs] = useState(new Array<EventLog>());
+
+  const vexmlClickCheckboxId = useId();
+  const [isVexmlClickEnabled, setVexmlClickEnabled] = useState(true);
+  const onVexmlClickCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setVexmlClickEnabled(event.target.checked);
+  };
+
   const nextKey = useNextKey('event-log');
   const onVexmlClick = useCallback<vexml.ClickEventListener>(
     (payload) => {
@@ -77,16 +84,6 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
-
-  const [enabledEvents, setEnabledEvents] = useState<Array<keyof vexml.EventMap>>(['click']);
-  const clickCheckboxId = useId();
-  const toggleEvent = (event: keyof vexml.EventMap) => () => {
-    setEnabledEvents((enabledEvents) =>
-      enabledEvents.includes(event)
-        ? enabledEvents.filter((enabledEvent) => enabledEvent !== event)
-        : [...enabledEvents, event]
-    );
-  };
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -153,13 +150,13 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="form-check form-check-inline">
             <input
               className="form-check-input"
-              id={clickCheckboxId}
+              id={vexmlClickCheckboxId}
               type="checkbox"
               value="click"
-              checked={enabledEvents.includes('click')}
-              onChange={toggleEvent('click')}
+              checked={isVexmlClickEnabled}
+              onChange={onVexmlClickCheckboxChange}
             />
-            <label className="form-check-label" htmlFor={clickCheckboxId}>
+            <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
               click
             </label>
           </div>
@@ -184,7 +181,11 @@ export const SourceDisplay = (props: SourceProps) => {
 
         {!isMusicXMLLoading && !musicXMLError && (
           <div className="d-flex justify-content-center">
-            <Vexml musicXML={musicXML} enabledEvents={enabledEvents} onResult={setVexmlResult} onClick={onVexmlClick} />
+            <Vexml
+              musicXML={musicXML}
+              onResult={setVexmlResult}
+              onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
+            />
           </div>
         )}
       </div>
