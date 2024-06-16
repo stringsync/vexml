@@ -1,2 +1,3 @@
 export * from './vexml';
-export { Config } from './rendering';
+export * from './rendering/events';
+export type { Config, Rendering } from './rendering';

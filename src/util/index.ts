@@ -8,3 +8,5 @@ export * from './array';
 export * from './fraction';
 export * from './assert';
 export * from './lru';
+export * from './device';
+export * from './rate';

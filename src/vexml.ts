@@ -1,9 +1,11 @@
 import * as musicxml from '@/musicxml';
 import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
+import * as cursors from '@/cursors';
+import * as events from '@/events';
 
 export type RenderOptions = {
-  element: HTMLDivElement | HTMLCanvasElement;
+  container: HTMLDivElement | HTMLCanvasElement;
   config?: Partial<rendering.Config>;
   width: number;
 };
@@ -73,21 +75,30 @@ export class Vexml {
     return Vexml.fromBlob(file);
   }
 
-  /** Renders the vexml instance to an HTML element. */
-  render(opts: RenderOptions): rendering.ScoreRendering {
+  /** Renders the vexml instance to an SVG element. */
+  renderSVG(opts: RenderOptions): rendering.Rendering {
     const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
 
-    const score = new rendering.Score({
-      config,
-      musicXML: {
-        scorePartwise: this.musicXML.getScorePartwise(),
-      },
+    // Render score.
+    const scorePartwise = this.musicXML.getScorePartwise();
+    const score = new rendering.Score({ config, musicXML: { scorePartwise } });
+    const scoreRendering = score.render({ container: opts.container, width: opts.width });
+
+    // Make a cursor.
+    const host = opts.container.firstElementChild! as SVGElement;
+    const locator = rendering.Locator.fromScoreRendering(scoreRendering);
+
+    // Initialize event routing.
+    const vexmlEventTopic = new events.Topic<rendering.EventMap>();
+    const nativeEventTopic = new events.Topic<events.NativeEventMap<SVGElement>>();
+    const cursor = new cursors.PointCursor(host, locator);
+    const eventMappingFactory = new rendering.EventMappingFactory(cursor, vexmlEventTopic);
+    const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>(host, {
+      mappings: eventMappingFactory.create(config.INPUT_TYPE),
+      native: { topic: nativeEventTopic, opts: { touchstart: { passive: true }, touchend: { passive: true } } },
     });
 
-    return score.render({
-      element: opts.element,
-      width: opts.width,
-    });
+    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });
   }
 
   /** Returns the document string. */

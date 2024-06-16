@@ -1,6 +1,6 @@
-import * as vexml from '@/vexml';
+import * as vexml from '@/index';
 import * as errors from '../util/errors';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 
 const THROTTLE_DELAY_MS = 50;
@@ -8,6 +8,7 @@ const THROTTLE_DELAY_MS = 50;
 export type VexmlProps = {
   musicXML: string;
   onResult: (result: VexmlResult) => void;
+  onClick?: vexml.ClickEventListener;
 };
 
 export type VexmlResult =
@@ -19,8 +20,29 @@ export type VexmlResult =
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
   const onResult = props.onResult;
+  const onClick = props.onClick;
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useWidth(containerRef, THROTTLE_DELAY_MS);
+
+  const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
+
+  useEffect(() => {
+    if (!rendering) {
+      return;
+    }
+
+    const handles = new Array<number>();
+
+    if (onClick) {
+      handles.push(rendering.addEventListener('click', onClick));
+    }
+
+    return () => {
+      for (const handle of handles) {
+        rendering.removeEventListener(handle);
+      }
+    };
+  }, [rendering, onClick]);
 
   useEffect(() => {
     onResult({ type: 'none' });
@@ -42,10 +64,12 @@ export const Vexml = (props: VexmlProps) => {
     const start = new Date();
 
     try {
-      vexml.Vexml.fromMusicXML(musicXML).render({
-        element,
+      const rendering = vexml.Vexml.fromMusicXML(musicXML).renderSVG({
+        container: element,
         width,
       });
+      setRendering(rendering);
+
       const svg = element.firstChild as SVGElement;
       svg.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
       onResult({
@@ -73,5 +97,5 @@ export const Vexml = (props: VexmlProps) => {
     };
   }, [musicXML, width, onResult]);
 
-  return <div className="w-100" ref={containerRef}></div>;
+  return <div className="w-100 position-relative" ref={containerRef}></div>;
 };

@@ -46,8 +46,8 @@ describe('vexml', () => {
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
-    Vexml.fromBuffer(buffer).render({
-      element: vexmlDiv,
+    Vexml.fromBuffer(buffer).renderSVG({
+      container: vexmlDiv,
       width: t.width,
     });
 

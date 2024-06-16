@@ -1,4 +1,5 @@
-import { useId, useRef, useState } from 'react';
+import * as vexml from '@/index';
+import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
 import { Vexml, VexmlResult } from './Vexml';
@@ -8,6 +9,8 @@ import { SourceInfo } from './SourceInfo';
 import { SourceInput } from './SourceInput';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
 import { convertFontToBase64 } from '../util/convertFontToBase64';
+import { useNextKey } from '../hooks/useNextKey';
+import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -57,6 +60,31 @@ export const SourceDisplay = (props: SourceProps) => {
     props.source.type === 'local' && props.source.musicXML.length === 0 ? 'show' : 'collapse'
   );
 
+  const [logs, setLogs] = useState(new Array<EventLog>());
+
+  const vexmlClickCheckboxId = useId();
+  const [isVexmlClickEnabled, setVexmlClickEnabled] = useState(true);
+  const onVexmlClickCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setVexmlClickEnabled(event.target.checked);
+  };
+
+  const nextKey = useNextKey('event-log');
+  const onVexmlClick = useCallback<vexml.ClickEventListener>(
+    (payload) => {
+      const log = {
+        key: nextKey(),
+        type: payload.type,
+        timestamp: new Date(),
+        payload,
+      };
+      setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
+    },
+    [nextKey]
+  );
+
+  const eventCardId = useId();
+  const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
+
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
@@ -69,6 +97,18 @@ export const SourceDisplay = (props: SourceProps) => {
               data-bs-target={sourceInputCardSelector}
             >
               <i className="bi bi-pencil-square"></i> <p className="d-md-inline d-none">Edit</p>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-outline-success"
+              data-bs-toggle="collapse"
+              data-bs-target={eventCardSelector}
+            >
+              <i className="bi bi-lightning"></i>{' '}
+              <p className="d-md-inline d-none">
+                Events <span className="badge text-bg-success">{logs.length}</span>
+              </p>
             </button>
 
             <button
@@ -104,6 +144,32 @@ export const SourceDisplay = (props: SourceProps) => {
 
         <br />
 
+        <div id={eventCardId} className="collapse mb-3">
+          <h3 className="mb-3">Events</h3>
+
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              id={vexmlClickCheckboxId}
+              type="checkbox"
+              value="click"
+              checked={isVexmlClickEnabled}
+              onChange={onVexmlClickCheckboxChange}
+            />
+            <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
+              click
+            </label>
+          </div>
+
+          <hr />
+
+          <div className="d-flex overflow-x-auto gap-3">
+            {logs.map((log, index) => (
+              <EventLogCard key={log.key} index={index} log={log} />
+            ))}
+          </div>
+        </div>
+
         <SourceInfo
           vexmlResult={vexmlResult}
           musicXML={musicXML}
@@ -115,7 +181,11 @@ export const SourceDisplay = (props: SourceProps) => {
 
         {!isMusicXMLLoading && !musicXMLError && (
           <div className="d-flex justify-content-center">
-            <Vexml musicXML={musicXML} onResult={setVexmlResult} />
+            <Vexml
+              musicXML={musicXML}
+              onResult={setVexmlResult}
+              onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
+            />
           </div>
         )}
       </div>
