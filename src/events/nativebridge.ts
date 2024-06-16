@@ -2,7 +2,7 @@ import * as util from '@/util';
 import { Topic } from './topic';
 import { EventListener } from './types';
 
-type HostElement = SVGElement | HTMLCanvasElement;
+export type HostElement = SVGElement | HTMLCanvasElement;
 
 type NativeEventName<T extends HostElement> = T extends SVGElement
   ? keyof SVGElementEventMap
@@ -11,11 +11,6 @@ type NativeEventName<T extends HostElement> = T extends SVGElement
 type NativeEvent<T extends HostElement, N extends NativeEventName<T>> = T extends SVGElement
   ? SVGElementEventMap[N]
   : HTMLElementEventMap[N];
-
-type NativeEventListener<T extends HostElement, N extends NativeEventName<T>> = {
-  eventName: N;
-  callback: EventListener<NativeEvent<T, N>>;
-};
 
 export type NativeEventMap<T extends HostElement> = {
   [N in NativeEventName<T>]: NativeEvent<T, N>;
@@ -26,8 +21,10 @@ export type NativeEventOpts<T extends HostElement> = {
 };
 
 export type EventMapping<T extends HostElement, V extends string> = {
-  vexmlEventName: V;
-  nativeEventListeners: NativeEventListener<T, NativeEventName<T>>[];
+  vexml: V;
+  native: {
+    [N in NativeEventName<T>]?: EventListener<NativeEvent<T, N>>;
+  };
 };
 
 /**
@@ -59,16 +56,18 @@ export class NativeBridge<T extends HostElement, V extends string> {
   }
 
   /** Creates a NativeBridge for an SVG element. */
-  static forSVG<V extends string>(opts: {
-    host: HostElement;
-    mappings: EventMapping<SVGElement, V>[];
-    native: {
-      topic: Topic<NativeEventMap<SVGElement>>;
-      opts: NativeEventOpts<SVGElement>;
-    };
-  }): NativeBridge<SVGElement, V> {
+  static forSVG<V extends string>(
+    host: HostElement,
+    opts: {
+      mappings: EventMapping<SVGElement, V>[];
+      native: {
+        topic: Topic<NativeEventMap<SVGElement>>;
+        opts: NativeEventOpts<SVGElement>;
+      };
+    }
+  ): NativeBridge<SVGElement, V> {
     return new NativeBridge({
-      host: opts.host,
+      host,
       mappings: opts.mappings,
       nativeEventTopic: opts.native.topic,
       nativeEventOpts: opts.native.opts,
@@ -76,16 +75,18 @@ export class NativeBridge<T extends HostElement, V extends string> {
   }
 
   /** Creates a NativeBridge for a canvas element. */
-  static forCanvas<V extends string>(opts: {
-    host: HostElement;
-    mappings: EventMapping<HTMLCanvasElement, V>[];
-    native: {
-      topic: Topic<NativeEventMap<HTMLCanvasElement>>;
-      opts: NativeEventOpts<HTMLCanvasElement>;
-    };
-  }): NativeBridge<HTMLCanvasElement, V> {
+  static forCanvas<V extends string>(
+    host: HostElement,
+    opts: {
+      mappings: EventMapping<HTMLCanvasElement, V>[];
+      native: {
+        topic: Topic<NativeEventMap<HTMLCanvasElement>>;
+        opts: NativeEventOpts<HTMLCanvasElement>;
+      };
+    }
+  ): NativeBridge<HTMLCanvasElement, V> {
     return new NativeBridge({
-      host: opts.host,
+      host,
       mappings: opts.mappings,
       nativeEventTopic: opts.native.topic,
       nativeEventOpts: opts.native.opts,
@@ -101,20 +102,23 @@ export class NativeBridge<T extends HostElement, V extends string> {
   activate(vexmlEventName: V) {
     util.assert(!this.isVexmlEventActive(vexmlEventName), `vexml event is already active: ${vexmlEventName}`);
 
-    const mapping = this.mappings.find((m) => m.vexmlEventName === vexmlEventName);
+    const mapping = this.mappings.find((m) => m.vexml === vexmlEventName);
     if (!mapping) {
       return;
     }
 
     this.handles[vexmlEventName] ??= [];
 
-    for (const native of mapping.nativeEventListeners) {
+    for (const native of Object.entries(mapping.native)) {
+      const nativeEventName = native[0] as NativeEventName<T>;
+      const nativeEventListener = native[1] as EventListener<NativeEvent<T, NativeEventName<T>>>;
+
       // Enforce only a single listener per native event. vexml is intended to consume the event through the
       // nativeEventTopic. That way, we only run the native callbacks that we need to run.
-      if (!this.nativeEventTopic.hasSubscribers(native.eventName)) {
-        this.host.addEventListener(native.eventName, this.publishNativeEvent);
+      if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
+        this.host.addEventListener(nativeEventName, this.publishNativeEvent);
       }
-      const handle = this.nativeEventTopic.subscribe(native.eventName, native.callback);
+      const handle = this.nativeEventTopic.subscribe(nativeEventName, nativeEventListener);
       this.handles[vexmlEventName]!.push(handle);
     }
   }
@@ -128,7 +132,7 @@ export class NativeBridge<T extends HostElement, V extends string> {
   deactivate(vexmlEventName: V) {
     util.assert(this.isVexmlEventActive(vexmlEventName), `vexml event is already inactive: ${vexmlEventName}`);
 
-    const mapping = this.mappings.find((m) => m.vexmlEventName === vexmlEventName);
+    const mapping = this.mappings.find((m) => m.vexml === vexmlEventName);
     if (!mapping) {
       return;
     }
@@ -138,9 +142,11 @@ export class NativeBridge<T extends HostElement, V extends string> {
     }
     delete this.handles[vexmlEventName];
 
-    for (const native of mapping.nativeEventListeners) {
-      if (!this.nativeEventTopic.hasSubscribers(native.eventName)) {
-        this.host.removeEventListener(native.eventName, this.publishNativeEvent);
+    for (const native of Object.entries(mapping.native)) {
+      const nativeEventName = native[0] as NativeEventName<T>;
+
+      if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
+        this.host.removeEventListener(nativeEventName, this.publishNativeEvent);
       }
     }
   }

@@ -10,10 +10,16 @@ export class PointCursor<T> {
     this.locator = locator;
   }
 
-  get(positional: { clientX: number; clientY: number }): { point: spatial.Point; targets: T[] } {
+  get(positional: { clientX: number; clientY: number }): {
+    point: spatial.Point;
+    targets: T[];
+    currentTarget: T | null;
+  } {
     const point = this.point(positional.clientX, positional.clientY);
-    const targets = this.locator.locate(point);
-    return { point, targets };
+    let targets = this.locator.locate(point);
+    targets = this.locator.sort(point, targets);
+    const currentTarget = targets[0] ?? null;
+    return { point, targets, currentTarget };
   }
 
   private point(clientX: number, clientY: number): spatial.Point {

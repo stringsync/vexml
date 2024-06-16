@@ -92,29 +92,10 @@ export class Vexml {
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<events.NativeEventMap<SVGElement>>();
     const cursor = new cursors.PointCursor(host, locator);
-    const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>({
-      host,
-      mappings: [
-        {
-          vexmlEventName: 'click',
-          nativeEventListeners: [
-            {
-              eventName: 'click',
-              callback: (event: MouseEvent) => {
-                const { point, targets } = cursor.get(event);
-                vexmlEventTopic.publish('click', { type: 'click', targets, point, src: event });
-              },
-            },
-          ],
-        },
-      ],
-      native: {
-        topic: nativeEventTopic,
-        opts: {
-          touchstart: { passive: true },
-          touchend: { passive: true },
-        },
-      },
+    const eventMappingFactory = new rendering.EventMappingFactory(cursor, vexmlEventTopic);
+    const bridge = events.NativeBridge.forSVG<keyof rendering.EventMap>(host, {
+      mappings: eventMappingFactory.create('auto'),
+      native: { topic: nativeEventTopic, opts: { touchstart: { passive: true }, touchend: { passive: true } } },
     });
 
     return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });

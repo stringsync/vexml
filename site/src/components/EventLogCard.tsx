@@ -58,7 +58,7 @@ const stringify = <T extends object>(payload: T) =>
         // Avoid expanding vexflow objects.
         value.constructor.name.startsWith('_');
       if (isComplexObject) {
-        return `[${value.constructor.name}]`;
+        return `<${value.constructor.name}>`;
       }
       return value;
     },
