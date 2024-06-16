@@ -3,8 +3,7 @@ import * as events from '@/events';
 import * as cursors from '@/cursors';
 import * as util from '@/util';
 import { LocatorTarget } from './locator';
-
-export type InputType = 'mouse' | 'touch' | 'hybrid' | 'auto' | 'none';
+import { InputType } from './config';
 
 /** Events that vexml dispatches to listeners. */
 export type EventMap = {
