@@ -98,7 +98,10 @@ export const SourceDisplay = (props: SourceProps) => {
               data-bs-toggle="collapse"
               data-bs-target={eventCardSelector}
             >
-              <i className="bi bi-lightning"></i> <p className="d-md-inline d-none">Events</p>
+              <i className="bi bi-lightning"></i>{' '}
+              <p className="d-md-inline d-none">
+                Events <span className="badge text-bg-success">{logs.length}</span>
+              </p>
             </button>
 
             <button
@@ -135,9 +138,7 @@ export const SourceDisplay = (props: SourceProps) => {
         <br />
 
         <div id={eventCardId} className="collapse mb-3">
-          <h3 className="mb-3">
-            Events <span className="badge text-bg-secondary">{logs.length}</span>
-          </h3>
+          <h3 className="mb-3">Events</h3>
 
           <div className="d-flex overflow-x-auto gap-3">
             {logs.map((log, index) => (

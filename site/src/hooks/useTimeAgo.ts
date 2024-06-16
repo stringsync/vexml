@@ -4,24 +4,13 @@ export const useTimeAgo = (since: Date) => {
   const [timeAgo, setTimeAgo] = useState<string>(() => getTimeAgo(0));
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
-
-    const update = () => {
-      const now = Date.now();
-      const dt = now - since.getTime();
-
-      setTimeAgo(getTimeAgo(dt));
-
-      // When less than a minute, update every second. Otherwise, update every minute.
-      const intervalMs = dt < 60000 ? 1000 : 60 * 1000;
-
-      timeout = setTimeout(update, intervalMs);
-    };
-
-    update();
-
+    const handle = setInterval(() => {
+      const dt = Date.now() - since.getTime();
+      const nextTimeAgo = getTimeAgo(dt);
+      setTimeAgo(nextTimeAgo);
+    }, 60000);
     return () => {
-      clearTimeout(timeout);
+      clearInterval(handle);
     };
   }, [since]);
 
@@ -29,11 +18,8 @@ export const useTimeAgo = (since: Date) => {
 };
 
 const getTimeAgo = (dt: number) => {
-  if (dt < 10 * 1000) {
+  if (dt < 60 * 1000) {
     return 'just now';
-  } else if (dt < 60 * 1000) {
-    const seconds = Math.floor(dt / 1000);
-    return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
   } else if (dt < 60 * 60 * 1000) {
     const minutes = Math.floor(dt / (60 * 1000));
     return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
