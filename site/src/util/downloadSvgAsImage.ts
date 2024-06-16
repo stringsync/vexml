@@ -1,5 +1,5 @@
 export function downloadSvgAsImage(
-  svgElement: SVGElement,
+  svg: SVGElement,
   opts: {
     imageName: string;
     fontFamily: string;
@@ -15,11 +15,11 @@ export function downloadSvgAsImage(
     }
   `;
   styleElement.innerHTML = fontFaceRule;
-  svgElement.prepend(styleElement);
+  svg.prepend(styleElement);
 
   // Serialize the SVG to a string
   const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svgElement);
+  const svgString = serializer.serializeToString(svg);
   const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 
   const URL = window.URL || window.webkitURL || window;

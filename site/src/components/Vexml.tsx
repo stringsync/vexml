@@ -84,8 +84,11 @@ export const Vexml = (props: VexmlProps) => {
       let element: HTMLCanvasElement | SVGElement;
       if (container instanceof HTMLDivElement) {
         element = container.firstElementChild as SVGElement;
-        element.style.backgroundColor = 'white'; // needed for non-transparent background downloadSvgAsImage
+        // Now that the <svg> is created, we can set the style for screenshots.
+        element.style.backgroundColor = 'white';
       } else if (container instanceof HTMLCanvasElement) {
+        // The <canvas> image background is transparent, and there's not much we can do to change that without
+        // significantly changing the vexml rendering.
         element = container;
       } else {
         throw new Error(`invalid container: ${container}`);

@@ -11,6 +11,7 @@ import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
 import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
 import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
+import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -42,7 +43,7 @@ export const SourceDisplay = (props: SourceProps) => {
   useTooltip(snapshotButtonRef, 'top', SNAPSHOT_NAME);
 
   const element = vexmlResult.type === 'success' ? vexmlResult.element : null;
-  const snapshotButtonDisabled = !(element instanceof SVGElement);
+  const snapshotButtonDisabled = !(element instanceof SVGElement) && !(element instanceof HTMLCanvasElement);
   const onSnapshotClick = async () => {
     if (element instanceof SVGElement) {
       downloadSvgAsImage(element, {
@@ -50,6 +51,9 @@ export const SourceDisplay = (props: SourceProps) => {
         fontFamily: FONT_FAMILY,
         fontBase64: await convertFontToBase64(FONT_URL),
       });
+    }
+    if (element instanceof HTMLCanvasElement) {
+      downloadCanvasAsImage(element, SNAPSHOT_NAME);
     }
   };
 
