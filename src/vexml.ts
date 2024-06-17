@@ -3,7 +3,6 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
-import * as spatial from '@/spatial';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;

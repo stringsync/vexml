@@ -124,7 +124,7 @@ export class QuadTree<T> {
     return max;
   }
 
-  /** Returns the boundaries for drawing */
+  /** Returns the boundaries of all the nodes. */
   getBoundaries(): Rect[] {
     const shapes = new Array<Rect>();
 
@@ -141,6 +141,25 @@ export class QuadTree<T> {
     dfs(this);
 
     return shapes;
+  }
+
+  /** Returns all the entries of all the nodes.  */
+  getEntries(): T[] {
+    const entries = new Array<T>();
+
+    const dfs = (tree: QuadTree<T>) => {
+      entries.push(...tree.entries.map((entry) => entry.data));
+      if (tree.isDivided()) {
+        dfs(tree.northeast!);
+        dfs(tree.northwest!);
+        dfs(tree.southwest!);
+        dfs(tree.southeast!);
+      }
+    };
+
+    dfs(this);
+
+    return entries;
   }
 
   private isDivided() {

@@ -20,16 +20,10 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
   private tree: spatial.QuadTree<LocatorTarget>;
   // The targets that could not be inserted into the tree because they are too large and/or out-of-bounds.
   private unorganizedTargets: LocatorTarget[];
-  private allTargets: LocatorTarget[];
 
-  private constructor(
-    tree: spatial.QuadTree<LocatorTarget>,
-    unorganizedTargets: LocatorTarget[],
-    allTargets: LocatorTarget[]
-  ) {
+  private constructor(tree: spatial.QuadTree<LocatorTarget>, unorganizedTargets: LocatorTarget[]) {
     this.tree = tree;
     this.unorganizedTargets = unorganizedTargets;
-    this.allTargets = allTargets;
   }
 
   static fromScoreRendering(score: ScoreRendering): Locator {
@@ -69,7 +63,7 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
       }
     }
 
-    return new Locator(tree, targets, models);
+    return new Locator(tree, targets);
   }
 
   /** Locates all the targets that contain the given point, sorted by descending distance tot he point. */
@@ -87,7 +81,9 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
   }
 
   draw(ctx: vexflow.RenderContext): void {
-    for (const target of this.allTargets) {
+    const targets = [...this.tree.getEntries(), ...this.unorganizedTargets];
+
+    for (const target of targets) {
       for (const shape of target.getShapes()) {
         if (shape instanceof spatial.Rect) {
           const rect = new drawables.Rect({ rect: shape, strokeStyle: TRANSPARENT_RED });
