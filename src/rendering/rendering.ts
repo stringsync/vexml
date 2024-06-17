@@ -26,14 +26,16 @@ export class Rendering {
   }
 
   /** Removes a vexml event listener. */
-  removeEventListener(id: number): void {
-    const subscription = this.topic.unsubscribe(id);
-    if (!subscription) {
-      return;
-    }
+  removeEventListener(...ids: number[]): void {
+    for (const id of ids) {
+      const subscription = this.topic.unsubscribe(id);
+      if (!subscription) {
+        return;
+      }
 
-    if (this.decrement(subscription.name) === 0) {
-      this.bridge.deactivate(subscription.name);
+      if (this.decrement(subscription.name) === 0) {
+        this.bridge.deactivate(subscription.name);
+      }
     }
   }
 
