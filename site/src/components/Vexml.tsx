@@ -8,6 +8,7 @@ const THROTTLE_DELAY_MS = 50;
 export type VexmlProps = {
   musicXML: string;
   mode: VexmlMode;
+  debug: boolean;
   onResult: (result: VexmlResult) => void;
   onClick: vexml.ClickEventListener;
   onHover: vexml.HoverEventListener;
@@ -24,6 +25,7 @@ export type VexmlResult =
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
   const mode = props.mode;
+  const debug = props.debug;
   const onResult = props.onResult;
   const onClick = props.onClick;
   const onHover = props.onHover;
@@ -76,7 +78,11 @@ export const Vexml = (props: VexmlProps) => {
     const start = new Date();
 
     try {
-      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({ container, width });
+      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+        container,
+        width,
+        config: { DEBUG_DRAW_TARGET_BOUNDS: debug },
+      });
       setRendering(rendering);
 
       let element: HTMLCanvasElement | SVGElement;
@@ -114,7 +120,7 @@ export const Vexml = (props: VexmlProps) => {
         container.firstElementChild?.remove();
       }
     };
-  }, [musicXML, mode, width, onResult]);
+  }, [musicXML, mode, debug, width, onResult]);
 
   return (
     <>
