@@ -11,6 +11,8 @@ import { ScoreRendering } from './score';
  * This is intentionally not configurable because it is a low level detail that should not be exposed to the caller.
  */
 const QUAD_TREE_THRESHOLD = 10;
+const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
+const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.75)';
 
 export type LocatorTarget = InteractionModel<StaveNoteRendering>;
 
@@ -88,13 +90,18 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
     for (const target of this.allTargets) {
       for (const shape of target.getShapes()) {
         if (shape instanceof spatial.Rect) {
-          const rect = new drawables.Rect({ rect: shape, strokeStyle: 'red' });
+          const rect = new drawables.Rect({ rect: shape, strokeStyle: TRANSPARENT_RED });
           rect.draw(ctx);
         } else if (shape instanceof spatial.Circle) {
-          const circle = new drawables.Circle({ circle: shape, strokeStyle: 'red' });
+          const circle = new drawables.Circle({ circle: shape, strokeStyle: TRANSPARENT_RED });
           circle.draw(ctx);
         }
       }
+    }
+
+    for (const boundary of this.tree.getBoundaries()) {
+      const rect = new drawables.Rect({ rect: boundary, strokeStyle: TRANSPARENT_BLUE });
+      rect.draw(ctx);
     }
   }
 }

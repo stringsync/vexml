@@ -124,6 +124,25 @@ export class QuadTree<T> {
     return max;
   }
 
+  /** Returns the boundaries for drawing */
+  getBoundaries(): Rect[] {
+    const shapes = new Array<Rect>();
+
+    const dfs = (tree: QuadTree<T>) => {
+      shapes.push(tree.boundary);
+      if (tree.isDivided()) {
+        dfs(tree.northeast!);
+        dfs(tree.northwest!);
+        dfs(tree.southwest!);
+        dfs(tree.southeast!);
+      }
+    };
+
+    dfs(this);
+
+    return shapes;
+  }
+
   private isDivided() {
     // Assume that if northeast is defined, then all children are defined.
     return this.northeast !== undefined;
