@@ -69,9 +69,7 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     return () => {
-      for (const handle of handles) {
-        rendering.removeEventListener(handle);
-      }
+      rendering.removeEventListener(...handles);
     };
   }, [rendering, container, onEvent]);
 
