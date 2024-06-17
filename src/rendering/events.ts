@@ -35,6 +35,9 @@ export type EventMap = {
   };
 };
 
+export type EventType = keyof EventMap;
+
+export type AnyEventListener = (event: EventMap[EventType]) => void;
 export type ClickEventListener = (event: EventMap['click']) => void;
 export type HoverEventListener = (event: EventMap['hover']) => void;
 export type EnterEventListener = (event: EventMap['enter']) => void;
