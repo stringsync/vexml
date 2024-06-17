@@ -13,22 +13,27 @@ export class InteractionModel<T> {
   }
 
   static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
+    const handles = new Array<InteractionHandle>();
+
     const vfStaveNote = staveNote.vexflow.staveNote;
     const vfBoundingBox = vfStaveNote.getBoundingBox();
     const vfNoteheadBounds = vfStaveNote.getNoteHeadBounds();
 
-    // TODO(jared): Break this up into a circle for the notehead, and a rectangle for the stem if present.
-    const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
-    const staveNotePoint = staveNoteRect.center();
-    const staveNoteHandle = new InteractionHandle(staveNoteRect, staveNotePoint);
-
     const hasAccidental = staveNote.modifiers.some((modifier) => modifier.type === 'accidental');
+    const hasStem = vfStaveNote.hasStem();
+
+    // calculate handle for notehead
     const noteheadX = hasAccidental ? vfBoundingBox.x : vfBoundingBox.x + vfBoundingBox.w / 2;
     const staveNoteheadCircle = new spatial.Circle(noteheadX, vfNoteheadBounds.yBottom, vfBoundingBox.w);
-    const staveNoteheadPoint = staveNoteheadCircle.center();
-    const staveNoteheadHandle = new InteractionHandle(staveNoteheadCircle, staveNoteheadPoint);
+    handles.push(new InteractionHandle(staveNoteheadCircle, staveNoteheadCircle.center()));
 
-    return new InteractionModel([staveNoteHandle, staveNoteheadHandle], staveNote);
+    // calculate handle for stem
+    if (hasStem) {
+      const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+      handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
+    }
+
+    return new InteractionModel(handles, staveNote);
   }
 
   /** Returns the interaction handles for this model. */
