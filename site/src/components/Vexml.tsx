@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 
 const THROTTLE_DELAY_MS = 50;
+const STRINGSYNC_RED = '#FC354C';
 
 export type VexmlProps = {
   musicXML: string;
@@ -58,11 +59,25 @@ export const Vexml = (props: VexmlProps) => {
     handles.push(rendering.addEventListener('exit', onEvent));
 
     if (container) {
-      const onEnter: vexml.EnterEventListener = () => {
+      const onEnter: vexml.EnterEventListener = (event) => {
         container.style.cursor = 'pointer';
+
+        const value = event.target.value;
+        if (value.type === 'stavenote') {
+          value.vexflow.staveNote.getSVGElement()?.remove();
+          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: STRINGSYNC_RED });
+          value.vexflow.staveNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+        }
       };
-      const onExit: vexml.ExitEventListener = () => {
+      const onExit: vexml.ExitEventListener = (event) => {
         container.style.cursor = 'default';
+
+        const value = event.target.value;
+        if (value.type === 'stavenote') {
+          value.vexflow.staveNote.getSVGElement()?.remove();
+          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: 'black' });
+          value.vexflow.staveNote.setStyle({ fillStyle: 'black' }).draw();
+        }
       };
       handles.push(rendering.addEventListener('enter', onEnter));
       handles.push(rendering.addEventListener('exit', onExit));
