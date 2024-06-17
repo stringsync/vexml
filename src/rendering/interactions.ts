@@ -5,7 +5,7 @@ import { StaveNoteRendering } from './note';
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
   private handles: InteractionHandle[];
-  private value: T;
+  public readonly value: T;
 
   private constructor(handles: InteractionHandle[], value: T) {
     this.handles = handles;
@@ -39,11 +39,6 @@ export class InteractionModel<T> {
   /** Returns the interaction handles for this model. */
   getHandles(): InteractionHandle[] {
     return this.handles;
-  }
-
-  /** Returns the value associated with this model. */
-  getValue(): T {
-    return this.value;
   }
 
   /** Returns the shapes that compose this model. */
