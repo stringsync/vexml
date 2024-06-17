@@ -8,8 +8,6 @@ export class Rendering {
   private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
 
-  private tally: { [K in keyof EventMap]?: number } = {};
-
   constructor(opts: { config: Config; bridge: events.NativeBridge<keyof EventMap>; topic: events.Topic<EventMap> }) {
     this.config = opts.config;
     this.bridge = opts.bridge;
@@ -18,11 +16,10 @@ export class Rendering {
 
   /** Adds a vexml event listener. */
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
-    const handle = this.topic.subscribe(name, listener);
-    if (this.increment(name) === 1) {
+    if (!this.topic.hasSubscribers(name)) {
       this.bridge.activate(name);
     }
-    return handle;
+    return this.topic.subscribe(name, listener);
   }
 
   /** Removes a vexml event listener. */
@@ -33,7 +30,7 @@ export class Rendering {
         return;
       }
 
-      if (this.decrement(subscription.name) === 0) {
+      if (!this.topic.hasSubscribers(subscription.name)) {
         this.bridge.deactivate(subscription.name);
       }
     }
@@ -43,16 +40,5 @@ export class Rendering {
   removeAllEventListeners(): void {
     this.topic.unsubscribeAll();
     this.bridge.deactivateAll();
-    this.tally = {};
-  }
-
-  private increment<N extends keyof EventMap>(name: N): number {
-    this.tally[name] ??= 0;
-    return ++this.tally[name]!;
-  }
-
-  private decrement<N extends keyof EventMap>(name: N): number {
-    this.tally[name] ??= 1;
-    return --this.tally[name]!;
   }
 }
