@@ -3,6 +3,7 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
+import * as spatial from '@/spatial';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
@@ -97,6 +98,10 @@ export class Vexml {
     }
 
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
+    if (config.DEBUG_DRAW_TARGET_BOUNDS) {
+      const ctx = scoreRendering.vexflow.renderer.getContext();
+      locator.draw(ctx);
+    }
 
     // Initialize event routing.
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
