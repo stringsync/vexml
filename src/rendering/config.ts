@@ -15,6 +15,7 @@ export type Config = {
   MULTI_MEASURE_REST_WIDTH: number;
   ENABLE_MEASURE_NUMBERS: boolean;
   INPUT_TYPE: InputType;
+  DEBUG_DRAW_TARGET_BOUNDS: boolean;
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -32,4 +33,5 @@ export const DEFAULT_CONFIG: Config = {
   MULTI_MEASURE_REST_WIDTH: 200,
   ENABLE_MEASURE_NUMBERS: true,
   INPUT_TYPE: 'auto',
+  DEBUG_DRAW_TARGET_BOUNDS: true,
 } as const;
