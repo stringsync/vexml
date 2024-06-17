@@ -22,11 +22,9 @@ export class InteractionModel<T> {
     const staveNotePoint = staveNoteRect.center();
     const staveNoteHandle = new InteractionHandle(staveNoteRect, staveNotePoint);
 
-    const staveNoteheadCircle = new spatial.Circle(
-      vfBoundingBox.x + vfBoundingBox.w / 2,
-      vfNoteheadBounds.yBottom,
-      vfBoundingBox.w
-    );
+    const hasAccidental = staveNote.modifiers.some((modifier) => modifier.type === 'accidental');
+    const noteheadX = hasAccidental ? vfBoundingBox.x : vfBoundingBox.x + vfBoundingBox.w / 2;
+    const staveNoteheadCircle = new spatial.Circle(noteheadX, vfNoteheadBounds.yBottom, vfBoundingBox.w);
     const staveNoteheadPoint = staveNoteheadCircle.center();
     const staveNoteheadHandle = new InteractionHandle(staveNoteheadCircle, staveNoteheadPoint);
 
