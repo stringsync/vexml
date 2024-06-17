@@ -121,6 +121,12 @@ export const SourceDisplay = (props: SourceProps) => {
     props.onUpdate({ ...props.source, vexmlMode: e.target.value as VexmlMode });
   };
 
+  const debugCheckboxId = useId();
+  const [debug, setDebug] = useState(false);
+  const onDebugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDebug(e.target.checked);
+  };
+
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
@@ -264,12 +270,30 @@ export const SourceDisplay = (props: SourceProps) => {
             <Vexml
               musicXML={musicXML}
               mode={props.source.vexmlMode}
+              debug={debug}
               onResult={setVexmlResult}
               onClick={onVexmlClick}
               onHover={onVexmlHover}
             />
           </div>
         )}
+
+        <br />
+
+        <div className="d-flex justify-content-end">
+          <div className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id={debugCheckboxId}
+              checked={debug}
+              onChange={onDebugChange}
+            />
+            <label className="form-check-label" htmlFor={debugCheckboxId}>
+              <i className="bi bi-bug"></i> Debug
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   );
