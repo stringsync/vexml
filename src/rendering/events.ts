@@ -21,11 +21,24 @@ export type EventMap = {
     point: spatial.Point;
     native: MouseEvent;
   };
+  enter: {
+    type: 'enter';
+    target: LocatorTarget;
+    point: spatial.Point;
+    native: MouseEvent;
+  };
+  exit: {
+    type: 'exit';
+    target: LocatorTarget;
+    point: spatial.Point;
+    native: MouseEvent;
+  };
 };
 
 export type ClickEventListener = (event: EventMap['click']) => void;
-
 export type HoverEventListener = (event: EventMap['hover']) => void;
+export type EnterEventListener = (event: EventMap['enter']) => void;
+export type ExitEventListener = (event: EventMap['exit']) => void;
 
 export class EventMappingFactory {
   private cursor: cursors.PointCursor<LocatorTarget>;
@@ -39,11 +52,11 @@ export class EventMappingFactory {
   create(inputType: InputType): events.EventMapping<events.HostElement, keyof EventMap>[] {
     switch (inputType) {
       case 'mouse':
-        return [this.click(), this.hover()];
+        return [this.click(), this.hover(), this.enter(), this.exit()];
       case 'touch':
         return [this.click()];
       case 'hybrid':
-        return [this.click(), this.hover()];
+        return [this.click(), this.hover(), this.enter(), this.exit()];
       case 'auto':
         switch (util.device().inputType) {
           case 'mouseonly':
@@ -79,6 +92,60 @@ export class EventMappingFactory {
         mousemove: (event) => {
           const { point, targets, closestTarget } = this.cursor.get(event);
           this.topic.publish('hover', { type: 'hover', closestTarget, targets, point, native: event });
+        },
+      },
+    };
+  }
+
+  private enter(): events.EventMapping<events.HostElement, 'enter'> {
+    let lastEvent: MouseEvent | null = null;
+
+    return {
+      vexml: 'enter',
+      native: {
+        mousemove: (event) => {
+          lastEvent ??= event;
+
+          const before = this.cursor.get(lastEvent);
+          const after = this.cursor.get(event);
+
+          lastEvent = event;
+
+          if (after.closestTarget && before.closestTarget !== after.closestTarget) {
+            this.topic.publish('enter', {
+              type: 'enter',
+              target: after.closestTarget,
+              point: after.point,
+              native: event,
+            });
+          }
+        },
+      },
+    };
+  }
+
+  private exit(): events.EventMapping<events.HostElement, 'exit'> {
+    let lastEvent: MouseEvent | null = null;
+
+    return {
+      vexml: 'exit',
+      native: {
+        mousemove: (event) => {
+          lastEvent ??= event;
+
+          const before = this.cursor.get(lastEvent);
+          const after = this.cursor.get(event);
+
+          lastEvent = event;
+
+          if (before.closestTarget && before.closestTarget !== after.closestTarget) {
+            this.topic.publish('exit', {
+              type: 'exit',
+              target: before.closestTarget,
+              point: before.point,
+              native: event,
+            });
+          }
         },
       },
     };
