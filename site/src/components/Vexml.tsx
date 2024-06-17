@@ -10,8 +10,7 @@ export type VexmlProps = {
   mode: VexmlMode;
   debug: boolean;
   onResult: (result: VexmlResult) => void;
-  onClick: vexml.ClickEventListener;
-  onHover: vexml.HoverEventListener;
+  onEvent: vexml.AnyEventListener;
 };
 
 export type VexmlMode = 'svg' | 'canvas';
@@ -27,16 +26,23 @@ export const Vexml = (props: VexmlProps) => {
   const mode = props.mode;
   const debug = props.debug;
   const onResult = props.onResult;
-  const onClick = props.onClick;
-  const onHover = props.onHover;
+  const onEvent = props.onEvent;
 
   const divContainerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLCanvasElement>(null);
+
+  const divStyle: React.CSSProperties = {
+    display: mode === 'svg' ? 'block' : 'none',
+  };
+  const canvasStyle: React.CSSProperties = {
+    display: mode === 'canvas' ? 'block' : 'none',
+  };
 
   const divWidth = useWidth(divContainerRef, THROTTLE_DELAY_MS);
   const canvasWidth = useWidth(canvasContainerRef, THROTTLE_DELAY_MS);
   const width = mode === 'svg' ? divWidth : canvasWidth;
 
+  const container = mode === 'svg' ? divContainerRef.current : canvasContainerRef.current;
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
 
   useEffect(() => {
@@ -44,14 +50,30 @@ export const Vexml = (props: VexmlProps) => {
       return;
     }
 
-    const handles = [rendering.addEventListener('click', onClick), rendering.addEventListener('hover', onHover)];
+    const handles = new Array<number>();
+
+    handles.push(rendering.addEventListener('click', onEvent));
+    handles.push(rendering.addEventListener('hover', onEvent));
+    handles.push(rendering.addEventListener('enter', onEvent));
+    handles.push(rendering.addEventListener('exit', onEvent));
+
+    if (container) {
+      const onEnter: vexml.EnterEventListener = () => {
+        container.style.cursor = 'pointer';
+      };
+      const onExit: vexml.ExitEventListener = () => {
+        container.style.cursor = 'default';
+      };
+      handles.push(rendering.addEventListener('enter', onEnter));
+      handles.push(rendering.addEventListener('exit', onExit));
+    }
 
     return () => {
       for (const handle of handles) {
         rendering.removeEventListener(handle);
       }
     };
-  }, [rendering, onClick, onHover]);
+  }, [rendering, container, onEvent]);
 
   useEffect(() => {
     onResult({ type: 'none' });
@@ -59,14 +81,6 @@ export const Vexml = (props: VexmlProps) => {
     if (!musicXML) {
       onResult({ type: 'empty' });
       return;
-    }
-
-    let container: HTMLDivElement | HTMLCanvasElement | null = null;
-    if (mode === 'canvas') {
-      container = canvasContainerRef.current as HTMLCanvasElement;
-    }
-    if (mode === 'svg') {
-      container = divContainerRef.current as HTMLDivElement;
     }
     if (!container) {
       return;
@@ -120,16 +134,12 @@ export const Vexml = (props: VexmlProps) => {
         container.firstElementChild?.remove();
       }
     };
-  }, [musicXML, mode, debug, width, onResult]);
+  }, [musicXML, mode, debug, width, container, onResult]);
 
   return (
     <>
-      <div className="w-100" ref={divContainerRef} style={{ display: mode === 'svg' ? 'block' : 'none' }}></div>
-      <canvas
-        className="w-100"
-        ref={canvasContainerRef}
-        style={{ display: mode === 'canvas' ? 'block' : 'none' }}
-      ></canvas>
+      <div className="w-100" ref={divContainerRef} style={divStyle}></div>
+      <canvas className="w-100" ref={canvasContainerRef} style={canvasStyle}></canvas>
     </>
   );
 };
