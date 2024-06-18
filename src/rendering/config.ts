@@ -1,4 +1,4 @@
-export type InputType = 'mouse' | 'touch' | 'hybrid' | 'auto' | 'none';
+import { InputType } from './types';
 
 export type Config = {
   DEFAULT_SYSTEM_DISTANCE: number;

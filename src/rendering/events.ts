@@ -3,7 +3,7 @@ import * as events from '@/events';
 import * as cursors from '@/cursors';
 import * as util from '@/util';
 import { LocatorTarget } from './locator';
-import { InputType } from './config';
+import { InputType } from './types';
 
 /** Events that vexml dispatches to listeners. */
 export type EventMap = {
