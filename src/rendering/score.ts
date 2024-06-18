@@ -4,7 +4,7 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as spatial from '@/spatial';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { Seed } from './seed';

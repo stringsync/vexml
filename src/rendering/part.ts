@@ -3,7 +3,7 @@ import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Stave, StaveModifier, StaveRendering } from './stave';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { PartName, PartNameRendering } from './partname';

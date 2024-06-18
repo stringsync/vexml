@@ -1,6 +1,6 @@
 import * as events from '@/events';
 import { EventMap } from './events';
-import { Config } from './config';
+import { Config } from '@/config';
 
 /** The result of rendering MusicXML. */
 export class Rendering {

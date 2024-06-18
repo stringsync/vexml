@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { Config } from './config';
+import { Config } from '@/config';
 import { PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';

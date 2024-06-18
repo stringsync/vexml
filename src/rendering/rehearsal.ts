@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import { Config } from './config';
+import { Config } from '@/config';
 
 /** The result of rendering a rehearsal. */
 export type RehearsalRendering = {
