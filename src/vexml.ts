@@ -3,10 +3,11 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
+import { Config, DEFAULT_CONFIG } from '@/config';
 
 export type RenderOptions = {
   container: HTMLDivElement | HTMLCanvasElement;
-  config?: Partial<rendering.Config>;
+  config?: Partial<Config>;
   width: number;
 };
 
@@ -77,7 +78,7 @@ export class Vexml {
 
   /** Renders the vexml instance to an SVG element. */
   render(opts: RenderOptions): rendering.Rendering {
-    const config = { ...rendering.DEFAULT_CONFIG, ...opts.config };
+    const config = { ...DEFAULT_CONFIG, ...opts.config };
     const container = opts.container;
     const width = opts.width;
 

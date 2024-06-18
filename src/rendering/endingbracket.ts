@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import { Config } from './config';
+import { Config } from '@/config';
 
 /** The result of rendering an ending bracket. */
 export type EndingBracketRendering = {
