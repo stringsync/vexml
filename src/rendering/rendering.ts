@@ -16,7 +16,7 @@ export class Rendering {
 
   /** Adds a vexml event listener. */
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
-    if (!this.topic.hasSubscribers(name)) {
+    if (!this.topic.hasSubscribers(name) && !this.bridge.isActivated(name)) {
       this.bridge.activate(name);
     }
     return this.topic.subscribe(name, listener);
@@ -30,7 +30,7 @@ export class Rendering {
         return;
       }
 
-      if (!this.topic.hasSubscribers(subscription.name)) {
+      if (!this.topic.hasSubscribers(subscription.name) && this.bridge.isActivated(subscription.name)) {
         this.bridge.deactivate(subscription.name);
       }
     }

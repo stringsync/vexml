@@ -55,6 +55,11 @@ export class NativeBridge<V extends string> {
     this.nativeEventOpts = opts.nativeEventOpts;
   }
 
+  /** Returns whether the vexml event is activated. */
+  isActivated(vexmlEventName: V) {
+    return this.isVexmlEventActive(vexmlEventName);
+  }
+
   /**
    * Activates a vexml event, initializing the native event machinery if needed.
    *
