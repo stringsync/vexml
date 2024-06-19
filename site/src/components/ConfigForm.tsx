@@ -131,7 +131,7 @@ const StringInput = (props: { label: string; value: string; defaultValue: string
       <div className="input-group">
         <input id={id} className="form-control" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
         <button
-          className="btn btn-outline-secondary"
+          className="btn border-0"
           type="button"
           disabled={props.value === props.defaultValue}
           onClick={() => props.onChange(props.defaultValue)}
@@ -160,7 +160,7 @@ const NumberInput = (props: { label: string; value: number; defaultValue: number
           onChange={(e) => props.onChange(Number(e.target.value))}
         />
         <button
-          className="btn btn-outline-secondary"
+          className="btn btn border-0"
           type="button"
           disabled={props.value === props.defaultValue}
           onClick={() => props.onChange(props.defaultValue)}
@@ -214,7 +214,7 @@ const EnumInput = (props: {
           ))}
         </select>
         <button
-          className="btn btn-outline-secondary"
+          className="btn btn border-0"
           type="button"
           disabled={props.value === props.defaultValue}
           onClick={() => props.onChange(props.defaultValue)}
