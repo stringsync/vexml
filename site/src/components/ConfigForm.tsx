@@ -111,20 +111,20 @@ export const ConfigForm = (props: ConfigFormProps) => {
 
   return (
     <div>
+      <div>
+        <button className="btn btn-danger btn-sm" onClick={onResetClick} disabled={isResetButtonDisabled}>
+          <i className="bi bi-arrow-counterclockwise"></i> Reset Config
+        </button>
+      </div>
+
+      <hr />
+
       <div className="row g-3">
         {SCHEMA_CONFIG_ENTRIES.map(([key, value]) => (
           <div key={key} className="col-md-6 col-lg-4">
             {render(key, value)}
           </div>
         ))}
-      </div>
-
-      <br />
-
-      <div className="d-grid">
-        <button className="btn btn-danger btn-lg" onClick={onResetClick} disabled={isResetButtonDisabled}>
-          <i className="bi bi-arrow-counterclockwise"></i> Reset Config
-        </button>
       </div>
     </div>
   );

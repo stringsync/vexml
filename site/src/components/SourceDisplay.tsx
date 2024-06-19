@@ -58,11 +58,24 @@ export const SourceDisplay = (props: SourceProps) => {
     }
   };
 
+  // For some reason, the data attributes doesn't work correctly when there are colons in the id.
+  const collapseRootId = `source-display-collapse-${useId().replaceAll(':', '\\:')}`;
+  const collapseRootSelector = `#${collapseRootId}`;
+
   const sourceInputCardId = useId();
   const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
   const [sourceInputCardClassName] = useState(() =>
-    props.source.type === 'local' && props.source.musicXML.length === 0 ? 'show' : 'collapse'
+    props.source.type === 'local' && props.source.musicXML.length === 0 ? 'collapse show' : 'collapse'
   );
+
+  const configFormCardId = useId();
+  const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
+  const onConfigChange = (config: vexml.Config) => {
+    props.onUpdate({ ...props.source, config });
+  };
+
+  const eventCardId = useId();
+  const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
 
   const vexmlEventSuffix = useId();
   const vexmlClickCheckboxId = `vexml-click-checkbox-${vexmlEventSuffix}`;
@@ -101,18 +114,11 @@ export const SourceDisplay = (props: SourceProps) => {
     [enabledVexmlEventTypes, nextKey]
   );
 
-  const eventCardId = useId();
-  const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
-
   const svgButtonId = useId();
   const canvasButtonId = useId();
   const vexmlModeName = useId();
   const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
-  };
-
-  const onConfigChange = (config: vexml.Config) => {
-    props.onUpdate({ ...props.source, config });
   };
 
   return (
@@ -131,16 +137,27 @@ export const SourceDisplay = (props: SourceProps) => {
 
             <button
               type="button"
-              className="btn btn-outline-success"
+              className="btn btn-outline-primary"
               data-bs-toggle="collapse"
               data-bs-target={eventCardSelector}
             >
               <i className="bi bi-lightning"></i>{' '}
               <p className="d-md-inline d-none">
-                Events <span className="badge text-bg-success">{logs.length}</span>
+                Events <span className="badge text-bg-primary">{logs.length}</span>
               </p>
             </button>
 
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              data-bs-toggle="collapse"
+              data-bs-target={configFormCardSelector}
+            >
+              <i className="bi bi-gear"></i> <p className="d-md-inline d-none">Config</p>
+            </button>
+          </div>
+
+          <div className="btn-group" role="group">
             <button
               ref={snapshotButtonRef}
               type="button"
@@ -196,85 +213,89 @@ export const SourceDisplay = (props: SourceProps) => {
 
         <br />
 
-        <div>
-          <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
-        </div>
+        <div id={collapseRootId}>
+          <div id={sourceInputCardId} className={sourceInputCardClassName} data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Edit</h3>
 
-        <br />
+            <SourceInput source={props.source} musicXML={musicXML} onUpdate={props.onUpdate} />
+          </div>
 
-        <div id={sourceInputCardId} className={sourceInputCardClassName}>
-          <SourceInput source={props.source} musicXML={musicXML} onUpdate={props.onUpdate} />
-        </div>
+          <br />
 
-        <br />
+          <div id={eventCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Events</h3>
 
-        <div id={eventCardId} className="collapse mb-3">
-          <h3 className="mb-3">Events</h3>
+            <div>
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlClickCheckboxId}
+                  type="checkbox"
+                  value="click"
+                  checked={enabledVexmlEventTypes.has('click')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
+                  click
+                </label>
+              </div>
 
-          <div>
-            <div className="form-check form-check-inline">
-              <input
-                className="form-check-input"
-                id={vexmlClickCheckboxId}
-                type="checkbox"
-                value="click"
-                checked={enabledVexmlEventTypes.has('click')}
-                onChange={onVexmlEventCheckboxChange}
-              />
-              <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
-                click
-              </label>
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlHoverCheckboxId}
+                  type="checkbox"
+                  value="hover"
+                  checked={enabledVexmlEventTypes.has('hover')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlHoverCheckboxId}>
+                  hover
+                </label>
+              </div>
+
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlEnterCheckboxId}
+                  type="checkbox"
+                  value="enter"
+                  checked={enabledVexmlEventTypes.has('enter')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlEnterCheckboxId}>
+                  enter
+                </label>
+              </div>
+
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlExitCheckboxId}
+                  type="checkbox"
+                  value="exit"
+                  checked={enabledVexmlEventTypes.has('exit')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlExitCheckboxId}>
+                  exit
+                </label>
+              </div>
             </div>
 
-            <div className="form-check form-check-inline">
-              <input
-                className="form-check-input"
-                id={vexmlHoverCheckboxId}
-                type="checkbox"
-                value="hover"
-                checked={enabledVexmlEventTypes.has('hover')}
-                onChange={onVexmlEventCheckboxChange}
-              />
-              <label className="form-check-label" htmlFor={vexmlHoverCheckboxId}>
-                hover
-              </label>
-            </div>
+            <hr />
 
-            <div className="form-check form-check-inline">
-              <input
-                className="form-check-input"
-                id={vexmlEnterCheckboxId}
-                type="checkbox"
-                value="enter"
-                checked={enabledVexmlEventTypes.has('enter')}
-                onChange={onVexmlEventCheckboxChange}
-              />
-              <label className="form-check-label" htmlFor={vexmlEnterCheckboxId}>
-                enter
-              </label>
-            </div>
-
-            <div className="form-check form-check-inline">
-              <input
-                className="form-check-input"
-                id={vexmlExitCheckboxId}
-                type="checkbox"
-                value="exit"
-                checked={enabledVexmlEventTypes.has('exit')}
-                onChange={onVexmlEventCheckboxChange}
-              />
-              <label className="form-check-label" htmlFor={vexmlExitCheckboxId}>
-                exit
-              </label>
+            <div className="d-flex overflow-x-auto gap-3">
+              {logs.map((log, index) => (
+                <EventLogCard key={log.key} index={index} log={log} />
+              ))}
             </div>
           </div>
 
-          <hr />
+          <div id={configFormCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Config</h3>
 
-          <div className="d-flex overflow-x-auto gap-3">
-            {logs.map((log, index) => (
-              <EventLogCard key={log.key} index={index} log={log} />
-            ))}
+            <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
           </div>
         </div>
 
