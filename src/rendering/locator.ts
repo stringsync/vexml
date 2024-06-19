@@ -4,6 +4,7 @@ import * as drawables from '@/drawables';
 import { StaveNoteRendering } from './note';
 import { InteractionModel } from './interactions';
 import { ScoreRendering } from './score';
+import { StaveChordRendering } from './chord';
 
 /**
  * How many entries a quad tree node should hold before subdividing.
@@ -14,7 +15,7 @@ const QUAD_TREE_THRESHOLD = 10;
 const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
 const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.75)';
 
-export type LocatorTarget = InteractionModel<StaveNoteRendering>;
+export type LocatorTarget = InteractionModel<StaveNoteRendering> | InteractionModel<StaveChordRendering>;
 
 export class Locator implements spatial.PointLocator<LocatorTarget> {
   private tree: spatial.QuadTree<LocatorTarget>;
@@ -48,6 +49,8 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
         switch (voiceEntry.type) {
           case 'stavenote':
             return InteractionModel.fromStaveNoteRendering(voiceEntry);
+          case 'stavechord':
+            return InteractionModel.fromStaveChordRendering(voiceEntry);
           default:
             return [];
         }
