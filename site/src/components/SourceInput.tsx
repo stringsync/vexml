@@ -4,7 +4,7 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { Vexml } from '@/index';
+import { Config, DEFAULT_CONFIG, Vexml } from '@/index';
 
 export type SourceInputProps = {
   source: Source;
@@ -34,7 +34,7 @@ export const SourceInput = (props: SourceInputProps) => {
   const musicXML = source.type === 'local' ? source.musicXML : props.musicXML;
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
-      updateLater({ type: 'local', musicXML: e.target.value, backend: source.backend });
+      updateLater({ type: 'local', musicXML: e.target.value, backend: source.backend, config: source.config });
     }
   };
 
@@ -42,20 +42,25 @@ export const SourceInput = (props: SourceInputProps) => {
   const pathKey = EXAMPLE_OPTION_KEY_BY_PATH[path] ?? '';
   const onPathChange = (e: SelectEvent<string>) => {
     if (source.type === 'example') {
-      updateNow({ type: 'example', path: e.value, backend: source.backend });
+      updateNow({ type: 'example', path: e.value, backend: source.backend, config: source.config });
     }
   };
 
   const url = source.type === 'remote' ? source.url : '';
   const onUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (source.type === 'remote') {
-      updateLater({ type: 'remote', url: e.target.value, backend: source.backend });
+      updateLater({ type: 'remote', url: e.target.value, backend: source.backend, config: source.config });
     }
   };
 
   const modalRef = useRef<HTMLDivElement>(null);
   const modal = useModal(modalRef);
-  const [modalSource, setModalSource] = useState<Source>({ type: 'local', musicXML: '', backend: 'svg' });
+  const [modalSource, setModalSource] = useState<Source>({
+    type: 'local',
+    musicXML: '',
+    backend: 'svg',
+    config: DEFAULT_CONFIG,
+  });
   const onModalContinue = () => {
     updateNow(modalSource);
     modal.hide();
@@ -67,7 +72,7 @@ export const SourceInput = (props: SourceInputProps) => {
       throw new Error(`Invalid source type: ${type}`);
     }
 
-    const source = getDefaultSource(type, props.source.backend);
+    const source = getDefaultSource(type, props.source.backend, props.source.config);
 
     const isSourceEmpty =
       (props.source.type === 'local' && props.source.musicXML.length === 0) ||
@@ -84,7 +89,10 @@ export const SourceInput = (props: SourceInputProps) => {
   };
 
   const onConvertToLocalClick = () => {
-    const source = getDefaultSource('local', props.source.backend) as Extract<Source, { type: 'local' }>;
+    const source = getDefaultSource('local', props.source.backend, props.source.config) as Extract<
+      Source,
+      { type: 'local' }
+    >;
     source.musicXML = props.musicXML;
     updateNow(source);
   };
@@ -96,7 +104,7 @@ export const SourceInput = (props: SourceInputProps) => {
 
     try {
       const vexml = await Vexml.fromFile(files[0]);
-      updateNow({ type: 'local', musicXML: vexml.getDocumentString(), backend: source.backend });
+      updateNow({ type: 'local', musicXML: vexml.getDocumentString(), backend: source.backend, config: source.config });
     } catch (e) {
       console.error(`error reading file: ${e}`);
     }
@@ -258,14 +266,14 @@ export const SourceInput = (props: SourceInputProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = (type: Source['type'], vexmlMode: RenderingBackend): Source => {
+const getDefaultSource = (type: Source['type'], backend: RenderingBackend, config: Config): Source => {
   switch (type) {
     case 'local':
-      return { type, musicXML: '', backend: vexmlMode };
+      return { type, musicXML: '', backend, config };
     case 'remote':
-      return { type, url: '', backend: vexmlMode };
+      return { type, url: '', backend, config };
     case 'example':
-      return { type, path: DEFAULT_EXAMPLE_PATH, backend: vexmlMode };
+      return { type, path: DEFAULT_EXAMPLE_PATH, backend, config };
     default:
       throw new Error(`Invalid source type: ${type}`);
   }
