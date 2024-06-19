@@ -1,10 +1,20 @@
 import * as vexml from '@/index';
-import { useId, useRef, useState } from 'react';
+import { CSSProperties, useId, useRef, useState } from 'react';
 
 export type ConfigFormProps = {
   defaultValue?: vexml.Config;
   onChange(config: vexml.Config): void;
 };
+
+const SLIDER_VALUE_STYLE: CSSProperties = { width: '3em' };
+
+const DESCRIPTOR_TYPE_ORDER = ['string', 'number', 'enum', 'boolean', 'debug'] as const;
+
+const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.CONFIG_SCHEMA).sort((a, b) => {
+  const aIndex = DESCRIPTOR_TYPE_ORDER.indexOf(a[1].type);
+  const bIndex = DESCRIPTOR_TYPE_ORDER.indexOf(b[1].type);
+  return aIndex - bIndex;
+});
 
 export const ConfigForm = (props: ConfigFormProps) => {
   const [config, setConfig] = useState(props.defaultValue ?? vexml.DEFAULT_CONFIG);
@@ -102,7 +112,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
   return (
     <div>
       <div className="row g-3">
-        {Object.entries(vexml.CONFIG_SCHEMA).map(([key, value]) => (
+        {SCHEMA_CONFIG_ENTRIES.map(([key, value]) => (
           <div key={key} className="col-md-6 col-lg-4">
             {render(key, value)}
           </div>
@@ -151,14 +161,19 @@ const NumberInput = (props: { label: string; value: number; defaultValue: number
       <label htmlFor={id} className="form-label">
         {props.label}
       </label>
-      <div className="input-group">
+      <div className="d-flex align-items-center">
         <input
           id={id}
-          type="number"
-          className="form-control"
+          type="range"
+          className="form-range"
           value={props.value}
+          min={0}
+          max={4 * props.defaultValue}
           onChange={(e) => props.onChange(Number(e.target.value))}
         />
+        <p className="mb-0 ms-2 text-center" style={SLIDER_VALUE_STYLE}>
+          {props.value}
+        </p>
         <button
           className="btn btn border-0"
           type="button"
