@@ -287,7 +287,7 @@ export const SourceDisplay = (props: SourceProps) => {
             <Vexml
               musicXML={musicXML}
               backend={props.source.backend}
-              debug={debug}
+              config={props.source.config}
               onResult={setVexmlResult}
               onEvent={onVexmlEvent}
             />

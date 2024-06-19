@@ -14,7 +14,7 @@ export type SchemaConfig<T extends Record<any, any>> = {
   [K in keyof T]: SchemaType<T[K]>;
 };
 
-export type AnySchemaDescriptor = { type: string };
+type TerminalSchemaDescriptor = ReturnType<typeof t.string | typeof t.number | typeof t.boolean | typeof t.enum>;
 
 export type SchemaDescriptor = ReturnType<
   typeof t.string | typeof t.number | typeof t.boolean | typeof t.enum | typeof t.debug
@@ -33,7 +33,7 @@ export class t {
         case 'enum':
           return descriptor.defaultValue as SchemaType<T>;
         case 'debug':
-          return value(descriptor.child as SchemaDescriptor) as SchemaType<T>;
+          return value(descriptor.child) as SchemaType<T>;
       }
     };
 
@@ -60,7 +60,7 @@ export class t {
     return { type: 'enum', choices, defaultValue } as const;
   }
 
-  static debug<T extends AnySchemaDescriptor>(child: T) {
+  static debug<T extends TerminalSchemaDescriptor>(child: T) {
     return { type: 'debug', child } as const;
   }
 

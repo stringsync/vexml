@@ -10,7 +10,7 @@ const STRINGSYNC_RED = '#FC354C';
 export type VexmlProps = {
   musicXML: string;
   backend: RenderingBackend;
-  debug: boolean;
+  config: vexml.Config;
   onResult: (result: VexmlResult) => void;
   onEvent: vexml.AnyEventListener;
 };
@@ -24,7 +24,7 @@ export type VexmlResult =
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
   const mode = props.backend;
-  const debug = props.debug;
+  const config = props.config;
   const onResult = props.onResult;
   const onEvent = props.onEvent;
 
@@ -107,7 +107,7 @@ export const Vexml = (props: VexmlProps) => {
       const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         container,
         width,
-        config: { DEBUG_DRAW_TARGET_BOUNDS: debug },
+        config,
       });
       setRendering(rendering);
 
@@ -146,7 +146,7 @@ export const Vexml = (props: VexmlProps) => {
         container.firstElementChild?.remove();
       }
     };
-  }, [musicXML, mode, debug, width, container, onResult]);
+  }, [musicXML, mode, config, width, container, onResult]);
 
   return (
     <>
