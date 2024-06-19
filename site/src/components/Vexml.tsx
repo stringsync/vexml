@@ -2,19 +2,18 @@ import * as vexml from '@/index';
 import * as errors from '../util/errors';
 import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
+import { RenderingBackend } from '../types';
 
 const THROTTLE_DELAY_MS = 50;
 const STRINGSYNC_RED = '#FC354C';
 
 export type VexmlProps = {
   musicXML: string;
-  mode: VexmlMode;
+  backend: RenderingBackend;
   debug: boolean;
   onResult: (result: VexmlResult) => void;
   onEvent: vexml.AnyEventListener;
 };
-
-export type VexmlMode = 'svg' | 'canvas';
 
 export type VexmlResult =
   | { type: 'none' }
@@ -24,7 +23,7 @@ export type VexmlResult =
 
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
-  const mode = props.mode;
+  const mode = props.backend;
   const debug = props.debug;
   const onResult = props.onResult;
   const onEvent = props.onEvent;

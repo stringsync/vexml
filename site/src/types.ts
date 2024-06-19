@@ -3,17 +3,17 @@ export type Source =
   | {
       type: 'local';
       musicXML: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
     }
   | {
       type: 'remote';
       url: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
     }
   | {
       type: 'example';
       path: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
     };
 
 /** A wrapper for keying values. */
@@ -23,4 +23,4 @@ export type Keyed<T> = {
 };
 
 /** The modes for rendering vexml. */
-export type VexmlMode = 'svg' | 'canvas';
+export type RenderingBackend = 'svg' | 'canvas';
