@@ -3,7 +3,7 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as conversions from './conversions';
 import { Accidental, AccidentalRendering } from './accidental';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Lyric, LyricRendering } from './lyric';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';

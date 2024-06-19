@@ -1,5 +1,5 @@
 import { Clef } from './clef';
-import { Config } from './config';
+import { Config } from '@/config';
 import { KeySignature } from './keysignature';
 import { MeasureEntry, StaveSignature } from './stavesignature';
 import { MultiRest, MultiRestRendering } from './multirest';

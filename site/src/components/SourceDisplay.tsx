@@ -1,8 +1,8 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { Source } from '../types';
-import { Vexml, VexmlMode, VexmlResult } from './Vexml';
+import { RenderingBackend, Source } from '../types';
+import { Vexml, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -12,6 +12,7 @@ import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
 import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
+import { ConfigForm } from './ConfigForm';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -57,42 +58,67 @@ export const SourceDisplay = (props: SourceProps) => {
     }
   };
 
+  // For some reason, the data attributes doesn't work correctly when there are colons in the id.
+  const collapseRootId = `source-display-collapse-${useId().replaceAll(':', '\\:')}`;
+  const collapseRootSelector = `#${collapseRootId}`;
+
   const sourceInputCardId = useId();
   const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
   const [sourceInputCardClassName] = useState(() =>
-    props.source.type === 'local' && props.source.musicXML.length === 0 ? 'show' : 'collapse'
+    props.source.type === 'local' && props.source.musicXML.length === 0 ? 'collapse show' : 'collapse'
   );
 
-  const [logs, setLogs] = useState(new Array<EventLog>());
-
-  const vexmlClickCheckboxId = useId();
-  const [isVexmlClickEnabled, setVexmlClickEnabled] = useState(true);
-  const onVexmlClickCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setVexmlClickEnabled(event.target.checked);
+  const configFormCardId = useId();
+  const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
+  const onConfigChange = (config: vexml.Config) => {
+    props.onUpdate({ ...props.source, config });
   };
-
-  const nextKey = useNextKey('event-log');
-  const onVexmlClick = useCallback<vexml.ClickEventListener>(
-    (payload) => {
-      const log = {
-        key: nextKey(),
-        type: payload.type,
-        timestamp: new Date(),
-        payload,
-      };
-      setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
-    },
-    [nextKey]
-  );
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
+
+  const vexmlEventSuffix = useId();
+  const vexmlClickCheckboxId = `vexml-click-checkbox-${vexmlEventSuffix}`;
+  const vexmlHoverCheckboxId = `vexml-hover-checkbox-${vexmlEventSuffix}`;
+  const vexmlEnterCheckboxId = `vexml-enter-checkbox-${vexmlEventSuffix}`;
+  const vexmlExitCheckboxId = `vexml-exit-checkbox-${vexmlEventSuffix}`;
+
+  const [enabledVexmlEventTypes, setEnabledVexmlEventTypes] = useState(new Set<vexml.EventType>(['click']));
+  const onVexmlEventCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextEnabledVexmlEventTypes = new Set(enabledVexmlEventTypes);
+
+    if (event.target.checked) {
+      nextEnabledVexmlEventTypes.add(event.target.value as vexml.EventType);
+    } else {
+      nextEnabledVexmlEventTypes.delete(event.target.value as vexml.EventType);
+    }
+
+    setEnabledVexmlEventTypes(nextEnabledVexmlEventTypes);
+  };
+
+  const [logs, setLogs] = useState(new Array<EventLog>());
+  const nextKey = useNextKey('event-log');
+  const onVexmlEvent = useCallback<vexml.AnyEventListener>(
+    (event) => {
+      if (!enabledVexmlEventTypes.has(event.type)) {
+        return;
+      }
+      const log = {
+        key: nextKey(),
+        type: event.type,
+        timestamp: new Date(),
+        event,
+      };
+      setLogs((logs) => [log, ...logs.slice(0, EVENT_LOG_CAPACITY - 1)]);
+    },
+    [enabledVexmlEventTypes, nextKey]
+  );
 
   const svgButtonId = useId();
   const canvasButtonId = useId();
   const vexmlModeName = useId();
   const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.onUpdate({ ...props.source, vexmlMode: e.target.value as VexmlMode });
+    props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
   };
 
   return (
@@ -111,16 +137,27 @@ export const SourceDisplay = (props: SourceProps) => {
 
             <button
               type="button"
-              className="btn btn-outline-success"
+              className="btn btn-outline-primary"
               data-bs-toggle="collapse"
               data-bs-target={eventCardSelector}
             >
               <i className="bi bi-lightning"></i>{' '}
               <p className="d-md-inline d-none">
-                Events <span className="badge text-bg-success">{logs.length}</span>
+                Events <span className="badge text-bg-primary">{logs.length}</span>
               </p>
             </button>
 
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              data-bs-toggle="collapse"
+              data-bs-target={configFormCardSelector}
+            >
+              <i className="bi bi-gear"></i> <p className="d-md-inline d-none">Config</p>
+            </button>
+          </div>
+
+          <div className="btn-group" role="group">
             <button
               ref={snapshotButtonRef}
               type="button"
@@ -148,7 +185,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="svg"
               id={svgButtonId}
-              checked={props.source.vexmlMode === 'svg'}
+              checked={props.source.backend === 'svg'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={svgButtonId}>
@@ -161,7 +198,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="canvas"
               id={canvasButtonId}
-              checked={props.source.vexmlMode === 'canvas'}
+              checked={props.source.backend === 'canvas'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
@@ -176,35 +213,89 @@ export const SourceDisplay = (props: SourceProps) => {
 
         <br />
 
-        <div id={sourceInputCardId} className={sourceInputCardClassName}>
-          <SourceInput source={props.source} musicXML={musicXML} onUpdate={props.onUpdate} />
-        </div>
+        <div id={collapseRootId}>
+          <div id={sourceInputCardId} className={sourceInputCardClassName} data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Edit</h3>
 
-        <br />
-
-        <div id={eventCardId} className="collapse mb-3">
-          <h3 className="mb-3">Events</h3>
-
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              id={vexmlClickCheckboxId}
-              type="checkbox"
-              value="click"
-              checked={isVexmlClickEnabled}
-              onChange={onVexmlClickCheckboxChange}
-            />
-            <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
-              click
-            </label>
+            <SourceInput source={props.source} musicXML={musicXML} onUpdate={props.onUpdate} />
           </div>
 
-          <hr />
+          <br />
 
-          <div className="d-flex overflow-x-auto gap-3">
-            {logs.map((log, index) => (
-              <EventLogCard key={log.key} index={index} log={log} />
-            ))}
+          <div id={eventCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Events</h3>
+
+            <div>
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlClickCheckboxId}
+                  type="checkbox"
+                  value="click"
+                  checked={enabledVexmlEventTypes.has('click')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlClickCheckboxId}>
+                  click
+                </label>
+              </div>
+
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlHoverCheckboxId}
+                  type="checkbox"
+                  value="hover"
+                  checked={enabledVexmlEventTypes.has('hover')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlHoverCheckboxId}>
+                  hover
+                </label>
+              </div>
+
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlEnterCheckboxId}
+                  type="checkbox"
+                  value="enter"
+                  checked={enabledVexmlEventTypes.has('enter')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlEnterCheckboxId}>
+                  enter
+                </label>
+              </div>
+
+              <div className="form-check form-check-inline">
+                <input
+                  className="form-check-input"
+                  id={vexmlExitCheckboxId}
+                  type="checkbox"
+                  value="exit"
+                  checked={enabledVexmlEventTypes.has('exit')}
+                  onChange={onVexmlEventCheckboxChange}
+                />
+                <label className="form-check-label" htmlFor={vexmlExitCheckboxId}>
+                  exit
+                </label>
+              </div>
+            </div>
+
+            <hr />
+
+            <div className="d-flex overflow-x-auto gap-3">
+              {logs.map((log, index) => (
+                <EventLogCard key={log.key} index={index} log={log} />
+              ))}
+            </div>
+          </div>
+
+          <div id={configFormCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Config</h3>
+
+            <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
           </div>
         </div>
 
@@ -221,9 +312,10 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              mode={props.source.vexmlMode}
+              backend={props.source.backend}
+              config={props.source.config}
               onResult={setVexmlResult}
-              onClick={isVexmlClickEnabled ? onVexmlClick : undefined}
+              onEvent={onVexmlEvent}
             />
           </div>
         )}

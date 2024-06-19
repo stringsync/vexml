@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { Config } from './config';
+import { Config } from '@/config';
 import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { NoteDurationDenominator, StemDirection } from './enums';
 import { Clef } from './clef';

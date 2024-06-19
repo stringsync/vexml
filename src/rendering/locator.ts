@@ -1,4 +1,6 @@
 import * as spatial from '@/spatial';
+import * as vexflow from 'vexflow';
+import * as drawables from '@/drawables';
 import { StaveNoteRendering } from './note';
 import { InteractionModel } from './interactions';
 import { ScoreRendering } from './score';
@@ -9,17 +11,19 @@ import { ScoreRendering } from './score';
  * This is intentionally not configurable because it is a low level detail that should not be exposed to the caller.
  */
 const QUAD_TREE_THRESHOLD = 10;
+const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
+const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.75)';
 
 export type LocatorTarget = InteractionModel<StaveNoteRendering>;
 
 export class Locator implements spatial.PointLocator<LocatorTarget> {
   private tree: spatial.QuadTree<LocatorTarget>;
   // The targets that could not be inserted into the tree because they are too large and/or out-of-bounds.
-  private targets: LocatorTarget[];
+  private unorganizedTargets: LocatorTarget[];
 
-  private constructor(tree: spatial.QuadTree<LocatorTarget>, targets: LocatorTarget[]) {
+  private constructor(tree: spatial.QuadTree<LocatorTarget>, unorganizedTargets: LocatorTarget[]) {
     this.tree = tree;
-    this.targets = targets;
+    this.unorganizedTargets = unorganizedTargets;
   }
 
   static fromScoreRendering(score: ScoreRendering): Locator {
@@ -64,7 +68,7 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
 
   /** Locates all the targets that contain the given point, sorted by descending distance tot he point. */
   locate(point: spatial.Point): LocatorTarget[] {
-    return [...this.tree.query(point), ...this.targets.filter((target) => target.contains(point))];
+    return [...this.tree.query(point), ...this.unorganizedTargets.filter((target) => target.contains(point))];
   }
 
   /** Sorts the targets by descending distance to the given point. */
@@ -74,5 +78,26 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
       const distanceB = b.getNearestHandleThatContains(point)?.distance(point) ?? Infinity;
       return distanceA - distanceB;
     });
+  }
+
+  draw(ctx: vexflow.RenderContext): void {
+    const targets = [...this.tree.getEntries(), ...this.unorganizedTargets];
+
+    for (const target of targets) {
+      for (const shape of target.getShapes()) {
+        if (shape instanceof spatial.Rect) {
+          const rect = new drawables.Rect({ rect: shape, strokeStyle: TRANSPARENT_RED });
+          rect.draw(ctx);
+        } else if (shape instanceof spatial.Circle) {
+          const circle = new drawables.Circle({ circle: shape, strokeStyle: TRANSPARENT_RED });
+          circle.draw(ctx);
+        }
+      }
+    }
+
+    for (const boundary of this.tree.getBoundaries()) {
+      const rect = new drawables.Rect({ rect: boundary, strokeStyle: TRANSPARENT_BLUE });
+      rect.draw(ctx);
+    }
   }
 }

@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Address } from './address';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Measure, MeasureRendering } from './measure';
 import { Spanners } from './spanners';
 import { MeasureFragmentWidth } from './measurefragment';

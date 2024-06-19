@@ -30,3 +30,6 @@ export type TabPosition = {
   string: number;
   fret: number | 'X';
 };
+
+/** The different inputs a device could be interacting with a vexml rendering. */
+export type InputType = 'auto' | 'mouse' | 'touch' | 'hybrid' | 'none';

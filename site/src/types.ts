@@ -1,19 +1,24 @@
+import * as vexml from '@/index';
+
 /** A MusicXML data source. */
 export type Source =
   | {
       type: 'local';
       musicXML: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
+      config: vexml.Config;
     }
   | {
       type: 'remote';
       url: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
+      config: vexml.Config;
     }
   | {
       type: 'example';
       path: string;
-      vexmlMode: VexmlMode;
+      backend: RenderingBackend;
+      config: vexml.Config;
     };
 
 /** A wrapper for keying values. */
@@ -23,4 +28,4 @@ export type Keyed<T> = {
 };
 
 /** The modes for rendering vexml. */
-export type VexmlMode = 'svg' | 'canvas';
+export type RenderingBackend = 'svg' | 'canvas';

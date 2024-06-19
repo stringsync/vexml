@@ -36,13 +36,13 @@ export class Rect implements Shape {
   }
 
   quadrants(): [upperRight: Rect, upperLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
-    const [upperLeft, upperRight, bottomRight, bottomLeft] = this.corners();
-    return [
-      new Rect(upperRight.x, upperRight.y, upperRight.x - upperLeft.x, bottomRight.y - upperRight.y),
-      new Rect(upperLeft.x, upperLeft.y, upperRight.x - upperLeft.x, bottomLeft.y - upperLeft.y),
-      new Rect(bottomLeft.x, bottomLeft.y, upperRight.x - upperLeft.x, bottomRight.y - bottomLeft.y),
-      new Rect(bottomRight.x, bottomRight.y, upperRight.x - upperLeft.x, bottomRight.y - bottomLeft.y),
-    ];
+    const halfWidth = this.w / 2;
+    const halfHeight = this.h / 2;
+    const upperRight = new Rect(this.x + halfWidth, this.y, halfWidth, halfHeight);
+    const upperLeft = new Rect(this.x, this.y, halfWidth, halfHeight);
+    const bottomLeft = new Rect(this.x, this.y + halfHeight, halfWidth, halfHeight);
+    const bottomRight = new Rect(this.x + halfWidth, this.y + halfHeight, halfWidth, halfHeight);
+    return [upperRight, upperLeft, bottomLeft, bottomRight];
   }
 
   contains(point: Point): boolean {

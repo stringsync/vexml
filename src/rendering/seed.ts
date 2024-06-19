@@ -1,5 +1,5 @@
 import { System } from './system';
-import { Config } from './config';
+import { Config } from '@/config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { PartScoped } from './types';

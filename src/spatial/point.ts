@@ -9,4 +9,8 @@ export class Point {
   distance(other: Point): number {
     return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
   }
+
+  isEqual(other: Point): boolean {
+    return this.x === other.x && this.y === other.y;
+  }
 }

@@ -2,17 +2,18 @@ import * as vexml from '@/index';
 import * as errors from '../util/errors';
 import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
+import { RenderingBackend } from '../types';
 
 const THROTTLE_DELAY_MS = 50;
+const STRINGSYNC_RED = '#FC354C';
 
 export type VexmlProps = {
   musicXML: string;
-  mode: VexmlMode;
+  backend: RenderingBackend;
+  config: vexml.Config;
   onResult: (result: VexmlResult) => void;
-  onClick?: vexml.ClickEventListener;
+  onEvent: vexml.AnyEventListener;
 };
-
-export type VexmlMode = 'svg' | 'canvas';
 
 export type VexmlResult =
   | { type: 'none' }
@@ -22,17 +23,26 @@ export type VexmlResult =
 
 export const Vexml = (props: VexmlProps) => {
   const musicXML = props.musicXML;
-  const mode = props.mode;
+  const mode = props.backend;
+  const config = props.config;
   const onResult = props.onResult;
-  const onClick = props.onClick;
+  const onEvent = props.onEvent;
 
   const divContainerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLCanvasElement>(null);
+
+  const divStyle: React.CSSProperties = {
+    display: mode === 'svg' ? 'block' : 'none',
+  };
+  const canvasStyle: React.CSSProperties = {
+    display: mode === 'canvas' ? 'block' : 'none',
+  };
 
   const divWidth = useWidth(divContainerRef, THROTTLE_DELAY_MS);
   const canvasWidth = useWidth(canvasContainerRef, THROTTLE_DELAY_MS);
   const width = mode === 'svg' ? divWidth : canvasWidth;
 
+  const container = mode === 'svg' ? divContainerRef.current : canvasContainerRef.current;
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
 
   useEffect(() => {
@@ -42,16 +52,40 @@ export const Vexml = (props: VexmlProps) => {
 
     const handles = new Array<number>();
 
-    if (onClick) {
-      handles.push(rendering.addEventListener('click', onClick));
+    handles.push(rendering.addEventListener('click', onEvent));
+    handles.push(rendering.addEventListener('hover', onEvent));
+    handles.push(rendering.addEventListener('enter', onEvent));
+    handles.push(rendering.addEventListener('exit', onEvent));
+
+    if (container) {
+      const onEnter: vexml.EnterEventListener = (event) => {
+        container.style.cursor = 'pointer';
+
+        const value = event.target.value;
+        if (value.type === 'stavenote') {
+          value.vexflow.staveNote.getSVGElement()?.remove();
+          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: STRINGSYNC_RED });
+          value.vexflow.staveNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+        }
+      };
+      const onExit: vexml.ExitEventListener = (event) => {
+        container.style.cursor = 'default';
+
+        const value = event.target.value;
+        if (value.type === 'stavenote') {
+          value.vexflow.staveNote.getSVGElement()?.remove();
+          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: 'black' });
+          value.vexflow.staveNote.setStyle({ fillStyle: 'black' }).draw();
+        }
+      };
+      handles.push(rendering.addEventListener('enter', onEnter));
+      handles.push(rendering.addEventListener('exit', onExit));
     }
 
     return () => {
-      for (const handle of handles) {
-        rendering.removeEventListener(handle);
-      }
+      rendering.removeEventListener(...handles);
     };
-  }, [rendering, onClick]);
+  }, [rendering, container, onEvent]);
 
   useEffect(() => {
     onResult({ type: 'none' });
@@ -59,14 +93,6 @@ export const Vexml = (props: VexmlProps) => {
     if (!musicXML) {
       onResult({ type: 'empty' });
       return;
-    }
-
-    let container: HTMLDivElement | HTMLCanvasElement | null = null;
-    if (mode === 'canvas') {
-      container = canvasContainerRef.current as HTMLCanvasElement;
-    }
-    if (mode === 'svg') {
-      container = divContainerRef.current as HTMLDivElement;
     }
     if (!container) {
       return;
@@ -78,7 +104,11 @@ export const Vexml = (props: VexmlProps) => {
     const start = new Date();
 
     try {
-      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({ container, width });
+      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+        container,
+        width,
+        config,
+      });
       setRendering(rendering);
 
       let element: HTMLCanvasElement | SVGElement;
@@ -116,16 +146,12 @@ export const Vexml = (props: VexmlProps) => {
         container.firstElementChild?.remove();
       }
     };
-  }, [musicXML, mode, width, onResult]);
+  }, [musicXML, mode, config, width, container, onResult]);
 
   return (
     <>
-      <div className="w-100" ref={divContainerRef} style={{ display: mode === 'svg' ? 'block' : 'none' }}></div>
-      <canvas
-        className="w-100"
-        ref={canvasContainerRef}
-        style={{ display: mode === 'canvas' ? 'block' : 'none' }}
-      ></canvas>
+      <div className="w-100" ref={divContainerRef} style={divStyle}></div>
+      <canvas className="w-100" ref={canvasContainerRef} style={canvasStyle}></canvas>
     </>
   );
 };
