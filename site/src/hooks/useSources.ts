@@ -2,7 +2,7 @@ import { DEFAULT_EXAMPLE_PATH, LOCAL_STORAGE_VEXML_SOURCES_KEY } from '../consta
 import { Source } from '../types';
 import { useJsonLocalStorage } from './useJsonLocalStorage';
 
-const DEFAULT_SOURCES: Source[] = [{ type: 'example', path: DEFAULT_EXAMPLE_PATH, vexmlMode: 'svg' }];
+const DEFAULT_SOURCES: Source[] = [{ type: 'example', path: DEFAULT_EXAMPLE_PATH, backend: 'svg' }];
 
 export const useSources = () => {
   const [sources, setSources] = useJsonLocalStorage(LOCAL_STORAGE_VEXML_SOURCES_KEY, [], isSources);
@@ -17,10 +17,10 @@ export const useSources = () => {
 const isSources = (data: unknown): data is Source[] =>
   Array.isArray(data) &&
   data.every((item): item is Source => {
-    if (typeof item !== 'object') {
+    if (typeof item !== 'object' && item !== null) {
       return false;
     }
-    if (item.vexmlMode !== 'svg' && item.vexmlMode !== 'canvas') {
+    if (item.backend !== 'svg' && item.backend !== 'canvas') {
       return false;
     }
     switch (item.type) {

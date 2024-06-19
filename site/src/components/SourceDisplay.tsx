@@ -1,8 +1,8 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { Source } from '../types';
-import { Vexml, VexmlMode, VexmlResult } from './Vexml';
+import { RenderingBackend, Source } from '../types';
+import { Vexml, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -107,7 +107,7 @@ export const SourceDisplay = (props: SourceProps) => {
   const canvasButtonId = useId();
   const vexmlModeName = useId();
   const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.onUpdate({ ...props.source, vexmlMode: e.target.value as VexmlMode });
+    props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
   };
 
   const debugCheckboxId = useId();
@@ -169,7 +169,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="svg"
               id={svgButtonId}
-              checked={props.source.vexmlMode === 'svg'}
+              checked={props.source.backend === 'svg'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={svgButtonId}>
@@ -182,7 +182,7 @@ export const SourceDisplay = (props: SourceProps) => {
               name={vexmlModeName}
               value="canvas"
               id={canvasButtonId}
-              checked={props.source.vexmlMode === 'canvas'}
+              checked={props.source.backend === 'canvas'}
               onChange={onVexmlModeChange}
             />
             <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
@@ -286,7 +286,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              mode={props.source.vexmlMode}
+              backend={props.source.backend}
               debug={debug}
               onResult={setVexmlResult}
               onEvent={onVexmlEvent}
