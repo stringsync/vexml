@@ -25,14 +25,14 @@ export const ConfigForm = (props: ConfigFormProps) => {
     return config[key as keyof vexml.Config] as T;
   }
 
-  function set<T>(key: string) {
+  function set<T>(key: string, opts?: { immediate: boolean }) {
     return (value: T) => {
       const nextConfig = { ...config, [key]: value };
       setConfig(nextConfig);
-      if (typeof value === 'string' || typeof value === 'number') {
-        updateLater(nextConfig);
-      } else {
+      if (opts?.immediate) {
         updateNow(nextConfig);
+      } else {
+        updateLater(nextConfig);
       }
     };
   }
@@ -45,19 +45,43 @@ export const ConfigForm = (props: ConfigFormProps) => {
 
     switch (descriptor.type) {
       case 'string':
-        return <StringInput key={key} label={label} value={get<string>(key)} onChange={set<string>(key)} />;
+        return (
+          <StringInput
+            key={key}
+            label={label}
+            value={get<string>(key)}
+            defaultValue={descriptor.defaultValue}
+            onChange={set<string>(key)}
+          />
+        );
       case 'number':
-        return <NumberInput key={key} label={label} value={get<number>(key)} onChange={set<number>(key)} />;
+        return (
+          <NumberInput
+            key={key}
+            label={label}
+            value={get<number>(key)}
+            defaultValue={descriptor.defaultValue}
+            onChange={set<number>(key)}
+          />
+        );
       case 'boolean':
-        return <BooleanInput key={key} label={label} value={get<boolean>(key)} onChange={set<boolean>(key)} />;
+        return (
+          <BooleanInput
+            key={key}
+            label={label}
+            value={get<boolean>(key)}
+            onChange={set<boolean>(key, { immediate: true })}
+          />
+        );
       case 'enum':
         return (
           <EnumInput
             key={key}
             label={label}
             value={get<string>(key)}
+            defaultValue={descriptor.defaultValue}
             choices={descriptor.choices}
-            onChange={set<string>(key)}
+            onChange={set<string>(key, { immediate: true })}
           />
         );
       case 'debug':
@@ -96,7 +120,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
   );
 };
 
-const StringInput = (props: { label: string; value: string; onChange(value: string): void }) => {
+const StringInput = (props: { label: string; value: string; defaultValue: string; onChange(value: string): void }) => {
   const id = useId();
 
   return (
@@ -104,12 +128,22 @@ const StringInput = (props: { label: string; value: string; onChange(value: stri
       <label htmlFor={id} className="form-label">
         {props.label}
       </label>
-      <input id={id} className="form-control" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+      <div className="input-group">
+        <input id={id} className="form-control" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+        <button
+          className="btn btn-outline-secondary"
+          type="button"
+          disabled={props.value === props.defaultValue}
+          onClick={() => props.onChange(props.defaultValue)}
+        >
+          <i className="bi bi-arrow-counterclockwise"></i>
+        </button>
+      </div>
     </div>
   );
 };
 
-const NumberInput = (props: { label: string; value: number; onChange(value: number): void }) => {
+const NumberInput = (props: { label: string; value: number; defaultValue: number; onChange(value: number): void }) => {
   const id = useId();
 
   return (
@@ -117,13 +151,23 @@ const NumberInput = (props: { label: string; value: number; onChange(value: numb
       <label htmlFor={id} className="form-label">
         {props.label}
       </label>
-      <input
-        id={id}
-        type="number"
-        className="form-control"
-        value={props.value}
-        onChange={(e) => props.onChange(Number(e.target.value))}
-      />
+      <div className="input-group">
+        <input
+          id={id}
+          type="number"
+          className="form-control"
+          value={props.value}
+          onChange={(e) => props.onChange(Number(e.target.value))}
+        />
+        <button
+          className="btn btn-outline-secondary"
+          type="button"
+          disabled={props.value === props.defaultValue}
+          onClick={() => props.onChange(props.defaultValue)}
+        >
+          <i className="bi bi-arrow-counterclockwise"></i>
+        </button>
+      </div>
     </div>
   );
 };
@@ -150,6 +194,7 @@ const BooleanInput = (props: { label: string; value: boolean; onChange(value: bo
 const EnumInput = (props: {
   label: string;
   value: string;
+  defaultValue: string;
   choices: readonly string[];
   onChange(value: string): void;
 }) => {
@@ -160,13 +205,23 @@ const EnumInput = (props: {
       <label htmlFor={id} className="mb-2">
         {props.label}
       </label>
-      <select id={id} className="form-select" value={props.value} onChange={(e) => props.onChange(e.target.value)}>
-        {props.choices.map((choice) => (
-          <option key={choice} value={choice}>
-            {choice}
-          </option>
-        ))}
-      </select>
+      <div className="input-group">
+        <select id={id} className="form-select" value={props.value} onChange={(e) => props.onChange(e.target.value)}>
+          {props.choices.map((choice) => (
+            <option key={choice} value={choice}>
+              {choice}
+            </option>
+          ))}
+        </select>
+        <button
+          className="btn btn-outline-secondary"
+          type="button"
+          disabled={props.value === props.defaultValue}
+          onClick={() => props.onChange(props.defaultValue)}
+        >
+          <i className="bi bi-arrow-counterclockwise"></i>
+        </button>
+      </div>
     </div>
   );
 };
