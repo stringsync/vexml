@@ -12,6 +12,7 @@ import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
 import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
+import { ConfigForm } from './ConfigForm';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -110,10 +111,8 @@ export const SourceDisplay = (props: SourceProps) => {
     props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
   };
 
-  const debugCheckboxId = useId();
-  const [debug, setDebug] = useState(false);
-  const onDebugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDebug(e.target.checked);
+  const onConfigChange = (config: vexml.Config) => {
+    props.onUpdate({ ...props.source, config });
   };
 
   return (
@@ -193,6 +192,12 @@ export const SourceDisplay = (props: SourceProps) => {
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
             <i className="bi bi-github"></i> Report an Issue
           </a>
+        </div>
+
+        <br />
+
+        <div>
+          <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
         </div>
 
         <br />
@@ -293,23 +298,6 @@ export const SourceDisplay = (props: SourceProps) => {
             />
           </div>
         )}
-
-        <br />
-
-        <div className="d-flex justify-content-end">
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id={debugCheckboxId}
-              checked={debug}
-              onChange={onDebugChange}
-            />
-            <label className="form-check-label" htmlFor={debugCheckboxId}>
-              <i className="bi bi-bug"></i> Debug
-            </label>
-          </div>
-        </div>
       </div>
     </div>
   );
