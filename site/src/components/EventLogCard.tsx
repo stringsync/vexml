@@ -4,13 +4,13 @@ import { useRef } from 'react';
 import { useTooltip } from '../hooks/useTooltip';
 
 export const EVENT_LOG_CAPACITY = 10;
-const EVENT_LOG_CARD_STYLE = { maxHeight: '400px' };
+const EVENT_LOG_CARD_STYLE = { width: '300px', height: '400px' };
 
 export type EventLog = {
   key: string;
   type: string;
   timestamp: Date;
-  payload: vexml.EventMap[keyof vexml.EventMap];
+  event: vexml.EventMap[vexml.EventType];
 };
 
 export type EventLogCardProps = {
@@ -24,7 +24,7 @@ export const EventLogCard = (props: EventLogCardProps) => {
 
   const timeAgo = useTimeAgo(log.timestamp);
 
-  const payload = stringify(log.payload);
+  const payload = stringify(log.event);
 
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(copyButtonRef, 'top', 'Copy to clipboard');
@@ -39,7 +39,7 @@ export const EventLogCard = (props: EventLogCardProps) => {
       className="card rounded flex-grow-0 flex-shrink-0 position-relative"
       style={EVENT_LOG_CARD_STYLE}
     >
-      <div className="card-body overflow-y-auto">
+      <div className="card-body overflow-auto">
         <h5 className="card-title d-flex justify-content-between align-items-center">
           {log.type}{' '}
           <span className="badge text-bg-primary" style={{ opacity: opacity(index) }}>

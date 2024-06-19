@@ -5,7 +5,7 @@ import { StaveNoteRendering } from './note';
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
   private handles: InteractionHandle[];
-  private value: T;
+  public readonly value: T;
 
   private constructor(handles: InteractionHandle[], value: T) {
     this.handles = handles;
@@ -13,24 +13,32 @@ export class InteractionModel<T> {
   }
 
   static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
+    const handles = new Array<InteractionHandle>();
+
     const vfStaveNote = staveNote.vexflow.staveNote;
+    const vfBoundingBox = vfStaveNote.getBoundingBox();
+    const vfNoteheadBounds = vfStaveNote.getNoteHeadBounds();
 
-    // TODO(jared): Break this up into a circle for the notehead, and a rectangle for the stem if present.
-    const staveNoteRect = spatial.Rect.fromRectLike(vfStaveNote.getBoundingBox());
-    const staveNotePoint = staveNoteRect.center();
-    const staveNoteHandle = new InteractionHandle(staveNoteRect, staveNotePoint);
+    const hasAccidental = staveNote.modifiers.some((modifier) => modifier.type === 'accidental');
+    const hasStem = vfStaveNote.hasStem();
 
-    return new InteractionModel([staveNoteHandle], staveNote);
+    // calculate handle for notehead
+    const noteheadX = hasAccidental ? vfBoundingBox.x : vfBoundingBox.x + vfBoundingBox.w / 2;
+    const staveNoteheadCircle = new spatial.Circle(noteheadX, vfNoteheadBounds.yBottom, vfBoundingBox.w);
+    handles.push(new InteractionHandle(staveNoteheadCircle, staveNoteheadCircle.center()));
+
+    // calculate handle for stem
+    if (hasStem) {
+      const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+      handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
+    }
+
+    return new InteractionModel(handles, staveNote);
   }
 
   /** Returns the interaction handles for this model. */
   getHandles(): InteractionHandle[] {
     return this.handles;
-  }
-
-  /** Returns the value associated with this model. */
-  getValue(): T {
-    return this.value;
   }
 
   /** Returns the shapes that compose this model. */

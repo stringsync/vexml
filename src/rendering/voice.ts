@@ -10,7 +10,7 @@ import {
   StemDirection,
 } from './enums';
 import { StaveSignature } from './stavesignature';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';

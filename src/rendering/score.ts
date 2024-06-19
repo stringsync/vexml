@@ -4,7 +4,7 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as spatial from '@/spatial';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
 import { Seed } from './seed';
@@ -19,6 +19,9 @@ export type ScoreRendering = {
   type: 'score';
   systems: SystemRendering[];
   boundary: spatial.Rect;
+  vexflow: {
+    renderer: vexflow.Renderer;
+  };
 };
 
 /**
@@ -243,7 +246,7 @@ export class Score {
     const boundary = new spatial.Rect(0, 0, opts.width, y);
 
     // TODO: Get the locator.
-    return { type: 'score', systems: systemRenderings, boundary };
+    return { type: 'score', systems: systemRenderings, boundary, vexflow: { renderer: vfRenderer } };
   }
 
   @util.memoize()

@@ -27,7 +27,6 @@
     "format": "yarn prettier .",
     "pretest": "yarn build:image",
     "pretest:ci": "yarn build:image",
-    "pretest:m1": "yarn build:image:m1",
     "test": "docker run -it --rm -v $(pwd)/src:/vexml/src -v $(pwd)/tests:/vexml/tests vexml:latest yarn jest --runInBand",
     "test:ci": "docker run --rm vexml:latest yarn jest --runInBand --ci"
   },

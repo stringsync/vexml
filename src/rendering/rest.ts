@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import { Config } from './config';
+import { Config } from '@/config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';

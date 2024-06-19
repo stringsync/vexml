@@ -1,14 +1,12 @@
 import * as events from '@/events';
 import { EventMap } from './events';
-import { Config } from './config';
+import { Config } from '@/config';
 
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
   private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
-
-  private tally: { [K in keyof EventMap]?: number } = {};
 
   constructor(opts: { config: Config; bridge: events.NativeBridge<keyof EventMap>; topic: events.Topic<EventMap> }) {
     this.config = opts.config;
@@ -18,22 +16,23 @@ export class Rendering {
 
   /** Adds a vexml event listener. */
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
-    const handle = this.topic.subscribe(name, listener);
-    if (this.increment(name) === 1) {
+    if (!this.topic.hasSubscribers(name) && !this.bridge.isActivated(name)) {
       this.bridge.activate(name);
     }
-    return handle;
+    return this.topic.subscribe(name, listener);
   }
 
   /** Removes a vexml event listener. */
-  removeEventListener(id: number): void {
-    const subscription = this.topic.unsubscribe(id);
-    if (!subscription) {
-      return;
-    }
+  removeEventListener(...ids: number[]): void {
+    for (const id of ids) {
+      const subscription = this.topic.unsubscribe(id);
+      if (!subscription) {
+        return;
+      }
 
-    if (this.decrement(subscription.name) === 0) {
-      this.bridge.deactivate(subscription.name);
+      if (!this.topic.hasSubscribers(subscription.name) && this.bridge.isActivated(subscription.name)) {
+        this.bridge.deactivate(subscription.name);
+      }
     }
   }
 
@@ -41,16 +40,5 @@ export class Rendering {
   removeAllEventListeners(): void {
     this.topic.unsubscribeAll();
     this.bridge.deactivateAll();
-    this.tally = {};
-  }
-
-  private increment<N extends keyof EventMap>(name: N): number {
-    this.tally[name] ??= 0;
-    return ++this.tally[name]!;
-  }
-
-  private decrement<N extends keyof EventMap>(name: N): number {
-    this.tally[name] ??= 1;
-    return --this.tally[name]!;
   }
 }
