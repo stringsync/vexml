@@ -11,7 +11,7 @@ import { InteractionModel, InteractionModelType } from './interactions';
  */
 const QUAD_TREE_THRESHOLD = 10;
 const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
-const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.75)';
+const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.5)';
 
 export class Locator implements spatial.PointLocator<InteractionModelType> {
   private tree: spatial.QuadTree<InteractionModelType>;
@@ -58,6 +58,7 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   draw(ctx: vexflow.RenderContext): void {
     const targets = [...this.tree.getEntries(), ...this.unorganizedTargets];
 
+    // Clear any lingering paths.
     ctx.beginPath();
 
     for (const target of targets) {
