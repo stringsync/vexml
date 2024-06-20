@@ -4,11 +4,13 @@ import { StaveNoteRendering } from './note';
 import { StaveChordRendering } from './chord';
 import { ScoreRendering } from './score';
 import { StaveRendering } from './stave';
+import { RestRendering } from './rest';
 
 export type InteractionModelType =
+  | InteractionModel<StaveRendering>
   | InteractionModel<StaveNoteRendering>
   | InteractionModel<StaveChordRendering>
-  | InteractionModel<StaveRendering>;
+  | InteractionModel<RestRendering>;
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
@@ -133,6 +135,8 @@ class InteractionModelFactory {
             return InteractionModelFactory.fromStaveNoteRendering(voiceEntry);
           case 'stavechord':
             return InteractionModelFactory.fromStaveChordRendering(voiceEntry);
+          case 'rest':
+            return InteractionModelFactory.fromRestRendering(voiceEntry);
           default:
             return [];
         }
@@ -197,5 +201,27 @@ class InteractionModelFactory {
     }
 
     return new InteractionModel(handles, staveChord);
+  }
+
+  private static fromRestRendering(rest: RestRendering): InteractionModel<RestRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfBoundingBox = rest.vexflow.note.getBoundingBox();
+    let restRect: spatial.Rect;
+    if (rest.duration === '1' || rest.duration === '2') {
+      // Whole and half rest bounding boxes are too small to interact with, so we make the interaction shape bigger.
+      const scale = 2;
+      const w = scale * vfBoundingBox.w;
+      const h = scale * vfBoundingBox.h;
+      const x = vfBoundingBox.x + (vfBoundingBox.w - w) / 2;
+      const y = vfBoundingBox.y + (vfBoundingBox.h - h) / 2;
+      restRect = new spatial.Rect(x, y, w, h);
+    } else {
+      restRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    }
+
+    handles.push(new InteractionHandle(restRect, restRect.center()));
+
+    return new InteractionModel(handles, rest);
   }
 }
