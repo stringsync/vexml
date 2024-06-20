@@ -5,9 +5,10 @@ import { StaveChordRendering } from './chord';
 import { ScoreRendering } from './score';
 import { StaveRendering } from './stave';
 import { RestRendering } from './rest';
+import { MeasureRendering } from './measure';
 
 export type InteractionModelType =
-  | InteractionModel<StaveRendering>
+  | InteractionModel<MeasureRendering>
   | InteractionModel<StaveNoteRendering>
   | InteractionModel<StaveChordRendering>
   | InteractionModel<RestRendering>;
@@ -106,8 +107,9 @@ export class InteractionHandle {
 class InteractionModelFactory {
   static fromScoreRendering(scoreRendering: ScoreRendering): InteractionModelType[] {
     // Calculate the renderings that can be interacted with.
-    const staves = scoreRendering.systems
-      .flatMap((system) => system.measures)
+    const measures = scoreRendering.systems.flatMap((system) => system.measures);
+
+    const staves = measures
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
       .flatMap((part) => part.staves);
@@ -126,8 +128,8 @@ class InteractionModelFactory {
 
     // Create interaction models for each interactable rendering.
     return [
-      ...staves.map((stave) => {
-        return InteractionModelFactory.fromStaveRendering(stave);
+      ...measures.map((measure) => {
+        return InteractionModelFactory.fromMeasureRendering(measure);
       }),
       ...voiceEntries.flatMap((voiceEntry) => {
         switch (voiceEntry.type) {
@@ -144,13 +146,17 @@ class InteractionModelFactory {
     ];
   }
 
-  private static fromStaveRendering(stave: StaveRendering): InteractionModel<StaveRendering> {
+  private static fromMeasureRendering(measure: MeasureRendering): InteractionModel<MeasureRendering> {
     const handles = new Array<InteractionHandle>();
 
-    const staveRect = spatial.Rect.fromRectLike(stave.vexflow.stave.getBoundingBox());
-    handles.push(new InteractionHandle(staveRect, staveRect.center()));
+    const staveRects = measure.fragments
+      .flatMap((fragment) => fragment.parts.flatMap((part) => part.staves))
+      .flatMap((stave) => spatial.Rect.fromRectLike(stave.vexflow.stave.getBoundingBox()));
 
-    return new InteractionModel(handles, stave);
+    const measureRect = spatial.Rect.merge(staveRects);
+    handles.push(new InteractionHandle(measureRect, measureRect.center()));
+
+    return new InteractionModel(handles, measure);
   }
 
   private static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
