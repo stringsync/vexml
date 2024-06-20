@@ -3,7 +3,6 @@ import * as util from '@/util';
 import { StaveNoteRendering } from './note';
 import { StaveChordRendering } from './chord';
 import { ScoreRendering } from './score';
-import { StaveRendering } from './stave';
 import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
 
