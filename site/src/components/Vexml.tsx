@@ -54,8 +54,8 @@ export const Vexml = (props: VexmlProps) => {
 
     handles.push(rendering.addEventListener('click', onEvent));
     handles.push(rendering.addEventListener('hover', onEvent));
-    handles.push(rendering.addEventListener('enter', onEvent));
     handles.push(rendering.addEventListener('exit', onEvent));
+    handles.push(rendering.addEventListener('enter', onEvent));
 
     if (container) {
       const onEnter: vexml.EnterEventListener = (event) => {
