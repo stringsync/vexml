@@ -1,6 +1,6 @@
 import * as spatial from '@/spatial';
 import * as util from '@/util';
-import { StaveNoteRendering } from './note';
+import { StaveNoteRendering, TabNoteRendering } from './note';
 import { StaveChordRendering } from './chord';
 import { ScoreRendering } from './score';
 import { RestRendering } from './rest';
@@ -10,7 +10,8 @@ export type InteractionModelType =
   | InteractionModel<MeasureRendering>
   | InteractionModel<StaveNoteRendering>
   | InteractionModel<StaveChordRendering>
-  | InteractionModel<RestRendering>;
+  | InteractionModel<RestRendering>
+  | InteractionModel<TabNoteRendering>;
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
@@ -138,6 +139,8 @@ class InteractionModelFactory {
             return InteractionModelFactory.fromStaveChordRendering(voiceEntry);
           case 'rest':
             return InteractionModelFactory.fromRestRendering(voiceEntry);
+          case 'tabnote':
+            return InteractionModelFactory.fromTabNoteRendering(voiceEntry);
           default:
             return [];
         }
@@ -228,5 +231,18 @@ class InteractionModelFactory {
     handles.push(new InteractionHandle(restRect, restRect.center()));
 
     return new InteractionModel(handles, rest);
+  }
+
+  private static fromTabNoteRendering(tabNote: TabNoteRendering): InteractionModel<TabNoteRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfTabNote = tabNote.vexflow.tabNote;
+    const x = vfTabNote.getAbsoluteX();
+    for (const y of vfTabNote.getYs()) {
+      const noteheadCircle = new spatial.Circle(x, y, 10);
+      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
+    }
+
+    return new InteractionModel(handles, tabNote);
   }
 }
