@@ -3,8 +3,12 @@ import * as util from '@/util';
 import { StaveNoteRendering } from './note';
 import { StaveChordRendering } from './chord';
 import { ScoreRendering } from './score';
+import { StaveRendering } from './stave';
 
-export type InteractionModelType = ReturnType<typeof InteractionModelFactory.fromScoreRendering>[number];
+export type InteractionModelType =
+  | InteractionModel<StaveNoteRendering>
+  | InteractionModel<StaveChordRendering>
+  | InteractionModel<StaveRendering>;
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
@@ -98,12 +102,15 @@ export class InteractionHandle {
 }
 
 class InteractionModelFactory {
-  static fromScoreRendering(scoreRendering: ScoreRendering) {
-    const models = scoreRendering.systems
+  static fromScoreRendering(scoreRendering: ScoreRendering): InteractionModelType[] {
+    // Calculate the renderings that can be interacted with.
+    const staves = scoreRendering.systems
       .flatMap((system) => system.measures)
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves)
+      .flatMap((part) => part.staves);
+
+    const voiceEntries = staves
       .flatMap((stave) => stave.entry)
       .flatMap((staveEntry) => {
         switch (staveEntry.type) {
@@ -113,20 +120,33 @@ class InteractionModelFactory {
             return [];
         }
       })
-      .flatMap((voice) => voice.entries)
-      .flatMap((voiceEntry) => {
+      .flatMap((voice) => voice.entries);
+
+    // Create interaction models for each interactable rendering.
+    return [
+      ...staves.map((stave) => {
+        return InteractionModelFactory.fromStaveRendering(stave);
+      }),
+      ...voiceEntries.flatMap((voiceEntry) => {
         switch (voiceEntry.type) {
           case 'stavenote':
             return InteractionModelFactory.fromStaveNoteRendering(voiceEntry);
           case 'stavechord':
             return InteractionModelFactory.fromStaveChordRendering(voiceEntry);
-          case 'gracenote':
           default:
             return [];
         }
-      });
+      }),
+    ];
+  }
 
-    return models;
+  private static fromStaveRendering(stave: StaveRendering): InteractionModel<StaveRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const staveRect = spatial.Rect.fromRectLike(stave.vexflow.stave.getBoundingBox());
+    handles.push(new InteractionHandle(staveRect, staveRect.center()));
+
+    return new InteractionModel(handles, stave);
   }
 
   private static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
