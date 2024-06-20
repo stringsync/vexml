@@ -10,6 +10,7 @@ import { Address } from './address';
 /** The result of rendering a Rest. */
 export type RestRendering = {
   type: 'rest';
+  duration: NoteDurationDenominator;
   vexflow: {
     note: vexflow.Note;
   };
@@ -108,6 +109,7 @@ export class Rest {
 
     return {
       type: 'rest',
+      duration: this.durationDenominator,
       vexflow: { note: vfNote },
     };
   }
