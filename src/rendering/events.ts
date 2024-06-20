@@ -2,34 +2,34 @@ import * as spatial from '@/spatial';
 import * as events from '@/events';
 import * as cursors from '@/cursors';
 import * as util from '@/util';
-import { LocatorTarget } from './locator';
 import { InputType } from './types';
+import { InteractionModelType } from './interactions';
 
 /** Events that vexml dispatches to listeners. */
 export type EventMap = {
   click: {
     type: 'click';
-    closestTarget: LocatorTarget | null;
-    targets: LocatorTarget[];
+    closestTarget: InteractionModelType | null;
+    targets: InteractionModelType[];
     point: spatial.Point;
     native: MouseEvent;
   };
   hover: {
     type: 'hover';
-    closestTarget: LocatorTarget | null;
-    targets: LocatorTarget[];
+    closestTarget: InteractionModelType | null;
+    targets: InteractionModelType[];
     point: spatial.Point;
     native: MouseEvent;
   };
   enter: {
     type: 'enter';
-    target: LocatorTarget;
+    target: InteractionModelType;
     point: spatial.Point;
     native: MouseEvent;
   };
   exit: {
     type: 'exit';
-    target: LocatorTarget;
+    target: InteractionModelType;
     point: spatial.Point;
     native: MouseEvent;
   };
@@ -44,10 +44,10 @@ export type EnterEventListener = (event: EventMap['enter']) => void;
 export type ExitEventListener = (event: EventMap['exit']) => void;
 
 export class EventMappingFactory {
-  private cursor: cursors.PointCursor<LocatorTarget>;
+  private cursor: cursors.PointCursor<InteractionModelType>;
   private topic: events.Topic<EventMap>;
 
-  constructor(cursor: cursors.PointCursor<LocatorTarget>, topic: events.Topic<EventMap>) {
+  constructor(cursor: cursors.PointCursor<InteractionModelType>, topic: events.Topic<EventMap>) {
     this.cursor = cursor;
     this.topic = topic;
   }
