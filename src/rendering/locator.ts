@@ -58,6 +58,8 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   draw(ctx: vexflow.RenderContext): void {
     const targets = [...this.tree.getEntries(), ...this.unorganizedTargets];
 
+    ctx.beginPath();
+
     for (const target of targets) {
       for (const shape of target.getShapes()) {
         if (shape instanceof spatial.Rect) {
