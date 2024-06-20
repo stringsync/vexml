@@ -1,7 +1,7 @@
 import * as spatial from '@/spatial';
 import * as util from '@/util';
 import { StaveNoteRendering, TabNoteRendering } from './note';
-import { StaveChordRendering } from './chord';
+import { StaveChordRendering, TabChordRendering } from './chord';
 import { ScoreRendering } from './score';
 import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
@@ -10,8 +10,9 @@ export type InteractionModelType =
   | InteractionModel<MeasureRendering>
   | InteractionModel<StaveNoteRendering>
   | InteractionModel<StaveChordRendering>
-  | InteractionModel<RestRendering>
-  | InteractionModel<TabNoteRendering>;
+  | InteractionModel<TabNoteRendering>
+  | InteractionModel<TabChordRendering>
+  | InteractionModel<RestRendering>;
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
@@ -141,6 +142,8 @@ class InteractionModelFactory {
             return InteractionModelFactory.fromRestRendering(voiceEntry);
           case 'tabnote':
             return InteractionModelFactory.fromTabNoteRendering(voiceEntry);
+          case 'tabchord':
+            return InteractionModelFactory.fromTabChordRendering(voiceEntry);
           default:
             return [];
         }
@@ -244,5 +247,18 @@ class InteractionModelFactory {
     }
 
     return new InteractionModel(handles, tabNote);
+  }
+
+  private static fromTabChordRendering(tabChord: TabChordRendering): InteractionModel<TabChordRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfTabNote = tabChord.tabNotes[0].vexflow.tabNote;
+    const x = vfTabNote.getAbsoluteX();
+    for (const y of vfTabNote.getYs()) {
+      const noteheadCircle = new spatial.Circle(x, y, 10);
+      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
+    }
+
+    return new InteractionModel(handles, tabChord);
   }
 }
