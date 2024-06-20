@@ -53,13 +53,15 @@ export class EventMappingFactory {
   }
 
   create(inputType: InputType): events.EventMapping<events.HostElement, keyof EventMap>[] {
+    // Order matters here. The order of the event mappings determines the order in which the event listeners are called.
+    // For example, exit must come before enter.
     switch (inputType) {
       case 'mouse':
-        return [this.click(), this.hover(), this.enter(), this.exit()];
+        return [this.click(), this.hover(), this.exit(), this.enter()];
       case 'touch':
         return [this.click()];
       case 'hybrid':
-        return [this.click(), this.hover(), this.enter(), this.exit()];
+        return [this.click(), this.hover(), this.exit(), this.enter()];
       case 'auto':
         switch (util.device().inputType) {
           case 'mouseonly':
