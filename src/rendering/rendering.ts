@@ -1,5 +1,4 @@
 import * as events from '@/events';
-import * as util from '@/util';
 import { EventMap } from './events';
 import { Config } from '@/config';
 
