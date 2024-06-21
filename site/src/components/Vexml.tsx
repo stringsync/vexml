@@ -88,16 +88,16 @@ export const Vexml = (props: VexmlProps) => {
   }, [rendering, container, onEvent]);
 
   useEffect(() => {
-    onResult({ type: 'none' });
-
     if (!musicXML) {
       onResult({ type: 'empty' });
       return;
     }
     if (!container) {
+      onResult({ type: 'none' });
       return;
     }
     if (width === 0) {
+      onResult({ type: 'none' });
       return;
     }
 
