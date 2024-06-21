@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 import { RenderingBackend } from '../types';
 
-const THROTTLE_DELAY_MS = 50;
 const STRINGSYNC_RED = '#FC354C';
 
 export type VexmlProps = {
@@ -38,8 +37,8 @@ export const Vexml = (props: VexmlProps) => {
     display: mode === 'canvas' ? 'block' : 'none',
   };
 
-  const divWidth = useWidth(divContainerRef, THROTTLE_DELAY_MS);
-  const canvasWidth = useWidth(canvasContainerRef, THROTTLE_DELAY_MS);
+  const divWidth = useWidth(divContainerRef);
+  const canvasWidth = useWidth(canvasContainerRef);
   const width = mode === 'svg' ? divWidth : canvasWidth;
 
   const container = mode === 'svg' ? divContainerRef.current : canvasContainerRef.current;
@@ -102,9 +101,10 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     const start = new Date();
+    let rendering: vexml.Rendering | null = null;
 
     try {
-      const rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+      rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         container,
         width,
         config,
@@ -142,9 +142,7 @@ export const Vexml = (props: VexmlProps) => {
     }
 
     return () => {
-      if (container instanceof HTMLDivElement) {
-        container.firstElementChild?.remove();
-      }
+      rendering?.destroy();
     };
   }, [musicXML, mode, config, width, container, onResult]);
 

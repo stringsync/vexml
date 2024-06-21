@@ -1,6 +1,6 @@
 import { RefObject, useLayoutEffect, useState } from 'react';
 
-export const useWidth = (elementRef: RefObject<HTMLElement>, throttleMs: number): number => {
+export const useWidth = (elementRef: RefObject<HTMLElement>): number => {
   const [width, setWidth] = useState(0);
 
   useLayoutEffect(() => {
@@ -20,7 +20,7 @@ export const useWidth = (elementRef: RefObject<HTMLElement>, throttleMs: number)
     return () => {
       resizeObserver.disconnect();
     };
-  }, [elementRef, throttleMs]);
+  }, [elementRef]);
 
   return width;
 };
