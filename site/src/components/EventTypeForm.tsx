@@ -28,7 +28,7 @@ export const EventTypeForm = (props: EventTypeFormProps) => {
   return (
     <div>
       {EVENT_TYPES.map((eventType) => (
-        <div className="form-check form-check-inline">
+        <div key={eventType} className="form-check form-check-inline">
           <input
             className="form-check-input"
             id={id(eventType)}

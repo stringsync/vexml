@@ -115,7 +115,7 @@ export class Vexml {
       nativeEventOpts: { touchstart: { passive: true }, touchend: { passive: true } },
     });
 
-    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });
+    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge, container });
   }
 
   /** Returns the document string. */
