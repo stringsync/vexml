@@ -60,21 +60,76 @@ export const Vexml = (props: VexmlProps) => {
       const onEnter: vexml.EnterEventListener = (event) => {
         container.style.cursor = 'pointer';
 
+        // TODO: Create official wrapper around vexml Rendering* objects that allows users to color the notes.
         const value = event.target.value;
-        if (value.type === 'stavenote') {
-          value.vexflow.staveNote.getSVGElement()?.remove();
-          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: STRINGSYNC_RED });
-          value.vexflow.staveNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+        switch (value.type) {
+          case 'stavenote':
+            const vfStaveNote = value.vexflow.staveNote;
+            vfStaveNote.getSVGElement()?.remove();
+            vfStaveNote.setLedgerLineStyle({ strokeStyle: STRINGSYNC_RED });
+            vfStaveNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+            break;
+          case 'stavechord':
+            value.notes.forEach((note) => {
+              const vfStaveNote = note.vexflow.staveNote;
+              vfStaveNote.getSVGElement()?.remove();
+              vfStaveNote.setLedgerLineStyle({ strokeStyle: STRINGSYNC_RED });
+              vfStaveNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+            });
+            break;
+          case 'tabnote':
+            const vfTabNote = value.vexflow.tabNote;
+            vfTabNote.getSVGElement()?.remove();
+            vfTabNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+            break;
+          case 'tabchord':
+            value.tabNotes.forEach((tabNote) => {
+              const vfTabNote = tabNote.vexflow.tabNote;
+              vfTabNote.getSVGElement()?.remove();
+              vfTabNote.setStyle({ fillStyle: STRINGSYNC_RED, strokeStyle: STRINGSYNC_RED }).draw();
+            });
+            break;
+          case 'rest':
+            value.vexflow.note.getSVGElement()?.remove();
+            value.vexflow.note.setStyle({ fillStyle: STRINGSYNC_RED }).draw();
+            break;
         }
       };
       const onExit: vexml.ExitEventListener = (event) => {
         container.style.cursor = 'default';
 
         const value = event.target.value;
-        if (value.type === 'stavenote') {
-          value.vexflow.staveNote.getSVGElement()?.remove();
-          value.vexflow.staveNote.setLedgerLineStyle({ strokeStyle: 'black' });
-          value.vexflow.staveNote.setStyle({ fillStyle: 'black' }).draw();
+        switch (value.type) {
+          case 'stavenote':
+            const vfStaveNote = value.vexflow.staveNote;
+            vfStaveNote.getSVGElement()?.remove();
+            vfStaveNote.setLedgerLineStyle({ strokeStyle: 'black' });
+            vfStaveNote.setStyle({ fillStyle: 'black', strokeStyle: 'black' }).draw();
+            break;
+          case 'stavechord':
+            value.notes.forEach((note) => {
+              const vfStaveNote = note.vexflow.staveNote;
+              vfStaveNote.getSVGElement()?.remove();
+              vfStaveNote.setLedgerLineStyle({ strokeStyle: 'black' });
+              vfStaveNote.setStyle({ fillStyle: 'black', strokeStyle: 'black' }).draw();
+            });
+            break;
+          case 'tabnote':
+            const vfTabNote = value.vexflow.tabNote;
+            vfTabNote.getSVGElement()?.remove();
+            vfTabNote.setStyle({ fillStyle: 'black', strokeStyle: 'black' }).draw();
+            break;
+          case 'tabchord':
+            value.tabNotes.forEach((tabNote) => {
+              const vfTabNote = tabNote.vexflow.tabNote;
+              vfTabNote.getSVGElement()?.remove();
+              vfTabNote.setStyle({ fillStyle: 'black', strokeStyle: 'black' }).draw();
+            });
+            break;
+          case 'rest':
+            value.vexflow.note.getSVGElement()?.remove();
+            value.vexflow.note.setStyle({ fillStyle: 'black' }).draw();
+            break;
         }
       };
       handles.push(rendering.addEventListener('enter', onEnter));
