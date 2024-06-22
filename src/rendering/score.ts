@@ -4,6 +4,7 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as spatial from '@/spatial';
+import * as components from '@/components';
 import { Config } from '@/config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -46,7 +47,7 @@ export class Score {
   }
 
   /** Renders the Score. */
-  render(opts: { container: HTMLDivElement | HTMLCanvasElement; width: number }): ScoreRendering {
+  render(opts: { root: components.Root; width: number }): ScoreRendering {
     // Track the system rendering results.
     const systemRenderings = new Array<SystemRendering>();
 
@@ -116,7 +117,8 @@ export class Score {
     const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
 
     // Prepare the vexflow rendering objects.
-    const vfRenderer = this.getVfRenderer(opts.container).resize(opts.width, y);
+    const container = opts.root.getVexflowContainerElement();
+    const vfRenderer = this.getVfRenderer(container).resize(opts.width, y);
     const vfContext = vfRenderer.getContext();
 
     // Draw the title.
