@@ -157,7 +157,7 @@ describe('lilypond', () => {
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
     Vexml.fromBuffer(buffer).render({
-      container: vexmlDiv,
+      element: vexmlDiv,
       width: t.width,
     });
 

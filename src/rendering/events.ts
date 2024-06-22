@@ -53,7 +53,7 @@ export class EventMappingFactory {
     this.topic = topic;
   }
 
-  create(inputType: InputType): events.EventMapping<events.HostElement, Array<keyof EventMap>>[] {
+  create(inputType: InputType): events.EventMapping<Array<keyof EventMap>>[] {
     switch (inputType) {
       case 'mouse':
         return [this.mousePress(), this.mouseEgress()];
@@ -77,7 +77,7 @@ export class EventMappingFactory {
     }
   }
 
-  private mousePress(): events.EventMapping<events.HostElement, ['click', 'longpress']> {
+  private mousePress(): events.EventMapping<['click', 'longpress']> {
     let timeout = 0 as unknown as NodeJS.Timeout;
     let isPending = false;
     let lastMouseDownInvocation = Symbol();
@@ -121,7 +121,7 @@ export class EventMappingFactory {
     };
   }
 
-  private mouseEgress(): events.EventMapping<events.HostElement, ['enter', 'exit']> {
+  private mouseEgress(): events.EventMapping<['enter', 'exit']> {
     let lastEvent: MouseEvent | null = null;
 
     return {
@@ -156,7 +156,7 @@ export class EventMappingFactory {
     };
   }
 
-  private touchPress(): events.EventMapping<events.HostElement, ['click', 'longpress']> {
+  private touchPress(): events.EventMapping<['click', 'longpress']> {
     let timeout = 0 as unknown as NodeJS.Timeout;
     let isPending = false;
     let lastTouchStartInvocation = Symbol();
@@ -204,7 +204,7 @@ export class EventMappingFactory {
     };
   }
 
-  private touchEgress(): events.EventMapping<events.HostElement, ['enter', 'exit']> {
+  private touchEgress(): events.EventMapping<['enter', 'exit']> {
     let lastEnteredEvent: TouchEvent | null = null;
 
     return {
