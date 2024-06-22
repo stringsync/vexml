@@ -112,7 +112,12 @@ export class Vexml {
       host,
       mappings,
       nativeEventTopic,
-      nativeEventOpts: { touchstart: { passive: true }, touchend: { passive: true } },
+      nativeEventOpts: {
+        touchstart: { passive: true },
+        touchmove: { passive: true },
+        touchcancel: { passive: true },
+        touchend: { passive: true },
+      },
     });
 
     return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge, container });

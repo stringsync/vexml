@@ -20,7 +20,7 @@ export type NativeEventOpts<T extends HostElement> = {
   [N in NativeEventName<T>]?: AddEventListenerOptions;
 };
 
-export type EventMapping<T extends HostElement, V extends string> = {
+export type EventMapping<T extends HostElement, V extends string[]> = {
   vexml: V;
   native: {
     [N in NativeEventName<T>]?: EventListener<NativeEvent<T, N>>;
@@ -36,7 +36,7 @@ export type EventMapping<T extends HostElement, V extends string> = {
  */
 export class NativeBridge<V extends string> {
   private host: HostElement;
-  private mappings: EventMapping<HostElement, V>[];
+  private mappings: EventMapping<HostElement, V[]>[];
   private nativeEventTopic: Topic<NativeEventMap<HostElement>>;
   private nativeEventOpts: NativeEventOpts<HostElement>;
 
@@ -45,7 +45,7 @@ export class NativeBridge<V extends string> {
 
   constructor(opts: {
     host: HostElement;
-    mappings: EventMapping<HostElement, V>[];
+    mappings: EventMapping<HostElement, V[]>[];
     nativeEventTopic: Topic<NativeEventMap<HostElement>>;
     nativeEventOpts: NativeEventOpts<HostElement>;
   }) {
@@ -69,7 +69,7 @@ export class NativeBridge<V extends string> {
   activate(vexmlEventName: V) {
     util.assert(!this.isVexmlEventActive(vexmlEventName), `vexml event is already active: ${vexmlEventName}`);
 
-    const mapping = this.mappings.find((m) => m.vexml === vexmlEventName);
+    const mapping = this.mappings.find((m) => m.vexml.includes(vexmlEventName));
     if (!mapping) {
       return;
     }
@@ -99,7 +99,7 @@ export class NativeBridge<V extends string> {
   deactivate(vexmlEventName: V) {
     util.assert(this.isVexmlEventActive(vexmlEventName), `vexml event is already inactive: ${vexmlEventName}`);
 
-    const mapping = this.mappings.find((m) => m.vexml === vexmlEventName);
+    const mapping = this.mappings.find((m) => m.vexml.includes(vexmlEventName));
     if (!mapping) {
       return;
     }
@@ -137,6 +137,7 @@ export class NativeBridge<V extends string> {
       event.type as NativeEventName<HostElement>,
       event as NativeEvent<HostElement, NativeEventName<HostElement>>
     );
+    return false;
   };
 
   /** Returns whether the vexml event is currently active. */

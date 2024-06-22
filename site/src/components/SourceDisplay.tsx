@@ -78,7 +78,7 @@ export const SourceDisplay = (props: SourceProps) => {
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
 
-  const [enabledVexmlEventTypes, setEnabledVexmlEventTypes] = useState<vexml.EventType[]>(['click']);
+  const [enabledVexmlEventTypes, setEnabledVexmlEventTypes] = useState<vexml.EventType[]>(['click', 'longpress']);
 
   const [logs, setLogs] = useState(new Array<EventLog>());
   const nextKey = useNextKey('event-log');

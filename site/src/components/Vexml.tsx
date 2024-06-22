@@ -32,9 +32,17 @@ export const Vexml = (props: VexmlProps) => {
 
   const divStyle: React.CSSProperties = {
     display: mode === 'svg' ? 'block' : 'none',
+    userSelect: 'none',
+    msUserSelect: 'none',
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
   };
   const canvasStyle: React.CSSProperties = {
     display: mode === 'canvas' ? 'block' : 'none',
+    userSelect: 'none',
+    msUserSelect: 'none',
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
   };
 
   const divWidth = useWidth(divContainerRef);
@@ -52,7 +60,7 @@ export const Vexml = (props: VexmlProps) => {
     const handles = new Array<number>();
 
     handles.push(rendering.addEventListener('click', onEvent));
-    handles.push(rendering.addEventListener('hover', onEvent));
+    handles.push(rendering.addEventListener('longpress', onEvent));
     handles.push(rendering.addEventListener('exit', onEvent));
     handles.push(rendering.addEventListener('enter', onEvent));
 
@@ -171,6 +179,7 @@ export const Vexml = (props: VexmlProps) => {
         element = container.firstElementChild as SVGElement;
         // Now that the <svg> is created, we can set the style for screenshots.
         element.style.backgroundColor = 'white';
+        element.style.pointerEvents = 'all';
       } else if (container instanceof HTMLCanvasElement) {
         // The <canvas> image background is transparent, and there's not much we can do to change that without
         // significantly changing the vexml rendering.

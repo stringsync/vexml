@@ -1,7 +1,7 @@
 import * as vexml from '@/index';
 import { useId, useState } from 'react';
 
-const EVENT_TYPES = ['click', 'hover', 'enter', 'exit'] as const;
+const EVENT_TYPES = ['click', 'longpress', 'enter', 'exit'] as const;
 
 export type EventTypeFormProps = {
   defaultEventTypes: vexml.EventType[];
