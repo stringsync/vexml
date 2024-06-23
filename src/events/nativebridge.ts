@@ -39,7 +39,7 @@ export class NativeBridge<V extends string> {
 
   /** Returns whether the vexml event is activated. */
   isActivated(vexmlEventName: V) {
-    return this.isVexmlEventActive(vexmlEventName);
+    return vexmlEventName in this.handles;
   }
 
   /**
@@ -49,7 +49,7 @@ export class NativeBridge<V extends string> {
    * the event is not already active.
    */
   activate(vexmlEventName: V) {
-    util.assert(!this.isVexmlEventActive(vexmlEventName), `vexml event is already active: ${vexmlEventName}`);
+    util.assert(!this.isActivated(vexmlEventName), `vexml event is already active: ${vexmlEventName}`);
 
     const mapping = this.mappings.find((m) => m.vexml.includes(vexmlEventName));
     if (!mapping) {
@@ -79,7 +79,7 @@ export class NativeBridge<V extends string> {
    * that the event is not already inactive.
    */
   deactivate(vexmlEventName: V) {
-    util.assert(this.isVexmlEventActive(vexmlEventName), `vexml event is already inactive: ${vexmlEventName}`);
+    util.assert(this.isActivated(vexmlEventName), `vexml event is already inactive: ${vexmlEventName}`);
 
     const mapping = this.mappings.find((m) => m.vexml.includes(vexmlEventName));
     if (!mapping) {
@@ -122,9 +122,4 @@ export class NativeBridge<V extends string> {
     this.nativeEventTopic.publish(event.type as keyof HTMLElementEventMap, event);
     return false;
   };
-
-  /** Returns whether the vexml event is currently active. */
-  private isVexmlEventActive(vexmlEventName: V) {
-    return vexmlEventName in this.handles;
-  }
 }
