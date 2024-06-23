@@ -23,6 +23,11 @@ export class Rendering {
     this.root = opts.root;
   }
 
+  /** Dispatches an event to the interactive surface element. */
+  dispatchEvent(event: Event): void {
+    this.root.getOverlayElement().dispatchEvent(event);
+  }
+
   /** Returns the element that vexflow is directly rendered on. */
   getVexflowElement(): SVGElement | HTMLCanvasElement {
     return this.root.getVexflowElement();
