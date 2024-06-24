@@ -5,8 +5,8 @@ import * as fs from 'fs';
 const MUSICXML_PATH = path.join(__dirname, '__data__', 'vexml', 'events.musicxml');
 
 describe('events', () => {
-  let musicXML = '';
   const div = document.createElement('div');
+  let musicXML = '';
   let rendering: Rendering;
 
   beforeAll(() => {
@@ -14,7 +14,11 @@ describe('events', () => {
   });
 
   beforeEach(() => {
-    rendering = Vexml.fromMusicXML(musicXML).render({ element: div, width: 400 });
+    rendering = Vexml.fromMusicXML(musicXML).render({
+      config: { INPUT_TYPE: 'hybrid' },
+      element: div,
+      width: 400,
+    });
     jest.useFakeTimers();
   });
 
@@ -23,13 +27,26 @@ describe('events', () => {
     jest.useRealTimers();
   });
 
-  it('emits click events', async () => {
-    const click = jest.fn();
+  it('emits click events from mouse events', async () => {
+    const callback = jest.fn();
 
-    rendering.addEventListener('click', click);
-    rendering.dispatchNativeEvent(new MouseEvent('mousedown', { bubbles: false }));
-    rendering.dispatchNativeEvent(new MouseEvent('mouseup', { bubbles: false }));
+    rendering.addEventListener('click', callback);
+    rendering.dispatchNativeEvent(new MouseEvent('mousedown'));
+    rendering.dispatchNativeEvent(new MouseEvent('mouseup'));
 
-    expect(click).toHaveBeenCalled();
+    expect(callback).toHaveBeenCalled();
   });
+
+  it('emits longpress events from mouse events', async () => {
+    const callback = jest.fn();
+
+    rendering.addEventListener('longpress', callback);
+    rendering.dispatchNativeEvent(new MouseEvent('mousedown'));
+    jest.advanceTimersByTime(500);
+
+    expect(callback).toHaveBeenCalled();
+  });
+
+  // TODO: Add tests for the rest of the events when there's a mechanism to query where the bounding shapes are and the
+  // events are finalized.
 });
