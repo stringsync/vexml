@@ -18,6 +18,21 @@ export class Rect implements Shape {
     return new Rect(rectLike.x, rectLike.y, rectLike.w, rectLike.h);
   }
 
+  static empty() {
+    return new Rect(0, 0, 0, 0);
+  }
+
+  static merge(rects: Rect[]): Rect {
+    if (rects.length === 0) {
+      return Rect.empty();
+    }
+    const x = Math.min(...rects.map((rect) => rect.x));
+    const y = Math.min(...rects.map((rect) => rect.y));
+    const w = Math.max(...rects.map((rect) => rect.x + rect.w)) - x;
+    const h = Math.max(...rects.map((rect) => rect.y + rect.h)) - y;
+    return new Rect(x, y, w, h);
+  }
+
   origin(): Point {
     return new Point(this.x, this.y);
   }

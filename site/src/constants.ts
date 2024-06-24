@@ -1,3 +1,5 @@
+import * as vexml from '@/index';
+
 export const VEXML_VERSION = VITE_VEXML_VERSION;
 
 export const LOCAL_STORAGE_VEXML_SOURCES_KEY = 'vexml:sources';
