@@ -1,9 +1,8 @@
 import * as spatial from '@/spatial';
 import * as vexflow from 'vexflow';
 import * as drawables from '@/drawables';
-import { StaveNoteRendering } from './note';
-import { InteractionModel } from './interactions';
 import { ScoreRendering } from './score';
+import { InteractionModel, InteractionModelType } from './interactions';
 
 /**
  * How many entries a quad tree node should hold before subdividing.
@@ -12,49 +11,25 @@ import { ScoreRendering } from './score';
  */
 const QUAD_TREE_THRESHOLD = 10;
 const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
-const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.75)';
+const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.5)';
 
-export type LocatorTarget = InteractionModel<StaveNoteRendering>;
-
-export class Locator implements spatial.PointLocator<LocatorTarget> {
-  private tree: spatial.QuadTree<LocatorTarget>;
+export class Locator implements spatial.PointLocator<InteractionModelType> {
+  private tree: spatial.QuadTree<InteractionModelType>;
   // The targets that could not be inserted into the tree because they are too large and/or out-of-bounds.
-  private unorganizedTargets: LocatorTarget[];
+  private unorganizedTargets: InteractionModelType[];
 
-  private constructor(tree: spatial.QuadTree<LocatorTarget>, unorganizedTargets: LocatorTarget[]) {
+  private constructor(tree: spatial.QuadTree<InteractionModelType>, unorganizedTargets: InteractionModelType[]) {
     this.tree = tree;
     this.unorganizedTargets = unorganizedTargets;
   }
 
   static fromScoreRendering(score: ScoreRendering): Locator {
-    const targets = new Array<LocatorTarget>();
+    const targets = new Array<InteractionModelType>();
 
-    const models = score.systems
-      .flatMap((system) => system.measures)
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves)
-      .flatMap((stave) => stave.entry)
-      .flatMap((staveEntry) => {
-        switch (staveEntry.type) {
-          case 'chorus':
-            return staveEntry.voices;
-          default:
-            return [];
-        }
-      })
-      .flatMap((voice) => voice.entries)
-      .flatMap((voiceEntry) => {
-        switch (voiceEntry.type) {
-          case 'stavenote':
-            return InteractionModel.fromStaveNoteRendering(voiceEntry);
-          default:
-            return [];
-        }
-      });
+    const models = InteractionModel.create(score);
 
     // First attempt to insert all the shapes into the tree.
-    const tree = new spatial.QuadTree<LocatorTarget>(score.boundary, QUAD_TREE_THRESHOLD);
+    const tree = new spatial.QuadTree<InteractionModelType>(score.boundary, QUAD_TREE_THRESHOLD);
     for (const model of models) {
       for (const shape of model.getShapes()) {
         if (!tree.insert(shape, model)) {
@@ -67,12 +42,12 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
   }
 
   /** Locates all the targets that contain the given point, sorted by descending distance tot he point. */
-  locate(point: spatial.Point): LocatorTarget[] {
+  locate(point: spatial.Point): InteractionModelType[] {
     return [...this.tree.query(point), ...this.unorganizedTargets.filter((target) => target.contains(point))];
   }
 
   /** Sorts the targets by descending distance to the given point. */
-  sort(point: spatial.Point, targets: LocatorTarget[]): LocatorTarget[] {
+  sort(point: spatial.Point, targets: InteractionModelType[]): InteractionModelType[] {
     return targets.sort((a, b) => {
       const distanceA = a.getNearestHandleThatContains(point)?.distance(point) ?? Infinity;
       const distanceB = b.getNearestHandleThatContains(point)?.distance(point) ?? Infinity;
@@ -82,6 +57,9 @@ export class Locator implements spatial.PointLocator<LocatorTarget> {
 
   draw(ctx: vexflow.RenderContext): void {
     const targets = [...this.tree.getEntries(), ...this.unorganizedTargets];
+
+    // Clear any lingering paths.
+    ctx.beginPath();
 
     for (const target of targets) {
       for (const shape of target.getShapes()) {

@@ -3,11 +3,13 @@ import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
+import * as components from '@/components';
 import { Config, DEFAULT_CONFIG } from '@/config';
 
 export type RenderOptions = {
-  container: HTMLDivElement | HTMLCanvasElement;
+  element: HTMLDivElement;
   config?: Partial<Config>;
+  backend?: 'svg' | 'canvas';
   width: number;
 };
 
@@ -79,24 +81,28 @@ export class Vexml {
   /** Renders the vexml instance to an SVG element. */
   render(opts: RenderOptions): rendering.Rendering {
     const config = { ...DEFAULT_CONFIG, ...opts.config };
-    const container = opts.container;
+    const element = opts.element;
     const width = opts.width;
+    const backend = opts.backend;
+
+    let root: components.Root;
+    switch (backend) {
+      case 'svg':
+        root = components.Root.svg(element);
+        break;
+      case 'canvas':
+        root = components.Root.canvas(element);
+        break;
+      default:
+        root = components.Root.svg(element);
+    }
 
     // Render score.
     const scorePartwise = this.musicXML.getScorePartwise();
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
-    const scoreRendering = score.render({ container, width });
+    const scoreRendering = score.render({ root, width });
 
     // Make a cursor.
-    let host: HTMLCanvasElement | SVGElement;
-    if (container instanceof HTMLCanvasElement) {
-      host = container;
-    } else if (container instanceof HTMLDivElement) {
-      host = container.firstElementChild as SVGElement;
-    } else {
-      throw new Error(`expected container to be a canvas or div, got: ${container}`);
-    }
-
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
     if (config.DEBUG_DRAW_TARGET_BOUNDS) {
       const ctx = scoreRendering.vexflow.renderer.getContext();
@@ -104,18 +110,24 @@ export class Vexml {
     }
 
     // Initialize event routing.
+    const overlay = root.getOverlayElement();
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
-    const nativeEventTopic = new events.Topic<events.NativeEventMap<SVGElement>>();
-    const cursor = new cursors.PointCursor(host, locator);
+    const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
+    const cursor = new cursors.PointCursor(overlay, locator);
     const mappings = new rendering.EventMappingFactory(cursor, vexmlEventTopic).create(config.INPUT_TYPE);
     const bridge = new events.NativeBridge<keyof rendering.EventMap>({
-      host,
+      overlay,
       mappings,
       nativeEventTopic,
-      nativeEventOpts: { touchstart: { passive: true }, touchend: { passive: true } },
+      nativeEventOpts: {
+        touchstart: { passive: true },
+        touchmove: { passive: true },
+        touchcancel: { passive: true },
+        touchend: { passive: true },
+      },
     });
 
-    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge });
+    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge, root });
   }
 
   /** Returns the document string. */

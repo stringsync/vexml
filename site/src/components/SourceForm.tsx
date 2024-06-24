@@ -6,13 +6,13 @@ import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
 import { Config, DEFAULT_CONFIG, Vexml } from '@/index';
 
-export type SourceInputProps = {
+export type SourceFormProps = {
   source: Source;
   musicXML: string;
   onUpdate: (source: Source) => void;
 };
 
-export const SourceInput = (props: SourceInputProps) => {
+export const SourceForm = (props: SourceFormProps) => {
   const [source, setSource] = useState<Source>(props.source);
 
   const timeoutRef = useRef(0);

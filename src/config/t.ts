@@ -6,7 +6,7 @@ export type SchemaType<T> = T extends { type: 'string' }
   ? boolean
   : T extends { type: 'debug'; child: infer S }
   ? SchemaType<S>
-  : T extends { type: 'enum'; choices: Array<infer S> }
+  : T extends { type: 'enum'; choices: Readonly<Array<infer S>> }
   ? S
   : never;
 

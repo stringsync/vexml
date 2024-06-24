@@ -14,10 +14,10 @@ export type CursorGetResult<T> = {
 
 /** A object that tracks a spatial cursor, and returns the targets under it. */
 export class PointCursor<T> {
-  private host: SVGElement | HTMLCanvasElement;
+  private host: HTMLElement;
   private locator: spatial.PointLocator<T>;
 
-  constructor(host: SVGElement | HTMLCanvasElement, locator: spatial.PointLocator<T>) {
+  constructor(host: HTMLElement, locator: spatial.PointLocator<T>) {
     this.host = host;
     this.locator = locator;
   }

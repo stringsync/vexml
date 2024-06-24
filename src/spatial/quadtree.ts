@@ -145,10 +145,12 @@ export class QuadTree<T> {
 
   /** Returns all the entries of all the nodes.  */
   getEntries(): T[] {
-    const entries = new Array<T>();
+    const entries = new Set<T>();
 
     const dfs = (tree: QuadTree<T>) => {
-      entries.push(...tree.entries.map((entry) => entry.data));
+      for (const { data } of tree.entries) {
+        entries.add(data);
+      }
       if (tree.isDivided()) {
         dfs(tree.northeast!);
         dfs(tree.northwest!);
@@ -159,7 +161,7 @@ export class QuadTree<T> {
 
     dfs(this);
 
-    return entries;
+    return Array.from(entries);
   }
 
   private isDivided() {
