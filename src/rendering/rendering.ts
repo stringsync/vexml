@@ -24,7 +24,7 @@ export class Rendering {
   }
 
   /** Dispatches an event to the interactive surface element. */
-  dispatchEvent(event: Event): void {
+  dispatchNativeEvent(event: Event): void {
     this.root.getOverlayElement().dispatchEvent(event);
   }
 

@@ -27,8 +27,8 @@ describe('events', () => {
     const click = jest.fn();
 
     rendering.addEventListener('click', click);
-    rendering.dispatchEvent(new MouseEvent('mousedown', { bubbles: false }));
-    rendering.dispatchEvent(new MouseEvent('mouseup', { bubbles: false }));
+    rendering.dispatchNativeEvent(new MouseEvent('mousedown', { bubbles: false }));
+    rendering.dispatchNativeEvent(new MouseEvent('mouseup', { bubbles: false }));
 
     expect(click).toHaveBeenCalled();
   });
