@@ -6323,6 +6323,11 @@ vexflow-fonts@^1.0.6:
   resolved "https://registry.yarnpkg.com/vexflow-fonts/-/vexflow-fonts-1.0.6.tgz#2fe3e3a056850bb39f436c568e50dec2c95ab90c"
   integrity sha512-B6jJGfCFn0OJoC4UdGq4FCa1tEtIruaBwyb/BPAeqyROr+gTJ4FlcM4X0ir5xdoH2CUrRwNoHdUWVIeqqIEj4g==
 
+vexflow@5.0.0-alpha.4:
+  version "5.0.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-5.0.0-alpha.4.tgz#8e69478ac9109453b27f9cd06ce2a4a3d1e480df"
+  integrity sha512-Xj43/F2dpgyFOjsOarIHJxGDcjDSiUOgYE5vKdwO1S8tBtezmYqhfclKobR/G8YxhKg9edEH8uI73amYsQ1uig==
+
 vite@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/vite/-/vite-5.0.0.tgz#3bfb65acda2a97127e4fa240156664a1f234ce08"
@@ -6333,11 +6338,6 @@ vite@^5.0.0:
     rollup "^4.2.0"
   optionalDependencies:
     fsevents "~2.3.3"
-
-vxflw-early-access@5.0.0-alpha.11:
-  version "5.0.0-alpha.11"
-  resolved "https://registry.yarnpkg.com/vxflw-early-access/-/vxflw-early-access-5.0.0-alpha.11.tgz#7efbb9e358330b2a8de21d9d1322f506cd944ed0"
-  integrity sha512-cyQYQRaA2n7I/MwjQa9n5TBAMd59l97FXiMuTHg3WrrWIix2tN5M2SHB6KYtiqx+v7zixG8b+4k9iD4NY2Qefg==
 
 w3c-xmlserializer@^4.0.0:
   version "4.0.0"

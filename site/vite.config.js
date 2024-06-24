@@ -13,7 +13,6 @@ export default defineConfig({
     preserveSymlinks: true,
     alias: {
       '@': path.resolve(__dirname, '..', 'src'),
-      vexflow: path.resolve(__dirname, '..', 'node_modules', 'vxflw-early-access'),
     },
   },
 });
