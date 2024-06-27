@@ -166,7 +166,7 @@ export class QuadTree<T> {
 
   private isDivided() {
     // Assume that if northeast is defined, then all children are defined.
-    return this.northeast !== undefined;
+    return typeof this.northeast !== 'undefined';
   }
 
   private subdivide() {

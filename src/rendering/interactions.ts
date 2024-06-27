@@ -167,23 +167,10 @@ class InteractionModelFactory {
   private static fromStaveNoteRendering(staveNote: StaveNoteRendering): InteractionModel<StaveNoteRendering> {
     const handles = new Array<InteractionHandle>();
 
-    const hasAccidental = staveNote.modifiers.some((modifier) => modifier.type === 'accidental');
-
     const vfStaveNote = staveNote.vexflow.staveNote;
-    for (const vfNotehead of vfStaveNote.noteHeads) {
-      const vfBoundingBox = vfNotehead.getBoundingBox();
-      const noteheadX = hasAccidental ? vfBoundingBox.x : vfBoundingBox.x + vfBoundingBox.w / 2;
-      const noteheadY = vfBoundingBox.y + vfBoundingBox.h / 2;
-      const noteheadCircle = new spatial.Circle(noteheadX, noteheadY, vfBoundingBox.w);
-      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
-    }
-
-    const hasStem = vfStaveNote.hasStem();
-    if (hasStem) {
-      const vfBoundingBox = vfStaveNote.getBoundingBox();
-      const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
-      handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
-    }
+    const vfBoundingBox = vfStaveNote.getBoundingBox();
+    const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
 
     return new InteractionModel(handles, staveNote);
   }
@@ -191,25 +178,10 @@ class InteractionModelFactory {
   private static fromStaveChordRendering(staveChord: StaveChordRendering): InteractionModel<StaveChordRendering> {
     const handles = new Array<InteractionHandle>();
 
-    const hasAccidental = staveChord.notes
-      .flatMap((note) => note.modifiers)
-      .some((modifier) => modifier.type === 'accidental');
-
     const vfStaveNote = staveChord.notes[0].vexflow.staveNote;
-    for (const vfNotehead of vfStaveNote.noteHeads) {
-      const vfBoundingBox = vfNotehead.getBoundingBox();
-      const noteheadX = hasAccidental ? vfBoundingBox.x : vfBoundingBox.x + vfBoundingBox.w / 2;
-      const noteheadY = vfBoundingBox.y + vfBoundingBox.h / 2;
-      const noteheadCircle = new spatial.Circle(noteheadX, noteheadY, vfBoundingBox.w);
-      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
-    }
-
-    const hasStem = vfStaveNote.hasStem();
-    if (hasStem) {
-      const vfBoundingBox = vfStaveNote.getBoundingBox();
-      const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
-      handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
-    }
+    const vfBoundingBox = vfStaveNote.getBoundingBox();
+    const staveNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
 
     return new InteractionModel(handles, staveChord);
   }
