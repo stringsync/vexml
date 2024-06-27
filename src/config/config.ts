@@ -7,7 +7,7 @@ export type Config = SchemaConfig<Schema>;
 export const CONFIG_SCHEMA = {
   DEFAULT_SYSTEM_DISTANCE: t.number({
     defaultValue: 80,
-    help: 'DEFAULT_YSTEM_DISTANCE is the vertical distance between systems.',
+    help: 'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems.',
   }),
   DEFAULT_STAVE_DISTANCE: t.number({
     defaultValue: 140,
