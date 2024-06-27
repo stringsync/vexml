@@ -7,11 +7,15 @@ export type Config = SchemaConfig<Schema>;
 export const CONFIG_SCHEMA = {
   DEFAULT_SYSTEM_DISTANCE: t.number({
     defaultValue: 80,
-    help: 'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems.',
+    help:
+      'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems.' +
+      "It won't have an effect if there is only one system.",
   }),
   DEFAULT_STAVE_DISTANCE: t.number({
     defaultValue: 140,
-    help: 'DEFAULT_STAVE_DISTANCE is the vertical distance between staves.',
+    help:
+      'DEFAULT_STAVE_DISTANCE is the vertical distance between staves within the same part and system. ' +
+      "It won't have an effect if there is only one stave per part.",
   }),
   TITLE_TOP_PADDING: t.number({
     defaultValue: 40,
@@ -43,7 +47,9 @@ export const CONFIG_SCHEMA = {
   }),
   PART_DISTANCE: t.number({
     defaultValue: 80,
-    help: 'PART_DISTANCE is the vertical distance between parts of a given system.',
+    help:
+      'PART_DISTANCE is the vertical distance between parts of a system.' +
+      "It won't have an effect if there is only one part per system.",
   }),
   VOICE_PADDING: t.number({
     defaultValue: 80,
