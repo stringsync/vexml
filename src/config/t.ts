@@ -44,24 +44,33 @@ export class t {
     return config;
   }
 
-  static string(defaultValue: string = '') {
-    return { type: 'string', defaultValue } as const;
+  static string(opts: { defaultValue: string; help: string }) {
+    const defaultValue = opts.defaultValue;
+    const help = opts.help;
+    return { type: 'string', defaultValue, help } as const;
   }
 
-  static number(defaultValue: number = 0) {
-    return { type: 'number', defaultValue } as const;
+  static number(opts: { defaultValue: number; help: string }) {
+    const defaultValue = opts.defaultValue;
+    const help = opts.help;
+    return { type: 'number', defaultValue, help } as const;
   }
 
-  static boolean(defaultValue: boolean = false) {
-    return { type: 'boolean', defaultValue } as const;
+  static boolean(opts: { defaultValue: boolean; help: string }) {
+    const defaultValue = opts.defaultValue;
+    const help = opts.help;
+    return { type: 'boolean', defaultValue, help } as const;
   }
 
-  static enum<T extends readonly [string, ...string[]]>(choices: T, defaultValue = choices[0]) {
-    return { type: 'enum', choices, defaultValue } as const;
+  static enum<T extends readonly [string, ...string[]]>(opts: { choices: T; defaultValue: T[0]; help: string }) {
+    const defaultValue = opts.defaultValue;
+    const help = opts.help;
+    return { type: 'enum', choices: opts.choices, defaultValue, help } as const;
   }
 
-  static debug<T extends TerminalSchemaDescriptor>(child: T) {
-    return { type: 'debug', child } as const;
+  static debug<T extends TerminalSchemaDescriptor>(opts: { child: T; help: string }) {
+    const help = opts.help;
+    return { type: 'debug', child: opts.child, help } as const;
   }
 
   private constructor() {
