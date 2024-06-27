@@ -48,7 +48,7 @@ export const CONFIG_SCHEMA = {
   PART_DISTANCE: t.number({
     defaultValue: 80,
     help:
-      'PART_DISTANCE is the vertical distance between parts of a system.' +
+      'PART_DISTANCE is the vertical distance between parts of a system. ' +
       "It won't have an effect if there is only one part per system.",
   }),
   VOICE_PADDING: t.number({
