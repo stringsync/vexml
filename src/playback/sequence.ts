@@ -1,17 +1,34 @@
-import * as util from '@/util';
-import { Step } from './step';
+import * as rendering from '@/rendering';
 import { Duration } from './duration';
+
+export type Step = {
+  start: Duration;
+  end: Duration;
+  repeat: number;
+  voiceEntry: rendering.VoiceEntryRendering;
+};
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
   private steps: Step[];
 
-  constructor(builder: SequenceBuilder) {
-    this.steps = builder.steps;
+  private constructor(steps: Step[]) {
+    this.steps = steps;
   }
 
-  static builder() {
-    return new SequenceBuilder();
+  static create(score: rendering.ScoreRendering): Sequence {
+    const steps = new Array<Step>();
+
+    score.systems
+      .flatMap((system) => system.measures)
+      .flatMap((measure) => measure.fragments)
+      .flatMap((fragment) => fragment.parts)
+      .flatMap((part) => part.staves)
+      .flatMap((stave) => stave.entry)
+      .flatMap((entry) => (entry.type === 'chorus' ? entry.voices : []))
+      .flatMap((voice) => voice.entries);
+
+    return new Sequence(steps);
   }
 
   get length() {
@@ -20,32 +37,5 @@ export class Sequence {
 
   at(index: number): Step | null {
     return this.steps[index] ?? null;
-  }
-}
-
-/** A builder for creating a valid sequence of steps. */
-export class SequenceBuilder {
-  public readonly steps = new Array<Step>();
-
-  addStep(step: Step): this {
-    this.validate(step);
-    this.steps.push(step);
-    return this;
-  }
-
-  build() {
-    return new Sequence(this);
-  }
-
-  private validate(step: Step) {
-    const prev = util.last(this.steps);
-
-    if (prev && !prev.end.eq(step.start)) {
-      throw new Error('Step end must be equal to the next step start');
-    }
-
-    if (!prev && !step.start.eq(Duration.zero())) {
-      throw new Error('First step must start at 0');
-    }
   }
 }
