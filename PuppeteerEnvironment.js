@@ -10,6 +10,12 @@ import os from 'os';
 const DIR = path.join(os.tmpdir(), 'jest_puppeteer_global_setup');
 
 export default class PuppeteerEnvironment extends TestEnvironment {
+  constructor(...args) {
+    super(...args);
+
+    this.global.structuredClone = globalThis.structuredClone;
+  }
+
   async setup() {
     await super.setup();
     // get the wsEndpoint
