@@ -2977,9 +2977,9 @@ delegates@^1.0.0:
   integrity sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ==
 
 detect-libc@^2.0.0:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.0.2.tgz#8ccf2ba9315350e1241b88d0ac3b0e1fbd99605d"
-  integrity sha512-UX6sGumvvqSaXgdKGUsgZWqcUyIXZ/vZTrlRT/iobiKhGL0zL4d3osHj3uqllWJK+i+sixDS/3COVEOFbupFyw==
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.0.3.tgz#f0cd503b40f9939b894697d19ad50895e30cf700"
+  integrity sha512-bwy0MGW55bG41VqxxypOsdSdGqLwXPI/focwgTYCFMbdUiBAxLg9CFzG08sz2aqzknwiX7Hkl0bQENjg8iLByw==
 
 detect-newline@^3.0.0:
   version "3.1.0"
@@ -4986,9 +4986,9 @@ ms@^2.1.1:
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
 nan@^2.17.0:
-  version "2.18.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.18.0.tgz#26a6faae7ffbeb293a39660e88a76b82e30b7554"
-  integrity sha512-W7tfG7vMOGtD30sHoZSSc/JVYiyDPEyQVso/Zz+/uQd0B0L46gtC+pHha5FFMRpil6fm/AoEcRWyOVi4+E/f8w==
+  version "2.20.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.20.0.tgz#08c5ea813dd54ed16e5bd6505bf42af4f7838ca3"
+  integrity sha512-bk3gXBZDGILuuo/6sKtr0DQmSThYHLtNCdSdXk9YkxD/jK6X2vmCyyXBBxyqZ4XcnzTyYEAThfX3DCEnLf6igw==
 
 nanoid@^3.3.6:
   version "3.3.7"
@@ -5731,12 +5731,17 @@ semver@^6.0.0, semver@^6.1.0, semver@^6.3.0, semver@^6.3.1:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.1.tgz#556d2ef8689146e46dcea4bfdd095f3434dffcb4"
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
-semver@^7.3.4, semver@^7.3.5, semver@^7.3.7, semver@^7.5.3, semver@^7.5.4:
+semver@^7.3.4, semver@^7.3.7, semver@^7.5.3, semver@^7.5.4:
   version "7.5.4"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.5.4.tgz#483986ec4ed38e1c6c48c34894a9182dbff68a6e"
   integrity sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==
   dependencies:
     lru-cache "^6.0.0"
+
+semver@^7.3.5:
+  version "7.6.2"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
+  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
 
 serialize-javascript@^6.0.1:
   version "6.0.2"
@@ -6027,9 +6032,9 @@ tar-stream@^3.1.5:
     streamx "^2.15.0"
 
 tar@^6.1.11:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.2.0.tgz#b14ce49a79cb1cd23bc9b016302dea5474493f73"
-  integrity sha512-/Wo7DcT0u5HUV486xg675HtjNd3BXZ6xDbzsCUZPt5iw8bTQ63bP0Raut3mvro9u+CUyq7YQd8Cx55fsZXxqLQ==
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/tar/-/tar-6.2.1.tgz#717549c541bc3c2af15751bea94b1dd068d4b03a"
+  integrity sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==
   dependencies:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"
