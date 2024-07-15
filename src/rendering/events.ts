@@ -122,35 +122,32 @@ export class EventMappingFactory {
   }
 
   private mouseEgress(): events.EventMapping<['enter', 'exit']> {
-    let lastEvent: MouseEvent | null = null;
+    let lastResult: cursors.CursorGetResult<InteractionModelType> | null = null;
 
     return {
       vexml: ['enter', 'exit'],
       native: {
         mousemove: (event) => {
-          lastEvent ??= event;
+          const result = this.cursor.get(event);
 
-          const before = this.cursor.get(lastEvent);
-          const after = this.cursor.get(event);
-
-          lastEvent = event;
-
-          if (before.closestTarget && before.closestTarget !== after.closestTarget) {
+          if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: before.closestTarget,
-              point: before.point,
+              target: lastResult.closestTarget,
+              point: lastResult.point,
               native: event,
             });
           }
-          if (after.closestTarget && before.closestTarget !== after.closestTarget) {
+          if (result.closestTarget && result.closestTarget !== lastResult?.closestTarget) {
             this.topic.publish('enter', {
               type: 'enter',
-              target: after.closestTarget,
-              point: after.point,
+              target: result.closestTarget,
+              point: result.point,
               native: event,
             });
           }
+
+          lastResult = result;
         },
       },
     };
@@ -205,61 +202,56 @@ export class EventMappingFactory {
   }
 
   private touchEgress(): events.EventMapping<['enter', 'exit']> {
-    let lastEnteredEvent: TouchEvent | null = null;
+    let lastResult: cursors.CursorGetResult<InteractionModelType> | null = null;
 
     return {
       vexml: ['enter', 'exit'],
       native: {
         touchmove: (event) => {
-          const before = lastEnteredEvent ? this.cursor.get(lastEnteredEvent.touches[0]) : null;
-          const after = this.cursor.get(event.touches[0]);
+          const result = this.cursor.get(event.touches[0]);
 
-          if (before && before.closestTarget && before.closestTarget !== after.closestTarget) {
+          if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: before.closestTarget,
-              point: before.point,
+              target: lastResult.closestTarget,
+              point: lastResult.point,
               native: event,
             });
           }
 
-          if (after.closestTarget && before?.closestTarget !== after.closestTarget) {
+          if (result.closestTarget && result.closestTarget !== lastResult?.closestTarget) {
             this.topic.publish('enter', {
               type: 'enter',
-              target: after.closestTarget,
-              point: after.point,
+              target: result.closestTarget,
+              point: result.point,
               native: event,
             });
 
-            lastEnteredEvent = event;
+            lastResult = result;
           }
         },
         touchcancel: (event) => {
-          const before = lastEnteredEvent ? this.cursor.get(lastEnteredEvent.touches[0]) : null;
-
-          if (before?.closestTarget) {
+          if (lastResult?.closestTarget) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: before.closestTarget,
-              point: before.point,
+              target: lastResult.closestTarget,
+              point: lastResult.point,
               native: event,
             });
 
-            lastEnteredEvent = null;
+            lastResult = null;
           }
         },
         touchend: (event) => {
-          const before = lastEnteredEvent ? this.cursor.get(lastEnteredEvent.touches[0]) : null;
-
-          if (before?.closestTarget) {
+          if (lastResult?.closestTarget) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: before.closestTarget,
-              point: before.point,
+              target: lastResult.closestTarget,
+              point: lastResult.point,
               native: event,
             });
 
-            lastEnteredEvent = null;
+            lastResult = null;
           }
         },
       },

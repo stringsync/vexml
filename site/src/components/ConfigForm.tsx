@@ -1,5 +1,6 @@
 import * as vexml from '@/index';
 import { CSSProperties, useId, useRef, useState } from 'react';
+import { useTooltip } from '../hooks/useTooltip';
 
 export type ConfigFormProps = {
   defaultValue?: vexml.Config;
@@ -61,6 +62,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
             label={label}
             value={get<string>(key)}
             defaultValue={descriptor.defaultValue}
+            help={descriptor.help}
             onChange={set<string>(key)}
           />
         );
@@ -71,6 +73,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
             label={label}
             value={get<number>(key)}
             defaultValue={descriptor.defaultValue}
+            help={descriptor.help}
             onChange={set<number>(key)}
           />
         );
@@ -80,6 +83,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
             key={key}
             label={label}
             value={get<boolean>(key)}
+            help={descriptor.help}
             onChange={set<boolean>(key, { immediate: true })}
           />
         );
@@ -91,6 +95,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
             value={get<string>(key)}
             defaultValue={descriptor.defaultValue}
             choices={descriptor.choices}
+            help={descriptor.help}
             onChange={set<string>(key, { immediate: true })}
           />
         );
@@ -130,14 +135,26 @@ export const ConfigForm = (props: ConfigFormProps) => {
   );
 };
 
-const StringInput = (props: { label: string; value: string; defaultValue: string; onChange(value: string): void }) => {
+const StringInput = (props: {
+  label: string;
+  value: string;
+  defaultValue: string;
+  help: string;
+  onChange(value: string): void;
+}) => {
   const id = useId();
+
+  const tooltipRef = useRef<HTMLElement>(null);
+  useTooltip(tooltipRef, 'top', props.help);
 
   return (
     <div>
       <label htmlFor={id} className="form-label">
         {props.label}
       </label>
+      <small ref={tooltipRef} className="ms-2">
+        <i className="bi bi-question-circle"></i>
+      </small>
       <div className="input-group">
         <input id={id} className="form-control" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
         <button
@@ -153,14 +170,26 @@ const StringInput = (props: { label: string; value: string; defaultValue: string
   );
 };
 
-const NumberInput = (props: { label: string; value: number; defaultValue: number; onChange(value: number): void }) => {
+const NumberInput = (props: {
+  label: string;
+  value: number;
+  defaultValue: number;
+  help: string;
+  onChange(value: number): void;
+}) => {
   const id = useId();
+
+  const tooltipRef = useRef<HTMLElement>(null);
+  useTooltip(tooltipRef, 'top', props.help);
 
   return (
     <div>
       <label htmlFor={id} className="form-label">
         {props.label}
       </label>
+      <small ref={tooltipRef} className="ms-2">
+        <i className="bi bi-question-circle"></i>
+      </small>
       <div className="d-flex align-items-center">
         <input
           id={id}
@@ -187,8 +216,11 @@ const NumberInput = (props: { label: string; value: number; defaultValue: number
   );
 };
 
-const BooleanInput = (props: { label: string; value: boolean; onChange(value: boolean): void }) => {
+const BooleanInput = (props: { label: string; value: boolean; help: string; onChange(value: boolean): void }) => {
   const id = useId();
+
+  const tooltipRef = useRef<HTMLElement>(null);
+  useTooltip(tooltipRef, 'top', props.help);
 
   return (
     <div className="form-check">
@@ -202,6 +234,9 @@ const BooleanInput = (props: { label: string; value: boolean; onChange(value: bo
       <label htmlFor={id} className="form-check-label">
         {props.label}
       </label>
+      <small ref={tooltipRef} className="ms-2">
+        <i className="bi bi-question-circle"></i>
+      </small>
     </div>
   );
 };
@@ -211,15 +246,22 @@ const EnumInput = (props: {
   value: string;
   defaultValue: string;
   choices: readonly string[];
+  help: string;
   onChange(value: string): void;
 }) => {
   const id = useId();
+
+  const tooltipRef = useRef<HTMLElement>(null);
+  useTooltip(tooltipRef, 'top', props.help);
 
   return (
     <div>
       <label htmlFor={id} className="mb-2">
         {props.label}
       </label>
+      <small ref={tooltipRef} className="ms-2">
+        <i className="bi bi-question-circle"></i>
+      </small>
       <div className="input-group">
         <select id={id} className="form-select" value={props.value} onChange={(e) => props.onChange(e.target.value)}>
           {props.choices.map((choice) => (

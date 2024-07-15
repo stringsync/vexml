@@ -47,6 +47,11 @@ export class Fraction {
     return new Fraction(mixed.whole * denominator, denominator).add(mixed.remainder);
   }
 
+  /** Creates a fraction from something that appears to be a fraction. */
+  static fromFractionLike(fractionLike: { numerator: number; denominator: number }): Fraction {
+    return new Fraction(fractionLike.numerator, fractionLike.denominator);
+  }
+
   /** Returns the decimal of the fraction. */
   toDecimal(): number {
     return this.numerator / this.denominator;

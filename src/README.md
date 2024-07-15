@@ -10,6 +10,7 @@
 - [events](./events/README.md): Exposes user interaction hooks.
 - [cursors](./cursors/README.md): Different utilities for navigating a rendered music sheet.
 - [components](./components/README.md): Creates UI components needed for vexml.
+- [playback](./playback/README.md): Provide data structures for playing a rendering.
 - `util`: Miscellaneous functionality that doesn't neatly fit into either library or needs to be shared.
 
 [src/vexml.ts](./vexml.ts) is the entrypoint for MusicXML rendering.

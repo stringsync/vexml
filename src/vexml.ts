@@ -127,7 +127,12 @@ export class Vexml {
       },
     });
 
-    return new rendering.Rendering({ config, topic: vexmlEventTopic, bridge, root });
+    return new rendering.Rendering({
+      config,
+      topic: vexmlEventTopic,
+      bridge,
+      root,
+    });
   }
 
   /** Returns the document string. */
