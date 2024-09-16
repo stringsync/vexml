@@ -6328,10 +6328,10 @@ vexflow-fonts@^1.0.6:
   resolved "https://registry.yarnpkg.com/vexflow-fonts/-/vexflow-fonts-1.0.6.tgz#2fe3e3a056850bb39f436c568e50dec2c95ab90c"
   integrity sha512-B6jJGfCFn0OJoC4UdGq4FCa1tEtIruaBwyb/BPAeqyROr+gTJ4FlcM4X0ir5xdoH2CUrRwNoHdUWVIeqqIEj4g==
 
-vexflow@5.0.0-alpha.4:
-  version "5.0.0-alpha.4"
-  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-5.0.0-alpha.4.tgz#8e69478ac9109453b27f9cd06ce2a4a3d1e480df"
-  integrity sha512-Xj43/F2dpgyFOjsOarIHJxGDcjDSiUOgYE5vKdwO1S8tBtezmYqhfclKobR/G8YxhKg9edEH8uI73amYsQ1uig==
+vexflow@^5.0.0-beta.0:
+  version "5.0.0-beta.0"
+  resolved "https://registry.yarnpkg.com/vexflow/-/vexflow-5.0.0-beta.0.tgz#53300ca1a9c6c66a5d71710c879f8c9722662626"
+  integrity sha512-uCzWR9HU1ciUfke1DA7U8DTXEiQxPzkHb/WDHLgRhKOMJoig4WRT1xgTryB4jvHLi0hjRBlTW0a+p6aAfv9X2A==
 
 vite@^5.0.0:
   version "5.0.0"
