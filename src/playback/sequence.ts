@@ -10,25 +10,33 @@ export type Step = {
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
+  private partId: string;
   private steps: Step[];
 
-  private constructor(steps: Step[]) {
+  private constructor(partId: string, steps: Step[]) {
+    this.partId = partId;
     this.steps = steps;
   }
 
-  static create(score: rendering.ScoreRendering): Sequence {
-    const steps = new Array<Step>();
-
-    score.systems
+  static fromScore(score: rendering.ScoreRendering): Sequence[] {
+    return score.systems
       .flatMap((system) => system.measures)
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves)
-      .flatMap((stave) => stave.entry)
-      .flatMap((entry) => (entry.type === 'chorus' ? entry.voices : []))
-      .flatMap((voice) => voice.entries);
+      .map((part) => {
+        const steps = part.staves
+          .flatMap((stave) => stave.entry)
+          .flatMap((entry) => (entry.type === 'chorus' ? entry.voices : []))
+          .flatMap((voice) => voice.entries)
+          .map((entry) => ({
+            start: Duration.zero(),
+            end: Duration.zero(),
+            repeat: 0,
+            voiceEntry: entry,
+          }));
 
-    return new Sequence(steps);
+        return new Sequence(part.id, steps);
+      });
   }
 
   get length() {
@@ -37,5 +45,9 @@ export class Sequence {
 
   at(index: number): Step | null {
     return this.steps[index] ?? null;
+  }
+
+  getPartId(): string {
+    return this.partId;
   }
 }
