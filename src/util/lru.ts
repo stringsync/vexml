@@ -34,7 +34,7 @@ export class LRU<K, V> {
 
     if (this.map.size > this.capacity) {
       const { value } = this.map.entries().next();
-      this.map.delete(value[0]);
+      this.map.delete(value![0]);
     }
   }
 
