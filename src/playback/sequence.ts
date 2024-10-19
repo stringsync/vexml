@@ -20,21 +20,16 @@ export class Sequence {
     this.steps = steps;
   }
 
-  static fromScore(score: rendering.ScoreRendering): Sequence[] {
+  static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
     const measures = score.systems.flatMap((system) => system.measures);
-
-    return util
-      .unique(
-        measures
-          .flatMap((measure) => measure.fragments)
-          .flatMap((fragment) => fragment.parts)
-          .map((part) => part.id)
-      )
-      .map((partId) => Sequence.fromMeasures(partId, measures));
+    return score.partIds.map((partId) => Sequence.fromMeasureRenderings(partId, measures));
   }
 
-  static fromMeasures(partId: string, measures: rendering.MeasureRendering[]): Sequence {
+  private static fromMeasureRenderings(partId: string, measures: rendering.MeasureRendering[]): Sequence {
     const steps = new Array<Step>();
+
+    // TODO: Determine the number of ticks per beat for measure rests.
+    let ticks = 0;
 
     for (const measure of measures) {
       const tickables = measure.fragments
@@ -52,9 +47,6 @@ export class Sequence {
               return [];
           }
         });
-
-      // TODO: Determine the number of ticks per beat for measure rests.
-      let ticks = 0;
 
       for (const tickable of tickables) {
         switch (tickable.type) {

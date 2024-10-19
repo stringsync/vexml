@@ -4,6 +4,7 @@ import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
 import * as components from '@/components';
+import * as playback from '@/playback';
 import { Config, DEFAULT_CONFIG } from '@/config';
 
 export type RenderOptions = {
@@ -102,7 +103,7 @@ export class Vexml {
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ root, width });
 
-    // Make a cursor.
+    // Make a point cursor.
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
     if (config.DEBUG_DRAW_TARGET_BOUNDS) {
       const ctx = scoreRendering.vexflow.renderer.getContext();
@@ -127,11 +128,16 @@ export class Vexml {
       },
     });
 
+    // Make playback sequences.
+    const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
+
     return new rendering.Rendering({
       config,
       topic: vexmlEventTopic,
       bridge,
       root,
+      sequences,
+      partIds: scoreRendering.partIds,
     });
   }
 
