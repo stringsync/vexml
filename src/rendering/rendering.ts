@@ -1,5 +1,6 @@
 import * as events from '@/events';
 import * as components from '@/components';
+import * as playback from '@/playback';
 import { EventMap } from './events';
 import { Config } from '@/config';
 
@@ -9,6 +10,9 @@ export class Rendering {
   private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
   private root: components.Root;
+  private sequences: playback.Sequence[];
+  private partIds: string[];
+
   private isDestroyed = false;
 
   constructor(opts: {
@@ -16,11 +20,15 @@ export class Rendering {
     bridge: events.NativeBridge<keyof EventMap>;
     topic: events.Topic<EventMap>;
     root: components.Root;
+    sequences: playback.Sequence[];
+    partIds: string[];
   }) {
     this.config = opts.config;
     this.bridge = opts.bridge;
     this.topic = opts.topic;
     this.root = opts.root;
+    this.sequences = opts.sequences;
+    this.partIds = opts.partIds;
   }
 
   /** Dispatches an event to the interactive surface element. */
@@ -31,6 +39,16 @@ export class Rendering {
   /** Returns the element that vexflow is directly rendered on. */
   getVexflowElement(): SVGElement | HTMLCanvasElement {
     return this.root.getVexflowElement();
+  }
+
+  /** Returns the part IDs of the score. */
+  getPartIds(): string[] {
+    return this.partIds;
+  }
+
+  /** Returns the playback sequence for a given part. */
+  getSequence(partId: string): playback.Sequence | null {
+    return this.sequences.find((sequence) => sequence.getPartId() === partId) ?? null;
   }
 
   /** Adds a vexml event listener. */

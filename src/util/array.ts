@@ -59,4 +59,14 @@ export const forEachTriple = <T>(
 };
 
 /** Returns a new array with unique elements. */
-export const unique = <T>(array: T[]): T[] => Array.from(new Set(array));
+/** Returns a new array with unique elements, preserving the order. */
+export const unique = <T>(array: T[]): T[] => {
+  const seen = new Set<T>();
+  return array.filter((item) => {
+    if (seen.has(item)) {
+      return false;
+    }
+    seen.add(item);
+    return true;
+  });
+};

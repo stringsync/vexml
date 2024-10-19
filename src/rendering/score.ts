@@ -18,6 +18,7 @@ const Y_SHIFT_PADDING = 10;
 /** The result of rendering a Score. */
 export type ScoreRendering = {
   type: 'score';
+  partIds: string[];
   systems: SystemRendering[];
   boundary: spatial.Rect;
   vexflow: {
@@ -247,8 +248,16 @@ export class Score {
     // Now that everything is drawn, we expect the bounding boxes to be correct.
     const boundary = new spatial.Rect(0, 0, opts.width, y);
 
+    // Extract the part IDs.
+    const partIds = util.unique(
+      measures
+        .flatMap((measure) => measure.fragments)
+        .flatMap((measureFragment) => measureFragment.parts)
+        .map((part) => part.id)
+    );
+
     // TODO: Get the locator.
-    return { type: 'score', systems: systemRenderings, boundary, vexflow: { renderer: vfRenderer } };
+    return { type: 'score', systems: systemRenderings, boundary, partIds, vexflow: { renderer: vfRenderer } };
   }
 
   @util.memoize()
