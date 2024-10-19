@@ -57,3 +57,6 @@ export const forEachTriple = <T>(
     callback([previous, current, next], { index, isFirst: index === 0, isLast: index === array.length - 1 });
   }
 };
+
+/** Returns a new array with unique elements. */
+export const unique = <T>(array: T[]): T[] => Array.from(new Set(array));
