@@ -1,6 +1,8 @@
 import * as events from '@/events';
 import * as components from '@/components';
+import * as cursors from '@/cursors';
 import * as playback from '@/playback';
+import * as util from '@/util';
 import { EventMap } from './events';
 import { Config } from '@/config';
 
@@ -11,6 +13,7 @@ export class Rendering {
   private topic: events.Topic<EventMap>;
   private root: components.Root;
   private sequences: playback.Sequence[];
+  private partIds: string[];
 
   private isDestroyed = false;
 
@@ -20,12 +23,43 @@ export class Rendering {
     topic: events.Topic<EventMap>;
     root: components.Root;
     sequences: playback.Sequence[];
+    partIds: string[];
   }) {
     this.config = opts.config;
     this.bridge = opts.bridge;
     this.topic = opts.topic;
     this.root = opts.root;
     this.sequences = opts.sequences;
+    this.partIds = opts.partIds;
+  }
+
+  /** Returns the part IDs for the score. */
+  getPartIds() {
+    return this.partIds;
+  }
+
+  /** Creates a new discrete cursor for the part ID */
+  createDiscreteCursor(partId: string): cursors.DiscreteCursor {
+    const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
+
+    util.assertDefined(sequence);
+
+    const overlayElement = this.root.getOverlay().getElement();
+    const cursorModel = new cursors.DiscreteCursor(sequence);
+    const cursorComponent = components.Cursor.render(overlayElement);
+
+    let x = 0;
+    const y = 0;
+    const height = 100;
+    cursorModel.addEventListener('change', () => {
+      // TODO: Get real (x, y) from event.tickable.
+      // TODO: Get real height from event.measure.
+      x += 5;
+      cursorComponent.update({ x, y, height });
+    });
+    cursorComponent.update({ x, y, height });
+
+    return cursorModel;
   }
 
   /** Dispatches an event to the interactive surface element. */
