@@ -4,7 +4,7 @@ type EventMap = {
   change: {
     index: number;
     length: number;
-    tickable: playback.Tickable | null;
+    step: playback.Step | null;
   };
 };
 
@@ -25,8 +25,8 @@ export class DiscreteCursor {
     return this.sequence.getLength();
   }
 
-  getCurrentTickable(): playback.Tickable | null {
-    return this.sequence.at(this.index)?.tickable ?? null;
+  getCurrentStep(): playback.Step | null {
+    return this.sequence.at(this.index);
   }
 
   getCurrentIndex(): number {
@@ -71,7 +71,7 @@ export class DiscreteCursor {
       this.topic.publish('change', {
         index: this.index,
         length: this.getLength(),
-        tickable: this.sequence.at(index)?.tickable ?? null,
+        step: this.sequence.at(index) ?? null,
       });
     }
   }

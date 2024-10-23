@@ -48,16 +48,16 @@ export class Rendering {
     const cursorModel = new cursors.DiscreteCursor(sequence);
     const cursorComponent = components.Cursor.render(overlayElement);
 
-    let x = 0;
-    const y = 0;
-    const height = 100;
-    cursorModel.addEventListener('change', () => {
-      // TODO: Get real (x, y) from event.tickable.
-      // TODO: Get real height from event.measure.
-      x += 5;
-      cursorComponent.update({ x, y, height });
+    cursorModel.addEventListener('change', (event) => {
+      const step = event.step;
+      if (step) {
+        cursorComponent.update({ x: step.getX(), y: step.getY(), height: step.getHeight() });
+      }
     });
-    cursorComponent.update({ x, y, height });
+    const step = cursorModel.getCurrentStep();
+    if (step) {
+      cursorComponent.update({ x: step.getX(), y: step.getY(), height: step.getHeight() });
+    }
 
     return cursorModel;
   }
