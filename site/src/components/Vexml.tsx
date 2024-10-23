@@ -156,6 +156,7 @@ export const Vexml = (props: VexmlProps) => {
         config,
       });
       setRendering(rendering);
+      console.log(rendering.getSequences());
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.
