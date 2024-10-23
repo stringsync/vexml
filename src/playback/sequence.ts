@@ -8,7 +8,7 @@ export type Step = {
   tickable: Tickable;
 };
 
-type Tickable = rendering.VoiceEntryRendering | rendering.MultiRestRendering;
+export type Tickable = rendering.VoiceEntryRendering | rendering.MultiRestRendering;
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
@@ -103,7 +103,7 @@ export class Sequence {
     return new Sequence(partId, steps);
   }
 
-  get length() {
+  getLength() {
     return this.steps.length;
   }
 
