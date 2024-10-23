@@ -111,13 +111,13 @@ export class Vexml {
     }
 
     // Initialize event routing.
-    const overlay = root.getOverlayElement();
+    const overlay = root.getOverlay();
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
-    const cursor = new cursors.PointCursor(overlay, locator);
+    const cursor = new cursors.PointCursor(overlay.getElement(), locator);
     const mappings = new rendering.EventMappingFactory(cursor, vexmlEventTopic).create(config.INPUT_TYPE);
     const bridge = new events.NativeBridge<keyof rendering.EventMap>({
-      overlay,
+      overlayElement: overlay.getElement(),
       mappings,
       nativeEventTopic,
       nativeEventOpts: {

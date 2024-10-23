@@ -30,7 +30,7 @@ export class Rendering {
 
   /** Dispatches an event to the interactive surface element. */
   dispatchNativeEvent(event: Event): void {
-    this.root.getOverlayElement().dispatchEvent(event);
+    this.root.getOverlay().getElement().dispatchEvent(event);
   }
 
   /** Returns the element that vexflow is directly rendered on. */
