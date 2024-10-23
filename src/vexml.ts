@@ -137,6 +137,7 @@ export class Vexml {
       bridge,
       root,
       sequences,
+      partIds: scoreRendering.partIds,
     });
   }
 

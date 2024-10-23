@@ -1,6 +1,5 @@
 import * as playback from '@/playback';
 import * as events from '@/events';
-
 type EventMap = {
   change: {
     index: number;
@@ -14,10 +13,8 @@ export class DiscreteCursor {
   private sequence: playback.Sequence;
   private topic = new events.Topic<EventMap>();
 
-  // TODO: Add a component that represents the cursor.
-
-  constructor(opts: { sequence: playback.Sequence }) {
-    this.sequence = opts.sequence;
+  constructor(sequence: playback.Sequence) {
+    this.sequence = sequence;
   }
 
   getPartId(): string {
