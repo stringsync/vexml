@@ -17,15 +17,15 @@ export class Cursor {
     return new Cursor(element);
   }
 
-  update(opts: { x?: number; y?: number; height?: number }) {
+  update(opts: { x?: number; y?: number; h?: number }) {
     if (typeof opts.x === 'number') {
       this.element.style.left = `${opts.x}px`;
     }
     if (typeof opts.y === 'number') {
       this.element.style.top = `${opts.y}px`;
     }
-    if (typeof opts.height === 'number') {
-      this.element.style.height = `${opts.height}px`;
+    if (typeof opts.h === 'number') {
+      this.element.style.height = `${opts.h}px`;
     }
   }
 

@@ -244,6 +244,7 @@ export class Stave {
           .flatMap((vfVoice) => vfVoice.getTickables())
           .forEach((vfTickable) => {
             vfTickable.setStave(vfStave);
+            vfStave.addChildElement(vfTickable);
           });
         break;
     }
