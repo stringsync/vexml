@@ -7,3 +7,4 @@ export * from './voice';
 export * from './measure';
 export * from './multirest';
 export * from './part';
+export * from './interactions';

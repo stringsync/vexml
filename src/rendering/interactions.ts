@@ -28,6 +28,16 @@ export class InteractionModel<T> {
     return InteractionModelFactory.fromScoreRendering(scoreRendering);
   }
 
+  /** Returns a box that contains all the handles. */
+  @util.memoize()
+  getBoundingBox(): spatial.Rect {
+    const rects = this.handles.map((handle) => {
+      const shape = handle.getShape();
+      return spatial.Rect.fromShape(shape);
+    });
+    return spatial.Rect.merge(rects);
+  }
+
   /** Returns the interaction handles for this model. */
   getHandles(): InteractionHandle[] {
     return this.handles;

@@ -1,3 +1,6 @@
 import * as rendering from '@/rendering';
 
-export type Tickable = rendering.VoiceEntryRendering | rendering.MultiRestRendering;
+export type InteractionModelType = Exclude<
+  rendering.InteractionModelType,
+  rendering.InteractionModel<rendering.MeasureRendering>
+>;

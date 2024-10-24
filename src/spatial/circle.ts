@@ -18,4 +18,20 @@ export class Circle implements Shape {
   contains(point: Point): boolean {
     return this.center().distance(point) <= this.r;
   }
+
+  getMinX() {
+    return this.x - this.r;
+  }
+
+  getMaxX() {
+    return this.x + this.r;
+  }
+
+  getMinY() {
+    return this.y - this.r;
+  }
+
+  getMaxY() {
+    return this.y + this.r;
+  }
 }

@@ -49,13 +49,13 @@ export class Rendering {
     const cursorComponent = components.Cursor.render(overlayElement);
 
     cursorModel.addEventListener('change', (event) => {
-      const rect = event.step?.getRect();
+      const rect = event.rect;
       if (rect) {
         cursorComponent.update(rect);
       }
       // TODO: Maybe hide cursorComponent if there is no rect.
     });
-    const rect = cursorModel.getCurrentStep()?.getRect();
+    const rect = cursorModel.getCurrent()?.rect;
     if (rect) {
       cursorComponent.update(rect);
     }
