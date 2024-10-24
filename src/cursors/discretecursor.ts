@@ -1,11 +1,17 @@
 import * as playback from '@/playback';
 import * as events from '@/events';
+import * as util from '@/util';
+import * as spatial from '@/spatial';
+
 type EventMap = {
-  change: {
-    index: number;
-    length: number;
-    step: playback.Step | null;
-  };
+  change: CursorState;
+};
+
+type CursorState = {
+  index: number;
+  length: number;
+  rect: spatial.Rect | null;
+  interaction: playback.InteractionModelType | null;
 };
 
 export class DiscreteCursor {
@@ -21,16 +27,39 @@ export class DiscreteCursor {
     return this.sequence.getPartId();
   }
 
-  getLength(): number {
-    return this.sequence.getLength();
-  }
+  getCurrent(): CursorState {
+    const interaction = this.sequence.at(this.index);
+    if (!interaction) {
+      return {
+        index: this.index,
+        length: this.sequence.getLength(),
+        rect: null,
+        interaction: null,
+      };
+    }
 
-  getCurrentStep(): playback.Step | null {
-    return this.sequence.at(this.index);
-  }
+    const systemIndex = interaction.value.address.getSystemIndex();
+    if (typeof systemIndex !== 'number') {
+      return {
+        index: this.index,
+        length: this.sequence.getLength(),
+        rect: null,
+        interaction: null,
+      };
+    }
 
-  getCurrentIndex(): number {
-    return this.index;
+    const box = interaction.getBoundingBox();
+    const leftX = box.getMinX();
+    const rightX = box.getMaxX();
+    const topY = box.getMinY();
+    const height = this.getCursorHeight(systemIndex);
+
+    return {
+      index: this.index,
+      length: this.sequence.getLength(),
+      rect: new spatial.Rect(leftX, topY, rightX - leftX, height),
+      interaction: this.sequence.at(this.index) ?? null,
+    };
   }
 
   next(): void {
@@ -65,14 +94,38 @@ export class DiscreteCursor {
     }
   }
 
+  /** Returns the cursor height for each system index. */
+  @util.memoize()
+  private getCursorHeights(): number[] {
+    const systemCount = util.max([
+      0,
+      ...this.sequence.getInteractions().map((interaction) => interaction.value.address.getSystemIndex() ?? 0),
+    ]);
+
+    const cursorHeights = new Array<number>(systemCount);
+
+    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
+      const interactions = this.sequence
+        .getInteractions()
+        .filter((interaction) => interaction.value.address.getSystemIndex() === systemIndex);
+
+      const minY = util.min(interactions.map((interaction) => interaction.getBoundingBox().getMinY()));
+      const maxY = util.max(interactions.map((interaction) => interaction.getBoundingBox().getMaxY()));
+
+      cursorHeights[systemIndex] = maxY - minY;
+    }
+
+    return cursorHeights;
+  }
+
+  private getCursorHeight(systemIndex: number): number {
+    return this.getCursorHeights()[systemIndex];
+  }
+
   private update(index: number) {
     if (this.index !== index) {
       this.index = index;
-      this.topic.publish('change', {
-        index: this.index,
-        length: this.getLength(),
-        step: this.sequence.at(index) ?? null,
-      });
+      this.topic.publish('change', this.getCurrent());
     }
   }
 }
