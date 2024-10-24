@@ -12,6 +12,7 @@ import { PartName, PartNameRendering } from './partname';
 export type PartRendering = {
   type: 'part';
   id: string;
+  address: Address<'part'>;
   name: PartNameRendering | null;
   staves: StaveRendering[];
   height: number;
@@ -171,6 +172,7 @@ export class Part {
     return {
       type: 'part',
       id: this.id,
+      address: opts.address,
       name,
       staves: staveRenderings,
       height,

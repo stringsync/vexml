@@ -222,10 +222,21 @@ export class Stave {
       vfStave.setTempo(vfStaveTempoOpts, -METRONOME_TOP_PADDING);
     }
 
-    const staveEntryRendering = this.getEntry().render({
-      address: opts.address.chorus(),
-      spanners: opts.spanners,
-    });
+    const staveEntry = this.getEntry();
+
+    let staveEntryRendering: StaveEntryRendering;
+    if (staveEntry instanceof MultiRest) {
+      staveEntryRendering = staveEntry.render({
+        address: opts.address,
+      });
+    } else if (staveEntry instanceof Chorus) {
+      staveEntryRendering = staveEntry.render({
+        address: opts.address.chorus(),
+        spanners: opts.spanners,
+      });
+    } else {
+      throw new Error(`Unsupported stave entry: ${staveEntry}`);
+    }
 
     switch (staveEntryRendering.type) {
       case 'measurerest':
@@ -244,7 +255,6 @@ export class Stave {
           .flatMap((vfVoice) => vfVoice.getTickables())
           .forEach((vfTickable) => {
             vfTickable.setStave(vfStave);
-            vfStave.addChildElement(vfTickable);
           });
         break;
     }

@@ -66,6 +66,7 @@ export type NoteRendering = StaveNoteRendering | GraceNoteRendering | TabNoteRen
 export type StaveNoteRendering = {
   type: 'stavenote';
   key: string;
+  address: Address<'voice'>;
   vexflow: {
     staveNote: vexflow.StaveNote;
   };
@@ -77,6 +78,7 @@ export type StaveNoteRendering = {
 export type GraceNoteRendering = {
   type: 'gracenote';
   hasSlur: boolean;
+  address: Address<'voice'>;
   vexflow: {
     graceNote: vexflow.GraceNote;
   };
@@ -86,6 +88,7 @@ export type GraceNoteRendering = {
 /** The result of rendering a tab Note. */
 export type TabNoteRendering = {
   type: 'tabnote';
+  address: Address<'voice'>;
   vexflow: {
     tabNote: vexflow.TabNote;
   };
@@ -94,6 +97,7 @@ export type TabNoteRendering = {
 /** The result of rendering a tab grace Note. */
 export type TabGraceNoteRendering = {
   type: 'tabgracenote';
+  address: Address<'voice'>;
   hasSlur: boolean;
   vexflow: {
     graceTabNote: vexflow.GraceTabNote;
@@ -173,13 +177,13 @@ export class Note {
     const isGrace = notes.every((note) => note.musicXML.note.isGrace());
 
     if (isTab && isGrace) {
-      return Note.renderTabGraceNotes({ notes });
+      return Note.renderTabGraceNotes({ notes, address });
     } else if (isTab) {
       return Note.renderTabNotes({ notes, spanners, address });
     } else if (isStave) {
       return Note.renderStaveNotes({ notes, spanners, address });
     } else if (isGrace) {
-      return Note.renderGraceNotes({ notes });
+      return Note.renderGraceNotes({ notes, address });
     } else {
       throw new Error('cannot render grace notes and stave notes together');
     }
@@ -328,6 +332,7 @@ export class Note {
       staveNoteRenderings.push({
         type: 'stavenote',
         key: keys[index],
+        address: opts.address,
         modifiers: modifierRenderingGroups[index],
         vexflow: {
           staveNote: vfStaveNote,
@@ -339,7 +344,7 @@ export class Note {
     return staveNoteRenderings;
   }
 
-  private static renderGraceNotes(opts: { notes: Note[] }): GraceNoteRendering[] {
+  private static renderGraceNotes(opts: { notes: Note[]; address: Address<'voice'> }): GraceNoteRendering[] {
     const notes = opts.notes;
     const keys = notes.map((note) => note.getKey());
 
@@ -381,6 +386,7 @@ export class Note {
     for (let index = 0; index < keys.length; index++) {
       graceNoteRenderings.push({
         type: 'gracenote',
+        address: opts.address,
         modifiers: modifierRenderingGroups[index],
         hasSlur,
         vexflow: {
@@ -478,6 +484,7 @@ export class Note {
 
       tabNoteRenderings.push({
         type: 'tabnote',
+        address: opts.address,
         vexflow: {
           tabNote: vfTabNote,
         },
@@ -487,7 +494,7 @@ export class Note {
     return tabNoteRenderings;
   }
 
-  private static renderTabGraceNotes(opts: { notes: Note[] }): TabGraceNoteRendering[] {
+  private static renderTabGraceNotes(opts: { notes: Note[]; address: Address<'voice'> }): TabGraceNoteRendering[] {
     const notes = opts.notes;
 
     const entries = notes.flatMap((note) => note.getTabEntries());
@@ -517,6 +524,7 @@ export class Note {
     for (let index = 0; index < entries.length; index++) {
       graceTabNoteRenderings.push({
         type: 'tabgracenote',
+        address: opts.address,
         hasSlur,
         vexflow: {
           graceTabNote: vfGraceTabNote,
