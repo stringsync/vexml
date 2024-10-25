@@ -1,39 +1,81 @@
 import * as rendering from '@/rendering';
-import { InteractionModelType } from './types';
+
+type VoiceEntryInteraction = Exclude<
+  rendering.InteractionModelType,
+  rendering.InteractionModel<rendering.MeasureRendering>
+>;
+
+type MeasureInteraction = rendering.InteractionModel<rendering.MeasureRendering>;
+
+type Interaction = {
+  voiceEntry: VoiceEntryInteraction;
+  measure: MeasureInteraction;
+};
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
   private partId: string;
-  private interactions: InteractionModelType[];
+  private voiceEntryInteractions: VoiceEntryInteraction[];
+  private measureInteractions: MeasureInteraction[];
 
-  private constructor(partId: string, interactions: InteractionModelType[]) {
+  private constructor(
+    partId: string,
+    voiceEntryInteractions: VoiceEntryInteraction[],
+    measureInteractions: MeasureInteraction[]
+  ) {
     this.partId = partId;
-    this.interactions = interactions;
+    this.voiceEntryInteractions = voiceEntryInteractions;
+    this.measureInteractions = measureInteractions;
   }
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
-    const interactions = rendering.InteractionModel.create(score).filter(
-      (interaction): interaction is InteractionModelType => interaction.value.type !== 'measure'
+    const interactions = rendering.InteractionModel.create(score);
+
+    const voiceEntryInteractions = interactions.filter(
+      (interaction): interaction is VoiceEntryInteraction => interaction.value.type !== 'measure'
+    );
+    const measureInteractions = interactions.filter(
+      (interaction): interaction is MeasureInteraction => interaction.value.type === 'measure'
     );
 
     return score.partIds.map((partId) => {
       return new Sequence(
         partId,
-        interactions.filter((interaction) => interaction.value.address.getPartId() === partId)
+        voiceEntryInteractions.filter((interaction) => interaction.value.address.getPartId() === partId),
+        measureInteractions
       );
     });
   }
 
-  at(index: number): InteractionModelType | null {
-    return this.interactions[index] ?? null;
+  getInteraction(index: number): Interaction | null {
+    const voiceEntry = this.voiceEntryInteractions[index];
+    if (!voiceEntry) {
+      return null;
+    }
+
+    const measureIndex = voiceEntry.value.address.getMeasureIndex();
+    if (typeof measureIndex !== 'number') {
+      return null;
+    }
+
+    const measure = this.measureInteractions[measureIndex];
+    if (!measure) {
+      return null;
+    }
+
+    return { voiceEntry, measure };
   }
 
-  getInteractions() {
-    return this.interactions;
+  getVoiceEntryInteractions() {
+    return this.voiceEntryInteractions;
+  }
+
+  getMeasureInteractions() {
+    return this.measureInteractions;
   }
 
   getLength() {
-    return this.interactions.length;
+    return this.voiceEntryInteractions.length;
   }
 
   getPartId(): string {
