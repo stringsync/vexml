@@ -59,7 +59,7 @@ describe('vexml', () => {
     await page.setContent(document.documentElement.outerHTML);
 
     const element = await page.$(screenshotElementSelector);
-    const screenshot = await element!.screenshot();
+    const screenshot = Buffer.from((await element!.screenshot()) as any);
     expect(screenshot).toMatchImageSnapshot({
       customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width }),
     });
