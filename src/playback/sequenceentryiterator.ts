@@ -1,31 +1,32 @@
-import { StaveChordRendering, TabChordRendering } from './chord';
-import { StaveNoteRendering, TabNoteRendering } from './note';
-import { RestRendering } from './rest';
-import { ScoreRendering } from './score';
+import { StaveChordRendering, TabChordRendering } from '../rendering/chord';
+import { StaveNoteRendering, TabNoteRendering } from '../rendering/note';
+import { RestRendering } from '../rendering/rest';
+import { ScoreRendering } from '../rendering/score';
 
-export type VoiceEntry =
+export type SequenceEntry =
   | StaveNoteRendering
   | StaveChordRendering
   | TabNoteRendering
   | TabChordRendering
   | RestRendering;
 
-export type VoiceEntryIteration = {
-  entry: VoiceEntry;
+export type SequenceEntryIteration = {
+  entry: SequenceEntry;
+  // TODO: Add repeat and multiple ending information.
 };
 
-/** Iterates over the voice entries, accounting for repeats and multiple endings. */
-export class VoiceEntryIterator {
-  private voiceEntries: VoiceEntry[];
+/** Iterates over the playable elements in a score, accounting for repeats and multiple endings. */
+export class SequenceEntryIterator {
+  private sequenceEntries: SequenceEntry[];
 
-  private constructor(voiceEntries: VoiceEntry[]) {
-    this.voiceEntries = voiceEntries;
+  private constructor(sequenceEntries: SequenceEntry[]) {
+    this.sequenceEntries = sequenceEntries;
   }
 
   /** Creates a VoiceEntryIterator from a score. */
   static create(partId: string, score: ScoreRendering) {
     // TODO: Support rests and multiple endings.
-    const voiceEntries = score.systems
+    const sequenceEntries = score.systems
       .flatMap((system) => system.measures)
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
@@ -41,7 +42,7 @@ export class VoiceEntryIterator {
         }
       })
       .flatMap((voice) => voice.entries)
-      .filter((entry): entry is VoiceEntry => {
+      .filter((entry): entry is SequenceEntry => {
         return (
           entry.type === 'stavenote' ||
           entry.type === 'stavechord' ||
@@ -51,18 +52,18 @@ export class VoiceEntryIterator {
         );
       });
 
-    return new VoiceEntryIterator(voiceEntries);
+    return new SequenceEntryIterator(sequenceEntries);
   }
 
-  [Symbol.iterator](): Iterator<VoiceEntryIteration> {
+  [Symbol.iterator](): Iterator<SequenceEntryIteration> {
     let index = 0;
 
     return {
       next: () => {
-        if (index >= this.voiceEntries.length) {
+        if (index >= this.sequenceEntries.length) {
           return { done: true, value: null };
         } else {
-          return { done: false, value: { entry: this.voiceEntries[index++] } };
+          return { done: false, value: { entry: this.sequenceEntries[index++] } };
         }
       },
     };
