@@ -57,3 +57,16 @@ export const forEachTriple = <T>(
     callback([previous, current, next], { index, isFirst: index === 0, isLast: index === array.length - 1 });
   }
 };
+
+/** Returns a new array with unique elements. */
+/** Returns a new array with unique elements, preserving the order. */
+export const unique = <T>(array: T[]): T[] => {
+  const seen = new Set<T>();
+  return array.filter((item) => {
+    if (seen.has(item)) {
+      return false;
+    }
+    seen.add(item);
+    return true;
+  });
+};

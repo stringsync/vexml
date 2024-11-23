@@ -1,8 +1,10 @@
 import * as vexflow from 'vexflow';
+import { Address } from './address';
 
 export type MultiRestRendering = {
   type: 'measurerest';
   coverage: 'multi';
+  address: Address<'stave'>;
   vexflow: {
     multiMeasureRest: vexflow.MultiMeasureRest;
   };
@@ -17,7 +19,7 @@ export class MultiRest {
   }
 
   /** Renders the Multi Measure Rest */
-  render(): MultiRestRendering {
+  render(opts: { address: Address<'stave'> }): MultiRestRendering {
     const vfMultiMeasureRest = new vexflow.MultiMeasureRest(this.count, {
       numberOfMeasures: 1,
     });
@@ -25,6 +27,7 @@ export class MultiRest {
     return {
       type: 'measurerest',
       coverage: 'multi',
+      address: opts.address,
       vexflow: {
         multiMeasureRest: vfMultiMeasureRest,
       },

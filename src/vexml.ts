@@ -4,6 +4,7 @@ import * as rendering from '@/rendering';
 import * as cursors from '@/cursors';
 import * as events from '@/events';
 import * as components from '@/components';
+import * as playback from '@/playback';
 import { Config, DEFAULT_CONFIG } from '@/config';
 
 export type RenderOptions = {
@@ -102,7 +103,7 @@ export class Vexml {
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ root, width });
 
-    // Make a cursor.
+    // Make a point cursor.
     const locator = rendering.Locator.fromScoreRendering(scoreRendering);
     if (config.DEBUG_DRAW_TARGET_BOUNDS) {
       const ctx = scoreRendering.vexflow.renderer.getContext();
@@ -110,13 +111,13 @@ export class Vexml {
     }
 
     // Initialize event routing.
-    const overlay = root.getOverlayElement();
+    const overlay = root.getOverlay();
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
-    const cursor = new cursors.PointCursor(overlay, locator);
+    const cursor = new cursors.PointCursor(overlay.getElement(), locator);
     const mappings = new rendering.EventMappingFactory(cursor, vexmlEventTopic).create(config.INPUT_TYPE);
     const bridge = new events.NativeBridge<keyof rendering.EventMap>({
-      overlay,
+      overlayElement: overlay.getElement(),
       mappings,
       nativeEventTopic,
       nativeEventOpts: {
@@ -127,11 +128,16 @@ export class Vexml {
       },
     });
 
+    // Make playback sequences.
+    const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
+
     return new rendering.Rendering({
       config,
       topic: vexmlEventTopic,
       bridge,
       root,
+      sequences,
+      partIds: scoreRendering.partIds,
     });
   }
 

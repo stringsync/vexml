@@ -13,24 +13,28 @@ export type ChordRendering = StaveChordRendering | GraceChordRendering | TabChor
 /** The result of rendering a stave Chord. */
 export type StaveChordRendering = {
   type: 'stavechord';
+  address: Address<'voice'>;
   notes: StaveNoteRendering[];
 };
 
 /** The result of rendering a grace Chord. */
 export type GraceChordRendering = {
   type: 'gracechord';
+  address: Address<'voice'>;
   graceNotes: GraceNoteRendering[];
 };
 
 /** The result of rendering a grace Tab Chord. */
 export type TabChordRendering = {
   type: 'tabchord';
+  address: Address<'voice'>;
   tabNotes: TabNoteRendering[];
 };
 
 /** The result of rendering a tab grace chord. */
 export type TabGraceChordRendering = {
   type: 'tabgracechord';
+  address: Address<'voice'>;
   tabGraceNotes: TabGraceNoteRendering[];
 };
 
@@ -101,21 +105,25 @@ export class Chord {
     if (isTabGrace) {
       return {
         type: 'tabgracechord',
+        address: opts.address,
         tabGraceNotes: noteRenderings,
       };
     } else if (isTab) {
       return {
         type: 'tabchord',
+        address: opts.address,
         tabNotes: noteRenderings,
       };
     } else if (isStave) {
       return {
         type: 'stavechord',
+        address: opts.address,
         notes: noteRenderings,
       };
     } else if (isGrace) {
       return {
         type: 'gracechord',
+        address: opts.address,
         graceNotes: noteRenderings,
       };
     } else {

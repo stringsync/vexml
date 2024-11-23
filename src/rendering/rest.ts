@@ -10,6 +10,7 @@ import { Address } from './address';
 /** The result of rendering a Rest. */
 export type RestRendering = {
   type: 'rest';
+  address: Address<'voice'>;
   duration: NoteDurationDenominator;
   vexflow: {
     note: vexflow.Note;
@@ -109,6 +110,7 @@ export class Rest {
 
     return {
       type: 'rest',
+      address: opts.address,
       duration: this.durationDenominator,
       vexflow: { note: vfNote },
     };
