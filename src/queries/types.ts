@@ -2,7 +2,7 @@ import * as rendering from '@/rendering';
 
 export type Predicate<T> = (element: T) => boolean;
 
-export type Queryable =
+export type Interactable =
   | rendering.StaveNoteRendering
   | rendering.StaveChordRendering
   | rendering.TabNoteRendering
@@ -10,10 +10,8 @@ export type Queryable =
   | rendering.RestRendering
   | rendering.MeasureRendering;
 
-export type Interactable = Queryable;
-
 export type Playable = Extract<
-  Queryable,
+  Interactable,
   | rendering.StaveNoteRendering
   | rendering.StaveChordRendering
   | rendering.TabNoteRendering
