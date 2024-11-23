@@ -12,3 +12,4 @@ export * from './measure';
 export * from './multirest';
 export * from './part';
 export * from './interactions';
+export * from './query';

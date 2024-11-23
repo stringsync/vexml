@@ -29,7 +29,8 @@ export class Sequence {
   }
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
-    const interactions = rendering.InteractionModel.create(score);
+    const renderings = rendering.Query.of(score).select('interactable');
+    const interactions = rendering.InteractionModel.create(renderings);
 
     const voiceEntryInteractions = interactions.filter(
       (interaction): interaction is VoiceEntryInteraction => interaction.value.type !== 'measure'

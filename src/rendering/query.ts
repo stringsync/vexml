@@ -1,6 +1,24 @@
 import * as rendering from '@/rendering';
 import * as util from '@/util';
-import { Interactable, Playable, Predicate } from './types';
+
+export type Predicate<T> = (element: T) => boolean;
+
+export type Interactable =
+  | rendering.StaveNoteRendering
+  | rendering.StaveChordRendering
+  | rendering.TabNoteRendering
+  | rendering.TabChordRendering
+  | rendering.RestRendering
+  | rendering.MeasureRendering;
+
+export type Playable = Extract<
+  Interactable,
+  | rendering.StaveNoteRendering
+  | rendering.StaveChordRendering
+  | rendering.TabNoteRendering
+  | rendering.TabChordRendering
+  | rendering.RestRendering
+>;
 
 type OnlyOne<T> = NonNullable<
   {
