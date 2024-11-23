@@ -19,6 +19,10 @@ export class Query {
     this.score = score;
   }
 
+  static of(score: rendering.ScoreRendering) {
+    return new Query(score);
+  }
+
   where(predicates: {
     system?: Predicate<rendering.SystemRendering>;
     measure?: Predicate<rendering.MeasureRendering>;
