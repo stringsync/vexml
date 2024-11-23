@@ -2,17 +2,18 @@ import * as spatial from '@/spatial';
 import * as util from '@/util';
 import { StaveNoteRendering, TabNoteRendering } from './note';
 import { StaveChordRendering, TabChordRendering } from './chord';
-import { ScoreRendering } from './score';
 import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
 
-export type InteractionModelType =
-  | InteractionModel<MeasureRendering>
-  | InteractionModel<StaveNoteRendering>
-  | InteractionModel<StaveChordRendering>
-  | InteractionModel<TabNoteRendering>
-  | InteractionModel<TabChordRendering>
-  | InteractionModel<RestRendering>;
+export type InteractableRendering =
+  | MeasureRendering
+  | StaveNoteRendering
+  | StaveChordRendering
+  | TabNoteRendering
+  | TabChordRendering
+  | RestRendering;
+
+export type InteractionModelType = InteractionModel<InteractableRendering>;
 
 /** Represents the blueprint for interacting with an object. */
 export class InteractionModel<T> {
@@ -24,8 +25,8 @@ export class InteractionModel<T> {
     this.value = value;
   }
 
-  static create(scoreRendering: ScoreRendering): InteractionModelType[] {
-    return InteractionModelFactory.fromScoreRendering(scoreRendering);
+  static create(renderings: InteractableRendering[]) {
+    return InteractionModelFactory.create(renderings);
   }
 
   /** Returns a box that contains all the handles. */
@@ -116,49 +117,25 @@ export class InteractionHandle {
 }
 
 class InteractionModelFactory {
-  static fromScoreRendering(scoreRendering: ScoreRendering): InteractionModelType[] {
-    // Calculate the renderings that can be interacted with.
-    const measures = scoreRendering.systems.flatMap((system) => system.measures);
-
-    const staves = measures
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves);
-
-    const voiceEntries = staves
-      .flatMap((stave) => stave.entry)
-      .flatMap((staveEntry) => {
-        switch (staveEntry.type) {
-          case 'chorus':
-            return staveEntry.voices;
-          default:
-            return [];
-        }
-      })
-      .flatMap((voice) => voice.entries);
-
-    // Create interaction models for each interactable rendering.
-    return [
-      ...measures.map((measure) => {
-        return InteractionModelFactory.fromMeasureRendering(measure);
-      }),
-      ...voiceEntries.flatMap((voiceEntry) => {
-        switch (voiceEntry.type) {
-          case 'stavenote':
-            return InteractionModelFactory.fromStaveNoteRendering(voiceEntry);
-          case 'stavechord':
-            return InteractionModelFactory.fromStaveChordRendering(voiceEntry);
-          case 'rest':
-            return InteractionModelFactory.fromRestRendering(voiceEntry);
-          case 'tabnote':
-            return InteractionModelFactory.fromTabNoteRendering(voiceEntry);
-          case 'tabchord':
-            return InteractionModelFactory.fromTabChordRendering(voiceEntry);
-          default:
-            return [];
-        }
-      }),
-    ];
+  static create(renderings: InteractableRendering[]): InteractionModel<InteractableRendering>[] {
+    return renderings.flatMap((rendering) => {
+      switch (rendering.type) {
+        case 'measure':
+          return InteractionModelFactory.fromMeasureRendering(rendering);
+        case 'stavenote':
+          return InteractionModelFactory.fromStaveNoteRendering(rendering);
+        case 'stavechord':
+          return InteractionModelFactory.fromStaveChordRendering(rendering);
+        case 'rest':
+          return InteractionModelFactory.fromRestRendering(rendering);
+        case 'tabnote':
+          return InteractionModelFactory.fromTabNoteRendering(rendering);
+        case 'tabchord':
+          return InteractionModelFactory.fromTabChordRendering(rendering);
+        default:
+          return [];
+      }
+    });
   }
 
   private static fromMeasureRendering(measure: MeasureRendering): InteractionModel<MeasureRendering> {
