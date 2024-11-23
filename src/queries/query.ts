@@ -2,6 +2,20 @@ import * as rendering from '@/rendering';
 import * as util from '@/util';
 import { Interactable, Playable, Predicate } from './types';
 
+type OnlyOne<T> = NonNullable<
+  {
+    [K in keyof T]: Record<K, T[K]> & Partial<Record<Exclude<keyof T, K>, never>>;
+  }[keyof T]
+>;
+
+type Predicates = {
+  system?: Predicate<rendering.SystemRendering>;
+  measure?: Predicate<rendering.MeasureRendering>;
+  part?: Predicate<rendering.PartRendering>;
+  stave?: Predicate<rendering.StaveRendering>;
+  voiceEntry?: Predicate<rendering.VoiceEntryRendering>;
+};
+
 type Selection = {
   interactable: Interactable;
   playable: Playable;
@@ -23,13 +37,7 @@ export class Query {
     return new Query(score);
   }
 
-  where(predicates: {
-    system?: Predicate<rendering.SystemRendering>;
-    measure?: Predicate<rendering.MeasureRendering>;
-    part?: Predicate<rendering.PartRendering>;
-    stave?: Predicate<rendering.StaveRendering>;
-    voiceEntry?: Predicate<rendering.VoiceEntryRendering>;
-  }) {
+  where(predicates: OnlyOne<Predicates>) {
     if (predicates.system) {
       this.systemPredicates.push(predicates.system);
     }
@@ -45,7 +53,6 @@ export class Query {
     if (predicates.voiceEntry) {
       this.voiceEntryPredicates.push(predicates.voiceEntry);
     }
-
     return this;
   }
 
