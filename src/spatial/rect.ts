@@ -78,7 +78,7 @@ export class Rect implements Shape {
   }
 
   getMaxX(): number {
-    return this.y;
+    return this.x + this.w;
   }
 
   getMinY(): number {

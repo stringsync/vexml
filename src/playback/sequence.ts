@@ -1,82 +1,81 @@
 import * as rendering from '@/rendering';
 
-type VoiceEntryInteraction = Exclude<
-  rendering.InteractionModelType,
-  rendering.InteractionModel<rendering.MeasureRendering>
->;
+type PlayableInteraction = rendering.InteractionModel<rendering.PlayableRendering>;
 
-type MeasureInteraction = rendering.InteractionModel<rendering.MeasureRendering>;
+type StaveInteraction = rendering.InteractionModel<rendering.StaveRendering>;
 
-type Interaction = {
-  voiceEntry: VoiceEntryInteraction;
-  measure: MeasureInteraction;
+type SequenceEntry = {
+  playableInteraction: PlayableInteraction;
+  system: {
+    staveInteractions: StaveInteraction[];
+    playableInteractions: PlayableInteraction[];
+  };
 };
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
   private partId: string;
-  private voiceEntryInteractions: VoiceEntryInteraction[];
-  private measureInteractions: MeasureInteraction[];
+  private playableInteractions: PlayableInteraction[];
+  private staveInteractions: StaveInteraction[];
 
   private constructor(
     partId: string,
-    voiceEntryInteractions: VoiceEntryInteraction[],
-    measureInteractions: MeasureInteraction[]
+    playableInteractions: PlayableInteraction[],
+    staveInteractions: StaveInteraction[]
   ) {
     this.partId = partId;
-    this.voiceEntryInteractions = voiceEntryInteractions;
-    this.measureInteractions = measureInteractions;
+    this.playableInteractions = playableInteractions;
+    this.staveInteractions = staveInteractions;
   }
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
-    const renderings = rendering.Query.of(score).select('interactable');
-    const interactions = rendering.InteractionModel.create(renderings);
-
-    const voiceEntryInteractions = interactions.filter(
-      (interaction): interaction is VoiceEntryInteraction => interaction.value.type !== 'measure'
-    );
-    const measureInteractions = interactions.filter(
-      (interaction): interaction is MeasureInteraction => interaction.value.type === 'measure'
-    );
-
     return score.partIds.map((partId) => {
-      return new Sequence(
-        partId,
-        voiceEntryInteractions.filter((interaction) => interaction.value.address.getPartId() === partId),
-        measureInteractions
-      );
+      const forPart = rendering.Query.forPart(partId);
+
+      const playables = rendering.Query.of(score).where(forPart).playables();
+      const playableInteractions = rendering.InteractionModel.create(playables);
+
+      const staves = rendering.Query.of(score).where(forPart).staves();
+      const staveInteractions = rendering.InteractionModel.create(staves);
+
+      return new Sequence(partId, playableInteractions, staveInteractions);
     });
   }
 
-  getInteraction(index: number): Interaction | null {
-    const voiceEntry = this.voiceEntryInteractions[index];
-    if (!voiceEntry) {
+  getEntry(index: number): SequenceEntry | null {
+    const playableInteraction = this.playableInteractions[index];
+    if (!playableInteraction) {
       return null;
     }
 
-    const measureIndex = voiceEntry.value.address.getMeasureIndex();
-    if (typeof measureIndex !== 'number') {
+    const systemIndex = playableInteraction.value.address.getSystemIndex();
+    if (typeof systemIndex !== 'number') {
       return null;
     }
 
-    const measure = this.measureInteractions[measureIndex];
-    if (!measure) {
-      return null;
-    }
+    const systemPlayableInteractions = this.playableInteractions.filter(
+      (playableInteraction) => playableInteraction.value.address.getSystemIndex() === systemIndex
+    );
 
-    return { voiceEntry, measure };
+    const systemStaveInteractions = this.staveInteractions.filter(
+      (staveInteraction) => staveInteraction.value.address.getSystemIndex() === systemIndex
+    );
+
+    return {
+      playableInteraction,
+      system: {
+        staveInteractions: systemStaveInteractions,
+        playableInteractions: systemPlayableInteractions,
+      },
+    };
   }
 
-  getVoiceEntryInteractions() {
-    return this.voiceEntryInteractions;
-  }
-
-  getMeasureInteractions() {
-    return this.measureInteractions;
+  getPlayableInteraction(index: number): PlayableInteraction {
+    return this.playableInteractions[index];
   }
 
   getLength() {
-    return this.voiceEntryInteractions.length;
+    return this.playableInteractions.length;
   }
 
   getPartId(): string {

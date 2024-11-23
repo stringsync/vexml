@@ -1,23 +1,28 @@
-import * as rendering from '@/rendering';
 import * as util from '@/util';
+import { StaveNoteRendering, TabNoteRendering } from './note';
+import { StaveChordRendering, TabChordRendering } from './chord';
+import { RestRendering } from './rest';
+import { MeasureRendering } from './measure';
+import { StaveRendering } from './stave';
+import { SystemRendering } from './system';
+import { PartRendering } from './part';
+import { VoiceEntryRendering } from './voice';
+import { ScoreRendering } from './score';
 
 export type Predicate<T> = (element: T) => boolean;
 
-export type Interactable =
-  | rendering.StaveNoteRendering
-  | rendering.StaveChordRendering
-  | rendering.TabNoteRendering
-  | rendering.TabChordRendering
-  | rendering.RestRendering
-  | rendering.MeasureRendering;
+export type InteractableRendering =
+  | StaveNoteRendering
+  | StaveChordRendering
+  | TabNoteRendering
+  | TabChordRendering
+  | RestRendering
+  | MeasureRendering
+  | StaveRendering;
 
-export type Playable = Extract<
-  Interactable,
-  | rendering.StaveNoteRendering
-  | rendering.StaveChordRendering
-  | rendering.TabNoteRendering
-  | rendering.TabChordRendering
-  | rendering.RestRendering
+export type PlayableRendering = Extract<
+  InteractableRendering,
+  StaveNoteRendering | StaveChordRendering | TabNoteRendering | TabChordRendering | RestRendering
 >;
 
 type OnlyOne<T> = NonNullable<
@@ -27,32 +32,31 @@ type OnlyOne<T> = NonNullable<
 >;
 
 type Predicates = {
-  system?: Predicate<rendering.SystemRendering>;
-  measure?: Predicate<rendering.MeasureRendering>;
-  part?: Predicate<rendering.PartRendering>;
-  stave?: Predicate<rendering.StaveRendering>;
-  voiceEntry?: Predicate<rendering.VoiceEntryRendering>;
-};
-
-type Selection = {
-  interactable: Interactable;
-  playable: Playable;
+  system?: Predicate<SystemRendering>;
+  measure?: Predicate<MeasureRendering>;
+  part?: Predicate<PartRendering>;
+  stave?: Predicate<StaveRendering>;
+  voiceEntry?: Predicate<VoiceEntryRendering>;
 };
 
 export class Query {
-  private score: rendering.ScoreRendering;
-  private systemPredicates = new Array<Predicate<rendering.SystemRendering>>();
-  private measurePredicates = new Array<Predicate<rendering.MeasureRendering>>();
-  private partPredicates = new Array<Predicate<rendering.PartRendering>>();
-  private stavePredicates = new Array<Predicate<rendering.StaveRendering>>();
-  private voiceEntryPredicates = new Array<Predicate<rendering.VoiceEntryRendering>>();
+  private score: ScoreRendering;
+  private systemPredicates = new Array<Predicate<SystemRendering>>();
+  private measurePredicates = new Array<Predicate<MeasureRendering>>();
+  private partPredicates = new Array<Predicate<PartRendering>>();
+  private stavePredicates = new Array<Predicate<StaveRendering>>();
+  private voiceEntryPredicates = new Array<Predicate<VoiceEntryRendering>>();
 
-  private constructor(score: rendering.ScoreRendering) {
+  private constructor(score: ScoreRendering) {
     this.score = score;
   }
 
-  static of(score: rendering.ScoreRendering) {
+  static of(score: ScoreRendering) {
     return new Query(score);
+  }
+
+  static forPart(partId: string): OnlyOne<Predicates> {
+    return { part: (part) => part.id === partId };
   }
 
   where(predicates: OnlyOne<Predicates>) {
@@ -74,15 +78,20 @@ export class Query {
     return this;
   }
 
-  select<T extends keyof Selection>(selection: T): Array<Selection[T]> {
-    switch (selection) {
-      case 'interactable':
-        return this.getInteractables() as Array<Selection[T]>;
-      case 'playable':
-        return this.getPlayables() as Array<Selection[T]>;
-      default:
-        throw new Error(`invalid query selection: '${selection}'`);
-    }
+  measures(): Array<MeasureRendering> {
+    return this.getMeasures();
+  }
+
+  staves(): Array<StaveRendering> {
+    return this.getStaves();
+  }
+
+  interactables(): Array<InteractableRendering> {
+    return this.getInteractables();
+  }
+
+  playables(): Array<PlayableRendering> {
+    return this.getPlayables();
   }
 
   @util.memoize()
@@ -93,13 +102,18 @@ export class Query {
   }
 
   @util.memoize()
-  private getVoiceEntries() {
+  private getStaves() {
     return this.getMeasures()
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
       .filter((part) => this.partPredicates.every((predicate) => predicate(part)))
       .flatMap((part) => part.staves)
-      .filter((stave) => this.stavePredicates.every((predicate) => predicate(stave)))
+      .filter((stave) => this.stavePredicates.every((predicate) => predicate(stave)));
+  }
+
+  @util.memoize()
+  private getVoiceEntries() {
+    return this.getStaves()
       .flatMap((stave) => stave.entry)
       .flatMap((staveEntry) => {
         switch (staveEntry.type) {
@@ -114,20 +128,21 @@ export class Query {
   }
 
   private getInteractables() {
-    return [...this.getVoiceEntries(), ...this.getMeasures()].filter(
-      (element): element is Interactable =>
+    return [...this.getVoiceEntries(), ...this.getStaves(), ...this.getMeasures()].filter(
+      (element): element is InteractableRendering =>
         element.type === 'stavenote' ||
         element.type === 'stavechord' ||
         element.type === 'tabnote' ||
         element.type === 'tabchord' ||
         element.type === 'rest' ||
-        element.type === 'measure'
+        element.type === 'measure' ||
+        element.type === 'stave'
     );
   }
 
   private getPlayables() {
     return this.getInteractables().filter(
-      (element): element is Playable =>
+      (element): element is PlayableRendering =>
         element.type === 'stavenote' ||
         element.type === 'stavechord' ||
         element.type === 'tabnote' ||

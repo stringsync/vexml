@@ -27,8 +27,8 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   static fromScoreRendering(score: ScoreRendering): Locator {
     const targets = new Array<InteractionModelType>();
 
-    const renderings = Query.of(score).select('interactable');
-    const models = InteractionModel.create(renderings);
+    const interactables = Query.of(score).interactables();
+    const models = InteractionModel.create(interactables);
 
     // First attempt to insert all the shapes into the tree.
     const tree = new spatial.QuadTree<InteractionModelType>(score.boundary, QUAD_TREE_THRESHOLD);
