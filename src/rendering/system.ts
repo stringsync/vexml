@@ -9,6 +9,7 @@ import { MeasureFragmentWidth } from './measurefragment';
 export type SystemRendering = {
   type: 'system';
   address: Address<'system'>;
+  index: number;
   measures: MeasureRendering[];
 };
 
@@ -87,6 +88,7 @@ export class System {
 
     return {
       type: 'system',
+      index: this.index,
       address: opts.address,
       measures: measureRenderings,
     };
