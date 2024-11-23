@@ -4,14 +4,8 @@ import { StaveNoteRendering, TabNoteRendering } from './note';
 import { StaveChordRendering, TabChordRendering } from './chord';
 import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
-
-export type InteractableRendering =
-  | MeasureRendering
-  | StaveNoteRendering
-  | StaveChordRendering
-  | TabNoteRendering
-  | TabChordRendering
-  | RestRendering;
+import { InteractableRendering } from './query';
+import { StaveRendering } from './stave';
 
 export type InteractionModelType = InteractionModel<InteractableRendering>;
 
@@ -25,8 +19,8 @@ export class InteractionModel<T> {
     this.value = value;
   }
 
-  static create(renderings: InteractableRendering[]) {
-    return InteractionModelFactory.create(renderings);
+  static create<T extends InteractableRendering>(renderings: T[]): InteractionModel<T>[] {
+    return InteractionModelFactory.create(renderings) as InteractionModel<T>[];
   }
 
   /** Returns a box that contains all the handles. */
@@ -117,8 +111,8 @@ export class InteractionHandle {
 }
 
 class InteractionModelFactory {
-  static create(renderings: InteractableRendering[]): InteractionModel<InteractableRendering>[] {
-    return renderings.flatMap((rendering) => {
+  static create<T extends InteractableRendering>(renderings: T[]) {
+    return renderings.map((rendering) => {
       switch (rendering.type) {
         case 'measure':
           return InteractionModelFactory.fromMeasureRendering(rendering);
@@ -132,8 +126,10 @@ class InteractionModelFactory {
           return InteractionModelFactory.fromTabNoteRendering(rendering);
         case 'tabchord':
           return InteractionModelFactory.fromTabChordRendering(rendering);
+        case 'stave':
+          return InteractionModelFactory.fromStaveRendering(rendering);
         default:
-          return [];
+          throw new Error(`unsupported rendering: ${rendering}`);
       }
     });
   }
@@ -219,5 +215,16 @@ class InteractionModelFactory {
     }
 
     return new InteractionModel(handles, tabChord);
+  }
+
+  private static fromStaveRendering(stave: StaveRendering): InteractionModel<StaveRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfStave = stave.vexflow.stave;
+    const vfBoundingBox = vfStave.getBoundingBox();
+    const staveRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    handles.push(new InteractionHandle(staveRect, staveRect.center()));
+
+    return new InteractionModel(handles, stave);
   }
 }

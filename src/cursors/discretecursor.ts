@@ -3,7 +3,6 @@ import * as events from '@/events';
 import * as util from '@/util';
 import * as spatial from '@/spatial';
 
-const CURSOR_HEIGHT_PADDING_PX = 12;
 const CURSOR_WIDTH_PX = 1.5;
 
 type EventMap = {
@@ -14,11 +13,6 @@ type CursorState = {
   index: number;
   length: number;
   rect: spatial.Rect | null;
-};
-
-type CursorVerticalBoundary = {
-  minY: number;
-  maxY: number;
 };
 
 export class DiscreteCursor {
@@ -35,8 +29,8 @@ export class DiscreteCursor {
   }
 
   getCurrent(): CursorState {
-    const interaction = this.sequence.getInteraction(this.index);
-    if (!interaction) {
+    const entry = this.sequence.getEntry(this.index);
+    if (!entry) {
       return {
         index: this.index,
         length: this.sequence.getLength(),
@@ -44,8 +38,20 @@ export class DiscreteCursor {
       };
     }
 
-    const systemIndex = interaction.voiceEntry.value.address.getSystemIndex();
-    if (typeof systemIndex !== 'number') {
+    const systemBoundingBoxes = [
+      ...entry.system.staveInteractions.map((staveInteraction) => staveInteraction.getBoundingBox()),
+      ...entry.system.playableInteractions.map((playableInteraction) => playableInteraction.getBoundingBox()),
+    ];
+    const minY = util.min(
+      systemBoundingBoxes.map((box) => box.getMinY()),
+      Number.POSITIVE_INFINITY
+    );
+    const maxY = util.max(
+      systemBoundingBoxes.map((box) => box.getMaxY()),
+      Number.NEGATIVE_INFINITY
+    );
+
+    if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
       return {
         index: this.index,
         length: this.sequence.getLength(),
@@ -53,23 +59,14 @@ export class DiscreteCursor {
       };
     }
 
-    const cursorVerticalBoundary = this.getCursorVerticalBoundary(systemIndex);
-    if (!cursorVerticalBoundary) {
-      return {
-        index: this.index,
-        length: this.sequence.getLength(),
-        rect: null,
-      };
-    }
-
-    const box = interaction.voiceEntry.getBoundingBox();
-    const leftX = box.getMinX();
-    const rightX = box.getMaxX();
+    const playableBoundingBox = entry.playableInteraction.getBoundingBox();
+    const leftX = playableBoundingBox.getMinX();
+    const rightX = playableBoundingBox.getMaxX();
 
     const x = (leftX + rightX) / 2;
-    const y = cursorVerticalBoundary.minY;
+    const y = minY;
     const w = CURSOR_WIDTH_PX;
-    const h = cursorVerticalBoundary.maxY - cursorVerticalBoundary.minY;
+    const h = maxY - minY;
 
     return {
       index: this.index,
@@ -108,48 +105,6 @@ export class DiscreteCursor {
     for (const id of ids) {
       this.topic.unsubscribe(id);
     }
-  }
-
-  /** Returns the cursor vertical boundaries for each system index. */
-  @util.memoize()
-  private getCursorVerticalBoundaries(): CursorVerticalBoundary[] {
-    const systemCount = util.max([
-      0,
-      ...this.sequence
-        .getVoiceEntryInteractions()
-        .map((interaction) => interaction.value.address.getSystemIndex() ?? 0),
-    ]);
-
-    const bounds = new Array<CursorVerticalBoundary>(systemCount);
-
-    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
-      const interactions = [
-        ...this.sequence.getVoiceEntryInteractions(),
-        ...this.sequence.getMeasureInteractions(),
-      ].filter((interaction) => interaction.value.address.getSystemIndex() === systemIndex);
-
-      if (interactions.length === 0) {
-        bounds[systemIndex] = { minY: 0, maxY: 0 };
-        continue;
-      }
-
-      const minY = util.min(
-        interactions.map((interaction) => interaction.getBoundingBox().getMinY()),
-        Number.POSITIVE_INFINITY
-      );
-      const maxY = util.max(
-        interactions.map((interaction) => interaction.getBoundingBox().getMaxY()),
-        Number.NEGATIVE_INFINITY
-      );
-
-      bounds[systemIndex] = { minY: minY - CURSOR_HEIGHT_PADDING_PX, maxY: maxY + CURSOR_HEIGHT_PADDING_PX };
-    }
-
-    return bounds;
-  }
-
-  private getCursorVerticalBoundary(systemIndex: number): CursorVerticalBoundary | null {
-    return this.getCursorVerticalBoundaries().at(systemIndex) ?? null;
   }
 
   private update(index: number) {
