@@ -14,6 +14,7 @@ import { Spanners } from './spanners';
 /** The result of rendering a chorus. */
 export type ChorusRendering = {
   type: 'chorus';
+  address: Address<'chorus'>;
   voices: VoiceRendering[];
 };
 
@@ -76,6 +77,7 @@ export class Chorus {
 
     return {
       type: 'chorus',
+      address: opts.address,
       voices: voiceRenderings,
     };
   }

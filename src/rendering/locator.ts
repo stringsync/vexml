@@ -3,6 +3,7 @@ import * as vexflow from 'vexflow';
 import * as drawables from '@/drawables';
 import { ScoreRendering } from './score';
 import { InteractionModel, InteractionModelType } from './interactions';
+import { Query } from './query';
 
 /**
  * How many entries a quad tree node should hold before subdividing.
@@ -26,7 +27,8 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   static fromScoreRendering(score: ScoreRendering): Locator {
     const targets = new Array<InteractionModelType>();
 
-    const models = InteractionModel.create(score);
+    const interactables = Query.of(score).interactables();
+    const models = InteractionModel.create(interactables);
 
     // First attempt to insert all the shapes into the tree.
     const tree = new spatial.QuadTree<InteractionModelType>(score.boundary, QUAD_TREE_THRESHOLD);

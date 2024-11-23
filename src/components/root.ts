@@ -1,3 +1,5 @@
+import { Overlay } from './overlay';
+
 /**
  * The root component that houses the vexflow renderings.
  *
@@ -5,9 +7,11 @@
  */
 export class Root {
   private element: HTMLDivElement;
+  private overlay: Overlay;
 
-  private constructor(element: HTMLDivElement) {
+  private constructor(element: HTMLDivElement, overlay: Overlay) {
     this.element = element;
+    this.overlay = overlay;
   }
 
   static svg(parent: HTMLElement) {
@@ -24,15 +28,7 @@ export class Root {
     element.classList.add('vexml-root');
     element.style.position = 'relative';
 
-    const overlay = document.createElement('div');
-    overlay.classList.add('vexml-overlay');
-    overlay.style.position = 'absolute';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-
-    element.append(overlay);
+    const overlay = Overlay.render(element);
 
     switch (type) {
       case 'svg':
@@ -51,12 +47,12 @@ export class Root {
 
     parent.append(element);
 
-    return new Root(element);
+    return new Root(element, overlay);
   }
 
-  /** Returns the element that overlays the rendering. */
-  getOverlayElement(): HTMLDivElement {
-    return this.element.querySelector('.vexml-overlay') as HTMLDivElement;
+  /** Returns the Overlay component. */
+  getOverlay(): Overlay {
+    return this.overlay;
   }
 
   /** Returns the element that is intended to be inputted to vexflow. */

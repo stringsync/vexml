@@ -1,41 +1,84 @@
 import * as rendering from '@/rendering';
-import { Duration } from './duration';
 
-export type Step = {
-  start: Duration;
-  end: Duration;
-  repeat: number;
-  voiceEntry: rendering.VoiceEntryRendering;
+type PlayableInteraction = rendering.InteractionModel<rendering.PlayableRendering>;
+
+type StaveInteraction = rendering.InteractionModel<rendering.StaveRendering>;
+
+type SequenceEntry = {
+  playableInteraction: PlayableInteraction;
+  system: {
+    staveInteractions: StaveInteraction[];
+    playableInteractions: PlayableInteraction[];
+  };
 };
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
-  private steps: Step[];
+  private partId: string;
+  private playableInteractions: PlayableInteraction[];
+  private staveInteractions: StaveInteraction[];
 
-  private constructor(steps: Step[]) {
-    this.steps = steps;
+  private constructor(
+    partId: string,
+    playableInteractions: PlayableInteraction[],
+    staveInteractions: StaveInteraction[]
+  ) {
+    this.partId = partId;
+    this.playableInteractions = playableInteractions;
+    this.staveInteractions = staveInteractions;
   }
 
-  static create(score: rendering.ScoreRendering): Sequence {
-    const steps = new Array<Step>();
+  static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
+    return score.partIds.map((partId) => {
+      const forPart = rendering.Query.forPart(partId);
 
-    score.systems
-      .flatMap((system) => system.measures)
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.parts)
-      .flatMap((part) => part.staves)
-      .flatMap((stave) => stave.entry)
-      .flatMap((entry) => (entry.type === 'chorus' ? entry.voices : []))
-      .flatMap((voice) => voice.entries);
+      const playables = rendering.Query.of(score).where(forPart).playables();
+      const playableInteractions = rendering.InteractionModel.create(playables);
 
-    return new Sequence(steps);
+      const staves = rendering.Query.of(score).where(forPart).staves();
+      const staveInteractions = rendering.InteractionModel.create(staves);
+
+      return new Sequence(partId, playableInteractions, staveInteractions);
+    });
   }
 
-  get length() {
-    return this.steps.length;
+  getEntry(index: number): SequenceEntry | null {
+    const playableInteraction = this.playableInteractions[index];
+    if (!playableInteraction) {
+      return null;
+    }
+
+    const systemIndex = playableInteraction.value.address.getSystemIndex();
+    if (typeof systemIndex !== 'number') {
+      return null;
+    }
+
+    const systemPlayableInteractions = this.playableInteractions.filter(
+      (playableInteraction) => playableInteraction.value.address.getSystemIndex() === systemIndex
+    );
+
+    const systemStaveInteractions = this.staveInteractions.filter(
+      (staveInteraction) => staveInteraction.value.address.getSystemIndex() === systemIndex
+    );
+
+    return {
+      playableInteraction,
+      system: {
+        staveInteractions: systemStaveInteractions,
+        playableInteractions: systemPlayableInteractions,
+      },
+    };
   }
 
-  at(index: number): Step | null {
-    return this.steps[index] ?? null;
+  getPlayableInteraction(index: number): PlayableInteraction {
+    return this.playableInteractions[index];
+  }
+
+  getLength() {
+    return this.playableInteractions.length;
+  }
+
+  getPartId(): string {
+    return this.partId;
   }
 }

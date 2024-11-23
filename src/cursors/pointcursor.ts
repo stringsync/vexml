@@ -12,12 +12,16 @@ export type CursorGetResult<T> = {
   closestTarget: T | null;
 };
 
+type Host = {
+  getBoundingClientRect(): DOMRect;
+};
+
 /** A object that tracks a spatial cursor, and returns the targets under it. */
 export class PointCursor<T> {
-  private host: HTMLElement;
+  private host: Host;
   private locator: spatial.PointLocator<T>;
 
-  constructor(host: HTMLElement, locator: spatial.PointLocator<T>) {
+  constructor(host: Host, locator: spatial.PointLocator<T>) {
     this.host = host;
     this.locator = locator;
   }

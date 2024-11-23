@@ -18,6 +18,15 @@ export class Rect implements Shape {
     return new Rect(rectLike.x, rectLike.y, rectLike.w, rectLike.h);
   }
 
+  static fromShape(shape: Shape) {
+    return new Rect(
+      shape.getMinX(),
+      shape.getMinY(),
+      shape.getMaxX() - shape.getMinX(),
+      shape.getMaxY() - shape.getMinY()
+    );
+  }
+
   static empty() {
     return new Rect(0, 0, 0, 0);
   }
@@ -62,5 +71,23 @@ export class Rect implements Shape {
 
   contains(point: Point): boolean {
     return point.x >= this.x && point.x <= this.x + this.w && point.y >= this.y && point.y <= this.y + this.h;
+  }
+
+  getMinX(): number {
+    return this.x;
+  }
+
+  getMaxX(): number {
+    return this.x + this.w;
+  }
+
+  getMinY(): number {
+    // NOTE: This assumes that the rectangle is not rotated.
+    return this.y;
+  }
+
+  getMaxY(): number {
+    // NOTE: This assumes that the rectangle is not rotated.
+    return this.y + this.h;
   }
 }
