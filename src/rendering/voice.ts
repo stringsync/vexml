@@ -209,6 +209,11 @@ export class Voice {
     }
   }
 
+  /** Returns the voice ID. */
+  getId(): string {
+    return this.id;
+  }
+
   /** Renders the voice. */
   render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
     const address = opts.address;
