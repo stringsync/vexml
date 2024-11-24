@@ -27,7 +27,7 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   static fromScoreRendering(score: ScoreRendering): Locator {
     const targets = new Array<InteractionModelType>();
 
-    const interactables = Query.of(score).interactables();
+    const interactables = Query.of(score).getInteractables();
     const models = InteractionModel.create(interactables);
 
     // First attempt to insert all the shapes into the tree.

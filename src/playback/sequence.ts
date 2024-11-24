@@ -1,4 +1,5 @@
 import * as rendering from '@/rendering';
+import * as util from '@/util';
 
 type PlayableInteraction = rendering.InteractionModel<rendering.PlayableRendering>;
 
@@ -6,6 +7,10 @@ type StaveInteraction = rendering.InteractionModel<rendering.StaveRendering>;
 
 type SequenceEntry = {
   playableInteraction: PlayableInteraction;
+  tickRange: util.NumberRange;
+  voices: {
+    [voiceId: string]: PlayableInteraction;
+  };
   system: {
     staveInteractions: StaveInteraction[];
     playableInteractions: PlayableInteraction[];
@@ -15,67 +20,45 @@ type SequenceEntry = {
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
   private partId: string;
-  private playableInteractions: PlayableInteraction[];
-  private staveInteractions: StaveInteraction[];
+  private entries: SequenceEntry[];
 
-  private constructor(
-    partId: string,
-    playableInteractions: PlayableInteraction[],
-    staveInteractions: StaveInteraction[]
-  ) {
+  private constructor(partId: string, entries: SequenceEntry[]) {
     this.partId = partId;
-    this.playableInteractions = playableInteractions;
-    this.staveInteractions = staveInteractions;
+    this.entries = entries;
   }
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
     return score.partIds.map((partId) => {
-      const forPart = rendering.Query.forPart(partId);
+      // Group playable renderings by voice ID, preserving the order that the playables appear in.
+      const playables = rendering.Query.of(score).where(rendering.Query.forPart(partId)).getPlayables();
+      const voiceIds = new Array<string>();
+      const playablesByVoiceId: { [voiceId: string]: rendering.PlayableRendering[] } = {};
+      for (const playable of playables) {
+        const voiceId = playable.address.getVoiceId();
+        if (typeof voiceId !== 'string') {
+          throw new Error(`Expected voice ID to be a string, got: ${voiceId}`);
+        }
 
-      const playables = rendering.Query.of(score).where(forPart).playables();
-      const playableInteractions = rendering.InteractionModel.create(playables);
+        if (!voiceIds.includes(voiceId)) {
+          voiceIds.push(voiceId);
+        }
 
-      const staves = rendering.Query.of(score).where(forPart).staves();
-      const staveInteractions = rendering.InteractionModel.create(staves);
+        playablesByVoiceId[voiceId] ??= [];
+        playablesByVoiceId[voiceId].push(playable);
+      }
 
-      return new Sequence(partId, playableInteractions, staveInteractions);
+      // TODO: Go through each voice and create sequence entries.
+
+      return new Sequence(partId, []);
     });
   }
 
   getEntry(index: number): SequenceEntry | null {
-    const playableInteraction = this.playableInteractions[index];
-    if (!playableInteraction) {
-      return null;
-    }
-
-    const systemIndex = playableInteraction.value.address.getSystemIndex();
-    if (typeof systemIndex !== 'number') {
-      return null;
-    }
-
-    const systemPlayableInteractions = this.playableInteractions.filter(
-      (playableInteraction) => playableInteraction.value.address.getSystemIndex() === systemIndex
-    );
-
-    const systemStaveInteractions = this.staveInteractions.filter(
-      (staveInteraction) => staveInteraction.value.address.getSystemIndex() === systemIndex
-    );
-
-    return {
-      playableInteraction,
-      system: {
-        staveInteractions: systemStaveInteractions,
-        playableInteractions: systemPlayableInteractions,
-      },
-    };
-  }
-
-  getPlayableInteraction(index: number): PlayableInteraction {
-    return this.playableInteractions[index];
+    return this.entries[index] ?? null;
   }
 
   getLength() {
-    return this.playableInteractions.length;
+    return this.entries.length;
   }
 
   getPartId(): string {

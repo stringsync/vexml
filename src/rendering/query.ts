@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import * as util from '@/util';
 import { StaveNoteRendering, TabNoteRendering } from './note';
 import { StaveChordRendering, TabChordRendering } from './chord';
@@ -59,6 +60,24 @@ export class Query {
     return { part: (part) => part.id === partId };
   }
 
+  static inSystem(systemIndex: number): OnlyOne<Predicates> {
+    return { system: (system) => system.index === systemIndex };
+  }
+
+  static isPlayable(value: any): value is PlayableRendering {
+    return (
+      value.type === 'stavenote' ||
+      value.type === 'stavechord' ||
+      value.type === 'tabnote' ||
+      value.type === 'tabchord' ||
+      value.type === 'rest'
+    );
+  }
+
+  static isInteractable(value: any): value is InteractableRendering {
+    return Query.isPlayable(value) || value.type === 'measure' || value.type === 'stave';
+  }
+
   where(predicates: OnlyOne<Predicates>) {
     if (predicates.system) {
       this.systemPredicates.push(predicates.system);
@@ -78,31 +97,15 @@ export class Query {
     return this;
   }
 
-  measures(): Array<MeasureRendering> {
-    return this.getMeasures();
-  }
-
-  staves(): Array<StaveRendering> {
-    return this.getStaves();
-  }
-
-  interactables(): Array<InteractableRendering> {
-    return this.getInteractables();
-  }
-
-  playables(): Array<PlayableRendering> {
-    return this.getPlayables();
-  }
-
   @util.memoize()
-  private getMeasures() {
+  getMeasures() {
     return this.score.systems
       .flatMap((system) => system.measures)
       .filter((measure) => this.measurePredicates.every((predicate) => predicate(measure)));
   }
 
   @util.memoize()
-  private getStaves() {
+  getStaves() {
     return this.getMeasures()
       .flatMap((measure) => measure.fragments)
       .flatMap((fragment) => fragment.parts)
@@ -112,7 +115,7 @@ export class Query {
   }
 
   @util.memoize()
-  private getVoiceEntries() {
+  getVoices() {
     return this.getStaves()
       .flatMap((stave) => stave.entry)
       .flatMap((staveEntry) => {
@@ -122,32 +125,21 @@ export class Query {
           default:
             return [];
         }
-      })
+      });
+  }
+
+  @util.memoize()
+  getVoiceEntries() {
+    return this.getVoices()
       .flatMap((voice) => voice.entries)
       .filter((entry) => this.voiceEntryPredicates.every((predicate) => predicate(entry)));
   }
 
-  private getInteractables() {
-    return [...this.getVoiceEntries(), ...this.getStaves(), ...this.getMeasures()].filter(
-      (element): element is InteractableRendering =>
-        element.type === 'stavenote' ||
-        element.type === 'stavechord' ||
-        element.type === 'tabnote' ||
-        element.type === 'tabchord' ||
-        element.type === 'rest' ||
-        element.type === 'measure' ||
-        element.type === 'stave'
-    );
+  getInteractables() {
+    return [...this.getVoiceEntries(), ...this.getStaves(), ...this.getMeasures()].filter(Query.isInteractable);
   }
 
-  private getPlayables() {
-    return this.getInteractables().filter(
-      (element): element is PlayableRendering =>
-        element.type === 'stavenote' ||
-        element.type === 'stavechord' ||
-        element.type === 'tabnote' ||
-        element.type === 'tabchord' ||
-        element.type === 'rest'
-    );
+  getPlayables() {
+    return this.getInteractables().filter(Query.isPlayable);
   }
 }
