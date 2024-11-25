@@ -2,7 +2,7 @@ import * as spatial from '@/spatial';
 import * as vexflow from 'vexflow';
 import * as drawables from '@/drawables';
 import { ScoreRendering } from './score';
-import { InteractionModel, InteractionModelType } from './interactions';
+import { INTERACTABLE_RENDERING_TYPES, InteractionModel, InteractionModelType } from './interactions';
 import { Query } from './query';
 
 /**
@@ -27,7 +27,7 @@ export class Locator implements spatial.PointLocator<InteractionModelType> {
   static fromScoreRendering(score: ScoreRendering): Locator {
     const targets = new Array<InteractionModelType>();
 
-    const interactables = Query.of(score).getInteractables();
+    const interactables = Query.of(score).select(...INTERACTABLE_RENDERING_TYPES);
     const models = InteractionModel.create(interactables);
 
     // First attempt to insert all the shapes into the tree.

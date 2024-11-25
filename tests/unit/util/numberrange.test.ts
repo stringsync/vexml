@@ -1,62 +1,42 @@
 import { NumberRange } from '@/util/numberrange';
 
 describe(NumberRange, () => {
-  it('should create a valid range with inclusive bounds', () => {
-    const range = NumberRange.fromInclusive(1).toInclusive(5);
-    expect(range.getLeft()).toBe(1);
-    expect(range.getRight()).toBe(5);
-  });
+  describe(NumberRange, () => {
+    test('should create a valid NumberRange', () => {
+      const range = new NumberRange(1, 5);
+      expect(range.getLeft()).toBe(1);
+      expect(range.getRight()).toBe(5);
+    });
 
-  it('should create a valid range with exclusive bounds', () => {
-    const range = NumberRange.fromExclusive(1).toExclusive(5);
-    expect(range.getLeft()).toBe(1);
-    expect(range.getRight()).toBe(5);
-  });
+    test('should throw an error for invalid range', () => {
+      expect(() => new NumberRange(5, 1)).toThrow(
+        'Invalid range: left bound must be less than or equal to right bound.'
+      );
+    });
 
-  it('should throw an error if left bound is greater than right bound', () => {
-    expect(() => {
-      NumberRange.fromInclusive(5).toInclusive(1);
-    }).toThrow('Invalid range: left bound must be less than or equal to right bound.');
-  });
+    test('should include a value within the range', () => {
+      const range = new NumberRange(1, 5);
+      expect(range.includes(3)).toBe(true);
+      expect(range.includes(1)).toBe(true);
+      expect(range.includes(5)).toBe(true);
+      expect(range.includes(0)).toBe(false);
+      expect(range.includes(6)).toBe(false);
+    });
 
-  it('should check if a value is within the range', () => {
-    const range = NumberRange.fromInclusive(1).toInclusive(5);
-    expect(range.contains(3)).toBeTrue();
-    expect(range.contains(0)).toBeFalse();
-  });
+    test('should contain another range within itself', () => {
+      const range1 = new NumberRange(1, 5);
+      const range2 = new NumberRange(2, 4);
+      const range3 = new NumberRange(0, 6);
+      expect(range1.contains(range2)).toBe(true);
+      expect(range1.contains(range3)).toBe(false);
+    });
 
-  it('should check if two ranges overlap', () => {
-    const range1 = NumberRange.fromInclusive(1).toInclusive(5);
-    const range2 = NumberRange.fromInclusive(4).toInclusive(6);
-    const range3 = NumberRange.fromInclusive(6).toInclusive(8);
-
-    expect(range1.overlaps(range2)).toBeTrue();
-    expect(range1.overlaps(range3)).toBeFalse();
-  });
-
-  it('should correctly handle inclusive left and exclusive right bounds', () => {
-    const range = NumberRange.fromInclusive(1).toExclusive(5);
-    expect(range.contains(1)).toBeTrue();
-    expect(range.contains(5)).toBeFalse();
-  });
-
-  it('should correctly handle exclusive left and inclusive right bounds', () => {
-    const range = NumberRange.fromExclusive(1).toInclusive(5);
-    expect(range.contains(1)).toBeFalse();
-    expect(range.contains(5)).toBeTrue();
-  });
-
-  it('should correctly handle exclusive bounds', () => {
-    const range = NumberRange.fromExclusive(1).toExclusive(5);
-    expect(range.contains(1)).toBeFalse();
-    expect(range.contains(5)).toBeFalse();
-    expect(range.contains(3)).toBeTrue();
-  });
-
-  it('should correctly handle inclusive bounds', () => {
-    const range = NumberRange.fromInclusive(1).toInclusive(5);
-    expect(range.contains(1)).toBeTrue();
-    expect(range.contains(5)).toBeTrue();
-    expect(range.contains(3)).toBeTrue();
+    test('should overlap with another range', () => {
+      const range1 = new NumberRange(1, 5);
+      const range2 = new NumberRange(4, 6);
+      const range3 = new NumberRange(6, 8);
+      expect(range1.overlaps(range2)).toBe(true);
+      expect(range1.overlaps(range3)).toBe(false);
+    });
   });
 });
