@@ -1,9 +1,8 @@
-import * as playback from '@/playback';
 import * as events from '@/events';
-import * as util from '@/util';
+import * as playback from '@/playback';
 import * as spatial from '@/spatial';
 
-const CURSOR_WIDTH_PX = 1.5;
+// const CURSOR_WIDTH_PX = 1.5;
 
 type EventMap = {
   change: CursorState;
@@ -38,20 +37,7 @@ export class DiscreteCursor {
       };
     }
 
-    const systemBoundingBoxes = [
-      ...entry.system.staveInteractions.map((staveInteraction) => staveInteraction.getBoundingBox()),
-      ...entry.system.playableInteractions.map((playableInteraction) => playableInteraction.getBoundingBox()),
-    ];
-    const minY = util.min(
-      systemBoundingBoxes.map((box) => box.getMinY()),
-      Number.POSITIVE_INFINITY
-    );
-    const maxY = util.max(
-      systemBoundingBoxes.map((box) => box.getMaxY()),
-      Number.NEGATIVE_INFINITY
-    );
-
-    if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+    if (entry.playables.length === 0) {
       return {
         index: this.index,
         length: this.sequence.getLength(),
@@ -59,14 +45,41 @@ export class DiscreteCursor {
       };
     }
 
-    const playableBoundingBox = entry.playableInteraction.getBoundingBox();
-    const leftX = playableBoundingBox.getMinX();
-    const rightX = playableBoundingBox.getMaxX();
+    // TODO: Fix this to adhere to the new model.
+    // const systemBoundingBoxes: spatial.Rect[] = [
+    //   ...entry.system.staveInteractions.map((staveInteraction) => staveInteraction.getBoundingBox()),
+    //   ...entry.system.playableInteractions.map((playableInteraction) => playableInteraction.getBoundingBox()),
+    // ];
+    // const minY = util.min(
+    //   systemBoundingBoxes.map((box) => box.getMinY()),
+    //   Number.POSITIVE_INFINITY
+    // );
+    // const maxY = util.max(
+    //   systemBoundingBoxes.map((box) => box.getMaxY()),
+    //   Number.NEGATIVE_INFINITY
+    // );
 
-    const x = (leftX + rightX) / 2;
-    const y = minY;
-    const w = CURSOR_WIDTH_PX;
-    const h = maxY - minY;
+    // if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+    //   return {
+    //     index: this.index,
+    //     length: this.sequence.getLength(),
+    //     rect: null,
+    //   };
+    // }
+
+    // const playableBoundingBox = entry.playables[0].getBoundingBox();
+    // const leftX = playableBoundingBox.getMinX();
+    // const rightX = playableBoundingBox.getMaxX();
+
+    // const x = (leftX + rightX) / 2;
+    // const y = minY;
+    // const w = CURSOR_WIDTH_PX;
+    // const h = maxY - minY;
+
+    const x = 0;
+    const y = 0;
+    const w = 0;
+    const h = 0;
 
     return {
       index: this.index,

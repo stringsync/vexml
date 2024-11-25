@@ -1,11 +1,27 @@
 import * as spatial from '@/spatial';
 import * as util from '@/util';
-import { StaveNoteRendering, TabNoteRendering } from './note';
 import { StaveChordRendering, TabChordRendering } from './chord';
-import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
-import { InteractableRendering } from './query';
+import { StaveNoteRendering, TabNoteRendering } from './note';
+import { SelectableRenderingWithType } from './query';
+import { RestRendering } from './rest';
 import { StaveRendering } from './stave';
+
+export const INTERACTABLE_RENDERING_TYPES = [
+  'measure',
+  'stavenote',
+  'stavechord',
+  'gracenote',
+  'gracechord',
+  'tabnote',
+  'tabchord',
+  'tabgracenote',
+  'tabgracechord',
+  'rest',
+  'stave',
+] as const;
+
+export type InteractableRendering = SelectableRenderingWithType<(typeof INTERACTABLE_RENDERING_TYPES)[number]>;
 
 export type InteractionModelType = InteractionModel<InteractableRendering>;
 
@@ -128,8 +144,6 @@ class InteractionModelFactory {
           return InteractionModelFactory.fromTabChordRendering(rendering);
         case 'stave':
           return InteractionModelFactory.fromStaveRendering(rendering);
-        default:
-          throw new Error(`unsupported rendering: ${rendering}`);
       }
     });
   }

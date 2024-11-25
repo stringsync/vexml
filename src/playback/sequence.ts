@@ -1,21 +1,33 @@
 import * as rendering from '@/rendering';
 import * as util from '@/util';
 
-type PlayableInteraction = rendering.InteractionModel<rendering.PlayableRendering>;
+const PLAYABLE_RENDERING_TYPES = [
+  'stavenote',
+  'stavechord',
+  'gracenote',
+  'gracechord',
+  'tabnote',
+  'tabchord',
+  'tabgracenote',
+  'tabgracechord',
+  'rest',
+  'ghostnote',
+] as const;
 
-type StaveInteraction = rendering.InteractionModel<rendering.StaveRendering>;
+type PlayableRendering = rendering.SelectableRenderingWithType<(typeof PLAYABLE_RENDERING_TYPES)[number]>;
+
+type SequenceEvent = {
+  type: SequenceEventType;
+  tick: number;
+  playable: PlayableRendering;
+};
 
 type SequenceEntry = {
-  playableInteraction: PlayableInteraction;
+  playables: PlayableRendering[];
   tickRange: util.NumberRange;
-  voices: {
-    [voiceId: string]: PlayableInteraction;
-  };
-  system: {
-    staveInteractions: StaveInteraction[];
-    playableInteractions: PlayableInteraction[];
-  };
 };
+
+type SequenceEventType = 'start' | 'stop';
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
@@ -29,27 +41,61 @@ export class Sequence {
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
     return score.partIds.map((partId) => {
-      // Group playable renderings by voice ID, preserving the order that the playables appear in.
-      const playables = rendering.Query.of(score).where(rendering.Query.forPart(partId)).getPlayables();
-      const voiceIds = new Array<string>();
-      const playablesByVoiceId: { [voiceId: string]: rendering.PlayableRendering[] } = {};
-      for (const playable of playables) {
-        const voiceId = playable.address.getVoiceId();
-        if (typeof voiceId !== 'string') {
-          throw new Error(`Expected voice ID to be a string, got: ${voiceId}`);
+      // Collect the voice IDs in the part.
+      const voiceIds = rendering.Query.of(score)
+        .where(rendering.filters.forPart(partId))
+        .select('voice')
+        .map((voice) => voice.id);
+
+      // Materialize sequence events.
+      const events = new Array<SequenceEvent>();
+      for (const voiceId of voiceIds) {
+        const playables = rendering.Query.of(score)
+          .where(rendering.filters.forPart(partId))
+          .where(rendering.filters.forVoice(voiceId))
+          .select(...PLAYABLE_RENDERING_TYPES);
+
+        let ticks = 0;
+        for (const playable of playables) {
+          const startTicks = ticks;
+          const stopTicks = ticks + getTicks(playable);
+
+          events.push({ type: 'start', tick: startTicks, playable });
+          events.push({ type: 'stop', tick: stopTicks, playable });
+
+          ticks = stopTicks;
+        }
+      }
+      events.sort((a, b) => a.tick - b.tick);
+
+      // Materialize sequence entries.
+      const playables = new Array<PlayableRendering>();
+      const entries = new Array<SequenceEntry>();
+      let tick = 0;
+      for (let index = 0; index < events.length; index++) {
+        const event = events[index];
+
+        if (event.type === 'start') {
+          playables.push(event.playable);
         }
 
-        if (!voiceIds.includes(voiceId)) {
-          voiceIds.push(voiceId);
+        if (event.type === 'stop') {
+          playables.splice(playables.indexOf(event.playable), 1);
         }
 
-        playablesByVoiceId[voiceId] ??= [];
-        playablesByVoiceId[voiceId].push(playable);
+        // If this is the last event or the next event is at a different tick, create a new entry.
+        if (index === events.length - 1 || events[index + 1].tick !== tick) {
+          const startTick = tick;
+          // TODO: Fix this for tick === 0.
+          const stopTick = tick + event.tick;
+          const tickRange = new util.NumberRange(startTick, stopTick);
+          tick = stopTick;
+
+          entries.push({ playables: [...playables], tickRange });
+        }
       }
 
-      // TODO: Go through each voice and create sequence entries.
-
-      return new Sequence(partId, []);
+      return new Sequence(partId, entries);
     });
   }
 
@@ -63,5 +109,30 @@ export class Sequence {
 
   getPartId(): string {
     return this.partId;
+  }
+}
+
+function getTicks(playable: PlayableRendering): number {
+  switch (playable.type) {
+    case 'stavenote':
+      return util.Fraction.fromFractionLike(playable.vexflow.staveNote.getTicks()).toDecimal();
+    case 'stavechord':
+      return util.Fraction.fromFractionLike(playable.notes[0].vexflow.staveNote.getTicks()).toDecimal();
+    case 'gracenote':
+      return util.Fraction.fromFractionLike(playable.vexflow.graceNote.getTicks()).toDecimal();
+    case 'gracechord':
+      return util.Fraction.fromFractionLike(playable.graceNotes[0].vexflow.graceNote.getTicks()).toDecimal();
+    case 'tabnote':
+      return util.Fraction.fromFractionLike(playable.vexflow.tabNote.getTicks()).toDecimal();
+    case 'tabchord':
+      return util.Fraction.fromFractionLike(playable.tabNotes[0].vexflow.tabNote.getTicks()).toDecimal();
+    case 'tabgracenote':
+      return util.Fraction.fromFractionLike(playable.vexflow.graceTabNote.getTicks()).toDecimal();
+    case 'tabgracechord':
+      return util.Fraction.fromFractionLike(playable.tabGraceNotes[0].vexflow.graceTabNote.getTicks()).toDecimal();
+    case 'rest':
+      return util.Fraction.fromFractionLike(playable.vexflow.note.getTicks()).toDecimal();
+    case 'ghostnote':
+      return util.Fraction.fromFractionLike(playable.vexflow.ghostNote.getTicks()).toDecimal();
   }
 }

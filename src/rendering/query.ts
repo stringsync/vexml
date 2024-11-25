@@ -1,52 +1,52 @@
-/* eslint-disable @typescript-eslint/member-ordering */
-import * as util from '@/util';
-import { StaveNoteRendering, TabNoteRendering } from './note';
-import { StaveChordRendering, TabChordRendering } from './chord';
+import { GraceNoteRendering, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
+import { GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { RestRendering } from './rest';
 import { MeasureRendering } from './measure';
 import { StaveRendering } from './stave';
 import { SystemRendering } from './system';
 import { PartRendering } from './part';
-import { VoiceEntryRendering } from './voice';
+import { VoiceRendering } from './voice';
 import { ScoreRendering } from './score';
+import { GhostNoteRendering } from './ghostnote';
+import { MeasureFragmentRendering } from './measurefragment';
 
-export type Predicate<T> = (element: T) => boolean;
+export type FilterableRendering = SystemRendering | PartRendering | VoiceRendering;
 
-export type InteractableRendering =
+export type SelectableRendering =
+  | SystemRendering
+  | MeasureRendering
+  | StaveRendering
   | StaveNoteRendering
   | StaveChordRendering
+  | GraceNoteRendering
+  | GraceChordRendering
   | TabNoteRendering
   | TabChordRendering
+  | TabGraceNoteRendering
+  | TabGraceChordRendering
   | RestRendering
-  | MeasureRendering
-  | StaveRendering;
+  | GhostNoteRendering
+  | VoiceRendering;
 
-export type PlayableRendering = Extract<
-  InteractableRendering,
-  StaveNoteRendering | StaveChordRendering | TabNoteRendering | TabChordRendering | RestRendering
->;
+type FilterableRenderingType = FilterableRendering['type'];
+export type FilterableRenderingWithType<T extends FilterableRenderingType> = Extract<FilterableRendering, { type: T }>;
 
-type OnlyOne<T> = NonNullable<
-  {
-    [K in keyof T]: Record<K, T[K]> & Partial<Record<Exclude<keyof T, K>, never>>;
-  }[keyof T]
->;
+type SelectableRenderingType = SelectableRendering['type'];
+export type SelectableRenderingWithType<T extends SelectableRenderingType> = Extract<SelectableRendering, { type: T }>;
 
-type Predicates = {
-  system?: Predicate<SystemRendering>;
-  measure?: Predicate<MeasureRendering>;
-  part?: Predicate<PartRendering>;
-  stave?: Predicate<StaveRendering>;
-  voiceEntry?: Predicate<VoiceEntryRendering>;
-};
+type Predicate<T = any> = (value: T) => boolean;
+
+type OnlyOne<T> = {
+  [K in keyof T]: { [P in K]: T[K] } & Partial<Record<Exclude<keyof T, K>, never>>;
+}[keyof T];
+
+type WhereArg = OnlyOne<{
+  [K in FilterableRenderingType]: Predicate<FilterableRenderingWithType<K>>;
+}>;
 
 export class Query {
   private score: ScoreRendering;
-  private systemPredicates = new Array<Predicate<SystemRendering>>();
-  private measurePredicates = new Array<Predicate<MeasureRendering>>();
-  private partPredicates = new Array<Predicate<PartRendering>>();
-  private stavePredicates = new Array<Predicate<StaveRendering>>();
-  private voiceEntryPredicates = new Array<Predicate<VoiceEntryRendering>>();
+  private predicates = new Array<Predicate>();
 
   private constructor(score: ScoreRendering) {
     this.score = score;
@@ -56,90 +56,133 @@ export class Query {
     return new Query(score);
   }
 
-  static forPart(partId: string): OnlyOne<Predicates> {
-    return { part: (part) => part.id === partId };
-  }
+  /** Creates a new query that filters based on the argument. */
+  where(arg: WhereArg): Query {
+    const query = new Query(this.score);
+    const predicates = [...this.predicates];
 
-  static inSystem(systemIndex: number): OnlyOne<Predicates> {
-    return { system: (system) => system.index === systemIndex };
-  }
-
-  static isPlayable(value: any): value is PlayableRendering {
-    return (
-      value.type === 'stavenote' ||
-      value.type === 'stavechord' ||
-      value.type === 'tabnote' ||
-      value.type === 'tabchord' ||
-      value.type === 'rest'
-    );
-  }
-
-  static isInteractable(value: any): value is InteractableRendering {
-    return Query.isPlayable(value) || value.type === 'measure' || value.type === 'stave';
-  }
-
-  where(predicates: OnlyOne<Predicates>) {
-    if (predicates.system) {
-      this.systemPredicates.push(predicates.system);
+    for (const [type, predicate] of Object.entries(arg)) {
+      // This HoF ensures that the predicate is only applied to the scoped type. Otherwise, it's ignored.
+      predicates.push((value) => value.type !== type || predicate(value));
     }
-    if (predicates.measure) {
-      this.measurePredicates.push(predicates.measure);
-    }
-    if (predicates.part) {
-      this.partPredicates.push(predicates.part);
-    }
-    if (predicates.stave) {
-      this.stavePredicates.push(predicates.stave);
-    }
-    if (predicates.voiceEntry) {
-      this.voiceEntryPredicates.push(predicates.voiceEntry);
-    }
-    return this;
+
+    query.predicates = predicates;
+    return query;
   }
 
-  @util.memoize()
-  getMeasures() {
-    return this.score.systems
-      .flatMap((system) => system.measures)
-      .filter((measure) => this.measurePredicates.every((predicate) => predicate(measure)));
+  select<T extends SelectableRenderingType>(...types: T[]): Array<SelectableRenderingWithType<T>> {
+    const selection = new Selection<T>(types);
+    this.walkSystems(this.score, selection);
+    return selection.results;
   }
 
-  @util.memoize()
-  getStaves() {
-    return this.getMeasures()
-      .flatMap((measure) => measure.fragments)
-      .flatMap((fragment) => fragment.parts)
-      .filter((part) => this.partPredicates.every((predicate) => predicate(part)))
-      .flatMap((part) => part.staves)
-      .filter((stave) => this.stavePredicates.every((predicate) => predicate(stave)));
+  private isInScope(value: any) {
+    return this.predicates.every((predicate) => predicate(value));
   }
 
-  @util.memoize()
-  getVoices() {
-    return this.getStaves()
-      .flatMap((stave) => stave.entry)
-      .flatMap((staveEntry) => {
-        switch (staveEntry.type) {
-          case 'chorus':
-            return staveEntry.voices;
-          default:
-            return [];
+  private walkSystems<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
+    for (const system of score.systems) {
+      if (this.isInScope(system)) {
+        selection.process(system);
+        this.walkMeasures(system, selection);
+      }
+    }
+  }
+
+  private walkMeasures<T extends SelectableRenderingType>(system: SystemRendering, selection: Selection<T>) {
+    for (const measure of system.measures) {
+      if (this.isInScope(measure)) {
+        selection.process(measure);
+        this.walkMeasureFragments(measure, selection);
+      }
+    }
+  }
+
+  private walkMeasureFragments<T extends SelectableRenderingType>(measure: MeasureRendering, selection: Selection<T>) {
+    for (const measureFragment of measure.fragments) {
+      if (this.isInScope(measureFragment)) {
+        selection.process(measureFragment);
+        this.walkParts(measureFragment, selection);
+      }
+    }
+  }
+
+  private walkParts<T extends SelectableRenderingType>(
+    measureFragment: MeasureFragmentRendering,
+    selection: Selection<T>
+  ) {
+    for (const part of measureFragment.parts) {
+      if (this.isInScope(part)) {
+        selection.process(part);
+        this.walkStaves(part, selection);
+      }
+    }
+  }
+
+  private walkStaves<T extends SelectableRenderingType>(part: PartRendering, selection: Selection<T>) {
+    for (const stave of part.staves) {
+      if (this.isInScope(stave)) {
+        selection.process(stave);
+        this.walkVoices(stave, selection);
+      }
+    }
+  }
+
+  private walkVoices<T extends SelectableRenderingType>(stave: StaveRendering, selection: Selection<T>) {
+    if (stave.entry.type === 'chorus') {
+      for (const voice of stave.entry.voices) {
+        if (this.isInScope(voice)) {
+          selection.process(voice);
+          this.walkVoiceEntries(voice, selection);
         }
-      });
+      }
+    }
   }
 
-  @util.memoize()
-  getVoiceEntries() {
-    return this.getVoices()
-      .flatMap((voice) => voice.entries)
-      .filter((entry) => this.voiceEntryPredicates.every((predicate) => predicate(entry)));
-  }
-
-  getInteractables() {
-    return [...this.getVoiceEntries(), ...this.getStaves(), ...this.getMeasures()].filter(Query.isInteractable);
-  }
-
-  getPlayables() {
-    return this.getInteractables().filter(Query.isPlayable);
+  private walkVoiceEntries<T extends SelectableRenderingType>(voice: VoiceRendering, selection: Selection<T>) {
+    for (const voiceEntry of voice.entries) {
+      if (this.predicates.every((predicate) => predicate(voiceEntry))) {
+        selection.process(voiceEntry);
+      }
+    }
   }
 }
+
+/** Helper class that facilitates type casting and rendering selection. */
+class Selection<T extends SelectableRenderingType> {
+  public readonly results = new Array<SelectableRenderingWithType<T>>();
+  private types: Array<SelectableRenderingType>;
+
+  constructor(types: Array<SelectableRenderingType>) {
+    this.types = types;
+  }
+
+  /** Conditionally adds the rendering to the results. */
+  process(rendering: { type: string }) {
+    if (this.isSelected(rendering)) {
+      this.results.push(rendering);
+    }
+  }
+
+  private isSelected(value: any): value is SelectableRenderingWithType<T> {
+    return this.types.includes(value.type);
+  }
+}
+
+function forSystem(systemIndex: number): WhereArg {
+  return { system: (system: SystemRendering) => system.index === systemIndex };
+}
+
+function forPart(partId: string): WhereArg {
+  return { part: (part: PartRendering) => part.id === partId };
+}
+
+function forVoice(voiceId: string): WhereArg {
+  return { voice: (voice: VoiceRendering) => voice.id === voiceId };
+}
+
+export const filters = {
+  forSystem,
+  forPart,
+  forVoice,
+};

@@ -25,6 +25,7 @@ const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', 
 /** The result of rendering a voice. */
 export type VoiceRendering = {
   type: 'voice';
+  id: string;
   address: Address<'voice'>;
   vexflow: {
     voice: vexflow.Voice;
@@ -282,6 +283,7 @@ export class Voice {
 
     return {
       type: 'voice',
+      id: this.id,
       address,
       vexflow: {
         voice: vfVoice,
