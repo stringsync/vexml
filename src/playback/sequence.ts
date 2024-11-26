@@ -72,28 +72,24 @@ export class Sequence {
       const playables = new Array<PlayableRendering>();
       const entries = new Array<SequenceEntry>();
       let tick = 0;
-      for (let index = 0; index < events.length; index++) {
-        const event = events[index];
-
-        if (event.type === 'start') {
-          playables.push(event.playable);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      util.forEachTriple(events, ([_, currentEvent, nextEvent]) => {
+        if (currentEvent.type === 'start') {
+          playables.push(currentEvent.playable);
         }
 
-        if (event.type === 'stop') {
-          playables.splice(playables.indexOf(event.playable), 1);
+        if (currentEvent.type === 'stop') {
+          playables.splice(playables.indexOf(currentEvent.playable), 1);
         }
 
-        // If this is the last event or the next event is at a different tick, create a new entry.
-        if (index === events.length - 1 || events[index + 1].tick !== tick) {
+        if (nextEvent && tick !== nextEvent.tick) {
           const startTick = tick;
-          // TODO: Fix this for tick === 0.
-          const stopTick = tick + event.tick;
+          const stopTick = nextEvent.tick;
           const tickRange = new util.NumberRange(startTick, stopTick);
           tick = stopTick;
-
           entries.push({ playables: [...playables], tickRange });
         }
-      }
+      });
 
       return new Sequence(partId, entries);
     });
