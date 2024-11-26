@@ -73,7 +73,7 @@ export class Sequence {
       const entries = new Array<SequenceEntry>();
       let tick = 0;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      util.forEachTriple(events, ([_, currentEvent, nextEvent]) => {
+      util.forEachTriple(events, ([previousEvent, currentEvent, nextEvent]) => {
         if (currentEvent.type === 'start') {
           playables.push(currentEvent.playable);
         }
