@@ -1,8 +1,25 @@
 import * as events from '@/events';
 import * as playback from '@/playback';
 import * as spatial from '@/spatial';
+import * as rendering from '@/rendering';
+import * as util from '@/util';
 
-// const CURSOR_WIDTH_PX = 1.5;
+const CURSOR_WIDTH_PX = 1.5;
+
+const PART_VERTICAL_SPAN_RENDERINGS = [
+  'stave',
+  'stavenote',
+  'stavechord',
+  'gracenote',
+  'gracechord',
+  'tabnote',
+  'tabchord',
+  'tabgracenote',
+  'tabgracechord',
+  'rest',
+] as const;
+
+const SYSTEM_VERTICAL_SPAN_RENDERINGS = ['measure'] as const;
 
 type EventMap = {
   change: CursorState;
@@ -15,12 +32,16 @@ type CursorState = {
 };
 
 export class DiscreteCursor {
-  private index = 0;
+  private score: rendering.ScoreRendering;
+  private span: rendering.CursorVerticalSpan;
   private sequence: playback.Sequence;
+  private index = 0;
   private topic = new events.Topic<EventMap>();
 
-  constructor(sequence: playback.Sequence) {
+  constructor(score: rendering.ScoreRendering, sequence: playback.Sequence, span: rendering.CursorVerticalSpan) {
+    this.score = score;
     this.sequence = sequence;
+    this.span = span;
   }
 
   getPartId(): string {
@@ -37,7 +58,7 @@ export class DiscreteCursor {
       };
     }
 
-    if (entry.playables.length === 0) {
+    if (entry.interactables.length === 0) {
       return {
         index: this.index,
         length: this.sequence.getLength(),
@@ -45,41 +66,14 @@ export class DiscreteCursor {
       };
     }
 
-    // TODO: Fix this to adhere to the new model.
-    // const systemBoundingBoxes: spatial.Rect[] = [
-    //   ...entry.system.staveInteractions.map((staveInteraction) => staveInteraction.getBoundingBox()),
-    //   ...entry.system.playableInteractions.map((playableInteraction) => playableInteraction.getBoundingBox()),
-    // ];
-    // const minY = util.min(
-    //   systemBoundingBoxes.map((box) => box.getMinY()),
-    //   Number.POSITIVE_INFINITY
-    // );
-    // const maxY = util.max(
-    //   systemBoundingBoxes.map((box) => box.getMaxY()),
-    //   Number.NEGATIVE_INFINITY
-    // );
+    const systemIndex = entry.interactables[0].address.getSystemIndex()!;
+    const systemRect = this.getVerticalSpanRect(systemIndex);
+    const playableRect = rendering.InteractionModel.create(entry.interactables[0]).getBoundingBox();
 
-    // if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
-    //   return {
-    //     index: this.index,
-    //     length: this.sequence.getLength(),
-    //     rect: null,
-    //   };
-    // }
-
-    // const playableBoundingBox = entry.playables[0].getBoundingBox();
-    // const leftX = playableBoundingBox.getMinX();
-    // const rightX = playableBoundingBox.getMaxX();
-
-    // const x = (leftX + rightX) / 2;
-    // const y = minY;
-    // const w = CURSOR_WIDTH_PX;
-    // const h = maxY - minY;
-
-    const x = 0;
-    const y = 0;
-    const w = 0;
-    const h = 0;
+    const x = playableRect.center().x;
+    const y = systemRect.y;
+    const w = CURSOR_WIDTH_PX;
+    const h = systemRect.h;
 
     return {
       index: this.index,
@@ -118,6 +112,36 @@ export class DiscreteCursor {
     for (const id of ids) {
       this.topic.unsubscribe(id);
     }
+  }
+
+  @util.memoize()
+  private getVerticalSpanRect(systemIndex: number): spatial.Rect {
+    const query = rendering.Query.of(this.score)
+      .where(rendering.filters.forPart(this.getPartId()))
+      .where(rendering.filters.forSystem(systemIndex));
+
+    switch (this.span) {
+      case 'part':
+        return this.getPartVerticalSpanRect(query);
+      case 'system':
+        return this.getSystemVerticalSpanRect(query);
+    }
+  }
+
+  private getPartVerticalSpanRect(query: rendering.Query): spatial.Rect {
+    const rects = query
+      .select(...PART_VERTICAL_SPAN_RENDERINGS)
+      .map(rendering.InteractionModel.create)
+      .map((model) => model.getBoundingBox());
+    return spatial.Rect.merge(rects);
+  }
+
+  private getSystemVerticalSpanRect(query: rendering.Query): spatial.Rect {
+    const rects = query
+      .select(...SYSTEM_VERTICAL_SPAN_RENDERINGS)
+      .map(rendering.InteractionModel.create)
+      .map((model) => model.getBoundingBox());
+    return spatial.Rect.merge(rects);
   }
 
   private update(index: number) {

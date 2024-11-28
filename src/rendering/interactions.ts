@@ -3,11 +3,11 @@ import * as util from '@/util';
 import { StaveChordRendering, TabChordRendering } from './chord';
 import { MeasureRendering } from './measure';
 import { StaveNoteRendering, TabNoteRendering } from './note';
-import { SelectableRenderingWithType } from './query';
+import { Query, SelectableRenderingWithType } from './query';
 import { RestRendering } from './rest';
 import { StaveRendering } from './stave';
 
-export const INTERACTABLE_RENDERING_TYPES = [
+const INTERACTABLE_RENDERING_TYPES = [
   'measure',
   'stavenote',
   'stavechord',
@@ -35,8 +35,12 @@ export class InteractionModel<T> {
     this.value = value;
   }
 
-  static create<T extends InteractableRendering>(renderings: T[]): InteractionModel<T>[] {
-    return InteractionModelFactory.create(renderings) as InteractionModel<T>[];
+  static create<T extends InteractableRendering>(rendering: T): InteractionModel<T> {
+    return InteractionModelFactory.create(rendering) as InteractionModel<T>;
+  }
+
+  static fromQuery(query: Query) {
+    return InteractionModelFactory.fromQuery(query);
   }
 
   /** Returns a box that contains all the handles. */
@@ -127,25 +131,29 @@ export class InteractionHandle {
 }
 
 class InteractionModelFactory {
-  static create<T extends InteractableRendering>(renderings: T[]) {
-    return renderings.map((rendering) => {
-      switch (rendering.type) {
-        case 'measure':
-          return InteractionModelFactory.fromMeasureRendering(rendering);
-        case 'stavenote':
-          return InteractionModelFactory.fromStaveNoteRendering(rendering);
-        case 'stavechord':
-          return InteractionModelFactory.fromStaveChordRendering(rendering);
-        case 'rest':
-          return InteractionModelFactory.fromRestRendering(rendering);
-        case 'tabnote':
-          return InteractionModelFactory.fromTabNoteRendering(rendering);
-        case 'tabchord':
-          return InteractionModelFactory.fromTabChordRendering(rendering);
-        case 'stave':
-          return InteractionModelFactory.fromStaveRendering(rendering);
-      }
-    });
+  static create(rendering: InteractableRendering) {
+    switch (rendering.type) {
+      case 'measure':
+        return InteractionModelFactory.fromMeasureRendering(rendering);
+      case 'stavenote':
+        return InteractionModelFactory.fromStaveNoteRendering(rendering);
+      case 'stavechord':
+        return InteractionModelFactory.fromStaveChordRendering(rendering);
+      case 'rest':
+        return InteractionModelFactory.fromRestRendering(rendering);
+      case 'tabnote':
+        return InteractionModelFactory.fromTabNoteRendering(rendering);
+      case 'tabchord':
+        return InteractionModelFactory.fromTabChordRendering(rendering);
+      case 'stave':
+        return InteractionModelFactory.fromStaveRendering(rendering);
+      default:
+        throw new Error(`unsupported rendering type: ${rendering.type}`);
+    }
+  }
+
+  static fromQuery(query: Query) {
+    return query.select(...INTERACTABLE_RENDERING_TYPES).flatMap(InteractionModelFactory.create);
   }
 
   private static fromMeasureRendering(measure: MeasureRendering): InteractionModel<MeasureRendering> {

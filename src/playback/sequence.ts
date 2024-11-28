@@ -1,7 +1,7 @@
 import * as rendering from '@/rendering';
 import * as util from '@/util';
 
-const PLAYABLE_RENDERING_TYPES = [
+export const PLAYABLE_RENDERING_TYPES = [
   'stavenote',
   'stavechord',
   'gracenote',
@@ -11,23 +11,25 @@ const PLAYABLE_RENDERING_TYPES = [
   'tabgracenote',
   'tabgracechord',
   'rest',
+  // We need to add this type to the list of playable rendering types so that we can account for ghost notes when
+  // calculating the number of ticks. We shouldn't try to interact with this after.
   'ghostnote',
 ] as const;
 
-type PlayableRendering = rendering.SelectableRenderingWithType<(typeof PLAYABLE_RENDERING_TYPES)[number]>;
+export type PlayableRendering = rendering.SelectableRenderingWithType<(typeof PLAYABLE_RENDERING_TYPES)[number]>;
+
+type SequenceEventType = 'start' | 'stop';
 
 type SequenceEvent = {
   type: SequenceEventType;
   tick: number;
-  playable: PlayableRendering;
+  interactable: rendering.InteractableRendering;
 };
 
-type SequenceEntry = {
-  playables: PlayableRendering[];
+export type SequenceEntry = {
+  interactables: rendering.InteractableRendering[];
   tickRange: util.NumberRange;
 };
-
-type SequenceEventType = 'start' | 'stop';
 
 /** Represents a sequence of steps needed for playback. */
 export class Sequence {
@@ -60,8 +62,10 @@ export class Sequence {
           const startTicks = ticks;
           const stopTicks = ticks + getTicks(playable);
 
-          events.push({ type: 'start', tick: startTicks, playable });
-          events.push({ type: 'stop', tick: stopTicks, playable });
+          if (isInteractable(playable)) {
+            events.push({ type: 'start', tick: startTicks, interactable: playable });
+            events.push({ type: 'stop', tick: stopTicks, interactable: playable });
+          }
 
           ticks = stopTicks;
         }
@@ -69,17 +73,17 @@ export class Sequence {
       events.sort((a, b) => a.tick - b.tick);
 
       // Materialize sequence entries.
-      const playables = new Array<PlayableRendering>();
+      const interactables = new Array<rendering.InteractableRendering>();
       const entries = new Array<SequenceEntry>();
       let tick = 0;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       util.forEachTriple(events, ([previousEvent, currentEvent, nextEvent]) => {
         if (currentEvent.type === 'start') {
-          playables.push(currentEvent.playable);
+          interactables.push(currentEvent.interactable);
         }
 
         if (currentEvent.type === 'stop') {
-          playables.splice(playables.indexOf(currentEvent.playable), 1);
+          interactables.splice(interactables.indexOf(currentEvent.interactable), 1);
         }
 
         if (nextEvent && tick !== nextEvent.tick) {
@@ -87,7 +91,7 @@ export class Sequence {
           const stopTick = nextEvent.tick;
           const tickRange = new util.NumberRange(startTick, stopTick);
           tick = stopTick;
-          entries.push({ playables: [...playables], tickRange });
+          entries.push({ interactables: [...interactables], tickRange });
         }
       });
 
@@ -131,4 +135,8 @@ function getTicks(playable: PlayableRendering): number {
     case 'ghostnote':
       return util.Fraction.fromFractionLike(playable.vexflow.ghostNote.getTicks()).toDecimal();
   }
+}
+
+function isInteractable(value: any): value is rendering.InteractableRendering {
+  return PLAYABLE_RENDERING_TYPES.includes(value.type);
 }
