@@ -5,10 +5,15 @@ import * as playback from '@/playback';
 import * as util from '@/util';
 import { EventMap } from './events';
 import { Config } from '@/config';
+import { ScoreRendering } from './score';
+
+/** Describes how much the cursor should vertically span. */
+export type CursorVerticalSpan = 'system' | 'part';
 
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
+  private score: ScoreRendering;
   private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
   private root: components.Root;
@@ -19,6 +24,7 @@ export class Rendering {
 
   constructor(opts: {
     config: Config;
+    score: ScoreRendering;
     bridge: events.NativeBridge<keyof EventMap>;
     topic: events.Topic<EventMap>;
     root: components.Root;
@@ -26,6 +32,7 @@ export class Rendering {
     partIds: string[];
   }) {
     this.config = opts.config;
+    this.score = opts.score;
     this.bridge = opts.bridge;
     this.topic = opts.topic;
     this.root = opts.root;
@@ -39,13 +46,16 @@ export class Rendering {
   }
 
   /** Creates a new discrete cursor for the part ID */
-  createDiscreteCursor(partId: string): cursors.DiscreteCursor {
+  createDiscreteCursor(opts?: { span?: CursorVerticalSpan; partId?: string }): cursors.DiscreteCursor {
+    const span = opts?.span ?? 'system';
+    const partId = opts?.partId ?? this.partIds[0];
+
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
 
     util.assertDefined(sequence);
 
     const overlayElement = this.root.getOverlay().getElement();
-    const cursorModel = new cursors.DiscreteCursor(sequence);
+    const cursorModel = new cursors.DiscreteCursor(this.score, sequence, span);
     const cursorComponent = components.Cursor.render(overlayElement);
 
     cursorModel.addEventListener('change', (event) => {
@@ -53,7 +63,6 @@ export class Rendering {
       if (rect) {
         cursorComponent.update(rect);
       }
-      // TODO: Maybe hide cursorComponent if there is no rect.
     });
     const rect = cursorModel.getCurrent()?.rect;
     if (rect) {
