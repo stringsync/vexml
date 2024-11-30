@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Cursor } from '../types';
 import { Select, SelectOptionGroup } from './Select';
 import { useNextKey } from '../hooks/useNextKey';
@@ -22,6 +22,20 @@ export const CursorForm = (props: CursorFormProps) => {
     span: 'system',
   }));
   const [cursors, setCursors] = useState(new Array<Cursor>());
+
+  useEffect(() => {
+    const cursorPartIds = cursors
+      .map((cursor) => cursor.partId)
+      .filter((partId): partId is string => typeof partId === 'string');
+    if (cursorPartIds.some((partId) => !props.partIds.includes(partId))) {
+      const nextCursors = cursors.filter(
+        (cursor) => typeof cursor.partId !== 'string' || props.partIds.includes(cursor.partId)
+      );
+      setCursors(nextCursors);
+      props.onChange(nextCursors);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cursors, props.partIds, props.onChange]);
 
   const colorSelectOptionGroups = COLORS.map<SelectOptionGroup<string>>((color) => ({
     type: 'single',
