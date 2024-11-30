@@ -79,7 +79,7 @@ export class Sequence {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       util.forEachTriple(events, ([previousEvent, currentEvent, nextEvent]) => {
         if (currentEvent.type === 'start') {
-          interactables.push(currentEvent.interactable);
+          interactables.unshift(currentEvent.interactable);
         }
 
         if (currentEvent.type === 'stop') {

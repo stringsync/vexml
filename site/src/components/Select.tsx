@@ -1,7 +1,8 @@
 export type SelectProps<T> = {
+  disabled?: boolean;
   groups: SelectOptionGroup<T>[];
   selectedKey: string;
-  onChange: (event: SelectEvent<T>) => void;
+  onChange?: (event: SelectEvent<T>) => void;
 };
 
 type OptionGroupProps<T> = {
@@ -43,11 +44,11 @@ export function Select<T>(props: SelectProps<T>) {
     const value = props.groups
       .flatMap((group) => (group.type === 'multi' ? group.options : group.option))
       .find((option) => option.key === key)!.value;
-    props.onChange({ key, value });
+    props.onChange?.({ key, value });
   };
 
   return (
-    <select className="form-select" onChange={onChange} value={props.selectedKey}>
+    <select disabled={props.disabled} className="form-select" onChange={onChange} value={props.selectedKey}>
       {props.groups.map((group) =>
         group.type === 'multi' ? (
           <OptionGroup key={group.label} group={group} />

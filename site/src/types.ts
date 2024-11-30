@@ -29,3 +29,12 @@ export type Keyed<T> = {
 
 /** The modes for rendering vexml. */
 export type RenderingBackend = 'svg' | 'canvas';
+
+/** Cursors that assist with navigating the rendered notation. */
+export type Cursor = {
+  type: 'discrete';
+  id: string;
+  color: string;
+  span: vexml.CursorVerticalSpan;
+  partId?: string;
+};
