@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import * as errors from '../util/errors';
 import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
-import { RenderingBackend } from '../types';
+import { Cursor, RenderingBackend } from '../types';
 
 const STRINGSYNC_RED = '#FC354C';
 
@@ -10,8 +10,10 @@ export type VexmlProps = {
   musicXML: string;
   backend: RenderingBackend;
   config: vexml.Config;
+  cursors: Cursor[];
   onResult: (result: VexmlResult) => void;
   onEvent: vexml.AnyEventListener;
+  onPartIdsChange: (partIds: string[]) => void;
 };
 
 export type VexmlResult =
@@ -156,6 +158,9 @@ export const Vexml = (props: VexmlProps) => {
         config,
       });
       setRendering(rendering);
+
+      const partIds = rendering.getPartIds();
+      props.onPartIdsChange(partIds);
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.
