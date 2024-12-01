@@ -1,8 +1,8 @@
 import * as spatial from '@/spatial';
 import * as util from '@/util';
-import { StaveChordRendering, TabChordRendering } from './chord';
+import { GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { MeasureRendering } from './measure';
-import { StaveNoteRendering, TabNoteRendering } from './note';
+import { GraceNoteRendering, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { Query, SelectableRenderingWithType } from './query';
 import { RestRendering } from './rest';
 import { StaveRendering } from './stave';
@@ -139,16 +139,22 @@ class InteractionModelFactory {
         return InteractionModelFactory.fromStaveNoteRendering(rendering);
       case 'stavechord':
         return InteractionModelFactory.fromStaveChordRendering(rendering);
+      case 'gracenote':
+        return InteractionModelFactory.fromGraceNoteRendering(rendering);
+      case 'gracechord':
+        return InteractionModelFactory.fromGraceChordRendering(rendering);
       case 'rest':
         return InteractionModelFactory.fromRestRendering(rendering);
       case 'tabnote':
         return InteractionModelFactory.fromTabNoteRendering(rendering);
       case 'tabchord':
         return InteractionModelFactory.fromTabChordRendering(rendering);
+      case 'tabgracenote':
+        return InteractionModelFactory.fromTabGraceNoteRendering(rendering);
+      case 'tabgracechord':
+        return InteractionModelFactory.fromTabGraceChordRendering(rendering);
       case 'stave':
         return InteractionModelFactory.fromStaveRendering(rendering);
-      default:
-        throw new Error(`unsupported rendering type: ${rendering.type}`);
     }
   }
 
@@ -189,6 +195,28 @@ class InteractionModelFactory {
     handles.push(new InteractionHandle(staveNoteRect, staveNoteRect.center()));
 
     return new InteractionModel(handles, staveChord);
+  }
+
+  private static fromGraceNoteRendering(graceNote: GraceNoteRendering): InteractionModel<GraceNoteRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfGraceNote = graceNote.vexflow.graceNote;
+    const vfBoundingBox = vfGraceNote.getBoundingBox();
+    const graceNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    handles.push(new InteractionHandle(graceNoteRect, graceNoteRect.center()));
+
+    return new InteractionModel(handles, graceNote);
+  }
+
+  private static fromGraceChordRendering(graceChord: GraceChordRendering): InteractionModel<GraceChordRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfGraceNote = graceChord.graceNotes[0].vexflow.graceNote;
+    const vfBoundingBox = vfGraceNote.getBoundingBox();
+    const graceNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    handles.push(new InteractionHandle(graceNoteRect, graceNoteRect.center()));
+
+    return new InteractionModel(handles, graceChord);
   }
 
   private static fromRestRendering(rest: RestRendering): InteractionModel<RestRendering> {
@@ -237,6 +265,36 @@ class InteractionModelFactory {
     }
 
     return new InteractionModel(handles, tabChord);
+  }
+
+  private static fromTabGraceNoteRendering(
+    tabGraceNote: TabGraceNoteRendering
+  ): InteractionModel<TabGraceNoteRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfGraceTabNote = tabGraceNote.vexflow.graceTabNote;
+    const x = vfGraceTabNote.getAbsoluteX();
+    for (const y of vfGraceTabNote.getYs()) {
+      const noteheadCircle = new spatial.Circle(x, y, 10);
+      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
+    }
+
+    return new InteractionModel(handles, tabGraceNote);
+  }
+
+  private static fromTabGraceChordRendering(
+    tabGraceChord: TabGraceChordRendering
+  ): InteractionModel<TabGraceChordRendering> {
+    const handles = new Array<InteractionHandle>();
+
+    const vfGraceTabNote = tabGraceChord.tabGraceNotes[0].vexflow.graceTabNote;
+    const x = vfGraceTabNote.getAbsoluteX();
+    for (const y of vfGraceTabNote.getYs()) {
+      const noteheadCircle = new spatial.Circle(x, y, 10);
+      handles.push(new InteractionHandle(noteheadCircle, noteheadCircle.center()));
+    }
+
+    return new InteractionModel(handles, tabGraceChord);
   }
 
   private static fromStaveRendering(stave: StaveRendering): InteractionModel<StaveRendering> {
