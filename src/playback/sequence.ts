@@ -138,5 +138,5 @@ function getTicks(playable: PlayableRendering): number {
 }
 
 function isInteractable(value: any): value is rendering.InteractableRendering {
-  return PLAYABLE_RENDERING_TYPES.includes(value.type);
+  return rendering.INTERACTABLE_RENDERING_TYPES.includes(value.type);
 }

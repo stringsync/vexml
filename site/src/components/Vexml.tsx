@@ -22,19 +22,23 @@ export type VexmlResult =
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
-export const Vexml = (props: VexmlProps) => {
-  const musicXML = props.musicXML;
-  const backend = props.backend;
-  const config = props.config;
-  const onResult = props.onResult;
-  const onEvent = props.onEvent;
-
+export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, onPartIdsChange }: VexmlProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
 
   const width = useWidth(divRef);
 
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
+  const [discreteCursors, setDiscreteCursors] = useState<vexml.DiscreteCursor[]>([]);
+
+  const [progress, setProgress] = useState(0);
+  const onProgressChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const nextProgress = parseFloat(e.target.value);
+    setProgress(nextProgress);
+    for (const discreteCursor of discreteCursors) {
+      discreteCursor.next();
+    }
+  };
 
   useEffect(() => {
     if (!rendering) {
@@ -160,7 +164,10 @@ export const Vexml = (props: VexmlProps) => {
       setRendering(rendering);
 
       const partIds = rendering.getPartIds();
-      props.onPartIdsChange(partIds);
+      onPartIdsChange(partIds);
+
+      const discreteCursors = cursors.map((cursor) => rendering!.createDiscreteCursor(cursor));
+      setDiscreteCursors(discreteCursors);
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.
@@ -186,7 +193,26 @@ export const Vexml = (props: VexmlProps) => {
     return () => {
       rendering?.destroy();
     };
-  }, [musicXML, backend, config, width, div, onResult]);
+  }, [musicXML, cursors, backend, config, width, div, onResult, onPartIdsChange]);
 
-  return <div className="w-100" ref={divRef}></div>;
+  return (
+    <div className="w-100">
+      <div ref={divRef}></div>
+      <div className="d-flex align-items-center gap-3 m-3">
+        <button className="btn bg-transparent" style={{ fontSize: 24 }}>
+          <i className="bi bi-play-fill"></i>
+        </button>
+        <input
+          className="w-100 form-range"
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={progress}
+          onChange={onProgressChange}
+        ></input>
+        <span>0:00</span>
+      </div>
+    </div>
+  );
 };

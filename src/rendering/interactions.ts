@@ -7,7 +7,7 @@ import { Query, SelectableRenderingWithType } from './query';
 import { RestRendering } from './rest';
 import { StaveRendering } from './stave';
 
-const INTERACTABLE_RENDERING_TYPES = [
+export const INTERACTABLE_RENDERING_TYPES = [
   'measure',
   'stavenote',
   'stavechord',
