@@ -7,8 +7,6 @@ import { EventMap } from './events';
 import { Config } from '@/config';
 import { ScoreRendering } from './score';
 
-const STRINGSYNC_RED = '#FC354C';
-
 /** Describes how much the cursor should vertically span. */
 export type CursorVerticalSpan = 'system' | 'part';
 
