@@ -1,3 +1,5 @@
+const STRINGSYNC_RED = '#FC354C';
+
 export class Cursor {
   private element: HTMLElement;
 
@@ -5,12 +7,12 @@ export class Cursor {
     this.element = element;
   }
 
-  static render(parent: HTMLElement) {
+  static render(parent: HTMLElement, color = STRINGSYNC_RED) {
     const element = document.createElement('div');
     element.classList.add('vexml-cursor');
     element.style.width = '1.5px';
     element.style.position = 'absolute';
-    element.style.backgroundColor = 'red';
+    element.style.backgroundColor = color;
 
     parent.append(element);
 

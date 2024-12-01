@@ -17,7 +17,7 @@ export type AddressContext<T extends AddressType> = T extends 'system'
   : T extends 'chorus'
   ? Record<never, never>
   : T extends 'voice'
-  ? { voiceIndex: number }
+  ? { voiceId: string }
   : never;
 
 /** The location of a musical object in the rendering hierarchy. */
@@ -91,11 +91,11 @@ export class Address<T extends AddressType = AddressType> {
     return staveAddress.context?.staveNumber;
   }
 
-  /** Returns the voice number. */
-  getVoiceNumber(): number | undefined {
+  /** Returns the voice ID. */
+  getVoiceId(): string | undefined {
     const voiceAddress = this.getAddress('voice');
     util.assertNotNull(voiceAddress);
-    return voiceAddress.context?.voiceIndex;
+    return voiceAddress.context?.voiceId;
   }
 
   /** Creates an address for a measure. */
