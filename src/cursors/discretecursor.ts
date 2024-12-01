@@ -66,7 +66,9 @@ export class DiscreteCursor {
       };
     }
 
-    const systemIndex = entry.interactables[0].address.getSystemIndex()!;
+    const systemIndex = entry.interactables[0].address.getSystemIndex();
+    util.assertDefined(systemIndex);
+
     const systemRect = this.getVerticalSpanRect(systemIndex);
     const playableRect = rendering.InteractionModel.create(entry.interactables[0]).getBoundingBox();
 

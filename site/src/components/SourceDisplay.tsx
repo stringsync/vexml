@@ -110,10 +110,6 @@ export const SourceDisplay = (props: SourceProps) => {
   };
 
   const [partIds, setPartIds] = useState<string[]>([]);
-  const onPartIdsChange = (partIds: string[]) => {
-    setPartIds(partIds);
-  };
-
   const [cursors, setCursors] = useState(new Array<Cursor>());
   const onCursorsChange = (cursors: Cursor[]) => {
     setCursors(cursors);
@@ -272,7 +268,7 @@ export const SourceDisplay = (props: SourceProps) => {
               config={props.source.config}
               onResult={setVexmlResult}
               onEvent={onVexmlEvent}
-              onPartIdsChange={onPartIdsChange}
+              onPartIdsChange={setPartIds}
             />
           </div>
         )}
