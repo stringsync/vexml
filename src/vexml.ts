@@ -133,6 +133,7 @@ export class Vexml {
 
     return new rendering.Rendering({
       config,
+      score: scoreRendering,
       topic: vexmlEventTopic,
       bridge,
       root,

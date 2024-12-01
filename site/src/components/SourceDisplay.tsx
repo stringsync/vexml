@@ -1,7 +1,7 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { RenderingBackend, Source } from '../types';
+import { Cursor, RenderingBackend, Source } from '../types';
 import { Vexml, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
@@ -14,6 +14,7 @@ import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 import { ConfigForm } from './ConfigForm';
 import { EventTypeForm } from './EventTypeForm';
+import { CursorForm } from './CursorForm';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -98,11 +99,20 @@ export const SourceDisplay = (props: SourceProps) => {
     [enabledVexmlEventTypes, nextKey]
   );
 
+  const cursorCardId = useId();
+  const cursorCardSelector = '#' + cursorCardId.replaceAll(':', '\\:');
+
   const svgButtonId = useId();
   const canvasButtonId = useId();
   const vexmlModeName = useId();
   const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
+  };
+
+  const [partIds, setPartIds] = useState<string[]>([]);
+  const [cursors, setCursors] = useState(new Array<Cursor>());
+  const onCursorsChange = (cursors: Cursor[]) => {
+    setCursors(cursors);
   };
 
   return (
@@ -138,6 +148,15 @@ export const SourceDisplay = (props: SourceProps) => {
               data-bs-target={configFormCardSelector}
             >
               <i className="bi bi-gear"></i> <p className="d-md-inline d-none">Config</p>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              data-bs-toggle="collapse"
+              data-bs-target={cursorCardSelector}
+            >
+              <i className="bi bi-input-cursor"></i> <p className="d-md-inline d-none">Cursors</p>
             </button>
           </div>
 
@@ -223,6 +242,12 @@ export const SourceDisplay = (props: SourceProps) => {
 
             <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
           </div>
+
+          <div id={cursorCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
+            <h3 className="mb-3">Cursors</h3>
+
+            <CursorForm partIds={partIds} onChange={onCursorsChange} />
+          </div>
         </div>
 
         <SourceInfo
@@ -238,10 +263,12 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
+              cursors={cursors}
               backend={props.source.backend}
               config={props.source.config}
               onResult={setVexmlResult}
               onEvent={onVexmlEvent}
+              onPartIdsChange={setPartIds}
             />
           </div>
         )}

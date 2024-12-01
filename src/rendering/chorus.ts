@@ -52,9 +52,9 @@ export class Chorus {
 
     if (this.voices.length > 0) {
       const vfVoices = this.voices.map(
-        (voice, index) =>
+        (voice) =>
           voice.render({
-            address: address.voice({ voiceIndex: index }),
+            address: address.voice({ voiceId: voice.getId() }),
             spanners,
           }).vexflow.voice
       );
@@ -68,9 +68,9 @@ export class Chorus {
 
   /** Renders the chorus. */
   render(opts: { address: Address<'chorus'>; spanners: Spanners }): ChorusRendering {
-    const voiceRenderings = this.voices.map((voice, index) =>
+    const voiceRenderings = this.voices.map((voice) =>
       voice.render({
-        address: opts.address.voice({ voiceIndex: index }),
+        address: opts.address.voice({ voiceId: voice.getId() }),
         spanners: opts.spanners,
       })
     );
