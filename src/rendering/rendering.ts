@@ -7,6 +7,8 @@ import { EventMap } from './events';
 import { Config } from '@/config';
 import { ScoreRendering } from './score';
 
+const STRINGSYNC_RED = '#FC354C';
+
 /** Describes how much the cursor should vertically span. */
 export type CursorVerticalSpan = 'system' | 'part';
 
@@ -46,7 +48,7 @@ export class Rendering {
   }
 
   /** Creates a new discrete cursor for the part ID */
-  createDiscreteCursor(opts?: { span?: CursorVerticalSpan; partId?: string }): cursors.DiscreteCursor {
+  createDiscreteCursor(opts?: { span?: CursorVerticalSpan; partId?: string; color?: string }): cursors.DiscreteCursor {
     const span = opts?.span ?? 'system';
     const partId = opts?.partId ?? this.partIds[0];
 
@@ -56,7 +58,7 @@ export class Rendering {
 
     const overlayElement = this.root.getOverlay().getElement();
     const cursorModel = new cursors.DiscreteCursor(this.score, sequence, span);
-    const cursorComponent = components.Cursor.render(overlayElement);
+    const cursorComponent = components.Cursor.render(overlayElement, opts?.color);
 
     cursorModel.addEventListener('change', (event) => {
       const rect = event.rect;
