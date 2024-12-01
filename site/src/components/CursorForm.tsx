@@ -19,7 +19,7 @@ export const CursorForm = (props: CursorFormProps) => {
     type: 'discrete',
     id: nextCursorId(),
     color: COLORS[0],
-    span: 'system',
+    span: 'part',
   }));
   const [cursors, setCursors] = useState(new Array<Cursor>());
 
@@ -63,11 +63,11 @@ export const CursorForm = (props: CursorFormProps) => {
   const spanSelectOptionGroups: Array<SelectOptionGroup<vexml.CursorVerticalSpan>> = [
     {
       type: 'single',
-      option: { label: 'system', key: 'system', value: 'system' },
+      option: { label: 'part', key: 'part', value: 'part' },
     },
     {
       type: 'single',
-      option: { label: 'part', key: 'part', value: 'part' },
+      option: { label: 'system', key: 'system', value: 'system' },
     },
   ];
 
@@ -86,7 +86,7 @@ export const CursorForm = (props: CursorFormProps) => {
       id: nextCursorId(),
       color: COLORS[nextColorIndex],
       partId: nextPartId,
-      span: 'system',
+      span: 'part',
     });
   };
 

@@ -40,6 +40,18 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     }
   };
 
+  const onPreviousClick = () => {
+    for (const discreteCursor of discreteCursors) {
+      discreteCursor.previous();
+    }
+  };
+
+  const onNextClick = () => {
+    for (const discreteCursor of discreteCursors) {
+      discreteCursor.next();
+    }
+  };
+
   useEffect(() => {
     if (!rendering) {
       return;
@@ -198,21 +210,50 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
   return (
     <div className="w-100">
       <div ref={divRef}></div>
-      <div className="d-flex align-items-center gap-3 m-3">
-        <button className="btn bg-transparent" style={{ fontSize: 24 }}>
-          <i className="bi bi-play-fill"></i>
-        </button>
-        <input
-          className="w-100 form-range"
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={progress}
-          onChange={onProgressChange}
-        ></input>
-        <span>0:00</span>
-      </div>
+
+      {discreteCursors.length > 0 && (
+        <>
+          <div className="alert alert-warning d-flex align-items-center" role="alert">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>The controls are a work in progress.</div>
+          </div>
+
+          <div>
+            <div className="d-flex align-items-center gap-3 mt-3">
+              <span>0:00</span>
+              <input
+                className="w-100 form-range"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={progress}
+                onChange={onProgressChange}
+              ></input>
+              <span>0:00</span>
+            </div>
+            <div className="d-flex gap-2 justify-content-center mt-2">
+              <button
+                className="btn btn-outline-primary border border-0"
+                style={{ fontSize: 20 }}
+                onClick={onPreviousClick}
+              >
+                <i className="bi bi-chevron-bar-left"></i>
+              </button>
+              <button className="btn btn-outline-primary rounded-circle" style={{ fontSize: 24 }}>
+                <i className="bi bi-play-fill"></i>
+              </button>
+              <button
+                className="btn btn-outline-primary border border-0"
+                style={{ fontSize: 20 }}
+                onClick={onNextClick}
+              >
+                <i className="bi bi-chevron-bar-right"></i>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
