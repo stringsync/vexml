@@ -200,9 +200,11 @@ class InteractionModelFactory {
   private static fromGraceNoteRendering(graceNote: GraceNoteRendering): InteractionModel<GraceNoteRendering> {
     const handles = new Array<InteractionHandle>();
 
-    const vfGraceNote = graceNote.vexflow.graceNote;
-    const vfBoundingBox = vfGraceNote.getBoundingBox();
-    const graceNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    // TODO: When calling vfGraceNote.getBoundingBox(), we find that the grace note is not attached to a tick context.
+    // const vfGraceNote = graceNote.vexflow.graceNote;
+    // const vfBoundingBox = vfGraceNote.getBoundingBox();
+    // const graceNoteRect = spatial.Rect.fromRectLike(vfBoundingBox);
+    const graceNoteRect = spatial.Rect.empty();
     handles.push(new InteractionHandle(graceNoteRect, graceNoteRect.center()));
 
     return new InteractionModel(handles, graceNote);
