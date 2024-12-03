@@ -131,8 +131,6 @@ export class Vexml {
     // Make playback sequences.
     const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
 
-    console.log(scoreRendering);
-
     return new rendering.Rendering({
       config,
       score: scoreRendering,
