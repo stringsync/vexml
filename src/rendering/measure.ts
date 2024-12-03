@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
-import { PartScoped } from './types';
+import { JumpInstruction, PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -24,6 +24,7 @@ export type MeasureRendering = {
   fragments: MeasureFragmentRendering[];
   width: number;
   endingBracket: EndingBracketRendering | null;
+  jumpInstructions: JumpInstruction[];
 };
 
 /**
@@ -224,6 +225,7 @@ export class Measure {
       index: this.index,
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
       endingBracket: endingBracketRendering,
+      jumpInstructions: this.getJumpInstructions(),
     };
   }
 
@@ -400,5 +402,48 @@ export class Measure {
     }
 
     return new MeasureEntryIterator({ entries, staveSignature });
+  }
+
+  private getJumpInstructions(): JumpInstruction[] {
+    // TODO: Handle other directional symbols like codas and fines.
+    const repeatBarlines = this.musicXML.measures
+      .flatMap((measure) => measure.value.getBarlines())
+      .filter((barline) => barline.isRepeat());
+
+    // NOTE: Repeats can be specified in multiple parts, but the measure should be consistent across all parts. If a
+    // measure in a single part has a start repeat, then all parts should have a start repeat. The same goes for end.
+    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
+    const hasEndRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'backward');
+
+    const jumpInstructions = new Array<JumpInstruction>();
+
+    if (hasStartRepeat) {
+      jumpInstructions.push({ type: 'repeatstart' });
+    }
+    if (hasEndRepeat) {
+      const endings = repeatBarlines
+        .filter((barline) => barline.isEnding())
+        .flatMap((barline) => barline.getEndingText().split(/[\s,]+/))
+        .map((endingText) => endingText.trim())
+        .filter((endingText) => endingText.length > 0)
+        .map((endingText) => parseInt(endingText, 0));
+
+      if (endings.length === 0) {
+        // If there are no endings, insert a 0 for the number of times to repeat.
+        const times = util.max(
+          repeatBarlines
+            .map((barline) => barline.getRepeatTimes())
+            .filter((times): times is number => typeof times === 'number'),
+          1
+        );
+        for (let i = 0; i < times; i++) {
+          endings.push(0);
+        }
+      }
+
+      jumpInstructions.push({ type: 'repeatend', endings });
+    }
+
+    return jumpInstructions;
   }
 }
