@@ -33,3 +33,13 @@ export type TabPosition = {
 
 /** The different inputs a device could be interacting with a vexml rendering. */
 export type InputType = 'auto' | 'mouse' | 'touch' | 'hybrid' | 'none';
+
+/** A directive to jump to a different measure in a musical piece. */
+export type JumpInstruction =
+  | { type: 'repeatstart' }
+  | { type: 'repeatend'; endings: number[] }
+  | { type: 'codastart' }
+  | { type: 'codaend' }
+  | { type: 'dcalcoda' }
+  | { type: 'fine' }
+  | { type: 'dsalfine' };
