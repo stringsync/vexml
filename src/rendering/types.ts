@@ -35,7 +35,7 @@ export type TabPosition = {
 export type InputType = 'auto' | 'mouse' | 'touch' | 'hybrid' | 'none';
 
 /** A directive to jump to a different measure in a musical piece. */
-export type JumpInstruction =
+export type Jump =
   | { type: 'repeatstart' }
   | { type: 'repeatend'; endings: number[] }
   | { type: 'codastart' }

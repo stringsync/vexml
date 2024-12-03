@@ -44,9 +44,13 @@ type WhereArg = OnlyOne<{
   [K in FilterableRenderingType]: Predicate<FilterableRenderingWithType<K>>;
 }>;
 
+/** Describes how to traverse the sheet music. */
+type WalkType = 'as-seen' | 'as-played';
+
 export class Query {
   private score: ScoreRendering;
   private predicates = new Array<Predicate>();
+  private walkType: WalkType = 'as-seen';
 
   private constructor(score: ScoreRendering) {
     this.score = score;
@@ -56,9 +60,16 @@ export class Query {
     return new Query(score);
   }
 
+  /** Traverses the music in the order it is played, accounting for jump instructions. */
+  asPlayed(): Query {
+    const query = this.clone();
+    query.walkType = 'as-played';
+    return query;
+  }
+
   /** Creates a new query that filters based on the argument. */
   where(arg: WhereArg): Query {
-    const query = new Query(this.score);
+    const query = this.clone();
     const predicates = [...this.predicates];
 
     for (const [type, predicate] of Object.entries(arg)) {
@@ -72,15 +83,66 @@ export class Query {
 
   select<T extends SelectableRenderingType>(...types: T[]): Array<SelectableRenderingWithType<T>> {
     const selection = new Selection<T>(types);
-    this.walkSystems(this.score, selection);
+
+    switch (this.walkType) {
+      case 'as-seen':
+        this.walkAsSeen(this.score, selection);
+        break;
+      case 'as-played':
+        this.walkAsPlayed(this.score, selection);
+        break;
+    }
+
     return selection.results;
+  }
+
+  private clone(): Query {
+    const query = new Query(this.score);
+    query.predicates = [...this.predicates];
+    query.walkType = this.walkType;
+    return query;
   }
 
   private isInScope(value: any) {
     return this.predicates.every((predicate) => predicate(value));
   }
 
-  private walkSystems<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
+  private walkAsPlayed<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
+    // Before processing the selection, we need to figure out the order of the measures based on their jumps. We will
+    // perform filtering after we have the correct order.
+    const asPlayedMeasures = new Array<MeasureRendering>();
+
+    let measureIndex = 0;
+    const measures = score.systems.flatMap((system) => system.measures);
+    while (measureIndex < measures.length) {
+      const measure = measures[measureIndex];
+      asPlayedMeasures.push(measure);
+
+      // TODO: Account for measure jumps.
+
+      measureIndex++;
+    }
+
+    // Now, we can walk the measures in the order they are played. Whenever we change systems, we'll reprocess it.
+    let currentSystemIndex = -1;
+    for (const measure of asPlayedMeasures) {
+      const systemIndex = measure.address.getSystemIndex()!;
+      if (systemIndex !== currentSystemIndex) {
+        currentSystemIndex = systemIndex;
+        const system = score.systems[currentSystemIndex];
+        if (this.isInScope(system)) {
+          selection.process(system);
+        }
+      }
+
+      if (this.isInScope(measure)) {
+        selection.process(measure);
+        this.walkMeasureFragments(measure, selection);
+      }
+    }
+  }
+
+  private walkAsSeen<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
     for (const system of score.systems) {
       if (this.isInScope(system)) {
         selection.process(system);

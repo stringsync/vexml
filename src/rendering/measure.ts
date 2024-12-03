@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
-import { JumpInstruction, PartScoped } from './types';
+import { Jump, PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -24,7 +24,7 @@ export type MeasureRendering = {
   fragments: MeasureFragmentRendering[];
   width: number;
   endingBracket: EndingBracketRendering | null;
-  jumpInstructions: JumpInstruction[];
+  jumps: Jump[];
 };
 
 /**
@@ -225,7 +225,7 @@ export class Measure {
       index: this.index,
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
       endingBracket: endingBracketRendering,
-      jumpInstructions: this.getJumpInstructions(),
+      jumps: this.getJumps(),
     };
   }
 
@@ -404,7 +404,7 @@ export class Measure {
     return new MeasureEntryIterator({ entries, staveSignature });
   }
 
-  private getJumpInstructions(): JumpInstruction[] {
+  private getJumps(): Jump[] {
     // TODO: Handle other directional symbols like codas and fines.
     const repeatBarlines = this.musicXML.measures
       .flatMap((measure) => measure.value.getBarlines())
@@ -415,10 +415,10 @@ export class Measure {
     const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
     const hasEndRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'backward');
 
-    const jumpInstructions = new Array<JumpInstruction>();
+    const jumps = new Array<Jump>();
 
     if (hasStartRepeat) {
-      jumpInstructions.push({ type: 'repeatstart' });
+      jumps.push({ type: 'repeatstart' });
     }
     if (hasEndRepeat) {
       const endings = repeatBarlines
@@ -441,9 +441,9 @@ export class Measure {
         }
       }
 
-      jumpInstructions.push({ type: 'repeatend', endings });
+      jumps.push({ type: 'repeatend', endings });
     }
 
-    return jumpInstructions;
+    return jumps;
   }
 }
