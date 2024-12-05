@@ -37,7 +37,8 @@ export type InputType = 'auto' | 'mouse' | 'touch' | 'hybrid' | 'none';
 /** A directive to jump to a different measure in a musical piece. */
 export type Jump =
   | { type: 'repeatstart' }
-  | { type: 'repeatend'; endings: number[] }
+  | { type: 'repeatend'; times: number }
+  | { type: 'repeatending'; times: number }
   | { type: 'codastart' }
   | { type: 'codaend' }
   | { type: 'dcalcoda' }
