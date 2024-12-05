@@ -55,6 +55,7 @@ export class Sequence {
         const playables = rendering.Query.of(score)
           .where(rendering.filters.forPart(partId))
           .where(rendering.filters.forVoice(voiceId))
+          .asPlayed()
           .select(...PLAYABLE_RENDERING_TYPES);
 
         let ticks = 0;

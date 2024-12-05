@@ -406,42 +406,25 @@ export class Measure {
 
   private getJumps(): Jump[] {
     // TODO: Handle other directional symbols like codas and fines.
-    const repeatBarlines = this.musicXML.measures
-      .flatMap((measure) => measure.value.getBarlines())
-      .filter((barline) => barline.isRepeat());
+    const barlines = this.musicXML.measures.flatMap((measure) => measure.value.getBarlines());
+    const repeatBarlines = barlines.filter((barline) => barline.isRepeat());
 
     // NOTE: Repeats can be specified in multiple parts, but the measure should be consistent across all parts. If a
     // measure in a single part has a start repeat, then all parts should have a start repeat. The same goes for end.
-    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
-    const hasEndRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'backward');
 
     const jumps = new Array<Jump>();
 
+    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
     if (hasStartRepeat) {
       jumps.push({ type: 'repeatstart' });
     }
-    if (hasEndRepeat) {
-      const endings = repeatBarlines
-        .filter((barline) => barline.isEnding())
-        .flatMap((barline) => barline.getEndingText().split(/[\s,]+/))
-        .map((endingText) => endingText.trim())
-        .filter((endingText) => endingText.length > 0)
-        .map((endingText) => parseInt(endingText, 0));
 
-      if (endings.length === 0) {
-        // If there are no endings, insert a 0 for the number of times to repeat.
-        const times = util.max(
-          repeatBarlines
-            .map((barline) => barline.getRepeatTimes())
-            .filter((times): times is number => typeof times === 'number'),
-          1
-        );
-        for (let i = 0; i < times; i++) {
-          endings.push(0);
-        }
-      }
-
-      jumps.push({ type: 'repeatend', endings });
+    const endRepeat = repeatBarlines.find((barline) => barline.getRepeatDirection() === 'backward');
+    if (endRepeat && endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatending', times: endRepeat.getEndingNumber().split(',').length });
+    }
+    if (endRepeat && !endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatend', times: endRepeat.getRepeatTimes() ?? 1 });
     }
 
     return jumps;

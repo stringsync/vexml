@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import { GraceNoteRendering, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { RestRendering } from './rest';
@@ -46,6 +47,14 @@ type WhereArg = OnlyOne<{
 
 /** Describes how to traverse the sheet music. */
 type WalkType = 'as-seen' | 'as-played';
+
+type Repeat = {
+  id: number;
+  from: number;
+  to: number;
+  times: number;
+  excluding: number[];
+};
 
 export class Query {
   private score: ScoreRendering;
@@ -111,14 +120,76 @@ export class Query {
     // Before processing the selection, we need to figure out the order of the measures based on their jumps. We will
     // perform filtering after we have the correct order.
     const asPlayedMeasures = new Array<MeasureRendering>();
-
-    let measureIndex = 0;
     const measures = score.systems.flatMap((system) => system.measures);
+
+    // Create repeats to make the data easier to work with.
+    let repeatId = 1;
+    const repeats = new Array<Readonly<Repeat>>();
+    const startMeasureIndexes = new Array<number>();
+    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
+      const measure = measures[measureIndex];
+
+      for (const jump of measure.jumps) {
+        if (jump.type === 'repeatstart') {
+          startMeasureIndexes.push(measureIndex);
+        }
+
+        if (jump.type === 'repeatend') {
+          // Not all repeatends have a corresponding repeatstart. Assume they're supposed to repeat from the beginning.
+          const from = startMeasureIndexes.pop() ?? 0;
+          const to = measureIndex;
+          const times = jump.times;
+          const id = repeatId++;
+          repeats.push({ id, from, to, times, excluding: [] });
+        }
+
+        if (jump.type === 'repeatending') {
+          const from = startMeasureIndexes.pop() ?? 0;
+          const to = measureIndex;
+          const times = jump.times - 1;
+          if (times > 0) {
+            repeats.push({ id: repeatId++, from, to, times: times - 1, excluding: [] });
+          }
+          repeats.push({ id: repeatId++, from, to, times: 1, excluding: [measureIndex] });
+        }
+      }
+    }
+
+    // March through the measures and react to the repeats whenever we encounter them.
+    let measureIndex = 0;
+    const repeatStack = new Array<Repeat>();
     while (measureIndex < measures.length) {
       const measure = measures[measureIndex];
-      asPlayedMeasures.push(measure);
 
-      // TODO: Account for measure jumps.
+      const srcRepeat = repeats.find((repeat) => repeat.to === measureIndex);
+      const activeRepeat = util.last(repeatStack);
+
+      const isMeasureExcluded =
+        !!activeRepeat && activeRepeat.times === 0 && activeRepeat.excluding.includes(measureIndex);
+      if (!isMeasureExcluded) {
+        asPlayedMeasures.push(measure);
+      }
+
+      if (srcRepeat && srcRepeat.id === activeRepeat?.id) {
+        if (activeRepeat.times > 0) {
+          activeRepeat.times--;
+          measureIndex = activeRepeat.from;
+        } else {
+          repeatStack.pop();
+          measureIndex++;
+        }
+        continue;
+      }
+
+      if (srcRepeat) {
+        // IMPORTANT: We need to clone the repeat object to avoid modifying the original since we'll be decrementing
+        // the times property. This is necessary to avoid side effects when we encounter the same repeat multiple times.
+        const repeatCopy = { ...srcRepeat };
+        repeatStack.push(repeatCopy);
+        repeatCopy.times--;
+        measureIndex = repeatCopy.from;
+        continue;
+      }
 
       measureIndex++;
     }

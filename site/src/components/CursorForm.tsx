@@ -155,7 +155,7 @@ export const CursorForm = (props: CursorFormProps) => {
 
       <div className="d-grid gap-3">
         {cursors.map((cursor) => (
-          <div className="row">
+          <div key={cursor.id} className="row">
             <div className="col d-flex align-items-center gap-2">
               <div
                 className="border border-black"
