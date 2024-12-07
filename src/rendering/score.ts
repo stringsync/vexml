@@ -12,6 +12,7 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
+import { MeasureRendering } from './measure';
 
 const Y_SHIFT_PADDING = 10;
 

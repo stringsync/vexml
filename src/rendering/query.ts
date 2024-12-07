@@ -56,9 +56,16 @@ type Repeat = {
   excluding: number[];
 };
 
+/**
+ * A function that returns the measure indexes (not measure numbers) that the measures should be traversed. Indexes can
+ * appear multiple times, which is common for repeats.
+ */
+export type MeasureSequenceProvider = (measures: MeasureRendering[]) => number[];
+
 export class Query {
   private score: ScoreRendering;
   private predicates = new Array<Predicate>();
+  private measureSequenceProvider: MeasureSequenceProvider | null = null;
   private walkType: WalkType = 'as-seen';
 
   private constructor(score: ScoreRendering) {
@@ -90,6 +97,13 @@ export class Query {
     return query;
   }
 
+  withMeasureSequence(measureSequenceProvider: MeasureSequenceProvider): Query {
+    const query = this.clone();
+    query.measureSequenceProvider = measureSequenceProvider;
+    return query;
+  }
+
+  /** Selects the renderings that match the specified types. */
   select<T extends SelectableRenderingType>(...types: T[]): Array<SelectableRenderingWithType<T>> {
     const selection = new Selection<T>(types);
 
@@ -108,6 +122,7 @@ export class Query {
   private clone(): Query {
     const query = new Query(this.score);
     query.predicates = [...this.predicates];
+    query.measureSequenceProvider = this.measureSequenceProvider;
     query.walkType = this.walkType;
     return query;
   }
