@@ -162,7 +162,7 @@ class Repeat {
               new Repeat({
                 id: nextId++,
                 times: jump.times - 1,
-                from: measureIndex,
+                from: startMeasureIndex,
                 to: measureIndex,
                 excluding: [],
               })
