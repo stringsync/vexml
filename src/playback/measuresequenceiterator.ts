@@ -10,14 +10,14 @@ type Jump = { type: 'repeatstart' } | { type: 'repeatend'; times: number } | { t
 /**
  * A class that iterates over measures in playback order (accounting for repeats and jumps).
  */
-export class MeasureIterator<T extends Measure> implements Iterable<T> {
+export class MeasureSequenceIterator<T extends Measure> implements Iterable<number> {
   private measures: T[];
 
   constructor(measures: T[]) {
     this.measures = measures;
   }
 
-  [Symbol.iterator](): Iterator<T> {
+  [Symbol.iterator](): Iterator<number> {
     const repeats = Repeat.from(this.measures);
     const activeRepeats = new util.Stack<Repeat>();
 
@@ -37,7 +37,7 @@ export class MeasureIterator<T extends Measure> implements Iterable<T> {
 
     let measureIndex = 0;
 
-    const iterator: Iterator<T> = {
+    const iterator: Iterator<number> = {
       next: () => {
         // We've reached the end of the measures.
         if (measureIndex >= this.measures.length) {
@@ -45,10 +45,21 @@ export class MeasureIterator<T extends Measure> implements Iterable<T> {
         }
 
         const measure = this.measures[measureIndex];
+
         const { activeRepeat, measureRepeat, nextMeasureRepeat } = getState();
 
-        // The active repeat prescribes that we should skip this measure.
-        if (activeRepeat?.isMeasureExcluded(measureIndex)) {
+        const isMeasureExcluded = activeRepeat?.isMeasureExcluded(measureIndex);
+
+        // We need to skip this measure, but also account for the active repeat finishing.
+        // WARNING: Any subsequent repeats that "activate" (not start) on this measure will be ignored.
+        if (isMeasureExcluded && activeRepeat?.isFinished()) {
+          activeRepeats.pop();
+          measureIndex++;
+          return iterator.next();
+        }
+
+        // The active repeat simply excludes this measure, so we move onto the next one.
+        if (isMeasureExcluded && !activeRepeat?.isFinished()) {
           measureIndex++;
           return iterator.next();
         }
@@ -62,21 +73,21 @@ export class MeasureIterator<T extends Measure> implements Iterable<T> {
           activeRepeats.push(nextActiveRepeat);
           nextActiveRepeat.decrement();
           measureIndex = nextMeasureRepeat.from;
-          return { value: measure, done: false };
+          return { value: measure.index, done: false };
         }
 
         // The measure repeat is active, has finished, and there is not another repeat to process.
         if (isMeasureRepeatActive && activeRepeat.isFinished() && !nextMeasureRepeat) {
           activeRepeats.pop();
           measureIndex++;
-          return { value: measure, done: false };
+          return { value: measure.index, done: false };
         }
 
         // The measure repeat is active and has not finished.
         if (isMeasureRepeatActive && !activeRepeat.isFinished()) {
           activeRepeat.decrement();
           measureIndex = activeRepeat.from;
-          return { value: measure, done: false };
+          return { value: measure.index, done: false };
         }
 
         // The measure repeat is not active, but it should be.
@@ -85,12 +96,12 @@ export class MeasureIterator<T extends Measure> implements Iterable<T> {
           activeRepeats.push(nextActiveRepeat);
           nextActiveRepeat.decrement();
           measureIndex = measureRepeat.from;
-          return { value: measure, done: false };
+          return { value: measure.index, done: false };
         }
 
         // Nothing special to do with this measure, move forward.
         measureIndex++;
-        return { value: measure, done: false };
+        return { value: measure.index, done: false };
       },
     };
 

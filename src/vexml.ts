@@ -6,6 +6,7 @@ import * as events from '@/events';
 import * as components from '@/components';
 import * as playback from '@/playback';
 import { Config, DEFAULT_CONFIG } from '@/config';
+import { MeasureSequenceIterator } from './playback/measuresequenceiterator';
 
 export type RenderOptions = {
   element: HTMLDivElement;
