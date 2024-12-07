@@ -1,4 +1,3 @@
-import * as util from '@/util';
 import { GraceNoteRendering, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
 import { GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
 import { RestRendering } from './rest';
@@ -6,7 +5,7 @@ import { MeasureRendering } from './measure';
 import { StaveRendering } from './stave';
 import { SystemRendering } from './system';
 import { PartRendering } from './part';
-import { VoiceRendering } from './voice';
+import { VoiceEntryRendering, VoiceRendering } from './voice';
 import { ScoreRendering } from './score';
 import { GhostNoteRendering } from './ghostnote';
 import { MeasureFragmentRendering } from './measurefragment';
@@ -45,28 +44,16 @@ type WhereArg = OnlyOne<{
   [K in FilterableRenderingType]: Predicate<FilterableRenderingWithType<K>>;
 }>;
 
-/** Describes how to traverse the sheet music. */
-type WalkType = 'as-seen' | 'as-played';
-
-type Repeat = {
-  id: number;
-  from: number;
-  to: number;
-  times: number;
-  excluding: number[];
-};
-
 /**
  * A function that returns the measure indexes (not measure numbers) that the measures should be traversed. Indexes can
  * appear multiple times, which is common for repeats.
  */
-export type MeasureSequenceProvider = (measures: MeasureRendering[]) => number[];
+export type MeasureSequence = (measures: MeasureRendering[]) => Iterable<number>;
 
 export class Query {
   private score: ScoreRendering;
   private predicates = new Array<Predicate>();
-  private measureSequenceProvider: MeasureSequenceProvider | null = null;
-  private walkType: WalkType = 'as-seen';
+  private measureSequence: MeasureSequence | null = null;
 
   private constructor(score: ScoreRendering) {
     this.score = score;
@@ -74,13 +61,6 @@ export class Query {
 
   static of(score: ScoreRendering) {
     return new Query(score);
-  }
-
-  /** Traverses the music in the order it is played, accounting for jump instructions. */
-  asPlayed(): Query {
-    const query = this.clone();
-    query.walkType = 'as-played';
-    return query;
   }
 
   /** Creates a new query that filters based on the argument. */
@@ -97,33 +77,23 @@ export class Query {
     return query;
   }
 
-  withMeasureSequence(measureSequenceProvider: MeasureSequenceProvider): Query {
+  withMeasureSequence(measureSequence: MeasureSequence): Query {
     const query = this.clone();
-    query.measureSequenceProvider = measureSequenceProvider;
+    query.measureSequence = measureSequence;
     return query;
   }
 
   /** Selects the renderings that match the specified types. */
   select<T extends SelectableRenderingType>(...types: T[]): Array<SelectableRenderingWithType<T>> {
     const selection = new Selection<T>(types);
-
-    switch (this.walkType) {
-      case 'as-seen':
-        this.walkAsSeen(this.score, selection);
-        break;
-      case 'as-played':
-        this.walkAsPlayed(this.score, selection);
-        break;
-    }
-
+    this.walkScore(this.score, selection);
     return selection.results;
   }
 
   private clone(): Query {
     const query = new Query(this.score);
     query.predicates = [...this.predicates];
-    query.measureSequenceProvider = this.measureSequenceProvider;
-    query.walkType = this.walkType;
+    query.measureSequence = this.measureSequence;
     return query;
   }
 
@@ -131,167 +101,98 @@ export class Query {
     return this.predicates.every((predicate) => predicate(value));
   }
 
-  private walkAsPlayed<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
-    // Before processing the selection, we need to figure out the order of the measures based on their jumps. We will
-    // perform filtering after we have the correct order.
-    const asPlayedMeasures = new Array<MeasureRendering>();
-    const measures = score.systems.flatMap((system) => system.measures);
+  private walkScore<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
+    let measures = score.systems.flatMap((system) => system.measures);
 
-    // Create repeats to make the data easier to work with.
-    let repeatId = 1;
-    const repeats = new Array<Readonly<Repeat>>();
-    const startMeasureIndexes = new Array<number>();
-    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-      const measure = measures[measureIndex];
+    measures = this.measureSequence
+      ? Array.from(this.measureSequence(measures)).map((index) => measures[index])
+      : measures;
 
-      for (const jump of measure.jumps) {
-        if (jump.type === 'repeatstart') {
-          startMeasureIndexes.push(measureIndex);
-        }
-
-        if (jump.type === 'repeatend') {
-          // Not all repeatends have a corresponding repeatstart. Assume they're supposed to repeat from the beginning.
-          const from = startMeasureIndexes.pop() ?? 0;
-          const to = measureIndex;
-          const times = jump.times;
-          const id = repeatId++;
-          repeats.push({ id, from, to, times, excluding: [] });
-        }
-
-        if (jump.type === 'repeatending') {
-          const from = startMeasureIndexes.pop() ?? 0;
-          const to = measureIndex;
-          const times = jump.times - 1;
-          if (times > 0) {
-            repeats.push({ id: repeatId++, from, to, times: times - 1, excluding: [] });
-          }
-          repeats.push({ id: repeatId++, from, to, times: 1, excluding: [measureIndex] });
-        }
-      }
-    }
-
-    // March through the measures and react to the repeats whenever we encounter them.
-    let measureIndex = 0;
-    const repeatStack = new Array<Repeat>();
-    while (measureIndex < measures.length) {
-      const measure = measures[measureIndex];
-
-      const srcRepeat = repeats.find((repeat) => repeat.to === measureIndex);
-      const activeRepeat = util.last(repeatStack);
-
-      const isMeasureExcluded =
-        !!activeRepeat && activeRepeat.times === 0 && activeRepeat.excluding.includes(measureIndex);
-      if (!isMeasureExcluded) {
-        asPlayedMeasures.push(measure);
-      }
-
-      if (srcRepeat && srcRepeat.id === activeRepeat?.id) {
-        if (activeRepeat.times > 0) {
-          activeRepeat.times--;
-          measureIndex = activeRepeat.from;
-        } else {
-          repeatStack.pop();
-          measureIndex++;
-        }
-        continue;
-      }
-
-      if (srcRepeat) {
-        // IMPORTANT: We need to clone the repeat object to avoid modifying the original since we'll be decrementing
-        // the times property. This is necessary to avoid side effects when we encounter the same repeat multiple times.
-        const repeatCopy = { ...srcRepeat };
-        repeatStack.push(repeatCopy);
-        repeatCopy.times--;
-        measureIndex = repeatCopy.from;
-        continue;
-      }
-
-      measureIndex++;
-    }
-
-    // Now, we can walk the measures in the order they are played. Whenever we change systems, we'll reprocess it.
     let currentSystemIndex = -1;
-    for (const measure of asPlayedMeasures) {
+    for (const measure of measures) {
       const systemIndex = measure.address.getSystemIndex()!;
-      if (systemIndex !== currentSystemIndex) {
-        currentSystemIndex = systemIndex;
-        const system = score.systems[currentSystemIndex];
-        if (this.isInScope(system)) {
+      const didSystemChange = systemIndex !== currentSystemIndex;
+      currentSystemIndex = systemIndex;
+      const system = score.systems[currentSystemIndex];
+      if (this.isInScope(system)) {
+        if (didSystemChange) {
           selection.process(system);
         }
-      }
-
-      if (this.isInScope(measure)) {
-        selection.process(measure);
-        this.walkMeasureFragments(measure, selection);
+        this.walkMeasure(measure, selection);
       }
     }
   }
 
-  private walkAsSeen<T extends SelectableRenderingType>(score: ScoreRendering, selection: Selection<T>) {
-    for (const system of score.systems) {
-      if (this.isInScope(system)) {
-        selection.process(system);
-        this.walkMeasures(system, selection);
-      }
+  private walkMeasure<T extends SelectableRenderingType>(measure: MeasureRendering, selection: Selection<T>) {
+    if (!this.isInScope(measure)) {
+      return;
     }
-  }
 
-  private walkMeasures<T extends SelectableRenderingType>(system: SystemRendering, selection: Selection<T>) {
-    for (const measure of system.measures) {
-      if (this.isInScope(measure)) {
-        selection.process(measure);
-        this.walkMeasureFragments(measure, selection);
-      }
-    }
-  }
+    selection.process(measure);
 
-  private walkMeasureFragments<T extends SelectableRenderingType>(measure: MeasureRendering, selection: Selection<T>) {
     for (const measureFragment of measure.fragments) {
-      if (this.isInScope(measureFragment)) {
-        selection.process(measureFragment);
-        this.walkParts(measureFragment, selection);
-      }
+      this.walkMeasureFragment(measureFragment, selection);
     }
   }
 
-  private walkParts<T extends SelectableRenderingType>(
+  private walkMeasureFragment<T extends SelectableRenderingType>(
     measureFragment: MeasureFragmentRendering,
     selection: Selection<T>
   ) {
+    if (!this.isInScope(measureFragment)) {
+      return;
+    }
+
+    selection.process(measureFragment);
+
     for (const part of measureFragment.parts) {
-      if (this.isInScope(part)) {
-        selection.process(part);
-        this.walkStaves(part, selection);
-      }
+      this.walkPart(part, selection);
     }
   }
 
-  private walkStaves<T extends SelectableRenderingType>(part: PartRendering, selection: Selection<T>) {
+  private walkPart<T extends SelectableRenderingType>(part: PartRendering, selection: Selection<T>) {
+    if (!this.isInScope(part)) {
+      return;
+    }
+
+    selection.process(part);
+
     for (const stave of part.staves) {
-      if (this.isInScope(stave)) {
-        selection.process(stave);
-        this.walkVoices(stave, selection);
-      }
+      this.walkStave(stave, selection);
     }
   }
 
-  private walkVoices<T extends SelectableRenderingType>(stave: StaveRendering, selection: Selection<T>) {
-    if (stave.entry.type === 'chorus') {
-      for (const voice of stave.entry.voices) {
-        if (this.isInScope(voice)) {
-          selection.process(voice);
-          this.walkVoiceEntries(voice, selection);
-        }
-      }
+  private walkStave<T extends SelectableRenderingType>(stave: StaveRendering, selection: Selection<T>) {
+    if (!this.isInScope(stave)) {
+      return;
+    }
+
+    selection.process(stave);
+
+    if (stave.entry.type !== 'chorus') {
+      return;
+    }
+
+    for (const voice of stave.entry.voices) {
+      this.walkVoice(voice, selection);
     }
   }
 
-  private walkVoiceEntries<T extends SelectableRenderingType>(voice: VoiceRendering, selection: Selection<T>) {
+  private walkVoice<T extends SelectableRenderingType>(voice: VoiceRendering, selection: Selection<T>) {
+    if (!this.isInScope(voice)) {
+      return;
+    }
+
+    selection.process(voice);
+
     for (const voiceEntry of voice.entries) {
-      if (this.predicates.every((predicate) => predicate(voiceEntry))) {
-        selection.process(voiceEntry);
-      }
+      this.walkVoiceEntry(voiceEntry, selection);
+    }
+  }
+
+  private walkVoiceEntry<T extends SelectableRenderingType>(voiceEntry: VoiceEntryRendering, selection: Selection<T>) {
+    if (this.predicates.every((predicate) => predicate(voiceEntry))) {
+      selection.process(voiceEntry);
     }
   }
 }

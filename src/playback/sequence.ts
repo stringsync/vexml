@@ -1,5 +1,6 @@
 import * as rendering from '@/rendering';
 import * as util from '@/util';
+import { MeasureSequenceIterator } from './measuresequenceiterator';
 
 export const PLAYABLE_RENDERING_TYPES = [
   'stavenote',
@@ -53,9 +54,9 @@ export class Sequence {
       const events = new Array<SequenceEvent>();
       for (const voiceId of voiceIds) {
         const playables = rendering.Query.of(score)
+          .withMeasureSequence((measures) => new MeasureSequenceIterator(measures))
           .where(rendering.filters.forPart(partId))
           .where(rendering.filters.forVoice(voiceId))
-          .asPlayed()
           .select(...PLAYABLE_RENDERING_TYPES);
 
         let ticks = 0;
