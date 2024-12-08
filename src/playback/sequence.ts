@@ -29,6 +29,8 @@ type SequenceEvent = {
 
 export type SequenceEntry = {
   interactables: rendering.InteractableRendering[];
+  // TODO: Factor in bpm and use timeMs instead of ticks. If the bpm needs to change, the change should stem from the
+  // MusicXML. Otherwise, we can change the playback rate to make the music play faster or slower.
   tickRange: util.NumberRange;
 };
 
@@ -111,6 +113,10 @@ export class Sequence {
 
   getPartId(): string {
     return this.partId;
+  }
+
+  getDurationMs(): number {
+    return 9999;
   }
 }
 
