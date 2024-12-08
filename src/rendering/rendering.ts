@@ -59,7 +59,7 @@ export class Rendering {
     const cursorModel = cursors.Cursor.create(this.score, partId, sequence);
 
     const overlayElement = this.root.getOverlay().getElement();
-    const cursorComponent = components.Cursor.render(overlayElement, 'red');
+    const cursorComponent = opts?.component ?? components.Cursor.render(overlayElement);
 
     cursorModel.addEventListener('change', (event) => {
       const rect = event.cursorRect;
@@ -73,6 +73,11 @@ export class Rendering {
     }
 
     return cursorModel;
+  }
+
+  /** Returns the duration of the score in milliseconds. */
+  getDurationMs() {
+    return util.max(this.sequences.map((sequence) => sequence.getDuration().ms));
   }
 
   /** Dispatches an event to the interactive surface element. */
