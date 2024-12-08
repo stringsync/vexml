@@ -17,10 +17,16 @@ export class Cursor {
   private expensiveLocator: ExpensiveLocator;
   private index = 0;
 
-  constructor(sequence: playback.Sequence, cheapLocator: CheapLocator, expensiveLocator: ExpensiveLocator) {
+  private constructor(sequence: playback.Sequence, cheapLocator: CheapLocator, expensiveLocator: ExpensiveLocator) {
     this.sequence = sequence;
     this.cheapLocator = cheapLocator;
     this.expensiveLocator = expensiveLocator;
+  }
+
+  static create(sequence: playback.Sequence): Cursor {
+    const cheapLocator = new CheapLocator(sequence);
+    const expensiveLocator = new ExpensiveLocator(sequence);
+    return new Cursor(sequence, cheapLocator, expensiveLocator);
   }
 
   getState(): CursorState {
@@ -31,25 +37,28 @@ export class Cursor {
     return { index, interactables, hasPrevious, hasNext };
   }
 
-  next(): void {
+  next(): this {
     this.goTo(this.index + 1);
+    return this;
   }
 
-  previous(): void {
+  previous(): this {
     this.goTo(this.index - 1);
+    return this;
   }
 
-  goTo(index: number): void {
-    this.index = util.clamp(index, 0, this.sequence.getLength() - 1);
+  goTo(index: number): this {
+    this.index = util.clamp(0, this.sequence.getLength() - 1, index);
+    return this;
   }
 
-  seek(timeMs: number): void {
-    timeMs = util.clamp(timeMs, 0, this.sequence.getDuration().ms);
+  seek(timeMs: number): this {
+    timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
-    const index = this.cheapLocator.setIndex(this.index).locate(time) ?? this.expensiveLocator.locate(time);
+    const index = this.cheapLocator.setStartingIndex(this.index).locate(time) ?? this.expensiveLocator.locate(time);
     if (typeof index !== 'number') {
       throw new Error(`locator coverage is insufficient to locate time ${timeMs}`);
     }
-    this.goTo(index);
+    return this.goTo(index);
   }
 }

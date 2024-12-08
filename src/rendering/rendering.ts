@@ -72,6 +72,16 @@ export class Rendering {
     return cursorModel;
   }
 
+  addCursor(opts?: { partId?: string }): cursors.Cursor {
+    const partId = opts?.partId ?? this.partIds[0];
+    const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
+
+    util.assertDefined(sequence);
+
+    const cursor = cursors.Cursor.create(sequence);
+    return cursor;
+  }
+
   /** Dispatches an event to the interactive surface element. */
   dispatchNativeEvent(event: Event): void {
     this.root.getOverlay().getElement().dispatchEvent(event);
