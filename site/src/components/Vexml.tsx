@@ -31,24 +31,34 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
   const [discreteCursors, setDiscreteCursors] = useState<vexml.Cursor[]>([]);
 
+  const durationMs = rendering?.getDurationMs() ?? 0;
+
   const [progress, setProgress] = useState(0);
   const onProgressChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const nextProgress = parseFloat(e.target.value);
     setProgress(nextProgress);
+    const timeMs = nextProgress * durationMs;
+
     for (const discreteCursor of discreteCursors) {
-      discreteCursor.next();
+      discreteCursor.seek(timeMs);
     }
   };
 
   const onPreviousClick = () => {
     for (const discreteCursor of discreteCursors) {
       discreteCursor.previous();
+      const timeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      const nextProgress = timeMs / durationMs;
+      setProgress(nextProgress);
     }
   };
 
   const onNextClick = () => {
     for (const discreteCursor of discreteCursors) {
       discreteCursor.next();
+      const timeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      const nextProgress = timeMs / durationMs;
+      setProgress(nextProgress);
     }
   };
 
@@ -207,6 +217,9 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     };
   }, [musicXML, cursors, backend, config, width, div, onResult, onPartIdsChange]);
 
+  const elapsedMs = progress * durationMs;
+  const remainingMs = durationMs - elapsedMs;
+
   return (
     <div className="w-100">
       <div ref={divRef}></div>
@@ -220,7 +233,7 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
 
           <div>
             <div className="d-flex align-items-center gap-3 mt-3">
-              <span>0:00</span>
+              <span className="font-monospace">{toTimeString(elapsedMs)}</span>
               <input
                 className="w-100 form-range"
                 type="range"
@@ -230,24 +243,16 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
                 value={progress}
                 onChange={onProgressChange}
               ></input>
-              <span>0:00</span>
+              <span className="font-monospace">{`-${toTimeString(remainingMs)}`}</span>
             </div>
             <div className="d-flex gap-2 justify-content-center mt-2">
-              <button
-                className="btn btn-outline-primary border border-0"
-                style={{ fontSize: 20 }}
-                onClick={onPreviousClick}
-              >
+              <button className="btn text-primary border border-0" style={{ fontSize: 20 }} onClick={onPreviousClick}>
                 <i className="bi bi-chevron-bar-left"></i>
               </button>
               <button className="btn btn-outline-primary rounded-circle" style={{ fontSize: 24 }}>
                 <i className="bi bi-play-fill"></i>
               </button>
-              <button
-                className="btn btn-outline-primary border border-0"
-                style={{ fontSize: 20 }}
-                onClick={onNextClick}
-              >
+              <button className="btn text-primary border border-0" style={{ fontSize: 20 }} onClick={onNextClick}>
                 <i className="bi bi-chevron-bar-right"></i>
               </button>
             </div>
@@ -257,3 +262,17 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     </div>
   );
 };
+
+function toTimeString(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+}
