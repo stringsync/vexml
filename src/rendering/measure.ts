@@ -25,6 +25,7 @@ export type MeasureRendering = {
   width: number;
   endingBracket: EndingBracketRendering | null;
   jumps: Jump[];
+  bpm: number;
 };
 
 /**
@@ -151,6 +152,7 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
+    defaultBpm: number;
     fragmentWidths: MeasureFragmentWidth[];
     address: Address<'measure'>;
     spanners: Spanners;
@@ -226,6 +228,7 @@ export class Measure {
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
       endingBracket: endingBracketRendering,
       jumps: this.getJumps(),
+      bpm: this.getBpm() ?? opts.defaultBpm,
     };
   }
 
@@ -428,5 +431,15 @@ export class Measure {
     }
 
     return jumps;
+  }
+
+  private getBpm(): number | null {
+    for (const partId of this.partIds) {
+      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
+      if (typeof bpm === 'number') {
+        return bpm;
+      }
+    }
+    return null;
   }
 }
