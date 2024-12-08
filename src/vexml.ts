@@ -135,6 +135,12 @@ export class Vexml {
     // Make playback sequences.
     const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
 
+    console.table(
+      rendering.Query.of(scoreRendering)
+        .select('measure')
+        .map((measure) => measure.bpm)
+    );
+
     return new rendering.Rendering({
       config,
       score: scoreRendering,
