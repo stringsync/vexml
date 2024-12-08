@@ -6,13 +6,28 @@ import * as events from '@/events';
 import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 
+const PART_VERTICAL_SPAN_RENDERINGS = [
+  'stave',
+  'stavenote',
+  'stavechord',
+  'gracenote',
+  'gracechord',
+  'tabnote',
+  'tabchord',
+  'tabgracenote',
+  'tabgracechord',
+  'rest',
+] as const;
+
+const SYSTEM_VERTICAL_SPAN_RENDERINGS = ['measure'] as const;
+
 type CursorState = {
   index: number;
   hasNext: boolean;
   hasPrevious: boolean;
   systemRect: spatial.Rect | null;
   partRect: spatial.Rect | null;
-  interactables: rendering.InteractableRendering[];
+  sequenceEntry: playback.SequenceEntry;
 };
 
 type EventMap = {
@@ -40,15 +55,42 @@ export class Cursor {
     this.expensiveLocator = expensiveLocator;
   }
 
-  static create(sequence: playback.Sequence): Cursor {
+  static create(score: rendering.ScoreRendering, partId: string, sequence: playback.Sequence): Cursor {
+    const query = rendering.Query.of(score).where(rendering.filters.forPart(partId));
+
+    const systemIndexes = query.select('system').map((system) => system.index);
+
+    const partRects = systemIndexes.map((systemIndex) => {
+      const rects = query
+        .where(rendering.filters.forSystem(systemIndex))
+        .select(...PART_VERTICAL_SPAN_RENDERINGS)
+        .map(rendering.InteractionModel.create)
+        .map((model) => model.getBoundingBox());
+      return { systemIndex, rect: spatial.Rect.merge(rects) };
+    });
+
+    const systemRects = systemIndexes.map((systemIndex) => {
+      const rects = query
+        .where(rendering.filters.forSystem(systemIndex))
+        .select(...SYSTEM_VERTICAL_SPAN_RENDERINGS)
+        .map(rendering.InteractionModel.create)
+        .map((model) => model.getBoundingBox());
+      return { systemIndex, rect: spatial.Rect.merge(rects) };
+    });
+
     const states = new Array<CursorState>(sequence.getLength());
     for (let index = 0; index < sequence.getLength(); index++) {
-      const interactables = sequence.getEntry(index)?.interactables ?? [];
+      const sequenceEntry = sequence.getEntry(index);
+      util.assertNotNull(sequenceEntry);
+
       const hasPrevious = index > 0;
       const hasNext = index < sequence.getLength() - 1;
-      const systemRect = spatial.Rect.empty();
-      const partRect = spatial.Rect.empty();
-      states[index] = { index, interactables, hasPrevious, hasNext, systemRect, partRect };
+
+      const systemIndex = sequenceEntry.interactables.at(0)?.address.getSystemIndex();
+      const partRect = partRects.find((rect) => rect.systemIndex === systemIndex)?.rect ?? null;
+      const systemRect = systemRects.find((rect) => rect.systemIndex === systemIndex)?.rect ?? null;
+
+      states[index] = { index, hasPrevious, hasNext, systemRect, partRect, sequenceEntry };
     }
 
     const cheapLocator = new CheapLocator(sequence);
