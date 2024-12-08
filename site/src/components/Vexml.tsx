@@ -29,7 +29,7 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
   const width = useWidth(divRef);
 
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
-  const [discreteCursors, setDiscreteCursors] = useState<vexml.DiscreteCursor[]>([]);
+  const [discreteCursors, setDiscreteCursors] = useState<vexml.Cursor[]>([]);
 
   const [progress, setProgress] = useState(0);
   const onProgressChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -178,7 +178,7 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
 
-      const discreteCursors = cursors.map((cursor) => rendering!.createDiscreteCursor(cursor));
+      const discreteCursors = cursors.map((cursor) => rendering!.addCursor(cursor));
       setDiscreteCursors(discreteCursors);
 
       const element = rendering.getVexflowElement();

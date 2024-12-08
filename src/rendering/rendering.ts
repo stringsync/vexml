@@ -50,41 +50,29 @@ export class Rendering {
     return this.partIds;
   }
 
-  /** Creates a new discrete cursor for the part ID */
-  createDiscreteCursor(opts?: { span?: CursorVerticalSpan; partId?: string; color?: string }): cursors.DiscreteCursor {
-    const span = opts?.span ?? 'system';
-    const partId = opts?.partId ?? this.partIds[0];
-
-    const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
-
-    util.assertDefined(sequence);
-
-    const overlayElement = this.root.getOverlay().getElement();
-    const cursorModel = new cursors.DiscreteCursor(this.score, sequence, span);
-    const cursorComponent = components.Cursor.render(overlayElement, opts?.color);
-
-    cursorModel.addEventListener('change', (event) => {
-      const rect = event.rect;
-      if (rect) {
-        cursorComponent.update(rect);
-      }
-    });
-    const rect = cursorModel.getCurrent()?.rect;
-    if (rect) {
-      cursorComponent.update(rect);
-    }
-
-    return cursorModel;
-  }
-
   addCursor(opts?: { partId?: string; component?: CursorComponent }): cursors.Cursor {
     const partId = opts?.partId ?? this.partIds[0];
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
 
     util.assertDefined(sequence);
 
-    const cursor = cursors.Cursor.create(this.score, partId, sequence);
-    return cursor;
+    const cursorModel = cursors.Cursor.create(this.score, partId, sequence);
+
+    const overlayElement = this.root.getOverlay().getElement();
+    const cursorComponent = components.Cursor.render(overlayElement, 'red');
+
+    cursorModel.addEventListener('change', (event) => {
+      const rect = event.cursorRect;
+      if (rect) {
+        cursorComponent.update(rect);
+      }
+    });
+    const rect = cursorModel.getState()?.cursorRect;
+    if (rect) {
+      cursorComponent.update(rect);
+    }
+
+    return cursorModel;
   }
 
   /** Dispatches an event to the interactive surface element. */
