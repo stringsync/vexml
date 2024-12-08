@@ -8,7 +8,7 @@ export class CheapLocator {
     this.sequence = sequence;
   }
 
-  setIndex(index: number): this {
+  setStartingIndex(index: number): this {
     this.index = index;
     return this;
   }

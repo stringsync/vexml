@@ -51,10 +51,12 @@ export class Sequence {
 
     return score.partIds.map((partId) => {
       // Collect the voice IDs in the part.
-      const voiceIds = rendering.Query.of(score)
-        .where(rendering.filters.forPart(partId))
-        .select('voice')
-        .map((voice) => voice.id);
+      const voiceIds = util.unique(
+        rendering.Query.of(score)
+          .where(rendering.filters.forPart(partId))
+          .select('voice')
+          .map((voice) => voice.id)
+      );
 
       // Materialize sequence events.
       const events = new Array<SequenceEvent>();
@@ -75,7 +77,7 @@ export class Sequence {
 
           const duration = tickConverter.toDuration(ticks);
           const start = time;
-          const stop = duration.plus(duration);
+          const stop = time.plus(duration);
 
           if (isInteractable(playable)) {
             events.push({ type: 'start', time: start, interactable: playable });
