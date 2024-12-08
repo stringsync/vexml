@@ -231,7 +231,7 @@ export class Voice {
         return value.render({ address, spanners, voiceEntryCount: this.entries.length });
       }
       if (value instanceof GhostNote) {
-        return value.render();
+        return value.render({ address });
       }
       if (value instanceof SymbolNote) {
         return value.render();

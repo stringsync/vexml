@@ -1,6 +1,5 @@
 import * as spatial from '@/spatial';
 import * as events from '@/events';
-import * as cursors from '@/cursors';
 import * as util from '@/util';
 import { InputType } from './types';
 import { InteractionModelType } from './interactions';
@@ -44,16 +43,42 @@ export type EnterEventListener = (event: EventMap['enter']) => void;
 export type ExitEventListener = (event: EventMap['exit']) => void;
 export type LongpressEventListener = (event: EventMap['longpress']) => void;
 
+type ClientPoint = {
+  clientX: number;
+  clientY: number;
+};
+
+type LocateResult = {
+  point: spatial.Point;
+  targets: InteractionModelType[];
+  closestTarget: InteractionModelType | null;
+};
+
 export class EventMappingFactory {
-  private cursor: cursors.PointCursor<InteractionModelType>;
+  private overlayElement: Element;
+  private locator: spatial.PointLocator<InteractionModelType>;
   private topic: events.Topic<EventMap>;
 
-  constructor(cursor: cursors.PointCursor<InteractionModelType>, topic: events.Topic<EventMap>) {
-    this.cursor = cursor;
-    this.topic = topic;
+  private constructor(opts: {
+    overlayElement: Element;
+    locator: spatial.PointLocator<InteractionModelType>;
+    topic: events.Topic<EventMap>;
+  }) {
+    this.overlayElement = opts.overlayElement;
+    this.locator = opts.locator;
+    this.topic = opts.topic;
   }
 
-  create(inputType: InputType): events.EventMapping<Array<keyof EventMap>>[] {
+  static create(opts: {
+    overlayElement: Element;
+    inputType: InputType;
+    locator: spatial.PointLocator<InteractionModelType>;
+    topic: events.Topic<EventMap>;
+  }): events.EventMapping<Array<keyof EventMap>>[] {
+    return new EventMappingFactory(opts).create(opts.inputType);
+  }
+
+  private create(inputType: InputType): events.EventMapping<Array<keyof EventMap>>[] {
     switch (inputType) {
       case 'mouse':
         return [this.mousePress(), this.mouseEgress()];
@@ -77,6 +102,18 @@ export class EventMappingFactory {
     }
   }
 
+  private locate(clientPoint: ClientPoint): LocateResult {
+    const rect = this.overlayElement.getBoundingClientRect();
+    const x = clientPoint.clientX - rect.left;
+    const y = clientPoint.clientY - rect.top;
+    const point = new spatial.Point(x, y);
+
+    let targets = this.locator.locate(point);
+    targets = this.locator.sort(point, targets);
+    const closestTarget = targets[0] ?? null;
+    return { point, targets, closestTarget };
+  }
+
   private mousePress(): events.EventMapping<['click', 'longpress']> {
     let timeout = 0 as unknown as NodeJS.Timeout;
     let isPending = false;
@@ -88,7 +125,7 @@ export class EventMappingFactory {
         mousedown: (event) => {
           const mouseDownInvocation = Symbol();
 
-          const { point, closestTarget } = this.cursor.get(event);
+          const { point, closestTarget } = this.locate(event);
           if (!closestTarget) {
             return;
           }
@@ -109,7 +146,7 @@ export class EventMappingFactory {
         },
         mouseup: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget } = this.cursor.get(event);
+            const { point, targets, closestTarget } = this.locate(event);
             if (closestTarget) {
               this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
             }
@@ -122,13 +159,13 @@ export class EventMappingFactory {
   }
 
   private mouseEgress(): events.EventMapping<['enter', 'exit']> {
-    let lastResult: cursors.CursorGetResult<InteractionModelType> | null = null;
+    let lastResult: LocateResult | null = null;
 
     return {
       vexml: ['enter', 'exit'],
       native: {
         mousemove: (event) => {
-          const result = this.cursor.get(event);
+          const result = this.locate(event);
 
           if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
             this.topic.publish('exit', {
@@ -164,7 +201,7 @@ export class EventMappingFactory {
         touchstart: (event) => {
           const touchStartInvocation = Symbol();
 
-          const { point, closestTarget } = this.cursor.get(event.touches[0]);
+          const { point, closestTarget } = this.locate(event.touches[0]);
           if (!closestTarget) {
             return;
           }
@@ -185,7 +222,7 @@ export class EventMappingFactory {
         },
         touchend: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget } = this.cursor.get(event.changedTouches[0]);
+            const { point, targets, closestTarget } = this.locate(event.changedTouches[0]);
             if (closestTarget) {
               this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
             }
@@ -202,13 +239,13 @@ export class EventMappingFactory {
   }
 
   private touchEgress(): events.EventMapping<['enter', 'exit']> {
-    let lastResult: cursors.CursorGetResult<InteractionModelType> | null = null;
+    let lastResult: LocateResult | null = null;
 
     return {
       vexml: ['enter', 'exit'],
       native: {
         touchmove: (event) => {
-          const result = this.cursor.get(event.touches[0]);
+          const result = this.locate(event.touches[0]);
 
           if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
             this.topic.publish('exit', {

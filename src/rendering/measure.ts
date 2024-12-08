@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
-import { PartScoped } from './types';
+import { Jump, PartScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -24,6 +24,8 @@ export type MeasureRendering = {
   fragments: MeasureFragmentRendering[];
   width: number;
   endingBracket: EndingBracketRendering | null;
+  jumps: Jump[];
+  bpm: number;
 };
 
 /**
@@ -150,6 +152,7 @@ export class Measure {
   render(opts: {
     x: number;
     y: number;
+    defaultBpm: number;
     fragmentWidths: MeasureFragmentWidth[];
     address: Address<'measure'>;
     spanners: Spanners;
@@ -224,6 +227,8 @@ export class Measure {
       index: this.index,
       width: staveOffsetX + util.sum(fragmentRenderings.map((fragment) => fragment.width)),
       endingBracket: endingBracketRendering,
+      jumps: this.getJumps(),
+      bpm: this.getBpm() ?? opts.defaultBpm,
     };
   }
 
@@ -400,5 +405,41 @@ export class Measure {
     }
 
     return new MeasureEntryIterator({ entries, staveSignature });
+  }
+
+  private getJumps(): Jump[] {
+    // TODO: Handle other directional symbols like codas and fines.
+    const barlines = this.musicXML.measures.flatMap((measure) => measure.value.getBarlines());
+    const repeatBarlines = barlines.filter((barline) => barline.isRepeat());
+
+    // NOTE: Repeats can be specified in multiple parts, but the measure should be consistent across all parts. If a
+    // measure in a single part has a start repeat, then all parts should have a start repeat. The same goes for end.
+
+    const jumps = new Array<Jump>();
+
+    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
+    if (hasStartRepeat) {
+      jumps.push({ type: 'repeatstart' });
+    }
+
+    const endRepeat = repeatBarlines.find((barline) => barline.getRepeatDirection() === 'backward');
+    if (endRepeat && endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatending', times: endRepeat.getEndingNumber().split(',').length });
+    }
+    if (endRepeat && !endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatend', times: endRepeat.getRepeatTimes() ?? 1 });
+    }
+
+    return jumps;
+  }
+
+  private getBpm(): number | null {
+    for (const partId of this.partIds) {
+      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
+      if (typeof bpm === 'number') {
+        return bpm;
+      }
+    }
+    return null;
   }
 }

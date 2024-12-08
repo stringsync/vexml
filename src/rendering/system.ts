@@ -5,6 +5,8 @@ import { Measure, MeasureRendering } from './measure';
 import { Spanners } from './spanners';
 import { MeasureFragmentWidth } from './measurefragment';
 
+const DEFAULT_BPM = 120;
+
 /** The result of rendering a system. */
 export type SystemRendering = {
   type: 'system';
@@ -55,6 +57,8 @@ export class System {
     let x = opts.x;
     const y = opts.y + this.getTopPadding();
 
+    let defaultBpm = DEFAULT_BPM;
+
     util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
       if (isFirst) {
         previousMeasure = util.last(opts.previousSystem?.measures ?? []);
@@ -80,10 +84,12 @@ export class System {
         previousMeasure,
         nextMeasure,
         spanners: opts.spanners,
+        defaultBpm,
       });
       measureRenderings.push(measureRendering);
 
       x += measureRendering.width;
+      defaultBpm = measureRendering.bpm;
     });
 
     return {

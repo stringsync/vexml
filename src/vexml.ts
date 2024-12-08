@@ -1,7 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as mxl from '@/mxl';
 import * as rendering from '@/rendering';
-import * as cursors from '@/cursors';
 import * as events from '@/events';
 import * as components from '@/components';
 import * as playback from '@/playback';
@@ -114,10 +113,15 @@ export class Vexml {
     const overlay = root.getOverlay();
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
-    const cursor = new cursors.PointCursor(overlay.getElement(), locator);
-    const mappings = new rendering.EventMappingFactory(cursor, vexmlEventTopic).create(config.INPUT_TYPE);
+    const overlayElement = overlay.getElement();
+    const mappings = rendering.EventMappingFactory.create({
+      overlayElement,
+      locator,
+      inputType: config.INPUT_TYPE,
+      topic: vexmlEventTopic,
+    });
     const bridge = new events.NativeBridge<keyof rendering.EventMap>({
-      overlayElement: overlay.getElement(),
+      overlayElement,
       mappings,
       nativeEventTopic,
       nativeEventOpts: {
