@@ -6,6 +6,8 @@ import * as events from '@/events';
 import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 
+const CURSOR_WIDTH_PX = 1.5;
+
 const PART_VERTICAL_SPAN_RENDERINGS = [
   'stave',
   'stavenote',
@@ -25,8 +27,10 @@ type CursorState = {
   index: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  systemRect: spatial.Rect | null;
-  partRect: spatial.Rect | null;
+  partRect: spatial.Rect;
+  systemRect: spatial.Rect;
+  playableRect: spatial.Rect;
+  cursorRect: spatial.Rect;
   sequenceEntry: playback.SequenceEntry;
 };
 
@@ -60,7 +64,7 @@ export class Cursor {
 
     const systemIndexes = query.select('system').map((system) => system.index);
 
-    const partRects = systemIndexes.map((systemIndex) => {
+    const partVerticalRects = systemIndexes.map((systemIndex) => {
       const rects = query
         .where(rendering.filters.forSystem(systemIndex))
         .select(...PART_VERTICAL_SPAN_RENDERINGS)
@@ -69,7 +73,7 @@ export class Cursor {
       return { systemIndex, rect: spatial.Rect.merge(rects) };
     });
 
-    const systemRects = systemIndexes.map((systemIndex) => {
+    const systemVerticalRects = systemIndexes.map((systemIndex) => {
       const rects = query
         .where(rendering.filters.forSystem(systemIndex))
         .select(...SYSTEM_VERTICAL_SPAN_RENDERINGS)
@@ -86,11 +90,28 @@ export class Cursor {
       const hasPrevious = index > 0;
       const hasNext = index < sequence.getLength() - 1;
 
-      const systemIndex = sequenceEntry.interactables.at(0)?.address.getSystemIndex();
-      const partRect = partRects.find((rect) => rect.systemIndex === systemIndex)?.rect ?? null;
-      const systemRect = systemRects.find((rect) => rect.systemIndex === systemIndex)?.rect ?? null;
+      const interactable = sequenceEntry.interactables.at(0);
 
-      states[index] = { index, hasPrevious, hasNext, systemRect, partRect, sequenceEntry };
+      util.assertDefined(interactable);
+
+      const systemIndex = interactable.address.getSystemIndex();
+
+      const partRect = partVerticalRects.find((rect) => rect.systemIndex === systemIndex)?.rect;
+      util.assertDefined(partRect);
+
+      const systemRect = systemVerticalRects.find((rect) => rect.systemIndex === systemIndex)?.rect;
+      util.assertDefined(systemRect);
+
+      const playableRect = rendering.InteractionModel.create(interactable).getBoundingBox();
+
+      const x = playableRect.center().x;
+      const y = partRect.y;
+      const w = CURSOR_WIDTH_PX;
+      const h = partRect.h;
+
+      const cursorRect = new spatial.Rect(x, y, w, h);
+
+      states[index] = { index, hasPrevious, hasNext, systemRect, partRect, playableRect, cursorRect, sequenceEntry };
     }
 
     const cheapLocator = new CheapLocator(sequence);
