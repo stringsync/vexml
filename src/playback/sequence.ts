@@ -1,6 +1,9 @@
 import * as rendering from '@/rendering';
 import * as util from '@/util';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
+import { TickConverter } from './tickconverter';
+import { Duration } from './duration';
+import { DurationRange } from './durationrange';
 
 export const PLAYABLE_RENDERING_TYPES = [
   'stavenote',
@@ -23,15 +26,13 @@ type SequenceEventType = 'start' | 'stop';
 
 type SequenceEvent = {
   type: SequenceEventType;
-  tick: number;
+  time: Duration;
   interactable: rendering.InteractableRendering;
 };
 
 export type SequenceEntry = {
   interactables: rendering.InteractableRendering[];
-  // TODO: Factor in bpm and use timeMs instead of ticks. If the bpm needs to change, the change should stem from the
-  // MusicXML. Otherwise, we can change the playback rate to make the music play faster or slower.
-  tickRange: util.NumberRange;
+  durationRange: DurationRange;
 };
 
 /** Represents a sequence of steps needed for playback. */
@@ -45,6 +46,9 @@ export class Sequence {
   }
 
   static fromScoreRendering(score: rendering.ScoreRendering): Sequence[] {
+    // Collect all the measures in the score for bpm data.
+    const measures = rendering.Query.of(score).select('measure');
+
     return score.partIds.map((partId) => {
       // Collect the voice IDs in the part.
       const voiceIds = rendering.Query.of(score)
@@ -61,25 +65,32 @@ export class Sequence {
           .where(rendering.filters.forVoice(voiceId))
           .select(...PLAYABLE_RENDERING_TYPES);
 
-        let ticks = 0;
+        let time = Duration.zero();
         for (const playable of playables) {
-          const startTicks = ticks;
-          const stopTicks = ticks + getTicks(playable);
+          const measureIndex = playable.address.getMeasureIndex()!;
+          const bpm = measures[measureIndex].bpm;
+          const tickConverter = new TickConverter(bpm);
+
+          const ticks = getTicks(playable);
+
+          const duration = tickConverter.toDuration(ticks);
+          const start = time;
+          const stop = duration.plus(duration);
 
           if (isInteractable(playable)) {
-            events.push({ type: 'start', tick: startTicks, interactable: playable });
-            events.push({ type: 'stop', tick: stopTicks, interactable: playable });
+            events.push({ type: 'start', time: start, interactable: playable });
+            events.push({ type: 'stop', time: stop, interactable: playable });
           }
 
-          ticks = stopTicks;
+          time = stop;
         }
       }
-      events.sort((a, b) => a.tick - b.tick);
+      events.sort((a, b) => a.time.ms - b.time.ms);
 
       // Materialize sequence entries.
       const interactables = new Array<rendering.InteractableRendering>();
       const entries = new Array<SequenceEntry>();
-      let tick = 0;
+      let time = Duration.zero();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       util.forEachTriple(events, ([previousEvent, currentEvent, nextEvent]) => {
         if (currentEvent.type === 'start') {
@@ -90,12 +101,12 @@ export class Sequence {
           interactables.splice(interactables.indexOf(currentEvent.interactable), 1);
         }
 
-        if (nextEvent && tick !== nextEvent.tick) {
-          const startTick = tick;
-          const stopTick = nextEvent.tick;
-          const tickRange = new util.NumberRange(startTick, stopTick);
-          tick = stopTick;
-          entries.push({ interactables: [...interactables], tickRange });
+        if (nextEvent && time.eq(currentEvent.time)) {
+          const start = time;
+          const stop = nextEvent.time;
+          const durationRange = new DurationRange(start, stop);
+          time = stop;
+          entries.push({ interactables: [...interactables], durationRange });
         }
       });
 
@@ -115,8 +126,8 @@ export class Sequence {
     return this.partId;
   }
 
-  getDurationMs(): number {
-    return 9999;
+  getDuration(): Duration {
+    return util.last(this.entries)?.durationRange.getRight() ?? Duration.zero();
   }
 }
 

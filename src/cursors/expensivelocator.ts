@@ -8,7 +8,7 @@ export class ExpensiveLocator {
     this.sequence = sequence;
   }
 
-  locate(timeMs: number): number | null {
+  locate(time: playback.Duration): number | null {
     let left = 0;
     let right = this.sequence.getLength() - 1;
 
@@ -18,11 +18,11 @@ export class ExpensiveLocator {
 
       util.assertNotNull(entry);
 
-      if (entry.tickRange.includes(timeMs)) {
+      if (entry.durationRange.includes(time)) {
         return mid;
       }
 
-      if (entry.tickRange.getLeft() <= timeMs) {
+      if (entry.durationRange.getRight().gteq(time)) {
         right = mid - 1;
       } else {
         left = mid + 1;

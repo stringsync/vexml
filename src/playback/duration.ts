@@ -34,6 +34,22 @@ export class Duration {
     return Duration.ms(duration.ms + this.ms);
   }
 
+  gt(duration: Duration) {
+    return this.ms > duration.ms;
+  }
+
+  gteq(duration: Duration) {
+    return this.ms >= duration.ms;
+  }
+
+  lt(duration: Duration) {
+    return this.ms < duration.ms;
+  }
+
+  lteq(duration: Duration) {
+    return this.ms <= duration.ms;
+  }
+
   get ms() {
     return this._ms;
   }

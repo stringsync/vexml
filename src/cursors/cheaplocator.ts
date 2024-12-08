@@ -13,27 +13,27 @@ export class CheapLocator {
     return this;
   }
 
-  locate(timeMs: number): number | null {
-    if (timeMs < 0) {
+  locate(time: playback.Duration): number | null {
+    if (time.lt(playback.Duration.zero())) {
       return 0;
     }
 
-    if (timeMs > this.sequence.getDurationMs()) {
+    if (time.gt(this.sequence.getDuration())) {
       return this.sequence.getLength() - 1;
     }
 
     const previousIndex = this.index - 1;
-    if (this.sequence.getEntry(previousIndex)?.tickRange.includes(timeMs)) {
+    if (this.sequence.getEntry(previousIndex)?.durationRange.includes(time)) {
       return previousIndex;
     }
 
     const currentIndex = this.index;
-    if (this.sequence.getEntry(currentIndex)?.tickRange.includes(timeMs)) {
+    if (this.sequence.getEntry(currentIndex)?.durationRange.includes(time)) {
       return currentIndex;
     }
 
     const nextIndex = this.index + 1;
-    if (this.sequence.getEntry(nextIndex)?.tickRange.includes(timeMs)) {
+    if (this.sequence.getEntry(nextIndex)?.durationRange.includes(time)) {
       return nextIndex;
     }
 
