@@ -83,7 +83,7 @@ export class Rendering {
 
     util.assertDefined(sequence);
 
-    const cursor = cursors.Cursor.create(sequence);
+    const cursor = cursors.Cursor.create(this.score, partId, sequence);
     return cursor;
   }
 

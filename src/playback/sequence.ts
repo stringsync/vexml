@@ -77,7 +77,7 @@ export class Sequence {
 
           const duration = tickConverter.toDuration(ticks);
           const start = time;
-          const stop = duration.plus(duration);
+          const stop = time.plus(duration);
 
           if (isInteractable(playable)) {
             events.push({ type: 'start', time: start, interactable: playable });
@@ -103,7 +103,7 @@ export class Sequence {
           interactables.splice(interactables.indexOf(currentEvent.interactable), 1);
         }
 
-        if (nextEvent && time.eq(currentEvent.time)) {
+        if (nextEvent && interactables.length > 0) {
           const start = time;
           const stop = nextEvent.time;
           const durationRange = new DurationRange(start, stop);
