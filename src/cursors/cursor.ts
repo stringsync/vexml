@@ -31,11 +31,6 @@ export class Cursor {
     return { index, interactables, hasPrevious, hasNext };
   }
 
-  getDurationMs(): number {
-    // TODO: Fix this.
-    return 0;
-  }
-
   next(): void {
     this.goTo(this.index + 1);
   }
@@ -49,7 +44,9 @@ export class Cursor {
   }
 
   seek(timeMs: number): void {
-    const index = this.cheapLocator.setIndex(this.index).locate(timeMs) ?? this.expensiveLocator.locate(timeMs);
+    timeMs = util.clamp(timeMs, 0, this.sequence.getDuration().ms);
+    const time = playback.Duration.ms(timeMs);
+    const index = this.cheapLocator.setIndex(this.index).locate(time) ?? this.expensiveLocator.locate(time);
     if (typeof index !== 'number') {
       throw new Error(`locator coverage is insufficient to locate time ${timeMs}`);
     }
