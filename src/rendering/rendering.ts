@@ -10,6 +10,11 @@ import { ScoreRendering } from './score';
 /** Describes how much the cursor should vertically span. */
 export type CursorVerticalSpan = 'system' | 'part';
 
+export interface CursorComponent {
+  update(rect: { x: number; y: number; w: number; h: number }): void;
+  remove(): void;
+}
+
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
@@ -72,7 +77,7 @@ export class Rendering {
     return cursorModel;
   }
 
-  addCursor(opts?: { partId?: string }): cursors.Cursor {
+  addCursor(opts?: { partId?: string; component?: CursorComponent }): cursors.Cursor {
     const partId = opts?.partId ?? this.partIds[0];
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
 
