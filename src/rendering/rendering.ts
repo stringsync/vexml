@@ -50,7 +50,7 @@ export class Rendering {
     return this.partIds;
   }
 
-  addCursor(opts?: { partId?: string; component?: CursorComponent }): cursors.Cursor {
+  addCursor(opts?: { partId?: string; component?: (overlay: HTMLElement) => CursorComponent }): cursors.Cursor {
     const partId = opts?.partId ?? this.partIds[0];
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
 
@@ -59,7 +59,7 @@ export class Rendering {
     const cursorModel = cursors.Cursor.create(this.score, partId, sequence);
 
     const overlayElement = this.root.getOverlay().getElement();
-    const cursorComponent = opts?.component ?? components.Cursor.render(overlayElement);
+    const cursorComponent = opts?.component?.(overlayElement) ?? components.SimpleCursor.render(overlayElement);
 
     cursorModel.addEventListener('change', (event) => {
       const rect = event.cursorRect;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cursor } from '../types';
+import { CursorInput } from '../types';
 import { Select, SelectOptionGroup } from './Select';
 import { useNextKey } from '../hooks/useNextKey';
 import * as vexml from '@/index';
@@ -10,18 +10,18 @@ const DEFAULT_PART_ID_KEY = 'vexml-default';
 
 export type CursorFormProps = {
   partIds: string[];
-  onChange(cursors: Cursor[]): void;
+  onChange(cursors: CursorInput[]): void;
 };
 
 export const CursorForm = (props: CursorFormProps) => {
   const nextCursorId = useNextKey('cursor');
-  const [cursor, setCursor] = useState<Cursor>(() => ({
+  const [cursor, setCursor] = useState<CursorInput>(() => ({
     type: 'discrete',
     id: nextCursorId(),
     color: COLORS[0],
     span: 'part',
   }));
-  const [cursors, setCursors] = useState(new Array<Cursor>());
+  const [cursors, setCursors] = useState(new Array<CursorInput>());
 
   useEffect(() => {
     const cursorPartIds = cursors
@@ -42,7 +42,7 @@ export const CursorForm = (props: CursorFormProps) => {
     option: { label: color, key: color, value: color },
   }));
 
-  const cursorTypeSelectOptionGroups: Array<SelectOptionGroup<Cursor['type']>> = [
+  const cursorTypeSelectOptionGroups: Array<SelectOptionGroup<CursorInput['type']>> = [
     {
       type: 'single',
       option: { label: 'discrete', key: 'discrete', value: 'discrete' },

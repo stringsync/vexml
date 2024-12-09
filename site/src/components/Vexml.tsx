@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import * as errors from '../util/errors';
 import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
-import { Cursor, RenderingBackend } from '../types';
+import { CursorInput, RenderingBackend } from '../types';
 import { Player, PlayerState } from '../lib/Player';
 
 const STRINGSYNC_RED = '#FC354C';
@@ -11,7 +11,7 @@ export type VexmlProps = {
   musicXML: string;
   backend: RenderingBackend;
   config: vexml.Config;
-  cursors: Cursor[];
+  cursorInputs: CursorInput[];
   onResult: (result: VexmlResult) => void;
   onEvent: vexml.AnyEventListener;
   onPartIdsChange: (partIds: string[]) => void;
@@ -23,14 +23,14 @@ export type VexmlResult =
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
-export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, onPartIdsChange }: VexmlProps) => {
+export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEvent, onPartIdsChange }: VexmlProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
 
   const width = useWidth(divRef);
 
   const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
-  const [discreteCursors, setDiscreteCursors] = useState<vexml.Cursor[]>([]);
+  const [cursors, setCursors] = useState<vexml.Cursor[]>([]);
 
   const durationMs = rendering?.getDurationMs() ?? 0;
 
@@ -41,8 +41,8 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     const currentTimeMs = nextProgress * durationMs;
     player.seek(currentTimeMs);
 
-    for (const discreteCursor of discreteCursors) {
-      discreteCursor.seek(currentTimeMs);
+    for (const cursor of cursors) {
+      cursor.seek(currentTimeMs);
     }
   };
   const onProgressDragStart = () => {
@@ -59,8 +59,8 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     const ids = [
       player.addEventListener('progress', (currentTimeMs: number) => {
         const nextProgress = currentTimeMs / durationMs;
-        for (const discreteCursor of discreteCursors) {
-          discreteCursor.seek(currentTimeMs);
+        for (const cursor of cursors) {
+          cursor.seek(currentTimeMs);
         }
         setProgress(nextProgress);
       }),
@@ -71,7 +71,7 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     return () => {
       player.removeEventListener(...ids);
     };
-  }, [player, durationMs, discreteCursors]);
+  }, [player, durationMs, cursors]);
 
   const onPlayClick = () => {
     player.play();
@@ -83,9 +83,9 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
 
   const onPreviousClick = () => {
     let currentTimeMs = 0;
-    for (const discreteCursor of discreteCursors) {
-      discreteCursor.previous();
-      currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
+    for (const cursor of cursors) {
+      cursor.previous();
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
     const nextProgress = currentTimeMs / durationMs;
     setProgress(nextProgress);
@@ -94,7 +94,7 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
 
   const onNextClick = () => {
     let currentTimeMs = 0;
-    for (const discreteCursor of discreteCursors) {
+    for (const discreteCursor of cursors) {
       discreteCursor.next();
       currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
@@ -234,8 +234,13 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
 
-      const discreteCursors = cursors.map((cursor) => rendering!.addCursor(cursor));
-      setDiscreteCursors(discreteCursors);
+      const cursors = cursorInputs.map((cursorInput) =>
+        rendering!.addCursor({
+          ...cursorInput,
+          component: (overlay) => vexml.SimpleCursor.render(overlay, cursorInput.color),
+        })
+      );
+      setCursors(cursors);
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.
@@ -261,16 +266,16 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
     return () => {
       rendering?.destroy();
     };
-  }, [musicXML, cursors, backend, config, width, div, onResult, onPartIdsChange]);
+  }, [musicXML, cursorInputs, backend, config, width, div, onResult, onPartIdsChange]);
 
   const elapsedMs = progress * durationMs;
-  const remainingMs = durationMs - elapsedMs;
+  const remainingMs = Math.max(0, durationMs - elapsedMs);
 
   return (
     <div className="w-100">
       <div ref={divRef}></div>
 
-      {discreteCursors.length > 0 && (
+      {cursors.length > 0 && (
         <>
           <div>
             <div className="d-flex align-items-center gap-3 mt-3">
