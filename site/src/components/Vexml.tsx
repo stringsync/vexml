@@ -3,6 +3,7 @@ import * as errors from '../util/errors';
 import { useEffect, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 import { Cursor, RenderingBackend } from '../types';
+import { Player, PlayerState } from '../lib/Player';
 
 const STRINGSYNC_RED = '#FC354C';
 
@@ -37,29 +38,69 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
   const onProgressChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const nextProgress = parseFloat(e.target.value);
     setProgress(nextProgress);
-    const timeMs = nextProgress * durationMs;
+    const currentTimeMs = nextProgress * durationMs;
+    player.seek(currentTimeMs);
 
     for (const discreteCursor of discreteCursors) {
-      discreteCursor.seek(timeMs);
+      discreteCursor.seek(currentTimeMs);
     }
+  };
+  const onProgressDragStart = () => {
+    player.startDrag();
+  };
+  const onProgressDragEnd = () => {
+    player.stopDrag();
+  };
+
+  const [player, setPlayer] = useState<Player>(() => new Player(durationMs));
+  const [playerState, setPlayerState] = useState<PlayerState>(player.getState());
+
+  useEffect(() => {
+    const ids = [
+      player.addEventListener('progress', (currentTimeMs: number) => {
+        const nextProgress = currentTimeMs / durationMs;
+        for (const discreteCursor of discreteCursors) {
+          discreteCursor.seek(currentTimeMs);
+        }
+        setProgress(nextProgress);
+      }),
+      player.addEventListener('statechange', (state: PlayerState) => {
+        setPlayerState(state);
+      }),
+    ];
+    return () => {
+      player.removeEventListener(...ids);
+    };
+  }, [player, durationMs, discreteCursors]);
+
+  const onPlayClick = () => {
+    player.play();
+  };
+
+  const onPauseClick = () => {
+    player.pause();
   };
 
   const onPreviousClick = () => {
+    let currentTimeMs = 0;
     for (const discreteCursor of discreteCursors) {
       discreteCursor.previous();
-      const timeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
-      const nextProgress = timeMs / durationMs;
-      setProgress(nextProgress);
+      currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
+    const nextProgress = currentTimeMs / durationMs;
+    setProgress(nextProgress);
+    player.seek(currentTimeMs);
   };
 
   const onNextClick = () => {
+    let currentTimeMs = 0;
     for (const discreteCursor of discreteCursors) {
       discreteCursor.next();
-      const timeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
-      const nextProgress = timeMs / durationMs;
-      setProgress(nextProgress);
+      currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
+    const nextProgress = currentTimeMs / durationMs;
+    setProgress(nextProgress);
+    player.seek(currentTimeMs);
   };
 
   useEffect(() => {
@@ -185,6 +226,9 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
       });
       setRendering(rendering);
 
+      const durationMs = rendering.getDurationMs();
+      setPlayer(new Player(durationMs));
+
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
 
@@ -226,11 +270,6 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
 
       {discreteCursors.length > 0 && (
         <>
-          <div className="alert alert-warning d-flex align-items-center" role="alert">
-            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            <div>The controls are a work in progress.</div>
-          </div>
-
           <div>
             <div className="d-flex align-items-center gap-3 mt-3">
               <span className="font-monospace">{toTimeString(elapsedMs)}</span>
@@ -239,9 +278,11 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
                 type="range"
                 min={0}
                 max={1}
-                step={0.01}
+                step={0.001}
                 value={progress}
                 onChange={onProgressChange}
+                onMouseDown={onProgressDragStart}
+                onMouseUp={onProgressDragEnd}
               ></input>
               <span className="font-monospace">{`-${toTimeString(remainingMs)}`}</span>
             </div>
@@ -249,9 +290,27 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
               <button className="btn text-primary border border-0" style={{ fontSize: 20 }} onClick={onPreviousClick}>
                 <i className="bi bi-chevron-bar-left"></i>
               </button>
-              <button className="btn btn-outline-primary rounded-circle" style={{ fontSize: 24 }}>
-                <i className="bi bi-play-fill"></i>
-              </button>
+
+              {playerState === 'paused' && (
+                <button
+                  onClick={onPlayClick}
+                  className="btn btn-outline-primary rounded-circle"
+                  style={{ fontSize: 24 }}
+                >
+                  <i className="bi bi-play-fill"></i>
+                </button>
+              )}
+
+              {playerState === 'playing' && (
+                <button
+                  onClick={onPauseClick}
+                  className="btn btn-outline-primary rounded-circle"
+                  style={{ fontSize: 24 }}
+                >
+                  <i className="bi bi-pause-fill"></i>
+                </button>
+              )}
+
               <button className="btn text-primary border border-0" style={{ fontSize: 20 }} onClick={onNextClick}>
                 <i className="bi bi-chevron-bar-right"></i>
               </button>
