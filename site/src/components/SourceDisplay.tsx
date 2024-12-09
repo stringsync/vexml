@@ -1,7 +1,7 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { Cursor, RenderingBackend, Source } from '../types';
+import { CursorInput, RenderingBackend, Source } from '../types';
 import { Vexml, VexmlResult } from './Vexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
@@ -110,9 +110,9 @@ export const SourceDisplay = (props: SourceProps) => {
   };
 
   const [partIds, setPartIds] = useState<string[]>([]);
-  const [cursors, setCursors] = useState(new Array<Cursor>());
-  const onCursorsChange = (cursors: Cursor[]) => {
-    setCursors(cursors);
+  const [cursorInputs, setCursorInputs] = useState(new Array<CursorInput>());
+  const onCursorInputsChange = (cursorInputs: CursorInput[]) => {
+    setCursorInputs(cursorInputs);
   };
 
   return (
@@ -246,7 +246,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div id={cursorCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
             <h3 className="mb-3">Cursors</h3>
 
-            <CursorForm partIds={partIds} onChange={onCursorsChange} />
+            <CursorForm partIds={partIds} onChange={onCursorInputsChange} />
           </div>
         </div>
 
@@ -263,7 +263,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              cursors={cursors}
+              cursorInputs={cursorInputs}
               backend={props.source.backend}
               config={props.source.config}
               onResult={setVexmlResult}

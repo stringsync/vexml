@@ -1,6 +1,6 @@
 const STRINGSYNC_RED = '#FC354C';
 
-export class Cursor {
+export class SimpleCursor {
   private element: HTMLElement;
 
   private constructor(element: HTMLElement) {
@@ -16,7 +16,7 @@ export class Cursor {
 
     parent.append(element);
 
-    return new Cursor(element);
+    return new SimpleCursor(element);
   }
 
   /** Moves the cursor's position to the given rect. */
