@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import { Attributes } from './attributes';
 import { Barline } from './barline';
 import { NamedElement, max } from '@/util';
@@ -85,5 +86,20 @@ export class Measure {
     }
 
     return new Measure(measure);
+  }
+
+  /**
+   * Returns the first sound[tempo] specification in the measure.
+   *
+   * Technically, this can be specified multiple times per measure, but this is a simplification that covers most music.
+   * This is independent of the <metronome> element, which describes how to signal metronome engravings.
+   */
+  getFirstTempo(): number | null {
+    return util.first(
+      this.element
+        .children('sound')
+        .map((sound) => sound.attr('tempo').int())
+        .filter((tempo) => typeof tempo === 'number')
+    );
   }
 }
