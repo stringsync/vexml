@@ -70,6 +70,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     ];
     return () => {
       player.removeEventListener(...ids);
+      player.pause(); // Prevent rAF from running after the component is unmounted.
     };
   }, [player, durationMs, cursors]);
 
