@@ -35,6 +35,5 @@ export type CursorInput = {
   type: 'discrete';
   id: string;
   color: string;
-  span: vexml.CursorVerticalSpan;
   partId?: string;
 };
