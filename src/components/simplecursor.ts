@@ -1,6 +1,6 @@
 const STRINGSYNC_RED = '#FC354C';
 
-export class Cursor {
+export class SimpleCursor {
   private element: HTMLElement;
 
   private constructor(element: HTMLElement) {
@@ -16,22 +16,15 @@ export class Cursor {
 
     parent.append(element);
 
-    return new Cursor(element);
+    return new SimpleCursor(element);
   }
 
-  update(opts: { x?: number; y?: number; w?: number; h?: number }) {
-    if (typeof opts.x === 'number') {
-      this.element.style.left = `${opts.x}px`;
-    }
-    if (typeof opts.y === 'number') {
-      this.element.style.top = `${opts.y}px`;
-    }
-    if (typeof opts.w === 'number') {
-      this.element.style.width = `${opts.w}px`;
-    }
-    if (typeof opts.h === 'number') {
-      this.element.style.height = `${opts.h}px`;
-    }
+  /** Moves the cursor's position to the given rect. */
+  update(opts: { x: number; y: number; w: number; h: number }) {
+    this.element.style.left = `${opts.x}px`;
+    this.element.style.top = `${opts.y}px`;
+    this.element.style.width = `${opts.w}px`;
+    this.element.style.height = `${opts.h}px`;
   }
 
   remove() {

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Cursor } from '../types';
+import { CursorInput } from '../types';
 import { Select, SelectOptionGroup } from './Select';
 import { useNextKey } from '../hooks/useNextKey';
-import * as vexml from '@/index';
 
 const COLORS = ['#FC354C', '#FFB400', '#00BD9D', '#00A2FF', '#8A79AF'];
 
@@ -10,18 +9,17 @@ const DEFAULT_PART_ID_KEY = 'vexml-default';
 
 export type CursorFormProps = {
   partIds: string[];
-  onChange(cursors: Cursor[]): void;
+  onChange(cursors: CursorInput[]): void;
 };
 
 export const CursorForm = (props: CursorFormProps) => {
   const nextCursorId = useNextKey('cursor');
-  const [cursor, setCursor] = useState<Cursor>(() => ({
+  const [cursor, setCursor] = useState<CursorInput>(() => ({
     type: 'discrete',
     id: nextCursorId(),
     color: COLORS[0],
-    span: 'part',
   }));
-  const [cursors, setCursors] = useState(new Array<Cursor>());
+  const [cursors, setCursors] = useState(new Array<CursorInput>());
 
   useEffect(() => {
     const cursorPartIds = cursors
@@ -42,7 +40,7 @@ export const CursorForm = (props: CursorFormProps) => {
     option: { label: color, key: color, value: color },
   }));
 
-  const cursorTypeSelectOptionGroups: Array<SelectOptionGroup<Cursor['type']>> = [
+  const cursorTypeSelectOptionGroups: Array<SelectOptionGroup<CursorInput['type']>> = [
     {
       type: 'single',
       option: { label: 'discrete', key: 'discrete', value: 'discrete' },
@@ -60,17 +58,6 @@ export const CursorForm = (props: CursorFormProps) => {
     })),
   ];
 
-  const spanSelectOptionGroups: Array<SelectOptionGroup<vexml.CursorVerticalSpan>> = [
-    {
-      type: 'single',
-      option: { label: 'part', key: 'part', value: 'part' },
-    },
-    {
-      type: 'single',
-      option: { label: 'system', key: 'system', value: 'system' },
-    },
-  ];
-
   const onAdd = () => {
     const nextCursors = [cursor, ...cursors];
     setCursors(nextCursors);
@@ -86,7 +73,6 @@ export const CursorForm = (props: CursorFormProps) => {
       id: nextCursorId(),
       color: COLORS[nextColorIndex],
       partId: nextPartId,
-      span: 'part',
     });
   };
 
@@ -134,16 +120,6 @@ export const CursorForm = (props: CursorFormProps) => {
           />
         </div>
 
-        <div className="col">
-          <Select
-            groups={spanSelectOptionGroups}
-            selectedKey={cursor.span}
-            onChange={(e) => {
-              setCursor((cursor) => ({ ...cursor, span: e.value }));
-            }}
-          />
-        </div>
-
         <div className="col d-grid">
           <button className="btn btn-outline-success" onClick={onAdd}>
             Add
@@ -155,7 +131,7 @@ export const CursorForm = (props: CursorFormProps) => {
 
       <div className="d-grid gap-3">
         {cursors.map((cursor) => (
-          <div className="row">
+          <div key={cursor.id} className="row">
             <div className="col d-flex align-items-center gap-2">
               <div
                 className="border border-black"
@@ -170,10 +146,6 @@ export const CursorForm = (props: CursorFormProps) => {
 
             <div className="col">
               <Select disabled groups={partIdSelectOptionGroups} selectedKey={cursor.partId ?? DEFAULT_PART_ID_KEY} />
-            </div>
-
-            <div className="col">
-              <Select disabled groups={spanSelectOptionGroups} selectedKey={cursor.span} />
             </div>
 
             <div className="col d-grid">

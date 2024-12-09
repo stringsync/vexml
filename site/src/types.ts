@@ -31,10 +31,9 @@ export type Keyed<T> = {
 export type RenderingBackend = 'svg' | 'canvas';
 
 /** Cursors that assist with navigating the rendered notation. */
-export type Cursor = {
+export type CursorInput = {
   type: 'discrete';
   id: string;
   color: string;
-  span: vexml.CursorVerticalSpan;
   partId?: string;
 };

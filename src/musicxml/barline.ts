@@ -28,6 +28,11 @@ export class Barline {
     return this.element.all('repeat').length > 0;
   }
 
+  /** Returns the number of times the repeat should be played. Defaults to null. */
+  getRepeatTimes(): number | null {
+    return this.element.first('repeat')?.attr('times').int() ?? null;
+  }
+
   /** Returns the repeat direction. Defaults to null. */
   getRepeatDirection(): RepeatDirection | null {
     return this.element.first('repeat')?.attr('direction').enum(REPEAT_DIRECTIONS) ?? null;
