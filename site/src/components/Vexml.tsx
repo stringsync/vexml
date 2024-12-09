@@ -227,7 +227,9 @@ export const Vexml = ({ musicXML, backend, config, cursors, onResult, onEvent, o
       setRendering(rendering);
 
       const durationMs = rendering.getDurationMs();
-      setPlayer(new Player(durationMs));
+      const player = new Player(durationMs);
+      setPlayer(player);
+      setPlayerState(player.getState());
 
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);

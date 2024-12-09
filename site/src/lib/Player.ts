@@ -40,15 +40,19 @@ export class Player {
   }
 
   play() {
-    if (this.state === 'paused') {
-      this.state = 'playing';
-      this.lastFrameMs = performance.now();
-      this.raf();
-      this.broadcastStateChange();
+    if (this.state === 'playing') {
+      return;
     }
+    this.state = 'playing';
+    this.lastFrameMs = performance.now();
+    this.raf();
+    this.broadcastStateChange();
   }
 
   pause() {
+    if (this.state === 'paused') {
+      return;
+    }
     this.state = 'paused';
     cancelAnimationFrame(this.handle);
     this.broadcastStateChange();
