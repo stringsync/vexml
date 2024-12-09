@@ -1,7 +1,6 @@
-import * as vexflow from 'vexflow';
 import { Duration } from './duration';
 
-const TICKS_PER_QUARTER_NOTE = vexflow.VexFlow.durationToTicks('q');
+const TICKS_PER_QUARTER_NOTE = 4096;
 
 export class TickConverter {
   public readonly bpm: number;

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { CursorInput } from '../types';
 import { Select, SelectOptionGroup } from './Select';
 import { useNextKey } from '../hooks/useNextKey';
-import * as vexml from '@/index';
 
 const COLORS = ['#FC354C', '#FFB400', '#00BD9D', '#00A2FF', '#8A79AF'];
 
