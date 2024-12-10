@@ -7,14 +7,6 @@ import { EventMap } from './events';
 import { Config } from '@/config';
 import { ScoreRendering } from './score';
 
-/** Describes how much the cursor should vertically span. */
-export type CursorVerticalSpan = 'system' | 'part';
-
-export interface CursorComponent {
-  update(rect: { x: number; y: number; w: number; h: number }): void;
-  remove(): void;
-}
-
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
@@ -50,29 +42,16 @@ export class Rendering {
     return this.partIds;
   }
 
-  addCursor(opts?: { partId?: string; component?: (overlay: HTMLElement) => CursorComponent }): cursors.Cursor {
+  addCursor(opts?: { partId?: string }): cursors.Cursor {
     const partId = opts?.partId ?? this.partIds[0];
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
-
     util.assertDefined(sequence);
+    return cursors.Cursor.create(this.score, partId, sequence);
+  }
 
-    const cursorModel = cursors.Cursor.create(this.score, partId, sequence);
-
-    const overlayElement = this.root.getOverlay().getElement();
-    const cursorComponent = opts?.component?.(overlayElement) ?? components.SimpleCursor.render(overlayElement);
-
-    cursorModel.addEventListener('change', (event) => {
-      const rect = event.cursorRect;
-      if (rect) {
-        cursorComponent.update(rect);
-      }
-    });
-    const rect = cursorModel.getState()?.cursorRect;
-    if (rect) {
-      cursorComponent.update(rect);
-    }
-
-    return cursorModel;
+  /** Returns the element used as an overlay. */
+  getOverlayElement(): HTMLElement {
+    return this.root.getOverlay().getElement();
   }
 
   /** Returns the duration of the score in milliseconds. */

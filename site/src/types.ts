@@ -32,7 +32,6 @@ export type RenderingBackend = 'svg' | 'canvas';
 
 /** Cursors that assist with navigating the rendered notation. */
 export type CursorInput = {
-  type: 'discrete';
   id: string;
   color: string;
   partId?: string;
