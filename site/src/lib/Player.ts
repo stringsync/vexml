@@ -85,6 +85,13 @@ export class Player {
     this.currentTimeMs = timeMs;
   }
 
+  reset() {
+    this.pause();
+    this.currentTimeMs = 0;
+    this.suspendCount = 0;
+    this.listeners = [];
+  }
+
   private raf() {
     const now = performance.now();
     const deltaMs = now - this.lastFrameMs;

@@ -14,25 +14,25 @@ export type CursorFormProps = {
 
 export const CursorForm = (props: CursorFormProps) => {
   const nextCursorId = useNextKey('cursor');
-  const [cursor, setCursor] = useState<CursorInput>(() => ({
+  const [cursorInput, setCursorInput] = useState<CursorInput>(() => ({
     id: nextCursorId(),
     color: COLORS[0],
   }));
-  const [cursors, setCursors] = useState(new Array<CursorInput>());
+  const [cursorInputs, setCursorInputs] = useState(new Array<CursorInput>());
 
   useEffect(() => {
-    const cursorPartIds = cursors
+    const cursorPartIds = cursorInputs
       .map((cursor) => cursor.partId)
       .filter((partId): partId is string => typeof partId === 'string');
     if (cursorPartIds.some((partId) => !props.partIds.includes(partId))) {
-      const nextCursors = cursors.filter(
+      const nextCursors = cursorInputs.filter(
         (cursor) => typeof cursor.partId !== 'string' || props.partIds.includes(cursor.partId)
       );
-      setCursors(nextCursors);
+      setCursorInputs(nextCursors);
       props.onChange(nextCursors);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursors, props.partIds, props.onChange]);
+  }, [cursorInputs, props.partIds, props.onChange]);
 
   const colorSelectOptionGroups = COLORS.map<SelectOptionGroup<string>>((color) => ({
     type: 'single',
@@ -51,16 +51,16 @@ export const CursorForm = (props: CursorFormProps) => {
   ];
 
   const onAdd = () => {
-    const nextCursors = [cursor, ...cursors];
-    setCursors(nextCursors);
+    const nextCursors = [cursorInput, ...cursorInputs];
+    setCursorInputs(nextCursors);
     props.onChange(nextCursors);
 
-    const nextColorIndex = (COLORS.findIndex((color) => color === cursor.color) + 1) % COLORS.length;
+    const nextColorIndex = (COLORS.findIndex((color) => color === cursorInput.color) + 1) % COLORS.length;
 
     const partIds = [undefined, ...props.partIds];
-    const nextPartIdIndex = (partIds.findIndex((partId) => partId === cursor.partId) + 1) % partIds.length;
+    const nextPartIdIndex = (partIds.findIndex((partId) => partId === cursorInput.partId) + 1) % partIds.length;
     const nextPartId = partIds[nextPartIdIndex];
-    setCursor({
+    setCursorInput({
       id: nextCursorId(),
       color: COLORS[nextColorIndex],
       partId: nextPartId,
@@ -68,8 +68,8 @@ export const CursorForm = (props: CursorFormProps) => {
   };
 
   const onRemove = (id: string) => {
-    const nextCursors = [...cursors].filter((cursor) => cursor.id !== id);
-    setCursors(nextCursors);
+    const nextCursors = [...cursorInputs].filter((cursor) => cursor.id !== id);
+    setCursorInputs(nextCursors);
     props.onChange(nextCursors);
   };
 
@@ -79,13 +79,13 @@ export const CursorForm = (props: CursorFormProps) => {
         <div className="col d-flex align-items-center gap-2">
           <div
             className="border border-black"
-            style={{ backgroundColor: cursor.color, minWidth: 32, minHeight: 32, maxWidth: 32, maxHeight: 32 }}
+            style={{ backgroundColor: cursorInput.color, minWidth: 32, minHeight: 32, maxWidth: 32, maxHeight: 32 }}
           ></div>
           <Select
             groups={colorSelectOptionGroups}
-            selectedKey={cursor.color}
+            selectedKey={cursorInput.color}
             onChange={(e) => {
-              setCursor((cursor) => ({ ...cursor, color: e.value }));
+              setCursorInput((cursor) => ({ ...cursor, color: e.value }));
             }}
           />
         </div>
@@ -93,9 +93,9 @@ export const CursorForm = (props: CursorFormProps) => {
         <div className="col">
           <Select
             groups={partIdSelectOptionGroups}
-            selectedKey={cursor.partId ?? DEFAULT_PART_ID_KEY}
+            selectedKey={cursorInput.partId ?? DEFAULT_PART_ID_KEY}
             onChange={(e) => {
-              setCursor((cursor) => ({ ...cursor, partId: e.value }));
+              setCursorInput((cursor) => ({ ...cursor, partId: e.value }));
             }}
           />
         </div>
@@ -110,7 +110,7 @@ export const CursorForm = (props: CursorFormProps) => {
       <hr />
 
       <div className="d-grid gap-3">
-        {cursors.map((cursor) => (
+        {cursorInputs.map((cursor) => (
           <div key={cursor.id} className="row">
             <div className="col d-flex align-items-center gap-2">
               <div
