@@ -14,7 +14,7 @@ export class SimpleCursor {
     element.style.position = 'absolute';
     element.style.backgroundColor = color;
 
-    parent.append(element);
+    parent.insertBefore(element, parent.firstChild);
 
     return new SimpleCursor(element);
   }

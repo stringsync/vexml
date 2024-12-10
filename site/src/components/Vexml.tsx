@@ -42,35 +42,32 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     player.seek(currentTimeMs);
 
     for (const cursor of cursors) {
-      cursor.seek(currentTimeMs);
+      cursor.snap(currentTimeMs);
     }
   };
   const onProgressDragStart = () => {
-    player.startDrag();
+    player.suspend();
   };
   const onProgressDragEnd = () => {
-    player.stopDrag();
+    player.unsuspend();
   };
 
   const [player, setPlayer] = useState<Player>(() => new Player(durationMs));
   const [playerState, setPlayerState] = useState<PlayerState>(player.getState());
 
   useEffect(() => {
-    const ids = [
-      player.addEventListener('progress', (currentTimeMs: number) => {
-        const nextProgress = currentTimeMs / durationMs;
-        for (const cursor of cursors) {
-          cursor.seek(currentTimeMs);
-        }
-        setProgress(nextProgress);
-      }),
-      player.addEventListener('statechange', (state: PlayerState) => {
-        setPlayerState(state);
-      }),
-    ];
+    player.addEventListener('progress', (currentTimeMs: number) => {
+      const nextProgress = currentTimeMs / durationMs;
+      for (const cursor of cursors) {
+        cursor.snap(currentTimeMs);
+      }
+      setProgress(nextProgress);
+    });
+    player.addEventListener('statechange', (state: PlayerState) => {
+      setPlayerState(state);
+    });
     return () => {
-      player.removeEventListener(...ids);
-      player.pause(); // Prevent rAF from running after the component is unmounted.
+      player.reset();
     };
   }, [player, durationMs, cursors]);
 
@@ -95,9 +92,9 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
 
   const onNextClick = () => {
     let currentTimeMs = 0;
-    for (const discreteCursor of cursors) {
-      discreteCursor.next();
-      currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
+    for (const cursor of cursors) {
+      cursor.next();
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
     const nextProgress = currentTimeMs / durationMs;
     setProgress(nextProgress);
@@ -202,6 +199,43 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
   }, [rendering, div, onEvent]);
 
   useEffect(() => {
+    if (!rendering) {
+      return;
+    }
+
+    const overlayElement = rendering.getOverlayElement();
+
+    const dispose = new Array<() => void>();
+
+    const nextCursors = new Array<vexml.Cursor>();
+    for (const cursorInput of cursorInputs) {
+      const cursor = rendering.addCursor(cursorInput);
+      nextCursors.push(cursor);
+
+      const simpleCursor = vexml.SimpleCursor.render(overlayElement, cursorInput.color);
+
+      // TODO: There should be an easier way to do this.
+      const handle = cursor.addEventListener('change', (state) => {
+        simpleCursor.update(state.cursorRect);
+      });
+      simpleCursor.update(cursor.getState().cursorRect);
+
+      dispose.push(() => {
+        cursor.removeEventListener(handle);
+        simpleCursor.remove();
+      });
+    }
+
+    setCursors(nextCursors);
+
+    return () => {
+      for (const fn of dispose) {
+        fn();
+      }
+    };
+  }, [rendering, cursorInputs]);
+
+  useEffect(() => {
     if (!musicXML) {
       onResult({ type: 'empty' });
       return;
@@ -234,14 +268,6 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
 
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
-
-      const cursors = cursorInputs.map((cursorInput) =>
-        rendering!.addCursor({
-          ...cursorInput,
-          component: (overlay) => vexml.SimpleCursor.render(overlay, cursorInput.color),
-        })
-      );
-      setCursors(cursors);
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.

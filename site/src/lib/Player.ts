@@ -13,15 +13,16 @@ type Listener<K extends keyof PlayerEventMap> = {
   callback: PlayerEventCallback<K>;
 };
 
+/** A player driven by requestAnimationFrame. */
 export class Player {
   private state: PlayerState = 'paused';
   private currentTimeMs = 0;
   private lastFrameMs = -1;
   private handle = -1;
   private nextListenerId = 1;
+  private suspendCount = 0;
   private listeners = new Array<Listener<any>>();
-  private preDragState: PlayerState = 'paused';
-  private isDragging = false;
+  private preSuspendState: PlayerState = 'paused';
 
   constructor(private readonly durationMs: number) {}
 
@@ -58,15 +59,22 @@ export class Player {
     this.broadcastStateChange();
   }
 
-  startDrag() {
-    this.preDragState = this.state;
+  suspend() {
+    if (this.suspendCount === 0) {
+      this.preSuspendState = this.state;
+    }
     this.pause();
-    this.isDragging = true;
+    this.suspendCount++;
   }
 
-  stopDrag() {
-    this.isDragging = false;
-    if (this.preDragState === 'playing') {
+  unsuspend() {
+    this.suspendCount = Math.max(0, this.suspendCount - 1);
+
+    if (this.isSuspended()) {
+      return;
+    }
+
+    if (this.preSuspendState === 'playing') {
       this.play();
     } else {
       this.pause();
@@ -75,18 +83,25 @@ export class Player {
 
   seek(timeMs: number) {
     this.currentTimeMs = timeMs;
-    this.broadcastProgress();
+  }
+
+  reset() {
+    this.pause();
+    this.currentTimeMs = 0;
+    this.suspendCount = 0;
+    this.listeners = [];
   }
 
   private raf() {
-    if (this.isDragging) {
+    const now = performance.now();
+    const deltaMs = now - this.lastFrameMs;
+    this.lastFrameMs = now;
+
+    if (this.isSuspended()) {
       requestAnimationFrame(() => this.raf());
       return;
     }
 
-    const now = performance.now();
-    const deltaMs = now - this.lastFrameMs;
-    this.lastFrameMs = now;
     this.currentTimeMs += deltaMs;
 
     this.broadcastProgress();
@@ -96,6 +111,10 @@ export class Player {
     } else {
       this.handle = requestAnimationFrame(() => this.raf());
     }
+  }
+
+  private isSuspended() {
+    return this.suspendCount > 0;
   }
 
   private broadcastProgress() {

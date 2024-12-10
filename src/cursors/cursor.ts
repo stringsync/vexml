@@ -136,7 +136,8 @@ export class Cursor {
     this.update(index);
   }
 
-  seek(timeMs: number): void {
+  /** Snaps to the closest sequence entry step. */
+  snap(timeMs: number): void {
     timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
     const index = this.cheapLocator.setStartingIndex(this.index).locate(time) ?? this.expensiveLocator.locate(time);
@@ -144,6 +145,11 @@ export class Cursor {
       throw new Error(`locator coverage is insufficient to locate time ${timeMs}`);
     }
     this.update(index);
+  }
+
+  /** Seeks to the exact position, interpolating as needed. */
+  seek(timeMs: number): void {
+    throw new Error('not implemented');
   }
 
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
