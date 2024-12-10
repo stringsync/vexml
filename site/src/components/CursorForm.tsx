@@ -15,7 +15,6 @@ export type CursorFormProps = {
 export const CursorForm = (props: CursorFormProps) => {
   const nextCursorId = useNextKey('cursor');
   const [cursor, setCursor] = useState<CursorInput>(() => ({
-    type: 'discrete',
     id: nextCursorId(),
     color: COLORS[0],
   }));
@@ -40,13 +39,6 @@ export const CursorForm = (props: CursorFormProps) => {
     option: { label: color, key: color, value: color },
   }));
 
-  const cursorTypeSelectOptionGroups: Array<SelectOptionGroup<CursorInput['type']>> = [
-    {
-      type: 'single',
-      option: { label: 'discrete', key: 'discrete', value: 'discrete' },
-    },
-  ];
-
   const partIdSelectOptionGroups: Array<SelectOptionGroup<string | undefined>> = [
     {
       type: 'single',
@@ -69,7 +61,6 @@ export const CursorForm = (props: CursorFormProps) => {
     const nextPartIdIndex = (partIds.findIndex((partId) => partId === cursor.partId) + 1) % partIds.length;
     const nextPartId = partIds[nextPartIdIndex];
     setCursor({
-      type: 'discrete',
       id: nextCursorId(),
       color: COLORS[nextColorIndex],
       partId: nextPartId,
@@ -95,17 +86,6 @@ export const CursorForm = (props: CursorFormProps) => {
             selectedKey={cursor.color}
             onChange={(e) => {
               setCursor((cursor) => ({ ...cursor, color: e.value }));
-            }}
-          />
-        </div>
-
-        <div className="col">
-          <Select
-            disabled
-            groups={cursorTypeSelectOptionGroups}
-            selectedKey={cursor.type}
-            onChange={(e) => {
-              setCursor((cursor) => ({ ...cursor, type: e.value }));
             }}
           />
         </div>
@@ -138,10 +118,6 @@ export const CursorForm = (props: CursorFormProps) => {
                 style={{ backgroundColor: cursor.color, minWidth: 32, minHeight: 32, maxWidth: 32, maxHeight: 32 }}
               ></div>
               <Select disabled groups={colorSelectOptionGroups} selectedKey={cursor.color} />
-            </div>
-
-            <div className="col">
-              <Select disabled groups={cursorTypeSelectOptionGroups} selectedKey={cursor.type} />
             </div>
 
             <div className="col">
