@@ -83,7 +83,6 @@ export class Player {
 
   seek(timeMs: number) {
     this.currentTimeMs = timeMs;
-    this.broadcastProgress();
   }
 
   private raf() {

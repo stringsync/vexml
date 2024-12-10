@@ -95,9 +95,9 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
 
   const onNextClick = () => {
     let currentTimeMs = 0;
-    for (const discreteCursor of cursors) {
-      discreteCursor.next();
-      currentTimeMs = discreteCursor.getState().sequenceEntry.durationRange.getLeft().ms;
+    for (const cursor of cursors) {
+      cursor.next();
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
     }
     const nextProgress = currentTimeMs / durationMs;
     setProgress(nextProgress);
