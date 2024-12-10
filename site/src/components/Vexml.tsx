@@ -56,21 +56,18 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
   const [playerState, setPlayerState] = useState<PlayerState>(player.getState());
 
   useEffect(() => {
-    const ids = [
-      player.addEventListener('progress', (currentTimeMs: number) => {
-        const nextProgress = currentTimeMs / durationMs;
-        for (const cursor of cursors) {
-          cursor.seek(currentTimeMs);
-        }
-        setProgress(nextProgress);
-      }),
-      player.addEventListener('statechange', (state: PlayerState) => {
-        setPlayerState(state);
-      }),
-    ];
+    player.addEventListener('progress', (currentTimeMs: number) => {
+      const nextProgress = currentTimeMs / durationMs;
+      for (const cursor of cursors) {
+        cursor.seek(currentTimeMs);
+      }
+      setProgress(nextProgress);
+    });
+    player.addEventListener('statechange', (state: PlayerState) => {
+      setPlayerState(state);
+    });
     return () => {
-      player.removeEventListener(...ids);
-      player.pause(); // Prevent rAF from running after the component is unmounted.
+      player.reset();
     };
   }, [player, durationMs, cursors]);
 
@@ -202,6 +199,39 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
   }, [rendering, div, onEvent]);
 
   useEffect(() => {
+    if (!rendering) {
+      return;
+    }
+
+    const overlayElement = rendering.getOverlayElement();
+
+    const handles = new Array<number>();
+
+    const simpleCursors = cursorInputs.map((cursorInput) =>
+      vexml.SimpleCursor.render(overlayElement, cursorInput.color)
+    );
+
+    for (let index = 0; index < cursors.length; index++) {
+      const cursor = cursors[index];
+      const simpleCursor = simpleCursors[index];
+
+      // TODO: There should be an easier way to do this.
+      handles.push(
+        cursor.addEventListener('change', (state) => {
+          simpleCursor.update(state.cursorRect);
+        })
+      );
+      simpleCursor.update(cursor.getState().cursorRect);
+    }
+
+    return () => {
+      for (const simpleCursor of simpleCursors) {
+        simpleCursor.remove();
+      }
+    };
+  }, [rendering, cursors, cursorInputs]);
+
+  useEffect(() => {
     if (!musicXML) {
       onResult({ type: 'empty' });
       return;
@@ -235,12 +265,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
 
-      const cursors = cursorInputs.map((cursorInput) =>
-        rendering!.addCursor({
-          ...cursorInput,
-          component: (overlay) => vexml.SimpleCursor.render(overlay, cursorInput.color),
-        })
-      );
+      const cursors = cursorInputs.map((cursorInput) => rendering!.addCursor(cursorInput));
       setCursors(cursors);
 
       const element = rendering.getVexflowElement();
