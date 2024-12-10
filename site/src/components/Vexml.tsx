@@ -205,31 +205,35 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
 
     const overlayElement = rendering.getOverlayElement();
 
-    const handles = new Array<number>();
+    const dispose = new Array<() => void>();
 
-    const simpleCursors = cursorInputs.map((cursorInput) =>
-      vexml.SimpleCursor.render(overlayElement, cursorInput.color)
-    );
+    const nextCursors = new Array<vexml.Cursor>();
+    for (const cursorInput of cursorInputs) {
+      const cursor = rendering.addCursor(cursorInput);
+      nextCursors.push(cursor);
 
-    for (let index = 0; index < cursors.length; index++) {
-      const cursor = cursors[index];
-      const simpleCursor = simpleCursors[index];
+      const simpleCursor = vexml.SimpleCursor.render(overlayElement, cursorInput.color);
 
       // TODO: There should be an easier way to do this.
-      handles.push(
-        cursor.addEventListener('change', (state) => {
-          simpleCursor.update(state.cursorRect);
-        })
-      );
+      const handle = cursor.addEventListener('change', (state) => {
+        simpleCursor.update(state.cursorRect);
+      });
       simpleCursor.update(cursor.getState().cursorRect);
+
+      dispose.push(() => {
+        cursor.removeEventListener(handle);
+        simpleCursor.remove();
+      });
     }
 
+    setCursors(nextCursors);
+
     return () => {
-      for (const simpleCursor of simpleCursors) {
-        simpleCursor.remove();
+      for (const fn of dispose) {
+        fn();
       }
     };
-  }, [rendering, cursors, cursorInputs]);
+  }, [rendering, cursorInputs]);
 
   useEffect(() => {
     if (!musicXML) {
@@ -264,9 +268,6 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
 
       const partIds = rendering.getPartIds();
       onPartIdsChange(partIds);
-
-      const cursors = cursorInputs.map((cursorInput) => rendering!.addCursor(cursorInput));
-      setCursors(cursors);
 
       const element = rendering.getVexflowElement();
       // For screenshots, we want the background to be white.
