@@ -46,10 +46,10 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     }
   };
   const onProgressDragStart = () => {
-    player.startDrag();
+    player.suspend();
   };
   const onProgressDragEnd = () => {
-    player.stopDrag();
+    player.unsuspend();
   };
 
   const [player, setPlayer] = useState<Player>(() => new Player(durationMs));
