@@ -42,7 +42,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     player.seek(currentTimeMs);
 
     for (const cursor of cursors) {
-      cursor.snap(currentTimeMs);
+      cursor.seek(currentTimeMs);
     }
   };
   const onProgressDragStart = () => {
@@ -59,7 +59,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     player.addEventListener('progress', (currentTimeMs: number) => {
       const nextProgress = currentTimeMs / durationMs;
       for (const cursor of cursors) {
-        cursor.snap(currentTimeMs);
+        cursor.seek(currentTimeMs);
       }
       setProgress(nextProgress);
     });
