@@ -14,19 +14,24 @@ export class Root {
     this.overlay = overlay;
   }
 
-  static svg(parent: HTMLElement) {
-    return Root.render('svg', parent);
+  static svg(parent: HTMLElement, height: number | undefined) {
+    return Root.render('svg', parent, height);
   }
 
-  static canvas(parent: HTMLElement) {
-    return Root.render('canvas', parent);
+  static canvas(parent: HTMLElement, height: number | undefined) {
+    return Root.render('canvas', parent, height);
   }
 
-  private static render(type: 'svg' | 'canvas', parent: HTMLElement) {
+  private static render(type: 'svg' | 'canvas', parent: HTMLElement, height: number | undefined): Root {
     const element = document.createElement('div');
 
     element.classList.add('vexml-root');
     element.style.position = 'relative';
+
+    if (typeof height === 'number') {
+      element.style.height = `${height}px`;
+      element.style.overflow = 'auto';
+    }
 
     const overlay = Overlay.render(element);
 
