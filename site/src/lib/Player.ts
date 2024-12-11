@@ -20,7 +20,7 @@ export class Player {
   private lastFrameMs = -1;
   private handle = -1;
   private nextListenerId = 1;
-  private suspendCount = 0;
+  private isSuspended = false;
   private listeners = new Array<Listener<any>>();
   private preSuspendState: PlayerState = 'paused';
 
@@ -41,6 +41,7 @@ export class Player {
   }
 
   play() {
+    this.isSuspended = false;
     if (this.state === 'playing') {
       return;
     }
@@ -60,19 +61,15 @@ export class Player {
   }
 
   suspend() {
-    if (this.suspendCount === 0) {
+    if (!this.isSuspended) {
       this.preSuspendState = this.state;
     }
     this.pause();
-    this.suspendCount++;
+    this.isSuspended = true;
   }
 
   unsuspend() {
-    this.suspendCount = Math.max(0, this.suspendCount - 1);
-
-    if (this.isSuspended()) {
-      return;
-    }
+    this.isSuspended = false;
 
     if (this.preSuspendState === 'playing') {
       this.play();
@@ -88,7 +85,7 @@ export class Player {
   reset() {
     this.pause();
     this.currentTimeMs = 0;
-    this.suspendCount = 0;
+    this.isSuspended = false;
     this.listeners = [];
   }
 
@@ -97,7 +94,7 @@ export class Player {
     const deltaMs = now - this.lastFrameMs;
     this.lastFrameMs = now;
 
-    if (this.isSuspended()) {
+    if (this.isSuspended) {
       requestAnimationFrame(() => this.raf());
       return;
     }
@@ -111,10 +108,6 @@ export class Player {
     } else {
       this.handle = requestAnimationFrame(() => this.raf());
     }
-  }
-
-  private isSuspended() {
-    return this.suspendCount > 0;
   }
 
   private broadcastProgress() {
