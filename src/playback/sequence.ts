@@ -31,6 +31,7 @@ type SequenceEvent = {
 };
 
 export type SequenceEntry = {
+  mostRecentInteractable: rendering.InteractableRendering;
   interactables: rendering.InteractableRendering[];
   durationRange: DurationRange;
 };
@@ -93,9 +94,11 @@ export class Sequence {
       const interactables = new Array<rendering.InteractableRendering>();
       const entries = new Array<SequenceEntry>();
       let time = Duration.zero();
+      let mostRecentInteractable: rendering.InteractableRendering | null = null;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       util.forEachTriple(events, ([previousEvent, currentEvent, nextEvent]) => {
         if (currentEvent.type === 'start') {
+          mostRecentInteractable = currentEvent.interactable;
           interactables.unshift(currentEvent.interactable);
         }
 
@@ -108,7 +111,8 @@ export class Sequence {
           const stop = nextEvent.time;
           const durationRange = new DurationRange(start, stop);
           time = stop;
-          entries.push({ interactables: [...interactables], durationRange });
+          util.assertNotNull(mostRecentInteractable);
+          entries.push({ mostRecentInteractable, interactables: [...interactables], durationRange });
         }
       });
 

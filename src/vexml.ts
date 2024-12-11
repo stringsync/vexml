@@ -11,6 +11,7 @@ export type RenderOptions = {
   config?: Partial<Config>;
   backend?: 'svg' | 'canvas';
   width: number;
+  height?: number;
 };
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
@@ -83,18 +84,19 @@ export class Vexml {
     const config = { ...DEFAULT_CONFIG, ...opts.config };
     const element = opts.element;
     const width = opts.width;
+    const height = opts.height;
     const backend = opts.backend;
 
     let root: components.Root;
     switch (backend) {
       case 'svg':
-        root = components.Root.svg(element);
+        root = components.Root.svg(element, height);
         break;
       case 'canvas':
-        root = components.Root.canvas(element);
+        root = components.Root.canvas(element, height);
         break;
       default:
-        root = components.Root.svg(element);
+        root = components.Root.svg(element, height);
     }
 
     // Render score.
