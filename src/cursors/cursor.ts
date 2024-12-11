@@ -97,7 +97,7 @@ export class Cursor {
       const hasPrevious = index > 0;
       const hasNext = index < sequence.getLength() - 1;
 
-      const interactable = sequenceEntry.interactables.at(0);
+      const interactable = sequenceEntry.mostRecentInteractable;
 
       util.assertDefined(interactable);
 
@@ -149,21 +149,20 @@ export class Cursor {
       return { ...state };
     }
 
-    const currentSystemId = state.sequenceEntry.interactables.at(0)?.address.getSystemIndex();
+    const currentSystemId = state.sequenceEntry.mostRecentInteractable?.address.getSystemIndex();
     util.assertDefined(currentSystemId);
 
-    const currentMeasureIndex = state.sequenceEntry.interactables.at(0)?.address.getMeasureIndex();
+    const currentMeasureIndex = state.sequenceEntry.mostRecentInteractable?.address.getMeasureIndex();
     util.assertDefined(currentMeasureIndex);
 
     const nextState = this.states.at(this.index + 1);
-    const nextSystemId = nextState?.sequenceEntry.interactables.at(0)?.address.getSystemIndex();
-    const nextMeasureIndex = nextState?.sequenceEntry.interactables.at(0)?.address.getMeasureIndex();
+    const nextSystemId = nextState?.sequenceEntry.mostRecentInteractable?.address.getSystemIndex();
+    const nextMeasureIndex = nextState?.sequenceEntry.mostRecentInteractable?.address.getMeasureIndex();
 
     // "Normally" here means the next state is either in the same measure or the next measure to the right of the
     // current state.
     const isAdvancingNormally =
-      // TODO: Add a "key" interactable instead of assuming the first interactable is the changing one.
-      state.sequenceEntry.interactables[0] !== nextState?.sequenceEntry.interactables[0] &&
+      state.sequenceEntry.mostRecentInteractable !== nextState?.sequenceEntry.mostRecentInteractable &&
       typeof nextMeasureIndex === 'number' &&
       (currentMeasureIndex === nextMeasureIndex || currentMeasureIndex === nextMeasureIndex - 1);
 
