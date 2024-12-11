@@ -159,7 +159,13 @@ export class Cursor {
     const nextSystemId = nextState?.sequenceEntry.interactables.at(0)?.address.getSystemIndex();
     const nextMeasureIndex = nextState?.sequenceEntry.interactables.at(0)?.address.getMeasureIndex();
 
-    if (nextState && currentSystemId === nextSystemId && currentMeasureIndex + 1 !== nextMeasureIndex) {
+    // "Normally" here means the next state is either in the same measure or the next measure to the right of the
+    // current state.
+    const isAdvancingNormally =
+      typeof nextMeasureIndex === 'number' &&
+      (currentMeasureIndex === nextMeasureIndex || currentMeasureIndex === nextMeasureIndex - 1);
+
+    if (nextState && currentSystemId === nextSystemId && !isAdvancingNormally) {
       // The next state is in the same system and is not immediately in the next measure. This is common when processing
       // repeats. Instead of interpolating with the next state, interpolate with the edge of the measure.
       const leftX = state.cursorRect.x;
