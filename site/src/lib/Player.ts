@@ -42,6 +42,9 @@ export class Player {
 
   play() {
     this.isSuspended = false;
+    if (this.currentTimeMs >= this.durationMs) {
+      this.currentTimeMs = 0;
+    }
     if (this.state === 'playing') {
       return;
     }
