@@ -152,11 +152,15 @@ export class Cursor {
     const currentSystemId = state.sequenceEntry.interactables.at(0)?.address.getSystemIndex();
     util.assertDefined(currentSystemId);
 
+    const currentMeasureIndex = state.sequenceEntry.interactables.at(0)?.address.getMeasureIndex();
+    util.assertDefined(currentMeasureIndex);
+
     const nextState = this.states.at(this.index + 1);
     const nextSystemId = nextState?.sequenceEntry.interactables.at(0)?.address.getSystemIndex();
+    const nextMeasureIndex = nextState?.sequenceEntry.interactables.at(0)?.address.getMeasureIndex();
 
-    if (nextState && currentSystemId === nextSystemId && nextState.cursorRect.x < state.cursorRect.x) {
-      // The next state is in the same system and is to the left of the current state. This can happen when processing
+    if (nextState && currentSystemId === nextSystemId && currentMeasureIndex + 1 !== nextMeasureIndex) {
+      // The next state is in the same system and is not immediately in the next measure. This is common when processing
       // repeats. Instead of interpolating with the next state, interpolate with the edge of the measure.
       const leftX = state.cursorRect.x;
       const rightX = state.measureRect.x + state.measureRect.w;
