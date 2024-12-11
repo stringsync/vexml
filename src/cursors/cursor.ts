@@ -162,6 +162,8 @@ export class Cursor {
     // "Normally" here means the next state is either in the same measure or the next measure to the right of the
     // current state.
     const isAdvancingNormally =
+      // TODO: Add a "key" interactable instead of assuming the first interactable is the changing one.
+      state.sequenceEntry.interactables[0] !== nextState?.sequenceEntry.interactables[0] &&
       typeof nextMeasureIndex === 'number' &&
       (currentMeasureIndex === nextMeasureIndex || currentMeasureIndex === nextMeasureIndex - 1);
 
