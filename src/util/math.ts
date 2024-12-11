@@ -36,3 +36,9 @@ export const gcd = (a: number, b: number): number => {
 export const lcm = (a: number, b: number): number => {
   return (a * b) / gcd(a, b);
 };
+
+/** Interpolates between a and b. */
+export const lerp = (a: number, b: number, alpha: number): number => {
+  alpha = clamp(0, 1, alpha);
+  return a + (b - a) * alpha;
+};
