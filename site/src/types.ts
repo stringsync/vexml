@@ -7,18 +7,21 @@ export type Source =
       musicXML: string;
       backend: RenderingBackend;
       config: vexml.Config;
+      height: number;
     }
   | {
       type: 'remote';
       url: string;
       backend: RenderingBackend;
       config: vexml.Config;
+      height: number;
     }
   | {
       type: 'example';
       path: string;
       backend: RenderingBackend;
       config: vexml.Config;
+      height: number;
     };
 
 /** A wrapper for keying values. */
