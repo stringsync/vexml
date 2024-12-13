@@ -118,7 +118,6 @@ export const Vexml = ({
 
     const handles = new Array<number>();
 
-    handles.push(rendering.addEventListener('scroll', (event) => console.log(event)));
     handles.push(rendering.addEventListener('click', onEvent));
     handles.push(rendering.addEventListener('longpress', onEvent));
     handles.push(rendering.addEventListener('exit', onEvent));
