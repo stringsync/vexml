@@ -25,10 +25,12 @@ export class Root {
   private static render(type: 'svg' | 'canvas', parent: HTMLElement, height: number | undefined): Root {
     const vexmlRoot = document.createElement('div');
     vexmlRoot.classList.add('vexml-root');
+    vexmlRoot.classList.add('vexml-scroll-container');
 
     if (typeof height === 'number') {
       vexmlRoot.style.height = `${height}px`;
-      vexmlRoot.style.overflow = 'auto';
+      vexmlRoot.style.overflowY = 'auto';
+      vexmlRoot.style.overflowX = 'hidden';
     }
 
     const vexmlContainer = document.createElement('div');
@@ -60,7 +62,7 @@ export class Root {
     return this.overlay;
   }
 
-  getElement(): HTMLDivElement {
+  getScrollContainer(): HTMLDivElement {
     return this.element;
   }
 
