@@ -9,6 +9,7 @@ const STRINGSYNC_RED = '#FC354C';
 
 export type VexmlProps = {
   musicXML: string;
+  height: number | undefined;
   backend: RenderingBackend;
   config: vexml.Config;
   cursorInputs: CursorInput[];
@@ -23,7 +24,16 @@ export type VexmlResult =
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
-export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEvent, onPartIdsChange }: VexmlProps) => {
+export const Vexml = ({
+  musicXML,
+  height,
+  backend,
+  config,
+  cursorInputs,
+  onResult,
+  onEvent,
+  onPartIdsChange,
+}: VexmlProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
 
@@ -255,6 +265,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     try {
       rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         element: div,
+        height,
         width,
         backend,
         config,
@@ -293,7 +304,7 @@ export const Vexml = ({ musicXML, backend, config, cursorInputs, onResult, onEve
     return () => {
       rendering?.destroy();
     };
-  }, [musicXML, cursorInputs, backend, config, width, div, onResult, onPartIdsChange]);
+  }, [musicXML, height, cursorInputs, backend, config, width, div, onResult, onPartIdsChange]);
 
   const elapsedMs = progress * durationMs;
   const remainingMs = Math.max(0, durationMs - elapsedMs);

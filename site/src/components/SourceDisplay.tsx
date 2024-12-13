@@ -263,6 +263,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
+              height={props.source.height === 0 ? undefined : props.source.height}
               cursorInputs={cursorInputs}
               backend={props.source.backend}
               config={props.source.config}
