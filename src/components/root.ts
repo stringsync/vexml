@@ -60,6 +60,10 @@ export class Root {
     return this.overlay;
   }
 
+  getElement(): HTMLDivElement {
+    return this.element;
+  }
+
   /** Returns the element that is intended to be inputted to vexflow. */
   getVexflowContainerElement(): HTMLDivElement | HTMLCanvasElement {
     return this.element.querySelector('.vexflow-container') as HTMLDivElement | HTMLCanvasElement;

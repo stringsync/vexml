@@ -33,6 +33,11 @@ export type EventMap = {
     point: spatial.Point;
     native: MouseEvent | TouchEvent;
   };
+  scroll: {
+    type: 'scroll';
+    scrollX: number;
+    scrollY: number;
+  };
 };
 
 export type EventType = keyof EventMap;
@@ -42,6 +47,7 @@ export type ClickEventListener = (event: EventMap['click']) => void;
 export type EnterEventListener = (event: EventMap['enter']) => void;
 export type ExitEventListener = (event: EventMap['exit']) => void;
 export type LongpressEventListener = (event: EventMap['longpress']) => void;
+export type ScrollEventListener = (event: EventMap['scroll']) => void;
 
 type ClientPoint = {
   clientX: number;
@@ -55,21 +61,25 @@ type LocateResult = {
 };
 
 export class EventMappingFactory {
+  private scrollElement: Element;
   private overlayElement: Element;
   private locator: spatial.PointLocator<InteractionModelType>;
   private topic: events.Topic<EventMap>;
 
   private constructor(opts: {
+    scrollElement: Element;
     overlayElement: Element;
     locator: spatial.PointLocator<InteractionModelType>;
     topic: events.Topic<EventMap>;
   }) {
+    this.scrollElement = opts.scrollElement;
     this.overlayElement = opts.overlayElement;
     this.locator = opts.locator;
     this.topic = opts.topic;
   }
 
   static create(opts: {
+    scrollElement: Element;
     overlayElement: Element;
     inputType: InputType;
     locator: spatial.PointLocator<InteractionModelType>;
@@ -81,9 +91,9 @@ export class EventMappingFactory {
   private create(inputType: InputType): events.EventMapping<Array<keyof EventMap>>[] {
     switch (inputType) {
       case 'mouse':
-        return [this.mousePress(), this.mouseEgress()];
+        return [this.mousePress(), this.mouseEgress(), this.scroll()];
       case 'touch':
-        return [this.touchPress(), this.touchEgress()];
+        return [this.touchPress(), this.touchEgress(), this.scroll()];
       case 'hybrid':
         return [...this.create('mouse'), ...this.create('touch')];
       case 'auto':
@@ -114,12 +124,29 @@ export class EventMappingFactory {
     return { point, targets, closestTarget };
   }
 
+  private scroll(): events.EventMapping<['scroll', 'scroll']> {
+    return {
+      src: 'scroll',
+      vexml: ['scroll', 'scroll'],
+      native: {
+        scroll: () => {
+          this.topic.publish('scroll', {
+            type: 'scroll',
+            scrollX: this.scrollElement.scrollLeft,
+            scrollY: this.scrollElement.scrollTop,
+          });
+        },
+      },
+    };
+  }
+
   private mousePress(): events.EventMapping<['click', 'longpress']> {
     let timeout = 0 as unknown as NodeJS.Timeout;
     let isPending = false;
     let lastMouseDownInvocation = Symbol();
 
     return {
+      src: 'overlay',
       vexml: ['click', 'longpress'],
       native: {
         mousedown: (event) => {
@@ -162,6 +189,7 @@ export class EventMappingFactory {
     let lastResult: LocateResult | null = null;
 
     return {
+      src: 'overlay',
       vexml: ['enter', 'exit'],
       native: {
         mousemove: (event) => {
@@ -196,6 +224,7 @@ export class EventMappingFactory {
     let lastTouchStartInvocation = Symbol();
 
     return {
+      src: 'overlay',
       vexml: ['click', 'longpress'],
       native: {
         touchstart: (event) => {
@@ -242,6 +271,7 @@ export class EventMappingFactory {
     let lastResult: LocateResult | null = null;
 
     return {
+      src: 'overlay',
       vexml: ['enter', 'exit'],
       native: {
         touchmove: (event) => {
