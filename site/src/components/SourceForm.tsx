@@ -34,7 +34,7 @@ export const SourceForm = (props: SourceFormProps) => {
   const musicXML = source.type === 'local' ? source.musicXML : props.musicXML;
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
-      updateLater({ type: 'local', musicXML: e.target.value, backend: source.backend, config: source.config });
+      updateLater({ ...source, type: 'local', musicXML: e.target.value });
     }
   };
 
@@ -42,14 +42,14 @@ export const SourceForm = (props: SourceFormProps) => {
   const pathKey = EXAMPLE_OPTION_KEY_BY_PATH[path] ?? '';
   const onPathChange = (e: SelectEvent<string>) => {
     if (source.type === 'example') {
-      updateNow({ type: 'example', path: e.value, backend: source.backend, config: source.config });
+      updateNow({ ...source, type: 'example', path: e.value });
     }
   };
 
   const url = source.type === 'remote' ? source.url : '';
   const onUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (source.type === 'remote') {
-      updateLater({ type: 'remote', url: e.target.value, backend: source.backend, config: source.config });
+      updateLater({ ...source, type: 'remote', url: e.target.value });
     }
   };
 
@@ -60,6 +60,7 @@ export const SourceForm = (props: SourceFormProps) => {
     musicXML: '',
     backend: 'svg',
     config: DEFAULT_CONFIG,
+    height: 0,
   });
   const onModalContinue = () => {
     updateNow(modalSource);
@@ -72,7 +73,7 @@ export const SourceForm = (props: SourceFormProps) => {
       throw new Error(`Invalid source type: ${type}`);
     }
 
-    const source = getDefaultSource(type, props.source.backend, props.source.config);
+    const source = getDefaultSource(type, props.source.backend, props.source.config, props.source.height);
 
     const isSourceEmpty =
       (props.source.type === 'local' && props.source.musicXML.length === 0) ||
@@ -88,8 +89,14 @@ export const SourceForm = (props: SourceFormProps) => {
     }
   };
 
+  const heightId = useId();
+  const onHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const height = parseInt(e.target.value, 10);
+    updateLater({ ...source, height });
+  };
+
   const onConvertToLocalClick = () => {
-    const source = getDefaultSource('local', props.source.backend, props.source.config) as Extract<
+    const source = getDefaultSource('local', props.source.backend, props.source.config, props.source.height) as Extract<
       Source,
       { type: 'local' }
     >;
@@ -104,7 +111,11 @@ export const SourceForm = (props: SourceFormProps) => {
 
     try {
       const vexml = await Vexml.fromFile(files[0]);
-      updateNow({ type: 'local', musicXML: vexml.getDocumentString(), backend: source.backend, config: source.config });
+      updateNow({
+        ...source,
+        type: 'local',
+        musicXML: vexml.getDocumentString(),
+      });
     } catch (e) {
       console.error(`error reading file: ${e}`);
     }
@@ -125,48 +136,72 @@ export const SourceForm = (props: SourceFormProps) => {
 
   return (
     <div>
-      <div>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            name={sourceTypeRadioName}
-            id={localRadioId}
-            value="local"
-            checked={props.source.type === 'local'}
-            onChange={onRadioChange}
-          />
-          <label className="form-check-label" htmlFor={localRadioId}>
-            local
-          </label>
+      <div className="row align-items-center">
+        <div className="col-12 col-md-6 col-lg-8">
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={sourceTypeRadioName}
+              id={localRadioId}
+              value="local"
+              checked={props.source.type === 'local'}
+              onChange={onRadioChange}
+            />
+            <label className="form-check-label" htmlFor={localRadioId}>
+              local
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={sourceTypeRadioName}
+              id={exampleRadioId}
+              value="example"
+              checked={props.source.type === 'example'}
+              onChange={onRadioChange}
+            />
+            <label className="form-check-label" htmlFor={exampleRadioId}>
+              example
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={sourceTypeRadioName}
+              id={remoteRadioId}
+              value="remote"
+              checked={props.source.type === 'remote'}
+              onChange={onRadioChange}
+            />
+            <label className="form-check-label" htmlFor={remoteRadioId}>
+              remote
+            </label>
+          </div>
         </div>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            name={sourceTypeRadioName}
-            id={exampleRadioId}
-            value="example"
-            checked={props.source.type === 'example'}
-            onChange={onRadioChange}
-          />
-          <label className="form-check-label" htmlFor={exampleRadioId}>
-            example
-          </label>
-        </div>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            name={sourceTypeRadioName}
-            id={remoteRadioId}
-            value="remote"
-            checked={props.source.type === 'remote'}
-            onChange={onRadioChange}
-          />
-          <label className="form-check-label" htmlFor={remoteRadioId}>
-            remote
-          </label>
+
+        <div className="col-12 col-md-6 col-lg-4 my-4 my-md-0">
+          <div>
+            <label htmlFor={heightId} className="form-label">
+              Height
+            </label>
+            <div className="row">
+              <div className="col-8">
+                <input
+                  id={heightId}
+                  type="range"
+                  className="form-range"
+                  value={source.height ?? 0}
+                  min={0}
+                  max={2400}
+                  onChange={onHeightChange}
+                />
+              </div>
+              <div className="col-4">{source.height ?? 'N/A'}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -266,14 +301,14 @@ export const SourceForm = (props: SourceFormProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = (type: Source['type'], backend: RenderingBackend, config: Config): Source => {
+const getDefaultSource = (type: Source['type'], backend: RenderingBackend, config: Config, height: number): Source => {
   switch (type) {
     case 'local':
-      return { type, musicXML: '', backend, config };
+      return { type, musicXML: '', backend, config, height };
     case 'remote':
-      return { type, url: '', backend, config };
+      return { type, url: '', backend, config, height };
     case 'example':
-      return { type, path: DEFAULT_EXAMPLE_PATH, backend, config };
+      return { type, path: DEFAULT_EXAMPLE_PATH, backend, config, height };
     default:
       throw new Error(`Invalid source type: ${type}`);
   }

@@ -2,11 +2,6 @@ import * as vexml from '@/index';
 import { CSSProperties, useId, useRef, useState } from 'react';
 import { useTooltip } from '../hooks/useTooltip';
 
-export type ConfigFormProps = {
-  defaultValue?: vexml.Config;
-  onChange(config: vexml.Config): void;
-};
-
 const SLIDER_VALUE_STYLE: CSSProperties = { width: '3em' };
 
 const DESCRIPTOR_TYPE_ORDER = ['string', 'number', 'enum', 'boolean', 'debug'] as const;
@@ -16,6 +11,11 @@ const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.CONFIG_SCHEMA).sort((a, b) =>
   const bIndex = DESCRIPTOR_TYPE_ORDER.indexOf(b[1].type);
   return aIndex - bIndex;
 });
+
+export type ConfigFormProps = {
+  defaultValue?: vexml.Config;
+  onChange(config: vexml.Config): void;
+};
 
 export const ConfigForm = (props: ConfigFormProps) => {
   const [config, setConfig] = useState(props.defaultValue ?? vexml.DEFAULT_CONFIG);
