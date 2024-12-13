@@ -5,6 +5,7 @@ import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
 import { Config, DEFAULT_CONFIG, Vexml } from '@/index';
+import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
   source: Source;
@@ -66,6 +67,9 @@ export const SourceForm = (props: SourceFormProps) => {
     updateNow(modalSource);
     modal.hide();
   };
+
+  const heightTooltipRef = useRef<HTMLDivElement>(null);
+  useTooltip(heightTooltipRef, 'right', 'The height scroll container in pixels. Set to 0 for auto height.');
 
   const onRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const type = e.target.value;
@@ -187,6 +191,9 @@ export const SourceForm = (props: SourceFormProps) => {
             <label htmlFor={heightId} className="form-label">
               Height
             </label>
+            <small ref={heightTooltipRef} className="ms-2">
+              <i className="bi bi-question-circle"></i>
+            </small>
             <div className="row">
               <div className="col-8">
                 <input
@@ -199,7 +206,7 @@ export const SourceForm = (props: SourceFormProps) => {
                   onChange={onHeightChange}
                 />
               </div>
-              <div className="col-4">{source.height ?? 'N/A'}</div>
+              <div className="col-4">{source.height || 'auto'}</div>
             </div>
           </div>
         </div>
