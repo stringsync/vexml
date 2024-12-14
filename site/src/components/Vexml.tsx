@@ -52,7 +52,7 @@ export const Vexml = ({
     player.seek(currentTimeMs);
 
     for (const cursor of cursors) {
-      cursor.seek(currentTimeMs);
+      cursor.seek(currentTimeMs, { scroll: !cursor.isFullyVisible() });
     }
   };
   const onProgressDragStart = () => {
@@ -69,7 +69,7 @@ export const Vexml = ({
     player.addEventListener('progress', (currentTimeMs: number) => {
       const nextProgress = currentTimeMs / durationMs;
       for (const cursor of cursors) {
-        cursor.seek(currentTimeMs);
+        cursor.seek(currentTimeMs, { scroll: !cursor.isFullyVisible() });
       }
       setProgress(nextProgress);
     });

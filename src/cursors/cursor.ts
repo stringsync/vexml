@@ -5,6 +5,7 @@ import * as spatial from '@/spatial';
 import * as events from '@/events';
 import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
+import { Scroller } from './scroller';
 
 const CURSOR_WIDTH_PX = 1.5;
 
@@ -40,7 +41,7 @@ type EventMap = {
 };
 
 export class Cursor {
-  private scrollContainer: HTMLElement;
+  private scroller: Scroller;
   private states: CursorState[];
   private sequence: playback.Sequence;
   private cheapLocator: CheapLocator;
@@ -51,13 +52,13 @@ export class Cursor {
   private alpha = 0; // interpolation factor, ranging from 0 to 1
 
   private constructor(opts: {
-    scrollContainer: HTMLElement;
+    scroller: Scroller;
     states: CursorState[];
     sequence: playback.Sequence;
     cheapLocator: CheapLocator;
     expensiveLocator: ExpensiveLocator;
   }) {
-    this.scrollContainer = opts.scrollContainer;
+    this.scroller = opts.scroller;
     this.states = opts.states;
     this.sequence = opts.sequence;
     this.cheapLocator = opts.cheapLocator;
@@ -144,11 +145,12 @@ export class Cursor {
       };
     }
 
+    const scroller = new Scroller(opts.scrollContainer);
     const cheapLocator = new CheapLocator(sequence);
     const expensiveLocator = new ExpensiveLocator(sequence);
 
     return new Cursor({
-      scrollContainer: opts.scrollContainer,
+      scroller,
       states,
       sequence,
       cheapLocator,
@@ -237,15 +239,20 @@ export class Cursor {
   }
 
   /** Snaps to the closest sequence entry step. */
-  snap(timeMs: number): void {
+  snap(timeMs: number, opts: { scroll?: boolean } = {}): void {
     timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
     const index = this.getIndexClosestTo(time);
     this.update(index, 0);
+
+    if (opts.scroll) {
+      const scrollPoint = this.getScrollPoint();
+      this.scroller.scrollTo(scrollPoint);
+    }
   }
 
   /** Seeks to the exact position, interpolating as needed. */
-  seek(timeMs: number): void {
+  seek(timeMs: number, opts: { scroll?: boolean } = {}): void {
     timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
     const index = this.getIndexClosestTo(time);
@@ -258,6 +265,16 @@ export class Cursor {
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
     this.update(index, alpha);
+
+    if (opts.scroll) {
+      const scrollPoint = this.getScrollPoint();
+      this.scroller.scrollTo(scrollPoint);
+    }
+  }
+
+  isFullyVisible(): boolean {
+    const cursorRect = this.getState().cursorRect;
+    return this.scroller.isFullyVisible(cursorRect);
   }
 
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
@@ -268,6 +285,13 @@ export class Cursor {
     for (const id of ids) {
       this.topic.unsubscribe(id);
     }
+  }
+
+  private getScrollPoint(): spatial.Point {
+    const cursorRect = this.getState().cursorRect;
+    const x = cursorRect.center().x;
+    const y = cursorRect.y;
+    return new spatial.Point(x, y);
   }
 
   private update(index: number, alpha: number): void {
