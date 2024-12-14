@@ -6,9 +6,9 @@ export class Overlay {
     this.element = element;
   }
 
-  static render(parent: HTMLElement, ...classNames: string[]) {
+  static render(parent: HTMLElement) {
     const element = document.createElement('div');
-    element.classList.add('vexml-overlay', ...classNames);
+    element.classList.add('vexml-overlay');
     element.style.position = 'absolute';
     element.style.top = '0';
     element.style.left = '0';
