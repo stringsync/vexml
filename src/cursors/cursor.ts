@@ -239,20 +239,15 @@ export class Cursor {
   }
 
   /** Snaps to the closest sequence entry step. */
-  snap(timeMs: number, opts: { scroll?: boolean } = {}): void {
+  snap(timeMs: number): void {
     timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
     const index = this.getIndexClosestTo(time);
     this.update(index, 0);
-
-    if (opts.scroll) {
-      const scrollPoint = this.getScrollPoint();
-      this.scroller.scrollTo(scrollPoint);
-    }
   }
 
   /** Seeks to the exact position, interpolating as needed. */
-  seek(timeMs: number, opts: { scroll?: boolean } = {}): void {
+  seek(timeMs: number): void {
     timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
     const time = playback.Duration.ms(timeMs);
     const index = this.getIndexClosestTo(time);
@@ -265,16 +260,16 @@ export class Cursor {
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
     this.update(index, alpha);
-
-    if (opts.scroll) {
-      const scrollPoint = this.getScrollPoint();
-      this.scroller.scrollTo(scrollPoint);
-    }
   }
 
   isFullyVisible(): boolean {
     const cursorRect = this.getState().cursorRect;
     return this.scroller.isFullyVisible(cursorRect);
+  }
+
+  scrollIntoView(): void {
+    const scrollPoint = this.getScrollPoint();
+    this.scroller.scrollTo(scrollPoint);
   }
 
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
