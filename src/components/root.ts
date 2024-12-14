@@ -14,40 +14,47 @@ export class Root {
     this.overlay = overlay;
   }
 
-  static svg(parent: HTMLElement) {
-    return Root.render('svg', parent);
+  static svg(parent: HTMLElement, height: number | undefined) {
+    return Root.render('svg', parent, height);
   }
 
-  static canvas(parent: HTMLElement) {
-    return Root.render('canvas', parent);
+  static canvas(parent: HTMLElement, height: number | undefined) {
+    return Root.render('canvas', parent, height);
   }
 
-  private static render(type: 'svg' | 'canvas', parent: HTMLElement) {
-    const element = document.createElement('div');
+  private static render(type: 'svg' | 'canvas', parent: HTMLElement, height: number | undefined): Root {
+    const vexmlRoot = document.createElement('div');
+    vexmlRoot.classList.add('vexml-root');
+    vexmlRoot.classList.add('vexml-scroll-container');
 
-    element.classList.add('vexml-root');
-    element.style.position = 'relative';
-
-    const overlay = Overlay.render(element);
-
-    switch (type) {
-      case 'svg':
-        const div = document.createElement('div');
-        div.classList.add('vexml-container');
-        div.classList.add('vexml-container-svg');
-        element.append(div);
-        break;
-      case 'canvas':
-        const canvas = document.createElement('canvas');
-        canvas.classList.add('vexml-container');
-        canvas.classList.add('vexml-container-canvas');
-        element.append(canvas);
-        break;
+    if (typeof height === 'number') {
+      vexmlRoot.style.height = `${height}px`;
+      vexmlRoot.style.overflowY = 'auto';
+      vexmlRoot.style.overflowX = 'hidden';
     }
 
-    parent.append(element);
+    const vexmlContainer = document.createElement('div');
+    vexmlContainer.classList.add('vexml-container');
+    vexmlContainer.style.position = 'relative';
+    vexmlRoot.append(vexmlContainer);
 
-    return new Root(element, overlay);
+    const overlay = Overlay.render(vexmlContainer);
+
+    if (type === 'svg') {
+      const vexflowContainer = document.createElement('div');
+      vexflowContainer.classList.add('vexflow-container');
+      vexflowContainer.classList.add('vexflow-container-svg');
+      vexmlContainer.append(vexflowContainer);
+    } else {
+      const vexflowContainer = document.createElement('canvas');
+      vexflowContainer.classList.add('vexflow-container');
+      vexflowContainer.classList.add('vexflow-container-canvas');
+      vexmlContainer.append(vexflowContainer);
+    }
+
+    parent.append(vexmlRoot);
+
+    return new Root(vexmlRoot, overlay);
   }
 
   /** Returns the Overlay component. */
@@ -55,15 +62,23 @@ export class Root {
     return this.overlay;
   }
 
+  getScrollContainer(): HTMLDivElement {
+    return this.element;
+  }
+
   /** Returns the element that is intended to be inputted to vexflow. */
   getVexflowContainerElement(): HTMLDivElement | HTMLCanvasElement {
-    return this.element.querySelector('.vexml-container') as HTMLDivElement | HTMLCanvasElement;
+    return this.element.querySelector('.vexflow-container') as HTMLDivElement | HTMLCanvasElement;
   }
 
   /** Returns the element that vexflow rendered onto. */
   getVexflowElement(): SVGElement | HTMLCanvasElement {
     const container = this.getVexflowContainerElement();
-    return container instanceof HTMLDivElement ? (container.firstElementChild as SVGElement) : container;
+    if (container instanceof HTMLDivElement) {
+      return container.firstElementChild as SVGElement;
+    } else {
+      return container as HTMLCanvasElement;
+    }
   }
 
   /** Removes the element from the DOM. */
