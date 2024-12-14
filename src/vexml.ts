@@ -115,17 +115,17 @@ export class Vexml {
     const overlay = root.getOverlay();
     const vexmlEventTopic = new events.Topic<rendering.EventMap>();
     const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
-    const scrollElement = root.getScrollContainer();
+    const scrollContainer = root.getScrollContainer();
     const overlayElement = overlay.getElement();
     const mappings = rendering.EventMappingFactory.create({
-      scrollElement,
+      scrollContainer,
       overlayElement,
       locator,
       inputType: config.INPUT_TYPE,
       topic: vexmlEventTopic,
     });
     const bridge = new events.NativeBridge<keyof rendering.EventMap>({
-      scrollElement,
+      scrollContainer,
       overlayElement,
       mappings,
       nativeEventTopic,

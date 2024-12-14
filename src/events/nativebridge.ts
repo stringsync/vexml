@@ -18,7 +18,7 @@ export type EventMapping<V extends string[]> = {
  * - Native events are only added to the host element when they are needed.
  */
 export class NativeBridge<V extends string> {
-  private scrollElement: HTMLElement;
+  private scrollContainer: HTMLElement;
   private overlayElement: HTMLElement;
   private mappings: EventMapping<V[]>[];
   private nativeEventTopic: Topic<HTMLElementEventMap>;
@@ -28,13 +28,13 @@ export class NativeBridge<V extends string> {
   private handles: { [K in V]?: number[] } = {};
 
   constructor(opts: {
-    scrollElement: HTMLElement;
+    scrollContainer: HTMLElement;
     overlayElement: HTMLElement;
     mappings: EventMapping<V[]>[];
     nativeEventTopic: Topic<HTMLElementEventMap>;
     nativeEventOpts: { [K in keyof HTMLElementEventMap]?: AddEventListenerOptions };
   }) {
-    this.scrollElement = opts.scrollElement;
+    this.scrollContainer = opts.scrollContainer;
     this.overlayElement = opts.overlayElement;
     this.mappings = opts.mappings;
     this.nativeEventTopic = opts.nativeEventTopic;
@@ -69,7 +69,7 @@ export class NativeBridge<V extends string> {
       // Enforce only a single listener per native event. vexml is intended to consume the event through the
       // nativeEventTopic. That way, we only run the native callbacks that we need to run.
       if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
-        const srcElement = mapping.src === 'scroll' ? this.scrollElement : this.overlayElement;
+        const srcElement = mapping.src === 'scroll' ? this.scrollContainer : this.overlayElement;
         srcElement.addEventListener(nativeEventName, this.publishNativeEvent, this.nativeEventOpts[nativeEventName]);
       }
       const handle = this.nativeEventTopic.subscribe(nativeEventName, nativeEventListener);
@@ -100,7 +100,7 @@ export class NativeBridge<V extends string> {
       const nativeEventName = native[0] as keyof HTMLElementEventMap;
 
       if (!this.nativeEventTopic.hasSubscribers(nativeEventName)) {
-        const srcElement = mapping.src === 'scroll' ? this.scrollElement : this.overlayElement;
+        const srcElement = mapping.src === 'scroll' ? this.scrollContainer : this.overlayElement;
         srcElement.removeEventListener(nativeEventName, this.publishNativeEvent, this.nativeEventOpts[nativeEventName]);
       }
     }

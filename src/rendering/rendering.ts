@@ -46,7 +46,12 @@ export class Rendering {
     const partId = opts?.partId ?? this.partIds[0];
     const sequence = this.sequences.find((sequence) => sequence.getPartId() === partId);
     util.assertDefined(sequence);
-    return cursors.Cursor.create(this.score, partId, sequence);
+    return cursors.Cursor.create({
+      scrollContainer: this.root.getScrollContainer(),
+      partId,
+      sequence,
+      score: this.score,
+    });
   }
 
   /** Returns the element used as an overlay. */
