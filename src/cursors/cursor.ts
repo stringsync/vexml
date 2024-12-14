@@ -40,6 +40,7 @@ type EventMap = {
 };
 
 export class Cursor {
+  private scrollContainer: HTMLElement;
   private states: CursorState[];
   private sequence: playback.Sequence;
   private cheapLocator: CheapLocator;
@@ -49,19 +50,27 @@ export class Cursor {
   private index = 0;
   private alpha = 0; // interpolation factor, ranging from 0 to 1
 
-  private constructor(
-    states: CursorState[],
-    sequence: playback.Sequence,
-    cheapLocator: CheapLocator,
-    expensiveLocator: ExpensiveLocator
-  ) {
-    this.states = states;
-    this.sequence = sequence;
-    this.cheapLocator = cheapLocator;
-    this.expensiveLocator = expensiveLocator;
+  private constructor(opts: {
+    scrollContainer: HTMLElement;
+    states: CursorState[];
+    sequence: playback.Sequence;
+    cheapLocator: CheapLocator;
+    expensiveLocator: ExpensiveLocator;
+  }) {
+    this.scrollContainer = opts.scrollContainer;
+    this.states = opts.states;
+    this.sequence = opts.sequence;
+    this.cheapLocator = opts.cheapLocator;
+    this.expensiveLocator = opts.expensiveLocator;
   }
 
-  static create(score: rendering.ScoreRendering, partId: string, sequence: playback.Sequence): Cursor {
+  static create(opts: {
+    scrollContainer: HTMLElement;
+    score: rendering.ScoreRendering;
+    partId: string;
+    sequence: playback.Sequence;
+  }): Cursor {
+    const { score, partId, sequence } = opts;
     const query = rendering.Query.of(score).where(rendering.filters.forPart(partId));
 
     const systemIndexes = query.select('system').map((system) => system.index);
@@ -138,7 +147,13 @@ export class Cursor {
     const cheapLocator = new CheapLocator(sequence);
     const expensiveLocator = new ExpensiveLocator(sequence);
 
-    return new Cursor(states, sequence, cheapLocator, expensiveLocator);
+    return new Cursor({
+      scrollContainer: opts.scrollContainer,
+      states,
+      sequence,
+      cheapLocator,
+      expensiveLocator,
+    });
   }
 
   getState(): CursorState {

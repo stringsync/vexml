@@ -61,25 +61,25 @@ type LocateResult = {
 };
 
 export class EventMappingFactory {
-  private scrollElement: Element;
+  private scrollContainer: Element;
   private overlayElement: Element;
   private locator: spatial.PointLocator<InteractionModelType>;
   private topic: events.Topic<EventMap>;
 
   private constructor(opts: {
-    scrollElement: Element;
+    scrollContainer: Element;
     overlayElement: Element;
     locator: spatial.PointLocator<InteractionModelType>;
     topic: events.Topic<EventMap>;
   }) {
-    this.scrollElement = opts.scrollElement;
+    this.scrollContainer = opts.scrollContainer;
     this.overlayElement = opts.overlayElement;
     this.locator = opts.locator;
     this.topic = opts.topic;
   }
 
   static create(opts: {
-    scrollElement: Element;
+    scrollContainer: Element;
     overlayElement: Element;
     inputType: InputType;
     locator: spatial.PointLocator<InteractionModelType>;
@@ -132,8 +132,8 @@ export class EventMappingFactory {
         scroll: () => {
           this.topic.publish('scroll', {
             type: 'scroll',
-            scrollX: this.scrollElement.scrollLeft,
-            scrollY: this.scrollElement.scrollTop,
+            scrollX: this.scrollContainer.scrollLeft,
+            scrollY: this.scrollContainer.scrollTop,
           });
         },
       },
