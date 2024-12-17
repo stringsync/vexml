@@ -236,6 +236,8 @@ export const Vexml = ({
 
       const simpleCursor = vexml.SimpleCursor.render(overlayElement, cursorInput.color);
 
+      (window as any).simpleCursor = simpleCursor;
+
       // TODO: There should be an easier way to do this.
       const handle = cursor.addEventListener('change', (state) => {
         simpleCursor.update(state.cursorRect);
