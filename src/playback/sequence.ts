@@ -20,6 +20,8 @@ export const PLAYABLE_RENDERING_TYPES = [
   'ghostnote',
 ] as const;
 
+const LAST_MEASURE_XRANGE_PADDING = 6;
+
 export type PlayableRendering = rendering.SelectableRenderingWithType<(typeof PLAYABLE_RENDERING_TYPES)[number]>;
 
 type SequenceEventType = 'start' | 'stop';
@@ -34,6 +36,7 @@ export type SequenceEntry = {
   mostRecentInteractable: rendering.InteractableRendering;
   interactables: rendering.InteractableRendering[];
   durationRange: DurationRange;
+  xRange: util.NumberRange;
 };
 
 /** Represents a sequence of steps needed for playback. */
@@ -112,9 +115,83 @@ export class Sequence {
           const durationRange = new DurationRange(start, stop);
           time = stop;
           util.assertNotNull(mostRecentInteractable);
-          entries.push({ mostRecentInteractable, interactables: [...interactables], durationRange });
+          // For now, the xRange will be initialized to be empty. After we've materialized all the sequence entries, we
+          // will go back and fill in the xRange values.
+          const xRange = new util.NumberRange(0, 0);
+          entries.push({
+            mostRecentInteractable,
+            interactables: [...interactables],
+            durationRange,
+            xRange,
+          });
         }
       });
+
+      const measureRects = measures.map((measure) => ({
+        index: measure.index,
+        rect: rendering.InteractionModel.create(measure).getBoundingBox(),
+      }));
+
+      const entryRects = entries.map((entry) =>
+        rendering.InteractionModel.create(entry.mostRecentInteractable).getBoundingBox()
+      );
+
+      // Fix the xRange values, now that we can look ahead easily.
+      for (let index = 0; index < entries.length; index++) {
+        const currentEntry = entries[index];
+        const currentEntryCenterX = entryRects[index].center().x;
+        const currentMeasureIndex = currentEntry.mostRecentInteractable.address.getMeasureIndex()!;
+        const currentMeasureEndX = measureRects[currentMeasureIndex].rect.getMaxX();
+
+        const isLast = index === entries.length - 1;
+        if (isLast) {
+          currentEntry.xRange = new util.NumberRange(
+            currentEntryCenterX,
+            currentMeasureEndX - LAST_MEASURE_XRANGE_PADDING
+          );
+          continue;
+        }
+
+        const nextEntry = entries[index + 1];
+
+        const currentSystemIndex = currentEntry.mostRecentInteractable.address.getSystemIndex()!;
+        const nextSystemIndex = nextEntry.mostRecentInteractable.address.getSystemIndex()!;
+
+        const isChangingSystems = currentSystemIndex !== nextSystemIndex;
+        if (isChangingSystems) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
+
+        // This can happen if there is a repeat range that spans a single measure and the measure only has one
+        // interactable.
+        const isRepeatingTheSameNote = currentEntry.mostRecentInteractable === nextEntry.mostRecentInteractable;
+        if (isRepeatingTheSameNote) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
+
+        const nextMeasureIndex = nextEntry.mostRecentInteractable.address.getMeasureIndex()!;
+
+        // This will happen if there's a jump in the sequence.
+        const isChangingMeasures = currentMeasureIndex !== nextMeasureIndex;
+        const isJumpingMeasures = currentMeasureIndex !== nextMeasureIndex - 1;
+        if (isChangingMeasures && isJumpingMeasures) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
+
+        const nextEntryCenterX = entryRects[index + 1].center().x;
+
+        const isGoingBackwards = currentEntryCenterX > nextEntryCenterX;
+        if (isGoingBackwards) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
+
+        // Otherwise, deduce that the next entry is on the same system and is moving forward normally.
+        currentEntry.xRange = new util.NumberRange(currentEntryCenterX, nextEntryCenterX);
+      }
 
       return new Sequence(partId, entries);
     });
@@ -133,7 +210,7 @@ export class Sequence {
   }
 
   getDuration(): Duration {
-    return util.last(this.entries)?.durationRange.getRight() ?? Duration.zero();
+    return util.last(this.entries)?.durationRange.getEnd() ?? Duration.zero();
   }
 }
 

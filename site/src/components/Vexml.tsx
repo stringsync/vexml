@@ -50,13 +50,6 @@ export const Vexml = ({
     setProgress(nextProgress);
     const currentTimeMs = nextProgress * durationMs;
     player.seek(currentTimeMs);
-
-    for (const cursor of cursors) {
-      cursor.seek(currentTimeMs);
-      if (!cursor.isFullyVisible()) {
-        cursor.scrollIntoView();
-      }
-    }
   };
   const onProgressDragStart = () => {
     player.suspend();
@@ -102,11 +95,10 @@ export const Vexml = ({
       if (!cursor.isFullyVisible()) {
         cursor.scrollIntoView();
       }
-      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
-    const nextProgress = currentTimeMs / durationMs;
-    setProgress(nextProgress);
-    player.seek(currentTimeMs);
+    player.seek(currentTimeMs, false);
+    setProgress(currentTimeMs / durationMs);
   };
 
   const onNextClick = () => {
@@ -116,11 +108,10 @@ export const Vexml = ({
       if (!cursor.isFullyVisible()) {
         cursor.scrollIntoView();
       }
-      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
-    const nextProgress = currentTimeMs / durationMs;
-    setProgress(nextProgress);
-    player.seek(currentTimeMs);
+    player.seek(currentTimeMs, false);
+    setProgress(currentTimeMs / durationMs);
   };
 
   useEffect(() => {
@@ -130,7 +121,15 @@ export const Vexml = ({
 
     const handles = new Array<number>();
 
-    handles.push(rendering.addEventListener('click', onEvent));
+    handles.push(
+      rendering.addEventListener('click', (event) => {
+        const timestampMs = event.timestampMs;
+        if (typeof timestampMs === 'number') {
+          player.seek(timestampMs);
+        }
+        onEvent(event);
+      })
+    );
     handles.push(rendering.addEventListener('longpress', onEvent));
     handles.push(rendering.addEventListener('exit', onEvent));
     handles.push(rendering.addEventListener('enter', onEvent));
@@ -218,7 +217,7 @@ export const Vexml = ({
     return () => {
       rendering.removeEventListener(...handles);
     };
-  }, [rendering, div, onEvent]);
+  }, [rendering, player, div, onEvent]);
 
   useEffect(() => {
     if (!rendering) {
