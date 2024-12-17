@@ -120,7 +120,7 @@ export class Vexml {
     const mappings = rendering.EventMappingFactory.create({
       scrollContainer,
       overlayElement,
-      locator,
+      renderingLocator: locator,
       inputType: config.INPUT_TYPE,
       topic: vexmlEventTopic,
     });

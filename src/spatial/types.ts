@@ -17,9 +17,3 @@ export interface Shape {
   /** Returns the maximum Y. */
   getMaxY(): number;
 }
-
-/** Represents something that can take a point, and return something.  */
-export interface PointLocator<T> {
-  locate(point: Point): T[];
-  sort(point: Point, targets: T[]): T[];
-}

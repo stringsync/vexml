@@ -14,7 +14,7 @@ const QUAD_TREE_THRESHOLD = 10;
 const TRANSPARENT_BLUE = 'rgba(0, 0, 255, 0.02)';
 const TRANSPARENT_RED = 'rgba(255, 0, 0, 0.5)';
 
-export class Locator implements spatial.PointLocator<InteractionModelType> {
+export class Locator {
   private tree: spatial.QuadTree<InteractionModelType>;
   // The targets that could not be inserted into the tree because they are too large and/or out-of-bounds.
   private unorganizedTargets: InteractionModelType[];
