@@ -3,6 +3,7 @@ import * as events from '@/events';
 import * as util from '@/util';
 import { InputType } from './types';
 import { InteractionModelType } from './interactions';
+import { Locator } from './locator';
 
 const LONGPRESS_DURATION_MS = 500;
 
@@ -63,18 +64,18 @@ type LocateResult = {
 export class EventMappingFactory {
   private scrollContainer: Element;
   private overlayElement: Element;
-  private locator: spatial.PointLocator<InteractionModelType>;
+  private renderingLocator: Locator;
   private topic: events.Topic<EventMap>;
 
   private constructor(opts: {
     scrollContainer: Element;
     overlayElement: Element;
-    locator: spatial.PointLocator<InteractionModelType>;
+    renderingLocator: Locator;
     topic: events.Topic<EventMap>;
   }) {
     this.scrollContainer = opts.scrollContainer;
     this.overlayElement = opts.overlayElement;
-    this.locator = opts.locator;
+    this.renderingLocator = opts.renderingLocator;
     this.topic = opts.topic;
   }
 
@@ -82,7 +83,7 @@ export class EventMappingFactory {
     scrollContainer: Element;
     overlayElement: Element;
     inputType: InputType;
-    locator: spatial.PointLocator<InteractionModelType>;
+    renderingLocator: Locator;
     topic: events.Topic<EventMap>;
   }): events.EventMapping<Array<keyof EventMap>>[] {
     return new EventMappingFactory(opts).create(opts.inputType);
@@ -118,8 +119,8 @@ export class EventMappingFactory {
     const y = clientPoint.clientY - rect.top;
     const point = new spatial.Point(x, y);
 
-    let targets = this.locator.locate(point);
-    targets = this.locator.sort(point, targets);
+    let targets = this.renderingLocator.locate(point);
+    targets = this.renderingLocator.sort(point, targets);
     const closestTarget = targets[0] ?? null;
     return { point, targets, closestTarget };
   }
