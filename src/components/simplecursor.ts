@@ -10,6 +10,7 @@ export class SimpleCursor {
   static render(parent: HTMLElement, color = STRINGSYNC_RED) {
     const element = document.createElement('div');
     element.classList.add('vexml-cursor');
+    element.style.display = 'block';
     element.style.width = '1.5px';
     element.style.position = 'absolute';
     element.style.backgroundColor = color;
@@ -29,5 +30,13 @@ export class SimpleCursor {
 
   remove() {
     this.element.remove();
+  }
+
+  show() {
+    this.element.style.display = 'block';
+  }
+
+  hide() {
+    this.element.style.display = 'none';
   }
 }
