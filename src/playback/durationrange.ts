@@ -4,16 +4,16 @@ import { Duration } from './duration';
 export class DurationRange {
   private numberRange: util.NumberRange;
 
-  constructor(left: Duration, right: Duration) {
-    this.numberRange = new util.NumberRange(left.ms, right.ms);
+  constructor(start: Duration, end: Duration) {
+    this.numberRange = new util.NumberRange(start.ms, end.ms);
   }
 
-  getLeft(): Duration {
-    return Duration.ms(this.numberRange.getLeft());
+  getStart(): Duration {
+    return Duration.ms(this.numberRange.getStart());
   }
 
-  getRight(): Duration {
-    return Duration.ms(this.numberRange.getRight());
+  getEnd(): Duration {
+    return Duration.ms(this.numberRange.getEnd());
   }
 
   includes(duration: Duration): boolean {

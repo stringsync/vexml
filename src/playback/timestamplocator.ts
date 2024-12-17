@@ -63,9 +63,9 @@ export class TimestampLocator {
         if (!entry.xRange.includes(point.x)) {
           continue;
         }
-        const startMs = entry.durationRange.getLeft().ms;
-        const stopMs = entry.durationRange.getRight().ms;
-        const alpha = (point.x - entry.xRange.getLeft()) / entry.xRange.getSize();
+        const startMs = entry.durationRange.getStart().ms;
+        const stopMs = entry.durationRange.getEnd().ms;
+        const alpha = (point.x - entry.xRange.getStart()) / entry.xRange.getSize();
         const timestampMs = util.lerp(startMs, stopMs, alpha);
         return Duration.ms(timestampMs);
       }
