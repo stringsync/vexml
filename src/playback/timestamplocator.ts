@@ -40,7 +40,9 @@ export class TimestampLocator {
         for (let index = 0; index < sequence.getLength(); index++) {
           const entry = sequence.getEntry(index);
           util.assertNotNull(entry);
-          entries.push({ xRange: entry.xRange, durationRange: entry.durationRange });
+          if (entry.mostRecentInteractable.address.getSystemIndex() === systemIndex) {
+            entries.push({ xRange: entry.xRange, durationRange: entry.durationRange });
+          }
         }
       }
 
