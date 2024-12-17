@@ -10,7 +10,7 @@ describe(NumberRange, () => {
 
     test('should throw an error for invalid range', () => {
       expect(() => new NumberRange(5, 1)).toThrow(
-        'Invalid range: left bound must be less than or equal to right bound.'
+        'Invalid range: start bound must be less than or equal to end bound.'
       );
     });
 
