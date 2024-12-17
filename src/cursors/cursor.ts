@@ -192,17 +192,17 @@ export class Cursor {
   }
 
   /** Snaps to the closest sequence entry step. */
-  snap(timeMs: number): void {
-    timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
-    const time = playback.Duration.ms(timeMs);
+  snap(timestampMs: number): void {
+    timestampMs = util.clamp(0, this.sequence.getDuration().ms, timestampMs);
+    const time = playback.Duration.ms(timestampMs);
     const index = this.getIndexClosestTo(time);
     this.update(index, 0);
   }
 
   /** Seeks to the exact position, interpolating as needed. */
-  seek(timeMs: number): void {
-    timeMs = util.clamp(0, this.sequence.getDuration().ms, timeMs);
-    const time = playback.Duration.ms(timeMs);
+  seek(timestampMs: number): void {
+    timestampMs = util.clamp(0, this.sequence.getDuration().ms, timestampMs);
+    const time = playback.Duration.ms(timestampMs);
     const index = this.getIndexClosestTo(time);
 
     const entry = this.sequence.getEntry(index);
