@@ -20,6 +20,8 @@ export const PLAYABLE_RENDERING_TYPES = [
   'ghostnote',
 ] as const;
 
+const LAST_MEASURE_XRANGE_PADDING = 6;
+
 export type PlayableRendering = rendering.SelectableRenderingWithType<(typeof PLAYABLE_RENDERING_TYPES)[number]>;
 
 type SequenceEventType = 'start' | 'stop';
@@ -143,7 +145,10 @@ export class Sequence {
 
         const isLast = index === entries.length - 1;
         if (isLast) {
-          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          currentEntry.xRange = new util.NumberRange(
+            currentEntryCenterX,
+            currentMeasureEndX - LAST_MEASURE_XRANGE_PADDING
+          );
           continue;
         }
 
@@ -177,6 +182,12 @@ export class Sequence {
         }
 
         const nextEntryCenterX = entryRects[index + 1].center().x;
+
+        const isGoingBackwards = currentEntryCenterX > nextEntryCenterX;
+        if (isGoingBackwards) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
 
         // Otherwise, deduce that the next entry is on the same system and is moving forward normally.
         currentEntry.xRange = new util.NumberRange(currentEntryCenterX, nextEntryCenterX);
