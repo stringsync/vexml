@@ -176,7 +176,11 @@ export class Cursor {
   }
 
   next(): void {
-    this.update(this.index + 1, 0);
+    if (this.index === this.sequence.getLength() - 1) {
+      this.update(this.index, 1);
+    } else {
+      this.update(this.index + 1, 0);
+    }
   }
 
   previous(): void {

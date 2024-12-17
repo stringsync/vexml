@@ -81,10 +81,12 @@ export class Player {
     }
   }
 
-  seek(timeMs: number) {
+  seek(timeMs: number, broadcast = true) {
     if (this.currentTimeMs !== timeMs) {
       this.currentTimeMs = timeMs;
-      this.broadcastProgress();
+      if (broadcast) {
+        this.broadcastProgress();
+      }
     }
   }
 

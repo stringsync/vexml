@@ -97,9 +97,7 @@ export const Vexml = ({
       }
       currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
-    const nextProgress = currentTimeMs / durationMs;
-    setProgress(nextProgress);
-    player.seek(currentTimeMs);
+    player.seek(currentTimeMs, false);
   };
 
   const onNextClick = () => {
@@ -111,9 +109,7 @@ export const Vexml = ({
       }
       currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
-    const nextProgress = currentTimeMs / durationMs;
-    setProgress(nextProgress);
-    player.seek(currentTimeMs);
+    player.seek(currentTimeMs, false);
   };
 
   useEffect(() => {
