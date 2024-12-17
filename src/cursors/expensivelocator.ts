@@ -22,7 +22,7 @@ export class ExpensiveLocator {
         return mid;
       }
 
-      if (entry.durationRange.getRight().gteq(time)) {
+      if (entry.durationRange.getEnd().gteq(time)) {
         right = mid - 1;
       } else {
         left = mid + 1;

@@ -199,7 +199,7 @@ export class Sequence {
   }
 
   getDuration(): Duration {
-    return util.last(this.entries)?.durationRange.getRight() ?? Duration.zero();
+    return util.last(this.entries)?.durationRange.getEnd() ?? Duration.zero();
   }
 }
 

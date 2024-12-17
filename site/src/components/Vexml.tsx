@@ -102,7 +102,7 @@ export const Vexml = ({
       if (!cursor.isFullyVisible()) {
         cursor.scrollIntoView();
       }
-      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
     const nextProgress = currentTimeMs / durationMs;
     setProgress(nextProgress);
@@ -116,7 +116,7 @@ export const Vexml = ({
       if (!cursor.isFullyVisible()) {
         cursor.scrollIntoView();
       }
-      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getLeft().ms;
+      currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
     const nextProgress = currentTimeMs / durationMs;
     setProgress(nextProgress);

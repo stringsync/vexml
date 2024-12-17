@@ -4,8 +4,8 @@ describe(NumberRange, () => {
   describe(NumberRange, () => {
     test('should create a valid NumberRange', () => {
       const range = new NumberRange(1, 5);
-      expect(range.getLeft()).toBe(1);
-      expect(range.getRight()).toBe(5);
+      expect(range.getStart()).toBe(1);
+      expect(range.getEnd()).toBe(5);
     });
 
     test('should throw an error for invalid range', () => {

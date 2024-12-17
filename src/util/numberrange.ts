@@ -1,38 +1,38 @@
 export class NumberRange {
-  private left: number;
-  private right: number;
+  private start: number;
+  private end: number;
 
-  constructor(left: number, right: number) {
-    if (left > right) {
-      throw new Error('Invalid range: left bound must be less than or equal to right bound.');
+  constructor(start: number, end: number) {
+    if (start > end) {
+      throw new Error('Invalid range: start bound must be less than or equal to end bound.');
     }
-    this.left = left;
-    this.right = right;
+    this.start = start;
+    this.end = end;
   }
 
-  getLeft(): number {
-    return this.left;
+  getStart(): number {
+    return this.start;
   }
 
-  getRight(): number {
-    return this.right;
+  getEnd(): number {
+    return this.end;
   }
 
   getSize(): number {
-    return this.right - this.left;
+    return this.end - this.start;
   }
 
   includes(value: number): boolean {
-    return value >= this.left && value <= this.right;
+    return value >= this.start && value <= this.end;
   }
 
   contains(range: NumberRange): boolean {
-    return this.includes(range.left) && this.includes(range.right);
+    return this.includes(range.start) && this.includes(range.end);
   }
 
   overlaps(range: NumberRange): boolean {
     return (
-      this.includes(range.left) || this.includes(range.right) || range.includes(this.left) || range.includes(this.right)
+      this.includes(range.start) || this.includes(range.end) || range.includes(this.start) || range.includes(this.end)
     );
   }
 }

@@ -166,7 +166,7 @@ export class Cursor {
       return { ...state };
     }
 
-    const x = util.lerp(state.sequenceEntry.xRange.getLeft(), state.sequenceEntry.xRange.getRight(), this.alpha);
+    const x = util.lerp(state.sequenceEntry.xRange.getStart(), state.sequenceEntry.xRange.getEnd(), this.alpha);
     const y = state.cursorRect.y;
     const w = state.cursorRect.w;
     const h = state.cursorRect.h;
@@ -204,8 +204,8 @@ export class Cursor {
     const entry = this.sequence.getEntry(index);
     util.assertNotNull(entry);
 
-    const left = entry.durationRange.getLeft();
-    const right = entry.durationRange.getRight();
+    const left = entry.durationRange.getStart();
+    const right = entry.durationRange.getEnd();
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
     this.update(index, alpha);
