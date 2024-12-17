@@ -166,61 +166,10 @@ export class Cursor {
       return { ...state };
     }
 
-    const currentSystemId = state.sequenceEntry.mostRecentInteractable?.address.getSystemIndex();
-    util.assertDefined(currentSystemId);
-
-    const currentMeasureIndex = state.sequenceEntry.mostRecentInteractable?.address.getMeasureIndex();
-    util.assertDefined(currentMeasureIndex);
-
-    const nextState = this.states.at(this.index + 1);
-    const nextSystemId = nextState?.sequenceEntry.mostRecentInteractable?.address.getSystemIndex();
-    const nextMeasureIndex = nextState?.sequenceEntry.mostRecentInteractable?.address.getMeasureIndex();
-
-    // "Normally" here means the next state is either in the same measure or the next measure to the right of the
-    // current state.
-    const isAdvancingNormally =
-      state.sequenceEntry.mostRecentInteractable !== nextState?.sequenceEntry.mostRecentInteractable &&
-      typeof nextMeasureIndex === 'number' &&
-      (currentMeasureIndex === nextMeasureIndex || currentMeasureIndex === nextMeasureIndex - 1);
-
-    if (nextState && currentSystemId === nextSystemId && !isAdvancingNormally) {
-      // The next state is in the same system and is not immediately in the next measure. This is common when processing
-      // repeats. Instead of interpolating with the next state, interpolate with the edge of the measure.
-      const leftX = state.cursorRect.x;
-      const rightX = state.measureRect.x + state.measureRect.w;
-      const x = util.lerp(leftX, rightX, this.alpha);
-      const y = state.cursorRect.y;
-      const w = CURSOR_WIDTH_PX;
-      const h = state.cursorRect.h;
-
-      const cursorRect = new spatial.Rect(x, y, w, h);
-
-      return { ...state, cursorRect };
-    }
-
-    if (nextState && currentSystemId === nextSystemId) {
-      // Interpolate with the nextState in the same system.
-      const leftX = state.cursorRect.center().x;
-      const rightX = nextState.cursorRect.center().x;
-      const x = util.lerp(leftX, rightX, this.alpha);
-      const y = state.cursorRect.y;
-      const w = CURSOR_WIDTH_PX;
-      const h = state.cursorRect.h;
-
-      const cursorRect = new spatial.Rect(x, y, w, h);
-
-      return { ...state, cursorRect };
-    }
-
-    // Otherwise, interpolate with the edge of the system, since the next state does not exist or is in a different
-    // system.
-    const leftX = state.cursorRect.center().x;
-    const rightX = state.systemRect.x + state.systemRect.w;
-    const x = util.lerp(leftX, rightX, this.alpha);
+    const x = util.lerp(state.sequenceEntry.xRange.getLeft(), state.sequenceEntry.xRange.getRight(), this.alpha);
     const y = state.cursorRect.y;
-    const w = CURSOR_WIDTH_PX;
+    const w = state.cursorRect.w;
     const h = state.cursorRect.h;
-
     const cursorRect = new spatial.Rect(x, y, w, h);
 
     return { ...state, cursorRect };
