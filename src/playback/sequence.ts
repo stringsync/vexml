@@ -34,6 +34,7 @@ export type SequenceEntry = {
   mostRecentInteractable: rendering.InteractableRendering;
   interactables: rendering.InteractableRendering[];
   durationRange: DurationRange;
+  xRange: util.NumberRange;
 };
 
 /** Represents a sequence of steps needed for playback. */
@@ -112,7 +113,21 @@ export class Sequence {
           const durationRange = new DurationRange(start, stop);
           time = stop;
           util.assertNotNull(mostRecentInteractable);
-          entries.push({ mostRecentInteractable, interactables: [...interactables], durationRange });
+          // For now, the xRange will be initialized to be empty. After we've materialized all the sequence entries, we
+          // will go back and fill in the xRange values.
+          const xRange = new util.NumberRange(0, 0);
+          entries.push({
+            mostRecentInteractable,
+            interactables: [...interactables],
+            durationRange,
+            xRange,
+          });
+        }
+      });
+
+      util.forEachTriple(entries, ([previousEntry, currentEntry, nextEntry]) => {
+        if (!nextEntry) {
+          const leftX = rendering.InteractionModel.create(currentEntry.mostRecentInteractable).getBoundingBox().x;
         }
       });
 
