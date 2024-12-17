@@ -6,6 +6,7 @@ import { InputType } from './types';
 import { InteractionModelType } from './interactions';
 import { Locator } from './locator';
 
+const MOUSEDOWN_MOVEMENT_TOLERANCE = 10;
 const LONGPRESS_DURATION_MS = 500;
 
 /** Events that vexml dispatches to listeners. */
@@ -124,10 +125,7 @@ export class EventMappingFactory {
   }
 
   private locate(clientPoint: ClientPoint): LocateResult {
-    const rect = this.overlayElement.getBoundingClientRect();
-    const x = clientPoint.clientX - rect.left;
-    const y = clientPoint.clientY - rect.top;
-    const point = new spatial.Point(x, y);
+    const point = this.point(clientPoint);
 
     let targets = this.renderingLocator.locate(point);
     targets = this.renderingLocator.sort(point, targets);
@@ -136,6 +134,13 @@ export class EventMappingFactory {
     const timestampMs = this.timestampLocator.locate(point)?.ms ?? null;
 
     return { point, targets, closestTarget, timestampMs };
+  }
+
+  private point(clientPoint: ClientPoint): spatial.Point {
+    const rect = this.overlayElement.getBoundingClientRect();
+    const x = clientPoint.clientX - rect.left;
+    const y = clientPoint.clientY - rect.top;
+    return new spatial.Point(x, y);
   }
 
   private scroll(): events.EventMapping<['scroll', 'scroll']> {
@@ -156,8 +161,9 @@ export class EventMappingFactory {
 
   private mousePress(): events.EventMapping<['click', 'longpress']> {
     let timeout = 0 as unknown as NodeJS.Timeout;
-    let isPending = false;
     let lastMouseDownInvocation = Symbol();
+    let lastMouseDownPoint = spatial.Point.origin();
+    let isPending = false;
 
     return {
       src: 'overlay',
@@ -172,6 +178,7 @@ export class EventMappingFactory {
           }
 
           lastMouseDownInvocation = mouseDownInvocation;
+          lastMouseDownPoint = point;
           isPending = true;
 
           timeout = setTimeout(() => {
@@ -187,9 +194,11 @@ export class EventMappingFactory {
             isPending = false;
           }, LONGPRESS_DURATION_MS);
         },
-        mousemove: () => {
-          clearTimeout(timeout);
-          isPending = false;
+        mousemove: (event) => {
+          if (isPending && lastMouseDownPoint.distance(this.point(event)) > MOUSEDOWN_MOVEMENT_TOLERANCE) {
+            clearTimeout(timeout);
+            isPending = false;
+          }
         },
         mouseup: (event) => {
           if (isPending) {
@@ -199,6 +208,8 @@ export class EventMappingFactory {
             }
           }
           clearTimeout(timeout);
+          lastMouseDownInvocation = Symbol();
+          lastMouseDownPoint = spatial.Point.origin();
           isPending = false;
         },
       },
