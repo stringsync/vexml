@@ -19,7 +19,7 @@ type SystemEntry = {
 export class TimestampLocator {
   private constructor(private systems: System[]) {}
 
-  static create(opts: { score: rendering.ScoreRendering; sequence: Sequence }): TimestampLocator {
+  static create(opts: { score: rendering.ScoreRendering; sequences: Sequence[] }): TimestampLocator {
     const systemIndexes = rendering.Query.of(opts.score)
       .select('system')
       .map((system) => system.index);
@@ -36,10 +36,12 @@ export class TimestampLocator {
 
       const entries = new Array<SystemEntry>();
 
-      for (let index = 0; index < opts.sequence.getLength(); index++) {
-        const entry = opts.sequence.getEntry(index);
-        util.assertNotNull(entry);
-        entries.push({ xRange: entry.xRange, durationRange: entry.durationRange });
+      for (const sequence of opts.sequences) {
+        for (let index = 0; index < sequence.getLength(); index++) {
+          const entry = sequence.getEntry(index);
+          util.assertNotNull(entry);
+          entries.push({ xRange: entry.xRange, durationRange: entry.durationRange });
+        }
       }
 
       return { index: systemIndex, yRange, entries };

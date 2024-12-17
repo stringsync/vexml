@@ -1,6 +1,7 @@
 import * as spatial from '@/spatial';
 import * as events from '@/events';
 import * as util from '@/util';
+import * as playback from '@/playback';
 import { InputType } from './types';
 import { InteractionModelType } from './interactions';
 import { Locator } from './locator';
@@ -11,6 +12,7 @@ const LONGPRESS_DURATION_MS = 500;
 export type EventMap = {
   click: {
     type: 'click';
+    timestampMs: number | null;
     closestTarget: InteractionModelType;
     targets: InteractionModelType[];
     point: spatial.Point;
@@ -18,18 +20,21 @@ export type EventMap = {
   };
   enter: {
     type: 'enter';
+    timestampMs: number | null;
     target: InteractionModelType;
     point: spatial.Point;
     native: MouseEvent | TouchEvent;
   };
   exit: {
     type: 'exit';
+    timestampMs: number | null;
     target: InteractionModelType;
     point: spatial.Point;
     native: MouseEvent | TouchEvent;
   };
   longpress: {
     type: 'longpress';
+    timestampMs: number | null;
     target: InteractionModelType;
     point: spatial.Point;
     native: MouseEvent | TouchEvent;
@@ -59,23 +64,27 @@ type LocateResult = {
   point: spatial.Point;
   targets: InteractionModelType[];
   closestTarget: InteractionModelType | null;
+  timestampMs: number | null;
 };
 
 export class EventMappingFactory {
   private scrollContainer: Element;
   private overlayElement: Element;
   private renderingLocator: Locator;
+  private timestampLocator: playback.TimestampLocator;
   private topic: events.Topic<EventMap>;
 
   private constructor(opts: {
     scrollContainer: Element;
     overlayElement: Element;
     renderingLocator: Locator;
+    timestampLocator: playback.TimestampLocator;
     topic: events.Topic<EventMap>;
   }) {
     this.scrollContainer = opts.scrollContainer;
     this.overlayElement = opts.overlayElement;
     this.renderingLocator = opts.renderingLocator;
+    this.timestampLocator = opts.timestampLocator;
     this.topic = opts.topic;
   }
 
@@ -84,6 +93,7 @@ export class EventMappingFactory {
     overlayElement: Element;
     inputType: InputType;
     renderingLocator: Locator;
+    timestampLocator: playback.TimestampLocator;
     topic: events.Topic<EventMap>;
   }): events.EventMapping<Array<keyof EventMap>>[] {
     return new EventMappingFactory(opts).create(opts.inputType);
@@ -122,7 +132,10 @@ export class EventMappingFactory {
     let targets = this.renderingLocator.locate(point);
     targets = this.renderingLocator.sort(point, targets);
     const closestTarget = targets[0] ?? null;
-    return { point, targets, closestTarget };
+
+    const timestampMs = this.timestampLocator.locate(point)?.ms ?? null;
+
+    return { point, targets, closestTarget, timestampMs };
   }
 
   private scroll(): events.EventMapping<['scroll', 'scroll']> {
@@ -153,7 +166,7 @@ export class EventMappingFactory {
         mousedown: (event) => {
           const mouseDownInvocation = Symbol();
 
-          const { point, closestTarget } = this.locate(event);
+          const { point, closestTarget, timestampMs } = this.locate(event);
           if (!closestTarget) {
             return;
           }
@@ -163,7 +176,13 @@ export class EventMappingFactory {
 
           timeout = setTimeout(() => {
             if (lastMouseDownInvocation === mouseDownInvocation) {
-              this.topic.publish('longpress', { type: 'longpress', target: closestTarget, point, native: event });
+              this.topic.publish('longpress', {
+                type: 'longpress',
+                target: closestTarget,
+                point,
+                native: event,
+                timestampMs,
+              });
             }
             isPending = false;
           }, LONGPRESS_DURATION_MS);
@@ -174,9 +193,9 @@ export class EventMappingFactory {
         },
         mouseup: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget } = this.locate(event);
+            const { point, targets, closestTarget, timestampMs } = this.locate(event);
             if (closestTarget) {
-              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
+              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event, timestampMs });
             }
           }
           clearTimeout(timeout);
@@ -202,6 +221,7 @@ export class EventMappingFactory {
               target: lastResult.closestTarget,
               point: lastResult.point,
               native: event,
+              timestampMs: lastResult.timestampMs,
             });
           }
           if (result.closestTarget && result.closestTarget !== lastResult?.closestTarget) {
@@ -210,6 +230,7 @@ export class EventMappingFactory {
               target: result.closestTarget,
               point: result.point,
               native: event,
+              timestampMs: result.timestampMs,
             });
           }
 
@@ -231,7 +252,7 @@ export class EventMappingFactory {
         touchstart: (event) => {
           const touchStartInvocation = Symbol();
 
-          const { point, closestTarget } = this.locate(event.touches[0]);
+          const { point, closestTarget, timestampMs } = this.locate(event.touches[0]);
           if (!closestTarget) {
             return;
           }
@@ -241,7 +262,13 @@ export class EventMappingFactory {
 
           timeout = setTimeout(() => {
             if (lastTouchStartInvocation === touchStartInvocation) {
-              this.topic.publish('longpress', { type: 'longpress', target: closestTarget, point, native: event });
+              this.topic.publish('longpress', {
+                type: 'longpress',
+                target: closestTarget,
+                point,
+                native: event,
+                timestampMs,
+              });
             }
             isPending = false;
           }, LONGPRESS_DURATION_MS);
@@ -252,9 +279,9 @@ export class EventMappingFactory {
         },
         touchend: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget } = this.locate(event.changedTouches[0]);
+            const { point, targets, closestTarget, timestampMs } = this.locate(event.changedTouches[0]);
             if (closestTarget) {
-              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event });
+              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event, timestampMs });
             }
           }
           clearTimeout(timeout);
@@ -284,6 +311,7 @@ export class EventMappingFactory {
               target: lastResult.closestTarget,
               point: lastResult.point,
               native: event,
+              timestampMs: lastResult.timestampMs,
             });
           }
 
@@ -293,6 +321,7 @@ export class EventMappingFactory {
               target: result.closestTarget,
               point: result.point,
               native: event,
+              timestampMs: result.timestampMs,
             });
 
             lastResult = result;
@@ -305,6 +334,7 @@ export class EventMappingFactory {
               target: lastResult.closestTarget,
               point: lastResult.point,
               native: event,
+              timestampMs: lastResult.timestampMs,
             });
 
             lastResult = null;
@@ -317,6 +347,7 @@ export class EventMappingFactory {
               target: lastResult.closestTarget,
               point: lastResult.point,
               native: event,
+              timestampMs: lastResult.timestampMs,
             });
 
             lastResult = null;
