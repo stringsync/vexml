@@ -18,6 +18,10 @@ export class NumberRange {
     return this.right;
   }
 
+  getSize(): number {
+    return this.right - this.left;
+  }
+
   includes(value: number): boolean {
     return value >= this.left && value <= this.right;
   }
