@@ -104,12 +104,16 @@ export class Vexml {
     const score = new rendering.Score({ config, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ root, width });
 
-    // Make a point cursor.
-    const locator = rendering.Locator.fromScoreRendering(scoreRendering);
+    // Make playback sequences.
+    const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
+
+    // Make locators.
+    const renderingLocator = rendering.Locator.fromScoreRendering(scoreRendering);
     if (config.DEBUG_DRAW_TARGET_BOUNDS) {
       const ctx = scoreRendering.vexflow.renderer.getContext();
-      locator.draw(ctx);
+      renderingLocator.draw(ctx);
     }
+    const timestampLocator = playback.TimestampLocator.create({ score: scoreRendering, sequences });
 
     // Initialize event routing.
     const overlay = root.getOverlay();
@@ -120,7 +124,8 @@ export class Vexml {
     const mappings = rendering.EventMappingFactory.create({
       scrollContainer,
       overlayElement,
-      locator,
+      renderingLocator,
+      timestampLocator,
       inputType: config.INPUT_TYPE,
       topic: vexmlEventTopic,
     });
@@ -136,9 +141,6 @@ export class Vexml {
         touchend: { passive: true },
       },
     });
-
-    // Make playback sequences.
-    const sequences = playback.Sequence.fromScoreRendering(scoreRendering);
 
     return new rendering.Rendering({
       config,

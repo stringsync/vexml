@@ -81,8 +81,13 @@ export class Player {
     }
   }
 
-  seek(timeMs: number) {
-    this.currentTimeMs = timeMs;
+  seek(timeMs: number, broadcast = true) {
+    if (this.currentTimeMs !== timeMs) {
+      this.currentTimeMs = timeMs;
+      if (broadcast) {
+        this.broadcastProgress();
+      }
+    }
   }
 
   reset() {
