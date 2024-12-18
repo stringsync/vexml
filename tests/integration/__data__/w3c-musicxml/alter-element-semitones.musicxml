@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC
+      "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+      "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+    <defaults>
+    </defaults>
+    <part-list>
+        <score-part id="P1">
+            <part-name>placeholder</part-name>
+        </score-part>
+    </part-list>
+    <part id="P1">
+        <measure number="11">
+            <note>
+                <pitch>
+                    <step>B</step>
+                    <alter>-2</alter>
+                    <octave>4</octave>
+                </pitch>
+                <duration>4</duration>
+                <voice>1</voice>
+                <type>eighth</type>
+                <accidental>flat-flat</accidental>
+                <stem default-y="-52">down</stem>
+                <beam number="1">begin</beam>
+            </note>
+            <note>
+                <pitch>
+                    <step>B</step>
+                    <alter>-1</alter>
+                    <octave>4</octave>
+                </pitch>
+                <duration>4</duration>
+                <voice>1</voice>
+                <type>eighth</type>
+                <accidental>flat</accidental>
+                <stem default-y="-52">down</stem>
+                <beam number="1">continue</beam>
+            </note>
+            <note>
+                <pitch>
+                    <step>B</step>
+                    <octave>4</octave>
+                </pitch>
+                <duration>4</duration>
+                <voice>1</voice>
+                <type>eighth</type>
+                <accidental>natural</accidental>
+                <stem default-y="-52">down</stem>
+                <beam number="1">continue</beam>
+            </note>
+            <note>
+                <pitch>
+                    <step>B</step>
+                    <alter>1</alter>
+                    <octave>4</octave>
+                </pitch>
+                <duration>4</duration>
+                <voice>1</voice>
+                <type>eighth</type>
+                <accidental>sharp</accidental>
+                <stem default-y="-52">down</stem>
+                <beam number="1">end</beam>
+            </note>
+            <note>
+                <pitch>
+                    <step>B</step>
+                    <alter>2</alter>
+                    <octave>4</octave>
+                </pitch>
+                <duration>8</duration>
+                <voice>1</voice>
+                <type>quarter</type>
+                <accidental>double-sharp</accidental>
+                <stem default-y="-55">down</stem>
+            </note>
+        </measure>
+    </part>
+</score-partwise>

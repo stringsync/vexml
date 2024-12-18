@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC
+      "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+      "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+    <defaults>
+    </defaults>
+    <part-list>
+        <score-part id="P1">
+            <part-name>placeholder</part-name>
+        </score-part>
+    </part-list>
+    <part id="P1">
+        <measure number="23">
+            <note>
+                <pitch>
+                    <step>G</step>
+                    <octave>4</octave>
+                </pitch>
+                <duration>16</duration>
+                <voice>1</voice>
+                <type>whole</type>
+                <staff>1</staff>
+                <notations>
+                    <arpeggiate number="1" default-x="-12" default-y="-41"/>
+                </notations>
+            </note>
+            <note>
+                <chord/>
+                <pitch>
+                    <step>B</step>
+                    <octave>4</octave>
+                </pitch>
+                <duration>16</duration>
+                <voice>1</voice>
+                <type>whole</type>
+                <staff>1</staff>
+                <notations>
+                    <arpeggiate number="1" default-x="-12"/>
+                </notations>
+            </note>
+            <note>
+                <chord/>
+                <pitch>
+                    <step>D</step>
+                    <octave>5</octave>
+                </pitch>
+                <duration>16</duration>
+                <voice>1</voice>
+                <type>whole</type>
+                <staff>1</staff>
+                <notations>
+                    <arpeggiate number="1" default-x="-12"/>
+                </notations>
+            </note>
+            <note>
+                <chord/>
+                <pitch>
+                    <step>G</step>
+                    <octave>5</octave>
+                </pitch>
+                <duration>16</duration>
+                <voice>1</voice>
+                <type>whole</type>
+                <staff>1</staff>
+                <notations>
+                    <arpeggiate number="1" default-x="-12" default-y="10"/>
+                </notations>
+            </note>
+        </measure>
+    </part>
+</score-partwise>

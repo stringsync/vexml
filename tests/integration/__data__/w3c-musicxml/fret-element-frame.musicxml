@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC
+      "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+      "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+    <defaults>
+    </defaults>
+    <part-list>
+        <score-part id="P1">
+            <part-name>placeholder</part-name>
+        </score-part>
+    </part-list>
+    <part id="P1">
+        <measure number="1">
+            <attributes>
+                <divisions>1</divisions>
+                <key>
+                    <fifths>0</fifths>
+                </key>
+                <time>
+                    <beats>4</beats>
+                    <beat-type>4</beat-type>
+                </time>
+                <clef>
+                    <sign>G</sign>
+                    <line>2</line>
+                </clef>
+            </attributes>
+            <harmony default-y="110" font-family="Arial">
+                <root>
+                    <root-step>A</root-step>
+                </root>
+                <kind halign="center" text="">major</kind>
+                <frame default-y="93" halign="center" unplayed="x" valign="top">
+                    <frame-strings>6</frame-strings>
+                    <frame-frets>5</frame-frets>
+                    <first-fret location="right" text="12fr.">12</first-fret>
+                    <frame-note>
+                        <string>5</string>
+                        <fret>12</fret>
+                        <barre type="start"/>
+                    </frame-note>
+                    <frame-note>
+                        <string>4</string>
+                        <fret>14</fret>
+                        <barre type="start"/>
+                    </frame-note>
+                    <frame-note>
+                        <string>3</string>
+                        <fret>14</fret>
+                    </frame-note>
+                    <frame-note>
+                        <string>2</string>
+                        <fret>14</fret>
+                        <barre type="stop"/>
+                    </frame-note>
+                    <frame-note>
+                        <string>1</string>
+                        <fret>12</fret>
+                        <barre type="stop"/>
+                    </frame-note>
+                </frame>
+            </harmony>
+            <note>
+                <pitch>
+                    <step>C</step>
+                    <octave>4</octave>
+                </pitch>
+                <duration>4</duration>
+                <type>whole</type>
+                <notations>
+                </notations>
+            </note>
+            <print>
+            </print>
+        </measure>
+    </part>
+</score-partwise>
