@@ -16,7 +16,6 @@ import { StaveRendering } from './stave';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
-const DEFAULT_MEASURE_FRAGMENT_WIDTH = 200;
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -302,6 +301,7 @@ export class Measure {
       result.push(
         new MeasureFragment({
           config: this.config,
+          log: this.log,
           index: result.length,
           partIds: this.partIds,
           partNames: this.partNames,
@@ -315,6 +315,8 @@ export class Measure {
         })
       );
     }
+
+    this.log.debug('detected measure fragments', { measureIndex: this.index, fragmentCount: result.length });
 
     return result;
   }
@@ -384,8 +386,8 @@ export class Measure {
         this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'left')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, type: 'single', location: 'left' })
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'left' })
     );
   }
 
@@ -395,8 +397,8 @@ export class Measure {
         this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'right')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, type: 'single', location: 'right' })
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'right' })
     );
   }
 

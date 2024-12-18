@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import { Clef } from './clef';
 import { Config } from '@/config';
 import { KeySignature } from './keysignature';
@@ -48,17 +49,20 @@ export type StaveModifier = 'clef' | 'keySignature' | 'timeSignature';
  */
 export class Stave {
   private config: Config;
+  private log: debug.Logger;
   private number: number;
   private staveSignature: StaveSignature;
   private measureEntries: MeasureEntry[];
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     number: number;
     staveSignature: StaveSignature;
     measureEntries: MeasureEntry[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.number = opts.number;
     this.staveSignature = opts.staveSignature;
     this.measureEntries = opts.measureEntries;
@@ -67,6 +71,7 @@ export class Stave {
   @util.memoize()
   getEntry(): StaveEntry {
     const config = this.config;
+    const log = this.log;
     const timeSignature = this.getTimeSignature();
     const clef = this.getClef();
     const multiRestCount = this.getMultiRestCount();
@@ -75,6 +80,7 @@ export class Stave {
     if (multiRestCount === 1) {
       return new Chorus({
         config,
+        log,
         voices: [
           new Voice({
             config,
@@ -95,11 +101,12 @@ export class Stave {
     }
 
     if (multiRestCount > 1) {
-      return new MultiRest({ count: multiRestCount });
+      return new MultiRest({ config, log, count: multiRestCount });
     }
 
     return Chorus.fromMusicXML({
       config,
+      log,
       measureEntries,
       staveSignature: this.staveSignature,
     });
