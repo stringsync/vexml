@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 
@@ -11,14 +13,20 @@ export type FermataRendering = {
 
 /** Represents a Fermata. */
 export class Fermata {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { fermata: musicxml.Fermata };
 
-  constructor(opts: { musicXML: { fermata: musicxml.Fermata } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { fermata: musicxml.Fermata } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   /** Renders the Fermata. */
   render(): FermataRendering {
+    this.log.debug('rendering fermata');
+
     return {
       type: 'fermata',
       vexflow: {

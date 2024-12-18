@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
@@ -19,25 +21,46 @@ export type KeySignatureRendering = {
 
 /** Represents a key signature. */
 export class KeySignature {
+  private config: Config;
+  private log: debug.Logger;
   private fifths: number;
   private mode: musicxml.KeyMode;
   private previousKeySignature: KeySignature | null;
 
-  private constructor(opts: { fifths: number; mode: musicxml.KeyMode; previousKeySignature: KeySignature | null }) {
+  private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    fifths: number;
+    mode: musicxml.KeyMode;
+    previousKeySignature: KeySignature | null;
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fifths = opts.fifths;
     this.mode = opts.mode;
     this.previousKeySignature = opts.previousKeySignature;
   }
 
-  static from(opts: { musicXML: { key: musicxml.Key }; previousKeySignature: KeySignature | null }) {
+  static from(opts: {
+    config: Config;
+    log: debug.Logger;
+    musicXML: { key: musicxml.Key };
+    previousKeySignature: KeySignature | null;
+  }) {
     const fifths = opts.musicXML.key.getFifthsCount();
     const mode = opts.musicXML.key.getMode();
     const previousKeySignature = opts.previousKeySignature;
-    return new KeySignature({ fifths, mode, previousKeySignature });
+    return new KeySignature({ config: opts.config, log: opts.log, fifths, mode, previousKeySignature });
   }
 
-  static Cmajor(): KeySignature {
-    return new KeySignature({ fifths: 0, mode: 'major', previousKeySignature: null });
+  static Cmajor(opts: { config: Config; log: debug.Logger }): KeySignature {
+    return new KeySignature({
+      config: opts.config,
+      log: opts.log,
+      fifths: 0,
+      mode: 'major',
+      previousKeySignature: null,
+    });
   }
 
   /** Returns the root of the key signature. */

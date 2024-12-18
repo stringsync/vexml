@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -31,13 +33,18 @@ type PedalFragmentType = musicxml.PedalType | 'unspecified';
 
 /** Represents piano pedal marks. */
 export class Pedal {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [PedalFragment, ...PedalFragment[]];
 
-  private constructor(opts: { fragment: PedalFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: PedalFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: PedalContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: PedalContainer }): void {
+    const { config, log, data, container } = opts;
     if (data.vexflow.type !== 'stavenote') {
       return;
     }
@@ -51,30 +58,38 @@ export class Pedal {
       .map((content) => content.pedal)
       .forEach((pedal) => {
         const pedalType = pedal.getType();
-        Pedal.commit(
-          {
+        Pedal.commit({
+          config,
+          log,
+          fragment: {
             type: pedalType,
             address: data.address,
             musicXML: { pedal },
             vexflow: { staveNote: vfStaveNote },
           },
-          container
-        );
+          container,
+        });
       });
   }
 
-  private static commit(fragment: PedalFragment, container: PedalContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: PedalFragment;
+    container: PedalContainer;
+  }): void {
+    const { config, log, container, fragment } = opts;
     const pedal = container.get(null);
     const last = pedal?.getLastFragment();
     const isAllowedType = Pedal.getAllowedTypes(last?.type).includes(fragment.type);
     const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
 
     if (fragment.type === 'start' || fragment.type === 'resume') {
-      container.push(null, new Pedal({ fragment }));
+      container.push(null, new Pedal({ config, log, fragment }));
     } else if (pedal && isAllowedType && isOnSameSystem) {
       pedal.fragments.push(fragment);
     } else if (pedal && isAllowedType && !isOnSameSystem) {
-      container.push(null, new Pedal({ fragment }));
+      container.push(null, new Pedal({ config, log, fragment }));
     }
   }
 

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -12,14 +14,22 @@ export type LyricRendering = {
 
 /** Represents a lyric attached to a single note. */
 export class Lyric {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { lyric: musicxml.Lyric };
 
-  constructor(opts: { musicXML: { lyric: musicxml.Lyric } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { lyric: musicxml.Lyric } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   /** Renders the Lyric. */
   render(): LyricRendering {
+    const verseNumber = this.musicXML.lyric.getVerseNumber();
+
+    this.log.debug('rendering lyric', { verseNumber });
+
     const text = this.getText();
     const vfAnnotation = new vexflow.Annotation(text).setVerticalJustification(
       vexflow.AnnotationVerticalJustify.BOTTOM
@@ -27,7 +37,7 @@ export class Lyric {
 
     return {
       type: 'lyric',
-      verseNumber: this.musicXML.lyric.getVerseNumber(),
+      verseNumber,
       vexflow: {
         annotation: vfAnnotation,
       },

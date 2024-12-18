@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import { Config } from '@/config';
@@ -13,10 +14,12 @@ export type RehearsalRendering = {
 /** Represents an indicator denoting a certain point in a score. */
 export class Rehearsal {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: { rehearsal: musicxml.Rehearsal };
 
-  constructor(opts: { config: Config; musicXML: { rehearsal: musicxml.Rehearsal } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { rehearsal: musicxml.Rehearsal } }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 

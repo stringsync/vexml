@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import { Division } from './division';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
@@ -73,6 +74,7 @@ export type VoiceEntry = {
  */
 export class Voice {
   private config: Config;
+  private log: debug.Logger;
   private id: string;
   private entries: VoiceEntry[];
   private timeSignature: TimeSignature;
@@ -80,19 +82,27 @@ export class Voice {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     id: string;
     entries: VoiceEntry[];
     timeSignature: TimeSignature;
     parent: Voice | null;
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.id = opts.id;
     this.entries = opts.entries;
     this.timeSignature = opts.timeSignature;
     this.parent = opts.parent;
   }
 
-  static fromInputs(opts: { config: Config; id: string; inputs: VoiceInput[]; timeSignature: TimeSignature }): Voice {
+  static fromInputs(opts: {
+    config: Config;
+    log: debug.Logger;
+    id: string;
+    inputs: VoiceInput[];
+    timeSignature: TimeSignature;
+  }): Voice {
     const entries = new Array<VoiceEntry>();
 
     let divisions = Division.zero();
@@ -105,7 +115,7 @@ export class Voice {
 
       if (ghostNoteDuration.isGreaterThan(Division.zero())) {
         const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
-        const ghostNote = new GhostNote({ durationDenominator });
+        const ghostNote = new GhostNote({ config: opts.config, log: opts.log, durationDenominator });
         entries.push({ start: ghostNoteStart, end: ghostNoteEnd, value: ghostNote, directions: [] });
       }
 
@@ -127,7 +137,7 @@ export class Voice {
         }
       }
 
-      const entry = this.toEntry({ config: opts.config, input, octaveShift: openOctaveShift });
+      const entry = this.toEntry({ config: opts.config, log: opts.log, input, octaveShift: openOctaveShift });
       entries.push(entry);
 
       if (shouldCloseOctaveShift) {
@@ -137,16 +147,25 @@ export class Voice {
       divisions = input.end;
     }
 
-    return new Voice({ config: opts.config, id: opts.id, entries, timeSignature: opts.timeSignature, parent: null });
+    return new Voice({
+      config: opts.config,
+      log: opts.log,
+      id: opts.id,
+      entries,
+      timeSignature: opts.timeSignature,
+      parent: null,
+    });
   }
 
   private static toEntry(opts: {
     config: Config;
+    log: debug.Logger;
     input: VoiceInput;
     octaveShift: musicxml.OctaveShift | null;
   }): VoiceEntry {
     const input = opts.input;
     const config = opts.config;
+    const log = opts.log;
     const octaveShift = opts.octaveShift;
     const note = input.note;
     const stem = input.stem;
@@ -164,7 +183,7 @@ export class Voice {
       return {
         start: input.start,
         end: input.end,
-        value: new GhostNote({ durationDenominator }),
+        value: new GhostNote({ config, log, durationDenominator }),
         directions,
       };
     } else if (note.isChordHead()) {
@@ -173,6 +192,7 @@ export class Voice {
         end: input.end,
         value: new Chord({
           config,
+          log,
           musicXML: { note, directions, octaveShift },
           stem,
           clef,
@@ -187,6 +207,7 @@ export class Voice {
         end: input.end,
         value: new Rest({
           config,
+          log,
           musicXML: { note, directions },
           clef,
           durationDenominator,
@@ -199,6 +220,7 @@ export class Voice {
         end: input.end,
         value: new Note({
           config,
+          log,
           musicXML: { note, directions, octaveShift },
           stem,
           clef,
@@ -217,6 +239,8 @@ export class Voice {
 
   /** Renders the voice. */
   render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
+    this.log.debug('rendering voice', { voiceId: this.id });
+
     const address = opts.address;
     const spanners = opts.spanners;
 
@@ -443,7 +467,7 @@ export class Voice {
       throw new Error('dynamics direction is missing a type');
     }
     const characters = type.split('').filter((char): char is DynamicsCharacter => DYNAMICS_CHARACTERS.includes(char));
-    return SymbolNote.dynamics({ characters, durationDenominator });
+    return SymbolNote.dynamics({ config: this.config, log: this.log, characters, durationDenominator });
   }
 
   private getEntry(end: Division): VoiceEntry | null {
@@ -473,6 +497,7 @@ export class Voice {
 
     return new Voice({
       config: this.config,
+      log: this.log,
       id: this.id,
       entries,
       timeSignature: this.timeSignature,
@@ -489,7 +514,7 @@ export class Voice {
     return {
       start,
       end,
-      value: new GhostNote({ durationDenominator }),
+      value: new GhostNote({ config: this.config, log: this.log, durationDenominator }),
       directions: [], // avoid processing directions multiple times
     };
   }

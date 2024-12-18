@@ -84,12 +84,13 @@ export class Stave {
         voices: [
           new Voice({
             config,
+            log,
             id: '-1',
             entries: [
               {
                 start: Division.zero(),
                 end: Division.of(1, 1),
-                value: Rest.whole({ config, clef }),
+                value: Rest.whole({ config, log, clef }),
                 directions: [],
               },
             ],

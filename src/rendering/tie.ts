@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Address } from './address';
@@ -38,14 +40,19 @@ type TieContainer = SpannerMap<number, Tie>;
 
 /** Represents a curved line that connects two notes of the same pitch. */
 export class Tie {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [TieFragment, ...TieFragment[]];
 
-  private constructor(opts: { fragment: TieFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: TieFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
   /** Processes spanner data for ties. */
-  static process(data: SpannerData, container: TieContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: TieContainer }): void {
+    const { config, log, data, container } = opts;
     const note = data.musicXML.note;
     const isRest = note?.isRest() ?? false;
     const isGrace = note?.isGrace() ?? false;
@@ -60,8 +67,10 @@ export class Tie {
         continue;
       }
 
-      Tie.commit(
-        {
+      Tie.commit({
+        config,
+        log,
+        fragment: {
           type: tieType,
           number: tie.getNumber(),
           address: data.address,
@@ -71,18 +80,24 @@ export class Tie {
             keyIndex: data.keyIndex,
           },
         },
-        container
-      );
+        container,
+      });
     }
   }
 
-  private static commit(fragment: TieFragment, container: TieContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: TieFragment;
+    container: TieContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     let tie = container.get(fragment.number);
     const last = tie?.getLastFragment();
     const isAllowedType = Tie.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(fragment.number, new Tie({ fragment }));
+      container.push(fragment.number, new Tie({ config, log, fragment }));
     } else if (tie && isAllowedType) {
       if (last && last.address.getSystemIndex() === fragment.address.getSystemIndex()) {
         tie.fragments.push(fragment);
@@ -97,6 +112,8 @@ export class Tie {
 
         // Start a tie with a null start note on the next system.
         tie = new Tie({
+          config,
+          log,
           fragment: {
             type: 'start',
             address: fragment.address,

@@ -1,5 +1,7 @@
 import * as vexflow from 'vexflow';
 import { Enum, EnumValues } from '@/util';
+import { Config } from '@/config';
+import * as debug from '@/debug';
 
 /** The result of rendering an Accidental. */
 export type AccidentalRendering = {
@@ -29,16 +31,21 @@ export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', '
  * realizes them accurately.
  */
 export class Accidental {
+  private config: Config;
+  private log: debug.Logger;
   private code: AccidentalCode;
   private isCautionary: boolean;
 
-  constructor(opts: { code: AccidentalCode; isCautionary: boolean }) {
+  constructor(opts: { config: Config; log: debug.Logger; code: AccidentalCode; isCautionary: boolean }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.code = opts.code;
     this.isCautionary = opts.isCautionary;
   }
 
   /** Renders the Accidental. */
   render(): AccidentalRendering {
+    this.log.debug('rendering accidental', { accidental: this.code });
     const vfAccidental = this.toVexflowAccidental();
     return { type: 'accidental', vexflow: { accidental: vfAccidental } };
   }

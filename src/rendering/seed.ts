@@ -55,7 +55,10 @@ export class Seed {
 
     for (const part of this.musicXML.parts) {
       const partId = part.getId();
-      result.push({ partId, value: StaveSignature.toMeasureEntryGroups({ part }) });
+      result.push({
+        partId,
+        value: StaveSignature.toMeasureEntryGroups({ config: this.config, log: this.log, musicXML: { part } }),
+      });
     }
 
     return result;
@@ -67,7 +70,7 @@ export class Seed {
 
     for (const partDetail of this.musicXML.partDetails) {
       const partId = partDetail.id;
-      const partName = new PartName({ config: this.config, content: partDetail.name });
+      const partName = new PartName({ config: this.config, log: this.log, content: partDetail.name });
       result.push({ partId, value: partName });
     }
 
@@ -261,6 +264,7 @@ class SystemCalculator {
     this.systems.push(
       new System({
         config: this.config,
+        log: this.log,
         index: this.systems.length,
         measures: this.buffer.map(({ measure }) => measure),
         measureFragmentWidths,

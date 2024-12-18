@@ -64,7 +64,7 @@ export class Score {
     let y = 0;
 
     // Initialize spanners for rendering.
-    const spanners = new Spanners(this.log);
+    const spanners = new Spanners({ config: this.config, log: this.log });
 
     // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
@@ -291,6 +291,7 @@ export class Score {
   private getTitle() {
     return new Title({
       config: this.config,
+      log: this.log,
       text: this.musicXML.scorePartwise?.getTitle() ?? '',
     });
   }
@@ -314,7 +315,7 @@ export class Score {
         y: 0,
         previousSystem: null,
         nextSystem: systems[1] ?? null,
-        spanners: new Spanners(this.log),
+        spanners: new Spanners({ config: this.config, log: this.log }),
       });
 
       const staves = systemRendering.measures

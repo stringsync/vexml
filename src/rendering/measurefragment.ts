@@ -391,7 +391,7 @@ export class MeasureFragment {
   }
 
   private getMinVoiceJustifyWidth(opts: { address: Address<'measurefragment'> }): number {
-    const spanners = new Spanners(this.log);
+    const spanners = new Spanners({ config: this.config, log: this.log });
     const vfFormatter = new vexflow.Formatter();
     const vfVoices = new Array<vexflow.Voice>();
 

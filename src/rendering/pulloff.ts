@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { SpannerData } from './types';
@@ -30,14 +32,19 @@ type PullOffContainer = SpannerMap<number, PullOff>;
 
 /** Represents tapping a string location to produce a note for stringed instruments. */
 export class PullOff {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [PullOffFragment, ...PullOffFragment[]];
 
-  private constructor(opts: { fragment: PullOffFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: PullOffFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
   /** Processes spanner data for pull-offs. */
-  static process(data: SpannerData, container: PullOffContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: PullOffContainer }): void {
+    const { config, log, data, container } = opts;
     if (data.vexflow.type !== 'tabnote') {
       return;
     }
@@ -55,8 +62,10 @@ export class PullOff {
       .flatMap((notation) => notation.getTechnicals())
       .flatMap((technical) => technical.getPullOffs());
     for (const pullOff of pullOffs) {
-      PullOff.commit(
-        {
+      PullOff.commit({
+        config,
+        log,
+        fragment: {
           type: pullOff.getType() ?? 'unspecified',
           number: pullOff.getNumber(),
           address: data.address,
@@ -65,18 +74,24 @@ export class PullOff {
             keyIndex: data.keyIndex,
           },
         },
-        container
-      );
+        container,
+      });
     }
   }
 
-  private static commit(fragment: PullOffFragment, container: PullOffContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: PullOffFragment;
+    container: PullOffContainer;
+  }): void {
+    const { config, log, container, fragment } = opts;
     const pullOff = container.get(fragment.number);
     const last = pullOff?.getLastFragment();
     const isAllowedType = PullOff.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(fragment.number, new PullOff({ fragment }));
+      container.push(fragment.number, new PullOff({ config, log, fragment }));
     } else if (pullOff && isAllowedType) {
       pullOff.fragments.push(fragment);
     }
@@ -97,6 +112,8 @@ export class PullOff {
 
   /** Renders the pull-off. */
   render(): PullOffRendering {
+    this.log.debug('rendering pull-off');
+
     const vfTieNotes: vexflow.TieNotes = {};
 
     for (let index = 0; index < this.fragments.length; index++) {
