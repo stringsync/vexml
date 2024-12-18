@@ -2,10 +2,7 @@
 import { Logger } from './types';
 
 export class NoopLogger implements Logger {
-  info(message: string): void {}
-  warn(message: string): void {}
-  error(message: string): void {}
-  withCtx(ctx: Record<string, string>): Logger {
-    return new NoopLogger();
-  }
+  info(message: string, meta?: Record<string, string>): void {}
+  warn(message: string, meta?: Record<string, string>): void {}
+  error(message: string, meta?: Record<string, string>): void {}
 }
