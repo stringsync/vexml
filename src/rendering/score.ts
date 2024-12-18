@@ -5,6 +5,7 @@ import * as util from '@/util';
 import * as drawables from '@/drawables';
 import * as spatial from '@/spatial';
 import * as components from '@/components';
+import * as debug from '@/debug';
 import { Config } from '@/config';
 import { Title, TitleRendering } from './title';
 import { MultiRestRendering } from './multirest';
@@ -33,17 +34,20 @@ export type ScoreRendering = {
  */
 export class Score {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     scorePartwise: musicxml.ScorePartwise | null;
   };
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     musicXML: {
       scorePartwise: musicxml.ScorePartwise | null;
     };
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
@@ -264,6 +268,7 @@ export class Score {
   private seed(): Seed {
     return new Seed({
       config: this.config,
+      log: this.log,
       musicXML: {
         parts: this.musicXML.scorePartwise?.getParts() ?? [],
         partDetails: this.musicXML.scorePartwise?.getPartDetails() ?? [],
