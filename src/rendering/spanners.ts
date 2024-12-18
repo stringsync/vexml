@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import * as debug from '@/debug';
 import { Beam, BeamRendering } from './beam';
 import { Tuplet, TupletRendering } from './tuplet';
@@ -33,6 +34,9 @@ export type SpannersRendering = {
 
 /** The accounting for all spanners. */
 export class Spanners {
+  private config: Config;
+  private log: debug.Logger;
+
   private beams = SpannerMap.keyless<Beam>();
   private tuplets = SpannerMap.keyless<Tuplet>();
   private slurs = new SpannerMap<number, Slur>();
@@ -45,7 +49,10 @@ export class Spanners {
   private pullOffs = new SpannerMap<number, PullOff>();
   private slides = new SpannerMap<number, Slide>();
 
-  constructor(private log: debug.Logger) {}
+  constructor(opts: { config: Config; log: debug.Logger }) {
+    this.config = opts.config;
+    this.log = opts.log;
+  }
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {
@@ -60,17 +67,20 @@ export class Spanners {
 
   /** Extracts and processes all the spanners within the given data. */
   process(data: SpannerData): void {
-    Beam.process(data, this.beams);
-    Tuplet.process(data, this.tuplets);
-    Slur.process(data, this.slurs);
-    Tie.process(data, this.ties);
-    Wedge.process(data, this.wedges);
-    Pedal.process(data, this.pedals);
-    Vibrato.process(data, this.vibratos);
-    OctaveShift.process(data, this.octaveShifts);
-    HammerOn.process(data, this.hammerOns);
-    PullOff.process(data, this.pullOffs);
-    Slide.process(data, this.slides);
+    const config = this.config;
+    const log = this.log;
+
+    Beam.process({ config, log, data, container: this.beams });
+    Tuplet.process({ config, log, data, container: this.tuplets });
+    Slur.process({ config, log, data, container: this.slurs });
+    Tie.process({ config, log, data, container: this.ties });
+    Wedge.process({ config, log, data, container: this.wedges });
+    Pedal.process({ config, log, data, container: this.pedals });
+    Vibrato.process({ config, log, data, container: this.vibratos });
+    OctaveShift.process({ config, log, data, container: this.octaveShifts });
+    HammerOn.process({ config, log, data, container: this.hammerOns });
+    PullOff.process({ config, log, data, container: this.pullOffs });
+    Slide.process({ config, log, data, container: this.slides });
   }
 
   /** Renders all the spanners. */

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
@@ -42,13 +44,18 @@ type CurveOpeningDirection = 'up' | 'down' | 'unknown';
  * played legato.
  */
 export class Slur {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [SlurFragment, ...SlurFragment[]];
 
-  private constructor(opts: { fragment: SlurFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: SlurFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: SlurContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: SlurContainer }): void {
+    const { config, log, data, container } = opts;
     if (data.vexflow.type !== 'stavenote') {
       return;
     }
@@ -67,8 +74,10 @@ export class Slur {
         continue;
       }
 
-      Slur.commit(
-        {
+      Slur.commit({
+        config,
+        log,
+        fragment: {
           type: slurType,
           number: slur.getNumber(),
           address: data.address,
@@ -78,18 +87,24 @@ export class Slur {
             keyIndex: data.keyIndex,
           },
         },
-        container
-      );
+        container,
+      });
     }
   }
 
-  private static commit(fragment: SlurFragment, container: SlurContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: SlurFragment;
+    container: SlurContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     const slur = container.get(fragment.number);
     const last = slur?.getLastFragment();
     const isAllowedType = Slur.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(fragment.number, new Slur({ fragment }));
+      container.push(fragment.number, new Slur({ config, log, fragment }));
     } else if (slur && isAllowedType) {
       slur.fragments.push(fragment);
     }
@@ -116,6 +131,8 @@ export class Slur {
 
   /** Renders the slur. */
   render(): SlurRendering {
+    this.log.debug('rendering slur');
+
     const vfStartNote = this.fragments.find((fragment) => fragment.type === 'start')?.vexflow.note;
     const vfStopNote = this.fragments.find((fragment) => fragment.type === 'stop')?.vexflow.note;
 

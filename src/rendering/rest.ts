@@ -1,6 +1,7 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
-import { Config } from '@/config';
 import { NoteDurationDenominator } from './enums';
 import { Clef } from './clef';
 import { Token } from './token';
@@ -29,6 +30,7 @@ export type RestRendering = {
  */
 export class Rest {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     note: musicxml.Note | null;
     directions: musicxml.Direction[];
@@ -38,6 +40,7 @@ export class Rest {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     musicXML: {
       note: musicxml.Note | null;
       directions: musicxml.Direction[];
@@ -46,15 +49,17 @@ export class Rest {
     clef: Clef;
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
     this.durationDenominator = opts.durationDenominator;
     this.clef = opts.clef;
   }
 
   /** Creates a whole rest. */
-  static whole(opts: { config: Config; clef: Clef }): Rest {
+  static whole(opts: { config: Config; log: debug.Logger; clef: Clef }): Rest {
     return new Rest({
       config: opts.config,
+      log: opts.log,
       musicXML: {
         note: null,
         directions: [],
@@ -66,6 +71,8 @@ export class Rest {
 
   /** Renders the Rest. */
   render(opts: { voiceEntryCount: number; spanners: Spanners; address: Address<'voice'> }): RestRendering {
+    this.log.debug('rendering rest');
+
     const dotCount = this.musicXML.note?.getDotCount() ?? 0;
 
     const vfNote =
@@ -138,7 +145,9 @@ export class Rest {
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
-      .flatMap((content) => content.tokens.map((token) => new Token({ musicXML: { token } })));
+      .flatMap((content) =>
+        content.tokens.map((token) => new Token({ config: this.config, log: this.log, musicXML: { token } }))
+      );
   }
 
   private shouldCenter(voiceEntryCount: number): boolean {

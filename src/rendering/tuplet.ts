@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as conversions from './conversions';
@@ -40,13 +42,18 @@ type TupletContainer = SpannerMap<null, Tuplet>;
 
 /** Represents a time modification for a group of notes within a measure. */
 export class Tuplet {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [TupletFragment, ...TupletFragment[]];
 
-  private constructor(opts: { fragment: TupletFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: TupletFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: TupletContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: TupletContainer }): void {
+    const { config, log, data, container } = opts;
     // Tuplets cannot be grouped, but the schema allows for multiple to be possible. We only handle the first one we
     // come across.
     const tuplet = util.first(
@@ -59,8 +66,10 @@ export class Tuplet {
     switch (tuplet?.getType()) {
       case 'start':
         const showNumber = tuplet.getShowNumber();
-        Tuplet.commit(
-          {
+        Tuplet.commit({
+          config,
+          log,
+          fragment: {
             type: 'start',
             address: data.address,
             vexflow: {
@@ -69,42 +78,52 @@ export class Tuplet {
               ratioed: showNumber === 'both',
             },
           },
-          container
-        );
+          container,
+        });
         break;
       case 'stop':
-        Tuplet.commit(
-          {
+        Tuplet.commit({
+          config,
+          log,
+          fragment: {
             type: 'stop',
             address: data.address,
             vexflow: {
               note: data.vexflow.note,
             },
           },
-          container
-        );
+          container,
+        });
         break;
       default:
-        Tuplet.commit(
-          {
+        Tuplet.commit({
+          config,
+          log,
+          fragment: {
             type: 'unspecified',
             address: data.address,
             vexflow: {
               note: data.vexflow.note,
             },
           },
-          container
-        );
+          container,
+        });
     }
   }
 
-  static commit(fragment: TupletFragment, container: TupletContainer): void {
+  static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: TupletFragment;
+    container: TupletContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     const tuplet = container.get(null);
     const last = tuplet?.getLastFragment();
     const isAllowedType = Tuplet.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(null, new Tuplet({ fragment }));
+      container.push(null, new Tuplet({ config, log, fragment }));
     } else if (tuplet && isAllowedType) {
       tuplet.fragments.push(fragment);
     }
@@ -136,6 +155,8 @@ export class Tuplet {
     const vfNotes = this.fragments.map((fragment) => fragment.vexflow.note);
     const ratioed = this.getRatioed();
     const vfTuplet = new vexflow.Tuplet(vfNotes, { location: vfTupletLocation, ratioed });
+
+    this.log.debug('rendering tuplet', { vfTupletLocation, ratioed });
 
     return {
       type: 'tuplet',

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -22,14 +24,20 @@ export type TechnicalsAnchor = 'stave' | 'tab';
  * A single `<technical>` element may contain multiple technicals to render.
  */
 export class Technicals {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { technical: musicxml.Technical };
 
-  constructor(opts: { musicXML: { technical: musicxml.Technical } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { technical: musicxml.Technical } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   /** Renders the technicals. */
   render(opts: { anchor: TechnicalsAnchor }): TechnicalsRendering {
+    this.log.debug('rendering technicals', { anchor: opts.anchor });
+
     switch (opts.anchor) {
       case 'stave':
         return this.renderStave();

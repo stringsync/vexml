@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -16,30 +18,48 @@ export type ClefRendering = {
 
 /** A musical symbol used to indicate which notes are represented by the lines and spaces on a stave. */
 export class Clef {
+  private config: Config;
+  private log: debug.Logger;
   private sign: musicxml.ClefSign | null;
   private line: number | null;
   private octaveChange: number | null;
 
-  private constructor(sign: musicxml.ClefSign | null, line: number | null, octaveChange: number | null) {
-    this.sign = sign;
-    this.line = line;
-    this.octaveChange = octaveChange;
+  private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    sign: musicxml.ClefSign | null;
+    line: number | null;
+    octaveChange: number | null;
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
+    this.sign = opts.sign;
+    this.line = opts.line;
+    this.octaveChange = opts.octaveChange;
   }
 
   /** Creates a clef from a MusicXML element. */
-  static from(musicXML: { clef: musicxml.Clef }): Clef {
+  static fromMusicXML(opts: { config: Config; log: debug.Logger; musicXML: { clef: musicxml.Clef } }): Clef {
+    const { config, log, musicXML } = opts;
+
     const clef = musicXML.clef;
 
     const sign = clef.getSign();
     const line = clef.getLine();
     const octaveChange = clef.getOctaveChange();
 
-    return new Clef(sign, line, octaveChange);
+    return new Clef({ config, log, sign, line, octaveChange });
   }
 
   /** Creates a standard treble clef. */
-  static treble(): Clef {
-    return new Clef('G', 2, null);
+  static treble(opts: { config: Config; log: debug.Logger }): Clef {
+    return new Clef({
+      config: opts.config,
+      log: opts.log,
+      sign: 'G',
+      line: 2,
+      octaveChange: null,
+    });
   }
 
   /** Returns the width of the clef. */
@@ -76,6 +96,8 @@ export class Clef {
 
   /** Renders the clef. */
   render(): ClefRendering {
+    this.log.debug('rendering clef');
+
     return {
       type: 'clef',
       vexflow: {

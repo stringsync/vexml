@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { SpannerData } from './types';
@@ -30,14 +32,19 @@ type HammerOnContainer = SpannerMap<number, HammerOn>;
 
 /** Represents tapping a string location to produce a note for stringed instruments. */
 export class HammerOn {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [HammerOnFragment, ...HammerOnFragment[]];
 
-  private constructor(opts: { fragment: HammerOnFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: HammerOnFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
   /** Processes spanner data for hammer-ons. */
-  static process(data: SpannerData, container: HammerOnContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: HammerOnContainer }): void {
+    const { config, log, data, container } = opts;
     if (data.vexflow.type !== 'tabnote') {
       return;
     }
@@ -55,8 +62,10 @@ export class HammerOn {
       .flatMap((notation) => notation.getTechnicals())
       .flatMap((technical) => technical.getHammerOns());
     for (const hammerOn of hammerOns) {
-      HammerOn.commit(
-        {
+      HammerOn.commit({
+        config,
+        log,
+        fragment: {
           type: hammerOn.getType() ?? 'unspecified',
           number: hammerOn.getNumber(),
           address: data.address,
@@ -65,18 +74,25 @@ export class HammerOn {
             keyIndex: data.keyIndex,
           },
         },
-        container
-      );
+        container,
+      });
     }
   }
 
-  private static commit(fragment: HammerOnFragment, container: HammerOnContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: HammerOnFragment;
+    container: HammerOnContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
+
     const hammerOn = container.get(fragment.number);
     const last = hammerOn?.getLastFragment();
     const isAllowedType = HammerOn.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(fragment.number, new HammerOn({ fragment }));
+      container.push(fragment.number, new HammerOn({ config, log, fragment }));
     } else if (hammerOn && isAllowedType) {
       hammerOn.fragments.push(fragment);
     }

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as conversions from './conversions';
@@ -58,26 +60,33 @@ type UnspecifiedWedgeFragment = {
 
 /** Represents a crescendo or decrescendo. */
 export class Wedge {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [StartWedgeFragment, ...WedgeFragment[]];
 
-  private constructor(opts: { fragment: StartWedgeFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: StartWedgeFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: WedgeContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: WedgeContainer }): void {
+    const { config, log, data, container } = opts;
     // For applications where a specific direction is indeed attached to a specific note, the <direction> element can be
     // associated with the first <note> element that follows it in score order that is not in a different voice.
     // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/direction/
 
     if (data.musicXML.directions.length === 0) {
-      Wedge.commit(
-        {
+      Wedge.commit({
+        config,
+        log,
+        fragment: {
           type: 'unspecified',
           address: data.address,
           vexflow: { note: data.vexflow.note },
         },
-        container
-      );
+        container,
+      });
     }
 
     for (const direction of data.musicXML.directions) {
@@ -95,8 +104,10 @@ export class Wedge {
         switch (wedgeType) {
           case 'crescendo':
           case 'diminuendo':
-            Wedge.commit(
-              {
+            Wedge.commit({
+              config,
+              log,
+              fragment: {
                 type: 'start',
                 address: data.address,
                 vexflow: {
@@ -105,52 +116,64 @@ export class Wedge {
                   position: modifierPosition,
                 },
               },
-              container
-            );
+              container,
+            });
             break;
           case 'continue':
-            Wedge.commit(
-              {
+            Wedge.commit({
+              config,
+              log,
+              fragment: {
                 type: 'continue',
                 address: data.address,
                 vexflow: { note: data.vexflow.note },
               },
-              container
-            );
+              container,
+            });
             break;
           case 'stop':
-            Wedge.commit(
-              {
+            Wedge.commit({
+              config,
+              log,
+              fragment: {
                 type: 'stop',
                 address: data.address,
                 vexflow: { note: data.vexflow.note },
               },
-              container
-            );
+              container,
+            });
             break;
           default:
-            Wedge.commit(
-              {
+            Wedge.commit({
+              config,
+              log,
+              fragment: {
                 type: 'unspecified',
                 address: data.address,
                 vexflow: { note: data.vexflow.note },
               },
-              container
-            );
+              container,
+            });
         }
       }
     }
   }
 
   /** Conditionally commits the fragment when it can be accepted. */
-  private static commit(fragment: WedgeFragment, container: WedgeContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: WedgeFragment;
+    container: WedgeContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     const wedge = container.get(null);
     const last = wedge?.getLastFragment();
     const isAllowedType = Wedge.getAllowedTypes(last?.type).includes(fragment.type);
     const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
 
     if (fragment.type === 'start') {
-      container.push(null, new Wedge({ fragment }));
+      container.push(null, new Wedge({ config, log, fragment }));
     } else if (wedge && isAllowedType && isOnSameSystem) {
       wedge.fragments.push(fragment);
     } else if (wedge && isAllowedType && !isOnSameSystem) {
@@ -173,6 +196,8 @@ export class Wedge {
   }
 
   render(): WedgeRendering {
+    this.log.debug('rendering wedge');
+
     const firstNote = this.getFirstFragment().vexflow.note;
     const lastNote = this.getLastFragment().vexflow.note;
 
@@ -203,6 +228,8 @@ export class Wedge {
   private copy(fragment: WedgeFragment): Wedge {
     const first = this.getFirstFragment();
     return new Wedge({
+      config: this.config,
+      log: this.log,
       fragment: {
         type: 'start',
         address: fragment.address,

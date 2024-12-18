@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { StaveModifier } from './stave';
@@ -29,6 +31,8 @@ type StaveMap<T> = { [staveNumber: number | string]: T };
  *  - It's inherently plural. What do you call an array of "attributes"?
  */
 export class StaveSignature {
+  private config: Config;
+  private log: debug.Logger;
   private measureIndex: number;
   private measureEntryIndex: number;
   private clefs: StaveMap<Clef>;
@@ -43,6 +47,8 @@ export class StaveSignature {
   private next: StaveSignature | null;
 
   private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
     measureIndex: number;
     measureEntryIndex: number;
     clefs: StaveMap<Clef>;
@@ -54,6 +60,8 @@ export class StaveSignature {
     staveCount: number;
     attributes: musicxml.Attributes;
   }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.measureIndex = opts.measureIndex;
     this.measureEntryIndex = opts.measureEntryIndex;
     this.clefs = opts.clefs;
@@ -69,7 +77,12 @@ export class StaveSignature {
   }
 
   /** Creates a matrix of `StaveSignature` objects from a `musicxml.Part`, grouped by measure index. */
-  static toMeasureEntryGroups(musicXML: { part: musicxml.Part }): MeasureEntry[][] {
+  static toMeasureEntryGroups(opts: {
+    config: Config;
+    log: debug.Logger;
+    musicXML: { part: musicxml.Part };
+  }): MeasureEntry[][] {
+    const { config, log, musicXML } = opts;
     const result = new Array<MeasureEntry[]>();
 
     let previousStaveSignature: StaveSignature | null = null;
@@ -86,6 +99,8 @@ export class StaveSignature {
 
         if (entry instanceof musicxml.Attributes) {
           const staveSignature = StaveSignature.merge({
+            config,
+            log,
             measureIndex,
             measureEntryIndex,
             previousStaveSignature,
@@ -105,6 +120,8 @@ export class StaveSignature {
 
   /** Creates a new StaveSignature by selectively merging properties from its designated previous. */
   private static merge(opts: {
+    config: Config;
+    log: debug.Logger;
     measureIndex: number;
     measureEntryIndex: number;
     previousStaveSignature: StaveSignature | null;
@@ -112,13 +129,17 @@ export class StaveSignature {
       attributes: musicxml.Attributes;
     };
   }): StaveSignature {
+    const { config, log } = opts;
     const previousStaveSignature = opts.previousStaveSignature;
 
     const clefs = {
       ...previousStaveSignature?.clefs,
       ...opts.musicXML.attributes
         .getClefs()
-        .map((clef): [staveNumber: number, clef: Clef] => [clef.getStaveNumber(), Clef.from({ clef })])
+        .map((clef): [staveNumber: number, clef: Clef] => [
+          clef.getStaveNumber(),
+          Clef.fromMusicXML({ config, log, musicXML: { clef } }),
+        ])
         .reduce<StaveMap<Clef>>((map, [staveNumber, clef]) => {
           map[staveNumber] = clef;
           return map;
@@ -130,7 +151,7 @@ export class StaveSignature {
       ...opts.musicXML.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
         const staveNumber = key.getStaveNumber();
         const previousKeySignature = previousStaveSignature?.getKeySignature(staveNumber) ?? null;
-        map[staveNumber] = KeySignature.from({ musicXML: { key }, previousKeySignature });
+        map[staveNumber] = KeySignature.from({ config, log, musicXML: { key }, previousKeySignature });
         return map;
       }, {}),
     };
@@ -141,7 +162,7 @@ export class StaveSignature {
         .getTimes()
         .map((time): [staveNumber: number, timeSignature: TimeSignature | null] => [
           time.getStaveNumber(),
-          TimeSignature.from({ time }),
+          TimeSignature.fromMusicXML({ config, log, musicXML: { time } }),
         ])
         .filter((time): time is [staveNumber: number, timeSignature: TimeSignature] => !!time[1])
         .reduce<StaveMap<TimeSignature>>((map, [staveNumber, timeSignature]) => {
@@ -169,10 +190,10 @@ export class StaveSignature {
     const staveCount = opts.musicXML.attributes.getStaveCount() ?? opts.previousStaveSignature?.staveCount ?? 1;
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
       if (!keySignatures[staveNumber]) {
-        keySignatures[staveNumber] = keySignatures[1] ?? KeySignature.Cmajor();
+        keySignatures[staveNumber] = keySignatures[1] ?? KeySignature.Cmajor({ config, log });
       }
       if (!timeSignatures[staveNumber]) {
-        timeSignatures[staveNumber] = timeSignatures[1] ?? TimeSignature.common();
+        timeSignatures[staveNumber] = timeSignatures[1] ?? TimeSignature.common({ config, log });
       }
     }
 
@@ -180,6 +201,8 @@ export class StaveSignature {
     const attributes = opts.musicXML.attributes;
 
     const staveSignature = new StaveSignature({
+      config,
+      log,
       measureIndex: opts.measureIndex,
       measureEntryIndex: opts.measureEntryIndex,
       clefs,
@@ -260,12 +283,12 @@ export class StaveSignature {
 
   /** Returns the clef corresponding to the stave number. */
   getClef(staveNumber: number): Clef {
-    return this.clefs[staveNumber] ?? Clef.treble();
+    return this.clefs[staveNumber] ?? Clef.treble({ config: this.config, log: this.log });
   }
 
   /** Returns the key signature corresponding to the stave number. */
   getKeySignature(staveNumber: number): KeySignature {
-    return this.keySignatures[staveNumber] ?? KeySignature.Cmajor();
+    return this.keySignatures[staveNumber] ?? KeySignature.Cmajor({ config: this.config, log: this.log });
   }
 
   /** Returns how many divisions a quarter note has. */
@@ -275,7 +298,13 @@ export class StaveSignature {
 
   /** Returns the time signature corresponding to the stave number. */
   getTimeSignature(staveNumber: number): TimeSignature {
-    return this.timeSignatures[staveNumber] ?? TimeSignature.common();
+    return (
+      this.timeSignatures[staveNumber] ??
+      TimeSignature.common({
+        config: this.config,
+        log: this.log,
+      })
+    );
   }
 
   /** Returns the multiple rest count. */

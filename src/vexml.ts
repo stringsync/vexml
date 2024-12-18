@@ -148,6 +148,7 @@ export class Vexml {
 
     return new rendering.Rendering({
       config,
+      log,
       score: scoreRendering,
       topic: vexmlEventTopic,
       bridge,
