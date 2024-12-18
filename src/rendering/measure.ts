@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
@@ -15,6 +16,7 @@ import { StaveRendering } from './stave';
 
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
+const DEFAULT_MEASURE_FRAGMENT_WIDTH = 200;
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -35,6 +37,7 @@ export type MeasureRendering = {
  */
 export class Measure {
   private config: Config;
+  private log: debug.Logger;
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
@@ -47,6 +50,7 @@ export class Measure {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
@@ -58,6 +62,7 @@ export class Measure {
     entries: PartScoped<MeasureEntry>[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
     this.index = opts.index;
@@ -159,9 +164,17 @@ export class Measure {
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
+    const measureIndex = this.index;
+    this.log.debug('rendering measure', { measureIndex });
+
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
     const endingBracketRendering = this.getEndingBracket()?.render() ?? null;
+    if (endingBracketRendering) {
+      this.log.debug('detected ending bracket', { measureIndex });
+    } else {
+      this.log.debug('did not detect ending bracket', { measureIndex });
+    }
 
     const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
 
@@ -391,7 +404,9 @@ export class Measure {
     const barline = util.first(
       this.musicXML.measures.flatMap((measure) => measure.value.getBarlines()).filter((barline) => barline.isEnding())
     );
-    return barline ? EndingBracket.fromMusicXML({ config: this.config, musicXML: { barline: barline } }) : null;
+    return barline
+      ? EndingBracket.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline: barline } })
+      : null;
   }
 
   private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
