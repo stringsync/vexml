@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
@@ -39,6 +40,7 @@ export type MeasureFragmentWidth = {
  */
 export class MeasureFragment {
   private config: Config;
+  private log: debug.Logger;
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
@@ -52,6 +54,7 @@ export class MeasureFragment {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
@@ -64,6 +67,7 @@ export class MeasureFragment {
     staveSignatures: PartScoped<StaveSignature>[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.index = opts.index;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
@@ -116,6 +120,8 @@ export class MeasureFragment {
     previousMeasureFragment: MeasureFragment | null;
     nextMeasureFragment: MeasureFragment | null;
   }): MeasureFragmentRendering {
+    this.log.debug('rendering measure fragment', { measureFragmentIndex: this.index });
+
     const partRenderings = new Array<PartRendering>();
 
     const x = opts.x;
@@ -157,7 +163,7 @@ export class MeasureFragment {
 
       const startBarline =
         this.startBarlines.find((barline) => barline.partId === partId)?.value ??
-        new Barline({ config: this.config, type: 'none', location: 'left' });
+        new Barline({ config: this.config, log: this.log, type: 'none', location: 'left' });
       const startBarlineRendering = startBarline.render();
       for (const stave of partRendering.staves) {
         stave.vexflow.stave.setBegBarType(startBarlineRendering.vexflow.barlineType);
@@ -165,7 +171,7 @@ export class MeasureFragment {
 
       const endBarline =
         this.endBarlines.find((barline) => barline.partId === partId)?.value ??
-        new Barline({ config: this.config, type: 'none', location: 'right' });
+        new Barline({ config: this.config, log: this.log, type: 'none', location: 'right' });
       const endBarlineRendering = endBarline.render();
       for (const stave of partRendering.staves) {
         stave.vexflow.stave.setEndBarType(endBarlineRendering.vexflow.barlineType);
@@ -248,6 +254,7 @@ export class MeasureFragment {
 
       return new Part({
         config: this.config,
+        log: this.log,
         id: partId,
         name: partName,
         musicXML: {
@@ -384,7 +391,7 @@ export class MeasureFragment {
   }
 
   private getMinVoiceJustifyWidth(opts: { address: Address<'measurefragment'> }): number {
-    const spanners = new Spanners();
+    const spanners = new Spanners({ config: this.config, log: this.log });
     const vfFormatter = new vexflow.Formatter();
     const vfVoices = new Array<vexflow.Voice>();
 

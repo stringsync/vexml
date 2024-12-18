@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 
@@ -14,18 +16,26 @@ export type ArpeggioRendering = {
  * progressive rising or descending order.
  */
 export class Arpeggio {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { notations: musicxml.Notations };
 
-  constructor(opts: { musicXML: { notations: musicxml.Notations } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { notations: musicxml.Notations } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   /** Renders the Arpeggio. */
   render(): ArpeggioRendering {
+    const vfStroke = this.getVfStroke();
+
+    this.log.debug('rendering arpeggio', { vfStroke });
+
     return {
       type: 'arpeggio',
       vexflow: {
-        stroke: this.getVfStroke(),
+        stroke: vfStroke,
       },
     };
   }

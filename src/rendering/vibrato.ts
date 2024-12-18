@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { SpannerData } from './types';
@@ -31,41 +33,54 @@ type VibratoContainer = SpannerMap<null, Vibrato>;
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/wavy-line/
  */
 export class Vibrato {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [VibratoFragment, ...VibratoFragment[]];
 
-  private constructor(opts: { fragment: VibratoFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: VibratoFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: VibratoContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: VibratoContainer }): void {
+    const { config, log, data, container } = opts;
     data.musicXML.note
       ?.getNotations()
       .flatMap((notation) => notation.getOrnaments())
       .flatMap((ornament) => ornament.getWavyLines())
       .forEach((wavyLine) => {
-        Vibrato.commit(
-          {
+        Vibrato.commit({
+          config,
+          log,
+          fragment: {
             type: wavyLine.value.getType(),
             address: data.address,
             vexflow: { note: data.vexflow.note },
           },
-          container
-        );
+          container,
+        });
       });
   }
 
-  private static commit(fragment: VibratoFragment, container: VibratoContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: VibratoFragment;
+    container: VibratoContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     const vibrato = container.get(null);
     const last = vibrato?.getLastFragment();
     const isAllowedType = Vibrato.getAllowedTypes(last?.type).includes(fragment.type);
     const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
 
     if (fragment.type === 'start') {
-      container.push(null, new Vibrato({ fragment }));
+      container.push(null, new Vibrato({ config, log, fragment }));
     } else if (vibrato && isAllowedType && isOnSameSystem) {
       vibrato.fragments.push(fragment);
     } else if (vibrato && isAllowedType && !isOnSameSystem) {
-      container.push(null, new Vibrato({ fragment: { ...fragment, type: 'start' } }));
+      container.push(null, new Vibrato({ config, log, fragment: { ...fragment, type: 'start' } }));
     }
   }
 
@@ -83,6 +98,8 @@ export class Vibrato {
   }
 
   render(): VibratoRendering {
+    this.log.debug('rendering vibrato');
+
     const vfStartNote = util.first(this.fragments)!.vexflow.note;
     const vfEndNote = util.last(this.fragments)!.vexflow.note;
 

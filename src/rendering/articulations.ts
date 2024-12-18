@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as musicxml from '@/musicxml';
 
@@ -14,14 +16,20 @@ export type ArticulationsRendering = {
  * a single note, or between multiple notes or sounds.
  */
 export class Articulations {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { articulations: musicxml.Articulations };
 
-  constructor(opts: { musicXML: { articulations: musicxml.Articulations } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { articulations: musicxml.Articulations } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   /** Renders the articulations. */
   render(): ArticulationsRendering {
+    this.log.debug('rendering articulations');
+
     return {
       type: 'articulations',
       vexflow: {

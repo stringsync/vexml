@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import { Config } from '@/config';
 import { MeasureEntryIteration, MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -21,26 +22,31 @@ export type ChorusRendering = {
 /** Houses the coordination of several voices. */
 export class Chorus {
   private config: Config;
+  private log: debug.Logger;
   private voices: Voice[];
 
-  constructor(opts: { config: Config; voices: Voice[] }) {
+  constructor(opts: { config: Config; log: debug.Logger; voices: Voice[] }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.voices = opts.voices;
   }
 
   static fromMusicXML(opts: {
     config: Config;
+    log: debug.Logger;
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
   }): Chorus {
     const calculator = new VoiceCalculator({
       config: opts.config,
+      log: opts.log,
       measureEntries: opts.measureEntries,
       staveSignature: opts.staveSignature,
     });
 
     return new Chorus({
       config: opts.config,
+      log: opts.log,
       voices: calculator.calculate(),
     });
   }
@@ -48,7 +54,7 @@ export class Chorus {
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(address: Address<'chorus'>): number {
-    const spanners = new Spanners();
+    const spanners = new Spanners({ config: this.config, log: this.log });
 
     if (this.voices.length > 0) {
       const vfVoices = this.voices.map(
@@ -88,6 +94,7 @@ class VoiceCalculator {
   private static readonly UNDEFINED_VOICE_ID = '';
 
   private config: Config;
+  private log: debug.Logger;
   private measureEntries: MeasureEntry[];
   private staveSignature: StaveSignature;
   private voiceId = VoiceCalculator.UNDEFINED_VOICE_ID;
@@ -95,8 +102,14 @@ class VoiceCalculator {
   private voiceInputs: Record<string, VoiceInput[]> = {};
   private iteration: MeasureEntryIteration = { done: true, value: null };
 
-  constructor(opts: { config: Config; measureEntries: MeasureEntry[]; staveSignature: StaveSignature }) {
+  constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    measureEntries: MeasureEntry[];
+    staveSignature: StaveSignature;
+  }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
   }
@@ -139,7 +152,7 @@ class VoiceCalculator {
     return Object.entries(this.voiceInputs).map(([id, inputs]) => {
       const staveNumber = util.first(inputs)?.note.getStaveNumber() ?? 1;
       const timeSignature = util.first(inputs)!.staveSignature.getTimeSignature(staveNumber);
-      return Voice.fromInputs({ config: this.config, id, inputs, timeSignature });
+      return Voice.fromInputs({ config: this.config, log: this.log, id, inputs, timeSignature });
     });
   }
 

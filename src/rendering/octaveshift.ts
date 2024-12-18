@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
@@ -65,13 +67,23 @@ type UnspecifiedOctaveShiftFragment = {
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/octave-shift/
  */
 export class OctaveShift {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [StartOctaveShiftFragment, ...OctaveShiftFragment[]];
 
-  private constructor(opts: { fragment: StartOctaveShiftFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: StartOctaveShiftFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
-  static process(data: SpannerData, container: OctaveShiftContainer): void {
+  static process(opts: {
+    config: Config;
+    log: debug.Logger;
+    data: SpannerData;
+    container: OctaveShiftContainer;
+  }): void {
+    const { config, log, data, container } = opts;
     data.musicXML.directions
       .flatMap((direction) => direction.getTypes())
       .flatMap((directionType) => directionType.getContent())
@@ -80,8 +92,10 @@ export class OctaveShift {
       .forEach((octaveShift) => {
         switch (octaveShift.getType()) {
           case 'up':
-            OctaveShift.commit(
-              {
+            OctaveShift.commit({
+              config,
+              log,
+              fragment: {
                 type: 'start',
                 address: data.address,
                 text: octaveShift.getSize().toString(),
@@ -91,12 +105,14 @@ export class OctaveShift {
                   textBracketPosition: vexflow.TextBracketPosition.BOTTOM,
                 },
               },
-              container
-            );
+              container,
+            });
             break;
           case 'down':
-            OctaveShift.commit(
-              {
+            OctaveShift.commit({
+              config,
+              log,
+              fragment: {
                 type: 'start',
                 address: data.address,
                 text: octaveShift.getSize().toString(),
@@ -106,41 +122,51 @@ export class OctaveShift {
                   textBracketPosition: vexflow.TextBracketPosition.TOP,
                 },
               },
-              container
-            );
+              container,
+            });
             break;
           case 'continue':
-            OctaveShift.commit(
-              {
+            OctaveShift.commit({
+              config,
+              log,
+              fragment: {
                 type: 'continue',
                 address: data.address,
                 vexflow: { note: data.vexflow.note },
               },
-              container
-            );
+              container,
+            });
             break;
           case 'stop':
-            OctaveShift.commit(
-              {
+            OctaveShift.commit({
+              config,
+              log,
+              fragment: {
                 type: 'stop',
                 address: data.address,
                 vexflow: { note: data.vexflow.note },
               },
-              container
-            );
+              container,
+            });
             break;
         }
       });
   }
 
-  private static commit(fragment: OctaveShiftFragment, container: OctaveShiftContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: OctaveShiftFragment;
+    container: OctaveShiftContainer;
+  }): void {
+    const { config, log, container, fragment } = opts;
     const octaveShift = container.get(null);
     const last = octaveShift?.getLastFragment();
     const isAllowedType = OctaveShift.getAllowedTypes(last?.type).includes(fragment.type);
     const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
 
     if (fragment.type === 'start') {
-      container.push(null, new OctaveShift({ fragment }));
+      container.push(null, new OctaveShift({ config, log, fragment }));
     } else if (octaveShift && isAllowedType && isOnSameSystem) {
       octaveShift.fragments.push(fragment);
     } else if (octaveShift && isAllowedType && !isOnSameSystem) {
@@ -195,6 +221,8 @@ export class OctaveShift {
   private copy(fragment: OctaveShiftFragment): OctaveShift {
     const first = this.getFirstFragment();
     return new OctaveShift({
+      config: this.config,
+      log: this.log,
       fragment: {
         type: 'start',
         address: fragment.address,

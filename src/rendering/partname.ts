@@ -1,4 +1,5 @@
 import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as drawables from '@/drawables';
 import * as util from '@/util';
 
@@ -13,10 +14,12 @@ export type PartNameRendering = {
 /** Represents a part name within a score. */
 export class PartName {
   private config: Config;
+  private log: debug.Logger;
   private content: string;
 
-  constructor(opts: { config: Config; content: string }) {
+  constructor(opts: { config: Config; log: debug.Logger; content: string }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.content = opts.content;
   }
 
@@ -33,6 +36,8 @@ export class PartName {
 
   /** Renders the title. */
   render(opts: { x: number; y: number }): PartNameRendering {
+    this.log.debug('rendering part name', { content: this.content });
+
     const text = new drawables.Text({
       x: opts.x,
       y: opts.y,

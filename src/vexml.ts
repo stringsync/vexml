@@ -4,6 +4,7 @@ import * as rendering from '@/rendering';
 import * as events from '@/events';
 import * as components from '@/components';
 import * as playback from '@/playback';
+import * as debug from '@/debug';
 import { Config, DEFAULT_CONFIG } from '@/config';
 
 export type RenderOptions = {
@@ -12,11 +13,12 @@ export type RenderOptions = {
   backend?: 'svg' | 'canvas';
   width: number;
   height?: number;
+  logger?: debug.Logger;
 };
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  constructor(private musicXML: musicxml.MusicXML) {}
+  private constructor(private musicXML: musicxml.MusicXML) {}
 
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
@@ -86,6 +88,7 @@ export class Vexml {
     const width = opts.width;
     const height = opts.height;
     const backend = opts.backend;
+    const log = opts.logger ?? new debug.NoopLogger();
 
     let root: components.Root;
     switch (backend) {
@@ -96,12 +99,13 @@ export class Vexml {
         root = components.Root.canvas(element, height);
         break;
       default:
+        log.info(`backend not specified or supported, defaulting to 'svg'`);
         root = components.Root.svg(element, height);
     }
 
     // Render score.
     const scorePartwise = this.musicXML.getScorePartwise();
-    const score = new rendering.Score({ config, musicXML: { scorePartwise } });
+    const score = new rendering.Score({ config, log, musicXML: { scorePartwise } });
     const scoreRendering = score.render({ root, width });
 
     // Make playback sequences.
@@ -144,6 +148,7 @@ export class Vexml {
 
     return new rendering.Rendering({
       config,
+      log,
       score: scoreRendering,
       topic: vexmlEventTopic,
       bridge,

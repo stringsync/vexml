@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as events from '@/events';
 import * as components from '@/components';
 import * as cursors from '@/cursors';
@@ -10,6 +11,7 @@ import { ScoreRendering } from './score';
 /** The result of rendering MusicXML. */
 export class Rendering {
   private config: Config;
+  private log: debug.Logger;
   private score: ScoreRendering;
   private bridge: events.NativeBridge<keyof EventMap>;
   private topic: events.Topic<EventMap>;
@@ -21,6 +23,7 @@ export class Rendering {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     score: ScoreRendering;
     bridge: events.NativeBridge<keyof EventMap>;
     topic: events.Topic<EventMap>;
@@ -29,6 +32,7 @@ export class Rendering {
     partIds: string[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.score = opts.score;
     this.bridge = opts.bridge;
     this.topic = opts.topic;

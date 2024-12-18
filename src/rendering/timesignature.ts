@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import { Fraction } from '@/util';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
@@ -15,12 +17,32 @@ export type TimeSignatureRendering = {
 
 /** Represents a musical time signature. */
 export class TimeSignature {
-  private constructor(private components: Fraction[], private symbol: musicxml.TimeSymbol | null) {}
+  private config: Config;
+  private log: debug.Logger;
+  private components: Fraction[];
+  private symbol: musicxml.TimeSymbol | null;
 
-  static from(musicXML: { time: musicxml.Time }): TimeSignature | null {
-    const time = musicXML.time;
+  private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    components: Fraction[];
+    symbol: musicxml.TimeSymbol | null;
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
+    this.components = opts.components;
+    this.symbol = opts.symbol;
+  }
+
+  static fromMusicXML(opts: {
+    config: Config;
+    log: debug.Logger;
+    musicXML: { time: musicxml.Time };
+  }): TimeSignature | null {
+    const { config, log } = opts;
+    const time = opts.musicXML.time;
     if (time.isHidden()) {
-      return TimeSignature.hidden();
+      return TimeSignature.hidden({ config, log });
     }
 
     // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
@@ -28,11 +50,11 @@ export class TimeSignature {
     const symbol = time.getSymbol();
     switch (symbol) {
       case 'common':
-        return TimeSignature.common();
+        return TimeSignature.common({ config, log });
       case 'cut':
-        return TimeSignature.cut();
+        return TimeSignature.cut({ config, log });
       case 'hidden':
-        return TimeSignature.hidden();
+        return TimeSignature.hidden({ config, log });
     }
 
     const beats = time.getBeats();
@@ -44,7 +66,7 @@ export class TimeSignature {
     for (let index = 0; index < len; index++) {
       const beatsPerMeasure = beats[index];
       const beatValue = beatTypes[index];
-      const timeSignature = TimeSignature.parse(beatsPerMeasure, beatValue);
+      const timeSignature = TimeSignature.parse({ config, log, beatsPerMeasure, beatValue });
       timeSignatures.push(timeSignature);
     }
 
@@ -52,30 +74,49 @@ export class TimeSignature {
       return null;
     }
     if (symbol === 'single-number') {
-      return TimeSignature.singleNumber(TimeSignature.combine(timeSignatures));
+      return TimeSignature.singleNumber({
+        config,
+        log,
+        timeSignature: TimeSignature.combine({ config, log, timeSignatures }),
+      });
     }
     if (timeSignatures.length === 1) {
       return timeSignatures[0];
     }
-    return TimeSignature.combine(timeSignatures);
+    return TimeSignature.combine({ config, log, timeSignatures });
   }
 
   /** Returns a normal TimeSignature, composed of two numbers. */
-  static of(beatsPerMeasure: number, beatValue: number): TimeSignature {
-    const components = [new Fraction(beatsPerMeasure, beatValue)];
-    return new TimeSignature(components, null);
+  static of(opts: { config: Config; log: debug.Logger; beatsPerMeasure: number; beatValue: number }): TimeSignature {
+    const components = [new Fraction(opts.beatsPerMeasure, opts.beatValue)];
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components,
+      symbol: null,
+    });
   }
 
   /** Returns a TimeSignature in cut time. */
-  static cut(): TimeSignature {
+  static cut(opts: { config: Config; log: debug.Logger }): TimeSignature {
     const components = [new Fraction(2, 2)];
-    return new TimeSignature(components, 'cut');
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components,
+      symbol: 'cut',
+    });
   }
 
   /** Returns a TimeSignature in common time. */
-  static common(): TimeSignature {
+  static common(opts: { config: Config; log: debug.Logger }): TimeSignature {
     const components = [new Fraction(4, 4)];
-    return new TimeSignature(components, 'common');
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components,
+      symbol: 'common',
+    });
   }
 
   /**
@@ -83,19 +124,34 @@ export class TimeSignature {
    *
    * The parameter type signature ensures that there are at least two Fractions present.
    */
-  static complex(components: Fraction[]): TimeSignature {
-    return new TimeSignature(components, null);
+  static complex(opts: { config: Config; log: debug.Logger; components: Fraction[] }): TimeSignature {
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components: opts.components,
+      symbol: null,
+    });
   }
 
   /** Combines multiple time signatures into a single one, ignoring any symbols. */
-  static combine(timeSignatures: TimeSignature[]): TimeSignature {
-    const components = timeSignatures.flatMap((timeSignature) => timeSignature.components);
-    return new TimeSignature(components, null);
+  static combine(opts: { config: Config; log: debug.Logger; timeSignatures: TimeSignature[] }): TimeSignature {
+    const components = opts.timeSignatures.flatMap((timeSignature) => timeSignature.components);
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components,
+      symbol: null,
+    });
   }
 
   /** Creates a new time signature that should be displayed as a single number. */
-  static singleNumber(timeSignature: TimeSignature): TimeSignature {
-    return new TimeSignature(timeSignature.components, 'single-number');
+  static singleNumber(opts: { config: Config; log: debug.Logger; timeSignature: TimeSignature }): TimeSignature {
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components: [opts.timeSignature.toFraction()],
+      symbol: 'single-number',
+    });
   }
 
   /**
@@ -104,21 +160,33 @@ export class TimeSignature {
    * NOTE: It contains time signature components, but purely to simplify rendering downstream. It shouldn't be used for
    * calculations.
    */
-  static hidden(): TimeSignature {
+  static hidden(opts: { config: Config; log: debug.Logger }): TimeSignature {
     const components = [new Fraction(4, 4)];
-    return new TimeSignature(components, 'hidden');
+    return new TimeSignature({
+      config: opts.config,
+      log: opts.log,
+      components,
+      symbol: 'hidden',
+    });
   }
 
-  private static parse(beatsPerMeasure: string, beatValue: string): TimeSignature {
+  private static parse(opts: {
+    config: Config;
+    log: debug.Logger;
+    beatsPerMeasure: string;
+    beatValue: string;
+  }): TimeSignature {
+    const { config, log, beatsPerMeasure, beatValue } = opts;
+
     const denominator = parseInt(beatValue.trim(), 10);
     const numerators = beatsPerMeasure.split('+').map((b) => parseInt(b.trim(), 10));
 
     if (numerators.length > 1) {
       const fractions = numerators.map((numerator) => new Fraction(numerator, denominator));
-      return TimeSignature.complex(fractions);
+      return TimeSignature.complex({ config, log, components: fractions });
     }
 
-    return TimeSignature.of(numerators[0], denominator);
+    return TimeSignature.of({ config, log, beatsPerMeasure: numerators[0], beatValue: denominator });
   }
 
   /** Returns the width of the time signature.*/
