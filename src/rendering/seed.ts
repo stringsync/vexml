@@ -38,7 +38,7 @@ export class Seed {
 
   /** Splits the measures into parts and systems that fit the given width. */
   split(width: number): System[] {
-    this.log.info('Splitting measures into systems', { width });
+    this.log.info('splitting measures into systems', { width });
 
     const calculator = new SystemCalculator({
       config: this.config,
@@ -76,8 +76,10 @@ export class Seed {
 
   private getMeasures(): Measure[] {
     const measures = new Array<Measure>();
-
     const measureCount = this.getMeasureCount();
+
+    this.log.debug('found measure count', { measureCount });
+
     let multiRestMeasureCount = 0;
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
@@ -196,6 +198,11 @@ class SystemCalculator {
       const projectedWidth = this.required + measureWidth.getValue() + measureShiftX + measureEndBarlineWidth;
 
       if (projectedWidth > this.width && this.buffer.length > 0) {
+        this.log.debug('not enough space for measure, adding stretched system', {
+          measureIndex: measure.getIndex(),
+          projectedWidth,
+          width: this.width,
+        });
         this.addSystem({ stretch: true });
         this.reset();
 
@@ -212,7 +219,7 @@ class SystemCalculator {
 
       if (isLast) {
         const stretch = this.isAboveStretchThreshold();
-        this.log.info(`last system is above stretch threshold: ${stretch}, adding system`);
+        this.log.debug('adding last system', { stretch });
         this.addSystem({ stretch });
       }
     });
@@ -296,14 +303,13 @@ class MeasureWidth {
 
   /** Returns the value of the measure width. */
   getValue(): number {
-    this.log.info(`calculating measure ${this.measure.getIndex()} width`);
-
+    const measureIndex = this.measure.getIndex();
     const maxSpecifiedWidth = this.measure.getMaxSpecifiedWidth();
     if (typeof maxSpecifiedWidth === 'number') {
-      this.log.info(`detected a max specified width of ${maxSpecifiedWidth}`);
+      this.log.debug('detected a max specified width', { measureIndex, maxSpecifiedWidth });
       return maxSpecifiedWidth;
     } else {
-      this.log.info(`no max specified width detected, calculating measure width from fragments`);
+      this.log.debug('no width specified, inferring measure width from its fragments', { measureIndex });
       return util.sum(this.fragments.map(({ value }) => value));
     }
   }
