@@ -38,7 +38,7 @@ export class Seed {
 
   /** Splits the measures into parts and systems that fit the given width. */
   split(width: number): System[] {
-    this.log.info('splitting measures into systems', { width });
+    this.log.debug('splitting measures into systems', { width });
 
     const calculator = new SystemCalculator({
       config: this.config,

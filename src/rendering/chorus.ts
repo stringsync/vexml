@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import { Config } from '@/config';
 import { MeasureEntryIteration, MeasureEntryIterator } from './measureentryiterator';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -21,15 +22,18 @@ export type ChorusRendering = {
 /** Houses the coordination of several voices. */
 export class Chorus {
   private config: Config;
+  private log: debug.Logger;
   private voices: Voice[];
 
-  constructor(opts: { config: Config; voices: Voice[] }) {
+  constructor(opts: { config: Config; log: debug.Logger; voices: Voice[] }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.voices = opts.voices;
   }
 
   static fromMusicXML(opts: {
     config: Config;
+    log: debug.Logger;
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
   }): Chorus {
@@ -41,6 +45,7 @@ export class Chorus {
 
     return new Chorus({
       config: opts.config,
+      log: opts.log,
       voices: calculator.calculate(),
     });
   }
@@ -48,7 +53,7 @@ export class Chorus {
   /** Returns the minimum justify width for the stave in a measure context. */
   @util.memoize()
   getMinJustifyWidth(address: Address<'chorus'>): number {
-    const spanners = new Spanners();
+    const spanners = new Spanners(this.log);
 
     if (this.voices.length > 0) {
       const vfVoices = this.voices.map(

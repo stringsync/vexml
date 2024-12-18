@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
@@ -21,6 +22,7 @@ export type PartRendering = {
 /** A part in a musical score. */
 export class Part {
   private config: Config;
+  private log: debug.Logger;
   private id: string;
   private name: PartName;
   private musicXML: {
@@ -31,6 +33,7 @@ export class Part {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     id: string;
     name: PartName;
     musicXML: {
@@ -40,6 +43,7 @@ export class Part {
     staveSignature: StaveSignature;
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.id = opts.id;
     this.name = opts.name;
     this.musicXML = opts.musicXML;
@@ -69,6 +73,7 @@ export class Part {
       result.push(
         new Stave({
           config: this.config,
+          log: this.log,
           staveSignature: this.staveSignature,
           number: staveNumber,
           measureEntries,
@@ -108,6 +113,8 @@ export class Part {
     previousPart: Part | null;
     nextPart: Part | null;
   }): PartRendering {
+    this.log.debug('rendering part', { partId: this.id });
+
     const staveRenderings = new Array<StaveRendering>();
 
     const x = opts.x;
