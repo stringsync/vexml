@@ -1,5 +1,6 @@
 import { NamedElement } from '@/util';
 import { StaveLayout, SystemLayout } from './types';
+import { Scaling } from './scaling';
 
 export class Defaults {
   constructor(private element: NamedElement<'defaults'>) {}
@@ -24,5 +25,10 @@ export class Defaults {
       topSystemDistance: topSystemDistance ? topSystemDistance.int() : null,
       systemDistance: systemDistance ? systemDistance.int() : null,
     };
+  }
+
+  getScaling(): Scaling | null {
+    const element = this.element.first('scaling');
+    return element ? new Scaling(element) : null;
   }
 }
