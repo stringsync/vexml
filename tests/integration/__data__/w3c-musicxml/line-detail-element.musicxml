@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC
+      "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+      "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+    <defaults>
+    </defaults>
+    <part-list>
+        <score-part id="P1">
+            <part-name>placeholder</part-name>
+        </score-part>
+    </part-list>
+    <part id="P1">
+        <measure number="35">
+            <attributes>
+                <clef>
+                    <sign>G</sign>
+                    <line>2</line>
+                </clef>
+                <staff-details>
+                    <staff-lines>5</staff-lines>
+                    <line-detail line="1" print-object="no"/>
+                    <line-detail line="3" print-object="no"/>
+                    <line-detail line="4" print-object="no"/>
+                    <line-detail line="5" print-object="no"/>
+                </staff-details>
+            </attributes>
+            <note>
+                <pitch>
+                    <step>G</step>
+                    <octave>4</octave>
+                </pitch>
+                <duration>8</duration>
+                <voice>1</voice>
+                <type>whole</type>
+            </note>
+        </measure>
+    </part>
+</score-partwise>
