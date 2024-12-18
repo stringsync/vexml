@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import { Beam, BeamRendering } from './beam';
 import { Tuplet, TupletRendering } from './tuplet';
 import { Slur, SlurRendering } from './slur';
@@ -43,6 +44,8 @@ export class Spanners {
   private hammerOns = new SpannerMap<number, HammerOn>();
   private pullOffs = new SpannerMap<number, PullOff>();
   private slides = new SpannerMap<number, Slide>();
+
+  constructor(private log: debug.Logger) {}
 
   /** Returns the additional padding needed to accommodate some spanners. */
   getExtraMeasureFragmentWidth(address: Address<'measurefragment'>): number {

@@ -78,8 +78,6 @@ export class Seed {
     const measures = new Array<Measure>();
     const measureCount = this.getMeasureCount();
 
-    this.log.debug('found measure count', { measureCount });
-
     let multiRestMeasureCount = 0;
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
@@ -90,6 +88,7 @@ export class Seed {
 
       const measure = new Measure({
         config: this.config,
+        log: this.log,
         index: measureIndex,
         partIds: this.getPartIds(),
         partNames: this.getPartNames(),

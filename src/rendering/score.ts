@@ -64,7 +64,7 @@ export class Score {
     let y = 0;
 
     // Initialize spanners for rendering.
-    const spanners = new Spanners();
+    const spanners = new Spanners(this.log);
 
     // Draw the title if it has text.
     let titleRendering: TitleRendering | null = null;
@@ -314,7 +314,7 @@ export class Score {
         y: 0,
         previousSystem: null,
         nextSystem: systems[1] ?? null,
-        spanners: new Spanners(),
+        spanners: new Spanners(this.log),
       });
 
       const staves = systemRendering.measures
