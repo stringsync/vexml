@@ -10,14 +10,22 @@ export class MemoryLogger implements Logger {
   }
 
   info(message: string, meta?: Record<string, string>): void {
-    this.logs.push({ level: 'info', message, meta });
+    this.logs.push({ level: 'info', message, meta: { callsite: this.getCallsite(), ...meta } });
   }
 
   warn(message: string, meta?: Record<string, string>): void {
-    this.logs.push({ level: 'warn', message, meta });
+    this.logs.push({ level: 'warn', message, meta: { callsite: this.getCallsite(), ...meta } });
   }
 
   error(message: string, meta?: Record<string, string>): void {
-    this.logs.push({ level: 'error', message, meta });
+    this.logs.push({ level: 'error', message, meta: { callsite: this.getCallsite(), ...meta } });
+  }
+
+  private getCallsite(): string {
+    const stack = new Error().stack;
+    if (!stack) return '';
+    const stackLines = stack.split('\n');
+    // Return the third line which is the callsite
+    return stackLines[3] ? stackLines[3].trim() : '';
   }
 }
