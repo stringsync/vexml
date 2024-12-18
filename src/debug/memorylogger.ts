@@ -1,6 +1,6 @@
-import { Logger } from './types';
+import { Logger, LogLevel } from './types';
 
-export type MemoryLog = { level: 'info' | 'warn' | 'error'; message: string; meta?: Record<string, string> };
+export type MemoryLog = { level: LogLevel; message: string; meta?: Record<string, string> };
 
 export class MemoryLogger implements Logger {
   private logs = new Array<MemoryLog>();
@@ -9,15 +9,19 @@ export class MemoryLogger implements Logger {
     return this.logs;
   }
 
-  info(message: string, meta?: Record<string, string>): void {
+  debug(message: string, meta?: Record<string, any>): void {
+    this.logs.push({ level: 'debug', message, meta: { callsite: this.getCallsite(), ...meta } });
+  }
+
+  info(message: string, meta?: Record<string, any>): void {
     this.logs.push({ level: 'info', message, meta: { callsite: this.getCallsite(), ...meta } });
   }
 
-  warn(message: string, meta?: Record<string, string>): void {
+  warn(message: string, meta?: Record<string, any>): void {
     this.logs.push({ level: 'warn', message, meta: { callsite: this.getCallsite(), ...meta } });
   }
 
-  error(message: string, meta?: Record<string, string>): void {
+  error(message: string, meta?: Record<string, any>): void {
     this.logs.push({ level: 'error', message, meta: { callsite: this.getCallsite(), ...meta } });
   }
 
