@@ -16,7 +16,7 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  constructor(private musicXML: musicxml.MusicXML) {}
+  private constructor(private musicXML: musicxml.MusicXML) {}
 
   /** Creates an instance from a MusicXML string. */
   static fromMusicXML(musicXML: string): Vexml {
