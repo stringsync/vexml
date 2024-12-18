@@ -2,6 +2,7 @@ import { System } from './system';
 import { Config } from '@/config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as debug from '@/debug';
 import { PartScoped } from './types';
 import { Measure } from './measure';
 import { Address } from './address';
@@ -14,6 +15,7 @@ const LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD = 0.75;
 /** A reusable data container that houses rendering data to spawn `System` objects. */
 export class Seed {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     parts: musicxml.Part[];
     partDetails: musicxml.PartDetail[];
@@ -22,6 +24,7 @@ export class Seed {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     musicXML: {
       parts: musicxml.Part[];
       partDetails: musicxml.PartDetail[];
@@ -29,6 +32,7 @@ export class Seed {
     };
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
@@ -36,6 +40,7 @@ export class Seed {
   split(width: number): System[] {
     const calculator = new SystemCalculator({
       config: this.config,
+      log: this.log,
       width,
       measures: this.getMeasures(),
     });
@@ -157,6 +162,7 @@ export class Seed {
 /** A private utility to calculate systems for Seed. */
 class SystemCalculator {
   private config: Config;
+  private log: debug.Logger;
   private width: number;
   private measures: Measure[];
   private systems = new Array<System>();
@@ -166,8 +172,9 @@ class SystemCalculator {
   private endBarlineWidth = 0;
   private systemAddress = Address.system({ systemIndex: 0, origin: 'SystemCalculator.constructor' });
 
-  constructor(opts: { config: Config; width: number; measures: Measure[] }) {
+  constructor(opts: { config: Config; log: debug.Logger; width: number; measures: Measure[] }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.width = opts.width;
     this.measures = opts.measures;
   }
@@ -180,7 +187,7 @@ class SystemCalculator {
 
     util.forEachTriple(this.measures, ([previousMeasure, measure], { isLast, index }) => {
       let measureAddress = this.measureAddress(index);
-      let measureWidth = MeasureWidth.create({ measure, previousMeasure, address: measureAddress });
+      let measureWidth = MeasureWidth.create({ log: this.log, measure, previousMeasure, address: measureAddress });
       let measureShiftX = measure.getStaveOffsetX({ address: measureAddress });
       let measureEndBarlineWidth = measure.getEndBarlineWidth();
 
@@ -191,7 +198,7 @@ class SystemCalculator {
         this.reset();
 
         measureAddress = this.measureAddress(index);
-        measureWidth = MeasureWidth.create({ measure, previousMeasure, address: measureAddress });
+        measureWidth = MeasureWidth.create({ log: this.log, measure, previousMeasure, address: measureAddress });
         measureShiftX = measure.getStaveOffsetX({ address: measureAddress });
         measureEndBarlineWidth = measure.getEndBarlineWidth();
       }
@@ -203,6 +210,7 @@ class SystemCalculator {
 
       if (isLast) {
         const stretch = this.isAboveStretchThreshold();
+        this.log.info(`last system is above stretch threshold: ${stretch}, adding system`);
         this.addSystem({ stretch });
       }
     });
@@ -259,30 +267,43 @@ class SystemCalculator {
 
 /** Describes the width of a measure including a breakdown of its components. */
 class MeasureWidth {
+  private log: debug.Logger;
   private measure: Measure;
   private fragments: MeasureFragmentWidth[];
 
-  constructor(opts: { measure: Measure; fragments: MeasureFragmentWidth[] }) {
+  constructor(opts: { log: debug.Logger; measure: Measure; fragments: MeasureFragmentWidth[] }) {
+    this.log = opts.log;
     this.measure = opts.measure;
     this.fragments = opts.fragments;
   }
 
   static create(opts: {
+    log: debug.Logger;
     measure: Measure;
     previousMeasure: Measure | null;
     address: Address<'measure'>;
   }): MeasureWidth {
+    const log = opts.log;
     const measure = opts.measure;
     const fragments = measure.getMinRequiredFragmentWidths({
       previousMeasure: opts.previousMeasure,
       address: opts.address,
     });
-    return new MeasureWidth({ measure, fragments });
+    return new MeasureWidth({ log, measure, fragments });
   }
 
   /** Returns the value of the measure width. */
   getValue(): number {
-    return this.measure.getMaxSpecifiedWidth() ?? util.sum(this.fragments.map(({ value }) => value));
+    this.log.info(`calculating measure ${this.measure.getIndex()} width`);
+
+    const maxSpecifiedWidth = this.measure.getMaxSpecifiedWidth();
+    if (typeof maxSpecifiedWidth === 'number') {
+      this.log.info(`detected a max specified width of ${maxSpecifiedWidth}`);
+      return maxSpecifiedWidth;
+    } else {
+      this.log.info(`no max specified width detected, calculating measure width from fragments`);
+      return util.sum(this.fragments.map(({ value }) => value));
+    }
   }
 
   /** Returns the fragments of the measure width. */
