@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import { Config } from '@/config';
 import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
@@ -51,6 +52,7 @@ export type TabGraceChordRendering = {
  */
 export class Chord {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     note: musicxml.Note;
     directions: musicxml.Direction[];
@@ -63,6 +65,7 @@ export class Chord {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     musicXML: {
       note: musicxml.Note;
       directions: musicxml.Direction[];
@@ -74,6 +77,7 @@ export class Chord {
     durationDenominator: NoteDurationDenominator;
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
     this.stem = opts.stem;
     this.clef = opts.clef;
@@ -84,6 +88,8 @@ export class Chord {
   /** Renders the Chord. */
   render(opts: { spanners: Spanners; address: Address<'voice'> }): ChordRendering {
     const noteRenderings = Note.render({
+      config: this.config,
+      log: this.log,
       notes: this.getNotes(),
       spanners: opts.spanners,
       address: opts.address,
@@ -138,6 +144,7 @@ export class Chord {
     return [
       new Note({
         config: this.config,
+        log: this.log,
         musicXML: {
           note: head,
           directions: this.musicXML.directions,
@@ -152,6 +159,7 @@ export class Chord {
         (note) =>
           new Note({
             config: this.config,
+            log: this.log,
             // We don't want the `<directions>` to be handled multiple times, since it's already handled by the head
             // note.
             musicXML: {

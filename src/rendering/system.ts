@@ -1,6 +1,7 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as util from '@/util';
 import { Address } from './address';
-import { Config } from '@/config';
 import { Measure, MeasureRendering } from './measure';
 import { Spanners } from './spanners';
 import { MeasureFragmentWidth } from './measurefragment';
@@ -22,17 +23,20 @@ export type SystemRendering = {
  */
 export class System {
   private config: Config;
+  private log: debug.Logger;
   private index: number;
   private measures: Measure[];
   private measureFragmentWidths: MeasureFragmentWidth[];
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     index: number;
     measures: Measure[];
     measureFragmentWidths: MeasureFragmentWidth[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.index = opts.index;
     this.measures = opts.measures;
     this.measureFragmentWidths = opts.measureFragmentWidths;
@@ -52,6 +56,8 @@ export class System {
     nextSystem: System | null;
     spanners: Spanners;
   }): SystemRendering {
+    this.log.debug('rendering system', { index: this.index });
+
     const measureRenderings = new Array<MeasureRendering>();
 
     let x = opts.x;

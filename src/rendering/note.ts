@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
@@ -121,6 +122,7 @@ type TabEntry = {
  */
 export class Note {
   private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     note: musicxml.Note;
     directions: musicxml.Direction[];
@@ -133,6 +135,7 @@ export class Note {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     musicXML: {
       note: musicxml.Note;
       directions: musicxml.Direction[];
@@ -144,6 +147,7 @@ export class Note {
     keySignature: KeySignature;
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
     this.stem = opts.stem;
     this.durationDenominator = opts.durationDenominator;
@@ -156,7 +160,13 @@ export class Note {
    *
    * This exists to dedup code with rendering.Chord without exposing private members in this class.
    */
-  static render(opts: { notes: Note[]; spanners: Spanners; address: Address<'voice'> }): NoteRendering[] {
+  static render(opts: {
+    config: Config;
+    log: debug.Logger;
+    notes: Note[];
+    spanners: Spanners;
+    address: Address<'voice'>;
+  }): NoteRendering[] {
     const notes = Note.sort(opts.notes);
     const spanners = opts.spanners;
     const address = opts.address;
@@ -553,8 +563,12 @@ export class Note {
     spanners: Spanners;
     address: Address<'voice'>;
   }): StaveNoteRendering | GraceNoteRendering | TabNoteRendering | TabGraceNoteRendering {
+    this.log.debug('rendering note');
+
     return util.first(
       Note.render({
+        config: this.config,
+        log: this.log,
         notes: [this],
         spanners: opts.spanners,
         address: opts.address,
@@ -572,7 +586,7 @@ export class Note {
     const hasExplicitAccidental = this.musicXML.note.getAccidentalType() !== null;
     if (hasExplicitAccidental || noteAccidentalCode !== keySignatureAccidentalCode) {
       const isCautionary = this.musicXML.note.hasAccidentalCautionary();
-      return new Accidental({ code: noteAccidentalCode, isCautionary });
+      return new Accidental({ config: this.config, log: this.log, code: noteAccidentalCode, isCautionary });
     }
 
     return null;
@@ -582,21 +596,21 @@ export class Note {
     return this.musicXML.note
       .getLyrics()
       .sort((a, b) => a.getVerseNumber() - b.getVerseNumber())
-      .map((lyric) => new Lyric({ musicXML: { lyric } }));
+      .map((lyric) => new Lyric({ config: this.config, log: this.log, musicXML: { lyric } }));
   }
 
   private getOrnaments(): Ornaments[] {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getOrnaments())
-      .map((ornaments) => new Ornaments({ musicXML: { ornaments } }));
+      .map((ornaments) => new Ornaments({ config: this.config, log: this.log, musicXML: { ornaments } }));
   }
 
   private getFermatas(): Fermata[] {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getFermatas())
-      .map((fermata) => new Fermata({ musicXML: { fermata } }));
+      .map((fermata) => new Fermata({ config: this.config, log: this.log, musicXML: { fermata } }));
   }
 
   private getArpeggios(): Arpeggio[] {
@@ -607,14 +621,14 @@ export class Note {
     return this.musicXML.note
       .getNotations()
       .filter((notations) => notations.isArpeggiated())
-      .map((notations) => new Arpeggio({ musicXML: { notations } }));
+      .map((notations) => new Arpeggio({ config: this.config, log: this.log, musicXML: { notations } }));
   }
 
   private getArticulations(): Articulations[] {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getArticulations())
-      .map((articulations) => new Articulations({ musicXML: { articulations } }));
+      .map((articulations) => new Articulations({ config: this.config, log: this.log, musicXML: { articulations } }));
   }
 
   private getDotCount(): number {
@@ -651,7 +665,7 @@ export class Note {
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens)
-      .map((token) => new Token({ musicXML: { token } }));
+      .map((token) => new Token({ config: this.config, log: this.log, musicXML: { token } }));
   }
 
   /** Returns the accidental mark to be placed above or below (not next) the note. */
@@ -660,7 +674,9 @@ export class Note {
       this.musicXML.note
         .getNotations()
         .flatMap((notations) => notations.getAccidentalMarks())
-        .map((accidentalMark) => new AccidentalMark({ musicXML: { accidentalMark } }))
+        .map(
+          (accidentalMark) => new AccidentalMark({ config: this.config, log: this.log, musicXML: { accidentalMark } })
+        )
     );
   }
 
@@ -670,7 +686,7 @@ export class Note {
         .getNotations()
         .flatMap((notations) => notations.getOrnaments())
         .flatMap((ornaments) => ornaments.getTremolos())
-        .map((tremolo) => new Tremolo({ musicXML: { tremolo: tremolo.value } }))
+        .map((tremolo) => new Tremolo({ config: this.config, log: this.log, musicXML: { tremolo: tremolo.value } }))
     );
   }
 
@@ -678,7 +694,7 @@ export class Note {
     return this.musicXML.note
       .getNotations()
       .flatMap((notations) => notations.getTechnicals())
-      .map((technical) => new Technicals({ musicXML: { technical } }));
+      .map((technical) => new Technicals({ config: this.config, log: this.log, musicXML: { technical } }));
   }
 
   private getRehearsals(): Rehearsal[] {
@@ -687,7 +703,7 @@ export class Note {
       .flatMap((directionType) => directionType.getContent())
       .filter((content): content is musicxml.RehearsalDirectionTypeContent => content.type === 'rehearsal')
       .flatMap((content) => content.rehearsals)
-      .map((rehearsal) => new Rehearsal({ config: this.config, musicXML: { rehearsal } }));
+      .map((rehearsal) => new Rehearsal({ config: this.config, log: this.log, musicXML: { rehearsal } }));
   }
 
   private getTabEntries(): TabEntry[] {

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
 import { Address } from './address';
 import { SpannerMap } from './spannermap';
@@ -29,14 +31,19 @@ type SlideContainer = SpannerMap<number, Slide>;
 
 /** Represents a rapid movement from one note to another such that the individual notes are not discernable. */
 export class Slide {
+  private config: Config;
+  private log: debug.Logger;
   private fragments: [SlideFragment, ...SlideFragment[]];
 
-  private constructor(opts: { fragment: SlideFragment }) {
+  private constructor(opts: { config: Config; log: debug.Logger; fragment: SlideFragment }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.fragments = [opts.fragment];
   }
 
   /** Processes spanner data for slides. */
-  static process(data: SpannerData, container: SlideContainer): void {
+  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: SlideContainer }): void {
+    const { config, log, data, container } = opts;
     if (data.vexflow.type !== 'tabnote') {
       return;
     }
@@ -53,8 +60,10 @@ export class Slide {
       .flatMap((notations) => notations)
       .flatMap((notation) => notation.getSlides());
     for (const slide of slides) {
-      Slide.commit(
-        {
+      Slide.commit({
+        config,
+        log,
+        fragment: {
           type: slide.getType() ?? 'unspecified',
           number: slide.getNumber(),
           address: data.address,
@@ -63,19 +72,25 @@ export class Slide {
             keyIndex: data.keyIndex,
           },
         },
-        container
-      );
+        container,
+      });
     }
   }
 
   /** Commits a slide fragment to a container. */
-  private static commit(fragment: SlideFragment, container: SlideContainer): void {
+  private static commit(opts: {
+    config: Config;
+    log: debug.Logger;
+    fragment: SlideFragment;
+    container: SlideContainer;
+  }): void {
+    const { config, log, fragment, container } = opts;
     const slide = container.get(fragment.number);
     const last = slide?.getLastFragment();
     const isAllowedType = Slide.getAllowedTypes(last?.type).includes(fragment.type);
 
     if (fragment.type === 'start') {
-      container.push(fragment.number, new Slide({ fragment }));
+      container.push(fragment.number, new Slide({ config, log, fragment }));
     } else if (slide && isAllowedType) {
       slide.fragments.push(fragment);
     }

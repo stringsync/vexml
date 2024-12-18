@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
@@ -35,6 +36,7 @@ export type MeasureRendering = {
  */
 export class Measure {
   private config: Config;
+  private log: debug.Logger;
   private index: number;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
@@ -47,6 +49,7 @@ export class Measure {
 
   constructor(opts: {
     config: Config;
+    log: debug.Logger;
     index: number;
     partIds: string[];
     partNames: PartScoped<PartName>[];
@@ -58,6 +61,7 @@ export class Measure {
     entries: PartScoped<MeasureEntry>[];
   }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
     this.index = opts.index;
@@ -159,9 +163,17 @@ export class Measure {
     previousMeasure: Measure | null;
     nextMeasure: Measure | null;
   }): MeasureRendering {
+    const measureIndex = this.index;
+    this.log.debug('rendering measure', { measureIndex });
+
     const fragmentRenderings = new Array<MeasureFragmentRendering>();
 
     const endingBracketRendering = this.getEndingBracket()?.render() ?? null;
+    if (endingBracketRendering) {
+      this.log.debug('detected ending bracket', { measureIndex });
+    } else {
+      this.log.debug('did not detect ending bracket', { measureIndex });
+    }
 
     const staveOffsetX = this.getStaveOffsetX({ address: opts.address });
 
@@ -289,6 +301,7 @@ export class Measure {
       result.push(
         new MeasureFragment({
           config: this.config,
+          log: this.log,
           index: result.length,
           partIds: this.partIds,
           partNames: this.partNames,
@@ -302,6 +315,8 @@ export class Measure {
         })
       );
     }
+
+    this.log.debug('detected measure fragments', { measureIndex: this.index, fragmentCount: result.length });
 
     return result;
   }
@@ -371,8 +386,8 @@ export class Measure {
         this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'left')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, type: 'single', location: 'left' })
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'left' })
     );
   }
 
@@ -382,8 +397,8 @@ export class Measure {
         this.musicXML.measures
           .flatMap((measure) => measure.value.getBarlines())
           .filter((barline) => barline.getLocation() === 'right')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, type: 'single', location: 'right' })
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'right' })
     );
   }
 
@@ -391,7 +406,9 @@ export class Measure {
     const barline = util.first(
       this.musicXML.measures.flatMap((measure) => measure.value.getBarlines()).filter((barline) => barline.isEnding())
     );
-    return barline ? EndingBracket.fromMusicXML({ config: this.config, musicXML: { barline: barline } }) : null;
+    return barline
+      ? EndingBracket.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline: barline } })
+      : null;
   }
 
   private getMeasureEntryIterator(partId: string): MeasureEntryIterator {

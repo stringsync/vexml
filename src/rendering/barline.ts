@@ -1,3 +1,4 @@
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import { Config } from '@/config';
@@ -17,16 +18,18 @@ export type BarlineLocation = 'left' | 'middle' | 'right';
 
 export class Barline {
   private config: Config;
+  private log: debug.Logger;
   private type: BarlineType;
   private location: BarlineLocation;
 
-  constructor(opts: { config: Config; type: BarlineType; location: BarlineLocation }) {
+  constructor(opts: { config: Config; log: debug.Logger; type: BarlineType; location: BarlineLocation }) {
     this.config = opts.config;
+    this.log = opts.log;
     this.type = opts.type;
     this.location = opts.location;
   }
 
-  static fromMusicXML(opts: { config: Config; musicXML: { barline: musicxml.Barline } }) {
+  static fromMusicXML(opts: { config: Config; log: debug.Logger; musicXML: { barline: musicxml.Barline } }) {
     let barlineType: BarlineType = 'none';
 
     const barline = opts.musicXML.barline;
@@ -67,6 +70,7 @@ export class Barline {
 
     return new Barline({
       config: opts.config,
+      log: opts.log,
       type: barlineType,
       location: location,
     });
@@ -84,6 +88,8 @@ export class Barline {
 
   /** Renders the barline. */
   render(): BarlineRendering {
+    this.log.debug('rendering barline', { type: this.type, location: this.location });
+
     return {
       type: 'barline',
       vexflow: {

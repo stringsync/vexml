@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as conversions from './conversions';
@@ -12,13 +14,19 @@ export type OrnamentsRendering = {
 
 /** Represents multiple note ornaments. */
 export class Ornaments {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: { ornaments: musicxml.Ornaments };
 
-  constructor(opts: { musicXML: { ornaments: musicxml.Ornaments } }) {
+  constructor(opts: { config: Config; log: debug.Logger; musicXML: { ornaments: musicxml.Ornaments } }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   render(): OrnamentsRendering {
+    this.log.debug('rendering ornaments');
+
     return {
       type: 'ornaments',
       vexflow: {
@@ -41,7 +49,9 @@ export class Ornaments {
   }): vexflow.Ornament {
     const vfOrnament = new vexflow.Ornament(opts.type).setDelayed(opts.delayed);
 
-    // TODO: Provide a warning when there are more than two accidental marks.
+    if (opts.accidentalMarks.length > 2) {
+      this.log.warn('only the first two accidental marks are supported for ornaments, ignoring the excess');
+    }
 
     const [accidental1, accidental2] = opts.accidentalMarks.map((accidentalMark) =>
       conversions.fromAccidentalTypeToAccidentalCode(accidentalMark.getType())

@@ -1,3 +1,5 @@
+import { Config } from '@/config';
+import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 
@@ -11,20 +13,29 @@ export type TokenRendering = {
 
 /** Represents a word or a symbol being rendered. */
 export class Token {
+  private config: Config;
+  private log: debug.Logger;
   private musicXML: {
     token: musicxml.Words | musicxml.Symbolic;
   };
 
   constructor(opts: {
+    config: Config;
+    log: debug.Logger;
     musicXML: {
       token: musicxml.Words | musicxml.Symbolic;
     };
   }) {
+    this.config = opts.config;
+    this.log = opts.log;
     this.musicXML = opts.musicXML;
   }
 
   render(): TokenRendering {
     const text = this.getContent();
+
+    this.log.debug('rendering token', { text });
+
     const annotation = new vexflow.Annotation(text);
 
     return {
