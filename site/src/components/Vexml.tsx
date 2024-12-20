@@ -1,6 +1,7 @@
 import * as vexml from '@/index';
 import * as errors from '../util/errors';
-import { useEffect, useRef, useState } from 'react';
+import { getDevice } from '../util/getDevice';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 import { CursorInput, RenderingBackend } from '../types';
 import { Player, PlayerState } from '../lib/Player';
@@ -34,6 +35,9 @@ export const Vexml = ({
   onEvent,
   onPartIdsChange,
 }: VexmlProps) => {
+  const device = useMemo(getDevice, []);
+  const scrollBehavior: ScrollBehavior = device.inputType === 'mouseonly' ? 'smooth' : 'auto';
+
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
 
@@ -67,7 +71,7 @@ export const Vexml = ({
       for (const cursor of cursors) {
         cursor.seek(currentTimeMs);
         if (!cursor.isFullyVisible()) {
-          cursor.scrollIntoView();
+          cursor.scrollIntoView(scrollBehavior);
         }
       }
       setProgress(nextProgress);
@@ -78,7 +82,7 @@ export const Vexml = ({
     return () => {
       player.reset();
     };
-  }, [player, durationMs, cursors]);
+  }, [player, scrollBehavior, durationMs, cursors]);
 
   const onPlayClick = () => {
     player.play();
@@ -93,7 +97,7 @@ export const Vexml = ({
     for (const cursor of cursors) {
       cursor.previous();
       if (!cursor.isFullyVisible()) {
-        cursor.scrollIntoView();
+        cursor.scrollIntoView(scrollBehavior);
       }
       currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
@@ -106,7 +110,7 @@ export const Vexml = ({
     for (const cursor of cursors) {
       cursor.next();
       if (!cursor.isFullyVisible()) {
-        cursor.scrollIntoView();
+        cursor.scrollIntoView(scrollBehavior);
       }
       currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
     }
