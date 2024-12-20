@@ -18,6 +18,8 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
+  private messageMeasures = new Array<rendering.MessageMeasure>();
+
   private constructor(private musicXML: musicxml.MusicXML) {}
 
   /** Creates an instance from a MusicXML string. */
@@ -79,6 +81,20 @@ export class Vexml {
   /** Creates an instance from a File of a MusicXML string or a .mxl archive (compressed MusicXML file). */
   static async fromFile(file: File): Promise<Vexml> {
     return Vexml.fromBlob(file);
+  }
+
+  /** Sets the message measures for this Vexml instance. */
+  setMessageMeasures(...messageMeasures: rendering.MessageMeasureInit[]): this {
+    this.messageMeasures = messageMeasures.map(
+      (messageMeasure) =>
+        new rendering.MessageMeasure({
+          index: messageMeasure.absoluteMeasureIndex,
+          message: messageMeasure.message,
+          durationMs: messageMeasure.durationMs,
+          width: messageMeasure.width,
+        })
+    );
+    return this;
   }
 
   /** Renders the vexml instance to an SVG element. */
