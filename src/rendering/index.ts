@@ -15,3 +15,4 @@ export * from './interactions';
 export * from './query';
 export * from './ghostnote';
 export * from './locator';
+export * from './messagemeasure';
