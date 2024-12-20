@@ -84,16 +84,8 @@ export class Vexml {
   }
 
   /** Sets the message measures for this Vexml instance. */
-  setMessageMeasures(...messageMeasures: rendering.MessageMeasureInit[]): this {
-    this.messageMeasures = messageMeasures.map(
-      (messageMeasure) =>
-        new rendering.MessageMeasure({
-          index: messageMeasure.absoluteMeasureIndex,
-          message: messageMeasure.message,
-          durationMs: messageMeasure.durationMs,
-          width: messageMeasure.width,
-        })
-    );
+  setMessageMeasures(...messageMeasures: rendering.MessageMeasure[]): this {
+    this.messageMeasures = messageMeasures;
     return this;
   }
 
