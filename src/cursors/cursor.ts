@@ -220,9 +220,9 @@ export class Cursor {
     return this.scroller.isFullyVisible(cursorRect);
   }
 
-  scrollIntoView(): void {
+  scrollIntoView(behavior: ScrollBehavior = 'auto'): void {
     const scrollPoint = this.getScrollPoint();
-    this.scroller.scrollTo(scrollPoint);
+    this.scroller.scrollTo(scrollPoint, behavior);
   }
 
   addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
