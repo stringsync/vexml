@@ -2,7 +2,7 @@ import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
-import { Jump, PartScoped, StaveScoped } from './types';
+import { Jump, MessageMeasure, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -38,6 +38,7 @@ export class Measure {
   private config: Config;
   private log: debug.Logger;
   private index: number;
+  private maxSpecifiedWidth: number | null;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
   private musicXML: {
@@ -51,6 +52,7 @@ export class Measure {
     config: Config;
     log: debug.Logger;
     index: number;
+    maxSpecifiedWidth: number | null;
     partIds: string[];
     partNames: PartScoped<PartName>[];
     musicXML: {
@@ -62,9 +64,10 @@ export class Measure {
   }) {
     this.config = opts.config;
     this.log = opts.log;
+    this.index = opts.index;
+    this.maxSpecifiedWidth = opts.maxSpecifiedWidth;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
-    this.index = opts.index;
     this.musicXML = opts.musicXML;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
@@ -89,10 +92,18 @@ export class Measure {
       value: staveLayout.staveDistance ?? opts.config.DEFAULT_STAVE_DISTANCE,
     }));
 
+    const maxSpecifiedWidth =
+      util.max(
+        opts.musicXML.measures
+          .map((measure) => measure.value.getWidth())
+          .filter((width): width is number => typeof width === 'number')
+      ) || null; // Disallow 0 width.
+
     return new Measure({
       config: opts.config,
       log: opts.log,
       index: opts.index,
+      maxSpecifiedWidth,
       partIds: opts.partIds,
       partNames: opts.partNames,
       musicXML: {
@@ -104,12 +115,17 @@ export class Measure {
     });
   }
 
-  static fromMessageMeasure(opts: { config: Config; log: debug.Logger; index: number }): Measure {
+  static fromMessageMeasure(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
     // TODO: Finish implementing when this class is decoupled from musicxml.
+    const index = opts.messageMeasure.absoluteMeasureIndex;
+
+    const maxSpecifiedWidth = opts.messageMeasure.width;
+
     return new Measure({
       config: opts.config,
       log: opts.log,
-      index: opts.index,
+      index,
+      maxSpecifiedWidth,
       partIds: [],
       partNames: [],
       musicXML: { measures: [] },
@@ -126,13 +142,7 @@ export class Measure {
 
   /** Returns the max specified width of the measure across all parts. */
   getMaxSpecifiedWidth(): number | null {
-    return (
-      util.max(
-        this.musicXML.measures
-          .map((measure) => measure.value.getWidth())
-          .filter((width): width is number => typeof width === 'number')
-      ) || null // Disallow 0 width.
-    );
+    return this.maxSpecifiedWidth;
   }
 
   /** Returns the minimum required width for each measure fragment. */
