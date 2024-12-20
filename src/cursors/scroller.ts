@@ -13,12 +13,12 @@ export class Scroller {
     );
   }
 
-  scrollTo(position: spatial.Point) {
+  scrollTo(position: spatial.Point, behavior: ScrollBehavior = 'auto') {
     if (!this.isAt(position)) {
       this.scrollContainer.scrollTo({
         top: position.y,
         left: position.x,
-        behavior: 'smooth',
+        behavior,
       });
     }
   }
