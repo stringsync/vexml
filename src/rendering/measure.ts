@@ -47,6 +47,7 @@ export class Measure {
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
 
+  // TODO: Privatize the constructor.
   constructor(opts: {
     config: Config;
     log: debug.Logger;
@@ -68,6 +69,36 @@ export class Measure {
     this.musicXML = opts.musicXML;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
+  }
+
+  static fromMusicXML(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    musicXML: {
+      measures: PartScoped<musicxml.Measure>[];
+      staveLayouts: musicxml.StaveLayout[];
+    };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+  }): Measure {
+    return new Measure(opts);
+  }
+
+  static fromMessageMeasure(opts: { config: Config; log: debug.Logger; index: number }): Measure {
+    // TODO: Finish implementing when this class is decoupled from musicxml.
+    return new Measure({
+      config: opts.config,
+      log: opts.log,
+      index: opts.index,
+      partIds: [],
+      partNames: [],
+      musicXML: { measures: [], staveLayouts: [] },
+      leadingStaveSignatures: [],
+      entries: [],
+    });
   }
 
   /** Returns the absolute index of the measure. */
