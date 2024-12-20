@@ -13,14 +13,18 @@ export class Scroller {
     );
   }
 
-  scrollTo(point: spatial.Point) {
-    if (this.scrollContainer.scrollLeft !== point.x || this.scrollContainer.scrollTop !== point.y) {
+  scrollTo(position: spatial.Point) {
+    if (!this.isAt(position)) {
       this.scrollContainer.scrollTo({
-        top: point.y,
-        left: point.x,
+        top: position.y,
+        left: position.x,
         behavior: 'smooth',
       });
     }
+  }
+
+  private isAt(position: spatial.Point): boolean {
+    return this.scrollContainer.scrollLeft === position.x && this.scrollContainer.scrollTop === position.y;
   }
 
   private getVisibleRect(): spatial.Rect {
