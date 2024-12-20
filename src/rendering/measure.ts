@@ -2,7 +2,7 @@ import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Config } from '@/config';
-import { Jump, PartScoped } from './types';
+import { Jump, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -42,10 +42,10 @@ export class Measure {
   private partNames: PartScoped<PartName>[];
   private musicXML: {
     measures: PartScoped<musicxml.Measure>[];
-    staveLayouts: musicxml.StaveLayout[];
   };
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
+  private staveDistances: StaveScoped<number>[];
 
   private constructor(opts: {
     config: Config;
@@ -55,10 +55,10 @@ export class Measure {
     partNames: PartScoped<PartName>[];
     musicXML: {
       measures: PartScoped<musicxml.Measure>[];
-      staveLayouts: musicxml.StaveLayout[];
     };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
+    staveDistances: StaveScoped<number>[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -68,6 +68,7 @@ export class Measure {
     this.musicXML = opts.musicXML;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
+    this.staveDistances = opts.staveDistances;
   }
 
   static fromMusicXML(opts: {
@@ -83,7 +84,24 @@ export class Measure {
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
   }): Measure {
-    return new Measure(opts);
+    const staveDistances = opts.musicXML.staveLayouts.map<StaveScoped<number>>((staveLayout) => ({
+      staveNumber: staveLayout.staveNumber,
+      value: staveLayout.staveDistance ?? opts.config.DEFAULT_STAVE_DISTANCE,
+    }));
+
+    return new Measure({
+      config: opts.config,
+      log: opts.log,
+      index: opts.index,
+      partIds: opts.partIds,
+      partNames: opts.partNames,
+      musicXML: {
+        measures: opts.musicXML.measures,
+      },
+      leadingStaveSignatures: opts.leadingStaveSignatures,
+      entries: opts.entries,
+      staveDistances,
+    });
   }
 
   static fromMessageMeasure(opts: { config: Config; log: debug.Logger; index: number }): Measure {
@@ -94,9 +112,10 @@ export class Measure {
       index: opts.index,
       partIds: [],
       partNames: [],
-      musicXML: { measures: [], staveLayouts: [] },
+      musicXML: { measures: [] },
       leadingStaveSignatures: [],
       entries: [],
+      staveDistances: [],
     });
   }
 
@@ -337,11 +356,9 @@ export class Measure {
           partNames: this.partNames,
           startBarlines,
           endBarlines,
-          musicXML: {
-            staveLayouts: this.musicXML.staveLayouts,
-          },
           measureEntries,
           staveSignatures,
+          staveDistances: this.staveDistances,
         })
       );
     }

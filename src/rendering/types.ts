@@ -25,6 +25,9 @@ export type SpannerData = {
 /** A value that is scoped to a specific part. */
 export type PartScoped<T> = { partId: string; value: T };
 
+/** A value that is scoped to a specific stave. */
+export type StaveScoped<T> = { staveNumber: number; value: T };
+
 /** Describes the coordinates of a tablature component. */
 export type TabPosition = {
   string: number;
