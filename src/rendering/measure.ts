@@ -47,8 +47,7 @@ export class Measure {
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
 
-  // TODO: Privatize the constructor.
-  constructor(opts: {
+  private constructor(opts: {
     config: Config;
     log: debug.Logger;
     index: number;

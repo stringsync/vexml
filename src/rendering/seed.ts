@@ -78,6 +78,7 @@ export class Seed {
   }
 
   private getMeasures(): Measure[] {
+    // TODO: Account for message measures.
     const measures = new Array<Measure>();
     const measureCount = this.getMeasureCount();
 
@@ -89,7 +90,7 @@ export class Seed {
         continue;
       }
 
-      const measure = new Measure({
+      const measure = Measure.fromMusicXML({
         config: this.config,
         log: this.log,
         index: measureIndex,
