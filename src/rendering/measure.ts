@@ -38,6 +38,7 @@ export class Measure {
   private config: Config;
   private log: debug.Logger;
   private index: number;
+  private measureNumber: number | null;
   private maxSpecifiedWidth: number | null;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
@@ -52,6 +53,7 @@ export class Measure {
     config: Config;
     log: debug.Logger;
     index: number;
+    measureNumber: number | null;
     maxSpecifiedWidth: number | null;
     partIds: string[];
     partNames: PartScoped<PartName>[];
@@ -65,6 +67,7 @@ export class Measure {
     this.config = opts.config;
     this.log = opts.log;
     this.index = opts.index;
+    this.measureNumber = opts.measureNumber;
     this.maxSpecifiedWidth = opts.maxSpecifiedWidth;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
@@ -99,10 +102,13 @@ export class Measure {
           .filter((width): width is number => typeof width === 'number')
       ) || null; // Disallow 0 width.
 
+    const measureNumber = Measure.getMeasureNumberFromMusicXML(opts.index, opts.partIds, opts.musicXML);
+
     return new Measure({
       config: opts.config,
       log: opts.log,
       index: opts.index,
+      measureNumber,
       maxSpecifiedWidth,
       partIds: opts.partIds,
       partNames: opts.partNames,
@@ -125,6 +131,7 @@ export class Measure {
       config: opts.config,
       log: opts.log,
       index,
+      measureNumber: null,
       maxSpecifiedWidth,
       partIds: [],
       partNames: [],
@@ -133,6 +140,33 @@ export class Measure {
       entries: [],
       staveDistances: [],
     });
+  }
+
+  private static getMeasureNumberFromMusicXML(
+    index: number,
+    partIds: string[],
+    musicXML: { measures: PartScoped<musicxml.Measure>[] }
+  ): number | null {
+    const partId = util.first(partIds);
+    if (!partId) {
+      return null;
+    }
+
+    const measure = musicXML.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return null;
+    }
+
+    if (measure.isImplicit()) {
+      return null;
+    }
+
+    const number = parseInt(measure.getNumber(), 0);
+    if (Number.isInteger(number) && !Number.isNaN(number)) {
+      return number;
+    }
+
+    return index + 1;
   }
 
   /** Returns the absolute index of the measure. */
@@ -379,26 +413,7 @@ export class Measure {
   }
 
   private getMeasureNumber(): number | null {
-    const partId = util.first(this.partIds);
-    if (!partId) {
-      return null;
-    }
-
-    const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
-    if (!measure) {
-      return null;
-    }
-
-    if (measure.isImplicit()) {
-      return null;
-    }
-
-    const number = parseInt(measure.getNumber(), 0);
-    if (Number.isInteger(number) && !Number.isNaN(number)) {
-      return number;
-    }
-
-    return this.index + 1;
+    return this.measureNumber;
   }
 
   private getFragmentBoundaries(): Division[] {
