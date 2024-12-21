@@ -14,6 +14,7 @@ import { Barline } from './barline';
 import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
 
+const DEFAULT_MEASURE_WIDTH = 200;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
 
@@ -39,7 +40,7 @@ export class Measure {
   private log: debug.Logger;
   private index: number;
   private measureNumber: number | null;
-  private maxSpecifiedWidth: number | null;
+  private specifiedWidth: number | null;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
@@ -56,7 +57,7 @@ export class Measure {
     log: debug.Logger;
     index: number;
     measureNumber: number | null;
-    maxSpecifiedWidth: number | null;
+    specifiedWidth: number | null;
     partIds: string[];
     partNames: PartScoped<PartName>[];
     leadingStaveSignatures: PartScoped<StaveSignature>[];
@@ -72,7 +73,7 @@ export class Measure {
     this.log = opts.log;
     this.index = opts.index;
     this.measureNumber = opts.measureNumber;
-    this.maxSpecifiedWidth = opts.maxSpecifiedWidth;
+    this.specifiedWidth = opts.specifiedWidth;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
@@ -93,15 +94,23 @@ export class Measure {
     partNames: PartScoped<PartName>[];
     musicXML: {
       measures: PartScoped<musicxml.Measure>[];
-      staveLayouts: musicxml.StaveLayout[];
     };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
+    staveDistances: StaveScoped<number>[];
   }): Measure {
     return FromMusicXMLFactory.create(opts);
   }
 
-  static fromMessageMeasure(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
+  static fromMessageMeasure(opts: {
+    config: Config;
+    log: debug.Logger;
+    messageMeasure: MessageMeasure;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
     return FromMessageMeasureFactory.create(opts);
   }
 
@@ -111,8 +120,8 @@ export class Measure {
   }
 
   /** Returns the max specified width of the measure across all parts. */
-  getMaxSpecifiedWidth(): number | null {
-    return this.maxSpecifiedWidth;
+  getSpecifiedWidth(): number | null {
+    return this.specifiedWidth;
   }
 
   /** Returns the minimum required width for each measure fragment. */
@@ -135,6 +144,14 @@ export class Measure {
         }),
       });
     });
+
+    if (widths.every(({ value }) => value === 0)) {
+      // If all fragments have a width of 0, then there are likely no measure entries. In this case, we should try to
+      // default to a width for the measure.
+      const width = this.getSpecifiedWidth() ?? DEFAULT_MEASURE_WIDTH;
+      const widthPerFragment = width / widths.length;
+      return widths.map((width) => ({ ...width, value: widthPerFragment }));
+    }
 
     return widths;
   }
@@ -431,7 +448,6 @@ class FromMusicXMLFactory {
   private partNames: PartScoped<PartName>[];
   private musicXML: {
     measures: PartScoped<musicxml.Measure>[];
-    staveLayouts: musicxml.StaveLayout[];
   };
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
@@ -444,7 +460,6 @@ class FromMusicXMLFactory {
     partNames: PartScoped<PartName>[];
     musicXML: {
       measures: PartScoped<musicxml.Measure>[];
-      staveLayouts: musicxml.StaveLayout[];
     };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
@@ -467,10 +482,10 @@ class FromMusicXMLFactory {
     partNames: PartScoped<PartName>[];
     musicXML: {
       measures: PartScoped<musicxml.Measure>[];
-      staveLayouts: musicxml.StaveLayout[];
     };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
+    staveDistances: StaveScoped<number>[];
   }): Measure {
     const factory = new FromMusicXMLFactory(opts);
     return new Measure({
@@ -478,12 +493,12 @@ class FromMusicXMLFactory {
       log: factory.log,
       index: factory.index,
       measureNumber: factory.getMeasureNumber(),
-      maxSpecifiedWidth: factory.getMaxSpecifiedWidth(),
+      specifiedWidth: factory.getSpecifiedWidth(),
       partIds: factory.partIds,
       partNames: factory.partNames,
       leadingStaveSignatures: factory.leadingStaveSignatures,
       entries: factory.entries,
-      staveDistances: factory.getStaveDistances(),
+      staveDistances: opts.staveDistances,
       startBarline: factory.getStartBarline(),
       endBarline: factory.getEndBarline(),
       endingBracket: factory.getEndingBracket(),
@@ -515,7 +530,7 @@ class FromMusicXMLFactory {
     return this.index + 1;
   }
 
-  private getMaxSpecifiedWidth(): number | null {
+  private getSpecifiedWidth(): number | null {
     return (
       util.max(
         this.musicXML.measures
@@ -523,13 +538,6 @@ class FromMusicXMLFactory {
           .filter((width): width is number => typeof width === 'number')
       ) || null // Disallow 0 width.
     );
-  }
-
-  private getStaveDistances(): StaveScoped<number>[] {
-    return this.musicXML.staveLayouts.map<StaveScoped<number>>((staveLayout) => ({
-      staveNumber: staveLayout.staveNumber,
-      value: staveLayout.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE,
-    }));
   }
 
   private getStartBarline(): Barline {
@@ -602,19 +610,26 @@ class FromMusicXMLFactory {
 
 /** Creates a Measure from a MessageMeasure. */
 class FromMessageMeasureFactory {
-  // TODO: Finish implementing when Measure is decoupled from musicxml.
-  static create(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
+  static create(opts: {
+    config: Config;
+    log: debug.Logger;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    messageMeasure: MessageMeasure;
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
     return new Measure({
       config: opts.config,
       log: opts.log,
       index: opts.messageMeasure.absoluteMeasureIndex,
       measureNumber: null,
-      maxSpecifiedWidth: opts.messageMeasure.width,
-      partIds: [],
-      partNames: [],
-      leadingStaveSignatures: [],
+      specifiedWidth: opts.messageMeasure.width,
+      partIds: opts.partIds,
+      partNames: opts.partNames,
+      leadingStaveSignatures: opts.leadingStaveSignatures,
       entries: [],
-      staveDistances: [],
+      staveDistances: opts.staveDistances,
       startBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'left' }),
       endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
       endingBracket: null,
