@@ -253,6 +253,12 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
+    // Draw message measures.
+    measures.forEach((measure) => {
+      measure.rect?.draw(vfContext);
+      measure.text?.draw(vfContext);
+    });
+
     // Now that everything is drawn, we expect the bounding boxes to be correct.
     const boundary = new spatial.Rect(0, 0, opts.width, y);
 
@@ -264,7 +270,6 @@ export class Score {
         .map((part) => part.id)
     );
 
-    // TODO: Get the locator.
     return { type: 'score', systems: systemRenderings, boundary, partIds, vexflow: { renderer: vfRenderer } };
   }
 

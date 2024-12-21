@@ -1,6 +1,8 @@
 import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
+import * as spatial from '@/spatial';
 import { Config } from '@/config';
 import { Jump, MessageMeasure, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
@@ -13,6 +15,8 @@ import { MeasureEntryIterator } from './measureentryiterator';
 import { Barline } from './barline';
 import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
+import { staves } from '../util/xml';
+import { TextMeasurer } from './textmeasurer';
 
 const DEFAULT_MEASURE_WIDTH = 200;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
@@ -28,6 +32,8 @@ export type MeasureRendering = {
   endingBracket: EndingBracketRendering | null;
   jumps: Jump[];
   bpm: number;
+  rect: drawables.Rect | null;
+  text: drawables.Text | null;
 };
 
 /**
@@ -51,6 +57,7 @@ export class Measure {
   private endingBracket: EndingBracket | null;
   private bpm: number | null;
   private jumps: Jump[];
+  private message: string | null;
 
   constructor(opts: {
     config: Config;
@@ -68,6 +75,7 @@ export class Measure {
     endingBracket: EndingBracket | null;
     bpm: number | null;
     jumps: Jump[];
+    message: string | null;
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -84,6 +92,7 @@ export class Measure {
     this.endingBracket = opts.endingBracket;
     this.bpm = opts.bpm;
     this.jumps = opts.jumps;
+    this.message = opts.message;
   }
 
   static fromMusicXML(opts: {
@@ -166,7 +175,7 @@ export class Measure {
     return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
   }
 
-  /** Returns how much to offset the measure by. */
+  /** Returns how much to offset the measure by due to the stave. */
   getStaveOffsetX(opts: { address: Address<'measure'> }): number {
     let result = 0;
 
@@ -278,6 +287,42 @@ export class Measure {
       }
     );
 
+    let rect: drawables.Rect | null = null;
+    let text: drawables.Text | null = null;
+    if (typeof this.message === 'string') {
+      const x = opts.x + staveOffsetX;
+      const w = util.sum(fragmentRenderings.map((fragment) => fragment.width));
+
+      const vfStaves = fragmentRenderings
+        .flatMap((fragment) => fragment.parts)
+        .flatMap((part) => part.staves)
+        .map((stave) => stave.vexflow.stave);
+
+      const yMin = util.first(vfStaves.map((vfStave) => vfStave.getYForLine(0))) ?? 0;
+      const yMax = util.last(vfStaves.map((vfStave) => vfStave.getBottomLineBottomY())) ?? 0;
+
+      const h = yMax - yMin;
+
+      const messageBox = spatial.Rect.fromRectLike({ x, y: yMin, w, h });
+
+      rect = new drawables.Rect({
+        rect: messageBox,
+        fillStyle: 'rgba(252, 53, 76, 0.4)',
+      });
+
+      const fontSize = '16px';
+      const fontFamily = 'Arial';
+      const textMeasurer = new TextMeasurer({ text: this.message, fontSize, fontFamily });
+
+      text = new drawables.Text({
+        x: x + (w - textMeasurer.getWidth()) / 2,
+        y: yMin + h / 2,
+        content: this.message,
+        size: fontSize,
+        family: fontFamily,
+      });
+    }
+
     return {
       type: 'measure',
       address: opts.address,
@@ -287,6 +332,8 @@ export class Measure {
       endingBracket: endingBracketRendering,
       jumps: this.getJumps(),
       bpm: this.getBpm() ?? opts.defaultBpm,
+      rect,
+      text,
     };
   }
 
@@ -504,6 +551,7 @@ class FromMusicXMLFactory {
       endingBracket: factory.getEndingBracket(),
       bpm: factory.getBpm(),
       jumps: factory.getJumps(),
+      message: null,
     });
   }
 
@@ -635,6 +683,7 @@ class FromMessageMeasureFactory {
       endingBracket: null,
       bpm: null,
       jumps: [],
+      message: opts.messageMeasure.message,
     });
   }
 }
