@@ -86,6 +86,23 @@ export class Vexml {
   /** Sets the message measures for this Vexml instance. */
   setMessageMeasures(...messageMeasures: rendering.MessageMeasure[]): this {
     this.messageMeasures = messageMeasures;
+
+    // We validate the indexes because it is error-prone to insert message measures with incorrect indexes.
+    const indexes = messageMeasures.map(({ absoluteMeasureIndex }) => absoluteMeasureIndex);
+    const seen = new Set<number>();
+    for (const index of indexes) {
+      if (index < 0) {
+        throw new Error(`expected all absoluteMeasureIndexes to be non-negative, got: ${index}`);
+      }
+      if (!Number.isInteger(index)) {
+        throw new Error(`expected all absoluteMeasureIndexes to be integers, got: ${index}`);
+      }
+      if (seen.has(index)) {
+        throw new Error(`expected all absoluteMeasureIndexes to be unique, got: ${index}`);
+      }
+      seen.add(index);
+    }
+
     return this;
   }
 
@@ -113,7 +130,12 @@ export class Vexml {
 
     // Render score.
     const scorePartwise = this.musicXML.getScorePartwise();
-    const score = new rendering.Score({ config, log, musicXML: { scorePartwise } });
+    const score = new rendering.Score({
+      config,
+      log,
+      musicXML: { scorePartwise },
+      messageMeasures: this.messageMeasures,
+    });
     const scoreRendering = score.render({ root, width });
 
     // Make playback sequences.

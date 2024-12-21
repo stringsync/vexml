@@ -3,7 +3,7 @@ import { Config } from '@/config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as debug from '@/debug';
-import { PartScoped } from './types';
+import { MessageMeasure, PartScoped } from './types';
 import { Measure } from './measure';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -21,6 +21,7 @@ export class Seed {
     partDetails: musicxml.PartDetail[];
     staveLayouts: musicxml.StaveLayout[];
   };
+  private messageMeasures: MessageMeasure[];
 
   constructor(opts: {
     config: Config;
@@ -30,10 +31,12 @@ export class Seed {
       partDetails: musicxml.PartDetail[];
       staveLayouts: musicxml.StaveLayout[];
     };
+    messageMeasures: MessageMeasure[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
     this.musicXML = opts.musicXML;
+    this.messageMeasures = opts.messageMeasures;
   }
 
   /** Splits the measures into parts and systems that fit the given width. */
@@ -80,11 +83,30 @@ export class Seed {
   private getMeasures(): Measure[] {
     // TODO: Account for message measures.
     const measures = new Array<Measure>();
-    const measureCount = this.getMeasureCount();
+    const measureCount = this.getMusicXMLMeasureCount();
 
     let multiRestMeasureCount = 0;
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // Keep inserting message measures such that the messageMeasure.absoluteMeasureIndex is honored. Having a
+      // MessageMeasure[] with duplicate absoluteMeasureIndex properties is an error and should be validated and/or
+      // sanitzied upstream.
+      let messageMeasure = this.messageMeasures.find(
+        (messageMeasure) => messageMeasure.absoluteMeasureIndex === measures.length
+      );
+      while (messageMeasure) {
+        const measure = Measure.fromMessageMeasure({
+          config: this.config,
+          log: this.log,
+          messageMeasure,
+        });
+        measures.push(measure);
+
+        messageMeasure = this.messageMeasures.find(
+          (messageMeasure) => messageMeasure.absoluteMeasureIndex === measures.length
+        );
+      }
+
       if (multiRestMeasureCount > 0) {
         multiRestMeasureCount--;
         continue;
@@ -93,7 +115,8 @@ export class Seed {
       const measure = Measure.fromMusicXML({
         config: this.config,
         log: this.log,
-        index: measureIndex,
+        // We use the length because it's possible we inserted a
+        index: measures.length,
         partIds: this.getPartIds(),
         partNames: this.getPartNames(),
         musicXML: {
@@ -116,7 +139,7 @@ export class Seed {
     return measures;
   }
 
-  private getMeasureCount(): number {
+  private getMusicXMLMeasureCount(): number {
     return util.max(this.musicXML.parts.map((part) => part.getMeasures().length));
   }
 
