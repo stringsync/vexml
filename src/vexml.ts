@@ -98,7 +98,7 @@ export class Vexml {
         throw new Error(`expected all absoluteMeasureIndexes to be integers, got: ${index}`);
       }
       if (seen.has(index)) {
-        throw new Error(`expected all absoluteMeasureIndexes to be unique, got: ${index}`);
+        throw new Error(`expected all absoluteMeasureIndexes to be unique`);
       }
       seen.add(index);
     }

@@ -57,4 +57,16 @@ export type MessageMeasure = {
 
   /** The width of the messeage measure in pixels. It will be clamped to the width of the score. */
   width: number;
+
+  /** The stroke style of the message measure rect. */
+  strokeStyle?: string;
+
+  /** The fill style of the message measure rect. */
+  fillStyle?: string;
+
+  /** The font size of the message. */
+  fontSize?: string;
+
+  /** The font family of the message. */
+  fontFamily?: string;
 };

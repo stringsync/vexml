@@ -15,12 +15,14 @@ import { MeasureEntryIterator } from './measureentryiterator';
 import { Barline } from './barline';
 import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
-import { staves } from '../util/xml';
 import { TextMeasurer } from './textmeasurer';
 
 const DEFAULT_MEASURE_WIDTH = 200;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
+const DEFAULT_MESSAGE_FONT_SIZE = '16px';
+const DEFAULT_MESSAGE_FONT_FAMILY = 'Arial';
+const DEFAULT_MESSAGE_MEASURE_FILL_STYLE = 'rgba(252, 53, 76, 0.4)';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -58,6 +60,10 @@ export class Measure {
   private bpm: number | null;
   private jumps: Jump[];
   private message: string | null;
+  private messageFontSize: string | null;
+  private messageFontFamily: string | null;
+  private rectStrokeStyle: string | null;
+  private rectFillStyle: string | null;
 
   constructor(opts: {
     config: Config;
@@ -76,6 +82,10 @@ export class Measure {
     bpm: number | null;
     jumps: Jump[];
     message: string | null;
+    messageFontSize: string | null;
+    messageFontFamily: string | null;
+    rectStrokeStyle: string | null;
+    rectFillStyle: string | null;
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -93,6 +103,10 @@ export class Measure {
     this.bpm = opts.bpm;
     this.jumps = opts.jumps;
     this.message = opts.message;
+    this.messageFontSize = opts.messageFontSize;
+    this.messageFontFamily = opts.messageFontFamily;
+    this.rectStrokeStyle = opts.rectStrokeStyle;
+    this.rectFillStyle = opts.rectFillStyle;
   }
 
   static fromMusicXML(opts: {
@@ -307,12 +321,18 @@ export class Measure {
 
       rect = new drawables.Rect({
         rect: messageBox,
-        fillStyle: 'rgba(252, 53, 76, 0.4)',
+        strokeStyle: this.rectStrokeStyle ?? undefined,
+        fillStyle: this.rectFillStyle ?? DEFAULT_MESSAGE_MEASURE_FILL_STYLE,
       });
 
-      const fontSize = '16px';
-      const fontFamily = 'Arial';
-      const textMeasurer = new TextMeasurer({ text: this.message, fontSize, fontFamily });
+      const fontSize = this.messageFontSize ?? DEFAULT_MESSAGE_FONT_SIZE;
+      const fontFamily = this.messageFontFamily ?? DEFAULT_MESSAGE_FONT_FAMILY;
+
+      const textMeasurer = new TextMeasurer({
+        text: this.message,
+        fontSize,
+        fontFamily,
+      });
 
       text = new drawables.Text({
         x: x + (w - textMeasurer.getWidth()) / 2,
@@ -552,6 +572,10 @@ class FromMusicXMLFactory {
       bpm: factory.getBpm(),
       jumps: factory.getJumps(),
       message: null,
+      messageFontFamily: null,
+      messageFontSize: null,
+      rectFillStyle: null,
+      rectStrokeStyle: null,
     });
   }
 
@@ -684,6 +708,10 @@ class FromMessageMeasureFactory {
       bpm: null,
       jumps: [],
       message: opts.messageMeasure.message,
+      messageFontFamily: opts.messageMeasure.fontFamily ?? null,
+      messageFontSize: opts.messageMeasure.fontSize ?? null,
+      rectFillStyle: opts.messageMeasure.fillStyle ?? null,
+      rectStrokeStyle: opts.messageMeasure.strokeStyle ?? null,
     });
   }
 }
