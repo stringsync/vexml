@@ -3,7 +3,7 @@ import { Config } from '@/config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as debug from '@/debug';
-import { MessageMeasure, PartScoped } from './types';
+import { MessageMeasure, PartScoped, StaveScoped } from './types';
 import { Measure } from './measure';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -67,7 +67,6 @@ export class Seed {
     return result;
   }
 
-  @util.memoize()
   private getPartNames(): PartScoped<PartName>[] {
     const result = new Array<PartScoped<PartName>>();
 
@@ -80,14 +79,26 @@ export class Seed {
     return result;
   }
 
+  private getStaveDistances(): StaveScoped<number>[] {
+    return this.musicXML.staveLayouts.map((staveLayout) => ({
+      staveNumber: staveLayout.staveNumber,
+      value: staveLayout.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE,
+    }));
+  }
+
   private getMeasures(): Measure[] {
-    // TODO: Account for message measures.
     const measures = new Array<Measure>();
     const measureCount = this.getMusicXMLMeasureCount();
 
     let multiRestMeasureCount = 0;
 
+    const partIds = this.getPartIds();
+    const partNames = this.getPartNames();
+    const staveDistances = this.getStaveDistances();
+
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const leadingStaveSignatures = this.getLeadingStaveSignatures(measureIndex);
+
       // Keep inserting message measures such that the messageMeasure.absoluteMeasureIndex is honored. Having a
       // MessageMeasure[] with duplicate absoluteMeasureIndex properties is an error and should be validated and/or
       // sanitzied upstream.
@@ -99,6 +110,10 @@ export class Seed {
           config: this.config,
           log: this.log,
           messageMeasure,
+          partIds,
+          partNames,
+          leadingStaveSignatures,
+          staveDistances,
         });
         measures.push(measure);
 
@@ -115,19 +130,18 @@ export class Seed {
       const measure = Measure.fromMusicXML({
         config: this.config,
         log: this.log,
-        // We use the length because it's possible we inserted a
         index: measures.length,
-        partIds: this.getPartIds(),
-        partNames: this.getPartNames(),
+        partIds,
+        partNames,
         musicXML: {
           measures: this.musicXML.parts.map((part) => ({
             partId: part.getId(),
             value: part.getMeasures()[measureIndex],
           })),
-          staveLayouts: this.musicXML.staveLayouts,
         },
-        leadingStaveSignatures: this.getLeadingStaveSignatures(measureIndex),
+        leadingStaveSignatures,
         entries: this.getMeasureEntries(measureIndex),
+        staveDistances,
       });
 
       measures.push(measure);
@@ -331,10 +345,10 @@ class MeasureWidth {
   /** Returns the value of the measure width. */
   getValue(): number {
     const measureIndex = this.measure.getIndex();
-    const maxSpecifiedWidth = this.measure.getMaxSpecifiedWidth();
-    if (typeof maxSpecifiedWidth === 'number') {
-      this.log.debug('detected a max specified width', { measureIndex, maxSpecifiedWidth });
-      return maxSpecifiedWidth;
+    const specifiedWidth = this.measure.getSpecifiedWidth();
+    if (typeof specifiedWidth === 'number') {
+      this.log.debug('detected a specified width', { measureIndex, specifiedWidth });
+      return specifiedWidth;
     } else {
       this.log.debug('no width specified, inferring measure width from its fragments', { measureIndex });
       return util.sum(this.fragments.map(({ value }) => value));
