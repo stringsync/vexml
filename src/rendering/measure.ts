@@ -49,7 +49,7 @@ export class Measure {
   private entries: PartScoped<MeasureEntry>[];
   private staveDistances: StaveScoped<number>[];
 
-  private constructor(opts: {
+  constructor(opts: {
     config: Config;
     log: debug.Logger;
     index: number;
@@ -90,83 +90,11 @@ export class Measure {
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
   }): Measure {
-    const staveDistances = opts.musicXML.staveLayouts.map<StaveScoped<number>>((staveLayout) => ({
-      staveNumber: staveLayout.staveNumber,
-      value: staveLayout.staveDistance ?? opts.config.DEFAULT_STAVE_DISTANCE,
-    }));
-
-    const maxSpecifiedWidth =
-      util.max(
-        opts.musicXML.measures
-          .map((measure) => measure.value.getWidth())
-          .filter((width): width is number => typeof width === 'number')
-      ) || null; // Disallow 0 width.
-
-    const measureNumber = Measure.getMeasureNumberFromMusicXML(opts.index, opts.partIds, opts.musicXML);
-
-    return new Measure({
-      config: opts.config,
-      log: opts.log,
-      index: opts.index,
-      measureNumber,
-      maxSpecifiedWidth,
-      partIds: opts.partIds,
-      partNames: opts.partNames,
-      musicXML: {
-        measures: opts.musicXML.measures,
-      },
-      leadingStaveSignatures: opts.leadingStaveSignatures,
-      entries: opts.entries,
-      staveDistances,
-    });
+    return FromMusicXMLFactory.create(opts);
   }
 
   static fromMessageMeasure(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
-    // TODO: Finish implementing when this class is decoupled from musicxml.
-    const index = opts.messageMeasure.absoluteMeasureIndex;
-
-    const maxSpecifiedWidth = opts.messageMeasure.width;
-
-    return new Measure({
-      config: opts.config,
-      log: opts.log,
-      index,
-      measureNumber: null,
-      maxSpecifiedWidth,
-      partIds: [],
-      partNames: [],
-      musicXML: { measures: [] },
-      leadingStaveSignatures: [],
-      entries: [],
-      staveDistances: [],
-    });
-  }
-
-  private static getMeasureNumberFromMusicXML(
-    index: number,
-    partIds: string[],
-    musicXML: { measures: PartScoped<musicxml.Measure>[] }
-  ): number | null {
-    const partId = util.first(partIds);
-    if (!partId) {
-      return null;
-    }
-
-    const measure = musicXML.measures.find((measure) => measure.partId === partId)?.value;
-    if (!measure) {
-      return null;
-    }
-
-    if (measure.isImplicit()) {
-      return null;
-    }
-
-    const number = parseInt(measure.getNumber(), 0);
-    if (Number.isInteger(number) && !Number.isNaN(number)) {
-      return number;
-    }
-
-    return index + 1;
+    return FromMessageMeasureFactory.create(opts);
   }
 
   /** Returns the absolute index of the measure. */
@@ -530,5 +458,130 @@ export class Measure {
       }
     }
     return null;
+  }
+}
+
+class FromMusicXMLFactory {
+  private config: Config;
+  private log: debug.Logger;
+  private index: number;
+  private partIds: string[];
+  private partNames: PartScoped<PartName>[];
+  private musicXML: {
+    measures: PartScoped<musicxml.Measure>[];
+    staveLayouts: musicxml.StaveLayout[];
+  };
+  private leadingStaveSignatures: PartScoped<StaveSignature>[];
+  private entries: PartScoped<MeasureEntry>[];
+
+  private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    musicXML: {
+      measures: PartScoped<musicxml.Measure>[];
+      staveLayouts: musicxml.StaveLayout[];
+    };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
+    this.index = opts.index;
+    this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
+    this.musicXML = opts.musicXML;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
+  }
+
+  static create(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    musicXML: {
+      measures: PartScoped<musicxml.Measure>[];
+      staveLayouts: musicxml.StaveLayout[];
+    };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+  }): Measure {
+    const factory = new FromMusicXMLFactory(opts);
+    return new Measure({
+      config: factory.config,
+      log: factory.log,
+      index: factory.index,
+      measureNumber: factory.getMeasureNumber(),
+      maxSpecifiedWidth: factory.getMaxSpecifiedWidth(),
+      partIds: factory.partIds,
+      partNames: factory.partNames,
+      musicXML: factory.musicXML,
+      leadingStaveSignatures: factory.leadingStaveSignatures,
+      entries: factory.entries,
+      staveDistances: factory.getStaveDistances(),
+    });
+  }
+
+  private getMeasureNumber(): number | null {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return null;
+    }
+
+    const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return null;
+    }
+
+    if (measure.isImplicit()) {
+      return null;
+    }
+
+    const number = parseInt(measure.getNumber(), 0);
+    if (Number.isInteger(number) && !Number.isNaN(number)) {
+      return number;
+    }
+
+    return this.index + 1;
+  }
+
+  private getMaxSpecifiedWidth(): number | null {
+    return (
+      util.max(
+        this.musicXML.measures
+          .map((measure) => measure.value.getWidth())
+          .filter((width): width is number => typeof width === 'number')
+      ) || null // Disallow 0 width.
+    );
+  }
+
+  private getStaveDistances(): StaveScoped<number>[] {
+    return this.musicXML.staveLayouts.map<StaveScoped<number>>((staveLayout) => ({
+      staveNumber: staveLayout.staveNumber,
+      value: staveLayout.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE,
+    }));
+  }
+}
+
+class FromMessageMeasureFactory {
+  // TODO: Finish implementing when Measure is decoupled from musicxml.
+  static create(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
+    return new Measure({
+      config: opts.config,
+      log: opts.log,
+      index: opts.messageMeasure.absoluteMeasureIndex,
+      measureNumber: null,
+      maxSpecifiedWidth: opts.messageMeasure.width,
+      partIds: [],
+      partNames: [],
+      musicXML: { measures: [] },
+      leadingStaveSignatures: [],
+      entries: [],
+      staveDistances: [],
+    });
   }
 }
