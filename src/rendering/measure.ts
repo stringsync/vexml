@@ -42,9 +42,6 @@ export class Measure {
   private maxSpecifiedWidth: number | null;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
-  private musicXML: {
-    measures: PartScoped<musicxml.Measure>[];
-  };
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
   private staveDistances: StaveScoped<number>[];
@@ -62,9 +59,6 @@ export class Measure {
     maxSpecifiedWidth: number | null;
     partIds: string[];
     partNames: PartScoped<PartName>[];
-    musicXML: {
-      measures: PartScoped<musicxml.Measure>[];
-    };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
     staveDistances: StaveScoped<number>[];
@@ -81,7 +75,6 @@ export class Measure {
     this.maxSpecifiedWidth = opts.maxSpecifiedWidth;
     this.partIds = opts.partIds;
     this.partNames = opts.partNames;
-    this.musicXML = opts.musicXML;
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
     this.staveDistances = opts.staveDistances;
@@ -488,7 +481,6 @@ class FromMusicXMLFactory {
       maxSpecifiedWidth: factory.getMaxSpecifiedWidth(),
       partIds: factory.partIds,
       partNames: factory.partNames,
-      musicXML: factory.musicXML,
       leadingStaveSignatures: factory.leadingStaveSignatures,
       entries: factory.entries,
       staveDistances: factory.getStaveDistances(),
@@ -620,7 +612,6 @@ class FromMessageMeasureFactory {
       maxSpecifiedWidth: opts.messageMeasure.width,
       partIds: [],
       partNames: [],
-      musicXML: { measures: [] },
       leadingStaveSignatures: [],
       entries: [],
       staveDistances: [],
