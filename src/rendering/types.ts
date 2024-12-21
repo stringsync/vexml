@@ -25,6 +25,9 @@ export type SpannerData = {
 /** A value that is scoped to a specific part. */
 export type PartScoped<T> = { partId: string; value: T };
 
+/** A value that is scoped to a specific stave. */
+export type StaveScoped<T> = { staveNumber: number; value: T };
+
 /** Describes the coordinates of a tablature component. */
 export type TabPosition = {
   string: number;
@@ -40,3 +43,30 @@ export type Jump =
   | { type: 'repeatstart' }
   | { type: 'repeatend'; times: number }
   | { type: 'repeatending'; times: number };
+
+/** A directive to insert a non-musical measure with a message. */
+export type MessageMeasure = {
+  /** The **absolute** measure index accounting for any previous measures that have been removed or inserted. */
+  absoluteMeasureIndex: number;
+
+  /** The message to be displayed over the measure. */
+  message: string;
+
+  /** The duration that the message measure should play for. */
+  durationMs: number;
+
+  /** The width of the messeage measure in pixels. It will be clamped to the width of the score. */
+  width: number;
+
+  /** The stroke style of the message measure rect. */
+  strokeStyle?: string;
+
+  /** The fill style of the message measure rect. */
+  fillStyle?: string;
+
+  /** The font size of the message. */
+  fontSize?: string;
+
+  /** The font family of the message. */
+  fontFamily?: string;
+};

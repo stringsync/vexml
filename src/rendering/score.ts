@@ -13,6 +13,7 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
+import { MessageMeasure } from './types';
 
 const Y_SHIFT_PADDING = 10;
 
@@ -38,6 +39,7 @@ export class Score {
   private musicXML: {
     scorePartwise: musicxml.ScorePartwise | null;
   };
+  private messageMeasures: MessageMeasure[];
 
   constructor(opts: {
     config: Config;
@@ -45,10 +47,12 @@ export class Score {
     musicXML: {
       scorePartwise: musicxml.ScorePartwise | null;
     };
+    messageMeasures: MessageMeasure[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
     this.musicXML = opts.musicXML;
+    this.messageMeasures = opts.messageMeasures;
   }
 
   /** Renders the Score. */
@@ -249,6 +253,12 @@ export class Score {
         vfTabSlide.setContext(vfContext).draw();
       });
 
+    // Draw message measures.
+    measures.forEach((measure) => {
+      measure.rect?.draw(vfContext);
+      measure.text?.draw(vfContext);
+    });
+
     // Now that everything is drawn, we expect the bounding boxes to be correct.
     const boundary = new spatial.Rect(0, 0, opts.width, y);
 
@@ -260,7 +270,6 @@ export class Score {
         .map((part) => part.id)
     );
 
-    // TODO: Get the locator.
     return { type: 'score', systems: systemRenderings, boundary, partIds, vexflow: { renderer: vfRenderer } };
   }
 
@@ -274,6 +283,7 @@ export class Score {
         partDetails: this.musicXML.scorePartwise?.getPartDetails() ?? [],
         staveLayouts: this.musicXML.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
+      messageMeasures: this.messageMeasures,
     });
   }
 
