@@ -8,6 +8,7 @@ import { Config } from '@/config';
 import { Address } from './address';
 import { Spanners } from './spanners';
 import { PartName, PartNameRendering } from './partname';
+import { StaveScoped } from './types';
 
 /** The result of rendering a part. */
 export type PartRendering = {
@@ -25,9 +26,7 @@ export class Part {
   private log: debug.Logger;
   private id: string;
   private name: PartName;
-  private musicXML: {
-    staveLayouts: musicxml.StaveLayout[];
-  };
+  private staveDistances: StaveScoped<number>[];
   private measureEntries: MeasureEntry[];
   private staveSignature: StaveSignature;
 
@@ -36,9 +35,7 @@ export class Part {
     log: debug.Logger;
     id: string;
     name: PartName;
-    musicXML: {
-      staveLayouts: musicxml.StaveLayout[];
-    };
+    staveDistances: StaveScoped<number>[];
     measureEntries: MeasureEntry[];
     staveSignature: StaveSignature;
   }) {
@@ -46,7 +43,7 @@ export class Part {
     this.log = opts.log;
     this.id = opts.id;
     this.name = opts.name;
-    this.musicXML = opts.musicXML;
+    this.staveDistances = opts.staveDistances;
     this.measureEntries = opts.measureEntries;
     this.staveSignature = opts.staveSignature;
   }
@@ -145,8 +142,8 @@ export class Part {
       staveRenderings.push(staveRendering);
 
       const staveDistance =
-        this.musicXML.staveLayouts.find((staveLayout) => staveLayout.staveNumber === staveRendering.staveNumber)
-          ?.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE;
+        this.staveDistances.find((staveDistance) => staveDistance.staveNumber === staveRendering.staveNumber)?.value ??
+        this.config.DEFAULT_STAVE_DISTANCE;
 
       y += staveDistance;
     });

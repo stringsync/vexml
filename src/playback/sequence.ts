@@ -15,6 +15,7 @@ export const PLAYABLE_RENDERING_TYPES = [
   'tabgracenote',
   'tabgracechord',
   'rest',
+  'measure',
   // We need to add this type to the list of playable rendering types so that we can account for ghost notes when
   // calculating the number of ticks. We shouldn't try to interact with this after.
   'ghostnote',
@@ -73,13 +74,24 @@ export class Sequence {
 
         let time = Duration.zero();
         for (const playable of playables) {
-          const measureIndex = playable.address.getMeasureIndex()!;
-          const bpm = measures[measureIndex].bpm;
-          const tickConverter = new TickConverter(bpm);
+          let duration: Duration;
+          if (playable.type === 'measure') {
+            if (typeof playable.messageDurationMs === 'number') {
+              duration = Duration.ms(playable.messageDurationMs);
+            } else {
+              // Skip measures that aren't a message measure.
+              continue;
+            }
+          } else {
+            const measureIndex = playable.address.getMeasureIndex()!;
+            const bpm = measures[measureIndex].bpm;
+            const tickConverter = new TickConverter(bpm);
 
-          const ticks = getTicks(playable);
+            const ticks = getTicks(playable);
 
-          const duration = tickConverter.toDuration(ticks);
+            duration = tickConverter.toDuration(ticks);
+          }
+
           const start = time;
           const stop = time.plus(duration);
 
@@ -153,6 +165,13 @@ export class Sequence {
         }
 
         const nextEntry = entries[index + 1];
+        const nextEntryCenterX = entryRects[index + 1].center().x;
+
+        if (currentEntry.mostRecentInteractable.type === 'measure') {
+          const currentMeasureRect = measureRects[currentMeasureIndex].rect;
+          currentEntry.xRange = new util.NumberRange(currentMeasureRect.getMinX(), nextEntryCenterX);
+          continue;
+        }
 
         const currentSystemIndex = currentEntry.mostRecentInteractable.address.getSystemIndex()!;
         const nextSystemIndex = nextEntry.mostRecentInteractable.address.getSystemIndex()!;
@@ -181,10 +200,14 @@ export class Sequence {
           continue;
         }
 
-        const nextEntryCenterX = entryRects[index + 1].center().x;
-
         const isGoingBackwards = currentEntryCenterX > nextEntryCenterX;
         if (isGoingBackwards) {
+          currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
+          continue;
+        }
+
+        const isNextMessageMeasure = nextEntry.mostRecentInteractable.type === 'measure';
+        if (isNextMessageMeasure) {
           currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
           continue;
         }
@@ -236,6 +259,8 @@ function getTicks(playable: PlayableRendering): number {
       return util.Fraction.fromFractionLike(playable.vexflow.note.getTicks()).toDecimal();
     case 'ghostnote':
       return util.Fraction.fromFractionLike(playable.vexflow.ghostNote.getTicks()).toDecimal();
+    case 'measure':
+      throw new Error('Cannot get ticks for a measure.');
   }
 }
 

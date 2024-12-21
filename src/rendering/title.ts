@@ -2,6 +2,7 @@ import { Config } from '@/config';
 import * as debug from '@/debug';
 import * as drawables from '@/drawables';
 import * as util from '@/util';
+import { TextMeasurer } from './textmeasurer';
 
 export type TitleRendering = {
   type: 'title';
@@ -30,41 +31,22 @@ export class Title {
   render(opts: { y: number; containerWidth: number }): TitleRendering {
     this.log.debug('rendering title', { text: this.text });
 
-    const width = this.getWidth();
+    const fontSize = this.config.TITLE_FONT_SIZE;
+    const fontFamily = this.config.TITLE_FONT_FAMILY;
+    const textMeasurer = new TextMeasurer({ text: this.text, fontSize, fontFamily });
+
+    const width = textMeasurer.getWidth();
     const x = (opts.containerWidth - width) / 2;
     const y = opts.y;
     const content = this.text;
-    const size = this.config.TITLE_FONT_SIZE;
-    const family = this.config.TITLE_FONT_FAMILY;
-    const approximateHeight = this.getApproximateHeight();
+    const approximateHeight = textMeasurer.getApproximateHeight();
 
-    const text = new drawables.Text({ content, x, y, size, family });
+    const text = new drawables.Text({ content, x, y, size: fontSize, family: fontFamily });
 
     return {
       type: 'title',
       text,
       approximateHeight,
     };
-  }
-
-  @util.memoize()
-  private getTextMetrics(): TextMetrics {
-    const context = document.createElement('canvas').getContext('2d');
-    if (!context) {
-      throw new Error('unable to get canvas rendering context');
-    }
-
-    context.font = `${this.config.TITLE_FONT_SIZE} ${this.config.TITLE_FONT_FAMILY}`;
-
-    return context.measureText(this.text);
-  }
-
-  private getWidth(): number {
-    return this.getTextMetrics().width;
-  }
-
-  private getApproximateHeight(): number {
-    const textMetrics = this.getTextMetrics();
-    return textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
   }
 }

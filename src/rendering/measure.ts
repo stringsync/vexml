@@ -1,8 +1,10 @@
 import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
+import * as drawables from '@/drawables';
+import * as spatial from '@/spatial';
 import { Config } from '@/config';
-import { Jump, PartScoped } from './types';
+import { Jump, MessageMeasure, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -13,9 +15,14 @@ import { MeasureEntryIterator } from './measureentryiterator';
 import { Barline } from './barline';
 import { EndingBracket, EndingBracketRendering } from './endingbracket';
 import { StaveRendering } from './stave';
+import { TextMeasurer } from './textmeasurer';
 
+const DEFAULT_MEASURE_WIDTH = 200;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
+const DEFAULT_MESSAGE_FONT_SIZE = '16px';
+const DEFAULT_MESSAGE_FONT_FAMILY = 'Arial';
+const DEFAULT_MESSAGE_MEASURE_FILL_STYLE = 'rgba(252, 53, 76, 0.4)';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -27,6 +34,9 @@ export type MeasureRendering = {
   endingBracket: EndingBracketRendering | null;
   jumps: Jump[];
   bpm: number;
+  messageDurationMs: number | null;
+  rect: drawables.Rect | null;
+  text: drawables.Text | null;
 };
 
 /**
@@ -38,16 +48,72 @@ export class Measure {
   private config: Config;
   private log: debug.Logger;
   private index: number;
+  private measureNumber: number | null;
+  private specifiedWidth: number | null;
   private partIds: string[];
   private partNames: PartScoped<PartName>[];
-  private musicXML: {
-    measures: PartScoped<musicxml.Measure>[];
-    staveLayouts: musicxml.StaveLayout[];
-  };
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
+  private staveDistances: StaveScoped<number>[];
+  private startBarline: Barline;
+  private endBarline: Barline;
+  private endingBracket: EndingBracket | null;
+  private bpm: number | null;
+  private jumps: Jump[];
+  private message: string | null;
+  private messageDurationMs: number | null;
+  private messageFontSize: string | null;
+  private messageFontFamily: string | null;
+  private rectStrokeStyle: string | null;
+  private rectFillStyle: string | null;
 
   constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    measureNumber: number | null;
+    specifiedWidth: number | null;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+    staveDistances: StaveScoped<number>[];
+    startBarline: Barline;
+    endBarline: Barline;
+    endingBracket: EndingBracket | null;
+    bpm: number | null;
+    jumps: Jump[];
+    message: string | null;
+    messageDurationMs: number | null;
+    messageFontSize: string | null;
+    messageFontFamily: string | null;
+    rectStrokeStyle: string | null;
+    rectFillStyle: string | null;
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
+    this.index = opts.index;
+    this.measureNumber = opts.measureNumber;
+    this.specifiedWidth = opts.specifiedWidth;
+    this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
+    this.staveDistances = opts.staveDistances;
+    this.startBarline = opts.startBarline;
+    this.endBarline = opts.endBarline;
+    this.endingBracket = opts.endingBracket;
+    this.bpm = opts.bpm;
+    this.jumps = opts.jumps;
+    this.message = opts.message;
+    this.messageDurationMs = opts.messageDurationMs;
+    this.messageFontSize = opts.messageFontSize;
+    this.messageFontFamily = opts.messageFontFamily;
+    this.rectStrokeStyle = opts.rectStrokeStyle;
+    this.rectFillStyle = opts.rectFillStyle;
+  }
+
+  static fromMusicXML(opts: {
     config: Config;
     log: debug.Logger;
     index: number;
@@ -55,19 +121,24 @@ export class Measure {
     partNames: PartScoped<PartName>[];
     musicXML: {
       measures: PartScoped<musicxml.Measure>[];
-      staveLayouts: musicxml.StaveLayout[];
     };
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
-  }) {
-    this.config = opts.config;
-    this.log = opts.log;
-    this.partIds = opts.partIds;
-    this.partNames = opts.partNames;
-    this.index = opts.index;
-    this.musicXML = opts.musicXML;
-    this.leadingStaveSignatures = opts.leadingStaveSignatures;
-    this.entries = opts.entries;
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
+    return FromMusicXMLFactory.create(opts);
+  }
+
+  static fromMessageMeasure(opts: {
+    config: Config;
+    log: debug.Logger;
+    messageMeasure: MessageMeasure;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
+    return FromMessageMeasureFactory.create(opts);
   }
 
   /** Returns the absolute index of the measure. */
@@ -76,14 +147,8 @@ export class Measure {
   }
 
   /** Returns the max specified width of the measure across all parts. */
-  getMaxSpecifiedWidth(): number | null {
-    return (
-      util.max(
-        this.musicXML.measures
-          .map((measure) => measure.value.getWidth())
-          .filter((width): width is number => typeof width === 'number')
-      ) || null // Disallow 0 width.
-    );
+  getSpecifiedWidth(): number | null {
+    return this.specifiedWidth;
   }
 
   /** Returns the minimum required width for each measure fragment. */
@@ -107,6 +172,21 @@ export class Measure {
       });
     });
 
+    if (widths.every(({ value }) => value === 0)) {
+      // If all fragments have a width of 0, then there are likely no measure entries. In this case, we should try to
+      // default to a width for the measure.
+      const width = this.getSpecifiedWidth() ?? DEFAULT_MEASURE_WIDTH;
+      const widthPerFragment = width / widths.length;
+      return widths.map((width) => ({ ...width, value: widthPerFragment }));
+    }
+
+    const specifiedWidth = this.getSpecifiedWidth();
+    const minRequiredWidth = util.sum(widths.map((width) => width.value));
+    if (specifiedWidth && specifiedWidth > minRequiredWidth) {
+      const scale = specifiedWidth / minRequiredWidth;
+      return widths.map((width) => ({ ...width, value: width.value * scale }));
+    }
+
     return widths;
   }
 
@@ -120,7 +200,7 @@ export class Measure {
     return util.max(this.getFragments().map((fragment) => fragment.getTopPadding()));
   }
 
-  /** Returns how much to offset the measure by. */
+  /** Returns how much to offset the measure by due to the stave. */
   getStaveOffsetX(opts: { address: Address<'measure'> }): number {
     let result = 0;
 
@@ -232,6 +312,48 @@ export class Measure {
       }
     );
 
+    let rect: drawables.Rect | null = null;
+    let text: drawables.Text | null = null;
+    if (typeof this.message === 'string') {
+      const x = opts.x + staveOffsetX;
+      const w = util.sum(fragmentRenderings.map((fragment) => fragment.width));
+
+      const vfStaves = fragmentRenderings
+        .flatMap((fragment) => fragment.parts)
+        .flatMap((part) => part.staves)
+        .map((stave) => stave.vexflow.stave);
+
+      const yMin = util.first(vfStaves.map((vfStave) => vfStave.getYForLine(0))) ?? 0;
+      const yMax = util.last(vfStaves.map((vfStave) => vfStave.getBottomLineBottomY())) ?? 0;
+
+      const h = yMax - yMin;
+
+      const messageBox = spatial.Rect.fromRectLike({ x, y: yMin, w, h });
+
+      rect = new drawables.Rect({
+        rect: messageBox,
+        strokeStyle: this.rectStrokeStyle ?? undefined,
+        fillStyle: this.rectFillStyle ?? DEFAULT_MESSAGE_MEASURE_FILL_STYLE,
+      });
+
+      const fontSize = this.messageFontSize ?? DEFAULT_MESSAGE_FONT_SIZE;
+      const fontFamily = this.messageFontFamily ?? DEFAULT_MESSAGE_FONT_FAMILY;
+
+      const textMeasurer = new TextMeasurer({
+        text: this.message,
+        fontSize,
+        fontFamily,
+      });
+
+      text = new drawables.Text({
+        x: x + (w - textMeasurer.getWidth()) / 2,
+        y: yMin + h / 2,
+        content: this.message,
+        size: fontSize,
+        family: fontFamily,
+      });
+    }
+
     return {
       type: 'measure',
       address: opts.address,
@@ -241,6 +363,9 @@ export class Measure {
       endingBracket: endingBracketRendering,
       jumps: this.getJumps(),
       bpm: this.getBpm() ?? opts.defaultBpm,
+      messageDurationMs: this.messageDurationMs,
+      rect,
+      text,
     };
   }
 
@@ -307,11 +432,9 @@ export class Measure {
           partNames: this.partNames,
           startBarlines,
           endBarlines,
-          musicXML: {
-            staveLayouts: this.musicXML.staveLayouts,
-          },
           measureEntries,
           staveSignatures,
+          staveDistances: this.staveDistances,
         })
       );
     }
@@ -322,26 +445,7 @@ export class Measure {
   }
 
   private getMeasureNumber(): number | null {
-    const partId = util.first(this.partIds);
-    if (!partId) {
-      return null;
-    }
-
-    const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
-    if (!measure) {
-      return null;
-    }
-
-    if (measure.isImplicit()) {
-      return null;
-    }
-
-    const number = parseInt(measure.getNumber(), 0);
-    if (Number.isInteger(number) && !Number.isNaN(number)) {
-      return number;
-    }
-
-    return this.index + 1;
+    return this.measureNumber;
   }
 
   private getFragmentBoundaries(): Division[] {
@@ -381,6 +485,147 @@ export class Measure {
   }
 
   private getStartBarline(): Barline {
+    return this.startBarline;
+  }
+
+  private getEndBarline(): Barline {
+    return this.endBarline;
+  }
+
+  private getEndingBracket(): EndingBracket | null {
+    return this.endingBracket;
+  }
+
+  private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
+    const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
+
+    const staveSignature = this.leadingStaveSignatures.find(
+      (staveSignature) => staveSignature.partId === partId
+    )?.value;
+    if (!staveSignature) {
+      throw new Error(`Stave signature not found for part: ${partId}`);
+    }
+
+    return new MeasureEntryIterator({ entries, staveSignature });
+  }
+
+  private getJumps(): Jump[] {
+    return this.jumps;
+  }
+
+  private getBpm(): number | null {
+    return this.bpm;
+  }
+}
+
+/** Creates a Measure from MusicXML data. */
+class FromMusicXMLFactory {
+  private config: Config;
+  private log: debug.Logger;
+  private index: number;
+  private partIds: string[];
+  private partNames: PartScoped<PartName>[];
+  private musicXML: {
+    measures: PartScoped<musicxml.Measure>[];
+  };
+  private leadingStaveSignatures: PartScoped<StaveSignature>[];
+  private entries: PartScoped<MeasureEntry>[];
+
+  private constructor(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    musicXML: {
+      measures: PartScoped<musicxml.Measure>[];
+    };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+  }) {
+    this.config = opts.config;
+    this.log = opts.log;
+    this.index = opts.index;
+    this.partIds = opts.partIds;
+    this.partNames = opts.partNames;
+    this.musicXML = opts.musicXML;
+    this.leadingStaveSignatures = opts.leadingStaveSignatures;
+    this.entries = opts.entries;
+  }
+
+  static create(opts: {
+    config: Config;
+    log: debug.Logger;
+    index: number;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    musicXML: {
+      measures: PartScoped<musicxml.Measure>[];
+    };
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    entries: PartScoped<MeasureEntry>[];
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
+    const factory = new FromMusicXMLFactory(opts);
+    return new Measure({
+      config: factory.config,
+      log: factory.log,
+      index: factory.index,
+      measureNumber: factory.getMeasureNumber(),
+      specifiedWidth: factory.getSpecifiedWidth(),
+      partIds: factory.partIds,
+      partNames: factory.partNames,
+      leadingStaveSignatures: factory.leadingStaveSignatures,
+      entries: factory.entries,
+      staveDistances: opts.staveDistances,
+      startBarline: factory.getStartBarline(),
+      endBarline: factory.getEndBarline(),
+      endingBracket: factory.getEndingBracket(),
+      bpm: factory.getBpm(),
+      jumps: factory.getJumps(),
+      message: null,
+      messageDurationMs: null,
+      messageFontFamily: null,
+      messageFontSize: null,
+      rectFillStyle: null,
+      rectStrokeStyle: null,
+    });
+  }
+
+  private getMeasureNumber(): number | null {
+    const partId = util.first(this.partIds);
+    if (!partId) {
+      return null;
+    }
+
+    const measure = this.musicXML.measures.find((measure) => measure.partId === partId)?.value;
+    if (!measure) {
+      return null;
+    }
+
+    if (measure.isImplicit()) {
+      return null;
+    }
+
+    const number = parseInt(measure.getNumber(), 0);
+    if (Number.isInteger(number) && !Number.isNaN(number)) {
+      return number;
+    }
+
+    return this.index + 1;
+  }
+
+  private getSpecifiedWidth(): number | null {
+    return (
+      util.max(
+        this.musicXML.measures
+          .map((measure) => measure.value.getWidth())
+          .filter((width): width is number => typeof width === 'number')
+      ) || null // Disallow 0 width.
+    );
+  }
+
+  private getStartBarline(): Barline {
     return (
       util.first(
         this.musicXML.measures
@@ -411,17 +656,14 @@ export class Measure {
       : null;
   }
 
-  private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
-    const entries = this.entries.filter((entry) => entry.partId === partId).map((entry) => entry.value);
-
-    const staveSignature = this.leadingStaveSignatures.find(
-      (staveSignature) => staveSignature.partId === partId
-    )?.value;
-    if (!staveSignature) {
-      throw new Error(`Stave signature not found for part: ${partId}`);
+  private getBpm(): number | null {
+    for (const partId of this.partIds) {
+      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
+      if (typeof bpm === 'number') {
+        return bpm;
+      }
     }
-
-    return new MeasureEntryIterator({ entries, staveSignature });
+    return null;
   }
 
   private getJumps(): Jump[] {
@@ -449,14 +691,41 @@ export class Measure {
 
     return jumps;
   }
+}
 
-  private getBpm(): number | null {
-    for (const partId of this.partIds) {
-      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
-      if (typeof bpm === 'number') {
-        return bpm;
-      }
-    }
-    return null;
+/** Creates a Measure from a MessageMeasure. */
+class FromMessageMeasureFactory {
+  static create(opts: {
+    config: Config;
+    log: debug.Logger;
+    partIds: string[];
+    partNames: PartScoped<PartName>[];
+    messageMeasure: MessageMeasure;
+    leadingStaveSignatures: PartScoped<StaveSignature>[];
+    staveDistances: StaveScoped<number>[];
+  }): Measure {
+    return new Measure({
+      config: opts.config,
+      log: opts.log,
+      index: opts.messageMeasure.absoluteMeasureIndex,
+      measureNumber: null,
+      specifiedWidth: opts.messageMeasure.width,
+      partIds: opts.partIds,
+      partNames: opts.partNames,
+      leadingStaveSignatures: opts.leadingStaveSignatures,
+      entries: [],
+      staveDistances: opts.staveDistances,
+      startBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'left' }),
+      endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
+      endingBracket: null,
+      bpm: null,
+      jumps: [],
+      message: opts.messageMeasure.message,
+      messageDurationMs: opts.messageMeasure.durationMs,
+      messageFontFamily: opts.messageMeasure.fontFamily ?? null,
+      messageFontSize: opts.messageMeasure.fontSize ?? null,
+      rectFillStyle: opts.messageMeasure.fillStyle ?? null,
+      rectStrokeStyle: opts.messageMeasure.strokeStyle ?? null,
+    });
   }
 }

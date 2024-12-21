@@ -1,10 +1,9 @@
 import * as debug from '@/debug';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Config } from '@/config';
 import { MeasureEntry, StaveSignature } from './stavesignature';
-import { PartScoped } from './types';
+import { PartScoped, StaveScoped } from './types';
 import { Address } from './address';
 import { Part, PartRendering } from './part';
 import { Spanners } from './spanners';
@@ -46,11 +45,9 @@ export class MeasureFragment {
   private partNames: PartScoped<PartName>[];
   private startBarlines: PartScoped<Barline>[];
   private endBarlines: PartScoped<Barline>[];
-  private musicXML: {
-    staveLayouts: musicxml.StaveLayout[];
-  };
   private measureEntries: PartScoped<MeasureEntry>[];
   private staveSignatures: PartScoped<StaveSignature>[];
+  private staveDistances: StaveScoped<number>[];
 
   constructor(opts: {
     config: Config;
@@ -60,11 +57,9 @@ export class MeasureFragment {
     partNames: PartScoped<PartName>[];
     startBarlines: PartScoped<Barline>[];
     endBarlines: PartScoped<Barline>[];
-    musicXML: {
-      staveLayouts: musicxml.StaveLayout[];
-    };
     measureEntries: PartScoped<MeasureEntry>[];
     staveSignatures: PartScoped<StaveSignature>[];
+    staveDistances: StaveScoped<number>[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -73,9 +68,9 @@ export class MeasureFragment {
     this.partNames = opts.partNames;
     this.startBarlines = opts.startBarlines;
     this.endBarlines = opts.endBarlines;
-    this.musicXML = opts.musicXML;
     this.measureEntries = opts.measureEntries;
     this.staveSignatures = opts.staveSignatures;
+    this.staveDistances = opts.staveDistances;
   }
 
   /** Returns the index of the measure fragment, which is relative to its parent measure. */
@@ -257,9 +252,7 @@ export class MeasureFragment {
         log: this.log,
         id: partId,
         name: partName,
-        musicXML: {
-          staveLayouts: this.musicXML.staveLayouts,
-        },
+        staveDistances: this.staveDistances,
         measureEntries,
         staveSignature,
       });

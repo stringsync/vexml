@@ -29,7 +29,7 @@ export class ConsoleLogger implements Logger {
 
   private toCompleteMessage(message: string, meta?: Record<string, any>): string {
     if (meta) {
-      return `${message} ${Object.entries(meta)
+      return `[vexml] ${message} ${Object.entries(meta)
         .map(([key, value]) => `${key}=${value}`)
         .join(' ')}`;
     }
