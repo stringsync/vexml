@@ -34,6 +34,7 @@ export type MeasureRendering = {
   endingBracket: EndingBracketRendering | null;
   jumps: Jump[];
   bpm: number;
+  messageDurationMs: number | null;
   rect: drawables.Rect | null;
   text: drawables.Text | null;
 };
@@ -60,6 +61,7 @@ export class Measure {
   private bpm: number | null;
   private jumps: Jump[];
   private message: string | null;
+  private messageDurationMs: number | null;
   private messageFontSize: string | null;
   private messageFontFamily: string | null;
   private rectStrokeStyle: string | null;
@@ -82,6 +84,7 @@ export class Measure {
     bpm: number | null;
     jumps: Jump[];
     message: string | null;
+    messageDurationMs: number | null;
     messageFontSize: string | null;
     messageFontFamily: string | null;
     rectStrokeStyle: string | null;
@@ -103,6 +106,7 @@ export class Measure {
     this.bpm = opts.bpm;
     this.jumps = opts.jumps;
     this.message = opts.message;
+    this.messageDurationMs = opts.messageDurationMs;
     this.messageFontSize = opts.messageFontSize;
     this.messageFontFamily = opts.messageFontFamily;
     this.rectStrokeStyle = opts.rectStrokeStyle;
@@ -352,6 +356,7 @@ export class Measure {
       endingBracket: endingBracketRendering,
       jumps: this.getJumps(),
       bpm: this.getBpm() ?? opts.defaultBpm,
+      messageDurationMs: this.messageDurationMs,
       rect,
       text,
     };
@@ -572,6 +577,7 @@ class FromMusicXMLFactory {
       bpm: factory.getBpm(),
       jumps: factory.getJumps(),
       message: null,
+      messageDurationMs: null,
       messageFontFamily: null,
       messageFontSize: null,
       rectFillStyle: null,
@@ -708,6 +714,7 @@ class FromMessageMeasureFactory {
       bpm: null,
       jumps: [],
       message: opts.messageMeasure.message,
+      messageDurationMs: opts.messageMeasure.durationMs,
       messageFontFamily: opts.messageMeasure.fontFamily ?? null,
       messageFontSize: opts.messageMeasure.fontSize ?? null,
       rectFillStyle: opts.messageMeasure.fillStyle ?? null,
