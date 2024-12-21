@@ -51,6 +51,7 @@ export class Measure {
   private startBarline: Barline;
   private endBarline: Barline;
   private endingBracket: EndingBracket | null;
+  private bpm: number | null;
 
   constructor(opts: {
     config: Config;
@@ -69,6 +70,7 @@ export class Measure {
     startBarline: Barline;
     endBarline: Barline;
     endingBracket: EndingBracket | null;
+    bpm: number | null;
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -84,6 +86,7 @@ export class Measure {
     this.startBarline = opts.startBarline;
     this.endBarline = opts.endBarline;
     this.endingBracket = opts.endingBracket;
+    this.bpm = opts.bpm;
   }
 
   static fromMusicXML(opts: {
@@ -441,13 +444,7 @@ export class Measure {
   }
 
   private getBpm(): number | null {
-    for (const partId of this.partIds) {
-      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
-      if (typeof bpm === 'number') {
-        return bpm;
-      }
-    }
-    return null;
+    return this.bpm;
   }
 }
 
@@ -517,6 +514,7 @@ class FromMusicXMLFactory {
       startBarline: factory.getStartBarline(),
       endBarline: factory.getEndBarline(),
       endingBracket: factory.getEndingBracket(),
+      bpm: factory.getBpm(),
     });
   }
 
@@ -590,6 +588,16 @@ class FromMusicXMLFactory {
       ? EndingBracket.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline: barline } })
       : null;
   }
+
+  private getBpm(): number | null {
+    for (const partId of this.partIds) {
+      const bpm = this.musicXML.measures.find((measure) => measure.partId === partId)?.value.getFirstTempo();
+      if (typeof bpm === 'number') {
+        return bpm;
+      }
+    }
+    return null;
+  }
 }
 
 /** Creates a Measure from a MessageMeasure. */
@@ -611,6 +619,7 @@ class FromMessageMeasureFactory {
       startBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'left' }),
       endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
       endingBracket: null,
+      bpm: null,
     });
   }
 }
