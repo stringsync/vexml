@@ -278,20 +278,13 @@ export const Vexml = ({
     let rendering: vexml.Rendering | null = null;
 
     try {
-      rendering = vexml.Vexml.fromMusicXML(musicXML)
-        .setMessageMeasures({
-          absoluteMeasureIndex: 1,
-          message: 'hello, world!',
-          durationMs: 5000,
-          width: 300,
-        })
-        .render({
-          element: div,
-          height,
-          width,
-          backend,
-          config,
-        });
+      rendering = vexml.Vexml.fromMusicXML(musicXML).render({
+        element: div,
+        height,
+        width,
+        backend,
+        config,
+      });
       setRendering(rendering);
 
       const durationMs = rendering.getDurationMs();
