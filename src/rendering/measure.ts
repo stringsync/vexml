@@ -48,6 +48,9 @@ export class Measure {
   private leadingStaveSignatures: PartScoped<StaveSignature>[];
   private entries: PartScoped<MeasureEntry>[];
   private staveDistances: StaveScoped<number>[];
+  private startBarline: Barline;
+  private endBarline: Barline;
+  private endingBracket: EndingBracket | null;
 
   constructor(opts: {
     config: Config;
@@ -63,6 +66,9 @@ export class Measure {
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     entries: PartScoped<MeasureEntry>[];
     staveDistances: StaveScoped<number>[];
+    startBarline: Barline;
+    endBarline: Barline;
+    endingBracket: EndingBracket | null;
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -75,6 +81,9 @@ export class Measure {
     this.leadingStaveSignatures = opts.leadingStaveSignatures;
     this.entries = opts.entries;
     this.staveDistances = opts.staveDistances;
+    this.startBarline = opts.startBarline;
+    this.endBarline = opts.endBarline;
+    this.endingBracket = opts.endingBracket;
   }
 
   static fromMusicXML(opts: {
@@ -381,34 +390,15 @@ export class Measure {
   }
 
   private getStartBarline(): Barline {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'left')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'left' })
-    );
+    return this.startBarline;
   }
 
   private getEndBarline(): Barline {
-    return (
-      util.first(
-        this.musicXML.measures
-          .flatMap((measure) => measure.value.getBarlines())
-          .filter((barline) => barline.getLocation() === 'right')
-          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
-      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'right' })
-    );
+    return this.endBarline;
   }
 
   private getEndingBracket(): EndingBracket | null {
-    const barline = util.first(
-      this.musicXML.measures.flatMap((measure) => measure.value.getBarlines()).filter((barline) => barline.isEnding())
-    );
-    return barline
-      ? EndingBracket.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline: barline } })
-      : null;
+    return this.endingBracket;
   }
 
   private getMeasureEntryIterator(partId: string): MeasureEntryIterator {
@@ -461,6 +451,7 @@ export class Measure {
   }
 }
 
+/** Creates a Measure from MusicXML data. */
 class FromMusicXMLFactory {
   private config: Config;
   private log: debug.Logger;
@@ -523,6 +514,9 @@ class FromMusicXMLFactory {
       leadingStaveSignatures: factory.leadingStaveSignatures,
       entries: factory.entries,
       staveDistances: factory.getStaveDistances(),
+      startBarline: factory.getStartBarline(),
+      endBarline: factory.getEndBarline(),
+      endingBracket: factory.getEndingBracket(),
     });
   }
 
@@ -565,8 +559,40 @@ class FromMusicXMLFactory {
       value: staveLayout.staveDistance ?? this.config.DEFAULT_STAVE_DISTANCE,
     }));
   }
+
+  private getStartBarline(): Barline {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'left')
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'left' })
+    );
+  }
+
+  private getEndBarline(): Barline {
+    return (
+      util.first(
+        this.musicXML.measures
+          .flatMap((measure) => measure.value.getBarlines())
+          .filter((barline) => barline.getLocation() === 'right')
+          .map((barline) => Barline.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline } }))
+      ) ?? new Barline({ config: this.config, log: this.log, type: 'single', location: 'right' })
+    );
+  }
+
+  private getEndingBracket(): EndingBracket | null {
+    const barline = util.first(
+      this.musicXML.measures.flatMap((measure) => measure.value.getBarlines()).filter((barline) => barline.isEnding())
+    );
+    return barline
+      ? EndingBracket.fromMusicXML({ config: this.config, log: this.log, musicXML: { barline: barline } })
+      : null;
+  }
 }
 
+/** Creates a Measure from a MessageMeasure. */
 class FromMessageMeasureFactory {
   // TODO: Finish implementing when Measure is decoupled from musicxml.
   static create(opts: { config: Config; log: debug.Logger; messageMeasure: MessageMeasure }): Measure {
@@ -582,6 +608,9 @@ class FromMessageMeasureFactory {
       leadingStaveSignatures: [],
       entries: [],
       staveDistances: [],
+      startBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'left' }),
+      endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
+      endingBracket: null,
     });
   }
 }
