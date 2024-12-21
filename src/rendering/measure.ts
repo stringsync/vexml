@@ -52,6 +52,7 @@ export class Measure {
   private endBarline: Barline;
   private endingBracket: EndingBracket | null;
   private bpm: number | null;
+  private jumps: Jump[];
 
   constructor(opts: {
     config: Config;
@@ -71,6 +72,7 @@ export class Measure {
     endBarline: Barline;
     endingBracket: EndingBracket | null;
     bpm: number | null;
+    jumps: Jump[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -87,6 +89,7 @@ export class Measure {
     this.endBarline = opts.endBarline;
     this.endingBracket = opts.endingBracket;
     this.bpm = opts.bpm;
+    this.jumps = opts.jumps;
   }
 
   static fromMusicXML(opts: {
@@ -418,29 +421,7 @@ export class Measure {
   }
 
   private getJumps(): Jump[] {
-    // TODO: Handle other directional symbols like codas and fines.
-    const barlines = this.musicXML.measures.flatMap((measure) => measure.value.getBarlines());
-    const repeatBarlines = barlines.filter((barline) => barline.isRepeat());
-
-    // NOTE: Repeats can be specified in multiple parts, but the measure should be consistent across all parts. If a
-    // measure in a single part has a start repeat, then all parts should have a start repeat. The same goes for end.
-
-    const jumps = new Array<Jump>();
-
-    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
-    if (hasStartRepeat) {
-      jumps.push({ type: 'repeatstart' });
-    }
-
-    const endRepeat = repeatBarlines.find((barline) => barline.getRepeatDirection() === 'backward');
-    if (endRepeat && endRepeat.isEnding()) {
-      jumps.push({ type: 'repeatending', times: endRepeat.getEndingNumber().split(',').length });
-    }
-    if (endRepeat && !endRepeat.isEnding()) {
-      jumps.push({ type: 'repeatend', times: endRepeat.getRepeatTimes() ?? 1 });
-    }
-
-    return jumps;
+    return this.jumps;
   }
 
   private getBpm(): number | null {
@@ -515,6 +496,7 @@ class FromMusicXMLFactory {
       endBarline: factory.getEndBarline(),
       endingBracket: factory.getEndingBracket(),
       bpm: factory.getBpm(),
+      jumps: factory.getJumps(),
     });
   }
 
@@ -598,6 +580,32 @@ class FromMusicXMLFactory {
     }
     return null;
   }
+
+  private getJumps(): Jump[] {
+    // TODO: Handle other directional symbols like codas and fines.
+    const barlines = this.musicXML.measures.flatMap((measure) => measure.value.getBarlines());
+    const repeatBarlines = barlines.filter((barline) => barline.isRepeat());
+
+    // NOTE: Repeats can be specified in multiple parts, but the measure should be consistent across all parts. If a
+    // measure in a single part has a start repeat, then all parts should have a start repeat. The same goes for end.
+
+    const jumps = new Array<Jump>();
+
+    const hasStartRepeat = repeatBarlines.some((barline) => barline.getRepeatDirection() === 'forward');
+    if (hasStartRepeat) {
+      jumps.push({ type: 'repeatstart' });
+    }
+
+    const endRepeat = repeatBarlines.find((barline) => barline.getRepeatDirection() === 'backward');
+    if (endRepeat && endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatending', times: endRepeat.getEndingNumber().split(',').length });
+    }
+    if (endRepeat && !endRepeat.isEnding()) {
+      jumps.push({ type: 'repeatend', times: endRepeat.getRepeatTimes() ?? 1 });
+    }
+
+    return jumps;
+  }
 }
 
 /** Creates a Measure from a MessageMeasure. */
@@ -620,6 +628,7 @@ class FromMessageMeasureFactory {
       endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
       endingBracket: null,
       bpm: null,
+      jumps: [],
     });
   }
 }
