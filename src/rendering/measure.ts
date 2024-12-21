@@ -180,6 +180,13 @@ export class Measure {
       return widths.map((width) => ({ ...width, value: widthPerFragment }));
     }
 
+    const specifiedWidth = this.getSpecifiedWidth();
+    const minRequiredWidth = util.sum(widths.map((width) => width.value));
+    if (specifiedWidth && specifiedWidth > minRequiredWidth) {
+      const scale = specifiedWidth / minRequiredWidth;
+      return widths.map((width) => ({ ...width, value: width.value * scale }));
+    }
+
     return widths;
   }
 
