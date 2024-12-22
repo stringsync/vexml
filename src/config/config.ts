@@ -59,12 +59,8 @@ export const CONFIG_SCHEMA = {
     defaultValue: 200,
     help: 'MULTI_MEASURE_REST_WIDTH is the width of multi-measure rests.',
   }),
-  ENABLE_MEASURE_NUMBERS: t.boolean({
-    defaultValue: true,
-    help: 'ENABLE_MEASURE_NUMBERS enables measure numbers to be displayed.',
-  }),
   MEASURE_NUMBERING_SCHEME: t.enum({
-    choices: ['all', 'sparse', 'system', 'none'],
+    choices: ['all', 'every2', 'every3', 'system', 'none'] as const,
     defaultValue: 'all',
     help: 'MEASURE_NUMBERING_SCHEME is the scheme for numbering measures.',
   }),

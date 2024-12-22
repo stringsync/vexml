@@ -297,7 +297,7 @@ export class Measure {
 
         const vfStave = util.first(vfStaves);
         const measureNumber = this.getMeasureNumber();
-        if (isFirst && this.config.ENABLE_MEASURE_NUMBERS && vfStave && typeof measureNumber === 'number') {
+        if (isFirst && this.shouldShowMeasureNumber(opts.address) && vfStave && typeof measureNumber === 'number') {
           vfStave.setMeasure(measureNumber);
         }
 
@@ -515,6 +515,23 @@ export class Measure {
 
   private getBpm(): number | null {
     return this.bpm;
+  }
+
+  private shouldShowMeasureNumber(address: Address<'measure'>): boolean {
+    const systemMeasureIndex = address.getSystemMeasureIndex()!;
+
+    switch (this.config.MEASURE_NUMBERING_SCHEME) {
+      case 'all':
+        return true;
+      case 'every2':
+        return systemMeasureIndex % 2 === 0;
+      case 'every3':
+        return systemMeasureIndex % 3 === 0;
+      case 'system':
+        return systemMeasureIndex === 0;
+      case 'none':
+        return false;
+    }
   }
 }
 
