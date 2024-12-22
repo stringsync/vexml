@@ -63,6 +63,11 @@ export const CONFIG_SCHEMA = {
     defaultValue: true,
     help: 'ENABLE_MEASURE_NUMBERS enables measure numbers to be displayed.',
   }),
+  MEASURE_NUMBERING_SCHEME: t.enum({
+    choices: ['all', 'sparse', 'system', 'none'],
+    defaultValue: 'all',
+    help: 'MEASURE_NUMBERING_SCHEME is the scheme for numbering measures.',
+  }),
   INPUT_TYPE: t.enum({
     choices: ['auto', 'none', 'mouse', 'touch', 'hybrid'] as const,
     defaultValue: 'auto',
