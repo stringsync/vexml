@@ -18,7 +18,7 @@ export type RenderOptions = {
 
 /** Vexml contains the core operation of this library: rendering MusicXML in a web browser. */
 export class Vexml {
-  private messageMeasures = new Array<rendering.MessageMeasure>();
+  private gaps = new Array<rendering.Gap>();
 
   private constructor(private musicXML: musicxml.MusicXML) {}
 
@@ -84,11 +84,11 @@ export class Vexml {
   }
 
   /** Sets the message measures for this Vexml instance. */
-  setMessageMeasures(...messageMeasures: rendering.MessageMeasure[]): this {
-    this.messageMeasures = messageMeasures;
+  setGaps(...gaps: rendering.Gap[]): this {
+    this.gaps = gaps;
 
     // We validate the indexes because it is error-prone to insert message measures with incorrect indexes.
-    const indexes = messageMeasures.map(({ absoluteMeasureIndex }) => absoluteMeasureIndex);
+    const indexes = gaps.map(({ absoluteMeasureIndex }) => absoluteMeasureIndex);
     const seen = new Set<number>();
     for (const index of indexes) {
       if (index < 0) {
@@ -134,7 +134,7 @@ export class Vexml {
       config,
       log,
       musicXML: { scorePartwise },
-      messageMeasures: this.messageMeasures,
+      gaps: this.gaps,
     });
     const scoreRendering = score.render({ root, width });
 

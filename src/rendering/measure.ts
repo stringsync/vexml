@@ -2,9 +2,8 @@ import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as drawables from '@/drawables';
-import * as spatial from '@/spatial';
 import { Config } from '@/config';
-import { Jump, MessageMeasure, PartScoped, StaveScoped } from './types';
+import { Jump, Gap, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
 import { MeasureFragment, MeasureFragmentRendering, MeasureFragmentWidth } from './measurefragment';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -20,9 +19,10 @@ import { TextMeasurer } from './textmeasurer';
 const DEFAULT_MEASURE_WIDTH = 200;
 const STAVE_CONNECTOR_BRACE_WIDTH = 16;
 const FIRST_SYSTEM_MEASURE_NUMBER_X_SHIFT = 6;
-const DEFAULT_MESSAGE_FONT_SIZE = '16px';
-const DEFAULT_MESSAGE_FONT_FAMILY = 'Arial';
-const DEFAULT_MESSAGE_MEASURE_FILL_STYLE = 'rgba(252, 53, 76, 0.4)';
+const DEFAULT_GAP_MESSAGE_FONT_SIZE = '16px';
+const DEFAULT_GAP_MESSAGE_FONT_FAMILY = 'Arial';
+const DEFAULT_GAP_STROKE_STYLE = null;
+const DEFAULT_GAP_FILL_STYLE = 'rgba(230, 230, 230, 0.7)';
 
 /** The result of rendering a Measure. */
 export type MeasureRendering = {
@@ -34,7 +34,7 @@ export type MeasureRendering = {
   endingBracket: EndingBracketRendering | null;
   jumps: Jump[];
   bpm: number;
-  messageDurationMs: number | null;
+  gap: Gap | null;
   rect: drawables.Rect | null;
   text: drawables.Text | null;
 };
@@ -60,12 +60,7 @@ export class Measure {
   private endingBracket: EndingBracket | null;
   private bpm: number | null;
   private jumps: Jump[];
-  private message: string | null;
-  private messageDurationMs: number | null;
-  private messageFontSize: string | null;
-  private messageFontFamily: string | null;
-  private rectStrokeStyle: string | null;
-  private rectFillStyle: string | null;
+  private gap: Gap | null;
 
   constructor(opts: {
     config: Config;
@@ -83,12 +78,7 @@ export class Measure {
     endingBracket: EndingBracket | null;
     bpm: number | null;
     jumps: Jump[];
-    message: string | null;
-    messageDurationMs: number | null;
-    messageFontSize: string | null;
-    messageFontFamily: string | null;
-    rectStrokeStyle: string | null;
-    rectFillStyle: string | null;
+    gap: Gap | null;
   }) {
     this.config = opts.config;
     this.log = opts.log;
@@ -105,12 +95,7 @@ export class Measure {
     this.endingBracket = opts.endingBracket;
     this.bpm = opts.bpm;
     this.jumps = opts.jumps;
-    this.message = opts.message;
-    this.messageDurationMs = opts.messageDurationMs;
-    this.messageFontSize = opts.messageFontSize;
-    this.messageFontFamily = opts.messageFontFamily;
-    this.rectStrokeStyle = opts.rectStrokeStyle;
-    this.rectFillStyle = opts.rectFillStyle;
+    this.gap = opts.gap;
   }
 
   static fromMusicXML(opts: {
@@ -129,16 +114,16 @@ export class Measure {
     return FromMusicXMLFactory.create(opts);
   }
 
-  static fromMessageMeasure(opts: {
+  static fromGap(opts: {
     config: Config;
     log: debug.Logger;
-    messageMeasure: MessageMeasure;
+    gap: Gap;
     partIds: string[];
     partNames: PartScoped<PartName>[];
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     staveDistances: StaveScoped<number>[];
   }): Measure {
-    return FromMessageMeasureFactory.create(opts);
+    return FromGapFactory.create(opts);
   }
 
   /** Returns the absolute index of the measure. */
@@ -314,7 +299,7 @@ export class Measure {
 
     let rect: drawables.Rect | null = null;
     let text: drawables.Text | null = null;
-    if (typeof this.message === 'string') {
+    if (this.gap) {
       const x = opts.x + staveOffsetX;
       const w = util.sum(fragmentRenderings.map((fragment) => fragment.width));
 
@@ -328,30 +313,30 @@ export class Measure {
 
       const h = yMax - yMin;
 
-      const messageBox = spatial.Rect.fromRectLike({ x, y: yMin, w, h });
-
       rect = new drawables.Rect({
-        rect: messageBox,
-        strokeStyle: this.rectStrokeStyle ?? undefined,
-        fillStyle: this.rectFillStyle ?? DEFAULT_MESSAGE_MEASURE_FILL_STYLE,
+        bounds: { x, y: yMin, w, h },
+        strokeStyle: this.getGapStrokeStyle(),
+        fillStyle: this.getGapFillStyle(),
       });
 
-      const fontSize = this.messageFontSize ?? DEFAULT_MESSAGE_FONT_SIZE;
-      const fontFamily = this.messageFontFamily ?? DEFAULT_MESSAGE_FONT_FAMILY;
+      if (this.gap.message) {
+        const fontSize = this.gap.fontSize ?? DEFAULT_GAP_MESSAGE_FONT_SIZE;
+        const fontFamily = this.gap.fontFamily ?? DEFAULT_GAP_MESSAGE_FONT_FAMILY;
 
-      const textMeasurer = new TextMeasurer({
-        text: this.message,
-        fontSize,
-        fontFamily,
-      });
+        const textMeasurer = new TextMeasurer({
+          text: this.gap.message,
+          fontSize,
+          fontFamily,
+        });
 
-      text = new drawables.Text({
-        x: x + (w - textMeasurer.getWidth()) / 2,
-        y: yMin + h / 2,
-        content: this.message,
-        size: fontSize,
-        family: fontFamily,
-      });
+        text = new drawables.Text({
+          x: x + (w - textMeasurer.getWidth()) / 2,
+          y: yMin + h / 2,
+          content: this.gap.message,
+          size: fontSize,
+          family: fontFamily,
+        });
+      }
     }
 
     return {
@@ -363,7 +348,7 @@ export class Measure {
       endingBracket: endingBracketRendering,
       jumps: this.getJumps(),
       bpm: this.getBpm() ?? opts.defaultBpm,
-      messageDurationMs: this.messageDurationMs,
+      gap: this.gap,
       rect,
       text,
     };
@@ -442,6 +427,20 @@ export class Measure {
     this.log.debug('detected measure fragments', { measureIndex: this.index, fragmentCount: result.length });
 
     return result;
+  }
+
+  private getGapStrokeStyle(): string | null {
+    if (typeof this.gap?.strokeStyle === 'undefined') {
+      return DEFAULT_GAP_STROKE_STYLE;
+    }
+    return this.gap?.strokeStyle;
+  }
+
+  private getGapFillStyle(): string | null {
+    if (typeof this.gap?.fillStyle === 'undefined') {
+      return DEFAULT_GAP_FILL_STYLE;
+    }
+    return this.gap?.fillStyle;
   }
 
   private getMeasureNumber(): number | null {
@@ -600,12 +599,7 @@ class FromMusicXMLFactory {
       endingBracket: factory.getEndingBracket(),
       bpm: factory.getBpm(),
       jumps: factory.getJumps(),
-      message: null,
-      messageDurationMs: null,
-      messageFontFamily: null,
-      messageFontSize: null,
-      rectFillStyle: null,
-      rectStrokeStyle: null,
+      gap: null,
     });
   }
 
@@ -710,39 +704,44 @@ class FromMusicXMLFactory {
   }
 }
 
-/** Creates a Measure from a MessageMeasure. */
-class FromMessageMeasureFactory {
+/** Creates a Measure from a Gap. */
+class FromGapFactory {
   static create(opts: {
     config: Config;
     log: debug.Logger;
     partIds: string[];
     partNames: PartScoped<PartName>[];
-    messageMeasure: MessageMeasure;
+    gap: Gap;
     leadingStaveSignatures: PartScoped<StaveSignature>[];
     staveDistances: StaveScoped<number>[];
   }): Measure {
     return new Measure({
       config: opts.config,
       log: opts.log,
-      index: opts.messageMeasure.absoluteMeasureIndex,
+      index: opts.gap.absoluteMeasureIndex,
       measureNumber: null,
-      specifiedWidth: opts.messageMeasure.width,
+      specifiedWidth: opts.gap.width,
       partIds: opts.partIds,
       partNames: opts.partNames,
       leadingStaveSignatures: opts.leadingStaveSignatures,
       entries: [],
       staveDistances: opts.staveDistances,
-      startBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'left' }),
-      endBarline: new Barline({ config: opts.config, log: opts.log, type: 'single', location: 'right' }),
+      startBarline: new Barline({
+        config: opts.config,
+        log: opts.log,
+        type: opts.gap.startBarlineType ?? 'none',
+        location: 'left',
+      }),
+      endBarline: new Barline({
+        config: opts.config,
+        log: opts.log,
+        type: opts.gap.endBarlineType ?? 'none',
+        location: 'right',
+      }),
       endingBracket: null,
       bpm: null,
       jumps: [],
-      message: opts.messageMeasure.message,
-      messageDurationMs: opts.messageMeasure.durationMs,
-      messageFontFamily: opts.messageMeasure.fontFamily ?? null,
-      messageFontSize: opts.messageMeasure.fontSize ?? null,
-      rectFillStyle: opts.messageMeasure.fillStyle ?? null,
-      rectStrokeStyle: opts.messageMeasure.strokeStyle ?? null,
+      gap: opts.gap,
     });
   }
 }

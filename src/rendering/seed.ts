@@ -3,7 +3,7 @@ import { Config } from '@/config';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import * as debug from '@/debug';
-import { MessageMeasure, PartScoped, StaveScoped } from './types';
+import { Gap, PartScoped, StaveScoped } from './types';
 import { Measure } from './measure';
 import { Address } from './address';
 import { MeasureEntry, StaveSignature } from './stavesignature';
@@ -21,7 +21,7 @@ export class Seed {
     partDetails: musicxml.PartDetail[];
     staveLayouts: musicxml.StaveLayout[];
   };
-  private messageMeasures: MessageMeasure[];
+  private gaps: Gap[];
 
   constructor(opts: {
     config: Config;
@@ -31,12 +31,12 @@ export class Seed {
       partDetails: musicxml.PartDetail[];
       staveLayouts: musicxml.StaveLayout[];
     };
-    messageMeasures: MessageMeasure[];
+    gaps: Gap[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
     this.musicXML = opts.musicXML;
-    this.messageMeasures = opts.messageMeasures;
+    this.gaps = opts.gaps;
   }
 
   /** Splits the measures into parts and systems that fit the given width. */
@@ -99,17 +99,14 @@ export class Seed {
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const leadingStaveSignatures = this.getLeadingStaveSignatures(measureIndex);
 
-      // Keep inserting message measures such that the messageMeasure.absoluteMeasureIndex is honored. Having a
-      // MessageMeasure[] with duplicate absoluteMeasureIndex properties is an error and should be validated and/or
-      // sanitzied upstream.
-      let messageMeasure = this.messageMeasures.find(
-        (messageMeasure) => messageMeasure.absoluteMeasureIndex === measures.length
-      );
-      while (messageMeasure) {
-        const measure = Measure.fromMessageMeasure({
+      // Keep inserting message measures such that the gap.absoluteMeasureIndex is honored. Having a Gap[] with
+      // duplicate absoluteMeasureIndex properties is an error and should be validated and/or sanitzied upstream.
+      let gap = this.gaps.find((gap) => gap.absoluteMeasureIndex === measures.length);
+      while (gap) {
+        const measure = Measure.fromGap({
           config: this.config,
           log: this.log,
-          messageMeasure,
+          gap: gap,
           partIds,
           partNames,
           leadingStaveSignatures,
@@ -117,9 +114,7 @@ export class Seed {
         });
         measures.push(measure);
 
-        messageMeasure = this.messageMeasures.find(
-          (messageMeasure) => messageMeasure.absoluteMeasureIndex === measures.length
-        );
+        gap = this.gaps.find((gap) => gap.absoluteMeasureIndex === measures.length);
       }
 
       if (multiRestMeasureCount > 0) {
