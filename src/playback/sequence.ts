@@ -70,27 +70,22 @@ export class Sequence {
           .withMeasureSequence((measures) => new MeasureSequenceIterator(measures))
           .where(rendering.filters.forPart(partId))
           .where(rendering.filters.forVoice(voiceId))
-          .select(...PLAYABLE_RENDERING_TYPES);
+          .select(...PLAYABLE_RENDERING_TYPES)
+          .filter((playable) => {
+            if (playable.type !== 'measure') {
+              // Accept all playables that are not measures.
+              return true;
+            }
+            // Otherwise, only accept measures that have a gap.
+            return playable.gap;
+          });
 
         let time = Duration.zero();
         for (const playable of playables) {
-          let duration: Duration;
-          if (playable.type === 'measure') {
-            if (typeof playable.messageDurationMs === 'number') {
-              duration = Duration.ms(playable.messageDurationMs);
-            } else {
-              // Skip measures that aren't a message measure.
-              continue;
-            }
-          } else {
-            const measureIndex = playable.address.getMeasureIndex()!;
-            const bpm = measures[measureIndex].bpm;
-            const tickConverter = new TickConverter(bpm);
-
-            const ticks = getTicks(playable);
-
-            duration = tickConverter.toDuration(ticks);
-          }
+          const measureIndex = playable.address.getMeasureIndex()!;
+          const bpm = measures[measureIndex].bpm;
+          const tickConverter = new TickConverter(bpm);
+          const duration = getDuration(playable, tickConverter);
 
           const start = time;
           const stop = time.plus(duration);
@@ -167,7 +162,14 @@ export class Sequence {
         const nextEntry = entries[index + 1];
         const nextEntryCenterX = entryRects[index + 1].center().x;
 
-        if (currentEntry.mostRecentInteractable.type === 'measure') {
+        const isFirst = index === 0;
+        const isCurrentGap = currentEntry.mostRecentInteractable.type === 'measure';
+        if (isCurrentGap && isFirst) {
+          const currentMeasureRect = measureRects[currentMeasureIndex].rect;
+          currentEntry.xRange = new util.NumberRange(currentMeasureRect.center().x, nextEntryCenterX);
+          continue;
+        }
+        if (isCurrentGap && !isFirst) {
           const currentMeasureRect = measureRects[currentMeasureIndex].rect;
           currentEntry.xRange = new util.NumberRange(currentMeasureRect.getMinX(), nextEntryCenterX);
           continue;
@@ -206,8 +208,8 @@ export class Sequence {
           continue;
         }
 
-        const isNextMessageMeasure = nextEntry.mostRecentInteractable.type === 'measure';
-        if (isNextMessageMeasure) {
+        const isGapNext = nextEntry.mostRecentInteractable.type === 'measure';
+        if (isGapNext) {
           currentEntry.xRange = new util.NumberRange(currentEntryCenterX, currentMeasureEndX);
           continue;
         }
@@ -234,6 +236,16 @@ export class Sequence {
 
   getDuration(): Duration {
     return util.last(this.entries)?.durationRange.getEnd() ?? Duration.zero();
+  }
+}
+
+function getDuration(playable: PlayableRendering, tickConverter: TickConverter): Duration {
+  if (playable.type === 'measure') {
+    util.assertNotNull(playable.gap);
+    return Duration.ms(playable.gap.durationMs);
+  } else {
+    const ticks = getTicks(playable);
+    return tickConverter.toDuration(ticks);
   }
 }
 

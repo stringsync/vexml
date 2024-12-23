@@ -65,7 +65,7 @@ export class Locator {
     for (const target of targets) {
       for (const shape of target.getShapes()) {
         if (shape instanceof spatial.Rect) {
-          const rect = new drawables.Rect({ rect: shape, strokeStyle: TRANSPARENT_RED });
+          const rect = new drawables.Rect({ bounds: shape, strokeStyle: TRANSPARENT_RED, fillStyle: null });
           rect.draw(ctx);
         } else if (shape instanceof spatial.Circle) {
           const circle = new drawables.Circle({ circle: shape, strokeStyle: TRANSPARENT_RED });
@@ -75,7 +75,7 @@ export class Locator {
     }
 
     for (const boundary of this.tree.getBoundaries()) {
-      const rect = new drawables.Rect({ rect: boundary, strokeStyle: TRANSPARENT_BLUE });
+      const rect = new drawables.Rect({ bounds: boundary, strokeStyle: TRANSPARENT_BLUE, fillStyle: null });
       rect.draw(ctx);
     }
   }

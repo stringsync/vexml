@@ -44,13 +44,10 @@ export type Jump =
   | { type: 'repeatend'; times: number }
   | { type: 'repeatending'; times: number };
 
-/** A directive to insert a non-musical measure with a message. */
-export type MessageMeasure = {
+/** Gap is a non-musical section with an optional message. */
+export type Gap = {
   /** The **absolute** measure index accounting for any previous measures that have been removed or inserted. */
   absoluteMeasureIndex: number;
-
-  /** The message to be displayed over the measure. */
-  message: string;
 
   /** The duration that the message measure should play for. */
   durationMs: number;
@@ -58,11 +55,20 @@ export type MessageMeasure = {
   /** The width of the messeage measure in pixels. It will be clamped to the width of the score. */
   width: number;
 
+  /** The message to be displayed over the measure. */
+  message?: string;
+
+  /** The barline type at the beginning of the gap. */
+  startBarlineType?: 'single' | 'none';
+
+  /** The barline type at the end of the gap. */
+  endBarlineType?: 'single' | 'none';
+
   /** The stroke style of the message measure rect. */
-  strokeStyle?: string;
+  strokeStyle?: string | null;
 
   /** The fill style of the message measure rect. */
-  fillStyle?: string;
+  fillStyle?: string | null;
 
   /** The font size of the message. */
   fontSize?: string;
