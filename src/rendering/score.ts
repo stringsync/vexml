@@ -13,7 +13,7 @@ import { Seed } from './seed';
 import { Spanners } from './spanners';
 import { Address } from './address';
 import { ChorusRendering } from './chorus';
-import { MessageMeasure } from './types';
+import { Gap } from './types';
 
 const Y_SHIFT_PADDING = 10;
 
@@ -39,7 +39,7 @@ export class Score {
   private musicXML: {
     scorePartwise: musicxml.ScorePartwise | null;
   };
-  private messageMeasures: MessageMeasure[];
+  private gaps: Gap[];
 
   constructor(opts: {
     config: Config;
@@ -47,12 +47,12 @@ export class Score {
     musicXML: {
       scorePartwise: musicxml.ScorePartwise | null;
     };
-    messageMeasures: MessageMeasure[];
+    gaps: Gap[];
   }) {
     this.config = opts.config;
     this.log = opts.log;
     this.musicXML = opts.musicXML;
-    this.messageMeasures = opts.messageMeasures;
+    this.gaps = opts.gaps;
   }
 
   /** Renders the Score. */
@@ -283,7 +283,7 @@ export class Score {
         partDetails: this.musicXML.scorePartwise?.getPartDetails() ?? [],
         staveLayouts: this.musicXML.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
       },
-      messageMeasures: this.messageMeasures,
+      gaps: this.gaps,
     });
   }
 
