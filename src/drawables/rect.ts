@@ -1,13 +1,14 @@
-import * as spatial from '@/spatial';
 import * as vexflow from 'vexflow';
 
-export class Rect {
-  private rect: spatial.Rect;
-  private strokeStyle?: string;
-  private fillStyle?: string;
+type Box = { x: number; y: number; w: number; h: number };
 
-  constructor(opts: { rect: spatial.Rect; strokeStyle?: string; fillStyle?: string }) {
-    this.rect = opts.rect;
+export class Rect {
+  private bounds: Box;
+  private strokeStyle: string | null;
+  private fillStyle: string | null;
+
+  constructor(opts: { bounds: Box; strokeStyle: string | null; fillStyle: string | null }) {
+    this.bounds = opts.bounds;
     this.strokeStyle = opts.strokeStyle;
     this.fillStyle = opts.fillStyle;
   }
@@ -17,13 +18,13 @@ export class Rect {
 
     if (this.strokeStyle) {
       vfContext.setStrokeStyle(this.strokeStyle);
-      vfContext.rect(this.rect.x, this.rect.y, this.rect.w, this.rect.h);
+      vfContext.rect(this.bounds.x, this.bounds.y, this.bounds.w, this.bounds.h);
       vfContext.stroke();
     }
 
     if (this.fillStyle) {
       vfContext.setFillStyle(this.fillStyle);
-      vfContext.fillRect(this.rect.x, this.rect.y, this.rect.w, this.rect.h);
+      vfContext.fillRect(this.bounds.x, this.bounds.y, this.bounds.w, this.bounds.h);
     }
 
     vfContext.restore();
