@@ -68,4 +68,3 @@ export * from './upbow';
 export * from './wavyline';
 export * from './wedge';
 export * from './words';
-export * from './parser';

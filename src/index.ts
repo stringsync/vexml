@@ -1,5 +1,6 @@
 export * from './vexml';
 export * from './rendering/events';
+export { MusicXMLParser, MXLParser } from './data';
 export { type Rendering, type Gap } from './rendering';
 export { SimpleCursor } from './components';
 export { CONFIG_SCHEMA, DEFAULT_CONFIG } from './config';
