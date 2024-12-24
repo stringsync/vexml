@@ -618,7 +618,7 @@ class FromMusicXMLFactory {
       return null;
     }
 
-    const number = parseInt(measure.getNumber(), 0);
+    const number = parseInt(measure.getNumber(), 10);
     if (Number.isInteger(number) && !Number.isNaN(number)) {
       return number;
     }
