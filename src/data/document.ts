@@ -3,16 +3,11 @@ import * as errors from '@/errors';
 
 /** Document is an interface for querying and mutating a {@link Score}. */
 export class Document {
-  constructor(private score: Score) {}
+  constructor(public readonly score: Score) {}
 
   /** Returns a valid empty Document. */
   static empty() {
-    return new Document({ measures: [] });
-  }
-
-  /** Returns the {@link Score}. */
-  getScore() {
-    return this.score;
+    return new Document({ title: '', measures: [] });
   }
 
   /** Inserts a gap at specified measure and fragment indexes. */

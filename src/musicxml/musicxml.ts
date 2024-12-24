@@ -1,3 +1,4 @@
+import * as errors from '@/errors';
 import { NamedElement } from '@/util';
 import { ScorePartwise } from './scorepartwise';
 
@@ -12,12 +13,12 @@ export class MusicXML {
   /**
    * Returns the first <score-partwise> of the document.
    *
-   * @throws {Error} when the root does not contain a <score-partwise> element. It does not check for deep validity.
+   * @throws {errors.ParseError} when the root does not contain a <score-partwise> element. It does not check for deep validity.
    */
   getScorePartwise(): ScorePartwise {
     const node = this.root.getElementsByTagName('score-partwise').item(0);
     if (!node) {
-      throw new Error('could not find a <score-partwise> element');
+      throw new errors.ParseError('could not find a <score-partwise> element');
     }
     return new ScorePartwise(NamedElement.of(node));
   }
