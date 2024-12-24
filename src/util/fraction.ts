@@ -30,6 +30,11 @@ export class Fraction {
     }
   }
 
+  /** Creates a 0 fraction. */
+  static zero(): Fraction {
+    return new Fraction(0);
+  }
+
   /**
    * Creates a fraction from a decimal number.
    *
@@ -119,6 +124,11 @@ export class Fraction {
   /** Returns the reciprocal a new fraction. */
   reciprocate(): Fraction {
     return new Fraction(this.denominator, this.numerator);
+  }
+
+  /** Returns a fraction-like POJO representing the fraction. */
+  toFractionLike(): { numerator: number; denominator: number } {
+    return { numerator: this.numerator, denominator: this.denominator };
   }
 
   /** Returns the greatest common denominator. */
