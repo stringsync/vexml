@@ -1,4 +1,5 @@
 import { Gap, Score } from './types';
+import * as errors from '@/errors';
 
 /** Document is an interface for querying and mutating a {@link Score}. */
 export class Document {
@@ -20,7 +21,7 @@ export class Document {
 
     const measure = this.score.measures[measureIndex];
     if (!measure) {
-      throw new Error(`Measure at index ${measureIndex} not found`);
+      throw new errors.VexmlError(`Measure at index ${measureIndex} not found`);
     }
 
     measure.entries.splice(fragmentIndex, 0, gap);
