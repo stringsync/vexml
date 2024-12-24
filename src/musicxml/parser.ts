@@ -88,7 +88,6 @@ class MeasureExtractor {
     return {
       index: this.index,
       label: this.label,
-      partId: this.musicXML.part.getId(),
       entries: this.getEntries(),
     };
   }
