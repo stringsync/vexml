@@ -5,14 +5,12 @@ export type Score = {
 
 export type Measure = {
   index: number;
-  partId: string;
   label: string;
   entries: Array<Fragment | Gap>;
 };
 
 export type Fragment = {
   type: 'fragment';
-  partId: string;
   staveSignature: StaveSignature;
   parts: [Part, ...Part[]];
 };
