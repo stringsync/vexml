@@ -1,10 +1,10 @@
 export type Score = {
-  title?: string;
+  title: string;
   measures: Measure[];
 };
 
 export type Measure = {
-  label?: string;
+  label: string;
   entries: Array<Fragment | Gap>;
 };
 
@@ -93,8 +93,8 @@ export type StaveSignature = {
 
 export type Clef = {
   sign: ClefSign;
-  line?: number;
-  octaveChange?: number;
+  line: number | null;
+  octaveChange: number | null;
 };
 
 export type ClefSign = 'G' | 'F' | 'C';
