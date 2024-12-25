@@ -459,7 +459,7 @@ export class Measure {
         const entry = iteration.value.entry;
 
         const isStaveSignature = entry instanceof StaveSignature;
-        const hasMetronome = entry instanceof musicxml.Direction && entry.getMetronomes().length > 0;
+        const hasMetronome = entry instanceof musicxml.Direction && entry.getMetronome();
 
         if (isStaveSignature || hasMetronome) {
           boundaries.push(iteration.value.end);

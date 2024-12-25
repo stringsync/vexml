@@ -10,13 +10,6 @@ export class Document {
     return new Document({
       title: '',
       systems: [],
-      staveSignature: {
-        metronome: { bpm: 120 },
-        clefs: [],
-        keySignatures: [],
-        timeSignatures: [],
-        quarterNoteDivisions: [],
-      },
     });
   }
 

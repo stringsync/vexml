@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import { OctaveShift } from './octaveshift';
 import { NamedElement } from '@/util';
 import {
@@ -44,11 +45,13 @@ export class Direction {
   }
 
   /** Returns the metronomes of the direction. */
-  getMetronomes(): Metronome[] {
-    return this.getTypes()
-      .map((type) => type.getContent())
-      .filter((content): content is MetronomeDirectionTypeContent => content.type === 'metronome')
-      .flatMap((content) => content.metronome);
+  getMetronome(): Metronome | null {
+    return util.first(
+      this.getTypes()
+        .map((type) => type.getContent())
+        .filter((content): content is MetronomeDirectionTypeContent => content.type === 'metronome')
+        .flatMap((content) => content.metronome)
+    );
   }
 
   /**

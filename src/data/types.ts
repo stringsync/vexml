@@ -1,7 +1,6 @@
 export type Score = {
   title: string;
   systems: System[];
-  staveSignature: StaveSignature;
 };
 
 export type System = {

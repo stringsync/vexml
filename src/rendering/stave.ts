@@ -285,7 +285,7 @@ export class Stave {
     return util.first(
       this.measureEntries
         .filter((measureEntry): measureEntry is musicxml.Direction => measureEntry instanceof musicxml.Direction)
-        .flatMap((direction) => direction.getMetronomes())
+        .map((direction) => direction.getMetronome())
     );
   }
 
