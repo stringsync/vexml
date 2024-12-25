@@ -54,27 +54,27 @@ export class MeasureEntryProcessor {
   /** Processes the measure entry, storing any events that occured. */
   process(entry: musicxml.MeasureEntry): void {
     if (entry instanceof musicxml.Note) {
-      this.onNote(entry);
+      this.processNote(entry);
     }
 
     if (entry instanceof musicxml.Backup) {
-      this.onBackup(entry);
+      this.processBackup(entry);
     }
 
     if (entry instanceof musicxml.Forward) {
-      this.onForward(entry);
+      this.processForward(entry);
     }
 
     if (entry instanceof musicxml.Attributes) {
-      this.onAttributes(entry);
+      this.processAttributes(entry);
     }
 
     if (entry instanceof musicxml.Direction) {
-      this.onDirection(entry);
+      this.processDirection(entry);
     }
   }
 
-  private onNote(note: musicxml.Note): void {
+  private processNote(note: musicxml.Note): void {
     if (note.isChordTail()) {
       return;
     }
@@ -91,7 +91,7 @@ export class MeasureEntryProcessor {
     this.start = this.start.add(duration);
   }
 
-  private onBackup(backup: musicxml.Backup): void {
+  private processBackup(backup: musicxml.Backup): void {
     const quarterNotes = backup.getDuration();
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
     const duration = new Fraction(quarterNotes, quarterNoteDivisions);
@@ -99,7 +99,7 @@ export class MeasureEntryProcessor {
     this.start = this.start.subtract(duration);
   }
 
-  private onForward(forward: musicxml.Forward): void {
+  private processForward(forward: musicxml.Forward): void {
     const quarterNotes = forward.getDuration();
     const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
     const duration = new Fraction(quarterNotes, quarterNoteDivisions);
@@ -107,12 +107,12 @@ export class MeasureEntryProcessor {
     this.start = this.start.add(duration);
   }
 
-  private onAttributes(attributes: musicxml.Attributes): void {
+  private processAttributes(attributes: musicxml.Attributes): void {
     this.staveSignature = this.staveSignature.updateWithAttributes(this.partId, { attributes });
     this.events.push({ type: 'stavesignature', at: this.start, staveSignature: this.staveSignature.asData() });
   }
 
-  private onDirection(direction: musicxml.Direction): void {
+  private processDirection(direction: musicxml.Direction): void {
     const metronome = direction.getMetronome();
     const metronomeMark = metronome?.getMark();
     if (metronome && metronomeMark) {
