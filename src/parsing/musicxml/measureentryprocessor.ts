@@ -1,7 +1,7 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { Fraction } from '@/util';
-import { StaveSignature } from './stavesignature';
+import { FragmentSignature } from './fragmentsignature';
 
 /**
  * MeasureEvent is an intermediate data structure that accounts for the duration of each event.
@@ -15,46 +15,52 @@ export type MeasureEvent =
       at: Fraction;
       duration: Fraction;
       note: musicxml.Note;
+      signature: data.FragmentSignature;
+      measureIndex: number;
       partId: string;
       staveNumber: number;
       voiceId: string;
     }
   | {
-      type: 'stavesignature';
+      type: 'signature';
       at: Fraction;
-      staveSignature: data.StaveSignature;
+      measureIndex: number;
+      signature: data.FragmentSignature;
     }
   | {
       // TODO: Once parsing spans are established, figure out the extra data needed.
       type: 'octaveshift';
       at: Fraction;
       octaveShift: musicxml.OctaveShift;
+      measureIndex: number;
       partId: string;
     }
   | {
       type: 'dynamics';
       at: Fraction;
       dynamics: musicxml.Dynamics;
+      measureIndex: number;
       partId: string;
       placement: musicxml.AboveBelow;
     };
 
 /** MeasureEntryProcessor is a helper that incrementally tracks measure events for a given part. */
 export class MeasureEntryProcessor {
-  private start = Fraction.zero();
+  private at = Fraction.zero();
   private events = new Array<MeasureEvent>();
+  private quarterNoteDivisions = 1;
 
-  constructor(private partId: string, private staveSignature: StaveSignature) {}
+  constructor(private partId: string, private signature: FragmentSignature) {}
 
-  /** Returns the events that were collected, sorted by start. */
+  /** Returns the events that were collected, sorted by at. */
   getEvents(): MeasureEvent[] {
     return this.events.toSorted((a, b) => a.at.toDecimal() - b.at.toDecimal());
   }
 
   /** Processes the measure entry, storing any events that occured. */
-  process(entry: musicxml.MeasureEntry): void {
+  process(entry: musicxml.MeasureEntry, measureIndex: number): void {
     if (entry instanceof musicxml.Note) {
-      this.processNote(entry);
+      this.processNote(entry, measureIndex);
     }
 
     if (entry instanceof musicxml.Backup) {
@@ -66,15 +72,15 @@ export class MeasureEntryProcessor {
     }
 
     if (entry instanceof musicxml.Attributes) {
-      this.processAttributes(entry);
+      this.processAttributes(entry, measureIndex);
     }
 
     if (entry instanceof musicxml.Direction) {
-      this.processDirection(entry);
+      this.processDirection(entry, measureIndex);
     }
   }
 
-  private processNote(note: musicxml.Note): void {
+  private processNote(note: musicxml.Note, measureIndex: number): void {
     if (note.isChordTail()) {
       return;
     }
@@ -83,54 +89,72 @@ export class MeasureEntryProcessor {
     const staveNumber = note.getStaveNumber();
 
     const quarterNotes = note.isGrace() ? 0 : note.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
-    const duration = new Fraction(quarterNotes, quarterNoteDivisions);
+    const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
 
-    this.events.push({ type: 'note', at: this.start, duration, note, partId: this.partId, staveNumber, voiceId });
+    this.events.push({
+      type: 'note',
+      at: this.at,
+      duration,
+      signature: this.signature.asData(),
+      note,
+      measureIndex,
+      partId: this.partId,
+      staveNumber,
+      voiceId,
+    });
 
-    this.start = this.start.add(duration);
+    this.at = this.at.add(duration);
   }
 
   private processBackup(backup: musicxml.Backup): void {
     const quarterNotes = backup.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
-    const duration = new Fraction(quarterNotes, quarterNoteDivisions);
+    const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
 
-    this.start = this.start.subtract(duration);
+    this.at = this.at.subtract(duration);
   }
 
   private processForward(forward: musicxml.Forward): void {
     const quarterNotes = forward.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
-    const duration = new Fraction(quarterNotes, quarterNoteDivisions);
+    const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
 
-    this.start = this.start.add(duration);
+    this.at = this.at.add(duration);
   }
 
-  private processAttributes(attributes: musicxml.Attributes): void {
-    this.staveSignature = this.staveSignature.updateWithAttributes(this.partId, { attributes });
-    this.events.push({ type: 'stavesignature', at: this.start, staveSignature: this.staveSignature.asData() });
+  private processAttributes(attributes: musicxml.Attributes, measureIndex: number): void {
+    this.quarterNoteDivisions = attributes.getQuarterNoteDivisions();
+    this.signature = this.signature.updateWithAttributes(this.partId, { attributes });
+    this.events.push({
+      type: 'signature',
+      at: this.at,
+      measureIndex,
+      signature: this.signature.asData(),
+    });
   }
 
-  private processDirection(direction: musicxml.Direction): void {
+  private processDirection(direction: musicxml.Direction, measureIndex: number): void {
     const metronome = direction.getMetronome();
     const metronomeMark = metronome?.getMark();
     if (metronome && metronomeMark) {
-      this.staveSignature = this.staveSignature.updateWithMetronome({ metronome, metronomeMark });
-      this.events.push({ type: 'stavesignature', at: this.start, staveSignature: this.staveSignature.asData() });
+      this.signature = this.signature.updateWithMetronome({ metronome, metronomeMark });
+      this.events.push({
+        type: 'signature',
+        at: this.at,
+        measureIndex,
+        signature: this.signature.asData(),
+      });
     }
 
     // TODO: Support multiple simultaneous octave shifts.
     const octaveShift = direction.getOctaveShifts().at(0);
     if (octaveShift) {
-      this.events.push({ type: 'octaveshift', at: this.start, octaveShift, partId: this.partId });
+      this.events.push({ type: 'octaveshift', at: this.at, octaveShift, measureIndex, partId: this.partId });
     }
 
     // We only support one dynamic per part.
     const dynamics = direction.getDynamics().at(0);
     if (dynamics) {
       const placement = direction.getPlacement() ?? 'above';
-      this.events.push({ type: 'dynamics', at: this.start, dynamics, partId: this.partId, placement });
+      this.events.push({ type: 'dynamics', at: this.at, dynamics, measureIndex, partId: this.partId, placement });
     }
   }
 }

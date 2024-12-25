@@ -2,7 +2,8 @@ import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { MeasureEvent, MeasureEntryProcessor } from './measureentryprocessor';
-import { StaveSignature } from './stavesignature';
+import { FragmentSignature } from './fragmentsignature';
+import { PartSignature } from './types';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -15,43 +16,64 @@ export class MusicXMLParser {
 
   private getScore(scorePartwise: musicxml.ScorePartwise): data.Score {
     const title = scorePartwise.getTitle();
-    const staveSignature = StaveSignature.default();
-
-    const measures = this.getMeasures(scorePartwise, staveSignature);
-
-    // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
-    // each element. We can then use this information to determine the number of systems needed to fit a constrained
-    // width if needed.
-    const systems = [{ measures }];
-
+    const systems = this.getSystems(scorePartwise);
     return { title, systems };
   }
 
-  private getMeasures(scorePartwise: musicxml.ScorePartwise, staveSignature: StaveSignature): data.Measure[] {
+  private getSystems(scorePartwise: musicxml.ScorePartwise): data.System[] {
+    // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
+    // each element. We can then use this information to determine the number of systems needed to fit a constrained
+    // width if needed.
+    return [{ measures: this.getMeasures(scorePartwise) }];
+  }
+
+  private getMeasures(scorePartwise: musicxml.ScorePartwise): data.Measure[] {
+    const result = new Array<data.Measure>();
+
+    const partSignatures = this.getPartSignatures(scorePartwise);
+
     const measureCount = this.getMeasureCount(scorePartwise);
     const measureLabels = this.getMeasureLabels(scorePartwise, measureCount);
-    const measureEvents = this.getMeasureEvents(scorePartwise, staveSignature);
+    const measureEvents = this.getMeasureEvents(scorePartwise);
 
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const measureLabel = measureLabels[measureIndex];
+      // All of the data.Measure.entries are fragments because data.Gaps cannot be encoded in MusicXML.
+      const fragments = this.getFragments(
+        partSignatures,
+        measureEvents.filter((event) => event.measureIndex === measureIndex)
+      );
+      result.push({ index: measureIndex, label: measureLabel, entries: fragments });
+    }
+
+    return result;
+  }
+
+  private getFragments(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Fragment[] {
+    // TODO: Determine fragment boundaries by seeing where the signature changes non-trivially.
+    const parts = this.getParts(partSignatures, measureEvents);
+
+    return [{ type: 'fragment', signature: null, parts }];
+  }
+
+  private getParts(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Part[] {
     return [];
   }
 
-  private getMeasureEvents(
-    scorePartwise: musicxml.ScorePartwise,
-    initialStaveSignature: StaveSignature
-  ): MeasureEvent[] {
+  private getMeasureEvents(scorePartwise: musicxml.ScorePartwise): MeasureEvent[] {
     const result = new Array<MeasureEvent>();
 
     for (const part of scorePartwise.getParts()) {
       const partId = part.getId();
       const measures = part.getMeasures();
-
-      const measureEventTracker = new MeasureEntryProcessor(partId, initialStaveSignature);
+      const staveSignature = FragmentSignature.default();
+      const measureEventTracker = new MeasureEntryProcessor(partId, staveSignature);
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         const measure = measures[measureIndex];
 
         for (const entry of measure.getEntries()) {
-          measureEventTracker.process(entry);
+          measureEventTracker.process(entry, measureIndex);
         }
       }
 
@@ -90,5 +112,18 @@ export class MusicXMLParser {
     }
 
     return result;
+  }
+
+  private getPartSignatures(scorePartwise: musicxml.ScorePartwise): PartSignature[] {
+    return scorePartwise.getParts().map<PartSignature>((part) => {
+      const staveCount =
+        part
+          .getMeasures()
+          .flatMap((measure) => measure.getAttributes())
+          .map((attributes) => attributes.getStaveCount())
+          .at(0) ?? 1;
+
+      return { partId: part.getId(), staveCount };
+    });
   }
 }
