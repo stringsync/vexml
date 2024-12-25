@@ -1,7 +1,7 @@
 import * as debug from '@/debug';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import * as drawables from '@/drawables';
+import * as drawing from '@/drawing';
 import { Config } from '@/config';
 import { Jump, Gap, PartScoped, StaveScoped } from './types';
 import { Address } from './address';
@@ -35,8 +35,8 @@ export type MeasureRendering = {
   jumps: Jump[];
   bpm: number;
   gap: Gap | null;
-  rect: drawables.Rect | null;
-  text: drawables.Text | null;
+  rect: drawing.Rect | null;
+  text: drawing.Text | null;
 };
 
 /**
@@ -297,8 +297,8 @@ export class Measure {
       }
     );
 
-    let rect: drawables.Rect | null = null;
-    let text: drawables.Text | null = null;
+    let rect: drawing.Rect | null = null;
+    let text: drawing.Text | null = null;
     if (this.gap) {
       const x = opts.x + staveOffsetX;
       const w = util.sum(fragmentRenderings.map((fragment) => fragment.width));
@@ -313,7 +313,7 @@ export class Measure {
 
       const h = yMax - yMin;
 
-      rect = new drawables.Rect({
+      rect = new drawing.Rect({
         bounds: { x, y: yMin, w, h },
         strokeStyle: this.getGapStrokeStyle(),
         fillStyle: this.getGapFillStyle(),
@@ -329,7 +329,7 @@ export class Measure {
           fontFamily,
         });
 
-        text = new drawables.Text({
+        text = new drawing.Text({
           x: x + (w - textMeasurer.getWidth()) / 2,
           y: yMin + h / 2,
           content: this.gap.message,

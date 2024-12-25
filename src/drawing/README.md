@@ -1,4 +1,4 @@
-# drawables
+# drawing
 
 ## Intent
 
@@ -18,11 +18,11 @@
 
 `vexflow` provides a [RenderContext](https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/rendercontext.ts) that decouples the drawer from the rendering backend (SVG or canvas). This context has methods to draw lines and shapes. [Element](https://github.com/0xfe/vexflow/blob/7e7eb97bf1580a31171302b3bd8165f057b692ba/src/element.ts) implementers typically leverage this context to draw whatever they're supposed to represent.
 
-The `drawables` library is similar to `Element`: leverage the `RenderContext` to draw whatever is represented by the class.
+The `drawing` library is similar to `Element`: leverage the `RenderContext` to draw whatever is represented by the class.
 
 ### Interface
 
-For now, class implementations in `drawables` are not enforced by an interface. This was done because at the time of writing, there was only one drawable: `Text`. If the library evolves to have several drawables, it may be appropriate to enforce a certain shape in TypeScript, to possibly make it easier for the caller to manage.
+For now, class implementations in `drawing` are not enforced by an interface. This was done because at the time of writing, there was only one drawable: `Text`. If the library evolves to have several drawing, it may be appropriate to enforce a certain shape in TypeScript, to possibly make it easier for the caller to manage.
 
 For now, the "soft" interface looks like this:
 
