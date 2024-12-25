@@ -20,25 +20,31 @@ export type MeasureEvent =
       voiceId: string;
     }
   | {
-      type: 'direction';
-      at: Fraction;
-      direction: musicxml.Direction;
-      partId: string;
-      staveNumber: number | null;
-      voiceId: string | null;
-    }
-  | {
       type: 'stavesignature';
       at: Fraction;
       staveSignature: data.StaveSignature;
+    }
+  | {
+      // TODO: Once parsing spans are established, figure out the extra data needed.
+      type: 'octaveshift';
+      at: Fraction;
+      octaveShift: musicxml.OctaveShift;
+      partId: string;
+    }
+  | {
+      type: 'dynamics';
+      at: Fraction;
+      dynamics: musicxml.Dynamics;
+      partId: string;
+      placement: musicxml.AboveBelow;
     };
 
-/** MeasureEventTracker is a parser helper that incrementally tracks measure events. */
-export class MeasureEventTracker {
+/** MeasureEntryProcessor is a helper that incrementally tracks measure events for a given part. */
+export class MeasureEntryProcessor {
   private start = Fraction.zero();
   private events = new Array<MeasureEvent>();
 
-  constructor(private staveSignature: StaveSignature) {}
+  constructor(private partId: string, private staveSignature: StaveSignature) {}
 
   /** Returns the events that were collected, sorted by start. */
   getEvents(): MeasureEvent[] {
@@ -46,69 +52,67 @@ export class MeasureEventTracker {
   }
 
   /** Processes the measure entry, storing any events that occured. */
-  update(entry: musicxml.MeasureEntry, part: musicxml.Part): void {
+  process(entry: musicxml.MeasureEntry): void {
     if (entry instanceof musicxml.Note) {
-      this.onNote(entry, part);
+      this.onNote(entry);
     }
 
     if (entry instanceof musicxml.Backup) {
-      this.onBackup(entry, part);
+      this.onBackup(entry);
     }
 
     if (entry instanceof musicxml.Forward) {
-      this.onForward(entry, part);
+      this.onForward(entry);
     }
 
     if (entry instanceof musicxml.Attributes) {
-      this.onAttributes(entry, part);
+      this.onAttributes(entry);
     }
 
     if (entry instanceof musicxml.Direction) {
-      this.onDirection(entry, part);
+      this.onDirection(entry);
     }
   }
 
-  private onNote(note: musicxml.Note, part: musicxml.Part): void {
+  private onNote(note: musicxml.Note): void {
     if (note.isChordTail()) {
       return;
     }
 
-    const partId = part.getId();
     const voiceId = note.getVoice();
     const staveNumber = note.getStaveNumber();
 
     const quarterNotes = note.isGrace() ? 0 : note.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(partId);
+    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
     const duration = new Fraction(quarterNotes, quarterNoteDivisions);
 
-    this.events.push({ type: 'note', at: this.start, duration, note, partId, staveNumber, voiceId });
+    this.events.push({ type: 'note', at: this.start, duration, note, partId: this.partId, staveNumber, voiceId });
 
     this.start = this.start.add(duration);
   }
 
-  private onBackup(backup: musicxml.Backup, part: musicxml.Part): void {
+  private onBackup(backup: musicxml.Backup): void {
     const quarterNotes = backup.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(part.getId());
+    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
     const duration = new Fraction(quarterNotes, quarterNoteDivisions);
 
     this.start = this.start.subtract(duration);
   }
 
-  private onForward(forward: musicxml.Forward, part: musicxml.Part): void {
+  private onForward(forward: musicxml.Forward): void {
     const quarterNotes = forward.getDuration();
-    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(part.getId());
+    const quarterNoteDivisions = this.staveSignature.getQuarterNoteDivisions(this.partId);
     const duration = new Fraction(quarterNotes, quarterNoteDivisions);
 
     this.start = this.start.add(duration);
   }
 
-  private onAttributes(attributes: musicxml.Attributes, part: musicxml.Part): void {
-    const partId = part.getId();
-    this.staveSignature = this.staveSignature.updateWithAttributes(partId, { attributes });
+  private onAttributes(attributes: musicxml.Attributes): void {
+    this.staveSignature = this.staveSignature.updateWithAttributes(this.partId, { attributes });
     this.events.push({ type: 'stavesignature', at: this.start, staveSignature: this.staveSignature.asData() });
   }
 
-  private onDirection(direction: musicxml.Direction, part: musicxml.Part): void {
+  private onDirection(direction: musicxml.Direction): void {
     const metronome = direction.getMetronome();
     const metronomeMark = metronome?.getMark();
     if (metronome && metronomeMark) {
@@ -116,9 +120,17 @@ export class MeasureEventTracker {
       this.events.push({ type: 'stavesignature', at: this.start, staveSignature: this.staveSignature.asData() });
     }
 
-    const partId = part.getId();
-    const voiceId = direction.getVoice();
-    const staveNumber = direction.getStaveNumber();
-    this.events.push({ type: 'direction', at: this.start, direction, partId, staveNumber, voiceId });
+    // TODO: Support multiple simultaneous octave shifts.
+    const octaveShift = direction.getOctaveShifts().at(0);
+    if (octaveShift) {
+      this.events.push({ type: 'octaveshift', at: this.start, octaveShift, partId: this.partId });
+    }
+
+    // We only support one dynamic per part.
+    const dynamics = direction.getDynamics().at(0);
+    if (dynamics) {
+      const placement = direction.getPlacement() ?? 'above';
+      this.events.push({ type: 'dynamics', at: this.start, dynamics, partId: this.partId, placement });
+    }
   }
 }
