@@ -26,6 +26,16 @@ export class FragmentSignature {
     return new FragmentSignature({ bpm: 120 }, [], [], [], []);
   }
 
+  static fromData(data: data.FragmentSignature): FragmentSignature {
+    return new FragmentSignature(
+      data.metronome,
+      data.clefs,
+      data.keySignatures,
+      data.timeSignatures,
+      data.staveLineCounts
+    );
+  }
+
   private static defaultClef(partId: string, staveNumber: number): data.Clef {
     return { partId, staveNumber, sign: 'G', line: null, octaveChange: null };
   }

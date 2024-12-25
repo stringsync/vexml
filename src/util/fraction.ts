@@ -35,6 +35,11 @@ export class Fraction {
     return new Fraction(0);
   }
 
+  /** Creates the maximum fraction. */
+  static max(): Fraction {
+    return new Fraction(Number.MAX_SAFE_INTEGER);
+  }
+
   /**
    * Creates a fraction from a decimal number.
    *

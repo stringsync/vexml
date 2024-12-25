@@ -1,9 +1,9 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { MeasureEvent, MeasureEntryProcessor } from './measureentryprocessor';
-import { FragmentSignature } from './fragmentsignature';
-import { PartSignature } from './types';
+import { FragmentPart, MeasureEvent, PartSignature } from './types';
+import { MeasureEntryProcessor } from './measureentryprocessor';
+import { FragmentPartFactory } from './fragmentpartfactory';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -36,28 +36,27 @@ export class MusicXMLParser {
     const measureLabels = this.getMeasureLabels(scorePartwise, measureCount);
     const measureEvents = this.getMeasureEvents(scorePartwise);
 
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const measureLabel = measureLabels[measureIndex];
-      // All of the data.Measure.entries are fragments because data.Gaps cannot be encoded in MusicXML.
-      const fragments = this.getFragments(
-        partSignatures,
-        measureEvents.filter((event) => event.measureIndex === measureIndex)
-      );
-      result.push({ index: measureIndex, label: measureLabel, entries: fragments });
-    }
+    const fragmentParts = this.getFragmentParts(measureCount, partSignatures, measureEvents);
 
     return result;
   }
 
   private getFragments(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Fragment[] {
-    // TODO: Determine fragment boundaries by seeing where the signature changes non-trivially.
-    const parts = this.getParts(partSignatures, measureEvents);
+    const result = new Array<data.Fragment>();
 
-    return [{ type: 'fragment', signature: null, parts }];
+    return result;
   }
 
   private getParts(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Part[] {
     return [];
+  }
+
+  private getFragmentParts(
+    measureCount: number,
+    partSignatures: PartSignature[],
+    measureEvent: MeasureEvent[]
+  ): FragmentPart[] {
+    return new FragmentPartFactory(measureCount, partSignatures, measureEvent).create();
   }
 
   private getMeasureEvents(scorePartwise: musicxml.ScorePartwise): MeasureEvent[] {
@@ -66,8 +65,7 @@ export class MusicXMLParser {
     for (const part of scorePartwise.getParts()) {
       const partId = part.getId();
       const measures = part.getMeasures();
-      const staveSignature = FragmentSignature.default();
-      const measureEventTracker = new MeasureEntryProcessor(partId, staveSignature);
+      const measureEventTracker = new MeasureEntryProcessor(partId);
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         const measure = measures[measureIndex];
