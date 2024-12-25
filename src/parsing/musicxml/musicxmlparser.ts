@@ -1,7 +1,7 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { MeasureEvent, MeasureEventTracker } from './measureeventtracker';
+import { MeasureEvent, MeasureEntryProcessor } from './measureentryprocessor';
 import { StaveSignature } from './stavesignature';
 
 /** Parses a MusicXML document string. */
@@ -42,15 +42,16 @@ export class MusicXMLParser {
     const result = new Array<MeasureEvent>();
 
     for (const part of scorePartwise.getParts()) {
+      const partId = part.getId();
       const measures = part.getMeasures();
 
-      const measureEventTracker = new MeasureEventTracker(initialStaveSignature);
+      const measureEventTracker = new MeasureEntryProcessor(partId, initialStaveSignature);
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         const measure = measures[measureIndex];
 
         for (const entry of measure.getEntries()) {
-          measureEventTracker.update(entry, part);
+          measureEventTracker.process(entry);
         }
       }
 
