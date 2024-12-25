@@ -3,18 +3,27 @@ import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 
-export class StaveSignature {
+/**
+ * FragmentSignature represents attributes that create new measure fragments.
+ *
+ * It wraps {@link data.FragmentSignature} to provide convenience methods for updating the signature with new
+ * {@link musicxml.Attributes} and {@link musicxml.MetronomeMark} elements.
+ *
+ * Measure fragments are necessary because there are some musical elements that have a 1:1 relationship with a vexflow
+ * stave.
+ */
+export class FragmentSignature {
   private constructor(
     private metronome: data.Metronome,
     private clefs: data.Clef[],
     private keySignatures: data.KeySignature[],
     private timeSignatures: data.TimeSignature[],
-    private quarterNoteDivisions: data.QuarterNoteDivisions[]
+    private staveLineCounts: data.StaveLineCount[]
   ) {}
 
-  /** Returns a default StaveSignature  */
+  /** Returns a default FragmentSignature. */
   static default() {
-    return new StaveSignature({ bpm: 120 }, [], [], [], []);
+    return new FragmentSignature({ bpm: 120 }, [], [], [], []);
   }
 
   private static defaultClef(partId: string, staveNumber: number): data.Clef {
@@ -29,18 +38,16 @@ export class StaveSignature {
     return { partId, staveNumber, components: [new util.Fraction(4, 4)] };
   }
 
-  private static defaultQuarterNoteDivisions(): number {
-    return 1;
-  }
-
-  updateWithAttributes(partId: string, musicXML: { attributes: musicxml.Attributes }): StaveSignature {
+  updateWithAttributes(partId: string, musicXML: { attributes: musicxml.Attributes }): FragmentSignature {
     const proposedClefs = new Array<data.Clef>();
     const proposedKeySignatures = new Array<data.KeySignature>();
     const proposedTimeSignatures = new Array<data.TimeSignature>();
+    const proposedStaveLineCounts = new Array<data.StaveLineCount>();
 
     const clefStaveNumbers = new Set<number>();
     const keySignatureStaveNumbers = new Set<number>();
     const timeSignatureStaveNumbers = new Set<number>();
+    const staveLineCountStaveNumbers = new Set<number>();
 
     for (const clef of musicXML.attributes.getClefs()) {
       const staveNumber = clef.getStaveNumber();
@@ -95,9 +102,19 @@ export class StaveSignature {
       });
     }
 
-    const proposedDivisions = new Array<data.QuarterNoteDivisions>();
-    if (musicXML.attributes.getQuarterNoteDivisions()) {
-      proposedDivisions.push({ partId, value: musicXML.attributes.getQuarterNoteDivisions() });
+    for (const staveDetail of musicXML.attributes.getStaveDetails()) {
+      const staveNumber = staveDetail.getStaveNumber();
+
+      if (staveLineCountStaveNumbers.has(staveNumber)) {
+        continue;
+      }
+
+      staveLineCountStaveNumbers.add(staveNumber);
+      proposedStaveLineCounts.push({
+        partId,
+        staveNumber,
+        lineCount: staveDetail.getStaveLines(),
+      });
     }
 
     // prettier-ignore
@@ -113,24 +130,24 @@ export class StaveSignature {
       ...this.timeSignatures.filter((time) => !timeSignatureStaveNumbers.has(time.staveNumber)),
       ...proposedTimeSignatures,
     ];
-    const mergedQuarterNoteDivisions = [
-      ...this.quarterNoteDivisions.filter((division) => division.partId !== partId),
-      ...proposedDivisions,
+    const mergedStaveLineCounts = [
+      ...this.staveLineCounts.filter((staveLineCount) => !staveLineCountStaveNumbers.has(staveLineCount.staveNumber)),
+      ...proposedStaveLineCounts,
     ];
 
-    return new StaveSignature(
+    return new FragmentSignature(
       this.metronome,
       mergedClefs,
       mergedKeySignatures,
       mergedTimeSignatures,
-      mergedQuarterNoteDivisions
+      mergedStaveLineCounts
     );
   }
 
   updateWithMetronome(musicXML: {
     metronome: musicxml.Metronome;
     metronomeMark: musicxml.MetronomeMark;
-  }): StaveSignature {
+  }): FragmentSignature {
     const metronome: data.Metronome = {};
 
     metronome.parenthesis = musicXML.metronome.parentheses() ?? undefined;
@@ -150,50 +167,37 @@ export class StaveSignature {
         break;
     }
 
-    return new StaveSignature(
-      metronome,
-      this.clefs,
-      this.keySignatures,
-      this.timeSignatures,
-      this.quarterNoteDivisions
-    );
+    return new FragmentSignature(metronome, this.clefs, this.keySignatures, this.timeSignatures, this.staveLineCounts);
   }
 
   getClef(partId: string, staveNumber: number): data.Clef {
     return (
       this.clefs.find((clef) => clef.partId === partId && clef.staveNumber === staveNumber) ??
-      StaveSignature.defaultClef(partId, staveNumber)
+      FragmentSignature.defaultClef(partId, staveNumber)
     );
   }
 
   getKeySignature(partId: string, staveNumber: number): data.KeySignature {
     return (
       this.keySignatures.find((key) => key.partId === partId && key.staveNumber === staveNumber) ??
-      StaveSignature.defaultKeySignature(partId, staveNumber)
+      FragmentSignature.defaultKeySignature(partId, staveNumber)
     );
   }
 
   getTimeSignature(partId: string, staveNumber: number): data.TimeSignature {
     return (
       this.timeSignatures.find((time) => time.partId === partId && time.staveNumber === staveNumber) ??
-      StaveSignature.defaultTimeSignature(partId, staveNumber)
+      FragmentSignature.defaultTimeSignature(partId, staveNumber)
     );
   }
 
-  getQuarterNoteDivisions(partId: string): number {
-    return (
-      this.quarterNoteDivisions.find((division) => division.partId === partId)?.value ??
-      StaveSignature.defaultQuarterNoteDivisions()
-    );
-  }
-
-  asData(): data.StaveSignature {
+  asData(): data.FragmentSignature {
     return {
       metronome: this.metronome,
       clefs: this.clefs,
       keySignatures: this.keySignatures,
       timeSignatures: this.timeSignatures,
-      quarterNoteDivisions: this.quarterNoteDivisions,
+      staveLineCounts: this.staveLineCounts,
     };
   }
 }

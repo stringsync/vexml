@@ -15,8 +15,8 @@ export type Measure = {
 
 export type Fragment = {
   type: 'fragment';
-  staveSignature: StaveSignature | null;
-  parts: [Part, ...Part[]];
+  signature: FragmentSignature | null;
+  parts: Part[];
 };
 
 export type Gap = {
@@ -24,7 +24,7 @@ export type Gap = {
 };
 
 export type Part = {
-  staves: [Stave[], ...Stave[]];
+  staves: Stave[];
 };
 
 export type Stave = {
@@ -112,12 +112,12 @@ export type SymbolNote = {
   duration: Fraction;
 };
 
-export type StaveSignature = {
+export type FragmentSignature = {
   metronome: Metronome;
   clefs: Clef[];
   keySignatures: KeySignature[];
   timeSignatures: TimeSignature[];
-  quarterNoteDivisions: QuarterNoteDivisions[];
+  staveLineCounts: StaveLineCount[];
 };
 
 export type Clef = {
@@ -171,7 +171,8 @@ export type Metronome = {
   dots2?: number;
 };
 
-export type QuarterNoteDivisions = {
+export type StaveLineCount = {
   partId: string;
-  value: number;
+  staveNumber: number;
+  lineCount: number;
 };
