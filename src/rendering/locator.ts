@@ -1,6 +1,6 @@
 import * as spatial from '@/spatial';
 import * as vexflow from 'vexflow';
-import * as drawables from '@/drawables';
+import * as drawing from '@/drawing';
 import { ScoreRendering } from './score';
 import { InteractionModel, InteractionModelType } from './interactions';
 import { Query } from './query';
@@ -65,17 +65,17 @@ export class Locator {
     for (const target of targets) {
       for (const shape of target.getShapes()) {
         if (shape instanceof spatial.Rect) {
-          const rect = new drawables.Rect({ bounds: shape, strokeStyle: TRANSPARENT_RED, fillStyle: null });
+          const rect = new drawing.Rect({ bounds: shape, strokeStyle: TRANSPARENT_RED, fillStyle: null });
           rect.draw(ctx);
         } else if (shape instanceof spatial.Circle) {
-          const circle = new drawables.Circle({ circle: shape, strokeStyle: TRANSPARENT_RED });
+          const circle = new drawing.Circle({ circle: shape, strokeStyle: TRANSPARENT_RED });
           circle.draw(ctx);
         }
       }
     }
 
     for (const boundary of this.tree.getBoundaries()) {
-      const rect = new drawables.Rect({ bounds: boundary, strokeStyle: TRANSPARENT_BLUE, fillStyle: null });
+      const rect = new drawing.Rect({ bounds: boundary, strokeStyle: TRANSPARENT_BLUE, fillStyle: null });
       rect.draw(ctx);
     }
   }

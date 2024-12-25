@@ -2,7 +2,7 @@ import { System, SystemRendering } from './system';
 import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import * as drawables from '@/drawables';
+import * as drawing from '@/drawing';
 import * as spatial from '@/spatial';
 import * as components from '@/components';
 import * as debug from '@/debug';
@@ -136,7 +136,7 @@ export class Score {
     // Draw the part names.
     parts
       .map((part) => part.name?.text)
-      .filter((text): text is drawables.Text => text instanceof drawables.Text)
+      .filter((text): text is drawing.Text => text instanceof drawing.Text)
       .forEach((text) => {
         text.draw(vfContext);
       });

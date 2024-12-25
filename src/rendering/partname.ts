@@ -1,13 +1,13 @@
 import { Config } from '@/config';
 import * as debug from '@/debug';
-import * as drawables from '@/drawables';
+import * as drawing from '@/drawing';
 import * as util from '@/util';
 
 const PART_NAME_PADDING_RIGHT = 8;
 
 export type PartNameRendering = {
   type: 'partname';
-  text: drawables.Text;
+  text: drawing.Text;
   width: number;
 };
 
@@ -38,7 +38,7 @@ export class PartName {
   render(opts: { x: number; y: number }): PartNameRendering {
     this.log.debug('rendering part name', { content: this.content });
 
-    const text = new drawables.Text({
+    const text = new drawing.Text({
       x: opts.x,
       y: opts.y,
       content: this.content,

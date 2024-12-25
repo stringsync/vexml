@@ -1,12 +1,12 @@
 import { Config } from '@/config';
 import * as debug from '@/debug';
-import * as drawables from '@/drawables';
+import * as drawing from '@/drawing';
 import * as util from '@/util';
 import { TextMeasurer } from './textmeasurer';
 
 export type TitleRendering = {
   type: 'title';
-  text: drawables.Text;
+  text: drawing.Text;
   approximateHeight: number;
 };
 
@@ -41,7 +41,7 @@ export class Title {
     const content = this.text;
     const approximateHeight = textMeasurer.getApproximateHeight();
 
-    const text = new drawables.Text({ content, x, y, size: fontSize, family: fontFamily });
+    const text = new drawing.Text({ content, x, y, size: fontSize, family: fontFamily });
 
     return {
       type: 'title',
