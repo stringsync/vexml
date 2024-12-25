@@ -12,9 +12,4 @@ export class Forward {
   getDuration(): number {
     return this.element.first('duration')?.content().int() ?? 4;
   }
-
-  /** Returns the voice this forward is changing to. */
-  getVoice(): string {
-    return this.element.first('voice')?.content().str() ?? '1';
-  }
 }

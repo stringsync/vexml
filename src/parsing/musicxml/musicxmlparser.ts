@@ -1,11 +1,11 @@
 import * as data from '@/data';
-import * as util from '@/util';
 import * as musicxml from '@/musicxml';
+import * as util from '@/util';
 import { MeasureEvent, MeasureEventTracker } from './measureeventtracker';
 import { StaveSignature } from './stavesignature';
 
 /** Parses a MusicXML document string. */
-export class Parser {
+export class MusicXMLParser {
   parse(musicXML: string): data.Document {
     const xml = new DOMParser().parseFromString(musicXML, 'application/xml');
     const scorePartwise = new musicxml.MusicXML(xml).getScorePartwise();
@@ -15,27 +15,19 @@ export class Parser {
 
   private getScore(scorePartwise: musicxml.ScorePartwise): data.Score {
     const title = scorePartwise.getTitle();
-    const staveSignature = StaveSignature.initialize(scorePartwise);
+    const staveSignature = StaveSignature.default();
+
+    const measures = this.getMeasures(scorePartwise, staveSignature);
 
     // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
     // each element. We can then use this information to determine the number of systems needed to fit a constrained
-    // width, if needed.
-    const systems = [this.getSystem(scorePartwise, staveSignature)];
+    // width if needed.
+    const systems = [{ measures }];
 
-    return {
-      title,
-      systems,
-      staveSignature,
-    };
+    return { title, systems };
   }
 
-  private getSystem(scorePartwise: musicxml.ScorePartwise, staveSignature: data.StaveSignature): data.System {
-    const measures = this.getMeasures(scorePartwise, staveSignature);
-
-    return { measures };
-  }
-
-  private getMeasures(scorePartwise: musicxml.ScorePartwise, staveSignature: data.StaveSignature): data.Measure[] {
+  private getMeasures(scorePartwise: musicxml.ScorePartwise, staveSignature: StaveSignature): data.Measure[] {
     const measureCount = this.getMeasureCount(scorePartwise);
     const measureLabels = this.getMeasureLabels(scorePartwise, measureCount);
     const measureEvents = this.getMeasureEvents(scorePartwise, staveSignature);
@@ -45,7 +37,7 @@ export class Parser {
 
   private getMeasureEvents(
     scorePartwise: musicxml.ScorePartwise,
-    initialStaveSignature: data.StaveSignature
+    initialStaveSignature: StaveSignature
   ): MeasureEvent[] {
     const result = new Array<MeasureEvent>();
 
@@ -58,7 +50,7 @@ export class Parser {
         const measure = measures[measureIndex];
 
         for (const entry of measure.getEntries()) {
-          measureEventTracker.update(entry);
+          measureEventTracker.update(entry, part);
         }
       }
 
