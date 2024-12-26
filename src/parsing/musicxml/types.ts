@@ -9,6 +9,8 @@ export type PartSignature = {
 
 export type FragmentPart = {
   partId: string;
+  measureIndex: number;
+  fragmentIndex: number;
   events: MeasureEvent[];
   changes: FragmentComponent[];
 };

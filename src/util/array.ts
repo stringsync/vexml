@@ -58,7 +58,6 @@ export const forEachTriple = <T>(
   }
 };
 
-/** Returns a new array with unique elements. */
 /** Returns a new array with unique elements, preserving the order. */
 export const unique = <T>(array: T[]): T[] => {
   const seen = new Set<T>();
@@ -67,6 +66,19 @@ export const unique = <T>(array: T[]): T[] => {
       return false;
     }
     seen.add(item);
+    return true;
+  });
+};
+
+/** Returns a new array with unique elements based on the transformation, preserving the order. */
+export const uniqueBy = <T, S>(array: T[], transform: (item: T) => S): T[] => {
+  const seen = new Set<S>();
+  return array.filter((item) => {
+    const key = transform(item);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
     return true;
   });
 };
