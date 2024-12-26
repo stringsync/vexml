@@ -1,5 +1,6 @@
-import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import { Fraction } from '@/util';
+import { FragmentSignature } from './fragmentsignature';
 
 /** Data that defines a part. */
 export type PartSignature = {
@@ -27,10 +28,10 @@ export type MeasureEvent = NoteEvent | SignatureEvent | OctaveShiftEvent | Dynam
 
 export type NoteEvent = {
   type: 'note';
-  beat: data.Fraction;
-  duration: data.Fraction;
+  beat: Fraction;
+  duration: Fraction;
   note: musicxml.Note;
-  fragmentSignature: data.FragmentSignature;
+  fragmentSignature: FragmentSignature;
   measureIndex: number;
   partId: string;
   staveNumber: number;
@@ -39,27 +40,27 @@ export type NoteEvent = {
 
 export type SignatureEvent = {
   type: 'signature';
-  beat: data.Fraction;
+  beat: Fraction;
   partId: string;
   measureIndex: number;
-  fragmentSignature: data.FragmentSignature;
+  fragmentSignature: FragmentSignature;
 };
 
 export type OctaveShiftEvent = {
   type: 'octaveshift';
-  beat: data.Fraction;
+  beat: Fraction;
   octaveShift: musicxml.OctaveShift;
   measureIndex: number;
   partId: string;
-  fragmentSignature: data.FragmentSignature;
+  fragmentSignature: FragmentSignature;
 };
 
 export type DynamicsEvent = {
   type: 'dynamics';
-  beat: data.Fraction;
+  beat: Fraction;
   dynamics: musicxml.Dynamics;
   measureIndex: number;
   partId: string;
   placement: musicxml.AboveBelow;
-  fragmentSignature: data.FragmentSignature;
+  fragmentSignature: FragmentSignature;
 };

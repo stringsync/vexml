@@ -1,178 +1,179 @@
 import * as data from '@/data';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { FragmentPart, MeasureEvent, PartSignature } from './types';
-import { MeasureEntryProcessor } from './measureentryprocessor';
-import { FragmentPartFactory } from './fragmentpartfactory';
+import * as musicxml from '@/musicxml';
+import { Score } from './score';
+import { System } from './system';
+import { Measure } from './measure';
+import { Fragment } from './fragment';
+import { Part } from './part';
+import { FragmentSignature } from './fragmentsignature';
+import { Chorus } from './chorus';
+import { MultiRest } from './multirest';
+import { Stave } from './stave';
+import { Metronome } from './metronome';
+import { Clef } from './clef';
+import { KeySignature } from './keysignature';
+import { TimeSignature } from './timesignature';
+import { StaveLineCount } from './stavelinecount';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
   parse(musicXML: string): data.Document {
     const xml = new DOMParser().parseFromString(musicXML, 'application/xml');
     const scorePartwise = new musicxml.MusicXML(xml).getScorePartwise();
-    const score = this.getScore(scorePartwise);
+    const score = this.parseScore(new Score({ scorePartwise }));
     return new data.Document(score);
   }
 
-  private getScore(scorePartwise: musicxml.ScorePartwise): data.Score {
-    const title = scorePartwise.getTitle();
-    const systems = this.getSystems(scorePartwise);
-    return { title, systems };
+  private parseScore(score: Score): data.Score {
+    return {
+      type: 'score',
+      title: score.getTitle(),
+      systems: score.getSystems().map((system) => this.parseSystem(system)),
+    };
   }
 
-  private getSystems(scorePartwise: musicxml.ScorePartwise): data.System[] {
-    // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
-    // each element. We can then use this information to determine the number of systems needed to fit a constrained
-    // width if needed.
-    return [{ measures: this.getMeasures(scorePartwise) }];
+  private parseSystem(system: System): data.System {
+    return {
+      type: 'system',
+      measures: system.getMeasures().map((measure) => this.parseMeasure(measure)),
+    };
   }
 
-  private getMeasures(scorePartwise: musicxml.ScorePartwise): data.Measure[] {
-    const result = new Array<data.Measure>();
+  private parseMeasure(measure: Measure): data.Measure {
+    return {
+      type: 'measure',
+      index: measure.getIndex(),
+      label: measure.getLabel(),
+      entries: measure.getFragments().map((entry) => this.parseFragment(entry)),
+    };
+  }
 
-    const measureCount = this.getMeasureCount(scorePartwise);
-    const measureLabels = this.getMeasureLabels(scorePartwise, measureCount);
-    const measureEvents = this.getMeasureEvents(scorePartwise);
+  private parseFragment(fragment: Fragment): data.Fragment {
+    return {
+      type: 'fragment',
+      parts: fragment.getParts().map((part) => this.parsePart(part)),
+      signature: this.parseFragmentSignature(fragment.getSignature()),
+    };
+  }
 
-    const partSignatures = this.getPartSignatures(scorePartwise);
-    const fragmentParts = this.getFragmentParts(measureCount, partSignatures, measureEvents);
-
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const label = measureLabels[measureIndex];
-      const entries = [
-        ...this.getGaps(),
-        ...this.getFragments(
-          measureIndex,
-          partSignatures,
-          fragmentParts.filter((fragmentPart) => fragmentPart.measureIndex === measureIndex)
-        ),
-      ];
-      result.push({ index: measureIndex, label, entries });
+  private parseFragmentSignature(fragmentSignature: FragmentSignature | null): data.FragmentSignature | null {
+    if (!fragmentSignature) {
+      return null;
     }
 
-    return result;
-  }
-
-  private getGaps(): data.Gap[] {
-    // Gaps can't be encoded in MusicXML.
-    return [];
-  }
-
-  private getFragments(
-    measureIndex: number,
-    partSignatures: PartSignature[],
-    fragmentParts: FragmentPart[]
-  ): data.Fragment[] {
-    const result = new Array<data.Fragment>();
-
-    // TODO: This might not be correct because the fragment signatures were made independently of each other based on
-    // part.
-    const fragmentSignature =
-      fragmentParts
-        .flatMap((fragmentPart) => fragmentPart.events)
-        .map((event) => event.fragmentSignature)
-        .at(0) ?? null;
-
-    const fragmentIndexes = util.unique(fragmentParts.map((fragmentPart) => fragmentPart.fragmentIndex));
-    for (const fragmentIndex of fragmentIndexes) {
-      const parts = this.getParts(
-        partSignatures,
-        fragmentParts.filter((fragmentPart) => fragmentPart.fragmentIndex === fragmentIndex)
-      );
-      result.push({ type: 'fragment', parts, signature: fragmentSignature });
+    if (!fragmentSignature.hasChanges()) {
+      return null;
     }
 
-    return result;
+    return {
+      type: 'fragmentsignature',
+      metronome: this.parseMetronome(fragmentSignature.getMetronome()),
+      clefs: fragmentSignature.getClefs().map((clef) => this.parseClef(clef)),
+      keySignatures: fragmentSignature.getKeySignatures().map((keySignature) => this.parseKeySignature(keySignature)),
+      timeSignatures: fragmentSignature
+        .getTimeSignatures()
+        .map((timeSignature) => this.parseTimeSignature(timeSignature)),
+      staveLineCounts: fragmentSignature
+        .getStaveLineCounts()
+        .map((staveLineCount) => this.parseStaveLineCount(staveLineCount)),
+    };
   }
 
-  private getParts(partSignatures: PartSignature[], fragmentPart: FragmentPart[]): data.Part[] {
-    const result = new Array<data.Part>();
+  private parseMetronome(metronome: Metronome): data.Metronome {
+    return {
+      type: 'metronome',
+    };
+  }
 
-    for (const partSignature of partSignatures) {
-      const staves = this.getStaves(partSignature.partId);
-      const events = fragmentPart
-        .filter((fragmentPart) => fragmentPart.partId === partSignature.partId)
-        .flatMap((fragmentPart) => fragmentPart.events);
+  private parseClef(clef: Clef): data.Clef {
+    return {
+      type: 'clef',
+      partId: clef.getPartId(),
+      staveNumber: clef.getStaveNumber(),
+      line: clef.getLine(),
+      sign: clef.getSign(),
+      octaveChange: clef.getOctaveChange(),
+    };
+  }
+
+  private parseKeySignature(keySignature: KeySignature): data.KeySignature {
+    return {
+      type: 'keysignature',
+      partId: keySignature.getPartId(),
+      staveNumber: keySignature.getStaveNumber(),
+      fifths: keySignature.getFifths(),
+      previousKeySignature: this.parsePreviousKeySignature(keySignature.getPreviousKeySignature()),
+      mode: keySignature.getMode(),
+    };
+  }
+
+  private parsePreviousKeySignature(previousKeySignature: KeySignature | null): data.PreviousKeySignature | null {
+    if (!previousKeySignature) {
+      return null;
     }
 
-    return result;
+    return {
+      type: 'previouskeysignature',
+      partId: previousKeySignature.getPartId(),
+      staveNumber: previousKeySignature.getStaveNumber(),
+      fifths: previousKeySignature.getFifths(),
+      mode: previousKeySignature.getMode(),
+    };
   }
 
-  private getStaves(partId: string): data.Stave[] {
-    return [];
+  private parseTimeSignature(timeSignature: TimeSignature): data.TimeSignature {
+    return {
+      type: 'timesignature',
+      partId: timeSignature.getPartId(),
+      staveNumber: timeSignature.getStaveNumber(),
+      components: timeSignature.getComponents().map((component) => this.parseFraction(component)),
+    };
   }
 
-  private getFragmentParts(
-    measureCount: number,
-    partSignatures: PartSignature[],
-    measureEvent: MeasureEvent[]
-  ): FragmentPart[] {
-    return new FragmentPartFactory(measureCount, partSignatures, measureEvent).create();
+  private parseFraction(fraction: util.Fraction): data.Fraction {
+    return {
+      type: 'fraction',
+      numerator: fraction.numerator,
+      denominator: fraction.denominator,
+    };
   }
 
-  private getMeasureEvents(scorePartwise: musicxml.ScorePartwise): MeasureEvent[] {
-    const result = new Array<MeasureEvent>();
-
-    for (const part of scorePartwise.getParts()) {
-      const partId = part.getId();
-      const measures = part.getMeasures();
-      const measureEventTracker = new MeasureEntryProcessor(partId);
-
-      for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-        const measure = measures[measureIndex];
-
-        for (const entry of measure.getEntries()) {
-          measureEventTracker.process(entry, measureIndex);
-        }
-      }
-
-      result.push(...measureEventTracker.getEvents());
-    }
-
-    return result;
+  private parseStaveLineCount(staveLineCount: StaveLineCount): data.StaveLineCount {
+    return {
+      type: 'stavelinecount',
+      partId: staveLineCount.getPartId(),
+      staveNumber: staveLineCount.getStaveNumber(),
+      lineCount: staveLineCount.getLineCount(),
+    };
   }
 
-  private getMeasureCount(scorePartwise: musicxml.ScorePartwise): number {
-    return util.max(scorePartwise.getParts().map((part) => part.getMeasures().length));
+  private parsePart(part: Part): data.Part {
+    return {
+      type: 'part',
+      id: part.getId(),
+      staves: part.getStaves().map((stave) => this.parseStave(stave)),
+    };
   }
 
-  private getMeasureLabels(scorePartwise: musicxml.ScorePartwise, measureCount: number): string[] {
-    const result = new Array<string>(measureCount).fill('');
+  private parseStave(stave: Stave): data.Stave {
+    const entry = stave.getEntry();
 
-    const part = util.first(scorePartwise.getParts());
-    if (!part) {
-      return result;
-    }
-
-    const measures = part.getMeasures();
-
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const measure = measures[measureIndex];
-      if (measure.isImplicit()) {
-        continue;
-      }
-
-      const number = parseInt(measure.getNumber(), 10);
-      if (Number.isInteger(number) && !Number.isNaN(number)) {
-        result[measureIndex] = number.toString();
-      } else {
-        result[measureIndex] = (measureIndex + 1).toString();
-      }
-    }
-
-    return result;
+    return {
+      type: 'stave',
+      entry: entry instanceof Chorus ? this.parseChorus(entry) : this.parseMultiRest(entry),
+    };
   }
 
-  private getPartSignatures(scorePartwise: musicxml.ScorePartwise): PartSignature[] {
-    return scorePartwise.getParts().map<PartSignature>((part) => {
-      const staveCount =
-        part
-          .getMeasures()
-          .flatMap((measure) => measure.getAttributes())
-          .map((attributes) => attributes.getStaveCount())
-          .at(0) ?? 1;
+  private parseChorus(chorus: Chorus): data.Chorus {
+    return {
+      type: 'chorus',
+    };
+  }
 
-      return { partId: part.getId(), staveCount };
-    });
+  private parseMultiRest(multiRest: MultiRest): data.MultiRest {
+    return {
+      type: 'multirest',
+    };
   }
 }
