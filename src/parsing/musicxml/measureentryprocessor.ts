@@ -84,7 +84,7 @@ export class MeasureEntryProcessor {
 
   private processAttributes(attributes: musicxml.Attributes, measureIndex: number): void {
     this.quarterNoteDivisions = attributes.getQuarterNoteDivisions();
-    this.fragmentSignature = this.fragmentSignature.applyAttributes(this.partId, { attributes });
+    this.fragmentSignature = this.fragmentSignature.mergeAttributes(this.partId, { attributes });
     this.events.push({
       type: 'signature',
       beat: this.beat,
@@ -98,7 +98,7 @@ export class MeasureEntryProcessor {
     const metronome = direction.getMetronome();
     const metronomeMark = metronome?.getMark();
     if (metronome && metronomeMark) {
-      this.fragmentSignature = this.fragmentSignature.applyMetronome({ metronome, metronomeMark });
+      this.fragmentSignature = this.fragmentSignature.mergeMetronome({ metronome, metronomeMark });
       this.events.push({
         type: 'signature',
         beat: this.beat,
