@@ -30,24 +30,75 @@ export class MusicXMLParser {
   private getMeasures(scorePartwise: musicxml.ScorePartwise): data.Measure[] {
     const result = new Array<data.Measure>();
 
-    const partSignatures = this.getPartSignatures(scorePartwise);
-
     const measureCount = this.getMeasureCount(scorePartwise);
     const measureLabels = this.getMeasureLabels(scorePartwise, measureCount);
     const measureEvents = this.getMeasureEvents(scorePartwise);
 
+    const partSignatures = this.getPartSignatures(scorePartwise);
     const fragmentParts = this.getFragmentParts(measureCount, partSignatures, measureEvents);
 
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const label = measureLabels[measureIndex];
+      const entries = [
+        ...this.getGaps(),
+        ...this.getFragments(
+          measureIndex,
+          partSignatures,
+          fragmentParts.filter((fragmentPart) => fragmentPart.measureIndex === measureIndex)
+        ),
+      ];
+      result.push({ index: measureIndex, label, entries });
+    }
+
     return result;
   }
 
-  private getFragments(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Fragment[] {
+  private getGaps(): data.Gap[] {
+    // Gaps can't be encoded in MusicXML.
+    return [];
+  }
+
+  private getFragments(
+    measureIndex: number,
+    partSignatures: PartSignature[],
+    fragmentParts: FragmentPart[]
+  ): data.Fragment[] {
     const result = new Array<data.Fragment>();
 
+    // TODO: This might not be correct because the fragment signatures were made independently of each other based on
+    // part.
+    const fragmentSignature =
+      fragmentParts
+        .flatMap((fragmentPart) => fragmentPart.events)
+        .map((event) => event.fragmentSignature)
+        .at(0) ?? null;
+
+    const fragmentIndexes = util.unique(fragmentParts.map((fragmentPart) => fragmentPart.fragmentIndex));
+    for (const fragmentIndex of fragmentIndexes) {
+      const parts = this.getParts(
+        partSignatures,
+        fragmentParts.filter((fragmentPart) => fragmentPart.fragmentIndex === fragmentIndex)
+      );
+      result.push({ type: 'fragment', parts, signature: fragmentSignature });
+    }
+
     return result;
   }
 
-  private getParts(partSignatures: PartSignature[], measureEvents: MeasureEvent[]): data.Part[] {
+  private getParts(partSignatures: PartSignature[], fragmentPart: FragmentPart[]): data.Part[] {
+    const result = new Array<data.Part>();
+
+    for (const partSignature of partSignatures) {
+      const staves = this.getStaves(partSignature.partId);
+      const events = fragmentPart
+        .filter((fragmentPart) => fragmentPart.partId === partSignature.partId)
+        .flatMap((fragmentPart) => fragmentPart.events);
+    }
+
+    return result;
+  }
+
+  private getStaves(partId: string): data.Stave[] {
     return [];
   }
 

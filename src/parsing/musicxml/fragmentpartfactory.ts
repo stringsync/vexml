@@ -5,7 +5,7 @@ import { FragmentComponent, FragmentPart, MeasureEvent, PartSignature } from './
 
 type FragmentBoundary = {
   partId: string;
-  beat: data.Fraction;
+  beat: Fraction;
   changes: FragmentComponent[];
 };
 
@@ -19,27 +19,47 @@ export class FragmentPartFactory {
   create(): FragmentPart[] {
     const result = new Array<FragmentPart>();
 
-    for (const partId of this.getPartIds()) {
-      let left = Fraction.zero();
-      for (const boundary of this.getFragmentBoundaries(partId)) {
-        const right = Fraction.fromFractionLike(boundary.beat);
+    const boundaries = this.getPartIds()
+      .flatMap((partId) => this.getFragmentBoundaries(partId))
+      .sort((a, b) => a.beat.toDecimal() - b.beat.toDecimal());
 
+    const beats = util.uniqueBy(
+      boundaries.map((boundary) => boundary.beat),
+      (beat) => beat.toDecimal()
+    );
+
+    // partId -> measureIndex -> fragmentIndex
+    const fragmentIndexes: Record<string, Record<number, number>> = {};
+
+    for (let index = 1; index <= beats.length - 1; index++) {
+      const startBeat = beats[index - 1];
+      const endBeat = beats[index];
+
+      const startBoundaries = boundaries.filter((boundary) => boundary.beat.isEquivalent(startBeat));
+
+      for (const partId of this.getPartIds()) {
         const measureEvents = this.measureEvents
-          .filter((event) => event.partId === boundary.partId)
-          .filter((event) => Fraction.fromFractionLike(event.beat).toDecimal() >= left.toDecimal())
-          .filter((event) => Fraction.fromFractionLike(event.beat).toDecimal() < right.toDecimal());
+          .filter((measureEvent) => measureEvent.partId === partId)
+          .filter((measureEvent) => Fraction.fromFractionLike(measureEvent.beat).toDecimal() >= startBeat.toDecimal())
+          .filter((measureEvent) => Fraction.fromFractionLike(measureEvent.beat).toDecimal() < endBeat.toDecimal());
 
-        left = right;
+        const changes = startBoundaries.find((boundary) => boundary.partId === partId)?.changes ?? [];
 
-        // Group the measure events by measure index.
-        const measureIndexes = util.unique(measureEvents.map((event) => event.measureIndex));
+        const measureIndexes = util.unique(measureEvents.map((measureEvent) => measureEvent.measureIndex));
+
         for (const measureIndex of measureIndexes) {
-          const events = measureEvents
-            .filter((event) => event.partId === boundary.partId)
-            .filter((event) => event.measureIndex === measureIndex);
-          if (events.length > 0) {
-            result.push({ partId: boundary.partId, events, changes: boundary.changes });
-          }
+          fragmentIndexes[partId] ??= {};
+          fragmentIndexes[partId][measureIndex] ??= 0;
+          const fragmentIndex = fragmentIndexes[partId][measureIndex];
+          fragmentIndexes[partId][measureIndex]++;
+
+          result.push({
+            partId,
+            measureIndex,
+            fragmentIndex,
+            changes,
+            events: measureEvents.filter((measureEvent) => measureEvent.measureIndex === measureIndex),
+          });
         }
       }
     }
@@ -51,10 +71,6 @@ export class FragmentPartFactory {
     return this.partSignatures.map((signature) => signature.partId);
   }
 
-  private getMeasureEvents(partId: string, measureIndex: number): MeasureEvent[] {
-    return this.measureEvents.filter((event) => event.partId === partId && event.measureIndex === measureIndex);
-  }
-
   private getFragmentBoundaries(partId: string) {
     const result = new Array<FragmentBoundary>();
 
@@ -64,7 +80,9 @@ export class FragmentPartFactory {
     let currentFragmentSignature: data.FragmentSignature | null = null;
 
     for (let measureIndex = 0; measureIndex < this.measureCount; measureIndex++) {
-      const measureEvents = this.getMeasureEvents(partId, measureIndex);
+      const measureEvents = this.measureEvents
+        .filter((event) => event.partId === partId)
+        .filter((event) => event.measureIndex === measureIndex);
 
       for (const measureEvent of measureEvents) {
         const beforeFragmentSignature = currentFragmentSignature;
@@ -76,7 +94,7 @@ export class FragmentPartFactory {
         }
 
         if (changes.length > 0) {
-          result.push({ partId, beat: measureEvent.beat, changes });
+          result.push({ partId, beat: Fraction.fromFractionLike(measureEvent.beat), changes });
         }
 
         currentFragmentSignature = afterFragmentSignature;
