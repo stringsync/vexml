@@ -20,3 +20,20 @@ export const NOTE_DURATION_DENOMINATORS = new Enum([
   '1',
   '1/2',
 ] as const);
+
+export type ClefSign = EnumValues<typeof CLEF_SIGNS>;
+export const CLEF_SIGNS = new Enum(['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'] as const);
+
+export type KeyMode = EnumValues<typeof KEY_MODES>;
+export const KEY_MODES = new Enum([
+  'none',
+  'major',
+  'minor',
+  'dorian',
+  'phrygian',
+  'lydian',
+  'mixolydian',
+  'aeolian',
+  'ionian',
+  'locrian',
+] as const);

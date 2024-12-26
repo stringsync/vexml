@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 import { Fraction } from '@/util';
-import { FragmentSignature } from './fragmentsignature';
 import { MeasureEvent } from './types';
+import { FragmentSignature } from './fragmentsignature';
 
 /** MeasureEntryProcessor is a helper that incrementally tracks measure events for a given part. */
 export class MeasureEntryProcessor {
@@ -57,7 +57,7 @@ export class MeasureEntryProcessor {
       type: 'note',
       beat: this.beat,
       duration,
-      fragmentSignature: this.fragmentSignature.asData(),
+      fragmentSignature: this.fragmentSignature,
       note,
       measureIndex,
       partId: this.partId,
@@ -84,13 +84,13 @@ export class MeasureEntryProcessor {
 
   private processAttributes(attributes: musicxml.Attributes, measureIndex: number): void {
     this.quarterNoteDivisions = attributes.getQuarterNoteDivisions();
-    this.fragmentSignature = this.fragmentSignature.updateWithAttributes(this.partId, { attributes });
+    this.fragmentSignature = this.fragmentSignature.applyAttributes(this.partId, { attributes });
     this.events.push({
       type: 'signature',
       beat: this.beat,
       partId: this.partId,
       measureIndex,
-      fragmentSignature: this.fragmentSignature.asData(),
+      fragmentSignature: this.fragmentSignature,
     });
   }
 
@@ -98,13 +98,13 @@ export class MeasureEntryProcessor {
     const metronome = direction.getMetronome();
     const metronomeMark = metronome?.getMark();
     if (metronome && metronomeMark) {
-      this.fragmentSignature = this.fragmentSignature.updateWithMetronome({ metronome, metronomeMark });
+      this.fragmentSignature = this.fragmentSignature.applyMetronome({ metronome, metronomeMark });
       this.events.push({
         type: 'signature',
         beat: this.beat,
         partId: this.partId,
         measureIndex,
-        fragmentSignature: this.fragmentSignature.asData(),
+        fragmentSignature: this.fragmentSignature,
       });
     }
 
@@ -117,7 +117,7 @@ export class MeasureEntryProcessor {
         octaveShift,
         measureIndex,
         partId: this.partId,
-        fragmentSignature: this.fragmentSignature.asData(),
+        fragmentSignature: this.fragmentSignature,
       });
     }
 
@@ -132,7 +132,7 @@ export class MeasureEntryProcessor {
         measureIndex,
         partId: this.partId,
         placement,
-        fragmentSignature: this.fragmentSignature.asData(),
+        fragmentSignature: this.fragmentSignature,
       });
     }
   }

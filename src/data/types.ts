@@ -1,13 +1,16 @@
 export type Score = {
+  type: 'score';
   title: string;
   systems: System[];
 };
 
 export type System = {
+  type: 'system';
   measures: Measure[];
 };
 
 export type Measure = {
+  type: 'measure';
   index: number;
   label: string;
   entries: Array<Fragment | Gap>;
@@ -24,10 +27,13 @@ export type Gap = {
 };
 
 export type Part = {
+  type: 'part';
+  id: string;
   staves: Stave[];
 };
 
 export type Stave = {
+  type: 'stave';
   entry: Chorus | MultiRest;
 };
 
@@ -40,6 +46,7 @@ export type MultiRest = {
 };
 
 export type Voice = {
+  type: 'voice';
   id: string;
   entries: Array<VoiceEntry>;
 };
@@ -113,6 +120,7 @@ export type SymbolNote = {
 };
 
 export type FragmentSignature = {
+  type: 'fragmentsignature';
   metronome: Metronome;
   clefs: Clef[];
   keySignatures: KeySignature[];
@@ -121,6 +129,7 @@ export type FragmentSignature = {
 };
 
 export type Clef = {
+  type: 'clef';
   partId: string;
   staveNumber: number;
   sign: ClefSign;
@@ -131,9 +140,18 @@ export type Clef = {
 export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none';
 
 export type KeySignature = {
+  type: 'keysignature';
   partId: string;
   staveNumber: number;
-  previousKeySignature: KeySignature | null;
+  previousKeySignature: PreviousKeySignature | null;
+  fifths: number;
+  mode: KeyMode;
+};
+
+export type PreviousKeySignature = {
+  type: 'previouskeysignature';
+  partId: string;
+  staveNumber: number;
   fifths: number;
   mode: KeyMode;
 };
@@ -151,17 +169,20 @@ export type KeyMode =
   | 'locrian';
 
 export type TimeSignature = {
+  type: 'timesignature';
   partId: string;
   staveNumber: number;
   components: Fraction[];
 };
 
 export type Fraction = {
+  type: 'fraction';
   numerator: number;
   denominator: number;
 };
 
 export type Metronome = {
+  type: 'metronome';
   name?: string;
   parenthesis?: boolean;
   duration?: string;
@@ -172,6 +193,7 @@ export type Metronome = {
 };
 
 export type StaveLineCount = {
+  type: 'stavelinecount';
   partId: string;
   staveNumber: number;
   lineCount: number;
