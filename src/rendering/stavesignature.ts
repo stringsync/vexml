@@ -174,7 +174,7 @@ export class StaveSignature {
     const multiRestCounts = opts.musicXML.attributes
       .getMeasureStyles()
       .reduce<StaveMap<number>>((map, measureStyle) => {
-        map[measureStyle.getStaveNumber()] = measureStyle.getMultipleRestCount();
+        map[measureStyle.getStaveNumber() ?? 1] = measureStyle.getMultipleRestCount();
         return map;
       }, {});
 
