@@ -1,4 +1,3 @@
-import * as musicxml from '@/musicxml';
 import { KeyMode } from './enums';
 
 /** Represents a key signature. */
@@ -7,7 +6,7 @@ export class Key {
     private partId: string,
     private staveNumber: number,
     private fifths: number,
-    private previousKeySignature: Key | null,
+    private previousKey: Key | null,
     private mode: KeyMode
   ) {}
 
@@ -27,40 +26,30 @@ export class Key {
     return this.fifths;
   }
 
-  getPreviousKeySignature(): Key | null {
-    return this.previousKeySignature;
+  getPreviousKey(): Key | null {
+    return this.previousKey;
   }
 
   getMode(): KeyMode {
     return this.mode;
   }
 
-  isEqual(keySignature: Key): boolean {
+  isEqual(key: Key): boolean {
+    return this.partId === key.getPartId() && this.staveNumber === key.getStaveNumber() && this.isEquivalent(key);
+  }
+
+  isEquivalent(key: Key): boolean {
     return (
-      this.partId === keySignature.getPartId() &&
-      this.staveNumber === keySignature.getStaveNumber() &&
-      this.isEquivalent(keySignature)
+      this.fifths === key.getFifths() &&
+      this.mode === key.getMode() &&
+      this.arePreviousKeySignaturesEquivalent(key.previousKey)
     );
   }
 
-  isEquivalent(keySignature: Key): boolean {
-    return (
-      this.fifths === keySignature.getFifths() &&
-      this.mode === keySignature.getMode() &&
-      this.arePreviousKeySignaturesEquivalent(keySignature.previousKeySignature)
-    );
-  }
-
-  private arePreviousKeySignaturesEquivalent(previousKeySignature: Key | null): boolean {
-    if (!this.previousKeySignature && !previousKeySignature) {
-      return true;
-    }
-    if (!this.previousKeySignature || !previousKeySignature) {
+  private arePreviousKeySignaturesEquivalent(previousKey: Key | null): boolean {
+    if (!this.previousKey || !previousKey) {
       return false;
     }
-    return (
-      this.previousKeySignature.fifths === previousKeySignature.fifths &&
-      this.previousKeySignature.mode === previousKeySignature.mode
-    );
+    return this.previousKey?.fifths === previousKey?.fifths && this.previousKey?.mode === previousKey?.mode;
   }
 }

@@ -1,12 +1,22 @@
+import * as util from '@/util';
 import { Stave } from './stave';
-import { PartSignature } from './partsignature';
 import { Signature } from './signature';
+import { LeafEvent } from './types';
 
 export class Part {
-  constructor(private id: string, private signature: Signature) {}
+  constructor(private id: string, private signature: Signature, private events: LeafEvent[]) {
+    util.assert(
+      events.every((event) => event.partId === id),
+      'Expected all leaf events to belong to the current part'
+    );
+  }
 
-  getSignature(): PartSignature {
-    return this.signature.asPartSignature(this.id);
+  getId(): string {
+    return this.id;
+  }
+
+  getSignature(): Signature {
+    return this.signature;
   }
 
   getStaves(): Stave[] {
