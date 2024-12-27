@@ -110,6 +110,10 @@ export class Signature {
   getChanges(): SignatureChange[] {
     return this.changes;
   }
+
+  hasChanges(): boolean {
+    return this.changes.length > 0;
+  }
 }
 
 class SignatureBuilder {

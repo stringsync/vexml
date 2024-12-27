@@ -46,6 +46,7 @@ export type PartSignature = {
 
 export type Stave = {
   type: 'stave';
+  signature: StaveSignature;
   entry: Chorus | MultiRest;
 };
 
@@ -135,9 +136,7 @@ export type SymbolNote = {
 
 export type Clef = {
   type: 'clef';
-  partId: string;
-  staveNumber: number;
-  sign: ClefSign;
+  sign: ClefSign | null;
   line: number | null;
   octaveChange: number | null;
 };
@@ -146,8 +145,6 @@ export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none
 
 export type Key = {
   type: 'key';
-  partId: string;
-  staveNumber: number;
   previousKey: PreviousKey | null;
   fifths: number;
   mode: KeyMode;
@@ -155,8 +152,6 @@ export type Key = {
 
 export type PreviousKey = {
   type: 'previouskey';
-  partId: string;
-  staveNumber: number;
   fifths: number;
   mode: KeyMode;
 };
@@ -175,8 +170,6 @@ export type KeyMode =
 
 export type Time = {
   type: 'time';
-  partId: string;
-  staveNumber: number;
   components: Fraction[];
 };
 

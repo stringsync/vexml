@@ -6,8 +6,8 @@ import { Time } from './time';
 export class StaveSignature {
   constructor(private staveLineCount: StaveLineCount, private clef: Clef, private key: Key, private time: Time) {}
 
-  getStaveLineCount(): StaveLineCount {
-    return this.staveLineCount;
+  getLineCount(): number {
+    return this.staveLineCount.getValue();
   }
 
   getClef(): Clef {
