@@ -5,13 +5,13 @@ export class Clef {
   constructor(
     private partId: string,
     private staveNumber: number,
-    private line: number,
-    private sign: ClefSign,
+    private line: number | null,
+    private sign: ClefSign | null,
     private octaveChange: number | null
   ) {}
 
   static default(partId: string, staveNumber: number) {
-    return new Clef(partId, staveNumber, 2, 'G', null);
+    return new Clef(partId, staveNumber, null, null, null);
   }
 
   getPartId(): string {
@@ -21,13 +21,12 @@ export class Clef {
   getStaveNumber(): number {
     return this.staveNumber;
   }
-
-  getLine(): number {
-    return this.line;
+  getSign(): ClefSign | null {
+    return this.sign;
   }
 
-  getSign(): ClefSign {
-    return this.sign;
+  getLine(): number | null {
+    return this.line;
   }
 
   getOctaveChange(): number | null {
@@ -40,15 +39,5 @@ export class Clef {
 
   isEquivalent(clef: Clef): boolean {
     return this.line === clef.line && this.sign === clef.sign && this.octaveChange === clef.octaveChange;
-  }
-
-  merge(musicXML: { clef: musicxml.Clef }): Clef {
-    return new Clef(
-      this.partId,
-      this.staveNumber,
-      musicXML.clef.getLine() ?? this.line,
-      musicXML.clef.getSign() ?? this.sign,
-      musicXML.clef.getOctaveChange() ?? this.octaveChange
-    );
   }
 }

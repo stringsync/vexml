@@ -1,17 +1,18 @@
 import * as musicxml from '@/musicxml';
 import { KeyMode } from './enums';
 
-export class KeySignature {
+/** Represents a key signature. */
+export class Key {
   constructor(
     private partId: string,
     private staveNumber: number,
     private fifths: number,
-    private previousKeySignature: KeySignature | null,
+    private previousKeySignature: Key | null,
     private mode: KeyMode
   ) {}
 
-  static default(partId: string, staveNumber: number): KeySignature {
-    return new KeySignature(partId, staveNumber, 0, null, 'none');
+  static default(partId: string, staveNumber: number): Key {
+    return new Key(partId, staveNumber, 0, null, 'none');
   }
 
   getPartId(): string {
@@ -26,7 +27,7 @@ export class KeySignature {
     return this.fifths;
   }
 
-  getPreviousKeySignature(): KeySignature | null {
+  getPreviousKeySignature(): Key | null {
     return this.previousKeySignature;
   }
 
@@ -34,7 +35,7 @@ export class KeySignature {
     return this.mode;
   }
 
-  isEqual(keySignature: KeySignature): boolean {
+  isEqual(keySignature: Key): boolean {
     return (
       this.partId === keySignature.getPartId() &&
       this.staveNumber === keySignature.getStaveNumber() &&
@@ -42,7 +43,7 @@ export class KeySignature {
     );
   }
 
-  isEquivalent(keySignature: KeySignature): boolean {
+  isEquivalent(keySignature: Key): boolean {
     return (
       this.fifths === keySignature.getFifths() &&
       this.mode === keySignature.getMode() &&
@@ -50,11 +51,7 @@ export class KeySignature {
     );
   }
 
-  merge(musicXML: { key: musicxml.Key }): KeySignature {
-    return new KeySignature(this.partId, this.staveNumber, musicXML.key.getFifthsCount(), this, musicXML.key.getMode());
-  }
-
-  private arePreviousKeySignaturesEquivalent(previousKeySignature: KeySignature | null): boolean {
+  private arePreviousKeySignaturesEquivalent(previousKeySignature: Key | null): boolean {
     if (!this.previousKeySignature && !previousKeySignature) {
       return true;
     }

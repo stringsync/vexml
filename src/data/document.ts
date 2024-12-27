@@ -14,9 +14,7 @@ export class Document {
   insertGap(gap: Gap, opts: { measureIndex: number; fragmentIndex?: number }): void {
     const { measureIndex, fragmentIndex = 0 } = opts;
 
-    const measure = this.score.systems
-      .flatMap((system) => system.measures)
-      .find((measure) => measure.index === measureIndex);
+    const measure = this.score.systems.flatMap((system) => system.measures).at(measureIndex);
     if (!measure) {
       throw new errors.VexmlError(`Measure at index ${measureIndex} not found`);
     }

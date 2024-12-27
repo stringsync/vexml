@@ -1,7 +1,7 @@
 import * as musicxml from '@/musicxml';
 
 export class StaveLineCount {
-  constructor(private partId: string, private staveNumber: number, private lineCount: number) {}
+  constructor(private partId: string, private staveNumber: number, private value: number) {}
 
   static default(partId: string, staveNumber: number) {
     return new StaveLineCount(partId, staveNumber, 5);
@@ -15,8 +15,8 @@ export class StaveLineCount {
     return this.staveNumber;
   }
 
-  getLineCount(): number {
-    return this.lineCount;
+  getValue(): number {
+    return this.value;
   }
 
   isEqual(staveLineCount: StaveLineCount): boolean {
@@ -28,10 +28,6 @@ export class StaveLineCount {
   }
 
   isEquivalent(staveLineCount: StaveLineCount): boolean {
-    return this.lineCount === staveLineCount.lineCount;
-  }
-
-  merge(musicXML: { staveDetail: musicxml.StaveDetails }): StaveLineCount {
-    return new StaveLineCount(this.partId, this.staveNumber, musicXML.staveDetail.getStaveLines());
+    return this.value === staveLineCount.value;
   }
 }

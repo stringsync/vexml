@@ -17,6 +17,10 @@ export class Metronome {
     return new Metronome({ bpm: 120 });
   }
 
+  static fromMusicXML(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {
+    return new Metronome({});
+  }
+
   getName(): string | undefined {
     return this.opts.name;
   }
@@ -55,10 +59,5 @@ export class Metronome {
       this.getDuration2() === metronome.getDuration2() &&
       this.getDots2() === metronome.getDots2()
     );
-  }
-
-  merge(musicXML: { metronome: musicxml.Metronome; metronomeMark: musicxml.MetronomeMark }): Metronome {
-    // TODO: Implement this.
-    return new Metronome(this.opts);
   }
 }

@@ -1,38 +1,23 @@
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Measure } from './measure';
-import { PartSignature } from './types';
 
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
   getMeasures(): Measure[] {
-    const partSignatures = this.getPartSignatures();
     const measureCount = this.getMeasureCount();
     const measureLabels = this.getMeasureLabels(measureCount);
 
     const measures = new Array<Measure>(measureCount);
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureLabel = measureLabels[measureIndex];
-      measures[measureIndex] = new Measure(measureIndex, measureLabel, partSignatures, {
+      measures[measureIndex] = new Measure(measureIndex, measureLabel, {
         scorePartwise: this.musicXML.scorePartwise,
       });
     }
 
-    return [];
-  }
-
-  private getPartSignatures(): PartSignature[] {
-    return this.musicXML.scorePartwise.getParts().map((part) => {
-      const staveCount =
-        part
-          .getMeasures()
-          .flatMap((measure) => measure.getAttributes())
-          .map((attributes) => attributes.getStaveCount())
-          .at(0) ?? 1;
-
-      return { partId: part.getId(), staveCount };
-    });
+    return measures;
   }
 
   private getMeasureCount() {
