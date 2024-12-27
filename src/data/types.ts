@@ -11,30 +11,50 @@ export type System = {
 
 export type Measure = {
   type: 'measure';
-  index: number;
   label: string;
   entries: Array<Fragment | Gap>;
 };
 
 export type Fragment = {
   type: 'fragment';
-  signature: FragmentSignature | null;
+  signature: FragmentSignature;
   parts: Part[];
+};
+
+export type FragmentSignature = {
+  type: 'fragmentsignature';
+  metronome: Metronome;
 };
 
 export type Gap = {
   type: 'gap';
+  text?: string;
+  width?: number;
+  durationMs: number;
 };
 
 export type Part = {
   type: 'part';
-  id: string;
   staves: Stave[];
+  signature: PartSignature;
+};
+
+export type PartSignature = {
+  type: 'partsignature';
+  staveCount: number;
 };
 
 export type Stave = {
   type: 'stave';
   entry: Chorus | MultiRest;
+};
+
+export type StaveSignature = {
+  type: 'stavesignature';
+  lineCount: number;
+  clef: Clef;
+  key: Key;
+  time: Time;
 };
 
 export type Chorus = {
@@ -61,7 +81,6 @@ export type VoiceEntry =
   | TabGraceNote
   | TabGraceChord
   | Rest
-  | GhostNote
   | SymbolNote;
 
 export type StaveNote = {
@@ -109,23 +128,9 @@ export type Rest = {
   duration: Fraction;
 };
 
-export type GhostNote = {
-  type: 'ghostnote';
-  duration: Fraction;
-};
-
 export type SymbolNote = {
   type: 'symbolnote';
   duration: Fraction;
-};
-
-export type FragmentSignature = {
-  type: 'fragmentsignature';
-  metronome: Metronome;
-  clefs: Clef[];
-  keySignatures: KeySignature[];
-  timeSignatures: TimeSignature[];
-  staveLineCounts: StaveLineCount[];
 };
 
 export type Clef = {
@@ -139,17 +144,17 @@ export type Clef = {
 
 export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none';
 
-export type KeySignature = {
-  type: 'keysignature';
+export type Key = {
+  type: 'key';
   partId: string;
   staveNumber: number;
-  previousKeySignature: PreviousKeySignature | null;
+  previousKey: PreviousKey | null;
   fifths: number;
   mode: KeyMode;
 };
 
-export type PreviousKeySignature = {
-  type: 'previouskeysignature';
+export type PreviousKey = {
+  type: 'previouskey';
   partId: string;
   staveNumber: number;
   fifths: number;
@@ -168,8 +173,8 @@ export type KeyMode =
   | 'ionian'
   | 'locrian';
 
-export type TimeSignature = {
-  type: 'timesignature';
+export type Time = {
+  type: 'time';
   partId: string;
   staveNumber: number;
   components: Fraction[];
@@ -190,11 +195,4 @@ export type Metronome = {
   bpm?: number | string;
   duration2?: string;
   dots2?: number;
-};
-
-export type StaveLineCount = {
-  type: 'stavelinecount';
-  partId: string;
-  staveNumber: number;
-  lineCount: number;
 };

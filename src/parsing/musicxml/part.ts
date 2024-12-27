@@ -1,11 +1,12 @@
-import * as musicxml from '@/musicxml';
 import { Stave } from './stave';
+import { PartSignature } from './partsignature';
+import { Signature } from './signature';
 
 export class Part {
-  constructor(private id: string) {}
+  constructor(private id: string, private signature: Signature) {}
 
-  getId(): string {
-    return this.id;
+  getSignature(): PartSignature {
+    return this.signature.asPartSignature(this.id);
   }
 
   getStaves(): Stave[] {

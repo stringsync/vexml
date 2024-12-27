@@ -1,11 +1,12 @@
 import * as musicxml from '@/musicxml';
 import { Fraction } from '@/util';
 
-export class TimeSignature {
+/** Represents a musical time signature. */
+export class Time {
   constructor(private partId: string, private staveNumber: number, private components: Fraction[]) {}
 
   static default(partId: string, staveNumber: number) {
-    return new TimeSignature(partId, staveNumber, []);
+    return new Time(partId, staveNumber, []);
   }
 
   getPartId(): string {
@@ -20,7 +21,7 @@ export class TimeSignature {
     return this.components;
   }
 
-  isEqual(timeSignature: TimeSignature): boolean {
+  isEqual(timeSignature: Time): boolean {
     return (
       this.partId === timeSignature.partId &&
       this.staveNumber === timeSignature.staveNumber &&
@@ -28,7 +29,7 @@ export class TimeSignature {
     );
   }
 
-  isEquivalent(timeSignature: TimeSignature): boolean {
+  isEquivalent(timeSignature: Time): boolean {
     if (this.components.length !== timeSignature.components.length) {
       return false;
     }
@@ -41,10 +42,5 @@ export class TimeSignature {
     }
 
     return true;
-  }
-
-  merge(musicXML: { time: musicxml.Time }): TimeSignature {
-    // TODO: Extract components from the time.
-    return new TimeSignature(this.partId, this.staveNumber, this.components);
   }
 }
