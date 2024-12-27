@@ -76,7 +76,7 @@ export class System {
 }
 
 class MeasureEventCalculator {
-  private beat = Fraction.zero();
+  private measureBeat = Fraction.zero();
   private events = new Array<MeasureEvent>();
   private quarterNoteDivisions = 1;
 
@@ -92,7 +92,7 @@ class MeasureEventCalculator {
       const measures = part.getMeasures();
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-        this.beat = Fraction.zero();
+        this.measureBeat = Fraction.zero();
 
         for (const entry of measures[measureIndex].getEntries()) {
           this.process(entry, partId, measureIndex);
@@ -100,7 +100,7 @@ class MeasureEventCalculator {
       }
     }
 
-    return util.sortBy(this.events, (event) => event.beat.toDecimal());
+    return util.sortBy(this.events, (event) => event.measureBeat.toDecimal());
   }
 
   private process(entry: musicxml.MeasureEntry, partId: string, measureIndex: number): void {
@@ -135,31 +135,62 @@ class MeasureEventCalculator {
       return;
     }
 
-    this.events.push({ type: 'note', partId, measureIndex, staveNumber, voiceId, beat: this.beat, musicXML: { note } });
+    this.events.push({
+      type: 'note',
+      partId,
+      measureIndex,
+      staveNumber,
+      voiceId,
+      measureBeat: this.measureBeat,
+      musicXML: { note },
+    });
 
-    this.beat = this.beat.add(duration);
+    this.measureBeat = this.measureBeat.add(duration);
   }
 
   private processBackup(backup: musicxml.Backup): void {
     const quarterNotes = backup.getDuration();
     const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
-    this.beat = this.beat.subtract(duration);
+    this.measureBeat = this.measureBeat.subtract(duration);
   }
 
   private processForward(forward: musicxml.Forward): void {
     const quarterNotes = forward.getDuration();
     const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
-    this.beat = this.beat.add(duration);
+    this.measureBeat = this.measureBeat.add(duration);
   }
 
   private processAttributes(attributes: musicxml.Attributes, partId: string, measureIndex: number): void {
-    this.events.push({ type: 'attributes', partId, measureIndex, beat: this.beat, musicXML: { attributes } });
+    this.events.push({
+      type: 'attributes',
+      partId,
+      measureIndex,
+      measureBeat: this.measureBeat,
+      musicXML: { attributes },
+    });
+
+    for (const measureStyle of attributes.getMeasureStyles()) {
+      this.events.push({
+        type: 'measurestyle',
+        partId,
+        measureIndex,
+        staveNumber: measureStyle.getStaveNumber() ?? 1,
+        measureBeat: this.measureBeat,
+        musicXML: { measureStyle },
+      });
+    }
   }
 
   private processDirection(direction: musicxml.Direction, partId: string, measureIndex: number): void {
     const metronome = direction.getMetronome();
     if (metronome) {
-      this.events.push({ type: 'metronome', partId, measureIndex, beat: this.beat, musicXML: { metronome } });
+      this.events.push({
+        type: 'metronome',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        musicXML: { metronome },
+      });
     }
   }
 }

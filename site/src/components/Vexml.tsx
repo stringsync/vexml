@@ -279,7 +279,7 @@ export const Vexml = ({
 
     try {
       const parser = new vexml.MusicXMLParser();
-      console.log(parser.parse(musicXML).score);
+      console.log(JSON.stringify(parser.parse(musicXML).score, null, 2));
 
       rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         element: div,

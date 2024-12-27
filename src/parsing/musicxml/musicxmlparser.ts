@@ -10,7 +10,6 @@ import { PartSignature } from './partsignature';
 import { Part } from './part';
 import { Stave } from './stave';
 import { Chorus } from './chorus';
-import { MultiRest } from './multirest';
 import { StaveSignature } from './stavesignature';
 import { Clef } from './clef';
 import { Key } from './key';
@@ -101,7 +100,7 @@ export class MusicXMLParser {
     return {
       type: 'stave',
       signature: this.parseStaveSignature(stave.getSignature().asStaveSignature(stave.getPartId(), stave.getNumber())),
-      entry: this.parseStaveEntry(stave.getEntry()),
+      chorus: this.parseChorus(stave.getChorus()),
     };
   }
 
@@ -159,19 +158,7 @@ export class MusicXMLParser {
     };
   }
 
-  private parseStaveEntry(entry: Chorus | MultiRest): data.Chorus | data.MultiRest {
-    if (entry instanceof Chorus) {
-      return this.parseChorus(entry);
-    } else {
-      return this.parseMultiRest(entry);
-    }
-  }
-
   private parseChorus(chorus: Chorus): data.Chorus {
     return { type: 'chorus' };
-  }
-
-  private parseMultiRest(multiRest: MultiRest): data.MultiRest {
-    return { type: 'multirest' };
   }
 }

@@ -15,7 +15,7 @@ export type NoteEvent = {
   measureIndex: number;
   staveNumber: number;
   voiceId: string;
-  beat: Fraction;
+  measureBeat: Fraction;
   musicXML: {
     note: musicxml.Note;
   };
@@ -25,7 +25,7 @@ export type AttributesEvent = {
   type: 'attributes';
   partId: string;
   measureIndex: number;
-  beat: Fraction;
+  measureBeat: Fraction;
   musicXML: {
     attributes: musicxml.Attributes;
   };
@@ -35,12 +35,29 @@ export type MetronomeEvent = {
   type: 'metronome';
   partId: string;
   measureIndex: number;
-  beat: Fraction;
+  measureBeat: Fraction;
   musicXML: {
     metronome: musicxml.Metronome;
   };
 };
 
-export type MeasureEvent = NoteEvent | AttributesEvent | MetronomeEvent;
+export type MeasureStyleEvent = {
+  type: 'measurestyle';
+  partId: string;
+  measureIndex: number;
+  staveNumber: number;
+  measureBeat: Fraction;
+  musicXML: {
+    measureStyle: musicxml.MeasureStyle;
+  };
+};
 
-export type LeafEvent = NoteEvent;
+export type MusicXMLEvent = NoteEvent | AttributesEvent | MetronomeEvent | MeasureStyleEvent;
+
+export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
+
+export type PartEvent = Extract<MusicXMLEvent, { partId: string }>;
+
+export type StaveEvent = Extract<MusicXMLEvent, { staveNumber: number }>;
+
+export type VoiceEvent = Extract<MusicXMLEvent, { voiceId: string }>;

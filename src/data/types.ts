@@ -47,7 +47,7 @@ export type PartSignature = {
 export type Stave = {
   type: 'stave';
   signature: StaveSignature;
-  entry: Chorus | MultiRest;
+  chorus: Chorus;
 };
 
 export type StaveSignature = {
@@ -60,10 +60,6 @@ export type StaveSignature = {
 
 export type Chorus = {
   type: 'chorus';
-};
-
-export type MultiRest = {
-  type: 'multirest';
 };
 
 export type Voice = {

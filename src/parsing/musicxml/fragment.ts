@@ -1,9 +1,9 @@
 import { Part } from './part';
 import { Signature } from './signature';
-import { LeafEvent } from './types';
+import { StaveEvent } from './types';
 
 export class Fragment {
-  constructor(private signature: Signature, private events: LeafEvent[], private partIds: string[]) {}
+  constructor(private signature: Signature, private events: StaveEvent[], private partIds: string[]) {}
 
   getSignature(): Signature {
     return this.signature;

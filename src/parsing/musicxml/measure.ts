@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Fragment } from './fragment';
-import { MeasureEvent, NoteEvent } from './types';
+import { MeasureEvent, StaveEvent } from './types';
 import { Fraction } from '@/util';
 import { Signature } from './signature';
 
@@ -44,7 +44,7 @@ class FragmentFactory {
     const beats = [...eventsByBeat.keys()].sort((a, b) => a.toDecimal() - b.toDecimal());
 
     let signature = this.initialSignature;
-    let buffer = new Array<NoteEvent>();
+    let buffer = new Array<StaveEvent>();
 
     for (const beat of beats) {
       const events = eventsByBeat.get(beat);
@@ -55,6 +55,10 @@ class FragmentFactory {
       for (const e of events) {
         switch (e.type) {
           case 'note':
+            buffer.push(e);
+            break;
+          case 'measurestyle':
+            // We'll handle the measure style more precisely downstream.
             buffer.push(e);
             break;
           case 'attributes':
@@ -87,12 +91,12 @@ class FragmentFactory {
     const seen = new Set<MeasureEvent>();
 
     for (const event of this.events) {
-      const beat = event.beat;
+      const beat = event.measureBeat;
       if (!result.has(beat)) {
         result.set(beat, []);
       }
 
-      const events = this.events.filter((e) => e.beat.isEquivalent(beat));
+      const events = this.events.filter((e) => e.measureBeat.isEquivalent(beat));
       for (const e of events) {
         seen.add(e);
       }
