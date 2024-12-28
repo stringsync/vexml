@@ -37,6 +37,7 @@ export class MusicXMLParser {
       type: 'score',
       title: score.getTitle(),
       systems: score.getSystems().map((system) => this.parseSystem(system)),
+      partLabels: score.getPartLabels(),
     });
   }
 

@@ -2,6 +2,7 @@ export type Score = {
   type: 'score';
   title: string;
   systems: System[];
+  partLabels: string[];
 };
 
 export type System = {
