@@ -1,4 +1,4 @@
-import * as rendering from '@/rendering';
+import * as rendering from '@/legacyrendering';
 import * as util from '@/util';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 import { TickConverter } from './tickconverter';

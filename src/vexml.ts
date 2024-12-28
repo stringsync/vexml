@@ -1,6 +1,6 @@
 import * as musicxml from '@/musicxml';
 import * as mxl from '@/mxl';
-import * as rendering from '@/rendering';
+import * as rendering from '@/legacyrendering';
 import * as events from '@/events';
 import * as components from '@/components';
 import * as playback from '@/playback';

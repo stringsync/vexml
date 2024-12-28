@@ -1,4 +1,4 @@
-import { TimeSignature } from '@/rendering/timesignature';
+import { TimeSignature } from '@/legacyrendering/timesignature';
 import { Fraction } from '@/util';
 import { DEFAULT_CONFIG } from '@/config';
 import { NoopLogger } from '@/debug';
