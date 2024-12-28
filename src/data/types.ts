@@ -1,8 +1,8 @@
 export type Score = {
   type: 'score';
   title: string;
-  systems: System[];
   partLabels: string[];
+  systems: System[];
 };
 
 export type System = {

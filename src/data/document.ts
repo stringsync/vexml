@@ -1,7 +1,7 @@
 import { Gap, Score } from './types';
 import * as errors from '@/errors';
 
-/** Document is an interface for querying and mutating a {@link Score}. */
+/** Document is an interface for mutating a {@link Score}. */
 export class Document {
   constructor(public readonly score: Score) {}
 
