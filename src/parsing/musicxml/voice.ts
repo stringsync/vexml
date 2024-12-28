@@ -15,6 +15,6 @@ export class Voice {
   }
 
   getEntries(): VoiceEntry[] {
-    return [];
+    return this.events.map((event) => event.note);
   }
 }

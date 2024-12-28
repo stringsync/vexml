@@ -10,6 +10,7 @@ import { Clef } from './clef';
 import { Key } from './key';
 import { Time } from './time';
 import { Metronome } from './metronome';
+import { Note } from './note';
 
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
@@ -152,7 +153,8 @@ class MeasureEventCalculator {
       staveNumber,
       voiceId,
       measureBeat: this.measureBeat,
-      // TODO: This will probably need to be exploded out into note subtypes.
+      duration,
+      note: Note.fromMusicXML(this.measureBeat, duration, { note }),
     });
 
     this.measureBeat = this.measureBeat.add(duration);
@@ -171,6 +173,8 @@ class MeasureEventCalculator {
   }
 
   private processAttributes(attributes: musicxml.Attributes, partId: string, measureIndex: number): void {
+    this.quarterNoteDivisions = attributes.getQuarterNoteDivisions() ?? this.quarterNoteDivisions;
+
     const staveCount = new StaveCount(partId, attributes.getStaveCount() ?? 1);
     this.events.push({
       type: 'stavecount',

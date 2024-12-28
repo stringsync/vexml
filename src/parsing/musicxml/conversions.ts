@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { NoteDurationDenominator, Notehead } from './enums';
+import { NoteDurationDenominator, Notehead, StemDirection } from './enums';
 
 /** Converts a `NoteType` to a `NoteDurationDenominator`. Defaults to null. */
 export const fromNoteTypeToNoteDurationDenominator = (
@@ -39,8 +39,22 @@ export const fromNoteTypeToNoteDurationDenominator = (
   }
 };
 
-/** Converts `Notehead` to a `NoteheadSuffix`. Defaults to ''. */
-export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null): Notehead | null => {
+/** Converts from a `Stem` to a `StemDirection`. Defaults to 'auto'. */
+export const fromStemToStemDirection = (stem: musicxml.Stem | null): StemDirection => {
+  switch (stem) {
+    case 'up':
+      return 'up';
+    case 'down':
+      return 'down';
+    case 'none':
+      return 'none';
+    default:
+      return 'auto';
+  }
+};
+
+/** Converts a MusicXML `Notehead` to a `Notehead`. Defaults to ''. */
+export const fromNoteheadToNotehead = (notehead: musicxml.Notehead | null): Notehead => {
   switch (notehead) {
     case 'circle dot':
     case 'cluster':
@@ -84,6 +98,6 @@ export const fromNoteheadToNoteheadSuffix = (notehead: musicxml.Notehead | null)
     case 'x':
       return 'X';
     default:
-      return null;
+      return '';
   }
 };

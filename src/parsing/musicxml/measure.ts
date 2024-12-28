@@ -55,6 +55,7 @@ class FragmentFactory {
       for (const e of events) {
         switch (e.type) {
           case 'note':
+            console.log(e.partId, e.measureIndex, `${e.note.getDuration().toDecimal()}`);
             buffer.push(e);
             break;
           case 'metronome':
@@ -78,6 +79,7 @@ class FragmentFactory {
         }
       }
 
+      // TODO: There's something wrong here — we're not collecting the notes correctly.
       const nextSignature = builder.build();
       if (nextSignature.hasChanges()) {
         this.fragments.push(new Fragment(signature, buffer, this.partIds));
