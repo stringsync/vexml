@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { CursorInput, RenderingBackend, Source } from '../types';
-import { Vexml, VexmlResult } from './Vexml';
+import { LegacyVexml, VexmlResult } from './LegacyVexml';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -261,7 +261,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
         {!isMusicXMLLoading && !musicXMLError && (
           <div className="d-flex justify-content-center">
-            <Vexml
+            <LegacyVexml
               musicXML={musicXML}
               height={props.source.height === 0 ? undefined : props.source.height}
               cursorInputs={cursorInputs}

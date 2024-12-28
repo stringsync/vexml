@@ -25,7 +25,7 @@ export type VexmlResult =
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
-export const Vexml = ({
+export const LegacyVexml = ({
   musicXML,
   height,
   backend,

@@ -1,4 +1,4 @@
-import { VexmlResult } from './Vexml';
+import { VexmlResult } from './LegacyVexml';
 
 export type SourceInfoProps = {
   vexmlResult: VexmlResult;
