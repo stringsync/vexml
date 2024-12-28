@@ -141,7 +141,7 @@ class MeasureEventCalculator {
     const quarterNotes = note.getDuration();
     const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
 
-    if (!note.isChordTail()) {
+    if (note.isChordTail()) {
       return;
     }
 
