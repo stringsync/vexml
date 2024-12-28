@@ -75,7 +75,10 @@ export type Note = {
   stemDirection: NoteStemDirection;
   duration: Fraction;
   measureBeat: Fraction;
+  // TODO: Add NoteMod[]
 };
+
+// TODO: Add symbol leaf type
 
 export type Notehead =
   | ''
