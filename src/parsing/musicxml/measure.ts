@@ -4,6 +4,12 @@ import { MeasureEvent, StaveEvent } from './types';
 import { Fraction } from '@/util';
 import { Signature } from './signature';
 
+type SignatureRange = {
+  signature: Signature;
+  start: Fraction;
+  end: Fraction;
+};
+
 export class Measure {
   constructor(
     private initialSignature: Signature,
@@ -24,30 +30,15 @@ export class Measure {
 
   @util.memoize()
   getFragments(): Fragment[] {
-    return new FragmentFactory(this.initialSignature, this.events, this.partIds).create();
+    return this.createFragments();
   }
 
   getLastSignature(): Signature {
     return this.getFragments().at(-1)?.getSignature() ?? this.initialSignature;
   }
-}
 
-type SignatureRange = {
-  signature: Signature;
-  start: Fraction;
-  end: Fraction;
-};
-
-class FragmentFactory {
-  constructor(private initialSignature: Signature, private events: MeasureEvent[], private partIds: string[]) {}
-
-  create(): Fragment[] {
+  private createFragments(): Fragment[] {
     const ranges = this.getSignatureRanges();
-
-    // Ensure that we always have at least one fragment.
-    if (ranges.length === 0) {
-      return [new Fragment(this.initialSignature, [], this.partIds)];
-    }
 
     const fragments = new Array<Fragment>();
 
@@ -61,6 +52,11 @@ class FragmentFactory {
         index++;
       }
       fragments.push(new Fragment(range.signature, fragmentEvents, this.partIds));
+    }
+
+    // Ensure that we always have at least one fragment.
+    if (fragments.length === 0) {
+      return [new Fragment(this.initialSignature, [], this.partIds)];
     }
 
     return fragments;
