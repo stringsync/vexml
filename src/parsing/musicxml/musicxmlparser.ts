@@ -36,8 +36,8 @@ export class MusicXMLParser {
     return new data.Document({
       type: 'score',
       title: score.getTitle(),
-      systems: score.getSystems().map((system) => this.parseSystem(system)),
       partLabels: score.getPartLabels(),
+      systems: score.getSystems().map((system) => this.parseSystem(system)),
     });
   }
 
