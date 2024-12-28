@@ -4,6 +4,12 @@ import { Measure } from './measure';
 import { Fraction } from '@/util';
 import { MeasureEvent } from './types';
 import { Signature } from './signature';
+import { StaveCount } from './stavecount';
+import { StaveLineCount } from './stavelinecount';
+import { Clef } from './clef';
+import { Key } from './key';
+import { Time } from './time';
+import { Metronome } from './metronome';
 
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
@@ -80,6 +86,9 @@ class MeasureEventCalculator {
   private events = new Array<MeasureEvent>();
   private quarterNoteDivisions = 1;
 
+  // staveNumber -> Key
+  private previousKeys = new Map<number, Key>();
+
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
   calculate(): MeasureEvent[] {
@@ -87,6 +96,7 @@ class MeasureEventCalculator {
 
     for (const part of this.musicXML.scorePartwise.getParts()) {
       this.quarterNoteDivisions = 1;
+      this.previousKeys = new Map<number, Key>();
 
       const partId = part.getId();
       const measures = part.getMeasures();
@@ -142,7 +152,7 @@ class MeasureEventCalculator {
       staveNumber,
       voiceId,
       measureBeat: this.measureBeat,
-      musicXML: { note },
+      // TODO: This will probably need to be exploded out into note subtypes.
     });
 
     this.measureBeat = this.measureBeat.add(duration);
@@ -161,35 +171,91 @@ class MeasureEventCalculator {
   }
 
   private processAttributes(attributes: musicxml.Attributes, partId: string, measureIndex: number): void {
+    const staveCount = new StaveCount(partId, attributes.getStaveCount() ?? 1);
     this.events.push({
-      type: 'attributes',
+      type: 'stavecount',
       partId,
       measureIndex,
       measureBeat: this.measureBeat,
-      musicXML: { attributes },
+      staveCount,
     });
 
-    for (const measureStyle of attributes.getMeasureStyles()) {
+    const staveLineCounts = attributes
+      .getStaveDetails()
+      .map((staveDetails) => StaveLineCount.fromMusicXML(partId, { staveDetails }));
+    for (const staveLineCount of staveLineCounts) {
       this.events.push({
-        type: 'measurestyle',
+        type: 'stavelinecount',
         partId,
         measureIndex,
-        staveNumber: measureStyle.getStaveNumber() ?? 1,
         measureBeat: this.measureBeat,
-        musicXML: { measureStyle },
+        staveNumber: staveLineCount.getStaveNumber(),
+        staveLineCount,
+      });
+    }
+
+    const clefs = attributes.getClefs().map((clef) => Clef.fromMusicXML(partId, { clef }));
+    for (const clef of clefs) {
+      this.events.push({
+        type: 'clef',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber: clef.getStaveNumber(),
+        clef,
+      });
+    }
+
+    for (const attributeKey of attributes.getKeys()) {
+      const staveNumber = attributeKey.getStaveNumber();
+      const previousKey = this.previousKeys.get(staveNumber) ?? null;
+      const key = Key.fromMusicXML(partId, previousKey, { key: attributeKey });
+      this.previousKeys.set(staveNumber, key);
+      this.events.push({
+        type: 'key',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber,
+        key,
+      });
+    }
+
+    const times = attributes.getTimes().map((time) => Time.fromMusicXML(partId, { time }));
+    for (const time of times) {
+      this.events.push({
+        type: 'time',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber: time.getStaveNumber(),
+        time,
+      });
+    }
+
+    const measureStyle = attributes.getMeasureStyles().find((measureStyle) => measureStyle.getMultipleRestCount() > 0);
+    if (measureStyle) {
+      this.events.push({
+        type: 'multirest',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        measureCount: measureStyle.getMultipleRestCount(),
+        staveNumber: measureStyle.getStaveNumber(),
       });
     }
   }
 
   private processDirection(direction: musicxml.Direction, partId: string, measureIndex: number): void {
     const metronome = direction.getMetronome();
-    if (metronome) {
+    const mark = metronome?.getMark();
+    if (metronome && mark) {
       this.events.push({
         type: 'metronome',
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        musicXML: { metronome },
+        metronome: Metronome.fromMusicXML({ metronome, mark }),
       });
     }
   }

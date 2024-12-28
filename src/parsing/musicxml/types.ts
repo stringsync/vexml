@@ -1,5 +1,10 @@
 import { Fraction } from '@/util';
-import * as musicxml from '@/musicxml';
+import { Clef } from './clef';
+import { Metronome } from './metronome';
+import { Key } from './key';
+import { Time } from './time';
+import { StaveLineCount } from './stavelinecount';
+import { StaveCount } from './stavecount';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -16,19 +21,51 @@ export type NoteEvent = {
   staveNumber: number;
   voiceId: string;
   measureBeat: Fraction;
-  musicXML: {
-    note: musicxml.Note;
-  };
+  // TODO: This will probably need to be exploded out into note subtypes.
 };
 
-export type AttributesEvent = {
-  type: 'attributes';
+export type StaveCountEvent = {
+  type: 'stavecount';
   partId: string;
   measureIndex: number;
   measureBeat: Fraction;
-  musicXML: {
-    attributes: musicxml.Attributes;
-  };
+  staveCount: StaveCount;
+};
+
+export type StaveLineCountEvent = {
+  type: 'stavelinecount';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  staveLineCount: StaveLineCount;
+};
+
+export type ClefEvent = {
+  type: 'clef';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  clef: Clef;
+};
+
+export type KeyEvent = {
+  type: 'key';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  key: Key;
+};
+
+export type TimeEvent = {
+  type: 'time';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  time: Time;
 };
 
 export type MetronomeEvent = {
@@ -36,23 +73,27 @@ export type MetronomeEvent = {
   partId: string;
   measureIndex: number;
   measureBeat: Fraction;
-  musicXML: {
-    metronome: musicxml.Metronome;
-  };
+  metronome: Metronome;
 };
 
-export type MeasureStyleEvent = {
-  type: 'measurestyle';
+export type MultiRestEvent = {
+  type: 'multirest';
   partId: string;
   measureIndex: number;
-  staveNumber: number;
+  staveNumber: number | null;
   measureBeat: Fraction;
-  musicXML: {
-    measureStyle: musicxml.MeasureStyle;
-  };
+  measureCount: number;
 };
 
-export type MusicXMLEvent = NoteEvent | AttributesEvent | MetronomeEvent | MeasureStyleEvent;
+export type MusicXMLEvent =
+  | NoteEvent
+  | StaveCountEvent
+  | StaveLineCountEvent
+  | ClefEvent
+  | KeyEvent
+  | TimeEvent
+  | MetronomeEvent
+  | MultiRestEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 

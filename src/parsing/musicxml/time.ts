@@ -9,6 +9,11 @@ export class Time {
     return new Time(partId, staveNumber, []);
   }
 
+  static fromMusicXML(partId: string, musicXML: { time: musicxml.Time }) {
+    // TODO: Extract the real time components.
+    return new Time(partId, musicXML.time.getStaveNumber(), [new Fraction(4, 4)]);
+  }
+
   getPartId(): string {
     return this.partId;
   }

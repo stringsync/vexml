@@ -1,7 +1,7 @@
 import * as util from '@/util';
 import { Chorus } from './chorus';
 import { Signature } from './signature';
-import { MeasureStyleEvent, StaveEvent } from './types';
+import { StaveEvent } from './types';
 
 export class Stave {
   constructor(
@@ -30,13 +30,5 @@ export class Stave {
 
   getChorus(): Chorus {
     return new Chorus();
-  }
-
-  private getMultiRestCount(): number {
-    return (
-      this.events
-        .find((event): event is MeasureStyleEvent => event.type === 'measurestyle')
-        ?.musicXML.measureStyle.getMultipleRestCount() ?? 0
-    );
   }
 }

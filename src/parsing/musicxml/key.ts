@@ -1,3 +1,4 @@
+import * as musicxml from '@/musicxml';
 import { KeyMode } from './enums';
 
 /** Represents a key signature. */
@@ -12,6 +13,16 @@ export class Key {
 
   static default(partId: string, staveNumber: number): Key {
     return new Key(partId, staveNumber, 0, null, 'none');
+  }
+
+  static fromMusicXML(partId: string, previousKey: Key | null, musicXML: { key: musicxml.Key }): Key {
+    return new Key(
+      partId,
+      musicXML.key.getStaveNumber(),
+      musicXML.key.getFifthsCount(),
+      previousKey,
+      musicXML.key.getMode()
+    );
   }
 
   getPartId(): string {
