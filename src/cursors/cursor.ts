@@ -1,4 +1,4 @@
-import * as rendering from '@/rendering';
+import * as rendering from '@/legacyrendering';
 import * as playback from '@/playback';
 import * as util from '@/util';
 import * as spatial from '@/spatial';

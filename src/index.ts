@@ -1,7 +1,7 @@
 export * from './vexml';
-export * from './rendering/events';
+export * from './legacyrendering/events';
 export { MusicXMLParser, MXLParser } from './parsing';
-export { type Rendering, type Gap } from './rendering';
+export { type Rendering, type Gap } from './legacyrendering';
 export { SimpleCursor } from './components';
 export { CONFIG_SCHEMA, DEFAULT_CONFIG } from './config';
 export type { Config, SchemaDescriptor, SchemaType, SchemaConfig } from './config';

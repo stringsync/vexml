@@ -1,5 +1,5 @@
 import * as spatial from '@/spatial';
-import * as rendering from '@/rendering';
+import * as rendering from '@/legacyrendering';
 import * as util from '@/util';
 import { Duration } from './duration';
 import { Sequence } from './sequence';
