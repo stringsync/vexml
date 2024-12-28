@@ -1,4 +1,3 @@
-import * as musicxml from '@/musicxml';
 import { Metronome } from './metronome';
 import { StaveCount } from './stavecount';
 import { StaveLineCount } from './stavelinecount';
@@ -118,21 +117,84 @@ export class Signature {
 
 class SignatureBuilder {
   private previousSignature = Signature.default();
-  private metronome: musicxml.Metronome | null = null;
-  private attributes = new Map<string, musicxml.Attributes>();
+  private metronome: Metronome | null = null;
+
+  // partId -> StaveCount
+  private staveCounts = new Map<string, StaveCount>();
+
+  // partId -> staveNumber -> StaveLineCount
+  private staveLineCounts = new Map<string, Map<number, StaveLineCount>>();
+
+  // partId -> staveNumber -> Clef
+  private clefs = new Map<string, Map<number, Clef>>();
+
+  // partId -> staveNumber -> Key
+  private keys = new Map<string, Map<number, Key>>();
+
+  // partId -> staveNumber -> Time
+  private times = new Map<string, Map<number, Time>>();
 
   setPreviousSignature(signature: Signature): SignatureBuilder {
     this.previousSignature = signature;
     return this;
   }
 
-  addMetronome(musicXML: { metronome: musicxml.Metronome }): SignatureBuilder {
-    this.metronome = musicXML.metronome;
+  setMetronome(metronome: Metronome): SignatureBuilder {
+    this.metronome = metronome;
     return this;
   }
 
-  addAttributes(partId: string, musicXML: { attributes: musicxml.Attributes }): SignatureBuilder {
-    this.attributes.set(partId, musicXML.attributes);
+  addStaveCount(staveCount: StaveCount): SignatureBuilder {
+    const partId = staveCount.getPartId();
+    this.staveCounts.set(partId, staveCount);
+    return this;
+  }
+
+  addStaveLineCount(staveLineCount: StaveLineCount): SignatureBuilder {
+    const partId = staveLineCount.getPartId();
+    const staveNumber = staveLineCount.getStaveNumber();
+
+    if (!this.staveLineCounts.has(partId)) {
+      this.staveLineCounts.set(partId, new Map());
+    }
+    this.staveLineCounts.get(partId)!.set(staveNumber, staveLineCount);
+
+    return this;
+  }
+
+  addKey(key: Key): SignatureBuilder {
+    const partId = key.getPartId();
+    const staveNumber = key.getStaveNumber();
+
+    if (!this.keys.has(partId)) {
+      this.keys.set(partId, new Map());
+    }
+    this.keys.get(partId)!.set(staveNumber, key);
+
+    return this;
+  }
+
+  addClef(clef: Clef): SignatureBuilder {
+    const partId = clef.getPartId();
+    const staveNumber = clef.getStaveNumber();
+
+    if (!this.clefs.has(partId)) {
+      this.clefs.set(partId, new Map());
+    }
+    this.clefs.get(partId)!.set(staveNumber, clef);
+
+    return this;
+  }
+
+  addTime(time: Time): SignatureBuilder {
+    const partId = time.getPartId();
+    const staveNumber = time.getStaveNumber();
+
+    if (!this.times.has(partId)) {
+      this.times.set(partId, new Map());
+    }
+    this.times.get(partId)!.set(staveNumber, time);
+
     return this;
   }
 
@@ -157,29 +219,15 @@ class SignatureBuilder {
   }
 
   private buildMetronome(): Metronome {
-    const metronome = this.metronome;
-    const mark = metronome?.getMark();
-    if (metronome && mark) {
-      return Metronome.fromMusicXML({ metronome, mark });
-    }
-
-    return Metronome.default();
+    return this.metronome ?? Metronome.default();
   }
 
   private buildStaveCounts(): StaveCount[] {
-    const next = new Array<StaveCount>();
-    for (const [partId, attributes] of this.attributes) {
-      const count = attributes.getStaveCount();
-      if (typeof count === 'number') {
-        next.push(new StaveCount(partId, count));
-      } else {
-        next.push(StaveCount.default(partId));
-      }
-    }
+    const next = this.staveCounts.values();
 
     const existing = new Array<StaveCount>();
     for (const staveCount of this.previousSignature.getStaveCounts()) {
-      if (!this.attributes.has(staveCount.getPartId())) {
+      if (!this.staveCounts.has(staveCount.getPartId())) {
         existing.push(staveCount);
       }
     }
@@ -195,16 +243,13 @@ class SignatureBuilder {
     }
 
     const next = new Array<StaveLineCount>();
-    for (const [partId, attributes] of this.attributes) {
-      for (const staveDetail of attributes.getStaveDetails()) {
-        const staveNumber = staveDetail.getStaveNumber();
+    for (const [partId, partStaveLineCounts] of this.staveLineCounts) {
+      for (const [staveNumber, staveLineCount] of partStaveLineCounts) {
         if (isSeen(partId, staveNumber)) {
           continue;
         }
         seen.push({ partId, staveNumber });
-
-        const staveLineCount = staveDetail.getStaveLines();
-        next.push(new StaveLineCount(partId, staveNumber, staveLineCount));
+        next.push(staveLineCount);
       }
     }
 
@@ -226,18 +271,13 @@ class SignatureBuilder {
     }
 
     const next = new Array<Clef>();
-    for (const [partId, attributes] of this.attributes) {
-      for (const clef of attributes.getClefs()) {
-        const staveNumber = clef.getStaveNumber();
+    for (const [partId, partClefs] of this.clefs) {
+      for (const [staveNumber, clef] of partClefs) {
         if (isSeen(partId, staveNumber)) {
           continue;
         }
         seen.push({ partId, staveNumber });
-
-        const line = clef.getLine();
-        const sign = clef.getSign();
-        const octaveChange = clef.getOctaveChange();
-        next.push(new Clef(partId, staveNumber, line, sign, octaveChange));
+        next.push(clef);
       }
     }
 
@@ -259,24 +299,19 @@ class SignatureBuilder {
     }
 
     const next = new Array<Key>();
-    for (const [partId, attributes] of this.attributes) {
-      for (const key of attributes.getKeys()) {
-        const staveNumber = key.getStaveNumber();
+    for (const [partId, partKeys] of this.keys) {
+      for (const [staveNumber, key] of partKeys) {
         if (isSeen(partId, staveNumber)) {
           continue;
         }
         seen.push({ partId, staveNumber });
-
-        const fifths = key.getFifthsCount();
-        const mode = key.getMode();
-        const previousKey = this.previousSignature.getPreviousKey(partId, staveNumber);
-        next.push(new Key(partId, staveNumber, fifths, previousKey, mode));
+        next.push(key);
       }
     }
 
     const existing = new Array<Key>();
     for (const key of this.previousSignature.getKeys()) {
-      if (!this.attributes.has(key.getPartId())) {
+      if (!this.keys.has(key.getPartId())) {
         existing.push(key);
       }
     }

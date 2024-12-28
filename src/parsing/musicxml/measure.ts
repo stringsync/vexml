@@ -57,15 +57,23 @@ class FragmentFactory {
           case 'note':
             buffer.push(e);
             break;
-          case 'measurestyle':
-            // We'll handle the measure style more precisely downstream.
-            buffer.push(e);
-            break;
-          case 'attributes':
-            builder.addAttributes(e.partId, e.musicXML);
-            break;
           case 'metronome':
-            builder.addMetronome(e.musicXML);
+            builder.setMetronome(e.metronome);
+            break;
+          case 'stavecount':
+            builder.addStaveCount(e.staveCount);
+            break;
+          case 'stavelinecount':
+            builder.addStaveLineCount(e.staveLineCount);
+            break;
+          case 'clef':
+            builder.addClef(e.clef);
+            break;
+          case 'key':
+            builder.addKey(e.key);
+            break;
+          case 'time':
+            builder.addTime(e.time);
             break;
         }
       }

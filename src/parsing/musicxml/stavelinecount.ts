@@ -7,6 +7,10 @@ export class StaveLineCount {
     return new StaveLineCount(partId, staveNumber, 5);
   }
 
+  static fromMusicXML(partId: string, musicXML: { staveDetails: musicxml.StaveDetails }) {
+    return new StaveLineCount(partId, musicXML.staveDetails.getStaveNumber(), musicXML.staveDetails.getStaveLines());
+  }
+
   getPartId(): string {
     return this.partId;
   }

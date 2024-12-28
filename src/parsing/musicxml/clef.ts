@@ -14,6 +14,16 @@ export class Clef {
     return new Clef(partId, staveNumber, null, null, null);
   }
 
+  static fromMusicXML(partId: string, musicXML: { clef: musicxml.Clef }) {
+    return new Clef(
+      partId,
+      musicXML.clef.getStaveNumber(),
+      musicXML.clef.getLine(),
+      musicXML.clef.getSign(),
+      musicXML.clef.getOctaveChange()
+    );
+  }
+
   getPartId(): string {
     return this.partId;
   }
