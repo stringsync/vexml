@@ -88,14 +88,32 @@ export class Fraction {
 
   /** Returns whether the other fraction is equal to this fraction.  */
   isEquivalent(value: Fraction): boolean {
-    const v1 = this.simplify();
-    const v2 = value.simplify();
-    return v1.numerator === v2.numerator && v1.denominator === v2.denominator;
+    return this.numerator * value.denominator === value.numerator * this.denominator;
   }
 
   /** Returns whether the other fraction has the exact same numerator and denominator. */
   isEqual(value: Fraction): boolean {
     return this.numerator === value.numerator && this.denominator === value.denominator;
+  }
+
+  /** Returns whether this fraction is less than the other. */
+  isLessThan(value: Fraction): boolean {
+    return this.numerator * value.denominator < value.numerator * this.denominator;
+  }
+
+  /** Returns whether this fraction is less than or _equivalent_ to the other. */
+  isLessThanOrEqualTo(value: Fraction): boolean {
+    return this.isLessThan(value) || this.isEquivalent(value);
+  }
+
+  /** Returns whether this fraction is greater than the other. */
+  isGreaterThan(value: Fraction): boolean {
+    return this.numerator * value.denominator > value.numerator * this.denominator;
+  }
+
+  /** Returns whether this fraction is greater than or _equivalent_ to the other. */
+  isGreaterThanOrEqualTo(value: Fraction): boolean {
+    return this.isGreaterThan(value) || this.isEquivalent(value);
   }
 
   /** Reduces the numerator and denominator to its lowest common factor. */

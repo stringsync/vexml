@@ -32,88 +32,115 @@ export class Measure {
   }
 }
 
-class FragmentFactory {
-  private fragments = new Array<Fragment>();
+type SignatureRange = {
+  signature: Signature;
+  start: Fraction;
+  end: Fraction;
+};
 
+class FragmentFactory {
   constructor(private initialSignature: Signature, private events: MeasureEvent[], private partIds: string[]) {}
 
   create(): Fragment[] {
-    this.fragments = [];
+    const ranges = this.getSignatureRanges();
 
-    const eventsByBeat = this.getEventsByBeat();
-    const beats = [...eventsByBeat.keys()].sort((a, b) => a.toDecimal() - b.toDecimal());
+    // Ensure that we always have at least one fragment.
+    if (ranges.length === 0) {
+      return [new Fragment(this.initialSignature, [], this.partIds)];
+    }
 
+    const fragments = new Array<Fragment>();
+
+    let index = 0;
+    const events = this.events.filter((e): e is StaveEvent => e.type === 'note');
+
+    for (const range of ranges) {
+      const fragmentEvents = new Array<StaveEvent>();
+      while (events.at(index)?.measureBeat.isLessThanOrEqualTo(range.end)) {
+        fragmentEvents.push(events[index]);
+        index++;
+      }
+      fragments.push(new Fragment(range.signature, fragmentEvents, this.partIds));
+    }
+
+    return fragments;
+  }
+
+  private getUniqueMeasureBeats(): Fraction[] {
+    const measureBeats = new Array<Fraction>();
+
+    // Let N be the number of events. This is O(N^2) but N should be small.
+    for (const event of this.events) {
+      const hasEquivalent = measureBeats.some((m) => m.isEquivalent(event.measureBeat));
+      if (!hasEquivalent) {
+        measureBeats.push(event.measureBeat);
+      }
+    }
+
+    return measureBeats;
+  }
+
+  private getSignatureRanges(): Array<SignatureRange> {
+    const ranges = new Array<SignatureRange>();
+
+    let start = new Fraction(0);
     let signature = this.initialSignature;
-    let buffer = new Array<StaveEvent>();
+    const measureBeats = this.getUniqueMeasureBeats();
 
-    for (const beat of beats) {
-      const events = eventsByBeat.get(beat);
-      util.assertDefined(events);
+    for (let index = 0; index < measureBeats.length; index++) {
+      const measureBeat = measureBeats[index];
 
-      const builder = Signature.builder();
+      const builder = Signature.builder().setPreviousSignature(signature);
 
-      for (const e of events) {
-        switch (e.type) {
-          case 'note':
-            console.log(e.partId, e.measureIndex, `${e.note.getDuration().toDecimal()}`);
-            buffer.push(e);
-            break;
+      // Process all the events that occur at this measure beat.
+      const events = this.events.filter((e) => e.measureBeat.isEquivalent(measureBeat));
+      for (const event of events) {
+        switch (event.type) {
           case 'metronome':
-            builder.setMetronome(e.metronome);
+            builder.setMetronome(event.metronome);
             break;
           case 'stavecount':
-            builder.addStaveCount(e.staveCount);
+            builder.addStaveCount(event.staveCount);
             break;
           case 'stavelinecount':
-            builder.addStaveLineCount(e.staveLineCount);
+            builder.addStaveLineCount(event.staveLineCount);
             break;
           case 'clef':
-            builder.addClef(e.clef);
+            builder.addClef(event.clef);
             break;
           case 'key':
-            builder.addKey(e.key);
+            builder.addKey(event.key);
             break;
           case 'time':
-            builder.addTime(e.time);
+            builder.addTime(event.time);
             break;
         }
       }
 
-      // TODO: There's something wrong here — we're not collecting the notes correctly.
+      // Build the signature and create a range if it changed.
       const nextSignature = builder.build();
       if (nextSignature.hasChanges()) {
-        this.fragments.push(new Fragment(signature, buffer, this.partIds));
-        buffer = [];
+        const end = measureBeat;
+        if (!start.isEquivalent(end)) {
+          ranges.push({ signature, start, end });
+        }
         signature = nextSignature;
+        start = end;
       }
     }
 
-    if (buffer.length > 0) {
-      this.fragments.push(new Fragment(signature, buffer, this.partIds));
+    // Ensure that the last range includes the last measure beat to cover everything.
+    const lastRange = ranges.at(-1);
+    const lastMeasureBeat = measureBeats.at(-1);
+    if (lastRange && lastMeasureBeat) {
+      lastRange.end = lastMeasureBeat;
     }
 
-    return this.fragments;
-  }
-
-  private getEventsByBeat(): Map<Fraction, MeasureEvent[]> {
-    const result = new Map<Fraction, MeasureEvent[]>();
-
-    const seen = new Set<MeasureEvent>();
-
-    for (const event of this.events) {
-      const beat = event.measureBeat;
-      if (!result.has(beat)) {
-        result.set(beat, []);
-      }
-
-      const events = this.events.filter((e) => e.measureBeat.isEquivalent(beat));
-      for (const e of events) {
-        seen.add(e);
-      }
-
-      result.set(beat, events);
+    // If there are no ranges, add a single range that covers the entire measure.
+    if (ranges.length === 0 && lastMeasureBeat) {
+      ranges.push({ signature, start, end: lastMeasureBeat });
     }
 
-    return result;
+    return ranges;
   }
 }
