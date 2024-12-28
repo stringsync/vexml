@@ -5,6 +5,7 @@ import { Key } from './key';
 import { Time } from './time';
 import { StaveLineCount } from './stavelinecount';
 import { StaveCount } from './stavecount';
+import { Note } from './note';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -13,6 +14,8 @@ export type SignatureChange =
   | { type: 'clef'; partId: string; staveNumber: number }
   | { type: 'key'; partId: string; staveNumber: number }
   | { type: 'time'; partId: string; staveNumber: number };
+
+export type VoiceEntry = Note;
 
 export type NoteEvent = {
   type: 'note';

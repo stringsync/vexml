@@ -60,7 +60,64 @@ export type StaveSignature = {
 
 export type Voice = {
   type: 'voice';
+  entries: VoiceEntry[];
 };
+
+export type VoiceEntry = Note;
+
+export type Note = {
+  type: 'note';
+  pitch: string;
+  octave: number;
+  head: Notehead;
+  dotCount: number;
+  stemDirection: NoteStemDirection;
+  duration: Fraction;
+  measureBeat: Fraction;
+};
+
+export type Notehead =
+  | ''
+  | 'D0'
+  | 'D1'
+  | 'D2'
+  | 'D3'
+  | 'T0'
+  | 'T1'
+  | 'T2'
+  | 'T3'
+  | 'X0'
+  | 'X1'
+  | 'X2'
+  | 'X3'
+  | 'S1'
+  | 'S2'
+  | 'R1'
+  | 'R2'
+  | 'DO'
+  | 'RE'
+  | 'MI'
+  | 'FA'
+  | 'FAUP'
+  | 'SO'
+  | 'LA'
+  | 'TI'
+  | 'D'
+  | 'H'
+  | 'N'
+  | 'G'
+  | 'M'
+  | 'X'
+  | 'CX'
+  | 'CI'
+  | 'S'
+  | 'SQ'
+  | 'TU'
+  | 'TD'
+  | 'SF'
+  | 'SB';
+
+export type NoteStemDirection = 'up' | 'down' | 'auto';
 
 export type Clef = {
   type: 'clef';
