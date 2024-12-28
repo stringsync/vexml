@@ -1,3 +1,5 @@
+import * as musicxml from '@/musicxml';
+import * as conversions from './conversions';
 import { Fraction } from '@/util';
 import { Notehead, StemDirection } from './enums';
 
@@ -11,6 +13,15 @@ export class Note {
     private duration: Fraction,
     private measureBeat: Fraction
   ) {}
+
+  static fromMusicXML(measureBeat: Fraction, duration: Fraction, musicXML: { note: musicxml.Note }): Note {
+    const pitch = musicXML.note.getStep();
+    const octave = musicXML.note.getOctave();
+    const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
+    const dotCount = musicXML.note.getDotCount();
+    const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
+    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat);
+  }
 
   getPitch(): string {
     return this.pitch;

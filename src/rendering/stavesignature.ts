@@ -197,7 +197,7 @@ export class StaveSignature {
       }
     }
 
-    const quarterNoteDivisions = opts.musicXML.attributes.getQuarterNoteDivisions();
+    const quarterNoteDivisions = opts.musicXML.attributes.getQuarterNoteDivisions() ?? 1;
     const attributes = opts.musicXML.attributes;
 
     const staveSignature = new StaveSignature({

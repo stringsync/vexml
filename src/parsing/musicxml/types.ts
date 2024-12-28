@@ -23,8 +23,9 @@ export type NoteEvent = {
   measureIndex: number;
   staveNumber: number;
   voiceId: string;
+  duration: Fraction;
   measureBeat: Fraction;
-  // TODO: This will probably need to be exploded out into note subtypes.
+  note: Note;
 };
 
 export type StaveCountEvent = {

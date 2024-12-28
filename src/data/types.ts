@@ -117,7 +117,7 @@ export type Notehead =
   | 'SF'
   | 'SB';
 
-export type NoteStemDirection = 'up' | 'down' | 'auto';
+export type NoteStemDirection = 'auto' | 'up' | 'down' | 'none';
 
 export type Clef = {
   type: 'clef';
