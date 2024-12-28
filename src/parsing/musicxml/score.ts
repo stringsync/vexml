@@ -15,4 +15,8 @@ export class Score {
     const system = new System({ scorePartwise: this.musicXML.scorePartwise });
     return [system];
   }
+
+  getPartLabels(): string[] {
+    return this.musicXML.scorePartwise.getPartDetails().map((p) => p.name);
+  }
 }
