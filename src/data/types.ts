@@ -47,7 +47,7 @@ export type PartSignature = {
 export type Stave = {
   type: 'stave';
   signature: StaveSignature;
-  chorus: Chorus;
+  voices: Voice[];
 };
 
 export type StaveSignature = {
@@ -58,76 +58,8 @@ export type StaveSignature = {
   time: Time;
 };
 
-export type Chorus = {
-  type: 'chorus';
-};
-
 export type Voice = {
   type: 'voice';
-  id: string;
-  entries: Array<VoiceEntry>;
-};
-
-export type VoiceEntry =
-  | StaveNote
-  | StaveChord
-  | StaveGraceNote
-  | StaveGraceChord
-  | TabNote
-  | TabChord
-  | TabGraceNote
-  | TabGraceChord
-  | Rest
-  | SymbolNote;
-
-export type StaveNote = {
-  type: 'stavenote';
-  duration: Fraction;
-};
-
-export type StaveChord = {
-  type: 'stavechord';
-  notes: StaveNote[];
-};
-
-export type StaveGraceNote = {
-  type: 'stavegracenote';
-  duration: Fraction;
-};
-
-export type StaveGraceChord = {
-  type: 'stavegracechord';
-  notes: StaveNote[];
-};
-
-export type TabNote = {
-  type: 'tabnote';
-  duration: Fraction;
-};
-
-export type TabChord = {
-  type: 'tabchord';
-  notes: TabNote[];
-};
-
-export type TabGraceNote = {
-  type: 'tabgracenote';
-  duration: Fraction;
-};
-
-export type TabGraceChord = {
-  type: 'tabgracechord';
-  notes: TabGraceNote[];
-};
-
-export type Rest = {
-  type: 'rest';
-  duration: Fraction;
-};
-
-export type SymbolNote = {
-  type: 'symbolnote';
-  duration: Fraction;
 };
 
 export type Clef = {
