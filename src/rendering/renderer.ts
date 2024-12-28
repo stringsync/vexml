@@ -1,13 +1,12 @@
 import * as data from '@/data';
-import * as elements from '@/elements';
-import * as components from '@/components';
-import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Logger, NoopLogger } from '@/debug';
-import { System } from './system';
-import { Title } from './title';
+import { Rendering } from './rendering';
+import { Prerendering } from './prerendering';
+import { NoopRenderContext } from './nooprendercontext';
 
 export type RenderOptions = {
   config?: Partial<Config>;
@@ -21,59 +20,23 @@ export class Renderer {
     this.document = new Document(document);
   }
 
-  render(element: HTMLDivElement, opts?: RenderOptions): elements.Score {
+  render(element: HTMLDivElement, opts?: RenderOptions): Rendering {
     const config = { ...DEFAULT_CONFIG, ...opts?.config };
-    const log = opts?.logger || new NoopLogger();
+    const log = opts?.logger ?? new NoopLogger();
+    return this.prerender(config, log).render(element);
+  }
 
-    const root = this.getRoot(element, config, log);
-    const ctx = this.getVexflowRenderingContext(root);
-
+  @util.memoize()
+  private prerender(config: Config, log: Logger): Prerendering {
     const start = performance.now();
-    log.debug('prerender start');
 
-    const result = this.renderScore(ctx, new Score(config, log, this.document));
+    const ctx = new NoopRenderContext();
+    const score = new Score(config, log, this.document).render(ctx);
 
-    const end = performance.now();
-    log.debug('prerender stop', { duration: `${end - start}ms` });
+    const stop = performance.now();
+    const elapsed = stop - start;
+    log.info(`prerendered in ${elapsed.toFixed(2)}ms`);
 
-    return result;
-  }
-
-  private getRoot(container: HTMLDivElement, config: Config, log: Logger): components.Root {
-    switch (config.DRAWING_BACKEND) {
-      case 'svg':
-        return components.Root.svg(container, config.HEIGHT ?? undefined);
-      case 'canvas':
-        return components.Root.canvas(container, config.HEIGHT ?? undefined);
-      default:
-        log.info(`backend not specified or supported, defaulting to 'svg'`);
-        return components.Root.svg(container, config.HEIGHT ?? undefined);
-    }
-  }
-
-  private getVexflowRenderingContext(root: components.Root): vexflow.RenderContext {
-    const container = root.getVexflowContainerElement();
-    // TODO: May need to resize the renderer.
-    if (container instanceof HTMLCanvasElement) {
-      return new vexflow.Renderer(container, vexflow.Renderer.Backends.CANVAS).getContext();
-    }
-    return new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG).getContext();
-  }
-
-  private renderScore(ctx: vexflow.RenderContext, score: Score): elements.Score {
-    const title = this.renderTitle(ctx, score.getTitle());
-
-    return new elements.Score(title, []);
-  }
-
-  private renderTitle(ctx: vexflow.RenderContext, title: Title): elements.Title {
-    const text = title.getText();
-    text.draw(ctx);
-
-    return new elements.Title(text);
-  }
-
-  private renderSystem(system: System): elements.System {
-    throw new Error('Not implemented');
+    return new Prerendering(config, log, this.document, { score });
   }
 }

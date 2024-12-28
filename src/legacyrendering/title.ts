@@ -1,7 +1,6 @@
 import { Config } from '@/config';
 import * as debug from '@/debug';
 import * as drawing from '@/drawing';
-import * as util from '@/util';
 import { TextMeasurer } from './textmeasurer';
 
 export type TitleRendering = {

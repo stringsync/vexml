@@ -8,11 +8,11 @@ import { Player, PlayerState } from '../lib/Player';
 
 const STRINGSYNC_RED = '#FC354C';
 
-export type VexmlProps = {
+export type LegacyVexmlProps = {
   musicXML: string;
   height: number | undefined;
   backend: RenderingBackend;
-  config: vexml.Config;
+  config: vexml.LegacyConfig;
   cursorInputs: CursorInput[];
   onResult: (result: VexmlResult) => void;
   onEvent: vexml.AnyEventListener;
@@ -34,7 +34,7 @@ export const LegacyVexml = ({
   onResult,
   onEvent,
   onPartIdsChange,
-}: VexmlProps) => {
+}: LegacyVexmlProps) => {
   const device = useMemo(getDevice, []);
   const scrollBehavior: ScrollBehavior = device.inputType === 'mouseonly' ? 'smooth' : 'auto';
 
@@ -278,9 +278,6 @@ export const LegacyVexml = ({
     let rendering: vexml.Rendering | null = null;
 
     try {
-      const parser = new vexml.MusicXMLParser();
-      console.log(JSON.stringify(parser.parse(musicXML).score, null, 2));
-
       rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         element: div,
         height,

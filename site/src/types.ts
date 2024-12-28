@@ -6,21 +6,21 @@ export type Source =
       type: 'local';
       musicXML: string;
       backend: RenderingBackend;
-      config: vexml.Config;
+      config: vexml.LegacyConfig;
       height: number;
     }
   | {
       type: 'remote';
       url: string;
       backend: RenderingBackend;
-      config: vexml.Config;
+      config: vexml.LegacyConfig;
       height: number;
     }
   | {
       type: 'example';
       path: string;
       backend: RenderingBackend;
-      config: vexml.Config;
+      config: vexml.LegacyConfig;
       height: number;
     };
 

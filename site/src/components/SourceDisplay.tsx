@@ -15,6 +15,7 @@ import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 import { ConfigForm } from './ConfigForm';
 import { EventTypeForm } from './EventTypeForm';
 import { CursorForm } from './CursorForm';
+import { Vexml } from './Vexml';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -40,12 +41,12 @@ export const SourceDisplay = (props: SourceProps) => {
   const lockIconRef = useRef<HTMLElement>(null);
   useTooltip(lockIconRef, 'right', 'There are no other vexml versions available');
 
-  const [vexmlResult, setVexmlResult] = useState<VexmlResult>({ type: 'none' });
+  const [legacyVexmlResult, setLegacyVexmlResult] = useState<VexmlResult>({ type: 'none' });
 
   const snapshotButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(snapshotButtonRef, 'top', SNAPSHOT_NAME);
 
-  const element = vexmlResult.type === 'success' ? vexmlResult.element : null;
+  const element = legacyVexmlResult.type === 'success' ? legacyVexmlResult.element : null;
   const snapshotButtonDisabled = !(element instanceof SVGElement) && !(element instanceof HTMLCanvasElement);
   const onSnapshotClick = async () => {
     if (element instanceof SVGElement) {
@@ -72,7 +73,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const configFormCardId = useId();
   const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
-  const onConfigChange = (config: vexml.Config) => {
+  const onConfigChange = (config: vexml.LegacyConfig) => {
     props.onUpdate({ ...props.source, config });
   };
 
@@ -250,24 +251,34 @@ export const SourceDisplay = (props: SourceProps) => {
           </div>
         </div>
 
-        <SourceInfo
-          vexmlResult={vexmlResult}
-          musicXML={musicXML}
-          isMusicXMLLoading={isMusicXMLLoading}
-          musicXMLError={musicXMLError}
-        />
-
         <br />
 
         {!isMusicXMLLoading && !musicXMLError && (
-          <div className="d-flex justify-content-center">
+          <div>
+            <h2>New</h2>
+            <Vexml musicXML={musicXML} backend={props.source.backend} />
+
+            <hr />
+
+            <div className="d-flex gap-4 align-items-center">
+              <h2 className="mb-3 ">Legacy</h2>
+              <div className="flex-grow-1">
+                <SourceInfo
+                  vexmlResult={legacyVexmlResult}
+                  musicXML={musicXML}
+                  isMusicXMLLoading={isMusicXMLLoading}
+                  musicXMLError={musicXMLError}
+                />
+              </div>
+            </div>
+
             <LegacyVexml
               musicXML={musicXML}
               height={props.source.height === 0 ? undefined : props.source.height}
               cursorInputs={cursorInputs}
               backend={props.source.backend}
               config={props.source.config}
-              onResult={setVexmlResult}
+              onResult={setLegacyVexmlResult}
               onEvent={onVexmlEvent}
               onPartIdsChange={setPartIds}
             />

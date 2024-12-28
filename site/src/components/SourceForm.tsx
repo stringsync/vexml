@@ -4,7 +4,7 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { Config, DEFAULT_CONFIG, Vexml } from '@/index';
+import { LegacyConfig, DEFAULT_CONFIG, Vexml } from '@/index';
 import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
@@ -308,7 +308,12 @@ export const SourceForm = (props: SourceFormProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = (type: Source['type'], backend: RenderingBackend, config: Config, height: number): Source => {
+const getDefaultSource = (
+  type: Source['type'],
+  backend: RenderingBackend,
+  config: LegacyConfig,
+  height: number
+): Source => {
   switch (type) {
     case 'local':
       return { type, musicXML: '', backend, config, height };

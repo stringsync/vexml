@@ -13,19 +13,19 @@ const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.CONFIG_SCHEMA).sort((a, b) =>
 });
 
 export type ConfigFormProps = {
-  defaultValue?: vexml.Config;
-  onChange(config: vexml.Config): void;
+  defaultValue?: vexml.LegacyConfig;
+  onChange(config: vexml.LegacyConfig): void;
 };
 
 export const ConfigForm = (props: ConfigFormProps) => {
   const [config, setConfig] = useState(props.defaultValue ?? vexml.DEFAULT_CONFIG);
 
-  const updateNow = (config: vexml.Config) => {
+  const updateNow = (config: vexml.LegacyConfig) => {
     props.onChange(config);
   };
 
   const timeoutRef = useRef(0);
-  const updateLater = (config: vexml.Config) => {
+  const updateLater = (config: vexml.LegacyConfig) => {
     window.clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
       props.onChange(config);
@@ -33,7 +33,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
   };
 
   function get<T>(key: string): T {
-    return config[key as keyof vexml.Config] as T;
+    return config[key as keyof vexml.LegacyConfig] as T;
   }
 
   function set<T>(key: string, opts?: { immediate: boolean }) {
@@ -111,7 +111,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
   }
 
   const isResetButtonDisabled = Object.entries(config).every(
-    ([key, value]) => value === vexml.DEFAULT_CONFIG[key as keyof vexml.Config]
+    ([key, value]) => value === vexml.DEFAULT_CONFIG[key as keyof vexml.LegacyConfig]
   );
 
   return (
