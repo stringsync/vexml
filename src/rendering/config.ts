@@ -17,9 +17,17 @@ export const CONFIG = {
     defaultValue: null,
     help: 'HEIGHT specifies the maximum height of the rendered score.',
   }),
-  DEBUG_DRAW_TARGET_BOUNDS: t.boolean({
+  TITLE_FONT_FAMILY: t.string({
+    defaultValue: 'Arial',
+    help: 'TITLE_FONT_FAMILY is the font family for the title.',
+  }),
+  TITLE_FONT_SIZE: t.string({
+    defaultValue: '36px',
+    help: 'TITLE_FONT_SIZE is the font size for the title expressed in browser-compatible units.',
+  }),
+  DEBUG_DRAW_ELEMENT_BOXES: t.boolean({
     defaultValue: false,
-    help: 'DEBUG_DRAW_TARGET_BOUNDS enables drawing of target bounds for debugging.',
+    help: 'DEBUG_DRAW_ELEMENT_BOXES enables drawing of target bounds for debugging.',
   }),
 };
 
