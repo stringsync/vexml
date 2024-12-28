@@ -26,7 +26,7 @@ export class Renderer {
     const log = opts?.logger || new NoopLogger();
 
     const root = this.getRoot(element, config, log);
-    const ctx = this.getRenderingCtx(root);
+    const ctx = this.getVexflowRenderingContext(root);
 
     const start = performance.now();
     log.debug('prerender start');
@@ -51,8 +51,9 @@ export class Renderer {
     }
   }
 
-  private getRenderingCtx(root: components.Root): vexflow.RenderContext {
+  private getVexflowRenderingContext(root: components.Root): vexflow.RenderContext {
     const container = root.getVexflowContainerElement();
+    // TODO: May need to resize the renderer.
     if (container instanceof HTMLCanvasElement) {
       return new vexflow.Renderer(container, vexflow.Renderer.Backends.CANVAS).getContext();
     }
