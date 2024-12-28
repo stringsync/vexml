@@ -51,16 +51,11 @@ export class Key {
 
   isEquivalent(key: Key): boolean {
     return (
-      this.fifths === key.getFifths() &&
-      this.mode === key.getMode() &&
-      this.arePreviousKeySignaturesEquivalent(key.previousKey)
+      this.fifths === key.fifths && this.mode === key.mode && this.arePreviousKeySignaturesEquivalent(key.previousKey)
     );
   }
 
   private arePreviousKeySignaturesEquivalent(previousKey: Key | null): boolean {
-    if (!this.previousKey || !previousKey) {
-      return false;
-    }
     return this.previousKey?.fifths === previousKey?.fifths && this.previousKey?.mode === previousKey?.mode;
   }
 }

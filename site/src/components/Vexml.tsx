@@ -279,19 +279,7 @@ export const Vexml = ({
 
     try {
       const parser = new vexml.MusicXMLParser();
-      console.log(
-        JSON.stringify(
-          parser
-            .parse(musicXML)
-            .score.systems.flatMap((system) => system.measures)
-            .flatMap((measure) => measure.entries)
-            .flatMap((entry) => (entry.type === 'fragment' ? entry.parts : []))
-            .flatMap((part) => part.staves)
-            .flatMap((stave) => stave.voices),
-          null,
-          2
-        )
-      );
+      console.log(JSON.stringify(parser.parse(musicXML).score, null, 2));
 
       rendering = vexml.Vexml.fromMusicXML(musicXML).render({
         element: div,
