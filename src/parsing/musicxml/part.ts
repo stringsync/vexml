@@ -7,7 +7,7 @@ export class Part {
   constructor(private id: string, private signature: Signature, private events: StaveEvent[]) {
     util.assert(
       events.every((event) => event.partId === id),
-      'Expected all leaf events to belong to the current part'
+      'Expected all events to belong to the current part'
     );
   }
 

@@ -15,6 +15,8 @@ import { Key } from './key';
 import { Time } from './time';
 import { Fraction } from '@/util';
 import { Voice } from './voice';
+import { VoiceEntry } from './types';
+import { Note } from './note';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -107,6 +109,27 @@ export class MusicXMLParser {
   private parseVoice(voice: Voice): data.Voice {
     return {
       type: 'voice',
+      entries: voice.getEntries().map((entry) => this.parseVoiceEntry(entry)),
+    };
+  }
+
+  private parseVoiceEntry(entry: VoiceEntry): data.VoiceEntry {
+    if (entry instanceof Note) {
+      return this.parseNote(entry);
+    }
+    throw new Error(`Unsupported voice entry type: ${entry}`);
+  }
+
+  private parseNote(note: Note): data.Note {
+    return {
+      type: 'note',
+      pitch: note.getPitch(),
+      octave: note.getOctave(),
+      head: note.getHead(),
+      dotCount: note.getDotCount(),
+      stemDirection: note.getStemDirection(),
+      duration: this.parseFraction(note.getDuration()),
+      measureBeat: this.parseFraction(note.getMeasureBeat()),
     };
   }
 

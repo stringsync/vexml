@@ -58,3 +58,55 @@ export const CLEF_TYPES = new Enum([
   'percussion',
   'tab',
 ] as const);
+
+/**
+ * The suffix for a fully qualified key.
+ *
+ * See https://github.com/0xfe/vexflow/blob/974fe1aaf5bb6270577053200a59c87b32d99d31/src/tables.ts#L817
+ */
+export type Notehead = EnumValues<typeof NOTEHEADS>;
+export const NOTEHEADS = new Enum([
+  '',
+  'D0',
+  'D1',
+  'D2',
+  'D3',
+  'T0',
+  'T1',
+  'T2',
+  'T3',
+  'X0',
+  'X1',
+  'X2',
+  'X3',
+  'S1',
+  'S2',
+  'R1',
+  'R2',
+  'DO',
+  'RE',
+  'MI',
+  'FA',
+  'FAUP',
+  'SO',
+  'LA',
+  'TI',
+  'D',
+  'H',
+  'N',
+  'G',
+  'M',
+  'X',
+  'CX',
+  'CI',
+  'S',
+  'SQ',
+  'TU',
+  'TD',
+  'SF',
+  'SB',
+] as const);
+
+/** Represents the direction of a stem on a note. */
+export type StemDirection = EnumValues<typeof STEM_DIRECTIONS>;
+export const STEM_DIRECTIONS = new Enum(['up', 'down', 'auto'] as const);

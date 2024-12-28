@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Signature } from './signature';
-import { StaveEvent } from './types';
+import { StaveEvent, VoiceEvent } from './types';
 import { Voice } from './voice';
 
 export class Stave {
@@ -29,6 +29,14 @@ export class Stave {
   }
 
   getVoices(): Voice[] {
-    return [];
+    const voiceEvents = this.getVoiceEvents();
+
+    return util
+      .unique(voiceEvents.map((event) => event.voiceId))
+      .map((voiceId) => new Voice(voiceId, this.signature, voiceEvents));
+  }
+
+  private getVoiceEvents(): VoiceEvent[] {
+    return this.events.filter((event): event is VoiceEvent => event.type === 'note');
   }
 }
