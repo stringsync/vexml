@@ -9,12 +9,12 @@ import { Metronome } from './metronome';
 import { PartSignature } from './partsignature';
 import { Part } from './part';
 import { Stave } from './stave';
-import { Chorus } from './chorus';
 import { StaveSignature } from './stavesignature';
 import { Clef } from './clef';
 import { Key } from './key';
 import { Time } from './time';
 import { Fraction } from '@/util';
+import { Voice } from './voice';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -100,7 +100,13 @@ export class MusicXMLParser {
     return {
       type: 'stave',
       signature: this.parseStaveSignature(stave.getSignature().asStaveSignature(stave.getPartId(), stave.getNumber())),
-      chorus: this.parseChorus(stave.getChorus()),
+      voices: stave.getVoices().map((voice) => this.parseVoice(voice)),
+    };
+  }
+
+  private parseVoice(voice: Voice): data.Voice {
+    return {
+      type: 'voice',
     };
   }
 
@@ -156,9 +162,5 @@ export class MusicXMLParser {
       numerator: fraction.numerator,
       denominator: fraction.denominator,
     };
-  }
-
-  private parseChorus(chorus: Chorus): data.Chorus {
-    return { type: 'chorus' };
   }
 }

@@ -1,7 +1,7 @@
 import * as util from '@/util';
-import { Chorus } from './chorus';
 import { Signature } from './signature';
 import { StaveEvent } from './types';
+import { Voice } from './voice';
 
 export class Stave {
   constructor(
@@ -28,7 +28,7 @@ export class Stave {
     return this.signature;
   }
 
-  getChorus(): Chorus {
-    return new Chorus();
+  getVoices(): Voice[] {
+    return [];
   }
 }
