@@ -5,7 +5,12 @@ import { System } from './system';
 import { Title } from './title';
 
 export class Score {
-  constructor(private ctx: vexflow.RenderContext, private title: Title | null, private systems: System[]) {}
+  constructor(
+    private ctx: vexflow.RenderContext,
+    private title: Title | null,
+    private partLabels: string[],
+    private systems: System[]
+  ) {}
 
   @util.memoize()
   getRect(): spatial.Rect {
@@ -21,6 +26,10 @@ export class Score {
 
   getSystems(): System[] {
     return this.systems;
+  }
+
+  getPartLabels(): string[] {
+    return this.partLabels;
   }
 
   draw(): this {

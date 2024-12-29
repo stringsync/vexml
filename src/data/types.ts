@@ -1,8 +1,17 @@
 export type Score = {
   type: 'score';
-  title: string;
+  title: Title | null;
   partLabels: string[];
   systems: System[];
+  width: number | null;
+  height: number | null;
+};
+
+export type Title = {
+  type: 'title';
+  text: string;
+  x: number | null;
+  y: number | null;
 };
 
 export type System = {
@@ -22,6 +31,7 @@ export type Fragment = {
   type: 'fragment';
   signature: FragmentSignature;
   parts: Part[];
+  width: number | null;
 };
 
 export type FragmentSignature = {
@@ -31,8 +41,8 @@ export type FragmentSignature = {
 
 export type Gap = {
   type: 'gap';
-  text?: string;
-  width?: number;
+  text: string | null;
+  width: number | null;
   durationMs: number;
 };
 

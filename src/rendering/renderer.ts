@@ -1,6 +1,6 @@
 import * as data from '@/data';
 import * as util from '@/util';
-import * as formats from './formats';
+import * as formatters from './formatters';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
@@ -32,13 +32,14 @@ export class Renderer {
     const start = performance.now();
 
     const ctx = new NoopRenderContext();
-    const format = new formats.PrerenderingFormat();
-    const score = new Score(config, log, this.document, format).render(ctx);
+    const score = new Score(config, log, this.document).render(ctx);
+    const formatter = new formatters.UndefinedHeightFormatter(config, log, { score });
+    const document = formatter.format();
 
     const stop = performance.now();
     const elapsed = stop - start;
     log.info(`prerendered in ${elapsed.toFixed(2)}ms`);
 
-    return new Prerendering(config, log, this.document, { score });
+    return new Prerendering(config, log, document);
   }
 }

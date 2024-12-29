@@ -1,1 +1,5 @@
-export class Gap {}
+export class Gap {
+  draw(): this {
+    return this;
+  }
+}

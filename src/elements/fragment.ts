@@ -6,4 +6,8 @@ export class Fragment {
   getRect(): spatial.Rect {
     return new spatial.Rect(0, 0, 100, 50);
   }
+
+  draw(): this {
+    return this;
+  }
 }

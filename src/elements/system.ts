@@ -1,9 +1,10 @@
+import * as vexflow from 'vexflow';
 import * as spatial from '@/spatial';
 import * as util from '@/util';
 import { Measure } from './measure';
 
 export class System {
-  constructor(private measures: Measure[]) {}
+  constructor(private ctx: vexflow.RenderContext, private measures: Measure[]) {}
 
   @util.memoize()
   getRect(): spatial.Rect {
@@ -12,5 +13,12 @@ export class System {
 
   getMeasures(): Measure[] {
     return this.measures;
+  }
+
+  draw(): this {
+    for (const measure of this.measures) {
+      measure.draw();
+    }
+    return this;
   }
 }

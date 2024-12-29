@@ -5,26 +5,24 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { System } from './system';
 import { Title } from './title';
-import { Format } from './types';
 
 export class Score {
-  constructor(private config: Config, private log: Logger, private document: Document, private format: Format) {}
+  constructor(private config: Config, private log: Logger, private document: Document) {}
 
   getTitle(): Title {
-    return new Title(this.config, this.log, this.document, this.format);
+    return new Title(this.config, this.log, this.document);
   }
 
   getSystems(): System[] {
-    return this.document
-      .getSystemKeys()
-      .map((systemKey) => new System(this.config, this.log, this.document, systemKey));
+    return this.document.getSystems().map((system) => new System(this.config, this.log, this.document, { system }));
   }
 
   render(ctx: vexflow.RenderContext): elements.Score {
+    const score = this.document.getScore();
+
     const title = this.getTitle().render(ctx);
+    const systems = this.getSystems().map((system) => system.render(ctx));
 
-    const systems = this.getSystems();
-
-    return new elements.Score(ctx, title, []);
+    return new elements.Score(ctx, title, [], systems);
   }
 }
