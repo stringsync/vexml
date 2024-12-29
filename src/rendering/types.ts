@@ -4,6 +4,10 @@ export interface Formatter {
   format(): Document;
 }
 
+export type SystemArrangement = {
+  measureIndexes: number[];
+};
+
 export type SystemKey = {
   systemIndex: number;
 };

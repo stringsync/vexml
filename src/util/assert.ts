@@ -4,6 +4,12 @@ export function assertNotNull<T>(value: T): asserts value is Exclude<T, null> {
   }
 }
 
+export function assertNull(value: any): asserts value is null {
+  if (value !== null) {
+    throw new Error(`expected value to be null, got: ${value}`);
+  }
+}
+
 export function assertDefined<T>(value: T): asserts value is Exclude<T, undefined> {
   if (typeof value === 'undefined') {
     throw new Error(`expected value to be defined, got: ${value}`);

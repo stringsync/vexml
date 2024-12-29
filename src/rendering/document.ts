@@ -1,6 +1,15 @@
 import * as data from '@/data';
 import * as util from '@/util';
-import { SystemKey, MeasureKey, MeasureEntryKey, PartKey, StaveKey, VoiceKey, VoiceEntryKey } from './types';
+import {
+  SystemKey,
+  MeasureKey,
+  MeasureEntryKey,
+  PartKey,
+  StaveKey,
+  VoiceKey,
+  VoiceEntryKey,
+  SystemArrangement,
+} from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
 export class Document {
@@ -88,5 +97,36 @@ export class Document {
     const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
     util.assert(entry?.type === 'note', 'expected entry to be a note');
     return entry;
+  }
+
+  /** Returns a new document with the system arrangements applied. */
+  reflow(width: number, arrangements: SystemArrangement[]): Document {
+    const clone = this.clone();
+
+    const measures = this.data.score.systems.flatMap((s) => s.measures);
+
+    this.data.score.systems = [];
+
+    for (const arrangement of arrangements) {
+      const system: data.System = {
+        type: 'system',
+        measures: new Array<data.Measure>(),
+      };
+
+      for (const measureIndex of arrangement.measureIndexes) {
+        // TODO: Update the measure width to stretch to the system width.
+        system.measures.push(measures[measureIndex]);
+      }
+
+      this.data.score.systems.push(system);
+    }
+
+    return clone;
+  }
+
+  private clone(): Document {
+    const score = util.deepClone(this.data.score);
+    const document = new data.Document(score);
+    return new Document(document);
   }
 }
