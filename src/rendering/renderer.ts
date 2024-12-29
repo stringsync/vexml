@@ -33,6 +33,7 @@ export class Renderer {
 
     const ctx = new NoopRenderContext();
     const score = new Score(config, log, this.document).render(ctx);
+    // TODO: Support other formats.
     const formatter = new formatters.UndefinedHeightFormatter(config, log, { score });
     const document = formatter.format();
 

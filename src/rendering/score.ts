@@ -14,7 +14,9 @@ export class Score {
   }
 
   getSystems(): System[] {
-    return this.document.getSystems().map((system) => new System(this.config, this.log, this.document, { system }));
+    return this.document
+      .getSystems()
+      .map((_, systemIndex) => new System(this.config, this.log, this.document, { systemIndex }));
   }
 
   render(ctx: vexflow.RenderContext): elements.Score {

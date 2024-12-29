@@ -18,12 +18,11 @@ export class UndefinedHeightFormatter implements Formatter {
   format(): Document {
     this.y = this.config.TOP_PADDING;
 
-    const score = this.formatScore();
-    const document = new data.Document(score);
+    const document = new data.Document(this.formatScore(this.elements.score));
     return new Document(document);
   }
 
-  private formatScore(): data.Score {
+  private formatScore(score: elements.Score): data.Score {
     const result: data.Score = {
       type: 'score',
       title: null,
@@ -33,13 +32,12 @@ export class UndefinedHeightFormatter implements Formatter {
       height: null,
     };
 
-    const score = this.elements.score;
     const title = score.getTitle();
 
     result.title = this.formatTitle(title);
     // TODO: This probably needs to be positioned, especially for paged formatting.
     result.partLabels = score.getPartLabels();
-    result.systems = this.formatSystems();
+    result.systems = this.formatSystems(score);
 
     result.width = this.w;
     result.height = this.y + this.config.BOTTOM_PADDING;
@@ -70,12 +68,24 @@ export class UndefinedHeightFormatter implements Formatter {
     return result;
   }
 
-  private formatSystems(): data.System[] {
-    const measures = this.elements.score.getSystems().flatMap((system) => system.getMeasures());
+  private formatSystems(score: elements.Score): data.System[] {
+    const measures = score.getSystems().flatMap((system) => system.getMeasures());
     this.log.debug('formatting measures', { length: measures.length, width: this.w });
 
     // TODO: After measures are rendered, format them into systems based on the width.
 
     return [];
+  }
+}
+
+export class UndefinedWidthFormatter implements Formatter {
+  format(): Document {
+    throw new Error('Method not implemented.');
+  }
+}
+
+export class PagedFormatter implements Formatter {
+  format(): Document {
+    throw new Error('Method not implemented.');
   }
 }
