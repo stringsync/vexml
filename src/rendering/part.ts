@@ -16,8 +16,22 @@ export class Part {
   }
 
   render(ctx: vexflow.RenderContext, x: number, y: number): elements.Part {
-    const staves = this.getStaves().map((stave) => stave.render(ctx, x, y));
+    const staveElements = this.getStaves().map((stave) => stave.render(ctx, x, y));
 
-    return new elements.Part(ctx, staves);
+    const vexflowVoices = staveElements
+      .flatMap((staveElement) => staveElement.getVoices())
+      .flatMap((voiceElement) => voiceElement.getVexflowVoice());
+
+    new vexflow.Formatter().joinVoices(vexflowVoices).format(vexflowVoices, this.getWidth());
+
+    return new elements.Part(ctx, staveElements);
+  }
+
+  private getWidth(): number {
+    return this.document.getFragment(this.key).width ?? this.getIntrinsicWidth();
+  }
+
+  private getIntrinsicWidth(): number {
+    return 100;
   }
 }

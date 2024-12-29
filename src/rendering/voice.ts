@@ -19,41 +19,13 @@ export class Voice {
     });
   }
 
-  getVexflowVoice(): vexflow.Voice {
-    const voice = new vexflow.Voice({
-      beatValue: 4,
-      numBeats: 4,
-    });
-
-    voice.addTickables([
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-    ]);
-
-    return voice;
-  }
-
   render(ctx: vexflow.RenderContext): elements.Voice {
-    const voiceEntries = this.getVoiceEntries().map((voiceEntry) => voiceEntry.render(ctx));
+    const vexflowVoice = new vexflow.Voice().setMode(vexflow.VoiceMode.SOFT).setContext(ctx);
 
-    return new elements.Voice(ctx, voiceEntries);
+    const voiceEntryElements = this.getVoiceEntries().map((voiceEntry) => voiceEntry.render(ctx));
+    const vexflowTickables = voiceEntryElements.map((voiceEntryElement) => voiceEntryElement.getVexflowTickable());
+    vexflowVoice.addTickables(vexflowTickables);
+
+    return new elements.Voice(ctx, voiceEntryElements, { voice: vexflowVoice });
   }
 }

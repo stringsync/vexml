@@ -18,6 +18,8 @@ export const Vexml = ({ musicXML, backend }: VexmlProps) => {
       return;
     }
 
+    const logger = new vexml.ConsoleLogger();
+
     const parser = new vexml.MusicXMLParser();
     const document = parser.parse(musicXML);
     const renderer = new vexml.Renderer(document);
@@ -26,7 +28,7 @@ export const Vexml = ({ musicXML, backend }: VexmlProps) => {
         DRAWING_BACKEND: backend,
         WIDTH: width,
       },
-      logger: new vexml.ConsoleLogger(),
+      logger,
     });
 
     return () => {

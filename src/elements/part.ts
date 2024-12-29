@@ -17,7 +17,6 @@ export class Part {
     for (const stave of this.staves) {
       stave.draw();
     }
-
     return this;
   }
 }

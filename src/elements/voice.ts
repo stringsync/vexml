@@ -3,7 +3,11 @@ import * as spatial from '@/spatial';
 import { Note } from './note';
 
 export class Voice {
-  constructor(private ctx: vexflow.RenderContext, private entries: Array<Note>) {}
+  constructor(
+    private ctx: vexflow.RenderContext,
+    private entries: Array<Note>,
+    private vexflow: { voice: vexflow.Voice }
+  ) {}
 
   getRect(): spatial.Rect {
     return spatial.Rect.merge(this.entries.map((entry) => entry.getRect()));
@@ -14,42 +18,10 @@ export class Voice {
   }
 
   getVexflowVoice(): vexflow.Voice {
-    const voice = new vexflow.Voice({
-      beatValue: 4,
-      numBeats: 4,
-    });
-
-    voice.addTickables([
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-      new vexflow.StaveNote({
-        duration: 'q',
-        keys: ['c/4'],
-        clef: 'treble',
-      }),
-    ]);
-
-    return voice;
+    return this.vexflow.voice;
   }
 
   draw(): this {
-    for (const entry of this.entries) {
-      entry.draw();
-    }
-
     return this;
   }
 }
