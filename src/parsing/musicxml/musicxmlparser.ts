@@ -17,6 +17,7 @@ import { Fraction } from '@/util';
 import { Voice } from './voice';
 import { VoiceEntry } from './types';
 import { Note } from './note';
+import { Title } from './title';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -35,10 +36,21 @@ export class MusicXMLParser {
   private parseScore(score: Score): data.Document {
     return new data.Document({
       type: 'score',
-      title: score.getTitle(),
+      title: this.parseTitle(score.getTitle()),
       partLabels: score.getPartLabels(),
       systems: score.getSystems().map((system) => this.parseSystem(system)),
+      height: null,
+      width: null,
     });
+  }
+
+  private parseTitle(title: Title): data.Title {
+    return {
+      type: 'title',
+      text: title.getText(),
+      x: null,
+      y: null,
+    };
   }
 
   private parseSystem(system: System): data.System {
@@ -61,6 +73,7 @@ export class MusicXMLParser {
       type: 'fragment',
       parts: fragment.getParts().map((part) => this.parsePart(part)),
       signature: this.parseFragmentSignature(fragment.getSignature().asFragmentSignature()),
+      width: null,
     };
   }
 

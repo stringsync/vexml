@@ -1,19 +1,5 @@
-import * as spatial from '@/spatial';
+import { Document } from './document';
 
-export interface Format {
-  getScoreWidth(): number;
-  getScoreHeight(): number;
-  getTitlePosition(): spatial.Point;
+export interface Formatter {
+  format(): Document;
 }
-
-export type SystemKey = {
-  systemIndex: number;
-};
-
-export type MeasureKey = SystemKey & {
-  measureIndex: number;
-};
-
-export type MeasureEntryKey = MeasureKey & {
-  entryIndex: number;
-};

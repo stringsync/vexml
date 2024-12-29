@@ -7,7 +7,7 @@ export class Document {
 
   /** Returns a valid empty Document. */
   static empty() {
-    return new Document({ type: 'score', title: '', systems: [], partLabels: [] });
+    return new Document({ type: 'score', title: null, systems: [], partLabels: [], width: null, height: null });
   }
 
   /** Inserts a gap at specified measure and fragment indexes. */

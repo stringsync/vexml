@@ -1,7 +1,9 @@
+import * as data from '@/data';
+import * as elements from '@/elements';
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureKey } from './types';
 import { Fragment } from './fragment';
 import { Gap } from './gap';
 
@@ -10,18 +12,16 @@ export class Measure {
     private config: Config,
     private log: Logger,
     private document: Document,
-    private measureKey: MeasureKey
+    private data: { measure: data.Measure }
   ) {}
 
   getEntries(): Array<Fragment | Gap> {
-    return this.document.getMeasureEntryKeys(this.measureKey).map((measureEntryKey) => {
-      const measureEntry = this.document.getMeasureEntry(measureEntryKey);
-      switch (measureEntry.type) {
-        case 'fragment':
-          return new Fragment(this.config, this.log, this.document, measureEntryKey);
-        case 'gap':
-          return new Gap(this.config, this.log, this.document, measureEntryKey);
-      }
-    });
+    return [];
+  }
+
+  render(ctx: vexflow.RenderContext): elements.Measure {
+    const entries = this.getEntries().map((entry) => entry.render());
+
+    return new elements.Measure(this.data.measure.label, []);
   }
 }
