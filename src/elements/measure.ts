@@ -23,7 +23,6 @@ export class Measure {
     for (const entry of this.entries) {
       entry.draw();
     }
-
     return this;
   }
 }

@@ -9,8 +9,10 @@ export class Note {
   }
 
   draw(): this {
-    this.vexflow.staveNote.setContext(this.ctx).draw();
-
     return this;
+  }
+
+  getVexflowTickable(): vexflow.Tickable {
+    return this.vexflow.staveNote;
   }
 }

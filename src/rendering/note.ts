@@ -13,7 +13,7 @@ export class Note {
       keys: ['c/4'],
       duration: 'q',
       clef: 'treble',
-    });
+    }).setContext(ctx);
 
     return new elements.Note(ctx, { staveNote });
   }

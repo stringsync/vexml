@@ -17,13 +17,12 @@ export class Stave {
     return this.voices;
   }
 
+  getVexflowStave(): vexflow.Stave {
+    return this.vexflow.stave;
+  }
+
   draw(): this {
-    for (const voice of this.voices) {
-      voice.draw();
-    }
-
-    this.vexflow.stave.setContext(this.ctx).draw();
-
+    this.vexflow.stave.draw();
     return this;
   }
 }
