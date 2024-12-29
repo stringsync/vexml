@@ -1,5 +1,6 @@
 import * as vexml from '@/index';
 import { useEffect, useRef } from 'react';
+import { useWidth } from '../hooks/useWidth';
 
 export type VexmlProps = {
   musicXML: string;
@@ -9,6 +10,8 @@ export type VexmlProps = {
 export const Vexml = ({ musicXML, backend }: VexmlProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
+
+  const width = useWidth(divRef);
 
   useEffect(() => {
     if (!div) {
@@ -21,6 +24,7 @@ export const Vexml = ({ musicXML, backend }: VexmlProps) => {
     const rendering = renderer.render(div, {
       config: {
         DRAWING_BACKEND: backend,
+        WIDTH: width,
       },
       logger: new vexml.ConsoleLogger(),
     });
@@ -28,7 +32,7 @@ export const Vexml = ({ musicXML, backend }: VexmlProps) => {
     return () => {
       rendering.clear();
     };
-  }, [div, backend, musicXML]);
+  }, [div, backend, width, musicXML]);
 
   return (
     <div className="w-100">

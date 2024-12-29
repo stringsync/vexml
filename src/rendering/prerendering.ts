@@ -1,15 +1,15 @@
 import * as components from '@/components';
 import * as vexflow from 'vexflow';
 import * as elements from '@/elements';
+import * as formats from './formats';
 import { Document } from './document';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Rendering } from './rendering';
 import { Score } from './score';
+import { Format } from './types';
 
-/**
- * An intermediate data container that houses unpositioned elements for the purpose of querying their width and height.
- */
+/** Formats unpositioned rendered elements. */
 export class Prerendering {
   constructor(
     private config: Config,
@@ -40,12 +40,26 @@ export class Prerendering {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
+    const format = this.format();
+
+    renderer.resize(format.getScoreWidth(), format.getScoreHeight());
     const ctx = renderer.getContext();
 
-    // TODO: Copy the document, format the width and positions of the elements, and render them.
-
-    const score = new Score(this.config, this.log, this.document).render(ctx);
+    const score = new Score(this.config, this.log, this.document, format).render(ctx).draw();
 
     return new Rendering(root, { score });
+  }
+
+  private format(): Format {
+    const width = this.config.WIDTH;
+    const height = this.config.HEIGHT;
+
+    if (width && height) {
+      return new formats.PagedFormat();
+    } else if (width) {
+      return new formats.InfiniteHeightFormat(this.config, this.elements, width);
+    } else {
+      return new formats.InfiniteWidthFormat();
+    }
   }
 }

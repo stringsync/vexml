@@ -6,28 +6,31 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { TextMeasurer } from './textmeasurer';
+import { Format } from './types';
 
 export class Title {
-  constructor(private config: Config, private log: Logger, private document: Document) {}
+  constructor(private config: Config, private log: Logger, private document: Document, private format: Format) {}
 
-  render(ctx: vexflow.RenderContext, point: spatial.Point): elements.Title {
+  render(ctx: vexflow.RenderContext): elements.Title {
     const content = this.document.getScore().title;
     const fontFamily = this.config.TITLE_FONT_FAMILY;
     const fontSize = this.config.TITLE_FONT_SIZE;
 
+    const { x, y } = this.format.getTitlePosition();
+
     const text = new drawing.Text({
       content,
-      x: point.x,
-      y: point.y,
+      x,
+      y,
       color: 'black',
       family: fontFamily,
       size: fontSize,
     });
 
     const textMeasurer = new TextMeasurer({ text: content, fontSize, fontFamily });
-    const width = textMeasurer.getWidth();
-    const height = textMeasurer.getApproximateHeight();
-    const rect = new spatial.Rect(point.x, point.y, width, height);
+    const w = textMeasurer.getWidth();
+    const h = textMeasurer.getApproximateHeight();
+    const rect = new spatial.Rect(x, y, w, h);
 
     return new elements.Title(ctx, rect, text);
   }

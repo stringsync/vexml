@@ -17,6 +17,14 @@ export const CONFIG = {
     defaultValue: null,
     help: 'HEIGHT specifies the maximum height of the rendered score.',
   }),
+  TOP_PADDING: t.number({
+    defaultValue: 40,
+    help: 'TOP_PADDING is the vertical distance from the top of the rendering.',
+  }),
+  BOTTOM_PADDING: t.number({
+    defaultValue: 40,
+    help: 'TOP_PADDING is the vertical distance from the bottom of the rendering.',
+  }),
   TITLE_FONT_FAMILY: t.string({
     defaultValue: 'Arial',
     help: 'TITLE_FONT_FAMILY is the font family for the title.',

@@ -1,13 +1,16 @@
+import * as util from '@/util';
+import * as spatial from '@/spatial';
 import { Fragment } from './fragment';
 
 export class Measure {
   constructor(private fragments: Fragment[]) {}
 
-  getFragments(): Fragment[] {
-    return this.fragments;
+  @util.memoize()
+  getRect() {
+    return spatial.Rect.merge(this.fragments.map((fragment) => fragment.getRect()));
   }
 
-  getWidth(): number {
-    throw new Error('not implemented');
+  getFragments(): Fragment[] {
+    return this.fragments;
   }
 }
