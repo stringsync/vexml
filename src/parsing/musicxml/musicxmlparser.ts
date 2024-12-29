@@ -39,8 +39,6 @@ export class MusicXMLParser {
       title: this.parseTitle(score.getTitle()),
       partLabels: score.getPartLabels(),
       systems: score.getSystems().map((system) => this.parseSystem(system)),
-      height: null,
-      width: null,
     });
   }
 
@@ -48,8 +46,6 @@ export class MusicXMLParser {
     return {
       type: 'title',
       text: title.getText(),
-      x: null,
-      y: null,
     };
   }
 

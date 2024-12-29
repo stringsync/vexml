@@ -21,10 +21,10 @@ export class Renderer {
     this.document = new Document(document);
   }
 
-  render(element: HTMLDivElement, opts?: RenderOptions): Rendering {
+  render(div: HTMLDivElement, opts?: RenderOptions): Rendering {
     const config = { ...DEFAULT_CONFIG, ...opts?.config };
     const log = opts?.logger ?? new NoopLogger();
-    return this.prerender(config, log).render(element);
+    return this.prerender(config, log).render(div);
   }
 
   @util.memoize()
@@ -41,6 +41,7 @@ export class Renderer {
     const elapsed = stop - start;
     log.info(`prerendered in ${elapsed.toFixed(2)}ms`);
 
-    return new Prerendering(config, log, document);
+    // TODO: Use real width and height.
+    return new Prerendering(config, log, document, config.WIDTH!, 400);
   }
 }

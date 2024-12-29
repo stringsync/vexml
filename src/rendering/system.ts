@@ -15,9 +15,17 @@ export class System {
       .map((_, measureIndex) => new Measure(this.config, this.log, this.document, { ...this.key, measureIndex }));
   }
 
-  render(ctx: vexflow.RenderContext): elements.System {
-    const measures = this.getMeasures().map((measure) => measure.render(ctx));
+  render(ctx: vexflow.RenderContext, y: number): elements.System {
+    let x = 0;
 
-    return new elements.System(ctx, measures);
+    const measureElements = new Array<elements.Measure>();
+
+    for (const measure of this.getMeasures()) {
+      const measureElement = measure.render(ctx, x, y);
+      measureElements.push(measureElement);
+      x += measureElement.getRect().w;
+    }
+
+    return new elements.System(ctx, measureElements);
   }
 }

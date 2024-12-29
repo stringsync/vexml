@@ -22,11 +22,23 @@ export class Measure {
     });
   }
 
-  render(ctx: vexflow.RenderContext): elements.Measure {
+  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Measure {
     const measure = this.document.getMeasure(this.key);
 
-    const entries = this.getEntries().map((entry) => entry.render(ctx));
+    const entryElements = new Array<elements.Fragment | elements.Gap>();
 
-    return new elements.Measure(measure.label, entries);
+    for (const entry of this.getEntries()) {
+      if (entry instanceof Fragment) {
+        const fragmentElement = entry.render(ctx, x, y);
+        entryElements.push(fragmentElement);
+        x += fragmentElement.getRect().w;
+      } else if (entry instanceof Gap) {
+        const gapElement = entry.render(ctx, x, y);
+        entryElements.push(gapElement);
+        x += gapElement.getRect().w;
+      }
+    }
+
+    return new elements.Measure(measure.label, entryElements);
   }
 }

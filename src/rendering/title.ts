@@ -2,6 +2,7 @@ import * as vexflow from 'vexflow';
 import * as drawing from '@/drawing';
 import * as elements from '@/elements';
 import * as spatial from '@/spatial';
+import * as util from '@/util';
 import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
@@ -10,15 +11,11 @@ import { TextMeasurer } from './textmeasurer';
 export class Title {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  render(ctx: vexflow.RenderContext): elements.Title | null {
-    const title = this.document.getScore().title;
-    if (!title) {
-      return null;
-    }
+  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Title {
+    const title = this.document.getTitle();
+    util.assertNotNull(title);
 
     const content = title.text;
-    const x = title.x ?? 0;
-    const y = title.y ?? 0;
     const fontFamily = this.config.TITLE_FONT_FAMILY;
     const fontSize = this.config.TITLE_FONT_SIZE;
 

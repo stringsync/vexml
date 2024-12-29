@@ -19,6 +19,7 @@ export class System {
     for (const measure of this.measures) {
       measure.draw();
     }
+
     return this;
   }
 }
