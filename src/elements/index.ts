@@ -4,3 +4,7 @@ export * from './system';
 export * from './measure';
 export * from './fragment';
 export * from './gap';
+export * from './part';
+export * from './stave';
+export * from './voice';
+export * from './note';

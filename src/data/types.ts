@@ -3,15 +3,11 @@ export type Score = {
   title: Title | null;
   partLabels: string[];
   systems: System[];
-  width: number | null;
-  height: number | null;
 };
 
 export type Title = {
   type: 'title';
   text: string;
-  x: number | null;
-  y: number | null;
 };
 
 export type System = {

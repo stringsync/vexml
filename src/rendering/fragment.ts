@@ -15,7 +15,9 @@ export class Fragment {
       .map((_, partIndex) => new Part(this.config, this.log, this.document, { ...this.key, partIndex }));
   }
 
-  render(ctx: vexflow.RenderContext): elements.Fragment {
-    return new elements.Fragment(ctx);
+  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Fragment {
+    const partElements = this.getParts().map((part) => part.render(ctx, x, y));
+
+    return new elements.Fragment(ctx, partElements);
   }
 }

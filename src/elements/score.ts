@@ -34,6 +34,11 @@ export class Score {
 
   draw(): this {
     this.title?.draw();
+
+    for (const system of this.systems) {
+      system.draw();
+    }
+
     return this;
   }
 }

@@ -1,6 +1,5 @@
 import * as components from '@/components';
 import * as vexflow from 'vexflow';
-import * as util from '@/util';
 import { Document } from './document';
 import { Logger } from '@/debug';
 import { Config } from './config';
@@ -9,7 +8,13 @@ import { Score } from './score';
 
 /** Formats unpositioned rendered elements. */
 export class Prerendering {
-  constructor(private config: Config, private log: Logger, private document: Document) {}
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private width: number,
+    private height: number
+  ) {}
 
   render(element: HTMLDivElement): Rendering {
     let root: components.Root;
@@ -33,12 +38,7 @@ export class Prerendering {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
-    const { width, height } = this.document.getScore();
-
-    util.assertNotNull(width);
-    util.assertNotNull(height);
-
-    const ctx = renderer.resize(width, height).getContext();
+    const ctx = renderer.resize(this.width, this.height).getContext();
     const score = new Score(this.config, this.log, this.document).render(ctx).draw();
     return new Rendering(root, { score });
   }

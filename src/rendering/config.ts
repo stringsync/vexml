@@ -33,6 +33,10 @@ export const CONFIG = {
     defaultValue: '36px',
     help: 'TITLE_FONT_SIZE is the font size for the title expressed in browser-compatible units.',
   }),
+  TITLE_BOTTOM_PADDING: t.number({
+    defaultValue: 20,
+    help: 'TITLE_BOTTOM_PADDING is the vertical distance from the title to the first system.',
+  }),
   DEBUG_DRAW_ELEMENT_BOXES: t.boolean({
     defaultValue: false,
     help: 'DEBUG_DRAW_ELEMENT_BOXES enables drawing of target bounds for debugging.',

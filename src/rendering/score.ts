@@ -9,8 +9,12 @@ import { Title } from './title';
 export class Score {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  getTitle(): Title {
-    return new Title(this.config, this.log, this.document);
+  getTitle(): Title | null {
+    if (this.document.getTitle()) {
+      return new Title(this.config, this.log, this.document);
+    } else {
+      return null;
+    }
   }
 
   getSystems(): System[] {
@@ -20,11 +24,25 @@ export class Score {
   }
 
   render(ctx: vexflow.RenderContext): elements.Score {
-    const score = this.document.getScore();
+    const x = 0;
+    let y = this.config.TOP_PADDING;
 
-    const title = this.getTitle().render(ctx);
-    const systems = this.getSystems().map((system) => system.render(ctx));
+    const title = this.getTitle();
+    let titleElement: elements.Title | null = null;
+    if (title) {
+      titleElement = title.render(ctx, x, y);
+      y += titleElement.getRect().h;
+      y += this.config.TITLE_BOTTOM_PADDING;
+    }
 
-    return new elements.Score(ctx, title, [], systems);
+    const systemElements = new Array<elements.System>();
+
+    for (const system of this.getSystems()) {
+      const systemElement = system.render(ctx, y);
+      systemElements.push(systemElement);
+      y += systemElement.getRect().h;
+    }
+
+    return new elements.Score(ctx, titleElement, [], systemElements);
   }
 }
