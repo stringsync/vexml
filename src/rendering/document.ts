@@ -1,6 +1,6 @@
 import * as data from '@/data';
 import * as util from '@/util';
-import { MeasureKey, SystemKey } from './types';
+import { MeasureEntryKey, MeasureKey, SystemKey } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
 export class Document {
@@ -21,11 +21,32 @@ export class Document {
   }
 
   getMeasureKeys(address: SystemKey): MeasureKey[] {
-    const systemIndex = address.systemIndex;
-    return this.getSystem(address).measures.map((_, measureIndex) => ({ systemIndex, measureIndex }));
+    return this.getSystem(address).measures.map((_, measureIndex) => ({ ...address, measureIndex }));
   }
 
   getMeasures(address: SystemKey): data.Measure[] {
     return this.getSystem(address).measures;
+  }
+
+  getMeasure(address: MeasureKey): data.Measure {
+    const measure = this.getMeasures(address).at(address.measureIndex);
+    util.assertDefined(measure);
+    return measure;
+  }
+
+  getMeasureEntryKeys(address: MeasureKey): MeasureEntryKey[] {
+    return this.getMeasures(address).flatMap((measure, measureIndex) =>
+      measure.entries.map((_, entryIndex) => ({
+        ...address,
+        measureIndex,
+        entryIndex,
+      }))
+    );
+  }
+
+  getMeasureEntry(address: MeasureEntryKey): data.MeasureEntry {
+    const measureEntry = this.getMeasures(address).at(address.measureIndex)?.entries.at(address.entryIndex);
+    util.assertDefined(measureEntry);
+    return measureEntry;
   }
 }

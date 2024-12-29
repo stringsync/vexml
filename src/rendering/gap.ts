@@ -1,15 +1,15 @@
 import * as elements from '@/elements';
-import * as data from '@/data';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
+import { MeasureEntryKey } from './types';
 
 export class Gap {
   constructor(
     private config: Config,
     private log: Logger,
     private document: Document,
-    private data: { gap: data.Gap }
+    private gapKey: MeasureEntryKey
   ) {}
 
   render(): elements.Gap {

@@ -13,8 +13,10 @@ export type System = {
 export type Measure = {
   type: 'measure';
   label: string;
-  entries: Array<Fragment | Gap>;
+  entries: Array<MeasureEntry>;
 };
+
+export type MeasureEntry = Fragment | Gap;
 
 export type Fragment = {
   type: 'fragment';

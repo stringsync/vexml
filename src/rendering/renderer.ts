@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as util from '@/util';
+import * as formats from './formats';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
@@ -31,7 +32,8 @@ export class Renderer {
     const start = performance.now();
 
     const ctx = new NoopRenderContext();
-    const score = new Score(config, log, this.document).render(ctx);
+    const format = new formats.PrerenderingFormat();
+    const score = new Score(config, log, this.document, format).render(ctx);
 
     const stop = performance.now();
     const elapsed = stop - start;

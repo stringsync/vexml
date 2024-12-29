@@ -9,7 +9,8 @@ export class Title {
     return this.rect;
   }
 
-  draw() {
+  draw(): this {
     this.text.draw(this.ctx);
+    return this;
   }
 }
