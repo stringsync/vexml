@@ -8,6 +8,9 @@ export class Stopwatch {
   }
 
   lap(): number {
-    return performance.now() - this.start;
+    const now = performance.now();
+    const result = now - this.start;
+    this.start = now;
+    return result;
   }
 }

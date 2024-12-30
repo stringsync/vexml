@@ -5,7 +5,7 @@ import * as components from '@/components';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
-import { Logger, NoopLogger } from '@/debug';
+import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Rendering } from './rendering';
 import { Formatter } from './types';
 
@@ -51,9 +51,18 @@ export class Renderer {
     // mechanism to measure the elements and make decisions on the system layout.
     const unformattedScore = new Score({ ...config, WIDTH: null, HEIGHT: null }, log, this.document);
 
+    const stopwatch = Stopwatch.start();
+
     const formatter = this.getFormatter(config, log, unformattedScore);
     const formattedDocument = formatter.format(this.document);
     const formattedScore = new Score(config, log, formattedDocument);
+
+    const lap = stopwatch.lap();
+    if (lap < 1) {
+      log.info(`formatted score in ${lap.toFixed(3)}ms`);
+    } else {
+      log.info(`formatted score in ${Math.round(lap)}ms`);
+    }
 
     const ctx = renderer.resize(formattedScore.rect.w, formattedScore.rect.h).getContext();
 

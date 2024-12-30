@@ -1,7 +1,7 @@
 import * as util from '@/util';
 import { Document } from './document';
 import { Config } from './config';
-import { Logger, Stopwatch } from '@/debug';
+import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { System } from './system';
 import { Title } from './title';
 import { Point, Rect } from '@/spatial';
@@ -45,11 +45,19 @@ export class Score implements Renderable {
       }
     }
 
-    this.log.debug(`rendered score in ${stopwatch.lap().toFixed(2)}ms`);
+    const lap = stopwatch.lap();
+    if (lap < 1) {
+      this.log.info(`rendered score in ${lap.toFixed(3)}ms`);
+    } else {
+      this.log.info(`rendered score in ${Math.round(lap)}ms`);
+    }
   }
 
   @util.memoize()
   private getChildren(): Renderable[] {
+    const stopwatch = Stopwatch.start();
+    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
+
     const children = new Array<Renderable>();
 
     let y = 0;
@@ -73,6 +81,8 @@ export class Score implements Renderable {
     const bottomSpacer = Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM);
     children.push(Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM));
     y += bottomSpacer.rect.h;
+
+    performanceMonitor.check(stopwatch.lap());
 
     return children;
   }

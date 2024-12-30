@@ -49,6 +49,10 @@ export const CONFIG = {
     defaultValue: '13px',
     help: 'PART_LABEL_FONT_SIZE is the font size for part names expressed in browser-compatible units.',
   }),
+  SLOW_WARNING_THRESHOLD_MS: t.number({
+    defaultValue: 1,
+    help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
+  }),
 };
 
 export const DEFAULT_CONFIG = t.defaultConfig(CONFIG);
