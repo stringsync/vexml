@@ -9,6 +9,7 @@ import {
   VoiceKey,
   VoiceEntryKey,
   SystemArrangement,
+  PartLabelKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -17,6 +18,12 @@ export class Document {
 
   getTitle(): data.Title | null {
     return this.data.score.title;
+  }
+
+  getPartLabel(key: PartLabelKey): string {
+    const partLabel = this.data.score.partLabels.at(key.partIndex);
+    util.assertDefined(partLabel);
+    return partLabel;
   }
 
   getScore(): data.Score {

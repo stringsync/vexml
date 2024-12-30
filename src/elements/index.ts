@@ -8,3 +8,4 @@ export * from './part';
 export * from './stave';
 export * from './voice';
 export * from './note';
+export * from './partlabel';
