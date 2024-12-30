@@ -8,13 +8,13 @@ import { VoiceEntryKey } from './types';
 export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
 
-  render(ctx: vexflow.RenderContext): elements.Note {
+  render(): elements.Note {
     const staveNote = new vexflow.StaveNote({
       keys: ['c/4'],
       duration: 'q',
       clef: 'treble',
-    }).setContext(ctx);
+    });
 
-    return new elements.Note(ctx, { staveNote });
+    return new elements.Note({ staveNote });
   }
 }

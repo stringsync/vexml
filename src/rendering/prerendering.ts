@@ -38,8 +38,11 @@ export class Prerendering {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
-    const ctx = renderer.resize(this.width, this.height).getContext();
-    const score = new Score(this.config, this.log, this.document).render(ctx).draw();
+    const score = new Score(this.config, this.log, this.document).render();
+    const rect = score.getRect();
+    const ctx = renderer.resize(rect.w, rect.h).getContext();
+    score.setContext(ctx).draw();
+
     return new Rendering(root, { score });
   }
 }

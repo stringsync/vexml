@@ -1,4 +1,3 @@
-import * as vexflow from 'vexflow';
 import * as elements from '@/elements';
 import { Config } from './config';
 import { Logger } from '@/debug';
@@ -15,9 +14,9 @@ export class Fragment {
       .map((_, partIndex) => new Part(this.config, this.log, this.document, { ...this.key, partIndex }));
   }
 
-  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Fragment {
-    const partElements = this.getParts().map((part) => part.render(ctx, x, y));
+  render(x: number, y: number): elements.Fragment {
+    const partElements = this.getParts().map((part) => part.render(x, y));
 
-    return new elements.Fragment(ctx, partElements);
+    return new elements.Fragment(partElements);
   }
 }

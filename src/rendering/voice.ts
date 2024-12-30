@@ -19,13 +19,13 @@ export class Voice {
     });
   }
 
-  render(ctx: vexflow.RenderContext): elements.Voice {
-    const vexflowVoice = new vexflow.Voice().setMode(vexflow.VoiceMode.SOFT).setContext(ctx);
+  render(): elements.Voice {
+    const vexflowVoice = new vexflow.Voice().setMode(vexflow.VoiceMode.SOFT);
 
-    const voiceEntryElements = this.getVoiceEntries().map((voiceEntry) => voiceEntry.render(ctx));
+    const voiceEntryElements = this.getVoiceEntries().map((voiceEntry) => voiceEntry.render());
     const vexflowTickables = voiceEntryElements.map((voiceEntryElement) => voiceEntryElement.getVexflowTickable());
     vexflowVoice.addTickables(vexflowTickables);
 
-    return new elements.Voice(ctx, voiceEntryElements, { voice: vexflowVoice });
+    return new elements.Voice(voiceEntryElements, { voice: vexflowVoice });
   }
 }

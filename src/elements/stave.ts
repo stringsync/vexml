@@ -3,11 +3,7 @@ import * as spatial from '@/spatial';
 import { Voice } from './voice';
 
 export class Stave {
-  constructor(
-    private ctx: vexflow.RenderContext,
-    private voices: Array<Voice>,
-    private vexflow: { stave: vexflow.Stave }
-  ) {}
+  constructor(private voices: Array<Voice>, private vexflow: { stave: vexflow.Stave }) {}
 
   getRect(): spatial.Rect {
     return spatial.Rect.merge(this.voices.map((voice) => voice.getRect()));
@@ -15,6 +11,16 @@ export class Stave {
 
   getVoices(): Array<Voice> {
     return this.voices;
+  }
+
+  setContext(ctx: vexflow.RenderContext): this {
+    this.vexflow.stave.setContext(ctx);
+
+    for (const voice of this.voices) {
+      voice.setContext(ctx);
+    }
+
+    return this;
   }
 
   getVexflowStave(): vexflow.Stave {

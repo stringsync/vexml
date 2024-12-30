@@ -1,18 +1,11 @@
-import * as vexflow from 'vexflow';
 import * as spatial from '@/spatial';
-import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import { System } from './system';
 import { Title } from './title';
 
 export class Score {
-  constructor(
-    private ctx: vexflow.RenderContext,
-    private title: Title | null,
-    private partLabels: string[],
-    private systems: System[]
-  ) {}
+  constructor(private title: Title | null, private partLabels: string[], private systems: System[]) {}
 
-  @util.memoize()
   getRect(): spatial.Rect {
     return spatial.Rect.merge([
       this.title?.getRect() ?? spatial.Rect.empty(),
@@ -30,6 +23,16 @@ export class Score {
 
   getPartLabels(): string[] {
     return this.partLabels;
+  }
+
+  setContext(ctx: vexflow.RenderContext): this {
+    this.title?.setContext(ctx);
+
+    for (const system of this.systems) {
+      system.setContext(ctx);
+    }
+
+    return this;
   }
 
   draw(): this {

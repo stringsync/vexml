@@ -15,8 +15,8 @@ export class Part {
       .map((_, staveIndex) => new Stave(this.config, this.log, this.document, { ...this.key, staveIndex }));
   }
 
-  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Part {
-    const staveElements = this.getStaves().map((stave) => stave.render(ctx, x, y));
+  render(x: number, y: number): elements.Part {
+    const staveElements = this.getStaves().map((stave) => stave.render(x, y));
 
     const vexflowVoices = staveElements
       .flatMap((staveElement) => staveElement.getVoices())
@@ -24,7 +24,7 @@ export class Part {
 
     new vexflow.Formatter().joinVoices(vexflowVoices).format(vexflowVoices, this.getWidth());
 
-    return new elements.Part(ctx, staveElements);
+    return new elements.Part(staveElements);
   }
 
   private getWidth(): number {

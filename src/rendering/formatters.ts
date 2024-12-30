@@ -17,7 +17,6 @@ export class UndefinedHeightFormatter implements Formatter {
   }
 
   format(): Document {
-    this.log.debug('formatting using UndefinedHeightFormatter');
     const systemArrangements = this.getSystemArrangements();
     return this.document.reflow(this.config.WIDTH!, systemArrangements);
   }
@@ -42,7 +41,7 @@ export class UndefinedHeightFormatter implements Formatter {
       remaining -= required;
     }
 
-    this.log.debug(`grouped measures into ${arrangements.length} systems`);
+    this.log.debug(`grouped ${measures.length} measures into ${arrangements.length} systems`);
 
     return arrangements;
   }
@@ -53,6 +52,12 @@ export class UndefinedHeightFormatter implements Formatter {
 }
 
 export class UndefinedWidthFormatter implements Formatter {
+  format(): Document {
+    throw new Error('Method not implemented.');
+  }
+}
+
+export class DefaultFormatter implements Formatter {
   format(): Document {
     throw new Error('Method not implemented.');
   }

@@ -1,5 +1,4 @@
 import * as elements from '@/elements';
-import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
@@ -22,18 +21,18 @@ export class Measure {
     });
   }
 
-  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Measure {
+  render(x: number, y: number): elements.Measure {
     const measure = this.document.getMeasure(this.key);
 
     const entryElements = new Array<elements.Fragment | elements.Gap>();
 
     for (const entry of this.getEntries()) {
       if (entry instanceof Fragment) {
-        const fragmentElement = entry.render(ctx, x, y);
+        const fragmentElement = entry.render(x, y);
         entryElements.push(fragmentElement);
         x += fragmentElement.getRect().w;
       } else if (entry instanceof Gap) {
-        const gapElement = entry.render(ctx, x, y);
+        const gapElement = entry.render(x, y);
         entryElements.push(gapElement);
         x += gapElement.getRect().w;
       }
