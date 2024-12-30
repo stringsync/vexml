@@ -1,17 +1,19 @@
+import * as util from '@/util';
 import { Document } from './document';
 import { Config } from './config';
 import { Logger, Stopwatch } from '@/debug';
 import { System } from './system';
 import { Title } from './title';
 import { Point, Rect } from '@/spatial';
-import { Renderable, RenderContext, RenderLayer } from './types';
+import { Renderable, RenderContext, RenderLayer, SystemKey } from './types';
 import { Spacer } from './spacer';
+import { Measure } from './measure';
 
 export class Score implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
   get rect(): Rect {
-    const rects = this.getRenderables().map((renderable) => renderable.rect);
+    const rects = this.getChildren().map((renderable) => renderable.rect);
     return Rect.merge(rects);
   }
 
@@ -19,10 +21,17 @@ export class Score implements Renderable {
     return 'background';
   }
 
+  getMeasures(): Measure[] {
+    return this.getChildren()
+      .filter((renderable): renderable is System => renderable instanceof System)
+      .flatMap((system) => system.getChildren())
+      .filter((renderable): renderable is Measure => renderable instanceof Measure);
+  }
+
   render(ctx: RenderContext) {
     const stopwatch = Stopwatch.start();
 
-    const children = this.getRenderables();
+    const children = this.getChildren();
 
     for (const child of children) {
       if (child.layer === 'background') {
@@ -30,18 +39,17 @@ export class Score implements Renderable {
       }
     }
 
-    this.log.debug(`rendered score background in ${stopwatch.lap().toFixed(2)}ms`);
-
     for (const child of children) {
       if (child.layer === 'foreground') {
         child.render(ctx);
       }
     }
 
-    this.log.debug(`rendered score foreground in ${stopwatch.lap().toFixed(2)}ms`);
+    this.log.debug(`rendered score in ${stopwatch.lap().toFixed(2)}ms`);
   }
 
-  private getRenderables(): Renderable[] {
+  @util.memoize()
+  private getChildren(): Renderable[] {
     const children = new Array<Renderable>();
 
     let y = 0;
@@ -57,10 +65,10 @@ export class Score implements Renderable {
       y += title.rect.h;
     }
 
-    // for (const system of this.getSystems(y)) {
-    //   children.push(system);
-    //   y += system.rect.h;
-    // }
+    for (const system of this.getSystems(y)) {
+      children.push(system);
+      y += system.rect.h;
+    }
 
     const bottomSpacer = Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM);
     children.push(Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM));
@@ -82,12 +90,13 @@ export class Score implements Renderable {
 
     const systemCount = this.document.getSystems().length;
 
-    // for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
-    //   const key: SystemKey = { systemIndex };
-    //   const system = new System(this.config, this.log, this.document, key, y);
-    //   systems.push(system);
-    //   y += system.rect.h;
-    // }
+    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
+      const key: SystemKey = { systemIndex };
+      const position = new Point(0, y);
+      const system = new System(this.config, this.log, this.document, key, position);
+      systems.push(system);
+      y += system.rect.h;
+    }
 
     return systems;
   }

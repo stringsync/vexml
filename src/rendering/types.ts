@@ -2,13 +2,21 @@ import * as vexflow from 'vexflow';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 
+/** Formatter produces a new formatted document from an unformatted one. */
 export interface Formatter {
-  format(): Document;
+  format(document: Document): Document;
 }
 
+/** Renderable represents an entity that has dimensions and can be rendered to a context. */
 export interface Renderable {
+  /** rect is the bounding box of the object, which must always return an equivalent object. */
   rect: Rect;
+  /**
+   * layer is the render layer for which this object should be rendered to, which must always return an equivalent
+   * object.
+   */
   layer: RenderLayer;
+  /** Draws the object to a context. */
   render(ctx: vexflow.RenderContext): void;
 }
 
