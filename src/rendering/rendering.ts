@@ -1,8 +1,9 @@
 import * as components from '@/components';
-import * as elements from '@/elements';
+
+import { Score } from './score';
 
 export class Rendering {
-  constructor(private root: components.Root, private elements: { score: elements.Score }) {}
+  constructor(private root: components.Root, score: Score) {}
 
   clear(): void {
     this.root.remove();

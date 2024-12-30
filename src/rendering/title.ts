@@ -1,41 +1,66 @@
 import * as drawing from '@/drawing';
-import * as elements from '@/elements';
-import * as spatial from '@/spatial';
 import * as util from '@/util';
+import { Point, Rect } from '@/spatial';
 import { Document } from './document';
 import { Config } from './config';
 import { Logger, Stopwatch } from '@/debug';
 import { TextMeasurer } from './textmeasurer';
+import { Renderable, RenderContext, RenderLayer } from './types';
+import { Spacer } from './spacer';
 
-export class Title {
-  constructor(private config: Config, private log: Logger, private document: Document) {}
+export class Title implements Renderable {
+  constructor(private config: Config, private log: Logger, private document: Document, private position: Point) {}
 
-  render(x: number, y: number): elements.Title {
+  get rect(): Rect {
+    const textMeasurer = this.getTextMeasurer();
+    const textRect = new Rect(
+      this.position.x,
+      this.position.y,
+      textMeasurer.getWidth(),
+      textMeasurer.getApproximateHeight()
+    );
+    const spacers = this.getSpacers();
+    return Rect.merge([textRect, ...spacers.map((spacer) => spacer.rect)]);
+  }
+
+  get layer(): RenderLayer {
+    return 'foreground';
+  }
+
+  render(ctx: RenderContext): void {
     const stopwatch = Stopwatch.start();
 
-    const title = this.document.getTitle();
-    util.assertNotNull(title);
+    this.getTextDrawing().draw(ctx);
 
-    const content = title.text;
-    const fontFamily = this.config.TITLE_FONT_FAMILY;
-    const fontSize = this.config.TITLE_FONT_SIZE;
+    this.log.debug(`rendered title in ${stopwatch.lap().toFixed(2)}ms`);
+  }
 
-    const text = new drawing.Text({
-      content,
-      x,
-      y,
+  private getText(): string {
+    const text = this.document.getTitle();
+    util.assertNotNull(text);
+    return text;
+  }
+
+  private getSpacers(): Spacer[] {
+    return [Spacer.vertical(this.position.y, this.position.y + this.config.TITLE_PADDING_BOTTOM)];
+  }
+
+  private getTextDrawing(): drawing.Text {
+    return new drawing.Text({
+      content: this.getText(),
+      x: this.position.x,
+      y: this.position.y,
       color: 'black',
-      family: fontFamily,
-      size: fontSize,
+      family: this.config.TITLE_FONT_FAMILY,
+      size: this.config.TITLE_FONT_SIZE,
     });
+  }
 
-    const textMeasurer = new TextMeasurer({ text: content, fontSize, fontFamily });
-    const w = textMeasurer.getWidth();
-    const h = textMeasurer.getApproximateHeight();
-    const rect = new spatial.Rect(x, y, w, h);
-
-    this.log.debug(`rendered score in ${stopwatch.lap().toFixed(2)}ms`);
-
-    return new elements.Title(rect, text, content);
+  private getTextMeasurer(): TextMeasurer {
+    return new TextMeasurer({
+      text: this.getText(),
+      fontSize: this.config.TITLE_FONT_SIZE,
+      fontFamily: this.config.TITLE_FONT_FAMILY,
+    });
   }
 }

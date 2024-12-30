@@ -16,7 +16,7 @@ import {
 export class Document {
   constructor(private data: data.Document) {}
 
-  getTitle(): data.Title | null {
+  getTitle(): string | null {
     return this.data.score.title;
   }
 
