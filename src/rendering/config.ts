@@ -37,9 +37,13 @@ export const CONFIG = {
     defaultValue: 20,
     help: 'TITLE_BOTTOM_PADDING is the vertical distance from the title to the first system.',
   }),
-  DEBUG_DRAW_ELEMENT_BOXES: t.boolean({
-    defaultValue: false,
-    help: 'DEBUG_DRAW_ELEMENT_BOXES enables drawing of target bounds for debugging.',
+  PART_LABEL_FONT_FAMILY: t.string({
+    defaultValue: 'Arial',
+    help: 'PART_LABEL_FONT_FAMILY is the font family for part names.',
+  }),
+  PART_LABEL_FONT_SIZE: t.string({
+    defaultValue: '13px',
+    help: 'PART_LABEL_FONT_SIZE is the font size for part names expressed in browser-compatible units.',
   }),
 };
 

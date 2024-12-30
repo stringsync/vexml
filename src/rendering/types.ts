@@ -4,6 +4,10 @@ export interface Formatter {
   format(): Document;
 }
 
+export type PartLabelKey = {
+  partIndex: number;
+};
+
 export type SystemArrangement = {
   measureIndexes: number[];
 };
