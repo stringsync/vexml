@@ -1,7 +1,7 @@
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { Config } from './config';
-import { Logger, Stopwatch } from '@/debug';
+import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Document } from './document';
 import { Measure } from './measure';
 import { MeasureKey, Renderable, RenderContext, RenderLayer, SystemKey } from './types';
@@ -26,6 +26,7 @@ export class System implements Renderable {
 
   render(ctx: RenderContext): void {
     const stopwatch = Stopwatch.start();
+    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
 
     const children = this.getChildren();
 
@@ -41,12 +42,23 @@ export class System implements Renderable {
       }
     }
 
-    this.log.debug(`rendered system in ${stopwatch.lap().toFixed(2)}ms`, this.key);
+    performanceMonitor.check(stopwatch.lap(), this.key);
   }
 
   @util.memoize()
   getChildren(): Renderable[] {
-    return this.getMeasures();
+    const stopwatch = Stopwatch.start();
+    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
+
+    const children = new Array<Renderable>();
+
+    for (const measure of this.getMeasures()) {
+      children.push(measure);
+    }
+
+    performanceMonitor.check(stopwatch.lap(), this.key);
+
+    return children;
   }
 
   private getMeasures(): Measure[] {
@@ -56,7 +68,7 @@ export class System implements Renderable {
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
-      const measure = new Measure(this.config, this.log, this.document, measureKey, Point.origin());
+      const measure = new Measure(this.config, this.log, this.document, measureKey, Point.origin(), null);
       measures.push(measure);
     }
 

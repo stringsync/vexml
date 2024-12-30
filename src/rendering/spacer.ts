@@ -1,4 +1,3 @@
-import { RenderContext } from 'vexflow';
 import { Rect } from '@/spatial';
 import { Renderable } from './types';
 
@@ -15,8 +14,7 @@ export class Spacer implements Renderable {
     return new Spacer(new Rect(y1, 0, 0, y2 - y1));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(ctx: RenderContext): void {
-    // There is nothing to render for a spacer.
+  render(): void {
+    // noop
   }
 }

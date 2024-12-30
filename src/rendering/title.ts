@@ -28,11 +28,7 @@ export class Title implements Renderable {
   }
 
   render(ctx: RenderContext): void {
-    const stopwatch = Stopwatch.start();
-
     this.getTextDrawing().draw(ctx);
-
-    this.log.debug(`rendered title in ${stopwatch.lap().toFixed(2)}ms`);
   }
 
   private getText(): string {
