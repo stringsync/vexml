@@ -1,30 +1,65 @@
-import * as elements from '@/elements';
+import * as util from '@/util';
+import { Point, Rect } from '@/spatial';
 import { Config } from './config';
-import { Logger } from '@/debug';
+import { Logger, Stopwatch } from '@/debug';
 import { Document } from './document';
 import { Measure } from './measure';
-import { SystemKey } from './types';
+import { MeasureKey, Renderable, RenderContext, RenderLayer, SystemKey } from './types';
 
-export class System {
-  constructor(private config: Config, private log: Logger, private document: Document, private key: SystemKey) {}
+export class System implements Renderable {
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: SystemKey,
+    private position: Point
+  ) {}
 
-  getMeasures(): Measure[] {
-    return this.document
-      .getMeasures(this.key)
-      .map((_, measureIndex) => new Measure(this.config, this.log, this.document, { ...this.key, measureIndex }));
+  get rect(): Rect {
+    const rects = this.getChildren().map((renderable) => renderable.rect);
+    return Rect.merge(rects);
   }
 
-  render(y: number): elements.System {
-    let x = 0;
+  get layer(): RenderLayer {
+    return 'background';
+  }
 
-    const measureElements = new Array<elements.Measure>();
+  render(ctx: RenderContext): void {
+    const stopwatch = Stopwatch.start();
 
-    for (const measure of this.getMeasures()) {
-      const measureElement = measure.render(x, y);
-      measureElements.push(measureElement);
-      x += measureElement.getRect().w;
+    const children = this.getChildren();
+
+    for (const child of children) {
+      if (child.layer === 'background') {
+        child.render(ctx);
+      }
     }
 
-    return new elements.System(measureElements);
+    for (const child of children) {
+      if (child.layer === 'foreground') {
+        child.render(ctx);
+      }
+    }
+
+    this.log.debug(`rendered system in ${stopwatch.lap().toFixed(2)}ms`, this.key);
+  }
+
+  @util.memoize()
+  getChildren(): Renderable[] {
+    return this.getMeasures();
+  }
+
+  private getMeasures(): Measure[] {
+    const measures = new Array<Measure>();
+
+    const measureCount = this.document.getMeasures(this.key).length;
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const measureKey: MeasureKey = { ...this.key, measureIndex };
+      const measure = new Measure(this.config, this.log, this.document, measureKey, Point.origin());
+      measures.push(measure);
+    }
+
+    return measures;
   }
 }

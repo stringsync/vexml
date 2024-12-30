@@ -46,9 +46,13 @@ export class Renderer {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
-    const unformattedScore = new Score(config, log, this.document);
+    // We'll create a score that thinks the configured dimensions are undefined. This is necessary since the score (and
+    // its children) may need to render elements into order to compute rects. This will provide the formatter a
+    // mechanism to measure the elements and make decisions on the system layout.
+    const unformattedScore = new Score({ ...config, WIDTH: null, HEIGHT: null }, log, this.document);
+
     const formatter = this.getFormatter(config, log, unformattedScore);
-    const formattedDocument = formatter.format();
+    const formattedDocument = formatter.format(this.document);
     const formattedScore = new Score(config, log, formattedDocument);
 
     const ctx = renderer.resize(formattedScore.rect.w, formattedScore.rect.h).getContext();
@@ -64,7 +68,7 @@ export class Renderer {
 
     if (width && !height) {
       log.debug('using UndefinedHeightFormatter');
-      return new formatters.UndefinedHeightFormatter(config, log, this.document, score);
+      return new formatters.UndefinedHeightFormatter(config, log, score);
     }
 
     if (!width && height) {

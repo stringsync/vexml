@@ -1,43 +1,31 @@
-import * as elements from '@/elements';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { Fragment } from './fragment';
-import { Gap } from './gap';
-import { MeasureKey } from './types';
+import { MeasureKey, Renderable, RenderLayer } from './types';
+import { Point, Rect } from '@/spatial';
+import { RenderContext } from 'vexflow';
 
-export class Measure {
-  constructor(private config: Config, private log: Logger, private document: Document, private key: MeasureKey) {}
+export class Measure implements Renderable {
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: MeasureKey,
+    private position: Point
+  ) {}
 
-  getEntries(): Array<Fragment | Gap> {
-    return this.document.getMeasureEntries(this.key).map((measureEntry, measureEntryIndex) => {
-      const key = { ...this.key, measureEntryIndex };
-      switch (measureEntry.type) {
-        case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key);
-        case 'gap':
-          return new Gap(this.config, this.log, this.document, key);
-      }
-    });
+  get rect(): Rect {
+    const rects = this.getChildren().map((renderable) => renderable.rect);
+    return Rect.merge(rects);
   }
 
-  render(x: number, y: number): elements.Measure {
-    const measure = this.document.getMeasure(this.key);
+  get layer(): RenderLayer {
+    return 'background';
+  }
 
-    const entryElements = new Array<elements.Fragment | elements.Gap>();
+  render(ctx: RenderContext): void {}
 
-    for (const entry of this.getEntries()) {
-      if (entry instanceof Fragment) {
-        const fragmentElement = entry.render(x, y);
-        entryElements.push(fragmentElement);
-        x += fragmentElement.getRect().w;
-      } else if (entry instanceof Gap) {
-        const gapElement = entry.render(x, y);
-        entryElements.push(gapElement);
-        x += gapElement.getRect().w;
-      }
-    }
-
-    return new elements.Measure(measure.label, entryElements);
+  private getChildren(): Renderable[] {
+    return [];
   }
 }

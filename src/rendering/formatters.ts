@@ -1,5 +1,4 @@
 import * as util from '@/util';
-import * as elements from '@/elements';
 import { Document } from './document';
 import { Formatter, SystemArrangement } from './types';
 import { Config } from './config';
@@ -7,26 +6,26 @@ import { Logger } from '@/debug';
 import { Score } from './score';
 
 export class UndefinedHeightFormatter implements Formatter {
-  constructor(private config: Config, private log: Logger, private document: Document, private score: Score) {
+  constructor(private config: Config, private log: Logger, private score: Score) {
     util.assertNotNull(this.config.WIDTH);
     util.assertNull(this.config.HEIGHT);
   }
 
-  format(): Document {
+  format(document: Document): Document {
     const systemArrangements = this.getSystemArrangements();
-    return this.document.reflow(this.config.WIDTH!, systemArrangements);
+    return document.reflow(this.config.WIDTH!, systemArrangements);
   }
 
   private getSystemArrangements(): SystemArrangement[] {
     const arrangements: SystemArrangement[] = [{ measureIndexes: [] }];
     let remaining = this.config.WIDTH!;
 
-    const measures = this.getMeasures();
+    const measures = this.score.getMeasures();
 
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
-      const required = measure.getRect().w;
+      const required = measure.rect.w;
 
       if (required > remaining) {
         arrangements.push({ measureIndexes: [] });
@@ -40,11 +39,6 @@ export class UndefinedHeightFormatter implements Formatter {
     this.log.debug(`grouped ${measures.length} measures into ${arrangements.length} system(s)`);
 
     return arrangements;
-  }
-
-  private getMeasures(): elements.Measure[] {
-    // return this.score.getSystems().flatMap((system) => system.getMeasures());
-    return [];
   }
 }
 
