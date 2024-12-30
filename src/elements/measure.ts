@@ -1,4 +1,4 @@
-import * as util from '@/util';
+import * as vexflow from 'vexflow';
 import * as spatial from '@/spatial';
 import { Fragment } from './fragment';
 import { Gap } from './gap';
@@ -6,7 +6,6 @@ import { Gap } from './gap';
 export class Measure {
   constructor(private label: string, private entries: Array<Fragment | Gap>) {}
 
-  @util.memoize()
   getRect() {
     return new spatial.Rect(0, 0, 100, 50);
   }
@@ -17,6 +16,13 @@ export class Measure {
 
   getEntries(): Array<Fragment | Gap> {
     return this.entries;
+  }
+
+  setContext(ctx: vexflow.RenderContext): this {
+    for (const entry of this.entries) {
+      entry.setContext(ctx);
+    }
+    return this;
   }
 
   draw(): this {

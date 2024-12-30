@@ -1,13 +1,14 @@
 import * as data from '@/data';
 import * as util from '@/util';
+import * as elements from '@/elements';
 import * as formatters from './formatters';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
-import { Logger, NoopLogger } from '@/debug';
+import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Rendering } from './rendering';
 import { Prerendering } from './prerendering';
-import { NoopRenderContext } from './nooprendercontext';
+import { Formatter } from './types';
 
 export type RenderOptions = {
   config?: Partial<Config>;
@@ -29,19 +30,38 @@ export class Renderer {
 
   @util.memoize()
   private prerender(config: Config, log: Logger): Prerendering {
-    const start = performance.now();
+    const stopwatch = Stopwatch.start();
 
-    const ctx = new NoopRenderContext();
-    const score = new Score(config, log, this.document).render(ctx);
-    // TODO: Support other formats.
-    const formatter = new formatters.UndefinedHeightFormatter(config, log, this.document, { score });
+    const scoreElement = new Score(config, log, this.document).render();
+    const formatter = this.getFormatter(config, log, { score: scoreElement });
     const document = formatter.format();
 
-    const stop = performance.now();
-    const elapsed = stop - start;
-    log.info(`prerendered in ${elapsed.toFixed(2)}ms`);
+    log.info(`prerendered in ${stopwatch.lap().toFixed(2)}ms`);
 
     // TODO: Use real width and height.
     return new Prerendering(config, log, document, config.WIDTH!, 400);
+  }
+
+  private getFormatter(config: Config, log: Logger, elements: { score: elements.Score }): Formatter {
+    const width = config.WIDTH;
+    const height = config.HEIGHT;
+
+    if (width && !height) {
+      log.debug('using UndefinedHeightFormatter');
+      return new formatters.UndefinedHeightFormatter(config, log, this.document, elements);
+    }
+
+    if (!width && height) {
+      log.debug('using UndefinedWidthFormatter');
+      return new formatters.UndefinedWidthFormatter();
+    }
+
+    if (!width && !height) {
+      log.debug('using UndefinedWidthFormatter');
+      return new formatters.UndefinedWidthFormatter();
+    }
+
+    log.debug('using DefaultFormatter');
+    return new formatters.DefaultFormatter();
   }
 }

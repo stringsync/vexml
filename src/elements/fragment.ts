@@ -1,9 +1,9 @@
-import * as spatial from '@/spatial';
 import * as vexflow from 'vexflow';
+import * as spatial from '@/spatial';
 import { Part } from './part';
 
 export class Fragment {
-  constructor(private ctx: vexflow.RenderContext, private parts: Part[]) {}
+  constructor(private parts: Part[]) {}
 
   getParts(): Part[] {
     return this.parts;
@@ -11,6 +11,13 @@ export class Fragment {
 
   getRect(): spatial.Rect {
     return new spatial.Rect(0, 0, 100, 50);
+  }
+
+  setContext(ctx: vexflow.RenderContext): this {
+    for (const part of this.parts) {
+      part.setContext(ctx);
+    }
+    return this;
   }
 
   draw(): this {

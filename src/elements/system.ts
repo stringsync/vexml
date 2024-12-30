@@ -4,7 +4,7 @@ import * as util from '@/util';
 import { Measure } from './measure';
 
 export class System {
-  constructor(private ctx: vexflow.RenderContext, private measures: Measure[]) {}
+  constructor(private measures: Measure[]) {}
 
   @util.memoize()
   getRect(): spatial.Rect {
@@ -15,11 +15,17 @@ export class System {
     return this.measures;
   }
 
+  setContext(ctx: vexflow.RenderContext): this {
+    for (const measure of this.measures) {
+      measure.setContext(ctx);
+    }
+    return this;
+  }
+
   draw(): this {
     for (const measure of this.measures) {
       measure.draw();
     }
-
     return this;
   }
 }

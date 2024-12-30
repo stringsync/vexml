@@ -1,5 +1,4 @@
 import * as elements from '@/elements';
-import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
@@ -15,17 +14,17 @@ export class System {
       .map((_, measureIndex) => new Measure(this.config, this.log, this.document, { ...this.key, measureIndex }));
   }
 
-  render(ctx: vexflow.RenderContext, y: number): elements.System {
+  render(y: number): elements.System {
     let x = 0;
 
     const measureElements = new Array<elements.Measure>();
 
     for (const measure of this.getMeasures()) {
-      const measureElement = measure.render(ctx, x, y);
+      const measureElement = measure.render(x, y);
       measureElements.push(measureElement);
       x += measureElement.getRect().w;
     }
 
-    return new elements.System(ctx, measureElements);
+    return new elements.System(measureElements);
   }
 }

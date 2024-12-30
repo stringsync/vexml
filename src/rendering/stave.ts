@@ -16,12 +16,11 @@ export class Stave {
       .map((_, voiceIndex) => new Voice(this.config, this.log, this.document, { ...this.key, voiceIndex }));
   }
 
-  render(ctx: vexflow.RenderContext, x: number, y: number): elements.Stave {
+  render(x: number, y: number): elements.Stave {
     const w = this.getWidth();
-    const vexflowStave = new vexflow.Stave(x, y, w).setContext(ctx);
-    this.log.debug('rendering stave', { x, y, w });
+    const vexflowStave = new vexflow.Stave(x, y, w);
 
-    const voiceElements = this.getVoices().map((voice) => voice.render(ctx));
+    const voiceElements = this.getVoices().map((voice) => voice.render());
     for (const voiceElement of voiceElements) {
       const vexflowVoice = voiceElement.getVexflowVoice();
       vexflowVoice.setStave(vexflowStave);
@@ -30,7 +29,7 @@ export class Stave {
       }
     }
 
-    return new elements.Stave(ctx, voiceElements, { stave: vexflowStave });
+    return new elements.Stave(voiceElements, { stave: vexflowStave });
   }
 
   private getWidth(): number {
@@ -38,8 +37,7 @@ export class Stave {
   }
 
   private getIntrinsicWidth(): number {
-    const ctx = new NoopRenderContext();
-    const vexflowVoices = this.getVoices().map((voice) => voice.render(ctx).getVexflowVoice());
+    const vexflowVoices = this.getVoices().map((voice) => voice.render().getVexflowVoice());
     return new vexflow.Formatter().joinVoices(vexflowVoices).preCalculateMinTotalWidth(vexflowVoices);
   }
 }

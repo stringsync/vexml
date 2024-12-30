@@ -1,5 +1,4 @@
 import * as elements from '@/elements';
-import * as vexflow from 'vexflow';
 import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
@@ -23,14 +22,14 @@ export class Score {
       .map((_, systemIndex) => new System(this.config, this.log, this.document, { systemIndex }));
   }
 
-  render(ctx: vexflow.RenderContext): elements.Score {
+  render(): elements.Score {
     const x = 0;
     let y = this.config.TOP_PADDING;
 
     const title = this.getTitle();
     let titleElement: elements.Title | null = null;
     if (title) {
-      titleElement = title.render(ctx, x, y);
+      titleElement = title.render(x, y);
       y += titleElement.getRect().h;
       y += this.config.TITLE_BOTTOM_PADDING;
     }
@@ -38,11 +37,12 @@ export class Score {
     const systemElements = new Array<elements.System>();
 
     for (const system of this.getSystems()) {
-      const systemElement = system.render(ctx, y);
+      const systemElement = system.render(y);
       systemElements.push(systemElement);
       y += systemElement.getRect().h;
     }
 
-    return new elements.Score(ctx, titleElement, [], systemElements);
+    // TODO: Provide part labels.
+    return new elements.Score(titleElement, [], systemElements);
   }
 }
