@@ -4,14 +4,10 @@ import { Document } from './document';
 import { Formatter, SystemArrangement } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
+import { Score } from './score';
 
 export class UndefinedHeightFormatter implements Formatter {
-  constructor(
-    private config: Config,
-    private log: Logger,
-    private document: Document,
-    private elements: { score: elements.Score }
-  ) {
+  constructor(private config: Config, private log: Logger, private document: Document, private score: Score) {
     util.assertNotNull(this.config.WIDTH);
     util.assertNull(this.config.HEIGHT);
   }
@@ -25,7 +21,7 @@ export class UndefinedHeightFormatter implements Formatter {
     const arrangements: SystemArrangement[] = [{ measureIndexes: [] }];
     let remaining = this.config.WIDTH!;
 
-    const measures = this.getMeasureElements();
+    const measures = this.getMeasures();
 
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
@@ -41,13 +37,14 @@ export class UndefinedHeightFormatter implements Formatter {
       remaining -= required;
     }
 
-    this.log.debug(`grouped ${measures.length} measures into ${arrangements.length} systems`);
+    this.log.debug(`grouped ${measures.length} measures into ${arrangements.length} system(s)`);
 
     return arrangements;
   }
 
-  private getMeasureElements(): elements.Measure[] {
-    return this.elements.score.getSystems().flatMap((s) => s.getMeasures());
+  private getMeasures(): elements.Measure[] {
+    // return this.score.getSystems().flatMap((system) => system.getMeasures());
+    return [];
   }
 }
 

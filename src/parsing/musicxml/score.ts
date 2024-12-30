@@ -1,12 +1,11 @@
 import * as musicxml from '@/musicxml';
 import { System } from './system';
-import { Title } from './title';
 
 export class Score {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
-  getTitle(): Title {
-    return new Title(this.musicXML.scorePartwise.getTitle());
+  getTitle(): string {
+    return this.musicXML.scorePartwise.getTitle();
   }
 
   getPartLabels(): string[] {

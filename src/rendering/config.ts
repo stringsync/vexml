@@ -17,13 +17,13 @@ export const CONFIG = {
     defaultValue: null,
     help: 'HEIGHT specifies the maximum height of the rendered score.',
   }),
-  TOP_PADDING: t.number({
+  SCORE_PADDING_TOP: t.number({
     defaultValue: 40,
     help: 'TOP_PADDING is the vertical distance from the top of the rendering.',
   }),
-  BOTTOM_PADDING: t.number({
+  SCORE_PADDING_BOTTOM: t.number({
     defaultValue: 40,
-    help: 'TOP_PADDING is the vertical distance from the bottom of the rendering.',
+    help: 'SCORE_PADDING_BOTTOM is the vertical distance from the bottom of the rendering.',
   }),
   TITLE_FONT_FAMILY: t.string({
     defaultValue: 'Arial',
@@ -33,9 +33,13 @@ export const CONFIG = {
     defaultValue: '36px',
     help: 'TITLE_FONT_SIZE is the font size for the title expressed in browser-compatible units.',
   }),
-  TITLE_BOTTOM_PADDING: t.number({
+  TITLE_PADDING_BOTTOM: t.number({
     defaultValue: 20,
     help: 'TITLE_BOTTOM_PADDING is the vertical distance from the title to the first system.',
+  }),
+  SYSTEM_PADDING_BOTTOM: t.number({
+    defaultValue: 80,
+    help: 'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems',
   }),
   PART_LABEL_FONT_FAMILY: t.string({
     defaultValue: 'Arial',

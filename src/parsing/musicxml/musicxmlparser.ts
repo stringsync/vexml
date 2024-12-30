@@ -17,7 +17,6 @@ import { Fraction } from '@/util';
 import { Voice } from './voice';
 import { VoiceEntry } from './types';
 import { Note } from './note';
-import { Title } from './title';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -36,17 +35,10 @@ export class MusicXMLParser {
   private parseScore(score: Score): data.Document {
     return new data.Document({
       type: 'score',
-      title: this.parseTitle(score.getTitle()),
+      title: score.getTitle(),
       partLabels: score.getPartLabels(),
       systems: score.getSystems().map((system) => this.parseSystem(system)),
     });
-  }
-
-  private parseTitle(title: Title): data.Title {
-    return {
-      type: 'title',
-      text: title.getText(),
-    };
   }
 
   private parseSystem(system: System): data.System {

@@ -1,13 +1,8 @@
 export type Score = {
   type: 'score';
-  title: Title | null;
+  title: string | null;
   partLabels: string[];
   systems: System[];
-};
-
-export type Title = {
-  type: 'title';
-  text: string;
 };
 
 export type System = {

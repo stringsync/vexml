@@ -1,48 +1,94 @@
-import * as elements from '@/elements';
 import { Document } from './document';
 import { Config } from './config';
-import { Logger } from '@/debug';
+import { Logger, Stopwatch } from '@/debug';
 import { System } from './system';
 import { Title } from './title';
+import { Point, Rect } from '@/spatial';
+import { Renderable, RenderContext, RenderLayer } from './types';
+import { Spacer } from './spacer';
 
-export class Score {
+export class Score implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  getTitle(): Title | null {
+  get rect(): Rect {
+    const rects = this.getRenderables().map((renderable) => renderable.rect);
+    return Rect.merge(rects);
+  }
+
+  get layer(): RenderLayer {
+    return 'background';
+  }
+
+  render(ctx: RenderContext) {
+    const stopwatch = Stopwatch.start();
+
+    const children = this.getRenderables();
+
+    for (const child of children) {
+      if (child.layer === 'background') {
+        child.render(ctx);
+      }
+    }
+
+    this.log.debug(`rendered score background in ${stopwatch.lap().toFixed(2)}ms`);
+
+    for (const child of children) {
+      if (child.layer === 'foreground') {
+        child.render(ctx);
+      }
+    }
+
+    this.log.debug(`rendered score foreground in ${stopwatch.lap().toFixed(2)}ms`);
+  }
+
+  private getRenderables(): Renderable[] {
+    const children = new Array<Renderable>();
+
+    let y = 0;
+
+    const topSpacer = Spacer.vertical(y, y + this.config.SCORE_PADDING_TOP);
+    children.push(topSpacer);
+    y += topSpacer.rect.h;
+
+    // TODO: Inject a score formatting type and use it to determine the title's position.
+    const title = this.getTitle(new Point(0, y));
+    if (title) {
+      children.push(title);
+      y += title.rect.h;
+    }
+
+    // for (const system of this.getSystems(y)) {
+    //   children.push(system);
+    //   y += system.rect.h;
+    // }
+
+    const bottomSpacer = Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM);
+    children.push(Spacer.vertical(y, y + this.config.SCORE_PADDING_BOTTOM));
+    y += bottomSpacer.rect.h;
+
+    return children;
+  }
+
+  private getTitle(position: Point): Title | null {
     if (this.document.getTitle()) {
-      return new Title(this.config, this.log, this.document);
+      return new Title(this.config, this.log, this.document, position);
     } else {
       return null;
     }
   }
 
-  getSystems(): System[] {
-    return this.document
-      .getSystems()
-      .map((_, systemIndex) => new System(this.config, this.log, this.document, { systemIndex }));
-  }
+  private getSystems(y: number): System[] {
+    const systems = new Array<System>();
 
-  render(): elements.Score {
-    const x = 0;
-    let y = this.config.TOP_PADDING;
+    const systemCount = this.document.getSystems().length;
 
-    const title = this.getTitle();
-    let titleElement: elements.Title | null = null;
-    if (title) {
-      titleElement = title.render(x, y);
-      y += titleElement.getRect().h;
-      y += this.config.TITLE_BOTTOM_PADDING;
-    }
+    // for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
+    //   const key: SystemKey = { systemIndex };
+    //   const system = new System(this.config, this.log, this.document, key, y);
+    //   systems.push(system);
+    //   y += system.rect.h;
+    // }
 
-    const systemElements = new Array<elements.System>();
-
-    for (const system of this.getSystems()) {
-      const systemElement = system.render(y);
-      systemElements.push(systemElement);
-      y += systemElement.getRect().h;
-    }
-
-    // TODO: Provide part labels.
-    return new elements.Score(titleElement, [], systemElements);
+    return systems;
   }
 }
