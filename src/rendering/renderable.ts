@@ -12,7 +12,9 @@ export abstract class Renderable {
     return this.#rect;
   }
 
-  abstract layer(): RenderLayer;
+  layer(): RenderLayer {
+    return 'none';
+  }
 
   abstract children(): Renderable[];
 

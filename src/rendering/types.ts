@@ -12,7 +12,7 @@ export type Padding = {
   left?: number;
 };
 
-export type RenderLayer = 'any' | 'staves' | 'notes' | 'ornaments' | 'connectors';
+export type RenderLayer = 'none' | 'any' | 'staves' | 'notes' | 'ornaments' | 'connectors';
 
 export type PartLabelKey = {
   partIndex: number;

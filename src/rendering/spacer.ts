@@ -27,10 +27,6 @@ export class Spacer extends Renderable {
     return this.space;
   }
 
-  layer(): RenderLayer {
-    return 'any';
-  }
-
   children(): Renderable[] {
     return [];
   }

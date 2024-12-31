@@ -21,10 +21,6 @@ export class Fragment extends Renderable {
     super();
   }
 
-  layer(): RenderLayer {
-    return 'any';
-  }
-
   @util.memoize()
   children(): Renderable[] {
     const children = new Array<Renderable>();

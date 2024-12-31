@@ -17,10 +17,6 @@ export class Gap extends Renderable {
     super();
   }
 
-  layer(): RenderLayer {
-    return 'any';
-  }
-
   @util.memoize()
   children(): Renderable[] {
     return [];

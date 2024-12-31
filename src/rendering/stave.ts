@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import { Point } from '@/spatial';
-import { MeasureEntryKey, RenderContext, RenderLayer, StaveKey } from './types';
+import { RenderContext, RenderLayer, StaveKey } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
