@@ -2,32 +2,27 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, Renderable, RenderLayer } from './types';
-import { Point, Rect } from '@/spatial';
+import { MeasureEntryKey, RenderLayer } from './types';
+import { Point } from '@/spatial';
+import { Renderable } from './renderable';
 
-export class Gap implements Renderable {
+export class Gap extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
     private document: Document,
     private key: MeasureEntryKey,
     private position: Point
-  ) {}
+  ) {
+    super();
+  }
 
   layer(): RenderLayer {
     return 'any';
   }
 
   @util.memoize()
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
-  }
-
-  @util.memoize()
   children(): Renderable[] {
     return [];
   }
-
-  render(): void {}
 }

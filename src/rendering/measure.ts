@@ -2,13 +2,14 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, MeasureKey, Renderable, RenderLayer } from './types';
-import { Point, Rect } from '@/spatial';
+import { MeasureEntryKey, MeasureKey, RenderLayer } from './types';
+import { Point } from '@/spatial';
 import { Fragment } from './fragment';
 import { Gap } from './gap';
 import { Pen } from './pen';
+import { Renderable } from './renderable';
 
-export class Measure implements Renderable {
+export class Measure extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
@@ -16,12 +17,8 @@ export class Measure implements Renderable {
     private key: MeasureKey,
     private position: Point,
     private width: number | null
-  ) {}
-
-  @util.memoize()
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
+  ) {
+    super();
   }
 
   layer(): RenderLayer {

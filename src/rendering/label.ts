@@ -1,12 +1,13 @@
 import { FontInfo, RenderContext } from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { Point, Rect } from '@/spatial';
-import { Padding, Renderable, RenderLayer } from './types';
+import { Point } from '@/spatial';
+import { Padding, RenderLayer } from './types';
 import { Spacer } from './spacer';
 import { TextMeasurer } from './textmeasurer';
+import { Renderable } from './renderable';
 
-export class Label implements Renderable {
+export class Label extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
@@ -18,15 +19,12 @@ export class Label implements Renderable {
       family?: string;
       size?: string;
     }
-  ) {}
+  ) {
+    super();
+  }
 
   layer(): RenderLayer {
     return 'any';
-  }
-
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
   }
 
   children(): Renderable[] {

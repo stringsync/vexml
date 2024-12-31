@@ -1,15 +1,15 @@
 import * as util from '@/util';
-import { PartKey, Renderable, RenderLayer, StaveKey } from './types';
-import { RenderContext } from 'vexflow';
-import { Point, Rect } from '@/spatial';
+import { PartKey, RenderLayer, StaveKey } from './types';
+import { Point } from '@/spatial';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Pen } from './pen';
 import { Stave } from './stave';
 import { Label } from './label';
+import { Renderable } from './renderable';
 
-export class Part implements Renderable {
+export class Part extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
@@ -18,16 +18,12 @@ export class Part implements Renderable {
     private position: Point,
     private label: Label | null,
     private width: number | null
-  ) {}
+  ) {
+    super();
+  }
 
   layer(): RenderLayer {
     return 'any';
-  }
-
-  @util.memoize()
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
   }
 
   @util.memoize()
@@ -38,7 +34,7 @@ export class Part implements Renderable {
 
     if (this.label) {
       children.push(this.label);
-      pen.moveBy({ dx: this.label.rect().w });
+      pen.moveBy({ dx: this.label.rect.w });
     }
 
     for (const stave of this.getDescendantlessStaves(pen.clone())) {
@@ -51,7 +47,7 @@ export class Part implements Renderable {
   getStaveHeight(): number {
     const pen = new Pen(this.position);
 
-    const rects = this.getDescendantlessStaves(pen).map((stave) => stave.rect());
+    const rects = this.getDescendantlessStaves(pen).map((stave) => stave.rect);
 
     if (rects.length === 0) {
       return 0;
@@ -59,9 +55,6 @@ export class Part implements Renderable {
 
     return rects.at(-1)!.getMaxY() - rects.at(0)!.getMinY();
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(ctx: RenderContext): void {}
 
   private getDescendantlessStaves(pen: Pen): Stave[] {
     const staveCount = this.document.getStaveCount(this.key);
@@ -72,7 +65,7 @@ export class Part implements Renderable {
       const key: StaveKey = { ...this.key, staveIndex };
       const stave = new Stave(this.config, this.log, this.document, key, pen.position(), this.width, false);
       staves.push(stave);
-      pen.moveBy({ dy: stave.rect().h });
+      pen.moveBy({ dy: stave.rect.h });
     }
 
     return staves;

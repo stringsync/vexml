@@ -31,7 +31,7 @@ export class UndefinedHeightFormatter implements Formatter {
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
-      const required = measure.rect().w;
+      const required = measure.rect.w;
 
       if (required > remaining) {
         arrangements.push({ measureIndexes: [] });

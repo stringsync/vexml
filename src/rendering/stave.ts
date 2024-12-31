@@ -1,16 +1,17 @@
 import * as vexflow from 'vexflow';
-import { Point, Rect } from '@/spatial';
-import { MeasureEntryKey, Renderable, RenderContext, RenderLayer } from './types';
+import { Point } from '@/spatial';
+import { MeasureEntryKey, RenderContext, RenderLayer } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Spacer } from './spacer';
+import { Renderable } from './renderable';
 
 const TODO_WIDTH = 200;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_WIDTH = 1;
 
-export class Stave implements Renderable {
+export class Stave extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
@@ -19,11 +20,8 @@ export class Stave implements Renderable {
     private position: Point,
     private width: number | null,
     private includeDescendants: boolean
-  ) {}
-
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
+  ) {
+    super();
   }
 
   layer(): RenderLayer {

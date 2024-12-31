@@ -64,7 +64,7 @@ export class Renderer {
       log.info(`formatted score in ${Math.round(lap)}ms`);
     }
 
-    const ctx = renderer.resize(formattedScore.rect().w, formattedScore.rect().h).getContext();
+    const ctx = renderer.resize(formattedScore.rect.w, formattedScore.rect.h).getContext();
     const rendering = new Rendering(config, log, ctx, root, formattedScore);
 
     rendering.render(formattedScore);

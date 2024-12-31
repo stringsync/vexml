@@ -1,8 +1,11 @@
 import { Rect } from '@/spatial';
-import { Renderable, RenderLayer } from './types';
+import { RenderLayer } from './types';
+import { Renderable } from './renderable';
 
-export class Spacer implements Renderable {
-  private constructor(private space: Rect) {}
+export class Spacer extends Renderable {
+  private constructor(private space: Rect) {
+    super();
+  }
 
   static horizontal(x: number, y: number, w: number): Spacer {
     return new Spacer(new Rect(x, y, w, 0));
@@ -20,7 +23,7 @@ export class Spacer implements Renderable {
     return new Spacer(Rect.empty());
   }
 
-  rect(): Rect {
+  get rect() {
     return this.space;
   }
 

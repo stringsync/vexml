@@ -1,8 +1,9 @@
 import * as components from '@/components';
 import { Score } from './score';
-import { Renderable, RenderContext, RenderLayer } from './types';
+import { RenderContext, RenderLayer } from './types';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Config } from './config';
+import { Renderable } from './renderable';
 
 const RENDER_LAYERS: RenderLayer[] = ['staves', 'notes', 'ornaments', 'connectors', 'any'];
 
