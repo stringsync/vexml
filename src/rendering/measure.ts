@@ -4,7 +4,6 @@ import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Document } from './document';
 import { MeasureEntryKey, MeasureKey, Renderable, RenderLayer } from './types';
 import { Point, Rect } from '@/spatial';
-import { RenderContext } from 'vexflow';
 import { Fragment } from './fragment';
 import { Gap } from './gap';
 
@@ -18,6 +17,7 @@ export class Measure implements Renderable {
     private width: number | null
   ) {}
 
+  @util.memoize()
   rect(): Rect {
     const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
@@ -27,6 +27,7 @@ export class Measure implements Renderable {
     return 'any';
   }
 
+  @util.memoize()
   children(): Renderable[] {
     const children = new Array<Renderable>();
 

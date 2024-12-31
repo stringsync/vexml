@@ -107,7 +107,7 @@ export class Document {
   }
 
   /** Returns a new document with the system arrangements applied. */
-  reflow(width: number, arrangements: SystemArrangement[]): Document {
+  reflow(arrangements: SystemArrangement[]): Document {
     const clone = this.clone();
 
     const measures = this.data.score.systems.flatMap((s) => s.measures);
@@ -121,7 +121,6 @@ export class Document {
       };
 
       for (const measureIndex of arrangement.measureIndexes) {
-        // TODO: Update the measure width to stretch to the system width.
         system.measures.push(measures[measureIndex]);
       }
 

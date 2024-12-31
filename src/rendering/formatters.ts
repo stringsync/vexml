@@ -15,7 +15,7 @@ export class UndefinedHeightFormatter implements Formatter {
 
   format(document: Document): Document {
     const systemArrangements = this.getSystemArrangements();
-    return document.reflow(this.config.WIDTH!, systemArrangements);
+    return document.reflow(systemArrangements);
   }
 
   private getSystemArrangements(): SystemArrangement[] {

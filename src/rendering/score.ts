@@ -11,6 +11,7 @@ import { Spacer } from './spacer';
 export class Score implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
+  @util.memoize()
   rect(): Rect {
     const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
@@ -20,6 +21,7 @@ export class Score implements Renderable {
     return 'any';
   }
 
+  @util.memoize()
   children(): Renderable[] {
     const stopwatch = Stopwatch.start();
     const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);

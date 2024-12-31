@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { Config } from './config';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
@@ -14,6 +15,7 @@ export class System implements Renderable {
     private position: Point
   ) {}
 
+  @util.memoize()
   rect(): Rect {
     const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
@@ -23,6 +25,7 @@ export class System implements Renderable {
     return 'any';
   }
 
+  @util.memoize()
   children(): Renderable[] {
     const stopwatch = Stopwatch.start();
     const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);

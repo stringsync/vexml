@@ -9,8 +9,8 @@ export interface Formatter {
 
 /** Renderable represents an entity that has dimensions and can be rendered to a context. */
 export interface Renderable {
-  rect(): Rect;
   layer(): RenderLayer;
+  rect(): Rect;
   children(): Renderable[];
   render(ctx: vexflow.RenderContext): void;
 }
