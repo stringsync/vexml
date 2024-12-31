@@ -37,7 +37,7 @@ export class Rendering {
 
           renderable.render(this.ctx);
 
-          performanceMonitor.check(stopwatch.lap(), { renderable });
+          performanceMonitor.check(stopwatch.lap());
         }
       }
     }
