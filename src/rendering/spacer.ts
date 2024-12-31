@@ -2,7 +2,7 @@ import { Rect } from '@/spatial';
 import { Renderable, RenderLayer } from './types';
 
 export class Spacer implements Renderable {
-  constructor(private space: Rect) {}
+  private constructor(private space: Rect) {}
 
   static horizontal(x: number, y: number, w: number): Spacer {
     return new Spacer(new Rect(x, y, w, 0));
@@ -10,6 +10,10 @@ export class Spacer implements Renderable {
 
   static vertical(x: number, y: number, h: number): Spacer {
     return new Spacer(new Rect(x, y, 0, h));
+  }
+
+  static rect(x: number, y: number, w: number, h: number): Spacer {
+    return new Spacer(new Rect(x, y, w, h));
   }
 
   rect(): Rect {

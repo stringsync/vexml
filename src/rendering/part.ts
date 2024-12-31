@@ -5,9 +5,9 @@ import { Point, Rect } from '@/spatial';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { PartLabel } from './partlabel';
 import { Pen } from './pen';
 import { Stave } from './stave';
+import { Label } from './label';
 
 export class Part implements Renderable {
   constructor(
@@ -16,7 +16,7 @@ export class Part implements Renderable {
     private document: Document,
     private key: PartKey,
     private position: Point,
-    private label: PartLabel | null,
+    private label: Label | null,
     private width: number | null
   ) {}
 
