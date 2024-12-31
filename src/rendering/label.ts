@@ -14,9 +14,9 @@ export class Label implements Renderable {
     private position: Point,
     private padding: Padding,
     private font: {
-      color: string | null;
-      family: string | null;
-      size: string | null;
+      color?: string;
+      family?: string;
+      size?: string;
     }
   ) {}
 

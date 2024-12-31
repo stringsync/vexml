@@ -12,7 +12,7 @@ export type System = {
 
 export type Measure = {
   type: 'measure';
-  label: string;
+  label: number;
   entries: Array<MeasureEntry>;
 };
 
