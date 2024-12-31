@@ -3,7 +3,7 @@ import { Point } from '@/spatial';
 import { Stack } from '@/util';
 
 /**
- * A mutable cursor context to simplify tracking positions across scopes.
+ * Pen is a position tracker.
  *
  * The term "cursor" is overloaded in the codebase, so this is a simple alternative.
  */

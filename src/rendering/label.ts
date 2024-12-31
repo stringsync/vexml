@@ -1,13 +1,15 @@
-import { FontInfo, RenderContext } from 'vexflow';
+import * as vexflow from 'vexflow';
+import * as util from '@/util';
+import { FontInfo } from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { Point } from '@/spatial';
-import { Padding, RenderLayer } from './types';
-import { Spacer } from './spacer';
+import { Point, Rect } from '@/spatial';
+import { Drawable, Padding } from './types';
 import { TextMeasurer } from './textmeasurer';
-import { Renderable } from './renderable';
 
-export class Label extends Renderable {
+export class Label implements Drawable {
+  private ctx: vexflow.RenderContext | null = null;
+
   constructor(
     private config: Config,
     private log: Logger,
@@ -19,35 +21,32 @@ export class Label extends Renderable {
       family?: string;
       size?: string;
     }
-  ) {
-    super();
-  }
+  ) {}
 
-  layer(): RenderLayer {
-    return 'any';
-  }
-
-  children(): Renderable[] {
+  @util.memoize()
+  rect(): Rect {
     const textMeasurer = this.getTextMeasurer();
     const paddingTop = this.padding.top ?? 0;
     const paddingBottom = this.padding.bottom ?? 0;
     const paddingLeft = this.padding.left ?? 0;
     const paddingRight = this.padding.right ?? 0;
 
-    return [
-      Spacer.rect(
-        this.position.x - paddingLeft,
-        this.position.y - paddingTop,
-        textMeasurer.getWidth() + paddingLeft + paddingRight,
-        textMeasurer.getApproximateHeight() + paddingTop + paddingBottom
-      ),
-    ];
+    return new Rect(
+      this.position.x - paddingLeft,
+      this.position.y - paddingTop,
+      textMeasurer.getWidth() + paddingLeft + paddingRight,
+      textMeasurer.getApproximateHeight() + paddingTop + paddingBottom
+    );
   }
 
-  render(ctx: RenderContext): void {
-    ctx.save();
+  setContext(ctx: vexflow.RenderContext): this {
+    this.ctx = ctx;
+    return this;
+  }
 
-    ctx.scale(1, 1);
+  draw(): this {
+    const ctx = this.ctx;
+    util.assertNotNull(ctx);
 
     if (this.font.color) {
       ctx.setFillStyle(this.font.color);
@@ -66,7 +65,7 @@ export class Label extends Renderable {
 
     ctx.fillText(this.text, this.position.x, this.position.y);
 
-    ctx.restore();
+    return this;
   }
 
   private getTextMeasurer(): TextMeasurer {

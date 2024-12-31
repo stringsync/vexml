@@ -3,7 +3,7 @@ import * as formatters from './formatters';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { Document } from './document';
-import { Score } from './score';
+import { Score, ScoreRender } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Rendering } from './rendering';
@@ -53,7 +53,8 @@ export class Renderer {
 
     const stopwatch = Stopwatch.start();
 
-    const formatter = this.getFormatter(config, log, unformattedScore);
+    const unformattedScoreRender = unformattedScore.render();
+    const formatter = this.getFormatter(config, log, unformattedScoreRender);
     const formattedDocument = formatter.format(this.document);
     const formattedScore = new Score(config, log, formattedDocument);
 
@@ -64,10 +65,9 @@ export class Renderer {
       log.info(`formatted score in ${Math.round(lap)}ms`);
     }
 
-    const ctx = renderer.resize(formattedScore.rect.w, formattedScore.rect.h).getContext();
-    const rendering = new Rendering(config, log, ctx, root, formattedScore);
-
-    rendering.render(formattedScore);
+    const formattedScoreRender = formattedScore.render();
+    const ctx = renderer.resize(formattedScoreRender.rect.w, formattedScoreRender.rect.h).getContext();
+    const rendering = Rendering.finalize(config, log, formattedDocument, ctx, root, formattedScoreRender);
 
     lap = stopwatch.lap();
     if (lap < 1) {
@@ -79,13 +79,13 @@ export class Renderer {
     return rendering;
   }
 
-  private getFormatter(config: Config, log: Logger, score: Score): Formatter {
+  private getFormatter(config: Config, log: Logger, scoreRender: ScoreRender): Formatter {
     const width = config.WIDTH;
     const height = config.HEIGHT;
 
     if (width && !height) {
       log.debug('using UndefinedHeightFormatter');
-      return new formatters.UndefinedHeightFormatter(config, log, score);
+      return new formatters.UndefinedHeightFormatter(config, log, scoreRender);
     }
 
     if (!width && height) {

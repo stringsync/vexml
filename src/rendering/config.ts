@@ -41,6 +41,12 @@ export const CONFIG = {
     defaultValue: 80,
     help: 'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems',
   }),
+  LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD: t.number({
+    defaultValue: 0.75,
+    help:
+      'LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD is the total width fraction that the measures must exceed to stretch the ' +
+      'measures in the last system.',
+  }),
   PART_LABEL_FONT_FAMILY: t.string({
     defaultValue: 'Arial',
     help: 'PART_LABEL_FONT_FAMILY is the font family for part names.',
