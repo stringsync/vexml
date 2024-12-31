@@ -5,6 +5,8 @@ import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Document } from './document';
 import { Measure } from './measure';
 import { MeasureKey, Renderable, RenderLayer, SystemKey } from './types';
+import { Pen } from './pen';
+import { Spacer } from './spacer';
 
 export class System implements Renderable {
   constructor(
@@ -30,11 +32,17 @@ export class System implements Renderable {
     const stopwatch = Stopwatch.start();
     const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
 
+    const pen = new Pen(this.position);
+
     const children = new Array<Renderable>();
 
-    for (const measure of this.getMeasures()) {
+    for (const measure of this.getMeasures(pen)) {
       children.push(measure);
     }
+
+    const bottomSpacer = Spacer.vertical(pen.y, pen.y + this.config.SYSTEM_PADDING_BOTTOM);
+    children.push(bottomSpacer);
+    pen.moveBy({ dy: bottomSpacer.rect().h });
 
     performanceMonitor.check(stopwatch.lap(), this.key);
 
@@ -43,7 +51,7 @@ export class System implements Renderable {
 
   render(): void {}
 
-  private getMeasures(): Measure[] {
+  private getMeasures(pen: Pen): Measure[] {
     const measures = new Array<Measure>();
 
     const measureCount = this.document.getMeasures(this.key).length;
@@ -52,6 +60,7 @@ export class System implements Renderable {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
       const measure = new Measure(this.config, this.log, this.document, measureKey, Point.origin(), null);
       measures.push(measure);
+      pen.moveBy({ dx: measure.rect().w });
     }
 
     return measures;
