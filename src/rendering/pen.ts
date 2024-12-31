@@ -40,10 +40,14 @@ export class Pen {
     this.moveTo(position.x + dx, position.y + dy);
   }
 
+  clone(): Pen {
+    const pen = new Pen();
+    pen.positions = this.positions.clone();
+    return pen;
+  }
+
   save(): void {
-    const position = this.position();
-    const copy = new Point(position.x, position.y);
-    this.positions.push(copy);
+    this.positions.push(this.position());
   }
 
   restore(): void {

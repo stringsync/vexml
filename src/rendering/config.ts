@@ -49,6 +49,10 @@ export const CONFIG = {
     defaultValue: '13px',
     help: 'PART_LABEL_FONT_SIZE is the font size for part names expressed in browser-compatible units.',
   }),
+  PART_LABEL_PADDING_RIGHT: t.number({
+    defaultValue: 4,
+    help: 'PART_LABEL_PADDING_RIGHT is the horizontal distance from part labels to the first measure.',
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',

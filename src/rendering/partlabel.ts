@@ -6,6 +6,7 @@ import { Config } from './config';
 import { PartLabelKey, Renderable, RenderContext, RenderLayer } from './types';
 import { Document } from './document';
 import { TextMeasurer } from './textmeasurer';
+import { Spacer } from './spacer';
 
 export class PartLabel {
   constructor(
@@ -21,6 +22,8 @@ export class PartLabel {
   }
 
   rect(): Rect {
+    const rects = this.children().map((renderable) => renderable.rect());
+
     const textMeasurer = this.getTextMeasurer();
     const textRect = new Rect(
       this.position.x,
@@ -28,11 +31,12 @@ export class PartLabel {
       textMeasurer.getWidth(),
       textMeasurer.getApproximateHeight()
     );
-    return textRect;
+
+    return Rect.merge([...rects, textRect]);
   }
 
   children(): Renderable[] {
-    return [];
+    return [Spacer.horizontal(this.position.x, this.position.y, this.config.PART_LABEL_PADDING_RIGHT)];
   }
 
   render(ctx: RenderContext): void {

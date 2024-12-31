@@ -6,6 +6,7 @@ import { MeasureEntryKey, MeasureKey, Renderable, RenderLayer } from './types';
 import { Point, Rect } from '@/spatial';
 import { Fragment } from './fragment';
 import { Gap } from './gap';
+import { Pen } from './pen';
 
 export class Measure implements Renderable {
   constructor(
@@ -29,12 +30,14 @@ export class Measure implements Renderable {
 
   @util.memoize()
   children(): Renderable[] {
-    const children = new Array<Renderable>();
-
     const stopwatch = Stopwatch.start();
     const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
 
-    for (const measureEntry of this.getMeasureEntries()) {
+    const pen = new Pen(this.position);
+
+    const children = new Array<Renderable>();
+
+    for (const measureEntry of this.getMeasureEntries(pen)) {
       children.push(measureEntry);
     }
 
@@ -45,14 +48,14 @@ export class Measure implements Renderable {
 
   render(): void {}
 
-  private getMeasureEntries(): Array<Fragment | Gap> {
+  private getMeasureEntries(pen: Pen): Array<Fragment | Gap> {
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
       const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
       switch (entry.type) {
         case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
+          return new Fragment(this.config, this.log, this.document, key, pen.position(), null);
         case 'gap':
-          return new Gap(this.config, this.log, this.document, key, Point.origin());
+          return new Gap(this.config, this.log, this.document, key, pen.position());
       }
     });
   }

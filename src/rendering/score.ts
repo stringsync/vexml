@@ -31,7 +31,7 @@ export class Score implements Renderable {
 
     const pen = new Pen();
 
-    const topSpacer = Spacer.vertical(pen.y, pen.y + this.config.SCORE_PADDING_TOP);
+    const topSpacer = Spacer.vertical(pen.x, pen.y, this.config.SCORE_PADDING_TOP);
     children.push(topSpacer);
     pen.moveBy({ dy: topSpacer.rect().h });
 
@@ -45,7 +45,7 @@ export class Score implements Renderable {
       children.push(system);
     }
 
-    const bottomSpacer = Spacer.vertical(pen.y, pen.y + this.config.SCORE_PADDING_BOTTOM);
+    const bottomSpacer = Spacer.vertical(pen.x, pen.y, this.config.SCORE_PADDING_BOTTOM);
     children.push(bottomSpacer);
     pen.moveBy({ dy: bottomSpacer.rect().h });
 
