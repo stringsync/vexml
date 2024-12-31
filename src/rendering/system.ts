@@ -51,13 +51,32 @@ export class System extends Renderable {
 
     const measureCount = this.document.getMeasures(this.key).length;
 
+    const measureWidths = this.getMeasureWidths();
+
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
-      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), null);
+      const width = measureWidths?.at(measureIndex) ?? null;
+      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
       measures.push(measure);
       pen.moveBy({ dx: measure.rect.w });
     }
 
     return measures;
+  }
+
+  private getMeasureWidths(): number[] | null {
+    if (!this.config.WIDTH) {
+      return null; // use intrinsic widths
+    }
+
+    const widths = this.document
+      .getMeasures(this.key)
+      .map<MeasureKey>((_, measureIndex) => ({ ...this.key, measureIndex }))
+      .map((measureKey) => new Measure(this.config, this.log, this.document, measureKey, Point.origin(), null))
+      .map((measure) => measure.rect.w);
+
+    const total = util.sum(widths);
+
+    return widths.map((width) => width / total).map((fraction) => fraction * this.config.WIDTH!);
   }
 }

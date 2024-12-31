@@ -47,8 +47,14 @@ export class Fragment extends Renderable {
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const key: PartKey = { ...this.key, partIndex };
-      const partLabel = partLabels[partIndex];
-      const part = new Part(this.config, this.log, this.document, key, pen.position(), partLabel, this.width);
+
+      let width = this.width;
+      const partLabel = partLabels?.at(partIndex) ?? null;
+      if (width && partLabel) {
+        width -= partLabel.rect.w;
+      }
+
+      const part = new Part(this.config, this.log, this.document, key, pen.position(), partLabel, width);
       parts.push(part);
       pen.moveBy({ dy: part.rect.h });
     }
@@ -67,13 +73,13 @@ export class Fragment extends Renderable {
    *     the staves.
    *   - The part height (with the voice entries) determines the vertical spacing between part labels.
    */
-  private getPartLabels(pen: Pen): Array<Label | null> {
+  private getPartLabels(pen: Pen): Label[] | null {
     const partCount = this.document.getPartCount(this.key);
 
     const isFirstSystem = this.key.systemIndex === 0;
     const isFirstMeasure = this.key.measureIndex === 0;
     if (!isFirstSystem || !isFirstMeasure) {
-      return new Array<Label | null>(partCount).fill(null);
+      return null;
     }
 
     const padding = { right: this.config.PART_LABEL_PADDING_RIGHT };

@@ -46,14 +46,40 @@ export class Measure extends Renderable {
   render(): void {}
 
   private getMeasureEntries(pen: Pen): Array<Fragment | Gap> {
+    const measureEntryWidths = this.getMeasureEntryWidths();
+
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
       const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
+      const width = measureEntryWidths?.at(measureEntryIndex) ?? null;
       switch (entry.type) {
         case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key, pen.position(), null);
+          return new Fragment(this.config, this.log, this.document, key, pen.position(), width);
         case 'gap':
           return new Gap(this.config, this.log, this.document, key, pen.position());
       }
     });
+  }
+
+  private getMeasureEntryWidths(): number[] | null {
+    if (this.width === null) {
+      return null;
+    }
+
+    const widths = this.document
+      .getMeasureEntries(this.key)
+      .map((entry, measureEntryIndex) => {
+        const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
+        switch (entry.type) {
+          case 'fragment':
+            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
+          case 'gap':
+            return new Gap(this.config, this.log, this.document, key, Point.origin());
+        }
+      })
+      .map((entry) => entry.rect.w);
+
+    const total = util.sum(widths);
+
+    return widths.map((width) => (width / total) * this.width!);
   }
 }
