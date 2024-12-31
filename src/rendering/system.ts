@@ -40,7 +40,7 @@ export class System implements Renderable {
       children.push(measure);
     }
 
-    const bottomSpacer = Spacer.vertical(pen.y, pen.y + this.config.SYSTEM_PADDING_BOTTOM);
+    const bottomSpacer = Spacer.vertical(pen.x, pen.y, this.config.SYSTEM_PADDING_BOTTOM);
     children.push(bottomSpacer);
     pen.moveBy({ dy: bottomSpacer.rect().h });
 
@@ -58,7 +58,7 @@ export class System implements Renderable {
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
-      const measure = new Measure(this.config, this.log, this.document, measureKey, Point.origin(), null);
+      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), null);
       measures.push(measure);
       pen.moveBy({ dx: measure.rect().w });
     }

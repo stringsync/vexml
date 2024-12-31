@@ -43,7 +43,7 @@ export class Title implements Renderable {
   }
 
   private getSpacers(): Spacer[] {
-    return [Spacer.vertical(this.position.y, this.position.y + this.config.TITLE_PADDING_BOTTOM)];
+    return [Spacer.vertical(this.position.x, this.position.y, this.config.TITLE_PADDING_BOTTOM)];
   }
 
   private getTextDrawing(): drawing.Text {

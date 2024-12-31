@@ -82,3 +82,13 @@ export const uniqueBy = <T, S>(array: T[], transform: (item: T) => S): T[] => {
     return true;
   });
 };
+
+/** Combines two arrays into an array of tuples. */
+export const zip = <T, U>(array1: T[], array2: U[]): [T, U][] => {
+  const length = Math.min(array1.length, array2.length);
+  const result: [T, U][] = [];
+  for (let i = 0; i < length; i++) {
+    result.push([array1[i], array2[i]]);
+  }
+  return result;
+};

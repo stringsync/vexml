@@ -34,6 +34,10 @@ export class Document {
     return this.data.score.systems;
   }
 
+  getSystemCount(): number {
+    return this.getSystems().length;
+  }
+
   getSystem(key: SystemKey): data.System {
     const system = this.getSystems().at(key.systemIndex);
     util.assertDefined(system);
@@ -42,6 +46,10 @@ export class Document {
 
   getMeasures(key: SystemKey): data.Measure[] {
     return this.getSystem(key).measures;
+  }
+
+  getMeasureCount(key: SystemKey): number {
+    return this.getMeasures(key).length;
   }
 
   getMeasure(key: MeasureKey): data.Measure {
@@ -70,6 +78,10 @@ export class Document {
     return this.getFragment(key).parts;
   }
 
+  getPartCount(key: MeasureEntryKey): number {
+    return this.getParts(key).length;
+  }
+
   getPart(key: PartKey): data.Part {
     const part = this.getParts(key).at(key.partIndex);
     util.assertDefined(part);
@@ -78,6 +90,10 @@ export class Document {
 
   getStaves(key: PartKey): data.Stave[] {
     return this.getPart(key).staves;
+  }
+
+  getStaveCount(key: PartKey): number {
+    return this.getStaves(key).length;
   }
 
   getStave(key: StaveKey): data.Stave {
@@ -112,7 +128,7 @@ export class Document {
 
     const measures = this.data.score.systems.flatMap((s) => s.measures);
 
-    this.data.score.systems = [];
+    clone.data.score.systems = [];
 
     for (const arrangement of arrangements) {
       const system: data.System = {
@@ -124,7 +140,7 @@ export class Document {
         system.measures.push(measures[measureIndex]);
       }
 
-      this.data.score.systems.push(system);
+      clone.data.score.systems.push(system);
     }
 
     return clone;
