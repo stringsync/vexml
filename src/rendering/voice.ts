@@ -4,9 +4,16 @@ import { Note } from './note';
 import { Renderable } from './renderable';
 import { Document } from './document';
 import { VoiceEntryKey, VoiceKey } from './types';
+import { VoiceLayout } from './voicelayout';
 
 export class Voice extends Renderable {
-  constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceKey) {
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: VoiceKey,
+    private layout: VoiceLayout
+  ) {
     super();
   }
 
@@ -25,7 +32,7 @@ export class Voice extends Renderable {
       const voiceEntryKey: VoiceEntryKey = { ...this.key, voiceEntryIndex };
       switch (entry.type) {
         case 'note':
-          return new Note(this.config, this.log, this.document, voiceEntryKey);
+          return new Note(this.config, this.log, this.document, voiceEntryKey, this.layout);
       }
     });
   }
