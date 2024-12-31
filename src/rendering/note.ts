@@ -6,10 +6,21 @@ import { RenderLayer, VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Spacer } from './spacer';
+import { VoiceLayout } from './voicelayout';
 
 export class Note extends Renderable {
-  constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: VoiceEntryKey,
+    private layout: VoiceLayout
+  ) {
     super();
+  }
+
+  get rect() {
+    return this.layout.rect(this.key);
   }
 
   layer(): RenderLayer {
