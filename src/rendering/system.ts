@@ -20,10 +20,6 @@ export class System extends Renderable {
     super();
   }
 
-  layer(): RenderLayer {
-    return 'any';
-  }
-
   @util.memoize()
   children(): Renderable[] {
     const stopwatch = Stopwatch.start();
