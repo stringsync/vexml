@@ -2,11 +2,11 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, PartKey, Renderable, RenderContext, RenderLayer } from './types';
+import { MeasureEntryKey, Padding, PartKey, Renderable, RenderContext, RenderLayer } from './types';
 import { Point, Rect } from '@/spatial';
 import { Part } from './part';
 import { Pen } from './pen';
-import { PartLabel } from './partlabel';
+import { Label } from './label';
 
 export class Fragment implements Renderable {
   constructor(
@@ -73,37 +73,50 @@ export class Fragment implements Renderable {
    *     the staves.
    *   - The part height (with the voice entries) determines the vertical spacing between part labels.
    */
-  private getPartLabels(pen: Pen): Array<PartLabel | null> {
+  private getPartLabels(pen: Pen): Array<Label | null> {
     const partCount = this.document.getPartCount(this.key);
 
     const isFirstSystem = this.key.systemIndex === 0;
     const isFirstMeasure = this.key.measureIndex === 0;
     if (!isFirstSystem || !isFirstMeasure) {
-      return new Array<PartLabel | null>(partCount).fill(null);
+      return new Array<Label | null>(partCount).fill(null);
     }
+
+    const padding = { right: this.config.PART_LABEL_PADDING_RIGHT };
+    const font = {
+      color: 'black',
+      family: this.config.PART_LABEL_FONT_FAMILY,
+      size: this.config.PART_LABEL_FONT_SIZE,
+    };
 
     const keys = this.document.getParts(this.key).map<PartKey>((_, partIndex) => ({ ...this.key, partIndex }));
 
     // Right-align the part labels.
-    const partLabelWidths = keys
-      .map((key) => new PartLabel(this.config, this.log, this.document, key, Point.origin()))
-      .map((partLabel) => partLabel.rect().w);
-    const maxPartLabelWidth = util.max(partLabelWidths);
-    const partLabelXValues = partLabelWidths.map((width) => pen.position().x + (maxPartLabelWidth - width));
+    const labelWidths = keys
+      .map((key) => {
+        const text = this.document.getPartLabel(key);
+        return new Label(this.config, this.log, text, Point.origin(), padding, font);
+      })
+      .map((label) => label.rect().w);
+    const maxLabelWidth = util.max(labelWidths);
+    const labelXPositions = labelWidths.map((width) => pen.position().x + (maxLabelWidth - width));
 
     const parts = keys.map((key) => new Part(this.config, this.log, this.document, key, Point.origin(), null, null));
 
-    const partLabels = new Array<PartLabel>();
+    const partLabels = new Array<Label>();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const x = partLabelXValues[partIndex];
+      const key = keys[partIndex];
+      const text = this.document.getPartLabel(key);
       const part = parts[partIndex];
+
+      const x = labelXPositions[partIndex];
       const h = part.getStaveHeight();
-
       const y = pen.position().y + h / 2;
+      const position = new Point(x, y);
 
-      const partLabel = new PartLabel(this.config, this.log, this.document, keys[partIndex], new Point(x, y));
-      partLabels.push(partLabel);
+      const label = new Label(this.config, this.log, text, position, padding, font);
+      partLabels.push(label);
 
       pen.moveBy({ dy: part.rect().h });
     }

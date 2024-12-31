@@ -3,11 +3,11 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { System } from './system';
-import { Title } from './title';
 import { Rect } from '@/spatial';
 import { Renderable, RenderContext, RenderLayer, SystemKey } from './types';
 import { Spacer } from './spacer';
 import { Pen } from './pen';
+import { Label } from './label';
 
 export class Score implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document) {}
@@ -36,7 +36,7 @@ export class Score implements Renderable {
     pen.moveBy({ dy: topSpacer.rect().h });
 
     // TODO: Inject a score formatting type and use it to determine the title's position.
-    const title = this.getTitle(pen);
+    const title = this.getTitleLabel(pen);
     if (title) {
       children.push(title);
     }
@@ -57,11 +57,19 @@ export class Score implements Renderable {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   render(ctx: RenderContext) {}
 
-  private getTitle(pen: Pen): Title | null {
-    if (this.document.getTitle()) {
-      const title = new Title(this.config, this.log, this.document, pen.position());
-      pen.moveBy({ dy: title.rect().h });
-      return title;
+  private getTitleLabel(pen: Pen): Label | null {
+    const title = this.document.getTitle();
+    if (title) {
+      const label = new Label(
+        this.config,
+        this.log,
+        title,
+        pen.position(),
+        { bottom: this.config.TITLE_PADDING_BOTTOM },
+        { color: 'black', family: this.config.TITLE_FONT_FAMILY, size: this.config.TITLE_FONT_SIZE }
+      );
+      pen.moveBy({ dy: label.rect().h });
+      return label;
     } else {
       return null;
     }

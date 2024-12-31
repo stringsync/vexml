@@ -15,6 +15,13 @@ export interface Renderable {
   render(ctx: vexflow.RenderContext): void;
 }
 
+export type Padding = {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+};
+
 export type RenderLayer = 'any' | 'staves' | 'notes' | 'ornaments' | 'connectors';
 
 export type PartLabelKey = {
@@ -107,7 +114,7 @@ export declare abstract class RenderContext {
 }
 
 // Copied from /node_modules/vexflow/build/types/src/rendercontext.d.ts
-interface FontInfo {
+export interface FontInfo {
   /** CSS font-family, e.g., 'Arial', 'Helvetica Neue, Arial, sans-serif', 'Times, serif' */
   family?: string;
   /**
