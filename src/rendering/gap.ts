@@ -15,33 +15,18 @@ export class Gap implements Renderable {
     private position: Point
   ) {}
 
-  get rect(): Rect {
-    const rects = this.getChildren().map((renderable) => renderable.rect);
+  rect(): Rect {
+    const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
   }
 
-  get layer(): RenderLayer {
-    return 'background';
+  layer(): RenderLayer {
+    return 'any';
   }
 
-  render(ctx: RenderContext): void {
-    const children = this.getChildren();
-
-    for (const child of children) {
-      if (child.layer === 'background') {
-        child.render(ctx);
-      }
-    }
-
-    for (const child of children) {
-      if (child.layer === 'foreground') {
-        child.render(ctx);
-      }
-    }
-  }
-
-  @util.memoize()
-  private getChildren(): Renderable[] {
+  children(): Renderable[] {
     return [];
   }
+
+  render(): void {}
 }

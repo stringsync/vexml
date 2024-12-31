@@ -3,7 +3,7 @@ import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { Document } from './document';
 import { Config } from './config';
-import { Logger, Stopwatch } from '@/debug';
+import { Logger } from '@/debug';
 import { TextMeasurer } from './textmeasurer';
 import { Renderable, RenderContext, RenderLayer } from './types';
 import { Spacer } from './spacer';
@@ -11,7 +11,7 @@ import { Spacer } from './spacer';
 export class Title implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document, private position: Point) {}
 
-  get rect(): Rect {
+  rect(): Rect {
     const textMeasurer = this.getTextMeasurer();
     const textRect = new Rect(
       this.position.x,
@@ -20,15 +20,19 @@ export class Title implements Renderable {
       textMeasurer.getApproximateHeight()
     );
     const spacers = this.getSpacers();
-    return Rect.merge([textRect, ...spacers.map((spacer) => spacer.rect)]);
+    return Rect.merge([textRect, ...spacers.map((spacer) => spacer.rect())]);
   }
 
-  get layer(): RenderLayer {
-    return 'foreground';
+  layer(): RenderLayer {
+    return 'any';
   }
 
   render(ctx: RenderContext): void {
     this.getTextDrawing().draw(ctx);
+  }
+
+  children(): Renderable[] {
+    return [];
   }
 
   private getText(): string {

@@ -57,18 +57,26 @@ export class Renderer {
     const formattedDocument = formatter.format(this.document);
     const formattedScore = new Score(config, log, formattedDocument);
 
-    const lap = stopwatch.lap();
+    let lap = stopwatch.lap();
     if (lap < 1) {
       log.info(`formatted score in ${lap.toFixed(3)}ms`);
     } else {
       log.info(`formatted score in ${Math.round(lap)}ms`);
     }
 
-    const ctx = renderer.resize(formattedScore.rect.w, formattedScore.rect.h).getContext();
+    const ctx = renderer.resize(formattedScore.rect().w, formattedScore.rect().h).getContext();
+    const rendering = new Rendering(config, log, ctx, root, formattedScore);
 
-    formattedScore.render(ctx);
+    rendering.render(formattedScore);
 
-    return new Rendering(root, formattedScore);
+    lap = stopwatch.lap();
+    if (lap < 1) {
+      log.info(`rendered score in ${lap.toFixed(3)}ms`);
+    } else {
+      log.info(`rendered score in ${Math.round(lap)}ms`);
+    }
+
+    return rendering;
   }
 
   private getFormatter(config: Config, log: Logger, score: Score): Formatter {
