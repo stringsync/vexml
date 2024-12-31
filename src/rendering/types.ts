@@ -1,18 +1,8 @@
-import * as vexflow from 'vexflow';
-import { Rect } from '@/spatial';
 import { Document } from './document';
 
 /** Formatter produces a new formatted document from an unformatted one. */
 export interface Formatter {
   format(document: Document): Document;
-}
-
-/** Renderable represents an entity that has dimensions and can be rendered to a context. */
-export interface Renderable {
-  layer(): RenderLayer;
-  rect(): Rect;
-  children(): Renderable[];
-  render(ctx: vexflow.RenderContext): void;
 }
 
 export type Padding = {

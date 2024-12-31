@@ -2,13 +2,14 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, PartKey, Renderable, RenderContext, RenderLayer } from './types';
-import { Point, Rect } from '@/spatial';
+import { MeasureEntryKey, PartKey, RenderLayer } from './types';
+import { Point } from '@/spatial';
 import { Part } from './part';
 import { Pen } from './pen';
 import { Label } from './label';
+import { Renderable } from './renderable';
 
-export class Fragment implements Renderable {
+export class Fragment extends Renderable {
   constructor(
     private config: Config,
     private log: Logger,
@@ -16,16 +17,12 @@ export class Fragment implements Renderable {
     private key: MeasureEntryKey,
     private position: Point,
     private width: number | null
-  ) {}
+  ) {
+    super();
+  }
 
   layer(): RenderLayer {
     return 'any';
-  }
-
-  @util.memoize()
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
   }
 
   @util.memoize()
@@ -41,9 +38,6 @@ export class Fragment implements Renderable {
     return children;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(ctx: RenderContext): void {}
-
   private getParts(pen: Pen): Part[] {
     const partCount = this.document.getPartCount(this.key);
 
@@ -56,7 +50,7 @@ export class Fragment implements Renderable {
       const partLabel = partLabels[partIndex];
       const part = new Part(this.config, this.log, this.document, key, pen.position(), partLabel, this.width);
       parts.push(part);
-      pen.moveBy({ dy: part.rect().h });
+      pen.moveBy({ dy: part.rect.h });
     }
 
     return parts;
@@ -97,7 +91,7 @@ export class Fragment implements Renderable {
         const text = this.document.getPartLabel(key);
         return new Label(this.config, this.log, text, Point.origin(), padding, font);
       })
-      .map((label) => label.rect().w);
+      .map((label) => label.rect.w);
     const maxLabelWidth = util.max(labelWidths);
     const labelXPositions = labelWidths.map((width) => pen.position().x + (maxLabelWidth - width));
 
@@ -118,7 +112,7 @@ export class Fragment implements Renderable {
       const label = new Label(this.config, this.log, text, position, padding, font);
       partLabels.push(label);
 
-      pen.moveBy({ dy: part.rect().h });
+      pen.moveBy({ dy: part.rect.h });
     }
 
     return partLabels;

@@ -3,19 +3,15 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { System } from './system';
-import { Rect } from '@/spatial';
-import { Renderable, RenderContext, RenderLayer, SystemKey } from './types';
+import { RenderLayer, SystemKey } from './types';
 import { Spacer } from './spacer';
 import { Pen } from './pen';
 import { Label } from './label';
+import { Renderable } from './renderable';
 
-export class Score implements Renderable {
-  constructor(private config: Config, private log: Logger, private document: Document) {}
-
-  @util.memoize()
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
+export class Score extends Renderable {
+  constructor(private config: Config, private log: Logger, private document: Document) {
+    super();
   }
 
   layer(): RenderLayer {
@@ -33,7 +29,7 @@ export class Score implements Renderable {
 
     const topSpacer = Spacer.vertical(pen.x, pen.y, this.config.SCORE_PADDING_TOP);
     children.push(topSpacer);
-    pen.moveBy({ dy: topSpacer.rect().h });
+    pen.moveBy({ dy: topSpacer.rect.h });
 
     // TODO: Inject a score formatting type and use it to determine the title's position.
     const title = this.getTitleLabel(pen);
@@ -47,15 +43,12 @@ export class Score implements Renderable {
 
     const bottomSpacer = Spacer.vertical(pen.x, pen.y, this.config.SCORE_PADDING_BOTTOM);
     children.push(bottomSpacer);
-    pen.moveBy({ dy: bottomSpacer.rect().h });
+    pen.moveBy({ dy: bottomSpacer.rect.h });
 
     performanceMonitor.check(stopwatch.lap());
 
     return children;
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  render(ctx: RenderContext) {}
 
   private getTitleLabel(pen: Pen): Label | null {
     const title = this.document.getTitle();
@@ -68,7 +61,7 @@ export class Score implements Renderable {
         { bottom: this.config.TITLE_PADDING_BOTTOM },
         { color: 'black', family: this.config.TITLE_FONT_FAMILY, size: this.config.TITLE_FONT_SIZE }
       );
-      pen.moveBy({ dy: label.rect().h });
+      pen.moveBy({ dy: label.rect.h });
       return label;
     } else {
       return null;
@@ -84,7 +77,7 @@ export class Score implements Renderable {
       const key: SystemKey = { systemIndex };
       const system = new System(this.config, this.log, this.document, key, pen.position());
       systems.push(system);
-      pen.moveBy({ dy: system.rect().h });
+      pen.moveBy({ dy: system.rect.h });
     }
 
     return systems;
