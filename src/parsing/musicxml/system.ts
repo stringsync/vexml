@@ -50,8 +50,8 @@ export class System {
     return util.max(this.musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
   }
 
-  private getMeasureLabels(measureCount: number): string[] {
-    const measureLabels = new Array<string>(measureCount).fill('');
+  private getMeasureLabels(measureCount: number): number[] {
+    const measureLabels = new Array<number>(measureCount).fill(1);
 
     const part = util.first(this.musicXML.scorePartwise.getParts());
     if (!part) {
@@ -68,9 +68,9 @@ export class System {
 
       const number = parseInt(measure.getNumber(), 10);
       if (Number.isInteger(number) && !Number.isNaN(number)) {
-        measureLabels[measureIndex] = number.toString();
+        measureLabels[measureIndex] = number;
       } else {
-        measureLabels[measureIndex] = (measureIndex + 1).toString();
+        measureLabels[measureIndex] = measureIndex + 1;
       }
     }
 

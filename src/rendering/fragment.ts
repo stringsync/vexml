@@ -2,7 +2,7 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, Padding, PartKey, Renderable, RenderContext, RenderLayer } from './types';
+import { MeasureEntryKey, PartKey, Renderable, RenderContext, RenderLayer } from './types';
 import { Point, Rect } from '@/spatial';
 import { Part } from './part';
 import { Pen } from './pen';

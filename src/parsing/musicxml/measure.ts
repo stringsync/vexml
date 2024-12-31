@@ -14,7 +14,7 @@ export class Measure {
   constructor(
     private initialSignature: Signature,
     private index: number,
-    private label: string,
+    private label: number,
     private events: MeasureEvent[],
     private partIds: string[]
   ) {
@@ -24,7 +24,7 @@ export class Measure {
     );
   }
 
-  getLabel(): string {
+  getLabel(): number {
     return this.label;
   }
 

@@ -16,6 +16,10 @@ export class Spacer implements Renderable {
     return new Spacer(new Rect(x, y, w, h));
   }
 
+  static empty(): Spacer {
+    return new Spacer(Rect.empty());
+  }
+
   rect(): Rect {
     return this.space;
   }

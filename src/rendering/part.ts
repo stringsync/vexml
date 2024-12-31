@@ -41,7 +41,7 @@ export class Part implements Renderable {
       pen.moveBy({ dx: this.label.rect().w });
     }
 
-    for (const stave of this.getStaves(pen.clone())) {
+    for (const stave of this.getDescendantlessStaves(pen.clone())) {
       children.push(stave);
     }
 
@@ -51,7 +51,7 @@ export class Part implements Renderable {
   getStaveHeight(): number {
     const pen = new Pen(this.position);
 
-    const rects = this.getStaves(pen).map((stave) => stave.childlessRect());
+    const rects = this.getDescendantlessStaves(pen).map((stave) => stave.rect());
 
     if (rects.length === 0) {
       return 0;
@@ -63,14 +63,14 @@ export class Part implements Renderable {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   render(ctx: RenderContext): void {}
 
-  private getStaves(pen: Pen): Stave[] {
+  private getDescendantlessStaves(pen: Pen): Stave[] {
     const staveCount = this.document.getStaveCount(this.key);
 
     const staves = new Array<Stave>();
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const key: StaveKey = { ...this.key, staveIndex };
-      const stave = new Stave(this.config, this.log, this.document, key, pen.position(), this.width);
+      const stave = new Stave(this.config, this.log, this.document, key, pen.position(), this.width, false);
       staves.push(stave);
       pen.moveBy({ dy: stave.rect().h });
     }
