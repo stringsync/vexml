@@ -2,8 +2,9 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, Renderable, RenderLayer } from './types';
+import { MeasureEntryKey, PartKey, Renderable, RenderContext, RenderLayer } from './types';
 import { Point, Rect } from '@/spatial';
+import { Part } from './part';
 
 export class Fragment implements Renderable {
   constructor(
@@ -24,10 +25,25 @@ export class Fragment implements Renderable {
     const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
   }
+
   @util.memoize()
   children(): Renderable[] {
-    return [];
+    const children = new Array<Renderable>();
+
+    for (const part of this.getParts()) {
+      children.push(part);
+    }
+
+    return children;
   }
 
-  render(): void {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  render(ctx: RenderContext): void {}
+
+  getParts(): Part[] {
+    return this.document.getParts(this.key).map((_, partIndex) => {
+      const partKey: PartKey = { ...this.key, partIndex };
+      return new Part(this.config, this.log, this.document, partKey, this.position);
+    });
+  }
 }
