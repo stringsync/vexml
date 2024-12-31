@@ -1,46 +1,42 @@
+import * as vexflow from 'vexflow';
 import * as components from '@/components';
-import { Score } from './score';
-import { RenderContext, RenderLayer } from './types';
-import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
+import { ScoreRender } from './score';
+import { Logger } from '@/debug';
 import { Config } from './config';
-import { Renderable } from './renderable';
-
-const RENDER_LAYERS: RenderLayer[] = ['staves', 'notes', 'ornaments', 'connectors', 'any'];
+import { Document } from './document';
+import { FragmentRender } from './fragment';
 
 export class Rendering {
-  constructor(
+  private constructor(
     private config: Config,
     private log: Logger,
-    private ctx: RenderContext,
+    private document: Document,
+    private ctx: vexflow.RenderContext,
     private root: components.Root,
-    private score: Score
+    private scoreRender: ScoreRender
   ) {}
 
-  render(renderable: Renderable): void {
-    const descendants = new Set<Renderable>();
-    const renderables = [renderable];
-    while (renderables.length > 0) {
-      const current = renderables.pop();
-      if (current && !descendants.has(current)) {
-        descendants.add(current);
-        renderables.push(...current.children());
-      }
-    }
+  static finalize(
+    config: Config,
+    log: Logger,
+    document: Document,
+    ctx: vexflow.RenderContext,
+    root: components.Root,
+    scoreRender: ScoreRender
+  ): Rendering {
+    // Draw the title.
+    scoreRender.titleRender?.label.setContext(ctx).draw();
 
-    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
+    // Draw the staves.
+    scoreRender.systemRenders
+      .flatMap((s) => s.measureRenders)
+      .flatMap((m) => m.measureEntryRenders)
+      .filter((m): m is FragmentRender => m.type === 'fragment')
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .forEach((s) => s.vexflowStave.setContext(ctx).draw());
 
-    for (const layer of RENDER_LAYERS) {
-      // Set elements are yielded in insertion order.
-      for (const renderable of descendants) {
-        if (renderable.layer() === layer) {
-          const stopwatch = Stopwatch.start();
-
-          renderable.render(this.ctx);
-
-          performanceMonitor.check(stopwatch.lap());
-        }
-      }
-    }
+    return new Rendering(config, log, document, ctx, root, scoreRender);
   }
 
   clear(): void {

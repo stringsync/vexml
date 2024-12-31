@@ -62,6 +62,10 @@ export class Document {
     return this.getMeasure(key).entries;
   }
 
+  getMeasureEntryCount(key: MeasureKey): number {
+    return this.getMeasureEntries(key).length;
+  }
+
   getFragment(key: MeasureEntryKey): data.Fragment {
     const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
     util.assert(entry?.type === 'fragment', 'expected entry to be a fragment');
@@ -93,7 +97,7 @@ export class Document {
   }
 
   getStaveCount(key: PartKey): number {
-    return this.getStaves(key).length;
+    return this.getPart(key).signature.staveCount;
   }
 
   getStave(key: StaveKey): data.Stave {

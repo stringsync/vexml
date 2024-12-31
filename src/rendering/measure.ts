@@ -1,15 +1,21 @@
 import * as util from '@/util';
 import { Config } from './config';
-import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
+import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, MeasureKey, RenderLayer } from './types';
-import { Point } from '@/spatial';
-import { Fragment } from './fragment';
-import { Gap } from './gap';
+import { MeasureEntryKey, MeasureKey } from './types';
+import { Point, Rect } from '@/spatial';
+import { Fragment, FragmentRender } from './fragment';
+import { Gap, GapRender } from './gap';
 import { Pen } from './pen';
-import { Renderable } from './renderable';
 
-export class Measure extends Renderable {
+export type MeasureRender = {
+  type: 'measure';
+  key: MeasureKey;
+  rect: Rect;
+  measureEntryRenders: Array<FragmentRender | GapRender>;
+};
+
+export class Measure {
   constructor(
     private config: Config,
     private log: Logger,
@@ -17,31 +23,24 @@ export class Measure extends Renderable {
     private key: MeasureKey,
     private position: Point,
     private width: number | null
-  ) {
-    super();
-  }
+  ) {}
 
-  @util.memoize()
-  children(): Renderable[] {
-    const stopwatch = Stopwatch.start();
-    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
-
+  render(): MeasureRender {
     const pen = new Pen(this.position);
 
-    const children = new Array<Renderable>();
+    const measureEntryRenders = this.renderMeasureEntries(pen);
 
-    for (const measureEntry of this.getMeasureEntries(pen)) {
-      children.push(measureEntry);
-    }
+    const rect = Rect.merge(measureEntryRenders.map((entry) => entry.rect));
 
-    performanceMonitor.check(stopwatch.lap(), this.key);
-
-    return children;
+    return {
+      type: 'measure',
+      key: this.key,
+      rect,
+      measureEntryRenders,
+    };
   }
 
-  render(): void {}
-
-  private getMeasureEntries(pen: Pen): Array<Fragment | Gap> {
+  private renderMeasureEntries(pen: Pen): Array<FragmentRender | GapRender> {
     const measureEntryWidths = this.getMeasureEntryWidths();
 
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
@@ -49,9 +48,9 @@ export class Measure extends Renderable {
       const width = measureEntryWidths?.at(measureEntryIndex) ?? null;
       switch (entry.type) {
         case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key, pen.position(), width);
+          return new Fragment(this.config, this.log, this.document, key, pen.position(), width).render();
         case 'gap':
-          return new Gap(this.config, this.log, this.document, key, pen.position());
+          return new Gap(this.config, this.log, this.document, key, pen.position()).render();
       }
     });
   }
@@ -63,16 +62,16 @@ export class Measure extends Renderable {
 
     const widths = this.document
       .getMeasureEntries(this.key)
-      .map((entry, measureEntryIndex) => {
+      .map((measureEntry, measureEntryIndex) => {
         const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
-        switch (entry.type) {
+        switch (measureEntry.type) {
           case 'fragment':
-            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
+            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
           case 'gap':
-            return new Gap(this.config, this.log, this.document, key, Point.origin());
+            return new Gap(this.config, this.log, this.document, key, Point.origin()).render();
         }
       })
-      .map((entry) => entry.rect.w);
+      .map((measureEntryRender) => measureEntryRender.rect.w);
 
     const total = util.sum(widths);
 

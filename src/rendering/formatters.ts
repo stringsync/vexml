@@ -3,12 +3,10 @@ import { Document } from './document';
 import { Formatter, SystemArrangement } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { Score } from './score';
-import { System } from './system';
-import { Measure } from './measure';
+import { ScoreRender } from './score';
 
 export class UndefinedHeightFormatter implements Formatter {
-  constructor(private config: Config, private log: Logger, private score: Score) {
+  constructor(private config: Config, private log: Logger, private scoreRender: ScoreRender) {
     util.assertNotNull(this.config.WIDTH);
     util.assertNull(this.config.HEIGHT);
   }
@@ -22,14 +20,10 @@ export class UndefinedHeightFormatter implements Formatter {
     const arrangements: SystemArrangement[] = [{ measureIndexes: [] }];
     let remaining = this.config.WIDTH!;
 
-    const measures = this.score
-      .children()
-      .filter((child) => child instanceof System)
-      .flatMap((system) => system.children())
-      .filter((child) => child instanceof Measure);
+    const measureRenders = this.scoreRender.systemRenders.flatMap((systemRender) => systemRender.measureRenders);
 
-    for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
-      const measure = measures[measureIndex];
+    for (let measureIndex = 0; measureIndex < measureRenders.length; measureIndex++) {
+      const measure = measureRenders[measureIndex];
 
       const required = measure.rect.w;
 
@@ -42,7 +36,7 @@ export class UndefinedHeightFormatter implements Formatter {
       remaining -= required;
     }
 
-    this.log.debug(`grouped ${measures.length} measures into ${arrangements.length} system(s)`);
+    this.log.debug(`grouped ${measureRenders.length} measures into ${arrangements.length} system(s)`);
 
     return arrangements;
   }

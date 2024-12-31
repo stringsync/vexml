@@ -1,63 +1,64 @@
 import * as util from '@/util';
-import { Point } from '@/spatial';
+import { Point, Rect } from '@/spatial';
 import { Config } from './config';
-import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
+import { Logger } from '@/debug';
 import { Document } from './document';
-import { Measure } from './measure';
-import { MeasureKey, RenderLayer, SystemKey } from './types';
+import { Measure, MeasureRender } from './measure';
+import { MeasureKey, SystemKey } from './types';
 import { Pen } from './pen';
-import { Spacer } from './spacer';
-import { Renderable } from './renderable';
 
-export class System extends Renderable {
+export type SystemRender = {
+  type: 'system';
+  key: SystemKey;
+  rect: Rect;
+  measureRenders: MeasureRender[];
+};
+
+export class System {
   constructor(
     private config: Config,
     private log: Logger,
     private document: Document,
     private key: SystemKey,
     private position: Point
-  ) {
-    super();
-  }
+  ) {}
 
-  @util.memoize()
-  children(): Renderable[] {
-    const stopwatch = Stopwatch.start();
-    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
-
+  render(): SystemRender {
     const pen = new Pen(this.position);
 
-    const children = new Array<Renderable>();
+    const measureRenders = this.renderMeasures(pen);
 
-    for (const measure of this.getMeasures(pen)) {
-      children.push(measure);
-    }
+    const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
 
-    const bottomSpacer = Spacer.vertical(pen.x, pen.y, this.config.SYSTEM_PADDING_BOTTOM);
-    children.push(bottomSpacer);
-    pen.moveBy({ dy: bottomSpacer.rect.h });
-
-    performanceMonitor.check(stopwatch.lap(), this.key);
-
-    return children;
+    return {
+      type: 'system',
+      key: this.key,
+      rect,
+      measureRenders,
+    };
   }
 
-  private getMeasures(pen: Pen): Measure[] {
-    const measures = new Array<Measure>();
-
+  private renderMeasures(pen: Pen): MeasureRender[] {
+    const measureRenders = new Array<MeasureRender>();
     const measureCount = this.document.getMeasures(this.key).length;
-
     const measureWidths = this.getMeasureWidths();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
       const width = measureWidths?.at(measureIndex) ?? null;
-      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
-      measures.push(measure);
-      pen.moveBy({ dx: measure.rect.w });
+      const measureRender = new Measure(
+        this.config,
+        this.log,
+        this.document,
+        measureKey,
+        pen.position(),
+        width
+      ).render();
+      measureRenders.push(measureRender);
+      pen.moveBy({ dx: measureRender.rect.w });
     }
 
-    return measures;
+    return measureRenders;
   }
 
   private getMeasureWidths(): number[] | null {
@@ -65,14 +66,28 @@ export class System extends Renderable {
       return null; // use intrinsic widths
     }
 
+    const measureCount = this.document.getMeasureCount(this.key);
+    if (measureCount === 1) {
+      return [this.config.WIDTH];
+    }
+
     const widths = this.document
       .getMeasures(this.key)
       .map<MeasureKey>((_, measureIndex) => ({ ...this.key, measureIndex }))
-      .map((measureKey) => new Measure(this.config, this.log, this.document, measureKey, Point.origin(), null))
-      .map((measure) => measure.rect.w);
+      .map((key) => new Measure(this.config, this.log, this.document, key, Point.origin(), null).render())
+      .map((measureRender) => measureRender.rect.w);
 
     const total = util.sum(widths);
 
-    return widths.map((width) => width / total).map((fraction) => fraction * this.config.WIDTH!);
+    return widths
+      .map((width) => width / total)
+      .map((fraction, measureIndex) => {
+        const isLast = measureIndex === widths.length - 1;
+        const isAboveStretchThreshold = fraction > this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD;
+        if (isLast && isAboveStretchThreshold) {
+          return widths[measureIndex];
+        }
+        return fraction * this.config.WIDTH!;
+      });
   }
 }
