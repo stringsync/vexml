@@ -11,6 +11,11 @@ import { Spacer } from './spacer';
 export class Title implements Renderable {
   constructor(private config: Config, private log: Logger, private document: Document, private position: Point) {}
 
+  layer(): RenderLayer {
+    return 'any';
+  }
+
+  @util.memoize()
   rect(): Rect {
     const textMeasurer = this.getTextMeasurer();
     const textRect = new Rect(
@@ -23,16 +28,13 @@ export class Title implements Renderable {
     return Rect.merge([textRect, ...spacers.map((spacer) => spacer.rect())]);
   }
 
-  layer(): RenderLayer {
-    return 'any';
+  @util.memoize()
+  children(): Renderable[] {
+    return [];
   }
 
   render(ctx: RenderContext): void {
     this.getTextDrawing().draw(ctx);
-  }
-
-  children(): Renderable[] {
-    return [];
   }
 
   private getText(): string {

@@ -15,15 +15,16 @@ export class Fragment implements Renderable {
     private width: number | null
   ) {}
 
-  rect(): Rect {
-    const rects = this.children().map((renderable) => renderable.rect());
-    return Rect.merge(rects);
-  }
-
   layer(): RenderLayer {
     return 'any';
   }
 
+  @util.memoize()
+  rect(): Rect {
+    const rects = this.children().map((renderable) => renderable.rect());
+    return Rect.merge(rects);
+  }
+  @util.memoize()
   children(): Renderable[] {
     return [];
   }
