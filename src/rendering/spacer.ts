@@ -1,10 +1,8 @@
 import { Rect } from '@/spatial';
-import { Renderable } from './types';
+import { Renderable, RenderLayer } from './types';
 
 export class Spacer implements Renderable {
-  public readonly layer = 'background';
-
-  constructor(public readonly rect: Rect) {}
+  constructor(private space: Rect) {}
 
   static horizontal(x1: number, x2: number): Spacer {
     return new Spacer(new Rect(x1, 0, x2 - x1, 0));
@@ -14,7 +12,17 @@ export class Spacer implements Renderable {
     return new Spacer(new Rect(y1, 0, 0, y2 - y1));
   }
 
-  render(): void {
-    // noop
+  rect(): Rect {
+    return this.space;
   }
+
+  layer(): RenderLayer {
+    return 'any';
+  }
+
+  children(): Renderable[] {
+    return [];
+  }
+
+  render(): void {}
 }

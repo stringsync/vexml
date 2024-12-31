@@ -4,6 +4,8 @@ import { Formatter, SystemArrangement } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Score } from './score';
+import { System } from './system';
+import { Measure } from './measure';
 
 export class UndefinedHeightFormatter implements Formatter {
   constructor(private config: Config, private log: Logger, private score: Score) {
@@ -20,12 +22,16 @@ export class UndefinedHeightFormatter implements Formatter {
     const arrangements: SystemArrangement[] = [{ measureIndexes: [] }];
     let remaining = this.config.WIDTH!;
 
-    const measures = this.score.getMeasures();
+    const measures = this.score
+      .children()
+      .filter((child) => child instanceof System)
+      .flatMap((system) => system.children())
+      .filter((child) => child instanceof Measure);
 
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
-      const required = measure.rect.w;
+      const required = measure.rect().w;
 
       if (required > remaining) {
         arrangements.push({ measureIndexes: [] });

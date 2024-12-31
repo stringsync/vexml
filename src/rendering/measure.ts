@@ -18,38 +18,16 @@ export class Measure implements Renderable {
     private width: number | null
   ) {}
 
-  get rect(): Rect {
-    const rects = this.getChildren().map((renderable) => renderable.rect);
+  rect(): Rect {
+    const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
   }
 
-  get layer(): RenderLayer {
-    return 'background';
+  layer(): RenderLayer {
+    return 'any';
   }
 
-  render(ctx: RenderContext): void {
-    const stopwatch = Stopwatch.start();
-    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
-
-    const children = this.getChildren();
-
-    for (const child of children) {
-      if (child.layer === 'background') {
-        child.render(ctx);
-      }
-    }
-
-    for (const child of children) {
-      if (child.layer === 'foreground') {
-        child.render(ctx);
-      }
-    }
-
-    performanceMonitor.check(stopwatch.lap(), this.key);
-  }
-
-  @util.memoize()
-  private getChildren(): Renderable[] {
+  children(): Renderable[] {
     const children = new Array<Renderable>();
 
     const stopwatch = Stopwatch.start();
@@ -63,6 +41,8 @@ export class Measure implements Renderable {
 
     return children;
   }
+
+  render(): void {}
 
   private getMeasureEntries(): Array<Fragment | Gap> {
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {

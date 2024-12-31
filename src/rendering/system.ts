@@ -1,10 +1,9 @@
-import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { Config } from './config';
 import { Logger, PerformanceMonitor, Stopwatch } from '@/debug';
 import { Document } from './document';
 import { Measure } from './measure';
-import { MeasureKey, Renderable, RenderContext, RenderLayer, SystemKey } from './types';
+import { MeasureKey, Renderable, RenderLayer, SystemKey } from './types';
 
 export class System implements Renderable {
   constructor(
@@ -15,38 +14,16 @@ export class System implements Renderable {
     private position: Point
   ) {}
 
-  get rect(): Rect {
-    const rects = this.getChildren().map((renderable) => renderable.rect);
+  rect(): Rect {
+    const rects = this.children().map((renderable) => renderable.rect());
     return Rect.merge(rects);
   }
 
-  get layer(): RenderLayer {
-    return 'background';
+  layer(): RenderLayer {
+    return 'any';
   }
 
-  render(ctx: RenderContext): void {
-    const stopwatch = Stopwatch.start();
-    const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
-
-    const children = this.getChildren();
-
-    for (const child of children) {
-      if (child.layer === 'background') {
-        child.render(ctx);
-      }
-    }
-
-    for (const child of children) {
-      if (child.layer === 'foreground') {
-        child.render(ctx);
-      }
-    }
-
-    performanceMonitor.check(stopwatch.lap(), this.key);
-  }
-
-  @util.memoize()
-  getChildren(): Renderable[] {
+  children(): Renderable[] {
     const stopwatch = Stopwatch.start();
     const performanceMonitor = new PerformanceMonitor(this.log, this.config.SLOW_WARNING_THRESHOLD_MS);
 
@@ -60,6 +37,8 @@ export class System implements Renderable {
 
     return children;
   }
+
+  render(): void {}
 
   private getMeasures(): Measure[] {
     const measures = new Array<Measure>();

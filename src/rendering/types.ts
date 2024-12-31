@@ -9,18 +9,13 @@ export interface Formatter {
 
 /** Renderable represents an entity that has dimensions and can be rendered to a context. */
 export interface Renderable {
-  /** rect is the bounding box of the object, which must always return an equivalent object. */
-  rect: Rect;
-  /**
-   * layer is the render layer for which this object should be rendered to, which must always return an equivalent
-   * object.
-   */
-  layer: RenderLayer;
-  /** Draws the object to a context. */
+  rect(): Rect;
+  layer(): RenderLayer;
+  children(): Renderable[];
   render(ctx: vexflow.RenderContext): void;
 }
 
-export type RenderLayer = 'background' | 'foreground';
+export type RenderLayer = 'any' | 'staves' | 'notes' | 'ornaments' | 'connectors';
 
 export type PartLabelKey = {
   partIndex: number;
