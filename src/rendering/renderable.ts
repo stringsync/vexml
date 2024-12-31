@@ -1,4 +1,3 @@
-import * as util from '@/util';
 import { Rect } from '@/spatial';
 import { RenderContext, RenderLayer } from './types';
 
@@ -17,5 +16,6 @@ export abstract class Renderable {
 
   abstract children(): Renderable[];
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   render(ctx: RenderContext): void {}
 }

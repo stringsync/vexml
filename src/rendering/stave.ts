@@ -31,8 +31,8 @@ export class Stave extends Renderable {
   children(): Renderable[] {
     const children = new Array<Renderable>();
 
-    const staveRepresentative = this.getVexflowStaveRepresentative();
-    children.push(staveRepresentative);
+    const vexflowStaveRectRep = this.getVexflowStaveRectRep();
+    children.push(vexflowStaveRectRep);
 
     if (this.includeDescendants) {
       // TODO: Include voices.
@@ -58,7 +58,7 @@ export class Stave extends Renderable {
    * Returns a spacer that represents the vexflow stave's true bounding box. We need to use this instead of the bounding
    * box because it doesn't account for the measure label nor the end barline.
    */
-  private getVexflowStaveRepresentative(): Spacer {
+  private getVexflowStaveRectRep(): Spacer {
     // eslint-disable-next-line prefer-const
     const { h } = this.getVexflowStave().getBoundingBox();
     const x = this.position.x;
