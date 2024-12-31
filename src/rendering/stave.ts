@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import { Point } from '@/spatial';
-import { MeasureEntryKey, RenderContext, RenderLayer } from './types';
+import { MeasureEntryKey, RenderContext, RenderLayer, StaveKey } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
@@ -16,7 +16,7 @@ export class Stave extends Renderable {
     private config: Config,
     private log: Logger,
     private document: Document,
-    private key: MeasureEntryKey,
+    private key: StaveKey,
     private position: Point,
     private width: number | null,
     private includeDescendants: boolean
@@ -49,9 +49,14 @@ export class Stave extends Renderable {
     const x = this.position.x + this.getStaveOffsetX();
     const y = this.position.y;
     const width = this.width ?? this.getIntrinsicWidth();
-    return new vexflow.Stave(x, y, width)
-      .setMeasure(this.document.getMeasure(this.key).label)
-      .setEndBarType(vexflow.Barline.type.SINGLE);
+    const vexflowStave = new vexflow.Stave(x, y, width).setEndBarType(vexflow.Barline.type.SINGLE);
+
+    const isFirstPart = this.key.partIndex === 0;
+    if (isFirstPart) {
+      vexflowStave.setMeasure(this.document.getMeasure(this.key).label);
+    }
+
+    return vexflowStave;
   }
 
   /**
