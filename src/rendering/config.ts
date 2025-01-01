@@ -59,6 +59,11 @@ export const CONFIG = {
     defaultValue: 8,
     help: 'PART_LABEL_PADDING_RIGHT is the horizontal distance from part labels to the first measure.',
   }),
+  PART_LABEL_ALIGNMENT: t.enum({
+    defaultValue: 'right',
+    help: 'PART_LABEL_ALIGNMENT is the horizontal alignment of part labels.',
+    choices: ['right', 'left'] as const,
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',

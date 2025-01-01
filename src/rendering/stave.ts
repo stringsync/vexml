@@ -88,8 +88,8 @@ export class Stave {
   }
 
   /**
-   * Returns a rect that represents the vexflow stave's true bounding box. We need to use this instead of the vexflow
-   * bounding box because it doesn't account for the measure label nor the end barline.
+   * Returns a rect that _represents_ the vexflow stave's bounding box. We adjusted the vexflow stave's x and width
+   * which is why we don't expect its bounding box to be representative of the rendering object.
    */
   private getVexflowStaveRectRepresentative(vexflowStave: vexflow.Stave, pen: Pen): Rect {
     const box = vexflowStave.getBoundingBox();
