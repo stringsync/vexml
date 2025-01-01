@@ -44,6 +44,15 @@ export class Rendering {
       .flatMap((p) => p.staveRenders)
       .forEach((s) => s.vexflowStave.setContext(ctx).draw());
 
+    // Draw the stave connectors.
+    scoreRender.systemRenders
+      .flatMap((s) => s.measureRenders)
+      .flatMap((m) => m.measureEntryRenders)
+      .filter((m): m is FragmentRender => m.type === 'fragment')
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.vexflowStaveConnectors)
+      .forEach((c) => c.setContext(ctx).draw());
+
     return new Rendering(config, log, document, ctx, root, scoreRender);
   }
 

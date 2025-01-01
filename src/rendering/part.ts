@@ -1,3 +1,4 @@
+import * as vexflow from 'vexflow';
 import { PartKey, StaveKey } from './types';
 import { Point, Rect } from '@/spatial';
 import { Config } from './config';
@@ -11,6 +12,7 @@ export type PartRender = {
   key: PartKey;
   rect: Rect;
   staveRenders: StaveRender[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
 };
 
 export class Part {
@@ -42,6 +44,7 @@ export class Part {
     const pen = new Pen(this.position);
 
     const staveRenders = this.renderStaves(pen);
+    const vexflowStaveConnectors = this.renderVexflowStaveConnectors(staveRenders);
 
     const rect = Rect.merge(staveRenders.map((staveRender) => staveRender.rect));
 
@@ -50,6 +53,7 @@ export class Part {
       key: this.key,
       rect,
       staveRenders,
+      vexflowStaveConnectors,
     };
   }
 
@@ -65,5 +69,31 @@ export class Part {
     }
 
     return staveRenders;
+  }
+
+  private renderVexflowStaveConnectors(staveRenders: StaveRender[]): vexflow.StaveConnector[] {
+    const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    if (staveRenders.length <= 1) {
+      return vexflowStaveConnectors;
+    }
+
+    const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
+    const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
+
+    const topStave = staveRenders.at(0)!;
+    const bottomStave = staveRenders.at(-1)!;
+
+    vexflowStaveConnectors.push(
+      new vexflow.StaveConnector(topStave.vexflowStave, bottomStave.vexflowStave).setType('singleLeft')
+    );
+
+    if (isLastMeasure && isLastMeasureEntry) {
+      vexflowStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflowStave, bottomStave.vexflowStave).setType('singleRight')
+      );
+    }
+
+    return vexflowStaveConnectors;
   }
 }
