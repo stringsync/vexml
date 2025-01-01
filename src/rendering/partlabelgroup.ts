@@ -1,5 +1,5 @@
 import { Point, Rect } from '@/spatial';
-import { MeasureEntryKey, PartKey, PartLabelKey } from './types';
+import { MeasureEntryKey, Padding, PartKey, PartLabelKey } from './types';
 import { Document } from './document';
 import { Label } from './label';
 import { Config } from './config';
@@ -32,7 +32,7 @@ export class PartLabelGroup {
   render(): PartLabelGroupRender {
     const pen = new Pen(this.position);
 
-    const partLabelRenders = this.renderPartLabels(pen.position());
+    const partLabelRenders = this.renderPartLabels(pen);
 
     const rect = Rect.merge(partLabelRenders.map((partLabel) => partLabel.rect));
 
@@ -43,17 +43,13 @@ export class PartLabelGroup {
     };
   }
 
-  private renderPartLabels(position: Point): PartLabelRender[] {
+  private renderPartLabels(pen: Pen): PartLabelRender[] {
     const partLabelRenders = new Array<PartLabelRender>();
-    const partLabelPositions = this.getPartLabelPositions(position);
+    const partLabelPositions = this.getPartLabelPositions(pen);
     const partCount = this.document.getPartCount(this.key);
 
-    const padding = { right: this.config.PART_LABEL_PADDING_RIGHT };
-    const font = {
-      color: 'black',
-      family: this.config.PART_LABEL_FONT_FAMILY,
-      size: this.config.PART_LABEL_FONT_SIZE,
-    };
+    const padding = this.getPartLabelPadding();
+    const font = this.getPartLabelFont();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartLabelKey = { ...this.key, partIndex };
@@ -67,38 +63,59 @@ export class PartLabelGroup {
     return partLabelRenders;
   }
 
-  private getPartLabelPositions(position: Point): Point[] {
-    const positions = new Array<Point>();
+  private getPartLabelPositions(pen: Pen): Point[] {
+    const partLabelPositions = new Array<Point>();
     const partCount = this.document.getPartCount(this.key);
     const partRenders = new Array<PartRender>();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(this.config, this.log, this.document, partKey, position, null).render();
+      const partRender = new Part(this.config, this.log, this.document, partKey, pen.position(), null).render();
       partRenders.push(partRender);
+      pen.moveBy({ dy: partRender.rect.h });
     }
 
-    const partWidths = partRenders.map((part) => part.rect.w);
-    const maxPartWidth = Math.max(0, ...partWidths);
-    const staveTops = partRenders.map((part) => part.staveRenders.at(0)?.vexflowStave.getTopLineTopY() ?? 0);
-    const staveBottoms = partRenders.map((part) => part.staveRenders.at(-1)?.vexflowStave.getBottomLineBottomY() ?? 0);
+    // Part widths depend on each other through this metric and the alignment config.
+    const maxPartWidth = Math.max(0, ...partRenders.map((part) => part.rect.w));
+
+    const padding = this.getPartLabelPadding();
+    const font = this.getPartLabelFont();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const partWidth = partWidths[partIndex];
-      const staveTop = staveTops[partIndex];
-      const staveBottom = staveBottoms[partIndex];
+      const key: PartLabelKey = { ...this.key, partIndex };
+
+      const partRender = partRenders[partIndex];
+      const partWidth = partRender.rect.w;
+      const staveTop = partRender.staveRenders.at(0)?.intrisicRect.getMinY() ?? 0;
+      const staveBottom = partRender.staveRenders.at(-1)?.intrisicRect.getMaxY() ?? 0;
 
       let offsetX: number = 0;
       if (this.config.PART_LABEL_ALIGNMENT === 'right') {
         offsetX = maxPartWidth - partWidth;
       }
 
-      const x = this.position.x + offsetX;
-      const y = (staveTop + staveBottom) / 2;
+      const text = this.document.getPartLabel(key);
+      const label = new Label(this.config, this.log, text, Point.origin(), padding, font);
+      const offsetY = label.rect().h / 2;
 
-      positions.push(new Point(x, y));
+      const x = this.position.x + offsetX;
+      const y = (staveTop + staveBottom) / 2 + offsetY;
+
+      partLabelPositions.push(new Point(x, y));
     }
 
-    return positions;
+    return partLabelPositions;
+  }
+
+  private getPartLabelPadding(): Padding {
+    return { right: this.config.PART_LABEL_PADDING_RIGHT };
+  }
+
+  private getPartLabelFont() {
+    return {
+      color: 'black',
+      family: this.config.PART_LABEL_FONT_FAMILY,
+      size: this.config.PART_LABEL_FONT_SIZE,
+    };
   }
 }

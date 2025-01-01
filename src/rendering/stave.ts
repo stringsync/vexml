@@ -14,6 +14,7 @@ export type StaveRender = {
   type: 'stave';
   key: StaveKey;
   rect: Rect;
+  intrisicRect: Rect;
   vexflowStave: vexflow.Stave;
 };
 
@@ -30,16 +31,16 @@ export class Stave {
   render(): StaveRender {
     const pen = new Pen(this.position);
 
-    pen.save();
-    const vexflowStave = this.renderVexflowStave(pen);
-    pen.restore();
+    const vexflowStave = this.renderVexflowStave(pen.clone());
 
     const rect = this.getVexflowStaveRectRepresentative(vexflowStave, pen);
+    const intrisicRect = this.getIntrinsicRect(rect, vexflowStave);
 
     return {
       type: 'stave',
       key: this.key,
       rect,
+      intrisicRect,
       vexflowStave,
     };
   }
@@ -58,7 +59,7 @@ export class Stave {
 
     const y = pen.y;
 
-    let width = this.width ?? this.getIntrinsicWidth();
+    let width = this.width ?? this.getMinWidth();
     if (isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
     }
@@ -96,13 +97,28 @@ export class Stave {
 
     const x = pen.x;
     const y = pen.y;
-    const w = this.width ?? this.getIntrinsicWidth();
+    const w = this.width ?? this.getMinWidth();
     const h = box.h;
 
     return new Rect(x, y, w, h);
   }
 
-  private getIntrinsicWidth(): number {
+  /**
+   * Returns the rect of the stave itself, ignoring any influence by child elements such as notes.
+   */
+  private getIntrinsicRect(vexflowStaveRectRepresentative: Rect, vexflowStave: vexflow.Stave): Rect {
+    const topLineY = vexflowStave.getTopLineTopY();
+    const bottomLineY = vexflowStave.getBottomLineBottomY();
+
+    const x = vexflowStaveRectRepresentative.x;
+    const y = topLineY;
+    const w = vexflowStaveRectRepresentative.w;
+    const h = bottomLineY - topLineY;
+
+    return new Rect(x, y, w, h);
+  }
+
+  private getMinWidth(): number {
     return Math.min(this.config.WIDTH ?? TODO_WIDTH, TODO_WIDTH);
   }
 }

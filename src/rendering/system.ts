@@ -46,14 +46,8 @@ export class System {
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
       const width = measureWidths?.at(measureIndex) ?? null;
-      const measureRender = new Measure(
-        this.config,
-        this.log,
-        this.document,
-        measureKey,
-        pen.position(),
-        width
-      ).render();
+      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
+      const measureRender = measure.render();
       measureRenders.push(measureRender);
       pen.moveBy({ dx: measureRender.rect.w });
     }

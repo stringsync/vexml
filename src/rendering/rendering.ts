@@ -27,6 +27,14 @@ export class Rendering {
     // Draw the title.
     scoreRender.titleRender?.label.setContext(ctx).draw();
 
+    // Draw the part labels.
+    scoreRender.systemRenders
+      .flatMap((s) => s.measureRenders)
+      .flatMap((m) => m.measureEntryRenders)
+      .filter((m): m is FragmentRender => m.type === 'fragment')
+      .at(0)
+      ?.partLabelGroupRender?.partLabelRenders.forEach((p) => p.label.setContext(ctx).draw());
+
     // Draw the staves.
     scoreRender.systemRenders
       .flatMap((s) => s.measureRenders)
