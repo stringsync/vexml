@@ -33,6 +33,10 @@ export const CONFIG = {
     defaultValue: '36px',
     help: 'TITLE_FONT_SIZE is the font size for the title expressed in browser-compatible units.',
   }),
+  TITLE_FONT_LINE_HEIGHT_PX: t.number({
+    defaultValue: 40,
+    help: 'TITLE_FONT_LINE_HEIGHT is the line height for the title in pixels',
+  }),
   TITLE_PADDING_BOTTOM: t.number({
     defaultValue: 20,
     help: 'TITLE_BOTTOM_PADDING is the vertical distance from the title to the first system.',

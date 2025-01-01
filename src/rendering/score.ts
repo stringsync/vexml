@@ -5,7 +5,7 @@ import { Logger } from '@/debug';
 import { System, SystemRender } from './system';
 import { SystemKey } from './types';
 import { Label } from './label';
-import { Point, Rect } from '@/spatial';
+import { Rect } from '@/spatial';
 import { Pen } from './pen';
 
 export type ScoreRender = {
@@ -52,9 +52,30 @@ export class Score {
       return null;
     }
 
-    const position = this.getTitlePosition(pen.position());
-    const label = new Label(this.config, this.log, title, position, this.getTitlePadding(), this.getTitleFont());
-    const rect = label.rect();
+    let label: Label;
+
+    if (this.config.WIDTH) {
+      label = Label.centerAligned(
+        this.config,
+        this.log,
+        this.config.WIDTH,
+        title,
+        pen.position(),
+        this.getTitlePadding(),
+        this.getTitleFont()
+      );
+    } else {
+      label = Label.singleLine(
+        this.config,
+        this.log,
+        title,
+        pen.position(),
+        this.getTitlePadding(),
+        this.getTitleFont()
+      );
+    }
+
+    const rect = label.rect;
     pen.moveBy({ dy: rect.h });
 
     return {
@@ -62,29 +83,6 @@ export class Score {
       rect,
       label,
     };
-  }
-
-  private getTitlePosition(position: Point): Point {
-    const title = this.document.getTitle();
-    if (!title) {
-      return position;
-    }
-
-    const width = this.config.WIDTH;
-    if (!width) {
-      return position;
-    }
-
-    const rect = new Label(
-      this.config,
-      this.log,
-      title,
-      Point.origin(),
-      this.getTitlePadding(),
-      this.getTitleFont()
-    ).rect();
-
-    return new Point((width - rect.w) / 2, position.y);
   }
 
   private getTitlePadding() {
@@ -96,6 +94,7 @@ export class Score {
       color: 'black',
       family: this.config.TITLE_FONT_FAMILY,
       size: this.config.TITLE_FONT_SIZE,
+      lineHeight: this.config.TITLE_FONT_LINE_HEIGHT_PX,
     };
   }
 
