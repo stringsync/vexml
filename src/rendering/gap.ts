@@ -20,8 +20,8 @@ export class Gap {
     private position: Point
   ) {}
 
-  getMinRequiredWidth(): number {
-    return TODO_WIDTH;
+  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
+    return [TODO_WIDTH, 0];
   }
 
   render(): GapRender {

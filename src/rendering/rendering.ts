@@ -33,7 +33,9 @@ export class Rendering {
       .flatMap((m) => m.measureEntryRenders)
       .filter((m): m is FragmentRender => m.type === 'fragment')
       .at(0)
-      ?.partLabelGroupRender?.partLabelRenders.forEach((p) => p.label.setContext(ctx).draw());
+      ?.partLabelGroupRender?.partLabelRenders.forEach((p) => {
+        p.label.setContext(ctx).draw();
+      });
 
     // Draw the staves.
     scoreRender.systemRenders
@@ -42,7 +44,9 @@ export class Rendering {
       .filter((m): m is FragmentRender => m.type === 'fragment')
       .flatMap((f) => f.partRenders)
       .flatMap((p) => p.staveRenders)
-      .forEach((s) => s.vexflowStave.setContext(ctx).draw());
+      .forEach((s) => {
+        s.vexflowStave.setContext(ctx).draw();
+      });
 
     // Draw the stave connectors.
     scoreRender.systemRenders
@@ -51,7 +55,9 @@ export class Rendering {
       .filter((m): m is FragmentRender => m.type === 'fragment')
       .flatMap((f) => f.partRenders)
       .flatMap((p) => p.vexflowStaveConnectors)
-      .forEach((c) => c.setContext(ctx).draw());
+      .forEach((c) => {
+        c.setContext(ctx).draw();
+      });
 
     return new Rendering(config, log, document, ctx, root, scoreRender);
   }

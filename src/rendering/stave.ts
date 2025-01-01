@@ -6,7 +6,7 @@ import { Logger } from '@/debug';
 import { Document } from './document';
 import { Pen } from './pen';
 
-const TODO_WIDTH = 400;
+const TODO_WIDTH = 200;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_WIDTH = 1;
 
@@ -28,6 +28,7 @@ export class Stave {
     private width: number | null
   ) {}
 
+  /** Returns the minimum width needed to render this stave based on its voice group. */
   getMinRequiredWidth(): number {
     return TODO_WIDTH;
   }

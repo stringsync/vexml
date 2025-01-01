@@ -25,6 +25,33 @@ export class Fragment {
     private width: number | null
   ) {}
 
+  /**
+   * Returns the minimum required widths to render this fragment. All parts in a fragment must be the same width, so we
+   * pick the largest one.
+   */
+  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
+    const partCount = this.document.getPartCount(this.key);
+
+    let minRequiredStaveWidth = 0;
+    let minRequiredNonStaveWidth = 0;
+
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const key: PartKey = { ...this.key, partIndex };
+      const part = new Part(this.config, this.log, this.document, key, this.position, this.width);
+      const [staveWidth, nonStaveWidth] = part.getMinRequiredWidths();
+      minRequiredStaveWidth = Math.max(minRequiredStaveWidth, staveWidth);
+      minRequiredNonStaveWidth = Math.max(minRequiredNonStaveWidth, nonStaveWidth);
+    }
+
+    const pen = new Pen(this.position);
+    const partLabelGroupRender = this.renderPartLabelGroup(pen);
+    if (partLabelGroupRender) {
+      minRequiredNonStaveWidth += partLabelGroupRender.rect.w;
+    }
+
+    return [minRequiredStaveWidth, minRequiredNonStaveWidth];
+  }
+
   render(): FragmentRender {
     const pen = new Pen(this.position);
 
@@ -50,27 +77,6 @@ export class Fragment {
       partLabelGroupRender,
       partRenders,
     };
-  }
-
-  getMinRequiredWidth(): number {
-    const partCount = this.document.getPartCount(this.key);
-
-    let minRequiredWidth = 0;
-
-    for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const key: PartKey = { ...this.key, partIndex };
-      const part = new Part(this.config, this.log, this.document, key, this.position, this.width);
-      // All parts in a fragment must be the same width, so we pick the largest one.
-      minRequiredWidth = Math.max(minRequiredWidth, part.getMinRequiredWidth());
-    }
-
-    const pen = new Pen(this.position);
-    const partLabelGroupRender = this.renderPartLabelGroup(pen);
-    if (partLabelGroupRender) {
-      minRequiredWidth += partLabelGroupRender.rect.w;
-    }
-
-    return minRequiredWidth;
   }
 
   private renderPartLabelGroup(pen: Pen): PartLabelGroupRender | null {
