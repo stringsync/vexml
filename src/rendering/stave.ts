@@ -53,9 +53,11 @@ export class Stave {
     const isFirstSystem = this.key.systemIndex === 0;
     const isFirstMeasure = this.key.measureIndex === 0;
     const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
+    const isFirstMeasureEntry = this.key.measureEntryIndex === 0;
     const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
     const isFirstPart = this.key.partIndex === 0;
     const isFirstStave = this.key.staveIndex === 0;
+    const staveCount = this.document.getStaveCount(this.key);
 
     let x = pen.x;
     // The first system measure has padding from the label.
@@ -75,19 +77,20 @@ export class Stave {
 
     const vexflowStave = new vexflow.Stave(x, y, width);
 
-    if (isFirstStave) {
+    // If there's more than 1 stave in a part, the stave connector will serve as the barline.
+    if (isFirstMeasureEntry && staveCount === 1) {
       vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
     } else {
       vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
     }
 
-    if (isLastMeasure && isLastMeasureEntry) {
+    if (isLastMeasure && isLastMeasureEntry && staveCount === 1) {
       vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
     } else {
       vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
     }
 
-    if (isFirstPart) {
+    if (isFirstPart && isFirstStave) {
       vexflowStave.setMeasure(this.document.getMeasure(this.key).label);
     }
 

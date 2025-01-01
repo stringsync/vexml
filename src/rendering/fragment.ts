@@ -37,7 +37,11 @@ export class Fragment {
 
     const partRenders = this.renderParts(pen, width);
 
-    const rect = Rect.merge(partRenders.map((part) => part.rect));
+    const rects = partRenders.map((part) => part.rect);
+    if (partLabelGroupRender) {
+      rects.push(partLabelGroupRender.rect);
+    }
+    const rect = Rect.merge(rects);
 
     return {
       type: 'fragment',
