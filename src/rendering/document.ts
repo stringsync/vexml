@@ -66,6 +66,12 @@ export class Document {
     return this.getMeasureEntries(key).length;
   }
 
+  getMeasureEntry(key: MeasureEntryKey): data.MeasureEntry {
+    const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
+    util.assertDefined(entry);
+    return entry;
+  }
+
   getFragment(key: MeasureEntryKey): data.Fragment {
     const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
     util.assert(entry?.type === 'fragment', 'expected entry to be a fragment');
