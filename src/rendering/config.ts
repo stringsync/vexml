@@ -68,6 +68,10 @@ export const CONFIG = {
     help: 'PART_LABEL_ALIGNMENT is the horizontal alignment of part labels.',
     choices: ['right', 'left'] as const,
   }),
+  BASE_VOICE_WIDTH: t.number({
+    defaultValue: 80,
+    help: 'BASE_VOICE_WIDTH is how much extra width to give voices when calculating stave minimum width.',
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',

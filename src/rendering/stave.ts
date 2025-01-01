@@ -5,8 +5,8 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Pen } from './pen';
+import { Ensemble } from './ensemble';
 
-const TODO_WIDTH = 200;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_WIDTH = 1;
 
@@ -25,7 +25,8 @@ export class Stave {
     private document: Document,
     private key: StaveKey,
     private position: Point,
-    private width: number | null
+    private width: number | null,
+    private ensemble: Ensemble
   ) {}
 
   render(): StaveRender {
@@ -63,7 +64,7 @@ export class Stave {
 
     const y = pen.y;
 
-    let width = this.width ?? this.getMinRequiredWidth();
+    let width = this.width ?? this.ensemble.getMinRequiredStaveWidth();
     if (!isFirstSystem && isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
     }
@@ -107,10 +108,5 @@ export class Stave {
     const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
-  }
-
-  /** Returns the minimum width needed to render this stave based on its voice group. */
-  private getMinRequiredWidth(): number {
-    return TODO_WIDTH;
   }
 }
