@@ -1,3 +1,4 @@
+import * as drawing from '@/drawing';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { ScoreRender } from './score';
@@ -5,6 +6,7 @@ import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
 import { FragmentRender } from './fragment';
+import { PartLabelGroupRender } from './partlabelgroup';
 
 export class Rendering {
   private constructor(
@@ -32,8 +34,10 @@ export class Rendering {
       .flatMap((s) => s.measureRenders)
       .flatMap((m) => m.measureEntryRenders)
       .filter((m): m is FragmentRender => m.type === 'fragment')
-      .at(0)
-      ?.partLabelGroupRender?.partLabelRenders.forEach((p) => {
+      .flatMap((f) => f.partLabelGroupRender)
+      .filter((p): p is PartLabelGroupRender => p?.type === 'partlabelgroup')
+      .flatMap((p) => p.partLabelRenders)
+      .forEach((p) => {
         p.label.setContext(ctx).draw();
       });
 

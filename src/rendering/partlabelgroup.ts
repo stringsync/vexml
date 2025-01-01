@@ -52,12 +52,11 @@ export class PartLabelGroup {
     const font = this.getPartLabelFont();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const partKey: PartLabelKey = { ...this.key, partIndex };
+      const key: PartLabelKey = { ...this.key, partIndex };
       const partLabelPosition = partLabelPositions[partIndex];
-      const text = this.document.getPartLabel(partKey);
-      const label = new Label(this.config, this.log, text, partLabelPosition, padding, font);
-      const rect = label.rect();
-      partLabelRenders.push({ type: 'partLabel', key: partKey, rect, label });
+      const text = this.document.getPartLabel(key);
+      const label = Label.singleLine(this.config, this.log, text, partLabelPosition, padding, font);
+      partLabelRenders.push({ type: 'partLabel', key, rect: label.rect, label });
     }
 
     return partLabelRenders;
@@ -95,8 +94,8 @@ export class PartLabelGroup {
       }
 
       const text = this.document.getPartLabel(key);
-      const label = new Label(this.config, this.log, text, Point.origin(), padding, font);
-      const offsetY = label.rect().h / 2;
+      const label = Label.singleLine(this.config, this.log, text, Point.origin(), padding, font);
+      const offsetY = label.rect.h / 2;
 
       const x = this.position.x + offsetX;
       const y = (staveTop + staveBottom) / 2 + offsetY;
