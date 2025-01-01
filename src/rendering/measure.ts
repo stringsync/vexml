@@ -25,36 +25,6 @@ export class Measure {
     private width: number | null
   ) {}
 
-  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
-    const measureEntryCount = this.document.getMeasureEntryCount(this.key);
-
-    let minRequiredStaveWidth = 0;
-    let minRequiredNonStaveWidth = 0;
-
-    for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
-      const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
-      const measureEntry = this.document.getMeasureEntry(key);
-
-      // All measure entries in a measure must be the same width, so we pick the largest one.
-
-      if (measureEntry.type === 'fragment') {
-        const fragment = new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
-        const [staveWidth, nonStaveWidth] = fragment.getMinRequiredWidths();
-        minRequiredStaveWidth = Math.max(minRequiredStaveWidth, staveWidth);
-        minRequiredNonStaveWidth = Math.max(minRequiredNonStaveWidth, nonStaveWidth);
-      }
-
-      if (measureEntry.type === 'gap') {
-        const gap = new Gap(this.config, this.log, this.document, key, Point.origin());
-        const [staveWidth, nonStaveWidth] = gap.getMinRequiredWidths();
-        minRequiredStaveWidth = Math.max(minRequiredStaveWidth, staveWidth);
-        minRequiredNonStaveWidth = Math.max(minRequiredNonStaveWidth, nonStaveWidth);
-      }
-    }
-
-    return [minRequiredStaveWidth, minRequiredNonStaveWidth];
-  }
-
   render(): MeasureRender {
     const pen = new Pen(this.position);
 

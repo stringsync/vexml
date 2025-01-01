@@ -7,6 +7,8 @@ import { Document } from './document';
 import { Stave, StaveRender } from './stave';
 import { Pen } from './pen';
 
+const BRACE_STAVE_CONNECTOR_WIDTH = 16;
+
 export type PartRender = {
   type: 'part';
   key: PartKey;
@@ -25,29 +27,17 @@ export class Part {
     private width: number | null
   ) {}
 
-  /**
-   * Returns the minimum required width to render this part. All staves in a part must be the same width, so we pick the
-   * largest one.
-   */
-  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
-    const staveCount = this.document.getStaveCount(this.key);
-
-    let minRequiredStaveWidth = 0;
-    const minRequiredNonStaveWidth = 0;
-
-    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
-      const key: StaveKey = { ...this.key, staveIndex };
-      const stave = new Stave(this.config, this.log, this.document, key, this.position, this.width);
-      minRequiredStaveWidth = Math.max(minRequiredStaveWidth, stave.getMinRequiredWidth());
-    }
-
-    return [minRequiredStaveWidth, minRequiredNonStaveWidth];
-  }
-
   render(): PartRender {
     const pen = new Pen(this.position);
 
-    const staveRenders = this.renderStaves(pen);
+    let staveWidth = this.width;
+    if (staveWidth && this.hasBraceConnector()) {
+      pen.moveBy({ dx: BRACE_STAVE_CONNECTOR_WIDTH });
+      staveWidth -= BRACE_STAVE_CONNECTOR_WIDTH;
+    }
+
+    const staveRenders = this.renderStaves(pen, staveWidth);
+
     const vexflowStaveConnectors = this.renderVexflowStaveConnectors(staveRenders);
 
     const rect = Rect.merge(staveRenders.map((staveRender) => staveRender.rect));
@@ -61,13 +51,13 @@ export class Part {
     };
   }
 
-  private renderStaves(pen: Pen): StaveRender[] {
+  private renderStaves(pen: Pen, staveWidth: number | null): StaveRender[] {
     const staveRenders = new Array<StaveRender>();
     const staveCount = this.document.getStaveCount(this.key);
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const key: StaveKey = { ...this.key, staveIndex };
-      const staveRender = new Stave(this.config, this.log, this.document, key, pen.position(), this.width).render();
+      const staveRender = new Stave(this.config, this.log, this.document, key, pen.position(), staveWidth).render();
       staveRenders.push(staveRender);
       pen.moveBy({ dy: staveRender.rect.h });
     }
@@ -82,16 +72,21 @@ export class Part {
       return vexflowStaveConnectors;
     }
 
-    const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
-    const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
-
     const topStave = staveRenders.at(0)!;
     const bottomStave = staveRenders.at(-1)!;
+
+    if (this.hasBraceConnector()) {
+      vexflowStaveConnectors.push(
+        new vexflow.StaveConnector(topStave.vexflowStave, bottomStave.vexflowStave).setType('brace')
+      );
+    }
 
     vexflowStaveConnectors.push(
       new vexflow.StaveConnector(topStave.vexflowStave, bottomStave.vexflowStave).setType('singleLeft')
     );
 
+    const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
+    const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
     if (isLastMeasure && isLastMeasureEntry) {
       vexflowStaveConnectors.push(
         new vexflow.StaveConnector(topStave.vexflowStave, bottomStave.vexflowStave).setType('singleRight')
@@ -99,5 +94,11 @@ export class Part {
     }
 
     return vexflowStaveConnectors;
+  }
+
+  private hasBraceConnector(): boolean {
+    const isFirstMeasure = this.key.measureIndex === 0;
+    const isFirstMeasureEntry = this.key.measureEntryIndex === 0;
+    return isFirstMeasure && isFirstMeasureEntry;
   }
 }

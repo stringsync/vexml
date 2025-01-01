@@ -49,46 +49,58 @@ export class System {
       const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
       const measureRender = measure.render();
       measureRenders.push(measureRender);
-      pen.moveBy({ dx: measureRender.rect.w });
+      const topRightCorner = measureRender.rect.corners()[1];
+      pen.moveTo(topRightCorner.x, topRightCorner.y);
     }
 
     return measureRenders;
   }
 
   private getMeasureWidths(): number[] | null {
+    // If there is no width, we should use the minimum required widths by returning null.
     if (!this.config.WIDTH) {
-      return null; // use intrinsic widths
+      return null;
     }
 
+    // If there is only one measure, stretch it to the configured width.
     const measureCount = this.document.getMeasureCount(this.key);
     if (measureCount === 1) {
       return [this.config.WIDTH];
     }
 
-    const minRequiredStaveWidths = new Array<number>();
-    const minRequiredNonStaveWidths = new Array<number>();
+    // Otherwise, we need to determine the minimum required widths of each measure by rendering it.
+    const measureRenders = new Array<MeasureRender>();
 
+    // Collect the absolute measure indexes to reflow as a single system. This will allow us to account for contextual
+    // widths such as part labels (for first system and first measure) and stave connectors (for first measure entry in
+    // any system).
+    const absoluteMeasureIndexes = new Array<number>();
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const key: MeasureKey = { ...this.key, measureIndex };
-      const measure = new Measure(this.config, this.log, this.document, key, Point.origin(), null);
-      const [minRequiredStaveWidth, minRequiredNonStaveWidth] = measure.getMinRequiredWidths();
-      minRequiredStaveWidths.push(minRequiredStaveWidth);
-      minRequiredNonStaveWidths.push(minRequiredNonStaveWidth);
+      const absoluteMeasureIndex = this.document.getAbsoluteMeasureIndex(key);
+      absoluteMeasureIndexes.push(absoluteMeasureIndex);
     }
 
-    const totalMinRequiredStaveWidth = util.sum(minRequiredStaveWidths);
-    const totalMinRequiredNonStaveWidth = util.sum(minRequiredNonStaveWidths);
-    const totalMinRequiredSystemWidth = totalMinRequiredStaveWidth + totalMinRequiredNonStaveWidth;
+    let document = this.document.reflow([{ measureIndexes: absoluteMeasureIndexes }]);
+    if (this.key.systemIndex > 0) {
+      document = document.withoutPartLabels();
+    }
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // In here, we're not going to use `this.document`. We're going to use the modified document that only has a
+      // single system. We also need to update the key to reflect this.
+      const key: MeasureKey = { systemIndex: 0, measureIndex };
+      const measureRender = new Measure(this.config, this.log, document, key, Point.origin(), null).render();
+      measureRenders.push(measureRender);
+    }
+
+    const totalMinRequiredSystemWidth = util.sum(measureRenders.map((measureRender) => measureRender.rect.w));
 
     const measureWidths = new Array<number>();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const minRequiredStaveWidth = minRequiredStaveWidths[measureIndex];
-      const minRequiredNonStaveWidth = minRequiredNonStaveWidths[measureIndex];
-      const minRequiredMeasureWidth = minRequiredStaveWidth + minRequiredNonStaveWidth;
-
+      const minRequiredMeasureWidth = measureRenders[measureIndex].rect.w;
       const fraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
-
       measureWidths.push(fraction * this.config.WIDTH);
     }
 
