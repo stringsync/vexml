@@ -21,9 +21,7 @@ export class Document {
   }
 
   getPartLabel(key: PartLabelKey): string {
-    const partLabel = this.data.score.partLabels.at(key.partIndex);
-    util.assertDefined(partLabel);
-    return partLabel;
+    return this.data.score.partLabels.at(key.partIndex) ?? '';
   }
 
   getScore(): data.Score {
@@ -56,6 +54,11 @@ export class Document {
     const measure = this.getMeasures(key).at(key.measureIndex);
     util.assertDefined(measure);
     return measure;
+  }
+
+  getAbsoluteMeasureIndex(key: MeasureKey): number {
+    const measures = this.getSystems().flatMap((s) => s.measures);
+    return measures.indexOf(this.getMeasure(key));
   }
 
   getMeasureEntries(key: MeasureKey): data.MeasureEntry[] {
@@ -153,6 +156,12 @@ export class Document {
       clone.data.score.systems.push(system);
     }
 
+    return clone;
+  }
+
+  withoutPartLabels(): Document {
+    const clone = this.clone();
+    clone.data.score.partLabels = [];
     return clone;
   }
 

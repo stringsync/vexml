@@ -28,18 +28,12 @@ export class Stave {
     private width: number | null
   ) {}
 
-  /** Returns the minimum width needed to render this stave based on its voice group. */
-  getMinRequiredWidth(): number {
-    return TODO_WIDTH;
-  }
-
   render(): StaveRender {
     const pen = new Pen(this.position);
 
     const vexflowStave = this.renderVexflowStave(pen.clone());
-
-    const rect = this.getVexflowStaveRectRepresentative(vexflowStave, pen);
-    const intrisicRect = this.getIntrinsicRect(rect, vexflowStave);
+    const rect = Rect.fromRectLike(vexflowStave.getBoundingBox());
+    const intrisicRect = this.getIntrinsicRect(vexflowStave);
 
     return {
       type: 'stave',
@@ -99,32 +93,23 @@ export class Stave {
   }
 
   /**
-   * Returns a rect that _represents_ the vexflow stave's bounding box. We adjusted the vexflow stave's x and width
-   * which is why we don't expect its bounding box to be representative of the rendering object.
+   * Returns the rect of the stave itself, ignoring any influence by child elements such as notes.
    */
-  private getVexflowStaveRectRepresentative(vexflowStave: vexflow.Stave, pen: Pen): Rect {
+  private getIntrinsicRect(vexflowStave: vexflow.Stave): Rect {
     const box = vexflowStave.getBoundingBox();
+    const topLineY = vexflowStave.getTopLineTopY();
+    const bottomLineY = vexflowStave.getBottomLineBottomY();
 
-    const x = pen.x;
-    const y = pen.y;
-    const w = this.width ?? this.getMinRequiredWidth();
-    const h = box.h;
+    const x = box.x;
+    const y = topLineY;
+    const w = box.w;
+    const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
   }
 
-  /**
-   * Returns the rect of the stave itself, ignoring any influence by child elements such as notes.
-   */
-  private getIntrinsicRect(vexflowStaveRectRepresentative: Rect, vexflowStave: vexflow.Stave): Rect {
-    const topLineY = vexflowStave.getTopLineTopY();
-    const bottomLineY = vexflowStave.getBottomLineBottomY();
-
-    const x = vexflowStaveRectRepresentative.x;
-    const y = topLineY;
-    const w = vexflowStaveRectRepresentative.w;
-    const h = bottomLineY - topLineY;
-
-    return new Rect(x, y, w, h);
+  /** Returns the minimum width needed to render this stave based on its voice group. */
+  private getMinRequiredWidth(): number {
+    return TODO_WIDTH;
   }
 }
