@@ -65,23 +65,33 @@ export class System {
       return [this.config.WIDTH];
     }
 
-    const widths = this.document
-      .getMeasures(this.key)
-      .map<MeasureKey>((_, measureIndex) => ({ ...this.key, measureIndex }))
-      .map((key) => new Measure(this.config, this.log, this.document, key, Point.origin(), null))
-      .map((measure) => measure.getMinRequiredWidth());
+    const minRequiredStaveWidths = new Array<number>();
+    const minRequiredNonStaveWidths = new Array<number>();
 
-    const total = util.sum(widths);
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const key: MeasureKey = { ...this.key, measureIndex };
+      const measure = new Measure(this.config, this.log, this.document, key, Point.origin(), null);
+      const [minRequiredStaveWidth, minRequiredNonStaveWidth] = measure.getMinRequiredWidths();
+      minRequiredStaveWidths.push(minRequiredStaveWidth);
+      minRequiredNonStaveWidths.push(minRequiredNonStaveWidth);
+    }
 
-    return widths
-      .map((width) => width / total)
-      .map((fraction, measureIndex) => {
-        const isLast = measureIndex === widths.length - 1;
-        const isAboveStretchThreshold = fraction > this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD;
-        if (isLast && isAboveStretchThreshold) {
-          return widths[measureIndex];
-        }
-        return fraction * this.config.WIDTH!;
-      });
+    const totalMinRequiredStaveWidth = util.sum(minRequiredStaveWidths);
+    const totalMinRequiredNonStaveWidth = util.sum(minRequiredNonStaveWidths);
+    const totalMinRequiredSystemWidth = totalMinRequiredStaveWidth + totalMinRequiredNonStaveWidth;
+
+    const measureWidths = new Array<number>();
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const minRequiredStaveWidth = minRequiredStaveWidths[measureIndex];
+      const minRequiredNonStaveWidth = minRequiredNonStaveWidths[measureIndex];
+      const minRequiredMeasureWidth = minRequiredStaveWidth + minRequiredNonStaveWidth;
+
+      const fraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
+
+      measureWidths.push(fraction * this.config.WIDTH);
+    }
+
+    return measureWidths;
   }
 }

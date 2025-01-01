@@ -25,10 +25,11 @@ export class Measure {
     private width: number | null
   ) {}
 
-  getMinRequiredWidth(): number {
+  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
     const measureEntryCount = this.document.getMeasureEntryCount(this.key);
 
-    let minRequiredWidth = 0;
+    let minRequiredStaveWidth = 0;
+    let minRequiredNonStaveWidth = 0;
 
     for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
       const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
@@ -38,16 +39,20 @@ export class Measure {
 
       if (measureEntry.type === 'fragment') {
         const fragment = new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
-        minRequiredWidth = Math.max(minRequiredWidth, fragment.getMinRequiredWidth());
+        const [staveWidth, nonStaveWidth] = fragment.getMinRequiredWidths();
+        minRequiredStaveWidth = Math.max(minRequiredStaveWidth, staveWidth);
+        minRequiredNonStaveWidth = Math.max(minRequiredNonStaveWidth, nonStaveWidth);
       }
 
       if (measureEntry.type === 'gap') {
         const gap = new Gap(this.config, this.log, this.document, key, Point.origin());
-        minRequiredWidth = Math.max(minRequiredWidth, gap.getMinRequiredWidth());
+        const [staveWidth, nonStaveWidth] = gap.getMinRequiredWidths();
+        minRequiredStaveWidth = Math.max(minRequiredStaveWidth, staveWidth);
+        minRequiredNonStaveWidth = Math.max(minRequiredNonStaveWidth, nonStaveWidth);
       }
     }
 
-    return minRequiredWidth;
+    return [minRequiredStaveWidth, minRequiredNonStaveWidth];
   }
 
   render(): MeasureRender {
@@ -100,6 +105,6 @@ export class Measure {
 
     const total = util.sum(widths);
 
-    return widths.map((width) => (width / total) * this.width!);
+    return widths.map((w) => (w / total) * this.width!);
   }
 }
