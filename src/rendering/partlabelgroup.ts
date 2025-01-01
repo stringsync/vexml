@@ -6,6 +6,7 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Part, PartRender } from './part';
 import { Pen } from './pen';
+import { Ensemble } from './ensemble';
 
 export type PartLabelGroupRender = {
   type: 'partlabelgroup';
@@ -26,7 +27,8 @@ export class PartLabelGroup {
     private log: Logger,
     private document: Document,
     private key: MeasureEntryKey,
-    private position: Point
+    private position: Point,
+    private ensemble: Ensemble
   ) {}
 
   render(): PartLabelGroupRender {
@@ -69,7 +71,15 @@ export class PartLabelGroup {
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(this.config, this.log, this.document, partKey, pen.position(), null).render();
+      const partRender = new Part(
+        this.config,
+        this.log,
+        this.document,
+        partKey,
+        pen.position(),
+        null,
+        this.ensemble
+      ).render();
       partRenders.push(partRender);
       pen.moveBy({ dy: partRender.rect.h });
     }

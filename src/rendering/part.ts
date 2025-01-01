@@ -6,6 +6,7 @@ import { Logger } from '@/debug';
 import { Document } from './document';
 import { Stave, StaveRender } from './stave';
 import { Pen } from './pen';
+import { Ensemble } from './ensemble';
 
 const BRACE_STAVE_CONNECTOR_WIDTH = 16;
 
@@ -24,7 +25,8 @@ export class Part {
     private document: Document,
     private key: PartKey,
     private position: Point,
-    private width: number | null
+    private width: number | null,
+    private ensemble: Ensemble
   ) {}
 
   render(): PartRender {
@@ -57,7 +59,15 @@ export class Part {
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const key: StaveKey = { ...this.key, staveIndex };
-      const staveRender = new Stave(this.config, this.log, this.document, key, pen.position(), staveWidth).render();
+      const staveRender = new Stave(
+        this.config,
+        this.log,
+        this.document,
+        key,
+        pen.position(),
+        staveWidth,
+        this.ensemble
+      ).render();
       staveRenders.push(staveRender);
       pen.moveBy({ dy: staveRender.rect.h });
     }

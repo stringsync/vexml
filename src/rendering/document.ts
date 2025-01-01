@@ -181,6 +181,24 @@ export class Document {
     return this.getVoice(key).entries;
   }
 
+  getVoiceEntryCount(key: VoiceKey): number {
+    return this.getVoiceEntries(key).length;
+  }
+
+  isFirstVoiceEntry(key: VoiceEntryKey): boolean {
+    return key.voiceEntryIndex === 0;
+  }
+
+  isLastVoiceEntry(key: VoiceEntryKey): boolean {
+    return key.voiceEntryIndex === this.getVoiceEntryCount(key) - 1;
+  }
+
+  getVoiceEntry(key: VoiceEntryKey): data.VoiceEntry {
+    const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
+    util.assertDefined(entry);
+    return entry;
+  }
+
   getNote(key: VoiceEntryKey): data.Note {
     const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
     util.assert(entry?.type === 'note', 'expected entry to be a note');
