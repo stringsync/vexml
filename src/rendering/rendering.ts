@@ -1,4 +1,3 @@
-import * as drawing from '@/drawing';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { ScoreRender } from './score';

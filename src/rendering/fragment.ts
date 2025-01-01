@@ -53,8 +53,8 @@ export class Fragment {
   }
 
   private renderPartLabelGroup(pen: Pen): PartLabelGroupRender | null {
-    const isFirstSystem = this.key.systemIndex === 0;
-    const isFirstMeasure = this.key.measureIndex === 0;
+    const isFirstSystem = this.document.isFirstSystem(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
     if (!isFirstSystem || !isFirstMeasure) {
       return null;
     }

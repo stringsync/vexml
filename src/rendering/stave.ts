@@ -45,13 +45,14 @@ export class Stave {
   }
 
   private renderVexflowStave(pen: Pen): vexflow.Stave {
-    const isFirstSystem = this.key.systemIndex === 0;
-    const isFirstMeasure = this.key.measureIndex === 0;
-    const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
-    const isFirstMeasureEntry = this.key.measureEntryIndex === 0;
-    const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
-    const isFirstPart = this.key.partIndex === 0;
-    const isFirstStave = this.key.staveIndex === 0;
+    const isFirstSystem = this.document.isFirstSystem(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isLastMeasure = this.document.isLastMeasure(this.key);
+    const isFirstMeasureEntry = this.document.isLastMeasureEntry(this.key);
+    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+    const isFirstPart = this.document.isFirstPart(this.key);
+    const isFirstStave = this.document.isFirstStave(this.key);
+
     const staveCount = this.document.getStaveCount(this.key);
 
     let x = pen.x;

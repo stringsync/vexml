@@ -95,13 +95,17 @@ export class System {
     }
 
     const totalMinRequiredSystemWidth = util.sum(measureRenders.map((measureRender) => measureRender.rect.w));
+    const systemFraction = totalMinRequiredSystemWidth / this.config.WIDTH;
+    if (this.document.isLastSystem(this.key) && systemFraction < this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD) {
+      return measureRenders.map((measureRender) => measureRender.rect.w);
+    }
 
     const measureWidths = new Array<number>();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const minRequiredMeasureWidth = measureRenders[measureIndex].rect.w;
-      const fraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
-      measureWidths.push(fraction * this.config.WIDTH);
+      const measureFraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
+      measureWidths.push(measureFraction * this.config.WIDTH);
     }
 
     return measureWidths;

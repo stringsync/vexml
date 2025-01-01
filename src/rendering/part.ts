@@ -97,8 +97,10 @@ export class Part {
   }
 
   private hasBraceConnector(): boolean {
-    const isFirstMeasure = this.key.measureIndex === 0;
-    const isFirstMeasureEntry = this.key.measureEntryIndex === 0;
-    return isFirstMeasure && isFirstMeasureEntry;
+    return (
+      this.document.getStaveCount(this.key) > 1 &&
+      this.document.isFirstMeasure(this.key) &&
+      this.document.isFirstMeasureEntry(this.key)
+    );
   }
 }
