@@ -36,6 +36,14 @@ export class Document {
     return this.getSystems().length;
   }
 
+  isFirstSystem(key: SystemKey): boolean {
+    return key.systemIndex === 0;
+  }
+
+  isLastSystem(key: SystemKey): boolean {
+    return key.systemIndex === this.getSystemCount() - 1;
+  }
+
   getSystem(key: SystemKey): data.System {
     const system = this.getSystems().at(key.systemIndex);
     util.assertDefined(system);
@@ -48,6 +56,14 @@ export class Document {
 
   getMeasureCount(key: SystemKey): number {
     return this.getMeasures(key).length;
+  }
+
+  isFirstMeasure(key: MeasureKey): boolean {
+    return key.measureIndex === 0;
+  }
+
+  isLastMeasure(key: MeasureKey): boolean {
+    return key.measureIndex === this.getMeasureCount(key) - 1;
   }
 
   getMeasure(key: MeasureKey): data.Measure {
@@ -67,6 +83,14 @@ export class Document {
 
   getMeasureEntryCount(key: MeasureKey): number {
     return this.getMeasureEntries(key).length;
+  }
+
+  isFirstMeasureEntry(key: MeasureEntryKey): boolean {
+    return key.measureEntryIndex === 0;
+  }
+
+  isLastMeasureEntry(key: MeasureEntryKey): boolean {
+    return key.measureEntryIndex === this.getMeasureEntryCount(key) - 1;
   }
 
   getMeasureEntry(key: MeasureEntryKey): data.MeasureEntry {
@@ -95,6 +119,14 @@ export class Document {
     return this.getParts(key).length;
   }
 
+  isFirstPart(key: PartKey): boolean {
+    return key.partIndex === 0;
+  }
+
+  isLastPart(key: PartKey): boolean {
+    return key.partIndex === this.getPartCount(key) - 1;
+  }
+
   getPart(key: PartKey): data.Part {
     const part = this.getParts(key).at(key.partIndex);
     util.assertDefined(part);
@@ -109,6 +141,14 @@ export class Document {
     return this.getPart(key).signature.staveCount;
   }
 
+  isFirstStave(key: StaveKey): boolean {
+    return key.staveIndex === 0;
+  }
+
+  isLastStave(key: StaveKey): boolean {
+    return key.staveIndex === this.getStaveCount(key) - 1;
+  }
+
   getStave(key: StaveKey): data.Stave {
     const stave = this.getStaves(key).at(key.staveIndex);
     util.assertDefined(stave);
@@ -117,6 +157,18 @@ export class Document {
 
   getVoices(key: StaveKey): data.Voice[] {
     return this.getStave(key).voices;
+  }
+
+  getVoiceCount(key: StaveKey): number {
+    return this.getVoices(key).length;
+  }
+
+  isFirstVoice(key: VoiceKey): boolean {
+    return key.voiceIndex === 0;
+  }
+
+  isLastVoice(key: VoiceKey): boolean {
+    return key.voiceIndex === this.getVoiceCount(key) - 1;
   }
 
   getVoice(key: VoiceKey): data.Voice {
