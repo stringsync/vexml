@@ -31,8 +31,8 @@ export class Fragment {
     const partLabelGroupRender = this.renderPartLabelGroup(pen);
 
     let width = this.width;
-    if (width) {
-      width -= partLabelGroupRender?.rect.w ?? 0;
+    if (partLabelGroupRender && width) {
+      width -= partLabelGroupRender.rect.w;
     }
 
     const partRenders = this.renderParts(pen, width);
@@ -46,6 +46,27 @@ export class Fragment {
       partLabelGroupRender,
       partRenders,
     };
+  }
+
+  getMinRequiredWidth(): number {
+    const partCount = this.document.getPartCount(this.key);
+
+    let minRequiredWidth = 0;
+
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const key: PartKey = { ...this.key, partIndex };
+      const part = new Part(this.config, this.log, this.document, key, this.position, this.width);
+      // All parts in a fragment must be the same width, so we pick the largest one.
+      minRequiredWidth = Math.max(minRequiredWidth, part.getMinRequiredWidth());
+    }
+
+    const pen = new Pen(this.position);
+    const partLabelGroupRender = this.renderPartLabelGroup(pen);
+    if (partLabelGroupRender) {
+      minRequiredWidth += partLabelGroupRender.rect.w;
+    }
+
+    return minRequiredWidth;
   }
 
   private renderPartLabelGroup(pen: Pen): PartLabelGroupRender | null {

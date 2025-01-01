@@ -6,7 +6,7 @@ import { Logger } from '@/debug';
 import { Document } from './document';
 import { Pen } from './pen';
 
-const TODO_WIDTH = 200;
+const TODO_WIDTH = 400;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_WIDTH = 1;
 
@@ -28,6 +28,10 @@ export class Stave {
     private width: number | null
   ) {}
 
+  getMinRequiredWidth(): number {
+    return TODO_WIDTH;
+  }
+
   render(): StaveRender {
     const pen = new Pen(this.position);
 
@@ -46,6 +50,7 @@ export class Stave {
   }
 
   private renderVexflowStave(pen: Pen): vexflow.Stave {
+    const isFirstSystem = this.key.systemIndex === 0;
     const isFirstMeasure = this.key.measureIndex === 0;
     const isLastMeasure = this.key.measureIndex === this.document.getMeasureCount(this.key) - 1;
     const isLastMeasureEntry = this.key.measureEntryIndex === this.document.getMeasureEntryCount(this.key) - 1;
@@ -53,14 +58,15 @@ export class Stave {
     const isFirstStave = this.key.staveIndex === 0;
 
     let x = pen.x;
-    if (isFirstMeasure) {
+    // The first system measure has padding from the label.
+    if (!isFirstSystem && isFirstMeasure) {
       x += MEASURE_NUMBER_PADDING_LEFT;
     }
 
     const y = pen.y;
 
-    let width = this.width ?? this.getMinWidth();
-    if (isFirstMeasure) {
+    let width = this.width ?? this.getMinRequiredWidth();
+    if (!isFirstSystem && isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
     }
     if (isLastMeasure && isLastMeasureEntry) {
@@ -97,7 +103,7 @@ export class Stave {
 
     const x = pen.x;
     const y = pen.y;
-    const w = this.width ?? this.getMinWidth();
+    const w = this.width ?? this.getMinRequiredWidth();
     const h = box.h;
 
     return new Rect(x, y, w, h);
@@ -116,9 +122,5 @@ export class Stave {
     const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
-  }
-
-  private getMinWidth(): number {
-    return Math.min(this.config.WIDTH ?? TODO_WIDTH, TODO_WIDTH);
   }
 }

@@ -25,6 +25,31 @@ export class Measure {
     private width: number | null
   ) {}
 
+  getMinRequiredWidth(): number {
+    const measureEntryCount = this.document.getMeasureEntryCount(this.key);
+
+    let minRequiredWidth = 0;
+
+    for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
+      const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
+      const measureEntry = this.document.getMeasureEntry(key);
+
+      // All measure entries in a measure must be the same width, so we pick the largest one.
+
+      if (measureEntry.type === 'fragment') {
+        const fragment = new Fragment(this.config, this.log, this.document, key, Point.origin(), null);
+        minRequiredWidth = Math.max(minRequiredWidth, fragment.getMinRequiredWidth());
+      }
+
+      if (measureEntry.type === 'gap') {
+        const gap = new Gap(this.config, this.log, this.document, key, Point.origin());
+        minRequiredWidth = Math.max(minRequiredWidth, gap.getMinRequiredWidth());
+      }
+    }
+
+    return minRequiredWidth;
+  }
+
   render(): MeasureRender {
     const pen = new Pen(this.position);
 

@@ -68,8 +68,8 @@ export class System {
     const widths = this.document
       .getMeasures(this.key)
       .map<MeasureKey>((_, measureIndex) => ({ ...this.key, measureIndex }))
-      .map((key) => new Measure(this.config, this.log, this.document, key, Point.origin(), null).render())
-      .map((measureRender) => measureRender.rect.w);
+      .map((key) => new Measure(this.config, this.log, this.document, key, Point.origin(), null))
+      .map((measure) => measure.getMinRequiredWidth());
 
     const total = util.sum(widths);
 

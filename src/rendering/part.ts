@@ -23,6 +23,21 @@ export class Part {
     private width: number | null
   ) {}
 
+  getMinRequiredWidth(): number {
+    const staveCount = this.document.getStaveCount(this.key);
+
+    let minRequiredWidth = 0;
+
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const key: StaveKey = { ...this.key, staveIndex };
+      const stave = new Stave(this.config, this.log, this.document, key, this.position, this.width);
+      // All staves in a part must be the same width, so we pick the largest one.
+      minRequiredWidth = Math.max(minRequiredWidth, stave.getMinRequiredWidth());
+    }
+
+    return minRequiredWidth;
+  }
+
   render(): PartRender {
     const pen = new Pen(this.position);
 
