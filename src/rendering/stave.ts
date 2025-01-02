@@ -6,6 +6,7 @@ import { Logger } from '@/debug';
 import { Document } from './document';
 import { Pen } from './pen';
 import { Ensemble } from './ensemble';
+import { Voice, VoiceRender } from './voice';
 
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_WIDTH = 1;
@@ -16,6 +17,7 @@ export type StaveRender = {
   rect: Rect;
   intrisicRect: Rect;
   vexflowStave: vexflow.Stave;
+  voiceRenders: VoiceRender[];
 };
 
 export class Stave {
@@ -33,6 +35,9 @@ export class Stave {
     const pen = new Pen(this.position);
 
     const vexflowStave = this.renderVexflowStave(pen.clone());
+
+    const voiceRenders = this.renderVoices(vexflowStave);
+
     const rect = Rect.fromRectLike(vexflowStave.getBoundingBox());
     const intrisicRect = this.getIntrinsicRect(vexflowStave);
 
@@ -42,6 +47,7 @@ export class Stave {
       rect,
       intrisicRect,
       vexflowStave,
+      voiceRenders,
     };
   }
 
@@ -64,7 +70,7 @@ export class Stave {
 
     const y = pen.y;
 
-    let width = this.width ?? this.ensemble.getMinRequiredStaveWidth();
+    let width = this.width ?? this.ensemble.getStaveWidth();
     if (!isFirstSystem && isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
     }
@@ -92,6 +98,36 @@ export class Stave {
     }
 
     return vexflowStave;
+  }
+
+  private renderVoices(vexflowStave: vexflow.Stave): VoiceRender[] {
+    const voiceRenders = new Array<VoiceRender>();
+    const voiceCount = this.document.getVoiceCount(this.key);
+
+    for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
+      const key = { ...this.key, voiceIndex };
+      const voiceRender = new Voice(this.config, this.log, this.document, key, this.ensemble).render();
+      voiceRenders.push(voiceRender);
+    }
+
+    let validVexflowVoiceCount = 0;
+
+    for (const voiceRender of voiceRenders) {
+      const vexflowVoice = voiceRender.vexflowVoice;
+      if (vexflowVoice.getTickables().length === 0) {
+        this.log.warn('encountered voice without tickables', { key: voiceRender.key });
+        continue;
+      }
+      vexflowVoice.setStave(vexflowStave);
+      validVexflowVoiceCount++;
+    }
+
+    if (validVexflowVoiceCount === 0) {
+      this.log.warn('encountered stave without valid vexflow voices', { key: this.key });
+      return [];
+    }
+
+    return voiceRenders;
   }
 
   /**

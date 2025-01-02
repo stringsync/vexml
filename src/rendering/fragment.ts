@@ -46,6 +46,16 @@ export class Fragment {
     }
     const rect = Rect.merge(rects);
 
+    const staveWidth = partRenders
+      .flatMap((p) => p.staveRenders)
+      .map((s) => s.rect.w)
+      .at(0);
+    if (staveWidth) {
+      ensemble.format(staveWidth);
+    } else {
+      this.log.warn('could not determine stave width, skipping formatting', { ...this.key });
+    }
+
     return {
       type: 'fragment',
       key: this.key,
