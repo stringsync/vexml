@@ -50,13 +50,6 @@ export class Rendering {
       .flatMap((p) => p.staveRenders)
       .forEach((s) => {
         s.vexflowStave.setContext(ctx).draw();
-
-        if (config.DEBUG_DRAW_STAVE_RECTS) {
-          new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
-        }
-        if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
-          new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
-        }
       });
 
     // Draw the stave connectors.
@@ -80,11 +73,63 @@ export class Rendering {
       .flatMap((s) => s.voiceRenders)
       .forEach((v) => {
         v.vexflowVoice.setContext(ctx).draw();
-
-        if (config.DEBUG_DRAW_VOICE_RECTS) {
-          new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
-        }
       });
+
+    // Draw the debug system rects.
+    if (config.DEBUG_DRAW_SYSTEM_RECTS) {
+      scoreRender.systemRenders.forEach((s) => {
+        new DebugRect(config, log, `s${s.key.systemIndex}`, s.rect).setContext(ctx).draw();
+      });
+    }
+
+    // Draw the debug measure rects.
+    if (config.DEBUG_DRAW_MEASURE_RECTS) {
+      scoreRender.systemRenders
+        .flatMap((s) => s.measureRenders)
+        .forEach((m) => {
+          new DebugRect(config, log, `m${m.key.measureIndex}`, m.rect).setContext(ctx).draw();
+        });
+    }
+
+    // Draw the debug stave rects.
+    if (config.DEBUG_DRAW_STAVE_RECTS) {
+      scoreRender.systemRenders
+        .flatMap((s) => s.measureRenders)
+        .flatMap((m) => m.measureEntryRenders)
+        .filter((m): m is FragmentRender => m.type === 'fragment')
+        .flatMap((f) => f.partRenders)
+        .flatMap((p) => p.staveRenders)
+        .forEach((s) => {
+          new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
+        });
+    }
+
+    // Draw the debug stave intrinsic rects.
+    if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
+      scoreRender.systemRenders
+        .flatMap((s) => s.measureRenders)
+        .flatMap((m) => m.measureEntryRenders)
+        .filter((m): m is FragmentRender => m.type === 'fragment')
+        .flatMap((f) => f.partRenders)
+        .flatMap((p) => p.staveRenders)
+        .forEach((s) => {
+          new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
+        });
+    }
+
+    // Draw the debug voice rects.
+    if (config.DEBUG_DRAW_VOICE_RECTS) {
+      scoreRender.systemRenders
+        .flatMap((s) => s.measureRenders)
+        .flatMap((m) => m.measureEntryRenders)
+        .filter((m): m is FragmentRender => m.type === 'fragment')
+        .flatMap((f) => f.partRenders)
+        .flatMap((p) => p.staveRenders)
+        .flatMap((s) => s.voiceRenders)
+        .forEach((v) => {
+          new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
+        });
+    }
 
     // Draw the debug voice entries.
     if (config.DEBUG_DRAW_VOICE_ENTRY_RECTS) {

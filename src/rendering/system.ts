@@ -28,8 +28,7 @@ export class System {
 
     const measureRenders = this.renderMeasures(pen);
 
-    let rect = Rect.merge(measureRenders.map((measure) => measure.rect));
-    rect = new Rect(rect.x, rect.y, rect.w, rect.h + this.config.SYSTEM_PADDING_BOTTOM);
+    const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
 
     return {
       type: 'system',
@@ -50,8 +49,7 @@ export class System {
       const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
       const measureRender = measure.render();
       measureRenders.push(measureRender);
-      const topRightCorner = measureRender.rect.corners()[1];
-      pen.moveTo(topRightCorner.x, topRightCorner.y);
+      pen.moveBy({ dx: measureRender.rect.w });
     }
 
     return measureRenders;

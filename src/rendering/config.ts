@@ -41,9 +41,9 @@ export const CONFIG = {
     defaultValue: 20,
     help: 'TITLE_BOTTOM_PADDING is the vertical distance from the title to the first system.',
   }),
-  SYSTEM_PADDING_BOTTOM: t.number({
+  SYSTEM_MARGIN_BOTTOM: t.number({
     defaultValue: 80,
-    help: 'DEFAULT_SYSTEM_DISTANCE is the vertical distance between systems',
+    help: 'SYSTEM_MARGIN_BOTTOM is the vertical distance between systems',
   }),
   LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD: t.number({
     defaultValue: 0.75,
@@ -81,6 +81,14 @@ export const CONFIG = {
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
+  }),
+  DEBUG_DRAW_SYSTEM_RECTS: t.boolean({
+    defaultValue: true,
+    help: 'DEBUG_DRAW_SYSTEM_RECTS enables drawing of system rectangles for debugging purposes',
+  }),
+  DEBUG_DRAW_MEASURE_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_MEASURE_RECTS enables drawing of measure rectangles for debugging purposes.',
   }),
   DEBUG_DRAW_STAVE_RECTS: t.boolean({
     defaultValue: false,
