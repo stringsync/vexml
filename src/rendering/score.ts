@@ -52,27 +52,15 @@ export class Score {
       return null;
     }
 
-    let label: Label;
+    const position = pen.position();
+    const padding = this.getTitlePadding();
+    const font = this.getTitleFont();
 
+    let label: Label;
     if (this.config.WIDTH) {
-      label = Label.centerAligned(
-        this.config,
-        this.log,
-        this.config.WIDTH,
-        title,
-        pen.position(),
-        this.getTitlePadding(),
-        this.getTitleFont()
-      );
+      label = Label.centerAligned(this.config, this.log, this.config.WIDTH, title, position, padding, font);
     } else {
-      label = Label.singleLine(
-        this.config,
-        this.log,
-        title,
-        pen.position(),
-        this.getTitlePadding(),
-        this.getTitleFont()
-      );
+      label = Label.singleLine(this.config, this.log, title, position, padding, font);
     }
 
     const rect = label.rect;

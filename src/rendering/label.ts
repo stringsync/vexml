@@ -154,6 +154,8 @@ export class Label implements Drawable {
     const ctx = this.ctx;
     util.assertNotNull(ctx);
 
+    ctx.save();
+
     if (this.font.color) {
       ctx.setFillStyle(this.font.color);
     }
@@ -172,6 +174,8 @@ export class Label implements Drawable {
     for (const line of this.lines) {
       ctx.fillText(line.text, line.rect.x, line.rect.y + line.rect.h);
     }
+
+    ctx.restore();
 
     return this;
   }

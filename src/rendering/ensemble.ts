@@ -76,7 +76,7 @@ export class Ensemble {
     return voice;
   }
 
-  getEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
+  getVoiceEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
     const entry = this.staves()
       .flatMap((s) => s.voices)
       .flatMap((v) => v.entries)
@@ -229,7 +229,7 @@ export class Ensemble {
       for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
         const voiceEntryKey: VoiceEntryKey = { ...voiceKey, voiceEntryIndex };
 
-        entries.push(this.entry(voiceEntryKey));
+        entries.push(this.voiceEntry(voiceEntryKey));
       }
 
       const vexflowTickables = entries.map((entry) => entry.vexflowTickable);
@@ -241,7 +241,7 @@ export class Ensemble {
     return voices;
   }
 
-  private entry(key: VoiceEntryKey): EnsembleVoiceEntry {
+  private voiceEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
     // TODO: When there are multiple entry types, we need to handle them here.
     return this.note(key);
   }

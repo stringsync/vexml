@@ -1,4 +1,3 @@
-import * as drawing from '@/drawing';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { ScoreRender } from './score';
@@ -7,6 +6,7 @@ import { Config } from './config';
 import { Document } from './document';
 import { FragmentRender } from './fragment';
 import { PartLabelGroupRender } from './partlabelgroup';
+import { DebugRect } from './debugrect';
 
 export class Rendering {
   private constructor(
@@ -50,6 +50,13 @@ export class Rendering {
       .flatMap((p) => p.staveRenders)
       .forEach((s) => {
         s.vexflowStave.setContext(ctx).draw();
+
+        if (config.DEBUG_DRAW_STAVE_RECTS) {
+          new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
+        }
+        if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
+          new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
+        }
       });
 
     // Draw the stave connectors.
@@ -73,13 +80,30 @@ export class Rendering {
       .flatMap((s) => s.voiceRenders)
       .forEach((v) => {
         v.vexflowVoice.setContext(ctx).draw();
+
+        if (config.DEBUG_DRAW_VOICE_RECTS) {
+          new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
+        }
       });
 
-    return new Rendering(config, log, document, ctx, root, scoreRender);
-  }
+    // Draw the debug voice entries.
+    if (config.DEBUG_DRAW_VOICE_ENTRY_RECTS) {
+      const style = { fill: 'rgba(255, 0, 0, 0.1)' };
 
-  private static debug(ctx: vexflow.RenderContext, bounds: { x: number; y: number; w: number; h: number }): void {
-    new drawing.Rect({ bounds, fillStyle: 'rgba(255, 0, 0, 0.35)', strokeStyle: 'red' }).draw(ctx);
+      scoreRender.systemRenders
+        .flatMap((s) => s.measureRenders)
+        .flatMap((m) => m.measureEntryRenders)
+        .filter((m): m is FragmentRender => m.type === 'fragment')
+        .flatMap((f) => f.partRenders)
+        .flatMap((p) => p.staveRenders)
+        .flatMap((s) => s.voiceRenders)
+        .flatMap((v) => v.entryRenders)
+        .forEach((e) => {
+          new DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
+        });
+    }
+
+    return new Rendering(config, log, document, ctx, root, scoreRender);
   }
 
   clear(): void {

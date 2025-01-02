@@ -4,10 +4,13 @@ import { Config } from './config';
 import { VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Ensemble } from './ensemble';
+import { Rect } from '@/spatial';
 
 export type NoteRender = {
   type: 'note';
-  vexflowTickable: vexflow.StaveNote;
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowStaveNote: vexflow.StaveNote;
 };
 
 export class Note {
@@ -20,11 +23,15 @@ export class Note {
   ) {}
 
   render(): NoteRender {
-    const vexflowStaveNote = this.ensemble.getEntry(this.key).vexflowTickable;
+    const ensembleVoiceEntry = this.ensemble.getVoiceEntry(this.key);
+    const vexflowStaveNote = ensembleVoiceEntry.vexflowTickable;
+    const rect = ensembleVoiceEntry.rect;
 
     return {
       type: 'note',
-      vexflowTickable: vexflowStaveNote,
+      key: this.key,
+      rect,
+      vexflowStaveNote,
     };
   }
 }
