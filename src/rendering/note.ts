@@ -3,8 +3,12 @@ import { Logger } from '@/debug';
 import { Config } from './config';
 import { VoiceEntryKey } from './types';
 import { Document } from './document';
-import { Rect } from '@/spatial';
-import { VoiceLayout } from './voicelayout';
+import { Ensemble } from './ensemble';
+
+export type NoteRender = {
+  type: 'note';
+  vexflowTickable: vexflow.StaveNote;
+};
 
 export class Note {
   constructor(
@@ -12,18 +16,15 @@ export class Note {
     private log: Logger,
     private document: Document,
     private key: VoiceEntryKey,
-    private layout: VoiceLayout
+    private ensemble: Ensemble
   ) {}
 
-  rect(): Rect {
-    return this.layout.rect(this.key);
-  }
+  render(): NoteRender {
+    const vexflowStaveNote = this.ensemble.getEntry(this.key).vexflowTickable;
 
-  private getVexflowStaveNote(): vexflow.StaveNote {
-    const note = this.document.getNote(this.key);
-    return new vexflow.StaveNote({
-      keys: [note.pitch],
-      duration: 'q',
-    });
+    return {
+      type: 'note',
+      vexflowTickable: vexflowStaveNote,
+    };
   }
 }

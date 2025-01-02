@@ -62,6 +62,18 @@ export class Rendering {
         c.setContext(ctx).draw();
       });
 
+    // Draw the voices.
+    scoreRender.systemRenders
+      .flatMap((s) => s.measureRenders)
+      .flatMap((m) => m.measureEntryRenders)
+      .filter((m): m is FragmentRender => m.type === 'fragment')
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .forEach((v) => {
+        v.vexflowVoice.setContext(ctx).draw();
+      });
+
     return new Rendering(config, log, document, ctx, root, scoreRender);
   }
 

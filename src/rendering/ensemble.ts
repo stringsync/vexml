@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import * as vexflow from 'vexflow';
 import { Logger } from '@/debug';
 import { Config } from './config';
@@ -17,7 +18,7 @@ type EnsembleVoiceEntry = EnsembleNote;
 type EnsembleNote = {
   type: 'note';
   key: VoiceEntryKey;
-  tickable: vexflow.StaveNote;
+  vexflowTickable: vexflow.StaveNote;
 };
 
 /**
@@ -36,13 +37,38 @@ export class Ensemble {
     private width: number | null
   ) {}
 
-  getMinRequiredStaveWidth(): number {
+  getStaveWidth(): number {
+    return this.width ?? this.getMinRequiredStaveWidth();
+  }
+
+  getVoice(key: VoiceKey): EnsembleVoice {
+    const voice = this.getVoices().find((v) => v.key.voiceIndex === key.voiceIndex);
+    util.assertDefined(voice);
+    return voice;
+  }
+
+  getEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
+    const entry = this.getVoices()
+      .flatMap((v) => v.entries)
+      .find((e) => e.key.voiceIndex === key.voiceIndex && e.key.voiceEntryIndex === key.voiceEntryIndex);
+    util.assertDefined(entry);
+    return entry;
+  }
+
+  format(width: number): void {
+    const voices = this.getVoices().map((v) => v.vexflowVoice);
+    const vexflowFormatter = new vexflow.Formatter();
+    vexflowFormatter.joinVoices(voices).format(voices, width - vexflow.Stave.defaultPadding);
+  }
+
+  private getMinRequiredStaveWidth(): number {
     const vexflowVoices = this.getVoices().map((v) => v.vexflowVoice);
     const vexflowFormatter = new vexflow.Formatter();
     const minRequiredStaveWidth = vexflowFormatter.joinVoices(vexflowVoices).preCalculateMinTotalWidth(vexflowVoices);
     return minRequiredStaveWidth + this.config.BASE_VOICE_WIDTH;
   }
 
+  @util.memoize()
   private getVoices(): EnsembleVoice[] {
     const voices = new Array<EnsembleVoice>();
 
@@ -58,8 +84,21 @@ export class Ensemble {
         for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
           const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
 
-          const entries = this.getEntries(voiceKey);
-          const vexflowTickables = entries.map((entry) => entry.tickable);
+          const entries = new Array<EnsembleVoiceEntry>();
+
+          const voiceEntryCount = this.document.getVoiceEntryCount(voiceKey);
+          for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
+            const voiceEntryKey: VoiceEntryKey = { ...voiceKey, voiceEntryIndex };
+
+            const voiceEntry = this.document.getVoiceEntry(voiceEntryKey);
+
+            if (voiceEntry.type === 'note') {
+              const note = this.getNote(voiceEntryKey);
+              entries.push(note);
+            }
+          }
+
+          const vexflowTickables = entries.map((entry) => entry.vexflowTickable);
           const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
 
           voices.push({ type: 'voice', key: voiceKey, vexflowVoice, entries });
@@ -70,32 +109,14 @@ export class Ensemble {
     return voices;
   }
 
-  private getEntries(key: VoiceKey): EnsembleVoiceEntry[] {
-    const entries = new Array<EnsembleVoiceEntry>();
-
-    const voiceEntryCount = this.document.getVoiceEntryCount(key);
-    for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
-      const voiceEntryKey: VoiceEntryKey = { ...key, voiceEntryIndex };
-
-      const voiceEntry = this.document.getVoiceEntry(voiceEntryKey);
-
-      if (voiceEntry.type === 'note') {
-        const note = this.getNote(voiceEntryKey);
-        entries.push(note);
-      }
-    }
-
-    return entries;
-  }
-
   private getNote(key: VoiceEntryKey): EnsembleNote {
     const note = this.document.getNote(key);
 
-    const vexflowStaveNote = new vexflow.StaveNote({
+    const vexflowTickable = new vexflow.StaveNote({
       keys: [`${note.pitch}/${note.octave}`],
       duration: 'q',
     });
 
-    return { type: 'note', key, tickable: vexflowStaveNote };
+    return { type: 'note', key, vexflowTickable };
   }
 }

@@ -1,9 +1,15 @@
+import * as vexflow from 'vexflow';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { Note } from './note';
 import { Document } from './document';
-import { VoiceEntryKey, VoiceKey } from './types';
-import { VoiceLayout } from './voicelayout';
+import { VoiceKey } from './types';
+import { Ensemble } from './ensemble';
+
+export type VoiceRender = {
+  type: 'voice';
+  key: VoiceKey;
+  vexflowVoice: vexflow.Voice;
+};
 
 export class Voice {
   constructor(
@@ -11,16 +17,16 @@ export class Voice {
     private log: Logger,
     private document: Document,
     private key: VoiceKey,
-    private layout: VoiceLayout
+    private ensemble: Ensemble
   ) {}
 
-  private getNotes(): Note[] {
-    return this.document.getVoice(this.key).entries.map((entry, voiceEntryIndex) => {
-      const voiceEntryKey: VoiceEntryKey = { ...this.key, voiceEntryIndex };
-      switch (entry.type) {
-        case 'note':
-          return new Note(this.config, this.log, this.document, voiceEntryKey, this.layout);
-      }
-    });
+  render(): VoiceRender {
+    const vexflowVoice = this.ensemble.getVoice(this.key).vexflowVoice;
+
+    return {
+      type: 'voice',
+      key: this.key,
+      vexflowVoice,
+    };
   }
 }
