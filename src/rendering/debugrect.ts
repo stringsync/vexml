@@ -6,6 +6,7 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Padding } from './types';
 
+const DEFAULT_STYLE_FONT_COLOR = 'rgb(230, 0, 0)';
 const DEFAULT_STYLE_FILL = 'rgba(255, 0, 0, 0.2)';
 const DEFAULT_STYLE_STROKE = 'rgba(255, 0, 0, 0.5)';
 
@@ -40,9 +41,13 @@ export class DebugRect {
 
     if (this.label) {
       const bottomLeft = this.rect.corners()[3];
-      const position = new Point(bottomLeft.x, bottomLeft.y);
+      const position = new Point(bottomLeft.x + 1, bottomLeft.y - 1);
       const padding: Padding = {};
-      const font: LabelFont = { color: 'black', size: '8px', family: 'monospace' };
+      const font: LabelFont = {
+        color: DEFAULT_STYLE_FONT_COLOR,
+        size: '8px',
+        family: 'monospace',
+      };
       Label.singleLine(this.config, this.log, this.label, position, padding, font).setContext(ctx).draw();
     }
 
