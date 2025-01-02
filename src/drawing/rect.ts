@@ -18,8 +18,10 @@ export class Rect {
 
     if (this.strokeStyle) {
       vfContext.setStrokeStyle(this.strokeStyle);
+      vfContext.beginPath();
       vfContext.rect(this.bounds.x, this.bounds.y, this.bounds.w, this.bounds.h);
       vfContext.stroke();
+      vfContext.closePath();
     }
 
     if (this.fillStyle) {

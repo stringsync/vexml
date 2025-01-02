@@ -71,15 +71,7 @@ export class PartLabelGroup {
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(
-        this.config,
-        this.log,
-        this.document,
-        partKey,
-        pen.position(),
-        null,
-        this.ensemble
-      ).render();
+      const partRender = new Part(this.config, this.log, this.document, partKey, this.ensemble).render();
       partRenders.push(partRender);
       pen.moveBy({ dy: partRender.rect.h });
     }

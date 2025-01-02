@@ -68,6 +68,12 @@ export const CONFIG = {
     help: 'PART_LABEL_ALIGNMENT is the horizontal alignment of part labels.',
     choices: ['right', 'left'] as const,
   }),
+  DEFAULT_STAVE_MARGIN_BOTTOM: t.number({
+    defaultValue: 140,
+    help:
+      'DEFAULT_STAVE_MARGIN_BOTTOM is the margin between staves within the same part and system. ' +
+      "It won't have an effect if there is only one stave per part.",
+  }),
   BASE_VOICE_WIDTH: t.number({
     defaultValue: 80,
     help: 'BASE_VOICE_WIDTH is how much extra width to give voices when calculating stave minimum width.',

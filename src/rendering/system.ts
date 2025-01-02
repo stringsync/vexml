@@ -28,7 +28,8 @@ export class System {
 
     const measureRenders = this.renderMeasures(pen);
 
-    const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
+    let rect = Rect.merge(measureRenders.map((measure) => measure.rect));
+    rect = new Rect(rect.x, rect.y, rect.w, rect.h + this.config.SYSTEM_PADDING_BOTTOM);
 
     return {
       type: 'system',

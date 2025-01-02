@@ -1,3 +1,4 @@
+import * as drawing from '@/drawing';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { ScoreRender } from './score';
@@ -52,15 +53,15 @@ export class Rendering {
       });
 
     // Draw the stave connectors.
-    scoreRender.systemRenders
-      .flatMap((s) => s.measureRenders)
-      .flatMap((m) => m.measureEntryRenders)
-      .filter((m): m is FragmentRender => m.type === 'fragment')
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.vexflowStaveConnectors)
-      .forEach((c) => {
-        c.setContext(ctx).draw();
-      });
+    // scoreRender.systemRenders
+    //   .flatMap((s) => s.measureRenders)
+    //   .flatMap((m) => m.measureEntryRenders)
+    //   .filter((m): m is FragmentRender => m.type === 'fragment')
+    //   .flatMap((f) => f.partRenders)
+    //   .flatMap((p) => p.vexflowStaveConnectors)
+    //   .forEach((c) => {
+    //     c.setContext(ctx).draw();
+    //   });
 
     // Draw the voices.
     scoreRender.systemRenders
@@ -75,6 +76,10 @@ export class Rendering {
       });
 
     return new Rendering(config, log, document, ctx, root, scoreRender);
+  }
+
+  private static debug(ctx: vexflow.RenderContext, bounds: { x: number; y: number; w: number; h: number }): void {
+    new drawing.Rect({ bounds, fillStyle: 'rgba(255, 0, 0, 0.35)', strokeStyle: 'red' }).draw(ctx);
   }
 
   clear(): void {

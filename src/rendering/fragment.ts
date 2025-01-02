@@ -7,6 +7,7 @@ import { Part, PartRender } from './part';
 import { Pen } from './pen';
 import { PartLabelGroup, PartLabelGroupRender } from './partlabelgroup';
 import { Ensemble } from './ensemble';
+import { Budget } from './budget';
 
 export type FragmentRender = {
   type: 'fragment';
@@ -29,32 +30,25 @@ export class Fragment {
   render(): FragmentRender {
     const pen = new Pen(this.position);
 
-    const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), this.width);
-
-    const partLabelGroupRender = this.renderPartLabelGroup(pen, ensemble);
-
-    let width = this.width;
-    if (partLabelGroupRender && width) {
-      width -= partLabelGroupRender.rect.w;
+    let widthBudget: Budget;
+    if (this.width === null) {
+      widthBudget = Budget.unlimited();
+    } else {
+      widthBudget = new Budget(this.width);
     }
 
-    const partRenders = this.renderParts(pen, ensemble, width);
+    const partLabelGroupRender = this.renderPartLabelGroup(pen, widthBudget);
+
+    const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
+    const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), ensembleWidth);
+
+    const partRenders = this.renderParts(ensemble);
 
     const rects = partRenders.map((part) => part.rect);
     if (partLabelGroupRender) {
       rects.push(partLabelGroupRender.rect);
     }
     const rect = Rect.merge(rects);
-
-    const staveWidth = partRenders
-      .flatMap((p) => p.staveRenders)
-      .map((s) => s.rect.w)
-      .at(0);
-    if (staveWidth) {
-      ensemble.format(staveWidth);
-    } else {
-      this.log.warn('could not determine stave width, skipping formatting', { ...this.key });
-    }
 
     return {
       type: 'fragment',
@@ -65,31 +59,36 @@ export class Fragment {
     };
   }
 
-  private renderPartLabelGroup(pen: Pen, ensemble: Ensemble): PartLabelGroupRender | null {
+  private renderPartLabelGroup(pen: Pen, widthBudget: Budget): PartLabelGroupRender | null {
     const isFirstSystem = this.document.isFirstSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     if (!isFirstSystem || !isFirstMeasure) {
       return null;
     }
 
+    // There's a circular dependency here: PartLabelGroup needs an Ensemble to render, and Ensemble needs to know
+    // PartLabelGroup's width to set the vertical positions correctly. We create this temporary ensemble to render the
+    // PartLabelGroup, and then throw it away. We can create a new one at the correct position later.
+    const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), this.width);
+
     const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position(), ensemble);
     const partLabelGroupRender = partLabelGroup.render();
 
     pen.moveBy({ dx: partLabelGroupRender.rect.w });
+    widthBudget.spend(partLabelGroupRender.rect.w);
 
     return partLabelGroupRender;
   }
 
-  private renderParts(pen: Pen, ensemble: Ensemble, width: number | null): PartRender[] {
+  private renderParts(ensemble: Ensemble): PartRender[] {
     const partCount = this.document.getPartCount(this.key);
 
     const partRenders = new Array<PartRender>();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const key: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(this.config, this.log, this.document, key, pen.position(), width, ensemble).render();
+      const partRender = new Part(this.config, this.log, this.document, key, ensemble).render();
       partRenders.push(partRender);
-      pen.moveBy({ dy: partRender.rect.h });
     }
 
     return partRenders;
