@@ -82,6 +82,22 @@ export const CONFIG = {
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
   }),
+  DEBUG_DRAW_STAVE_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_STAVE_RECTS enables drawing of stave rectangles for debugging purposes.',
+  }),
+  DEBUG_DRAW_STAVE_INTRINSIC_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_STAVE_INTRINSIC_RECTS enables drawing of stave intrinsic rectangles for debugging purposes.',
+  }),
+  DEBUG_DRAW_VOICE_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_VOICE_RECTS enables drawing of voice rectangles for debugging purposes.',
+  }),
+  DEBUG_DRAW_VOICE_ENTRY_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_VOICE_ENTRY_RECTS enables drawing of voice entry rectangles for debugging purposes.',
+  }),
 };
 
 export const DEFAULT_CONFIG = t.defaultConfig(CONFIG);
