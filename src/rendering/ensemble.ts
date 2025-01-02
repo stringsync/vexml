@@ -299,7 +299,11 @@ export class Ensemble {
       w += BARLINE_WIDTH;
     }
 
-    return new Rect(x, y, w, h);
+    const vexflowVoiceRects = stave.voices
+      .map((voice) => voice.vexflowVoice.getBoundingBox())
+      .map((box) => Rect.fromRectLike(box));
+
+    return Rect.merge([new Rect(x, y, w, h), ...vexflowVoiceRects]);
   }
 
   /**

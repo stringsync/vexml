@@ -95,6 +95,8 @@ export class Score {
       const key: SystemKey = { systemIndex };
       const systemRender = new System(this.config, this.log, this.document, key, pen.position()).render();
       systemRenders.push(systemRender);
+      // TODO: We do know how tall the other system will be, so we'll need to psuedo-render the system to get the
+      // height and adjust accordingly.
       pen.moveBy({ dy: systemRender.rect.h });
     }
 
