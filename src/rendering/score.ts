@@ -5,8 +5,9 @@ import { Logger } from '@/debug';
 import { System, SystemRender } from './system';
 import { SystemKey } from './types';
 import { Label } from './label';
-import { Rect } from '@/spatial';
+import { Rect, Point } from '@/spatial';
 import { Pen } from './pen';
+import { FragmentRender } from './fragment';
 
 export type ScoreRender = {
   type: 'score';
@@ -21,6 +22,9 @@ export type TitleRender = {
   label: Label;
 };
 
+/**
+ * Score is the top-level rendering object that is directly responsible for arranging systems.
+ */
 export class Score {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
@@ -89,17 +93,56 @@ export class Score {
   private renderSystems(pen: Pen): SystemRender[] {
     const systemRenders = new Array<SystemRender>();
 
-    const systemCount = this.document.getSystems().length;
+    const systemExcessHeights = this.getSystemExcessHeights();
+    const systemCount = this.document.getSystemCount();
+
+    pen.moveBy({ dy: systemExcessHeights[0] });
 
     for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
       const key: SystemKey = { systemIndex };
+
+      const nextSystemExcessHeight = systemExcessHeights.at(systemIndex + 1) ?? 0;
       const systemRender = new System(this.config, this.log, this.document, key, pen.position()).render();
       systemRenders.push(systemRender);
+
       // TODO: We do know how tall the other system will be, so we'll need to psuedo-render the system to get the
       // height and adjust accordingly.
-      pen.moveBy({ dy: systemRender.rect.h });
+      // NOTE: This is still wrong, but it's the best result so far.
+      pen.moveTo(pen.x, systemRender.rect.y);
+      pen.moveBy({ dy: systemRender.rect.h + nextSystemExcessHeight });
     }
 
     return systemRenders;
+  }
+
+  /**
+   * Precalculates the height of each system. This is necessary to do separately because the voices in a system can
+   * exceed the stave boundaries, making the initial system position invalid.
+   */
+  private getSystemExcessHeights(): number[] {
+    const systemExcessHeights = new Array<number>();
+
+    const systemCount = this.document.getSystemCount();
+
+    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
+      const key: SystemKey = { systemIndex };
+
+      const systemRender = new System(this.config, this.log, this.document, key, Point.origin()).render();
+      const staveRender = systemRender.measureRenders
+        .flatMap((m) => m.measureEntryRenders)
+        .filter((e): e is FragmentRender => e.type === 'fragment')
+        .flatMap((f) => f.partRenders)
+        .flatMap((p) => p.staveRenders)
+        .at(0);
+
+      if (staveRender) {
+        const systemExcessHeight = staveRender.intrisicRect.y - systemRender.rect.y;
+        systemExcessHeights.push(systemExcessHeight);
+      } else {
+        systemExcessHeights.push(0);
+      }
+    }
+
+    return systemExcessHeights;
   }
 }
