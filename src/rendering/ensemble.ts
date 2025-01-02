@@ -152,14 +152,10 @@ export class Ensemble {
       }
     }
 
-    // Precalculate the width if needed.
+    // Now that we have all the voices, we can format them.
     const vexflowVoices = staves.flatMap((s) => s.voices.map((v) => v.vexflowVoice));
     const vexflowFormatter = new vexflow.Formatter();
     vexflowFormatter.joinVoices(vexflowVoices);
-
-    const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
-    const isFirstMeasure = this.document.isFirstMeasure(this.key);
 
     const vexflowStavePadding = vexflow.Stave.defaultPadding;
 
@@ -172,9 +168,13 @@ export class Ensemble {
       width = baseVoiceWidth + minWidth + vexflowStavePadding;
     }
 
+    const isLastMeasure = this.document.isLastMeasure(this.key);
+    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
     if (isLastMeasure && isLastMeasureEntry) {
       width -= BARLINE_WIDTH;
     }
+
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
     if (isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
     }
