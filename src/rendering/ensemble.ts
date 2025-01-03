@@ -269,9 +269,27 @@ export class Ensemble {
   private note(key: VoiceEntryKey): EnsembleNote {
     const note = this.document.getNote(key);
 
+    let autoStem: boolean | undefined;
+    let stemDirection: number | undefined;
+
+    switch (note.stemDirection) {
+      case 'up':
+        stemDirection = vexflow.Stem.UP;
+        break;
+      case 'down':
+        stemDirection = vexflow.Stem.DOWN;
+        break;
+      case 'none':
+        break;
+      default:
+        autoStem = true;
+    }
+
     const vexflowTickable = new vexflow.StaveNote({
       keys: [`${note.pitch}/${note.octave}`],
       duration: 'q',
+      autoStem,
+      stemDirection,
     });
 
     return { type: 'note', key, rect: Ensemble.placeholderRect(), vexflowTickable };
