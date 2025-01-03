@@ -7,7 +7,7 @@ import { Ensemble } from './ensemble';
 import { Rect } from '@/spatial';
 import { Note, NoteRender } from './note';
 
-type VoiceEntryRender = NoteRender;
+export type VoiceEntryRender = NoteRender;
 
 export type VoiceRender = {
   type: 'voice';

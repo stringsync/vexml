@@ -8,11 +8,13 @@ import { Fragment, FragmentRender } from './fragment';
 import { Gap, GapRender } from './gap';
 import { Pen } from './pen';
 
+export type MeasureEntryRender = FragmentRender | GapRender;
+
 export type MeasureRender = {
   type: 'measure';
   key: MeasureKey;
   rect: Rect;
-  measureEntryRenders: Array<FragmentRender | GapRender>;
+  entryRenders: Array<MeasureEntryRender>;
 };
 
 export class Measure {
@@ -28,15 +30,15 @@ export class Measure {
   render(): MeasureRender {
     const pen = new Pen(this.position);
 
-    const measureEntryRenders = this.renderMeasureEntries(pen);
+    const entryRenders = this.renderMeasureEntries(pen);
 
-    const rect = Rect.merge(measureEntryRenders.map((entry) => entry.rect));
+    const rect = Rect.merge(entryRenders.map((entry) => entry.rect));
 
     return {
       type: 'measure',
       key: this.key,
       rect,
-      measureEntryRenders,
+      entryRenders,
     };
   }
 

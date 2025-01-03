@@ -26,126 +26,85 @@ export class Rendering {
     root: components.Root,
     scoreRender: ScoreRender
   ): Rendering {
+    // Collect all the render objects.
+    const titleRender = scoreRender.titleRender;
+    const systemRenders = scoreRender.systemRenders;
+    const measureRenders = systemRenders.flatMap((s) => s.measureRenders);
+    const measureEntryRenders = measureRenders.flatMap((m) => m.entryRenders);
+    const partLabelGroupRenders = measureEntryRenders.flatMap((m) => m.partLabelGroupRender ?? []);
+    const partLabelRenders = partLabelGroupRenders.flatMap((p) => p.partLabelRenders);
+    const partRenders = measureEntryRenders.flatMap((m) => m.partRenders);
+    const staveRenders = partRenders.flatMap((p) => p.staveRenders);
+    const voiceRenders = staveRenders.flatMap((s) => s.voiceRenders);
+    const voiceEntryRenders = voiceRenders.flatMap((v) => v.entryRenders);
+
     // Draw the title.
-    scoreRender.titleRender?.label.setContext(ctx).draw();
+    titleRender?.label.setContext(ctx).draw();
 
     // Draw the part labels.
-    scoreRender.systemRenders
-      .flatMap((s) => s.measureRenders)
-      .flatMap((m) => m.measureEntryRenders)
-      .filter((m): m is FragmentRender => m.type === 'fragment')
-      .flatMap((f) => f.partLabelGroupRender)
-      .filter((p): p is PartLabelGroupRender => p?.type === 'partlabelgroup')
-      .flatMap((p) => p.partLabelRenders)
-      .forEach((p) => {
-        p.label.setContext(ctx).draw();
-      });
+    partLabelRenders.forEach((p) => {
+      p.label.setContext(ctx).draw();
+    });
 
     // Draw the staves.
-    scoreRender.systemRenders
-      .flatMap((s) => s.measureRenders)
-      .flatMap((m) => m.measureEntryRenders)
-      .filter((m): m is FragmentRender => m.type === 'fragment')
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .forEach((s) => {
-        s.vexflowStave.setContext(ctx).draw();
-      });
+    staveRenders.forEach((s) => {
+      s.vexflowStave.setContext(ctx).draw();
+    });
 
     // Draw the stave connectors.
-    scoreRender.systemRenders
-      .flatMap((s) => s.measureRenders)
-      .flatMap((m) => m.measureEntryRenders)
-      .filter((m): m is FragmentRender => m.type === 'fragment')
-      .flatMap((f) => f.partRenders)
+    partRenders
       .flatMap((p) => p.vexflowStaveConnectors)
-      .forEach((c) => {
-        c.setContext(ctx).draw();
+      .forEach((v) => {
+        v.setContext(ctx).draw();
       });
 
     // Draw the voices.
-    scoreRender.systemRenders
-      .flatMap((s) => s.measureRenders)
-      .flatMap((m) => m.measureEntryRenders)
-      .filter((m): m is FragmentRender => m.type === 'fragment')
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .flatMap((s) => s.voiceRenders)
-      .forEach((v) => {
-        v.vexflowVoice.setContext(ctx).draw();
-      });
+    voiceRenders.forEach((v) => {
+      v.vexflowVoice.setContext(ctx).draw();
+    });
 
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
-      scoreRender.systemRenders.forEach((s) => {
+      systemRenders.forEach((s) => {
         new DebugRect(config, log, `s${s.key.systemIndex}`, s.rect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug measure rects.
     if (config.DEBUG_DRAW_MEASURE_RECTS) {
-      scoreRender.systemRenders
-        .flatMap((s) => s.measureRenders)
-        .forEach((m) => {
-          new DebugRect(config, log, `m${m.key.measureIndex}`, m.rect).setContext(ctx).draw();
-        });
+      measureRenders.forEach((m) => {
+        new DebugRect(config, log, `m${m.key.measureIndex}`, m.rect).setContext(ctx).draw();
+      });
     }
 
     // Draw the debug stave rects.
     if (config.DEBUG_DRAW_STAVE_RECTS) {
-      scoreRender.systemRenders
-        .flatMap((s) => s.measureRenders)
-        .flatMap((m) => m.measureEntryRenders)
-        .filter((m): m is FragmentRender => m.type === 'fragment')
-        .flatMap((f) => f.partRenders)
-        .flatMap((p) => p.staveRenders)
-        .forEach((s) => {
-          new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
-        });
+      staveRenders.forEach((s) => {
+        new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
+      });
     }
 
     // Draw the debug stave intrinsic rects.
     if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
-      scoreRender.systemRenders
-        .flatMap((s) => s.measureRenders)
-        .flatMap((m) => m.measureEntryRenders)
-        .filter((m): m is FragmentRender => m.type === 'fragment')
-        .flatMap((f) => f.partRenders)
-        .flatMap((p) => p.staveRenders)
-        .forEach((s) => {
-          new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
-        });
+      staveRenders.forEach((s) => {
+        new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
+      });
     }
 
     // Draw the debug voice rects.
     if (config.DEBUG_DRAW_VOICE_RECTS) {
-      scoreRender.systemRenders
-        .flatMap((s) => s.measureRenders)
-        .flatMap((m) => m.measureEntryRenders)
-        .filter((m): m is FragmentRender => m.type === 'fragment')
-        .flatMap((f) => f.partRenders)
-        .flatMap((p) => p.staveRenders)
-        .flatMap((s) => s.voiceRenders)
-        .forEach((v) => {
-          new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
-        });
+      voiceRenders.forEach((v) => {
+        new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
+      });
     }
 
     // Draw the debug voice entries.
     if (config.DEBUG_DRAW_VOICE_ENTRY_RECTS) {
       const style = { fill: 'rgba(255, 0, 0, 0.1)' };
 
-      scoreRender.systemRenders
-        .flatMap((s) => s.measureRenders)
-        .flatMap((m) => m.measureEntryRenders)
-        .filter((m): m is FragmentRender => m.type === 'fragment')
-        .flatMap((f) => f.partRenders)
-        .flatMap((p) => p.staveRenders)
-        .flatMap((s) => s.voiceRenders)
-        .flatMap((v) => v.entryRenders)
-        .forEach((e) => {
-          new DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
-        });
+      voiceEntryRenders.forEach((e) => {
+        new DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
+      });
     }
 
     return new Rendering(config, log, document, ctx, root, scoreRender);
