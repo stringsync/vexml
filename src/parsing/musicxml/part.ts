@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as util from '@/util';
 import { Stave } from './stave';
 import { Signature } from './signature';
@@ -9,6 +10,14 @@ export class Part {
       events.every((event) => event.partId === id),
       'Expected all events to belong to the current part'
     );
+  }
+
+  parse(): data.Part {
+    return {
+      type: 'part',
+      signature: this.signature.asPartSignature(this.id).parse(),
+      staves: this.getStaves().map((stave) => stave.parse()),
+    };
   }
 
   getId(): string {

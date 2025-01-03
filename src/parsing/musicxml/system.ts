@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Measure } from './measure';
@@ -15,7 +16,14 @@ import { Note } from './note';
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
-  getMeasures(): Measure[] {
+  parse(): data.System {
+    return {
+      type: 'system',
+      measures: this.getMeasures().map((measure) => measure.parse()),
+    };
+  }
+
+  private getMeasures(): Measure[] {
     const partIds = this.getPartIds();
 
     const measureCount = this.getMeasureCount();

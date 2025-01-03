@@ -1,9 +1,11 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
-import { Fraction } from '@/util';
+import * as util from '@/util';
+import { Fraction } from './fraction';
 
 /** Represents a musical time signature. */
 export class Time {
-  constructor(private partId: string, private staveNumber: number, private components: Fraction[]) {}
+  constructor(private partId: string, private staveNumber: number, private components: util.Fraction[]) {}
 
   static default(partId: string, staveNumber: number) {
     return new Time(partId, staveNumber, []);
@@ -11,7 +13,14 @@ export class Time {
 
   static fromMusicXML(partId: string, musicXML: { time: musicxml.Time }) {
     // TODO: Extract the real time components.
-    return new Time(partId, musicXML.time.getStaveNumber(), [new Fraction(4, 4)]);
+    return new Time(partId, musicXML.time.getStaveNumber(), [new util.Fraction(4, 4)]);
+  }
+
+  parse(): data.Time {
+    return {
+      type: 'time',
+      components: this.getComponents().map((component) => component.parse()),
+    };
   }
 
   getPartId(): string {
@@ -20,10 +29,6 @@ export class Time {
 
   getStaveNumber(): number {
     return this.staveNumber;
-  }
-
-  getComponents(): Fraction[] {
-    return this.components;
   }
 
   isEqual(timeSignature: Time): boolean {
@@ -47,5 +52,9 @@ export class Time {
     }
 
     return true;
+  }
+
+  private getComponents(): Fraction[] {
+    return this.components.map((component) => new Fraction(component));
   }
 }

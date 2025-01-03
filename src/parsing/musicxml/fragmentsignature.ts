@@ -1,9 +1,13 @@
+import * as data from '@/data';
 import { Metronome } from './metronome';
 
 export class FragmentSignature {
   constructor(private metronome: Metronome) {}
 
-  getMetronome(): Metronome {
-    return this.metronome;
+  parse(): data.FragmentSignature {
+    return {
+      type: 'fragmentsignature',
+      metronome: this.metronome.parse(),
+    };
   }
 }

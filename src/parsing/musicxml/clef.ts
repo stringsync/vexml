@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { ClefSign } from './enums';
 
@@ -24,23 +25,21 @@ export class Clef {
     );
   }
 
+  parse(): data.Clef {
+    return {
+      type: 'clef',
+      line: this.line,
+      sign: this.sign,
+      octaveChange: this.octaveChange,
+    };
+  }
+
   getPartId(): string {
     return this.partId;
   }
 
   getStaveNumber(): number {
     return this.staveNumber;
-  }
-  getSign(): ClefSign | null {
-    return this.sign;
-  }
-
-  getLine(): number | null {
-    return this.line;
-  }
-
-  getOctaveChange(): number | null {
-    return this.octaveChange;
   }
 
   isEqual(clef: Clef): boolean {

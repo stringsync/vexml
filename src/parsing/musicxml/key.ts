@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { KeyMode } from './enums';
 
@@ -25,6 +26,15 @@ export class Key {
     );
   }
 
+  parse(): data.Key {
+    return {
+      type: 'key',
+      fifths: this.fifths,
+      mode: this.mode,
+      previousKey: this.parsePreviousKey(),
+    };
+  }
+
   getPartId(): string {
     return this.partId;
   }
@@ -33,20 +43,8 @@ export class Key {
     return this.staveNumber;
   }
 
-  getFifths(): number {
-    return this.fifths;
-  }
-
-  getPreviousKey(): Key | null {
-    return this.previousKey;
-  }
-
-  getMode(): KeyMode {
-    return this.mode;
-  }
-
   isEqual(key: Key): boolean {
-    return this.partId === key.getPartId() && this.staveNumber === key.getStaveNumber() && this.isEquivalent(key);
+    return this.partId === key.partId && this.staveNumber === key.staveNumber && this.isEquivalent(key);
   }
 
   isEquivalent(key: Key): boolean {
@@ -57,5 +55,16 @@ export class Key {
 
   private arePreviousKeySignaturesEquivalent(previousKey: Key | null): boolean {
     return this.previousKey?.fifths === previousKey?.fifths && this.previousKey?.mode === previousKey?.mode;
+  }
+
+  private parsePreviousKey(): data.PreviousKey | null {
+    if (!this.previousKey) {
+      return null;
+    }
+    return {
+      type: 'previouskey',
+      fifths: this.previousKey.fifths,
+      mode: this.previousKey.mode,
+    };
   }
 }

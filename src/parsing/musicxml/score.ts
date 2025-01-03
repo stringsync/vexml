@@ -1,18 +1,28 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { System } from './system';
 
 export class Score {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
-  getTitle(): string {
+  parse(): data.Score {
+    return {
+      type: 'score',
+      title: this.getTitle(),
+      partLabels: this.getPartLabels(),
+      systems: this.getSystems().map((system) => system.parse()),
+    };
+  }
+
+  private getTitle(): string {
     return this.musicXML.scorePartwise.getTitle();
   }
 
-  getPartLabels(): string[] {
+  private getPartLabels(): string[] {
     return this.musicXML.scorePartwise.getPartDetails().map((p) => p.name);
   }
 
-  getSystems(): System[] {
+  private getSystems(): System[] {
     // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
     // each element. We can then use this information to determine the number of systems needed to fit a constrained
     // width if needed.
