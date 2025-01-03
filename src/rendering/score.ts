@@ -96,20 +96,18 @@ export class Score {
     const systemExcessHeights = this.getSystemExcessHeights();
     const systemCount = this.document.getSystemCount();
 
-    pen.moveBy({ dy: systemExcessHeights[0] });
-
     for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
       const key: SystemKey = { systemIndex };
 
-      const nextSystemExcessHeight = systemExcessHeights.at(systemIndex + 1) ?? 0;
+      const systemExcessHeight = systemExcessHeights[systemIndex];
+      pen.moveBy({ dy: systemExcessHeight });
+
       const systemRender = new System(this.config, this.log, this.document, key, pen.position()).render();
       systemRenders.push(systemRender);
 
-      // TODO: We do know how tall the other system will be, so we'll need to psuedo-render the system to get the
-      // height and adjust accordingly.
-      // NOTE: This is still wrong, but it's the best result so far.
-      pen.moveTo(pen.x, systemRender.rect.y);
-      pen.moveBy({ dy: systemRender.rect.h + nextSystemExcessHeight });
+      const bottomLeft = systemRender.rect.corners()[3];
+      pen.moveTo(bottomLeft.x, bottomLeft.y);
+      pen.moveBy({ dy: this.config.SYSTEM_MARGIN_BOTTOM });
     }
 
     return systemRenders;
@@ -136,7 +134,9 @@ export class Score {
         .at(0);
 
       if (staveRender) {
-        const systemExcessHeight = staveRender.intrisicRect.y - systemRender.rect.y;
+        // The excess height is the distance between the top of the vexflow stave and the top of the system rect (which
+        // should account for the highest voice). The vexml stave rect / intrinsic rect are not correct to use.
+        const systemExcessHeight = staveRender.vexflowStave.getBoundingBox().y - systemRender.rect.y;
         systemExcessHeights.push(systemExcessHeight);
       } else {
         systemExcessHeights.push(0);
