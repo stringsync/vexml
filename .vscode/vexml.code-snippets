@@ -1,4 +1,9 @@
 {
+  "@/import": {
+    "description": "Import a module using @ syntax",
+    "prefix": "@import",
+    "body": "import * as ${1:module} from '@/${1:module}';"
+  },
   "MusicXML Parser Class": {
     "description": "Create a class for MusicXML parsing",
     "prefix": "!musicxml",

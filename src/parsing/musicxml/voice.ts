@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as util from '@/util';
 import { Signature } from './signature';
 import { VoiceEntry, VoiceEvent } from './types';
@@ -10,8 +11,11 @@ export class Voice {
     );
   }
 
-  getId(): string {
-    return this.id;
+  parse(): data.Voice {
+    return {
+      type: 'voice',
+      entries: this.getEntries().map((entry) => entry.parse()),
+    };
   }
 
   getEntries(): VoiceEntry[] {

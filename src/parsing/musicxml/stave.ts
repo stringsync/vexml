@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as util from '@/util';
 import { Signature } from './signature';
 import { StaveEvent, VoiceEvent } from './types';
@@ -14,6 +15,14 @@ export class Stave {
       events.every((event) => event.staveNumber === number),
       'Expected all leaf events to belong to the current stave'
     );
+  }
+
+  parse(): data.Stave {
+    return {
+      type: 'stave',
+      signature: this.signature.asStaveSignature(this.partId, this.number).parse(),
+      voices: this.getVoices().map((voice) => voice.parse()),
+    };
   }
 
   getPartId(): string {

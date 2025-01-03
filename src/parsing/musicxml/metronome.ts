@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 
@@ -34,43 +35,22 @@ export class Metronome {
     }
   }
 
-  getName(): string | undefined {
-    return this.opts.name;
-  }
-
-  getParenthesis(): boolean | undefined {
-    return this.opts.parenthesis;
-  }
-
-  getDuration(): string | undefined {
-    return this.opts.duration;
-  }
-
-  getDots(): number | undefined {
-    return this.opts.dots;
-  }
-
-  getBpm(): number | string | undefined {
-    return this.opts.bpm;
-  }
-
-  getDuration2(): string | undefined {
-    return this.opts.duration2;
-  }
-
-  getDots2(): number | undefined {
-    return this.opts.dots2;
+  parse(): data.Metronome {
+    return {
+      type: 'metronome',
+      ...this.opts,
+    };
   }
 
   isEqual(metronome: Metronome): boolean {
     return (
-      this.getName() === metronome.getName() &&
-      this.getParenthesis() === metronome.getParenthesis() &&
-      this.getDuration() === metronome.getDuration() &&
-      this.getDots() === metronome.getDots() &&
-      this.getBpm() === metronome.getBpm() &&
-      this.getDuration2() === metronome.getDuration2() &&
-      this.getDots2() === metronome.getDots2()
+      this.opts.name === metronome.opts.name &&
+      this.opts.parenthesis === metronome.opts.parenthesis &&
+      this.opts.duration === metronome.opts.duration &&
+      this.opts.dots === metronome.opts.dots &&
+      this.opts.bpm === metronome.opts.bpm &&
+      this.opts.duration2 === metronome.opts.duration2 &&
+      this.opts.dots2 === metronome.opts.dots2
     );
   }
 }

@@ -1,8 +1,10 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
-import { Fraction } from '@/util';
+import * as util from '@/util';
 import { Notehead, StemDirection } from './enums';
 import { Accidental } from './accidental';
+import { Fraction } from './fraction';
 
 export type NoteMod = Accidental;
 
@@ -13,12 +15,12 @@ export class Note {
     private head: Notehead,
     private dotCount: number,
     private stemDirection: StemDirection,
-    private duration: Fraction,
-    private measureBeat: Fraction,
+    private duration: util.Fraction,
+    private measureBeat: util.Fraction,
     private mods: NoteMod[]
   ) {}
 
-  static fromMusicXML(measureBeat: Fraction, duration: Fraction, musicXML: { note: musicxml.Note }): Note {
+  static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
     const pitch = musicXML.note.getStep();
     const octave = musicXML.note.getOctave();
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
@@ -27,35 +29,25 @@ export class Note {
     return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, []);
   }
 
-  getPitch(): string {
-    return this.pitch;
+  parse(): data.Note {
+    return {
+      type: 'note',
+      pitch: this.pitch,
+      octave: this.octave,
+      head: this.head,
+      dotCount: this.dotCount,
+      stemDirection: this.stemDirection,
+      duration: this.getDuration().parse(),
+      measureBeat: this.getMeasureBeat().parse(),
+      mods: this.mods.map((mod) => mod.parse()),
+    };
   }
 
-  getOctave(): number {
-    return this.octave;
+  private getDuration(): Fraction {
+    return new Fraction(this.duration);
   }
 
-  getHead(): Notehead {
-    return this.head;
-  }
-
-  getDotCount(): number {
-    return this.dotCount;
-  }
-
-  getStemDirection(): StemDirection {
-    return this.stemDirection;
-  }
-
-  getDuration(): Fraction {
-    return this.duration;
-  }
-
-  getMeasureBeat(): Fraction {
-    return this.measureBeat;
-  }
-
-  getMods(): NoteMod[] {
-    return this.mods;
+  private getMeasureBeat(): Fraction {
+    return new Fraction(this.measureBeat);
   }
 }

@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as util from '@/util';
 import { Fragment } from './fragment';
 import { MeasureEvent, StaveEvent } from './types';
@@ -24,20 +25,20 @@ export class Measure {
     );
   }
 
-  getLabel(): number {
-    return this.label;
-  }
-
-  @util.memoize()
-  getFragments(): Fragment[] {
-    return this.createFragments();
+  parse(): data.Measure {
+    return {
+      type: 'measure',
+      label: this.label,
+      entries: this.getFragments().map((fragment) => fragment.parse()),
+    };
   }
 
   getLastSignature(): Signature {
     return this.getFragments().at(-1)?.getSignature() ?? this.initialSignature;
   }
 
-  private createFragments(): Fragment[] {
+  @util.memoize()
+  private getFragments(): Fragment[] {
     const ranges = this.getSignatureRanges();
 
     const fragments = new Array<Fragment>();
