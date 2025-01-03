@@ -3,12 +3,15 @@ import { Logger } from '@/debug';
 import { Document } from './document';
 import { MeasureEntryKey } from './types';
 import { Point, Rect } from '@/spatial';
-
-const TODO_WIDTH = 200;
+import { PartRender } from './part';
+import { PartLabelGroupRender } from './partlabelgroup';
 
 export type GapRender = {
   type: 'gap';
+  key: MeasureEntryKey;
   rect: Rect;
+  partLabelGroupRender: PartLabelGroupRender | null;
+  partRenders: PartRender[];
 };
 
 export class Gap {
@@ -20,14 +23,13 @@ export class Gap {
     private position: Point
   ) {}
 
-  getMinRequiredWidths(): [minRequiredStaveWidth: number, minRequiredNonStaveWidth: number] {
-    return [TODO_WIDTH, 0];
-  }
-
   render(): GapRender {
     return {
       type: 'gap',
+      key: this.key,
       rect: Rect.empty(),
+      partLabelGroupRender: null,
+      partRenders: [],
     };
   }
 }

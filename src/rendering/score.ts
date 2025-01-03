@@ -127,7 +127,7 @@ export class Score {
 
       const systemRender = new System(this.config, this.log, this.document, key, Point.origin()).render();
       const staveRender = systemRender.measureRenders
-        .flatMap((m) => m.measureEntryRenders)
+        .flatMap((m) => m.entryRenders)
         .filter((e): e is FragmentRender => e.type === 'fragment')
         .flatMap((f) => f.partRenders)
         .flatMap((p) => p.staveRenders)
