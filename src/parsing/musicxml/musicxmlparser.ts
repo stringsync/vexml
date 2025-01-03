@@ -16,7 +16,8 @@ import { Time } from './time';
 import { Fraction } from '@/util';
 import { Voice } from './voice';
 import { VoiceEntry } from './types';
-import { Note } from './note';
+import { Note, NoteMod } from './note';
+import { Accidental } from './accidental';
 
 /** Parses a MusicXML document string. */
 export class MusicXMLParser {
@@ -132,7 +133,17 @@ export class MusicXMLParser {
       stemDirection: note.getStemDirection(),
       duration: this.parseFraction(note.getDuration()),
       measureBeat: this.parseFraction(note.getMeasureBeat()),
+      mods: this.parseNoteMods(note.getMods()),
     };
+  }
+
+  private parseNoteMods(mods: NoteMod[]): data.NoteMod[] {
+    return mods.map((mod) => {
+      if (mod instanceof Accidental) {
+        return mod.parse();
+      }
+      throw new Error(`Unsupported note mod type: ${mod}`);
+    });
   }
 
   private parseStaveSignature(staveSignature: StaveSignature): data.StaveSignature {
