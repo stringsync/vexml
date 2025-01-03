@@ -8,14 +8,22 @@ export class Accidental {
   static fromMusicXML(musicXML: { note: musicxml.Note }): Accidental {
     const code =
       conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
-      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter());
+      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter()) ??
+      'n';
     const isExplicit = musicXML.note.getAccidentalType() !== null;
     const isCautionary = musicXML.note.hasAccidentalCautionary();
     return new Accidental(isExplicit, code, isCautionary);
   }
 
-  parse(keyAccidentalCode: data.AccidentalCode): data.Accidental | null {
+  parse(
+    keyAccidentalCode: data.AccidentalCode,
+    currentAccidentalCode: data.AccidentalCode | null
+  ): data.Accidental | null {
     if (!this.isExplicit && keyAccidentalCode === this.code) {
+      return null;
+    }
+
+    if (currentAccidentalCode !== null && currentAccidentalCode === this.code) {
       return null;
     }
 

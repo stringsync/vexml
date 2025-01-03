@@ -27,12 +27,15 @@ export class Note {
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
     const dotCount = musicXML.note.getDotCount();
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-
     const accidental = Accidental.fromMusicXML({ note: musicXML.note });
     return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, accidental);
   }
 
-  parse(key: Key): data.Note {
+  getPitch(): string {
+    return this.pitch;
+  }
+
+  parse(key: Key, currentAccidentalCode: data.AccidentalCode | null): data.Note {
     return {
       type: 'note',
       pitch: this.pitch,
@@ -42,15 +45,15 @@ export class Note {
       stemDirection: this.stemDirection,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      mods: this.parseMods(key),
+      mods: this.parseMods(key, currentAccidentalCode),
     };
   }
 
-  private parseMods(key: Key): data.NoteMod[] {
+  private parseMods(key: Key, currentAccidentalCode: data.AccidentalCode | null): data.NoteMod[] {
     const mods = new Array<data.NoteMod>();
 
     const keyAccidentalCode = key.getAccidentalCode(this.pitch);
-    const accidental = this.accidental.parse(keyAccidentalCode);
+    const accidental = this.accidental.parse(keyAccidentalCode, currentAccidentalCode);
     if (accidental) {
       mods.push(accidental);
     }
