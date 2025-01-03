@@ -5,9 +5,14 @@ import * as util from '@/util';
 import { Notehead, StemDirection } from './enums';
 import { Accidental } from './accidental';
 import { Fraction } from './fraction';
-import { Key } from './key';
+import { NoteContext, VoiceContext } from './contexts';
 
 export type NoteMod = Accidental;
+
+type NoteAccidentalProps = {
+  code: data.AccidentalCode;
+  isCautionary: boolean;
+};
 
 export class Note {
   constructor(
@@ -18,7 +23,7 @@ export class Note {
     private stemDirection: StemDirection,
     private duration: util.Fraction,
     private measureBeat: util.Fraction,
-    private accidental: Accidental
+    private accidentalProps: NoteAccidentalProps
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -27,15 +32,26 @@ export class Note {
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
     const dotCount = musicXML.note.getDotCount();
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-    const accidental = Accidental.fromMusicXML({ note: musicXML.note });
-    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, accidental);
+    const accidentalProps = Note.getAccidentalProps(musicXML);
+    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, accidentalProps);
+  }
+
+  private static getAccidentalProps(musicXML: { note: musicxml.Note }): NoteAccidentalProps {
+    const code =
+      conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter()) ??
+      'n';
+    const isCautionary = musicXML.note.hasAccidentalCautionary();
+    return { code, isCautionary };
   }
 
   getPitch(): string {
     return this.pitch;
   }
 
-  parse(key: Key, currentAccidentalCode: data.AccidentalCode | null): data.Note {
+  parse(voiceCtx: VoiceContext): data.Note {
+    const noteCtx = new NoteContext(voiceCtx, this.pitch, this.octave);
+
     return {
       type: 'note',
       pitch: this.pitch,
@@ -45,20 +61,37 @@ export class Note {
       stemDirection: this.stemDirection,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      mods: this.parseMods(key, currentAccidentalCode),
+      mods: this.getMods(noteCtx).map((mod) => mod.parse(noteCtx)),
     };
   }
 
-  private parseMods(key: Key, currentAccidentalCode: data.AccidentalCode | null): data.NoteMod[] {
-    const mods = new Array<data.NoteMod>();
+  private getMods(noteCtx: NoteContext): NoteMod[] {
+    const mods = new Array<NoteMod>();
 
-    const keyAccidentalCode = key.getAccidentalCode(this.pitch);
-    const accidental = this.accidental.parse(keyAccidentalCode, currentAccidentalCode);
+    const accidental = this.getAccidental(noteCtx);
     if (accidental) {
       mods.push(accidental);
     }
 
     return mods;
+  }
+
+  private getAccidental(noteCtx: NoteContext): Accidental | null {
+    const isCautionary = this.accidentalProps.isCautionary;
+
+    const noteAccidental = this.accidentalProps.code;
+    const keyAccidental = noteCtx.getKeyAccidental();
+    const activeAccidental = noteCtx.getActiveAccidental();
+
+    if (!isCautionary && keyAccidental === noteAccidental) {
+      return null;
+    }
+
+    if (!isCautionary && activeAccidental === noteAccidental) {
+      return null;
+    }
+
+    return new Accidental(this.accidentalProps.code, this.accidentalProps.isCautionary);
   }
 
   private getDuration(): Fraction {
