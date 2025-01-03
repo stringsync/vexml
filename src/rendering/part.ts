@@ -1,3 +1,4 @@
+import * as vexflow from 'vexflow';
 import { PartKey, StaveKey } from './types';
 import { Rect } from '@/spatial';
 import { Config } from './config';
@@ -11,6 +12,7 @@ export type PartRender = {
   key: PartKey;
   rect: Rect;
   staveRenders: StaveRender[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
 };
 
 export class Part {
@@ -23,15 +25,19 @@ export class Part {
   ) {}
 
   render(): PartRender {
+    const ensemblePart = this.ensemble.getPart(this.key);
+    const vexflowStaveConnectors = ensemblePart.vexflowStaveConnectors;
+
     const staveRenders = this.renderStaves();
 
-    const rect = Rect.merge(staveRenders.map((staveRender) => staveRender.rect));
+    const rect = ensemblePart.rect;
 
     return {
       type: 'part',
       key: this.key,
       rect,
       staveRenders,
+      vexflowStaveConnectors,
     };
   }
 

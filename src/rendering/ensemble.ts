@@ -8,6 +8,14 @@ import { Document } from './document';
 import { Point, Rect } from '@/spatial';
 import { Pen } from './pen';
 
+type EnsemblePart = {
+  type: 'part';
+  key: PartKey;
+  rect: Rect;
+  staves: EnsembleStave[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
+};
+
 type EnsembleStave = {
   type: 'stave';
   key: StaveKey;
@@ -58,17 +66,30 @@ export class Ensemble {
   }
 
   getWidth(): number {
-    return this.width ?? this.staves().at(0)?.rect.w ?? 0;
+    return this.width ?? this.parts().at(0)?.rect.w ?? 0;
+  }
+
+  getPart(key: PartKey): EnsemblePart {
+    const part = this.parts().find((p) => util.isEqual(p.key, key));
+
+    util.assertDefined(part);
+
+    return part;
   }
 
   getStave(key: StaveKey): EnsembleStave {
-    const stave = this.staves().find((s) => util.isEqual(s.key, key));
+    const stave = this.parts()
+      .flatMap((p) => p.staves)
+      .find((s) => util.isEqual(s.key, key));
+
     util.assertDefined(stave);
+
     return stave;
   }
 
   getVoice(key: VoiceKey): EnsembleVoice {
-    const voice = this.staves()
+    const voice = this.parts()
+      .flatMap((p) => p.staves)
       .flatMap((s) => s.voices)
       .find((v) => util.isEqual(v.key, key));
 
@@ -78,7 +99,8 @@ export class Ensemble {
   }
 
   getVoiceEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
-    const entry = this.staves()
+    const entry = this.parts()
+      .flatMap((p) => p.staves)
       .flatMap((s) => s.voices)
       .flatMap((v) => v.entries)
       .find((e) => util.isEqual(e.key, key));
@@ -89,67 +111,110 @@ export class Ensemble {
   }
 
   @util.memoize()
-  private staves(): EnsembleStave[] {
-    const staves = new Array<EnsembleStave>();
+  private parts(): EnsemblePart[] {
+    const parts = new Array<EnsemblePart>();
 
     const pen = new Pen(this.position);
 
     const partCount = this.document.getPartCount(this.key);
+
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
 
-      const staveCount = this.document.getStaveCount(partKey);
-      for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
-        const staveKey: StaveKey = { ...partKey, staveIndex };
+      const staves = this.staves(pen, partKey);
+      const rect = Rect.merge(staves.map((s) => s.rect));
 
-        const voices = this.voices(staveKey);
+      const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
 
-        const isFirstMeasure = this.document.isFirstMeasure(staveKey);
-        const isFirstPart = this.document.isFirstPart(staveKey);
-        const isFirstStave = this.document.isFirstStave(staveKey);
-        const isFirstMeasureEntry = this.document.isFirstMeasureEntry(staveKey);
-        const isLastMeasureEntry = this.document.isLastMeasureEntry(staveKey);
-        const hasStaveConnector = this.document.getStaveCount(staveKey) > 1;
-        const measureLabel = this.document.getMeasure(this.key).label;
+      if (staves.length > 1) {
+        const firstVexflowStave = staves.at(0)!.vexflowStave;
+        const lastVexflowStave = staves.at(-1)!.vexflowStave;
 
-        let x = pen.x;
-        const y = pen.y;
+        const isLastSystem = this.document.isLastSystem(this.key);
+        const isLastMeasure = this.document.isLastMeasure(this.key);
+        const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+        const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
 
-        if (isFirstMeasure) {
-          x += MEASURE_NUMBER_PADDING_LEFT;
+        if (isFirstMeasureEntry) {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
+          );
         }
 
-        // We'll update the width later after we collect all the data needed to format the staves.
-        const vexflowStave = new vexflow.Stave(x, y, 0);
-
-        if (isFirstPart && isFirstStave && measureLabel) {
-          vexflowStave.setMeasure(measureLabel);
+        if (isLastMeasureEntry) {
+          if (isLastSystem && isLastMeasure) {
+            vexflowStaveConnectors.push(
+              new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
+            );
+          } else {
+            vexflowStaveConnectors.push(
+              new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
+            );
+          }
         }
-
-        if (isFirstMeasureEntry && !hasStaveConnector) {
-          vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
-        } else {
-          vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
-        }
-
-        if (isLastMeasureEntry && !hasStaveConnector) {
-          vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
-        } else {
-          vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
-        }
-
-        // TODO: Check <stave-layouts> first, which has a part+stave scoped margin.
-        pen.moveBy({ dy: this.config.DEFAULT_STAVE_MARGIN_BOTTOM + vexflowStave.getHeight() });
-
-        staves.push({
-          type: 'stave',
-          key: staveKey,
-          rect: Ensemble.placeholderRect(),
-          intrinsicRect: Ensemble.placeholderRect(),
-          vexflowStave,
-          voices,
-        });
       }
+
+      parts.push({ type: 'part', key: partKey, rect, staves, vexflowStaveConnectors });
+    }
+
+    return parts;
+  }
+
+  private staves(pen: Pen, key: PartKey): EnsembleStave[] {
+    const staves = new Array<EnsembleStave>();
+
+    const staveCount = this.document.getStaveCount(key);
+    const hasStaveConnector = staveCount > 1;
+
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const staveKey: StaveKey = { ...key, staveIndex };
+
+      const voices = this.voices(staveKey);
+
+      const isFirstMeasure = this.document.isFirstMeasure(staveKey);
+      const isFirstPart = this.document.isFirstPart(staveKey);
+      const isFirstStave = this.document.isFirstStave(staveKey);
+      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(staveKey);
+      const isLastMeasureEntry = this.document.isLastMeasureEntry(staveKey);
+      const measureLabel = this.document.getMeasure(this.key).label;
+
+      let x = pen.x;
+      const y = pen.y;
+
+      if (isFirstMeasure) {
+        x += MEASURE_NUMBER_PADDING_LEFT;
+      }
+
+      // We'll update the width later after we collect all the data needed to format the staves.
+      const vexflowStave = new vexflow.Stave(x, y, 0);
+
+      if (isFirstPart && isFirstStave && measureLabel) {
+        vexflowStave.setMeasure(measureLabel);
+      }
+
+      if (isFirstMeasureEntry && !hasStaveConnector) {
+        vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
+      } else {
+        vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
+      }
+
+      if (isLastMeasureEntry && !hasStaveConnector) {
+        vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
+      } else {
+        vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
+      }
+
+      // TODO: Check <stave-layouts> first, which has a part+stave scoped margin.
+      pen.moveBy({ dy: this.config.DEFAULT_STAVE_MARGIN_BOTTOM + vexflowStave.getHeight() });
+
+      staves.push({
+        type: 'stave',
+        key: staveKey,
+        rect: Ensemble.placeholderRect(),
+        intrinsicRect: Ensemble.placeholderRect(),
+        vexflowStave,
+        voices,
+      });
     }
 
     // Now that we have all the voices, we can format them.
