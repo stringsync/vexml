@@ -5,6 +5,7 @@ import * as util from '@/util';
 import { Notehead, StemDirection } from './enums';
 import { Accidental } from './accidental';
 import { Fraction } from './fraction';
+import { Key } from './key';
 
 export type NoteMod = Accidental;
 
@@ -17,7 +18,7 @@ export class Note {
     private stemDirection: StemDirection,
     private duration: util.Fraction,
     private measureBeat: util.Fraction,
-    private mods: NoteMod[]
+    private accidental: Accidental
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -26,10 +27,12 @@ export class Note {
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
     const dotCount = musicXML.note.getDotCount();
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, []);
+
+    const accidental = Accidental.fromMusicXML({ note: musicXML.note });
+    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, accidental);
   }
 
-  parse(): data.Note {
+  parse(key: Key): data.Note {
     return {
       type: 'note',
       pitch: this.pitch,
@@ -39,8 +42,20 @@ export class Note {
       stemDirection: this.stemDirection,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      mods: this.mods.map((mod) => mod.parse()),
+      mods: this.parseMods(key),
     };
+  }
+
+  private parseMods(key: Key): data.NoteMod[] {
+    const mods = new Array<data.NoteMod>();
+
+    const keyAccidentalCode = key.getAccidentalCode(this.pitch);
+    const accidental = this.accidental.parse(keyAccidentalCode);
+    if (accidental) {
+      mods.push(accidental);
+    }
+
+    return mods;
   }
 
   private getDuration(): Fraction {
