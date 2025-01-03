@@ -4,8 +4,6 @@ import { ScoreRender } from './score';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
-import { FragmentRender } from './fragment';
-import { PartLabelGroupRender } from './partlabelgroup';
 import { DebugRect } from './debugrect';
 
 export class Rendering {

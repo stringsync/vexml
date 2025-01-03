@@ -1,0 +1,28 @@
+{
+  "Class with Render Method": {
+    "prefix": "!rendering",
+    "body": [
+      "import { Config } from './config';",
+      "import { Logger } from '@/debug';",
+      "import { Rect } from '@/spatial';",
+      "import { Document } from './document';",
+      "",
+      "export type ${1:Foo}Render = {",
+      "  type: '${2:foo}';",
+      "  rect: Rect;",
+      "};",
+      "",
+      "export class ${1:Foo} {",
+      "  constructor(private config: Config, private log: Logger, private document: Document) {}",
+      "",
+      "  render(): ${1:Foo}Render {",
+      "    return {",
+      "      type: '${2:foo}',",
+      "      rect: Rect.empty(),",
+      "    };",
+      "  }",
+      "}"
+    ],
+    "description": "Create a rendering object"
+  }
+}
