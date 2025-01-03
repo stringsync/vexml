@@ -1,5 +1,22 @@
 {
-  "Class with Render Method": {
+  "MusicXML Parser Class": {
+    "description": "Create a class for MusicXML parsing",
+    "prefix": "!musicxml",
+    "body": [
+      "import * as data from '@/data';",
+      "import * as musicxml from '@/musicxml';",
+      "",
+      "export class ${1:Foo} {",
+      "  parse(): data.${1:Foo} {",
+      "    return {",
+      "      type: '${2:foo}',",
+      "    };",
+      "  }",
+      "}"
+    ]
+  },
+  "Rendering Class": {
+    "description": "Create an object for rendering",
     "prefix": "!rendering",
     "body": [
       "import { Config } from './config';",
@@ -22,7 +39,6 @@
       "    };",
       "  }",
       "}"
-    ],
-    "description": "Create a rendering object"
+    ]
   }
 }

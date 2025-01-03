@@ -1,3 +1,5 @@
+import { AccidentalCode, ClefSign, KeyMode, Notehead, StemDirection } from './enums';
+
 export type Score = {
   type: 'score';
   title: string | null;
@@ -75,56 +77,19 @@ export type Note = {
   octave: number;
   head: Notehead;
   dotCount: number;
-  stemDirection: NoteStemDirection;
+  stemDirection: StemDirection;
   duration: Fraction;
   measureBeat: Fraction;
-  // TODO: Add NoteMod[]
+  mods: NoteMod[];
 };
 
-// TODO: Add symbol leaf type
+export type NoteMod = Accidental;
 
-export type Notehead =
-  | ''
-  | 'D0'
-  | 'D1'
-  | 'D2'
-  | 'D3'
-  | 'T0'
-  | 'T1'
-  | 'T2'
-  | 'T3'
-  | 'X0'
-  | 'X1'
-  | 'X2'
-  | 'X3'
-  | 'S1'
-  | 'S2'
-  | 'R1'
-  | 'R2'
-  | 'DO'
-  | 'RE'
-  | 'MI'
-  | 'FA'
-  | 'FAUP'
-  | 'SO'
-  | 'LA'
-  | 'TI'
-  | 'D'
-  | 'H'
-  | 'N'
-  | 'G'
-  | 'M'
-  | 'X'
-  | 'CX'
-  | 'CI'
-  | 'S'
-  | 'SQ'
-  | 'TU'
-  | 'TD'
-  | 'SF'
-  | 'SB';
-
-export type NoteStemDirection = 'auto' | 'up' | 'down' | 'none';
+export type Accidental = {
+  type: 'accidental';
+  code: AccidentalCode;
+  isCautionary: boolean;
+};
 
 export type Clef = {
   type: 'clef';
@@ -132,8 +97,6 @@ export type Clef = {
   line: number | null;
   octaveChange: number | null;
 };
-
-export type ClefSign = 'G' | 'F' | 'C' | 'percussion' | 'TAB' | 'jianpu' | 'none';
 
 export type Key = {
   type: 'key';
@@ -147,18 +110,6 @@ export type PreviousKey = {
   fifths: number;
   mode: KeyMode;
 };
-
-export type KeyMode =
-  | 'none'
-  | 'major'
-  | 'minor'
-  | 'dorian'
-  | 'phrygian'
-  | 'lydian'
-  | 'mixolydian'
-  | 'aeolian'
-  | 'ionian'
-  | 'locrian';
 
 export type Time = {
   type: 'time';

@@ -2,6 +2,9 @@ import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 import { Fraction } from '@/util';
 import { Notehead, StemDirection } from './enums';
+import { Accidental } from './accidental';
+
+export type NoteMod = Accidental;
 
 export class Note {
   constructor(
@@ -11,7 +14,8 @@ export class Note {
     private dotCount: number,
     private stemDirection: StemDirection,
     private duration: Fraction,
-    private measureBeat: Fraction
+    private measureBeat: Fraction,
+    private mods: NoteMod[]
   ) {}
 
   static fromMusicXML(measureBeat: Fraction, duration: Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -20,7 +24,7 @@ export class Note {
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
     const dotCount = musicXML.note.getDotCount();
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat);
+    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, []);
   }
 
   getPitch(): string {
@@ -49,5 +53,9 @@ export class Note {
 
   getMeasureBeat(): Fraction {
     return this.measureBeat;
+  }
+
+  getMods(): NoteMod[] {
+    return this.mods;
   }
 }
