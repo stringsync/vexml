@@ -22,9 +22,21 @@ export class Voice {
   private parseEntries(key: Key): data.VoiceEntry[] {
     const entries = new Array<data.VoiceEntry>();
 
+    const accidentalCodesByPitch: Record<string, data.AccidentalCode> = {};
+
     for (const event of this.events) {
       if (event.type === 'note') {
-        entries.push(event.note.parse(key));
+        const pitch = event.note.getPitch();
+        const accidentalCode = accidentalCodesByPitch[pitch] ?? null;
+
+        const note = event.note.parse(key, accidentalCode);
+
+        const accidental = note.mods.find((mod): mod is data.Accidental => mod.type === 'accidental');
+        if (accidental) {
+          accidentalCodesByPitch[pitch] = accidental.code;
+        }
+
+        entries.push(note);
       }
     }
 
