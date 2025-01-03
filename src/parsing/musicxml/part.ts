@@ -3,6 +3,7 @@ import * as util from '@/util';
 import { Stave } from './stave';
 import { Signature } from './signature';
 import { StaveEvent } from './types';
+import { FragmentContext, PartContext } from './contexts';
 
 export class Part {
   constructor(private id: string, private signature: Signature, private events: StaveEvent[]) {
@@ -12,11 +13,13 @@ export class Part {
     );
   }
 
-  parse(): data.Part {
+  parse(fragmentCtx: FragmentContext): data.Part {
+    const partCtx = new PartContext(fragmentCtx, this.id);
+
     return {
       type: 'part',
       signature: this.signature.asPartSignature(this.id).parse(),
-      staves: this.getStaves().map((stave) => stave.parse()),
+      staves: this.getStaves().map((stave) => stave.parse(partCtx)),
     };
   }
 

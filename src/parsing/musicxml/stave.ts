@@ -3,6 +3,7 @@ import * as util from '@/util';
 import { Signature } from './signature';
 import { StaveEvent, VoiceEvent } from './types';
 import { Voice } from './voice';
+import { PartContext, StaveContext } from './contexts';
 
 export class Stave {
   constructor(
@@ -17,13 +18,13 @@ export class Stave {
     );
   }
 
-  parse(): data.Stave {
-    const key = this.signature.getKey(this.partId, this.number);
+  parse(partCtx: PartContext): data.Stave {
+    const staveCtx = new StaveContext(partCtx, this.number);
 
     return {
       type: 'stave',
       signature: this.signature.asStaveSignature(this.partId, this.number).parse(),
-      voices: this.getVoices().map((voice) => voice.parse(key)),
+      voices: this.getVoices().map((voice) => voice.parse(staveCtx)),
     };
   }
 

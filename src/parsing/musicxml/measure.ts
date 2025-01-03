@@ -4,6 +4,7 @@ import { Fragment } from './fragment';
 import { MeasureEvent, StaveEvent } from './types';
 import { Fraction } from '@/util';
 import { Signature } from './signature';
+import { MeasureContext } from './contexts';
 
 type SignatureRange = {
   signature: Signature;
@@ -26,10 +27,12 @@ export class Measure {
   }
 
   parse(): data.Measure {
+    const measureCtx = new MeasureContext(this.index);
+
     return {
       type: 'measure',
       label: this.label,
-      entries: this.getFragments().map((fragment) => fragment.parse()),
+      entries: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
     };
   }
 
