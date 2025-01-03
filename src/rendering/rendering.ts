@@ -53,15 +53,15 @@ export class Rendering {
       });
 
     // Draw the stave connectors.
-    // scoreRender.systemRenders
-    //   .flatMap((s) => s.measureRenders)
-    //   .flatMap((m) => m.measureEntryRenders)
-    //   .filter((m): m is FragmentRender => m.type === 'fragment')
-    //   .flatMap((f) => f.partRenders)
-    //   .flatMap((p) => p.vexflowStaveConnectors)
-    //   .forEach((c) => {
-    //     c.setContext(ctx).draw();
-    //   });
+    scoreRender.systemRenders
+      .flatMap((s) => s.measureRenders)
+      .flatMap((m) => m.measureEntryRenders)
+      .filter((m): m is FragmentRender => m.type === 'fragment')
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.vexflowStaveConnectors)
+      .forEach((c) => {
+        c.setContext(ctx).draw();
+      });
 
     // Draw the voices.
     scoreRender.systemRenders

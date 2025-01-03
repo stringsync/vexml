@@ -69,7 +69,7 @@ export const CONFIG = {
     choices: ['right', 'left'] as const,
   }),
   DEFAULT_STAVE_MARGIN_BOTTOM: t.number({
-    defaultValue: 140,
+    defaultValue: 60,
     help:
       'DEFAULT_STAVE_MARGIN_BOTTOM is the margin between staves within the same part and system. ' +
       "It won't have an effect if there is only one stave per part.",
