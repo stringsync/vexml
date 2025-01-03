@@ -8,6 +8,10 @@ import { Document } from './document';
 import { Point, Rect } from '@/spatial';
 import { Pen } from './pen';
 
+const MEASURE_NUMBER_PADDING_LEFT = 6;
+const BARLINE_WIDTH = 1;
+const BRACE_CONNECTOR_WIDTH = 8;
+
 type EnsemblePart = {
   type: 'part';
   key: PartKey;
@@ -41,9 +45,6 @@ type EnsembleNote = {
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
 };
-
-const MEASURE_NUMBER_PADDING_LEFT = 6;
-const BARLINE_WIDTH = 1;
 
 /**
  * An ensemble is a collection of voices across staves and parts that should be formatted together.
@@ -121,6 +122,18 @@ export class Ensemble {
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
 
+      const isLastSystem = this.document.isLastSystem(partKey);
+      const isFirstMeasure = this.document.isFirstMeasure(partKey);
+      const isLastMeasure = this.document.isLastMeasure(partKey);
+      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(partKey);
+      const isLastMeasureEntry = this.document.isLastMeasureEntry(partKey);
+
+      const staveCount = this.document.getStaveCount(partKey);
+
+      if (isFirstMeasure && isFirstMeasureEntry && staveCount > 1) {
+        pen.moveBy({ dx: BRACE_CONNECTOR_WIDTH });
+      }
+
       const staves = this.staves(pen, partKey);
       const rect = Rect.merge(staves.map((s) => s.rect));
 
@@ -129,11 +142,6 @@ export class Ensemble {
       if (staves.length > 1) {
         const firstVexflowStave = staves.at(0)!.vexflowStave;
         const lastVexflowStave = staves.at(-1)!.vexflowStave;
-
-        const isLastSystem = this.document.isLastSystem(this.key);
-        const isLastMeasure = this.document.isLastMeasure(this.key);
-        const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-        const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
 
         if (isFirstMeasureEntry) {
           vexflowStaveConnectors.push(
@@ -151,6 +159,10 @@ export class Ensemble {
               new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
             );
           }
+        }
+
+        if (isFirstMeasure && isFirstMeasureEntry) {
+          vexflowStaveConnectors.push(new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace'));
         }
       }
 
@@ -233,15 +245,20 @@ export class Ensemble {
       width = baseVoiceWidth + minWidth + vexflowStavePadding;
     }
 
-    const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+    const isLastMeasure = this.document.isLastMeasure(key);
+    const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
     if (isLastMeasure && isLastMeasureEntry) {
       width -= BARLINE_WIDTH;
     }
 
-    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(key);
     if (isFirstMeasure) {
       width -= MEASURE_NUMBER_PADDING_LEFT;
+    }
+
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
+    if (isFirstMeasure && isFirstMeasureEntry) {
+      width -= BRACE_CONNECTOR_WIDTH;
     }
 
     // Set the width on the staves.
@@ -374,6 +391,13 @@ export class Ensemble {
     if (isFirstMeasure) {
       x -= MEASURE_NUMBER_PADDING_LEFT;
       w += MEASURE_NUMBER_PADDING_LEFT;
+    }
+
+    const staveCount = this.document.getStaveCount(stave.key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(stave.key);
+    if (isFirstMeasure && isFirstMeasureEntry && staveCount > 1) {
+      x -= BRACE_CONNECTOR_WIDTH;
+      w += BRACE_CONNECTOR_WIDTH;
     }
 
     const isLastMeasure = this.document.isLastMeasure(stave.key);
