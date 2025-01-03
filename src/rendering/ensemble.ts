@@ -197,8 +197,10 @@ export class Ensemble {
         x += MEASURE_NUMBER_PADDING_LEFT;
       }
 
+      const staveLineCount = this.document.getStave(staveKey).signature.lineCount;
+
       // We'll update the width later after we collect all the data needed to format the staves.
-      const vexflowStave = new vexflow.Stave(x, y, 0);
+      const vexflowStave = new vexflow.Stave(x, y, 0, { numLines: staveLineCount });
 
       if (isFirstPart && isFirstStave && measureLabel) {
         vexflowStave.setMeasure(measureLabel);
