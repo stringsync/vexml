@@ -1,9 +1,24 @@
 import * as data from '@/data';
+import * as musicxml from '@/musicxml';
+import * as conversions from './conversions';
 
 export class Accidental {
-  constructor(private code: data.AccidentalCode, private isCautionary: boolean) {}
+  constructor(private isExplicit: boolean, private code: data.AccidentalCode, private isCautionary: boolean) {}
 
-  parse(): data.Accidental {
+  static fromMusicXML(musicXML: { note: musicxml.Note }): Accidental {
+    const code =
+      conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter());
+    const isExplicit = musicXML.note.getAccidentalType() !== null;
+    const isCautionary = musicXML.note.hasAccidentalCautionary();
+    return new Accidental(isExplicit, code, isCautionary);
+  }
+
+  parse(keyAccidentalCode: data.AccidentalCode): data.Accidental | null {
+    if (!this.isExplicit && keyAccidentalCode === this.code) {
+      return null;
+    }
+
     return {
       type: 'accidental',
       code: this.code,

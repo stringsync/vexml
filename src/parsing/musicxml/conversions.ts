@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { NoteDurationDenominator, Notehead, StemDirection } from './enums';
 
@@ -99,5 +100,59 @@ export const fromNoteheadToNotehead = (notehead: musicxml.Notehead | null): Note
       return 'X';
     default:
       return '';
+  }
+};
+
+/** Converts an `AccidentalType` to an `AccidentalCode`. Defaults to null. */
+export const fromAccidentalTypeToAccidentalCode = (
+  accidentalType: musicxml.AccidentalType | null
+): data.AccidentalCode | null => {
+  switch (accidentalType) {
+    case 'sharp':
+      return '#';
+    case 'double-sharp':
+      return '##';
+    case 'flat':
+      return 'b';
+    case 'flat-flat':
+      return 'bb';
+    case 'natural':
+      return 'n';
+    case 'quarter-sharp':
+      return '+';
+    case 'quarter-flat':
+      return 'd';
+    case 'three-quarters-sharp':
+      return '++';
+    case 'three-quarters-flat':
+      return 'db';
+  }
+
+  return null;
+};
+
+/** Converts an `alter` to an `AccidentalCode`. Defaults to 'n'. */
+export const fromAlterToAccidentalCode = (alter: number | null): data.AccidentalCode => {
+  switch (alter) {
+    case 1:
+      return '#';
+    case 2:
+      return '##';
+    case -1:
+      return 'b';
+    case -2:
+      return 'bb';
+    case 0:
+      return 'n';
+    case -0.5:
+      return 'd';
+    case 0.5:
+      return '+';
+    case -1.5:
+      return 'db';
+    case 1.5:
+      return '++';
+    default:
+      return 'n';
   }
 };

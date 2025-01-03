@@ -1,7 +1,8 @@
 import * as data from '@/data';
 import * as util from '@/util';
 import { Signature } from './signature';
-import { VoiceEntry, VoiceEvent } from './types';
+import { VoiceEvent } from './types';
+import { Key } from './key';
 
 export class Voice {
   constructor(private id: string, private signature: Signature, private events: VoiceEvent[]) {
@@ -11,14 +12,22 @@ export class Voice {
     );
   }
 
-  parse(): data.Voice {
+  parse(key: Key): data.Voice {
     return {
       type: 'voice',
-      entries: this.getEntries().map((entry) => entry.parse()),
+      entries: this.parseEntries(key),
     };
   }
 
-  getEntries(): VoiceEntry[] {
-    return this.events.map((event) => event.note);
+  private parseEntries(key: Key): data.VoiceEntry[] {
+    const entries = new Array<data.VoiceEntry>();
+
+    for (const event of this.events) {
+      if (event.type === 'note') {
+        entries.push(event.note.parse(key));
+      }
+    }
+
+    return entries;
   }
 }

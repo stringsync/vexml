@@ -18,10 +18,12 @@ export class Stave {
   }
 
   parse(): data.Stave {
+    const key = this.signature.getKey(this.partId, this.number);
+
     return {
       type: 'stave',
       signature: this.signature.asStaveSignature(this.partId, this.number).parse(),
-      voices: this.getVoices().map((voice) => voice.parse()),
+      voices: this.getVoices().map((voice) => voice.parse(key)),
     };
   }
 
@@ -33,11 +35,7 @@ export class Stave {
     return this.number;
   }
 
-  getSignature(): Signature {
-    return this.signature;
-  }
-
-  getVoices(): Voice[] {
+  private getVoices(): Voice[] {
     const voiceEvents = this.getVoiceEvents();
 
     return util

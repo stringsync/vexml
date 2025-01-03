@@ -367,14 +367,24 @@ export class Ensemble {
         autoStem = true;
     }
 
-    const vexflowTickable = new vexflow.StaveNote({
+    const vexflowStaveNote = new vexflow.StaveNote({
       keys: [`${note.pitch}/${note.octave}`],
-      duration: 'q',
+      duration: 'q', // TODO: Use real duration
       autoStem,
       stemDirection,
     });
 
-    return { type: 'note', key, rect: Ensemble.placeholderRect(), vexflowTickable };
+    for (const mod of note.mods) {
+      if (mod.type === 'accidental') {
+        const vexflowAccidental = new vexflow.Accidental(mod.code);
+        if (mod.isCautionary) {
+          vexflowAccidental.setAsCautionary();
+        }
+        vexflowStaveNote.addModifier(vexflowAccidental);
+      }
+    }
+
+    return { type: 'note', key, rect: Ensemble.placeholderRect(), vexflowTickable: vexflowStaveNote };
   }
 
   private getStaveRect(stave: EnsembleStave): Rect {
