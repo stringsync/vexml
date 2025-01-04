@@ -5,7 +5,7 @@ import { Logger } from '@/debug';
 import { System, SystemRender } from './system';
 import { SystemKey } from './types';
 import { Label } from './label';
-import { Rect, Point } from '@/spatial';
+import { Rect } from '@/spatial';
 import { Pen } from './pen';
 
 export type ScoreRender = {
@@ -92,45 +92,74 @@ export class Score {
   private renderSystems(pen: Pen): SystemRender[] {
     const systemRenders = new Array<SystemRender>();
 
-    const systemExcessHeights = this.getSystemExcessHeights();
     const systemCount = this.document.getSystemCount();
 
     for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
       const key: SystemKey = { systemIndex };
 
-      const systemExcessHeight = systemExcessHeights[systemIndex];
-      pen.moveBy({ dy: systemExcessHeight });
-
       const systemRender = new System(this.config, this.log, this.document, key, pen.position()).render();
       systemRenders.push(systemRender);
 
-      const bottomLeft = systemRender.rect.corners()[3];
+      const excessHeight = util.max(
+        systemRender.measureRenders.flatMap((m) => m.entryRenders).flatMap((e) => e.excessHeight)
+      );
+      new SystemRenderMover().moveBy(systemRender, excessHeight);
+
+      const bottomLeft = systemRender.rect.bottomLeft();
       pen.moveTo(bottomLeft.x, bottomLeft.y);
       pen.moveBy({ dy: this.config.SYSTEM_MARGIN_BOTTOM });
     }
 
     return systemRenders;
   }
+}
 
-  /**
-   * Precalculates the height of each system. This is necessary to do separately because the voices in a system can
-   * exceed the stave boundaries, making the initial system position invalid.
-   */
-  private getSystemExcessHeights(): number[] {
-    const excessHeights = new Array<number>();
+type Movable = {
+  rect: Rect;
+};
 
-    const systemCount = this.document.getSystemCount();
+/**
+ * After a system is rendered, we may learn there is excess height from its components. This class recursivley moves
+ * all the rects by the excess height such that we can honor the SYSTEM_MARGIN_BOTTOM configuration without
+ * re-rendering. This is much faster than re-rendering the system at a different position.
+ */
+class SystemRenderMover {
+  moveBy(systemRender: SystemRender, dy: number) {
+    const seen = new Set<any>(); // avoid circular references
 
-    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
-      const key: SystemKey = { systemIndex };
+    const move = (obj: any) => {
+      if (seen.has(obj)) {
+        return;
+      }
+      seen.add(obj);
+      if (this.isMovable(obj)) {
+        obj.rect = obj.rect.translate({ dy });
+      }
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          move(item);
+        }
+      } else if (util.isPOJO(obj)) {
+        for (const key in obj) {
+          move(obj[key]);
+        }
+      }
+    };
+    move(systemRender);
 
-      const systemRender = new System(this.config, this.log, this.document, key, Point.origin()).render();
-      const excessHeight = util.max(
-        systemRender.measureRenders.flatMap((m) => m.entryRenders).map((e) => e.excessHeight)
-      );
-      excessHeights.push(excessHeight);
-    }
+    // Before finishing, we move the vexflow staves. Since everything is linked to them, this should complete the move.
+    // Any future supported vexflow object not connected to a stave will need to be moved here.
+    systemRender.measureRenders
+      .flatMap((m) => m.entryRenders)
+      .flatMap((e) => e.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .map((s) => s.vexflowStave)
+      .forEach((s) => {
+        s.setY(s.getY() + dy);
+      });
+  }
 
-    return excessHeights;
+  private isMovable(obj: any): obj is Movable {
+    return !!obj && obj.rect instanceof Rect;
   }
 }
