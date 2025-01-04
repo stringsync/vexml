@@ -25,6 +25,13 @@ type EnsemblePart = {
   vexflowBrace: vexflow.StaveConnector | null;
 };
 
+type EnsembleTime = {
+  type: 'time';
+  key: StaveKey;
+  vexflowTimeSignatures: vexflow.TimeSignature[];
+  width: number;
+};
+
 type EnsembleStave = {
   type: 'stave';
   key: StaveKey;
@@ -245,9 +252,9 @@ export class Ensemble {
       }
 
       if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
-        const time = new EnsembleTime(this.config, this.log, this.document, staveKey);
+        const time = new EnsembleTimeFactory(this.config, this.log, this.document).create(staveKey);
         times.push(time);
-        for (const vexflowTimeSignature of time.getVexflowTimeSignatures()) {
+        for (const vexflowTimeSignature of time.vexflowTimeSignatures) {
           vexflowStave.addModifier(vexflowTimeSignature);
         }
       }
@@ -296,7 +303,7 @@ export class Ensemble {
       nonVoiceWidth += util.max(vexflowClefs.map((c) => c.getWidth())) + ADDITIONAL_CLEF_WIDTH;
     }
     if (times.length > 0) {
-      nonVoiceWidth += util.max(times.map((t) => t.getWidth()));
+      nonVoiceWidth += util.max(times.map((t) => t.width));
     }
 
     let initialStaveWidth: number;
@@ -484,23 +491,26 @@ export class Ensemble {
   }
 }
 
-/** Encapsulates calculations related to arranging vexflow time signatures in an ensemble. */
-export class EnsembleTime {
-  constructor(private config: Config, private log: Logger, private document: Document, private key: StaveKey) {}
+class EnsembleTimeFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  getWidth(): number {
-    const timeSpecs = this.getTimeSpecs();
+  create(key: StaveKey): EnsembleTime {
+    const timeSpecs = this.getTimeSpecs(this.document, key);
+    const vexflowTimeSignatures = timeSpecs.map((t) => new vexflow.TimeSignature(t));
+
     const padding = ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH * (timeSpecs.length - 1);
-    return this.getVexflowTimeSignatures().reduce((sum, t) => sum + t.getWidth(), padding);
+    const width = vexflowTimeSignatures.reduce((sum, t) => sum + t.getWidth(), padding);
+
+    return {
+      type: 'time',
+      key,
+      vexflowTimeSignatures,
+      width,
+    };
   }
 
-  @util.memoize()
-  getVexflowTimeSignatures(): vexflow.TimeSignature[] {
-    return this.getTimeSpecs().map((t) => new vexflow.TimeSignature(t));
-  }
-
-  private getTimeSpecs(): string[] {
-    const time = this.document.getStave(this.key).signature.time;
+  private getTimeSpecs(document: Document, key: StaveKey): string[] {
+    const time = document.getStave(key).signature.time;
     const components = this.toFractions(time.components);
 
     switch (time.symbol) {
@@ -509,7 +519,7 @@ export class EnsembleTime {
       case 'cut':
         return ['C|'];
       case 'single-number':
-        const sum = this.summation(components).simplify();
+        const sum = Fraction.sum(...components).simplify();
         return [this.toSimpleTimeSpecs(sum)];
       case 'hidden':
         return [];
@@ -520,14 +530,6 @@ export class EnsembleTime {
     }
 
     return [this.toSimpleTimeSpecs(components[0])];
-  }
-
-  private toFractions(components: data.Fraction[]): Fraction[] {
-    return components.map((component) => new Fraction(component.numerator, component.denominator));
-  }
-
-  private summation(fractions: Fraction[]): Fraction {
-    return fractions.reduce((sum, component) => sum.add(component), new Fraction(0, 1));
   }
 
   private toSimpleTimeSpecs(component: Fraction): string {
@@ -564,5 +566,9 @@ export class EnsembleTime {
     }
 
     return result;
+  }
+
+  private toFractions(components: data.Fraction[]): Fraction[] {
+    return components.map((component) => new Fraction(component.numerator, component.denominator));
   }
 }
