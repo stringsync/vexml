@@ -27,15 +27,6 @@ type EnsemblePart = {
   vexflowBrace: vexflow.StaveConnector | null;
 };
 
-type EnsembleStave = {
-  type: 'stave';
-  key: StaveKey;
-  rect: Rect;
-  intrinsicRect: Rect;
-  vexflowStave: vexflow.Stave;
-  voices: EnsembleVoice[];
-};
-
 /**
  * An ensemble is a collection of voices across staves and parts that should be formatted together.
  *
@@ -189,87 +180,23 @@ export class Ensemble {
 
   private staves(pen: Pen, key: PartKey): EnsembleStave[] {
     const staves = new Array<EnsembleStave>();
-
-    const partCount = this.document.getPartCount(key);
+    const staveFactory = new EnsembleStaveFactory(this.config, this.log, this.document);
     const staveCount = this.document.getStaveCount(key);
-    const hasStaveConnector = partCount > 1 || staveCount > 1;
 
     const clefs = new Array<EnsembleClef>();
     const times = new Array<EnsembleTime>();
 
-    const voiceFactory = new EnsembleVoiceFactory(this.config, this.log, this.document);
-
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
+      const stave = staveFactory.create(staveKey, pen);
+      staves.push(stave);
 
-      const voices = new Array<EnsembleVoice>();
-      const voiceCount = this.document.getVoiceCount(staveKey);
-      for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
-        const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
-        voices.push(voiceFactory.create(voiceKey));
+      if (stave.clef) {
+        clefs.push(stave.clef);
       }
-
-      const isFirstSystem = this.document.isFirstSystem(staveKey);
-      const isLastSystem = this.document.isLastSystem(staveKey);
-      const isFirstMeasure = this.document.isFirstMeasure(staveKey);
-      const isLastMeasure = this.document.isLastMeasure(staveKey);
-      const isFirstPart = this.document.isFirstPart(staveKey);
-      const isFirstStave = this.document.isFirstStave(staveKey);
-      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(staveKey);
-      const isLastMeasureEntry = this.document.isLastMeasureEntry(staveKey);
-      const measureLabel = this.document.getMeasure(staveKey).label;
-      const staveSignature = this.document.getStave(staveKey).signature;
-      const staveLineCount = staveSignature.lineCount;
-
-      // We'll update the width later after we collect all the data needed to format the staves.
-      const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
-
-      // TODO: Also render when it changes.
-      if (isFirstMeasure && isFirstMeasureEntry) {
-        const clef = new EnsembleClefFactory(this.config, this.log, this.document).create(staveKey);
-        clefs.push(clef);
-        vexflowStave.addModifier(clef.vexflowClef);
+      if (stave.time) {
+        times.push(stave.time);
       }
-
-      if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
-        const time = new EnsembleTimeFactory(this.config, this.log, this.document).create(staveKey);
-        times.push(time);
-        for (const vexflowTimeSignature of time.vexflowTimeSignatures) {
-          vexflowStave.addModifier(vexflowTimeSignature);
-        }
-      }
-
-      if (isFirstPart && isFirstStave && measureLabel) {
-        vexflowStave.setMeasure(measureLabel);
-      }
-
-      if (!isFirstMeasure && isFirstMeasureEntry && !hasStaveConnector) {
-        vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
-      } else {
-        vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
-      }
-
-      if (isLastMeasureEntry && !hasStaveConnector) {
-        if (isLastSystem && isLastMeasure) {
-          vexflowStave.setEndBarType(vexflow.Barline.type.END);
-        } else {
-          vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
-        }
-      } else {
-        vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
-      }
-
-      // TODO: Check <stave-layouts> first, which has a part+stave scoped margin.
-      pen.moveBy({ dy: this.config.DEFAULT_STAVE_MARGIN_BOTTOM + vexflowStave.getHeight() });
-
-      staves.push({
-        type: 'stave',
-        key: staveKey,
-        rect: PLACEHOLDER_RECT,
-        intrinsicRect: PLACEHOLDER_RECT,
-        vexflowStave,
-        voices,
-      });
     }
 
     // Now that we have all the voices, we can format them.
@@ -399,6 +326,101 @@ export class Ensemble {
     const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
+  }
+}
+
+type EnsembleStave = {
+  type: 'stave';
+  key: StaveKey;
+  rect: Rect;
+  intrinsicRect: Rect;
+  vexflowStave: vexflow.Stave;
+  voices: EnsembleVoice[];
+  clef: EnsembleClef | null;
+  time: EnsembleTime | null;
+};
+
+class EnsembleStaveFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: StaveKey, pen: Pen): EnsembleStave {
+    const voices = new Array<EnsembleVoice>();
+    const voiceFactory = new EnsembleVoiceFactory(this.config, this.log, this.document);
+    const voiceCount = this.document.getVoiceCount(key);
+
+    for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
+      const voiceKey: VoiceKey = { ...key, voiceIndex };
+      voices.push(voiceFactory.create(voiceKey));
+    }
+
+    let clef: EnsembleClef | null = null;
+    let time: EnsembleTime | null = null;
+
+    const isFirstSystem = this.document.isFirstSystem(key);
+    const isLastSystem = this.document.isLastSystem(key);
+    const isFirstMeasure = this.document.isFirstMeasure(key);
+    const isLastMeasure = this.document.isLastMeasure(key);
+    const isFirstPart = this.document.isFirstPart(key);
+    const partCount = this.document.getPartCount(key);
+    const isFirstStave = this.document.isFirstStave(key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
+    const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
+    const measureLabel = this.document.getMeasure(key).label;
+    const staveSignature = this.document.getStave(key).signature;
+    const staveCount = this.document.getStaveCount(key);
+    const staveLineCount = staveSignature.lineCount;
+
+    const hasStaveConnector = partCount > 1 || staveCount > 1;
+
+    // We'll update the width later after we collect all the data needed to format the staves.
+    const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
+
+    // TODO: Also render when it changes.
+    if (isFirstMeasure && isFirstMeasureEntry) {
+      clef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
+      vexflowStave.addModifier(clef.vexflowClef);
+    }
+
+    if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
+      time = new EnsembleTimeFactory(this.config, this.log, this.document).create(key);
+      for (const vexflowTimeSignature of time.vexflowTimeSignatures) {
+        vexflowStave.addModifier(vexflowTimeSignature);
+      }
+    }
+
+    if (isFirstPart && isFirstStave && measureLabel) {
+      vexflowStave.setMeasure(measureLabel);
+    }
+
+    if (!isFirstMeasure && isFirstMeasureEntry && !hasStaveConnector) {
+      vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
+    } else {
+      vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
+    }
+
+    if (isLastMeasureEntry && !hasStaveConnector) {
+      if (isLastSystem && isLastMeasure) {
+        vexflowStave.setEndBarType(vexflow.Barline.type.END);
+      } else {
+        vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
+      }
+    } else {
+      vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
+    }
+
+    // TODO: Check <stave-layouts> first, which has a part+stave scoped margin.
+    pen.moveBy({ dy: this.config.DEFAULT_STAVE_MARGIN_BOTTOM + vexflowStave.getHeight() });
+
+    return {
+      type: 'stave',
+      key,
+      rect: PLACEHOLDER_RECT,
+      intrinsicRect: PLACEHOLDER_RECT,
+      vexflowStave,
+      voices,
+      clef,
+      time,
+    };
   }
 }
 
