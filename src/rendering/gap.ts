@@ -11,6 +11,7 @@ export type GapRender = {
   type: 'gap';
   key: MeasureEntryKey;
   rect: Rect;
+  excessHeight: number;
   partLabelGroupRender: PartLabelGroupRender | null;
   vexflowStaveConnectors: vexflow.StaveConnector[];
   partRenders: PartRender[];
@@ -30,6 +31,7 @@ export class Gap {
       type: 'gap',
       key: this.key,
       rect: Rect.empty(),
+      excessHeight: 0,
       partLabelGroupRender: null,
       vexflowStaveConnectors: [],
       partRenders: [],

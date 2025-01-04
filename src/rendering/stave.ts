@@ -27,11 +27,11 @@ export class Stave {
 
   render(): StaveRender {
     const ensembleStave = this.ensemble.getStave(this.key);
-    const vexflowStave = ensembleStave.vexflowStave;
 
     const voiceRenders = this.renderVoices();
 
-    const rect = Rect.fromRectLike(ensembleStave.rect);
+    const vexflowStave = ensembleStave.vexflowStave;
+    const rect = ensembleStave.rect;
     const intrisicRect = ensembleStave.intrinsicRect;
 
     return {

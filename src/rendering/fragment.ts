@@ -14,6 +14,7 @@ export type FragmentRender = {
   type: 'fragment';
   key: MeasureEntryKey;
   rect: Rect;
+  excessHeight: number;
   partLabelGroupRender: PartLabelGroupRender | null;
   vexflowStaveConnectors: vexflow.StaveConnector[];
   partRenders: PartRender[];
@@ -43,7 +44,9 @@ export class Fragment {
 
     const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
     const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), ensembleWidth);
-    const vexflowStaveConnectors = ensemble.getMeasureEntry().vexflowStaveConnectors;
+    const ensembleMeasureEntry = ensemble.getMeasureEntry();
+    const excessHeight = ensembleMeasureEntry.excessHeight;
+    const vexflowStaveConnectors = ensembleMeasureEntry.vexflowStaveConnectors;
 
     const partRenders = this.renderParts(ensemble);
 
@@ -57,6 +60,7 @@ export class Fragment {
       type: 'fragment',
       key: this.key,
       rect,
+      excessHeight,
       partLabelGroupRender,
       vexflowStaveConnectors,
       partRenders,

@@ -7,7 +7,6 @@ import { SystemKey } from './types';
 import { Label } from './label';
 import { Rect, Point } from '@/spatial';
 import { Pen } from './pen';
-import { FragmentRender } from './fragment';
 
 export type ScoreRender = {
   type: 'score';
@@ -118,7 +117,7 @@ export class Score {
    * exceed the stave boundaries, making the initial system position invalid.
    */
   private getSystemExcessHeights(): number[] {
-    const systemExcessHeights = new Array<number>();
+    const excessHeights = new Array<number>();
 
     const systemCount = this.document.getSystemCount();
 
@@ -126,23 +125,12 @@ export class Score {
       const key: SystemKey = { systemIndex };
 
       const systemRender = new System(this.config, this.log, this.document, key, Point.origin()).render();
-      const staveRender = systemRender.measureRenders
-        .flatMap((m) => m.entryRenders)
-        .filter((e): e is FragmentRender => e.type === 'fragment')
-        .flatMap((f) => f.partRenders)
-        .flatMap((p) => p.staveRenders)
-        .at(0);
-
-      if (staveRender) {
-        // The excess height is the distance between the top of the vexflow stave and the top of the system rect (which
-        // should account for the highest voice). The vexml stave rect / intrinsic rect are not correct to use.
-        const systemExcessHeight = staveRender.vexflowStave.getBoundingBox().y - systemRender.rect.y;
-        systemExcessHeights.push(systemExcessHeight);
-      } else {
-        systemExcessHeights.push(0);
-      }
+      const excessHeight = util.max(
+        systemRender.measureRenders.flatMap((m) => m.entryRenders).map((e) => e.excessHeight)
+      );
+      excessHeights.push(excessHeight);
     }
 
-    return systemExcessHeights;
+    return excessHeights;
   }
 }
