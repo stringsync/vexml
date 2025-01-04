@@ -1,4 +1,13 @@
-import { AccidentalCode, ClefSign, KeyMode, Notehead, StemDirection, TimeSymbol } from './enums';
+import {
+  AccidentalCode,
+  AnnotationHorizontalJustification,
+  AnnotationVerticalJustification,
+  ClefSign,
+  KeyMode,
+  Notehead,
+  StemDirection,
+  TimeSymbol,
+} from './enums';
 
 export type Score = {
   type: 'score';
@@ -83,12 +92,19 @@ export type Note = {
   mods: NoteMod[];
 };
 
-export type NoteMod = Accidental;
+export type NoteMod = Accidental | Annotation;
 
 export type Accidental = {
   type: 'accidental';
   code: AccidentalCode;
   isCautionary: boolean;
+};
+
+export type Annotation = {
+  type: 'annotation';
+  text: string;
+  horizontalJustification: AnnotationHorizontalJustification | null;
+  verticalJustification: AnnotationVerticalJustification | null;
 };
 
 export type Clef = {
