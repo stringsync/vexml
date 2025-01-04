@@ -668,6 +668,17 @@ class EnsembleNoteFactory {
         }
         vexflowStaveNote.addModifier(vexflowAccidental);
       }
+
+      if (mod.type === 'annotation') {
+        const vexflowAnnotation = new vexflow.Annotation(mod.text);
+        if (mod.horizontalJustification) {
+          vexflowAnnotation.setJustification(mod.horizontalJustification);
+        }
+        if (mod.verticalJustification) {
+          vexflowAnnotation.setVerticalJustification(mod.verticalJustification);
+        }
+        vexflowStaveNote.addModifier(vexflowAnnotation);
+      }
     }
 
     return {

@@ -6,8 +6,9 @@ import { Notehead, StemDirection } from './enums';
 import { Accidental } from './accidental';
 import { Fraction } from './fraction';
 import { NoteContext, VoiceContext } from './contexts';
+import { Annotation } from './annotation';
 
-export type NoteMod = Accidental;
+export type NoteMod = Accidental | Annotation;
 
 type NoteAccidentalProps = {
   code: data.AccidentalCode;
@@ -23,6 +24,7 @@ export class Note {
     private stemDirection: StemDirection,
     private duration: util.Fraction,
     private measureBeat: util.Fraction,
+    private lyrics: Annotation[],
     private accidentalProps: NoteAccidentalProps
   ) {}
 
@@ -32,8 +34,9 @@ export class Note {
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
     const dotCount = musicXML.note.getDotCount();
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
+    const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric({ lyric }));
     const accidentalProps = Note.getAccidentalProps(musicXML);
-    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, accidentalProps);
+    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, annotations, accidentalProps);
   }
 
   private static getAccidentalProps(musicXML: { note: musicxml.Note }): NoteAccidentalProps {
@@ -72,6 +75,8 @@ export class Note {
     if (accidental) {
       mods.push(accidental);
     }
+
+    mods.push(...this.lyrics);
 
     return mods;
   }

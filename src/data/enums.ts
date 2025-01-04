@@ -118,3 +118,19 @@ export const TIME_SYMBOLS = new Enum([
   'single-number',
   'hidden',
 ] as const);
+
+/**
+ * The horizontal justification of an annotation.
+ *
+ * See https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/annotation.ts#L19
+ */
+export type AnnotationHorizontalJustification = EnumValues<typeof ANNOTATION_HORIZONTAL_JUSTIFICATIONS>;
+export const ANNOTATION_HORIZONTAL_JUSTIFICATIONS = new Enum(['left', 'center', 'right', 'centerstem'] as const);
+
+/**
+ * The vertical justification of an annotation.
+ *
+ * See https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/annotation.ts#L26
+ */
+export type AnnotationVerticalJustification = EnumValues<typeof ANNOTATION_VERTICAL_JUSTIFICATIONS>;
+export const ANNOTATION_VERTICAL_JUSTIFICATIONS = new Enum(['top', 'center', 'bottom', 'centerstem'] as const);
