@@ -79,9 +79,17 @@ export class Note {
    * Defaults to null. This is intended to only be used for notes that contain a <rest> element.
    */
   getRestDisplayPitch(): string | null {
-    const step = this.element.first('display-step')?.content().str();
-    const octave = this.element.first('display-octave')?.content().str();
-    return typeof step === 'string' && typeof octave === 'string' ? `${step}/${octave}` : null;
+    const step = this.getRestDisplayStep();
+    const octave = this.getRestDisplayOctave();
+    return typeof step === 'string' && typeof octave === 'number' ? `${step}/${octave}` : null;
+  }
+
+  getRestDisplayStep(): string | null {
+    return this.element.first('display-step')?.content().str() ?? null;
+  }
+
+  getRestDisplayOctave(): number | null {
+    return this.element.first('display-octave')?.content().int() ?? null;
   }
 
   /** Returns the accidental type of the note. Defaults to null. */
