@@ -207,6 +207,8 @@ export class Ensemble {
     const staveCount = this.document.getStaveCount(key);
     const hasStaveConnector = partCount > 1 || staveCount > 1;
 
+    const vexflowClefs = new Array<vexflow.Clef>();
+
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
 
@@ -226,7 +228,9 @@ export class Ensemble {
       const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
 
       if (isFirstMeasure && isFirstMeasureEntry) {
-        // vexflowStave.addModifier(new vexflow.Clef(clef.sign, 'default', undefined));
+        const vexflowClef = new vexflow.Clef(clef.sign, 'default', undefined);
+        vexflowStave.addModifier(vexflowClef);
+        vexflowClefs.push(vexflowClef);
       }
 
       if (isFirstPart && isFirstStave && measureLabel) {
@@ -263,20 +267,27 @@ export class Ensemble {
     const vexflowFormatter = new vexflow.Formatter();
     vexflowFormatter.joinVoices(vexflowVoices);
 
+    // Non-voice width components.
     const vexflowStavePadding = vexflow.Stave.defaultPadding;
+    let clefWidth = 0;
+    if (vexflowClefs.length > 0) {
+      clefWidth = util.max(vexflowClefs.map((c) => c.getWidth()));
+    }
 
-    let initialWidth: number;
+    let initialStaveWidth: number;
     if (this.width) {
-      initialWidth = this.width;
+      initialStaveWidth = this.width;
     } else {
+      // Voice width components.
       const baseVoiceWidth = this.config.BASE_VOICE_WIDTH;
       const minWidth = vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices);
-      initialWidth = baseVoiceWidth + minWidth + vexflowStavePadding;
+
+      initialStaveWidth = baseVoiceWidth + minWidth + vexflowStavePadding + clefWidth;
     }
 
     const left = pen;
     const right = new Pen(this.position);
-    right.moveBy({ dx: initialWidth });
+    right.moveBy({ dx: initialStaveWidth });
 
     const isLastMeasure = this.document.isLastMeasure(key);
     const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
@@ -284,11 +295,11 @@ export class Ensemble {
       right.moveBy({ dx: -BARLINE_PADDING_RIGHT });
     }
 
-    const width = right.x - left.x;
+    const staveWidth = right.x - left.x;
 
     // Set the width on the staves.
     for (const stave of staves) {
-      stave.vexflowStave.setWidth(width);
+      stave.vexflowStave.setWidth(staveWidth);
     }
 
     // Associate everything with a stave.
@@ -303,7 +314,7 @@ export class Ensemble {
     }
 
     // Format! The voice width must be smaller than the stave or the stave won't contain it.
-    const voiceWidth = width - vexflowStavePadding;
+    const voiceWidth = staveWidth - vexflowStavePadding - clefWidth;
     vexflowFormatter.format(vexflowVoices, voiceWidth);
 
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
