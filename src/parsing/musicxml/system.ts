@@ -12,6 +12,7 @@ import { Key } from './key';
 import { Time } from './time';
 import { Metronome } from './metronome';
 import { Note } from './note';
+import { Rest } from './rest';
 
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
@@ -154,16 +155,29 @@ class MeasureEventCalculator {
       return;
     }
 
-    this.events.push({
-      type: 'note',
-      partId,
-      measureIndex,
-      staveNumber,
-      voiceId,
-      measureBeat: this.measureBeat,
-      duration,
-      note: Note.fromMusicXML(this.measureBeat, duration, { note }),
-    });
+    if (note.isRest()) {
+      this.events.push({
+        type: 'rest',
+        partId,
+        measureIndex,
+        staveNumber,
+        voiceId,
+        measureBeat: this.measureBeat,
+        duration,
+        rest: Rest.fromMusicXML(this.measureBeat, duration, { note }),
+      });
+    } else {
+      this.events.push({
+        type: 'note',
+        partId,
+        measureIndex,
+        staveNumber,
+        voiceId,
+        measureBeat: this.measureBeat,
+        duration,
+        note: Note.fromMusicXML(this.measureBeat, duration, { note }),
+      });
+    }
 
     this.measureBeat = this.measureBeat.add(duration);
   }

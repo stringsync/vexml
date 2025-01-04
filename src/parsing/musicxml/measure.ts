@@ -47,7 +47,7 @@ export class Measure {
     const fragments = new Array<Fragment>();
 
     let index = 0;
-    const events = this.events.filter((e): e is StaveEvent => e.type === 'note');
+    const events = this.events.filter((event: any): event is StaveEvent => typeof event.staveNumber === 'number');
 
     for (const range of ranges) {
       const fragmentEvents = new Array<StaveEvent>();

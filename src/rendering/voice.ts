@@ -6,8 +6,9 @@ import { VoiceEntryKey, VoiceKey } from './types';
 import { Ensemble } from './ensemble';
 import { Rect } from '@/spatial';
 import { Note, NoteRender } from './note';
+import { Rest, RestRender } from './rest';
 
-export type VoiceEntryRender = NoteRender;
+export type VoiceEntryRender = NoteRender | RestRender;
 
 export type VoiceRender = {
   type: 'voice';
@@ -55,6 +56,10 @@ export class Voice {
       if (voiceEntry.type === 'note') {
         const noteRender = new Note(this.config, this.log, this.document, key, this.ensemble).render();
         entryRenders.push(noteRender);
+      }
+      if (voiceEntry.type === 'rest') {
+        const restRender = new Rest(this.config, this.log, this.document, key, this.ensemble).render();
+        entryRenders.push(restRender);
       }
     }
 

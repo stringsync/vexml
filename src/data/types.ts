@@ -78,12 +78,11 @@ export type Voice = {
   entries: VoiceEntry[];
 };
 
-export type VoiceEntry = Note;
+export type VoiceEntry = Note | Rest;
 
 export type Note = {
   type: 'note';
-  pitch: string;
-  octave: number;
+  pitch: Pitch;
   head: Notehead;
   dotCount: number;
   stemDirection: StemDirection;
@@ -105,6 +104,19 @@ export type Annotation = {
   text: string;
   horizontalJustification: AnnotationHorizontalJustification | null;
   verticalJustification: AnnotationVerticalJustification | null;
+};
+
+export type Rest = {
+  type: 'rest';
+  measureBeat: Fraction;
+  duration: Fraction;
+  displayPitch: Pitch | null;
+};
+
+export type Pitch = {
+  type: 'pitch';
+  step: string;
+  octave: number;
 };
 
 export type Clef = {

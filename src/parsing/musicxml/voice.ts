@@ -27,6 +27,10 @@ export class Voice {
     for (const event of this.events) {
       if (event.type === 'note') {
         entries.push(event.note.parse(voiceCtx));
+      } else if (event.type === 'rest') {
+        entries.push(event.rest.parse());
+      } else {
+        util.assertUnreachable();
       }
     }
 

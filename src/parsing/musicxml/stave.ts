@@ -45,6 +45,6 @@ export class Stave {
   }
 
   private getVoiceEvents(): VoiceEvent[] {
-    return this.events.filter((event): event is VoiceEvent => event.type === 'note');
+    return this.events.filter((event: any): event is VoiceEvent => typeof event.voiceId === 'string');
   }
 }
