@@ -655,7 +655,7 @@ class EnsembleNoteFactory {
 
     const vexflowStaveNote = new vexflow.StaveNote({
       keys: [`${note.pitch}/${note.octave}`],
-      duration: 'q', // TODO: Use real duration
+      duration: this.getVexflowDuration(note),
       autoStem,
       stemDirection,
     });
@@ -676,5 +676,45 @@ class EnsembleNoteFactory {
       rect: PLACEHOLDER_RECT,
       vexflowTickable: vexflowStaveNote,
     };
+  }
+
+  private getVexflowDuration(note: data.Note): string {
+    const duration = Fraction.fromFractionLike(note.duration);
+
+    function equivalent(numerator: number, denominator: number): boolean {
+      return duration.isEquivalent(new Fraction(numerator, denominator));
+    }
+
+    if (equivalent(4, 1)) {
+      return '1';
+    }
+    if (equivalent(2, 1)) {
+      return '2';
+    }
+    if (equivalent(1, 1)) {
+      return '4';
+    }
+    if (equivalent(1, 2)) {
+      return '8';
+    }
+    if (equivalent(1, 8)) {
+      return '32';
+    }
+    if (equivalent(1, 16)) {
+      return '64';
+    }
+    if (equivalent(1, 32)) {
+      return '128';
+    }
+    if (equivalent(1, 64)) {
+      return '256';
+    }
+    if (equivalent(1, 128)) {
+      return '512';
+    }
+    if (equivalent(1, 256)) {
+      return '1024';
+    }
+    return '1';
   }
 }
