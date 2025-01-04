@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as util from '@/util';
+import * as data from '@/data';
 import * as vexflow from 'vexflow';
 import { Logger } from '@/debug';
 import { Config } from './config';
@@ -7,10 +7,15 @@ import { MeasureEntryKey, PartKey, StaveKey, VoiceEntryKey, VoiceKey } from './t
 import { Document } from './document';
 import { Point, Rect } from '@/spatial';
 import { Pen } from './pen';
+import { NoopRenderContext } from './nooprenderctx';
+import { Fraction } from '@/util';
 
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_PADDING_RIGHT = 6;
 const BRACE_CONNECTOR_PADDING_LEFT = 8;
+
+const ADDITIONAL_CLEF_WIDTH = 10;
+const ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH = 12;
 
 type EnsemblePart = {
   type: 'part';
@@ -123,8 +128,9 @@ export class Ensemble {
       const firstVexflowStave = staves.at(0)!;
       const lastVexflowStave = staves.at(-1)!;
 
+      const isFirstMeausre = this.document.isFirstMeasure(this.key);
       const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-      if (isFirstMeasureEntry) {
+      if (!isFirstMeausre && isFirstMeasureEntry) {
         vexflowStaveConnectors.push(
           new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
         );
@@ -208,12 +214,14 @@ export class Ensemble {
     const hasStaveConnector = partCount > 1 || staveCount > 1;
 
     const vexflowClefs = new Array<vexflow.Clef>();
+    const times = new Array<EnsembleTime>();
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
 
       const voices = this.voices(staveKey);
 
+      const isFirstSystem = this.document.isFirstSystem(staveKey);
       const isLastSystem = this.document.isLastSystem(staveKey);
       const isFirstMeasure = this.document.isFirstMeasure(staveKey);
       const isLastMeasure = this.document.isLastMeasure(staveKey);
@@ -229,17 +237,26 @@ export class Ensemble {
       // We'll update the width later after we collect all the data needed to format the staves.
       const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
 
+      // TODO: Also render when it changes.
       if (isFirstMeasure && isFirstMeasureEntry) {
         const vexflowClef = new vexflow.Clef(clef.sign, 'default', undefined);
         vexflowStave.addModifier(vexflowClef);
         vexflowClefs.push(vexflowClef);
       }
 
+      if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
+        const time = new EnsembleTime(this.config, this.log, this.document, staveKey);
+        times.push(time);
+        for (const vexflowTimeSignature of time.getVexflowTimeSignatures()) {
+          vexflowStave.addModifier(vexflowTimeSignature);
+        }
+      }
+
       if (isFirstPart && isFirstStave && measureLabel) {
         vexflowStave.setMeasure(measureLabel);
       }
 
-      if (isFirstMeasureEntry && !hasStaveConnector) {
+      if (!isFirstMeasure && isFirstMeasureEntry && !hasStaveConnector) {
         vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
       } else {
         vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
@@ -274,10 +291,12 @@ export class Ensemble {
     vexflowFormatter.joinVoices(vexflowVoices);
 
     // Non-voice width components.
-    const vexflowStavePadding = vexflow.Stave.defaultPadding;
-    let clefWidth = 0;
+    let nonVoiceWidth = vexflow.Stave.defaultPadding;
     if (vexflowClefs.length > 0) {
-      clefWidth = util.max(vexflowClefs.map((c) => c.getWidth()));
+      nonVoiceWidth += util.max(vexflowClefs.map((c) => c.getWidth())) + ADDITIONAL_CLEF_WIDTH;
+    }
+    if (times.length > 0) {
+      nonVoiceWidth += util.max(times.map((t) => t.getWidth()));
     }
 
     let initialStaveWidth: number;
@@ -288,7 +307,7 @@ export class Ensemble {
       const baseVoiceWidth = this.config.BASE_VOICE_WIDTH;
       const minWidth = vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices);
 
-      initialStaveWidth = baseVoiceWidth + minWidth + vexflowStavePadding + clefWidth;
+      initialStaveWidth = baseVoiceWidth + minWidth + nonVoiceWidth;
     }
 
     const left = pen;
@@ -320,7 +339,7 @@ export class Ensemble {
     }
 
     // Format! The voice width must be smaller than the stave or the stave won't contain it.
-    const voiceWidth = staveWidth - vexflowStavePadding - clefWidth;
+    const voiceWidth = staveWidth - nonVoiceWidth;
     vexflowFormatter.format(vexflowVoices, voiceWidth);
 
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
@@ -465,106 +484,85 @@ export class Ensemble {
   }
 }
 
-class NoopRenderContext extends vexflow.RenderContext {
-  clear(): void {}
-  setFillStyle(style: string): this {
-    return this;
+/** Encapsulates calculations related to arranging vexflow time signatures in an ensemble. */
+export class EnsembleTime {
+  constructor(private config: Config, private log: Logger, private document: Document, private key: StaveKey) {}
+
+  getWidth(): number {
+    const timeSpecs = this.getTimeSpecs();
+    const padding = ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH * (timeSpecs.length - 1);
+    return this.getVexflowTimeSignatures().reduce((sum, t) => sum + t.getWidth(), padding);
   }
-  setBackgroundFillStyle(style: string): this {
-    return this;
+
+  @util.memoize()
+  getVexflowTimeSignatures(): vexflow.TimeSignature[] {
+    return this.getTimeSpecs().map((t) => new vexflow.TimeSignature(t));
   }
-  setStrokeStyle(style: string): this {
-    return this;
+
+  private getTimeSpecs(): string[] {
+    const time = this.document.getStave(this.key).signature.time;
+    const components = this.toFractions(time.components);
+
+    switch (time.symbol) {
+      case 'common':
+        return ['C'];
+      case 'cut':
+        return ['C|'];
+      case 'single-number':
+        const sum = this.summation(components).simplify();
+        return [this.toSimpleTimeSpecs(sum)];
+      case 'hidden':
+        return [];
+    }
+
+    if (components.length > 1) {
+      return this.toComplexTimeSpecs(components);
+    }
+
+    return [this.toSimpleTimeSpecs(components[0])];
   }
-  setShadowColor(color: string): this {
-    return this;
+
+  private toFractions(components: data.Fraction[]): Fraction[] {
+    return components.map((component) => new Fraction(component.numerator, component.denominator));
   }
-  setShadowBlur(blur: number): this {
-    return this;
+
+  private summation(fractions: Fraction[]): Fraction {
+    return fractions.reduce((sum, component) => sum.add(component), new Fraction(0, 1));
   }
-  setLineWidth(width: number): this {
-    return this;
+
+  private toSimpleTimeSpecs(component: Fraction): string {
+    return `${component.numerator}/${component.denominator}`;
   }
-  setLineCap(capType: CanvasLineCap): this {
-    return this;
-  }
-  setLineDash(dashPattern: number[]): this {
-    return this;
-  }
-  scale(x: number, y: number): this {
-    return this;
-  }
-  rect(x: number, y: number, width: number, height: number): this {
-    return this;
-  }
-  resize(width: number, height: number): this {
-    return this;
-  }
-  fillRect(x: number, y: number, width: number, height: number): this {
-    return this;
-  }
-  clearRect(x: number, y: number, width: number, height: number): this {
-    return this;
-  }
-  pointerRect(x: number, y: number, width: number, height: number): this {
-    return this;
-  }
-  beginPath(): this {
-    return this;
-  }
-  moveTo(x: number, y: number): this {
-    return this;
-  }
-  lineTo(x: number, y: number): this {
-    return this;
-  }
-  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): this {
-    return this;
-  }
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): this {
-    return this;
-  }
-  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise: boolean): this {
-    return this;
-  }
-  fill(attributes?: any): this {
-    return this;
-  }
-  stroke(): this {
-    return this;
-  }
-  closePath(): this {
-    return this;
-  }
-  fillText(text: string, x: number, y: number): this {
-    return this;
-  }
-  save(): this {
-    return this;
-  }
-  restore(): this {
-    return this;
-  }
-  openGroup(cls?: string, id?: string) {}
-  closeGroup(): void {}
-  openRotation(angleDegrees: number, x: number, y: number): void {}
-  closeRotation(): void {}
-  add(child: any): void {}
-  measureText(text: string): vexflow.TextMeasure {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-  set fillStyle(style: string | CanvasGradient | CanvasPattern) {}
-  get fillStyle(): string | CanvasGradient | CanvasPattern {
-    return '';
-  }
-  set strokeStyle(style: string | CanvasGradient | CanvasPattern) {}
-  get strokeStyle(): string | CanvasGradient | CanvasPattern {
-    return '';
-  }
-  setFont(f?: string | vexflow.FontInfo, size?: string | number, weight?: string | number, style?: string): this {
-    return this;
-  }
-  getFont(): string {
-    return '';
+
+  private toComplexTimeSpecs(components: Fraction[]): string[] {
+    const denominators = new Array<number>();
+    const memo: Record<number, number[]> = {};
+
+    for (const component of components) {
+      const numerator = component.numerator;
+      const denominator = component.denominator;
+
+      if (typeof memo[denominator] === 'undefined') {
+        denominators.push(denominator);
+      }
+
+      memo[denominator] ??= [];
+      memo[denominator].push(numerator);
+    }
+
+    const result = new Array<string>();
+
+    for (let index = 0; index < denominators.length; index++) {
+      const denominator = denominators[index];
+      const isLast = index === denominators.length - 1;
+
+      result.push(`${memo[denominator].join('+')}/${denominator}`);
+
+      if (!isLast) {
+        result.push('+');
+      }
+    }
+
+    return result;
   }
 }

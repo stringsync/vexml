@@ -233,7 +233,10 @@ class MeasureEventCalculator {
       });
     }
 
-    const times = attributes.getTimes().map((time) => Time.fromMusicXML(partId, { time }));
+    const times = attributes
+      .getTimes()
+      .map((time) => Time.fromMusicXML(partId, { time }))
+      .filter((time) => time !== null);
     for (const time of times) {
       this.events.push({
         type: 'time',

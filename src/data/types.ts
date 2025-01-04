@@ -1,4 +1,4 @@
-import { AccidentalCode, ClefSign, KeyMode, Notehead, StemDirection } from './enums';
+import { AccidentalCode, ClefSign, KeyMode, Notehead, StemDirection, TimeSymbol } from './enums';
 
 export type Score = {
   type: 'score';
@@ -113,6 +113,7 @@ export type PreviousKey = {
 export type Time = {
   type: 'time';
   components: Fraction[];
+  symbol: TimeSymbol | null;
 };
 
 export type Fraction = {
