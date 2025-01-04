@@ -62,8 +62,9 @@ export class System {
     }
 
     // If there is only one measure, stretch it to the configured width.
+    const isLastSystem = this.document.isLastSystem(this.key);
     const measureCount = this.document.getMeasureCount(this.key);
-    if (measureCount === 1) {
+    if (!isLastSystem && measureCount === 1) {
       return [this.config.WIDTH];
     }
 
