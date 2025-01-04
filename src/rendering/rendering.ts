@@ -49,9 +49,17 @@ export class Rendering {
       s.vexflowStave.setContext(ctx).draw();
     });
 
-    // Draw the stave connectors.
+    // Draw the stave braces.
     partRenders
-      .flatMap((p) => p.vexflowStaveConnectors)
+      .flatMap((p) => p.vexflowBrace)
+      .filter((b) => b !== null)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
+
+    // Draw the stave connectors.
+    measureEntryRenders
+      .flatMap((m) => m.vexflowStaveConnectors)
       .forEach((v) => {
         v.setContext(ctx).draw();
       });

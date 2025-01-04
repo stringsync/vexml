@@ -1,3 +1,4 @@
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
@@ -14,6 +15,7 @@ export type FragmentRender = {
   key: MeasureEntryKey;
   rect: Rect;
   partLabelGroupRender: PartLabelGroupRender | null;
+  vexflowStaveConnectors: vexflow.StaveConnector[];
   partRenders: PartRender[];
 };
 
@@ -41,6 +43,7 @@ export class Fragment {
 
     const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
     const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), ensembleWidth);
+    const vexflowStaveConnectors = ensemble.getVexflowStaveConnectors();
 
     const partRenders = this.renderParts(ensemble);
 
@@ -55,6 +58,7 @@ export class Fragment {
       key: this.key,
       rect,
       partLabelGroupRender,
+      vexflowStaveConnectors,
       partRenders,
     };
   }

@@ -9,15 +9,15 @@ import { Point, Rect } from '@/spatial';
 import { Pen } from './pen';
 
 const MEASURE_NUMBER_PADDING_LEFT = 6;
-const BARLINE_WIDTH = 1;
-const BRACE_CONNECTOR_WIDTH = 8;
+const BARLINE_PADDING_RIGHT = 6;
+const BRACE_CONNECTOR_PADDING_LEFT = 8;
 
 type EnsemblePart = {
   type: 'part';
   key: PartKey;
   rect: Rect;
   staves: EnsembleStave[];
-  vexflowStaveConnectors: vexflow.StaveConnector[];
+  vexflowBrace: vexflow.StaveConnector | null;
 };
 
 type EnsembleStave = {
@@ -112,6 +112,44 @@ export class Ensemble {
   }
 
   @util.memoize()
+  getVexflowStaveConnectors(): vexflow.StaveConnector[] {
+    const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    const staves = this.parts()
+      .flatMap((p) => p.staves)
+      .map((s) => s.vexflowStave);
+
+    if (staves.length > 1) {
+      const firstVexflowStave = staves.at(0)!;
+      const lastVexflowStave = staves.at(-1)!;
+
+      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+      if (isFirstMeasureEntry) {
+        vexflowStaveConnectors.push(
+          new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
+        );
+      }
+
+      const isLastSystem = this.document.isLastSystem(this.key);
+      const isLastMeasure = this.document.isLastMeasure(this.key);
+      const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+      if (isLastMeasureEntry) {
+        if (isLastSystem && isLastMeasure) {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
+          );
+        } else {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
+          );
+        }
+      }
+    }
+
+    return vexflowStaveConnectors;
+  }
+
+  @util.memoize()
   private parts(): EnsemblePart[] {
     const parts = new Array<EnsemblePart>();
 
@@ -129,17 +167,14 @@ export class Ensemble {
       }
     }
 
-    const isLastSystem = this.document.isLastSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isLastMeasure = this.document.isLastMeasure(this.key);
     const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
 
     if (isFirstMeasure) {
       pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
     }
     if (isFirstMeasure && isFirstMeasureEntry && hasBraceConnector) {
-      pen.moveBy({ dx: BRACE_CONNECTOR_WIDTH });
+      pen.moveBy({ dx: BRACE_CONNECTOR_PADDING_LEFT });
     }
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
@@ -148,36 +183,18 @@ export class Ensemble {
       const staves = this.staves(pen, partKey);
       const rect = Rect.merge(staves.map((s) => s.rect));
 
-      const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+      let vexflowBrace: vexflow.StaveConnector | null = null;
 
       if (staves.length > 1) {
         const firstVexflowStave = staves.at(0)!.vexflowStave;
         const lastVexflowStave = staves.at(-1)!.vexflowStave;
 
-        if (isFirstMeasureEntry) {
-          vexflowStaveConnectors.push(
-            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
-          );
-        }
-
-        if (isLastMeasureEntry) {
-          if (isLastSystem && isLastMeasure) {
-            vexflowStaveConnectors.push(
-              new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
-            );
-          } else {
-            vexflowStaveConnectors.push(
-              new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
-            );
-          }
-        }
-
         if (isFirstMeasure && isFirstMeasureEntry) {
-          vexflowStaveConnectors.push(new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace'));
+          vexflowBrace = new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace');
         }
       }
 
-      parts.push({ type: 'part', key: partKey, rect, staves, vexflowStaveConnectors });
+      parts.push({ type: 'part', key: partKey, rect, staves, vexflowBrace });
     }
 
     return parts;
@@ -186,8 +203,9 @@ export class Ensemble {
   private staves(pen: Pen, key: PartKey): EnsembleStave[] {
     const staves = new Array<EnsembleStave>();
 
+    const partCount = this.document.getPartCount(key);
     const staveCount = this.document.getStaveCount(key);
-    const hasStaveConnector = staveCount > 1;
+    const hasStaveConnector = partCount > 1 || staveCount > 1;
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
@@ -247,28 +265,30 @@ export class Ensemble {
 
     const vexflowStavePadding = vexflow.Stave.defaultPadding;
 
-    let width: number;
+    let initialWidth: number;
     if (this.width) {
-      width = this.width;
+      initialWidth = this.width;
     } else {
       const baseVoiceWidth = this.config.BASE_VOICE_WIDTH;
       const minWidth = vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices);
-      width = baseVoiceWidth + minWidth + vexflowStavePadding;
+      initialWidth = baseVoiceWidth + minWidth + vexflowStavePadding;
     }
 
     const left = pen;
     const right = new Pen(this.position);
-    right.moveBy({ dx: width });
+    right.moveBy({ dx: initialWidth });
 
     const isLastMeasure = this.document.isLastMeasure(key);
     const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
     if (isLastMeasure && isLastMeasureEntry) {
-      right.moveBy({ dx: -BARLINE_WIDTH });
+      right.moveBy({ dx: -BARLINE_PADDING_RIGHT });
     }
+
+    const width = right.x - left.x;
 
     // Set the width on the staves.
     for (const stave of staves) {
-      stave.vexflowStave.setWidth(right.x - left.x);
+      stave.vexflowStave.setWidth(width);
     }
 
     // Associate everything with a stave.

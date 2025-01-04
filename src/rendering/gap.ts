@@ -1,3 +1,4 @@
+import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
@@ -11,6 +12,7 @@ export type GapRender = {
   key: MeasureEntryKey;
   rect: Rect;
   partLabelGroupRender: PartLabelGroupRender | null;
+  vexflowStaveConnectors: vexflow.StaveConnector[];
   partRenders: PartRender[];
 };
 
@@ -29,6 +31,7 @@ export class Gap {
       key: this.key,
       rect: Rect.empty(),
       partLabelGroupRender: null,
+      vexflowStaveConnectors: [],
       partRenders: [],
     };
   }
