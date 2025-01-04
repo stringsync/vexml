@@ -62,6 +62,11 @@ export class Fraction {
     return new Fraction(fractionLike.numerator, fractionLike.denominator);
   }
 
+  /** Returns the sum of the fractions. */
+  static sum(...fractions: Fraction[]): Fraction {
+    return fractions.reduce((acc, f) => acc.add(f), Fraction.zero());
+  }
+
   /** Returns the decimal of the fraction. */
   toDecimal(): number {
     return this.numerator / this.denominator;
