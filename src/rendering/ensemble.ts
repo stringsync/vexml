@@ -119,20 +119,31 @@ export class Ensemble {
 
     const partCount = this.document.getPartCount(this.key);
 
+    let hasBraceConnector = false;
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...this.key, partIndex };
 
-      const isLastSystem = this.document.isLastSystem(partKey);
-      const isFirstMeasure = this.document.isFirstMeasure(partKey);
-      const isLastMeasure = this.document.isLastMeasure(partKey);
-      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(partKey);
-      const isLastMeasureEntry = this.document.isLastMeasureEntry(partKey);
-
-      const staveCount = this.document.getStaveCount(partKey);
-
-      if (isFirstMeasure && isFirstMeasureEntry && staveCount > 1) {
-        pen.moveBy({ dx: BRACE_CONNECTOR_WIDTH });
+      if (this.document.getStaveCount(partKey) > 1) {
+        hasBraceConnector = true;
+        break;
       }
+    }
+
+    const isLastSystem = this.document.isLastSystem(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isLastMeasure = this.document.isLastMeasure(this.key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+
+    if (isFirstMeasure) {
+      pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
+    }
+    if (isFirstMeasure && isFirstMeasureEntry && hasBraceConnector) {
+      pen.moveBy({ dx: BRACE_CONNECTOR_WIDTH });
+    }
+
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const partKey: PartKey = { ...this.key, partIndex };
 
       const staves = this.staves(pen, partKey);
       const rect = Rect.merge(staves.map((s) => s.rect));
@@ -188,19 +199,17 @@ export class Ensemble {
       const isFirstStave = this.document.isFirstStave(staveKey);
       const isFirstMeasureEntry = this.document.isFirstMeasureEntry(staveKey);
       const isLastMeasureEntry = this.document.isLastMeasureEntry(staveKey);
-      const measureLabel = this.document.getMeasure(this.key).label;
-
-      let x = pen.x;
-      const y = pen.y;
-
-      if (isFirstMeasure) {
-        x += MEASURE_NUMBER_PADDING_LEFT;
-      }
-
-      const staveLineCount = this.document.getStave(staveKey).signature.lineCount;
+      const measureLabel = this.document.getMeasure(staveKey).label;
+      const staveSignature = this.document.getStave(staveKey).signature;
+      const staveLineCount = staveSignature.lineCount;
+      const clef = staveSignature.clef;
 
       // We'll update the width later after we collect all the data needed to format the staves.
-      const vexflowStave = new vexflow.Stave(x, y, 0, { numLines: staveLineCount });
+      const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
+
+      if (isFirstMeasure && isFirstMeasureEntry) {
+        // vexflowStave.addModifier(new vexflow.Clef(clef.sign, 'default', undefined));
+      }
 
       if (isFirstPart && isFirstStave && measureLabel) {
         vexflowStave.setMeasure(measureLabel);
@@ -247,25 +256,19 @@ export class Ensemble {
       width = baseVoiceWidth + minWidth + vexflowStavePadding;
     }
 
+    const left = pen;
+    const right = new Pen(this.position);
+    right.moveBy({ dx: width });
+
     const isLastMeasure = this.document.isLastMeasure(key);
     const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
     if (isLastMeasure && isLastMeasureEntry) {
-      width -= BARLINE_WIDTH;
-    }
-
-    const isFirstMeasure = this.document.isFirstMeasure(key);
-    if (isFirstMeasure) {
-      width -= MEASURE_NUMBER_PADDING_LEFT;
-    }
-
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
-    if (isFirstMeasure && isFirstMeasureEntry) {
-      width -= BRACE_CONNECTOR_WIDTH;
+      right.moveBy({ dx: -BARLINE_WIDTH });
     }
 
     // Set the width on the staves.
     for (const stave of staves) {
-      stave.vexflowStave.setWidth(width);
+      stave.vexflowStave.setWidth(right.x - left.x);
     }
 
     // Associate everything with a stave.
@@ -305,7 +308,7 @@ export class Ensemble {
     // At this point, we should be able to call getBoundingBox() on all of the vexflow objects. We can now update the
     // rects accordingly.
     for (const stave of staves) {
-      stave.rect = this.getStaveRect(stave);
+      stave.rect = this.getStaveRect(stave, left, right);
       stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
 
       for (const voice of stave.voices) {
@@ -389,34 +392,15 @@ export class Ensemble {
     return { type: 'note', key, rect: Ensemble.placeholderRect(), vexflowTickable: vexflowStaveNote };
   }
 
-  private getStaveRect(stave: EnsembleStave): Rect {
+  private getStaveRect(stave: EnsembleStave, left: Pen, right: Pen): Rect {
     const vexflowStave = stave.vexflowStave;
 
     const box = vexflowStave.getBoundingBox();
 
-    let x = box.x;
+    const x = box.x - left.x + this.position.x;
     const y = box.y;
-    let w = box.w;
+    const w = right.x - this.position.x;
     const h = box.h;
-
-    const isFirstMeasure = this.document.isFirstMeasure(stave.key);
-    if (isFirstMeasure) {
-      x -= MEASURE_NUMBER_PADDING_LEFT;
-      w += MEASURE_NUMBER_PADDING_LEFT;
-    }
-
-    const staveCount = this.document.getStaveCount(stave.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(stave.key);
-    if (isFirstMeasure && isFirstMeasureEntry && staveCount > 1) {
-      x -= BRACE_CONNECTOR_WIDTH;
-      w += BRACE_CONNECTOR_WIDTH;
-    }
-
-    const isLastMeasure = this.document.isLastMeasure(stave.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(stave.key);
-    if (isLastMeasure && isLastMeasureEntry) {
-      w += BARLINE_WIDTH;
-    }
 
     const vexflowVoiceRects = stave.voices
       .map((voice) => voice.vexflowVoice.getBoundingBox())

@@ -1,3 +1,5 @@
+import * as util from '@/util';
+
 /**
  * A generic utility for tracking a metric across scopes.
  */
@@ -21,6 +23,7 @@ export class Budget {
   }
 
   spend(amount: number): void {
+    util.assert(this.remaining >= amount, 'budget exceeded');
     this.remaining -= amount;
   }
 }

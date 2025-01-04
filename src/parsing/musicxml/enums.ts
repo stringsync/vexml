@@ -1,8 +1,5 @@
 import { EnumValues, Enum } from '@/util';
 
-export type ClefSign = EnumValues<typeof CLEF_SIGNS>;
-export const CLEF_SIGNS = new Enum(['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'] as const);
-
 export type KeyMode = EnumValues<typeof KEY_MODES>;
 export const KEY_MODES = new Enum([
   'none',

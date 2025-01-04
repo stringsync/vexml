@@ -93,8 +93,7 @@ export type Accidental = {
 
 export type Clef = {
   type: 'clef';
-  sign: ClefSign | null;
-  line: number | null;
+  sign: ClefSign;
   octaveChange: number | null;
 };
 
