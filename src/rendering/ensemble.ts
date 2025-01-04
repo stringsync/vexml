@@ -214,7 +214,9 @@ export class Ensemble {
 
       const voices = this.voices(staveKey);
 
+      const isLastSystem = this.document.isLastSystem(staveKey);
       const isFirstMeasure = this.document.isFirstMeasure(staveKey);
+      const isLastMeasure = this.document.isLastMeasure(staveKey);
       const isFirstPart = this.document.isFirstPart(staveKey);
       const isFirstStave = this.document.isFirstStave(staveKey);
       const isFirstMeasureEntry = this.document.isFirstMeasureEntry(staveKey);
@@ -244,7 +246,11 @@ export class Ensemble {
       }
 
       if (isLastMeasureEntry && !hasStaveConnector) {
-        vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
+        if (isLastSystem && isLastMeasure) {
+          vexflowStave.setEndBarType(vexflow.Barline.type.END);
+        } else {
+          vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
+        }
       } else {
         vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
       }
