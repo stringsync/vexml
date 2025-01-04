@@ -83,7 +83,7 @@ export const CONFIG = {
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
   }),
   DEBUG_DRAW_SYSTEM_RECTS: t.boolean({
-    defaultValue: true,
+    defaultValue: false,
     help: 'DEBUG_DRAW_SYSTEM_RECTS enables drawing of system rectangles for debugging purposes',
   }),
   DEBUG_DRAW_MEASURE_RECTS: t.boolean({

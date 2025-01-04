@@ -46,7 +46,7 @@ export class DebugRect {
 
     // Draw the main label in the bottom left corner.
     if (this.label) {
-      const bottomLeft = this.rect.corners()[3];
+      const bottomLeft = this.rect.bottomLeft();
       const position = new Point(bottomLeft.x + 1, bottomLeft.y - 1);
       Label.singleLine(this.config, this.log, this.label, position, padding, font).setContext(ctx).draw();
     }

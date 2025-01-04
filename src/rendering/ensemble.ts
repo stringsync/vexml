@@ -171,10 +171,10 @@ class EnsembleFormatter {
     let excessHeight = 0;
     for (const stave of staves) {
       for (const voice of stave.voices) {
+        voice.rect = Rect.fromRectLike(voice.vexflowVoice.getBoundingBox());
         for (const entry of voice.entries) {
           entry.rect = Rect.fromRectLike(entry.vexflowTickable.getBoundingBox());
         }
-        voice.rect = Rect.fromRectLike(voice.vexflowVoice.getBoundingBox());
       }
       stave.rect = this.getStaveRect(stave, left, right);
       stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
@@ -225,11 +225,14 @@ class EnsembleFormatter {
    * need to account for this when positioning the system that this ensemble belongs to.
    */
   private getExcessHeight(stave: EnsembleStave): number {
-    if (stave.voices.length === 0) {
+    const voices = stave.voices;
+    if (voices.length === 0) {
       return 0;
     }
-    const minY = util.min(stave.voices.map((v) => v.rect.y));
-    return util.max([0, stave.vexflowStave.getBoundingBox().y - minY]);
+
+    const highestY = Math.min(...voices.map((v) => v.rect.y));
+    const vexflowStaveY = stave.vexflowStave.getBoundingBox().y;
+    return vexflowStaveY - highestY;
   }
 }
 

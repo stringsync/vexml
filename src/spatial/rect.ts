@@ -50,13 +50,26 @@ export class Rect implements Shape {
     return new Point(this.x + this.w / 2, this.y + this.h / 2);
   }
 
-  corners(): [upperLeft: Point, upperRight: Point, bottomRight: Point, bottomLeft: Point] {
-    return [
-      new Point(this.x, this.y),
-      new Point(this.x + this.w, this.y),
-      new Point(this.x + this.w, this.y + this.h),
-      new Point(this.x, this.y + this.h),
-    ];
+  upperLeft(): Point {
+    return new Point(this.x, this.y);
+  }
+
+  upperRight(): Point {
+    return new Point(this.x + this.w, this.y);
+  }
+
+  bottomLeft(): Point {
+    return new Point(this.x, this.y + this.h);
+  }
+
+  bottomRight(): Point {
+    return new Point(this.x + this.w, this.y + this.h);
+  }
+
+  translate(opts: { dx?: number; dy?: number }): Rect {
+    const dx = opts.dx ?? 0;
+    const dy = opts.dy ?? 0;
+    return new Rect(this.x + dx, this.y + dy, this.w, this.h);
   }
 
   quadrants(): [upperRight: Rect, upperLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
