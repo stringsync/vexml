@@ -7,6 +7,7 @@ import { Accidental } from './accidental';
 import { Fraction } from './fraction';
 import { NoteContext, VoiceContext } from './contexts';
 import { Annotation } from './annotation';
+import { Pitch } from './pitch';
 
 export type NoteMod = Accidental | Annotation;
 
@@ -48,17 +49,12 @@ export class Note {
     return { code, isCautionary };
   }
 
-  getPitch(): string {
-    return this.pitch;
-  }
-
   parse(voiceCtx: VoiceContext): data.Note {
     const noteCtx = new NoteContext(voiceCtx, this.pitch, this.octave);
 
     return {
       type: 'note',
-      pitch: this.pitch,
-      octave: this.octave,
+      pitch: this.getPitch().parse(),
       head: this.head,
       dotCount: this.dotCount,
       stemDirection: this.stemDirection,
@@ -105,5 +101,9 @@ export class Note {
 
   private getMeasureBeat(): Fraction {
     return new Fraction(this.measureBeat);
+  }
+
+  private getPitch(): Pitch {
+    return new Pitch(this.pitch, this.octave);
   }
 }

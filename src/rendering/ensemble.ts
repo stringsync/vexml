@@ -1,6 +1,7 @@
 import * as util from '@/util';
 import * as data from '@/data';
 import * as vexflow from 'vexflow';
+import * as conversions from './conversions';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { MeasureEntryKey, PartKey, StaveKey, VoiceEntryKey, VoiceKey } from './types';
@@ -609,7 +610,7 @@ class EnsembleVoiceFactory {
   }
 }
 
-type EnsembleVoiceEntry = EnsembleNote;
+type EnsembleVoiceEntry = EnsembleNote | EnsembleRest;
 
 class EnsembleVoiceEntryFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
@@ -620,6 +621,8 @@ class EnsembleVoiceEntryFactory {
     switch (entry.type) {
       case 'note':
         return new EnsembleNoteFactory(this.config, this.log, this.document).create(key);
+      case 'rest':
+        return new EnsembleRestFactory(this.config, this.log, this.document).create(key);
     }
   }
 }
@@ -653,12 +656,20 @@ class EnsembleNoteFactory {
         autoStem = true;
     }
 
+    const duration = Fraction.fromFractionLike(note.duration);
+    const [denominator, dots] = conversions.fromFractionToNoteDuration(duration);
+
     const vexflowStaveNote = new vexflow.StaveNote({
-      keys: [`${note.pitch}/${note.octave}`],
-      duration: this.getVexflowDuration(note),
+      keys: [`${note.pitch.step}/${note.pitch.octave}`],
+      duration: denominator,
+      dots,
       autoStem,
       stemDirection,
     });
+
+    for (let index = 0; index < dots; index++) {
+      vexflow.Dot.buildAndAttach([vexflowStaveNote]);
+    }
 
     for (const mod of note.mods) {
       if (mod.type === 'accidental') {
@@ -688,44 +699,87 @@ class EnsembleNoteFactory {
       vexflowTickable: vexflowStaveNote,
     };
   }
+}
 
-  private getVexflowDuration(note: data.Note): string {
-    const duration = Fraction.fromFractionLike(note.duration);
+type EnsembleRest = {
+  type: 'rest';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.StaveNote;
+};
 
-    function equivalent(numerator: number, denominator: number): boolean {
-      return duration.isEquivalent(new Fraction(numerator, denominator));
+class EnsembleRestFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey): EnsembleRest {
+    const vexflowKey = this.getVexflowKey(key);
+    const [denominator, dots] = this.getVexflowDuration(key);
+    const shouldAlignCenter = this.shouldAlignCenter(key);
+    const clef = this.document.getStave(key).signature.clef.sign;
+
+    const vexflowStaveNote = new vexflow.StaveNote({
+      keys: [vexflowKey],
+      duration: `${denominator}r`,
+      dots,
+      clef,
+      alignCenter: shouldAlignCenter,
+    });
+
+    for (let index = 0; index < dots; index++) {
+      vexflow.Dot.buildAndAttach([vexflowStaveNote]);
     }
 
-    if (equivalent(4, 1)) {
-      return '1';
+    return {
+      type: 'rest',
+      key,
+      rect: PLACEHOLDER_RECT,
+      vexflowTickable: vexflowStaveNote,
+    };
+  }
+
+  private getVexflowKey(key: VoiceEntryKey): string {
+    const rest = this.document.getRest(key);
+
+    const displayPitch = rest.displayPitch;
+    if (displayPitch) {
+      return `${displayPitch.step}/${displayPitch.octave}`;
     }
-    if (equivalent(2, 1)) {
-      return '2';
+
+    const clef = this.document.getStave(key).signature.clef;
+    if (clef.sign === 'bass') {
+      return 'D/3';
     }
-    if (equivalent(1, 1)) {
-      return '4';
+
+    const [denominator] = this.getVexflowDuration(key);
+    if (denominator === '2') {
+      return 'B/4';
     }
-    if (equivalent(1, 2)) {
-      return '8';
+    if (denominator === '1') {
+      return 'D/5';
     }
-    if (equivalent(1, 8)) {
-      return '32';
+    return 'B/4';
+  }
+
+  private getVexflowDuration(key: VoiceEntryKey): [denominator: string, dots: number] {
+    const rest = this.document.getRest(key);
+    const duration = Fraction.fromFractionLike(rest.duration);
+    return conversions.fromFractionToNoteDuration(duration);
+  }
+
+  private shouldAlignCenter(key: VoiceEntryKey): boolean {
+    const voiceEntryCount = this.document.getVoiceEntryCount(key);
+    if (voiceEntryCount > 1) {
+      return false;
     }
-    if (equivalent(1, 16)) {
-      return '64';
+
+    const [denominator] = this.getVexflowDuration(key);
+    if (denominator === '1') {
+      return true;
     }
-    if (equivalent(1, 32)) {
-      return '128';
+    if (denominator === '2') {
+      return true;
     }
-    if (equivalent(1, 64)) {
-      return '256';
-    }
-    if (equivalent(1, 128)) {
-      return '512';
-    }
-    if (equivalent(1, 256)) {
-      return '1024';
-    }
-    return '1';
+
+    return false;
   }
 }

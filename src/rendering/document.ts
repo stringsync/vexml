@@ -205,6 +205,12 @@ export class Document {
     return entry;
   }
 
+  getRest(key: VoiceEntryKey): data.Rest {
+    const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
+    util.assert(entry?.type === 'rest', 'expected entry to be a rest');
+    return entry;
+  }
+
   /** Returns a new document with the system arrangements applied. */
   reflow(arrangements: SystemArrangement[]): Document {
     const clone = this.clone();
