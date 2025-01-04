@@ -320,7 +320,31 @@ class SignatureBuilder {
   }
 
   private buildTimes(): Time[] {
-    return [];
+    const seen = new Array<{ partId: string; staveNumber: number }>();
+
+    function isSeen(partId: string, staveNumber: number) {
+      return seen.some((s) => s.partId === partId && s.staveNumber === staveNumber);
+    }
+
+    const next = new Array<Time>();
+    for (const [partId, partTimes] of this.times) {
+      for (const [staveNumber, time] of partTimes) {
+        if (isSeen(partId, staveNumber)) {
+          continue;
+        }
+        seen.push({ partId, staveNumber });
+        next.push(time);
+      }
+    }
+
+    const existing = new Array<Time>();
+    for (const time of this.previousSignature.getTimes()) {
+      if (!isSeen(time.getPartId(), time.getStaveNumber())) {
+        existing.push(time);
+      }
+    }
+
+    return [...next, ...existing];
   }
 
   private diffMetronome(metronome: Metronome): SignatureChange[] {
