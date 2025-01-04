@@ -12,7 +12,7 @@ export type PartRender = {
   key: PartKey;
   rect: Rect;
   staveRenders: StaveRender[];
-  vexflowStaveConnectors: vexflow.StaveConnector[];
+  vexflowBrace: vexflow.StaveConnector | null;
 };
 
 export class Part {
@@ -26,7 +26,7 @@ export class Part {
 
   render(): PartRender {
     const ensemblePart = this.ensemble.getPart(this.key);
-    const vexflowStaveConnectors = ensemblePart.vexflowStaveConnectors;
+    const vexflowBrace = ensemblePart.vexflowBrace;
 
     const staveRenders = this.renderStaves();
 
@@ -37,7 +37,7 @@ export class Part {
       key: this.key,
       rect,
       staveRenders,
-      vexflowStaveConnectors,
+      vexflowBrace,
     };
   }
 
