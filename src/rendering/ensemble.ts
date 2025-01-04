@@ -10,6 +10,8 @@ import { Pen } from './pen';
 import { NoopRenderContext } from './nooprenderctx';
 import { Fraction } from '@/util';
 
+const PLACEHOLDER_RECT = Rect.empty();
+
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BARLINE_PADDING_RIGHT = 6;
 const BRACE_CONNECTOR_PADDING_LEFT = 8;
@@ -42,15 +44,6 @@ type EnsembleVoice = {
   entries: EnsembleVoiceEntry[];
 };
 
-type EnsembleVoiceEntry = EnsembleNote;
-
-type EnsembleNote = {
-  type: 'note';
-  key: VoiceEntryKey;
-  rect: Rect;
-  vexflowTickable: vexflow.StaveNote;
-};
-
 /**
  * An ensemble is a collection of voices across staves and parts that should be formatted together.
  *
@@ -66,10 +59,6 @@ export class Ensemble {
     private position: Point,
     private width: number | null
   ) {}
-
-  private static placeholderRect() {
-    return Rect.empty();
-  }
 
   getWidth(): number {
     return this.width ?? this.parts().at(0)?.rect.w ?? 0;
@@ -277,8 +266,8 @@ export class Ensemble {
       staves.push({
         type: 'stave',
         key: staveKey,
-        rect: Ensemble.placeholderRect(),
-        intrinsicRect: Ensemble.placeholderRect(),
+        rect: PLACEHOLDER_RECT,
+        intrinsicRect: PLACEHOLDER_RECT,
         vexflowStave,
         voices,
       });
@@ -380,71 +369,28 @@ export class Ensemble {
 
   private voices(staveKey: StaveKey): EnsembleVoice[] {
     const voices = new Array<EnsembleVoice>();
-
     const voiceCount = this.document.getVoiceCount(staveKey);
+
     for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
       const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
+      const voiceEntryFactory = new EnsembleVoiceEntryFactory(this.config, this.log, this.document);
+      const voiceEntryCount = this.document.getVoiceEntryCount(voiceKey);
 
       const entries = new Array<EnsembleVoiceEntry>();
 
-      const voiceEntryCount = this.document.getVoiceEntryCount(voiceKey);
       for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
         const voiceEntryKey: VoiceEntryKey = { ...voiceKey, voiceEntryIndex };
 
-        entries.push(this.voiceEntry(voiceEntryKey));
+        entries.push(voiceEntryFactory.create(voiceEntryKey));
       }
 
       const vexflowTickables = entries.map((entry) => entry.vexflowTickable);
       const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
 
-      voices.push({ type: 'voice', key: voiceKey, rect: Ensemble.placeholderRect(), vexflowVoice, entries });
+      voices.push({ type: 'voice', key: voiceKey, rect: PLACEHOLDER_RECT, vexflowVoice, entries });
     }
 
     return voices;
-  }
-
-  private voiceEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
-    // TODO: When there are multiple entry types, we need to handle them here.
-    return this.note(key);
-  }
-
-  private note(key: VoiceEntryKey): EnsembleNote {
-    const note = this.document.getNote(key);
-
-    let autoStem: boolean | undefined;
-    let stemDirection: number | undefined;
-
-    switch (note.stemDirection) {
-      case 'up':
-        stemDirection = vexflow.Stem.UP;
-        break;
-      case 'down':
-        stemDirection = vexflow.Stem.DOWN;
-        break;
-      case 'none':
-        break;
-      default:
-        autoStem = true;
-    }
-
-    const vexflowStaveNote = new vexflow.StaveNote({
-      keys: [`${note.pitch}/${note.octave}`],
-      duration: 'q', // TODO: Use real duration
-      autoStem,
-      stemDirection,
-    });
-
-    for (const mod of note.mods) {
-      if (mod.type === 'accidental') {
-        const vexflowAccidental = new vexflow.Accidental(mod.code);
-        if (mod.isCautionary) {
-          vexflowAccidental.setAsCautionary();
-        }
-        vexflowStaveNote.addModifier(vexflowAccidental);
-      }
-    }
-
-    return { type: 'note', key, rect: Ensemble.placeholderRect(), vexflowTickable: vexflowStaveNote };
   }
 
   private getStaveRect(stave: EnsembleStave, left: Pen, right: Pen): Rect {
@@ -587,5 +533,70 @@ class EnsembleTimeFactory {
 
   private toFractions(components: data.Fraction[]): Fraction[] {
     return components.map((component) => new Fraction(component.numerator, component.denominator));
+  }
+}
+
+type EnsembleVoiceEntry = EnsembleNote;
+
+class EnsembleVoiceEntryFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey): EnsembleVoiceEntry {
+    const entry = this.document.getVoiceEntry(key);
+
+    switch (entry.type) {
+      case 'note':
+        return new EnsembleNoteFactory(this.config, this.log, this.document).create(key);
+    }
+  }
+}
+
+type EnsembleNote = {
+  type: 'note';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.StaveNote;
+};
+
+class EnsembleNoteFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey): EnsembleNote {
+    const note = this.document.getNote(key);
+
+    let autoStem: boolean | undefined;
+    let stemDirection: number | undefined;
+
+    switch (note.stemDirection) {
+      case 'up':
+        stemDirection = vexflow.Stem.UP;
+        break;
+      case 'down':
+        stemDirection = vexflow.Stem.DOWN;
+        break;
+      case 'none':
+        break;
+      default:
+        autoStem = true;
+    }
+
+    const vexflowStaveNote = new vexflow.StaveNote({
+      keys: [`${note.pitch}/${note.octave}`],
+      duration: 'q', // TODO: Use real duration
+      autoStem,
+      stemDirection,
+    });
+
+    for (const mod of note.mods) {
+      if (mod.type === 'accidental') {
+        const vexflowAccidental = new vexflow.Accidental(mod.code);
+        if (mod.isCautionary) {
+          vexflowAccidental.setAsCautionary();
+        }
+        vexflowStaveNote.addModifier(vexflowAccidental);
+      }
+    }
+
+    return { type: 'note', key, rect: PLACEHOLDER_RECT, vexflowTickable: vexflowStaveNote };
   }
 }
