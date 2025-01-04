@@ -36,14 +36,6 @@ type EnsembleStave = {
   voices: EnsembleVoice[];
 };
 
-type EnsembleVoice = {
-  type: 'voice';
-  key: VoiceKey;
-  rect: Rect;
-  vexflowVoice: vexflow.Voice;
-  entries: EnsembleVoiceEntry[];
-};
-
 /**
  * An ensemble is a collection of voices across staves and parts that should be formatted together.
  *
@@ -205,10 +197,17 @@ export class Ensemble {
     const clefs = new Array<EnsembleClef>();
     const times = new Array<EnsembleTime>();
 
+    const voiceFactory = new EnsembleVoiceFactory(this.config, this.log, this.document);
+
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
 
-      const voices = this.voices(staveKey);
+      const voices = new Array<EnsembleVoice>();
+      const voiceCount = this.document.getVoiceCount(staveKey);
+      for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
+        const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
+        voices.push(voiceFactory.create(voiceKey));
+      }
 
       const isFirstSystem = this.document.isFirstSystem(staveKey);
       const isLastSystem = this.document.isLastSystem(staveKey);
@@ -367,32 +366,6 @@ export class Ensemble {
     return staves;
   }
 
-  private voices(staveKey: StaveKey): EnsembleVoice[] {
-    const voices = new Array<EnsembleVoice>();
-    const voiceCount = this.document.getVoiceCount(staveKey);
-
-    for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
-      const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
-      const voiceEntryFactory = new EnsembleVoiceEntryFactory(this.config, this.log, this.document);
-      const voiceEntryCount = this.document.getVoiceEntryCount(voiceKey);
-
-      const entries = new Array<EnsembleVoiceEntry>();
-
-      for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
-        const voiceEntryKey: VoiceEntryKey = { ...voiceKey, voiceEntryIndex };
-
-        entries.push(voiceEntryFactory.create(voiceEntryKey));
-      }
-
-      const vexflowTickables = entries.map((entry) => entry.vexflowTickable);
-      const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
-
-      voices.push({ type: 'voice', key: voiceKey, rect: PLACEHOLDER_RECT, vexflowVoice, entries });
-    }
-
-    return voices;
-  }
-
   private getStaveRect(stave: EnsembleStave, left: Pen, right: Pen): Rect {
     const vexflowStave = stave.vexflowStave;
 
@@ -533,6 +506,34 @@ class EnsembleTimeFactory {
 
   private toFractions(components: data.Fraction[]): Fraction[] {
     return components.map((component) => new Fraction(component.numerator, component.denominator));
+  }
+}
+
+type EnsembleVoice = {
+  type: 'voice';
+  key: VoiceKey;
+  rect: Rect;
+  vexflowVoice: vexflow.Voice;
+  entries: EnsembleVoiceEntry[];
+};
+
+class EnsembleVoiceFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceKey): EnsembleVoice {
+    const voiceEntryFactory = new EnsembleVoiceEntryFactory(this.config, this.log, this.document);
+    const voiceEntryCount = this.document.getVoiceEntryCount(key);
+    const voiceEntries = new Array<EnsembleVoiceEntry>();
+
+    for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
+      const voiceEntryKey: VoiceEntryKey = { ...key, voiceEntryIndex };
+      voiceEntries.push(voiceEntryFactory.create(voiceEntryKey));
+    }
+
+    const vexflowTickables = voiceEntries.map((entry) => entry.vexflowTickable);
+    const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
+
+    return { type: 'voice', key, rect: PLACEHOLDER_RECT, vexflowVoice, entries: voiceEntries };
   }
 }
 
