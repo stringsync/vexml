@@ -43,11 +43,11 @@ export class Fragment {
 
     const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
     const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), ensembleWidth);
-    const vexflowStaveConnectors = ensemble.getVexflowStaveConnectors();
+    const vexflowStaveConnectors = ensemble.getMeasureEntry().vexflowStaveConnectors;
 
     const partRenders = this.renderParts(ensemble);
 
-    const rects = partRenders.map((part) => part.rect);
+    const rects = [ensemble.getMeasureEntry().rect];
     if (partLabelGroupRender) {
       rects.push(partLabelGroupRender.rect);
     }

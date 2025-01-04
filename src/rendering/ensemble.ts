@@ -19,14 +19,6 @@ const BRACE_CONNECTOR_PADDING_LEFT = 8;
 const ADDITIONAL_CLEF_WIDTH = 10;
 const ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH = 12;
 
-type EnsemblePart = {
-  type: 'part';
-  key: PartKey;
-  rect: Rect;
-  staves: EnsembleStave[];
-  vexflowBrace: vexflow.StaveConnector | null;
-};
-
 /**
  * An ensemble is a collection of voices across staves and parts that should be formatted together.
  *
@@ -44,163 +36,62 @@ export class Ensemble {
   ) {}
 
   getWidth(): number {
-    return this.width ?? this.parts().at(0)?.rect.w ?? 0;
+    return this.width ?? this.getMeasureEntry().parts.at(0)?.rect.w ?? 0;
+  }
+
+  @util.memoize()
+  getMeasureEntry(): EnsembleMeasureEntry {
+    const pen = new Pen(this.position);
+    const measureEntry = new EnsembleMeasureEntryFactory(this.config, this.log, this.document).create(this.key, pen);
+    new EnsembleFormatter(this.config, this.log, this.document, this.position, this.width).format(measureEntry, pen);
+    return measureEntry;
   }
 
   getPart(key: PartKey): EnsemblePart {
-    const part = this.parts().find((p) => util.isEqual(p.key, key));
-
+    const part = this.getMeasureEntry().parts.at(key.partIndex);
     util.assertDefined(part);
-
     return part;
   }
 
   getStave(key: StaveKey): EnsembleStave {
-    const stave = this.parts()
-      .flatMap((p) => p.staves)
-      .find((s) => util.isEqual(s.key, key));
-
+    const stave = this.getPart(key).staves.at(key.staveIndex);
     util.assertDefined(stave);
-
     return stave;
   }
 
   getVoice(key: VoiceKey): EnsembleVoice {
-    const voice = this.parts()
-      .flatMap((p) => p.staves)
-      .flatMap((s) => s.voices)
-      .find((v) => util.isEqual(v.key, key));
-
+    const voice = this.getStave(key).voices.at(key.voiceIndex);
     util.assertDefined(voice);
-
     return voice;
   }
 
   getVoiceEntry(key: VoiceEntryKey): EnsembleVoiceEntry {
-    const entry = this.parts()
-      .flatMap((p) => p.staves)
-      .flatMap((s) => s.voices)
-      .flatMap((v) => v.entries)
-      .find((e) => util.isEqual(e.key, key));
-
-    util.assertDefined(entry);
-
-    return entry;
+    const voiceEntry = this.getVoice(key).entries.at(key.voiceEntryIndex);
+    util.assertDefined(voiceEntry);
+    return voiceEntry;
   }
+}
 
-  @util.memoize()
-  getVexflowStaveConnectors(): vexflow.StaveConnector[] {
-    const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+class EnsembleFormatter {
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private position: Point,
+    private width: number | null
+  ) {}
 
-    const staves = this.parts()
-      .flatMap((p) => p.staves)
-      .map((s) => s.vexflowStave);
-
-    if (staves.length > 1) {
-      const firstVexflowStave = staves.at(0)!;
-      const lastVexflowStave = staves.at(-1)!;
-
-      const isFirstMeausre = this.document.isFirstMeasure(this.key);
-      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-      if (!isFirstMeausre && isFirstMeasureEntry) {
-        vexflowStaveConnectors.push(
-          new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
-        );
-      }
-
-      const isLastSystem = this.document.isLastSystem(this.key);
-      const isLastMeasure = this.document.isLastMeasure(this.key);
-      const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
-      if (isLastMeasureEntry) {
-        if (isLastSystem && isLastMeasure) {
-          vexflowStaveConnectors.push(
-            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
-          );
-        } else {
-          vexflowStaveConnectors.push(
-            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
-          );
-        }
-      }
-    }
-
-    return vexflowStaveConnectors;
-  }
-
-  @util.memoize()
-  private parts(): EnsemblePart[] {
-    const parts = new Array<EnsemblePart>();
-
-    const pen = new Pen(this.position);
-
-    const partCount = this.document.getPartCount(this.key);
-
-    let hasBraceConnector = false;
-    for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const partKey: PartKey = { ...this.key, partIndex };
-
-      if (this.document.getStaveCount(partKey) > 1) {
-        hasBraceConnector = true;
-        break;
-      }
-    }
-
-    const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-
-    if (isFirstMeasure) {
-      pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
-    }
-    if (isFirstMeasure && isFirstMeasureEntry && hasBraceConnector) {
-      pen.moveBy({ dx: BRACE_CONNECTOR_PADDING_LEFT });
-    }
-
-    for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      const partKey: PartKey = { ...this.key, partIndex };
-
-      const staves = this.staves(pen, partKey);
-      const rect = Rect.merge(staves.map((s) => s.rect));
-
-      let vexflowBrace: vexflow.StaveConnector | null = null;
-
-      if (staves.length > 1) {
-        const firstVexflowStave = staves.at(0)!.vexflowStave;
-        const lastVexflowStave = staves.at(-1)!.vexflowStave;
-
-        if (isFirstMeasure && isFirstMeasureEntry) {
-          vexflowBrace = new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace');
-        }
-      }
-
-      parts.push({ type: 'part', key: partKey, rect, staves, vexflowBrace });
-    }
-
-    return parts;
-  }
-
-  private staves(pen: Pen, key: PartKey): EnsembleStave[] {
-    const staves = new Array<EnsembleStave>();
-    const staveFactory = new EnsembleStaveFactory(this.config, this.log, this.document);
-    const staveCount = this.document.getStaveCount(key);
-
-    const clefs = new Array<EnsembleClef>();
-    const times = new Array<EnsembleTime>();
-
-    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
-      const staveKey: StaveKey = { ...key, staveIndex };
-      const stave = staveFactory.create(staveKey, pen);
-      staves.push(stave);
-
-      if (stave.clef) {
-        clefs.push(stave.clef);
-      }
-      if (stave.time) {
-        times.push(stave.time);
-      }
-    }
+  /**
+   * Formats the ensemble, updating the rects of all the objects in place.
+   */
+  format(measureEntry: EnsembleMeasureEntry, pen: Pen): void {
+    const key = measureEntry.key;
+    const staves = measureEntry.parts.flatMap((p) => p.staves);
+    const clefs = staves.flatMap((s) => s.clef).filter((c) => c !== null);
+    const times = staves.flatMap((s) => s.time).filter((t) => t !== null);
 
     // Now that we have all the voices, we can format them.
-    const vexflowVoices = staves.flatMap((s) => s.voices.map((v) => v.vexflowVoice));
+    const vexflowVoices = staves.flatMap((s) => s.voices).map((v) => v.vexflowVoice);
     const vexflowFormatter = new vexflow.Formatter();
     vexflowFormatter.joinVoices(vexflowVoices);
 
@@ -290,7 +181,7 @@ export class Ensemble {
       }
     }
 
-    return staves;
+    measureEntry.rect = Rect.merge(staves.map((s) => s.rect));
   }
 
   private getStaveRect(stave: EnsembleStave, left: Pen, right: Pen): Rect {
@@ -326,6 +217,135 @@ export class Ensemble {
     const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
+  }
+}
+
+type EnsembleMeasureEntry = {
+  type: 'measureentry';
+  key: MeasureEntryKey;
+  rect: Rect;
+  parts: EnsemblePart[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
+};
+
+class EnsembleMeasureEntryFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: MeasureEntryKey, pen: Pen): EnsembleMeasureEntry {
+    const parts = new Array<EnsemblePart>();
+    const partFactory = new EnsemblePartFactory(this.config, this.log, this.document);
+    const partCount = this.document.getPartCount(key);
+
+    let hasBraceConnector = false;
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const partKey: PartKey = { ...key, partIndex };
+      if (this.document.getStaveCount(partKey) > 1) {
+        hasBraceConnector = true;
+        break;
+      }
+    }
+
+    const isFirstMeasure = this.document.isFirstMeasure(key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
+    if (isFirstMeasure) {
+      pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
+    }
+    if (isFirstMeasure && isFirstMeasureEntry && hasBraceConnector) {
+      pen.moveBy({ dx: BRACE_CONNECTOR_PADDING_LEFT });
+    }
+
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const partKey: PartKey = { ...key, partIndex };
+      parts.push(partFactory.create(partKey, pen));
+    }
+
+    const vexflowStaveConnectors = this.getVexflowStaveConnectors(key, parts);
+
+    return {
+      type: 'measureentry',
+      key,
+      rect: PLACEHOLDER_RECT,
+      parts,
+      vexflowStaveConnectors,
+    };
+  }
+
+  private getVexflowStaveConnectors(key: MeasureEntryKey, parts: EnsemblePart[]): vexflow.StaveConnector[] {
+    const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    const staves = parts.flatMap((p) => p.staves).map((s) => s.vexflowStave);
+
+    if (staves.length > 1) {
+      const firstVexflowStave = staves.at(0)!;
+      const lastVexflowStave = staves.at(-1)!;
+
+      const isFirstMeausre = this.document.isFirstMeasure(key);
+      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
+      if (!isFirstMeausre && isFirstMeasureEntry) {
+        vexflowStaveConnectors.push(
+          new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
+        );
+      }
+
+      const isLastSystem = this.document.isLastSystem(key);
+      const isLastMeasure = this.document.isLastMeasure(key);
+      const isLastMeasureEntry = this.document.isLastMeasureEntry(key);
+      if (isLastMeasureEntry) {
+        if (isLastSystem && isLastMeasure) {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
+          );
+        } else {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
+          );
+        }
+      }
+    }
+
+    return vexflowStaveConnectors;
+  }
+}
+
+type EnsemblePart = {
+  type: 'part';
+  key: PartKey;
+  rect: Rect;
+  staves: EnsembleStave[];
+  vexflowBrace: vexflow.StaveConnector | null;
+};
+
+class EnsemblePartFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: PartKey, pen: Pen): EnsemblePart {
+    const staves = new Array<EnsembleStave>();
+    const staveFactory = new EnsembleStaveFactory(this.config, this.log, this.document);
+    const staveCount = this.document.getStaveCount(key);
+
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const staveKey: StaveKey = { ...key, staveIndex };
+      staves.push(staveFactory.create(staveKey, pen));
+    }
+
+    let vexflowBrace: vexflow.StaveConnector | null = null;
+
+    const isFirstMeasure = this.document.isFirstMeasure(key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
+    if (isFirstMeasure && isFirstMeasureEntry && staves.length > 1) {
+      const firstVexflowStave = staves.at(0)!.vexflowStave;
+      const lastVexflowStave = staves.at(-1)!.vexflowStave;
+
+      vexflowBrace = new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace');
+    }
+
+    return {
+      type: 'part',
+      key,
+      rect: PLACEHOLDER_RECT,
+      staves,
+      vexflowBrace,
+    };
   }
 }
 
@@ -438,7 +458,13 @@ class EnsembleClefFactory {
     const clef = this.document.getStave(key).signature.clef;
     const vexflowClef = new vexflow.Clef(clef.sign);
     const width = vexflowClef.getWidth() + ADDITIONAL_CLEF_WIDTH;
-    return { type: 'clef', key, vexflowClef, width };
+
+    return {
+      type: 'clef',
+      key,
+      vexflowClef,
+      width,
+    };
   }
 }
 
@@ -555,7 +581,13 @@ class EnsembleVoiceFactory {
     const vexflowTickables = voiceEntries.map((entry) => entry.vexflowTickable);
     const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
 
-    return { type: 'voice', key, rect: PLACEHOLDER_RECT, vexflowVoice, entries: voiceEntries };
+    return {
+      type: 'voice',
+      key,
+      rect: PLACEHOLDER_RECT,
+      vexflowVoice,
+      entries: voiceEntries,
+    };
   }
 }
 
@@ -620,6 +652,11 @@ class EnsembleNoteFactory {
       }
     }
 
-    return { type: 'note', key, rect: PLACEHOLDER_RECT, vexflowTickable: vexflowStaveNote };
+    return {
+      type: 'note',
+      key,
+      rect: PLACEHOLDER_RECT,
+      vexflowTickable: vexflowStaveNote,
+    };
   }
 }
