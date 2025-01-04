@@ -1,34 +1,28 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
-import { ClefSign } from './enums';
+import * as conversions from './conversions';
 
 export class Clef {
   constructor(
     private partId: string,
     private staveNumber: number,
-    private line: number | null,
-    private sign: ClefSign | null,
+    private sign: data.ClefSign,
     private octaveChange: number | null
   ) {}
 
   static default(partId: string, staveNumber: number) {
-    return new Clef(partId, staveNumber, null, null, null);
+    return new Clef(partId, staveNumber, 'treble', null);
   }
 
   static fromMusicXML(partId: string, musicXML: { clef: musicxml.Clef }) {
-    return new Clef(
-      partId,
-      musicXML.clef.getStaveNumber(),
-      musicXML.clef.getLine(),
-      musicXML.clef.getSign(),
-      musicXML.clef.getOctaveChange()
-    );
+    const clefSign = conversions.fromClefPropertiesToClefSign(musicXML.clef.getSign(), musicXML.clef.getLine());
+
+    return new Clef(partId, musicXML.clef.getStaveNumber(), clefSign, musicXML.clef.getOctaveChange());
   }
 
   parse(): data.Clef {
     return {
       type: 'clef',
-      line: this.line,
       sign: this.sign,
       octaveChange: this.octaveChange,
     };
@@ -47,6 +41,6 @@ export class Clef {
   }
 
   isEquivalent(clef: Clef): boolean {
-    return this.line === clef.line && this.sign === clef.sign && this.octaveChange === clef.octaveChange;
+    return this.sign === clef.sign && this.octaveChange === clef.octaveChange;
   }
 }

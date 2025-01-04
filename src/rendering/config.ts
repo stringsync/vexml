@@ -91,7 +91,7 @@ export const CONFIG = {
     help: 'DEBUG_DRAW_MEASURE_RECTS enables drawing of measure rectangles for debugging purposes.',
   }),
   DEBUG_DRAW_STAVE_RECTS: t.boolean({
-    defaultValue: false,
+    defaultValue: true,
     help: 'DEBUG_DRAW_STAVE_RECTS enables drawing of stave rectangles for debugging purposes.',
   }),
   DEBUG_DRAW_STAVE_INTRINSIC_RECTS: t.boolean({

@@ -7,12 +7,25 @@ export type StemDirection = EnumValues<typeof STEM_DIRECTIONS>;
 export const STEM_DIRECTIONS = new Enum(['auto', 'up', 'down', 'none'] as const);
 
 /**
- * Different types of clef symbols.
+ * The translation of the clef sign and line.
  *
- * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/clef-sign/
+ * See https://github.com/0xfe/vexflow/blob/ea48402cb22a312249719fdbdb0766240678156d/src/clef.ts#L68
  */
 export type ClefSign = EnumValues<typeof CLEF_SIGNS>;
-export const CLEF_SIGNS = new Enum(['G', 'F', 'C', 'percussion', 'TAB', 'jianpu', 'none'] as const);
+export const CLEF_SIGNS = new Enum([
+  'treble',
+  'french',
+  'subbass',
+  'baritone-f',
+  'bass',
+  'baritone-c',
+  'tenor',
+  'mezzo-soprano',
+  'soprano',
+  'alto',
+  'percussion',
+  'tab',
+] as const);
 
 /**
  * The <mode> element is used to specify major/minor and other mode distinctions.

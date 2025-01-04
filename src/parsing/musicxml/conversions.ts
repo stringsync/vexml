@@ -156,3 +156,37 @@ export const fromAlterToAccidentalCode = (alter: number | null): data.Accidental
       return 'n';
   }
 };
+
+/** Converts MusicXML clef properties to a `ClefSign`. Defaults to 'treble'. */
+export const fromClefPropertiesToClefSign = (sign: musicxml.ClefSign | null, line: number | null): data.ClefSign => {
+  if (sign === 'G') {
+    // with G line defaults to 2
+    // see https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/line/
+    if (line === 1) return 'french';
+    return 'treble';
+  }
+
+  if (sign === 'F') {
+    if (line === 5) return 'subbass';
+    if (line === 3) return 'baritone-f';
+    return 'bass';
+  }
+
+  if (sign === 'C') {
+    if (line === 5) return 'baritone-c';
+    if (line === 4) return 'tenor';
+    if (line === 2) return 'mezzo-soprano';
+    if (line === 1) return 'soprano';
+    return 'alto';
+  }
+
+  if (sign === 'percussion') {
+    return 'percussion';
+  }
+
+  if (sign === 'TAB') {
+    return 'tab';
+  }
+
+  return 'treble';
+};
