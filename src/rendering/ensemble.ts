@@ -25,13 +25,6 @@ type EnsemblePart = {
   vexflowBrace: vexflow.StaveConnector | null;
 };
 
-type EnsembleTime = {
-  type: 'time';
-  key: StaveKey;
-  vexflowTimeSignatures: vexflow.TimeSignature[];
-  width: number;
-};
-
 type EnsembleStave = {
   type: 'stave';
   key: StaveKey;
@@ -220,7 +213,7 @@ export class Ensemble {
     const staveCount = this.document.getStaveCount(key);
     const hasStaveConnector = partCount > 1 || staveCount > 1;
 
-    const vexflowClefs = new Array<vexflow.Clef>();
+    const clefs = new Array<EnsembleClef>();
     const times = new Array<EnsembleTime>();
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
@@ -239,16 +232,15 @@ export class Ensemble {
       const measureLabel = this.document.getMeasure(staveKey).label;
       const staveSignature = this.document.getStave(staveKey).signature;
       const staveLineCount = staveSignature.lineCount;
-      const clef = staveSignature.clef;
 
       // We'll update the width later after we collect all the data needed to format the staves.
       const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
 
       // TODO: Also render when it changes.
       if (isFirstMeasure && isFirstMeasureEntry) {
-        const vexflowClef = new vexflow.Clef(clef.sign, 'default', undefined);
-        vexflowStave.addModifier(vexflowClef);
-        vexflowClefs.push(vexflowClef);
+        const clef = new EnsembleClefFactory(this.config, this.log, this.document).create(staveKey);
+        clefs.push(clef);
+        vexflowStave.addModifier(clef.vexflowClef);
       }
 
       if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
@@ -299,8 +291,8 @@ export class Ensemble {
 
     // Non-voice width components.
     let nonVoiceWidth = vexflow.Stave.defaultPadding;
-    if (vexflowClefs.length > 0) {
-      nonVoiceWidth += util.max(vexflowClefs.map((c) => c.getWidth())) + ADDITIONAL_CLEF_WIDTH;
+    if (clefs.length > 0) {
+      nonVoiceWidth += util.max(clefs.map((c) => c.width));
     }
     if (times.length > 0) {
       nonVoiceWidth += util.max(times.map((t) => t.width));
@@ -490,6 +482,31 @@ export class Ensemble {
     return new Rect(x, y, w, h);
   }
 }
+
+type EnsembleClef = {
+  type: 'clef';
+  key: StaveKey;
+  vexflowClef: vexflow.Clef;
+  width: number;
+};
+
+class EnsembleClefFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: StaveKey): EnsembleClef {
+    const clef = this.document.getStave(key).signature.clef;
+    const vexflowClef = new vexflow.Clef(clef.sign);
+    const width = vexflowClef.getWidth() + ADDITIONAL_CLEF_WIDTH;
+    return { type: 'clef', key, vexflowClef, width };
+  }
+}
+
+type EnsembleTime = {
+  type: 'time';
+  key: StaveKey;
+  vexflowTimeSignatures: vexflow.TimeSignature[];
+  width: number;
+};
 
 class EnsembleTimeFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
