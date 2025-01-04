@@ -168,20 +168,21 @@ class EnsembleFormatter {
 
     // At this point, we should be able to call getBoundingBox() on all of the vexflow objects. We can now update the
     // rects accordingly.
+    let excessHeight = 0;
     for (const stave of staves) {
-      stave.rect = this.getStaveRect(stave, left, right);
-      stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
-
       for (const voice of stave.voices) {
-        voice.rect = Rect.fromRectLike(voice.vexflowVoice.getBoundingBox());
-
         for (const entry of voice.entries) {
           entry.rect = Rect.fromRectLike(entry.vexflowTickable.getBoundingBox());
         }
+        voice.rect = Rect.fromRectLike(voice.vexflowVoice.getBoundingBox());
       }
+      stave.rect = this.getStaveRect(stave, left, right);
+      stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
+      excessHeight = Math.max(excessHeight, this.getExcessHeight(stave));
     }
 
     measureEntry.rect = Rect.merge(staves.map((s) => s.rect));
+    measureEntry.excessHeight = excessHeight;
   }
 
   private getStaveRect(stave: EnsembleStave, left: Pen, right: Pen): Rect {
@@ -218,12 +219,25 @@ class EnsembleFormatter {
 
     return new Rect(x, y, w, h);
   }
+
+  /**
+   * Returns how much height the voice exceeded the normal vexflow.Stave (not EnsembleStave) boundaries. Callers may
+   * need to account for this when positioning the system that this ensemble belongs to.
+   */
+  private getExcessHeight(stave: EnsembleStave): number {
+    if (stave.voices.length === 0) {
+      return 0;
+    }
+    const minY = util.min(stave.voices.map((v) => v.rect.y));
+    return util.max([0, stave.vexflowStave.getBoundingBox().y - minY]);
+  }
 }
 
 type EnsembleMeasureEntry = {
   type: 'measureentry';
   key: MeasureEntryKey;
   rect: Rect;
+  excessHeight: number;
   parts: EnsemblePart[];
   vexflowStaveConnectors: vexflow.StaveConnector[];
 };
@@ -265,6 +279,7 @@ class EnsembleMeasureEntryFactory {
       type: 'measureentry',
       key,
       rect: PLACEHOLDER_RECT,
+      excessHeight: 0,
       parts,
       vexflowStaveConnectors,
     };
