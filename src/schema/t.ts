@@ -8,7 +8,7 @@ export type SchemaType<T> = T extends { type: 'string'; defaultValue: infer D }
   ? S | D
   : never;
 
-export type Config<T extends Record<any, any>> = {
+export type SchemaConfig<T extends Record<any, any>> = {
   [K in keyof T]: SchemaType<T[K]>;
 };
 
@@ -18,7 +18,7 @@ export type AnySchema = Record<string, SchemaDescriptor>;
 
 /** A class for creating schema types. */
 export class t {
-  static defaultConfig<T extends AnySchema>(schema: T): Config<T> {
+  static defaultConfig<T extends AnySchema>(schema: T): SchemaConfig<T> {
     const config: any = {};
     for (const key in schema) {
       config[key] = schema[key].defaultValue;

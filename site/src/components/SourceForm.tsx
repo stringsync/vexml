@@ -4,7 +4,7 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { LegacyConfig, DEFAULT_CONFIG, Vexml } from '@/index';
+import { LegacyConfig, Vexml, LEGACY_DEFAULT_CONFIG } from '@/index';
 import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
@@ -60,7 +60,7 @@ export const SourceForm = (props: SourceFormProps) => {
     type: 'local',
     musicXML: '',
     backend: 'svg',
-    config: DEFAULT_CONFIG,
+    config: LEGACY_DEFAULT_CONFIG,
     height: 0,
   });
   const onModalContinue = () => {

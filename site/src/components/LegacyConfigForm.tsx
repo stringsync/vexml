@@ -4,28 +4,28 @@ import { useTooltip } from '../hooks/useTooltip';
 
 const SLIDER_VALUE_STYLE: CSSProperties = { width: '3em' };
 
-const DESCRIPTOR_TYPE_ORDER = ['string', 'number', 'enum', 'boolean'] as const;
+const DESCRIPTOR_TYPE_ORDER = ['string', 'number', 'enum', 'boolean', 'debug'] as const;
 
-const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.CONFIG).sort((a, b) => {
+const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.LEGACY_CONFIG_SCHEMA).sort((a, b) => {
   const aIndex = DESCRIPTOR_TYPE_ORDER.indexOf(a[1].type);
   const bIndex = DESCRIPTOR_TYPE_ORDER.indexOf(b[1].type);
   return aIndex - bIndex;
 });
 
-export type ConfigFormProps = {
-  defaultValue: vexml.Config;
-  onChange(config: vexml.Config): void;
+export type LegacyConfigFormProps = {
+  defaultValue?: vexml.LegacyConfig;
+  onChange(config: vexml.LegacyConfig): void;
 };
 
-export const ConfigForm = (props: ConfigFormProps) => {
-  const [config, setConfig] = useState(props.defaultValue ?? vexml.DEFAULT_CONFIG);
+export const LegacyConfigForm = (props: LegacyConfigFormProps) => {
+  const [config, setConfig] = useState(props.defaultValue ?? vexml.LEGACY_DEFAULT_CONFIG);
 
-  const updateNow = (config: vexml.Config) => {
+  const updateNow = (config: vexml.LegacyConfig) => {
     props.onChange(config);
   };
 
   const timeoutRef = useRef(0);
-  const updateLater = (config: vexml.Config) => {
+  const updateLater = (config: vexml.LegacyConfig) => {
     window.clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
       props.onChange(config);
@@ -33,7 +33,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
   };
 
   function get<T>(key: string): T {
-    return config[key as keyof vexml.Config] as T;
+    return config[key as keyof vexml.LegacyConfig] as T;
   }
 
   function set<T>(key: string, opts?: { immediate: boolean }) {
@@ -48,21 +48,70 @@ export const ConfigForm = (props: ConfigFormProps) => {
     };
   }
 
-  function label(key: string): string {
-    return key
+  function render(key: string, descriptor: vexml.LegacySchemaDescriptor): React.ReactNode {
+    const label = key
       .split('_')
       .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+
+    switch (descriptor.type) {
+      case 'string':
+        return (
+          <StringInput
+            key={key}
+            label={label}
+            value={get<string>(key)}
+            defaultValue={descriptor.defaultValue}
+            help={descriptor.help}
+            onChange={set<string>(key)}
+          />
+        );
+      case 'number':
+        return (
+          <NumberInput
+            key={key}
+            label={label}
+            value={get<number>(key)}
+            defaultValue={descriptor.defaultValue}
+            help={descriptor.help}
+            onChange={set<number>(key)}
+          />
+        );
+      case 'boolean':
+        return (
+          <BooleanInput
+            key={key}
+            label={label}
+            value={get<boolean>(key)}
+            help={descriptor.help}
+            onChange={set<boolean>(key, { immediate: true })}
+          />
+        );
+      case 'enum':
+        return (
+          <EnumInput
+            key={key}
+            label={label}
+            value={get<string>(key)}
+            defaultValue={descriptor.defaultValue}
+            choices={descriptor.choices}
+            help={descriptor.help}
+            onChange={set<string>(key, { immediate: true })}
+          />
+        );
+      case 'debug':
+        return render(key, descriptor.child);
+    }
   }
 
   function onResetClick() {
-    const nextConfig = vexml.DEFAULT_CONFIG;
+    const nextConfig = vexml.LEGACY_DEFAULT_CONFIG;
     setConfig(nextConfig);
     updateNow(nextConfig);
   }
 
   const isResetButtonDisabled = Object.entries(config).every(
-    ([key, value]) => value === vexml.DEFAULT_CONFIG[key as keyof vexml.Config]
+    ([key, value]) => value === vexml.LEGACY_DEFAULT_CONFIG[key as keyof vexml.LegacyConfig]
   );
 
   return (
@@ -76,51 +125,9 @@ export const ConfigForm = (props: ConfigFormProps) => {
       <hr />
 
       <div className="row g-3">
-        {SCHEMA_CONFIG_ENTRIES.map(([key, descriptor]) => (
+        {SCHEMA_CONFIG_ENTRIES.map(([key, value]) => (
           <div key={key} className="col-md-6 col-lg-4">
-            {descriptor.type === 'string' && (
-              <StringInput
-                key={key}
-                label={label(key)}
-                value={get<string>(key)}
-                defaultValue={descriptor.defaultValue ?? ''}
-                help={descriptor.help}
-                onChange={set<string>(key)}
-              />
-            )}
-
-            {descriptor.type === 'number' && (
-              <NumberInput
-                key={key}
-                label={label(key)}
-                value={get<number>(key)}
-                defaultValue={descriptor.defaultValue ?? 0}
-                help={descriptor.help}
-                onChange={set<number>(key)}
-              />
-            )}
-
-            {descriptor.type === 'boolean' && (
-              <BooleanInput
-                key={key}
-                label={label(key)}
-                value={get<boolean>(key)}
-                help={descriptor.help}
-                onChange={set<boolean>(key, { immediate: true })}
-              />
-            )}
-
-            {descriptor.type === 'enum' && (
-              <EnumInput
-                key={key}
-                label={label(key)}
-                value={get<string>(key)}
-                defaultValue={descriptor.defaultValue}
-                choices={descriptor.choices}
-                help={descriptor.help}
-                onChange={set<string>(key, { immediate: true })}
-              />
-            )}
+            {render(key, value)}
           </div>
         ))}
       </div>

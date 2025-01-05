@@ -107,7 +107,7 @@ export class Vexml {
   }
 
   /** Renders the vexml instance to an SVG element. */
-  render(opts: RenderOptions): rendering.Rendering {
+  render(opts: RenderOptions): rendering.LegacyRendering {
     const config = { ...DEFAULT_CONFIG, ...opts.config };
     const element = opts.element;
     const width = opts.width;
@@ -176,7 +176,7 @@ export class Vexml {
       },
     });
 
-    return new rendering.Rendering({
+    return new rendering.LegacyRendering({
       config,
       log,
       score: scoreRendering,
