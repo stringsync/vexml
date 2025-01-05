@@ -29,10 +29,8 @@ export class Voice {
 
   render(): VoiceRender {
     const ensembleVoice = this.ensemble.getVoice(this.key);
-
     const vexflowVoice = ensembleVoice.vexflowVoice;
     const rect = ensembleVoice.rect;
-
     const entryRenders = this.renderEntries();
 
     return {
@@ -47,18 +45,15 @@ export class Voice {
   private renderEntries(): VoiceEntryRender[] {
     const entryRenders = new Array<VoiceEntryRender>();
 
-    const voiceEntryCount = this.document.getVoiceEntryCount(this.key);
-    for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
-      const key: VoiceEntryKey = { ...this.key, voiceEntryIndex };
+    const voice = this.ensemble.getVoice(this.key);
 
-      const voiceEntry = this.document.getVoiceEntry(key);
-
+    for (const voiceEntry of voice.entries) {
       if (voiceEntry.type === 'note') {
-        const noteRender = new Note(this.config, this.log, this.document, key, this.ensemble).render();
+        const noteRender = new Note(this.config, this.log, this.document, voiceEntry.key, this.ensemble).render();
         entryRenders.push(noteRender);
       }
       if (voiceEntry.type === 'rest') {
-        const restRender = new Rest(this.config, this.log, this.document, key, this.ensemble).render();
+        const restRender = new Rest(this.config, this.log, this.document, voiceEntry.key, this.ensemble).render();
         entryRenders.push(restRender);
       }
     }

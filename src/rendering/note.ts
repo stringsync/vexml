@@ -1,4 +1,5 @@
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { VoiceEntryKey } from './types';
@@ -25,6 +26,7 @@ export class Note {
   render(): NoteRender {
     const ensembleVoiceEntry = this.ensemble.getVoiceEntry(this.key);
     const vexflowStaveNote = ensembleVoiceEntry.vexflowTickable;
+    util.assert(vexflowStaveNote instanceof vexflow.StaveNote, 'expected vexflowStaveNote to be a StaveNote');
     const rect = ensembleVoiceEntry.rect;
 
     return {

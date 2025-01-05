@@ -436,7 +436,10 @@ class EnsembleStaveFactory {
     const hasStaveConnector = partCount > 1 || staveCount > 1;
 
     // We'll update the width later after we collect all the data needed to format the staves.
-    const vexflowStave = new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
+    const vexflowStave =
+      staveSignature.clef.sign === 'tab'
+        ? new vexflow.TabStave(pen.x, pen.y, 0, { numLines: staveLineCount })
+        : new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
 
     // TODO: Also render when it changes.
     if (isFirstMeasure && isFirstMeasureEntry) {
@@ -700,7 +703,7 @@ class EnsembleVoiceFactory {
   }
 }
 
-type EnsembleVoiceEntry = EnsembleNote | EnsembleRest | EnsembleGhostNote;
+type EnsembleVoiceEntry = EnsembleNote | EnsembleRest | EnsembleGhostNote | EnsembleTabNote | EnsembleTabRest;
 
 class EnsembleVoiceEntryFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
@@ -708,12 +711,91 @@ class EnsembleVoiceEntryFactory {
   create(key: VoiceEntryKey): EnsembleVoiceEntry {
     const entry = this.document.getVoiceEntry(key);
 
+    const clef = this.document.getStave(key).signature.clef.sign;
+
     switch (entry.type) {
       case 'note':
-        return new EnsembleNoteFactory(this.config, this.log, this.document).create(key);
+        return clef === 'tab'
+          ? new EnsembleTabNoteFactory(this.config, this.log, this.document).create(key)
+          : new EnsembleNoteFactory(this.config, this.log, this.document).create(key);
       case 'rest':
-        return new EnsembleRestFactory(this.config, this.log, this.document).create(key);
+        return clef === 'tab'
+          ? new EnsembleTabRestFactory(this.config, this.log, this.document).create(key)
+          : new EnsembleRestFactory(this.config, this.log, this.document).create(key);
     }
+  }
+}
+
+type EnsembleTabNote = {
+  type: 'tabnote';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.TabNote;
+  measureBeat: Fraction;
+  duration: Fraction;
+};
+
+class EnsembleTabNoteFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey): EnsembleTabNote {
+    const note = this.document.getNote(key);
+
+    const vexflowTabNote = new vexflow.TabNote({
+      positions: [{ str: 1, fret: 1 }],
+      duration: note.durationType,
+      dots: note.dotCount,
+      clef: 'tab',
+    });
+
+    for (let index = 0; index < note.dotCount; index++) {
+      vexflow.Dot.buildAndAttach([vexflowTabNote]);
+    }
+
+    const duration = Fraction.fromFractionLike(note.duration);
+    const measureBeat = Fraction.fromFractionLike(note.measureBeat);
+
+    return {
+      type: 'tabnote',
+      key,
+      rect: PLACEHOLDER_RECT,
+      vexflowTickable: vexflowTabNote,
+      duration,
+      measureBeat,
+    };
+  }
+}
+
+type EnsembleTabRest = {
+  type: 'tabrest';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.TabNote;
+  measureBeat: Fraction;
+  duration: Fraction;
+};
+
+class EnsembleTabRestFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey): EnsembleTabRest {
+    const vexflowTabNote = new vexflow.TabNote({
+      positions: [{ str: 1, fret: 1 }],
+      duration: 'w',
+      clef: 'tab',
+    });
+
+    const duration = Fraction.fromFractionLike(this.document.getRest(key).duration);
+    const measureBeat = Fraction.fromFractionLike(this.document.getRest(key).measureBeat);
+
+    return {
+      type: 'tabrest',
+      key,
+      rect: PLACEHOLDER_RECT,
+      vexflowTickable: vexflowTabNote,
+      duration,
+      measureBeat,
+    };
   }
 }
 
