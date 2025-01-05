@@ -89,7 +89,8 @@ export const ConfigForm = (props: ConfigFormProps) => {
               />
             )}
 
-            {descriptor.type === 'number' && (
+            {/* For some reason, this is being rendered as if it weren't a React component.*/}
+            {/* {descriptor.type === 'number' && (
               <NumberInput
                 key={key}
                 label={label(key)}
@@ -98,7 +99,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
                 help={descriptor.help}
                 onChange={set<number>(key)}
               />
-            )}
+            )} */}
 
             {descriptor.type === 'boolean' && (
               <BooleanInput
