@@ -17,7 +17,7 @@ export class UndefinedHeightFormatter implements Formatter {
   }
 
   private getSystemArrangements(): SystemArrangement[] {
-    const arrangements: SystemArrangement[] = [{ measureIndexes: [] }];
+    const arrangements: SystemArrangement[] = [{ from: 0, to: -1 }];
     let remaining = this.config.WIDTH!;
 
     const measureRenders = this.scoreRender.systemRenders.flatMap((systemRender) => systemRender.measureRenders);
@@ -28,11 +28,14 @@ export class UndefinedHeightFormatter implements Formatter {
       const required = measure.rect.w;
 
       if (required > remaining) {
-        arrangements.push({ measureIndexes: [] });
+        arrangements.push({
+          from: measure.absoluteIndex,
+          to: -1,
+        });
         remaining = this.config.WIDTH!;
       }
 
-      arrangements.at(-1)!.measureIndexes.push(measureIndex);
+      arrangements.at(-1)!.to = measure.absoluteIndex;
       remaining -= required;
     }
 

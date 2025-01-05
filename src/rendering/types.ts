@@ -23,7 +23,8 @@ export type PartLabelKey = {
 };
 
 export type SystemArrangement = {
-  measureIndexes: number[];
+  from: number;
+  to: number;
 };
 
 export type SystemKey = {

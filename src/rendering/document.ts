@@ -153,8 +153,8 @@ export class Document {
     return key.staveIndex === this.getStaveCount(key) - 1;
   }
 
-  getStaveMultiRestCount(key: StaveKey): boolean {
-    return this.getStave(key).multiRestCount > 0;
+  getStaveMultiRestCount(key: StaveKey): number {
+    return this.getStave(key).multiRestCount;
   }
 
   getStave(key: StaveKey): data.Stave {
@@ -227,15 +227,15 @@ export class Document {
 
     clone.data.score.systems = [];
 
+    console.log(arrangements);
+
     for (const arrangement of arrangements) {
       const system: data.System = {
         type: 'system',
         measures: new Array<data.Measure>(),
       };
 
-      for (const measureIndex of arrangement.measureIndexes) {
-        system.measures.push(measures[measureIndex]);
-      }
+      system.measures = measures.slice(arrangement.from, arrangement.to + 1);
 
       clone.data.score.systems.push(system);
     }
