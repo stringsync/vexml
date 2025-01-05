@@ -70,8 +70,8 @@ export class Rendering {
     });
 
     // Draw the multi rests.
-    measureRenders.forEach((m) => {
-      m.vexflowMultiRest?.setContext(ctx).draw();
+    staveRenders.forEach((s) => {
+      s.vexflowMultiMeasureRest?.setContext(ctx).draw();
     });
 
     // Draw the debug system rects.

@@ -33,7 +33,8 @@ export class Ensemble {
     private document: Document,
     private key: MeasureEntryKey,
     private position: Point,
-    private width: number | null
+    private width: number | null,
+    private multiRestCount: number
   ) {}
 
   getWidth(): number {
@@ -43,7 +44,11 @@ export class Ensemble {
   @util.memoize()
   getMeasureEntry(): EnsembleMeasureEntry {
     const pen = new Pen(this.position);
-    const measureEntry = new EnsembleMeasureEntryFactory(this.config, this.log, this.document).create(this.key, pen);
+    const measureEntry = new EnsembleMeasureEntryFactory(this.config, this.log, this.document).create(
+      this.key,
+      pen,
+      this.multiRestCount
+    );
     new EnsembleFormatter(this.config, this.log, this.document, this.position, this.width).format(measureEntry, pen);
     return measureEntry;
   }
@@ -90,11 +95,15 @@ class EnsembleFormatter {
     const staves = measureEntry.parts.flatMap((p) => p.staves);
     const clefs = staves.flatMap((s) => s.clef).filter((c) => c !== null);
     const times = staves.flatMap((s) => s.time).filter((t) => t !== null);
+    const hasMultiMeasureRest = staves.some((s) => s.vexflowMultiMeasureRest !== null);
 
     // Now that we have all the voices, we can format them.
     const vexflowVoices = staves.flatMap((s) => s.voices).map((v) => v.vexflowVoice);
     const vexflowFormatter = new vexflow.Formatter();
-    vexflowFormatter.joinVoices(vexflowVoices);
+
+    if (vexflowVoices.length > 0) {
+      vexflowFormatter.joinVoices(vexflowVoices);
+    }
 
     // Non-voice width components.
     let nonVoiceWidth = vexflow.Stave.defaultPadding;
@@ -108,12 +117,14 @@ class EnsembleFormatter {
     let initialStaveWidth: number;
     if (this.width) {
       initialStaveWidth = this.width;
+    } else if (hasMultiMeasureRest) {
+      const baseWidth = this.config.BASE_MULTI_REST_MEASURE_WIDTH;
+      initialStaveWidth = baseWidth + nonVoiceWidth;
     } else {
       // Voice width components.
-      const baseVoiceWidth = this.config.BASE_VOICE_WIDTH;
-      const minWidth = vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices);
-
-      initialStaveWidth = baseVoiceWidth + minWidth + nonVoiceWidth;
+      const baseWidth = this.config.BASE_VOICE_WIDTH;
+      const minWidth = vexflowVoices.length > 0 ? vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices) : 0;
+      initialStaveWidth = baseWidth + minWidth + nonVoiceWidth;
     }
 
     const left = pen;
@@ -135,6 +146,8 @@ class EnsembleFormatter {
 
     // Associate everything with a stave.
     for (const stave of staves) {
+      stave.vexflowMultiMeasureRest?.setStave(stave.vexflowStave);
+
       for (const voice of stave.voices) {
         voice.vexflowVoice.setStave(stave.vexflowStave);
 
@@ -146,7 +159,9 @@ class EnsembleFormatter {
 
     // Format! The voice width must be smaller than the stave or the stave won't contain it.
     const voiceWidth = staveWidth - nonVoiceWidth;
-    vexflowFormatter.format(vexflowVoices, voiceWidth);
+    if (vexflowVoices.length > 0) {
+      vexflowFormatter.format(vexflowVoices, voiceWidth);
+    }
 
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
     // mutates the objects. Before we set the rects, we need to draw the staves to a noop context, then unset the
@@ -249,7 +264,7 @@ type EnsembleMeasureEntry = {
 class EnsembleMeasureEntryFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  create(key: MeasureEntryKey, pen: Pen): EnsembleMeasureEntry {
+  create(key: MeasureEntryKey, pen: Pen, multiRestCount: number): EnsembleMeasureEntry {
     const parts = new Array<EnsemblePart>();
     const partFactory = new EnsemblePartFactory(this.config, this.log, this.document);
     const partCount = this.document.getPartCount(key);
@@ -274,7 +289,7 @@ class EnsembleMeasureEntryFactory {
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const partKey: PartKey = { ...key, partIndex };
-      parts.push(partFactory.create(partKey, pen));
+      parts.push(partFactory.create(partKey, pen, multiRestCount));
     }
 
     const vexflowStaveConnectors = this.getVexflowStaveConnectors(key, parts);
@@ -337,14 +352,14 @@ type EnsemblePart = {
 class EnsemblePartFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  create(key: PartKey, pen: Pen): EnsemblePart {
+  create(key: PartKey, pen: Pen, multiRestCount: number): EnsemblePart {
     const staves = new Array<EnsembleStave>();
     const staveFactory = new EnsembleStaveFactory(this.config, this.log, this.document);
     const staveCount = this.document.getStaveCount(key);
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const staveKey: StaveKey = { ...key, staveIndex };
-      staves.push(staveFactory.create(staveKey, pen));
+      staves.push(staveFactory.create(staveKey, pen, multiRestCount));
     }
 
     let vexflowBrace: vexflow.StaveConnector | null = null;
@@ -377,19 +392,28 @@ type EnsembleStave = {
   voices: EnsembleVoice[];
   clef: EnsembleClef | null;
   time: EnsembleTime | null;
+  vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
 };
 
 class EnsembleStaveFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
 
-  create(key: StaveKey, pen: Pen): EnsembleStave {
+  create(key: StaveKey, pen: Pen, multiRestCount: number): EnsembleStave {
     const voices = new Array<EnsembleVoice>();
     const voiceFactory = new EnsembleVoiceFactory(this.config, this.log, this.document);
     const voiceCount = this.document.getVoiceCount(key);
 
-    for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
-      const voiceKey: VoiceKey = { ...key, voiceIndex };
-      voices.push(voiceFactory.create(voiceKey));
+    let vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null = null;
+
+    if (multiRestCount > 1) {
+      // A multirest that spans a single measure should have a whole rest associated with it. We only want to render
+      // multirests that span multiple measures.
+      vexflowMultiMeasureRest = new vexflow.MultiMeasureRest(multiRestCount, { numberOfMeasures: 1 });
+    } else {
+      for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
+        const voiceKey: VoiceKey = { ...key, voiceIndex };
+        voices.push(voiceFactory.create(voiceKey));
+      }
     }
 
     let clef: EnsembleClef | null = null;
@@ -459,6 +483,7 @@ class EnsembleStaveFactory {
       voices,
       clef,
       time,
+      vexflowMultiMeasureRest,
     };
   }
 }

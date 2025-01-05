@@ -227,8 +227,6 @@ export class Document {
 
     clone.data.score.systems = [];
 
-    console.log(arrangements);
-
     for (const arrangement of arrangements) {
       const system: data.System = {
         type: 'system',

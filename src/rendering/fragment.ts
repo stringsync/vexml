@@ -27,7 +27,8 @@ export class Fragment {
     private document: Document,
     private key: MeasureEntryKey,
     private position: Point,
-    private width: number | null
+    private width: number | null,
+    private multiRestCount: number
   ) {}
 
   render(): FragmentRender {
@@ -43,7 +44,15 @@ export class Fragment {
     const partLabelGroupRender = this.renderPartLabelGroup(pen, widthBudget);
 
     const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
-    const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), ensembleWidth);
+    const ensemble = new Ensemble(
+      this.config,
+      this.log,
+      this.document,
+      this.key,
+      pen.position(),
+      ensembleWidth,
+      this.multiRestCount
+    );
     const ensembleMeasureEntry = ensemble.getMeasureEntry();
     const excessHeight = ensembleMeasureEntry.excessHeight;
     const vexflowStaveConnectors = ensembleMeasureEntry.vexflowStaveConnectors;
@@ -77,7 +86,15 @@ export class Fragment {
     // There's a circular dependency here: PartLabelGroup needs an Ensemble to render, and Ensemble needs to know
     // PartLabelGroup's width to set the vertical positions correctly. We create this temporary ensemble to render the
     // PartLabelGroup, and then throw it away. We can create a new one at the correct position later.
-    const ensemble = new Ensemble(this.config, this.log, this.document, this.key, pen.position(), this.width);
+    const ensemble = new Ensemble(
+      this.config,
+      this.log,
+      this.document,
+      this.key,
+      pen.position(),
+      this.width,
+      this.multiRestCount
+    );
 
     const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position(), ensemble);
     const partLabelGroupRender = partLabelGroup.render();

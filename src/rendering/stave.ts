@@ -12,8 +12,9 @@ export type StaveRender = {
   key: StaveKey;
   rect: Rect;
   intrisicRect: Rect;
-  vexflowStave: vexflow.Stave;
   voiceRenders: VoiceRender[];
+  vexflowStave: vexflow.Stave;
+  vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
 };
 
 export class Stave {
@@ -28,9 +29,13 @@ export class Stave {
   render(): StaveRender {
     const ensembleStave = this.ensemble.getStave(this.key);
 
-    const voiceRenders = this.renderVoices();
+    // Sometimes ensemble may decide not to render a voice (e.g. multi measure rests). Therefore, we expect the number
+    // of voices to differ from the document.
+    const ensembleVoiceCount = ensembleStave.voices.length;
+    const voiceRenders = this.renderVoices(ensembleVoiceCount);
 
     const vexflowStave = ensembleStave.vexflowStave;
+    const vexflowMultiMeasureRest = ensembleStave.vexflowMultiMeasureRest;
     const rect = ensembleStave.rect;
     const intrisicRect = ensembleStave.intrinsicRect;
 
@@ -39,14 +44,14 @@ export class Stave {
       key: this.key,
       rect,
       intrisicRect,
-      vexflowStave,
       voiceRenders,
+      vexflowStave,
+      vexflowMultiMeasureRest,
     };
   }
 
-  private renderVoices(): VoiceRender[] {
+  private renderVoices(voiceCount: number): VoiceRender[] {
     const voiceRenders = new Array<VoiceRender>();
-    const voiceCount = this.document.getVoiceCount(this.key);
 
     for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
       const key = { ...this.key, voiceIndex };

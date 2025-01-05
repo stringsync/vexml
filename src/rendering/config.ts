@@ -78,6 +78,12 @@ export const CONFIG = {
     defaultValue: 80,
     help: 'BASE_VOICE_WIDTH is how much extra width to give voices when calculating stave minimum width.',
   }),
+  BASE_MULTI_REST_MEASURE_WIDTH: t.number({
+    defaultValue: 150,
+    help:
+      'MULTI_REST_MEASURE_WIDTH is how much extra width to give multi-rest measures ' +
+      'when calculating stave minimum width.',
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
