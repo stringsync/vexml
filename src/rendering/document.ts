@@ -157,6 +157,34 @@ export class Document {
     return this.getStave(key).multiRestCount;
   }
 
+  getPreviousStave(key: StaveKey): data.Stave | null {
+    if (key.staveIndex > 0) {
+      const previousStave = this.getStaves(key).at(key.staveIndex - 1);
+      util.assertDefined(previousStave);
+      return previousStave;
+    }
+
+    if (key.measureEntryIndex > 0) {
+      const previousStave = this.getStaves({ ...key, measureEntryIndex: key.measureEntryIndex - 1 }).at(-1);
+      util.assertDefined(previousStave);
+      return previousStave;
+    }
+
+    if (key.measureIndex > 0) {
+      const previousStave = this.getStaves({ ...key, measureIndex: key.measureIndex - 1 }).at(-1);
+      util.assertDefined(previousStave);
+      return previousStave;
+    }
+
+    if (key.systemIndex > 0) {
+      const previousStave = this.getStaves({ ...key, systemIndex: key.systemIndex - 1 }).at(-1);
+      util.assertDefined(previousStave);
+      return previousStave;
+    }
+
+    return null;
+  }
+
   getStave(key: StaveKey): data.Stave {
     const stave = this.getStaves(key).at(key.staveIndex);
     util.assertDefined(stave);

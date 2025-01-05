@@ -444,7 +444,18 @@ class EnsembleStaveFactory {
       vexflowStave.addModifier(clef.vexflowClef);
     }
 
-    if (isFirstSystem && isFirstMeasure && isFirstMeasureEntry) {
+    const isFirstScoreMeasureEntry = isFirstSystem && isFirstMeasure && isFirstMeasureEntry;
+    const currentTimeSignature = this.document.getStave(key).signature.time;
+    const previousTimeSignature = this.document.getPreviousStave(key)?.signature.time;
+    const didTimeSignatureChange =
+      currentTimeSignature.symbol !== previousTimeSignature?.symbol ||
+      currentTimeSignature.components.length !== previousTimeSignature.components.length ||
+      currentTimeSignature.components.some(
+        (component, index) =>
+          component.numerator !== previousTimeSignature?.components[index].numerator ||
+          component.denominator !== previousTimeSignature?.components[index].denominator
+      );
+    if (isFirstScoreMeasureEntry || didTimeSignatureChange) {
       time = new EnsembleTimeFactory(this.config, this.log, this.document).create(key);
       for (const vexflowTimeSignature of time.vexflowTimeSignatures) {
         vexflowStave.addModifier(vexflowTimeSignature);
