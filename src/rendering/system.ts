@@ -11,7 +11,6 @@ export type SystemRender = {
   type: 'system';
   key: SystemKey;
   rect: Rect;
-  remainingMultiRestCount: number;
   measureRenders: MeasureRender[];
 };
 
@@ -31,14 +30,11 @@ export class System {
 
     const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
 
-    const multiRestCount = measureRenders.at(-1)?.multiRestCount ?? 0;
-
     return {
       type: 'system',
       key: this.key,
       rect,
       measureRenders,
-      remainingMultiRestCount: multiRestCount,
     };
   }
 
@@ -47,24 +43,21 @@ export class System {
     const measureCount = this.document.getMeasures(this.key).length;
     const measureWidths = this.getMeasureWidths();
 
-    let remainingMultiRestCount = 0;
+    let multiRestCount = 0;
 
-    let measureIndex = 0;
-    while (measureIndex < measureCount) {
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
-      const width = measureWidths?.at(measureIndex) ?? null;
+      const width = measureWidths?.at(measureIndex) || null;
 
-      if (remainingMultiRestCount === 0) {
+      if (multiRestCount === 0) {
         const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
         const measureRender = measure.render();
         measureRenders.push(measureRender);
-        remainingMultiRestCount = Math.max(0, measureRender.multiRestCount - 1);
+        multiRestCount = Math.max(0, measureRender.multiRestCount - 1);
         pen.moveBy({ dx: measureRender.rect.w });
       } else {
-        remainingMultiRestCount--;
+        multiRestCount--;
       }
-
-      measureIndex++;
     }
 
     return measureRenders;
@@ -84,43 +77,49 @@ export class System {
     }
 
     // Otherwise, we need to determine the minimum required widths of each measure by rendering it.
-    const measureRenders = new Array<MeasureRender>();
+    const minRequiredMeasureWidths = new Array<number>();
 
     // Collect the absolute measure indexes to reflow as a single system. This will allow us to account for contextual
     // widths such as part labels (for first system and first measure) and stave connectors (for first measure entry in
     // any system).
-    const absoluteMeasureIndexes = new Array<number>();
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const key: MeasureKey = { ...this.key, measureIndex };
-      const absoluteMeasureIndex = this.document.getAbsoluteMeasureIndex(key);
-      absoluteMeasureIndexes.push(absoluteMeasureIndex);
+    let document = this.document;
+
+    if (measureCount > 0) {
+      const from = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: 0 });
+      const to = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: measureCount - 1 });
+      document = this.document.reflow([{ from, to }]);
+      if (this.key.systemIndex > 0) {
+        document = document.withoutPartLabels();
+      }
     }
 
-    util.assert(absoluteMeasureIndexes.length > 0, 'expected at least one measure');
-
-    let document = this.document.reflow([{ from: absoluteMeasureIndexes.at(0)!, to: absoluteMeasureIndexes.at(-1)! }]);
-    if (this.key.systemIndex > 0) {
-      document = document.withoutPartLabels();
-    }
+    let multiRestCount = 0;
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       // In here, we're not going to use `this.document`. We're going to use the modified document that only has a
       // single system. We also need to update the key to reflect this.
       const key: MeasureKey = { systemIndex: 0, measureIndex };
-      const measureRender = new Measure(this.config, this.log, document, key, Point.origin(), null).render();
-      measureRenders.push(measureRender);
+
+      if (multiRestCount === 0) {
+        const measureRender = new Measure(this.config, this.log, document, key, Point.origin(), null).render();
+        minRequiredMeasureWidths.push(measureRender.rect.w);
+        multiRestCount = Math.max(0, measureRender.multiRestCount - 1);
+      } else {
+        minRequiredMeasureWidths.push(0);
+        multiRestCount--;
+      }
     }
 
-    const totalMinRequiredSystemWidth = util.sum(measureRenders.map((measureRender) => measureRender.rect.w));
+    const totalMinRequiredSystemWidth = util.sum(minRequiredMeasureWidths);
     const systemFraction = totalMinRequiredSystemWidth / this.config.WIDTH;
     if (this.document.isLastSystem(this.key) && systemFraction < this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD) {
-      return measureRenders.map((measureRender) => measureRender.rect.w);
+      return minRequiredMeasureWidths;
     }
 
     const measureWidths = new Array<number>();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const minRequiredMeasureWidth = measureRenders[measureIndex].rect.w;
+      const minRequiredMeasureWidth = minRequiredMeasureWidths.at(measureIndex) ?? 0;
       const measureFraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
       measureWidths.push(measureFraction * this.config.WIDTH);
     }

@@ -28,10 +28,7 @@ export class UndefinedHeightFormatter implements Formatter {
       const required = measure.rect.w;
 
       if (required > remaining) {
-        arrangements.push({
-          from: measure.absoluteIndex,
-          to: -1,
-        });
+        arrangements.push({ from: measure.absoluteIndex, to: measure.absoluteIndex });
         remaining = this.config.WIDTH!;
       }
 

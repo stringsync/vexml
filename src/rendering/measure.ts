@@ -18,7 +18,6 @@ export type MeasureRender = {
   absoluteIndex: number;
   entryRenders: Array<MeasureEntryRender>;
   multiRestCount: number;
-  vexflowMultiRest: vexflow.MultiMeasureRest | null;
 };
 
 export class Measure {
@@ -35,57 +34,8 @@ export class Measure {
     const pen = new Pen(this.position);
 
     const absoluteIndex = this.document.getAbsoluteMeasureIndex(this.key);
-
     const multiRestCount = this.getMeasureMultiRestCount(this.key);
-    if (multiRestCount > 0) {
-      console.log('multiRestCount', multiRestCount);
-      const width = 200;
-      const vexflowStave = new vexflow.Stave(pen.x, pen.y, width);
-      const height = vexflowStave.getHeight();
-      const vexflowMultiRest = new vexflow.MultiMeasureRest(multiRestCount, {
-        numberOfMeasures: 1,
-      });
-      vexflowMultiRest.setStave(vexflowStave);
-
-      return {
-        type: 'measure',
-        key: this.key,
-        rect: new Rect(pen.x, pen.y, width, height),
-        multiRestCount,
-        vexflowMultiRest,
-        absoluteIndex,
-        entryRenders: [
-          {
-            type: 'fragment',
-            key: { ...this.key, measureEntryIndex: 0 },
-            rect: new Rect(pen.x, pen.y, width, height),
-            excessHeight: 0,
-            partLabelGroupRender: null,
-            vexflowStaveConnectors: [],
-            partRenders: [
-              {
-                type: 'part',
-                key: { ...this.key, measureEntryIndex: 0, partIndex: 0 },
-                rect: new Rect(pen.x, pen.y, width, height),
-                vexflowBrace: null,
-                staveRenders: [
-                  {
-                    type: 'stave',
-                    key: { ...this.key, measureEntryIndex: 0, partIndex: 0, staveIndex: 0 },
-                    rect: new Rect(pen.x, pen.y, width, height),
-                    vexflowStave: vexflowStave,
-                    intrisicRect: new Rect(pen.x, pen.y, width, height),
-                    voiceRenders: [],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-    }
-
-    const entryRenders = this.renderMeasureEntries(pen);
+    const entryRenders = this.renderMeasureEntries(pen, multiRestCount);
 
     const rect = Rect.merge(entryRenders.map((entry) => entry.rect));
 
@@ -94,9 +44,8 @@ export class Measure {
       key: this.key,
       rect,
       entryRenders,
-      multiRestCount: 0,
+      multiRestCount,
       absoluteIndex,
-      vexflowMultiRest: null,
     };
   }
 
@@ -130,22 +79,30 @@ export class Measure {
     return Math.max(0, measureMultiRestCount);
   }
 
-  private renderMeasureEntries(pen: Pen): Array<FragmentRender | GapRender> {
-    const measureEntryWidths = this.getMeasureEntryWidths();
+  private renderMeasureEntries(pen: Pen, multiRestCount: number): Array<FragmentRender | GapRender> {
+    const measureEntryWidths = this.getMeasureEntryWidths(multiRestCount);
 
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
       const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
       const width = measureEntryWidths?.at(measureEntryIndex) ?? null;
       switch (entry.type) {
         case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key, pen.position(), width).render();
+          return new Fragment(
+            this.config,
+            this.log,
+            this.document,
+            key,
+            pen.position(),
+            width,
+            multiRestCount
+          ).render();
         case 'gap':
           return new Gap(this.config, this.log, this.document, key, pen.position()).render();
       }
     });
   }
 
-  private getMeasureEntryWidths(): number[] | null {
+  private getMeasureEntryWidths(multiRestCount: number): number[] | null {
     if (this.width === null) {
       return null;
     }
@@ -156,7 +113,15 @@ export class Measure {
         const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
         switch (measureEntry.type) {
           case 'fragment':
-            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
+            return new Fragment(
+              this.config,
+              this.log,
+              this.document,
+              key,
+              Point.origin(),
+              null,
+              multiRestCount
+            ).render();
           case 'gap':
             return new Gap(this.config, this.log, this.document, key, Point.origin()).render();
         }
