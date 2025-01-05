@@ -44,6 +44,15 @@ export class Document {
     return key.systemIndex === this.getSystemCount() - 1;
   }
 
+  getPreviousSystem(key: SystemKey): data.System | null {
+    if (key.systemIndex > 0) {
+      const previousSystem = this.getSystems().at(key.systemIndex - 1);
+      util.assertDefined(previousSystem);
+      return previousSystem;
+    }
+    return null;
+  }
+
   getSystem(key: SystemKey): data.System {
     const system = this.getSystems().at(key.systemIndex);
     util.assertDefined(system);
@@ -64,6 +73,15 @@ export class Document {
 
   isLastMeasure(key: MeasureKey): boolean {
     return key.measureIndex === this.getMeasureCount(key) - 1;
+  }
+
+  getPreviousMeasure(key: MeasureKey): data.Measure | null {
+    if (key.measureIndex > 0) {
+      const previousMeasure = this.getMeasures(key).at(key.measureIndex - 1);
+      util.assertDefined(previousMeasure);
+      return previousMeasure;
+    }
+    return this.getPreviousSystem(key)?.measures.at(-1) ?? null;
   }
 
   getMeasure(key: MeasureKey): data.Measure {
@@ -91,6 +109,15 @@ export class Document {
 
   isLastMeasureEntry(key: MeasureEntryKey): boolean {
     return key.measureEntryIndex === this.getMeasureEntryCount(key) - 1;
+  }
+
+  getPreviousMeasureEntry(key: MeasureEntryKey): data.MeasureEntry | null {
+    if (key.measureEntryIndex > 0) {
+      const previousEntry = this.getMeasureEntries(key).at(key.measureEntryIndex - 1);
+      util.assertDefined(previousEntry);
+      return previousEntry;
+    }
+    return this.getPreviousMeasure(key)?.entries.at(-1) ?? null;
   }
 
   getMeasureEntry(key: MeasureEntryKey): data.MeasureEntry {
@@ -163,26 +190,7 @@ export class Document {
       util.assertDefined(previousStave);
       return previousStave;
     }
-
-    if (key.measureEntryIndex > 0) {
-      const previousStave = this.getStaves({ ...key, measureEntryIndex: key.measureEntryIndex - 1 }).at(-1);
-      util.assertDefined(previousStave);
-      return previousStave;
-    }
-
-    if (key.measureIndex > 0) {
-      const previousStave = this.getStaves({ ...key, measureIndex: key.measureIndex - 1 }).at(-1);
-      util.assertDefined(previousStave);
-      return previousStave;
-    }
-
-    if (key.systemIndex > 0) {
-      const previousStave = this.getStaves({ ...key, systemIndex: key.systemIndex - 1 }).at(-1);
-      util.assertDefined(previousStave);
-      return previousStave;
-    }
-
-    return null;
+    return this.getPreviousMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(-1) ?? null;
   }
 
   getStave(key: StaveKey): data.Stave {
