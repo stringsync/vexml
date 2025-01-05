@@ -45,6 +45,7 @@ export type Gap = {
   type: 'gap';
   text: string | null;
   width: number | null;
+  parts: Part[];
   durationMs: number;
 };
 
