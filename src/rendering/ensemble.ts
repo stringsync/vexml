@@ -450,18 +450,20 @@ class EnsembleStaveFactory {
     if (isFirstMeasure && isFirstMeasureEntry) {
       clef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
       vexflowStave.addModifier(clef.vexflowClef);
+      vexflowStave.setClef(clef.sign);
     }
 
-    const nextStaveSignature = this.document.getNextStave(key)?.signature;
+    const nextStaveSignature = this.document.getNextPlayedStave(key)?.signature;
     const willClefChange = nextStaveSignature && staveSignature.clef.sign !== nextStaveSignature?.clef.sign;
     if (willClefChange) {
       endClef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
       vexflowStave.addEndModifier(endClef.vexflowClef);
+      vexflowStave.setEndClef(endClef.sign);
     }
 
     const isFirstScoreMeasureEntry = isFirstSystem && isFirstMeasure && isFirstMeasureEntry;
     const currentTimeSignature = this.document.getStave(key).signature.time;
-    const previousTimeSignature = this.document.getPreviousStave(key)?.signature.time;
+    const previousTimeSignature = this.document.getPreviouslyPlayedStave(key)?.signature.time;
     const didTimeSignatureChange =
       currentTimeSignature.symbol !== previousTimeSignature?.symbol ||
       currentTimeSignature.components.length !== previousTimeSignature.components.length ||
@@ -521,9 +523,6 @@ class EnsembleStaveFactory {
    */
   private adjustStems(voices: EnsembleVoice[]): void {
     const voicesWithNotes = voices.filter((voice) => voice.entries.some((entry) => entry.type === 'note'));
-    if (voicesWithNotes.length <= 1) {
-      return;
-    }
 
     util.sortBy(
       voicesWithNotes,
@@ -560,6 +559,7 @@ type EnsembleClef = {
   key: StaveKey;
   vexflowClef: vexflow.Clef;
   width: number;
+  sign: data.ClefSign;
 };
 
 class EnsembleClefFactory {
@@ -575,6 +575,7 @@ class EnsembleClefFactory {
       key,
       vexflowClef,
       width,
+      sign: clef.sign,
     };
   }
 }
