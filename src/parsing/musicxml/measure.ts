@@ -4,7 +4,7 @@ import { Fragment } from './fragment';
 import { MeasureEvent, StaveEvent } from './types';
 import { Fraction } from '@/util';
 import { Signature } from './signature';
-import { MeasureContext } from './contexts';
+import { MeasureContext, SystemContext } from './contexts';
 
 type SignatureRange = {
   signature: Signature;
@@ -26,8 +26,12 @@ export class Measure {
     );
   }
 
-  parse(): data.Measure {
-    const measureCtx = new MeasureContext(this.index);
+  getEvents(): MeasureEvent[] {
+    return this.events;
+  }
+
+  parse(systemCtx: SystemContext): data.Measure {
+    const measureCtx = new MeasureContext(systemCtx, this.index);
 
     return {
       type: 'measure',

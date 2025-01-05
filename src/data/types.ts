@@ -24,7 +24,7 @@ export type System = {
 export type Measure = {
   type: 'measure';
   label: number;
-  entries: Array<MeasureEntry>;
+  entries: MeasureEntry[];
 };
 
 export type MeasureEntry = Fragment | Gap;
@@ -63,6 +63,7 @@ export type Stave = {
   type: 'stave';
   signature: StaveSignature;
   voices: Voice[];
+  multiRestCount: number;
 };
 
 export type StaveSignature = {

@@ -11,12 +11,40 @@ import { Key } from './key';
  *
  * NOTE: This code must **not** depend on any other parsing code because it will create an undesireble dependency graph.
  */
+export class SystemContext {
+  // part ID -> nullable stave number -> multi rest count
+  // When the stave number is null, the multi rest count applies to all staves in the part.
+  private multiRestCounts = new Map<string, Map<number | null, number>>();
+
+  getMultiRestCount(partId: string, staveNumber: number | null): number {
+    return this.multiRestCounts.get(partId)?.get(null) ?? this.multiRestCounts.get(partId)?.get(staveNumber) ?? 0;
+  }
+
+  incrementMultiRestCount(partId: string, staveNumber: number | null, count: number): void {
+    if (!this.multiRestCounts.has(partId)) {
+      this.multiRestCounts.set(partId, new Map());
+    }
+    this.multiRestCounts.get(partId)!.set(staveNumber, count + this.getMultiRestCount(partId, staveNumber));
+  }
+
+  decrementMultiRestCounts(): void {
+    for (const partId of this.multiRestCounts.keys()) {
+      const staveNumbers = this.multiRestCounts.get(partId)!.keys();
+      for (const staveNumber of staveNumbers) {
+        const count = this.getMultiRestCount(partId, staveNumber);
+        if (count > 0) {
+          this.multiRestCounts.get(partId)!.set(staveNumber, count - 1);
+        }
+      }
+    }
+  }
+}
 
 export class MeasureContext {
-  // partId -> pitch -> octave -> accidental code
+  // part ID -> pitch -> octave -> accidental code
   private accidentals: Record<string, Record<string, Record<number, data.AccidentalCode>>> = {};
 
-  constructor(private index: number) {}
+  constructor(private system: SystemContext, private index: number) {}
 
   getIndex(): number {
     return this.index;
@@ -30,6 +58,10 @@ export class MeasureContext {
     this.accidentals[partId] ??= {};
     this.accidentals[partId][pitch] ??= {};
     this.accidentals[partId][pitch][octave] = accidental;
+  }
+
+  getMultiRestCount(partId: string, staveNumber: number): number {
+    return this.system.getMultiRestCount(partId, staveNumber);
   }
 }
 
@@ -46,6 +78,10 @@ export class FragmentContext {
 
   setActiveAccidental(partId: string, pitch: string, octave: number, accidental: data.AccidentalCode) {
     this.measure.setActiveAccidental(partId, pitch, octave, accidental);
+  }
+
+  getMultiRestCount(partId: string, staveNumber: number): number {
+    return this.measure.getMultiRestCount(partId, staveNumber);
   }
 }
 
@@ -67,6 +103,10 @@ export class PartContext {
   setActiveAccidental(pitch: string, octave: number, accidental: data.AccidentalCode) {
     this.fragment.setActiveAccidental(this.id, pitch, octave, accidental);
   }
+
+  getMultiRestCount(staveNumber: number): number {
+    return this.fragment.getMultiRestCount(this.id, staveNumber);
+  }
 }
 
 export class StaveContext {
@@ -86,6 +126,10 @@ export class StaveContext {
 
   setActiveAccidental(pitch: string, octave: number, accidental: data.AccidentalCode) {
     this.part.setActiveAccidental(pitch, octave, accidental);
+  }
+
+  getMultiRestCount(): number {
+    return this.part.getMultiRestCount(this.number);
   }
 }
 
