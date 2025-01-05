@@ -211,13 +211,8 @@ export class Document {
     return this.getStave(key).multiRestCount;
   }
 
-  getPreviousStave(key: StaveKey): data.Stave | null {
-    if (key.staveIndex > 0) {
-      const previousStave = this.getStaves(key).at(key.staveIndex - 1);
-      util.assertDefined(previousStave);
-      return previousStave;
-    }
-    return this.getPreviousMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(-1) ?? null;
+  getPreviouslyPlayedStave(key: StaveKey): data.Stave | null {
+    return this.getPreviousMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
   }
 
   getStave(key: StaveKey): data.Stave {
@@ -226,13 +221,8 @@ export class Document {
     return stave;
   }
 
-  getNextStave(key: StaveKey): data.Stave | null {
-    if (key.staveIndex < this.getStaveCount(key) - 1) {
-      const nextStave = this.getStaves(key).at(key.staveIndex + 1);
-      util.assertDefined(nextStave);
-      return nextStave;
-    }
-    return this.getNextMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(0) ?? null;
+  getNextPlayedStave(key: StaveKey): data.Stave | null {
+    return this.getNextMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
   }
 
   getVoices(key: StaveKey): data.Voice[] {
