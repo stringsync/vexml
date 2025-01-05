@@ -59,6 +59,15 @@ export class Document {
     return system;
   }
 
+  getNextSystem(key: SystemKey): data.System | null {
+    if (key.systemIndex < this.getSystemCount() - 1) {
+      const nextSystem = this.getSystems().at(key.systemIndex + 1);
+      util.assertDefined(nextSystem);
+      return nextSystem;
+    }
+    return null;
+  }
+
   getMeasures(key: SystemKey): data.Measure[] {
     return this.getSystem(key).measures;
   }
@@ -88,6 +97,15 @@ export class Document {
     const measure = this.getMeasures(key).at(key.measureIndex);
     util.assertDefined(measure);
     return measure;
+  }
+
+  getNextMeasure(key: MeasureKey): data.Measure | null {
+    if (key.measureIndex < this.getMeasureCount(key) - 1) {
+      const nextMeasure = this.getMeasures(key).at(key.measureIndex + 1);
+      util.assertDefined(nextMeasure);
+      return nextMeasure;
+    }
+    return this.getNextSystem(key)?.measures.at(0) ?? null;
   }
 
   getAbsoluteMeasureIndex(key: MeasureKey): number {
@@ -124,6 +142,15 @@ export class Document {
     const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
     util.assertDefined(entry);
     return entry;
+  }
+
+  getNextMeasureEntry(key: MeasureEntryKey): data.MeasureEntry | null {
+    if (key.measureEntryIndex < this.getMeasureEntryCount(key) - 1) {
+      const nextEntry = this.getMeasureEntries(key).at(key.measureEntryIndex + 1);
+      util.assertDefined(nextEntry);
+      return nextEntry;
+    }
+    return this.getNextMeasure(key)?.entries.at(0) ?? null;
   }
 
   getFragment(key: MeasureEntryKey): data.Fragment {
@@ -197,6 +224,15 @@ export class Document {
     const stave = this.getStaves(key).at(key.staveIndex);
     util.assertDefined(stave);
     return stave;
+  }
+
+  getNextStave(key: StaveKey): data.Stave | null {
+    if (key.staveIndex < this.getStaveCount(key) - 1) {
+      const nextStave = this.getStaves(key).at(key.staveIndex + 1);
+      util.assertDefined(nextStave);
+      return nextStave;
+    }
+    return this.getNextMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(0) ?? null;
   }
 
   getVoices(key: StaveKey): data.Voice[] {
