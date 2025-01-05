@@ -25,6 +25,7 @@ export class Stave {
       type: 'stave',
       signature: this.signature.asStaveSignature(this.partId, this.number).parse(),
       voices: this.getVoices().map((voice) => voice.parse(staveCtx)),
+      multiRestCount: staveCtx.getMultiRestCount(),
     };
   }
 

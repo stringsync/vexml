@@ -13,14 +13,35 @@ import { Time } from './time';
 import { Metronome } from './metronome';
 import { Note } from './note';
 import { Rest } from './rest';
+import { SystemContext } from './contexts';
 
 export class System {
   constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
   parse(): data.System {
+    const systemCtx = new SystemContext();
+
+    const parsedMeasures = new Array<data.Measure>();
+
+    for (const measure of this.getMeasures()) {
+      const multiRestEvents = measure.getEvents().filter((event) => event.type === 'multirest');
+      for (const multiRestEvent of multiRestEvents) {
+        systemCtx.incrementMultiRestCount(
+          multiRestEvent.partId,
+          multiRestEvent.staveNumber,
+          multiRestEvent.measureCount
+        );
+      }
+
+      const parsedMeasure = measure.parse(systemCtx);
+      parsedMeasures.push(parsedMeasure);
+
+      systemCtx.decrementMultiRestCounts();
+    }
+
     return {
       type: 'system',
-      measures: this.getMeasures().map((measure) => measure.parse()),
+      measures: parsedMeasures,
     };
   }
 
