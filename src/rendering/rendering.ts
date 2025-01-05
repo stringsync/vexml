@@ -69,6 +69,11 @@ export class Rendering {
       v.vexflowVoice.setContext(ctx).draw();
     });
 
+    // Draw the multi rests.
+    measureRenders.forEach((m) => {
+      m.vexflowMultiRest?.setContext(ctx).draw();
+    });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {

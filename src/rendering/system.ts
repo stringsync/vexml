@@ -11,6 +11,7 @@ export type SystemRender = {
   type: 'system';
   key: SystemKey;
   rect: Rect;
+  remainingMultiRestCount: number;
   measureRenders: MeasureRender[];
 };
 
@@ -30,11 +31,14 @@ export class System {
 
     const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
 
+    const multiRestCount = measureRenders.at(-1)?.multiRestCount ?? 0;
+
     return {
       type: 'system',
       key: this.key,
       rect,
       measureRenders,
+      remainingMultiRestCount: multiRestCount,
     };
   }
 
@@ -43,13 +47,24 @@ export class System {
     const measureCount = this.document.getMeasures(this.key).length;
     const measureWidths = this.getMeasureWidths();
 
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+    let remainingMultiRestCount = 0;
+
+    let measureIndex = 0;
+    while (measureIndex < measureCount) {
       const measureKey: MeasureKey = { ...this.key, measureIndex };
       const width = measureWidths?.at(measureIndex) ?? null;
-      const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
-      const measureRender = measure.render();
-      measureRenders.push(measureRender);
-      pen.moveBy({ dx: measureRender.rect.w });
+
+      if (remainingMultiRestCount === 0) {
+        const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
+        const measureRender = measure.render();
+        measureRenders.push(measureRender);
+        remainingMultiRestCount = Math.max(0, measureRender.multiRestCount - 1);
+        pen.moveBy({ dx: measureRender.rect.w });
+      } else {
+        remainingMultiRestCount--;
+      }
+
+      measureIndex++;
     }
 
     return measureRenders;
@@ -81,7 +96,9 @@ export class System {
       absoluteMeasureIndexes.push(absoluteMeasureIndex);
     }
 
-    let document = this.document.reflow([{ measureIndexes: absoluteMeasureIndexes }]);
+    util.assert(absoluteMeasureIndexes.length > 0, 'expected at least one measure');
+
+    let document = this.document.reflow([{ from: absoluteMeasureIndexes.at(0)!, to: absoluteMeasureIndexes.at(-1)! }]);
     if (this.key.systemIndex > 0) {
       document = document.withoutPartLabels();
     }
