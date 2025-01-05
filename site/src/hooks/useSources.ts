@@ -4,7 +4,7 @@ import { Source } from '../types';
 import { useJsonLocalStorage } from './useJsonLocalStorage';
 
 const DEFAULT_SOURCES: Source[] = [
-  { type: 'example', path: DEFAULT_EXAMPLE_PATH, backend: 'svg', config: vexml.DEFAULT_CONFIG, height: 0 },
+  { type: 'example', path: DEFAULT_EXAMPLE_PATH, backend: 'svg', config: vexml.LEGACY_DEFAULT_CONFIG, height: 0 },
 ];
 
 export const useSources = () => {
@@ -49,7 +49,7 @@ const isConfig = (config: any): config is vexml.Config => {
     return false;
   }
 
-  const check = (key: string, descriptor: vexml.SchemaDescriptor): boolean => {
+  const check = (key: string, descriptor: vexml.LegacySchemaDescriptor): boolean => {
     switch (descriptor.type) {
       case 'string':
       case 'number':
@@ -62,7 +62,7 @@ const isConfig = (config: any): config is vexml.Config => {
     }
   };
 
-  for (const [key, descriptor] of Object.entries(vexml.CONFIG_SCHEMA)) {
+  for (const [key, descriptor] of Object.entries(vexml.LEGACY_CONFIG_SCHEMA)) {
     if (!check(key, descriptor)) {
       return false;
     }

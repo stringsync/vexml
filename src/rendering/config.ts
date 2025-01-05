@@ -1,7 +1,7 @@
 import * as schema from '@/schema';
 import { t } from '@/schema';
 
-export type Config = schema.Config<typeof CONFIG>;
+export type Config = schema.SchemaConfig<typeof CONFIG>;
 
 export const CONFIG = {
   DRAWING_BACKEND: t.enum({

@@ -14,12 +14,12 @@ export type LegacyVexmlProps = {
   backend: RenderingBackend;
   config: vexml.LegacyConfig;
   cursorInputs: CursorInput[];
-  onResult: (result: VexmlResult) => void;
+  onResult: (result: LegacyVexmlResult) => void;
   onEvent: vexml.AnyEventListener;
   onPartIdsChange: (partIds: string[]) => void;
 };
 
-export type VexmlResult =
+export type LegacyVexmlResult =
   | { type: 'none' }
   | { type: 'empty' }
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
@@ -43,7 +43,7 @@ export const LegacyVexml = ({
 
   const width = useWidth(divRef);
 
-  const [rendering, setRendering] = useState<vexml.Rendering | null>(null);
+  const [rendering, setRendering] = useState<vexml.LegacyRendering | null>(null);
   const [cursors, setCursors] = useState<vexml.Cursor[]>([]);
 
   const durationMs = rendering?.getDurationMs() ?? 0;
@@ -275,7 +275,7 @@ export const LegacyVexml = ({
     }
 
     const start = new Date();
-    let rendering: vexml.Rendering | null = null;
+    let rendering: vexml.LegacyRendering | null = null;
 
     try {
       rendering = vexml.Vexml.fromMusicXML(musicXML).render({

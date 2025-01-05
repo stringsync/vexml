@@ -1,7 +1,7 @@
-import { VexmlResult } from './LegacyVexml';
+import { LegacyVexmlResult } from './LegacyVexml';
 
 export type SourceInfoProps = {
-  vexmlResult: VexmlResult;
+  vexmlResult: LegacyVexmlResult;
   musicXML: string;
   isMusicXMLLoading: boolean;
   musicXMLError: Error | null;

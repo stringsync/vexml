@@ -121,6 +121,12 @@ export class Rendering {
     return new Rendering(config, log, document, ctx, root, scoreRender);
   }
 
+  /** Returns the element that vexflow is directly rendered on. */
+  getVexflowElement(): SVGElement | HTMLCanvasElement {
+    return this.root.getVexflowElement();
+  }
+
+  /** Clears the rendering. */
   clear(): void {
     this.root.remove();
   }

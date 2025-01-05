@@ -9,7 +9,7 @@ import { Config } from '@/config';
 import { ScoreRendering } from './score';
 
 /** The result of rendering MusicXML. */
-export class Rendering {
+export class LegacyRendering {
   private config: Config;
   private log: debug.Logger;
   private score: ScoreRendering;
