@@ -21,12 +21,12 @@ export class Metronome {
 
   static fromMusicXML(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {
     const parenthesis = musicXML.metronome.parentheses() ?? undefined;
-    const duration = conversions.fromNoteTypeToNoteDurationDenominator(musicXML.mark.left.unit) ?? undefined;
+    const duration = conversions.fromNoteTypeToDurationType(musicXML.mark.left.unit) ?? undefined;
     const dots = musicXML.mark.left.dotCount;
 
     switch (musicXML.mark.right.type) {
       case 'note':
-        const duration2 = conversions.fromNoteTypeToNoteDurationDenominator(musicXML.mark.right.unit) ?? undefined;
+        const duration2 = conversions.fromNoteTypeToDurationType(musicXML.mark.right.unit) ?? undefined;
         const dots2 = musicXML.mark.right.dotCount;
         return new Metronome({ parenthesis, duration, dots, duration2, dots2 });
       case 'bpm':

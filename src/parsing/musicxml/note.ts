@@ -21,6 +21,7 @@ export class Note {
     private pitch: string,
     private octave: number,
     private head: Notehead,
+    private durationType: data.DurationType,
     private dotCount: number,
     private stemDirection: StemDirection,
     private duration: util.Fraction,
@@ -33,11 +34,29 @@ export class Note {
     const pitch = musicXML.note.getStep();
     const octave = musicXML.note.getOctave();
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
-    const dotCount = musicXML.note.getDotCount();
+
+    let durationType = conversions.fromNoteTypeToDurationType(musicXML.note.getType());
+    let dotCount = musicXML.note.getDotCount();
+    if (!durationType) {
+      [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
+    }
+
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
     const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric({ lyric }));
     const accidentalProps = Note.getAccidentalProps(musicXML);
-    return new Note(pitch, octave, head, dotCount, stem, duration, measureBeat, annotations, accidentalProps);
+
+    return new Note(
+      pitch,
+      octave,
+      head,
+      durationType,
+      dotCount,
+      stem,
+      duration,
+      measureBeat,
+      annotations,
+      accidentalProps
+    );
   }
 
   private static getAccidentalProps(musicXML: { note: musicxml.Note }): NoteAccidentalProps {
@@ -58,6 +77,7 @@ export class Note {
       head: this.head,
       dotCount: this.dotCount,
       stemDirection: this.stemDirection,
+      durationType: this.durationType,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
       mods: this.getMods(noteCtx).map((mod) => mod.parse(noteCtx)),
