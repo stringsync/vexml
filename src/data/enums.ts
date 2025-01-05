@@ -134,3 +134,24 @@ export const ANNOTATION_HORIZONTAL_JUSTIFICATIONS = new Enum(['left', 'center', 
  */
 export type AnnotationVerticalJustification = EnumValues<typeof ANNOTATION_VERTICAL_JUSTIFICATIONS>;
 export const ANNOTATION_VERTICAL_JUSTIFICATIONS = new Enum(['top', 'center', 'bottom', 'centerstem'] as const);
+
+/**
+ * DurationType corresponds to the fraction duration of a note. The values are vexflow-specific.
+ *
+ * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L16.
+ */
+export type DurationType = EnumValues<typeof DURATION_TYPES>;
+export const DURATION_TYPES = new Enum([
+  '1024',
+  '512',
+  '256',
+  '128',
+  '64',
+  '32',
+  '16',
+  '8',
+  '4',
+  '2',
+  '1',
+  '1/2',
+] as const);

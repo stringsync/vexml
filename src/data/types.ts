@@ -3,6 +3,7 @@ import {
   AnnotationHorizontalJustification,
   AnnotationVerticalJustification,
   ClefSign,
+  DurationType,
   KeyMode,
   Notehead,
   StemDirection,
@@ -86,9 +87,10 @@ export type Note = {
   type: 'note';
   pitch: Pitch;
   head: Notehead;
-  dotCount: number;
   stemDirection: StemDirection;
   duration: Fraction;
+  durationType: DurationType;
+  dotCount: number;
   measureBeat: Fraction;
   mods: NoteMod[];
 };
@@ -111,6 +113,8 @@ export type Annotation = {
 export type Rest = {
   type: 'rest';
   measureBeat: Fraction;
+  durationType: DurationType;
+  dotCount: number;
   duration: Fraction;
   displayPitch: Pitch | null;
 };

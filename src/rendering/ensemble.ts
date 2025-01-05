@@ -1,7 +1,6 @@
 import * as util from '@/util';
 import * as data from '@/data';
 import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { MeasureEntryKey, PartKey, StaveKey, VoiceEntryKey, VoiceKey } from './types';
@@ -691,21 +690,18 @@ class EnsembleNoteFactory {
         autoStem = true;
     }
 
-    const duration = Fraction.fromFractionLike(note.duration);
-    const [denominator, dots] = conversions.fromFractionToNoteDuration(duration);
-
     const clef = this.document.getStave(key).signature.clef.sign;
 
     const vexflowStaveNote = new vexflow.StaveNote({
       keys: [`${note.pitch.step}/${note.pitch.octave}`],
-      duration: denominator,
-      dots,
+      duration: note.durationType,
+      dots: note.dotCount,
       autoStem,
       stemDirection,
       clef,
     });
 
-    for (let index = 0; index < dots; index++) {
+    for (let index = 0; index < note.dotCount; index++) {
       vexflow.Dot.buildAndAttach([vexflowStaveNote]);
     }
 
@@ -751,19 +747,19 @@ class EnsembleRestFactory {
 
   create(key: VoiceEntryKey): EnsembleRest {
     const vexflowKey = this.getVexflowKey(key);
-    const [denominator, dots] = this.getVexflowDuration(key);
+    const rest = this.document.getRest(key);
     const shouldAlignCenter = this.shouldAlignCenter(key);
     const clef = this.document.getStave(key).signature.clef.sign;
 
     const vexflowStaveNote = new vexflow.StaveNote({
       keys: [vexflowKey],
-      duration: `${denominator}r`,
-      dots,
+      duration: `${rest.durationType}r`,
+      dots: rest.dotCount,
       clef,
       alignCenter: shouldAlignCenter,
     });
 
-    for (let index = 0; index < dots; index++) {
+    for (let index = 0; index < rest.dotCount; index++) {
       vexflow.Dot.buildAndAttach([vexflowStaveNote]);
     }
 
@@ -788,20 +784,13 @@ class EnsembleRestFactory {
       return 'B/2';
     }
 
-    const [denominator] = this.getVexflowDuration(key);
-    if (denominator === '2') {
+    if (rest.durationType === '2') {
       return 'B/4';
     }
-    if (denominator === '1') {
+    if (rest.durationType === '1') {
       return 'D/5';
     }
     return 'B/4';
-  }
-
-  private getVexflowDuration(key: VoiceEntryKey): [denominator: string, dots: number] {
-    const rest = this.document.getRest(key);
-    const duration = Fraction.fromFractionLike(rest.duration);
-    return conversions.fromFractionToNoteDuration(duration);
   }
 
   private shouldAlignCenter(key: VoiceEntryKey): boolean {
@@ -810,11 +799,11 @@ class EnsembleRestFactory {
       return false;
     }
 
-    const [denominator] = this.getVexflowDuration(key);
-    if (denominator === '1') {
+    const rest = this.document.getRest(key);
+    if (rest.durationType === '1') {
       return true;
     }
-    if (denominator === '2') {
+    if (rest.durationType === '2') {
       return true;
     }
 
