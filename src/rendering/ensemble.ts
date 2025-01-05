@@ -453,7 +453,7 @@ class EnsembleStaveFactory {
     }
 
     const nextStaveSignature = this.document.getNextStave(key)?.signature;
-    const willClefChange = staveSignature.clef.sign !== nextStaveSignature?.clef.sign;
+    const willClefChange = nextStaveSignature && staveSignature.clef.sign !== nextStaveSignature?.clef.sign;
     if (willClefChange) {
       endClef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
       vexflowStave.addEndModifier(endClef.vexflowClef);
