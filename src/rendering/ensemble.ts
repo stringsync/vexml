@@ -186,10 +186,11 @@ class EnsembleFormatter {
     let excessHeight = 0;
     for (const stave of staves) {
       for (const voice of stave.voices) {
-        voice.rect = Rect.fromRectLike(voice.vexflowVoice.getBoundingBox());
-        for (const entry of voice.entries) {
+        const entries = voice.entries.filter((entry) => entry.type !== 'ghostnote');
+        for (const entry of entries) {
           entry.rect = Rect.fromRectLike(entry.vexflowTickable.getBoundingBox());
         }
+        voice.rect = Rect.merge(entries.map((e) => e.rect));
       }
       stave.rect = this.getStaveRect(stave, left, right);
       stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
@@ -412,6 +413,7 @@ class EnsembleStaveFactory {
         const voiceKey: VoiceKey = { ...key, voiceIndex };
         voices.push(voiceFactory.create(voiceKey));
       }
+      this.adjustStems(voices);
     }
 
     let clef: EnsembleClef | null = null;
@@ -494,6 +496,46 @@ class EnsembleStaveFactory {
       time,
       vexflowMultiMeasureRest,
     };
+  }
+
+  /**
+   * Adjusts the stems based on the first non-rest note of each voice by mutating the voice entry data in place.
+   *
+   * This method does _not_ change any stem directions that were explicitly defined.
+   */
+  private adjustStems(voices: EnsembleVoice[]): void {
+    const voicesWithNotes = voices.filter((voice) => voice.entries.some((entry) => entry.type === 'note'));
+    if (voicesWithNotes.length <= 1) {
+      return;
+    }
+
+    util.sortBy(
+      voicesWithNotes,
+      (voice) => -voice.entries.find((entry) => entry.type === 'note')!.vexflowTickable.getKeyLine(0)
+    );
+
+    const top = voicesWithNotes.at(0)!;
+    const middle = voicesWithNotes.slice(1, -1);
+    const bottom = voicesWithNotes.at(-1)!;
+
+    for (const entry of top.entries) {
+      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+        entry.stemDirection = 'up';
+        entry.vexflowTickable.setStemDirection(vexflow.Stem.UP);
+      }
+    }
+    for (const entry of middle.flatMap((v) => v.entries)) {
+      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+        entry.stemDirection = 'none';
+        entry.vexflowTickable.setStemDirection(undefined);
+      }
+    }
+    for (const entry of bottom.entries) {
+      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+        entry.stemDirection = 'down';
+        entry.vexflowTickable.setStemDirection(vexflow.Stem.DOWN);
+      }
+    }
   }
 }
 
@@ -626,8 +668,22 @@ class EnsembleVoiceFactory {
     const voiceEntryCount = this.document.getVoiceEntryCount(key);
     const voiceEntries = new Array<EnsembleVoiceEntry>();
 
+    const ghostNoteFactory = new EnsembleGhostNoteFactory(this.config, this.log, this.document);
+
+    let currentMeasureBeat = Fraction.zero();
+
     for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
       const voiceEntryKey: VoiceEntryKey = { ...key, voiceEntryIndex };
+      const voiceEntry = this.document.getVoiceEntry(voiceEntryKey);
+
+      const measureBeat = Fraction.fromFractionLike(voiceEntry.measureBeat);
+      const duration = Fraction.fromFractionLike(voiceEntry.duration);
+
+      if (currentMeasureBeat.isLessThan(measureBeat)) {
+        voiceEntries.push(ghostNoteFactory.create(voiceEntryKey, measureBeat, duration));
+      }
+      currentMeasureBeat = measureBeat.add(duration);
+
       voiceEntries.push(voiceEntryFactory.create(voiceEntryKey));
     }
 
@@ -644,7 +700,7 @@ class EnsembleVoiceFactory {
   }
 }
 
-type EnsembleVoiceEntry = EnsembleNote | EnsembleRest;
+type EnsembleVoiceEntry = EnsembleNote | EnsembleRest | EnsembleGhostNote;
 
 class EnsembleVoiceEntryFactory {
   constructor(private config: Config, private log: Logger, private document: Document) {}
@@ -666,6 +722,9 @@ type EnsembleNote = {
   key: VoiceEntryKey;
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
+  measureBeat: Fraction;
+  duration: Fraction;
+  stemDirection: data.StemDirection;
 };
 
 class EnsembleNoteFactory {
@@ -726,11 +785,17 @@ class EnsembleNoteFactory {
       }
     }
 
+    const duration = Fraction.fromFractionLike(note.duration);
+    const measureBeat = Fraction.fromFractionLike(note.measureBeat);
+
     return {
       type: 'note',
       key,
       rect: PLACEHOLDER_RECT,
       vexflowTickable: vexflowStaveNote,
+      duration,
+      measureBeat,
+      stemDirection: note.stemDirection,
     };
   }
 }
@@ -740,6 +805,8 @@ type EnsembleRest = {
   key: VoiceEntryKey;
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
+  measureBeat: Fraction;
+  duration: Fraction;
 };
 
 class EnsembleRestFactory {
@@ -763,11 +830,16 @@ class EnsembleRestFactory {
       vexflow.Dot.buildAndAttach([vexflowStaveNote]);
     }
 
+    const duration = Fraction.fromFractionLike(rest.duration);
+    const measureBeat = Fraction.fromFractionLike(rest.measureBeat);
+
     return {
       type: 'rest',
       key,
       rect: PLACEHOLDER_RECT,
       vexflowTickable: vexflowStaveNote,
+      duration,
+      measureBeat,
     };
   }
 
@@ -808,5 +880,33 @@ class EnsembleRestFactory {
     }
 
     return false;
+  }
+}
+
+type EnsembleGhostNote = {
+  type: 'ghostnote';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.GhostNote;
+  measureBeat: Fraction;
+  duration: Fraction;
+};
+
+class EnsembleGhostNoteFactory {
+  constructor(private config: Config, private log: Logger, private document: Document) {}
+
+  create(key: VoiceEntryKey, measureBeat: Fraction, duration: Fraction): EnsembleGhostNote {
+    const vexflowGhostNote = new vexflow.GhostNote({
+      duration: 'q',
+    });
+
+    return {
+      type: 'ghostnote',
+      key,
+      measureBeat,
+      duration,
+      rect: PLACEHOLDER_RECT,
+      vexflowTickable: vexflowGhostNote,
+    };
   }
 }
