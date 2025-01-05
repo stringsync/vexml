@@ -313,9 +313,8 @@ class EnsembleMeasureEntryFactory {
       const firstVexflowStave = staves.at(0)!;
       const lastVexflowStave = staves.at(-1)!;
 
-      const isFirstMeausre = this.document.isFirstMeasure(key);
       const isFirstMeasureEntry = this.document.isFirstMeasureEntry(key);
-      if (!isFirstMeausre && isFirstMeasureEntry) {
+      if (isFirstMeasureEntry) {
         vexflowStaveConnectors.push(
           new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
         );
@@ -695,12 +694,15 @@ class EnsembleNoteFactory {
     const duration = Fraction.fromFractionLike(note.duration);
     const [denominator, dots] = conversions.fromFractionToNoteDuration(duration);
 
+    const clef = this.document.getStave(key).signature.clef.sign;
+
     const vexflowStaveNote = new vexflow.StaveNote({
       keys: [`${note.pitch.step}/${note.pitch.octave}`],
       duration: denominator,
       dots,
       autoStem,
       stemDirection,
+      clef,
     });
 
     for (let index = 0; index < dots; index++) {
@@ -783,7 +785,7 @@ class EnsembleRestFactory {
 
     const clef = this.document.getStave(key).signature.clef;
     if (clef.sign === 'bass') {
-      return 'D/3';
+      return 'B/2';
     }
 
     const [denominator] = this.getVexflowDuration(key);
