@@ -40,9 +40,14 @@ export class Stave {
   private getVoices(): Voice[] {
     const voiceEvents = this.getVoiceEvents();
 
-    return util
-      .unique(voiceEvents.map((event) => event.voiceId))
-      .map((voiceId) => new Voice(voiceId, this.signature, voiceEvents));
+    return util.unique(voiceEvents.map((event) => event.voiceId)).map(
+      (voiceId) =>
+        new Voice(
+          voiceId,
+          this.signature,
+          voiceEvents.filter((e) => e.voiceId === voiceId)
+        )
+    );
   }
 
   private getVoiceEvents(): VoiceEvent[] {
