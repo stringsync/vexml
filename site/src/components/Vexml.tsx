@@ -17,6 +17,9 @@ export const Vexml = ({ musicXML, backend }: VexmlProps) => {
     if (!div) {
       return;
     }
+    if (musicXML.length === 0) {
+      return;
+    }
 
     const logger = new vexml.ConsoleLogger();
 
