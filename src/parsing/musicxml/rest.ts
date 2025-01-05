@@ -3,6 +3,8 @@ import * as util from '@/util';
 import * as musicxml from '@/musicxml';
 import { Fraction } from './fraction';
 import { Pitch } from './pitch';
+import { VoiceContext } from './contexts';
+import { Time } from './time';
 
 export class Rest {
   constructor(
@@ -21,7 +23,14 @@ export class Rest {
     return new Rest(measureBeat, duration, displayStep, displayOctave);
   }
 
-  parse(): data.Rest {
+  static whole(time: Time): Rest {
+    const measureBeat = util.Fraction.zero();
+    const duration = time.toFraction().multiply(new util.Fraction(4, 1));
+    return new Rest(measureBeat, duration, null, null);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  parse(voiceCtx: VoiceContext): data.Rest {
     return {
       type: 'rest',
       measureBeat: this.getMeasureBeat().parse(),
@@ -30,15 +39,15 @@ export class Rest {
     };
   }
 
-  getMeasureBeat(): Fraction {
+  private getMeasureBeat(): Fraction {
     return new Fraction(this.measureBeat);
   }
 
-  getDuration(): Fraction {
+  private getDuration(): Fraction {
     return new Fraction(this.duration);
   }
 
-  getDisplayPitch(): Pitch | null {
+  private getDisplayPitch(): Pitch | null {
     if (this.displayStep === null || this.displayOctave === null) {
       return null;
     }

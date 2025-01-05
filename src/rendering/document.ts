@@ -127,6 +127,10 @@ export class Document {
     return key.partIndex === this.getPartCount(key) - 1;
   }
 
+  getPartMultiRestCount(key: PartKey): number {
+    return Math.min(...this.getStaves(key).map((s) => s.multiRestCount));
+  }
+
   getPart(key: PartKey): data.Part {
     const part = this.getParts(key).at(key.partIndex);
     util.assertDefined(part);
@@ -147,6 +151,10 @@ export class Document {
 
   isLastStave(key: StaveKey): boolean {
     return key.staveIndex === this.getStaveCount(key) - 1;
+  }
+
+  getStaveMultiRestCount(key: StaveKey): boolean {
+    return this.getStave(key).multiRestCount > 0;
   }
 
   getStave(key: StaveKey): data.Stave {
