@@ -93,6 +93,7 @@ class EnsembleFormatter {
     const key = measureEntry.key;
     const staves = measureEntry.parts.flatMap((p) => p.staves);
     const clefs = staves.flatMap((s) => s.clef).filter((c) => c !== null);
+    const endClefs = staves.flatMap((s) => s.endClef).filter((c) => c !== null);
     const times = staves.flatMap((s) => s.time).filter((t) => t !== null);
     const hasMultiMeasureRest = staves.some((s) => s.vexflowMultiMeasureRest !== null);
 
@@ -108,6 +109,9 @@ class EnsembleFormatter {
     let nonVoiceWidth = vexflow.Stave.defaultPadding;
     if (clefs.length > 0) {
       nonVoiceWidth += util.max(clefs.map((c) => c.width));
+    }
+    if (endClefs.length > 0) {
+      nonVoiceWidth += util.max(endClefs.map((c) => c.width));
     }
     if (times.length > 0) {
       nonVoiceWidth += util.max(times.map((t) => t.width));
@@ -390,6 +394,7 @@ type EnsembleStave = {
   vexflowStave: vexflow.Stave;
   voices: EnsembleVoice[];
   clef: EnsembleClef | null;
+  endClef: EnsembleClef | null;
   time: EnsembleTime | null;
   vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
 };
@@ -417,6 +422,7 @@ class EnsembleStaveFactory {
     }
 
     let clef: EnsembleClef | null = null;
+    let endClef: EnsembleClef | null = null;
     let time: EnsembleTime | null = null;
 
     const isFirstSystem = this.document.isFirstSystem(key);
@@ -441,10 +447,16 @@ class EnsembleStaveFactory {
         ? new vexflow.TabStave(pen.x, pen.y, 0, { numLines: staveLineCount })
         : new vexflow.Stave(pen.x, pen.y, 0, { numLines: staveLineCount });
 
-    // TODO: Also render when it changes.
     if (isFirstMeasure && isFirstMeasureEntry) {
       clef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
       vexflowStave.addModifier(clef.vexflowClef);
+    }
+
+    const nextStaveSignature = this.document.getNextStave(key)?.signature;
+    const willClefChange = staveSignature.clef.sign !== nextStaveSignature?.clef.sign;
+    if (willClefChange) {
+      endClef = new EnsembleClefFactory(this.config, this.log, this.document).create(key);
+      vexflowStave.addEndModifier(endClef.vexflowClef);
     }
 
     const isFirstScoreMeasureEntry = isFirstSystem && isFirstMeasure && isFirstMeasureEntry;
@@ -496,6 +508,7 @@ class EnsembleStaveFactory {
       vexflowStave,
       voices,
       clef,
+      endClef,
       time,
       vexflowMultiMeasureRest,
     };

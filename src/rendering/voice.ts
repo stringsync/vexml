@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
-import { VoiceEntryKey, VoiceKey } from './types';
+import { VoiceKey } from './types';
 import { Ensemble } from './ensemble';
 import { Rect } from '@/spatial';
 import { Note, NoteRender } from './note';
