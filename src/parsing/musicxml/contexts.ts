@@ -1,6 +1,7 @@
 import * as data from '@/data';
 import { Signature } from './signature';
 import { Key } from './key';
+import { Time } from './time';
 
 /**
  * @file This file contains **mutable** context objects that are used during parsing.
@@ -96,6 +97,10 @@ export class PartContext {
     return this.fragment.getSignature().getKey(this.id, staveNumber);
   }
 
+  getTime(staveNumber: number): Time {
+    return this.fragment.getSignature().getTime(this.id, staveNumber);
+  }
+
   getActiveAccidental(pitch: string, octave: number): data.AccidentalCode | null {
     return this.fragment.getActiveAccidental(this.id, pitch, octave);
   }
@@ -118,6 +123,10 @@ export class StaveContext {
 
   getKey(): Key {
     return this.part.getKey(this.number);
+  }
+
+  getTime(): Time {
+    return this.part.getTime(this.number);
   }
 
   getActiveAccidental(pitch: string, octave: number): data.AccidentalCode | null {
@@ -144,12 +153,20 @@ export class VoiceContext {
     return this.stave.getKey();
   }
 
+  getTime(): Time {
+    return this.stave.getTime();
+  }
+
   getActiveAccidental(pitch: string, octave: number): data.AccidentalCode | null {
     return this.stave.getActiveAccidental(pitch, octave);
   }
 
   setActiveAccidental(pitch: string, octave: number, accidental: data.AccidentalCode) {
     this.stave.setActiveAccidental(pitch, octave, accidental);
+  }
+
+  getMultiRestCount(): number {
+    return this.stave.getMultiRestCount();
   }
 }
 
