@@ -28,10 +28,10 @@ export class Rendering {
     const titleRender = scoreRender.titleRender;
     const systemRenders = scoreRender.systemRenders;
     const measureRenders = systemRenders.flatMap((s) => s.measureRenders);
-    const measureEntryRenders = measureRenders.flatMap((m) => m.entryRenders);
-    const partLabelGroupRenders = measureEntryRenders.flatMap((m) => m.partLabelGroupRender ?? []);
+    const fragmentRenders = measureRenders.flatMap((m) => m.fragmentRenders);
+    const partLabelGroupRenders = fragmentRenders.flatMap((m) => m.partLabelGroupRender ?? []);
     const partLabelRenders = partLabelGroupRenders.flatMap((p) => p.partLabelRenders);
-    const partRenders = measureEntryRenders.flatMap((m) => m.partRenders);
+    const partRenders = fragmentRenders.flatMap((m) => m.partRenders);
     const staveRenders = partRenders.flatMap((p) => p.staveRenders);
     const voiceRenders = staveRenders.flatMap((s) => s.voiceRenders);
     const voiceEntryRenders = voiceRenders.flatMap((v) => v.entryRenders);
@@ -58,7 +58,7 @@ export class Rendering {
       });
 
     // Draw the stave connectors.
-    measureEntryRenders
+    fragmentRenders
       .flatMap((m) => m.vexflowStaveConnectors)
       .forEach((v) => {
         v.setContext(ctx).draw();

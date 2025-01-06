@@ -25,10 +25,8 @@ export type System = {
 export type Measure = {
   type: 'measure';
   label: number;
-  entries: MeasureEntry[];
+  fragments: Fragment[];
 };
-
-export type MeasureEntry = Fragment | Gap;
 
 export type Fragment = {
   type: 'fragment';

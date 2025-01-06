@@ -1,5 +1,4 @@
-import { Gap, Score } from './types';
-import * as errors from '@/errors';
+import { Score } from './types';
 
 /** Document is an interface for mutating a {@link Score}. */
 export class Document {
@@ -11,14 +10,7 @@ export class Document {
   }
 
   /** Inserts a gap at specified measure and fragment indexes. */
-  insertGap(gap: Gap, opts: { measureIndex: number; fragmentIndex?: number }): void {
-    const { measureIndex, fragmentIndex = 0 } = opts;
-
-    const measure = this.score.systems.flatMap((system) => system.measures).at(measureIndex);
-    if (!measure) {
-      throw new errors.VexmlError(`Measure at index ${measureIndex} not found`);
-    }
-
-    measure.entries.splice(fragmentIndex, 0, gap);
+  insertGap(): void {
+    throw new Error('Method not implemented.');
   }
 }

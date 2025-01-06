@@ -101,8 +101,8 @@ export class Stave {
 
   private renderStartClef(vexflowStave: vexflow.Stave): ClefRender | null {
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-    if (isFirstMeasure && isFirstMeasureEntry) {
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    if (isFirstMeasure && isFirstFragment) {
       const clefRender = new Clef(this.config, this.log, this.document, this.key).render();
       vexflowStave.addModifier(clefRender.vexflowClef);
       return clefRender;
@@ -126,8 +126,8 @@ export class Stave {
   private renderTime(vexflowStave: vexflow.Stave): TimeRender | null {
     const isFirstSystem = this.document.isFirstSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-    const isFirstScoreMeasureEntry = isFirstSystem && isFirstMeasure && isFirstMeasureEntry;
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment;
 
     const currentTime = this.document.getStave(this.key).signature.time;
     const previousTime = this.document.getPreviouslyPlayedStave(this.key)?.signature.time;
@@ -141,7 +141,7 @@ export class Stave {
           c.denominator !== previousTime?.components[i].denominator
       );
 
-    if (isFirstScoreMeasureEntry || didTimeChange) {
+    if (isAbsolutelyFirst || didTimeChange) {
       const timeRender = new Time(this.config, this.log, this.document, this.key).render();
       for (const vexflowTimeSignature of timeRender.vexflowTimeSignatures) {
         vexflowStave.addModifier(vexflowTimeSignature);
@@ -164,21 +164,21 @@ export class Stave {
   private renderBarlines(vexflowStave: vexflow.Stave): void {
     const isLastSystem = this.document.isLastSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+    const isFirstFragment = this.document.isFirstFragment(this.key);
     const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+    const isLastFragment = this.document.isLastFragment(this.key);
 
     const partCount = this.document.getPartCount(this.key);
     const staveCount = this.document.getStaveCount(this.key);
     const hasStaveConnector = partCount > 1 || staveCount > 1;
 
-    if (!isFirstMeasure && isFirstMeasureEntry && !hasStaveConnector) {
+    if (!isFirstMeasure && isFirstFragment && !hasStaveConnector) {
       vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
     } else {
       vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
     }
 
-    if (isLastMeasureEntry && !hasStaveConnector) {
+    if (isLastFragment && !hasStaveConnector) {
       if (isLastSystem && isLastMeasure) {
         vexflowStave.setEndBarType(vexflow.Barline.type.END);
       } else {

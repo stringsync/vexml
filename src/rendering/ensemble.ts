@@ -3,7 +3,7 @@ import { Logger } from '../debug';
 import { Config } from './config';
 import { Document } from './document';
 import { Point, Rect } from '@/spatial';
-import { MeasureEntryKey } from './types';
+import { FragmentKey } from './types';
 import { Pen } from './pen';
 import { NoopRenderContext } from './nooprenderctx';
 import { FragmentRender } from './fragment';
@@ -18,7 +18,7 @@ export class Ensemble {
     private config: Config,
     private log: Logger,
     private document: Document,
-    private key: MeasureEntryKey,
+    private key: FragmentKey,
     private position: Point,
     private width: number | null,
     private multiRestCount: number,
@@ -51,8 +51,8 @@ export class Ensemble {
     right.moveBy({ dx: initialStaveWidth });
 
     const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
-    if (isLastMeasure && isLastMeasureEntry) {
+    const isLastFragment = this.document.isLastFragment(this.key);
+    if (isLastMeasure && isLastFragment) {
       right.moveBy({ dx: -BARLINE_PADDING_RIGHT });
     }
 

@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, PartKey } from './types';
+import { FragmentKey, PartKey } from './types';
 import { Point, Rect } from '@/spatial';
 import { Part, PartRender } from './part';
 import { Pen } from './pen';
@@ -15,7 +15,7 @@ const BRACE_CONNECTOR_PADDING_LEFT = 8;
 
 export type FragmentRender = {
   type: 'fragment';
-  key: MeasureEntryKey;
+  key: FragmentKey;
   rect: Rect;
   excessHeight: number;
   partLabelGroupRender: PartLabelGroupRender | null;
@@ -28,7 +28,7 @@ export class Fragment {
     private config: Config,
     private log: Logger,
     private document: Document,
-    private key: MeasureEntryKey,
+    private key: FragmentKey,
     private position: Point,
     private width: number | null
   ) {}
@@ -135,11 +135,11 @@ export class Fragment {
     const partCount = this.document.getPartCount(this.key);
 
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+    const isFirstFragment = this.document.isFirstFragment(this.key);
     if (isFirstMeasure) {
       pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
     }
-    if (isFirstMeasure && isFirstMeasureEntry && this.hasBraceConnector()) {
+    if (isFirstMeasure && isFirstFragment && this.hasBraceConnector()) {
       pen.moveBy({ dx: BRACE_CONNECTOR_PADDING_LEFT });
     }
 
@@ -161,8 +161,8 @@ export class Fragment {
       const firstVexflowStave = staves.at(0)!;
       const lastVexflowStave = staves.at(-1)!;
 
-      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-      if (isFirstMeasureEntry) {
+      const isFirstFragment = this.document.isFirstFragment(this.key);
+      if (isFirstFragment) {
         vexflowStaveConnectors.push(
           new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
         );
@@ -170,8 +170,8 @@ export class Fragment {
 
       const isLastSystem = this.document.isLastSystem(this.key);
       const isLastMeasure = this.document.isLastMeasure(this.key);
-      const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
-      if (isLastMeasureEntry) {
+      const isLastFragment = this.document.isLastFragment(this.key);
+      if (isLastFragment) {
         if (isLastSystem && isLastMeasure) {
           vexflowStaveConnectors.push(
             new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')

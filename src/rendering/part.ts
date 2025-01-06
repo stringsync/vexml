@@ -58,8 +58,8 @@ export class Part {
 
   private renderVexflowBrace(staveRenders: StaveRender[]): vexflow.StaveConnector | null {
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
-    if (isFirstMeasure && isFirstMeasureEntry && staveRenders.length > 1) {
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    if (isFirstMeasure && isFirstFragment && staveRenders.length > 1) {
       const firstVexflowStave = staveRenders.at(0)!.vexflowStave;
       const lastVexflowStave = staveRenders.at(-1)!.vexflowStave;
       return new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('brace');
