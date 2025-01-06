@@ -15,7 +15,21 @@ export type Score = {
   title: string | null;
   partLabels: string[];
   systems: System[];
+  curves: Curve[];
 };
+
+export type Curve = {
+  type: 'curve';
+  id: string;
+};
+
+export type CurveRef = {
+  type: 'curveref';
+  curveId: string;
+  phase: CurvePhase;
+};
+
+export type CurvePhase = 'start' | 'continue' | 'end';
 
 export type System = {
   type: 'system';
@@ -91,6 +105,7 @@ export type Note = {
   dotCount: number;
   measureBeat: Fraction;
   mods: NoteMod[];
+  curveRefs: CurveRef[];
 };
 
 export type NoteMod = Accidental | Annotation;

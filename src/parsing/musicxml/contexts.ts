@@ -17,6 +17,10 @@ export class SystemContext {
   // When the stave number is null, the multi rest count applies to all staves in the part.
   private multiRestCounts = new Map<string, Map<number | null, number>>();
 
+  // curve number -> curve ref
+  // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=dotted%2C%20or%20wavy.-,number,-number%2Dlevel
+  private curves = new Map<number | null, data.CurveRef>();
+
   getMultiRestCount(partId: string, staveNumber: number | null): number {
     return this.multiRestCounts.get(partId)?.get(null) ?? this.multiRestCounts.get(partId)?.get(staveNumber) ?? 0;
   }
@@ -38,6 +42,10 @@ export class SystemContext {
         }
       }
     }
+  }
+
+  getCurveRef(curveNumber: number | null): data.CurveRef | null {
+    return this.curves.get(curveNumber) ?? null;
   }
 }
 
