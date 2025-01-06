@@ -35,10 +35,11 @@ export const setup = () => {
   return createTestDocument();
 };
 
-export const getSnapshotIdentifier = (opts: { filename: string; width: number }): string => {
+export const getSnapshotIdentifier = (opts: { filename: string; width: number; migrated?: boolean }): string => {
+  const prefix = opts.migrated ? '' : 'legacy_';
   const extname = path.extname(opts.filename);
   const basename = path.basename(opts.filename, extname);
-  return `${basename}_${opts.width}px`;
+  return `${prefix}${basename}_${opts.width}px`;
 };
 
 const createTestDocument = (): {

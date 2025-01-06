@@ -1,4 +1,3 @@
-import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { MeasureEntryKey, Padding, PartLabelKey } from './types';
 import { Document } from './document';
