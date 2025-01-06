@@ -5,7 +5,6 @@ import { Config } from './config';
 import { VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
-import { Fraction } from '@/util';
 
 export type StaveNoteRender = {
   type: 'note';
