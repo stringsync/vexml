@@ -89,8 +89,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
               />
             )}
 
-            {/* For some reason, this is being rendered as if it weren't a React component.*/}
-            {/* {descriptor.type === 'number' && (
+            {descriptor.type === 'number' && (
               <NumberInput
                 key={key}
                 label={label(key)}
@@ -99,7 +98,7 @@ export const ConfigForm = (props: ConfigFormProps) => {
                 help={descriptor.help}
                 onChange={set<number>(key)}
               />
-            )} */}
+            )}
 
             {descriptor.type === 'boolean' && (
               <BooleanInput
@@ -150,7 +149,12 @@ const StringInput = (props: {
         <i className="bi bi-question-circle"></i>
       </small>
       <div className="input-group">
-        <input id={id} className="form-control" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+        <input
+          id={id}
+          className="form-control"
+          value={props.value ?? ''}
+          onChange={(e) => props.onChange(e.target.value)}
+        />
         <button
           className="btn border-0"
           type="button"
@@ -189,7 +193,7 @@ const NumberInput = (props: {
           id={id}
           type="range"
           className="form-range"
-          value={props.value}
+          value={props.value ?? 0}
           min={0}
           max={4 * props.defaultValue}
           onChange={(e) => props.onChange(Number(e.target.value))}

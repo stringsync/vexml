@@ -101,8 +101,11 @@ class EnsembleFormatter {
     const vexflowVoices = staves.flatMap((s) => s.voices).map((v) => v.vexflowVoice);
     const vexflowFormatter = new vexflow.Formatter();
 
-    if (vexflowVoices.length > 0) {
-      vexflowFormatter.joinVoices(vexflowVoices);
+    for (const stave of staves) {
+      const vexflowVoices = stave.voices.map((v) => v.vexflowVoice);
+      if (vexflowVoices.length > 0) {
+        vexflowFormatter.joinVoices(vexflowVoices);
+      }
     }
 
     // Non-voice width components.
@@ -190,11 +193,10 @@ class EnsembleFormatter {
     let excessHeight = 0;
     for (const stave of staves) {
       for (const voice of stave.voices) {
-        const entries = voice.entries.filter((entry) => entry.type !== 'ghostnote');
-        for (const entry of entries) {
+        for (const entry of voice.entries) {
           entry.rect = Rect.fromRectLike(entry.vexflowTickable.getBoundingBox());
         }
-        voice.rect = Rect.merge(entries.map((e) => e.rect));
+        voice.rect = Rect.merge(voice.entries.map((e) => e.rect));
       }
       stave.rect = this.getStaveRect(stave, left, right);
       stave.intrinsicRect = this.getStaveIntrinsicRect(stave);
@@ -523,6 +525,9 @@ class EnsembleStaveFactory {
    */
   private adjustStems(voices: EnsembleVoice[]): void {
     const voicesWithNotes = voices.filter((voice) => voice.entries.some((entry) => entry.type === 'note'));
+    if (voicesWithNotes.length <= 1) {
+      return;
+    }
 
     util.sortBy(
       voicesWithNotes,
@@ -684,6 +689,7 @@ class EnsembleVoiceFactory {
     const voiceEntryFactory = new EnsembleVoiceEntryFactory(this.config, this.log, this.document);
     const voiceEntryCount = this.document.getVoiceEntryCount(key);
     const voiceEntries = new Array<EnsembleVoiceEntry>();
+    const vexflowTickables = new Array<vexflow.Tickable>();
 
     const ghostNoteFactory = new EnsembleGhostNoteFactory(this.config, this.log, this.document);
 
@@ -692,19 +698,20 @@ class EnsembleVoiceFactory {
     for (let voiceEntryIndex = 0; voiceEntryIndex < voiceEntryCount; voiceEntryIndex++) {
       const voiceEntryKey: VoiceEntryKey = { ...key, voiceEntryIndex };
       const voiceEntry = this.document.getVoiceEntry(voiceEntryKey);
-
       const measureBeat = Fraction.fromFractionLike(voiceEntry.measureBeat);
       const duration = Fraction.fromFractionLike(voiceEntry.duration);
 
       if (currentMeasureBeat.isLessThan(measureBeat)) {
-        voiceEntries.push(ghostNoteFactory.create(voiceEntryKey, measureBeat, duration));
+        const ghostNote = ghostNoteFactory.create(voiceEntryKey, measureBeat, duration);
+        vexflowTickables.push(ghostNote.vexflowTickable);
       }
       currentMeasureBeat = measureBeat.add(duration);
 
-      voiceEntries.push(voiceEntryFactory.create(voiceEntryKey));
+      const ensembleVoiceEntry = voiceEntryFactory.create(voiceEntryKey);
+      voiceEntries.push(ensembleVoiceEntry);
+      vexflowTickables.push(ensembleVoiceEntry.vexflowTickable);
     }
 
-    const vexflowTickables = voiceEntries.map((entry) => entry.vexflowTickable);
     const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT).addTickables(vexflowTickables);
 
     return {
