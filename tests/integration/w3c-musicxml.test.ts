@@ -7,6 +7,7 @@ import { setup, getSnapshotIdentifier } from './helpers';
 type TestCase = {
   filename: string;
   width: number;
+  migrated?: boolean;
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'w3c-musicxml');

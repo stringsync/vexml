@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer';
-import { Vexml } from '@/index';
+import { MusicXMLParser, Vexml, Renderer } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 import { setup, getSnapshotIdentifier } from './helpers';
@@ -7,6 +7,7 @@ import { setup, getSnapshotIdentifier } from './helpers';
 type TestCase = {
   filename: string;
   width: number;
+  migrated?: boolean; // TODO: Remove this when all tests are migrated.
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'lilypond');
@@ -24,7 +25,7 @@ describe('lilypond', () => {
 
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
-    { filename: '01a-Pitches-Pitches.musicxml', width: 900 },
+    { filename: '01a-Pitches-Pitches.musicxml', width: 900, migrated: true },
     { filename: '01b-Pitches-Intervals.musicxml', width: 900 },
     { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900 },
     { filename: '01d-Pitches-Microtones.musicxml', width: 900 },
@@ -156,10 +157,17 @@ describe('lilypond', () => {
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
-    Vexml.fromBuffer(buffer).render({
-      element: vexmlDiv,
-      width: t.width,
-    });
+    if (t.migrated) {
+      const parser = new MusicXMLParser();
+      const document = parser.parse(buffer.toString());
+      const renderer = new Renderer(document);
+      renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
+    } else {
+      Vexml.fromBuffer(buffer).render({
+        element: vexmlDiv,
+        width: t.width,
+      });
+    }
 
     await page.setViewport({
       width: t.width,
@@ -171,7 +179,7 @@ describe('lilypond', () => {
     const element = await page.$(screenshotElementSelector);
     const screenshot = Buffer.from((await element!.screenshot()) as any);
     expect(screenshot).toMatchImageSnapshot({
-      customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width }),
+      customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width, migrated: t.migrated }),
     });
   });
 });
