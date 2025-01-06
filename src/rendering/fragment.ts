@@ -43,10 +43,14 @@ export class Fragment {
       widthBudget = new Budget(this.width);
     }
 
-    const partLabelGroupRender = this.renderPartLabelGroup(pen, widthBudget);
-    const partPosition = pen.position();
+    // We don't know the y positions of the staves yet, so we don't know the y positions of the labels yet. For now,we
+    // just account for the width it steals from the parts.
+    const prePartLabelGroupPosition = pen.position();
+    this.accountForPartLabelGroupWidth(pen, widthBudget);
+    const postPartLabelGroupPosition = pen.position();
 
     const partRenders = this.renderParts(pen);
+
     const vexflowStaveConnectors = this.renderVexflowStaveConnectors(partRenders);
 
     const fragmentRender: FragmentRender = {
@@ -54,7 +58,7 @@ export class Fragment {
       key: this.key,
       rect: Rect.empty(), // placeholder
       excessHeight: 0, // placeholder
-      partLabelGroupRender,
+      partLabelGroupRender: null, // placeholder
       vexflowStaveConnectors,
       partRenders,
     };
@@ -67,34 +71,63 @@ export class Fragment {
       this.log,
       this.document,
       this.key,
-      partPosition,
+      postPartLabelGroupPosition,
       ensembleWidth,
       multiRestCount,
       fragmentRender
     );
     ensemble.format(pen);
 
+    // After formatting, we can trust the y positions of the staves. Now we can render the part labels.
+    const partLabelGroupRender = this.renderPartLabelGroup(prePartLabelGroupPosition, partRenders);
+
     if (partLabelGroupRender) {
+      fragmentRender.partLabelGroupRender = partLabelGroupRender;
       fragmentRender.rect = Rect.merge([fragmentRender.rect, partLabelGroupRender.rect]);
     }
 
     return fragmentRender;
   }
 
-  private renderPartLabelGroup(pen: Pen, widthBudget: Budget): PartLabelGroupRender | null {
-    const isFirstSystem = this.document.isFirstSystem(this.key);
-    const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    if (!isFirstSystem || !isFirstMeasure) {
-      return null;
+  private accountForPartLabelGroupWidth(pen: Pen, widthBudget: Budget): void {
+    if (!this.hasPartLabels()) {
+      return;
     }
-
-    const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position());
+    const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position(), null);
     const partLabelGroupRender = partLabelGroup.render();
 
     pen.moveBy({ dx: partLabelGroupRender.rect.w });
     widthBudget.spend(partLabelGroupRender.rect.w);
+  }
+
+  private renderPartLabelGroup(position: Point, partRenders: PartRender[]): PartLabelGroupRender | null {
+    if (!this.hasPartLabels()) {
+      return null;
+    }
+    const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, position, partRenders);
+    const partLabelGroupRender = partLabelGroup.render();
 
     return partLabelGroupRender;
+  }
+
+  private hasPartLabels(): boolean {
+    const isFirstSystem = this.document.isFirstSystem(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    if (!isFirstSystem || !isFirstMeasure) {
+      return false;
+    }
+
+    const partCount = this.document.getPartCount(this.key);
+
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const key: PartKey = { ...this.key, partIndex };
+      const partLabel = this.document.getPartLabel(key);
+      if (partLabel) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private renderParts(pen: Pen): PartRender[] {
