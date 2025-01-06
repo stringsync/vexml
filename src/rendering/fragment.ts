@@ -7,8 +7,11 @@ import { Point, Rect } from '@/spatial';
 import { Part, PartRender } from './part';
 import { Pen } from './pen';
 import { PartLabelGroup, PartLabelGroupRender } from './partlabelgroup';
-import { Ensemble } from './ensemble';
 import { Budget } from './budget';
+import { Ensemble } from './ensemble';
+
+const MEASURE_NUMBER_PADDING_LEFT = 6;
+const BRACE_CONNECTOR_PADDING_LEFT = 8;
 
 export type FragmentRender = {
   type: 'fragment';
@@ -16,8 +19,8 @@ export type FragmentRender = {
   rect: Rect;
   excessHeight: number;
   partLabelGroupRender: PartLabelGroupRender | null;
-  vexflowStaveConnectors: vexflow.StaveConnector[];
   partRenders: PartRender[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
 };
 
 export class Fragment {
@@ -42,38 +45,39 @@ export class Fragment {
     }
 
     const partLabelGroupRender = this.renderPartLabelGroup(pen, widthBudget);
+    const partPosition = pen.position();
 
-    const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.getRemaining();
+    const partRenders = this.renderParts(pen);
+    const vexflowStaveConnectors = this.renderVexflowStaveConnectors(partRenders);
+
+    const fragmentRender: FragmentRender = {
+      type: 'fragment',
+      key: this.key,
+      rect: Rect.empty(), // placeholder
+      excessHeight: 0, // placeholder
+      partLabelGroupRender,
+      vexflowStaveConnectors,
+      partRenders,
+    };
+
+    const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.remaining();
     const ensemble = new Ensemble(
       this.config,
       this.log,
       this.document,
       this.key,
-      pen.position(),
+      partPosition,
       ensembleWidth,
-      this.multiRestCount
+      this.multiRestCount,
+      fragmentRender
     );
-    const ensembleMeasureEntry = ensemble.getMeasureEntry();
-    const excessHeight = ensembleMeasureEntry.excessHeight;
-    const vexflowStaveConnectors = ensembleMeasureEntry.vexflowStaveConnectors;
+    ensemble.format(pen);
 
-    const partRenders = this.renderParts(ensemble);
-
-    const rects = [ensemble.getMeasureEntry().rect];
     if (partLabelGroupRender) {
-      rects.push(partLabelGroupRender.rect);
+      fragmentRender.rect = Rect.merge([fragmentRender.rect, partLabelGroupRender.rect]);
     }
-    const rect = Rect.merge(rects);
 
-    return {
-      type: 'fragment',
-      key: this.key,
-      rect,
-      excessHeight,
-      partLabelGroupRender,
-      vexflowStaveConnectors,
-      partRenders,
-    };
+    return fragmentRender;
   }
 
   private renderPartLabelGroup(pen: Pen, widthBudget: Budget): PartLabelGroupRender | null {
@@ -83,20 +87,7 @@ export class Fragment {
       return null;
     }
 
-    // There's a circular dependency here: PartLabelGroup needs an Ensemble to render, and Ensemble needs to know
-    // PartLabelGroup's width to set the vertical positions correctly. We create this temporary ensemble to render the
-    // PartLabelGroup, and then throw it away. We can create a new one at the correct position later.
-    const ensemble = new Ensemble(
-      this.config,
-      this.log,
-      this.document,
-      this.key,
-      pen.position(),
-      this.width,
-      this.multiRestCount
-    );
-
-    const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position(), ensemble);
+    const partLabelGroup = new PartLabelGroup(this.config, this.log, this.document, this.key, pen.position());
     const partLabelGroupRender = partLabelGroup.render();
 
     pen.moveBy({ dx: partLabelGroupRender.rect.w });
@@ -105,17 +96,79 @@ export class Fragment {
     return partLabelGroupRender;
   }
 
-  private renderParts(ensemble: Ensemble): PartRender[] {
+  private renderParts(pen: Pen): PartRender[] {
+    const partRenders = new Array<PartRender>();
     const partCount = this.document.getPartCount(this.key);
 
-    const partRenders = new Array<PartRender>();
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+    if (isFirstMeasure) {
+      pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
+    }
+    if (isFirstMeasure && isFirstMeasureEntry && this.hasBraceConnector()) {
+      pen.moveBy({ dx: BRACE_CONNECTOR_PADDING_LEFT });
+    }
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const key: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(this.config, this.log, this.document, key, ensemble).render();
+      const partRender = new Part(
+        this.config,
+        this.log,
+        this.document,
+        key,
+        pen.position(),
+        this.multiRestCount
+      ).render();
       partRenders.push(partRender);
     }
 
     return partRenders;
+  }
+
+  private renderVexflowStaveConnectors(partRenders: PartRender[]): vexflow.StaveConnector[] {
+    const vexflowStaveConnectors = new Array<vexflow.StaveConnector>();
+
+    const staves = partRenders.flatMap((p) => p.staveRenders).map((s) => s.vexflowStave);
+
+    if (staves.length > 1) {
+      const firstVexflowStave = staves.at(0)!;
+      const lastVexflowStave = staves.at(-1)!;
+
+      const isFirstMeasureEntry = this.document.isFirstMeasureEntry(this.key);
+      if (isFirstMeasureEntry) {
+        vexflowStaveConnectors.push(
+          new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleLeft')
+        );
+      }
+
+      const isLastSystem = this.document.isLastSystem(this.key);
+      const isLastMeasure = this.document.isLastMeasure(this.key);
+      const isLastMeasureEntry = this.document.isLastMeasureEntry(this.key);
+      if (isLastMeasureEntry) {
+        if (isLastSystem && isLastMeasure) {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
+          );
+        } else {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('singleRight')
+          );
+        }
+      }
+    }
+
+    return vexflowStaveConnectors;
+  }
+
+  private hasBraceConnector(): boolean {
+    const partCount = this.document.getPartCount(this.key);
+    for (let partIndex = 0; partIndex < partCount; partIndex++) {
+      const key: PartKey = { ...this.key, partIndex };
+      const staveCount = this.document.getStaveCount(key);
+      if (staveCount > 1) {
+        return true;
+      }
+    }
+    return false;
   }
 }

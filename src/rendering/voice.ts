@@ -1,14 +1,15 @@
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
 import { VoiceKey } from './types';
-import { Ensemble } from './ensemble';
 import { Rect } from '@/spatial';
-import { Note, NoteRender } from './note';
-import { Rest, RestRender } from './rest';
+import { StaveNote, StaveNoteRender } from './stavenote';
+import { StaveRest, StaveRestRender } from './staverest';
+import { Fraction } from '@/util';
 
-export type VoiceEntryRender = NoteRender | RestRender;
+export type VoiceEntryRender = StaveNoteRender | StaveRestRender;
 
 export type VoiceRender = {
   type: 'voice';
@@ -19,45 +20,59 @@ export type VoiceRender = {
 };
 
 export class Voice {
-  constructor(
-    private config: Config,
-    private log: Logger,
-    private document: Document,
-    private key: VoiceKey,
-    private ensemble: Ensemble
-  ) {}
+  constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceKey) {}
 
   render(): VoiceRender {
-    const ensembleVoice = this.ensemble.getVoice(this.key);
-    const vexflowVoice = ensembleVoice.vexflowVoice;
-    const rect = ensembleVoice.rect;
-    const entryRenders = this.renderEntries();
+    const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT);
+    const entryRenders = this.renderEntries(vexflowVoice);
 
     return {
       type: 'voice',
       key: this.key,
-      rect,
+      rect: Rect.empty(), // placeholder
       vexflowVoice,
       entryRenders,
     };
   }
 
-  private renderEntries(): VoiceEntryRender[] {
+  private renderEntries(vexflowVoice: vexflow.Voice): VoiceEntryRender[] {
     const entryRenders = new Array<VoiceEntryRender>();
+    const entryCount = this.document.getVoiceEntryCount(this.key);
 
-    const voice = this.ensemble.getVoice(this.key);
+    let currentMeasureBeat = Fraction.zero();
 
-    for (const voiceEntry of voice.entries) {
-      if (voiceEntry.type === 'note') {
-        const noteRender = new Note(this.config, this.log, this.document, voiceEntry.key, this.ensemble).render();
-        entryRenders.push(noteRender);
+    for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
+      const voiceEntryKey = { ...this.key, voiceEntryIndex };
+      const entry = this.document.getVoiceEntry(voiceEntryKey);
+      const measureBeat = Fraction.fromFractionLike(entry.measureBeat);
+      const duration = Fraction.fromFractionLike(entry.duration);
+
+      if (currentMeasureBeat.isLessThan(measureBeat)) {
+        const vexflowGhostNote = this.renderVexflowGhostNote(measureBeat.subtract(currentMeasureBeat));
+        vexflowVoice.addTickable(vexflowGhostNote);
+        // NOTE: We don't need to add this is entryRenders because it's not a real entry.
       }
-      if (voiceEntry.type === 'rest') {
-        const restRender = new Rest(this.config, this.log, this.document, voiceEntry.key, this.ensemble).render();
-        entryRenders.push(restRender);
+      currentMeasureBeat = measureBeat.add(duration);
+
+      if (entry.type === 'note') {
+        const staveNoteRender = new StaveNote(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(staveNoteRender.vexflowTickable);
+        entryRenders.push(staveNoteRender);
+      } else if (entry.type === 'rest') {
+        const staveRestRender = new StaveRest(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(staveRestRender.vexflowTickable);
+        entryRenders.push(staveRestRender);
+      } else {
+        util.assertUnreachable();
       }
     }
 
     return entryRenders;
+  }
+
+  private renderVexflowGhostNote(duration: Fraction): vexflow.GhostNote {
+    return new vexflow.GhostNote({
+      duration: 'q', // TODO: derive from duration
+    });
   }
 }
