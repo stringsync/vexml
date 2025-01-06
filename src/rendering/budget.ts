@@ -4,10 +4,10 @@ import * as util from '@/util';
  * A generic utility for tracking a metric across scopes.
  */
 export class Budget {
-  private remaining = 0;
+  private amount = 0;
 
   constructor(initial: number) {
-    this.remaining = initial;
+    this.amount = initial;
   }
 
   static unlimited() {
@@ -15,15 +15,15 @@ export class Budget {
   }
 
   isUnlimited(): boolean {
-    return this.remaining === Infinity;
+    return this.amount === Infinity;
   }
 
-  getRemaining(): number {
-    return this.remaining;
+  remaining(): number {
+    return this.amount;
   }
 
   spend(amount: number): void {
-    util.assert(this.remaining >= amount, 'budget exceeded');
-    this.remaining -= amount;
+    util.assert(this.amount >= amount, 'budget exceeded');
+    this.amount -= amount;
   }
 }

@@ -98,7 +98,7 @@ export class Rendering {
     // Draw the debug stave intrinsic rects.
     if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
       staveRenders.forEach((s) => {
-        new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrisicRect).setContext(ctx).draw();
+        new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrinsicRect).setContext(ctx).draw();
       });
     }
 
