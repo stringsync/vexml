@@ -50,8 +50,6 @@ export class PartLabelGroup {
     const padding = this.getPartLabelPadding();
     const font = this.getPartLabelFont();
 
-    console.log(positions);
-
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const key: PartLabelKey = { ...this.key, partIndex };
       const text = this.document.getPartLabel(key);
