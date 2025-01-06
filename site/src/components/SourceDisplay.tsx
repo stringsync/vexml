@@ -12,11 +12,11 @@ import { convertFontToBase64 } from '../util/convertFontToBase64';
 import { useNextKey } from '../hooks/useNextKey';
 import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
+import { ConfigForm } from './ConfigForm';
 import { LegacyConfigForm } from './LegacyConfigForm';
 import { EventTypeForm } from './EventTypeForm';
 import { CursorForm } from './CursorForm';
 import { Vexml, VexmlResult } from './Vexml';
-import { ConfigForm } from './ConfigForm';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
