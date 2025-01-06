@@ -8,6 +8,8 @@ import { Fraction } from './fraction';
 import { NoteContext, VoiceContext } from './contexts';
 import { Annotation } from './annotation';
 import { Pitch } from './pitch';
+import { Slur } from './slur';
+import { Tie } from './tie';
 
 export type NoteMod = Accidental | Annotation;
 
@@ -27,7 +29,8 @@ export class Note {
     private duration: util.Fraction,
     private measureBeat: util.Fraction,
     private lyrics: Annotation[],
-    private accidentalProps: NoteAccidentalProps
+    private accidentalProps: NoteAccidentalProps,
+    private ties: Tie[]
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -45,6 +48,11 @@ export class Note {
     const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric({ lyric }));
     const accidentalProps = Note.getAccidentalProps(musicXML);
 
+    const ties = musicXML.note
+      .getNotations()
+      .flatMap((notation) => notation.getTieds())
+      .map((tie) => Tie.fromMusicXML({ tie }));
+
     return new Note(
       pitch,
       octave,
@@ -55,7 +63,8 @@ export class Note {
       duration,
       measureBeat,
       annotations,
-      accidentalProps
+      accidentalProps,
+      ties
     );
   }
 
@@ -82,12 +91,20 @@ export class Note {
       measureBeat: this.getMeasureBeat().parse(),
       accidental: this.getAccidental(noteCtx)?.parse(noteCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
-      curveRefs: [],
+      curveRefs: this.getCurves().map((curve) => curve.parse(noteCtx)),
     };
   }
 
   private getAnnotations(): Annotation[] {
     return this.lyrics;
+  }
+
+  private getCurves(): Array<Slur | Tie> {
+    return [...this.getSlurs(), ...this.ties];
+  }
+
+  private getSlurs(): Slur[] {
+    return [];
   }
 
   private getAccidental(noteCtx: NoteContext): Accidental | null {
