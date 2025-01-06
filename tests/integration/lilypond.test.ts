@@ -26,11 +26,11 @@ describe('lilypond', () => {
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
     { filename: '01a-Pitches-Pitches.musicxml', width: 900, migrated: true },
-    { filename: '01b-Pitches-Intervals.musicxml', width: 900 },
-    { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900 },
-    { filename: '01d-Pitches-Microtones.musicxml', width: 900 },
-    { filename: '01e-Pitches-ParenthesizedAccidentals.musicxml', width: 900 },
-    { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.musicxml', width: 900 },
+    { filename: '01b-Pitches-Intervals.musicxml', width: 900, migrated: true },
+    { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900, migrated: true },
+    { filename: '01e-Pitches-ParenthesizedAccidentals.musicxml', width: 900, migrated: true },
+    { filename: '01d-Pitches-Microtones.musicxml', width: 900, migrated: true },
+    { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.musicxml', width: 900, migrated: true },
     { filename: '02a-Rests-Durations.musicxml', width: 900 },
     { filename: '02b-Rests-PitchedRests.musicxml', width: 900 },
     { filename: '02c-Rests-MultiMeasureRests.musicxml', width: 900 },
