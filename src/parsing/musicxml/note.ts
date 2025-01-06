@@ -80,21 +80,14 @@ export class Note {
       durationType: this.durationType,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      mods: this.getMods(noteCtx).map((mod) => mod.parse(noteCtx)),
+      accidental: this.getAccidental(noteCtx)?.parse(noteCtx) ?? null,
+      annotations: this.getAnnotations().map((annotation) => annotation.parse()),
+      curveRefs: [],
     };
   }
 
-  private getMods(noteCtx: NoteContext): NoteMod[] {
-    const mods = new Array<NoteMod>();
-
-    const accidental = this.getAccidental(noteCtx);
-    if (accidental) {
-      mods.push(accidental);
-    }
-
-    mods.push(...this.lyrics);
-
-    return mods;
+  private getAnnotations(): Annotation[] {
+    return this.lyrics;
   }
 
   private getAccidental(noteCtx: NoteContext): Accidental | null {

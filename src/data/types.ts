@@ -104,11 +104,10 @@ export type Note = {
   durationType: DurationType;
   dotCount: number;
   measureBeat: Fraction;
-  mods: NoteMod[];
+  accidental: Accidental | null;
+  annotations: Annotation[];
   curveRefs: CurveRef[];
 };
-
-export type NoteMod = Accidental | Annotation;
 
 export type Accidental = {
   type: 'accidental';

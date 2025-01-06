@@ -51,25 +51,23 @@ export class StaveNote {
       vexflow.Dot.buildAndAttach([vexflowStaveNote]);
     }
 
-    for (const mod of note.mods) {
-      if (mod.type === 'accidental') {
-        const vexflowAccidental = new vexflow.Accidental(mod.code);
-        if (mod.isCautionary) {
-          vexflowAccidental.setAsCautionary();
-        }
-        vexflowStaveNote.addModifier(vexflowAccidental);
+    if (note.accidental) {
+      const vexflowAccidental = new vexflow.Accidental(note.accidental.code);
+      if (note.accidental.isCautionary) {
+        vexflowAccidental.setAsCautionary();
       }
+      vexflowStaveNote.addModifier(vexflowAccidental);
+    }
 
-      if (mod.type === 'annotation') {
-        const vexflowAnnotation = new vexflow.Annotation(mod.text);
-        if (mod.horizontalJustification) {
-          vexflowAnnotation.setJustification(mod.horizontalJustification);
-        }
-        if (mod.verticalJustification) {
-          vexflowAnnotation.setVerticalJustification(mod.verticalJustification);
-        }
-        vexflowStaveNote.addModifier(vexflowAnnotation);
+    for (const annotation of note.annotations) {
+      const vexflowAnnotation = new vexflow.Annotation(annotation.text);
+      if (annotation.horizontalJustification) {
+        vexflowAnnotation.setJustification(annotation.horizontalJustification);
       }
+      if (annotation.verticalJustification) {
+        vexflowAnnotation.setVerticalJustification(annotation.verticalJustification);
+      }
+      vexflowStaveNote.addModifier(vexflowAnnotation);
     }
 
     return {
