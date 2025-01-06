@@ -4,14 +4,15 @@ import * as util from '@/util';
 import { Measure } from './measure';
 import { MeasureEvent } from './types';
 import { Signature } from './signature';
-import { SystemContext } from './contexts';
+import { ScoreContext, SystemContext } from './contexts';
 import { MeasureEventCalculator } from './measureeventcalculator';
+import { IdProvider } from './idprovider';
 
 export class System {
-  constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
+  constructor(private idProvider: IdProvider, private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
 
-  parse(): data.System {
-    const systemCtx = new SystemContext();
+  parse(scoreCtx: ScoreContext): data.System {
+    const systemCtx = new SystemContext(scoreCtx);
 
     const parsedMeasures = new Array<data.Measure>();
 

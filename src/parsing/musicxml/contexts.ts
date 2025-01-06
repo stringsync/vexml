@@ -1,8 +1,3 @@
-import * as data from '@/data';
-import { Signature } from './signature';
-import { Key } from './key';
-import { Time } from './time';
-
 /**
  * @file This file contains **mutable** context objects that are used during parsing.
  *
@@ -12,14 +7,25 @@ import { Time } from './time';
  *
  * NOTE: This code must **not** depend on any other parsing code because it will create an undesireble dependency graph.
  */
-export class SystemContext {
+
+import * as data from '@/data';
+import { Signature } from './signature';
+import { Key } from './key';
+import { Time } from './time';
+import { IdProvider } from './idprovider';
+
+export class ScoreContext {
   // part ID -> nullable stave number -> multi rest count
   // When the stave number is null, the multi rest count applies to all staves in the part.
   private multiRestCounts = new Map<string, Map<number | null, number>>();
 
+  private curves = new Array<data.Curve>();
+
   // curve number -> curve ref
   // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=dotted%2C%20or%20wavy.-,number,-number%2Dlevel
-  private curves = new Map<number | null, data.CurveRef>();
+  private curveRefs = new Map<number | null, data.CurveRef>();
+
+  constructor(private idProvider: IdProvider) {}
 
   getMultiRestCount(partId: string, staveNumber: number | null): number {
     return this.multiRestCounts.get(partId)?.get(null) ?? this.multiRestCounts.get(partId)?.get(staveNumber) ?? 0;
@@ -44,8 +50,35 @@ export class SystemContext {
     }
   }
 
+  getCurves(): data.Curve[] {
+    return this.curves;
+  }
+
   getCurveRef(curveNumber: number | null): data.CurveRef | null {
-    return this.curves.get(curveNumber) ?? null;
+    return this.curveRefs.get(curveNumber) ?? null;
+  }
+
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+    const id = this.idProvider.next();
+    this.curves.push({ type: 'curve', id, placement, opening });
+    this.curveRefs.set(curveNumber, { type: 'curveref', curveId: id });
+    return this.curveRefs.get(curveNumber)!;
+  }
+}
+
+export class SystemContext {
+  constructor(private score: ScoreContext) {}
+
+  getMultiRestCount(partId: string, staveNumber: number | null): number {
+    return this.score.getMultiRestCount(partId, staveNumber);
+  }
+
+  incrementMultiRestCount(partId: string, staveNumber: number | null, count: number): void {
+    return this.score.incrementMultiRestCount(partId, staveNumber, count);
+  }
+
+  decrementMultiRestCounts(): void {
+    return this.score.decrementMultiRestCounts();
   }
 }
 
