@@ -1,34 +1,22 @@
 import * as util from '@/util';
+import { LabelFont } from './label';
 
 export class TextMeasurer {
-  private text: string;
-  private fontSize: string;
-  private fontFamily: string;
+  constructor(private font: LabelFont) {}
 
-  constructor(opts: { text: string; fontSize: string; fontFamily: string }) {
-    this.text = opts.text;
-    this.fontSize = opts.fontSize;
-    this.fontFamily = opts.fontFamily;
-  }
+  measure(text: string) {
+    const ctx = document.createElement('canvas').getContext('2d');
+    util.assertNotNull(ctx);
 
-  getWidth(): number {
-    return this.getTextMetrics().width;
-  }
+    const fontSize = this.font.size || '16px';
+    const fontFamily = this.font.family || 'Arial, sans-serif';
+    ctx.font = `${fontSize} ${fontFamily}`;
 
-  getApproximateHeight(): number {
-    const textMetrics = this.getTextMetrics();
-    return textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
-  }
+    const metrics = ctx.measureText(text);
 
-  @util.memoize()
-  private getTextMetrics(): TextMetrics {
-    const context = document.createElement('canvas').getContext('2d');
-    if (!context) {
-      throw new Error('unable to get canvas rendering context');
-    }
-
-    context.font = `${this.fontSize} ${this.fontFamily}`;
-
-    return context.measureText(this.text);
+    return {
+      width: metrics.width,
+      approximateHeight: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+    };
   }
 }
