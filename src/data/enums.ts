@@ -155,3 +155,19 @@ export const DURATION_TYPES = new Enum([
   '1',
   '1/2',
 ] as const);
+
+/**
+ * CurvePlacement is the placement of the curve relative to the note.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=any%20notation%20type.-,placement,-above%2Dbelow
+ */
+export type CurvePlacement = EnumValues<typeof CURVE_PLACEMENTS>;
+export const CURVE_PLACEMENTS = new Enum(['auto', 'above', 'below'] as const);
+
+/**
+ * CurveOpening is the direction of the curve opening.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=MusicXML%20document%20order.-,orientation,-over%2Dunder
+ */
+export type CurveOpening = EnumValues<typeof CURVE_OPENING>;
+export const CURVE_OPENING = new Enum(['auto', 'up', 'down'] as const);

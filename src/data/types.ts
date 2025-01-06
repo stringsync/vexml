@@ -3,6 +3,8 @@ import {
   AnnotationHorizontalJustification,
   AnnotationVerticalJustification,
   ClefSign,
+  CurveOpening,
+  CurvePlacement,
   DurationType,
   KeyMode,
   Notehead,
@@ -21,15 +23,14 @@ export type Score = {
 export type Curve = {
   type: 'curve';
   id: string;
+  placement: CurvePlacement;
+  opening: CurveOpening;
 };
 
 export type CurveRef = {
   type: 'curveref';
   curveId: string;
-  phase: CurvePhase;
 };
-
-export type CurvePhase = 'start' | 'continue' | 'end';
 
 export type System = {
   type: 'system';
