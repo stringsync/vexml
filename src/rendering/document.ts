@@ -108,6 +108,33 @@ export class Document {
     return this.getNextSystem(key)?.measures.at(0) ?? null;
   }
 
+  getMeasureMultiRestCount(key: MeasureKey): number {
+    let measureMultiRestCount = -1;
+
+    const measureEntryCount = this.getMeasureEntryCount(key);
+    for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
+      const measureEntryKey: MeasureEntryKey = { ...key, measureEntryIndex };
+
+      const partCount = this.getPartCount(measureEntryKey);
+      for (let partIndex = 0; partIndex < partCount; partIndex++) {
+        const partKey: PartKey = { ...measureEntryKey, partIndex };
+
+        const staveCount = this.getStaveCount(partKey);
+        for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+          const staveKey: StaveKey = { ...partKey, staveIndex };
+
+          if (measureMultiRestCount === -1) {
+            measureMultiRestCount = this.getStaveMultiRestCount(staveKey);
+          } else {
+            measureMultiRestCount = Math.min(measureMultiRestCount, this.getStaveMultiRestCount(staveKey));
+          }
+        }
+      }
+    }
+
+    return Math.max(0, measureMultiRestCount);
+  }
+
   getAbsoluteMeasureIndex(key: MeasureKey): number {
     const measures = this.getSystems().flatMap((s) => s.measures);
     return measures.indexOf(this.getMeasure(key));

@@ -22,8 +22,7 @@ export class Part {
     private log: Logger,
     private document: Document,
     private key: PartKey,
-    private position: Point,
-    private multiRestCount: number
+    private position: Point
   ) {}
 
   render(): PartRender {
@@ -47,14 +46,7 @@ export class Part {
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const key: StaveKey = { ...this.key, staveIndex };
-      const staveRender = new Stave(
-        this.config,
-        this.log,
-        this.document,
-        key,
-        pen.position(),
-        this.multiRestCount
-      ).render();
+      const staveRender = new Stave(this.config, this.log, this.document, key, pen.position()).render();
       staveRenders.push(staveRender);
 
       // TODO: Check <stave-layouts> first, which has a part+stave scoped margin.

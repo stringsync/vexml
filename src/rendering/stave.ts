@@ -29,8 +29,7 @@ export class Stave {
     private log: Logger,
     private document: Document,
     private key: StaveKey,
-    private position: Point,
-    private multiRestCount: number
+    private position: Point
   ) {}
 
   render(): StaveRender {
@@ -70,10 +69,11 @@ export class Stave {
 
     let vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null = null;
 
-    if (this.multiRestCount > 1) {
+    const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
+    if (multiRestCount > 1) {
       // A multirest that spans a single measure should have a whole rest associated with it. We only want to render
       // multirests that span multiple measures.
-      vexflowMultiMeasureRest = new vexflow.MultiMeasureRest(this.multiRestCount, { numberOfMeasures: 1 });
+      vexflowMultiMeasureRest = new vexflow.MultiMeasureRest(multiRestCount, { numberOfMeasures: 1 });
     } else {
       for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
         const key = { ...this.key, voiceIndex };
