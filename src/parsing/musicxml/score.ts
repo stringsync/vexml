@@ -11,6 +11,7 @@ export class Score {
       title: this.getTitle(),
       partLabels: this.getPartLabels(),
       systems: this.getSystems().map((system) => system.parse()),
+      curves: [],
     };
   }
 
