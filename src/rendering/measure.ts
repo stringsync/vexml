@@ -1,9 +1,8 @@
-import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, MeasureKey, PartKey, StaveKey } from './types';
+import { MeasureEntryKey, MeasureKey } from './types';
 import { Point, Rect } from '@/spatial';
 import { Fragment, FragmentRender } from './fragment';
 import { Gap, GapRender } from './gap';
@@ -34,8 +33,8 @@ export class Measure {
     const pen = new Pen(this.position);
 
     const absoluteIndex = this.document.getAbsoluteMeasureIndex(this.key);
-    const multiRestCount = this.getMeasureMultiRestCount(this.key);
-    const entryRenders = this.renderMeasureEntries(pen, multiRestCount);
+    const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
+    const entryRenders = this.renderMeasureEntries(pen);
 
     const rect = Rect.merge(entryRenders.map((entry) => entry.rect));
 
@@ -49,60 +48,22 @@ export class Measure {
     };
   }
 
-  /**
-   * Returns the multi-rest count that applies to all elements in the measure.
-   */
-  private getMeasureMultiRestCount(key: MeasureKey): number {
-    let measureMultiRestCount = -1;
-
-    const measureEntryCount = this.document.getMeasureEntryCount(key);
-    for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
-      const measureEntryKey: MeasureEntryKey = { ...key, measureEntryIndex };
-
-      const partCount = this.document.getPartCount(measureEntryKey);
-      for (let partIndex = 0; partIndex < partCount; partIndex++) {
-        const partKey: PartKey = { ...measureEntryKey, partIndex };
-
-        const staveCount = this.document.getStaveCount(partKey);
-        for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
-          const staveKey: StaveKey = { ...partKey, staveIndex };
-
-          if (measureMultiRestCount === -1) {
-            measureMultiRestCount = this.document.getStaveMultiRestCount(staveKey);
-          } else {
-            measureMultiRestCount = Math.min(measureMultiRestCount, this.document.getStaveMultiRestCount(staveKey));
-          }
-        }
-      }
-    }
-
-    return Math.max(0, measureMultiRestCount);
-  }
-
-  private renderMeasureEntries(pen: Pen, multiRestCount: number): Array<FragmentRender | GapRender> {
-    const measureEntryWidths = this.getMeasureEntryWidths(multiRestCount);
+  private renderMeasureEntries(pen: Pen): Array<FragmentRender | GapRender> {
+    const measureEntryWidths = this.getMeasureEntryWidths();
 
     return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
       const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
       const width = measureEntryWidths?.at(measureEntryIndex) ?? null;
       switch (entry.type) {
         case 'fragment':
-          return new Fragment(
-            this.config,
-            this.log,
-            this.document,
-            key,
-            pen.position(),
-            width,
-            multiRestCount
-          ).render();
+          return new Fragment(this.config, this.log, this.document, key, pen.position(), width).render();
         case 'gap':
           return new Gap(this.config, this.log, this.document, key, pen.position()).render();
       }
     });
   }
 
-  private getMeasureEntryWidths(multiRestCount: number): number[] | null {
+  private getMeasureEntryWidths(): number[] | null {
     if (this.width === null) {
       return null;
     }
@@ -113,15 +74,7 @@ export class Measure {
         const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
         switch (measureEntry.type) {
           case 'fragment':
-            return new Fragment(
-              this.config,
-              this.log,
-              this.document,
-              key,
-              Point.origin(),
-              null,
-              multiRestCount
-            ).render();
+            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
           case 'gap':
             return new Gap(this.config, this.log, this.document, key, Point.origin()).render();
         }

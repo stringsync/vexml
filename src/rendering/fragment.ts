@@ -30,8 +30,7 @@ export class Fragment {
     private document: Document,
     private key: MeasureEntryKey,
     private position: Point,
-    private width: number | null,
-    private multiRestCount: number
+    private width: number | null
   ) {}
 
   render(): FragmentRender {
@@ -60,6 +59,8 @@ export class Fragment {
       partRenders,
     };
 
+    const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
+
     const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.remaining();
     const ensemble = new Ensemble(
       this.config,
@@ -68,7 +69,7 @@ export class Fragment {
       this.key,
       partPosition,
       ensembleWidth,
-      this.multiRestCount,
+      multiRestCount,
       fragmentRender
     );
     ensemble.format(pen);
@@ -111,14 +112,7 @@ export class Fragment {
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const key: PartKey = { ...this.key, partIndex };
-      const partRender = new Part(
-        this.config,
-        this.log,
-        this.document,
-        key,
-        pen.position(),
-        this.multiRestCount
-      ).render();
+      const partRender = new Part(this.config, this.log, this.document, key, pen.position()).render();
       partRenders.push(partRender);
     }
 
