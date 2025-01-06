@@ -1,5 +1,5 @@
 import { Point, Rect } from '@/spatial';
-import { MeasureEntryKey, Padding, PartLabelKey } from './types';
+import { FragmentKey, Padding, PartLabelKey } from './types';
 import { Document } from './document';
 import { Label } from './label';
 import { Config } from './config';
@@ -25,7 +25,7 @@ export class PartLabelGroup {
     private config: Config,
     private log: Logger,
     private document: Document,
-    private key: MeasureEntryKey,
+    private key: FragmentKey,
     private position: Point,
     private partRenders: PartRender[] | null
   ) {}

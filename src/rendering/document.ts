@@ -3,7 +3,7 @@ import * as util from '@/util';
 import {
   SystemKey,
   MeasureKey,
-  MeasureEntryKey,
+  FragmentKey,
   PartKey,
   StaveKey,
   VoiceKey,
@@ -111,13 +111,13 @@ export class Document {
   getMeasureMultiRestCount(key: MeasureKey): number {
     let measureMultiRestCount = -1;
 
-    const measureEntryCount = this.getMeasureEntryCount(key);
-    for (let measureEntryIndex = 0; measureEntryIndex < measureEntryCount; measureEntryIndex++) {
-      const measureEntryKey: MeasureEntryKey = { ...key, measureEntryIndex };
+    const fragmentCount = this.getFragmentCount(key);
+    for (let fragmentIndex = 0; fragmentIndex < fragmentCount; fragmentIndex++) {
+      const fragmentKey: FragmentKey = { ...key, fragmentIndex };
 
-      const partCount = this.getPartCount(measureEntryKey);
+      const partCount = this.getPartCount(fragmentKey);
       for (let partIndex = 0; partIndex < partCount; partIndex++) {
-        const partKey: PartKey = { ...measureEntryKey, partIndex };
+        const partKey: PartKey = { ...fragmentKey, partIndex };
 
         const staveCount = this.getStaveCount(partKey);
         for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
@@ -140,63 +140,51 @@ export class Document {
     return measures.indexOf(this.getMeasure(key));
   }
 
-  getMeasureEntries(key: MeasureKey): data.MeasureEntry[] {
-    return this.getMeasure(key).entries;
+  getFragments(key: MeasureKey): data.Fragment[] {
+    return this.getMeasure(key).fragments;
   }
 
-  getMeasureEntryCount(key: MeasureKey): number {
-    return this.getMeasureEntries(key).length;
+  getFragmentCount(key: MeasureKey): number {
+    return this.getFragments(key).length;
   }
 
-  isFirstMeasureEntry(key: MeasureEntryKey): boolean {
-    return key.measureEntryIndex === 0;
+  isFirstFragment(key: FragmentKey): boolean {
+    return key.fragmentIndex === 0;
   }
 
-  isLastMeasureEntry(key: MeasureEntryKey): boolean {
-    return key.measureEntryIndex === this.getMeasureEntryCount(key) - 1;
+  isLastFragment(key: FragmentKey): boolean {
+    return key.fragmentIndex === this.getFragmentCount(key) - 1;
   }
 
-  getPreviousMeasureEntry(key: MeasureEntryKey): data.MeasureEntry | null {
-    if (key.measureEntryIndex > 0) {
-      const previousEntry = this.getMeasureEntries(key).at(key.measureEntryIndex - 1);
+  getPreviousFragment(key: FragmentKey): data.Fragment | null {
+    if (key.fragmentIndex > 0) {
+      const previousEntry = this.getFragments(key).at(key.fragmentIndex - 1);
       util.assertDefined(previousEntry);
       return previousEntry;
     }
-    return this.getPreviousMeasure(key)?.entries.at(-1) ?? null;
+    return this.getPreviousMeasure(key)?.fragments.at(-1) ?? null;
   }
 
-  getMeasureEntry(key: MeasureEntryKey): data.MeasureEntry {
-    const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
+  getFragment(key: FragmentKey): data.Fragment {
+    const entry = this.getFragments(key).at(key.fragmentIndex);
     util.assertDefined(entry);
     return entry;
   }
 
-  getNextMeasureEntry(key: MeasureEntryKey): data.MeasureEntry | null {
-    if (key.measureEntryIndex < this.getMeasureEntryCount(key) - 1) {
-      const nextEntry = this.getMeasureEntries(key).at(key.measureEntryIndex + 1);
+  getNextFragment(key: FragmentKey): data.Fragment | null {
+    if (key.fragmentIndex < this.getFragmentCount(key) - 1) {
+      const nextEntry = this.getFragments(key).at(key.fragmentIndex + 1);
       util.assertDefined(nextEntry);
       return nextEntry;
     }
-    return this.getNextMeasure(key)?.entries.at(0) ?? null;
+    return this.getNextMeasure(key)?.fragments.at(0) ?? null;
   }
 
-  getFragment(key: MeasureEntryKey): data.Fragment {
-    const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
-    util.assert(entry?.type === 'fragment', 'expected entry to be a fragment');
-    return entry;
-  }
-
-  getGap(key: MeasureEntryKey): data.Gap {
-    const entry = this.getMeasureEntries(key).at(key.measureEntryIndex);
-    util.assert(entry?.type === 'gap', 'expected entry to be a gap');
-    return entry;
-  }
-
-  getParts(key: MeasureEntryKey): data.Part[] {
+  getParts(key: FragmentKey): data.Part[] {
     return this.getFragment(key).parts;
   }
 
-  getPartCount(key: MeasureEntryKey): number {
+  getPartCount(key: FragmentKey): number {
     return this.getParts(key).length;
   }
 
@@ -239,7 +227,7 @@ export class Document {
   }
 
   getPreviouslyPlayedStave(key: StaveKey): data.Stave | null {
-    return this.getPreviousMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
+    return this.getPreviousFragment(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
   }
 
   getStave(key: StaveKey): data.Stave {
@@ -249,7 +237,7 @@ export class Document {
   }
 
   getNextPlayedStave(key: StaveKey): data.Stave | null {
-    return this.getNextMeasureEntry(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
+    return this.getNextFragment(key)?.parts.at(key.partIndex)?.staves.at(key.staveIndex) ?? null;
   }
 
   getVoices(key: StaveKey): data.Voice[] {

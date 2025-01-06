@@ -36,7 +36,7 @@ export class Measure {
     return {
       type: 'measure',
       label: this.label,
-      entries: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
+      fragments: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
     };
   }
 

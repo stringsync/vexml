@@ -2,20 +2,17 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { MeasureEntryKey, MeasureKey } from './types';
+import { FragmentKey, MeasureKey } from './types';
 import { Point, Rect } from '@/spatial';
 import { Fragment, FragmentRender } from './fragment';
-import { Gap, GapRender } from './gap';
 import { Pen } from './pen';
-
-export type MeasureEntryRender = FragmentRender | GapRender;
 
 export type MeasureRender = {
   type: 'measure';
   key: MeasureKey;
   rect: Rect;
   absoluteIndex: number;
-  entryRenders: Array<MeasureEntryRender>;
+  fragmentRenders: FragmentRender[];
   multiRestCount: number;
 };
 
@@ -34,52 +31,44 @@ export class Measure {
 
     const absoluteIndex = this.document.getAbsoluteMeasureIndex(this.key);
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
-    const entryRenders = this.renderMeasureEntries(pen);
+    const fragmentRenders = this.renderFragments(pen);
 
-    const rect = Rect.merge(entryRenders.map((entry) => entry.rect));
+    const rect = Rect.merge(fragmentRenders.map((entry) => entry.rect));
 
     return {
       type: 'measure',
       key: this.key,
       rect,
-      entryRenders,
+      fragmentRenders,
       multiRestCount,
       absoluteIndex,
     };
   }
 
-  private renderMeasureEntries(pen: Pen): Array<FragmentRender | GapRender> {
-    const measureEntryWidths = this.getMeasureEntryWidths();
+  private renderFragments(pen: Pen): FragmentRender[] {
+    const fragmentWidths = this.getFragmentWidths();
 
-    return this.document.getMeasureEntries(this.key).map((entry, measureEntryIndex) => {
-      const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
-      const width = measureEntryWidths?.at(measureEntryIndex) ?? null;
-      switch (entry.type) {
-        case 'fragment':
-          return new Fragment(this.config, this.log, this.document, key, pen.position(), width).render();
-        case 'gap':
-          return new Gap(this.config, this.log, this.document, key, pen.position()).render();
-      }
+    return this.document.getFragments(this.key).map((entry, fragmentIndex) => {
+      const key: FragmentKey = { ...this.key, fragmentIndex: fragmentIndex };
+      const width = fragmentWidths?.at(fragmentIndex) ?? null;
+      return new Fragment(this.config, this.log, this.document, key, pen.position(), width).render();
     });
   }
 
-  private getMeasureEntryWidths(): number[] | null {
+  private getFragmentWidths(): number[] | null {
     if (this.width === null) {
       return null;
     }
 
-    const widths = this.document
-      .getMeasureEntries(this.key)
-      .map((measureEntry, measureEntryIndex) => {
-        const key: MeasureEntryKey = { ...this.key, measureEntryIndex };
-        switch (measureEntry.type) {
-          case 'fragment':
-            return new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
-          case 'gap':
-            return new Gap(this.config, this.log, this.document, key, Point.origin()).render();
-        }
-      })
-      .map((measureEntryRender) => measureEntryRender.rect.w);
+    const fragmentCount = this.document.getFragmentCount(this.key);
+
+    const widths = new Array<number>();
+
+    for (let fragmentIndex = 0; fragmentIndex < fragmentCount; fragmentIndex++) {
+      const key: FragmentKey = { ...this.key, fragmentIndex };
+      const fragmentRender = new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
+      widths.push(fragmentRender.rect.w);
+    }
 
     const total = util.sum(widths);
 

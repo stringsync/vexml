@@ -102,7 +102,7 @@ export class Score {
       systemRenders.push(systemRender);
 
       const excessHeight = util.max(
-        systemRender.measureRenders.flatMap((m) => m.entryRenders).flatMap((e) => e.excessHeight)
+        systemRender.measureRenders.flatMap((m) => m.fragmentRenders).flatMap((e) => e.excessHeight)
       );
       new SystemRenderMover().moveBy(systemRender, excessHeight);
 

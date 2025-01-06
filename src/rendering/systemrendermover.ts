@@ -38,7 +38,7 @@ export class SystemRenderMover {
     // Before finishing, we move the vexflow staves. Since everything is linked to them, this should complete the move.
     // Any future supported vexflow object not connected to a stave will need to be moved here.
     systemRender.measureRenders
-      .flatMap((m) => m.entryRenders)
+      .flatMap((m) => m.fragmentRenders)
       .flatMap((e) => e.partRenders)
       .flatMap((p) => p.staveRenders)
       .map((s) => s.vexflowStave)

@@ -35,11 +35,11 @@ export type MeasureKey = SystemKey & {
   measureIndex: number;
 };
 
-export type MeasureEntryKey = MeasureKey & {
-  measureEntryIndex: number;
+export type FragmentKey = MeasureKey & {
+  fragmentIndex: number;
 };
 
-export type PartKey = MeasureEntryKey & {
+export type PartKey = FragmentKey & {
   partIndex: number;
 };
 
