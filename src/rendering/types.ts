@@ -1,7 +1,8 @@
 import * as vexflow from 'vexflow';
 import { Document } from './document';
-import { StaveNoteRender } from './stavenote';
-import { StaveRestRender } from './staverest';
+import { Rect } from '@/spatial';
+import { Label } from './label';
+import { ClefSign, StemDirection } from './enums';
 
 /** Formatter produces a new formatted document from an unformatted one. */
 export interface Formatter {
@@ -65,4 +66,136 @@ export type VoiceEntryKey = VoiceKey & {
   voiceEntryIndex: number;
 };
 
+export type ScoreRender = {
+  type: 'score';
+  rect: Rect;
+  titleRender: TitleRender | null;
+  systemRenders: SystemRender[];
+  curveRenders: CurveRender[];
+};
+
+export type TitleRender = {
+  type: 'title';
+  rect: Rect;
+  label: Label;
+};
+
+export type SystemRender = {
+  type: 'system';
+  key: SystemKey;
+  rect: Rect;
+  measureRenders: MeasureRender[];
+};
+
+export type MeasureRender = {
+  type: 'measure';
+  key: MeasureKey;
+  rect: Rect;
+  absoluteIndex: number;
+  fragmentRenders: FragmentRender[];
+  multiRestCount: number;
+};
+
+export type FragmentRender = {
+  type: 'fragment';
+  key: FragmentKey;
+  rect: Rect;
+  excessHeight: number;
+  partLabelGroupRender: PartLabelGroupRender | null;
+  partRenders: PartRender[];
+  vexflowStaveConnectors: vexflow.StaveConnector[];
+};
+
+export type PartLabelGroupRender = {
+  type: 'partlabelgroup';
+  rect: Rect;
+  partLabelRenders: PartLabelRender[];
+};
+
+export type PartLabelRender = {
+  type: 'partLabel';
+  key: PartLabelKey;
+  rect: Rect;
+  label: Label;
+};
+
+export type CurveRender = {
+  type: 'curve';
+  rect: Rect;
+  key: CurveKey;
+  vexflowCurves: vexflow.Curve[];
+};
+
+export type PartRender = {
+  type: 'part';
+  key: PartKey;
+  rect: Rect;
+  staveRenders: StaveRender[];
+  vexflowBrace: vexflow.StaveConnector | null;
+};
+
+export type StaveRender = {
+  type: 'stave';
+  key: StaveKey;
+  rect: Rect;
+  intrinsicRect: Rect;
+  excessHeight: number;
+  voiceRenders: VoiceRender[];
+  startClefRender: ClefRender | null;
+  endClefRender: ClefRender | null;
+  timeRender: TimeRender | null;
+  vexflowStave: vexflow.Stave;
+  vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
+};
+
+export type ClefRender = {
+  type: 'clef';
+  key: StaveKey;
+  width: number;
+  sign: ClefSign;
+  vexflowClef: vexflow.Clef;
+};
+
+export type TimeRender = {
+  type: 'time';
+  rect: Rect;
+  key: StaveKey;
+  vexflowTimeSignatures: vexflow.TimeSignature[];
+  width: number;
+};
+
+export type VoiceRender = {
+  type: 'voice';
+  key: VoiceKey;
+  rect: Rect;
+  vexflowVoice: vexflow.Voice;
+  entryRenders: VoiceEntryRender[];
+  beamRenders: BeamRender[];
+};
+
+export type BeamRender = {
+  type: 'beam';
+  rect: Rect;
+  key: BeamKey;
+  vexflowBeam: vexflow.Beam;
+};
+
 export type VoiceEntryRender = StaveNoteRender | StaveRestRender;
+
+export type StaveNoteRender = {
+  type: 'note';
+  key: VoiceEntryKey;
+  rect: Rect;
+  stemDirection: StemDirection;
+  vexflowTickable: vexflow.StaveNote;
+  curveIds: string[];
+  beamId: string | null;
+};
+
+export type StaveRestRender = {
+  type: 'staverest';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowTickable: vexflow.StaveNote;
+  beamId: string | null;
+};

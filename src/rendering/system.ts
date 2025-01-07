@@ -3,16 +3,9 @@ import { Point, Rect } from '@/spatial';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { Measure, MeasureRender } from './measure';
-import { MeasureKey, SystemKey } from './types';
+import { Measure } from './measure';
+import { MeasureKey, MeasureRender, SystemKey, SystemRender } from './types';
 import { Pen } from './pen';
-
-export type SystemRender = {
-  type: 'system';
-  key: SystemKey;
-  rect: Rect;
-  measureRenders: MeasureRender[];
-};
 
 export class System {
   constructor(

@@ -4,18 +4,10 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { StaveKey } from './types';
+import { StaveKey, TimeRender } from './types';
 import { Fraction } from '@/util';
 
 const ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH = 18;
-
-export type TimeRender = {
-  type: 'time';
-  rect: Rect;
-  key: StaveKey;
-  vexflowTimeSignatures: vexflow.TimeSignature[];
-  width: number;
-};
 
 export class Time {
   constructor(private config: Config, private log: Logger, private document: Document, private key: StaveKey) {}

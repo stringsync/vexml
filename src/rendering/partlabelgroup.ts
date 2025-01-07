@@ -1,24 +1,10 @@
 import { Point, Rect } from '@/spatial';
-import { FragmentKey, Padding, PartLabelKey } from './types';
+import { FragmentKey, Padding, PartLabelGroupRender, PartLabelKey, PartLabelRender, PartRender } from './types';
 import { Document } from './document';
 import { Label } from './label';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { PartRender } from './part';
 import { TextMeasurer } from './textmeasurer';
-
-export type PartLabelGroupRender = {
-  type: 'partlabelgroup';
-  rect: Rect;
-  partLabelRenders: PartLabelRender[];
-};
-
-export type PartLabelRender = {
-  type: 'partLabel';
-  key: PartLabelKey;
-  rect: Rect;
-  label: Label;
-};
 
 export class PartLabelGroup {
   constructor(

@@ -1,20 +1,11 @@
 import * as vexflow from 'vexflow';
-import { PartKey, StaveKey } from './types';
+import { PartKey, PartRender, StaveKey, StaveRender } from './types';
 import { Point, Rect } from '@/spatial';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { Stave, StaveRender } from './stave';
+import { Stave } from './stave';
 import { Pen } from './pen';
-
-export type PartRender = {
-  type: 'part';
-  key: PartKey;
-  rect: Rect;
-  staveRenders: StaveRender[];
-
-  vexflowBrace: vexflow.StaveConnector | null;
-};
 
 export class Part {
   constructor(

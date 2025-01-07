@@ -4,14 +4,7 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { BeamKey, VoiceEntryRender } from './types';
-
-export type BeamRender = {
-  type: 'beam';
-  rect: Rect;
-  key: BeamKey;
-  vexflowBeam: vexflow.Beam;
-};
+import { BeamKey, BeamRender, VoiceEntryRender } from './types';
 
 interface VoiceEntryRenderRegistry {
   get(beamId: string): VoiceEntryRender[] | undefined;

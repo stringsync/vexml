@@ -3,22 +3,13 @@ import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
-import { BeamKey, VoiceEntryRender, VoiceKey } from './types';
+import { BeamKey, BeamRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
 import { Rect } from '@/spatial';
 import { StaveNote } from './stavenote';
 import { StaveRest } from './staverest';
 import { Fraction } from '@/util';
 import { DurationType } from '@/data/enums';
-import { Beam, BeamRender } from './beam';
-
-export type VoiceRender = {
-  type: 'voice';
-  key: VoiceKey;
-  rect: Rect;
-  vexflowVoice: vexflow.Voice;
-  entryRenders: VoiceEntryRender[];
-  beamRenders: BeamRender[];
-};
+import { Beam } from './beam';
 
 const DURATION_TYPE_VALUES: Array<{ type: DurationType; value: Fraction }> = [
   { type: '1/2', value: new Fraction(2, 1) },
