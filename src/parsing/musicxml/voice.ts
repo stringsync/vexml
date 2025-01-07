@@ -29,7 +29,7 @@ export class Voice {
     return {
       type: 'voice',
       entries: this.parseEntries(voiceCtx),
-      beams: [],
+      beams: voiceCtx.getBeams(),
     };
   }
 

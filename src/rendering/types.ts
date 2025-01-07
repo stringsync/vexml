@@ -1,5 +1,7 @@
 import * as vexflow from 'vexflow';
 import { Document } from './document';
+import { StaveNoteRender } from './stavenote';
+import { StaveRestRender } from './staverest';
 
 /** Formatter produces a new formatted document from an unformatted one. */
 export interface Formatter {
@@ -55,6 +57,12 @@ export type VoiceKey = StaveKey & {
   voiceIndex: number;
 };
 
+export type BeamKey = VoiceKey & {
+  beamIndex: number;
+};
+
 export type VoiceEntryKey = VoiceKey & {
   voiceEntryIndex: number;
 };
+
+export type VoiceEntryRender = StaveNoteRender | StaveRestRender;

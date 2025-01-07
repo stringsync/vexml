@@ -5,7 +5,7 @@ import * as util from '@/util';
 import { Notehead, StemDirection } from './enums';
 import { Accidental } from './accidental';
 import { Fraction } from './fraction';
-import { NoteContext, VoiceContext } from './contexts';
+import { VoiceEntryContext, VoiceContext } from './contexts';
 import { Annotation } from './annotation';
 import { Pitch } from './pitch';
 import { Slur } from './slur';
@@ -88,7 +88,7 @@ export class Note {
   }
 
   parse(voiceCtx: VoiceContext): data.Note {
-    const noteCtx = new NoteContext(voiceCtx, this.pitch, this.octave);
+    const voiceEntryCtx = VoiceEntryContext.note(voiceCtx, this.pitch, this.octave);
 
     return {
       type: 'note',
@@ -99,10 +99,10 @@ export class Note {
       durationType: this.durationType,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      accidental: this.getAccidental(noteCtx)?.parse(noteCtx) ?? null,
+      accidental: this.getAccidental(voiceEntryCtx)?.parse(voiceEntryCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
-      curveIds: this.getCurves().map((curve) => curve.parse(noteCtx)),
-      beamId: this.beam?.parse(noteCtx) ?? null,
+      curveIds: this.getCurves().map((curve) => curve.parse(voiceEntryCtx)),
+      beamId: this.beam?.parse(voiceEntryCtx) ?? null,
     };
   }
 
@@ -118,12 +118,12 @@ export class Note {
     return [];
   }
 
-  private getAccidental(noteCtx: NoteContext): Accidental | null {
+  private getAccidental(voiceEntryCtx: VoiceEntryContext): Accidental | null {
     const isCautionary = this.accidentalProps.isCautionary;
 
     const noteAccidental = this.accidentalProps.code;
-    const keyAccidental = noteCtx.getKeyAccidental();
-    const activeAccidental = noteCtx.getActiveAccidental();
+    const keyAccidental = voiceEntryCtx.getKeyAccidental();
+    const activeAccidental = voiceEntryCtx.getActiveAccidental();
 
     if (!isCautionary && keyAccidental === noteAccidental) {
       return null;

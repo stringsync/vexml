@@ -1,5 +1,5 @@
 import * as musicxml from '@/musicxml';
-import { NoteContext } from './contexts';
+import { VoiceEntryContext } from './contexts';
 
 type BeamPhase = 'start' | 'continue';
 
@@ -20,10 +20,10 @@ export class Beam {
     return new Beam(phase);
   }
 
-  parse(noteCtx: NoteContext): string {
+  parse(voiceEntryCtx: VoiceEntryContext): string {
     if (this.phase === 'start') {
-      return noteCtx.beginBeam();
+      return voiceEntryCtx.beginBeam();
     }
-    return noteCtx.continueBeam() ?? noteCtx.beginBeam();
+    return voiceEntryCtx.continueBeam() ?? voiceEntryCtx.beginBeam();
   }
 }

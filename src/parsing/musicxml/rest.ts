@@ -4,8 +4,9 @@ import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 import { Fraction } from './fraction';
 import { Pitch } from './pitch';
-import { VoiceContext } from './contexts';
+import { VoiceContext, VoiceEntryContext } from './contexts';
 import { Time } from './time';
+import { Beam } from './beam';
 
 export class Rest {
   constructor(
@@ -14,7 +15,8 @@ export class Rest {
     private dotCount: number,
     private duration: util.Fraction,
     private displayStep: string | null,
-    private displayOctave: number | null
+    private displayOctave: number | null,
+    private beam: Beam | null
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Rest {
@@ -28,18 +30,24 @@ export class Rest {
       [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
     }
 
-    return new Rest(measureBeat, durationType, dotCount, duration, displayStep, displayOctave);
+    let beam: Beam | null = null;
+    if (musicXML.note.getBeams().length > 0) {
+      beam = Beam.fromMusicXML({ beam: musicXML.note.getBeams().at(0)! });
+    }
+
+    return new Rest(measureBeat, durationType, dotCount, duration, displayStep, displayOctave, beam);
   }
 
   static whole(time: Time): Rest {
     const measureBeat = util.Fraction.zero();
     const duration = time.toFraction().multiply(new util.Fraction(4, 1));
     const [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
-    return new Rest(measureBeat, durationType, dotCount, duration, null, null);
+    return new Rest(measureBeat, durationType, dotCount, duration, null, null, null);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   parse(voiceCtx: VoiceContext): data.Rest {
+    const voiceEntryCtx = VoiceEntryContext.rest(voiceCtx);
+
     return {
       type: 'rest',
       durationType: this.durationType,
@@ -47,6 +55,7 @@ export class Rest {
       measureBeat: this.getMeasureBeat().parse(),
       duration: this.getDuration().parse(),
       displayPitch: this.getDisplayPitch()?.parse() ?? null,
+      beamId: this.beam?.parse(voiceEntryCtx) ?? null,
     };
   }
 
@@ -59,10 +68,9 @@ export class Rest {
   }
 
   private getDisplayPitch(): Pitch | null {
-    if (this.displayStep === null || this.displayOctave === null) {
+    if (!this.displayStep || this.displayOctave === null) {
       return null;
     }
-
     return new Pitch(this.displayStep, this.displayOctave);
   }
 }

@@ -1,6 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
-import { NoteContext } from './contexts';
+import { VoiceEntryContext } from './contexts';
 
 export class Slur {
   constructor(
@@ -27,7 +27,7 @@ export class Slur {
     return new Slur(curveNumber, placement, opening);
   }
 
-  parse(noteCtx: NoteContext): string {
+  parse(voiceEntryCtx: VoiceEntryContext): string {
     return '';
   }
 }

@@ -1,11 +1,11 @@
 import * as data from '@/data';
-import { NoteContext } from './contexts';
+import { VoiceEntryContext } from './contexts';
 
 export class Accidental {
   constructor(private code: data.AccidentalCode, private isCautionary: boolean) {}
 
-  parse(noteCtx: NoteContext): data.Accidental {
-    noteCtx.setActiveAccidental(this.code);
+  parse(voiceEntryCtx: VoiceEntryContext): data.Accidental {
+    voiceEntryCtx.setActiveAccidental(this.code);
 
     return {
       type: 'accidental',

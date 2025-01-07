@@ -10,10 +10,11 @@ import { StaveNoteRender } from './stavenote';
 export type CurveRender = {
   type: 'curve';
   rect: Rect;
+  key: CurveKey;
   vexflowCurves: vexflow.Curve[];
 };
 
-interface StaveNoteRegistry {
+interface StaveNoteRenderRegistry {
   get(curveId: string): StaveNoteRender[] | undefined;
 }
 
@@ -23,12 +24,12 @@ export class Curve {
     private log: Logger,
     private document: Document,
     private key: CurveKey,
-    private staveNoteRegistry: StaveNoteRegistry
+    private registry: StaveNoteRenderRegistry
   ) {}
 
   render(): CurveRender {
     const curve = this.document.getCurve(this.key);
-    const staveNoteRenders = this.staveNoteRegistry.get(curve.id);
+    const staveNoteRenders = this.registry.get(curve.id);
     util.assertDefined(staveNoteRenders);
     util.assert(staveNoteRenders.length > 0, 'Curve must have at least one stave note');
 
@@ -45,6 +46,7 @@ export class Curve {
     return {
       type: 'curve',
       rect,
+      key: this.key,
       vexflowCurves,
     };
   }
