@@ -70,9 +70,11 @@ export class Rendering {
     });
 
     // Draw the curves.
-    scoreRender.curveRenders.forEach((c) => {
-      c.vexflowCurve.setContext(ctx).draw();
-    });
+    scoreRender.curveRenders
+      .flatMap((c) => c.vexflowCurves)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
 
     // Draw the multi rests.
     staveRenders.forEach((s) => {

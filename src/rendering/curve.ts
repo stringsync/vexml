@@ -6,11 +6,12 @@ import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey } from './types';
 import { StaveNoteRender } from './stavenote';
+import { NoopRenderContext } from './nooprenderctx';
 
 export type CurveRender = {
   type: 'curve';
   rect: Rect;
-  vexflowCurve: vexflow.Curve;
+  vexflowCurves: vexflow.Curve[];
 };
 
 interface StaveNoteRegistry {
@@ -32,17 +33,20 @@ export class Curve {
     util.assertDefined(staveNoteRenders);
     util.assert(staveNoteRenders.length > 0, 'Curve must have at least one stave note');
 
-    const firstVexflowStaveNote = staveNoteRenders.at(0)!.vexflowTickable;
-    const lastVexflowStaveNote = staveNoteRenders.at(-1)!.vexflowTickable;
+    const firstNote = staveNoteRenders.at(0)!.vexflowTickable;
+    const lastNote = staveNoteRenders.at(-1)!.vexflowTickable;
 
-    // TODO: Figure out options
-    const vexflowCurve = new vexflow.Curve(firstVexflowStaveNote, lastVexflowStaveNote, {});
+    // TODO: Figure out options, especially when the curve spans systems.
+    const vexflowCurves = [new vexflow.Curve(firstNote, lastNote, {})];
+
+    // Use getBoundingBox when it works.
+    // See https://github.com/vexflow/vexflow/issues/252
+    const rect = Rect.empty();
 
     return {
       type: 'curve',
-      // TODO: Figure out when and how to get the rect. We might need to render it to a noop context.
-      rect: Rect.empty(),
-      vexflowCurve,
+      rect,
+      vexflowCurves,
     };
   }
 }
