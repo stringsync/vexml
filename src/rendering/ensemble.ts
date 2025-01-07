@@ -6,8 +6,6 @@ import { Rect } from '@/spatial';
 import { FragmentKey, FragmentRender, StaveRender } from './types';
 import { NoopRenderContext } from './nooprenderctx';
 
-const BARLINE_PADDING_RIGHT = 6;
-
 export class Ensemble {
   private vexflowFormatter = new vexflow.Formatter();
 
@@ -20,35 +18,17 @@ export class Ensemble {
   ) {}
 
   /** Formats the ensemble, updating the rects and vexflow objects in place. */
-  format(opts: { startX: number; width: number | null; paddingLeft: number; paddingRight: number }): void {
-    const paddingLeft = opts.paddingLeft;
-    let paddingRight = opts.paddingRight;
-
-    const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastFragment = this.document.isLastFragment(this.key);
-    if (isLastMeasure && isLastFragment) {
-      paddingRight += BARLINE_PADDING_RIGHT;
-    }
-
+  format(x: number, width: number | null, paddingLeft: number, paddingRight: number): void {
     // Calculate the non-voice width.
     const nonVoiceWidth =
       vexflow.Stave.defaultPadding +
       this.getStartClefWidth() +
       this.getEndClefWidth() +
       this.getKeyWidth() +
-      this.getTimeWidth() +
-      paddingLeft +
-      paddingRight;
+      this.getTimeWidth();
 
     // Calculate stave width.
-    let initialStaveWidth: number;
-    if (opts.width) {
-      initialStaveWidth = opts.width;
-    } else {
-      initialStaveWidth = this.getVoiceWidth() + nonVoiceWidth;
-    }
-
-    const staveWidth = initialStaveWidth - paddingLeft - paddingRight;
+    const staveWidth = (width ?? this.getVoiceWidth() + nonVoiceWidth) - paddingLeft - paddingRight;
 
     // Set the width on the vexflow staves.
     const vexflowStaves = this.getStaveRenders().map((s) => s.vexflowStave);
@@ -100,7 +80,7 @@ export class Ensemble {
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
         }
-        staveRender.rect = this.getStaveRect(staveRender, opts.startX, paddingLeft, paddingRight);
+        staveRender.rect = this.getStaveRect(staveRender, x, paddingLeft, paddingRight);
         staveRender.intrinsicRect = this.getStaveIntrinsicRect(staveRender);
         excessHeight = Math.max(excessHeight, this.getExcessHeight(staveRender));
       }
@@ -183,12 +163,11 @@ export class Ensemble {
     return 0;
   }
 
-  private getStaveRect(staveRender: StaveRender, startX: number, paddingLeft: number, paddingRight: number): Rect {
+  private getStaveRect(staveRender: StaveRender, x: number, paddingLeft: number, paddingRight: number): Rect {
     const vexflowStave = staveRender.vexflowStave;
 
     const box = vexflowStave.getBoundingBox();
 
-    const x = startX;
     const y = box.y;
     const w = box.w + paddingLeft + paddingRight;
     const h = box.h;

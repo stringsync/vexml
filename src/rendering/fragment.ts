@@ -10,6 +10,7 @@ import { PartLabelGroup } from './partlabelgroup';
 import { Budget } from './budget';
 import { Ensemble } from './ensemble';
 
+const BARLINE_PADDING_RIGHT = 6;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BRACE_CONNECTOR_PADDING_LEFT = 8;
 
@@ -61,14 +62,20 @@ export class Fragment {
     }
 
     const paddingLeft = pen.x - postPartLabelGroupPosition.x;
-    const paddingRight = 0;
+    let paddingRight = 0;
 
-    new Ensemble(this.config, this.log, this.document, this.key, fragmentRender).format({
-      startX: postPartLabelGroupPosition.x,
-      width: ensembleWidth,
+    const isLastMeasure = this.document.isLastMeasure(this.key);
+    const isLastFragment = this.document.isLastFragment(this.key);
+    if (isLastMeasure && isLastFragment) {
+      paddingRight += BARLINE_PADDING_RIGHT;
+    }
+
+    new Ensemble(this.config, this.log, this.document, this.key, fragmentRender).format(
+      postPartLabelGroupPosition.x,
+      ensembleWidth,
       paddingLeft,
-      paddingRight,
-    });
+      paddingRight
+    );
 
     // After formatting, we can trust the y positions of the staves. Now we can render the part labels.
     const partLabelGroupRender = this.renderPartLabelGroup(prePartLabelGroupPosition, partRenders);
