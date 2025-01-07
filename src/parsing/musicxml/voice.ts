@@ -22,12 +22,14 @@ export class Voice {
       return {
         type: 'voice',
         entries: [rest.parse(voiceCtx)],
+        beams: [],
       };
     }
 
     return {
       type: 'voice',
       entries: this.parseEntries(voiceCtx),
+      beams: [],
     };
   }
 

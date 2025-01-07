@@ -6,7 +6,6 @@ import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey } from './types';
 import { StaveNoteRender } from './stavenote';
-import { NoopRenderContext } from './nooprenderctx';
 
 export type CurveRender = {
   type: 'curve';
