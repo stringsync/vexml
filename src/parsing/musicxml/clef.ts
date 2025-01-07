@@ -24,7 +24,7 @@ export class Clef {
     return {
       type: 'clef',
       sign: this.sign,
-      octaveChange: this.octaveChange,
+      octaveShift: this.octaveChange,
     };
   }
 
