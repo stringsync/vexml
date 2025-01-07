@@ -205,5 +205,6 @@ export type KeyRender = {
   type: 'key';
   key: StaveKey;
   rect: Rect;
+  width: number;
   vexflowKeySignature: vexflow.KeySignature;
 };

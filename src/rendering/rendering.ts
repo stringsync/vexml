@@ -102,6 +102,19 @@ export class Rendering {
       });
     }
 
+    // Draw the debug fragment rects.
+    if (config.DEBUG_DRAW_FRAGMENT_RECTS) {
+      fragmentRenders.forEach((f) => {
+        new DebugRect(config, log, `f${f.key.fragmentIndex}`, f.rect).setContext(ctx).draw();
+      });
+    }
+
+    if (config.DEBUG_DRAW_PART_RECTS) {
+      partRenders.forEach((p) => {
+        new DebugRect(config, log, `p${p.key.partIndex}`, p.rect).setContext(ctx).draw();
+      });
+    }
+
     // Draw the debug stave rects.
     if (config.DEBUG_DRAW_STAVE_RECTS) {
       staveRenders.forEach((s) => {

@@ -96,6 +96,14 @@ export const CONFIG = {
     defaultValue: false,
     help: 'DEBUG_DRAW_MEASURE_RECTS enables drawing of measure rectangles for debugging purposes.',
   }),
+  DEBUG_DRAW_FRAGMENT_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_FRAGMENT_RECTS enables drawing of fragment rectangles for debugging purposes.',
+  }),
+  DEBUG_DRAW_PART_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_PART_RECTS enables drawing of part rectangles for debugging purposes.',
+  }),
   DEBUG_DRAW_STAVE_RECTS: t.boolean({
     defaultValue: false,
     help: 'DEBUG_DRAW_STAVE_RECTS enables drawing of stave rectangles for debugging purposes.',

@@ -25,15 +25,28 @@ export class Ensemble {
 
   /** Formats the ensemble, updating the rects and vexflow objects in place. */
   format(pen: Pen): void {
-    // Tell vexflow which voices belong on the same staves.
-    this.joinVoices();
+    // Padding is applied only to the rect to account for adjustments made by vexflow to the stave. For instance, if
+    // the stave is shifted right by 100 due to an unaccounted measure element in vexflow's getBoundingBox(),
+    // paddingLeft should increment by to 100 to reflect this. The actual stave size should exclude the padding,
+    // which again is only applied to the rect model.
+    const paddingLeft = pen.x - this.position.x;
+    let paddingRight = 0;
+
+    const isLastMeasure = this.document.isLastMeasure(this.key);
+    const isLastFragment = this.document.isLastFragment(this.key);
+    if (isLastMeasure && isLastFragment) {
+      paddingRight += BARLINE_PADDING_RIGHT;
+    }
 
     // Calculate the non-voice width.
     const nonVoiceWidth =
       vexflow.Stave.defaultPadding +
-      this.getStartVexflowClefWidth() +
-      this.getEndVexflowClefWidth() +
-      this.getVexflowTimeSignatureWidth();
+      this.getStartClefWidth() +
+      this.getEndClefWidth() +
+      this.getKeyWidth() +
+      this.getTimeWidth() +
+      paddingLeft +
+      paddingRight;
 
     // Calculate stave width.
     let initialStaveWidth: number;
@@ -43,18 +56,7 @@ export class Ensemble {
       initialStaveWidth = this.getVoiceWidth() + nonVoiceWidth;
     }
 
-    // Account for how much the pen has moved.
-    const left = pen;
-    const right = new Pen(this.position);
-    right.moveBy({ dx: initialStaveWidth });
-
-    const isLastMeasure = this.document.isLastMeasure(this.key);
-    const isLastFragment = this.document.isLastFragment(this.key);
-    if (isLastMeasure && isLastFragment) {
-      right.moveBy({ dx: -BARLINE_PADDING_RIGHT });
-    }
-
-    const staveWidth = right.x - left.x;
+    const staveWidth = initialStaveWidth - paddingLeft - paddingRight;
 
     // Set the width on the vexflow staves.
     const vexflowStaves = this.getStaveRenders().map((s) => s.vexflowStave);
@@ -62,9 +64,16 @@ export class Ensemble {
       vexflowStave.setWidth(staveWidth);
     }
 
-    // Format! The voice width must be smaller than the stave or the stave won't contain it.
+    // Join the voices that belong to the same stave.
+    for (const staveRender of this.getStaveRenders()) {
+      const vexflowVoices = staveRender.voiceRenders.map((v) => v.vexflowVoice);
+      this.vexflowFormatter.joinVoices(vexflowVoices);
+    }
+
+    // Format **all** the voices! The voice width must be smaller than the stave or the stave won't contain it.
     const vexflowVoices = this.getStaveRenders().flatMap((s) => s.voiceRenders.map((v) => v.vexflowVoice));
     const voiceWidth = staveWidth - nonVoiceWidth;
+
     if (vexflowVoices.length > 0) {
       this.vexflowFormatter.format(vexflowVoices, voiceWidth);
     }
@@ -99,7 +108,7 @@ export class Ensemble {
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
         }
-        staveRender.rect = this.getStaveRect(staveRender, left, right);
+        staveRender.rect = this.getStaveRect(staveRender, paddingLeft, paddingRight);
         staveRender.intrinsicRect = this.getStaveIntrinsicRect(staveRender);
         excessHeight = Math.max(excessHeight, this.getExcessHeight(staveRender));
       }
@@ -114,14 +123,7 @@ export class Ensemble {
     return this.fragmentRender.partRenders.flatMap((p) => p.staveRenders);
   }
 
-  private joinVoices(): void {
-    for (const staveRender of this.getStaveRenders()) {
-      const vexflowVoices = staveRender.voiceRenders.map((v) => v.vexflowVoice);
-      this.vexflowFormatter.joinVoices(vexflowVoices);
-    }
-  }
-
-  private getStartVexflowClefWidth(): number {
+  private getStartClefWidth(): number {
     const widths = this.getStaveRenders()
       .map((s) => s.startClefRender)
       .filter((c) => c !== null)
@@ -132,7 +134,7 @@ export class Ensemble {
     return 0;
   }
 
-  private getEndVexflowClefWidth(): number {
+  private getEndClefWidth(): number {
     const widths = this.getStaveRenders()
       .map((s) => s.endClefRender)
       .filter((c) => c !== null)
@@ -143,11 +145,22 @@ export class Ensemble {
     return 0;
   }
 
-  private getVexflowTimeSignatureWidth(): number {
+  private getTimeWidth(): number {
     const widths = this.getStaveRenders()
       .map((s) => s.timeRender)
       .filter((t) => t !== null)
       .flatMap((t) => t.width);
+    if (widths.length > 0) {
+      return Math.max(...widths);
+    }
+    return 0;
+  }
+
+  private getKeyWidth(): number {
+    const widths = this.getStaveRenders()
+      .map((s) => s.keyRender)
+      .filter((k) => k !== null)
+      .map((k) => k.width);
     if (widths.length > 0) {
       return Math.max(...widths);
     }
@@ -177,21 +190,19 @@ export class Ensemble {
     return 0;
   }
 
-  private getStaveRect(staveRender: StaveRender, left: Pen, right: Pen): Rect {
+  private getStaveRect(staveRender: StaveRender, paddingLeft: number, paddingRight: number): Rect {
     const vexflowStave = staveRender.vexflowStave;
 
     const box = vexflowStave.getBoundingBox();
 
-    const x = box.x - left.x + this.position.x;
-    const y = box.y;
-    const w = right.x - this.position.x;
+    const x = this.position.x;
+    const y = this.position.y;
+    const w = box.w + paddingLeft + paddingRight;
     const h = box.h;
 
-    const vexflowVoiceRects = staveRender.voiceRenders
-      .map((v) => v.vexflowVoice.getBoundingBox())
-      .map((b) => Rect.fromRectLike(b));
+    const voiceRects = staveRender.voiceRenders.map((v) => v.rect);
 
-    return Rect.merge([new Rect(x, y, w, h), ...vexflowVoiceRects]);
+    return Rect.merge([new Rect(x, y, w, h), ...voiceRects]);
   }
 
   /**

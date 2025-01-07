@@ -55,7 +55,13 @@ export class Fragment {
 
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
 
-    const ensembleWidth = widthBudget.isUnlimited() ? null : Math.max(0, widthBudget.remaining());
+    let ensembleWidth: number | null;
+    if (widthBudget.isUnlimited() || widthBudget.remaining() <= 0) {
+      ensembleWidth = null;
+    } else {
+      ensembleWidth = widthBudget.remaining();
+    }
+
     const ensemble = new Ensemble(
       this.config,
       this.log,
@@ -103,7 +109,8 @@ export class Fragment {
   private hasPartLabels(): boolean {
     const isFirstSystem = this.document.isFirstSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
-    if (!isFirstSystem || !isFirstMeasure) {
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    if (!isFirstSystem || !isFirstMeasure || !isFirstFragment) {
       return false;
     }
 
@@ -126,7 +133,7 @@ export class Fragment {
 
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
-    if (isFirstMeasure) {
+    if (isFirstMeasure && isFirstFragment) {
       pen.moveBy({ dx: MEASURE_NUMBER_PADDING_LEFT });
     }
     if (isFirstMeasure && isFirstFragment && this.hasBraceConnector()) {
