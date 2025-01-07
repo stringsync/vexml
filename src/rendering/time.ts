@@ -7,7 +7,7 @@ import { Document } from './document';
 import { StaveKey } from './types';
 import { Fraction } from '@/util';
 
-const ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH = 12;
+const ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH = 18;
 
 export type TimeRender = {
   type: 'time';
@@ -25,6 +25,8 @@ export class Time {
     const vexflowTimeSignatures = timeSpecs.map((t) => new vexflow.TimeSignature(t));
     const padding = ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH * (timeSpecs.length - 1);
     const width = vexflowTimeSignatures.reduce((sum, t) => sum + t.getWidth(), padding);
+
+    console.log(width);
 
     return {
       type: 'time',
