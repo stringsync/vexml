@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import * as conversions from './conversions';
 import { KeyMode } from './enums';
 
 const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
@@ -34,6 +35,7 @@ export class Key {
       type: 'key',
       fifths: this.fifths,
       mode: this.mode,
+      rootNote: this.getRootNote(),
       previousKey: this.parsePreviousKey(),
     };
   }
@@ -89,6 +91,7 @@ export class Key {
     }
     return {
       type: 'previouskey',
+      rootNote: this.previousKey.getRootNote(),
       fifths: this.previousKey.fifths,
       mode: this.previousKey.mode,
     };
@@ -106,5 +109,21 @@ export class Key {
     }
 
     return alterations;
+  }
+
+  private getRootNote(): string {
+    // Clamp between -7 and 7 — the excess gets handled by alterations.
+    let fifths = this.fifths;
+    fifths = Math.max(-7, fifths);
+    fifths = Math.min(7, fifths);
+
+    switch (this.mode) {
+      case 'major':
+        return conversions.fromFifthsToMajorKey(fifths);
+      case 'minor':
+        return conversions.fromFifthsToMinorKey(fifths);
+      default:
+        return conversions.fromFifthsToMajorKey(fifths);
+    }
   }
 }
