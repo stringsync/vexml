@@ -55,7 +55,7 @@ export class Fragment {
 
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
 
-    const ensembleWidth = widthBudget.isUnlimited() ? null : widthBudget.remaining();
+    const ensembleWidth = widthBudget.isUnlimited() ? null : Math.max(0, widthBudget.remaining());
     const ensemble = new Ensemble(
       this.config,
       this.log,
