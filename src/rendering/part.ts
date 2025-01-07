@@ -17,7 +17,9 @@ export class Part {
   ) {}
 
   render(): PartRender {
-    const staveRenders = this.renderStaves();
+    const pen = new Pen(this.position);
+
+    const staveRenders = this.renderStaves(pen);
     const vexflowBrace = this.renderVexflowBrace(staveRenders);
 
     return {
@@ -29,9 +31,7 @@ export class Part {
     };
   }
 
-  private renderStaves(): StaveRender[] {
-    const pen = new Pen(this.position);
-
+  private renderStaves(pen: Pen): StaveRender[] {
     const staveRenders = new Array<StaveRender>();
     const staveCount = this.document.getStaveCount(this.key);
 

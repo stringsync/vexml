@@ -6,7 +6,9 @@ import { Document } from './document';
 import { KeyRender, StaveKey } from './types';
 import { AccidentalCode } from './enums';
 
-/** Represents a key signature, not document key. */
+const KEY_SIGNATURE_PADDING = 15;
+
+/** Represents a musical key signature, not document key. */
 export class Key {
   constructor(private config: Config, private log: Logger, private document: Document, private key: StaveKey) {}
 
@@ -19,10 +21,13 @@ export class Key {
       this.getAlterations()
     );
 
+    const width = vexflowKeySignature.getWidth() + KEY_SIGNATURE_PADDING;
+
     return {
       type: 'key',
       key: this.key,
-      rect: Rect.empty(),
+      rect: Rect.empty(), // placeholder
+      width,
       vexflowKeySignature,
     };
   }

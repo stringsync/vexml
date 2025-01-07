@@ -125,24 +125,26 @@ export class Measure {
       const nextSignature = builder.build();
       if (nextSignature.hasChanges()) {
         const end = measureBeat;
-        if (!start.isEquivalent(end)) {
-          ranges.push({ signature, start, end });
-        }
+        ranges.push({ signature: nextSignature, start, end });
         signature = nextSignature;
         start = end;
       }
     }
 
-    // Ensure that the last range includes the last measure beat to cover everything.
+    // Ensure that the last range can cover everything.
     const lastRange = ranges.at(-1);
     const lastMeasureBeat = measureBeats.at(-1);
     if (lastRange && lastMeasureBeat) {
-      lastRange.end = lastMeasureBeat;
+      lastRange.end = new Fraction(lastMeasureBeat.numerator + 1, lastMeasureBeat.denominator);
     }
 
     // If there are no ranges, add a single range that covers the entire measure.
     if (ranges.length === 0 && lastMeasureBeat) {
-      ranges.push({ signature, start, end: lastMeasureBeat });
+      ranges.push({
+        signature,
+        start,
+        end: new Fraction(lastMeasureBeat.numerator + 1, lastMeasureBeat.denominator),
+      });
     }
 
     return ranges;

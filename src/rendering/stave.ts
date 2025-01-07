@@ -144,8 +144,9 @@ export class Stave {
   private renderMeasureLabel(vexflowStave: vexflow.Stave): void {
     const isFirstPart = this.document.isFirstPart(this.key);
     const isFirstStave = this.document.isFirstStave(this.key);
+    const isFirstFragment = this.document.isFirstFragment(this.key);
     const measureLabel = this.document.getMeasure(this.key).label;
-    if (isFirstPart && isFirstStave && measureLabel) {
+    if (isFirstPart && isFirstStave && isFirstFragment && measureLabel) {
       vexflowStave.setMeasure(measureLabel);
     }
   }
@@ -226,7 +227,10 @@ export class Stave {
     const currentKey = this.document.getStave(this.key).signature.key;
     const previousKey = this.document.getPreviouslyPlayedStave(this.key)?.signature.key;
 
-    const didKeyChange = currentKey.fifths !== previousKey?.fifths || currentKey.mode !== previousKey?.mode;
+    const didKeyChange =
+      currentKey.rootNote !== previousKey?.rootNote ||
+      currentKey.fifths !== previousKey?.fifths ||
+      currentKey.mode !== previousKey?.mode;
 
     if (isFirstMeasureFragment || didKeyChange) {
       const keyRender = new Key(this.config, this.log, this.document, this.key).render();
