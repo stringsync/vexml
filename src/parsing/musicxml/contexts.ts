@@ -27,6 +27,10 @@ export class ScoreContext {
 
   constructor(private idProvider: IdProvider) {}
 
+  nextId(): string {
+    return this.idProvider.next();
+  }
+
   getMultiRestCount(partId: string, staveNumber: number | null): number {
     return this.multiRestCounts.get(partId)?.get(null) ?? this.multiRestCounts.get(partId)?.get(staveNumber) ?? 0;
   }
@@ -55,7 +59,7 @@ export class ScoreContext {
   }
 
   beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
-    const id = this.idProvider.next();
+    const id = this.nextId();
     this.curves.push({ type: 'curve', id, placement, opening });
     this.curveIds.set(curveNumber, id);
     return id;
@@ -68,6 +72,10 @@ export class ScoreContext {
 
 export class SystemContext {
   constructor(private score: ScoreContext) {}
+
+  nextId(): string {
+    return this.score.nextId();
+  }
 
   getMultiRestCount(partId: string, staveNumber: number | null): number {
     return this.score.getMultiRestCount(partId, staveNumber);
@@ -95,6 +103,10 @@ export class MeasureContext {
   private accidentals: Record<string, Record<string, Record<number, data.AccidentalCode>>> = {};
 
   constructor(private system: SystemContext, private index: number) {}
+
+  nextId(): string {
+    return this.system.nextId();
+  }
 
   getIndex(): number {
     return this.index;
@@ -126,6 +138,10 @@ export class MeasureContext {
 export class FragmentContext {
   constructor(private measure: MeasureContext, private signature: Signature) {}
 
+  nextId(): string {
+    return this.measure.nextId();
+  }
+
   getSignature(): Signature {
     return this.signature;
   }
@@ -153,6 +169,10 @@ export class FragmentContext {
 
 export class PartContext {
   constructor(private fragment: FragmentContext, private id: string) {}
+
+  nextId() {
+    return this.fragment.nextId();
+  }
 
   getId(): string {
     return this.id;
@@ -190,6 +210,10 @@ export class PartContext {
 export class StaveContext {
   constructor(private part: PartContext, private number: number) {}
 
+  nextId() {
+    return this.part.nextId();
+  }
+
   getNumber(): number {
     return this.number;
   }
@@ -224,7 +248,14 @@ export class StaveContext {
 }
 
 export class VoiceContext {
+  private graceBeams = new Array<data.Beam>();
+  private beams = new Array<data.Beam>();
+
   constructor(private stave: StaveContext, private id: string) {}
+
+  nextId() {
+    return this.stave.nextId();
+  }
 
   getId(): string {
     return this.id;
@@ -257,10 +288,34 @@ export class VoiceContext {
   continueCurve(curveNumber: number | null): string | null {
     return this.stave.continueCurve(curveNumber);
   }
+
+  beginBeam(): string {
+    const id = this.nextId();
+    this.beams.push({ type: 'beam', id });
+    return id;
+  }
+
+  continueBeam(): string | null {
+    return this.beams.at(-1)?.id ?? null;
+  }
+
+  beginGraceBeam(): string {
+    const id = this.nextId();
+    this.graceBeams.push({ type: 'beam', id });
+    return id;
+  }
+
+  continueGraceBeam(): string | null {
+    return this.graceBeams.at(-1)?.id ?? null;
+  }
 }
 
 export class NoteContext {
   constructor(private voice: VoiceContext, private pitch: string, private octave: number) {}
+
+  nextId() {
+    return this.voice.nextId();
+  }
 
   getKeyAccidental(): data.AccidentalCode | null {
     return this.voice.getKey().getAccidentalCode(this.pitch);
@@ -280,5 +335,21 @@ export class NoteContext {
 
   continueCurve(curveNumber: number | null): string | null {
     return this.voice.continueCurve(curveNumber);
+  }
+
+  beginBeam(): string {
+    return this.voice.beginBeam();
+  }
+
+  continueBeam(): string | null {
+    return this.voice.continueBeam();
+  }
+
+  beginGraceBeam(): string {
+    return this.voice.beginGraceBeam();
+  }
+
+  continueGraceBeam(): string | null {
+    return this.voice.continueGraceBeam();
   }
 }

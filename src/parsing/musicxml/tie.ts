@@ -44,13 +44,11 @@ export class Tie {
   }
 
   parse(noteCtx: NoteContext): string {
-    let curveId: string;
     if (this.phase === 'start') {
-      curveId = noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
-    } else {
-      curveId =
-        noteCtx.continueCurve(this.curveNumber) ?? noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
+      return noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
     }
-    return curveId;
+    return (
+      noteCtx.continueCurve(this.curveNumber) ?? noteCtx.beginCurve(this.curveNumber, this.placement, this.opening)
+    );
   }
 }

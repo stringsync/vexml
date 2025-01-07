@@ -17,6 +17,11 @@ export type Score = {
   title: string | null;
   partLabels: string[];
   systems: System[];
+
+  /**
+   * `curves` are the slurs and ties present in the score. It's defined at the score level to allow them to span
+   *  multiple systems, which is possible and valid to do.
+   */
   curves: Curve[];
 };
 
@@ -87,6 +92,17 @@ export type StaveSignature = {
 export type Voice = {
   type: 'voice';
   entries: VoiceEntry[];
+
+  /**
+   * `beams` are the beams present in a voice. They are defined at the voice level, so they cannot span multiple
+   * measures. Instead, the rendering engine will break beams at measure boundaries.
+   */
+  beams: Beam[];
+};
+
+export type Beam = {
+  type: 'beam';
+  id: string;
 };
 
 export type VoiceEntry = Note | Rest;
@@ -103,6 +119,7 @@ export type Note = {
   accidental: Accidental | null;
   annotations: Annotation[];
   curveIds: string[];
+  beamId: string | null;
 };
 
 export type Accidental = {

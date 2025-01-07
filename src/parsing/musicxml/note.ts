@@ -10,6 +10,7 @@ import { Annotation } from './annotation';
 import { Pitch } from './pitch';
 import { Slur } from './slur';
 import { Tie } from './tie';
+import { Beam } from './beam';
 
 export type NoteMod = Accidental | Annotation;
 
@@ -30,7 +31,8 @@ export class Note {
     private measureBeat: util.Fraction,
     private lyrics: Annotation[],
     private accidentalProps: NoteAccidentalProps,
-    private ties: Tie[]
+    private ties: Tie[],
+    private beam: Beam | null
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -53,6 +55,13 @@ export class Note {
       .flatMap((notation) => notation.getTieds())
       .map((tie) => Tie.fromMusicXML({ tie }));
 
+    // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
+    // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
+    let beam: Beam | null = null;
+    if (musicXML.note.getBeams().length > 0) {
+      beam = Beam.fromMusicXML({ beam: musicXML.note.getBeams().at(0)! });
+    }
+
     return new Note(
       pitch,
       octave,
@@ -64,7 +73,8 @@ export class Note {
       measureBeat,
       annotations,
       accidentalProps,
-      ties
+      ties,
+      beam
     );
   }
 
@@ -92,6 +102,7 @@ export class Note {
       accidental: this.getAccidental(noteCtx)?.parse(noteCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
       curveIds: this.getCurves().map((curve) => curve.parse(noteCtx)),
+      beamId: this.beam?.parse(noteCtx) ?? null,
     };
   }
 
