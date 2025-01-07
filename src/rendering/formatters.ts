@@ -1,9 +1,8 @@
 import * as util from '@/util';
 import { Document } from './document';
-import { Formatter, SystemArrangement } from './types';
+import { Formatter, ScoreRender, SystemArrangement } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { ScoreRender } from './score';
 
 export class UndefinedHeightFormatter implements Formatter {
   constructor(private config: Config, private log: Logger, private scoreRender: ScoreRender) {

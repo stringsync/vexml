@@ -4,15 +4,7 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { CurveKey } from './types';
-import { StaveNoteRender } from './stavenote';
-
-export type CurveRender = {
-  type: 'curve';
-  rect: Rect;
-  key: CurveKey;
-  vexflowCurves: vexflow.Curve[];
-};
+import { CurveKey, CurveRender, StaveNoteRender } from './types';
 
 interface StaveNoteRenderRegistry {
   get(curveId: string): StaveNoteRender[] | undefined;

@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Rect } from '@/spatial';
-import { SystemRender } from './system';
+import { SystemRender } from './types';
 
 type Movable = {
   rect: Rect;

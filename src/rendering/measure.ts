@@ -2,19 +2,10 @@ import * as util from '@/util';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { FragmentKey, MeasureKey } from './types';
+import { FragmentKey, FragmentRender, MeasureKey, MeasureRender } from './types';
 import { Point, Rect } from '@/spatial';
-import { Fragment, FragmentRender } from './fragment';
+import { Fragment } from './fragment';
 import { Pen } from './pen';
-
-export type MeasureRender = {
-  type: 'measure';
-  key: MeasureKey;
-  rect: Rect;
-  absoluteIndex: number;
-  fragmentRenders: FragmentRender[];
-  multiRestCount: number;
-};
 
 export class Measure {
   constructor(

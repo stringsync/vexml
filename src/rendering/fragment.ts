@@ -2,26 +2,16 @@ import * as vexflow from 'vexflow';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { FragmentKey, PartKey } from './types';
+import { FragmentKey, FragmentRender, PartKey, PartLabelGroupRender, PartRender } from './types';
 import { Point, Rect } from '@/spatial';
-import { Part, PartRender } from './part';
+import { Part } from './part';
 import { Pen } from './pen';
-import { PartLabelGroup, PartLabelGroupRender } from './partlabelgroup';
+import { PartLabelGroup } from './partlabelgroup';
 import { Budget } from './budget';
 import { Ensemble } from './ensemble';
 
 const MEASURE_NUMBER_PADDING_LEFT = 6;
 const BRACE_CONNECTOR_PADDING_LEFT = 8;
-
-export type FragmentRender = {
-  type: 'fragment';
-  key: FragmentKey;
-  rect: Rect;
-  excessHeight: number;
-  partLabelGroupRender: PartLabelGroupRender | null;
-  partRenders: PartRender[];
-  vexflowStaveConnectors: vexflow.StaveConnector[];
-};
 
 export class Fragment {
   constructor(

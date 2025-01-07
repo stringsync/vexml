@@ -1,27 +1,13 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
-import { StaveKey } from './types';
+import { ClefRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
-import { Voice, VoiceRender } from './voice';
-import { Clef, ClefRender } from './clef';
-import { Time, TimeRender } from './time';
-
-export type StaveRender = {
-  type: 'stave';
-  key: StaveKey;
-  rect: Rect;
-  intrinsicRect: Rect;
-  excessHeight: number;
-  voiceRenders: VoiceRender[];
-  startClefRender: ClefRender | null;
-  endClefRender: ClefRender | null;
-  timeRender: TimeRender | null;
-  vexflowStave: vexflow.Stave;
-  vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
-};
+import { Voice } from './voice';
+import { Clef } from './clef';
+import { Time } from './time';
 
 export class Stave {
   constructor(

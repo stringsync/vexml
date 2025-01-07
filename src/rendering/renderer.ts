@@ -3,11 +3,11 @@ import * as formatters from './formatters';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import { Document } from './document';
-import { Score, ScoreRender } from './score';
+import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Rendering } from './rendering';
-import { Formatter } from './types';
+import { Formatter, ScoreRender } from './types';
 
 export type RenderOptions = {
   config?: Partial<Config>;

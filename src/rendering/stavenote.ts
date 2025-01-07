@@ -1,20 +1,9 @@
 import * as vexflow from 'vexflow';
-import * as data from '@/data';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { VoiceEntryKey } from './types';
+import { StaveNoteRender, VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
-
-export type StaveNoteRender = {
-  type: 'note';
-  key: VoiceEntryKey;
-  rect: Rect;
-  stemDirection: data.StemDirection;
-  vexflowTickable: vexflow.StaveNote;
-  curveIds: string[];
-  beamId: string | null;
-};
 
 export class StaveNote {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}

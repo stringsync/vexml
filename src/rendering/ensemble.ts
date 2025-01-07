@@ -3,11 +3,9 @@ import { Logger } from '../debug';
 import { Config } from './config';
 import { Document } from './document';
 import { Point, Rect } from '@/spatial';
-import { FragmentKey } from './types';
+import { FragmentKey, FragmentRender, StaveRender } from './types';
 import { Pen } from './pen';
 import { NoopRenderContext } from './nooprenderctx';
-import { FragmentRender } from './fragment';
-import { StaveRender } from './stave';
 
 const BARLINE_PADDING_RIGHT = 6;
 

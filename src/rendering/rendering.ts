@@ -1,10 +1,10 @@
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
-import { ScoreRender } from './score';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
 import { DebugRect } from './debugrect';
+import { ScoreRender } from './types';
 
 export class Rendering {
   private constructor(

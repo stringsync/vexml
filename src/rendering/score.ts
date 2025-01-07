@@ -2,28 +2,13 @@ import * as util from '@/util';
 import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
-import { System, SystemRender } from './system';
-import { CurveKey, SystemKey } from './types';
+import { System } from './system';
+import { CurveKey, CurveRender, ScoreRender, StaveNoteRender, SystemKey, SystemRender, TitleRender } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
 import { Pen } from './pen';
 import { SystemRenderMover } from './systemrendermover';
-import { Curve, CurveRender } from './curve';
-import { StaveNoteRender } from './stavenote';
-
-export type ScoreRender = {
-  type: 'score';
-  rect: Rect;
-  titleRender: TitleRender | null;
-  systemRenders: SystemRender[];
-  curveRenders: CurveRender[];
-};
-
-export type TitleRender = {
-  type: 'title';
-  rect: Rect;
-  label: Label;
-};
+import { Curve } from './curve';
 
 /**
  * Score is the top-level rendering object that is directly responsible for arranging systems.
