@@ -53,8 +53,6 @@ export class Fragment {
       partRenders,
     };
 
-    const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
-
     let ensembleWidth: number | null;
     if (widthBudget.isUnlimited() || widthBudget.remaining() <= 0) {
       ensembleWidth = null;
@@ -62,17 +60,15 @@ export class Fragment {
       ensembleWidth = widthBudget.remaining();
     }
 
-    const ensemble = new Ensemble(
-      this.config,
-      this.log,
-      this.document,
-      this.key,
-      postPartLabelGroupPosition,
-      ensembleWidth,
-      multiRestCount,
-      fragmentRender
-    );
-    ensemble.format(pen);
+    const paddingLeft = pen.x - postPartLabelGroupPosition.x;
+    const paddingRight = 0;
+
+    new Ensemble(this.config, this.log, this.document, this.key, fragmentRender).format({
+      startX: postPartLabelGroupPosition.x,
+      width: ensembleWidth,
+      paddingLeft,
+      paddingRight,
+    });
 
     // After formatting, we can trust the y positions of the staves. Now we can render the part labels.
     const partLabelGroupRender = this.renderPartLabelGroup(prePartLabelGroupPosition, partRenders);
