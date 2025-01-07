@@ -43,18 +43,14 @@ export class Tie {
     return new Tie(curveNumber, phase, placement, opening);
   }
 
-  parse(noteCtx: NoteContext): data.CurveRef {
-    let curveRef: data.CurveRef;
+  parse(noteCtx: NoteContext): string {
+    let curveId: string;
     if (this.phase === 'start') {
-      curveRef = noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
+      curveId = noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
     } else {
-      curveRef =
+      curveId =
         noteCtx.continueCurve(this.curveNumber) ?? noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
     }
-
-    return {
-      type: 'curveref',
-      curveId: curveRef.curveId,
-    };
+    return curveId;
   }
 }

@@ -27,10 +27,7 @@ export class Slur {
     return new Slur(curveNumber, placement, opening);
   }
 
-  parse(noteCtx: NoteContext): data.CurveRef {
-    return {
-      type: 'curveref',
-      curveId: '',
-    };
+  parse(noteCtx: NoteContext): string {
+    return '';
   }
 }

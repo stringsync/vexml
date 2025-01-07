@@ -22,6 +22,10 @@ export type PartLabelKey = {
   partIndex: number;
 };
 
+export type CurveKey = {
+  curveIndex: number;
+};
+
 export type SystemArrangement = {
   from: number;
   to: number;

@@ -9,7 +9,6 @@
  */
 
 import * as data from '@/data';
-import * as util from '@/util';
 import { Signature } from './signature';
 import { Key } from './key';
 import { Time } from './time';
@@ -22,9 +21,9 @@ export class ScoreContext {
 
   private curves = new Array<data.Curve>();
 
-  // curve number -> curve ref
+  // curve number -> curve id
   // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=dotted%2C%20or%20wavy.-,number,-number%2Dlevel
-  private curveRefs = new Map<number | null, data.CurveRef>();
+  private curveIds = new Map<number | null, string>();
 
   constructor(private idProvider: IdProvider) {}
 
@@ -55,15 +54,15 @@ export class ScoreContext {
     return this.curves;
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     const id = this.idProvider.next();
     this.curves.push({ type: 'curve', id, placement, opening });
-    this.curveRefs.set(curveNumber, { type: 'curveref', curveId: id });
-    return this.curveRefs.get(curveNumber)!;
+    this.curveIds.set(curveNumber, id);
+    return id;
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
-    return this.curveRefs.get(curveNumber) ?? null;
+  continueCurve(curveNumber: number | null): string | null {
+    return this.curveIds.get(curveNumber) ?? null;
   }
 }
 
@@ -82,11 +81,11 @@ export class SystemContext {
     return this.score.decrementMultiRestCounts();
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.score.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.score.continueCurve(curveNumber);
   }
 }
@@ -115,11 +114,11 @@ export class MeasureContext {
     return this.system.getMultiRestCount(partId, staveNumber);
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.system.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.system.continueCurve(curveNumber);
   }
 }
@@ -143,11 +142,11 @@ export class FragmentContext {
     return this.measure.getMultiRestCount(partId, staveNumber);
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.measure.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.measure.continueCurve(curveNumber);
   }
 }
@@ -179,11 +178,11 @@ export class PartContext {
     return this.fragment.getMultiRestCount(this.id, staveNumber);
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.fragment.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.fragment.continueCurve(curveNumber);
   }
 }
@@ -215,11 +214,11 @@ export class StaveContext {
     return this.part.getMultiRestCount(this.number);
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.part.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.part.continueCurve(curveNumber);
   }
 }
@@ -251,11 +250,11 @@ export class VoiceContext {
     return this.stave.getMultiRestCount();
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.stave.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.stave.continueCurve(curveNumber);
   }
 }
@@ -275,11 +274,11 @@ export class NoteContext {
     this.voice.setActiveAccidental(this.pitch, this.octave, accidental);
   }
 
-  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): data.CurveRef {
+  beginCurve(curveNumber: number | null, placement: data.CurvePlacement, opening: data.CurveOpening): string {
     return this.voice.beginCurve(curveNumber, placement, opening);
   }
 
-  continueCurve(curveNumber: number | null): data.CurveRef | null {
+  continueCurve(curveNumber: number | null): string | null {
     return this.voice.continueCurve(curveNumber);
   }
 }

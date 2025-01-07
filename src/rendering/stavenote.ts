@@ -12,6 +12,7 @@ export type StaveNoteRender = {
   rect: Rect;
   stemDirection: data.StemDirection;
   vexflowTickable: vexflow.StaveNote;
+  curveIds: string[];
 };
 
 export class StaveNote {
@@ -76,6 +77,7 @@ export class StaveNote {
       rect: Rect.empty(), // placeholder
       stemDirection: note.stemDirection,
       vexflowTickable: vexflowStaveNote,
+      curveIds: note.curveIds,
     };
   }
 }

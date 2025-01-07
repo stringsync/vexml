@@ -10,6 +10,7 @@ import {
   VoiceEntryKey,
   SystemArrangement,
   PartLabelKey,
+  CurveKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -26,6 +27,20 @@ export class Document {
 
   getScore(): data.Score {
     return this.data.score;
+  }
+
+  getCurveCount(): number {
+    return this.data.score.curves.length;
+  }
+
+  getCurves(): data.Curve[] {
+    return this.data.score.curves;
+  }
+
+  getCurve(key: CurveKey): data.Curve {
+    const curve = this.getCurves().at(key.curveIndex);
+    util.assertDefined(curve);
+    return curve;
   }
 
   getSystems(): data.System[] {
