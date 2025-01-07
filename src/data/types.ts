@@ -142,6 +142,7 @@ export type Rest = {
   dotCount: number;
   duration: Fraction;
   displayPitch: Pitch | null;
+  beamId: string | null;
 };
 
 export type Pitch = {

@@ -289,6 +289,10 @@ export class VoiceContext {
     return this.stave.continueCurve(curveNumber);
   }
 
+  getBeams(): data.Beam[] {
+    return [...this.graceBeams, ...this.beams];
+  }
+
   beginBeam(): string {
     const id = this.nextId();
     this.beams.push({ type: 'beam', id });
@@ -310,8 +314,16 @@ export class VoiceContext {
   }
 }
 
-export class NoteContext {
-  constructor(private voice: VoiceContext, private pitch: string, private octave: number) {}
+export class VoiceEntryContext {
+  private constructor(private voice: VoiceContext, private pitch: string, private octave: number) {}
+
+  static note(voice: VoiceContext, pitch: string, octave: number): VoiceEntryContext {
+    return new VoiceEntryContext(voice, pitch, octave);
+  }
+
+  static rest(voice: VoiceContext): VoiceEntryContext {
+    return new VoiceEntryContext(voice, '', 0);
+  }
 
   nextId() {
     return this.voice.nextId();

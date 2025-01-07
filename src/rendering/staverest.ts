@@ -10,6 +10,7 @@ export type StaveRestRender = {
   key: VoiceEntryKey;
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
+  beamId: string | null;
 };
 
 export class StaveRest {
@@ -35,6 +36,7 @@ export class StaveRest {
       key: this.key,
       rect: Rect.empty(), // placeholder
       vexflowTickable: vexflowStaveNote,
+      beamId: rest.beamId,
     };
   }
   private getVexflowStaveKeys(): string[] {

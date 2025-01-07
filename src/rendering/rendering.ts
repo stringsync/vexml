@@ -69,6 +69,13 @@ export class Rendering {
       v.vexflowVoice.setContext(ctx).draw();
     });
 
+    // Draw the beams.
+    voiceRenders
+      .flatMap((v) => v.beamRenders)
+      .forEach((b) => {
+        b.vexflowBeam.setContext(ctx).draw();
+      });
+
     // Draw the curves.
     scoreRender.curveRenders
       .flatMap((c) => c.vexflowCurves)

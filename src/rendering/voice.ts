@@ -3,14 +3,13 @@ import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
-import { VoiceKey } from './types';
+import { BeamKey, VoiceEntryRender, VoiceKey } from './types';
 import { Rect } from '@/spatial';
-import { StaveNote, StaveNoteRender } from './stavenote';
-import { StaveRest, StaveRestRender } from './staverest';
+import { StaveNote } from './stavenote';
+import { StaveRest } from './staverest';
 import { Fraction } from '@/util';
 import { DurationType } from '@/data/enums';
-
-export type VoiceEntryRender = StaveNoteRender | StaveRestRender;
+import { Beam, BeamRender } from './beam';
 
 export type VoiceRender = {
   type: 'voice';
@@ -18,6 +17,7 @@ export type VoiceRender = {
   rect: Rect;
   vexflowVoice: vexflow.Voice;
   entryRenders: VoiceEntryRender[];
+  beamRenders: BeamRender[];
 };
 
 const DURATION_TYPE_VALUES: Array<{ type: DurationType; value: Fraction }> = [
@@ -41,6 +41,7 @@ export class Voice {
   render(): VoiceRender {
     const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT);
     const entryRenders = this.renderEntries(vexflowVoice);
+    const beamRenders = this.renderBeams(entryRenders);
 
     return {
       type: 'voice',
@@ -48,6 +49,7 @@ export class Voice {
       rect: Rect.empty(), // placeholder
       vexflowVoice,
       entryRenders,
+      beamRenders,
     };
   }
 
@@ -99,5 +101,37 @@ export class Voice {
     }
 
     return new vexflow.GhostNote({ duration: closestDurationType });
+  }
+
+  private renderBeams(entryRenders: VoiceEntryRender[]): BeamRender[] {
+    const registry = new Map<string, VoiceEntryRender[]>();
+
+    const beams = this.document.getBeams(this.key);
+
+    for (const entryRender of entryRenders) {
+      if (!entryRender.beamId) {
+        continue;
+      }
+      if (!registry.has(entryRender.beamId)) {
+        registry.set(entryRender.beamId, []);
+      }
+      registry.get(entryRender.beamId)!.push(entryRender);
+    }
+
+    const beamRenders = new Array<BeamRender>();
+
+    for (let beamIndex = 0; beamIndex < beams.length; beamIndex++) {
+      const beamKey: BeamKey = { ...this.key, beamIndex };
+      const beam = this.document.getBeam(beamKey);
+
+      const entryRenderCount = registry.get(beam.id)?.length ?? 0;
+
+      if (entryRenderCount > 1) {
+        const beamRender = new Beam(this.config, this.log, this.document, beamKey, registry).render();
+        beamRenders.push(beamRender);
+      }
+    }
+
+    return beamRenders;
   }
 }

@@ -11,6 +11,7 @@ import {
   SystemArrangement,
   PartLabelKey,
   CurveKey,
+  BeamKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -275,6 +276,20 @@ export class Document {
     const voice = this.getVoices(key).at(key.voiceIndex);
     util.assertDefined(voice);
     return voice;
+  }
+
+  getBeams(key: VoiceKey): data.Beam[] {
+    return this.getVoice(key).beams;
+  }
+
+  getBeamCount(key: VoiceKey): number {
+    return this.getBeams(key).length;
+  }
+
+  getBeam(key: BeamKey): data.Beam {
+    const beam = this.getBeams(key).at(key.beamIndex);
+    util.assertDefined(beam);
+    return beam;
   }
 
   getVoiceEntries(key: VoiceKey): data.VoiceEntry[] {

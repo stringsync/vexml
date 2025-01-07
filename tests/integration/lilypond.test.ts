@@ -41,7 +41,7 @@ describe('lilypond', () => {
     { filename: '03c-Rhythm-DivisionChange.musicxml', width: 900, migrated: true },
     { filename: '03d-Rhythm-DottedDurations-Factors.musicxml', width: 900, migrated: true },
     { filename: '11a-TimeSignatures.musicxml', width: 900, migrated: true },
-    { filename: '11b-TimeSignatures-NoTime.musicxml', width: 900 },
+    { filename: '11b-TimeSignatures-NoTime.musicxml', width: 900, migrated: true },
     { filename: '11c-TimeSignatures-CompoundSimple.musicxml', width: 900 },
     { filename: '11d-TimeSignatures-CompoundMultiple.musicxml', width: 900 },
     { filename: '11e-TimeSignatures-CompoundMixed.musicxml', width: 900 },

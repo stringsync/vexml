@@ -1,6 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
-import { NoteContext } from './contexts';
+import { VoiceEntryContext } from './contexts';
 
 type TiePhase = 'start' | 'continue' | 'let-ring' | 'stop';
 
@@ -43,12 +43,13 @@ export class Tie {
     return new Tie(curveNumber, phase, placement, opening);
   }
 
-  parse(noteCtx: NoteContext): string {
+  parse(voiceEntryCtx: VoiceEntryContext): string {
     if (this.phase === 'start') {
-      return noteCtx.beginCurve(this.curveNumber, this.placement, this.opening);
+      return voiceEntryCtx.beginCurve(this.curveNumber, this.placement, this.opening);
     }
     return (
-      noteCtx.continueCurve(this.curveNumber) ?? noteCtx.beginCurve(this.curveNumber, this.placement, this.opening)
+      voiceEntryCtx.continueCurve(this.curveNumber) ??
+      voiceEntryCtx.beginCurve(this.curveNumber, this.placement, this.opening)
     );
   }
 }
