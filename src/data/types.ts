@@ -154,7 +154,7 @@ export type Pitch = {
 export type Clef = {
   type: 'clef';
   sign: ClefSign;
-  octaveChange: number | null;
+  octaveShift: number | null;
 };
 
 export type Key = {

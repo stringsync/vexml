@@ -38,15 +38,16 @@ export class StaveNote {
         autoStem = true;
     }
 
-    const clefSign = this.document.getStave(this.key).signature.clef.sign;
+    const clef = this.document.getStave(this.key).signature.clef;
+    const octave = note.pitch.octave - (clef.octaveShift ?? 0);
 
     const vexflowStaveNote = new vexflow.StaveNote({
-      keys: [`${note.pitch.step}/${note.pitch.octave}`],
+      keys: [`${note.pitch.step}/${octave}`],
       duration: note.durationType,
       dots: note.dotCount,
       autoStem,
       stemDirection,
-      clef: clefSign,
+      clef: clef.sign,
     });
 
     for (let index = 0; index < note.dotCount; index++) {
