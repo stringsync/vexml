@@ -143,6 +143,7 @@ export type StaveRender = {
   voiceRenders: VoiceRender[];
   startClefRender: ClefRender | null;
   endClefRender: ClefRender | null;
+  keyRender: KeyRender | null;
   timeRender: TimeRender | null;
   vexflowStave: vexflow.Stave;
   vexflowMultiMeasureRest: vexflow.MultiMeasureRest | null;
@@ -198,4 +199,11 @@ export type StaveRestRender = {
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
   beamId: string | null;
+};
+
+export type KeyRender = {
+  type: 'key';
+  key: StaveKey;
+  rect: Rect;
+  vexflowKeySignature: vexflow.KeySignature;
 };

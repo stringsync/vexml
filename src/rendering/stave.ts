@@ -1,13 +1,14 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
-import { ClefRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
+import { ClefRender, KeyRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Voice } from './voice';
 import { Clef } from './clef';
 import { Time } from './time';
+import { Key } from './key';
 
 export class Stave {
   constructor(
@@ -27,6 +28,7 @@ export class Stave {
     const startClefRender = this.renderStartClef(vexflowStave);
     const endClefRender = this.renderEndClef(vexflowStave);
     const timeRender = this.renderTime(vexflowStave);
+    const keyRender = this.renderKeySignature(vexflowStave);
 
     this.renderMeasureLabel(vexflowStave);
     this.renderBarlines(vexflowStave);
@@ -41,6 +43,7 @@ export class Stave {
       vexflowMultiMeasureRest,
       startClefRender,
       endClefRender,
+      keyRender,
       timeRender,
       vexflowStave,
     };
@@ -213,5 +216,24 @@ export class Stave {
         entry.vexflowTickable.setStemDirection(vexflow.Stem.DOWN);
       }
     }
+  }
+
+  private renderKeySignature(vexflowStave: vexflow.Stave): KeyRender | null {
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    const isFirstMeasureFragment = isFirstMeasure && isFirstFragment;
+
+    const currentKey = this.document.getStave(this.key).signature.key;
+    const previousKey = this.document.getPreviouslyPlayedStave(this.key)?.signature.key;
+
+    const didKeyChange = currentKey.fifths !== previousKey?.fifths || currentKey.mode !== previousKey?.mode;
+
+    if (isFirstMeasureFragment || didKeyChange) {
+      const keyRender = new Key(this.config, this.log, this.document, this.key).render();
+      vexflowStave.addModifier(keyRender.vexflowKeySignature);
+      return keyRender;
+    }
+
+    return null;
   }
 }

@@ -26,3 +26,12 @@ export const CLEF_SIGNS = new Enum([
   'percussion',
   'tab',
 ] as const);
+
+/**
+ * The accidental code from VexFlow. The list only contains typical accidentals from Western music and is currently not
+ * exhaustive.
+ *
+ * See https://github.com/0xfe/vexflow/blob/17755d786eae1670ee20e8101463b3368f2c06e5/src/tables.ts#L169
+ */
+export type AccidentalCode = EnumValues<typeof ACCIDENTAL_CODES>;
+export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', 'db', '+', '++'] as const);

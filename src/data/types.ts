@@ -159,6 +159,7 @@ export type Clef = {
 
 export type Key = {
   type: 'key';
+  rootNote: string;
   previousKey: PreviousKey | null;
   fifths: number;
   mode: KeyMode;
@@ -166,6 +167,7 @@ export type Key = {
 
 export type PreviousKey = {
   type: 'previouskey';
+  rootNote: string;
   fifths: number;
   mode: KeyMode;
 };

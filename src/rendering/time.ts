@@ -18,8 +18,6 @@ export class Time {
     const padding = ADDITIONAL_COMPLEX_TIME_SIGNATURE_COMPONENT_WIDTH * (timeSpecs.length - 1);
     const width = vexflowTimeSignatures.reduce((sum, t) => sum + t.getWidth(), padding);
 
-    console.log(width);
-
     return {
       type: 'time',
       rect: Rect.empty(), // placeholder
