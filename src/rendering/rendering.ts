@@ -69,6 +69,11 @@ export class Rendering {
       v.vexflowVoice.setContext(ctx).draw();
     });
 
+    // Draw the curves.
+    scoreRender.curveRenders.forEach((c) => {
+      c.vexflowCurve.setContext(ctx).draw();
+    });
+
     // Draw the multi rests.
     staveRenders.forEach((s) => {
       s.vexflowMultiMeasureRest?.setContext(ctx).draw();

@@ -3,17 +3,20 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { System, SystemRender } from './system';
-import { SystemKey } from './types';
+import { CurveKey, SystemKey } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
 import { Pen } from './pen';
 import { SystemRenderMover } from './systemrendermover';
+import { Curve, CurveRender } from './curve';
+import { StaveNoteRender } from './stavenote';
 
 export type ScoreRender = {
   type: 'score';
   rect: Rect;
   titleRender: TitleRender | null;
   systemRenders: SystemRender[];
+  curveRenders: CurveRender[];
 };
 
 export type TitleRender = {
@@ -35,11 +38,11 @@ export class Score {
 
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
+    const curveRenders = this.renderCurves(systemRenders);
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
     const width = this.config.WIDTH ?? util.max(systemRenders.map((system) => system.rect.w));
-
     const rect = new Rect(0, 0, width, pen.position().y);
 
     return {
@@ -47,6 +50,7 @@ export class Score {
       rect,
       titleRender,
       systemRenders,
+      curveRenders,
     };
   }
 
@@ -75,6 +79,44 @@ export class Score {
       rect,
       label,
     };
+  }
+
+  private renderCurves(systemRenders: SystemRender[]): CurveRender[] {
+    const curves = this.document.getCurves();
+
+    const staveNoteRenders = systemRenders
+      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.entryRenders)
+      .filter((e) => e.type === 'note');
+
+    const staveNoteRegistry = new Map<string, StaveNoteRender[]>();
+
+    for (const staveNoteRender of staveNoteRenders) {
+      for (const curveId of staveNoteRender.curveIds) {
+        if (!staveNoteRegistry.has(curveId)) {
+          staveNoteRegistry.set(curveId, []);
+        }
+        staveNoteRegistry.get(curveId)!.push(staveNoteRender);
+      }
+    }
+
+    const curveRenders = new Array<CurveRender>();
+
+    for (let curveIndex = 0; curveIndex < curves.length; curveIndex++) {
+      const key: CurveKey = { curveIndex };
+
+      const staveNoteRenderCount = staveNoteRegistry.get(curves[curveIndex].id)?.length ?? 0;
+
+      if (staveNoteRenderCount >= 1) {
+        const curveRender = new Curve(this.config, this.log, this.document, key, staveNoteRegistry).render();
+        curveRenders.push(curveRender);
+      }
+    }
+
+    return curveRenders;
   }
 
   private getTitlePadding() {

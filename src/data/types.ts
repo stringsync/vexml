@@ -27,11 +27,6 @@ export type Curve = {
   opening: CurveOpening;
 };
 
-export type CurveRef = {
-  type: 'curveref';
-  curveId: string;
-};
-
 export type System = {
   type: 'system';
   measures: Measure[];
@@ -107,7 +102,7 @@ export type Note = {
   measureBeat: Fraction;
   accidental: Accidental | null;
   annotations: Annotation[];
-  curveRefs: CurveRef[];
+  curveIds: string[];
 };
 
 export type Accidental = {

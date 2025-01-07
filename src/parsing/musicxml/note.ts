@@ -91,7 +91,7 @@ export class Note {
       measureBeat: this.getMeasureBeat().parse(),
       accidental: this.getAccidental(noteCtx)?.parse(noteCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
-      curveRefs: this.getCurves().map((curve) => curve.parse(noteCtx)),
+      curveIds: this.getCurves().map((curve) => curve.parse(noteCtx)),
     };
   }
 
