@@ -40,7 +40,7 @@ export class MeasureEventCalculator {
       }
     }
 
-    return util.sortBy(this.events, (event) => event.measureBeat.toDecimal());
+    return this.events;
   }
 
   private process(entry: musicxml.MeasureEntry, partId: string, measureIndex: number): void {

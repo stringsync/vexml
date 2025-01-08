@@ -2,15 +2,8 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Fragment } from './fragment';
 import { MeasureEvent, StaveEvent } from './types';
-import { Fraction } from '@/util';
 import { Signature } from './signature';
 import { MeasureContext, SystemContext } from './contexts';
-
-type SignatureRange = {
-  signature: Signature;
-  start: Fraction;
-  end: Fraction;
-};
 
 export class Measure {
   constructor(
@@ -46,59 +39,27 @@ export class Measure {
 
   @util.memoize()
   private getFragments(): Fragment[] {
-    const ranges = this.getSignatureRanges();
-
     const fragments = new Array<Fragment>();
 
-    let index = 0;
-    const events = this.events.filter((event: any): event is StaveEvent => typeof event.staveNumber === 'number');
+    const events = this.events.toSorted((a, b) => a.measureBeat.toDecimal() - b.measureBeat.toDecimal());
 
-    for (const range of ranges) {
-      const fragmentEvents = new Array<StaveEvent>();
-      while (events.at(index)?.measureBeat.isLessThanOrEqualTo(range.end)) {
-        fragmentEvents.push(events[index]);
-        index++;
-      }
-      fragments.push(new Fragment(range.signature, fragmentEvents, this.partIds));
-    }
+    // First, get all the unique measure beats that events happen on. When we come across a measure beat, we have to
+    // process all the events that happen on that beat before making a decision.
+    const measureBeats = util.uniqueBy(events, (e) => e.measureBeat.toDecimal()).map((e) => e.measureBeat);
 
-    // Ensure that we always have at least one fragment.
-    if (fragments.length === 0) {
-      return [new Fragment(this.initialSignature, [], this.partIds)];
-    }
-
-    return fragments;
-  }
-
-  private getUniqueMeasureBeats(): Fraction[] {
-    const measureBeats = new Array<Fraction>();
-
-    // Let N be the number of events. This is O(N^2) but N should be small.
-    for (const event of this.events) {
-      const hasEquivalent = measureBeats.some((m) => m.isEquivalent(event.measureBeat));
-      if (!hasEquivalent) {
-        measureBeats.push(event.measureBeat);
-      }
-    }
-
-    return measureBeats;
-  }
-
-  private getSignatureRanges(): Array<SignatureRange> {
-    const ranges = new Array<SignatureRange>();
-
-    let start = new Fraction(0);
+    // Next, we calculate the fragment boundaries by maintaining a buffer of the next fragment events. When the
+    // signature changes, we'll materialize the buffer into a Fragment, then start a new buffer. We'll also do
+    // this if the buffer has items after going over all the measure beats.
     let signature = this.initialSignature;
-    const measureBeats = this.getUniqueMeasureBeats();
+    let buffer = new Array<StaveEvent>();
 
-    for (let index = 0; index < measureBeats.length; index++) {
-      const measureBeat = measureBeats[index];
+    for (const measureBeat of measureBeats) {
+      const measureBeatEvents = events.filter((e) => measureBeat.toDecimal() === e.measureBeat.toDecimal());
 
       const builder = Signature.builder().setPreviousSignature(signature);
 
-      // Process all the events that occur at this measure beat.
-      const events = this.events.filter((e) => e.measureBeat.isEquivalent(measureBeat));
-      for (const event of events) {
+      // Apply all the signature-changing events.
+      for (const event of measureBeatEvents) {
         switch (event.type) {
           case 'metronome':
             builder.setMetronome(event.metronome);
@@ -121,32 +82,34 @@ export class Measure {
         }
       }
 
-      // Build the signature and create a range if it changed.
+      // If the signature changed and there are events in the buffer, materialize a fragment with the **old** signature.
       const nextSignature = builder.build();
-      if (nextSignature.hasChanges()) {
-        const end = measureBeat;
-        ranges.push({ signature: nextSignature, start, end });
-        signature = nextSignature;
-        start = end;
+      if (nextSignature.hasChanges() && buffer.length > 0) {
+        fragments.push(new Fragment(signature, buffer, this.partIds));
+        buffer = [];
+      }
+
+      signature = nextSignature;
+
+      // Process all the stave events that happen on this measure beat.
+      for (const event of measureBeatEvents) {
+        switch (event.type) {
+          case 'note':
+            buffer.push(event);
+            break;
+          case 'rest':
+            buffer.push(event);
+            break;
+        }
       }
     }
 
-    // Ensure that the last range can cover everything.
-    const lastRange = ranges.at(-1);
-    const lastMeasureBeat = measureBeats.at(-1);
-    if (lastRange && lastMeasureBeat) {
-      lastRange.end = new Fraction(lastMeasureBeat.numerator + 1, lastMeasureBeat.denominator);
+    if (buffer.length > 0) {
+      fragments.push(new Fragment(signature, buffer, this.partIds));
     }
 
-    // If there are no ranges, add a single range that covers the entire measure.
-    if (ranges.length === 0 && lastMeasureBeat) {
-      ranges.push({
-        signature,
-        start,
-        end: new Fraction(lastMeasureBeat.numerator + 1, lastMeasureBeat.denominator),
-      });
-    }
+    console.log(this.index, fragments);
 
-    return ranges;
+    return fragments;
   }
 }

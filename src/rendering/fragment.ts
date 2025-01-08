@@ -147,6 +147,7 @@ export class Fragment {
       const key: PartKey = { ...this.key, partIndex };
       const partRender = new Part(this.config, this.log, this.document, key, pen.position()).render();
       partRenders.push(partRender);
+      pen.moveBy({ dy: this.config.PART_MARGIN_BOTTOM });
     }
 
     return partRenders;
