@@ -181,10 +181,20 @@ export type BeamRender = {
   vexflowBeam: vexflow.Beam;
 };
 
-export type VoiceEntryRender = NoteRender | RestRender;
+export type VoiceEntryRender = NoteRender | RestRender | ChordRender;
 
 export type NoteRender = {
   type: 'note';
+  key: VoiceEntryKey;
+  rect: Rect;
+  stemDirection: StemDirection;
+  vexflowTickable: vexflow.StaveNote;
+  curveIds: string[];
+  beamId: string | null;
+};
+
+export type ChordRender = {
+  type: 'chord';
   key: VoiceEntryKey;
   rect: Rect;
   stemDirection: StemDirection;

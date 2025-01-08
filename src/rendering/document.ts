@@ -326,6 +326,12 @@ export class Document {
     return entry;
   }
 
+  getChord(key: VoiceEntryKey): data.Chord {
+    const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
+    util.assert(entry?.type === 'chord', 'expected entry to be a chord');
+    return entry;
+  }
+
   /** Returns a new document with the system arrangements applied. */
   reflow(arrangements: SystemArrangement[]): Document {
     const clone = this.clone();

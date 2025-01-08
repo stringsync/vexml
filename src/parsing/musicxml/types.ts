@@ -7,6 +7,7 @@ import { StaveLineCount } from './stavelinecount';
 import { StaveCount } from './stavecount';
 import { Note } from './note';
 import { Rest } from './rest';
+import { Chord } from './chord';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -27,6 +28,17 @@ export type NoteEvent = {
   duration: Fraction;
   measureBeat: Fraction;
   note: Note;
+};
+
+export type ChordEvent = {
+  type: 'chord';
+  partId: string;
+  measureIndex: number;
+  staveNumber: number;
+  voiceId: string;
+  duration: Fraction;
+  measureBeat: Fraction;
+  chord: Chord;
 };
 
 export type RestEvent = {
@@ -104,6 +116,7 @@ export type MultiRestEvent = {
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
+  | ChordEvent
   | StaveCountEvent
   | StaveLineCountEvent
   | ClefEvent
