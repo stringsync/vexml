@@ -98,10 +98,16 @@ export class Note {
 
     switch (voiceEntry.type) {
       case 'note':
-        return [`${voiceEntry.pitch.step}/${voiceEntry.pitch.octave - octaveShift}`];
+        return [this.getVexflowStaveNoteKey(voiceEntry, octaveShift)];
       case 'chord':
-        return voiceEntry.notes.map((note) => `${note.pitch.step}/${note.pitch.octave - octaveShift}`);
+        return voiceEntry.notes.map((note) => this.getVexflowStaveNoteKey(note, octaveShift));
     }
+  }
+
+  private getVexflowStaveNoteKey(note: data.Note | data.ChordNote, octaveShift: number): string {
+    const step = note.pitch.step;
+    const octave = note.pitch.octave - octaveShift;
+    return note.head ? `${step}/${octave}/${note.head}` : `${step}/${octave}`;
   }
 
   /**
