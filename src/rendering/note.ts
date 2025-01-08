@@ -1,14 +1,14 @@
 import * as vexflow from 'vexflow';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { StaveNoteRender, VoiceEntryKey } from './types';
+import { NoteRender, VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 
-export class StaveNote {
+export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
 
-  render(): StaveNoteRender {
+  render(): NoteRender {
     const note = this.document.getNote(this.key);
 
     let autoStem: boolean | undefined;

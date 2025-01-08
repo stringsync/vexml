@@ -3,7 +3,7 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { System } from './system';
-import { CurveKey, CurveRender, ScoreRender, StaveNoteRender, SystemKey, SystemRender, TitleRender } from './types';
+import { CurveKey, CurveRender, ScoreRender, NoteRender, SystemKey, SystemRender, TitleRender } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
 import { Pen } from './pen';
@@ -69,7 +69,7 @@ export class Score {
   private renderCurves(systemRenders: SystemRender[]): CurveRender[] {
     const curves = this.document.getCurves();
 
-    const staveNoteRenders = systemRenders
+    const noteRenders = systemRenders
       .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
       .flatMap((f) => f.partRenders)
       .flatMap((p) => p.staveRenders)
@@ -77,14 +77,14 @@ export class Score {
       .flatMap((v) => v.entryRenders)
       .filter((e) => e.type === 'note');
 
-    const staveNoteRegistry = new Map<string, StaveNoteRender[]>();
+    const staveNoteRegistry = new Map<string, NoteRender[]>();
 
-    for (const staveNoteRender of staveNoteRenders) {
-      for (const curveId of staveNoteRender.curveIds) {
+    for (const noteRender of noteRenders) {
+      for (const curveId of noteRender.curveIds) {
         if (!staveNoteRegistry.has(curveId)) {
           staveNoteRegistry.set(curveId, []);
         }
-        staveNoteRegistry.get(curveId)!.push(staveNoteRender);
+        staveNoteRegistry.get(curveId)!.push(noteRender);
       }
     }
 
@@ -93,9 +93,9 @@ export class Score {
     for (let curveIndex = 0; curveIndex < curves.length; curveIndex++) {
       const key: CurveKey = { curveIndex };
 
-      const staveNoteRenderCount = staveNoteRegistry.get(curves[curveIndex].id)?.length ?? 0;
+      const noteRenderCount = staveNoteRegistry.get(curves[curveIndex].id)?.length ?? 0;
 
-      if (staveNoteRenderCount >= 1) {
+      if (noteRenderCount >= 1) {
         const curveRender = new Curve(this.config, this.log, this.document, key, staveNoteRegistry).render();
         curveRenders.push(curveRender);
       }
