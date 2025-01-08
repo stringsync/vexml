@@ -48,7 +48,11 @@ export class Voice {
     const entryRenders = new Array<VoiceEntryRender>();
     const entryCount = this.document.getVoiceEntryCount(this.key);
 
-    let currentMeasureBeat = Fraction.zero();
+    let currentMeasureBeat = this.getInitialMeasureBeat();
+
+    if (this.key.fragmentIndex === 1) {
+      console.log(currentMeasureBeat);
+    }
 
     for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
       const voiceEntryKey = { ...this.key, voiceEntryIndex };
@@ -79,6 +83,26 @@ export class Voice {
     }
 
     return entryRenders;
+  }
+
+  private getInitialMeasureBeat(): Fraction {
+    let measureBeat = Fraction.zero();
+
+    this.document
+      .getMeasure(this.key)
+      .fragments.filter((_, fragmentIndex) => fragmentIndex < this.key.fragmentIndex)
+      .flatMap((f) => f.parts)
+      .flatMap((p) => p.staves)
+      .flatMap((s) => s.voices)
+      .flatMap((v) => v.entries)
+      .map((e) => Fraction.fromFractionLike(e.measureBeat).add(Fraction.fromFractionLike(e.duration)))
+      .forEach((m) => {
+        if (m.isGreaterThan(measureBeat)) {
+          measureBeat = m;
+        }
+      });
+
+    return measureBeat;
   }
 
   private renderVexflowGhostNote(beatDuration: Fraction): vexflow.GhostNote {

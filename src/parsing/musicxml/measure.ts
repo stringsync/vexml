@@ -108,8 +108,6 @@ export class Measure {
       fragments.push(new Fragment(signature, buffer, this.partIds));
     }
 
-    console.log(this.index, fragments);
-
     return fragments;
   }
 }
