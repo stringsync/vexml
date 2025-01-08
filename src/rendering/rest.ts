@@ -3,20 +3,12 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { VoiceEntryKey } from './types';
+import { RestRender, VoiceEntryKey } from './types';
 
-export type StaveRestRender = {
-  type: 'staverest';
-  key: VoiceEntryKey;
-  rect: Rect;
-  vexflowTickable: vexflow.StaveNote;
-  beamId: string | null;
-};
-
-export class StaveRest {
+export class Rest {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
 
-  render(): StaveRestRender {
+  render(): RestRender {
     const rest = this.document.getRest(this.key);
 
     const vexflowStaveNote = new vexflow.StaveNote({
@@ -32,7 +24,7 @@ export class StaveRest {
     }
 
     return {
-      type: 'staverest',
+      type: 'rest',
       key: this.key,
       rect: Rect.empty(), // placeholder
       vexflowTickable: vexflowStaveNote,

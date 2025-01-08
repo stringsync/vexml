@@ -5,8 +5,8 @@ import { Config } from './config';
 import { Document } from './document';
 import { BeamKey, BeamRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
 import { Rect } from '@/spatial';
-import { StaveNote } from './stavenote';
-import { StaveRest } from './staverest';
+import { Note } from './note';
+import { Rest } from './rest';
 import { Fraction } from '@/util';
 import { DurationType } from '@/data/enums';
 import { Beam } from './beam';
@@ -66,13 +66,13 @@ export class Voice {
       currentMeasureBeat = measureBeat.add(duration);
 
       if (entry.type === 'note') {
-        const staveNoteRender = new StaveNote(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(staveNoteRender.vexflowTickable);
-        entryRenders.push(staveNoteRender);
+        const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(noteRender.vexflowTickable);
+        entryRenders.push(noteRender);
       } else if (entry.type === 'rest') {
-        const staveRestRender = new StaveRest(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(staveRestRender.vexflowTickable);
-        entryRenders.push(staveRestRender);
+        const restRender = new Rest(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(restRender.vexflowTickable);
+        entryRenders.push(restRender);
       } else {
         util.assertUnreachable();
       }

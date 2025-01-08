@@ -181,9 +181,9 @@ export type BeamRender = {
   vexflowBeam: vexflow.Beam;
 };
 
-export type VoiceEntryRender = StaveNoteRender | StaveRestRender;
+export type VoiceEntryRender = NoteRender | RestRender;
 
-export type StaveNoteRender = {
+export type NoteRender = {
   type: 'note';
   key: VoiceEntryKey;
   rect: Rect;
@@ -193,8 +193,8 @@ export type StaveNoteRender = {
   beamId: string | null;
 };
 
-export type StaveRestRender = {
-  type: 'staverest';
+export type RestRender = {
+  type: 'rest';
   key: VoiceEntryKey;
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
