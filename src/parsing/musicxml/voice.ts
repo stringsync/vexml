@@ -37,12 +37,18 @@ export class Voice {
     const entries = new Array<data.VoiceEntry>();
 
     for (const event of this.events) {
-      if (event.type === 'note') {
-        entries.push(event.note.parse(voiceCtx));
-      } else if (event.type === 'rest') {
-        entries.push(event.rest.parse(voiceCtx));
-      } else {
-        util.assertUnreachable();
+      switch (event.type) {
+        case 'note':
+          entries.push(event.note.parse(voiceCtx));
+          break;
+        case 'rest':
+          entries.push(event.rest.parse(voiceCtx));
+          break;
+        case 'chord':
+          entries.push(event.chord.parse(voiceCtx));
+          break;
+        default:
+          util.assertUnreachable();
       }
     }
 

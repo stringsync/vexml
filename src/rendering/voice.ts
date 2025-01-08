@@ -73,6 +73,10 @@ export class Voice {
         const restRender = new Rest(this.config, this.log, this.document, voiceEntryKey).render();
         vexflowVoice.addTickable(restRender.vexflowTickable);
         entryRenders.push(restRender);
+      } else if (entry.type === 'chord') {
+        const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(noteRender.vexflowTickable);
+        entryRenders.push(noteRender);
       } else {
         util.assertUnreachable();
       }

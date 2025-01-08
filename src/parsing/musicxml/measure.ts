@@ -100,6 +100,9 @@ export class Measure {
           case 'rest':
             buffer.push(event);
             break;
+          case 'chord':
+            buffer.push(event);
+            break;
         }
       }
     }

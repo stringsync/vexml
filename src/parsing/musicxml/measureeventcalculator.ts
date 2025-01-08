@@ -9,6 +9,7 @@ import { Metronome } from './metronome';
 import { Note } from './note';
 import { Rest } from './rest';
 import { MeasureEvent } from './types';
+import { Chord } from './chord';
 
 export class MeasureEventCalculator {
   private measureBeat = Fraction.zero();
@@ -73,8 +74,18 @@ export class MeasureEventCalculator {
     if (note.isChordTail()) {
       return;
     }
-
-    if (note.isRest()) {
+    if (note.isChordHead()) {
+      this.events.push({
+        type: 'chord',
+        partId,
+        measureIndex,
+        staveNumber,
+        voiceId,
+        measureBeat: this.measureBeat,
+        duration,
+        chord: Chord.fromMusicXML(this.measureBeat, duration, { note }),
+      });
+    } else if (note.isRest()) {
       this.events.push({
         type: 'rest',
         partId,

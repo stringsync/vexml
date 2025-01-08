@@ -105,7 +105,7 @@ export type Beam = {
   id: string;
 };
 
-export type VoiceEntry = Note | Rest;
+export type VoiceEntry = Note | Rest | Chord;
 
 export type Note = {
   type: 'note';
@@ -120,6 +120,26 @@ export type Note = {
   annotations: Annotation[];
   curveIds: string[];
   beamId: string | null;
+};
+
+export type Chord = {
+  type: 'chord';
+  notes: ChordNote[];
+  stemDirection: StemDirection;
+  duration: Fraction;
+  durationType: DurationType;
+  dotCount: number;
+  annotations: Annotation[];
+  measureBeat: Fraction;
+  beamId: string | null;
+};
+
+export type ChordNote = {
+  type: 'chordnote';
+  pitch: Pitch;
+  head: Notehead;
+  accidental: Accidental | null;
+  curveIds: string[];
 };
 
 export type Accidental = {
