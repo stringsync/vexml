@@ -226,7 +226,7 @@ class SignatureBuilder {
     const next = this.staveCounts.values();
 
     const existing = new Array<StaveCount>();
-    for (const staveCount of this.previousSignature.getStaveCounts()) {
+    for (const staveCount of this.previousSignature?.getStaveCounts() ?? []) {
       if (!this.staveCounts.has(staveCount.getPartId())) {
         existing.push(staveCount);
       }
@@ -254,7 +254,7 @@ class SignatureBuilder {
     }
 
     const existing = new Array<StaveLineCount>();
-    for (const staveLineCount of this.previousSignature.getStaveLineCounts()) {
+    for (const staveLineCount of this.previousSignature?.getStaveLineCounts() ?? []) {
       if (!isSeen(staveLineCount.getPartId(), staveLineCount.getStaveNumber())) {
         existing.push(staveLineCount);
       }
@@ -282,7 +282,7 @@ class SignatureBuilder {
     }
 
     const existing = new Array<Clef>();
-    for (const clef of this.previousSignature.getClefs()) {
+    for (const clef of this.previousSignature?.getClefs() ?? []) {
       if (!isSeen(clef.getPartId(), clef.getStaveNumber())) {
         existing.push(clef);
       }
@@ -310,7 +310,7 @@ class SignatureBuilder {
     }
 
     const existing = new Array<Key>();
-    for (const key of this.previousSignature.getKeys()) {
+    for (const key of this.previousSignature?.getKeys() ?? []) {
       if (!this.keys.has(key.getPartId())) {
         existing.push(key);
       }
@@ -338,7 +338,7 @@ class SignatureBuilder {
     }
 
     const existing = new Array<Time>();
-    for (const time of this.previousSignature.getTimes()) {
+    for (const time of this.previousSignature?.getTimes() ?? []) {
       if (!isSeen(time.getPartId(), time.getStaveNumber())) {
         existing.push(time);
       }
@@ -348,7 +348,10 @@ class SignatureBuilder {
   }
 
   private diffMetronome(metronome: Metronome): SignatureChange[] {
-    if (metronome.isEqual(this.previousSignature.getMetronome())) {
+    if (
+      !this.previousSignature ||
+      metronome.isEqual(!this.previousSignature || this.previousSignature.getMetronome())
+    ) {
       return [];
     } else {
       return [{ type: 'metronome' }];
@@ -357,31 +360,41 @@ class SignatureBuilder {
 
   private diffStaveCounts(staveCounts: StaveCount[]): SignatureChange[] {
     return staveCounts
-      .filter((s) => !s.isEqual(this.previousSignature.getStaveCount(s.getPartId())))
+      .filter((s) => !this.previousSignature || !s.isEqual(this.previousSignature.getStaveCount(s.getPartId())))
       .map((s) => ({ type: 'stavecount', partId: s.getPartId() }));
   }
 
   private diffStaveLineCounts(staveLineCounts: StaveLineCount[]): SignatureChange[] {
     return staveLineCounts
-      .filter((s) => !s.isEqual(this.previousSignature.getStaveLineCount(s.getPartId(), s.getStaveNumber())))
+      .filter(
+        (s) =>
+          !this.previousSignature ||
+          !s.isEqual(this.previousSignature.getStaveLineCount(s.getPartId(), s.getStaveNumber()))
+      )
       .map((s) => ({ type: 'stavelinecount', partId: s.getPartId(), staveNumber: s.getStaveNumber() }));
   }
 
   private diffClefs(clefs: Clef[]): SignatureChange[] {
     return clefs
-      .filter((c) => !c.isEqual(this.previousSignature.getClef(c.getPartId(), c.getStaveNumber())))
+      .filter(
+        (c) => !this.previousSignature || !c.isEqual(this.previousSignature.getClef(c.getPartId(), c.getStaveNumber()))
+      )
       .map((c) => ({ type: 'clef', partId: c.getPartId(), staveNumber: c.getStaveNumber() }));
   }
 
   private diffKeys(keys: Key[]): SignatureChange[] {
     return keys
-      .filter((k) => !k.isEqual(this.previousSignature.getKey(k.getPartId(), k.getStaveNumber())))
+      .filter(
+        (k) => !this.previousSignature || !k.isEqual(this.previousSignature.getKey(k.getPartId(), k.getStaveNumber()))
+      )
       .map((k) => ({ type: 'key', partId: k.getPartId(), staveNumber: k.getStaveNumber() }));
   }
 
   private diffTimes(times: Time[]): SignatureChange[] {
     return times
-      .filter((t) => !t.isEqual(this.previousSignature.getTime(t.getPartId(), t.getStaveNumber())))
+      .filter(
+        (t) => !this.previousSignature || !t.isEqual(this.previousSignature.getTime(t.getPartId(), t.getStaveNumber()))
+      )
       .map((t) => ({ type: 'time', partId: t.getPartId(), staveNumber: t.getStaveNumber() }));
   }
 }
