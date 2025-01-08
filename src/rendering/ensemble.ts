@@ -36,16 +36,11 @@ export class Ensemble {
       vexflowStave.setWidth(staveWidth);
     }
 
-    // Join the voices that belong to the same stave.
-    for (const staveRender of this.getStaveRenders()) {
-      const vexflowVoices = staveRender.voiceRenders.map((v) => v.vexflowVoice);
-      this.vexflowFormatter.joinVoices(vexflowVoices);
-    }
-
-    // Format **all** the voices! The voice width must be smaller than the stave or the stave won't contain it.
-    const vexflowVoices = this.getStaveRenders().flatMap((s) => s.voiceRenders.map((v) => v.vexflowVoice));
+    // Format _all_ the voices. The voice width must be smaller than the stave or the stave won't contain it.
+    const vexflowVoices = this.getStaveRenders()
+      .flatMap((s) => s.voiceRenders)
+      .map((v) => v.vexflowVoice);
     const voiceWidth = staveWidth - nonVoiceWidth;
-
     if (vexflowVoices.length > 0) {
       this.vexflowFormatter.format(vexflowVoices, voiceWidth);
     }
@@ -156,9 +151,16 @@ export class Ensemble {
   }
 
   private getMinRequiredVoiceWidth(): number {
-    const vexflowVoices = this.getStaveRenders().flatMap((s) => s.voiceRenders.map((v) => v.vexflowVoice));
-    if (vexflowVoices.length > 0) {
-      return this.vexflowFormatter.preCalculateMinTotalWidth(vexflowVoices);
+    const widths = this.getStaveRenders().map((s) => {
+      const vexflowVoices = s.voiceRenders.map((v) => v.vexflowVoice).filter((v) => v.getTickables().length > 0);
+      if (vexflowVoices.length === 0) {
+        return 0;
+      } else {
+        return new vexflow.Formatter().joinVoices(vexflowVoices).preCalculateMinTotalWidth(vexflowVoices);
+      }
+    });
+    if (widths.length > 0) {
+      return Math.max(...widths);
     }
     return 0;
   }
