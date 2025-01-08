@@ -50,10 +50,6 @@ export class Voice {
 
     let currentMeasureBeat = this.getInitialMeasureBeat();
 
-    if (this.key.fragmentIndex === 1) {
-      console.log(currentMeasureBeat);
-    }
-
     for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
       const voiceEntryKey = { ...this.key, voiceEntryIndex };
       const entry = this.document.getVoiceEntry(voiceEntryKey);
