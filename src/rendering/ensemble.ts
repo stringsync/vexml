@@ -36,10 +36,21 @@ export class Ensemble {
       vexflowStave.setWidth(staveWidth);
     }
 
+    // Join the voices that belong on the _same stave_.
+    for (const staveRender of this.getStaveRenders()) {
+      const vexflowVoices = staveRender.voiceRenders
+        .map((v) => v.vexflowVoice)
+        .filter((v) => v.getTickables().length > 0);
+      if (vexflowVoices.length > 0) {
+        this.vexflowFormatter.joinVoices(vexflowVoices);
+      }
+    }
+
     // Format _all_ the voices. The voice width must be smaller than the stave or the stave won't contain it.
     const vexflowVoices = this.getStaveRenders()
       .flatMap((s) => s.voiceRenders)
-      .map((v) => v.vexflowVoice);
+      .map((v) => v.vexflowVoice)
+      .filter((v) => v.getTickables().length > 0);
     const voiceWidth = staveWidth - nonVoiceWidth;
     if (vexflowVoices.length > 0) {
       this.vexflowFormatter.format(vexflowVoices, voiceWidth);

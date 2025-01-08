@@ -1,5 +1,4 @@
 import * as musicxml from '@/musicxml';
-import * as util from '@/util';
 import { Fraction } from '@/util';
 import { StaveCount } from './stavecount';
 import { StaveLineCount } from './stavelinecount';
@@ -106,6 +105,9 @@ export class MeasureEventCalculator {
     const quarterNotes = backup.getDuration();
     const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
     this.measureBeat = this.measureBeat.subtract(duration);
+    if (this.measureBeat.isLessThan(Fraction.zero())) {
+      this.measureBeat = Fraction.zero();
+    }
   }
 
   private processForward(forward: musicxml.Forward): void {
