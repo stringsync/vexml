@@ -9,7 +9,7 @@ export class Measure {
   constructor(
     private initialSignature: Signature,
     private index: number,
-    private label: number,
+    private label: number | null,
     private events: MeasureEvent[],
     private partIds: string[]
   ) {

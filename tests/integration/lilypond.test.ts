@@ -59,7 +59,7 @@ describe('lilypond', () => {
     { filename: '21b-Chords-TwoNotes.musicxml', width: 900, migrated: true },
     { filename: '21c-Chords-ThreeNotesDuration.musicxml', width: 900, migrated: true },
     { filename: '21d-Chords-SchubertStabatMater.musicxml', width: 900 },
-    { filename: '21e-Chords-PickupMeasures.musicxml', width: 900 },
+    { filename: '21e-Chords-PickupMeasures.musicxml', width: 900, migrated: true },
     { filename: '21f-Chord-ElementInBetween.musicxml', width: 900 },
     { filename: '22a-Noteheads.musicxml', width: 900, migrated: true },
     // { filename: '22b-Staff-Notestyles.musicxml', width: 900 },
