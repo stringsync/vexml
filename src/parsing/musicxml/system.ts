@@ -73,8 +73,8 @@ export class System {
     return util.max(this.musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
   }
 
-  private getMeasureLabels(measureCount: number): number[] {
-    const measureLabels = new Array<number>(measureCount).fill(1);
+  private getMeasureLabels(measureCount: number): Array<number | null> {
+    const measureLabels = new Array<number | null>(measureCount).fill(null);
 
     const part = util.first(this.musicXML.scorePartwise.getParts());
     if (!part) {
@@ -86,7 +86,7 @@ export class System {
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measure = measures[measureIndex];
       if (measure.isImplicit()) {
-        continue;
+        measureLabels[measureIndex] = null;
       }
 
       const number = parseInt(measure.getNumber(), 10);
