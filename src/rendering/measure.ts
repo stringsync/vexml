@@ -53,7 +53,7 @@ export class Measure {
       const staveRender = fragmentRender.partRenders.flatMap((p) => p.staveRenders).at(0);
       if (staveRender) {
         const upperRight = staveRender.intrinsicRect.upperRight();
-        pen.moveTo(upperRight.x, pen.y);
+        pen.moveTo({ x: upperRight.x, y: pen.y });
       } else {
         // If this happens, the fragment staves may not be aligned. There could be a gap or overlap.
         this.log.warn('found a fragment render without staves, using fragment rect for spacing', key);
