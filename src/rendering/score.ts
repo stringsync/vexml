@@ -133,8 +133,7 @@ export class Score {
       );
       new SystemRenderMover().moveBy(systemRender, excessHeight);
 
-      const bottomLeft = systemRender.rect.bottomLeft();
-      pen.moveTo(bottomLeft.x, bottomLeft.y);
+      pen.moveTo(systemRender.rect.bottomLeft());
       pen.moveBy({ dy: this.config.SYSTEM_MARGIN_BOTTOM });
     }
 

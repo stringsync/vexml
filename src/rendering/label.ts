@@ -99,7 +99,7 @@ export class Label implements Drawable {
       lines.push({ text: fragment.text, rect });
 
       const lineHeight = font.lineHeight ?? fragment.height;
-      pen.moveTo(position.x, pen.y + lineHeight);
+      pen.moveTo({ x: position.x, y: pen.y + lineHeight });
     }
 
     const rect = Rect.merge(lines.map((line) => line.rect));

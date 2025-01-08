@@ -28,16 +28,16 @@ export class Pen {
     return position;
   }
 
-  moveTo(x: number, y: number): void {
+  moveTo(point: { x: number; y: number }): void {
     this.positions.pop();
-    this.positions.push(new Point(x, y));
+    this.positions.push(new Point(point.x, point.y));
   }
 
   moveBy(opts: { dx?: number; dy?: number }): void {
     const dx = opts.dx ?? 0;
     const dy = opts.dy ?? 0;
     const position = this.position();
-    this.moveTo(position.x + dx, position.y + dy);
+    this.moveTo({ x: position.x + dx, y: position.y + dy });
   }
 
   clone(): Pen {
