@@ -11,6 +11,7 @@ import { Pitch } from './pitch';
 import { Slur } from './slur';
 import { Tie } from './tie';
 import { Beam } from './beam';
+import { Tuplet } from './tuplet';
 
 export type NoteMod = Accidental | Annotation;
 
@@ -33,6 +34,7 @@ export class Note {
     private accidentalProps: NoteAccidentalProps,
     private ties: Tie[],
     private slurs: Slur[],
+    private tuplets: Tuplet[],
     private beam: Beam | null
   ) {}
 
@@ -61,6 +63,11 @@ export class Note {
       .flatMap((notation) => notation.getSlurs())
       .map((slur) => Slur.fromMusicXML({ slur }));
 
+    const tuplets = musicXML.note
+      .getNotations()
+      .flatMap((notation) => notation.getTuplets())
+      .map((tuplet) => Tuplet.fromMusicXML({ tuplet }));
+
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
     // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
     let beam: Beam | null = null;
@@ -81,6 +88,7 @@ export class Note {
       accidentalProps,
       ties,
       slurs,
+      tuplets,
       beam
     );
   }
@@ -109,6 +117,7 @@ export class Note {
       accidental: this.getAccidental(voiceEntryCtx)?.parse(voiceEntryCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
       curveIds: this.getCurves().map((curve) => curve.parse(voiceEntryCtx)),
+      tupletIds: this.tuplets.map((tuplet) => tuplet.parse(voiceEntryCtx)),
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
     };
   }

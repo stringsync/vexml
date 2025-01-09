@@ -20,6 +20,11 @@ export class Tuplet {
     return this.element.attr('placement').enum(ABOVE_BELOW) ?? 'below';
   }
 
+  /** Returns the number of the tuplet. Defaults to 1. */
+  getNumber(): number {
+    return this.element.attr('number').withDefault(1).int();
+  }
+
   /** Returns how the tuplet number should be displayed. */
   getShowNumber(): ShowTuplet {
     return this.element.attr('show-number').withDefault<ShowTuplet>('actual').enum(SHOW_TUPLET);
