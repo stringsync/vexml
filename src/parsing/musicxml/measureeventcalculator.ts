@@ -182,7 +182,20 @@ export class MeasureEventCalculator {
 
     const times = attributes
       .getTimes()
-      .map((time) => Time.fromMusicXML(partId, { time }))
+      .flatMap((time) => {
+        const staveNumber = time.getStaveNumber();
+        if (typeof staveNumber === 'number') {
+          return Time.fromMusicXML(partId, staveNumber, { time });
+        } else {
+          // A null stave number implies to apply to all staves.
+          // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/time/#:~:text=the%20entire%20document.-,number,-staff%2Dnumber
+          const times = new Array<Time | null>();
+          for (let staveNumber = 1; staveNumber <= staveCount.getValue(); staveNumber++) {
+            times.push(Time.fromMusicXML(partId, staveNumber, { time }));
+          }
+          return times;
+        }
+      })
       .filter((time) => time !== null);
     for (const time of times) {
       this.events.push({

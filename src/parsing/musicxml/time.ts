@@ -16,12 +16,11 @@ export class Time {
     return Time.common(partId, staveNumber);
   }
 
-  static fromMusicXML(partId: string, musicXML: { time: musicxml.Time }) {
+  static fromMusicXML(partId: string, staveNumber: number, musicXML: { time: musicxml.Time }): Time | null {
     const time = musicXML.time;
-    const staveNumber = time.getStaveNumber();
 
     if (time.isHidden()) {
-      return Time.hidden(partId, time.getStaveNumber());
+      return Time.hidden(partId, staveNumber);
     }
 
     // The symbol overrides any other time specifications. This is done to avoid incompatible symbol and time signature
