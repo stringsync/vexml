@@ -1,10 +1,13 @@
 import * as vexflow from 'vexflow';
+import * as util from '@/util';
 import { Logger } from '../debug';
 import { Config } from './config';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 import { FragmentKey, FragmentRender, StaveRender } from './types';
 import { NoopRenderContext } from './nooprenderctx';
+
+const CURVE_EXTRA_WIDTH = 20;
 
 export class Ensemble {
   private vexflowFormatter = new vexflow.Formatter();
@@ -101,6 +104,21 @@ export class Ensemble {
     return this.fragmentRender.partRenders.flatMap((p) => p.staveRenders);
   }
 
+  /** Returns extra width to accommodate curves */
+  private getCurveExtraWidth(): number {
+    const curveCount = util.unique(
+      this.getStaveRenders()
+        .flatMap((s) => s.voiceRenders)
+        .flatMap((v) => v.entryRenders)
+        .filter((e) => e.type === 'note')
+        .flatMap((n) => n.curveIds)
+    ).length;
+    if (curveCount <= 1) {
+      return 0;
+    }
+    return curveCount * CURVE_EXTRA_WIDTH;
+  }
+
   private getStartClefWidth(): number {
     const widths = this.getStaveRenders()
       .map((s) => s.startClefRender)
@@ -146,11 +164,18 @@ export class Ensemble {
   }
 
   private getVoiceWidth(): number {
+    let width = 0;
+
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
     if (multiRestCount > 0) {
-      return this.getMultiRestStaveWidth();
+      width += this.getMultiRestStaveWidth();
+    } else {
+      width += this.getMinRequiredStaveWidth();
     }
-    return this.getMinRequiredStaveWidth();
+
+    width += this.getCurveExtraWidth();
+
+    return width;
   }
 
   private getMultiRestStaveWidth(): number {
