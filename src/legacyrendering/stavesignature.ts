@@ -161,7 +161,7 @@ export class StaveSignature {
       ...opts.musicXML.attributes
         .getTimes()
         .map((time): [staveNumber: number, timeSignature: TimeSignature | null] => [
-          time.getStaveNumber(),
+          time.getStaveNumber() ?? 1,
           TimeSignature.fromMusicXML({ config, log, musicXML: { time } }),
         ])
         .filter((time): time is [staveNumber: number, timeSignature: TimeSignature] => !!time[1])

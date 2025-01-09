@@ -9,9 +9,9 @@ import { TIME_SYMBOLS, TimeSymbol } from './enums';
 export class Time {
   constructor(private element: NamedElement<'time'>) {}
 
-  /** Returns the stave number this time belongs to. */
-  getStaveNumber(): number {
-    return this.element.attr('number').withDefault(1).int();
+  /** Returns the stave number this time belongs to. Defaults to null. */
+  getStaveNumber(): number | null {
+    return this.element.attr('number').int();
   }
 
   /** Returns the beats of the time. */

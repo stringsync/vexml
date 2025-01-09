@@ -10,10 +10,10 @@ describe(Time, () => {
       expect(time.getStaveNumber()).toBe(42);
     });
 
-    it('defaults to 1 when missing', () => {
+    it('defaults to null when missing', () => {
       const node = xml.time();
       const time = new Time(node);
-      expect(time.getStaveNumber()).toBe(1);
+      expect(time.getStaveNumber()).toBeNull();
     });
   });
 
