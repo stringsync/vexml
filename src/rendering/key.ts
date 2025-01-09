@@ -13,29 +13,13 @@ export class Key {
   constructor(private config: Config, private log: Logger, private document: Document, private key: StaveKey) {}
 
   render(): KeyRender {
-    const keySignature = this.document.getStave(this.key).signature.key;
-
-    const vexflowKeySignature = new vexflow.KeySignature(
-      keySignature.rootNote,
-      keySignature.previousKey?.rootNote,
-      this.getAlterations()
-    );
-
-    const clone = new vexflow.KeySignature(
-      keySignature.rootNote,
-      keySignature.previousKey?.rootNote,
-      this.getAlterations()
-    );
-    const vexflowStave = new vexflow.Stave(0, 0, 0);
-    clone.addToStave(vexflowStave);
-
-    const width = clone.getWidth() + KEY_SIGNATURE_PADDING;
+    const vexflowKeySignature = this.getVexflowKeySignature();
 
     return {
       type: 'key',
       key: this.key,
       rect: Rect.empty(), // placeholder
-      width,
+      width: this.getWidth(),
       vexflowKeySignature,
     };
   }
@@ -53,5 +37,17 @@ export class Key {
     }
 
     return alterations;
+  }
+
+  private getWidth() {
+    const vexflowStave = new vexflow.Stave(0, 0, 0);
+    const vexflowKeySignature = this.getVexflowKeySignature();
+    vexflowKeySignature.addToStave(vexflowStave);
+    return vexflowKeySignature.getWidth() + KEY_SIGNATURE_PADDING;
+  }
+
+  private getVexflowKeySignature() {
+    const keySignature = this.document.getStave(this.key).signature.key;
+    return new vexflow.KeySignature(keySignature.rootNote, keySignature.previousKey?.rootNote, this.getAlterations());
   }
 }
