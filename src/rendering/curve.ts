@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as data from '@/data';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
@@ -25,11 +26,11 @@ export class Curve {
     util.assertDefined(noteRenders);
     util.assert(noteRenders.length > 0, 'Curve must have at least one stave note');
 
-    const firstNote = noteRenders.at(0)!.vexflowTickable;
-    const lastNote = noteRenders.at(-1)!.vexflowTickable;
+    const firstVexflowTickable = noteRenders.at(0)!.vexflowTickable;
+    const lastVexflowTickable = noteRenders.at(noteRenders.length - 1)!.vexflowTickable;
 
     // TODO: Figure out options, especially when the curve spans systems.
-    const vexflowCurves = [new vexflow.Curve(firstNote, lastNote, {})];
+    const vexflowCurves = [new vexflow.Curve(firstVexflowTickable, lastVexflowTickable, {})];
 
     // Use getBoundingBox when it works.
     // See https://github.com/vexflow/vexflow/issues/252

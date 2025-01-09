@@ -32,6 +32,7 @@ export class Note {
     private lyrics: Annotation[],
     private accidentalProps: NoteAccidentalProps,
     private ties: Tie[],
+    private slurs: Slur[],
     private beam: Beam | null
   ) {}
 
@@ -55,6 +56,11 @@ export class Note {
       .flatMap((notation) => notation.getTieds())
       .map((tie) => Tie.fromMusicXML({ tie }));
 
+    const slurs = musicXML.note
+      .getNotations()
+      .flatMap((notation) => notation.getSlurs())
+      .map((slur) => Slur.fromMusicXML({ slur }));
+
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
     // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
     let beam: Beam | null = null;
@@ -74,6 +80,7 @@ export class Note {
       annotations,
       accidentalProps,
       ties,
+      slurs,
       beam
     );
   }
@@ -111,11 +118,7 @@ export class Note {
   }
 
   private getCurves(): Array<Slur | Tie> {
-    return [...this.getSlurs(), ...this.ties];
-  }
-
-  private getSlurs(): Slur[] {
-    return [];
+    return [...this.slurs, ...this.ties];
   }
 
   private getAccidental(voiceEntryCtx: VoiceEntryContext): Accidental | null {

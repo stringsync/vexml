@@ -2,9 +2,12 @@ import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { VoiceEntryContext } from './contexts';
 
+type SlurPhase = 'start' | 'continue' | 'stop';
+
 export class Slur {
   constructor(
     private curveNumber: number,
+    private phase: SlurPhase,
     private placement: data.CurvePlacement,
     private opening: data.CurveOpening
   ) {}
@@ -24,10 +27,29 @@ export class Slur {
         break;
     }
 
-    return new Slur(curveNumber, placement, opening);
+    let phase: SlurPhase;
+    switch (musicXML.slur.getType()) {
+      case 'start':
+        phase = 'start';
+        break;
+      case 'stop':
+        phase = 'stop';
+        break;
+      default:
+        phase = 'continue';
+        break;
+    }
+
+    return new Slur(curveNumber, phase, placement, opening);
   }
 
   parse(voiceEntryCtx: VoiceEntryContext): string {
-    return '';
+    if (this.phase === 'start') {
+      return voiceEntryCtx.beginCurve(this.curveNumber, this.placement, this.opening);
+    }
+    return (
+      voiceEntryCtx.continueCurve(this.curveNumber) ??
+      voiceEntryCtx.beginCurve(this.curveNumber, this.placement, this.opening)
+    );
   }
 }
