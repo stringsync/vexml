@@ -6,10 +6,53 @@ import { MeasureEvent } from './types';
 import { Signature } from './signature';
 import { ScoreContext, SystemContext } from './contexts';
 import { MeasureEventCalculator } from './measureeventcalculator';
-import { IdProvider } from './idprovider';
 
 export class System {
-  constructor(private idProvider: IdProvider, private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
+  constructor(
+    private partIds: string[],
+    private measureCount: number,
+    private measureLabels: Array<number | null>,
+    private measureEvents: MeasureEvent[]
+  ) {}
+
+  static fromMusicXML(musicXML: { scorePartwise: musicxml.ScorePartwise }): System {
+    const partIds = musicXML.scorePartwise.getParts().map((part) => part.getId());
+    const measureCount = util.max(musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
+    const measureLabels = System.getMeasureLabels(measureCount, musicXML);
+    const measureEvents = new MeasureEventCalculator({ scorePartwise: musicXML.scorePartwise }).calculate();
+
+    return new System(partIds, measureCount, measureLabels, measureEvents);
+  }
+
+  private static getMeasureLabels(
+    measureCount: number,
+    musicXML: { scorePartwise: musicxml.ScorePartwise }
+  ): Array<number | null> {
+    const measureLabels = new Array<number | null>(measureCount).fill(null);
+
+    const part = util.first(musicXML.scorePartwise.getParts());
+    if (!part) {
+      return measureLabels;
+    }
+
+    const measures = part.getMeasures();
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const measure = measures[measureIndex];
+      if (measure.isImplicit()) {
+        measureLabels[measureIndex] = null;
+      }
+
+      const number = parseInt(measure.getNumber(), 10);
+      if (Number.isInteger(number) && !Number.isNaN(number)) {
+        measureLabels[measureIndex] = number;
+      } else {
+        measureLabels[measureIndex] = measureIndex + 1;
+      }
+    }
+
+    return measureLabels;
+  }
 
   parse(scoreCtx: ScoreContext): data.System {
     const systemCtx = new SystemContext(scoreCtx);
@@ -39,68 +82,23 @@ export class System {
   }
 
   private getMeasures(): Measure[] {
-    const partIds = this.getPartIds();
-
-    const measureCount = this.getMeasureCount();
-    const measureLabels = this.getMeasureLabels(measureCount);
-    const measureEvents = this.getMeasureEvents();
-
-    const measures = new Array<Measure>(measureCount);
+    const measures = new Array<Measure>(this.measureCount);
 
     let signature = Signature.default();
 
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const measureLabel = measureLabels[measureIndex];
+    for (let measureIndex = 0; measureIndex < this.measureCount; measureIndex++) {
+      const measureLabel = this.measureLabels[measureIndex];
       const measure = new Measure(
         signature,
         measureIndex,
         measureLabel,
-        measureEvents.filter((event) => event.measureIndex === measureIndex),
-        partIds
+        this.measureEvents.filter((event) => event.measureIndex === measureIndex),
+        this.partIds
       );
       measures[measureIndex] = measure;
       signature = measure.getLastSignature();
     }
 
     return measures;
-  }
-
-  private getPartIds(): string[] {
-    return this.musicXML.scorePartwise.getParts().map((part) => part.getId());
-  }
-
-  private getMeasureCount() {
-    return util.max(this.musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
-  }
-
-  private getMeasureLabels(measureCount: number): Array<number | null> {
-    const measureLabels = new Array<number | null>(measureCount).fill(null);
-
-    const part = util.first(this.musicXML.scorePartwise.getParts());
-    if (!part) {
-      return measureLabels;
-    }
-
-    const measures = part.getMeasures();
-
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const measure = measures[measureIndex];
-      if (measure.isImplicit()) {
-        measureLabels[measureIndex] = null;
-      }
-
-      const number = parseInt(measure.getNumber(), 10);
-      if (Number.isInteger(number) && !Number.isNaN(number)) {
-        measureLabels[measureIndex] = number;
-      } else {
-        measureLabels[measureIndex] = measureIndex + 1;
-      }
-    }
-
-    return measureLabels;
-  }
-
-  private getMeasureEvents(): MeasureEvent[] {
-    return new MeasureEventCalculator({ scorePartwise: this.musicXML.scorePartwise }).calculate();
   }
 }
