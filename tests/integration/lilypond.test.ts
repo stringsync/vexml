@@ -89,7 +89,7 @@ describe('lilypond', () => {
     // { filename: '33d-Spanners-OctaveShifts.musicxml', width: 900 },
     // { filename: '33e-Spanners-OctaveShifts-InvalidSize.musicxml', width: 900 },
     // { filename: '33f-Trill-EndingOnGraceNote.musicxml', width: 900 },
-    // { filename: '33g-Slur-ChordedNotes.musicxml', width: 900 },
+    { filename: '33g-Slur-ChordedNotes.musicxml', width: 900, migrated: true },
     // { filename: '33h-Spanners-Glissando.musicxml', width: 900 },
     // { filename: '33i-Ties-NotEnded.musicxml', width: 900 },
     { filename: '41a-MultiParts-Partorder.musicxml', width: 900, migrated: true },
