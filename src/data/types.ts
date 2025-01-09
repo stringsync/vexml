@@ -42,7 +42,13 @@ export type Measure = {
   type: 'measure';
   label: number | null;
   fragments: Fragment[];
+  jumps: Jump[];
 };
+
+export type Jump =
+  | { type: 'repeatstart' }
+  | { type: 'repeatend'; times: number }
+  | { type: 'repeatending'; times: number };
 
 export type Fragment = {
   type: 'fragment';

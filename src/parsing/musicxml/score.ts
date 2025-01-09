@@ -33,7 +33,7 @@ export class Score {
     // When parsing, we'll assume that there is only one system. Pre-rendering determines the minimum needed widths for
     // each element. We can then use this information to determine the number of systems needed to fit a constrained
     // width if needed.
-    const system = new System(this.idProvider, { scorePartwise: this.musicXML.scorePartwise });
+    const system = System.fromMusicXML({ scorePartwise: this.musicXML.scorePartwise });
     return [system];
   }
 }

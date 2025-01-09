@@ -30,6 +30,7 @@ export class Measure {
       type: 'measure',
       label: this.label,
       fragments: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
+      jumps: [],
     };
   }
 
