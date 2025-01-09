@@ -177,6 +177,17 @@ export class Stave {
     } else {
       vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
     }
+
+    // If there are jumps, override the previous barline types.
+    const jumps = this.document.getJumps(this.key);
+    const hasRepeatStart = jumps.some((jump) => jump.type === 'repeatstart');
+    const hasRepeatEnd = jumps.some((jump) => jump.type === 'repeatend');
+    if (hasRepeatStart) {
+      vexflowStave.setBegBarType(vexflow.Barline.type.REPEAT_BEGIN);
+    }
+    if (hasRepeatEnd) {
+      vexflowStave.setEndBarType(vexflow.Barline.type.REPEAT_END);
+    }
   }
 
   /**

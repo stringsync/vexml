@@ -6,13 +6,15 @@ import { MeasureEvent } from './types';
 import { Signature } from './signature';
 import { ScoreContext, SystemContext } from './contexts';
 import { MeasureEventCalculator } from './measureeventcalculator';
+import { JumpGroup } from './jumpgroup';
 
 export class System {
   constructor(
     private partIds: string[],
     private measureCount: number,
     private measureLabels: Array<number | null>,
-    private measureEvents: MeasureEvent[]
+    private measureEvents: MeasureEvent[],
+    private jumpGroups: JumpGroup[]
   ) {}
 
   static fromMusicXML(musicXML: { scorePartwise: musicxml.ScorePartwise }): System {
@@ -21,7 +23,13 @@ export class System {
     const measureLabels = System.getMeasureLabels(measureCount, musicXML);
     const measureEvents = new MeasureEventCalculator({ scorePartwise: musicXML.scorePartwise }).calculate();
 
-    return new System(partIds, measureCount, measureLabels, measureEvents);
+    const jumpGroups = new Array<JumpGroup>();
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const jumpGroup = JumpGroup.fromMusicXML(measureIndex, musicXML);
+      jumpGroups.push(jumpGroup);
+    }
+
+    return new System(partIds, measureCount, measureLabels, measureEvents, jumpGroups);
   }
 
   private static getMeasureLabels(
@@ -88,12 +96,14 @@ export class System {
 
     for (let measureIndex = 0; measureIndex < this.measureCount; measureIndex++) {
       const measureLabel = this.measureLabels[measureIndex];
+      const jumpGroup = this.jumpGroups[measureIndex];
       const measure = new Measure(
         signature,
         measureIndex,
         measureLabel,
         this.measureEvents.filter((event) => event.measureIndex === measureIndex),
-        this.partIds
+        this.partIds,
+        jumpGroup
       );
       measures[measureIndex] = measure;
       signature = measure.getLastSignature();

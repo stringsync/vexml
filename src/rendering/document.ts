@@ -14,6 +14,7 @@ import {
   BeamKey,
   TupletKey,
 } from './types';
+import { Measure } from '../musicxml';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
 export class Document {
@@ -155,6 +156,10 @@ export class Document {
   getAbsoluteMeasureIndex(key: MeasureKey): number {
     const measures = this.getSystems().flatMap((s) => s.measures);
     return measures.indexOf(this.getMeasure(key));
+  }
+
+  getJumps(key: MeasureKey): data.Jump[] {
+    return this.getMeasure(key).jumpGroup.jumps;
   }
 
   getFragments(key: MeasureKey): data.Fragment[] {
