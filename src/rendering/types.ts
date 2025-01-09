@@ -98,7 +98,13 @@ export type MeasureRender = {
   absoluteIndex: number;
   fragmentRenders: FragmentRender[];
   multiRestCount: number;
+  jumps: Jump[];
 };
+
+export type Jump =
+  | { type: 'repeatstart' }
+  | { type: 'repeatend'; times: number }
+  | { type: 'repeatending'; times: number };
 
 export type FragmentRender = {
   type: 'fragment';

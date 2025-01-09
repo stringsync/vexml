@@ -42,6 +42,11 @@ export type Measure = {
   type: 'measure';
   label: number | null;
   fragments: Fragment[];
+  jumpGroup: JumpGroup;
+};
+
+export type JumpGroup = {
+  type: 'jumpgroup';
   jumps: Jump[];
 };
 

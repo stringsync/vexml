@@ -4,6 +4,7 @@ import { Fragment } from './fragment';
 import { MeasureEvent, StaveEvent } from './types';
 import { Signature } from './signature';
 import { MeasureContext, SystemContext } from './contexts';
+import { JumpGroup } from './jumpgroup';
 
 export class Measure {
   constructor(
@@ -11,7 +12,8 @@ export class Measure {
     private index: number,
     private label: number | null,
     private events: MeasureEvent[],
-    private partIds: string[]
+    private partIds: string[],
+    private jumpGroup: JumpGroup
   ) {
     util.assert(
       events.every((e) => e.measureIndex === index),
@@ -30,7 +32,7 @@ export class Measure {
       type: 'measure',
       label: this.label,
       fragments: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
-      jumps: [],
+      jumpGroup: this.jumpGroup.parse(),
     };
   }
 
