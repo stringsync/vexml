@@ -143,9 +143,13 @@ export class Curve {
 
     const prescribedPlacement = this.document.getCurve(this.key).placement;
 
-    const note1 = this.document.getNote(first.key);
-    const note2 = this.document.getNote(last.key);
-    const isTie = note1.pitch.step === note2.pitch.step && note1.pitch.octave === note2.pitch.octave;
+    const entry1 = this.document.getVoiceEntry(first.key);
+    const entry2 = this.document.getVoiceEntry(last.key);
+    const isTie =
+      entry1.type === 'note' &&
+      entry2.type === 'note' &&
+      entry1.pitch.step === entry2.pitch.step &&
+      entry1.pitch.octave === entry2.pitch.octave;
     if (isTie && prescribedPlacement === 'auto') {
       return {
         position: vexflow.CurvePosition.NEAR_HEAD,
