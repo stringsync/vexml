@@ -3,13 +3,14 @@ import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
 import { Document } from './document';
-import { BeamKey, BeamRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
+import { BeamKey, BeamRender, TupletKey, TupletRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
 import { Rect } from '@/spatial';
 import { Note } from './note';
 import { Rest } from './rest';
 import { Fraction } from '@/util';
 import { DurationType } from '@/data/enums';
 import { Beam } from './beam';
+import { Tuplet } from './tuplet';
 
 const DURATION_TYPE_VALUES: Array<{ type: DurationType; value: Fraction }> = [
   { type: '1/2', value: new Fraction(2, 1) },
@@ -33,6 +34,7 @@ export class Voice {
     const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT);
     const entryRenders = this.renderEntries(vexflowVoice);
     const beamRenders = this.renderBeams(entryRenders);
+    const tupletRenders = this.renderTuplets(entryRenders);
 
     return {
       type: 'voice',
@@ -41,6 +43,7 @@ export class Voice {
       vexflowVoice,
       entryRenders,
       beamRenders,
+      tupletRenders,
     };
   }
 
@@ -148,5 +151,36 @@ export class Voice {
     }
 
     return beamRenders;
+  }
+
+  private renderTuplets(entryRenders: VoiceEntryRender[]): TupletRender[] {
+    const registry = new Map<string, VoiceEntryRender[]>();
+
+    const tuplets = this.document.getTuplets(this.key);
+
+    for (const entryRender of entryRenders) {
+      for (const tupletId of entryRender.tupletIds) {
+        if (!registry.has(tupletId)) {
+          registry.set(tupletId, []);
+        }
+        registry.get(tupletId)!.push(entryRender);
+      }
+    }
+
+    const tupletRenders = new Array<TupletRender>();
+
+    for (let tupletIndex = 0; tupletIndex < tuplets.length; tupletIndex++) {
+      const tupletKey: TupletKey = { ...this.key, tupletIndex };
+      const tuplet = this.document.getTuplet(tupletKey);
+
+      const entryRenderCount = registry.get(tuplet.id)?.length ?? 0;
+
+      if (entryRenderCount > 1) {
+        const tupletRender = new Tuplet(this.config, this.log, this.document, tupletKey, registry).render();
+        tupletRenders.push(tupletRender);
+      }
+    }
+
+    return tupletRenders;
   }
 }

@@ -252,7 +252,8 @@ export class VoiceContext {
   private beams = new Array<data.Beam>();
 
   // tuplet number -> tuplet
-  private tuplets = new Map<number, data.Tuplet>();
+  private openTuplets = new Map<number, data.Tuplet>();
+  private closedTuplets = new Array<data.Tuplet>();
 
   constructor(private stave: StaveContext, private id: string) {}
 
@@ -321,17 +322,30 @@ export class VoiceContext {
   }
 
   getTuplets(): data.Tuplet[] {
-    return Array.from(this.tuplets.values());
+    return this.closedTuplets;
   }
 
-  beginTuplet(number: number, showNumber: boolean): string {
+  beginTuplet(number: number, showNumber: boolean, placement: data.TupletPlacement): string {
     const id = this.nextId();
-    this.tuplets.set(number, { type: 'tuplet', id, showNumber });
+    this.openTuplets.set(number, { type: 'tuplet', id, showNumber, placement });
     return id;
   }
 
-  continueTuplet(number: number): string | null {
-    return this.tuplets.get(number)?.id ?? null;
+  continueOpenTuplets(): string[] {
+    return [...this.openTuplets.values()].map((tuplet) => tuplet.id);
+  }
+
+  closeTuplet(number: number): string | null {
+    if (!this.openTuplets.has(number)) {
+      return null;
+    }
+
+    const tuplet = this.openTuplets.get(number)!;
+
+    this.closedTuplets.push(tuplet);
+    this.openTuplets.delete(number);
+
+    return tuplet.id;
   }
 }
 
@@ -386,11 +400,15 @@ export class VoiceEntryContext {
     return this.voice.continueGraceBeam();
   }
 
-  beginTuplet(number: number, showNumber: boolean): string {
-    return this.voice.beginTuplet(number, showNumber);
+  beginTuplet(number: number, showNumber: boolean, placement: data.TupletPlacement): string {
+    return this.voice.beginTuplet(number, showNumber, placement);
   }
 
-  continueTuplet(number: number): string | null {
-    return this.voice.continueTuplet(number);
+  continueOpenTuplets(): string[] {
+    return this.voice.continueOpenTuplets();
+  }
+
+  closeTuplet(number: number): string | null {
+    return this.voice.closeTuplet(number);
   }
 }

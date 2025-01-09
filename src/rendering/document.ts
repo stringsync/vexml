@@ -12,6 +12,7 @@ import {
   PartLabelKey,
   CurveKey,
   BeamKey,
+  TupletKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -290,6 +291,20 @@ export class Document {
     const beam = this.getBeams(key).at(key.beamIndex);
     util.assertDefined(beam);
     return beam;
+  }
+
+  getTuplets(key: VoiceKey): data.Tuplet[] {
+    return this.getVoice(key).tuplets;
+  }
+
+  getTupletCount(key: VoiceKey): number {
+    return this.getTuplets(key).length;
+  }
+
+  getTuplet(key: TupletKey): data.Tuplet {
+    const tuplet = this.getTuplets(key).at(key.tupletIndex);
+    util.assertDefined(tuplet);
+    return tuplet;
   }
 
   getVoiceEntries(key: VoiceKey): data.VoiceEntry[] {

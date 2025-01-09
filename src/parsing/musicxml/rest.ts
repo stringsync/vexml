@@ -7,6 +7,7 @@ import { Pitch } from './pitch';
 import { VoiceContext, VoiceEntryContext } from './contexts';
 import { Time } from './time';
 import { Beam } from './beam';
+import { Tuplet } from './tuplet';
 
 export class Rest {
   constructor(
@@ -16,7 +17,8 @@ export class Rest {
     private duration: util.Fraction,
     private displayStep: string | null,
     private displayOctave: number | null,
-    private beam: Beam | null
+    private beam: Beam | null,
+    private tuplets: Tuplet[]
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Rest {
@@ -35,18 +37,28 @@ export class Rest {
       beam = Beam.fromMusicXML({ beam: musicXML.note.getBeams().at(0)! });
     }
 
-    return new Rest(measureBeat, durationType, dotCount, duration, displayStep, displayOctave, beam);
+    const tuplets = musicXML.note
+      .getNotations()
+      .flatMap((n) => n.getTuplets())
+      .map((tuplet) => Tuplet.fromMusicXML({ tuplet }));
+
+    return new Rest(measureBeat, durationType, dotCount, duration, displayStep, displayOctave, beam, tuplets);
   }
 
   static whole(time: Time): Rest {
     const measureBeat = util.Fraction.zero();
     const duration = time.toFraction().multiply(new util.Fraction(4, 1));
     const [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
-    return new Rest(measureBeat, durationType, dotCount, duration, null, null, null);
+    return new Rest(measureBeat, durationType, dotCount, duration, null, null, null, []);
   }
 
   parse(voiceCtx: VoiceContext): data.Rest {
     const voiceEntryCtx = VoiceEntryContext.rest(voiceCtx);
+
+    const tupletIds = util.unique([
+      ...this.tuplets.map((tuplet) => tuplet.parse(voiceEntryCtx)).filter((id) => id !== null),
+      ...voiceEntryCtx.continueOpenTuplets(),
+    ]);
 
     return {
       type: 'rest',
@@ -56,6 +68,7 @@ export class Rest {
       duration: this.getDuration().parse(),
       displayPitch: this.getDisplayPitch()?.parse() ?? null,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
+      tupletIds,
     };
   }
 

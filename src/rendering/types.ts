@@ -62,6 +62,10 @@ export type BeamKey = VoiceKey & {
   beamIndex: number;
 };
 
+export type TupletKey = VoiceKey & {
+  tupletIndex: number;
+};
+
 export type VoiceEntryKey = VoiceKey & {
   voiceEntryIndex: number;
 };
@@ -172,6 +176,7 @@ export type VoiceRender = {
   vexflowVoice: vexflow.Voice;
   entryRenders: VoiceEntryRender[];
   beamRenders: BeamRender[];
+  tupletRenders: TupletRender[];
 };
 
 export type BeamRender = {
@@ -181,7 +186,14 @@ export type BeamRender = {
   vexflowBeam: vexflow.Beam;
 };
 
-export type VoiceEntryRender = NoteRender | RestRender | ChordRender;
+export type TupletRender = {
+  type: 'tuplet';
+  rect: Rect;
+  key: TupletKey;
+  vexflowTuplet: vexflow.Tuplet;
+};
+
+export type VoiceEntryRender = NoteRender | RestRender;
 
 export type NoteRender = {
   type: 'note';
@@ -191,16 +203,7 @@ export type NoteRender = {
   vexflowTickable: vexflow.StaveNote;
   curveIds: string[];
   beamId: string | null;
-};
-
-export type ChordRender = {
-  type: 'chord';
-  key: VoiceEntryKey;
-  rect: Rect;
-  stemDirection: StemDirection;
-  vexflowTickable: vexflow.StaveNote;
-  curveIds: string[];
-  beamId: string | null;
+  tupletIds: string[];
 };
 
 export type RestRender = {
@@ -209,6 +212,7 @@ export type RestRender = {
   rect: Rect;
   vexflowTickable: vexflow.StaveNote;
   beamId: string | null;
+  tupletIds: string[];
 };
 
 export type KeyRender = {

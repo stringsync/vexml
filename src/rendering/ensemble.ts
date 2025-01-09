@@ -8,6 +8,7 @@ import { FragmentKey, FragmentRender, StaveRender } from './types';
 import { NoopRenderContext } from './nooprenderctx';
 
 const CURVE_EXTRA_WIDTH = 20;
+const TUPLET_EXTRA_WIDTH = 15;
 
 export class Ensemble {
   private vexflowFormatter = new vexflow.Formatter();
@@ -119,6 +120,13 @@ export class Ensemble {
     return curveCount * CURVE_EXTRA_WIDTH;
   }
 
+  private getTupletExtraWidth(): number {
+    const tupletCount = this.getStaveRenders()
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.tupletRenders).length;
+    return tupletCount * TUPLET_EXTRA_WIDTH;
+  }
+
   private getStartClefWidth(): number {
     const widths = this.getStaveRenders()
       .map((s) => s.startClefRender)
@@ -174,6 +182,7 @@ export class Ensemble {
     }
 
     width += this.getCurveExtraWidth();
+    width += this.getTupletExtraWidth();
 
     return width;
   }
