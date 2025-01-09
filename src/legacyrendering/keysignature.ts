@@ -99,7 +99,10 @@ export class KeySignature {
   /** Returns the width of the key signature. */
   @util.memoize()
   getWidth(): number {
-    return this.getVfKeySignature().getWidth() + KEY_SIGNATURE_PADDING;
+    const vfStave = new vexflow.Stave(0, 0, 0);
+    const vfKeySignature = this.getVfKeySignature();
+    vfKeySignature.addToStave(vfStave);
+    return vfKeySignature.getWidth() + KEY_SIGNATURE_PADDING;
   }
 
   /** Returns the accidental code being applied to the line that the pitch is on based on the key signature. */
