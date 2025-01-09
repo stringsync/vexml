@@ -21,7 +21,15 @@ export class Key {
       this.getAlterations()
     );
 
-    const width = vexflowKeySignature.getWidth() + KEY_SIGNATURE_PADDING;
+    const clone = new vexflow.KeySignature(
+      keySignature.rootNote,
+      keySignature.previousKey?.rootNote,
+      this.getAlterations()
+    );
+    const vexflowStave = new vexflow.Stave(0, 0, 0);
+    clone.addToStave(vexflowStave);
+
+    const width = clone.getWidth() + KEY_SIGNATURE_PADDING;
 
     return {
       type: 'key',
