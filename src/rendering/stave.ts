@@ -32,6 +32,7 @@ export class Stave {
 
     this.renderMeasureLabel(vexflowStave);
     this.renderBarlines(vexflowStave);
+    this.renderEndingBrackets(vexflowStave);
 
     return {
       type: 'stave',
@@ -188,6 +189,41 @@ export class Stave {
     if (hasRepeatEnd) {
       vexflowStave.setEndBarType(vexflow.Barline.type.REPEAT_END);
     }
+  }
+
+  private renderEndingBrackets(vexflowStave: vexflow.Stave): void {
+    const isFirstPart = this.document.isFirstPart(this.key);
+    const isFirstStave = this.document.isFirstStave(this.key);
+    if (!isFirstPart || !isFirstStave) {
+      return;
+    }
+
+    const jumps = this.document.getJumps(this.key);
+    const ending = jumps.find((jump) => jump.type === 'repeatending');
+    if (!ending) {
+      return;
+    }
+
+    let vexflowVoltaType = vexflow.VoltaType.NONE;
+    switch (ending.endBracketType) {
+      case 'none':
+        vexflowVoltaType = vexflow.VoltaType.NONE;
+        break;
+      case 'begin':
+        vexflowVoltaType = vexflow.VoltaType.BEGIN;
+        break;
+      case 'mid':
+        vexflowVoltaType = vexflow.VoltaType.MID;
+        break;
+      case 'end':
+        vexflowVoltaType = vexflow.VoltaType.END;
+        break;
+      case 'beginend':
+        vexflowVoltaType = vexflow.VoltaType.BEGIN_END;
+        break;
+    }
+
+    vexflowStave.setVoltaType(vexflowVoltaType, ending.label, 0);
   }
 
   /**

@@ -1,4 +1,5 @@
 import * as vexflow from 'vexflow';
+import * as data from '@/data';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Label } from './label';
@@ -98,13 +99,8 @@ export type MeasureRender = {
   absoluteIndex: number;
   fragmentRenders: FragmentRender[];
   multiRestCount: number;
-  jumps: Jump[];
+  jumps: data.Jump[];
 };
-
-export type Jump =
-  | { type: 'repeatstart' }
-  | { type: 'repeatend'; times: number }
-  | { type: 'repeatending'; times: number };
 
 export type FragmentRender = {
   type: 'fragment';

@@ -6,6 +6,7 @@ import {
   CurveOpening,
   CurvePlacement,
   DurationType,
+  EndingBracketType,
   KeyMode,
   Notehead,
   StemDirection,
@@ -53,7 +54,7 @@ export type JumpGroup = {
 export type Jump =
   | { type: 'repeatstart' }
   | { type: 'repeatend'; times: number }
-  | { type: 'repeatending'; times: number };
+  | { type: 'repeatending'; times: number; label: string; endBracketType: EndingBracketType };
 
 export type Fragment = {
   type: 'fragment';
