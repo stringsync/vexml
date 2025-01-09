@@ -58,6 +58,7 @@ export class Note {
       vexflowTickable: vexflowStaveNote,
       curveIds,
       beamId: voiceEntry.beamId,
+      tupletIds: voiceEntry.tupletIds,
     };
   }
 

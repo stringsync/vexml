@@ -171,3 +171,11 @@ export const CURVE_PLACEMENTS = new Enum(['auto', 'above', 'below'] as const);
  */
 export type CurveOpening = EnumValues<typeof CURVE_OPENING>;
 export const CURVE_OPENING = new Enum(['auto', 'up', 'down'] as const);
+
+/**
+ * The above-below type is used to indicate whether one element appears above or below another element.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/above-below/
+ */
+export type TupletPlacement = EnumValues<typeof TUPLET_PLACEMENTS>;
+export const TUPLET_PLACEMENTS = new Enum(['above', 'below'] as const);

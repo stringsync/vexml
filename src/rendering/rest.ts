@@ -29,6 +29,7 @@ export class Rest {
       rect: Rect.empty(), // placeholder
       vexflowTickable: vexflowStaveNote,
       beamId: rest.beamId,
+      tupletIds: rest.tupletIds,
     };
   }
   private getVexflowStaveKeys(): string[] {

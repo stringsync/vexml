@@ -10,6 +10,7 @@ import {
   Notehead,
   StemDirection,
   TimeSymbol,
+  TupletPlacement,
 } from './enums';
 
 export type Score = {
@@ -115,6 +116,7 @@ export type Tuplet = {
   type: 'tuplet';
   id: string;
   showNumber: boolean;
+  placement: TupletPlacement;
 };
 
 export type VoiceEntry = Note | Rest | Chord;
@@ -177,6 +179,7 @@ export type Rest = {
   duration: Fraction;
   displayPitch: Pitch | null;
   beamId: string | null;
+  tupletIds: string[];
 };
 
 export type Pitch = {

@@ -83,6 +83,13 @@ export class Rendering {
         v.setContext(ctx).draw();
       });
 
+    // Draw the tuplets.
+    voiceRenders
+      .flatMap((v) => v.tupletRenders)
+      .forEach((t) => {
+        t.vexflowTuplet.setContext(ctx).draw();
+      });
+
     // Draw the multi rests.
     staveRenders.forEach((s) => {
       s.vexflowMultiMeasureRest?.setContext(ctx).draw();

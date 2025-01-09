@@ -105,6 +105,11 @@ export class Note {
   parse(voiceCtx: VoiceContext): data.Note {
     const voiceEntryCtx = VoiceEntryContext.note(voiceCtx, this.pitch, this.octave);
 
+    const tupletIds = util.unique([
+      ...this.tuplets.map((tuplet) => tuplet.parse(voiceEntryCtx)).filter((id) => id !== null),
+      ...voiceEntryCtx.continueOpenTuplets(),
+    ]);
+
     return {
       type: 'note',
       pitch: this.getPitch().parse(),
@@ -117,7 +122,7 @@ export class Note {
       accidental: this.getAccidental(voiceEntryCtx)?.parse(voiceEntryCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
       curveIds: this.getCurves().map((curve) => curve.parse(voiceEntryCtx)),
-      tupletIds: this.tuplets.map((tuplet) => tuplet.parse(voiceEntryCtx)),
+      tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
     };
   }
