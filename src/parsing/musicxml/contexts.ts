@@ -251,6 +251,9 @@ export class VoiceContext {
   private graceBeams = new Array<data.Beam>();
   private beams = new Array<data.Beam>();
 
+  // tuplet number -> tuplet
+  private tuplets = new Map<number, data.Tuplet>();
+
   constructor(private stave: StaveContext, private id: string) {}
 
   nextId() {
@@ -299,6 +302,10 @@ export class VoiceContext {
     return id;
   }
 
+  getGraceBeams(): data.Beam[] {
+    return this.graceBeams;
+  }
+
   continueBeam(): string | null {
     return this.beams.at(-1)?.id ?? null;
   }
@@ -311,6 +318,20 @@ export class VoiceContext {
 
   continueGraceBeam(): string | null {
     return this.graceBeams.at(-1)?.id ?? null;
+  }
+
+  getTuplets(): data.Tuplet[] {
+    return Array.from(this.tuplets.values());
+  }
+
+  beginTuplet(number: number, showNumber: boolean): string {
+    const id = this.nextId();
+    this.tuplets.set(number, { type: 'tuplet', id, showNumber });
+    return id;
+  }
+
+  continueTuplet(number: number): string | null {
+    return this.tuplets.get(number)?.id ?? null;
   }
 }
 
@@ -363,5 +384,13 @@ export class VoiceEntryContext {
 
   continueGraceBeam(): string | null {
     return this.voice.continueGraceBeam();
+  }
+
+  beginTuplet(number: number, showNumber: boolean): string {
+    return this.voice.beginTuplet(number, showNumber);
+  }
+
+  continueTuplet(number: number): string | null {
+    return this.voice.continueTuplet(number);
   }
 }

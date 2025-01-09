@@ -98,11 +98,23 @@ export type Voice = {
    * measures. Instead, the rendering engine will break beams at measure boundaries.
    */
   beams: Beam[];
+
+  /**
+   * `tuplets` are the tuplets present in a voice. They are defined at the voice level, so they cannot span multiple
+   * measures. Instead, the rendering engine will break tuplets at measure boundaries.
+   */
+  tuplets: Tuplet[];
 };
 
 export type Beam = {
   type: 'beam';
   id: string;
+};
+
+export type Tuplet = {
+  type: 'tuplet';
+  id: string;
+  showNumber: boolean;
 };
 
 export type VoiceEntry = Note | Rest | Chord;
@@ -120,6 +132,7 @@ export type Note = {
   annotations: Annotation[];
   curveIds: string[];
   beamId: string | null;
+  tupletIds: string[];
 };
 
 export type Chord = {
@@ -132,6 +145,7 @@ export type Chord = {
   annotations: Annotation[];
   measureBeat: Fraction;
   beamId: string | null;
+  tupletIds: string[];
 };
 
 export type ChordNote = {

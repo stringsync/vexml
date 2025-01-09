@@ -23,6 +23,7 @@ export class Voice {
         type: 'voice',
         entries: [rest.parse(voiceCtx)],
         beams: [],
+        tuplets: [],
       };
     }
 
@@ -30,6 +31,7 @@ export class Voice {
       type: 'voice',
       entries: this.parseEntries(voiceCtx),
       beams: voiceCtx.getBeams(),
+      tuplets: voiceCtx.getTuplets(),
     };
   }
 
