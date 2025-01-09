@@ -179,3 +179,11 @@ export const CURVE_OPENING = new Enum(['auto', 'up', 'down'] as const);
  */
 export type TupletPlacement = EnumValues<typeof TUPLET_PLACEMENTS>;
 export const TUPLET_PLACEMENTS = new Enum(['above', 'below'] as const);
+
+/**
+ * The ending bracket type, which could be used for ending starts or ending ends.
+ *
+ * See https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/stavevolta.ts#L7
+ */
+export type EndingBracketType = EnumValues<typeof ENDING_BRACKET_TYPES>;
+export const ENDING_BRACKET_TYPES = new Enum(['none', 'begin', 'mid', 'end', 'beginend'] as const);

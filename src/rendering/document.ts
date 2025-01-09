@@ -14,7 +14,6 @@ import {
   BeamKey,
   TupletKey,
 } from './types';
-import { Measure } from '../musicxml';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
 export class Document {
