@@ -4,7 +4,7 @@ import { Logger } from '../debug';
 import { Config } from './config';
 import { Document } from './document';
 import { Rect } from '@/spatial';
-import { FragmentKey, FragmentRender, StaveRender } from './types';
+import { FragmentKey, FragmentRender, StaveRender, VoiceEntryRender } from './types';
 import { NoopRenderContext } from './nooprenderctx';
 
 const CURVE_EXTRA_WIDTH = 20;
@@ -86,6 +86,7 @@ export class Ensemble {
       for (const staveRender of partRender.staveRenders) {
         for (const voiceRender of staveRender.voiceRenders) {
           for (const entryRender of voiceRender.entryRenders) {
+            this.fixVexflowGraceNoteGroupBoundingBoxes(entryRender);
             entryRender.rect = Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
@@ -253,5 +254,32 @@ export class Ensemble {
     const highestY = Math.min(...staveRender.voiceRenders.map((v) => v.rect.y));
     const vexflowStaveY = staveRender.vexflowStave.getBoundingBox().y;
     return Math.max(0, vexflowStaveY - highestY);
+  }
+
+  /**
+   * A temporary hack to fix vexflow.GraceNoteGroup bounding boxes post-formatting.
+   *
+   * See https://github.com/vexflow/vexflow/issues/253
+   */
+  private fixVexflowGraceNoteGroupBoundingBoxes(entryRender: VoiceEntryRender) {
+    if (entryRender.type !== 'note') {
+      return;
+    }
+
+    const vexflowGraceNoteGroup = entryRender.vexflowGraceNoteGroup;
+    if (!vexflowGraceNoteGroup) {
+      return;
+    }
+
+    const boxes = vexflowGraceNoteGroup.getGraceNotes().map((n) => n.getBoundingBox());
+    if (boxes.length === 0) {
+      return;
+    }
+
+    const x = Math.min(...boxes.map((b) => b.x));
+    const y = Math.min(...boxes.map((b) => b.y));
+
+    vexflowGraceNoteGroup.setX(x);
+    vexflowGraceNoteGroup.setY(y);
   }
 }

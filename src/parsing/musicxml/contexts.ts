@@ -248,7 +248,6 @@ export class StaveContext {
 }
 
 export class VoiceContext {
-  private graceBeams = new Array<data.Beam>();
   private beams = new Array<data.Beam>();
 
   // tuplet number -> tuplet
@@ -294,7 +293,7 @@ export class VoiceContext {
   }
 
   getBeams(): data.Beam[] {
-    return [...this.graceBeams, ...this.beams];
+    return this.beams;
   }
 
   beginBeam(): string {
@@ -303,22 +302,8 @@ export class VoiceContext {
     return id;
   }
 
-  getGraceBeams(): data.Beam[] {
-    return this.graceBeams;
-  }
-
   continueBeam(): string | null {
     return this.beams.at(-1)?.id ?? null;
-  }
-
-  beginGraceBeam(): string {
-    const id = this.nextId();
-    this.graceBeams.push({ type: 'beam', id });
-    return id;
-  }
-
-  continueGraceBeam(): string | null {
-    return this.graceBeams.at(-1)?.id ?? null;
   }
 
   getTuplets(): data.Tuplet[] {
@@ -390,14 +375,6 @@ export class VoiceEntryContext {
 
   continueBeam(): string | null {
     return this.voice.continueBeam();
-  }
-
-  beginGraceBeam(): string {
-    return this.voice.beginGraceBeam();
-  }
-
-  continueGraceBeam(): string | null {
-    return this.voice.continueGraceBeam();
   }
 
   beginTuplet(number: number, showNumber: boolean, placement: data.TupletPlacement): string {

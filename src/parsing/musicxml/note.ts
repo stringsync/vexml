@@ -30,6 +30,7 @@ export class Note {
     private slurs: Slur[],
     private tuplets: Tuplet[],
     private beam: Beam | null,
+    private slash: boolean,
     private graceNotes: Note[]
   ) {}
 
@@ -86,6 +87,8 @@ export class Note {
       beam = Beam.create({ beam: musicXML.note.getBeams().at(0)! });
     }
 
+    const slash = musicXML.note.hasGraceSlash();
+
     return new Note(
       pitch,
       head,
@@ -100,6 +103,7 @@ export class Note {
       slurs,
       tuplets,
       beam,
+      slash,
       graceNotes
     );
   }
@@ -141,11 +145,13 @@ export class Note {
   private parseGraceNotes(voiceEntryCtx: VoiceEntryContext): data.GraceNote[] {
     return this.graceNotes.map((note) => ({
       type: 'gracenote',
+      head: note.head,
       accidental: note.maybeParseAccidental(voiceEntryCtx),
       beamId: note.beam?.parse(voiceEntryCtx) ?? null,
       durationType: note.durationType,
       curveIds: note.parseCurves(voiceEntryCtx),
       pitch: note.pitch.parse(),
+      slash: note.slash,
     }));
   }
 
@@ -164,6 +170,6 @@ export class Note {
       return null;
     }
 
-    return new Accidental(this.accidental.code, this.accidental.isCautionary).parse(voiceEntryCtx);
+    return this.accidental.parse(voiceEntryCtx);
   }
 }
