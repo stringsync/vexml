@@ -51,7 +51,7 @@ export class Note {
       vexflowStaveNote.addModifier(vexflowAnnotation);
     }
 
-    const { vexflowGraceNoteGroup, graceBeamRenders } = this.renderVexflowGraceNotes(voiceEntry);
+    const { vexflowGraceNoteGroup, graceBeamRenders } = this.renderGraceEntries(voiceEntry);
     if (vexflowGraceNoteGroup) {
       vexflowGraceNoteGroup.setNote(vexflowStaveNote);
       vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
@@ -146,11 +146,11 @@ export class Note {
     return vexflowAccidental;
   }
 
-  private renderVexflowGraceNotes(voiceEntry: data.Note | data.Chord): {
+  private renderGraceEntries(voiceEntry: data.Note | data.Chord): {
     vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
     graceBeamRenders: BeamRender[];
   } {
-    if (voiceEntry.graceNotes.length === 0) {
+    if (voiceEntry.graceEntries.length === 0) {
       return { vexflowGraceNoteGroup: null, graceBeamRenders: [] };
     }
 
@@ -160,26 +160,26 @@ export class Note {
 
     const vexflowGraceNotes = new Array<vexflow.GraceNote>();
 
-    for (const graceNote of voiceEntry.graceNotes) {
-      const key = this.getVexflowNoteKey(graceNote, octaveShift);
+    for (const graceEntry of voiceEntry.graceEntries) {
+      const key = this.getVexflowNoteKey(graceEntry, octaveShift);
       const vexflowGraceNote = new vexflow.GraceNote({
         keys: [key],
-        duration: graceNote.durationType,
-        slash: graceNote.slash,
+        duration: graceEntry.durationType,
+        slash: graceEntry.slash,
       });
 
-      const vexflowAccidental = this.renderVexflowAccidental(graceNote.accidental);
+      const vexflowAccidental = this.renderVexflowAccidental(graceEntry.accidental);
       if (vexflowAccidental) {
         vexflowGraceNote.addModifier(vexflowAccidental);
       }
 
       vexflowGraceNotes.push(vexflowGraceNote);
 
-      if (graceNote.beamId) {
-        if (!registry.has(graceNote.beamId)) {
-          registry.set(graceNote.beamId, []);
+      if (graceEntry.beamId) {
+        if (!registry.has(graceEntry.beamId)) {
+          registry.set(graceEntry.beamId, []);
         }
-        registry.get(graceNote.beamId)!.push(vexflowGraceNote);
+        registry.get(graceEntry.beamId)!.push(vexflowGraceNote);
       }
     }
 

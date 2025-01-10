@@ -150,7 +150,7 @@ export type Note = {
   curveIds: string[];
   beamId: string | null;
   tupletIds: string[];
-  graceNotes: GraceNote[];
+  graceEntries: GraceEntry[];
 };
 
 export type Chord = {
@@ -164,7 +164,7 @@ export type Chord = {
   measureBeat: Fraction;
   beamId: string | null;
   tupletIds: string[];
-  graceNotes: GraceNote[];
+  graceEntries: GraceEntry[];
 };
 
 export type ChordNote = {
@@ -174,6 +174,8 @@ export type ChordNote = {
   accidental: Accidental | null;
   curveIds: string[];
 };
+
+export type GraceEntry = GraceNote;
 
 export type GraceNote = {
   type: 'gracenote';
