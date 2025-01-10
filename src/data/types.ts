@@ -15,6 +15,8 @@ import {
   StemDirection,
   TimeSymbol,
   TupletPlacement,
+  WedgePlacement,
+  WedgeType,
 } from './enums';
 
 export type Score = {
@@ -28,6 +30,14 @@ export type Score = {
    *  multiple systems, which is possible and valid to do.
    */
   curves: Curve[];
+  wedges: Wedge[];
+};
+
+export type Wedge = {
+  type: 'wedge';
+  id: string;
+  wedgeType: WedgeType;
+  placement: WedgePlacement;
 };
 
 export type Curve = {
@@ -152,6 +162,7 @@ export type Note = {
   annotations: Annotation[];
   curveIds: string[];
   beamId: string | null;
+  wedgeId: string | null;
   tupletIds: string[];
   graceEntries: GraceEntry[];
 };
@@ -173,6 +184,7 @@ export type Chord = {
   annotations: Annotation[];
   measureBeat: Fraction;
   beamId: string | null;
+  wedgeId: string | null;
   tupletIds: string[];
   graceEntries: GraceEntry[];
 };

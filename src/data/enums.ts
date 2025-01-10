@@ -242,3 +242,9 @@ export const DYNAMIC_TYPES = new Enum([
   'pf',
   'sfzp',
 ] as const);
+
+export type WedgeType = EnumValues<typeof WEDGE_TYPES>;
+export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo'] as const);
+
+export type WedgePlacement = EnumValues<typeof WEDGE_PLACEMENTS>;
+export const WEDGE_PLACEMENTS = new Enum(['above', 'below'] as const);

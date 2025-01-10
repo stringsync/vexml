@@ -47,6 +47,7 @@ export class Chord {
       measureBeat: first.measureBeat,
       stemDirection: first.stemDirection,
       graceEntries,
+      wedgeId: null,
     };
   }
 }
