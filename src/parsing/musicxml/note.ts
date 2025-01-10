@@ -15,11 +15,6 @@ import { Tuplet } from './tuplet';
 
 export type NoteMod = Accidental | Annotation;
 
-type NoteAccidentalProps = {
-  code: data.AccidentalCode;
-  isCautionary: boolean;
-};
-
 export class Note {
   constructor(
     private pitch: string,
@@ -31,11 +26,12 @@ export class Note {
     private duration: util.Fraction,
     private measureBeat: util.Fraction,
     private lyrics: Annotation[],
-    private accidentalProps: NoteAccidentalProps,
+    private accidental: Accidental,
     private ties: Tie[],
     private slurs: Slur[],
     private tuplets: Tuplet[],
-    private beam: Beam | null
+    private beam: Beam | null,
+    private graceNotes: Note[]
   ) {}
 
   static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -51,7 +47,13 @@ export class Note {
 
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
     const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric({ lyric }));
-    const accidentalProps = Note.getAccidentalProps(musicXML);
+
+    const code =
+      conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
+      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter()) ??
+      'n';
+    const isCautionary = musicXML.note.hasAccidentalCautionary();
+    const accidental = new Accidental(code, isCautionary);
 
     const ties = musicXML.note
       .getNotations()
@@ -67,6 +69,15 @@ export class Note {
       .getNotations()
       .flatMap((notation) => notation.getTuplets())
       .map((tuplet) => Tuplet.fromMusicXML({ tuplet }));
+
+    // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
+    // the note is a grace note.
+    let graceNotes = new Array<Note>();
+    if (!musicXML.note.isGrace()) {
+      graceNotes = musicXML.note
+        .getGraceNotes()
+        .map((graceNote) => Note.fromMusicXML(measureBeat, util.Fraction.zero(), { note: graceNote }));
+    }
 
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
     // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
@@ -85,21 +96,13 @@ export class Note {
       duration,
       measureBeat,
       annotations,
-      accidentalProps,
+      accidental,
       ties,
       slurs,
       tuplets,
-      beam
+      beam,
+      graceNotes
     );
-  }
-
-  private static getAccidentalProps(musicXML: { note: musicxml.Note }): NoteAccidentalProps {
-    const code =
-      conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
-      conversions.fromAlterToAccidentalCode(musicXML.note.getAlter()) ??
-      'n';
-    const isCautionary = musicXML.note.hasAccidentalCautionary();
-    return { code, isCautionary };
   }
 
   parse(voiceCtx: VoiceContext): data.Note {
@@ -119,11 +122,12 @@ export class Note {
       durationType: this.durationType,
       duration: this.getDuration().parse(),
       measureBeat: this.getMeasureBeat().parse(),
-      accidental: this.getAccidental(voiceEntryCtx)?.parse(voiceEntryCtx) ?? null,
+      accidental: this.maybeParseAccidental(voiceEntryCtx) ?? null,
       annotations: this.getAnnotations().map((annotation) => annotation.parse()),
       curveIds: this.getCurves().map((curve) => curve.parse(voiceEntryCtx)),
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
+      graceNotes: [],
     };
   }
 
@@ -135,10 +139,10 @@ export class Note {
     return [...this.slurs, ...this.ties];
   }
 
-  private getAccidental(voiceEntryCtx: VoiceEntryContext): Accidental | null {
-    const isCautionary = this.accidentalProps.isCautionary;
+  private maybeParseAccidental(voiceEntryCtx: VoiceEntryContext): data.Accidental | null {
+    const isCautionary = this.accidental.isCautionary;
 
-    const noteAccidental = this.accidentalProps.code;
+    const noteAccidental = this.accidental.code;
     const keyAccidental = voiceEntryCtx.getKeyAccidental();
     const activeAccidental = voiceEntryCtx.getActiveAccidental();
 
@@ -150,7 +154,7 @@ export class Note {
       return null;
     }
 
-    return new Accidental(this.accidentalProps.code, this.accidentalProps.isCautionary);
+    return new Accidental(this.accidental.code, this.accidental.isCautionary).parse(voiceEntryCtx);
   }
 
   private getDuration(): Fraction {
