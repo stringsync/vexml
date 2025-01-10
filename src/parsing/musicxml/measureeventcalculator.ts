@@ -74,6 +74,9 @@ export class MeasureEventCalculator {
     if (note.isChordTail()) {
       return;
     }
+    if (note.isGrace()) {
+      return;
+    }
     if (note.isChordHead()) {
       this.events.push({
         type: 'chord',
