@@ -147,8 +147,10 @@ export class Note {
       return false;
     }
 
+    const note = new Note(sibling);
+
     // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
-    return new Note(sibling).isChordTail();
+    return note.isChordTail() && note.isGrace() === this.isGrace();
   }
 
   /** Whether or not the note is part of a chord and *not* the first note of the chord. */
@@ -164,10 +166,12 @@ export class Note {
       return tail;
     }
 
+    const isGrace = this.isGrace();
+
     let sibling = this.element.next('note');
     while (sibling) {
       const note = new Note(sibling);
-      if (!note.isChordTail()) {
+      if (!note.isChordTail() || note.isGrace() !== isGrace) {
         break;
       }
       tail.push(note);
