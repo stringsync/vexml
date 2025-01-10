@@ -175,7 +175,7 @@ export type ChordNote = {
   curveIds: string[];
 };
 
-export type GraceEntry = GraceNote;
+export type GraceEntry = GraceNote | GraceChord;
 
 export type GraceNote = {
   type: 'gracenote';
@@ -186,6 +186,22 @@ export type GraceNote = {
   durationType: DurationType;
   curveIds: string[];
   beamId: string | null;
+};
+
+export type GraceChord = {
+  type: 'gracechord';
+  notes: GraceChordNote[];
+  durationType: DurationType;
+  beamId: string | null;
+};
+
+export type GraceChordNote = {
+  type: 'gracechordnote';
+  pitch: Pitch;
+  head: Notehead;
+  accidental: Accidental | null;
+  curveIds: string[];
+  slash: boolean;
 };
 
 export type Accidental = {

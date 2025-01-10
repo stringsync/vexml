@@ -115,7 +115,10 @@ export class Note {
     }
   }
 
-  private getVexflowNoteKey(note: data.Note | data.ChordNote | data.GraceNote, octaveShift: number): string {
+  private getVexflowNoteKey(
+    note: data.Note | data.ChordNote | data.GraceNote | data.GraceChordNote,
+    octaveShift: number
+  ): string {
     const step = note.pitch.step;
     const octave = note.pitch.octave - octaveShift;
     return note.head ? `${step}/${octave}/${note.head}` : `${step}/${octave}`;
@@ -161,16 +164,47 @@ export class Note {
     const vexflowGraceNotes = new Array<vexflow.GraceNote>();
 
     for (const graceEntry of voiceEntry.graceEntries) {
-      const key = this.getVexflowNoteKey(graceEntry, octaveShift);
+      const keys = new Array<string>();
+      switch (graceEntry.type) {
+        case 'gracenote':
+          keys.push(this.getVexflowNoteKey(graceEntry, octaveShift));
+          break;
+        case 'gracechord':
+          keys.push(...graceEntry.notes.map((note) => this.getVexflowNoteKey(note, octaveShift)));
+          break;
+      }
+
+      let slash = false;
+      switch (graceEntry.type) {
+        case 'gracenote':
+          slash = graceEntry.slash;
+          break;
+        case 'gracechord':
+          slash = graceEntry.notes.some((note) => note.slash);
+          break;
+      }
+
       const vexflowGraceNote = new vexflow.GraceNote({
-        keys: [key],
+        keys: keys,
         duration: graceEntry.durationType,
-        slash: graceEntry.slash,
+        slash,
       });
 
-      const vexflowAccidental = this.renderVexflowAccidental(graceEntry.accidental);
-      if (vexflowAccidental) {
-        vexflowGraceNote.addModifier(vexflowAccidental);
+      const vexflowAccidentals = new Array<vexflow.Accidental | null>();
+      switch (graceEntry.type) {
+        case 'gracenote':
+          vexflowAccidentals.push(this.renderVexflowAccidental(graceEntry.accidental));
+          break;
+        case 'gracechord':
+          vexflowAccidentals.push(...graceEntry.notes.map((note) => this.renderVexflowAccidental(note.accidental)));
+          break;
+      }
+
+      for (let index = 0; index < vexflowAccidentals.length; index++) {
+        const vexflowAccidental = vexflowAccidentals[index];
+        if (vexflowAccidental) {
+          vexflowGraceNote.addModifier(vexflowAccidental, index);
+        }
       }
 
       vexflowGraceNotes.push(vexflowGraceNote);

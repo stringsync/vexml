@@ -13,7 +13,19 @@ import { Tie } from './tie';
 import { Beam } from './beam';
 import { Tuplet } from './tuplet';
 
-export type NoteMod = Accidental | Annotation;
+type GraceNote = {
+  type: 'gracenote';
+  note: Note;
+};
+
+/** Container object to avoid a circular reference to Chord. */
+type GraceChord = {
+  type: 'gracechord';
+  head: Note;
+  tail: Note[];
+};
+
+type GraceEntry = GraceNote | GraceChord;
 
 export class Note {
   constructor(
@@ -31,7 +43,7 @@ export class Note {
     private tuplets: Tuplet[],
     private beam: Beam | null,
     private slash: boolean,
-    private graceEntries: Note[]
+    private graceEntries: GraceEntry[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -71,13 +83,22 @@ export class Note {
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
-    const graceEntries = new Array<Note>();
+    const graceEntries = new Array<GraceEntry>();
     if (!musicXML.note.isGrace()) {
-      graceEntries.push(
-        ...musicXML.note
-          .getGraceNotes()
-          .map((graceNote) => Note.create(measureBeat, util.Fraction.zero(), { note: graceNote }))
-      );
+      for (const graceNote of musicXML.note.getGraceNotes()) {
+        if (graceNote.isChordTail()) {
+          continue;
+        }
+
+        const note = Note.create(measureBeat, util.Fraction.zero(), { note: graceNote });
+
+        if (graceNote.isChordHead()) {
+          const tail = graceNote.getChordTail().map((note) => Note.create(measureBeat, util.Fraction.zero(), { note }));
+          graceEntries.push({ type: 'gracechord', head: note, tail });
+        } else {
+          graceEntries.push({ type: 'gracenote', note });
+        }
+      }
     }
 
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
@@ -142,19 +163,6 @@ export class Note {
     return [...this.slurs, ...this.ties].map((curve) => curve.parse(voiceEntryCtx));
   }
 
-  private parseGraceEntries(voiceEntryCtx: VoiceEntryContext): data.GraceEntry[] {
-    return this.graceEntries.map((note) => ({
-      type: 'gracenote',
-      head: note.head,
-      accidental: note.maybeParseAccidental(voiceEntryCtx),
-      beamId: note.beam?.parse(voiceEntryCtx) ?? null,
-      durationType: note.durationType,
-      curveIds: note.parseCurves(voiceEntryCtx),
-      pitch: note.pitch.parse(),
-      slash: note.slash,
-    }));
-  }
-
   private maybeParseAccidental(voiceEntryCtx: VoiceEntryContext): data.Accidental | null {
     const isCautionary = this.accidental.isCautionary;
 
@@ -171,5 +179,50 @@ export class Note {
     }
 
     return this.accidental.parse(voiceEntryCtx);
+  }
+
+  private parseGraceEntries(voiceEntryCtx: VoiceEntryContext): data.GraceEntry[] {
+    return this.graceEntries.map((graceEntry) => {
+      switch (graceEntry.type) {
+        case 'gracenote':
+          return this.parseGraceNote(voiceEntryCtx, graceEntry);
+        case 'gracechord':
+          return this.parseGraceChord(voiceEntryCtx, graceEntry);
+        default:
+          util.assertUnreachable();
+      }
+    });
+  }
+
+  private parseGraceNote(voiceEntryCtx: VoiceEntryContext, graceNote: GraceNote): data.GraceNote {
+    const note = graceNote.note;
+    return {
+      type: 'gracenote',
+      head: note.head,
+      accidental: note.maybeParseAccidental(voiceEntryCtx),
+      beamId: note.beam?.parse(voiceEntryCtx) ?? null,
+      durationType: note.durationType,
+      curveIds: note.parseCurves(voiceEntryCtx),
+      pitch: note.pitch.parse(),
+      slash: note.slash,
+    };
+  }
+
+  private parseGraceChord(voiceEntryCtx: VoiceEntryContext, graceChord: GraceChord): data.GraceChord {
+    const notes = [graceChord.head, ...graceChord.tail].map<data.GraceChordNote>((note) => ({
+      type: 'gracechordnote',
+      pitch: note.pitch.parse(),
+      head: note.head,
+      accidental: note.maybeParseAccidental(voiceEntryCtx),
+      curveIds: note.parseCurves(voiceEntryCtx),
+      slash: note.slash,
+    }));
+
+    return {
+      type: 'gracechord',
+      beamId: graceChord.head.beam?.parse(voiceEntryCtx) ?? null,
+      durationType: graceChord.head.durationType,
+      notes,
+    };
   }
 }
