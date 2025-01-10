@@ -7,6 +7,7 @@ import {
   CurveOpening,
   CurvePlacement,
   DurationType,
+  DynamicType,
   EndingBracketType,
   KeyMode,
   Notehead,
@@ -136,7 +137,7 @@ export type Tuplet = {
   placement: TupletPlacement;
 };
 
-export type VoiceEntry = Note | Rest | Chord;
+export type VoiceEntry = Note | Rest | Chord | Dynamics;
 
 export type Note = {
   type: 'note';
@@ -153,6 +154,13 @@ export type Note = {
   beamId: string | null;
   tupletIds: string[];
   graceEntries: GraceEntry[];
+};
+
+export type Dynamics = {
+  type: 'dynamics';
+  measureBeat: Fraction;
+  duration: Fraction;
+  dynamicType: DynamicType;
 };
 
 export type Chord = {

@@ -8,12 +8,15 @@ import {
   MetronomeDirectionTypeContent,
   OctaveShiftDirectionTypeContent,
   SegnoDirectionTypeContent,
+  TokensDirectionTypeContent,
 } from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
 import { Dynamics } from './dynamics';
 import { Metronome } from './metronome';
 import { Segno } from './segno';
 import { Coda } from './coda';
+import { Words } from './words';
+import { Symbolic } from './symbolic';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -74,6 +77,14 @@ export class Direction {
     );
   }
 
+  /** Returns the tokens of the direction. */
+  getTokens(): Array<Words | Symbolic> {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is TokensDirectionTypeContent => content.type === 'tokens')
+      .flatMap((content) => content.tokens);
+  }
+
   /**
    * Returns the placement of the direction. Defaults to null.
    *
@@ -89,8 +100,8 @@ export class Direction {
     return this.element.first('voice')?.content().str() ?? null;
   }
 
-  /** Returns the staff this direction belongs to. Defaults to 1. */
+  /** Returns the staff this direction belongs to. Defaults to null. */
   getStaveNumber(): number | null {
-    return this.element.first('staff')?.content().int() ?? 1;
+    return this.element.first('staff')?.content().int() ?? null;
   }
 }

@@ -207,3 +207,38 @@ export const BARLINE_STYLES = new Enum([
 /** The repetition symbol of a measure. */
 export type RepetitionSymbol = EnumValues<typeof REPETITION_SYMBOLS>;
 export const REPETITION_SYMBOLS = new Enum(['segno', 'coda'] as const);
+
+/**
+ * The different kinds of dynamics.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/dynamics/
+ */
+export type DynamicType = EnumValues<typeof DYNAMIC_TYPES>;
+export const DYNAMIC_TYPES = new Enum([
+  'p',
+  'pp',
+  'ppp',
+  'pppp',
+  'ppppp',
+  'pppppp',
+  'f',
+  'ff',
+  'fff',
+  'ffff',
+  'fffff',
+  'ffffff',
+  'mp',
+  'mf',
+  'sf',
+  'sfp',
+  'sfpp',
+  'fp',
+  'rf',
+  'rfz',
+  'sfz',
+  'sffz',
+  'fz',
+  'n',
+  'pf',
+  'sfzp',
+] as const);

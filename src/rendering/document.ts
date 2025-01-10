@@ -351,6 +351,12 @@ export class Document {
     return entry;
   }
 
+  getDynamics(key: VoiceEntryKey): data.Dynamics {
+    const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
+    util.assert(entry?.type === 'dynamics', 'expected entry to be dynamics');
+    return entry;
+  }
+
   /** Returns a new document with the system arrangements applied. */
   reflow(arrangements: SystemArrangement[]): Document {
     const clone = this.clone();

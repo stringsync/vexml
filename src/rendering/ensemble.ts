@@ -43,7 +43,7 @@ export class Ensemble {
     // Join the voices that belong on the _same stave_.
     for (const staveRender of this.getStaveRenders()) {
       const vexflowVoices = staveRender.voiceRenders
-        .map((v) => v.vexflowVoice)
+        .flatMap((v) => v.vexflowVoices)
         .filter((v) => v.getTickables().length > 0);
       if (vexflowVoices.length > 0) {
         this.vexflowFormatter.joinVoices(vexflowVoices);
@@ -53,7 +53,7 @@ export class Ensemble {
     // Format _all_ the voices. The voice width must be smaller than the stave or the stave won't contain it.
     const vexflowVoices = this.getStaveRenders()
       .flatMap((s) => s.voiceRenders)
-      .map((v) => v.vexflowVoice)
+      .flatMap((v) => v.vexflowVoices)
       .filter((v) => v.getTickables().length > 0);
     const voiceWidth = staveWidth - nonVoiceWidth;
     if (vexflowVoices.length > 0) {
@@ -69,8 +69,10 @@ export class Ensemble {
       staveRender.vexflowStave.setRendered(false);
 
       for (const voiceRender of staveRender.voiceRenders) {
-        voiceRender.vexflowVoice.setContext(ctx).draw();
-        voiceRender.vexflowVoice.setRendered(false);
+        for (const vexflowVoice of voiceRender.vexflowVoices) {
+          vexflowVoice.setContext(ctx).draw();
+          vexflowVoice.setRendered(false);
+        }
 
         for (const entry of voiceRender.entryRenders) {
           entry.vexflowTickable.setContext(ctx).draw();
@@ -82,12 +84,12 @@ export class Ensemble {
     // At this point, we should be able to call getBoundingBox() on all of the vexflow objects. We can now update the
     // rects accordingly.
     let excessHeight = 0;
+
     for (const partRender of this.fragmentRender.partRenders) {
       for (const staveRender of partRender.staveRenders) {
         for (const voiceRender of staveRender.voiceRenders) {
           for (const entryRender of voiceRender.entryRenders) {
-            this.fixVexflowGraceNoteGroupBoundingBoxes(entryRender);
-            entryRender.rect = Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
+            entryRender.rect = this.hackEntryRenderRect(entryRender, staveRender);
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
         }
@@ -199,7 +201,7 @@ export class Ensemble {
 
   private getMinRequiredVoiceWidth(): number {
     const widths = this.getStaveRenders().map((s) => {
-      const vexflowVoices = s.voiceRenders.map((v) => v.vexflowVoice).filter((v) => v.getTickables().length > 0);
+      const vexflowVoices = s.voiceRenders.flatMap((v) => v.vexflowVoices).filter((v) => v.getTickables().length > 0);
       if (vexflowVoices.length === 0) {
         return 0;
       } else {
@@ -262,7 +264,7 @@ export class Ensemble {
    *
    * See https://github.com/vexflow/vexflow/issues/253
    */
-  private fixVexflowGraceNoteGroupBoundingBoxes(entryRender: VoiceEntryRender) {
+  private maybefixVexflowGraceNoteGroupBoundingBox(entryRender: VoiceEntryRender) {
     if (entryRender.type !== 'note') {
       return;
     }
@@ -282,5 +284,28 @@ export class Ensemble {
 
     vexflowGraceNoteGroup.setX(x);
     vexflowGraceNoteGroup.setY(y);
+  }
+
+  /** The vexflow text dynamics bounding box is incorrect. This method returns a reasonable approximation. */
+  private overrideVexflowTextDynamicsRect(entryRender: VoiceEntryRender, staveRender: StaveRender): Rect {
+    const textBox = entryRender.vexflowTickable.getBoundingBox();
+    const staveBox = staveRender.vexflowStave.getBoundingBox();
+
+    const x = entryRender.vexflowTickable.getAbsoluteX();
+    const y = staveBox.y - 2;
+    const w = textBox.w;
+    const h = textBox.h;
+
+    return new Rect(x, y, w, h);
+  }
+
+  private hackEntryRenderRect(entryRender: VoiceEntryRender, staveRender: StaveRender): Rect {
+    this.maybefixVexflowGraceNoteGroupBoundingBox(entryRender);
+
+    if (entryRender.vexflowTickable instanceof vexflow.TextDynamics) {
+      return this.overrideVexflowTextDynamicsRect(entryRender, staveRender);
+    }
+
+    return Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
   }
 }

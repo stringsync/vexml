@@ -65,9 +65,11 @@ export class Rendering {
       });
 
     // Draw the voices.
-    voiceRenders.forEach((v) => {
-      v.vexflowVoice.setContext(ctx).draw();
-    });
+    voiceRenders
+      .flatMap((v) => v.vexflowVoices)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
 
     // Draw the non-grace beams.
     voiceRenders
