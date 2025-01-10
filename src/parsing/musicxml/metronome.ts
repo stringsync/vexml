@@ -16,7 +16,7 @@ export class Metronome {
   ) {}
 
   static default(): Metronome {
-    return new Metronome({ bpm: 120 });
+    return new Metronome({});
   }
 
   static create(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {

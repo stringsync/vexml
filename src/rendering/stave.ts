@@ -11,6 +11,8 @@ import { Clef } from './clef';
 import { Time } from './time';
 import { Key } from './key';
 
+const METRONOME_TOP_PADDING = 8;
+
 export class Stave {
   constructor(
     private config: Config,
@@ -34,6 +36,7 @@ export class Stave {
     this.renderMeasureLabel(vexflowStave);
     this.renderBarlines(vexflowStave);
     this.renderEndingBrackets(vexflowStave);
+    this.renderMetronome(vexflowStave);
 
     return {
       type: 'stave',
@@ -291,5 +294,28 @@ export class Stave {
     }
 
     return null;
+  }
+
+  private renderMetronome(vexflowStave: vexflow.Stave): void {
+    const isFirstSystem = this.document.isFirstSystem(this.key);
+    const isFirstMeasure = this.document.isFirstMeasure(this.key);
+    const isFirstFragment = this.document.isFirstFragment(this.key);
+    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment;
+
+    const currentMetronome = this.document.getFragment(this.key).signature.metronome;
+    const previousMetronome = this.document.getPreviousFragment(this.key)?.signature.metronome;
+
+    const didMetronomeChange =
+      currentMetronome.bpm !== previousMetronome?.bpm ||
+      currentMetronome.dots !== previousMetronome?.dots ||
+      currentMetronome.dots2 !== previousMetronome?.dots2 ||
+      currentMetronome.duration !== previousMetronome?.duration;
+
+    const hasMetronome =
+      currentMetronome.bpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
+
+    if (hasMetronome && (isAbsolutelyFirst || didMetronomeChange)) {
+      vexflowStave.setTempo(currentMetronome, -METRONOME_TOP_PADDING);
+    }
   }
 }
