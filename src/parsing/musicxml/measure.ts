@@ -13,7 +13,9 @@ export class Measure {
     private label: number | null,
     private events: MeasureEvent[],
     private partIds: string[],
-    private jumpGroup: JumpGroup
+    private jumpGroup: JumpGroup,
+    private startBarlineStyle: data.BarlineStyle | null,
+    private endBarlineStyle: data.BarlineStyle | null
   ) {
     util.assert(
       events.every((e) => e.measureIndex === index),
@@ -33,6 +35,8 @@ export class Measure {
       label: this.label,
       fragments: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
       jumpGroup: this.jumpGroup.parse(),
+      startBarlineStyle: this.startBarlineStyle,
+      endBarlineStyle: this.endBarlineStyle,
     };
   }
 

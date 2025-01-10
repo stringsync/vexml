@@ -69,53 +69,13 @@ export class JumpGroup {
     return [{ type: 'repeatending', times, label, endBracketType }];
   }
 
-  // private static getStartRepeatEnding(musicXML: { barline: musicxml.Barline }): data.Jump {
-  //   util.assert(musicXML.barline.isEnding(), 'expected barline to be an ending');
+  getStartBarlineStyle(): data.BarlineStyle | null {
+    return this.jumps.find((jump) => jump.type === 'repeatstart') ? 'repeatstart' : null;
+  }
 
-  //   let endBracketType: data.EndingBracketType = 'none';
-  //   switch (musicXML.barline.getEndingType()) {
-  //     case 'start':
-  //       endBracketType = 'begin';
-  //       break;
-  //     case 'stop':
-  //       endBracketType = 'end';
-  //       break;
-  //     case 'discontinue':
-  //       endBracketType = 'mid';
-  //       break;
-  //   }
-
-  //   const text = musicXML.barline.getEndingText();
-  //   const number = musicXML.barline.getEndingNumber();
-  //   const times = musicXML.barline.getRepeatTimes() ?? number.split(',').length;
-  //   const label = text ? text : `${number}.`;
-
-  //   return { type: 'repeatending', times, label, endBracketType };
-  // }
-
-  // private static getEndRepeatEnding(musicXML: { barline: musicxml.Barline }): data.Jump {
-  //   util.assert(musicXML.barline.isEnding(), 'expected barline to be an ending');
-
-  //   let endBracketType: data.EndingBracketType = 'none';
-  //   switch (musicXML.barline.getEndingType()) {
-  //     case 'start':
-  //       endBracketType = 'begin';
-  //       break;
-  //     case 'stop':
-  //       endBracketType = 'end';
-  //       break;
-  //     case 'discontinue':
-  //       endBracketType = 'beginend';
-  //       break;
-  //   }
-
-  //   const text = musicXML.barline.getEndingText();
-  //   const number = musicXML.barline.getEndingNumber();
-  //   const times = musicXML.barline.getRepeatTimes() ?? number.split(',').length;
-  //   const label = text ? text : `${number}.`;
-
-  //   return { type: 'repeatending', times, label, endBracketType };
-  // }
+  getEndBarlineStyle(): data.BarlineStyle | null {
+    return this.jumps.find((jump) => jump.type === 'repeatend') ? 'repeatend' : null;
+  }
 
   parse(): data.JumpGroup {
     return {

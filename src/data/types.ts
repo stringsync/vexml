@@ -2,6 +2,7 @@ import {
   AccidentalCode,
   AnnotationHorizontalJustification,
   AnnotationVerticalJustification,
+  BarlineStyle,
   ClefSign,
   CurveOpening,
   CurvePlacement,
@@ -44,6 +45,8 @@ export type Measure = {
   label: number | null;
   fragments: Fragment[];
   jumpGroup: JumpGroup;
+  startBarlineStyle: BarlineStyle | null;
+  endBarlineStyle: BarlineStyle | null;
 };
 
 export type JumpGroup = {
