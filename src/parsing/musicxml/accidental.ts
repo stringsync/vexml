@@ -2,7 +2,7 @@ import * as data from '@/data';
 import { VoiceEntryContext } from './contexts';
 
 export class Accidental {
-  constructor(private code: data.AccidentalCode, private isCautionary: boolean) {}
+  constructor(public readonly code: data.AccidentalCode, public readonly isCautionary: boolean) {}
 
   parse(voiceEntryCtx: VoiceEntryContext): data.Accidental {
     voiceEntryCtx.setActiveAccidental(this.code);

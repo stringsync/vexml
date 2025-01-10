@@ -30,6 +30,8 @@ export class Chord {
 
     const tupletIds = parsed.flatMap((note) => note.tupletIds);
 
+    const graceNotes = parsed.flatMap((note) => note.graceNotes);
+
     const first = parsed.at(0);
     util.assertDefined(first);
 
@@ -38,6 +40,7 @@ export class Chord {
       notes,
       annotations,
       tupletIds,
+      graceNotes,
       beamId: first.beamId,
       dotCount: first.dotCount,
       duration: first.duration,
