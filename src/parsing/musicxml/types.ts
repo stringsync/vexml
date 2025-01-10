@@ -113,6 +113,20 @@ export type MultiRestEvent = {
   measureCount: number;
 };
 
+export type SegnoEvent = {
+  type: 'segno';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+};
+
+export type CodaEvent = {
+  type: 'coda';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+};
+
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
@@ -123,7 +137,9 @@ export type MusicXMLEvent =
   | KeyEvent
   | TimeEvent
   | MetronomeEvent
-  | MultiRestEvent;
+  | MultiRestEvent
+  | SegnoEvent
+  | CodaEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 

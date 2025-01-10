@@ -10,6 +10,7 @@ import {
   EndingBracketType,
   KeyMode,
   Notehead,
+  RepetitionSymbol,
   StemDirection,
   TimeSymbol,
   TupletPlacement,
@@ -47,6 +48,7 @@ export type Measure = {
   jumpGroup: JumpGroup;
   startBarlineStyle: BarlineStyle | null;
   endBarlineStyle: BarlineStyle | null;
+  repetitionSymbols: RepetitionSymbol[];
 };
 
 export type JumpGroup = {

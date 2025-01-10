@@ -37,6 +37,7 @@ export class Stave {
     this.renderBarlines(vexflowStave);
     this.renderEndingBrackets(vexflowStave);
     this.renderMetronome(vexflowStave);
+    this.renderRepetitionSymbol(vexflowStave);
 
     return {
       type: 'stave',
@@ -316,6 +317,27 @@ export class Stave {
 
     if (hasMetronome && (isAbsolutelyFirst || didMetronomeChange)) {
       vexflowStave.setTempo(currentMetronome, -METRONOME_TOP_PADDING);
+    }
+  }
+
+  private renderRepetitionSymbol(vexflowStave: vexflow.Stave): void {
+    const isFirstPart = this.document.isFirstPart(this.key);
+    const isFirstStave = this.document.isFirstStave(this.key);
+    if (!isFirstPart || !isFirstStave) {
+      return;
+    }
+
+    const measure = this.document.getMeasure(this.key);
+
+    for (const repetitionSymbol of measure.repetitionSymbols) {
+      switch (repetitionSymbol) {
+        case 'segno':
+          vexflowStave.setRepetitionType(vexflow.Repetition.type.SEGNO_LEFT);
+          break;
+        case 'coda':
+          vexflowStave.setRepetitionType(vexflow.Repetition.type.CODA_LEFT);
+          break;
+      }
     }
   }
 }

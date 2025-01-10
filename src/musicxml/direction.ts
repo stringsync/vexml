@@ -2,14 +2,18 @@ import * as util from '@/util';
 import { OctaveShift } from './octaveshift';
 import { NamedElement } from '@/util';
 import {
+  CodaDirectionTypeContent,
   DirectionType,
   DynamicsDirectionTypeContent,
   MetronomeDirectionTypeContent,
   OctaveShiftDirectionTypeContent,
+  SegnoDirectionTypeContent,
 } from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
 import { Dynamics } from './dynamics';
 import { Metronome } from './metronome';
+import { Segno } from './segno';
+import { Coda } from './coda';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -26,6 +30,22 @@ export class Direction {
    */
   getTypes(): DirectionType[] {
     return this.element.all('direction-type').map((node) => new DirectionType(node));
+  }
+
+  /** Returns the segnos of the direction. */
+  getSegnos(): Segno[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is SegnoDirectionTypeContent => content.type === 'segno')
+      .flatMap((content) => content.segnos);
+  }
+
+  /** Returns the codas of the direction. */
+  getCodas(): Coda[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is CodaDirectionTypeContent => content.type === 'coda')
+      .flatMap((content) => content.codas);
   }
 
   /** Returns the octave shifts of the direction. */
