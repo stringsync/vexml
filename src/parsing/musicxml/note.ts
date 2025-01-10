@@ -137,6 +137,9 @@ export class Note {
       ...voiceEntryCtx.continueOpenTuplets(),
     ]);
 
+    // Grace entries need to be parsed before the curves because a slur may start on a grace entry.
+    const graceEntries = this.parseGraceEntries(voiceEntryCtx);
+
     return {
       type: 'note',
       pitch: this.pitch.parse(),
@@ -151,7 +154,7 @@ export class Note {
       curveIds: this.parseCurves(voiceEntryCtx),
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
-      graceEntries: this.parseGraceEntries(voiceEntryCtx),
+      graceEntries,
     };
   }
 

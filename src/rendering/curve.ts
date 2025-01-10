@@ -7,7 +7,7 @@ import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey, CurveRender, NoteRender, VoiceEntryKey } from './types';
 
-interface NoteRenderRegistry {
+interface VexflowStaveNoteRegistry {
   get(curveId: string): NoteRender[] | undefined;
 }
 
@@ -29,7 +29,7 @@ export class Curve {
     private log: Logger,
     private document: Document,
     private key: CurveKey,
-    private registry: NoteRenderRegistry
+    private registry: VexflowStaveNoteRegistry
   ) {}
 
   render(): CurveRender {
@@ -227,23 +227,49 @@ export class Curve {
   }
 
   private getCurveNotes(noteRenders: NoteRender[]): CurveNote[] {
-    return noteRenders.map((noteRender) => ({
-      stem: this.getStem(noteRender),
-      key: noteRender.key,
-      line: noteRender.vexflowTickable.getLineNumber(true),
-      rect: noteRender.rect,
-      vexflowStaveNote: noteRender.vexflowTickable,
-    }));
+    const curveNotes = new Array<CurveNote>();
+
+    for (const noteRender of noteRenders) {
+      curveNotes.push({
+        stem: this.getStem(noteRender.vexflowTickable),
+        rect: noteRender.rect,
+        key: noteRender.key,
+        line: noteRender.vexflowTickable.getLineNumber(),
+        vexflowStaveNote: noteRender.vexflowTickable,
+      });
+
+      const vexflowGraceNotes = noteRender.vexflowGraceNoteGroup?.getGraceNotes() ?? [];
+      for (const graceCurve of noteRender.graceCurves) {
+        const vexflowGraceNote = vexflowGraceNotes.at(graceCurve.graceEntryIndex);
+        if (!vexflowGraceNote) {
+          this.log.warn('grace note not found for curve, continuing', { curveId: this.key.curveIndex });
+          continue;
+        }
+        if (!(vexflowGraceNote instanceof vexflow.StaveNote)) {
+          continue;
+        }
+
+        curveNotes.push({
+          stem: this.getStem(vexflowGraceNote),
+          rect: noteRender.rect,
+          key: noteRender.key,
+          line: vexflowGraceNote.getLineNumber(),
+          vexflowStaveNote: vexflowGraceNote,
+        });
+      }
+    }
+
+    return curveNotes;
   }
 
   /**
    * Returns the actual stem direction of the note, including the concrete resulting stem when using auto-stem.
    */
-  private getStem(noteRender: NoteRender): Stem {
+  private getStem(vexflowStaveNote: vexflow.StaveNote): Stem {
     // Calling getStemDirection will throw if there is no stem.
     // https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/stemmablenote.ts#L123
     try {
-      const stem = noteRender.vexflowTickable.getStemDirection();
+      const stem = vexflowStaveNote.getStemDirection();
       switch (stem) {
         case 1:
           return 'up';

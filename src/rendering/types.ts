@@ -206,8 +206,14 @@ export type NoteRender = {
   curveIds: string[];
   beamId: string | null;
   tupletIds: string[];
+  graceCurves: GraceCurve[];
   graceBeamRenders: BeamRender[];
   vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
+};
+
+export type GraceCurve = {
+  curveId: string;
+  graceEntryIndex: number;
 };
 
 export type RestRender = {

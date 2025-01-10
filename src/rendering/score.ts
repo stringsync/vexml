@@ -77,14 +77,15 @@ export class Score {
       .flatMap((v) => v.entryRenders)
       .filter((e) => e.type === 'note');
 
-    const staveNoteRegistry = new Map<string, NoteRender[]>();
+    const registry = new Map<string, NoteRender[]>();
 
     for (const noteRender of noteRenders) {
-      for (const curveId of noteRender.curveIds) {
-        if (!staveNoteRegistry.has(curveId)) {
-          staveNoteRegistry.set(curveId, []);
+      const curveIds = util.unique([...noteRender.graceCurves.map((g) => g.curveId), ...noteRender.curveIds]);
+      for (const curveId of curveIds) {
+        if (!registry.has(curveId)) {
+          registry.set(curveId, []);
         }
-        staveNoteRegistry.get(curveId)!.push(noteRender);
+        registry.get(curveId)!.push(noteRender);
       }
     }
 
@@ -93,10 +94,10 @@ export class Score {
     for (let curveIndex = 0; curveIndex < curves.length; curveIndex++) {
       const key: CurveKey = { curveIndex };
 
-      const noteRenderCount = staveNoteRegistry.get(curves[curveIndex].id)?.length ?? 0;
+      const noteRenderCount = registry.get(curves[curveIndex].id)?.length ?? 0;
 
       if (noteRenderCount >= 1) {
-        const curveRender = new Curve(this.config, this.log, this.document, key, staveNoteRegistry).render();
+        const curveRender = new Curve(this.config, this.log, this.document, key, registry).render();
         curveRenders.push(curveRender);
       }
     }
