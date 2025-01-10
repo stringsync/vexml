@@ -193,7 +193,8 @@ export class Ensemble {
   }
 
   private getMinRequiredStaveWidth(): number {
-    return this.config.BASE_VOICE_WIDTH + this.getMinRequiredVoiceWidth();
+    const fragmentCount = this.document.getFragmentCount(this.key);
+    return this.config.BASE_VOICE_WIDTH / fragmentCount + this.getMinRequiredVoiceWidth();
   }
 
   private getMinRequiredVoiceWidth(): number {
