@@ -4,7 +4,7 @@ import * as musicxml from '@/musicxml';
 export class JumpGroup {
   constructor(private jumps: data.Jump[]) {}
 
-  static fromMusicXML(measureIndex: number, musicXML: { scorePartwise: musicxml.ScorePartwise }): JumpGroup {
+  static create(measureIndex: number, musicXML: { scorePartwise: musicxml.ScorePartwise }): JumpGroup {
     const measures = musicXML.scorePartwise
       .getParts()
       .map((part) => part.getMeasures())

@@ -7,15 +7,15 @@ import { MeasureContext, SystemContext } from './contexts';
 import { JumpGroup } from './jumpgroup';
 
 export class Measure {
-  constructor(
+  private constructor(
     private initialSignature: Signature,
     private index: number,
     private label: number | null,
     private events: MeasureEvent[],
-    private partIds: string[],
     private jumpGroup: JumpGroup,
     private startBarlineStyle: data.BarlineStyle | null,
-    private endBarlineStyle: data.BarlineStyle | null
+    private endBarlineStyle: data.BarlineStyle | null,
+    private fragments: Fragment[]
   ) {
     util.assert(
       events.every((e) => e.measureIndex === index),
@@ -23,45 +23,51 @@ export class Measure {
     );
   }
 
-  getEvents(): MeasureEvent[] {
-    return this.events;
+  static create(
+    initialSignature: Signature,
+    index: number,
+    label: number | null,
+    events: MeasureEvent[],
+    partIds: string[],
+    jumpGroup: JumpGroup,
+    startBarlineStyle: data.BarlineStyle | null,
+    endBarlineStyle: data.BarlineStyle | null
+  ): Measure {
+    const fragments = Measure.getFragments(events, initialSignature, partIds);
+
+    return new Measure(
+      initialSignature,
+      index,
+      label,
+      events,
+      jumpGroup,
+      startBarlineStyle,
+      endBarlineStyle,
+      fragments
+    );
   }
 
-  parse(systemCtx: SystemContext): data.Measure {
-    const measureCtx = new MeasureContext(systemCtx, this.index);
-
-    return {
-      type: 'measure',
-      label: this.label,
-      fragments: this.getFragments().map((fragment) => fragment.parse(measureCtx)),
-      jumpGroup: this.jumpGroup.parse(),
-      startBarlineStyle: this.startBarlineStyle,
-      endBarlineStyle: this.endBarlineStyle,
-    };
-  }
-
-  getLastSignature(): Signature {
-    return this.getFragments().at(-1)?.getSignature() ?? this.initialSignature;
-  }
-
-  @util.memoize()
-  private getFragments(): Fragment[] {
+  private static getFragments(
+    measureEvents: MeasureEvent[],
+    initialSignature: Signature,
+    partIds: string[]
+  ): Fragment[] {
     const fragments = new Array<Fragment>();
 
-    const events = this.events.toSorted((a, b) => a.measureBeat.toDecimal() - b.measureBeat.toDecimal());
+    const sortedEvents = measureEvents.toSorted((a, b) => a.measureBeat.toDecimal() - b.measureBeat.toDecimal());
 
     // First, get all the unique measure beats that events happen on. When we come across a measure beat, we have to
     // process all the events that happen on that beat before making a decision.
-    const measureBeats = util.uniqueBy(events, (e) => e.measureBeat.toDecimal()).map((e) => e.measureBeat);
+    const measureBeats = util.uniqueBy(sortedEvents, (e) => e.measureBeat.toDecimal()).map((e) => e.measureBeat);
 
     // Next, we calculate the fragment boundaries by maintaining a buffer of the next fragment events. When the
     // signature changes, we'll materialize the buffer into a Fragment, then start a new buffer. We'll also do
     // this if the buffer has items after going over all the measure beats.
-    let signature = this.initialSignature;
+    let signature = initialSignature;
     let buffer = new Array<StaveEvent>();
 
     for (const measureBeat of measureBeats) {
-      const measureBeatEvents = events.filter((e) => measureBeat.toDecimal() === e.measureBeat.toDecimal());
+      const measureBeatEvents = sortedEvents.filter((e) => measureBeat.toDecimal() === e.measureBeat.toDecimal());
 
       const builder = Signature.builder().setPreviousSignature(signature);
 
@@ -92,7 +98,7 @@ export class Measure {
       // If the signature changed and there are events in the buffer, materialize a fragment with the **old** signature.
       const nextSignature = builder.build();
       if (nextSignature.hasChanges() && buffer.length > 0) {
-        fragments.push(new Fragment(signature, buffer, this.partIds));
+        fragments.push(Fragment.create(signature, buffer, partIds));
         buffer = [];
       }
 
@@ -115,9 +121,30 @@ export class Measure {
     }
 
     if (buffer.length > 0) {
-      fragments.push(new Fragment(signature, buffer, this.partIds));
+      fragments.push(Fragment.create(signature, buffer, partIds));
     }
 
     return fragments;
+  }
+
+  getEvents(): MeasureEvent[] {
+    return this.events;
+  }
+
+  getLastSignature(): Signature {
+    return this.fragments.at(-1)?.getSignature() ?? this.initialSignature;
+  }
+
+  parse(systemCtx: SystemContext): data.Measure {
+    const measureCtx = new MeasureContext(systemCtx, this.index);
+
+    return {
+      type: 'measure',
+      label: this.label,
+      fragments: this.fragments.map((fragment) => fragment.parse(measureCtx)),
+      jumpGroup: this.jumpGroup.parse(),
+      startBarlineStyle: this.startBarlineStyle,
+      endBarlineStyle: this.endBarlineStyle,
+    };
   }
 }

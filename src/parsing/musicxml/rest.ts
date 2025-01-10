@@ -21,7 +21,7 @@ export class Rest {
     private tuplets: Tuplet[]
   ) {}
 
-  static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Rest {
+  static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Rest {
     util.assert(musicXML.note.isRest(), 'Expected note to be a rest');
 
     const displayStep = musicXML.note.getRestDisplayStep();
@@ -34,13 +34,13 @@ export class Rest {
 
     let beam: Beam | null = null;
     if (musicXML.note.getBeams().length > 0) {
-      beam = Beam.fromMusicXML({ beam: musicXML.note.getBeams().at(0)! });
+      beam = Beam.create({ beam: musicXML.note.getBeams().at(0)! });
     }
 
     const tuplets = musicXML.note
       .getNotations()
       .flatMap((n) => n.getTuplets())
-      .map((tuplet) => Tuplet.fromMusicXML({ tuplet }));
+      .map((tuplet) => Tuplet.create({ tuplet }));
 
     return new Rest(measureBeat, durationType, dotCount, duration, displayStep, displayOctave, beam, tuplets);
   }

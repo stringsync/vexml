@@ -19,7 +19,7 @@ export class Metronome {
     return new Metronome({ bpm: 120 });
   }
 
-  static fromMusicXML(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {
+  static create(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {
     const parenthesis = musicXML.metronome.parentheses() ?? undefined;
     const duration = conversions.fromNoteTypeToDurationType(musicXML.mark.left.unit) ?? undefined;
     const dots = musicXML.mark.left.dotCount;
