@@ -4,10 +4,12 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { TupletKey, TupletRender, VoiceEntryRender } from './types';
+import { NoteRender, RestRender, TupletKey, TupletRender } from './types';
 
-interface VoiceEntryRenderRegistry {
-  get(beamId: string): VoiceEntryRender[] | undefined;
+export type TupletableRender = NoteRender | RestRender;
+
+interface TupletableRenderRegistry {
+  get(beamId: string): TupletableRender[] | undefined;
 }
 
 export class Tuplet {
@@ -16,7 +18,7 @@ export class Tuplet {
     private log: Logger,
     private document: Document,
     private key: TupletKey,
-    private registry: VoiceEntryRenderRegistry
+    private registry: TupletableRenderRegistry
   ) {}
 
   render(): TupletRender {

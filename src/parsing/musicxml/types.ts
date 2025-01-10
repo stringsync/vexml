@@ -8,6 +8,8 @@ import { StaveCount } from './stavecount';
 import { Note } from './note';
 import { Rest } from './rest';
 import { Chord } from './chord';
+import { DynamicType } from './enums';
+import { Dynamics } from './dynamics';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -127,6 +129,16 @@ export type CodaEvent = {
   measureBeat: Fraction;
 };
 
+export type DynamicsEvent = {
+  type: 'dynamics';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  voiceId: string;
+  dynamics: Dynamics;
+};
+
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
@@ -139,7 +151,8 @@ export type MusicXMLEvent =
   | MetronomeEvent
   | MultiRestEvent
   | SegnoEvent
-  | CodaEvent;
+  | CodaEvent
+  | DynamicsEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 

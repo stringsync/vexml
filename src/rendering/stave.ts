@@ -82,7 +82,9 @@ export class Stave {
     }
 
     for (const voiceRender of voiceRenders) {
-      voiceRender.vexflowVoice.setStave(vexflowStave);
+      for (const vexflowVoice of voiceRender.vexflowVoices) {
+        vexflowVoice.setStave(vexflowStave);
+      }
     }
 
     if (vexflowMultiMeasureRest) {

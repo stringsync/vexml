@@ -10,7 +10,8 @@ import { Rest } from './rest';
 import { Fraction } from '@/util';
 import { DurationType } from '@/data/enums';
 import { Beam } from './beam';
-import { Tuplet } from './tuplet';
+import { Tuplet, TupletableRender } from './tuplet';
+import { Dynamics } from './dynamics';
 
 const DURATION_TYPE_VALUES: Array<{ type: DurationType; value: Fraction }> = [
   { type: '1/2', value: new Fraction(2, 1) },
@@ -31,8 +32,7 @@ export class Voice {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceKey) {}
 
   render(): VoiceRender {
-    const vexflowVoice = new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT);
-    const entryRenders = this.renderEntries(vexflowVoice);
+    const { vexflowVoices, entryRenders } = this.renderVoices();
     const beamRenders = this.renderBeams(entryRenders);
     const tupletRenders = this.renderTuplets(entryRenders);
 
@@ -40,22 +40,25 @@ export class Voice {
       type: 'voice',
       key: this.key,
       rect: Rect.empty(), // placeholder
-      vexflowVoice,
       entryRenders,
       beamRenders,
       tupletRenders,
+      vexflowVoices,
     };
   }
 
-  private renderEntries(vexflowVoice: vexflow.Voice): VoiceEntryRender[] {
+  private renderVoices(): { vexflowVoices: vexflow.Voice[]; entryRenders: VoiceEntryRender[] } {
+    const vexflowVoices = [new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT)];
     const entryRenders = new Array<VoiceEntryRender>();
     const entryCount = this.document.getVoiceEntryCount(this.key);
 
     let currentMeasureBeat = this.getInitialMeasureBeat();
 
     for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
+      const vexflowVoice = vexflowVoices[0];
       const voiceEntryKey = { ...this.key, voiceEntryIndex };
       const entry = this.document.getVoiceEntry(voiceEntryKey);
+
       const measureBeat = Fraction.fromFractionLike(entry.measureBeat);
       const duration = Fraction.fromFractionLike(entry.duration);
 
@@ -80,12 +83,16 @@ export class Voice {
         const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
         vexflowVoice.addTickable(noteRender.vexflowTickable);
         entryRenders.push(noteRender);
+      } else if (entry.type === 'dynamics') {
+        const dynamicsRender = new Dynamics(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(dynamicsRender.vexflowTickable);
+        entryRenders.push(dynamicsRender);
       } else {
         util.assertUnreachable();
       }
     }
 
-    return entryRenders;
+    return { vexflowVoices, entryRenders };
   }
 
   private getInitialMeasureBeat(): Fraction {
@@ -128,6 +135,9 @@ export class Voice {
 
     // This inherently ignores grace beams because we don't include grace beams in the entry render object.
     for (const entryRender of entryRenders) {
+      if (entryRender.type !== 'note') {
+        continue;
+      }
       if (!entryRender.beamId) {
         continue;
       }
@@ -155,11 +165,13 @@ export class Voice {
   }
 
   private renderTuplets(entryRenders: VoiceEntryRender[]): TupletRender[] {
-    const registry = new Map<string, VoiceEntryRender[]>();
+    const registry = new Map<string, TupletableRender[]>();
 
     const tuplets = this.document.getTuplets(this.key);
 
-    for (const entryRender of entryRenders) {
+    const tupletableRenders = entryRenders.filter<TupletableRender>((e) => e.type === 'note' || e.type === 'rest');
+
+    for (const entryRender of tupletableRenders) {
       for (const tupletId of entryRender.tupletIds) {
         if (!registry.has(tupletId)) {
           registry.set(tupletId, []);

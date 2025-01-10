@@ -116,3 +116,38 @@ export const NOTE_DURATION_DENOMINATORS = new Enum([
  */
 export type TiedPhase = EnumValues<typeof TIED_PHASE>;
 export const TIED_PHASE = new Enum(['start', 'stop', 'continue'] as const);
+
+/**
+ * The different kinds of dynamics.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/dynamics/
+ */
+export type DynamicType = EnumValues<typeof DYNAMIC_TYPES>;
+export const DYNAMIC_TYPES = new Enum([
+  'p',
+  'pp',
+  'ppp',
+  'pppp',
+  'ppppp',
+  'pppppp',
+  'f',
+  'ff',
+  'fff',
+  'ffff',
+  'fffff',
+  'ffffff',
+  'mp',
+  'mf',
+  'sf',
+  'sfp',
+  'sfpp',
+  'fp',
+  'rf',
+  'rfz',
+  'sfz',
+  'sffz',
+  'fz',
+  'n',
+  'pf',
+  'sfzp',
+] as const);

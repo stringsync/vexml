@@ -116,19 +116,8 @@ export class Measure {
       signature = nextSignature;
 
       // Process all the stave events that happen on this measure beat.
-      for (const event of measureBeatEvents) {
-        switch (event.type) {
-          case 'note':
-            buffer.push(event);
-            break;
-          case 'rest':
-            buffer.push(event);
-            break;
-          case 'chord':
-            buffer.push(event);
-            break;
-        }
-      }
+      const staveEvents = measureBeatEvents.filter((e: any): e is StaveEvent => typeof e.staveNumber === 'number');
+      buffer.push(...staveEvents);
     }
 
     if (buffer.length > 0) {

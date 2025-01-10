@@ -175,7 +175,7 @@ export type VoiceRender = {
   type: 'voice';
   key: VoiceKey;
   rect: Rect;
-  vexflowVoice: vexflow.Voice;
+  vexflowVoices: vexflow.Voice[];
   entryRenders: VoiceEntryRender[];
   beamRenders: BeamRender[];
   tupletRenders: TupletRender[];
@@ -195,7 +195,7 @@ export type TupletRender = {
   vexflowTuplet: vexflow.Tuplet;
 };
 
-export type VoiceEntryRender = NoteRender | RestRender;
+export type VoiceEntryRender = NoteRender | RestRender | DynamicsRender;
 
 export type NoteRender = {
   type: 'note';
@@ -223,6 +223,14 @@ export type RestRender = {
   vexflowTickable: vexflow.StaveNote;
   beamId: string | null;
   tupletIds: string[];
+};
+
+export type DynamicsRender = {
+  type: 'dynamics';
+  key: VoiceEntryKey;
+  rect: Rect;
+  dynamicType: data.DynamicType;
+  vexflowTickable: vexflow.TextDynamics;
 };
 
 export type KeyRender = {

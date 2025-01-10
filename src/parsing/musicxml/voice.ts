@@ -52,6 +52,9 @@ export class Voice {
         case 'chord':
           entries.push(event.chord.parse(voiceCtx));
           break;
+        case 'dynamics':
+          entries.push(event.dynamics.parse());
+          break;
         default:
           util.assertUnreachable();
       }

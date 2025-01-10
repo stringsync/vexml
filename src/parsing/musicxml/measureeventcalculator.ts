@@ -10,6 +10,7 @@ import { Note } from './note';
 import { Rest } from './rest';
 import { MeasureEvent } from './types';
 import { Chord } from './chord';
+import { Dynamics } from './dynamics';
 
 export class MeasureEventCalculator {
   private measureBeat = Fraction.zero();
@@ -254,6 +255,22 @@ export class MeasureEventCalculator {
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
+      });
+    }
+
+    const dynamicType = direction
+      .getDynamics()
+      .flatMap((d) => d.getTypes())
+      .at(0);
+    if (dynamicType) {
+      this.events.push({
+        type: 'dynamics',
+        partId,
+        measureIndex,
+        staveNumber: direction.getStaveNumber() ?? 1,
+        voiceId: direction.getVoice() ?? '1',
+        measureBeat: this.measureBeat,
+        dynamics: new Dynamics(this.measureBeat, dynamicType),
       });
     }
   }
