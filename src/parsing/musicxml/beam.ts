@@ -6,7 +6,7 @@ type BeamPhase = 'start' | 'continue';
 export class Beam {
   constructor(private phase: BeamPhase) {}
 
-  static fromMusicXML(musicXML: { beam: musicxml.Beam }): Beam {
+  static create(musicXML: { beam: musicxml.Beam }): Beam {
     let phase: BeamPhase;
     switch (musicXML.beam.getBeamValue()) {
       case 'begin':

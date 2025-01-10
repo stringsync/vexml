@@ -7,7 +7,7 @@ export class MusicXMLParser {
   parse(musicXMLString: string): data.Document {
     const musicXML = this.parseMusicXMLString(musicXMLString);
     const scorePartwise = musicXML.getScorePartwise();
-    const score = new Score({ scorePartwise }).parse();
+    const score = Score.create({ scorePartwise }).parse();
     return new data.Document(score);
   }
 

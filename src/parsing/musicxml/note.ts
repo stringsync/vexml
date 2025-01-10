@@ -34,7 +34,7 @@ export class Note {
     private graceNotes: Note[]
   ) {}
 
-  static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
+  static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
     const pitch = musicXML.note.getStep();
     const octave = musicXML.note.getOctave();
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
@@ -58,7 +58,7 @@ export class Note {
     const ties = musicXML.note
       .getNotations()
       .flatMap((notation) => notation.getTieds())
-      .map((tie) => Tie.fromMusicXML({ tie }));
+      .map((tie) => Tie.create({ tied: tie }));
 
     const slurs = musicXML.note
       .getNotations()
@@ -68,7 +68,7 @@ export class Note {
     const tuplets = musicXML.note
       .getNotations()
       .flatMap((notation) => notation.getTuplets())
-      .map((tuplet) => Tuplet.fromMusicXML({ tuplet }));
+      .map((tuplet) => Tuplet.create({ tuplet }));
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
@@ -76,14 +76,14 @@ export class Note {
     if (!musicXML.note.isGrace()) {
       graceNotes = musicXML.note
         .getGraceNotes()
-        .map((graceNote) => Note.fromMusicXML(measureBeat, util.Fraction.zero(), { note: graceNote }));
+        .map((graceNote) => Note.create(measureBeat, util.Fraction.zero(), { note: graceNote }));
     }
 
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
     // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
     let beam: Beam | null = null;
     if (musicXML.note.getBeams().length > 0) {
-      beam = Beam.fromMusicXML({ beam: musicXML.note.getBeams().at(0)! });
+      beam = Beam.create({ beam: musicXML.note.getBeams().at(0)! });
     }
 
     return new Note(

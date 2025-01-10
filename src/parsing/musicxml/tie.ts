@@ -12,13 +12,13 @@ export class Tie {
     private opening: data.CurveOpening
   ) {}
 
-  static fromMusicXML(musicXML: { tie: musicxml.Tied }): Tie {
-    const curveNumber = musicXML.tie.getNumber();
-    const placement: data.CurvePlacement = musicXML.tie.getPlacement() ?? 'auto';
+  static create(musicXML: { tied: musicxml.Tied }): Tie {
+    const curveNumber = musicXML.tied.getNumber();
+    const placement: data.CurvePlacement = musicXML.tied.getPlacement() ?? 'auto';
 
     let opening: data.CurveOpening = 'auto';
     // Yes, these translations are correct.
-    switch (musicXML.tie.getOrientation()) {
+    switch (musicXML.tied.getOrientation()) {
       case 'over':
         opening = 'down';
         break;
@@ -28,7 +28,7 @@ export class Tie {
     }
 
     let phase: TiePhase;
-    switch (musicXML.tie.getType()) {
+    switch (musicXML.tied.getType()) {
       case 'start':
         phase = 'start';
         break;

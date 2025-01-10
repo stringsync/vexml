@@ -6,16 +6,24 @@ import { Voice } from './voice';
 import { PartContext, StaveContext } from './contexts';
 
 export class Stave {
-  constructor(
+  private constructor(
     private number: number,
     private partId: string,
     private signature: Signature,
-    private events: StaveEvent[]
-  ) {
-    util.assert(
-      events.every((event) => event.staveNumber === number),
-      'Expected all leaf events to belong to the current stave'
+    private voices: Voice[]
+  ) {}
+
+  static create(number: number, partId: string, signature: Signature, events: StaveEvent[]): Stave {
+    const voiceEvents = events.filter((event: any): event is VoiceEvent => typeof event.voiceId === 'string');
+
+    const voices = util.unique(voiceEvents.map((event) => event.voiceId)).map((voiceId) =>
+      Voice.create(
+        voiceId,
+        voiceEvents.filter((e) => e.voiceId === voiceId)
+      )
     );
+
+    return new Stave(number, partId, signature, voices);
   }
 
   parse(partCtx: PartContext): data.Stave {
@@ -24,33 +32,8 @@ export class Stave {
     return {
       type: 'stave',
       signature: this.signature.asStaveSignature(this.partId, this.number).parse(),
-      voices: this.getVoices().map((voice) => voice.parse(staveCtx)),
+      voices: this.voices.map((voice) => voice.parse(staveCtx)),
       multiRestCount: staveCtx.getMultiRestCount(),
     };
-  }
-
-  getPartId(): string {
-    return this.partId;
-  }
-
-  getNumber(): number {
-    return this.number;
-  }
-
-  private getVoices(): Voice[] {
-    const voiceEvents = this.getVoiceEvents();
-
-    return util.unique(voiceEvents.map((event) => event.voiceId)).map(
-      (voiceId) =>
-        new Voice(
-          voiceId,
-          this.signature,
-          voiceEvents.filter((e) => e.voiceId === voiceId)
-        )
-    );
-  }
-
-  private getVoiceEvents(): VoiceEvent[] {
-    return this.events.filter((event: any): event is VoiceEvent => typeof event.voiceId === 'string');
   }
 }

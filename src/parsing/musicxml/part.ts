@@ -1,16 +1,28 @@
 import * as data from '@/data';
-import * as util from '@/util';
 import { Stave } from './stave';
 import { Signature } from './signature';
 import { StaveEvent } from './types';
 import { FragmentContext, PartContext } from './contexts';
 
 export class Part {
-  constructor(private id: string, private signature: Signature, private events: StaveEvent[]) {
-    util.assert(
-      events.every((event) => event.partId === id),
-      'Expected all events to belong to the current part'
-    );
+  private constructor(private id: string, private signature: Signature, private staves: Stave[]) {}
+
+  static create(id: string, signature: Signature, events: StaveEvent[]): Part {
+    const staves = new Array<Stave>();
+
+    const staveCount = signature.getStaveCount(id).getValue();
+
+    for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
+      const stave = Stave.create(
+        staveNumber,
+        id,
+        signature,
+        events.filter((e) => e.staveNumber === staveNumber)
+      );
+      staves.push(stave);
+    }
+
+    return new Part(id, signature, staves);
   }
 
   parse(fragmentCtx: FragmentContext): data.Part {
@@ -19,33 +31,7 @@ export class Part {
     return {
       type: 'part',
       signature: this.signature.asPartSignature(this.id).parse(),
-      staves: this.getStaves().map((stave) => stave.parse(partCtx)),
+      staves: this.staves.map((stave) => stave.parse(partCtx)),
     };
-  }
-
-  getId(): string {
-    return this.id;
-  }
-
-  getSignature(): Signature {
-    return this.signature;
-  }
-
-  getStaves(): Stave[] {
-    const staveCount = this.signature.getStaveCount(this.id).getValue();
-
-    const staves = new Array<Stave>();
-
-    for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
-      const stave = new Stave(
-        staveNumber,
-        this.id,
-        this.signature,
-        this.events.filter((e) => e.staveNumber === staveNumber)
-      );
-      staves.push(stave);
-    }
-
-    return staves;
   }
 }

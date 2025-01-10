@@ -5,7 +5,23 @@ import { StaveEvent } from './types';
 import { FragmentContext, MeasureContext } from './contexts';
 
 export class Fragment {
-  constructor(private signature: Signature, private events: StaveEvent[], private partIds: string[]) {}
+  private constructor(private signature: Signature, private parts: Part[]) {}
+
+  static create(signature: Signature, events: StaveEvent[], partIds: string[]) {
+    const parts = partIds.map((partId) =>
+      Part.create(
+        partId,
+        signature,
+        events.filter((e) => e.partId === partId)
+      )
+    );
+
+    return new Fragment(signature, parts);
+  }
+
+  getSignature(): Signature {
+    return this.signature;
+  }
 
   parse(ctx: MeasureContext): data.Fragment {
     const fragmentCtx = new FragmentContext(ctx, this.signature);
@@ -14,22 +30,7 @@ export class Fragment {
       type: 'fragment',
       width: null,
       signature: this.signature.asFragmentSignature().parse(),
-      parts: this.getParts().map((part) => part.parse(fragmentCtx)),
+      parts: this.parts.map((part) => part.parse(fragmentCtx)),
     };
-  }
-
-  getSignature(): Signature {
-    return this.signature;
-  }
-
-  private getParts(): Part[] {
-    return this.partIds.map(
-      (partId) =>
-        new Part(
-          partId,
-          this.signature,
-          this.events.filter((e) => e.partId === partId)
-        )
-    );
   }
 }

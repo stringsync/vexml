@@ -1,16 +1,19 @@
 import * as data from '@/data';
 import * as util from '@/util';
-import { Signature } from './signature';
 import { VoiceEvent } from './types';
 import { StaveContext, VoiceContext } from './contexts';
 import { Rest } from './rest';
 
 export class Voice {
-  constructor(private id: string, private signature: Signature, private events: VoiceEvent[]) {
+  private constructor(private id: string, private events: VoiceEvent[]) {
     util.assert(
       events.every((event) => event.voiceId === id),
       'Expected all events to belong to the current voice'
     );
+  }
+
+  static create(id: string, events: VoiceEvent[]): Voice {
+    return new Voice(id, events);
   }
 
   parse(staveCtx: StaveContext): data.Voice {

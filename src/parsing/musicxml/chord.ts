@@ -7,10 +7,10 @@ import { VoiceContext } from './contexts';
 export class Chord {
   constructor(private notes: Note[]) {}
 
-  static fromMusicXML(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Chord {
+  static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Chord {
     util.assert(musicXML.note.isChordHead(), 'Expected note to be a chord head');
     const notes = [musicXML.note, ...musicXML.note.getChordTail()].map((note) =>
-      Note.fromMusicXML(measureBeat, duration, { note })
+      Note.create(measureBeat, duration, { note })
     );
     return new Chord(notes);
   }

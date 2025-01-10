@@ -86,7 +86,7 @@ export class MeasureEventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        chord: Chord.fromMusicXML(this.measureBeat, duration, { note }),
+        chord: Chord.create(this.measureBeat, duration, { note }),
       });
     } else if (note.isRest()) {
       this.events.push({
@@ -97,7 +97,7 @@ export class MeasureEventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        rest: Rest.fromMusicXML(this.measureBeat, duration, { note }),
+        rest: Rest.create(this.measureBeat, duration, { note }),
       });
     } else {
       this.events.push({
@@ -108,7 +108,7 @@ export class MeasureEventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        note: Note.fromMusicXML(this.measureBeat, duration, { note }),
+        note: Note.create(this.measureBeat, duration, { note }),
       });
     }
 
@@ -144,7 +144,7 @@ export class MeasureEventCalculator {
 
     const staveLineCounts = attributes
       .getStaveDetails()
-      .map((staveDetails) => StaveLineCount.fromMusicXML(partId, { staveDetails }));
+      .map((staveDetails) => StaveLineCount.create(partId, { staveDetails }));
     for (const staveLineCount of staveLineCounts) {
       this.events.push({
         type: 'stavelinecount',
@@ -188,13 +188,13 @@ export class MeasureEventCalculator {
       .flatMap((time) => {
         const staveNumber = time.getStaveNumber();
         if (typeof staveNumber === 'number') {
-          return Time.fromMusicXML(partId, staveNumber, { time });
+          return Time.create(partId, staveNumber, { time });
         } else {
           // A null stave number implies to apply to all staves.
           // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/time/#:~:text=the%20entire%20document.-,number,-staff%2Dnumber
           const times = new Array<Time | null>();
           for (let staveNumber = 1; staveNumber <= staveCount.getValue(); staveNumber++) {
-            times.push(Time.fromMusicXML(partId, staveNumber, { time }));
+            times.push(Time.create(partId, staveNumber, { time }));
           }
           return times;
         }
@@ -233,7 +233,7 @@ export class MeasureEventCalculator {
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        metronome: Metronome.fromMusicXML({ metronome, mark }),
+        metronome: Metronome.create({ metronome, mark }),
       });
     }
   }

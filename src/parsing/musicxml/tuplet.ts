@@ -12,7 +12,7 @@ export class Tuplet {
     private placement: data.TupletPlacement
   ) {}
 
-  static fromMusicXML(musicXML: { tuplet: musicxml.Tuplet }): Tuplet {
+  static create(musicXML: { tuplet: musicxml.Tuplet }): Tuplet {
     let phase: TupletPhase;
     switch (musicXML.tuplet.getType()) {
       case 'start':

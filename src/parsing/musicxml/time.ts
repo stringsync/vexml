@@ -16,7 +16,7 @@ export class Time {
     return Time.common(partId, staveNumber);
   }
 
-  static fromMusicXML(partId: string, staveNumber: number, musicXML: { time: musicxml.Time }): Time | null {
+  static create(partId: string, staveNumber: number, musicXML: { time: musicxml.Time }): Time | null {
     const time = musicXML.time;
 
     if (time.isHidden()) {
