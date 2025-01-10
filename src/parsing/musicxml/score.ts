@@ -34,6 +34,7 @@ export class Score {
       partLabels: this.partLabels,
       systems: this.systems.map((s) => s.parse(scoreCtx)),
       curves: scoreCtx.getCurves(),
+      wedges: scoreCtx.getWedges(),
     };
   }
 }
