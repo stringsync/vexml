@@ -31,7 +31,7 @@ export class Note {
     private tuplets: Tuplet[],
     private beam: Beam | null,
     private slash: boolean,
-    private graceNotes: Note[]
+    private graceEntries: Note[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -71,9 +71,9 @@ export class Note {
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
-    const graceNotes = new Array<Note>();
+    const graceEntries = new Array<Note>();
     if (!musicXML.note.isGrace()) {
-      graceNotes.push(
+      graceEntries.push(
         ...musicXML.note
           .getGraceNotes()
           .map((graceNote) => Note.create(measureBeat, util.Fraction.zero(), { note: graceNote }))
@@ -104,7 +104,7 @@ export class Note {
       tuplets,
       beam,
       slash,
-      graceNotes
+      graceEntries
     );
   }
 
@@ -130,7 +130,7 @@ export class Note {
       curveIds: this.parseCurves(voiceEntryCtx),
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
-      graceNotes: this.parseGraceNotes(voiceEntryCtx),
+      graceEntries: this.parseGraceEntries(voiceEntryCtx),
     };
   }
 
@@ -142,8 +142,8 @@ export class Note {
     return [...this.slurs, ...this.ties].map((curve) => curve.parse(voiceEntryCtx));
   }
 
-  private parseGraceNotes(voiceEntryCtx: VoiceEntryContext): data.GraceNote[] {
-    return this.graceNotes.map((note) => ({
+  private parseGraceEntries(voiceEntryCtx: VoiceEntryContext): data.GraceEntry[] {
+    return this.graceEntries.map((note) => ({
       type: 'gracenote',
       head: note.head,
       accidental: note.maybeParseAccidental(voiceEntryCtx),
