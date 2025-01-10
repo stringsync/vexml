@@ -3,7 +3,7 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { BeamKey, BeamRender, NoteRender, VoiceEntryKey } from './types';
+import { BeamKey, BeamRender, GraceCurve, NoteRender, VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Beam } from './beam';
@@ -51,7 +51,7 @@ export class Note {
       vexflowStaveNote.addModifier(vexflowAnnotation);
     }
 
-    const { vexflowGraceNoteGroup, graceBeamRenders } = this.renderGraceEntries(voiceEntry);
+    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderGraceEntries(voiceEntry);
     if (vexflowGraceNoteGroup) {
       vexflowGraceNoteGroup.setNote(vexflowStaveNote);
       vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
@@ -69,6 +69,7 @@ export class Note {
       tupletIds: voiceEntry.tupletIds,
       vexflowGraceNoteGroup,
       graceBeamRenders,
+      graceCurves,
     };
   }
 
@@ -152,18 +153,22 @@ export class Note {
   private renderGraceEntries(voiceEntry: data.Note | data.Chord): {
     vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
     graceBeamRenders: BeamRender[];
+    graceCurves: GraceCurve[];
   } {
     if (voiceEntry.graceEntries.length === 0) {
-      return { vexflowGraceNoteGroup: null, graceBeamRenders: [] };
+      return { vexflowGraceNoteGroup: null, graceBeamRenders: [], graceCurves: [] };
     }
 
     const registry = new Map<string, vexflow.StemmableNote[]>();
 
     const octaveShift = this.document.getStave(this.key).signature.clef.octaveShift ?? 0;
 
+    const graceCurves = new Array<GraceCurve>();
     const vexflowGraceNotes = new Array<vexflow.GraceNote>();
 
-    for (const graceEntry of voiceEntry.graceEntries) {
+    for (let graceEntryIndex = 0; graceEntryIndex < voiceEntry.graceEntries.length; graceEntryIndex++) {
+      const graceEntry = voiceEntry.graceEntries[graceEntryIndex];
+
       const keys = new Array<string>();
       switch (graceEntry.type) {
         case 'gracenote':
@@ -215,6 +220,19 @@ export class Note {
         }
         registry.get(graceEntry.beamId)!.push(vexflowGraceNote);
       }
+
+      const curveIds = new Array<string>();
+      switch (graceEntry.type) {
+        case 'gracenote':
+          curveIds.push(...graceEntry.curveIds);
+          break;
+        case 'gracechord':
+          curveIds.push(...graceEntry.notes.flatMap((note) => note.curveIds));
+          break;
+      }
+      for (const curveId of curveIds) {
+        graceCurves.push({ curveId, graceEntryIndex });
+      }
     }
 
     const vexflowGraceNoteGroup = new vexflow.GraceNoteGroup(vexflowGraceNotes);
@@ -230,6 +248,6 @@ export class Note {
       new Beam(this.config, this.log, this.document, beamKey, registry).render()
     );
 
-    return { vexflowGraceNoteGroup, graceBeamRenders };
+    return { vexflowGraceNoteGroup, graceBeamRenders, graceCurves };
   }
 }
