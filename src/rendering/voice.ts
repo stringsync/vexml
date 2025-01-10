@@ -122,10 +122,11 @@ export class Voice {
   }
 
   private renderBeams(entryRenders: VoiceEntryRender[]): BeamRender[] {
-    const registry = new Map<string, VoiceEntryRender[]>();
+    const registry = new Map<string, vexflow.StemmableNote[]>();
 
     const beams = this.document.getBeams(this.key);
 
+    // This inherently ignores grace beams because we don't include grace beams in the entry render object.
     for (const entryRender of entryRenders) {
       if (!entryRender.beamId) {
         continue;
@@ -133,7 +134,7 @@ export class Voice {
       if (!registry.has(entryRender.beamId)) {
         registry.set(entryRender.beamId, []);
       }
-      registry.get(entryRender.beamId)!.push(entryRender);
+      registry.get(entryRender.beamId)!.push(entryRender.vexflowTickable);
     }
 
     const beamRenders = new Array<BeamRender>();

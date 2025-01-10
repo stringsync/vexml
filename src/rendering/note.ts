@@ -3,9 +3,10 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { NoteRender, VoiceEntryKey } from './types';
+import { BeamKey, BeamRender, NoteRender, VoiceEntryKey } from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
+import { Beam } from './beam';
 
 export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
@@ -31,7 +32,7 @@ export class Note {
       vexflow.Dot.buildAndAttach([vexflowStaveNote], { all: true });
     }
 
-    const vexflowAccidentals = this.getVexflowAccidentals(voiceEntry);
+    const vexflowAccidentals = this.renderVexflowAccidentals(voiceEntry);
     for (let index = 0; index < vexflowAccidentals.length; index++) {
       const vexflowAccidental = vexflowAccidentals[index];
       if (vexflowAccidental) {
@@ -50,6 +51,13 @@ export class Note {
       vexflowStaveNote.addModifier(vexflowAnnotation);
     }
 
+    const { vexflowGraceNoteGroup, graceBeamRenders } = this.renderVexflowGraceNotes(voiceEntry);
+    if (vexflowGraceNoteGroup) {
+      vexflowGraceNoteGroup.setNote(vexflowStaveNote);
+      vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
+      vexflowStaveNote.addModifier(vexflowGraceNoteGroup);
+    }
+
     return {
       type: 'note',
       key: this.key,
@@ -59,6 +67,8 @@ export class Note {
       curveIds,
       beamId: voiceEntry.beamId,
       tupletIds: voiceEntry.tupletIds,
+      vexflowGraceNoteGroup,
+      graceBeamRenders,
     };
   }
 
@@ -99,13 +109,13 @@ export class Note {
 
     switch (voiceEntry.type) {
       case 'note':
-        return [this.getVexflowStaveNoteKey(voiceEntry, octaveShift)];
+        return [this.getVexflowNoteKey(voiceEntry, octaveShift)];
       case 'chord':
-        return voiceEntry.notes.map((note) => this.getVexflowStaveNoteKey(note, octaveShift));
+        return voiceEntry.notes.map((note) => this.getVexflowNoteKey(note, octaveShift));
     }
   }
 
-  private getVexflowStaveNoteKey(note: data.Note | data.ChordNote, octaveShift: number): string {
+  private getVexflowNoteKey(note: data.Note | data.ChordNote | data.GraceNote, octaveShift: number): string {
     const step = note.pitch.step;
     const octave = note.pitch.octave - octaveShift;
     return note.head ? `${step}/${octave}/${note.head}` : `${step}/${octave}`;
@@ -114,16 +124,16 @@ export class Note {
   /**
    * Returns the vexflow.Accidental objects preserving the note index.
    */
-  private getVexflowAccidentals(voiceEntry: data.Note | data.Chord): Array<vexflow.Accidental | null> {
+  private renderVexflowAccidentals(voiceEntry: data.Note | data.Chord): Array<vexflow.Accidental | null> {
     switch (voiceEntry.type) {
       case 'note':
-        return [this.getVexflowAccidental(voiceEntry.accidental)];
+        return [this.renderVexflowAccidental(voiceEntry.accidental)];
       case 'chord':
-        return voiceEntry.notes.map((note) => this.getVexflowAccidental(note.accidental));
+        return voiceEntry.notes.map((note) => this.renderVexflowAccidental(note.accidental));
     }
   }
 
-  private getVexflowAccidental(accidental: data.Accidental | null): vexflow.Accidental | null {
+  private renderVexflowAccidental(accidental: data.Accidental | null): vexflow.Accidental | null {
     if (!accidental) {
       return null;
     }
@@ -134,5 +144,58 @@ export class Note {
     }
 
     return vexflowAccidental;
+  }
+
+  private renderVexflowGraceNotes(voiceEntry: data.Note | data.Chord): {
+    vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
+    graceBeamRenders: BeamRender[];
+  } {
+    if (voiceEntry.graceNotes.length === 0) {
+      return { vexflowGraceNoteGroup: null, graceBeamRenders: [] };
+    }
+
+    const registry = new Map<string, vexflow.StemmableNote[]>();
+
+    const octaveShift = this.document.getStave(this.key).signature.clef.octaveShift ?? 0;
+
+    const vexflowGraceNotes = new Array<vexflow.GraceNote>();
+
+    for (const graceNote of voiceEntry.graceNotes) {
+      const key = this.getVexflowNoteKey(graceNote, octaveShift);
+      const vexflowGraceNote = new vexflow.GraceNote({
+        keys: [key],
+        duration: graceNote.durationType,
+        slash: graceNote.slash,
+      });
+
+      const vexflowAccidental = this.renderVexflowAccidental(graceNote.accidental);
+      if (vexflowAccidental) {
+        vexflowGraceNote.addModifier(vexflowAccidental);
+      }
+
+      vexflowGraceNotes.push(vexflowGraceNote);
+
+      if (graceNote.beamId) {
+        if (!registry.has(graceNote.beamId)) {
+          registry.set(graceNote.beamId, []);
+        }
+        registry.get(graceNote.beamId)!.push(vexflowGraceNote);
+      }
+    }
+
+    const vexflowGraceNoteGroup = new vexflow.GraceNoteGroup(vexflowGraceNotes);
+
+    // Grace notes cannot span voice entries, so we perform all the beaming here.
+    const beams = this.document.getBeams(this.key);
+    const beamKeys = Array.from(registry.keys()).map<BeamKey>((beamId) => ({
+      ...this.key,
+      beamIndex: beams.findIndex((beam) => beam.id === beamId),
+    }));
+
+    const graceBeamRenders = beamKeys.map((beamKey) =>
+      new Beam(this.config, this.log, this.document, beamKey, registry).render()
+    );
+
+    return { vexflowGraceNoteGroup, graceBeamRenders };
   }
 }

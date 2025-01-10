@@ -177,7 +177,9 @@ export type ChordNote = {
 
 export type GraceNote = {
   type: 'gracenote';
+  slash: boolean;
   pitch: Pitch;
+  head: Notehead;
   accidental: Accidental | null;
   durationType: DurationType;
   curveIds: string[];

@@ -64,7 +64,7 @@ export class Note {
       notes.push(note);
       sibling = sibling.previous('note');
     }
-    return notes;
+    return notes.reverse();
   }
 
   /** Whether or not the note has a glash slash. */
