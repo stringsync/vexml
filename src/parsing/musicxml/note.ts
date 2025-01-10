@@ -17,14 +17,13 @@ export type NoteMod = Accidental | Annotation;
 
 export class Note {
   constructor(
-    private pitch: string,
-    private octave: number,
+    private pitch: Pitch,
     private head: Notehead,
     private durationType: data.DurationType,
     private dotCount: number,
     private stemDirection: StemDirection,
-    private duration: util.Fraction,
-    private measureBeat: util.Fraction,
+    private duration: Fraction,
+    private measureBeat: Fraction,
     private lyrics: Annotation[],
     private accidental: Accidental,
     private ties: Tie[],
@@ -35,8 +34,7 @@ export class Note {
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
-    const pitch = musicXML.note.getStep();
-    const octave = musicXML.note.getOctave();
+    const pitch = new Pitch(musicXML.note.getStep(), musicXML.note.getOctave());
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
 
     let durationType = conversions.fromNoteTypeToDurationType(musicXML.note.getType());
@@ -72,11 +70,13 @@ export class Note {
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
-    let graceNotes = new Array<Note>();
+    const graceNotes = new Array<Note>();
     if (!musicXML.note.isGrace()) {
-      graceNotes = musicXML.note
-        .getGraceNotes()
-        .map((graceNote) => Note.create(measureBeat, util.Fraction.zero(), { note: graceNote }));
+      graceNotes.push(
+        ...musicXML.note
+          .getGraceNotes()
+          .map((graceNote) => Note.create(measureBeat, util.Fraction.zero(), { note: graceNote }))
+      );
     }
 
     // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
@@ -88,13 +88,12 @@ export class Note {
 
     return new Note(
       pitch,
-      octave,
       head,
       durationType,
       dotCount,
       stem,
-      duration,
-      measureBeat,
+      new Fraction(duration),
+      new Fraction(measureBeat),
       annotations,
       accidental,
       ties,
@@ -106,7 +105,7 @@ export class Note {
   }
 
   parse(voiceCtx: VoiceContext): data.Note {
-    const voiceEntryCtx = VoiceEntryContext.note(voiceCtx, this.pitch, this.octave);
+    const voiceEntryCtx = VoiceEntryContext.note(voiceCtx, this.pitch.getStep(), this.pitch.getOctave());
 
     const tupletIds = util.unique([
       ...this.tuplets.map((tuplet) => tuplet.parse(voiceEntryCtx)).filter((id) => id !== null),
@@ -115,28 +114,39 @@ export class Note {
 
     return {
       type: 'note',
-      pitch: this.getPitch().parse(),
+      pitch: this.pitch.parse(),
       head: this.head,
       dotCount: this.dotCount,
       stemDirection: this.stemDirection,
       durationType: this.durationType,
-      duration: this.getDuration().parse(),
-      measureBeat: this.getMeasureBeat().parse(),
+      duration: this.duration.parse(),
+      measureBeat: this.measureBeat.parse(),
       accidental: this.maybeParseAccidental(voiceEntryCtx) ?? null,
-      annotations: this.getAnnotations().map((annotation) => annotation.parse()),
-      curveIds: this.getCurves().map((curve) => curve.parse(voiceEntryCtx)),
+      annotations: this.parseAnnotations(),
+      curveIds: this.parseCurves(voiceEntryCtx),
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
-      graceNotes: [],
+      graceNotes: this.parseGraceNotes(voiceEntryCtx),
     };
   }
 
-  private getAnnotations(): Annotation[] {
-    return this.lyrics;
+  private parseAnnotations(): data.Annotation[] {
+    return [...this.lyrics].map((annotation) => annotation.parse());
   }
 
-  private getCurves(): Array<Slur | Tie> {
-    return [...this.slurs, ...this.ties];
+  private parseCurves(voiceEntryCtx: VoiceEntryContext): string[] {
+    return [...this.slurs, ...this.ties].map((curve) => curve.parse(voiceEntryCtx));
+  }
+
+  private parseGraceNotes(voiceEntryCtx: VoiceEntryContext): data.GraceNote[] {
+    return this.graceNotes.map((note) => ({
+      type: 'gracenote',
+      accidental: note.maybeParseAccidental(voiceEntryCtx),
+      beamId: note.beam?.parse(voiceEntryCtx) ?? null,
+      durationType: note.durationType,
+      curveIds: note.parseCurves(voiceEntryCtx),
+      pitch: note.pitch.parse(),
+    }));
   }
 
   private maybeParseAccidental(voiceEntryCtx: VoiceEntryContext): data.Accidental | null {
@@ -155,17 +165,5 @@ export class Note {
     }
 
     return new Accidental(this.accidental.code, this.accidental.isCautionary).parse(voiceEntryCtx);
-  }
-
-  private getDuration(): Fraction {
-    return new Fraction(this.duration);
-  }
-
-  private getMeasureBeat(): Fraction {
-    return new Fraction(this.measureBeat);
-  }
-
-  private getPitch(): Pitch {
-    return new Pitch(this.pitch, this.octave);
   }
 }
