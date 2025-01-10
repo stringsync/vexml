@@ -15,7 +15,8 @@ export class Measure {
     private jumpGroup: JumpGroup,
     private startBarlineStyle: data.BarlineStyle | null,
     private endBarlineStyle: data.BarlineStyle | null,
-    private fragments: Fragment[]
+    private fragments: Fragment[],
+    private repetitionSymbols: data.RepetitionSymbol[]
   ) {
     util.assert(
       events.every((e) => e.measureIndex === index),
@@ -35,6 +36,15 @@ export class Measure {
   ): Measure {
     const fragments = Measure.getFragments(events, initialSignature, partIds);
 
+    // TODO: Incoporate this when calculating jumps.
+    const repetitionSymbols = new Array<data.RepetitionSymbol>();
+    if (events.some((e) => e.type === 'coda')) {
+      repetitionSymbols.push('coda');
+    }
+    if (events.some((e) => e.type === 'segno')) {
+      repetitionSymbols.push('segno');
+    }
+
     return new Measure(
       initialSignature,
       index,
@@ -43,7 +53,8 @@ export class Measure {
       jumpGroup,
       startBarlineStyle,
       endBarlineStyle,
-      fragments
+      fragments,
+      repetitionSymbols
     );
   }
 
@@ -145,6 +156,7 @@ export class Measure {
       jumpGroup: this.jumpGroup.parse(),
       startBarlineStyle: this.startBarlineStyle,
       endBarlineStyle: this.endBarlineStyle,
+      repetitionSymbols: this.repetitionSymbols,
     };
   }
 }

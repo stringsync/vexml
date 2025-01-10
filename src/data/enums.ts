@@ -203,3 +203,7 @@ export const BARLINE_STYLES = new Enum([
   'repeatboth',
   'none',
 ] as const);
+
+/** The repetition symbol of a measure. */
+export type RepetitionSymbol = EnumValues<typeof REPETITION_SYMBOLS>;
+export const REPETITION_SYMBOLS = new Enum(['segno', 'coda'] as const);

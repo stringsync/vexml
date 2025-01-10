@@ -236,5 +236,25 @@ export class MeasureEventCalculator {
         metronome: Metronome.create({ metronome, mark }),
       });
     }
+
+    const segnos = direction.getSegnos();
+    if (segnos.length > 0) {
+      this.events.push({
+        type: 'segno',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+      });
+    }
+
+    const coda = direction.getCodas();
+    if (coda.length > 0) {
+      this.events.push({
+        type: 'coda',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+      });
+    }
   }
 }
