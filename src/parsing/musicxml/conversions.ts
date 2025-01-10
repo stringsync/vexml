@@ -343,3 +343,27 @@ export const fromFifthsToMinorKey = (fifths: number) => {
       throw new Error(`cannot handle fifths: ${fifths}`);
   }
 };
+
+export const fromMusicXMLBarStyleToBarlineStyle = (
+  barStyle: musicxml.BarStyle | undefined
+): data.BarlineStyle | null => {
+  switch (barStyle) {
+    case 'regular':
+    case 'short':
+    case 'dashed':
+    case 'dotted':
+    case 'heavy':
+      return 'single';
+    case 'heavy-light':
+    case 'heavy-heavy':
+    case 'light-light':
+    case 'tick':
+      return 'double';
+    case 'light-heavy':
+      return 'end';
+    case 'none':
+      return 'none';
+    default:
+      return null;
+  }
+};

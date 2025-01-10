@@ -1,5 +1,6 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
+import * as data from '@/data';
 import { Point, Rect } from '@/spatial';
 import { ClefRender, KeyRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
 import { Config } from './config';
@@ -153,41 +154,45 @@ export class Stave {
   }
 
   private renderBarlines(vexflowStave: vexflow.Stave): void {
-    const isLastSystem = this.document.isLastSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
-    const isLastMeasure = this.document.isLastMeasure(this.key);
     const isLastFragment = this.document.isLastFragment(this.key);
 
-    const partCount = this.document.getPartCount(this.key);
-    const staveCount = this.document.getStaveCount(this.key);
-    const hasStaveConnector = partCount > 1 || staveCount > 1;
+    const startVexflowBarlineType = this.toVexflowBarlineType(this.document.getMeasure(this.key).startBarlineStyle);
 
-    if (!isFirstMeasure && isFirstFragment && !hasStaveConnector) {
-      vexflowStave.setBegBarType(vexflow.Barline.type.SINGLE);
+    if (!isFirstMeasure && isFirstFragment) {
+      vexflowStave.setBegBarType(startVexflowBarlineType);
     } else {
       vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
     }
 
-    if (isLastFragment && !hasStaveConnector) {
-      if (isLastSystem && isLastMeasure) {
-        vexflowStave.setEndBarType(vexflow.Barline.type.END);
-      } else {
-        vexflowStave.setEndBarType(vexflow.Barline.type.SINGLE);
-      }
+    const endVexflowBarlineType = this.toVexflowBarlineType(this.document.getMeasure(this.key).endBarlineStyle);
+
+    if (isLastFragment) {
+      vexflowStave.setEndBarType(endVexflowBarlineType);
     } else {
       vexflowStave.setEndBarType(vexflow.Barline.type.NONE);
     }
+  }
 
-    // If there are jumps, override the previous barline types.
-    const jumps = this.document.getJumps(this.key);
-    const hasRepeatStart = jumps.some((jump) => jump.type === 'repeatstart');
-    const hasRepeatEnd = jumps.some((jump) => jump.type === 'repeatend');
-    if (hasRepeatStart) {
-      vexflowStave.setBegBarType(vexflow.Barline.type.REPEAT_BEGIN);
-    }
-    if (hasRepeatEnd) {
-      vexflowStave.setEndBarType(vexflow.Barline.type.REPEAT_END);
+  private toVexflowBarlineType(barlineStyle: data.BarlineStyle | null): vexflow.BarlineType {
+    switch (barlineStyle) {
+      case 'single':
+        return vexflow.Barline.type.SINGLE;
+      case 'double':
+        return vexflow.Barline.type.DOUBLE;
+      case 'end':
+        return vexflow.Barline.type.END;
+      case 'repeatstart':
+        return vexflow.Barline.type.REPEAT_BEGIN;
+      case 'repeatend':
+        return vexflow.Barline.type.REPEAT_END;
+      case 'repeatboth':
+        return vexflow.Barline.type.REPEAT_BOTH;
+      case 'none':
+        return vexflow.Barline.type.NONE;
+      default:
+        return vexflow.Barline.type.SINGLE;
     }
   }
 
