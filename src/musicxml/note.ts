@@ -43,6 +43,30 @@ export class Note {
     return this.element.all('grace').length > 0;
   }
 
+  /** Whether the note has a grace note. */
+  hasGrace(): boolean {
+    const element = this.element.previous('note');
+    if (!element) {
+      return false;
+    }
+    return new Note(element).isGrace();
+  }
+
+  /** Returns the notes that are part of this note's grace note. */
+  getGraceNotes(): Note[] {
+    const notes = new Array<Note>();
+    let sibling = this.element.previous('note');
+    while (sibling) {
+      const note = new Note(sibling);
+      if (!note.isGrace()) {
+        break;
+      }
+      notes.push(note);
+      sibling = sibling.previous('note');
+    }
+    return notes;
+  }
+
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
     return this.element.first('grace')?.attr('slash').str() === 'yes';
