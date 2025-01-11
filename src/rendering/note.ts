@@ -71,6 +71,7 @@ export class Note {
       vexflowGraceNoteGroup,
       graceBeamRenders,
       graceCurves,
+      pedalMark: voiceEntry.pedalMark,
     };
   }
 

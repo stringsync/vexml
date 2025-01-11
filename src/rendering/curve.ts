@@ -57,8 +57,8 @@ export class Curve {
   private renderVexflowCurves(curveNotes: CurveNote[]): vexflow.Curve[] {
     const curve = this.document.getCurve(this.key);
 
-    if (curveNotes.length < 1) {
-      this.log.warn('Curve has less than 1 note, rendering nothing.', { curveId: curve.id });
+    if (curveNotes.length < 2) {
+      this.log.warn('Curve has less than 2 notes, rendering nothing.', { curveId: curve.id });
       return [];
     }
 

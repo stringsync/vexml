@@ -33,8 +33,6 @@ export class Score {
   render(): ScoreRender {
     const pen = new Pen();
 
-    console.log(this.document.getScore().pedals);
-
     pen.moveBy({ dy: this.config.SCORE_PADDING_TOP });
 
     const titleRender = this.renderTitle(pen);
@@ -178,7 +176,7 @@ export class Score {
     const registry = new Map<string, NoteRender[]>();
 
     for (const noteRender of noteRenders) {
-      const pedalMark = this.document.getNote(noteRender.key).pedalMark;
+      const pedalMark = noteRender.pedalMark;
       if (!pedalMark) {
         continue;
       }
