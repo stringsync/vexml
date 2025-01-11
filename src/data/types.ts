@@ -34,6 +34,13 @@ export type Score = {
   curves: Curve[];
   wedges: Wedge[];
   pedals: Pedal[];
+  octaveShifts: OctaveShift[];
+};
+
+export type OctaveShift = {
+  type: 'octaveshift';
+  id: string;
+  size: number;
 };
 
 export type Pedal = {
@@ -181,6 +188,7 @@ export type Note = {
   tupletIds: string[];
   graceEntries: GraceEntry[];
   pedalMark: PedalMark | null;
+  octaveShiftId: string | null;
 };
 
 export type Dynamics = {
@@ -204,6 +212,7 @@ export type Chord = {
   tupletIds: string[];
   graceEntries: GraceEntry[];
   pedalMark: PedalMark | null;
+  octaveShiftId: string | null;
 };
 
 export type ChordNote = {

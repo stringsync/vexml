@@ -61,6 +61,9 @@ export class Voice {
         case 'pedal':
           event.pedal.parse(voiceCtx);
           break;
+        case 'octaveshift':
+          event.octaveShift.parse(voiceCtx);
+          break;
         default:
           util.assertUnreachable();
       }

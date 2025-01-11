@@ -13,6 +13,7 @@ import { Chord } from './chord';
 import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
+import { OctaveShift } from './octaveshift';
 
 export class MeasureEventCalculator {
   private measureBeat = Fraction.zero();
@@ -278,7 +279,7 @@ export class MeasureEventCalculator {
 
     const wedge = direction
       .getWedges()
-      .flatMap((wedge) => Wedge.create({ direction, wedge }))
+      .map((wedge) => Wedge.create({ direction, wedge }))
       .at(0);
     if (wedge) {
       this.events.push({
@@ -294,7 +295,7 @@ export class MeasureEventCalculator {
 
     const pedal = direction
       .getPedals()
-      .flatMap((pedal) => Pedal.create({ pedal }))
+      .map((pedal) => Pedal.create({ pedal }))
       .at(0);
     if (pedal) {
       this.events.push({
@@ -305,6 +306,22 @@ export class MeasureEventCalculator {
         staveNumber: direction.getStaveNumber() ?? 1,
         voiceId: direction.getVoice() ?? '1',
         pedal,
+      });
+    }
+
+    const octaveShift = direction
+      .getOctaveShifts()
+      .map((octaveShift) => OctaveShift.create({ octaveShift }))
+      .at(0);
+    if (octaveShift) {
+      this.events.push({
+        type: 'octaveshift',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber: direction.getStaveNumber() ?? 1,
+        voiceId: direction.getVoice() ?? '1',
+        octaveShift,
       });
     }
   }

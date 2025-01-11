@@ -34,6 +34,10 @@ export class ScoreContext {
   // pedal ID -> next pedal mark type
   private nextPedalMarkTypes = new Map<string, data.PedalMarkType>();
 
+  private octaveShifts = new Array<data.OctaveShift>();
+  // part ID -> stave number -> octave shift ID
+  private octaveShiftIds = new Map<string, Map<number, string>>();
+
   constructor(private idProvider: IdProvider) {}
 
   nextId(): string {
@@ -131,6 +135,28 @@ export class ScoreContext {
   closePedal(partId: string): void {
     this.pedalIds.delete(partId);
   }
+
+  getOctaveShifts(): data.OctaveShift[] {
+    return this.octaveShifts;
+  }
+
+  beginOctaveShift(partId: string, staveNumber: number, size: number): string {
+    const id = this.nextId();
+    this.octaveShifts.push({ type: 'octaveshift', id, size });
+    if (!this.octaveShiftIds.has(partId)) {
+      this.octaveShiftIds.set(partId, new Map());
+    }
+    this.octaveShiftIds.get(partId)!.set(staveNumber, id);
+    return id;
+  }
+
+  continueOpenOctaveShift(partId: string, staveNumber: number): string | null {
+    return this.octaveShiftIds.get(partId)?.get(staveNumber) ?? null;
+  }
+
+  closeOctaveShift(partId: string, staveNumber: number): void {
+    this.octaveShiftIds.get(partId)?.delete(staveNumber);
+  }
 }
 
 export class SystemContext {
@@ -186,6 +212,18 @@ export class SystemContext {
 
   closePedal(partId: string): void {
     this.score.closePedal(partId);
+  }
+
+  beginOctaveShift(partId: string, staveNumber: number, size: number): string {
+    return this.score.beginOctaveShift(partId, staveNumber, size);
+  }
+
+  continueOpenOctaveShift(partId: string, staveNumber: number): string | null {
+    return this.score.continueOpenOctaveShift(partId, staveNumber);
+  }
+
+  closeOctaveShift(partId: string, staveNumber: number): void {
+    this.score.closeOctaveShift(partId, staveNumber);
   }
 }
 
@@ -252,6 +290,18 @@ export class MeasureContext {
   closePedal(partId: string): void {
     this.system.closePedal(partId);
   }
+
+  beginOctaveShift(partId: string, staveNumber: number, size: number): string {
+    return this.system.beginOctaveShift(partId, staveNumber, size);
+  }
+
+  continueOpenOctaveShift(partId: string, staveNumber: number): string | null {
+    return this.system.continueOpenOctaveShift(partId, staveNumber);
+  }
+
+  closeOctaveShift(partId: string, staveNumber: number): void {
+    this.system.closeOctaveShift(partId, staveNumber);
+  }
 }
 
 export class FragmentContext {
@@ -311,6 +361,18 @@ export class FragmentContext {
 
   closePedal(partId: string): void {
     this.measure.closePedal(partId);
+  }
+
+  beginOctaveShift(partId: string, staveNumber: number, size: number): string {
+    return this.measure.beginOctaveShift(partId, staveNumber, size);
+  }
+
+  continueOpenOctaveShift(partId: string, staveNumber: number): string | null {
+    return this.measure.continueOpenOctaveShift(partId, staveNumber);
+  }
+
+  closeOctaveShift(partId: string, staveNumber: number): void {
+    this.measure.closeOctaveShift(partId, staveNumber);
   }
 }
 
@@ -380,6 +442,18 @@ export class PartContext {
   closePedal(): void {
     this.fragment.closePedal(this.id);
   }
+
+  beginOctaveShift(staveNumber: number, size: number): string {
+    return this.fragment.beginOctaveShift(this.id, staveNumber, size);
+  }
+
+  continueOpenOctaveShift(staveNumber: number): string | null {
+    return this.fragment.continueOpenOctaveShift(this.id, staveNumber);
+  }
+
+  closeOctaveShift(staveNumber: number): void {
+    this.fragment.closeOctaveShift(this.id, staveNumber);
+  }
 }
 
 export class StaveContext {
@@ -447,6 +521,18 @@ export class StaveContext {
 
   closePedal(): void {
     this.part.closePedal();
+  }
+
+  beginOctaveShift(size: number): string {
+    return this.part.beginOctaveShift(this.number, size);
+  }
+
+  continueOpenOctaveShift(): string | null {
+    return this.part.continueOpenOctaveShift(this.number);
+  }
+
+  closeOctaveShift(): void {
+    this.part.closeOctaveShift(this.number);
   }
 }
 
@@ -563,6 +649,18 @@ export class VoiceContext {
   closePedal(): void {
     this.stave.closePedal();
   }
+
+  beginOctaveShift(size: number): string {
+    return this.stave.beginOctaveShift(size);
+  }
+
+  continueOpenOctaveShift(): string | null {
+    return this.stave.continueOpenOctaveShift();
+  }
+
+  closeOctaveShift(): void {
+    this.stave.closeOctaveShift();
+  }
 }
 
 export class VoiceEntryContext {
@@ -626,5 +724,9 @@ export class VoiceEntryContext {
 
   continueOpenPedal(): data.PedalMark | null {
     return this.voice.continueOpenPedal();
+  }
+
+  continueOpenOctaveShift(): string | null {
+    return this.voice.continueOpenOctaveShift();
   }
 }
