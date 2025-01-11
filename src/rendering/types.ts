@@ -87,6 +87,10 @@ export type VoiceEntryKey = VoiceKey & {
   voiceEntryIndex: number;
 };
 
+export type ArticulationKey = VoiceEntryKey & {
+  articulationIndex: number;
+};
+
 export type ScoreRender = {
   type: 'score';
   rect: Rect;
@@ -233,6 +237,7 @@ export type NoteRender = {
   pedalMark: data.PedalMark | null;
   octaveShiftId: string | null;
   vibratoIds: string[];
+  articulationRenders: ArticulationRender[];
 };
 
 export type GraceCurve = {
@@ -290,4 +295,10 @@ export type VibratoRender = {
   type: 'vibrato';
   rect: Rect;
   vexflowVibratoBrackets: vexflow.VibratoBracket[];
+};
+
+export type ArticulationRender = {
+  type: 'articulation';
+  rect: Rect;
+  vexflowModifiers: vexflow.Modifier[];
 };

@@ -2,6 +2,8 @@ import {
   AccidentalCode,
   AnnotationHorizontalJustification,
   AnnotationVerticalJustification,
+  ArticulationPlacement,
+  ArticulationType,
   BarlineStyle,
   ClefSign,
   CurveOpening,
@@ -188,6 +190,7 @@ export type Note = {
   measureBeat: Fraction;
   accidental: Accidental | null;
   annotations: Annotation[];
+  articulations: Articulation[];
   curveIds: string[];
   beamId: string | null;
   wedgeId: string | null;
@@ -213,6 +216,7 @@ export type Chord = {
   durationType: DurationType;
   dotCount: number;
   annotations: Annotation[];
+  articulations: Articulation[];
   measureBeat: Fraction;
   beamId: string | null;
   wedgeId: string | null;
@@ -332,4 +336,10 @@ export type Metronome = {
   bpm?: number | string;
   duration2?: string;
   dots2?: number;
+};
+
+export type Articulation = {
+  type: 'articulation';
+  articulationType: ArticulationType;
+  placement: ArticulationPlacement;
 };

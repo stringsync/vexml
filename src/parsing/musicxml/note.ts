@@ -13,6 +13,7 @@ import { Tie } from './tie';
 import { Beam } from './beam';
 import { Tuplet } from './tuplet';
 import { Vibrato } from './vibrato';
+import { Articulation } from './articulation';
 
 type GraceNote = {
   type: 'gracenote';
@@ -45,7 +46,8 @@ export class Note {
     private beam: Beam | null,
     private slash: boolean,
     private graceEntries: GraceEntry[],
-    private vibratos: Vibrato[]
+    private vibratos: Vibrato[],
+    private articulations: Articulation[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -116,6 +118,8 @@ export class Note {
       beam = Beam.create({ beam: musicXML.note.getBeams().at(0)! });
     }
 
+    const articulations = Articulation.create({ note: musicXML.note });
+
     const slash = musicXML.note.hasGraceSlash();
 
     return new Note(
@@ -134,7 +138,8 @@ export class Note {
       beam,
       slash,
       graceEntries,
-      vibratos
+      vibratos,
+      articulations
     );
   }
 
@@ -168,6 +173,7 @@ export class Note {
       pedalMark: voiceEntryCtx.continueOpenPedal(),
       octaveShiftId: voiceEntryCtx.continueOpenOctaveShift(),
       vibratoIds: this.vibratos.map((vibrato) => vibrato.parse(voiceEntryCtx)),
+      articulations: this.articulations.map((articulation) => articulation.parse()),
     };
   }
 
