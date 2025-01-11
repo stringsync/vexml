@@ -36,6 +36,7 @@ export class Score {
       curves: scoreCtx.getCurves(),
       wedges: scoreCtx.getWedges(),
       pedals: scoreCtx.getPedals(),
+      octaveShifts: scoreCtx.getOctaveShifts(),
     };
   }
 }

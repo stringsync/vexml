@@ -11,6 +11,7 @@ import { Chord } from './chord';
 import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
+import { OctaveShift } from './octaveshift';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -160,6 +161,16 @@ export type PedalEvent = {
   pedal: Pedal;
 };
 
+export type OctaveShiftEvent = {
+  type: 'octaveshift';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  voiceId: string;
+  octaveShift: OctaveShift;
+};
+
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
@@ -175,7 +186,8 @@ export type MusicXMLEvent =
   | CodaEvent
   | DynamicsEvent
   | WedgeEvent
-  | PedalEvent;
+  | PedalEvent
+  | OctaveShiftEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 

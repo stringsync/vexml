@@ -157,6 +157,7 @@ export class Note {
       graceEntries,
       wedgeId: voiceEntryCtx.continueOpenWedge(),
       pedalMark: voiceEntryCtx.continueOpenPedal(),
+      octaveShiftId: voiceEntryCtx.continueOpenOctaveShift(),
     };
   }
 
