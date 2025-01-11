@@ -13,6 +13,7 @@ import {
   CurveKey,
   BeamKey,
   TupletKey,
+  WedgeKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -43,6 +44,20 @@ export class Document {
     const curve = this.getCurves().at(key.curveIndex);
     util.assertDefined(curve);
     return curve;
+  }
+
+  getWedgeCount(): number {
+    return this.data.score.wedges.length;
+  }
+
+  getWedges(): data.Wedge[] {
+    return this.data.score.wedges;
+  }
+
+  getWedge(key: WedgeKey): data.Wedge {
+    const wedge = this.getWedges().at(key.wedgeIndex);
+    util.assertDefined(wedge);
+    return wedge;
   }
 
   getSystems(): data.System[] {

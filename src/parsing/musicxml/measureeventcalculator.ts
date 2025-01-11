@@ -11,6 +11,7 @@ import { Rest } from './rest';
 import { MeasureEvent } from './types';
 import { Chord } from './chord';
 import { Dynamics } from './dynamics';
+import { Wedge } from './wedge';
 
 export class MeasureEventCalculator {
   private measureBeat = Fraction.zero();
@@ -271,6 +272,22 @@ export class MeasureEventCalculator {
         voiceId: direction.getVoice() ?? '1',
         measureBeat: this.measureBeat,
         dynamics: new Dynamics(this.measureBeat, dynamicType),
+      });
+    }
+
+    const wedge = direction
+      .getWedges()
+      .flatMap((wedge) => Wedge.create({ direction, wedge }))
+      .at(0);
+    if (wedge) {
+      this.events.push({
+        type: 'wedge',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber: direction.getStaveNumber() ?? 1,
+        voiceId: direction.getVoice() ?? '1',
+        wedge,
       });
     }
   }

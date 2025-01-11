@@ -7,7 +7,7 @@ import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey, CurveRender, NoteRender, VoiceEntryKey } from './types';
 
-interface VexflowStaveNoteRegistry {
+interface NoteRenderRegistry {
   get(curveId: string): NoteRender[] | undefined;
 }
 
@@ -29,7 +29,7 @@ export class Curve {
     private log: Logger,
     private document: Document,
     private key: CurveKey,
-    private registry: VexflowStaveNoteRegistry
+    private registry: NoteRenderRegistry
   ) {}
 
   render(): CurveRender {
@@ -57,8 +57,8 @@ export class Curve {
   private renderVexflowCurves(curveNotes: CurveNote[]): vexflow.Curve[] {
     const curve = this.document.getCurve(this.key);
 
-    if (curveNotes.length < 2) {
-      this.log.warn('Curve has less than 2 notes, rendering nothing.', { curveId: curve.id });
+    if (curveNotes.length < 1) {
+      this.log.warn('Curve has less than 1 note, rendering nothing.', { curveId: curve.id });
       return [];
     }
 
@@ -88,11 +88,11 @@ export class Curve {
 
     const systemIndexes = util.unique(curveNotes.map((note) => note.key.systemIndex));
     for (let index = 0; index < systemIndexes.length - 1; index++) {
-      const startSystemIndex = systemIndexes[index];
+      const systemIndex = systemIndexes[index];
       const isFirst = index === 0;
       const isLast = index === systemIndexes.length - 1;
 
-      const systemCurveNotes = curveNotes.filter((note) => note.key.systemIndex === startSystemIndex);
+      const systemCurveNotes = curveNotes.filter((note) => note.key.systemIndex === systemIndex);
       const firstCurveNote = systemCurveNotes.at(0)!;
       const lastCurveNote = systemCurveNotes.at(-1)!;
 

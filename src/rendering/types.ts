@@ -30,6 +30,10 @@ export type CurveKey = {
   curveIndex: number;
 };
 
+export type WedgeKey = {
+  wedgeIndex: number;
+};
+
 export type SystemArrangement = {
   from: number;
   to: number;
@@ -77,6 +81,7 @@ export type ScoreRender = {
   titleRender: TitleRender | null;
   systemRenders: SystemRender[];
   curveRenders: CurveRender[];
+  wedgeRenders: WedgeRender[];
 };
 
 export type TitleRender = {
@@ -205,6 +210,7 @@ export type NoteRender = {
   vexflowTickable: vexflow.StaveNote;
   curveIds: string[];
   beamId: string | null;
+  wedgeId: string | null;
   tupletIds: string[];
   graceCurves: GraceCurve[];
   graceBeamRenders: BeamRender[];
@@ -239,4 +245,11 @@ export type KeyRender = {
   rect: Rect;
   width: number;
   vexflowKeySignature: vexflow.KeySignature;
+};
+
+export type WedgeRender = {
+  type: 'wedge';
+  key: WedgeKey;
+  rect: Rect;
+  vexflowStaveHairpins: vexflow.StaveHairpin[];
 };

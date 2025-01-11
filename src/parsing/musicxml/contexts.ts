@@ -86,8 +86,12 @@ export class ScoreContext {
     return id;
   }
 
-  continueWedge(partId: string, staveNumber: number): string | null {
+  continueOpenWedge(partId: string, staveNumber: number): string | null {
     return this.wedgeIds.get(partId)?.get(staveNumber) ?? null;
+  }
+
+  closeWedge(partId: string, staveNumber: number): void {
+    this.wedgeIds.get(partId)?.delete(staveNumber);
   }
 }
 
@@ -122,8 +126,12 @@ export class SystemContext {
     return this.score.beginWedge(partId, staveNumber, wedgeType, placement);
   }
 
-  continueWedge(partId: string, staveNumber: number): string | null {
-    return this.score.continueWedge(partId, staveNumber);
+  continueOpenWedge(partId: string, staveNumber: number): string | null {
+    return this.score.continueOpenWedge(partId, staveNumber);
+  }
+
+  closeWedge(partId: string, staveNumber: number): void {
+    this.score.closeWedge(partId, staveNumber);
   }
 }
 
@@ -167,8 +175,12 @@ export class MeasureContext {
     return this.system.beginWedge(partId, staveNumber, wedgeType, placement);
   }
 
-  continueWedge(partId: string, staveNumber: number): string | null {
-    return this.system.continueWedge(partId, staveNumber);
+  continueOpenWedge(partId: string, staveNumber: number): string | null {
+    return this.system.continueOpenWedge(partId, staveNumber);
+  }
+
+  closeWedge(partId: string, staveNumber: number): void {
+    this.system.closeWedge(partId, staveNumber);
   }
 }
 
@@ -207,8 +219,12 @@ export class FragmentContext {
     return this.measure.beginWedge(partId, staveNumber, wedgeType, placement);
   }
 
-  continueWedge(partId: string, staveNumber: number): string | null {
-    return this.measure.continueWedge(partId, staveNumber);
+  continueOpenWedge(partId: string, staveNumber: number): string | null {
+    return this.measure.continueOpenWedge(partId, staveNumber);
+  }
+
+  closeWedge(partId: string, staveNumber: number): void {
+    this.measure.closeWedge(partId, staveNumber);
   }
 }
 
@@ -255,8 +271,12 @@ export class PartContext {
     return this.fragment.beginWedge(this.id, staveNumber, wedgeType, placement);
   }
 
-  continueWedge(staveNumber: number): string | null {
-    return this.fragment.continueWedge(this.id, staveNumber);
+  continueOpenWedge(staveNumber: number): string | null {
+    return this.fragment.continueOpenWedge(this.id, staveNumber);
+  }
+
+  closeWedge(staveNumber: number): void {
+    this.fragment.closeWedge(this.id, staveNumber);
   }
 }
 
@@ -303,8 +323,12 @@ export class StaveContext {
     return this.part.beginWedge(placement, wedgeType, this.number);
   }
 
-  continueWedge(): string | null {
-    return this.part.continueWedge(this.number);
+  continueOpenWedge(): string | null {
+    return this.part.continueOpenWedge(this.number);
+  }
+
+  closeWedge(): void {
+    this.part.closeWedge(this.number);
   }
 }
 
@@ -398,8 +422,12 @@ export class VoiceContext {
     return this.stave.beginWedge(placement, wedgeType);
   }
 
-  continueWedge(): string | null {
-    return this.stave.continueWedge();
+  continueOpenWedge(): string | null {
+    return this.stave.continueOpenWedge();
+  }
+
+  closeWedge(): void {
+    this.stave.closeWedge();
   }
 }
 
@@ -458,11 +486,7 @@ export class VoiceEntryContext {
     return this.voice.closeTuplet(number);
   }
 
-  beginWedge(placement: data.WedgePlacement, wedgeType: data.WedgeType): string {
-    return this.voice.beginWedge(placement, wedgeType);
-  }
-
-  continueWedge(): string | null {
-    return this.voice.continueWedge();
+  continueOpenWedge(): string | null {
+    return this.voice.continueOpenWedge();
   }
 }

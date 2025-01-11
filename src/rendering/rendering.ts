@@ -106,6 +106,13 @@ export class Rendering {
       s.vexflowMultiMeasureRest?.setContext(ctx).draw();
     });
 
+    // Draw the stave hairpins.
+    scoreRender.wedgeRenders
+      .flatMap((w) => w.vexflowStaveHairpins)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {
