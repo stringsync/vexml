@@ -263,8 +263,6 @@ export const ARTICULATION_TYPES = new Enum([
   'inverted-normal-fermata',
   'inverted-angled-fermata',
   'inverted-square-fermata',
-  'up-bow',
-  'down-bow',
   'harmonic',
   'open-string',
   'double-tongue',
@@ -286,6 +284,9 @@ export const ARTICULATION_TYPES = new Enum([
   'doit',
   'falloff',
   'breath-mark',
+  'arpeggio-roll-down',
+  'arpeggio-roll-up',
+  'arpeggio-directionless',
 ] as const);
 
 export type ArticulationPlacement = EnumValues<typeof ARTICULATION_PLACEMENTS>;

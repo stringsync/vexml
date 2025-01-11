@@ -36,8 +36,6 @@ export class Articulation {
       .getNotations()
       .flatMap((n) => n.getTechnicals())
       .forEach((technical) => {
-        technical.getUpBows().forEach(() => add('up-bow', 'above'));
-        technical.getDownBows().forEach(() => add('down-bow', 'above'));
         technical.getHarmonics().forEach(() => add('harmonic', 'above'));
         technical.getOpenStrings().forEach(() => add('open-string', 'above'));
         technical.getDoubleTongues().forEach(() => add('double-tongue', 'above'));
@@ -65,6 +63,25 @@ export class Articulation {
         articulation.getDoits().forEach((a) => add('doit', a.placement ?? 'above'));
         articulation.getFalloffs().forEach((a) => add('falloff', a.placement ?? 'above'));
         articulation.getBreathMarks().forEach((a) => add('breath-mark', a.placement ?? 'above'));
+      });
+
+    musicXML.note
+      .getNotations()
+      .flatMap((n) => n.getArpeggioDirection())
+      .forEach((direction) => {
+        switch (direction) {
+          case 'up':
+            // Yes, ROLL_DOWN is correct.
+            add('arpeggio-roll-down', 'above');
+            break;
+          case 'down':
+            // Yes, ROLL_UP is correct.
+            add('arpeggio-roll-up', 'above');
+            break;
+          default:
+            add('arpeggio-directionless', 'above');
+            break;
+        }
       });
 
     return articulations;

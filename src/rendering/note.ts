@@ -71,6 +71,10 @@ export class Note {
     // to the note in post-formatting in Ensemble.
     // See https://github.com/vexflow/vexflow/issues/254
     const articulationRenders = this.renderArticulations();
+    const vexflowModifiers = articulationRenders.flatMap((a) => a.vexflowModifiers);
+    for (const vexflowModifier of vexflowModifiers) {
+      vexflowStaveNote.addModifier(vexflowModifier);
+    }
 
     return {
       type: 'note',
