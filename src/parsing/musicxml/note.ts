@@ -155,7 +155,7 @@ export class Note {
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
       graceEntries,
-      wedgeId: null,
+      wedgeId: voiceEntryCtx.continueOpenWedge(),
     };
   }
 

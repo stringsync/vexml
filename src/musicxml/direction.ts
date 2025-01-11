@@ -9,6 +9,7 @@ import {
   OctaveShiftDirectionTypeContent,
   SegnoDirectionTypeContent,
   TokensDirectionTypeContent,
+  WedgeDirectionTypeContent,
 } from './directiontype';
 import { ABOVE_BELOW, AboveBelow } from './enums';
 import { Dynamics } from './dynamics';
@@ -17,6 +18,7 @@ import { Segno } from './segno';
 import { Coda } from './coda';
 import { Words } from './words';
 import { Symbolic } from './symbolic';
+import { Wedge } from './wedge';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -83,6 +85,14 @@ export class Direction {
       .map((type) => type.getContent())
       .filter((content): content is TokensDirectionTypeContent => content.type === 'tokens')
       .flatMap((content) => content.tokens);
+  }
+
+  /** Returns the wedges of the direction. */
+  getWedges(): Wedge[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is WedgeDirectionTypeContent => content.type === 'wedge')
+      .map((content) => content.wedge);
   }
 
   /**

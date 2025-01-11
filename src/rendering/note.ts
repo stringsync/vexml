@@ -66,6 +66,7 @@ export class Note {
       vexflowTickable: vexflowStaveNote,
       curveIds,
       beamId: voiceEntry.beamId,
+      wedgeId: voiceEntry.wedgeId,
       tupletIds: voiceEntry.tupletIds,
       vexflowGraceNoteGroup,
       graceBeamRenders,

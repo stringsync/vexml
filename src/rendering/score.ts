@@ -3,12 +3,23 @@ import { Document } from './document';
 import { Config } from './config';
 import { Logger } from '@/debug';
 import { System } from './system';
-import { CurveKey, CurveRender, ScoreRender, NoteRender, SystemKey, SystemRender, TitleRender } from './types';
+import {
+  CurveKey,
+  CurveRender,
+  ScoreRender,
+  NoteRender,
+  SystemKey,
+  SystemRender,
+  TitleRender,
+  WedgeRender,
+  WedgeKey,
+} from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
 import { Pen } from './pen';
 import { SystemRenderMover } from './systemrendermover';
 import { Curve } from './curve';
+import { Wedge } from './wedge';
 
 /**
  * Score is the top-level rendering object that is directly responsible for arranging systems.
@@ -24,6 +35,7 @@ export class Score {
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
     const curveRenders = this.renderCurves(systemRenders);
+    const wedgeRenders = this.renderWedges(systemRenders);
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
@@ -36,6 +48,7 @@ export class Score {
       titleRender,
       systemRenders,
       curveRenders,
+      wedgeRenders,
     };
   }
 
@@ -103,6 +116,45 @@ export class Score {
     }
 
     return curveRenders;
+  }
+
+  private renderWedges(systemRenders: SystemRender[]): WedgeRender[] {
+    const wedges = this.document.getWedges();
+
+    const noteRenders = systemRenders
+      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.entryRenders)
+      .filter((e) => e.type === 'note');
+
+    const registry = new Map<string, NoteRender[]>();
+
+    for (const noteRender of noteRenders) {
+      if (!noteRender.wedgeId) {
+        continue;
+      }
+      if (!registry.has(noteRender.wedgeId)) {
+        registry.set(noteRender.wedgeId, []);
+      }
+      registry.get(noteRender.wedgeId)!.push(noteRender);
+    }
+
+    const wedgeRenders = new Array<WedgeRender>();
+
+    for (let wedgeIndex = 0; wedgeIndex < wedges.length; wedgeIndex++) {
+      const key: WedgeKey = { wedgeIndex };
+
+      const noteRenderCount = registry.get(wedges[wedgeIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const wedgeRender = new Wedge(this.config, this.log, this.document, key, registry).render();
+        wedgeRenders.push(wedgeRender);
+      }
+    }
+
+    return wedgeRenders;
   }
 
   private getTitlePadding() {

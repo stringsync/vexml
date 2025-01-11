@@ -55,6 +55,9 @@ export class Voice {
         case 'dynamics':
           entries.push(event.dynamics.parse());
           break;
+        case 'wedge':
+          event.wedge.parse(voiceCtx);
+          break;
         default:
           util.assertUnreachable();
       }

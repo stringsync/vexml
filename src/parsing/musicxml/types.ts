@@ -8,8 +8,8 @@ import { StaveCount } from './stavecount';
 import { Note } from './note';
 import { Rest } from './rest';
 import { Chord } from './chord';
-import { DynamicType } from './enums';
 import { Dynamics } from './dynamics';
+import { Wedge } from './wedge';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -139,6 +139,16 @@ export type DynamicsEvent = {
   dynamics: Dynamics;
 };
 
+export type WedgeEvent = {
+  type: 'wedge';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  voiceId: string;
+  wedge: Wedge;
+};
+
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
@@ -152,7 +162,8 @@ export type MusicXMLEvent =
   | MultiRestEvent
   | SegnoEvent
   | CodaEvent
-  | DynamicsEvent;
+  | DynamicsEvent
+  | WedgeEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 
