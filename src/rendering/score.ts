@@ -13,6 +13,8 @@ import {
   TitleRender,
   WedgeRender,
   WedgeKey,
+  PedalRender,
+  PedalKey,
 } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
@@ -20,6 +22,7 @@ import { Pen } from './pen';
 import { SystemRenderMover } from './systemrendermover';
 import { Curve } from './curve';
 import { Wedge } from './wedge';
+import { Pedal } from './pedal';
 
 /**
  * Score is the top-level rendering object that is directly responsible for arranging systems.
@@ -30,12 +33,15 @@ export class Score {
   render(): ScoreRender {
     const pen = new Pen();
 
+    console.log(this.document.getScore().pedals);
+
     pen.moveBy({ dy: this.config.SCORE_PADDING_TOP });
 
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
     const curveRenders = this.renderCurves(systemRenders);
     const wedgeRenders = this.renderWedges(systemRenders);
+    const pedalRenders = this.renderPedals(systemRenders);
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
@@ -49,6 +55,7 @@ export class Score {
       systemRenders,
       curveRenders,
       wedgeRenders,
+      pedalRenders,
     };
   }
 
@@ -155,6 +162,46 @@ export class Score {
     }
 
     return wedgeRenders;
+  }
+
+  private renderPedals(systemRenders: SystemRender[]): PedalRender[] {
+    const pedals = this.document.getPedals();
+
+    const noteRenders = systemRenders
+      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.entryRenders)
+      .filter((e) => e.type === 'note');
+
+    const registry = new Map<string, NoteRender[]>();
+
+    for (const noteRender of noteRenders) {
+      const pedalMark = this.document.getNote(noteRender.key).pedalMark;
+      if (!pedalMark) {
+        continue;
+      }
+      if (!registry.has(pedalMark.pedalId)) {
+        registry.set(pedalMark.pedalId, []);
+      }
+      registry.get(pedalMark.pedalId)!.push(noteRender);
+    }
+
+    const pedalRenders = new Array<PedalRender>();
+
+    for (let pedalIndex = 0; pedalIndex < pedals.length; pedalIndex++) {
+      const key: PedalKey = { pedalIndex };
+
+      const noteRenderCount = registry.get(pedals[pedalIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const pedalRender = new Pedal(this.config, this.log, this.document, key, registry).render();
+        pedalRenders.push(pedalRender);
+      }
+    }
+
+    return pedalRenders;
   }
 
   private getTitlePadding() {

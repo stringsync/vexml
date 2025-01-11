@@ -14,6 +14,7 @@ import {
   BeamKey,
   TupletKey,
   WedgeKey,
+  PedalKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -32,10 +33,6 @@ export class Document {
     return this.data.score;
   }
 
-  getCurveCount(): number {
-    return this.data.score.curves.length;
-  }
-
   getCurves(): data.Curve[] {
     return this.data.score.curves;
   }
@@ -46,10 +43,6 @@ export class Document {
     return curve;
   }
 
-  getWedgeCount(): number {
-    return this.data.score.wedges.length;
-  }
-
   getWedges(): data.Wedge[] {
     return this.data.score.wedges;
   }
@@ -58,6 +51,16 @@ export class Document {
     const wedge = this.getWedges().at(key.wedgeIndex);
     util.assertDefined(wedge);
     return wedge;
+  }
+
+  getPedals(): data.Pedal[] {
+    return this.data.score.pedals;
+  }
+
+  getPedal(key: PedalKey): data.Pedal {
+    const pedal = this.getPedals().at(key.pedalIndex);
+    util.assertDefined(pedal);
+    return pedal;
   }
 
   getSystems(): data.System[] {

@@ -34,6 +34,10 @@ export type WedgeKey = {
   wedgeIndex: number;
 };
 
+export type PedalKey = {
+  pedalIndex: number;
+};
+
 export type SystemArrangement = {
   from: number;
   to: number;
@@ -82,6 +86,7 @@ export type ScoreRender = {
   systemRenders: SystemRender[];
   curveRenders: CurveRender[];
   wedgeRenders: WedgeRender[];
+  pedalRenders: PedalRender[];
 };
 
 export type TitleRender = {
@@ -252,4 +257,11 @@ export type WedgeRender = {
   key: WedgeKey;
   rect: Rect;
   vexflowStaveHairpins: vexflow.StaveHairpin[];
+};
+
+export type PedalRender = {
+  type: 'pedal';
+  key: PedalKey;
+  rect: Rect;
+  vexflowPedalMarkings: vexflow.PedalMarking[];
 };
