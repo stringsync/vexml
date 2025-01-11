@@ -5,10 +5,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { NoteRender, PedalKey, PedalRender } from './types';
-
-interface NoteRenderRegistry {
-  get(pedalId: string): NoteRender[] | undefined;
-}
+import { NoteRenderRegistry } from './noterenderregistry';
 
 export class Pedal {
   constructor(
@@ -22,7 +19,6 @@ export class Pedal {
   render(): PedalRender {
     const pedal = this.document.getPedal(this.key);
     const noteRenders = this.registry.get(pedal.id);
-    util.assertDefined(noteRenders);
 
     const vexflowPedalMarkings = this.renderVexflowPedalMarkings(noteRenders);
 

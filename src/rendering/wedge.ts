@@ -5,10 +5,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { NoteRender, WedgeKey, WedgeRender } from './types';
-
-interface NoteRenderRegistry {
-  get(wedgeId: string): NoteRender[] | undefined;
-}
+import { NoteRenderRegistry } from './noterenderregistry';
 
 export class Wedge {
   constructor(
@@ -22,7 +19,6 @@ export class Wedge {
   render(): WedgeRender {
     const wedge = this.document.getWedge(this.key);
     const noteRenders = this.registry.get(wedge.id);
-    util.assertDefined(noteRenders);
 
     const vexflowStaveHairpins = this.renderVexflowStaveHairpins(noteRenders);
 

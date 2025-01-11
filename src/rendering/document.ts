@@ -16,6 +16,7 @@ import {
   WedgeKey,
   PedalKey,
   OctaveShiftKey,
+  VibratoKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -78,6 +79,16 @@ export class Document {
     const octaveShift = this.data.score.octaveShifts.find((o) => o.id === id);
     util.assertDefined(octaveShift);
     return { octaveShiftIndex: this.data.score.octaveShifts.indexOf(octaveShift) };
+  }
+
+  getVibratos(): data.Vibrato[] {
+    return this.data.score.vibratos;
+  }
+
+  getVibrato(key: VibratoKey): data.Vibrato {
+    const vibrato = this.getVibratos().at(key.vibratoIndex);
+    util.assertDefined(vibrato);
+    return vibrato;
   }
 
   getSystems(): data.System[] {
