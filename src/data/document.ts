@@ -15,6 +15,7 @@ export class Document {
       wedges: [],
       pedals: [],
       octaveShifts: [],
+      vibratos: [],
     });
   }
 

@@ -36,6 +36,10 @@ export class ScoreContext {
   // part ID -> stave number -> octave shift status
   private octaveShiftStatuses = new Map<string, Map<number, { id: string; count: number; delete: boolean }>>();
 
+  private vibratos = new Array<data.Vibrato>();
+  // vibrato number -> vibrato ID
+  private vibratoStatuses = new Map<number, string>();
+
   constructor(private idProvider: IdProvider) {}
 
   nextId(): string {
@@ -222,6 +226,21 @@ export class ScoreContext {
       status.delete = true;
     }
   }
+
+  getVibratos(): data.Vibrato[] {
+    return this.vibratos;
+  }
+
+  beginVibrato(vibratoNumber: number): string {
+    const id = this.nextId();
+    this.vibratos.push({ type: 'vibrato', id });
+    this.vibratoStatuses.set(vibratoNumber, id);
+    return id;
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.vibratoStatuses.get(vibratoNumber) ?? null;
+  }
 }
 
 export class SystemContext {
@@ -289,6 +308,14 @@ export class SystemContext {
 
   closeOctaveShift(partId: string, staveNumber: number): void {
     this.score.closeOctaveShift(partId, staveNumber);
+  }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.score.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.score.continueVibrato(vibratoNumber);
   }
 }
 
@@ -367,6 +394,14 @@ export class MeasureContext {
   closeOctaveShift(partId: string, staveNumber: number): void {
     this.system.closeOctaveShift(partId, staveNumber);
   }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.system.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.system.continueVibrato(vibratoNumber);
+  }
 }
 
 export class FragmentContext {
@@ -438,6 +473,14 @@ export class FragmentContext {
 
   closeOctaveShift(partId: string, staveNumber: number): void {
     this.measure.closeOctaveShift(partId, staveNumber);
+  }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.measure.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.measure.continueVibrato(vibratoNumber);
   }
 }
 
@@ -519,6 +562,14 @@ export class PartContext {
   closeOctaveShift(staveNumber: number): void {
     this.fragment.closeOctaveShift(this.id, staveNumber);
   }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.fragment.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.fragment.continueVibrato(vibratoNumber);
+  }
 }
 
 export class StaveContext {
@@ -598,6 +649,14 @@ export class StaveContext {
 
   closeOctaveShift(): void {
     this.part.closeOctaveShift(this.number);
+  }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.part.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.part.continueVibrato(vibratoNumber);
   }
 }
 
@@ -726,6 +785,14 @@ export class VoiceContext {
   closeOctaveShift(): void {
     this.stave.closeOctaveShift();
   }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.stave.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.stave.continueVibrato(vibratoNumber);
+  }
 }
 
 export class VoiceEntryContext {
@@ -793,5 +860,13 @@ export class VoiceEntryContext {
 
   continueOpenOctaveShift(): string | null {
     return this.voice.continueOpenOctaveShift();
+  }
+
+  beginVibrato(vibratoNumber: number): string {
+    return this.voice.beginVibrato(vibratoNumber);
+  }
+
+  continueVibrato(vibratoNumber: number): string | null {
+    return this.voice.continueVibrato(vibratoNumber);
   }
 }
