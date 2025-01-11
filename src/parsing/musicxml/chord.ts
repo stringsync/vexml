@@ -48,6 +48,7 @@ export class Chord {
       stemDirection: first.stemDirection,
       graceEntries,
       wedgeId: first.wedgeId,
+      pedalMark: first.pedalMark,
     };
   }
 }

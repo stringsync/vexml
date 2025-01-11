@@ -11,6 +11,8 @@ import {
   EndingBracketType,
   KeyMode,
   Notehead,
+  PedalMarkType,
+  PedalType,
   RepetitionSymbol,
   StemDirection,
   TimeSymbol,
@@ -31,6 +33,19 @@ export type Score = {
    */
   curves: Curve[];
   wedges: Wedge[];
+  pedals: Pedal[];
+};
+
+export type Pedal = {
+  type: 'pedal';
+  id: string;
+  pedalType: PedalType;
+};
+
+export type PedalMark = {
+  type: 'pedalmark';
+  pedalMarkType: PedalMarkType;
+  pedalId: string;
 };
 
 export type Wedge = {
@@ -165,6 +180,7 @@ export type Note = {
   wedgeId: string | null;
   tupletIds: string[];
   graceEntries: GraceEntry[];
+  pedalMark: PedalMark | null;
 };
 
 export type Dynamics = {
@@ -187,6 +203,7 @@ export type Chord = {
   wedgeId: string | null;
   tupletIds: string[];
   graceEntries: GraceEntry[];
+  pedalMark: PedalMark | null;
 };
 
 export type ChordNote = {

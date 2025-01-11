@@ -1,6 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
-import { StaveContext, VoiceContext } from './contexts';
+import { VoiceContext } from './contexts';
 
 type WedgePhase = 'start' | 'continue' | 'stop';
 
@@ -53,7 +53,9 @@ export class Wedge {
   parse(voiceCtx: VoiceContext): void {
     if (this.phase === 'start') {
       voiceCtx.beginWedge(this.placement, this.wedgeType);
-    } else if (this.phase === 'stop') {
+    }
+
+    if (this.phase === 'stop') {
       voiceCtx.closeWedge();
     }
   }
