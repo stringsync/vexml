@@ -15,6 +15,7 @@ import {
   TupletKey,
   WedgeKey,
   PedalKey,
+  OctaveShiftKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -61,6 +62,16 @@ export class Document {
     const pedal = this.getPedals().at(key.pedalIndex);
     util.assertDefined(pedal);
     return pedal;
+  }
+
+  getOctaveShifts(): data.OctaveShift[] {
+    return this.data.score.octaveShifts;
+  }
+
+  getOctaveShift(key: OctaveShiftKey): data.OctaveShift {
+    const octaveShift = this.getOctaveShifts().at(key.octaveShiftIndex);
+    util.assertDefined(octaveShift);
+    return octaveShift;
   }
 
   getSystems(): data.System[] {

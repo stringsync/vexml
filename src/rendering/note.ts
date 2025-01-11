@@ -72,6 +72,7 @@ export class Note {
       graceBeamRenders,
       graceCurves,
       pedalMark: voiceEntry.pedalMark,
+      octaveShiftId: voiceEntry.octaveShiftId,
     };
   }
 

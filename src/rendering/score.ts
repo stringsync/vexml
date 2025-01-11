@@ -15,6 +15,8 @@ import {
   WedgeKey,
   PedalRender,
   PedalKey,
+  OctaveShiftRender,
+  OctaveShiftKey,
 } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
@@ -23,6 +25,7 @@ import { SystemRenderMover } from './systemrendermover';
 import { Curve } from './curve';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
+import { OctaveShift } from './octaveshift';
 
 /**
  * Score is the top-level rendering object that is directly responsible for arranging systems.
@@ -37,9 +40,19 @@ export class Score {
 
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
-    const curveRenders = this.renderCurves(systemRenders);
-    const wedgeRenders = this.renderWedges(systemRenders);
-    const pedalRenders = this.renderPedals(systemRenders);
+
+    const noteRenders = systemRenders
+      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
+      .flatMap((f) => f.partRenders)
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.entryRenders)
+      .filter((e) => e.type === 'note');
+
+    const curveRenders = this.renderCurves(noteRenders);
+    const wedgeRenders = this.renderWedges(noteRenders);
+    const pedalRenders = this.renderPedals(noteRenders);
+    const octaveShiftRenders = this.renderOctaveShifts(noteRenders);
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
@@ -54,6 +67,7 @@ export class Score {
       curveRenders,
       wedgeRenders,
       pedalRenders,
+      octaveShiftRenders,
     };
   }
 
@@ -84,16 +98,8 @@ export class Score {
     };
   }
 
-  private renderCurves(systemRenders: SystemRender[]): CurveRender[] {
+  private renderCurves(noteRenders: NoteRender[]): CurveRender[] {
     const curves = this.document.getCurves();
-
-    const noteRenders = systemRenders
-      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.entryRenders)
-      .filter((e) => e.type === 'note');
 
     const registry = new Map<string, NoteRender[]>();
 
@@ -123,16 +129,8 @@ export class Score {
     return curveRenders;
   }
 
-  private renderWedges(systemRenders: SystemRender[]): WedgeRender[] {
+  private renderWedges(noteRenders: NoteRender[]): WedgeRender[] {
     const wedges = this.document.getWedges();
-
-    const noteRenders = systemRenders
-      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.entryRenders)
-      .filter((e) => e.type === 'note');
 
     const registry = new Map<string, NoteRender[]>();
 
@@ -162,16 +160,8 @@ export class Score {
     return wedgeRenders;
   }
 
-  private renderPedals(systemRenders: SystemRender[]): PedalRender[] {
+  private renderPedals(noteRenders: NoteRender[]): PedalRender[] {
     const pedals = this.document.getPedals();
-
-    const noteRenders = systemRenders
-      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.entryRenders)
-      .filter((e) => e.type === 'note');
 
     const registry = new Map<string, NoteRender[]>();
 
@@ -200,6 +190,38 @@ export class Score {
     }
 
     return pedalRenders;
+  }
+
+  private renderOctaveShifts(noteRenders: NoteRender[]): OctaveShiftRender[] {
+    const octaveShifts = this.document.getOctaveShifts();
+
+    const registry = new Map<string, NoteRender[]>();
+
+    for (const noteRender of noteRenders) {
+      const octaveShiftId = noteRender.octaveShiftId;
+      if (!octaveShiftId) {
+        continue;
+      }
+      if (!registry.has(octaveShiftId)) {
+        registry.set(octaveShiftId, []);
+      }
+      registry.get(octaveShiftId)!.push(noteRender);
+    }
+
+    const octaveShiftRenders = new Array<OctaveShiftRender>();
+
+    for (let octaveShiftIndex = 0; octaveShiftIndex < octaveShifts.length; octaveShiftIndex++) {
+      const key: OctaveShiftKey = { octaveShiftIndex };
+
+      const noteRenderCount = registry.get(octaveShifts[octaveShiftIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const octaveShiftRender = new OctaveShift(this.config, this.log, this.document, key, registry).render();
+        octaveShiftRenders.push(octaveShiftRender);
+      }
+    }
+
+    return octaveShiftRenders;
   }
 
   private getTitlePadding() {

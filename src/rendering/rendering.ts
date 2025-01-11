@@ -120,6 +120,13 @@ export class Rendering {
         v.setContext(ctx).draw();
       });
 
+    // Draw octave shifts.
+    scoreRender.octaveShiftRenders
+      .flatMap((o) => o.vexflowTextBrackets)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {
