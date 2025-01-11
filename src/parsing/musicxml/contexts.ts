@@ -9,7 +9,6 @@
  */
 
 import * as data from '@/data';
-import * as util from '@/util';
 import { Signature } from './signature';
 import { Key } from './key';
 import { Time } from './time';
@@ -26,24 +25,16 @@ export class ScoreContext {
   private curveIds = new Map<number | null, string>();
 
   private wedges = new Array<data.Wedge>();
-  // part ID -> stave number -> wedge ID
-  private wedgeIds = new Map<string, Map<number, string>>();
-  // wedge ID -> wedge status
-  private wedgeStatuses = new Map<string, { count: number; delete: boolean }>();
+  // part ID -> stave number -> wedge status
+  private wedgeStatuses = new Map<string, Map<number, { id: string; count: number; delete: boolean }>>();
 
   private pedals = new Array<data.Pedal>();
-  // part ID -> pedal ID
-  private pedalIds = new Map<string, string>();
-  // pedal ID -> next pedal mark type
-  private nextPedalMarkTypes = new Map<string, data.PedalMarkType>();
-  // pedal ID -> pedal status
-  private pedalStatuses = new Map<string, { count: number; delete: boolean }>();
+  // part ID -> pedal status
+  private pedalStatuses = new Map<string, { id: string; next: data.PedalMarkType; count: number; delete: boolean }>();
 
   private octaveShifts = new Array<data.OctaveShift>();
-  // part ID -> stave number -> octave shift ID
-  private octaveShiftIds = new Map<string, Map<number, string>>();
-  // octave shift ID -> octave shift status
-  private octaveShiftStatuses = new Map<string, { count: number; delete: boolean }>();
+  // part ID -> stave number -> octave shift status
+  private octaveShiftStatuses = new Map<string, Map<number, { id: string; count: number; delete: boolean }>>();
 
   constructor(private idProvider: IdProvider) {}
 
@@ -98,46 +89,38 @@ export class ScoreContext {
 
     this.wedges.push({ type: 'wedge', wedgeType, id, placement });
 
-    if (!this.wedgeIds.has(partId)) {
-      this.wedgeIds.set(partId, new Map());
+    if (!this.wedgeStatuses.has(partId)) {
+      this.wedgeStatuses.set(partId, new Map());
     }
 
-    this.wedgeIds.get(partId)!.set(staveNumber, id);
-
-    this.wedgeStatuses.set(id, { count: 0, delete: false });
+    this.wedgeStatuses.get(partId)!.set(staveNumber, { id, count: 0, delete: false });
 
     return id;
   }
 
   continueOpenWedge(partId: string, staveNumber: number): string | null {
-    const wedgeId = this.wedgeIds.get(partId)?.get(staveNumber) ?? null;
-    if (!wedgeId) {
+    const status = this.wedgeStatuses.get(partId)?.get(staveNumber);
+    if (!status) {
       return null;
     }
 
-    const status = this.wedgeStatuses.get(wedgeId);
-    util.assertDefined(status);
-
     if (status.delete) {
-      this.wedgeIds.get(partId)?.delete(staveNumber);
+      this.wedgeStatuses.get(partId)?.delete(staveNumber);
     }
 
     status.count++;
 
-    return wedgeId;
+    return status.id;
   }
 
   closeWedge(partId: string, staveNumber: number): void {
-    const wedgeId = this.wedgeIds.get(partId)?.get(staveNumber);
-    if (!wedgeId) {
+    const status = this.wedgeStatuses.get(partId)?.get(staveNumber);
+    if (!status) {
       return;
     }
 
-    const status = this.wedgeStatuses.get(wedgeId);
-    util.assertDefined(status);
-
     if (status.count > 1) {
-      this.wedgeIds.get(partId)?.delete(staveNumber);
+      this.wedgeStatuses.get(partId)?.delete(staveNumber);
     } else {
       // We don't meet the criteria to be fully specified, so we'll mark for delete later.
       status.delete = true;
@@ -151,50 +134,43 @@ export class ScoreContext {
   beginPedal(partId: string, pedalType: data.PedalType): string {
     const id = this.nextId();
     this.pedals.push({ type: 'pedal', id, pedalType });
-    this.pedalIds.set(partId, id);
-    this.pedalStatuses.set(id, { count: 0, delete: false });
+    this.pedalStatuses.set(partId, { id, next: 'default', count: 0, delete: false });
     return id;
   }
 
   continueOpenPedal(partId: string): data.PedalMark | null {
-    const pedalId = this.pedalIds.get(partId);
-    if (!pedalId) {
+    const status = this.pedalStatuses.get(partId);
+    if (!status) {
       return null;
     }
 
-    const pedalMarkType = this.nextPedalMarkTypes.get(pedalId) ?? 'default';
-    this.nextPedalMarkTypes.set(pedalId, 'default'); // consume the next pedal mark type
+    const pedalMarkType = status.next;
+    status.next = 'default'; // consume the next pedal mark type
 
-    const status = this.pedalStatuses.get(pedalId);
-    util.assertDefined(status);
-
-    if (status.delete) {
-      this.pedalIds.delete(partId);
+    if (status.delete && status.count > 1) {
+      this.pedalStatuses.delete(partId);
     }
 
     status.count++;
 
-    return { type: 'pedalmark', pedalMarkType, pedalId };
+    return { type: 'pedalmark', pedalMarkType, pedalId: status.id };
   }
 
   primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
-    const pedalId = this.pedalIds.get(partId);
-    if (pedalId) {
-      this.nextPedalMarkTypes.set(pedalId, pedalMarkType);
+    const status = this.pedalStatuses.get(partId);
+    if (status) {
+      status.next = pedalMarkType;
     }
   }
 
   closePedal(partId: string): void {
-    const pedalId = this.pedalIds.get(partId);
-    if (!pedalId) {
+    const status = this.pedalStatuses.get(partId);
+    if (!status) {
       return;
     }
 
-    const status = this.pedalStatuses.get(pedalId);
-    util.assertDefined(status);
-
     if (status.count > 1) {
-      this.pedalIds.delete(partId);
+      this.pedalStatuses.delete(partId);
     } else {
       // We don't meet the criteria to be fully specified, so we'll mark for delete later.
       status.delete = true;
@@ -209,45 +185,38 @@ export class ScoreContext {
     const id = this.nextId();
 
     this.octaveShifts.push({ type: 'octaveshift', id, size });
-    if (!this.octaveShiftIds.has(partId)) {
-      this.octaveShiftIds.set(partId, new Map());
-    }
 
-    this.octaveShiftIds.get(partId)!.set(staveNumber, id);
-    this.octaveShiftStatuses.set(id, { count: 0, delete: false });
+    if (!this.octaveShiftStatuses.has(partId)) {
+      this.octaveShiftStatuses.set(partId, new Map());
+    }
+    this.octaveShiftStatuses.get(partId)!.set(staveNumber, { id, count: 0, delete: false });
 
     return id;
   }
 
   continueOpenOctaveShift(partId: string, staveNumber: number): string | null {
-    const octaveShiftId = this.octaveShiftIds.get(partId)?.get(staveNumber) ?? null;
-    if (!octaveShiftId) {
+    const status = this.octaveShiftStatuses.get(partId)?.get(staveNumber);
+    if (!status) {
       return null;
     }
 
-    const status = this.octaveShiftStatuses.get(octaveShiftId);
-    util.assertDefined(status);
-
-    if (status.delete) {
-      this.octaveShiftIds.get(partId)?.delete(staveNumber);
+    if (status.delete && status.count > 1) {
+      this.octaveShiftStatuses.get(partId)?.delete(staveNumber);
     }
 
     status.count++;
 
-    return octaveShiftId;
+    return status.id;
   }
 
   closeOctaveShift(partId: string, staveNumber: number): void {
-    const octaveShiftId = this.octaveShiftIds.get(partId)?.get(staveNumber);
-    if (!octaveShiftId) {
+    const status = this.octaveShiftStatuses.get(partId)?.get(staveNumber);
+    if (!status) {
       return;
     }
 
-    const status = this.octaveShiftStatuses.get(octaveShiftId);
-    util.assertDefined(status);
-
     if (status.count > 1) {
-      this.octaveShiftIds.get(partId)?.delete(staveNumber);
+      this.octaveShiftStatuses.get(partId)?.delete(staveNumber);
     } else {
       // We don't meet the criteria to be fully specified, so we'll mark for delete later.
       status.delete = true;
