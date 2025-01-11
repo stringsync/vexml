@@ -10,6 +10,7 @@ import { Rest } from './rest';
 import { Chord } from './chord';
 import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
+import { Pedal } from './pedal';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -149,6 +150,16 @@ export type WedgeEvent = {
   wedge: Wedge;
 };
 
+export type PedalEvent = {
+  type: 'pedal';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  voiceId: string;
+  pedal: Pedal;
+};
+
 export type MusicXMLEvent =
   | NoteEvent
   | RestEvent
@@ -163,7 +174,8 @@ export type MusicXMLEvent =
   | SegnoEvent
   | CodaEvent
   | DynamicsEvent
-  | WedgeEvent;
+  | WedgeEvent
+  | PedalEvent;
 
 export type MeasureEvent = Extract<MusicXMLEvent, { measureIndex: number }>;
 

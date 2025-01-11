@@ -20,13 +20,19 @@ export class ScoreContext {
   private multiRestCounts = new Map<string, Map<number | null, number>>();
 
   private curves = new Array<data.Curve>();
-  // curve number -> curve id
+  // curve number -> curve ID
   // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/slur/#:~:text=dotted%2C%20or%20wavy.-,number,-number%2Dlevel
   private curveIds = new Map<number | null, string>();
 
   private wedges = new Array<data.Wedge>();
-  // part ID -> stave number -> wedge id
+  // part ID -> stave number -> wedge ID
   private wedgeIds = new Map<string, Map<number, string>>();
+
+  private pedals = new Array<data.Pedal>();
+  // part ID -> pedal ID
+  private pedalIds = new Map<string, string>();
+  // pedal ID -> next pedal mark type
+  private nextPedalMarkTypes = new Map<string, data.PedalMarkType>();
 
   constructor(private idProvider: IdProvider) {}
 
@@ -93,6 +99,34 @@ export class ScoreContext {
   closeWedge(partId: string, staveNumber: number): void {
     this.wedgeIds.get(partId)?.delete(staveNumber);
   }
+
+  beginPedal(partId: string, pedalType: data.PedalType): string {
+    const id = this.nextId();
+    this.pedals.push({ type: 'pedal', id, pedalType });
+    this.pedalIds.set(partId, id);
+    return id;
+  }
+
+  continueOpenPedal(partId: string): data.PedalMark | null {
+    const pedalId = this.pedalIds.get(partId);
+    if (!pedalId) {
+      return null;
+    }
+    const pedalMarkType = this.nextPedalMarkTypes.get(pedalId) ?? 'default';
+    this.nextPedalMarkTypes.set(pedalId, 'default'); // consume the next pedal mark type
+    return { type: 'pedalmark', pedalMarkType, pedalId };
+  }
+
+  primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
+    const pedalId = this.pedalIds.get(partId);
+    if (pedalId) {
+      this.nextPedalMarkTypes.set(pedalId, pedalMarkType);
+    }
+  }
+
+  closePedal(partId: string): void {
+    this.pedalIds.delete(partId);
+  }
 }
 
 export class SystemContext {
@@ -132,6 +166,22 @@ export class SystemContext {
 
   closeWedge(partId: string, staveNumber: number): void {
     this.score.closeWedge(partId, staveNumber);
+  }
+
+  beginPedal(partId: string, pedalType: data.PedalType): string {
+    return this.score.beginPedal(partId, pedalType);
+  }
+
+  continueOpenPedal(partId: string): data.PedalMark | null {
+    return this.score.continueOpenPedal(partId);
+  }
+
+  primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
+    this.score.primeNextPedalMark(partId, pedalMarkType);
+  }
+
+  closePedal(partId: string): void {
+    this.score.closePedal(partId);
   }
 }
 
@@ -182,6 +232,22 @@ export class MeasureContext {
   closeWedge(partId: string, staveNumber: number): void {
     this.system.closeWedge(partId, staveNumber);
   }
+
+  beginPedal(partId: string, pedalType: data.PedalType): string {
+    return this.system.beginPedal(partId, pedalType);
+  }
+
+  continueOpenPedal(partId: string): data.PedalMark | null {
+    return this.system.continueOpenPedal(partId);
+  }
+
+  primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
+    this.system.primeNextPedalMark(partId, pedalMarkType);
+  }
+
+  closePedal(partId: string): void {
+    this.system.closePedal(partId);
+  }
 }
 
 export class FragmentContext {
@@ -225,6 +291,22 @@ export class FragmentContext {
 
   closeWedge(partId: string, staveNumber: number): void {
     this.measure.closeWedge(partId, staveNumber);
+  }
+
+  beginPedal(partId: string, pedalType: data.PedalType): string {
+    return this.measure.beginPedal(partId, pedalType);
+  }
+
+  continueOpenPedal(partId: string): data.PedalMark | null {
+    return this.measure.continueOpenPedal(partId);
+  }
+
+  primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
+    this.measure.primeNextPedalMark(partId, pedalMarkType);
+  }
+
+  closePedal(partId: string): void {
+    this.measure.closePedal(partId);
   }
 }
 
@@ -278,6 +360,22 @@ export class PartContext {
   closeWedge(staveNumber: number): void {
     this.fragment.closeWedge(this.id, staveNumber);
   }
+
+  beginPedal(pedalType: data.PedalType): string {
+    return this.fragment.beginPedal(this.id, pedalType);
+  }
+
+  continueOpenPedal(): data.PedalMark | null {
+    return this.fragment.continueOpenPedal(this.id);
+  }
+
+  primeNextPedalMark(pedalMarkType: data.PedalMarkType): void {
+    this.fragment.primeNextPedalMark(this.id, pedalMarkType);
+  }
+
+  closePedal(): void {
+    this.fragment.closePedal(this.id);
+  }
 }
 
 export class StaveContext {
@@ -329,6 +427,22 @@ export class StaveContext {
 
   closeWedge(): void {
     this.part.closeWedge(this.number);
+  }
+
+  beginPedal(pedalType: data.PedalType): string {
+    return this.part.beginPedal(pedalType);
+  }
+
+  continueOpenPedal(): data.PedalMark | null {
+    return this.part.continueOpenPedal();
+  }
+
+  primeNextPedalMark(pedalMarkType: data.PedalMarkType): void {
+    this.part.primeNextPedalMark(pedalMarkType);
+  }
+
+  closePedal(): void {
+    this.part.closePedal();
   }
 }
 
@@ -429,6 +543,22 @@ export class VoiceContext {
   closeWedge(): void {
     this.stave.closeWedge();
   }
+
+  beginPedal(pedalType: data.PedalType): string {
+    return this.stave.beginPedal(pedalType);
+  }
+
+  continueOpenPedal(): data.PedalMark | null {
+    return this.stave.continueOpenPedal();
+  }
+
+  primeNextPedalMark(pedalMarkType: data.PedalMarkType): void {
+    this.stave.primeNextPedalMark(pedalMarkType);
+  }
+
+  closePedal(): void {
+    this.stave.closePedal();
+  }
 }
 
 export class VoiceEntryContext {
@@ -488,5 +618,9 @@ export class VoiceEntryContext {
 
   continueOpenWedge(): string | null {
     return this.voice.continueOpenWedge();
+  }
+
+  continueOpenPedal(): data.PedalMark | null {
+    return this.voice.continueOpenPedal();
   }
 }

@@ -248,3 +248,9 @@ export const WEDGE_TYPES = new Enum(['crescendo', 'diminuendo'] as const);
 
 export type WedgePlacement = EnumValues<typeof WEDGE_PLACEMENTS>;
 export const WEDGE_PLACEMENTS = new Enum(['above', 'below'] as const);
+
+export type PedalType = EnumValues<typeof PEDAL_TYPES>;
+export const PEDAL_TYPES = new Enum(['bracket', 'mixed', 'text'] as const);
+
+export type PedalMarkType = EnumValues<typeof PEDAL_MARK_TYPES>;
+export const PEDAL_MARK_TYPES = new Enum(['default', 'change'] as const);

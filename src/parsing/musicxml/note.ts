@@ -156,6 +156,7 @@ export class Note {
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
       graceEntries,
       wedgeId: voiceEntryCtx.continueOpenWedge(),
+      pedalMark: voiceEntryCtx.continueOpenPedal(),
     };
   }
 
