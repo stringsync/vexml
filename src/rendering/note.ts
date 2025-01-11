@@ -115,9 +115,9 @@ export class Note {
     result += this.document.getStave(this.key).signature.clef.octaveShift ?? 0;
 
     // Octave shift from spanner.
-    const note = this.document.getNote(this.key);
-    if (note.octaveShiftId) {
-      const key = this.document.getOctaveShiftKey(note.octaveShiftId);
+    const voiceEntry = this.document.getVoiceEntry(this.key);
+    if (voiceEntry.type === 'note' && voiceEntry.octaveShiftId) {
+      const key = this.document.getOctaveShiftKey(voiceEntry.octaveShiftId);
       const octaveShift = this.document.getOctaveShift(key);
       result -= Math.floor((octaveShift.size - 1) / 7);
     }
