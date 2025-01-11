@@ -6,10 +6,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey, CurveRender, NoteRender, VoiceEntryKey } from './types';
-
-interface NoteRenderRegistry {
-  get(curveId: string): NoteRender[] | undefined;
-}
+import { NoteRenderRegistry } from './noterenderregistry';
 
 type Stem = 'up' | 'down' | 'none';
 
@@ -35,7 +32,6 @@ export class Curve {
   render(): CurveRender {
     const curve = this.document.getCurve(this.key);
     const noteRenders = this.registry.get(curve.id);
-    util.assertDefined(noteRenders);
 
     const curveNotes = this.getCurveNotes(noteRenders);
 

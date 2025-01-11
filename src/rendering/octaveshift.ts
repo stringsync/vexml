@@ -5,10 +5,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { NoteRender, OctaveShiftKey, OctaveShiftRender } from './types';
-
-interface NoteRenderRegistry {
-  get(octaveShiftId: string): NoteRender[] | undefined;
-}
+import { NoteRenderRegistry } from './noterenderregistry';
 
 export class OctaveShift {
   constructor(
@@ -22,7 +19,6 @@ export class OctaveShift {
   render(): OctaveShiftRender {
     const octaveShift = this.document.getOctaveShift(this.key);
     const noteRenders = this.registry.get(octaveShift.id);
-    util.assertDefined(noteRenders);
 
     const vexflowTextBrackets = this.renderVexflowTextBrackets(noteRenders);
 

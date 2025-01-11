@@ -73,6 +73,7 @@ export class Note {
       graceCurves,
       pedalMark: voiceEntry.pedalMark,
       octaveShiftId: voiceEntry.octaveShiftId,
+      vibratoIds: voiceEntry.vibratoIds,
     };
   }
 

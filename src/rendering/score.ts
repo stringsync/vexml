@@ -7,7 +7,6 @@ import {
   CurveKey,
   CurveRender,
   ScoreRender,
-  NoteRender,
   SystemKey,
   SystemRender,
   TitleRender,
@@ -17,6 +16,8 @@ import {
   PedalKey,
   OctaveShiftRender,
   OctaveShiftKey,
+  VibratoRender,
+  VibratoKey,
 } from './types';
 import { Label } from './label';
 import { Rect } from '@/spatial';
@@ -26,6 +27,8 @@ import { Curve } from './curve';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
+import { NoteRenderRegistry } from './noterenderregistry';
+import { Vibrato } from './vibrato';
 
 /**
  * Score is the top-level rendering object that is directly responsible for arranging systems.
@@ -41,18 +44,13 @@ export class Score {
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
 
-    const noteRenders = systemRenders
-      .flatMap((system) => system.measureRenders.flatMap((m) => m.fragmentRenders))
-      .flatMap((f) => f.partRenders)
-      .flatMap((p) => p.staveRenders)
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.entryRenders)
-      .filter((e) => e.type === 'note');
+    const registry = NoteRenderRegistry.create(systemRenders);
 
-    const curveRenders = this.renderCurves(noteRenders);
-    const wedgeRenders = this.renderWedges(noteRenders);
-    const pedalRenders = this.renderPedals(noteRenders);
-    const octaveShiftRenders = this.renderOctaveShifts(noteRenders);
+    const curveRenders = this.renderCurves(registry);
+    const wedgeRenders = this.renderWedges(registry);
+    const pedalRenders = this.renderPedals(registry);
+    const octaveShiftRenders = this.renderOctaveShifts(registry);
+    const vibratoRenders = this.renderVibratos(registry);
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
@@ -68,6 +66,7 @@ export class Score {
       wedgeRenders,
       pedalRenders,
       octaveShiftRenders,
+      vibratoRenders,
     };
   }
 
@@ -98,21 +97,8 @@ export class Score {
     };
   }
 
-  private renderCurves(noteRenders: NoteRender[]): CurveRender[] {
+  private renderCurves(registry: NoteRenderRegistry): CurveRender[] {
     const curves = this.document.getCurves();
-
-    const registry = new Map<string, NoteRender[]>();
-
-    for (const noteRender of noteRenders) {
-      const curveIds = util.unique([...noteRender.graceCurves.map((g) => g.curveId), ...noteRender.curveIds]);
-      for (const curveId of curveIds) {
-        if (!registry.has(curveId)) {
-          registry.set(curveId, []);
-        }
-        registry.get(curveId)!.push(noteRender);
-      }
-    }
-
     const curveRenders = new Array<CurveRender>();
 
     for (let curveIndex = 0; curveIndex < curves.length; curveIndex++) {
@@ -129,21 +115,8 @@ export class Score {
     return curveRenders;
   }
 
-  private renderWedges(noteRenders: NoteRender[]): WedgeRender[] {
+  private renderWedges(registry: NoteRenderRegistry): WedgeRender[] {
     const wedges = this.document.getWedges();
-
-    const registry = new Map<string, NoteRender[]>();
-
-    for (const noteRender of noteRenders) {
-      if (!noteRender.wedgeId) {
-        continue;
-      }
-      if (!registry.has(noteRender.wedgeId)) {
-        registry.set(noteRender.wedgeId, []);
-      }
-      registry.get(noteRender.wedgeId)!.push(noteRender);
-    }
-
     const wedgeRenders = new Array<WedgeRender>();
 
     for (let wedgeIndex = 0; wedgeIndex < wedges.length; wedgeIndex++) {
@@ -160,22 +133,8 @@ export class Score {
     return wedgeRenders;
   }
 
-  private renderPedals(noteRenders: NoteRender[]): PedalRender[] {
+  private renderPedals(registry: NoteRenderRegistry): PedalRender[] {
     const pedals = this.document.getPedals();
-
-    const registry = new Map<string, NoteRender[]>();
-
-    for (const noteRender of noteRenders) {
-      const pedalMark = noteRender.pedalMark;
-      if (!pedalMark) {
-        continue;
-      }
-      if (!registry.has(pedalMark.pedalId)) {
-        registry.set(pedalMark.pedalId, []);
-      }
-      registry.get(pedalMark.pedalId)!.push(noteRender);
-    }
-
     const pedalRenders = new Array<PedalRender>();
 
     for (let pedalIndex = 0; pedalIndex < pedals.length; pedalIndex++) {
@@ -192,22 +151,8 @@ export class Score {
     return pedalRenders;
   }
 
-  private renderOctaveShifts(noteRenders: NoteRender[]): OctaveShiftRender[] {
+  private renderOctaveShifts(registry: NoteRenderRegistry): OctaveShiftRender[] {
     const octaveShifts = this.document.getOctaveShifts();
-
-    const registry = new Map<string, NoteRender[]>();
-
-    for (const noteRender of noteRenders) {
-      const octaveShiftId = noteRender.octaveShiftId;
-      if (!octaveShiftId) {
-        continue;
-      }
-      if (!registry.has(octaveShiftId)) {
-        registry.set(octaveShiftId, []);
-      }
-      registry.get(octaveShiftId)!.push(noteRender);
-    }
-
     const octaveShiftRenders = new Array<OctaveShiftRender>();
 
     for (let octaveShiftIndex = 0; octaveShiftIndex < octaveShifts.length; octaveShiftIndex++) {
@@ -222,6 +167,24 @@ export class Score {
     }
 
     return octaveShiftRenders;
+  }
+
+  private renderVibratos(registry: NoteRenderRegistry): VibratoRender[] {
+    const vibratos = this.document.getVibratos();
+    const vibratoRenders = new Array<VibratoRender>();
+
+    for (let vibratoIndex = 0; vibratoIndex < vibratos.length; vibratoIndex++) {
+      const key: VibratoKey = { vibratoIndex };
+
+      const noteRenderCount = registry.get(vibratos[vibratoIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const vibratoRender = new Vibrato(this.config, this.log, this.document, key, registry).render();
+        vibratoRenders.push(vibratoRender);
+      }
+    }
+
+    return vibratoRenders;
   }
 
   private getTitlePadding() {

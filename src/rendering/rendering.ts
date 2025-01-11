@@ -127,6 +127,13 @@ export class Rendering {
         v.setContext(ctx).draw();
       });
 
+    // Draw vibratos brackets.
+    scoreRender.vibratoRenders
+      .flatMap((v) => v.vexflowVibratoBrackets)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {

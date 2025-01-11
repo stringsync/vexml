@@ -42,6 +42,10 @@ export type OctaveShiftKey = {
   octaveShiftIndex: number;
 };
 
+export type VibratoKey = {
+  vibratoIndex: number;
+};
+
 export type SystemArrangement = {
   from: number;
   to: number;
@@ -92,6 +96,7 @@ export type ScoreRender = {
   wedgeRenders: WedgeRender[];
   pedalRenders: PedalRender[];
   octaveShiftRenders: OctaveShiftRender[];
+  vibratoRenders: VibratoRender[];
 };
 
 export type TitleRender = {
@@ -227,6 +232,7 @@ export type NoteRender = {
   vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
   pedalMark: data.PedalMark | null;
   octaveShiftId: string | null;
+  vibratoIds: string[];
 };
 
 export type GraceCurve = {
@@ -278,4 +284,10 @@ export type OctaveShiftRender = {
   key: OctaveShiftKey;
   rect: Rect;
   vexflowTextBrackets: vexflow.TextBracket[];
+};
+
+export type VibratoRender = {
+  type: 'vibrato';
+  rect: Rect;
+  vexflowVibratoBrackets: vexflow.VibratoBracket[];
 };
