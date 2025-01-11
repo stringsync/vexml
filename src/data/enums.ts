@@ -291,3 +291,6 @@ export const ARTICULATION_TYPES = new Enum([
 
 export type ArticulationPlacement = EnumValues<typeof ARTICULATION_PLACEMENTS>;
 export const ARTICULATION_PLACEMENTS = new Enum(['above', 'below'] as const);
+
+export type BendType = EnumValues<typeof BEND_TYPES>;
+export const BEND_TYPES = new Enum(['prebend', 'normal', 'release'] as const);

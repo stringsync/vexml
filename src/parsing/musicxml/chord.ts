@@ -52,6 +52,7 @@ export class Chord {
       octaveShiftId: first.octaveShiftId,
       vibratoIds: first.vibratoIds,
       articulations: first.articulations,
+      bends: first.bends,
     };
   }
 }

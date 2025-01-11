@@ -31,6 +31,7 @@ export class Articulation {
 
     return {
       type: 'articulation',
+      key: this.key,
       rect: Rect.empty(),
       vexflowModifiers,
     };
@@ -104,7 +105,7 @@ export class Articulation {
       // case 'arpeggio-directionless':
       //   return [new vexflow.Stroke(vexflow.Stroke.Type.ARPEGGIO_DIRECTIONLESS)];
       default:
-        this.log.warn(`unsupported articulation type`, { type: articulation.articulationType });
+        this.log.debug(`unsupported articulation type`, { type: articulation.articulationType });
         return [];
     }
   }

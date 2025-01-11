@@ -5,6 +5,7 @@ import {
   ArticulationPlacement,
   ArticulationType,
   BarlineStyle,
+  BendType,
   ClefSign,
   CurveOpening,
   CurvePlacement,
@@ -199,6 +200,7 @@ export type Note = {
   pedalMark: PedalMark | null;
   octaveShiftId: string | null;
   vibratoIds: string[];
+  bends: Bend[];
 };
 
 export type Dynamics = {
@@ -225,6 +227,7 @@ export type Chord = {
   pedalMark: PedalMark | null;
   octaveShiftId: string | null;
   vibratoIds: string[];
+  bends: Bend[];
 };
 
 export type ChordNote = {
@@ -342,4 +345,15 @@ export type Articulation = {
   type: 'articulation';
   articulationType: ArticulationType;
   placement: ArticulationPlacement;
+};
+
+export type StringNumber = {
+  type: 'stringnumber';
+  number: number;
+};
+
+export type Bend = {
+  type: 'bend';
+  bendType: BendType;
+  semitones: number;
 };

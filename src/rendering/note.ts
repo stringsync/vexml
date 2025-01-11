@@ -8,6 +8,7 @@ import {
   ArticulationRender,
   BeamKey,
   BeamRender,
+  BendRender,
   GraceCurve,
   NoteRender,
   VoiceEntryKey,
@@ -16,6 +17,7 @@ import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Beam } from './beam';
 import { Articulation } from './articulation';
+import { Bend } from './bend';
 
 export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
@@ -67,14 +69,22 @@ export class Note {
       vexflowStaveNote.addModifier(vexflowGraceNoteGroup);
     }
 
-    // NOTE: Articulation modifiers have buggy bounding boxes and their draw() method is not idempotent. We'll add these
-    // to the note in post-formatting in Ensemble.
+    // NOTE: Articulation modifiers have buggy bounding boxes and their draw() method is not idempotent.
     // See https://github.com/vexflow/vexflow/issues/254
     const articulationRenders = this.renderArticulations();
-    const vexflowModifiers = articulationRenders.flatMap((a) => a.vexflowModifiers);
-    for (const vexflowModifier of vexflowModifiers) {
-      vexflowStaveNote.addModifier(vexflowModifier);
+    for (const articulationRender of articulationRenders) {
+      for (const vexflowModifier of articulationRender.vexflowModifiers) {
+        vexflowStaveNote.addModifier(vexflowModifier);
+      }
     }
+
+    // NOTE: Bend modifiers have buggy bounding boxes and their draw() method is not idempotent.
+    const bendRenders = this.renderBends();
+    // for (const bendRender of bendRenders) {
+    //   for (const vexflowModifier of bendRender.vexflowModifiers) {
+    //     vexflowStaveNote.addModifier(vexflowModifier);
+    //   }
+    // }
 
     return {
       type: 'note',
@@ -93,6 +103,7 @@ export class Note {
       octaveShiftId: voiceEntry.octaveShiftId,
       vibratoIds: voiceEntry.vibratoIds,
       articulationRenders,
+      bendRenders,
     };
   }
 
@@ -303,5 +314,19 @@ export class Note {
     }
 
     return articulationRenders;
+  }
+
+  private renderBends(): BendRender[] {
+    const bendRenders = new Array<BendRender>();
+
+    const voiceEntry = this.document.getVoiceEntry(this.key);
+    const isBendable = voiceEntry.type === 'note' || voiceEntry.type === 'chord';
+    const hasBends = isBendable && voiceEntry.bends.length > 0;
+    if (hasBends) {
+      const bendRender = new Bend(this.config, this.log, this.document, this.key).render();
+      bendRenders.push(bendRender);
+    }
+
+    return bendRenders;
   }
 }
