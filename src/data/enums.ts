@@ -254,3 +254,39 @@ export const PEDAL_TYPES = new Enum(['bracket', 'mixed', 'text'] as const);
 
 export type PedalMarkType = EnumValues<typeof PEDAL_MARK_TYPES>;
 export const PEDAL_MARK_TYPES = new Enum(['default', 'change'] as const);
+
+export type ArticulationType = EnumValues<typeof ARTICULATION_TYPES>;
+export const ARTICULATION_TYPES = new Enum([
+  'upright-normal-fermata',
+  'upright-angled-fermata',
+  'upright-square-fermata',
+  'inverted-normal-fermata',
+  'inverted-angled-fermata',
+  'inverted-square-fermata',
+  'up-bow',
+  'down-bow',
+  'harmonic',
+  'open-string',
+  'double-tongue',
+  'triple-tongue',
+  'stopped',
+  'snap-pizzicato',
+  'tap',
+  'heel',
+  'toe',
+  'upstroke',
+  'downstroke',
+  'accent',
+  'strong-accent',
+  'staccato',
+  'tenuto',
+  'detached-legato',
+  'staccatissimo',
+  'scoop',
+  'doit',
+  'falloff',
+  'breath-mark',
+] as const);
+
+export type ArticulationPlacement = EnumValues<typeof ARTICULATION_PLACEMENTS>;
+export const ARTICULATION_PLACEMENTS = new Enum(['above', 'below'] as const);

@@ -17,6 +17,7 @@ import {
   PedalKey,
   OctaveShiftKey,
   VibratoKey,
+  ArticulationKey,
 } from './types';
 
 /** A wrapper around {@link data.Document} that provides querying capabilities. */
@@ -401,6 +402,18 @@ export class Document {
     const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
     util.assert(entry?.type === 'dynamics', 'expected entry to be dynamics');
     return entry;
+  }
+
+  getArticulations(key: VoiceEntryKey): data.Articulation[] {
+    const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
+    util.assert(entry?.type === 'note' || entry?.type === 'chord', 'expected entry to be a note or chord');
+    return entry.articulations;
+  }
+
+  getArticulation(key: ArticulationKey): data.Articulation {
+    const articulation = this.getArticulations(key).at(key.articulationIndex);
+    util.assertDefined(articulation);
+    return articulation;
   }
 
   /** Returns a new document with the system arrangements applied. */

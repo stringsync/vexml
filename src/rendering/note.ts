@@ -3,10 +3,19 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Logger } from '@/debug';
 import { Config } from './config';
-import { BeamKey, BeamRender, GraceCurve, NoteRender, VoiceEntryKey } from './types';
+import {
+  ArticulationKey,
+  ArticulationRender,
+  BeamKey,
+  BeamRender,
+  GraceCurve,
+  NoteRender,
+  VoiceEntryKey,
+} from './types';
 import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Beam } from './beam';
+import { Articulation } from './articulation';
 
 export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
@@ -58,6 +67,11 @@ export class Note {
       vexflowStaveNote.addModifier(vexflowGraceNoteGroup);
     }
 
+    // NOTE: Articulation modifiers have buggy bounding boxes and their draw() method is not idempotent. We'll add these
+    // to the note in post-formatting in Ensemble.
+    // See https://github.com/vexflow/vexflow/issues/254
+    const articulationRenders = this.renderArticulations();
+
     return {
       type: 'note',
       key: this.key,
@@ -74,6 +88,7 @@ export class Note {
       pedalMark: voiceEntry.pedalMark,
       octaveShiftId: voiceEntry.octaveShiftId,
       vibratoIds: voiceEntry.vibratoIds,
+      articulationRenders,
     };
   }
 
@@ -270,5 +285,19 @@ export class Note {
     );
 
     return { vexflowGraceNoteGroup, graceBeamRenders, graceCurves };
+  }
+
+  private renderArticulations(): ArticulationRender[] {
+    const articulationRenders = new Array<ArticulationRender>();
+
+    const articulations = this.document.getArticulations(this.key);
+    for (let articulationIndex = 0; articulationIndex < articulations.length; articulationIndex++) {
+      const key: ArticulationKey = { ...this.key, articulationIndex };
+
+      const articulationRender = new Articulation(this.config, this.log, this.document, key).render();
+      articulationRenders.push(articulationRender);
+    }
+
+    return articulationRenders;
   }
 }
