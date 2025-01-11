@@ -90,19 +90,6 @@ export class Ensemble {
 
     this.fragmentRender.rect = Rect.merge(this.fragmentRender.partRenders.map((s) => s.rect));
     this.fragmentRender.excessHeight = excessHeight;
-
-    // Now that we've set the rects, we can add the buggy vexflow modifiers that need to be added post-formatting.
-    // We'll need to format again in order for them to be drawable.
-    // See https://github.com/vexflow/vexflow/issues/254
-    const entryRenders = this.getStaveRenders()
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.entryRenders);
-    for (const entryRender of entryRenders) {
-      this.addProblematicVexflowModifiersPostFormat(entryRender);
-    }
-    if (vexflowVoices.length > 0) {
-      this.vexflowFormatter.format(vexflowVoices, voiceWidth);
-    }
   }
 
   private getStaveRenders(): StaveRender[] {
@@ -308,17 +295,5 @@ export class Ensemble {
     }
 
     return Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
-  }
-
-  /**
-   * See https://github.com/vexflow/vexflow/issues/254
-   */
-  private addProblematicVexflowModifiersPostFormat(entryRender: VoiceEntryRender): void {
-    if (entryRender.type === 'note') {
-      const vexflowModifiers = entryRender.articulationRenders.flatMap((a) => a.vexflowModifiers);
-      for (const vexflowModifier of vexflowModifiers) {
-        entryRender.vexflowTickable.addModifier(vexflowModifier);
-      }
-    }
   }
 }
