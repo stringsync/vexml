@@ -220,6 +220,7 @@ export type NoteRender = {
   graceCurves: GraceCurve[];
   graceBeamRenders: BeamRender[];
   vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
+  pedalMark: data.PedalMark | null;
 };
 
 export type GraceCurve = {
