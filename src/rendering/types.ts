@@ -238,6 +238,7 @@ export type NoteRender = {
   octaveShiftId: string | null;
   vibratoIds: string[];
   articulationRenders: ArticulationRender[];
+  bendRenders: BendRender[];
 };
 
 export type GraceCurve = {
@@ -299,6 +300,14 @@ export type VibratoRender = {
 
 export type ArticulationRender = {
   type: 'articulation';
+  key: ArticulationKey;
+  rect: Rect;
+  vexflowModifiers: vexflow.Modifier[];
+};
+
+export type BendRender = {
+  type: 'bend';
+  key: VoiceEntryKey;
   rect: Rect;
   vexflowModifiers: vexflow.Modifier[];
 };
