@@ -17,6 +17,9 @@ export class OctaveShift {
         phase = 'start';
         break;
       case 'up':
+        phase = 'start';
+        break;
+      case 'stop':
         phase = 'stop';
         break;
       default:

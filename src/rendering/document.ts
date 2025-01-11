@@ -74,6 +74,12 @@ export class Document {
     return octaveShift;
   }
 
+  getOctaveShiftKey(id: string): OctaveShiftKey {
+    const octaveShift = this.data.score.octaveShifts.find((o) => o.id === id);
+    util.assertDefined(octaveShift);
+    return { octaveShiftIndex: this.data.score.octaveShifts.indexOf(octaveShift) };
+  }
+
   getSystems(): data.System[] {
     return this.data.score.systems;
   }
