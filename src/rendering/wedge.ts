@@ -40,17 +40,6 @@ export class Wedge {
       return [];
     }
 
-    const first = noteRenders.at(0)!;
-    const last = noteRenders.at(-1)!;
-
-    if (first.key.systemIndex !== last.key.systemIndex) {
-      return this.renderVexflowStaveHairpinsAcrossSystems(noteRenders);
-    }
-
-    return [this.renderSingleStaveHairpin(noteRenders)];
-  }
-
-  private renderVexflowStaveHairpinsAcrossSystems(noteRenders: NoteRender[]): vexflow.StaveHairpin[] {
     const vexflowStaveHairpins = new Array<vexflow.StaveHairpin>();
 
     const systemIndexes = util.unique(noteRenders.map((n) => n.key.systemIndex));

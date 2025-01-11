@@ -52,17 +52,6 @@ export class Pedal {
   }
 
   private renderVexflowPedalMarkings(noteRenders: NoteRender[]): vexflow.PedalMarking[] {
-    const first = noteRenders.at(0)!;
-    const last = noteRenders.at(-1)!;
-
-    if (first.key.systemIndex !== last.key.systemIndex) {
-      return this.renderVexflowPedalMarkingsAcrossSystems(noteRenders);
-    }
-
-    return [this.renderSinglePedalMarking(noteRenders)];
-  }
-
-  private renderVexflowPedalMarkingsAcrossSystems(noteRenders: NoteRender[]): vexflow.PedalMarking[] {
     const vexflowPedalMarkings = new Array<vexflow.PedalMarking>();
 
     const systemIndexes = util.unique(noteRenders.map((n) => n.key.systemIndex));
