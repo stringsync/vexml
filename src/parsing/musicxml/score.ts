@@ -37,6 +37,7 @@ export class Score {
       wedges: scoreCtx.getWedges(),
       pedals: scoreCtx.getPedals(),
       octaveShifts: scoreCtx.getOctaveShifts(),
+      vibratos: scoreCtx.getVibratos(),
     };
   }
 }

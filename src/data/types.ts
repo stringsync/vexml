@@ -35,6 +35,12 @@ export type Score = {
   wedges: Wedge[];
   pedals: Pedal[];
   octaveShifts: OctaveShift[];
+  vibratos: Vibrato[];
+};
+
+export type Vibrato = {
+  type: 'vibrato';
+  id: string;
 };
 
 export type OctaveShift = {
@@ -189,6 +195,7 @@ export type Note = {
   graceEntries: GraceEntry[];
   pedalMark: PedalMark | null;
   octaveShiftId: string | null;
+  vibratoIds: string[];
 };
 
 export type Dynamics = {
@@ -213,6 +220,7 @@ export type Chord = {
   graceEntries: GraceEntry[];
   pedalMark: PedalMark | null;
   octaveShiftId: string | null;
+  vibratoIds: string[];
 };
 
 export type ChordNote = {

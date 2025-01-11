@@ -5,7 +5,7 @@ import * as conversions from './conversions';
 import { Measure } from './measure';
 import { Signature } from './signature';
 import { ScoreContext, SystemContext } from './contexts';
-import { MeasureEventCalculator } from './measureeventcalculator';
+import { EventCalculator } from './eventcalculator';
 import { JumpGroup } from './jumpgroup';
 
 export class System {
@@ -16,7 +16,7 @@ export class System {
 
     const measureCount = util.max(musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
     const measureLabels = System.getMeasureLabels(measureCount, musicXML);
-    const measureEvents = new MeasureEventCalculator({ scorePartwise: musicXML.scorePartwise }).calculate();
+    const measureEvents = new EventCalculator({ scorePartwise: musicXML.scorePartwise }).calculate();
 
     const jumpGroups = System.getJumpGroups(measureCount, musicXML);
 

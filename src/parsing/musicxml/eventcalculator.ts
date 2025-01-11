@@ -15,7 +15,7 @@ import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
 
-export class MeasureEventCalculator {
+export class EventCalculator {
   private measureBeat = Fraction.zero();
   private events = new Array<MeasureEvent>();
   private quarterNoteDivisions = 1;

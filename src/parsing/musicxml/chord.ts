@@ -50,6 +50,7 @@ export class Chord {
       wedgeId: first.wedgeId,
       pedalMark: first.pedalMark,
       octaveShiftId: first.octaveShiftId,
+      vibratoIds: first.vibratoIds,
     };
   }
 }

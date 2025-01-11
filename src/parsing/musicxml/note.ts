@@ -12,6 +12,7 @@ import { Slur } from './slur';
 import { Tie } from './tie';
 import { Beam } from './beam';
 import { Tuplet } from './tuplet';
+import { Vibrato } from './vibrato';
 
 type GraceNote = {
   type: 'gracenote';
@@ -43,7 +44,8 @@ export class Note {
     private tuplets: Tuplet[],
     private beam: Beam | null,
     private slash: boolean,
-    private graceEntries: GraceEntry[]
+    private graceEntries: GraceEntry[],
+    private vibratos: Vibrato[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -80,6 +82,12 @@ export class Note {
       .getNotations()
       .flatMap((notation) => notation.getTuplets())
       .map((tuplet) => Tuplet.create({ tuplet }));
+
+    const vibratos = musicXML.note
+      .getNotations()
+      .flatMap((notation) => notation.getOrnaments())
+      .flatMap((ornament) => ornament.getWavyLines())
+      .map((entry) => Vibrato.create({ wavyLine: entry.value }));
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
@@ -125,7 +133,8 @@ export class Note {
       tuplets,
       beam,
       slash,
-      graceEntries
+      graceEntries,
+      vibratos
     );
   }
 
@@ -158,6 +167,7 @@ export class Note {
       wedgeId: voiceEntryCtx.continueOpenWedge(),
       pedalMark: voiceEntryCtx.continueOpenPedal(),
       octaveShiftId: voiceEntryCtx.continueOpenOctaveShift(),
+      vibratoIds: this.vibratos.map((vibrato) => vibrato.parse(voiceEntryCtx)),
     };
   }
 

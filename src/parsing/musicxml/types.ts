@@ -12,6 +12,7 @@ import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
+import { Vibrato } from './vibrato';
 
 export type SignatureChange =
   | { type: 'metronome' }
@@ -169,6 +170,16 @@ export type OctaveShiftEvent = {
   staveNumber: number;
   voiceId: string;
   octaveShift: OctaveShift;
+};
+
+export type VibratoEvent = {
+  type: 'vibrato';
+  partId: string;
+  measureIndex: number;
+  measureBeat: Fraction;
+  staveNumber: number;
+  voiceId: string;
+  vibrato: Vibrato;
 };
 
 export type MusicXMLEvent =
