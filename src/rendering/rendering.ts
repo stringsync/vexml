@@ -113,6 +113,13 @@ export class Rendering {
         v.setContext(ctx).draw();
       });
 
+    // Draw pedal markings.
+    scoreRender.pedalRenders
+      .flatMap((p) => p.vexflowPedalMarkings)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {

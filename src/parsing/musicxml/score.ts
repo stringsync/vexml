@@ -35,7 +35,7 @@ export class Score {
       systems: this.systems.map((s) => s.parse(scoreCtx)),
       curves: scoreCtx.getCurves(),
       wedges: scoreCtx.getWedges(),
-      pedals: [],
+      pedals: scoreCtx.getPedals(),
     };
   }
 }

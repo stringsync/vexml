@@ -7,6 +7,7 @@ import {
   DynamicsDirectionTypeContent,
   MetronomeDirectionTypeContent,
   OctaveShiftDirectionTypeContent,
+  PedalDirectionTypeContent,
   SegnoDirectionTypeContent,
   TokensDirectionTypeContent,
   WedgeDirectionTypeContent,
@@ -19,6 +20,7 @@ import { Coda } from './coda';
 import { Words } from './words';
 import { Symbolic } from './symbolic';
 import { Wedge } from './wedge';
+import { Pedal } from './pedal';
 
 /**
  * A direction is a musical indication that is not necessarily attached to a specific note.
@@ -93,6 +95,14 @@ export class Direction {
       .map((type) => type.getContent())
       .filter((content): content is WedgeDirectionTypeContent => content.type === 'wedge')
       .map((content) => content.wedge);
+  }
+
+  /** Returns the pedals of the direction. */
+  getPedals(): Pedal[] {
+    return this.getTypes()
+      .map((type) => type.getContent())
+      .filter((content): content is PedalDirectionTypeContent => content.type === 'pedal')
+      .map((content) => content.pedal);
   }
 
   /**

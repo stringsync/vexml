@@ -58,6 +58,9 @@ export class Voice {
         case 'wedge':
           event.wedge.parse(voiceCtx);
           break;
+        case 'pedal':
+          event.pedal.parse(voiceCtx);
+          break;
         default:
           util.assertUnreachable();
       }

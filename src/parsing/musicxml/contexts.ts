@@ -100,6 +100,10 @@ export class ScoreContext {
     this.wedgeIds.get(partId)?.delete(staveNumber);
   }
 
+  getPedals(): data.Pedal[] {
+    return this.pedals;
+  }
+
   beginPedal(partId: string, pedalType: data.PedalType): string {
     const id = this.nextId();
     this.pedals.push({ type: 'pedal', id, pedalType });

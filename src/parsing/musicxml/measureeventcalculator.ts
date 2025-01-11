@@ -12,6 +12,7 @@ import { MeasureEvent } from './types';
 import { Chord } from './chord';
 import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
+import { Pedal } from './pedal';
 
 export class MeasureEventCalculator {
   private measureBeat = Fraction.zero();
@@ -288,6 +289,22 @@ export class MeasureEventCalculator {
         staveNumber: direction.getStaveNumber() ?? 1,
         voiceId: direction.getVoice() ?? '1',
         wedge,
+      });
+    }
+
+    const pedal = direction
+      .getPedals()
+      .flatMap((pedal) => Pedal.create({ pedal }))
+      .at(0);
+    if (pedal) {
+      this.events.push({
+        type: 'pedal',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveNumber: direction.getStaveNumber() ?? 1,
+        voiceId: direction.getVoice() ?? '1',
+        pedal,
       });
     }
   }
