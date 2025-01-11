@@ -108,8 +108,25 @@ export class Note {
     return { autoStem, stemDirection };
   }
 
+  private getOctaveShift(): number {
+    let result = 0;
+
+    // Octave shift from clef.
+    result += this.document.getStave(this.key).signature.clef.octaveShift ?? 0;
+
+    // Octave shift from spanner.
+    const note = this.document.getNote(this.key);
+    if (note.octaveShiftId) {
+      const key = this.document.getOctaveShiftKey(note.octaveShiftId);
+      const octaveShift = this.document.getOctaveShift(key);
+      result -= Math.floor((octaveShift.size - 1) / 7);
+    }
+
+    return result;
+  }
+
   private getVexflowStaveNoteKeys(voiceEntry: data.Note | data.Chord): string[] {
-    const octaveShift = this.document.getStave(this.key).signature.clef.octaveShift ?? 0;
+    const octaveShift = this.getOctaveShift();
 
     switch (voiceEntry.type) {
       case 'note':

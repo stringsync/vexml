@@ -71,4 +71,8 @@ export class Voice {
 
     return entries;
   }
+
+  private isTickable(event: VoiceEvent): boolean {
+    return event.type === 'note' || event.type === 'rest' || event.type === 'chord';
+  }
 }
