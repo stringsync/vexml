@@ -14,6 +14,7 @@ export class Document {
       curves: [],
       wedges: [],
       pedals: [],
+      octaveShifts: [],
     });
   }
 
