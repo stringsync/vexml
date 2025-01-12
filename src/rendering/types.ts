@@ -130,11 +130,24 @@ export type FragmentRender = {
   type: 'fragment';
   key: FragmentKey;
   rect: Rect;
+  rectSrc: FragmentRectSrc;
   excessHeight: number;
   partLabelGroupRender: PartLabelGroupRender | null;
   partRenders: PartRender[];
   vexflowStaveConnectors: vexflow.StaveConnector[];
 };
+
+/**
+ * The status of a fragment render.
+ *
+ *   - 'none' means the fragment has not been formatted yet.
+ *   - 'draw' means the fragment has been formatted and drawn to the NoopRenderContext. It _cannot_ be drawn again.
+ *   - 'cache' means the fragment has been formatted and the rects come from a separate cache. It can be drawn.
+ *
+ * The reason why this is needed is because drawing some elements (e.g. vexflow.Articulations) is not idempotent.
+ * See https://github.com/vexflow/vexflow/issues/254
+ */
+export type FragmentRectSrc = 'none' | 'draw' | 'cache';
 
 export type PartLabelGroupRender = {
   type: 'partlabelgroup';

@@ -40,18 +40,34 @@ export class Fragment {
     this.accountForPartLabelGroupWidth(pen, widthBudget);
     const postPartLabelGroupPosition = pen.position();
 
+    // Drawing some vexflow elements is not idempotent. However, this is needed to determine the rects of the components
+    // in vexml. We render the children twice. The first render will be used to get the rect measurements, then thrown
+    // away. The second render will actually be used to draw the elements.
+    // See https://github.com/vexflow/vexflow/issues/254
+    pen.save();
     const partRenders = this.renderParts(pen);
-
-    const vexflowStaveConnectors = this.renderVexflowStaveConnectors(partRenders);
+    pen.restore();
+    const throwawayPartRenders = this.renderParts(pen);
 
     const fragmentRender: FragmentRender = {
       type: 'fragment',
       key: this.key,
+      rectSrc: 'none',
       rect: Rect.empty(), // placeholder
       excessHeight: 0, // placeholder
       partLabelGroupRender: null, // placeholder
-      vexflowStaveConnectors,
+      vexflowStaveConnectors: [], // placeholder
       partRenders,
+    };
+    const throwawayFragmentRender: FragmentRender = {
+      type: 'fragment',
+      key: this.key,
+      rectSrc: 'none',
+      rect: Rect.empty(), // placeholder
+      excessHeight: 0, // placeholder
+      partLabelGroupRender: null, // placeholder
+      vexflowStaveConnectors: [], // placeholder
+      partRenders: throwawayPartRenders,
     };
 
     let ensembleWidth: number | null;
@@ -72,12 +88,26 @@ export class Fragment {
 
     const ensemble = new Ensemble(this.config, this.log, this.document, this.key);
 
+    // First format is to populate the cache.
+    ensemble.format(throwawayFragmentRender, {
+      x: postPartLabelGroupPosition.x,
+      width: ensembleWidth,
+      paddingLeft,
+      paddingRight,
+      cache: null,
+    });
+
+    // Second format is to format the vexflow components, but don't draw them.
     ensemble.format(fragmentRender, {
       x: postPartLabelGroupPosition.x,
       width: ensembleWidth,
       paddingLeft,
       paddingRight,
+      cache: throwawayFragmentRender,
     });
+
+    const vexflowStaveConnectors = this.renderVexflowStaveConnectors(partRenders);
+    fragmentRender.vexflowStaveConnectors = vexflowStaveConnectors;
 
     // After formatting, we can trust the y positions of the staves. Now we can render the part labels.
     const partLabelGroupRender = this.renderPartLabelGroup(prePartLabelGroupPosition, partRenders);

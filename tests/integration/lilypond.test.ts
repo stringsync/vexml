@@ -79,7 +79,7 @@ describe('lilypond', () => {
     { filename: '24f-GraceNote-Slur.musicxml', width: 900, migrated: true },
     { filename: '31a-Directions.musicxml', width: 900, migrated: true },
     { filename: '31c-MetronomeMarks.musicxml', width: 900, migrated: true },
-    { filename: '32a-Notations.musicxml', width: 900 },
+    { filename: '32a-Notations.musicxml', width: 900, migrated: true },
     // { filename: '32b-Articulations-Texts.musicxml', width: 900 },
     // { filename: '32c-MultipleNotationChildren.musicxml', width: 900 },
     // { filename: '32d-Arpeggio.musicxml', width: 900 },

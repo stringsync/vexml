@@ -11,6 +11,15 @@ export class Articulation {
   render(): ArticulationRender {
     const vexflowModifiers = this.renderVexflowModifiers();
 
+    return {
+      type: 'articulation',
+      key: this.key,
+      rect: Rect.empty(),
+      vexflowModifiers,
+    };
+  }
+
+  private renderVexflowModifiers(): vexflow.Modifier[] {
     const articulation = this.document.getArticulation(this.key);
 
     let position: vexflow.ModifierPosition;
@@ -25,88 +34,101 @@ export class Articulation {
         position = vexflow.Modifier.Position.ABOVE;
     }
 
-    for (const vexflowModifier of vexflowModifiers) {
-      vexflowModifier.setPosition(position);
+    function vexflowArticulation(type: string, position?: vexflow.ModifierPosition) {
+      const a = new vexflow.Articulation(type);
+      if (position) {
+        a.setPosition(position);
+      }
+      return a;
     }
 
-    return {
-      type: 'articulation',
-      key: this.key,
-      rect: Rect.empty(),
-      vexflowModifiers,
-    };
-  }
+    function vexflowAnnotation(text: string, position?: vexflow.ModifierPosition) {
+      const a = new vexflow.Annotation(text);
+      if (position) {
+        a.setPosition(position);
+      }
+      return a;
+    }
 
-  private renderVexflowModifiers(): vexflow.Modifier[] {
-    const articulation = this.document.getArticulation(this.key);
-
-    // Some modifiers do not play well with vexml and are commented out.
-    // See https://github.com/vexflow/vexflow/issues/254.
+    function vexflowOrnament(type: string, position?: vexflow.ModifierPosition) {
+      const o = new vexflow.Ornament(type);
+      if (position) {
+        o.setPosition(position);
+      }
+      return o;
+    }
 
     switch (articulation.articulationType) {
-      // case 'upright-normal-fermata':
-      //   return [new vexflow.Articulation('a@a')];
-      // case 'upright-angled-fermata':
-      //   return [new vexflow.Articulation('a@s')];
-      // case 'upright-square-fermata':
-      //   return [new vexflow.Articulation('a@l')];
-      // case 'inverted-normal-fermata':
-      //   return [new vexflow.Articulation('a@u')];
-      // case 'inverted-angled-fermata':
-      //   return [new vexflow.Articulation('a@v')];
-      // case 'inverted-square-fermata':
-      //   return [new vexflow.Articulation('a@r')];
-      // case 'upstroke':
-      //   return [new vexflow.Articulation('a|')];
-      // case 'downstroke':
-      //   return [new vexflow.Articulation('am')];
-      // case 'harmonic':
-      //   return [new vexflow.Articulation('ah')];
-      // case 'open-string':
-      //   return [new vexflow.Articulation('ah')];
-      // case 'double-tongue':
-      //   return [new vexflow.Articulation('..')];
-      // case 'triple-tongue':
-      //   return [new vexflow.Articulation('...')];
-      // case 'stopped':
-      //   return [new vexflow.Articulation('a+')];
-      // case 'snap-pizzicato':
-      //   return [new vexflow.Articulation('ao')];
+      case 'upright-normal-fermata':
+        return [vexflowArticulation('a@a', position)];
+      case 'upright-angled-fermata':
+        return [vexflowArticulation('a@s', position)];
+      case 'upright-square-fermata':
+        return [vexflowArticulation('a@l', position)];
+      case 'inverted-normal-fermata':
+        return [vexflowArticulation('a@u', position)];
+      case 'inverted-angled-fermata':
+        return [vexflowArticulation('a@v', position)];
+      case 'inverted-square-fermata':
+        return [vexflowArticulation('a@r', position)];
+      case 'upstroke':
+        return [vexflowArticulation('a|', position)];
+      case 'downstroke':
+        return [vexflowArticulation('am', position)];
+      case 'harmonic':
+        return [vexflowArticulation('ah', position)];
+      case 'open-string':
+        return [vexflowArticulation('ah', position)];
+      case 'double-tongue':
+        return [vexflowArticulation('..', position)];
+      case 'triple-tongue':
+        return [vexflowArticulation('...', position)];
+      case 'stopped':
+        return [vexflowArticulation('a+', position)];
+      case 'snap-pizzicato':
+        return [vexflowArticulation('ao', position)];
       case 'tap':
-        return [new vexflow.Annotation('T')];
+        return [vexflowAnnotation('T', position)];
       case 'heel':
-        return [new vexflow.Annotation('U')];
+        return [vexflowAnnotation('U', position)];
       case 'toe':
-        return [new vexflow.Annotation('^')];
-      // case 'accent':
-      //   return articulation.placement === 'above' ? [new vexflow.Articulation('a>')] : [new vexflow.Articulation('a-')];
-      // case 'strong-accent':
-      //   return [new vexflow.Articulation('a^')];
-      // case 'staccato':
-      //   return [new vexflow.Articulation('a.')];
-      // case 'tenuto':
-      //   return [new vexflow.Articulation('a-')];
-      // case 'detached-legato':
-      //   return [new vexflow.Articulation('a.'), new vexflow.Articulation('a-')];
-      // case 'staccatissimo':
-      //   return [new vexflow.Articulation('av')];
+        return [vexflowAnnotation('^', position)];
+      case 'accent':
+        return articulation.placement === 'above'
+          ? [vexflowArticulation('a>', position)]
+          : [vexflowArticulation('a-', position)];
+      case 'strong-accent':
+        return [vexflowArticulation('a^', position)];
+      case 'staccato':
+        return [vexflowArticulation('a.', position)];
+      case 'tenuto':
+        return [vexflowArticulation('a-')];
+      case 'detached-legato':
+        return [vexflowArticulation('a.', position), vexflowArticulation('a-', position)];
+      case 'staccatissimo':
+        return [vexflowArticulation('av', position)];
       case 'scoop':
-        return [new vexflow.Ornament('scoop')];
+        return [vexflowOrnament('scoop')];
       case 'doit':
-        return [new vexflow.Ornament('doit')];
+        return [vexflowOrnament('doit')];
       case 'falloff':
-        return [new vexflow.Ornament('fall')];
-      // case 'breath-mark':
-      //   return articulation.placement === 'above' ? [new vexflow.Articulation('a>')] : [new vexflow.Articulation('a-')];
-      // case 'arpeggio-roll-up':
-      //   return [new vexflow.Stroke(vexflow.Stroke.Type.ROLL_UP)];
-      // case 'arpeggio-roll-down':
-      //   return [new vexflow.Stroke(vexflow.Stroke.Type.ROLL_DOWN)];
-      // case 'arpeggio-directionless':
-      //   return [new vexflow.Stroke(vexflow.Stroke.Type.ARPEGGIO_DIRECTIONLESS)];
-      default:
-        this.log.debug(`unsupported articulation type`, { type: articulation.articulationType });
-        return [];
+        return [vexflowOrnament('fall')];
+      case 'breath-mark':
+        return articulation.placement === 'above'
+          ? [vexflowArticulation('a>', position)]
+          : [vexflowArticulation('a-', position)];
+      case 'arpeggio-roll-up':
+        return [new vexflow.Stroke(vexflow.Stroke.Type.ROLL_UP)];
+      case 'arpeggio-roll-down':
+        return [new vexflow.Stroke(vexflow.Stroke.Type.ROLL_DOWN)];
+      case 'arpeggio-directionless':
+        return [new vexflow.Stroke(vexflow.Stroke.Type.ARPEGGIO_DIRECTIONLESS)];
+      case 'trill-mark':
+        return [vexflowOrnament('tr', position)];
+      case 'mordent':
+        return [vexflowOrnament('mordent')];
+      case 'inverted-mordent':
+        return [vexflowOrnament('mordentInverted')];
     }
   }
 }

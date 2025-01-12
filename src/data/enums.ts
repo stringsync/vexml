@@ -287,6 +287,9 @@ export const ARTICULATION_TYPES = new Enum([
   'arpeggio-roll-down',
   'arpeggio-roll-up',
   'arpeggio-directionless',
+  'trill-mark',
+  'mordent',
+  'inverted-mordent',
 ] as const);
 
 export type ArticulationPlacement = EnumValues<typeof ARTICULATION_PLACEMENTS>;

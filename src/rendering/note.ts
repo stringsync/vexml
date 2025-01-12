@@ -116,7 +116,13 @@ export class Note {
     if (voiceEntry.type === 'note' && voiceEntry.octaveShiftId) {
       const key = this.document.getOctaveShiftKey(voiceEntry.octaveShiftId);
       const octaveShift = this.document.getOctaveShift(key);
-      result -= Math.floor((octaveShift.size - 1) / 7);
+      const size = Math.abs(octaveShift.size) - 1;
+      const octaveCount = Math.floor(size / 7);
+      if (octaveShift.size < 0) {
+        result += octaveCount;
+      } else {
+        result -= octaveCount;
+      }
     }
 
     return result;

@@ -10,18 +10,25 @@ import { NoopRenderContext } from './nooprenderctx';
 const CURVE_EXTRA_WIDTH = 20;
 const TUPLET_EXTRA_WIDTH = 15;
 
+// These modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out when calculating
+// the bounding box of the vexflow StaveNote. Remove each member when they are fixed upstream.
+const PROBLEMATIC_VEXFLOW_MODIFIERS = [vexflow.Bend, vexflow.Stroke];
+
 export type EnsembleFormatParams = {
   x: number;
   width: number | null;
   paddingLeft: number;
   paddingRight: number;
+  cache: FragmentRender | null;
 };
 
 export class Ensemble {
   constructor(private config: Config, private log: Logger, private document: Document, private key: FragmentKey) {}
 
   /** Formats the ensemble, updating the rects and vexflow objects in place. */
-  format(fragmentRender: FragmentRender, { x, width, paddingLeft, paddingRight }: EnsembleFormatParams): void {
+  format(fragmentRender: FragmentRender, { x, width, paddingLeft, paddingRight, cache }: EnsembleFormatParams): void {
+    util.assert(fragmentRender.rectSrc === 'none', 'expected fragment render to be unformatted');
+
     const vexflowFormatter = new vexflow.Formatter();
 
     // Explode out the components of the ensemble.
@@ -70,6 +77,22 @@ export class Ensemble {
       vexflowFormatter.format(vexflowVoices, voiceWidth);
     }
 
+    if (cache) {
+      this.populateRectsFromCache(fragmentRender, cache);
+    } else {
+      this.populateRectsFromDraw(fragmentRender, { x, paddingLeft, paddingRight });
+    }
+  }
+
+  private populateRectsFromDraw(
+    fragmentRender: FragmentRender,
+    { x, paddingLeft, paddingRight }: { x: number; paddingLeft: number; paddingRight: number }
+  ): void {
+    const vexflowVoices = fragmentRender.partRenders
+      .flatMap((p) => p.staveRenders)
+      .flatMap((s) => s.voiceRenders)
+      .flatMap((v) => v.vexflowVoices);
+
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
     // mutates the objects. Before we set the rects, we need to draw the staves to a noop context, then unset the
     // context and rendered state.
@@ -91,15 +114,57 @@ export class Ensemble {
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
         }
-        staveRender.rect = this.getStaveRect(staveRender, x, paddingLeft, paddingRight);
-        staveRender.intrinsicRect = this.getStaveIntrinsicRect(staveRender);
-        excessHeight = Math.max(excessHeight, this.getExcessHeight(staveRender));
+        staveRender.rect = this.calculateStaveRect(staveRender, x, paddingLeft, paddingRight);
+        staveRender.intrinsicRect = this.calculateStaveIntrinsicRect(staveRender);
+        staveRender.excessHeight = this.getExcessHeight(staveRender);
+        excessHeight = Math.max(excessHeight, staveRender.excessHeight);
       }
       partRender.rect = Rect.merge(partRender.staveRenders.map((s) => s.rect));
     }
 
     fragmentRender.rect = Rect.merge(fragmentRender.partRenders.map((s) => s.rect));
     fragmentRender.excessHeight = excessHeight;
+
+    fragmentRender.rectSrc = 'draw';
+  }
+
+  private populateRectsFromCache(fragmentRender: FragmentRender, cache: FragmentRender): void {
+    util.assert(cache.rectSrc === 'draw', 'expected cache fragment to be from draw');
+
+    fragmentRender.rectSrc = 'cache';
+
+    fragmentRender.rect = cache.rect;
+    fragmentRender.excessHeight = cache.excessHeight;
+
+    for (let partIndex = 0; partIndex < fragmentRender.partRenders.length; partIndex++) {
+      const partRender = fragmentRender.partRenders[partIndex];
+      const cachePartRender = cache.partRenders[partIndex];
+
+      partRender.rect = cachePartRender.rect;
+
+      for (let staveIndex = 0; staveIndex < partRender.staveRenders.length; staveIndex++) {
+        const staveRender = partRender.staveRenders[staveIndex];
+        const cacheStaveRender = cachePartRender.staveRenders[staveIndex];
+
+        staveRender.rect = cacheStaveRender.rect;
+        staveRender.intrinsicRect = cacheStaveRender.intrinsicRect;
+        staveRender.excessHeight = cacheStaveRender.excessHeight;
+
+        for (let voiceIndex = 0; voiceIndex < staveRender.voiceRenders.length; voiceIndex++) {
+          const voiceRender = staveRender.voiceRenders[voiceIndex];
+          const cacheVoiceRender = cacheStaveRender.voiceRenders[voiceIndex];
+
+          voiceRender.rect = cacheVoiceRender.rect;
+
+          for (let entryIndex = 0; entryIndex < voiceRender.entryRenders.length; entryIndex++) {
+            const entryRender = voiceRender.entryRenders[entryIndex];
+            const cacheEntryRender = cacheVoiceRender.entryRenders[entryIndex];
+
+            entryRender.rect = cacheEntryRender.rect;
+          }
+        }
+      }
+    }
   }
 
   /** Returns extra width to accommodate curves */
@@ -204,7 +269,7 @@ export class Ensemble {
     return 0;
   }
 
-  private getStaveRect(staveRender: StaveRender, x: number, paddingLeft: number, paddingRight: number): Rect {
+  private calculateStaveRect(staveRender: StaveRender, x: number, paddingLeft: number, paddingRight: number): Rect {
     const vexflowStave = staveRender.vexflowStave;
 
     const box = vexflowStave.getBoundingBox();
@@ -221,7 +286,7 @@ export class Ensemble {
   /**
    * Returns the rect of the stave itself, ignoring any influence by child elements such as notes.
    */
-  private getStaveIntrinsicRect(staveRender: StaveRender): Rect {
+  private calculateStaveIntrinsicRect(staveRender: StaveRender): Rect {
     const vexflowStave = staveRender.vexflowStave;
 
     const box = vexflowStave.getBoundingBox();
@@ -296,6 +361,17 @@ export class Ensemble {
       return this.overrideVexflowTextDynamicsRect(entryRender, staveRender);
     }
 
-    return Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
+    // HACK! Some modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out here
+    // and readd them later. We keep as much of the original modifiers as possible to get a more accurate bounding box.
+    // See https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/stavenote.ts#L616
+    const vexflowTickable = entryRender.vexflowTickable;
+    const originalMods = vexflowTickable.getModifiers();
+    const sanitizedMods = originalMods.filter((m) => PROBLEMATIC_VEXFLOW_MODIFIERS.every((p) => !(m instanceof p)));
+
+    (vexflowTickable as any).modifiers = sanitizedMods;
+    const rect = Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
+    (vexflowTickable as any).modifiers = originalMods;
+
+    return rect;
   }
 }
