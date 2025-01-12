@@ -4,7 +4,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { VibratoKey, VibratoRender } from './types';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { RenderRegistry } from './renderregistry';
 
 export class Vibrato {
   constructor(
@@ -12,7 +12,7 @@ export class Vibrato {
     private log: Logger,
     private document: Document,
     private key: VibratoKey,
-    private registry: NoteRenderRegistry
+    private registry: RenderRegistry
   ) {}
 
   render(): VibratoRender {
