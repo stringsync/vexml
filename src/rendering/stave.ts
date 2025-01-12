@@ -120,6 +120,11 @@ export class Stave {
   }
 
   private renderEndClef(vexflowStave: vexflow.Stave): ClefRender | null {
+    const isClefEnabled = this.document.isTabStave(this.key) ? this.config.SHOW_TAB_CLEF : true;
+    if (!isClefEnabled) {
+      return null;
+    }
+
     const currentClef = this.document.getStave(this.key).signature.clef;
     const nextClef = this.document.getNextPlayedStave(this.key)?.signature.clef;
     const willClefChange = nextClef && currentClef.sign !== nextClef?.sign;
