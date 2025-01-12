@@ -74,17 +74,18 @@ export class Rendering {
     // Draw the non-grace beams.
     voiceRenders
       .flatMap((v) => v.beamRenders)
-      .forEach((b) => {
-        b.vexflowBeam.setContext(ctx).draw();
+      .flatMap((b) => b.vexflowBeams)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
       });
 
     // Draw the grace beams.
     voiceEntryRenders
       .filter((e) => e.type === 'note')
       .flatMap((e) => e.graceBeamRenders)
-      .map((b) => b.vexflowBeam)
-      .forEach((b) => {
-        b.setContext(ctx).draw();
+      .flatMap((b) => b.vexflowBeams)
+      .forEach((v) => {
+        v.setContext(ctx).draw();
       });
 
     // Draw the curves.

@@ -25,13 +25,13 @@ export class Beam {
     util.assertDefined(vexflowStemmableNotes);
     util.assert(vexflowStemmableNotes.length > 1, 'Beam must have more than one voice entry');
 
-    const vexflowBeam = new vexflow.Beam(vexflowStemmableNotes);
+    const vexflowBeams = [new vexflow.Beam(vexflowStemmableNotes)];
 
     return {
       type: 'beam',
       rect: Rect.empty(),
       key: this.key,
-      vexflowBeam,
+      vexflowBeams,
     };
   }
 }

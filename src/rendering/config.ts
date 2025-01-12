@@ -98,6 +98,10 @@ export const CONFIG = {
     defaultValue: false,
     help: 'SHOW_TAB_TIME_SIGNATURE specifies whether to show the time signature for tab staves.',
   }),
+  SHOW_TAB_STEMS: t.boolean({
+    defaultValue: true,
+    help: 'SHOW_TAB_STEMS specifies whether to show stems for tab staves.',
+  }),
   MEASURE_LABELING_SCHEME: t.enum({
     choices: ['all', 'every2', 'every3', 'system', 'none'] as const,
     defaultValue: 'all',

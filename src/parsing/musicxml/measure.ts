@@ -34,7 +34,7 @@ export class Measure {
     startBarlineStyle: data.BarlineStyle | null,
     endBarlineStyle: data.BarlineStyle | null
   ): Measure {
-    const fragments = Measure.getFragments(events, initialSignature, partIds);
+    const fragments = Measure.fragmentize(events, initialSignature, partIds);
 
     // TODO: Incoporate this when calculating jumps.
     const repetitionSymbols = new Array<data.RepetitionSymbol>();
@@ -58,7 +58,7 @@ export class Measure {
     );
   }
 
-  private static getFragments(
+  private static fragmentize(
     measureEvents: MeasureEvent[],
     initialSignature: Signature,
     partIds: string[]
