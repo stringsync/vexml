@@ -24,6 +24,7 @@ export class Chord {
       curveIds: note.curveIds,
       head: note.head,
       pitch: note.pitch,
+      tabPositions: note.tabPositions,
     }));
 
     const annotations = parsed.flatMap((note) => note.annotations);

@@ -15,6 +15,7 @@ import { Tuplet } from './tuplet';
 import { Vibrato } from './vibrato';
 import { Articulation } from './articulation';
 import { Bend } from './bend';
+import { TabPosition } from './tabposition';
 
 type GraceNote = {
   type: 'gracenote';
@@ -49,7 +50,8 @@ export class Note {
     private graceEntries: GraceEntry[],
     private vibratos: Vibrato[],
     private articulations: Articulation[],
-    private bends: Bend[]
+    private bends: Bend[],
+    private fretPositions: TabPosition[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -130,6 +132,8 @@ export class Note {
 
     const slash = musicXML.note.hasGraceSlash();
 
+    const fretPositions = TabPosition.create({ note: musicXML.note });
+
     return new Note(
       pitch,
       head,
@@ -148,7 +152,8 @@ export class Note {
       graceEntries,
       vibratos,
       articulations,
-      bends
+      bends,
+      fretPositions
     );
   }
 
@@ -184,6 +189,7 @@ export class Note {
       vibratoIds: this.vibratos.map((vibrato) => vibrato.parse(voiceEntryCtx)),
       articulations: this.articulations.map((articulation) => articulation.parse()),
       bends: this.bends.map((bend) => bend.parse()),
+      tabPositions: this.fretPositions.map((fretPosition) => fretPosition.parse()),
     };
   }
 

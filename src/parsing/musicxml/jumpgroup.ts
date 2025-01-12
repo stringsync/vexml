@@ -66,7 +66,7 @@ export class JumpGroup {
     const times = barline.getRepeatTimes() ?? number.split(',').length;
     const label = text ? text : `${number}.`;
 
-    return [{ type: 'repeatending', times, label, endBracketType }];
+    return [{ type: 'repeatending', times, label, endingBracketType: endBracketType }];
   }
 
   getStartBarlineStyle(): data.BarlineStyle | null {

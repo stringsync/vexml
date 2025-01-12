@@ -234,7 +234,7 @@ export class Stave {
     }
 
     let vexflowVoltaType = vexflow.VoltaType.NONE;
-    switch (ending.endBracketType) {
+    switch (ending.endingBracketType) {
       case 'none':
         vexflowVoltaType = vexflow.VoltaType.NONE;
         break;
