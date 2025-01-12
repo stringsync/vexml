@@ -51,7 +51,9 @@ export class Note {
       vexflow.Dot.buildAndAttach([vexflowNote], { all: true });
     }
 
-    // this.renderVexflowAccidentals(vexflowNote, voiceEntry);
+    if (!isTabStave) {
+      this.renderVexflowAccidentals(vexflowNote, voiceEntry);
+    }
     this.renderVexflowAnnotations(vexflowNote, voiceEntry);
     const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderGraceEntries(vexflowNote, voiceEntry);
     const articulationRenders = this.renderArticulations(vexflowNote);
