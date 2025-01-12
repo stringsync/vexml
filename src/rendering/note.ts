@@ -28,18 +28,17 @@ export class Note {
 
     const { autoStem, stemDirection } = this.getVexflowStemParams(voiceEntry);
     const curveIds = this.getCurveIds(voiceEntry);
-    const keys = this.getVexflowStaveNoteKeys(voiceEntry);
 
     const isTabStave = this.document.isTabStave(this.key);
 
     const vexflowNote = isTabStave
       ? new vexflow.TabNote({
-          positions: [{ fret: 1, str: 1 }],
+          positions: this.getVexflowTabNotePositions(voiceEntry),
           duration: voiceEntry.durationType,
           dots: voiceEntry.dotCount,
         })
       : new vexflow.StaveNote({
-          keys,
+          keys: this.getVexflowStaveNoteKeys(voiceEntry),
           duration: voiceEntry.durationType,
           dots: voiceEntry.dotCount,
           autoStem,
@@ -47,15 +46,22 @@ export class Note {
           clef: this.document.getStave(this.key).signature.clef.sign,
         });
 
-    for (let index = 0; index < voiceEntry.dotCount; index++) {
-      vexflow.Dot.buildAndAttach([vexflowNote], { all: true });
+    if (!isTabStave) {
+      for (let index = 0; index < voiceEntry.dotCount; index++) {
+        vexflow.Dot.buildAndAttach([vexflowNote], { all: true });
+      }
     }
 
     if (!isTabStave) {
       this.renderVexflowAccidentals(vexflowNote, voiceEntry);
     }
+
     this.renderVexflowAnnotations(vexflowNote, voiceEntry);
-    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderGraceEntries(vexflowNote, voiceEntry);
+
+    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderStaveGraceEntries(
+      vexflowNote,
+      voiceEntry
+    );
     const articulationRenders = this.renderArticulations(vexflowNote);
     const bendRenders = this.renderBends(vexflowNote);
 
@@ -133,6 +139,20 @@ export class Note {
     }
 
     return result;
+  }
+
+  private getVexflowTabNotePositions(voiceEntry: data.Note | data.Chord): vexflow.TabNotePosition[] {
+    switch (voiceEntry.type) {
+      case 'note':
+        return voiceEntry.tabPositions.map((t) => this.toVexflowTabNotePosition(t));
+      case 'chord':
+        return voiceEntry.notes.flatMap((note) => note.tabPositions).map((t) => this.toVexflowTabNotePosition(t));
+    }
+  }
+
+  private toVexflowTabNotePosition(tabPosition: data.TabPosition): vexflow.TabNotePosition {
+    const fret = tabPosition.harmonic ? `<${tabPosition.fret}>` : tabPosition.fret;
+    return { str: tabPosition.string, fret };
   }
 
   private getVexflowStaveNoteKeys(voiceEntry: data.Note | data.Chord): string[] {
@@ -218,7 +238,7 @@ export class Note {
     return vexflowAccidental;
   }
 
-  private renderGraceEntries(
+  private renderStaveGraceEntries(
     vexflowNote: vexflow.Note,
     voiceEntry: data.Note | data.Chord
   ): {

@@ -101,7 +101,7 @@ export type JumpGroup = {
 export type Jump =
   | { type: 'repeatstart' }
   | { type: 'repeatend'; times: number }
-  | { type: 'repeatending'; times: number; label: string; endBracketType: EndingBracketType };
+  | { type: 'repeatending'; times: number; label: string; endingBracketType: EndingBracketType };
 
 export type Fragment = {
   type: 'fragment';
@@ -201,6 +201,14 @@ export type Note = {
   octaveShiftId: string | null;
   vibratoIds: string[];
   bends: Bend[];
+  tabPositions: TabPosition[];
+};
+
+export type TabPosition = {
+  type: 'tabposition';
+  fret: string;
+  string: number;
+  harmonic: boolean;
 };
 
 export type Dynamics = {
@@ -236,6 +244,7 @@ export type ChordNote = {
   head: Notehead;
   accidental: Accidental | null;
   curveIds: string[];
+  tabPositions: TabPosition[];
 };
 
 export type GraceEntry = GraceNote | GraceChord;
