@@ -182,7 +182,7 @@ export class Fragment {
 
       const lastVexflowStave = partRender.staveRenders.at(-1)?.vexflowStave;
       if (lastVexflowStave) {
-        pen.moveBy({ dy: lastVexflowStave.getHeight() });
+        pen.moveTo({ x: pen.x, y: lastVexflowStave.getBottomLineBottomY() });
       }
 
       pen.moveBy({ dy: this.config.PART_MARGIN_BOTTOM });
