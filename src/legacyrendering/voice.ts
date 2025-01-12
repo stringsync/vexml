@@ -171,7 +171,7 @@ export class Voice {
     const stem = input.stem;
     const directions = input.directions;
     const duration = input.end.subtract(input.start);
-    const staveNumber = note.getStaveNumber();
+    const staveNumber = note.getStaveNumber() ?? 1;
     const clef = input.staveSignature.getClef(staveNumber);
     const keySignature = input.staveSignature.getKeySignature(staveNumber);
 

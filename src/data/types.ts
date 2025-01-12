@@ -298,6 +298,7 @@ export type Rest = {
   displayPitch: Pitch | null;
   beamId: string | null;
   tupletIds: string[];
+  pedalMark: PedalMark | null;
 };
 
 export type Pitch = {

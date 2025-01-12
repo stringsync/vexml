@@ -20,6 +20,11 @@ export class EventCalculator {
   private events = new Array<MeasureEvent>();
   private quarterNoteDivisions = 1;
 
+  // partId -> voiceId
+  private previousExplicitVoiceId: Record<string, string> = {};
+  // partId -> staveNumber
+  private previousExplicitStaveNumber: Record<string, number> = {};
+
   // staveNumber -> Key
   private previousKeys = new Map<number, Key>();
 
@@ -34,6 +39,9 @@ export class EventCalculator {
 
       const partId = part.getId();
       const measures = part.getMeasures();
+
+      this.previousExplicitStaveNumber[partId] = 1;
+      this.previousExplicitVoiceId[partId] = '1';
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         this.measureBeat = Fraction.zero();
@@ -70,8 +78,9 @@ export class EventCalculator {
   }
 
   private processNote(note: musicxml.Note, partId: string, measureIndex: number): void {
-    const staveNumber = note.getStaveNumber();
-    const voiceId = note.getVoice();
+    const staveNumber = this.resolveStaveNumber(partId, note.getStaveNumber());
+    const voiceId = this.resolveVoiceId(partId, note.getVoice());
+
     const quarterNotes = note.getDuration();
     const duration = new Fraction(quarterNotes, this.quarterNoteDivisions);
 
@@ -179,6 +188,7 @@ export class EventCalculator {
 
       if (typeof staveNumber === 'number') {
         // If the key is applied to a specific stave, proceed forward as normal.
+        this.resolveStaveNumber(partId, staveNumber);
         const previousKey = this.previousKeys.get(staveNumber) ?? null;
         const key = Key.create(partId, staveNumber, previousKey, { key: attributeKey });
         this.previousKeys.set(staveNumber, key);
@@ -213,7 +223,7 @@ export class EventCalculator {
       .flatMap((time) => {
         const staveNumber = time.getStaveNumber();
         if (typeof staveNumber === 'number') {
-          return [Time.create(partId, staveNumber, { time })];
+          return [Time.create(partId, this.resolveStaveNumber(partId, staveNumber), { time })];
         } else {
           return Time.createMulti(partId, staveCount.getValue(), { time });
         }
@@ -281,12 +291,15 @@ export class EventCalculator {
       .flatMap((d) => d.getTypes())
       .at(0);
     if (dynamicType) {
+      const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());
+      const voiceId = this.resolveVoiceId(partId, direction.getVoice());
+
       this.events.push({
         type: 'dynamics',
         partId,
         measureIndex,
-        staveNumber: direction.getStaveNumber() ?? 1,
-        voiceId: direction.getVoice() ?? '1',
+        staveNumber,
+        voiceId,
         measureBeat: this.measureBeat,
         dynamics: new Dynamics(this.measureBeat, dynamicType),
       });
@@ -297,13 +310,16 @@ export class EventCalculator {
       .map((wedge) => Wedge.create({ direction, wedge }))
       .at(0);
     if (wedge) {
+      const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());
+      const voiceId = this.resolveVoiceId(partId, direction.getVoice());
+
       this.events.push({
         type: 'wedge',
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        staveNumber: direction.getStaveNumber() ?? 1,
-        voiceId: direction.getVoice() ?? '1',
+        staveNumber,
+        voiceId,
         wedge,
       });
     }
@@ -313,13 +329,16 @@ export class EventCalculator {
       .map((pedal) => Pedal.create({ pedal }))
       .at(0);
     if (pedal) {
+      const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());
+      const voiceId = this.resolveVoiceId(partId, direction.getVoice());
+
       this.events.push({
         type: 'pedal',
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        staveNumber: direction.getStaveNumber() ?? 1,
-        voiceId: direction.getVoice() ?? '1',
+        staveNumber,
+        voiceId,
         pedal,
       });
     }
@@ -329,15 +348,26 @@ export class EventCalculator {
       .map((octaveShift) => OctaveShift.create({ octaveShift }))
       .at(0);
     if (octaveShift) {
+      const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());
+      const voiceId = this.resolveVoiceId(partId, direction.getVoice());
+
       this.events.push({
         type: 'octaveshift',
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        staveNumber: direction.getStaveNumber() ?? 1,
-        voiceId: direction.getVoice() ?? '1',
+        staveNumber,
+        voiceId,
         octaveShift,
       });
     }
+  }
+
+  private resolveVoiceId(partId: string, voiceId: string | null): string {
+    return (this.previousExplicitVoiceId[partId] = voiceId ?? this.previousExplicitVoiceId[partId]);
+  }
+
+  private resolveStaveNumber(partId: string, staveNumber: number | null): number {
+    return (this.previousExplicitStaveNumber[partId] = staveNumber ?? this.previousExplicitStaveNumber[partId]);
   }
 }

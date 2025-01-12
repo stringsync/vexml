@@ -189,7 +189,7 @@ class VoiceCalculator {
     // should be on top, middle, and bottom easily.
     util.sortBy(firstElgibleVoiceInput, (input) => {
       const note = input.note;
-      const staveNumber = note.getStaveNumber();
+      const staveNumber = note.getStaveNumber() ?? 1;
       const clef = input.staveSignature.getClef(staveNumber);
       return -this.staveNoteLine(note, clef);
     });

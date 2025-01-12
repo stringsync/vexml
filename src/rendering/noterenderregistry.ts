@@ -29,6 +29,7 @@ export class NoteRenderRegistry {
 
       for (const id of ids) {
         const renders = store.get(id) ?? [];
+        util.assertDefined(renders);
         renders.push(noteRender);
         store.set(id, renders);
       }
@@ -38,8 +39,6 @@ export class NoteRenderRegistry {
   }
 
   get(id: string): NoteRender[] {
-    const noteRenders = this.store.get(id);
-    util.assertDefined(noteRenders);
-    return noteRenders;
+    return this.store.get(id) ?? [];
   }
 }
