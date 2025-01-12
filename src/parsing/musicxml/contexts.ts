@@ -155,7 +155,12 @@ export class ScoreContext {
       this.pedalStatuses.delete(partId);
     }
 
-    status.count++;
+    if (pedalMarkType === 'change') {
+      // We don't want to end the pedal mark on a change, so we reset the count.
+      status.count = 1;
+    } else {
+      status.count++;
+    }
 
     return { type: 'pedalmark', pedalMarkType, pedalId: status.id };
   }
