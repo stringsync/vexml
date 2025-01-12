@@ -205,10 +205,11 @@ export class Stave {
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
     const isLastFragment = this.document.isLastFragment(this.key);
+    const isTabStave = this.document.isTabStave(this.key);
 
     const startVexflowBarlineType = this.toVexflowBarlineType(this.document.getMeasure(this.key).startBarlineStyle);
 
-    if (!isFirstMeasure && isFirstFragment) {
+    if (isTabStave || (!isFirstMeasure && isFirstFragment)) {
       vexflowStave.setBegBarType(startVexflowBarlineType);
     } else {
       vexflowStave.setBegBarType(vexflow.Barline.type.NONE);
