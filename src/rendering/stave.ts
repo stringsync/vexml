@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
-import * as util from '@/util';
 import * as data from '@/data';
+import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { ClefRender, KeyRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
 import { Config } from './config';
@@ -24,7 +24,10 @@ export class Stave {
 
   render(): StaveRender {
     const staveLineCount = this.document.getStave(this.key).signature.lineCount;
-    const vexflowStave = new vexflow.Stave(this.position.x, this.position.y, 0, { numLines: staveLineCount });
+    const isTabStave = this.document.isTabStave(this.key);
+    const vexflowStave = isTabStave
+      ? new vexflow.TabStave(this.position.x, this.position.y, 0, { numLines: staveLineCount })
+      : new vexflow.Stave(this.position.x, this.position.y, 0, { numLines: staveLineCount });
 
     const { voiceRenders, vexflowMultiMeasureRest } = this.renderVoicesOrVexflowMultiMeasureRest(vexflowStave);
 
@@ -81,6 +84,7 @@ export class Stave {
       }
     }
 
+    // Associate the vexflow voice and note data with the stave.
     for (const voiceRender of voiceRenders) {
       for (const vexflowVoice of voiceRender.vexflowVoices) {
         vexflowVoice.setStave(vexflowStave);
@@ -91,12 +95,20 @@ export class Stave {
       vexflowMultiMeasureRest.setStave(vexflowStave);
     }
 
-    this.adjustStems(voiceRenders);
+    const isTabStave = this.document.isTabStave(this.key);
+    if (!isTabStave) {
+      this.adjustStems(voiceRenders);
+    }
 
     return { voiceRenders, vexflowMultiMeasureRest };
   }
 
   private renderStartClef(vexflowStave: vexflow.Stave): ClefRender | null {
+    const isClefEnabled = this.document.isTabStave(this.key) ? this.config.SHOW_TAB_CLEF : true;
+    if (!isClefEnabled) {
+      return null;
+    }
+
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
     if (isFirstMeasure && isFirstFragment) {
@@ -138,7 +150,10 @@ export class Stave {
           c.denominator !== previousTime?.components[i].denominator
       );
 
-    if (isAbsolutelyFirst || didTimeChange) {
+    const isTabStave = this.document.isTabStave(this.key);
+    const isTimeEnabled = isTabStave && this.config.SHOW_TAB_TIME_SIGNATURE;
+
+    if ((isAbsolutelyFirst || didTimeChange) && isTimeEnabled) {
       const timeRender = new Time(this.config, this.log, this.document, this.key).render();
       for (const vexflowTimeSignature of timeRender.vexflowTimeSignatures) {
         vexflowStave.addModifier(vexflowTimeSignature);
@@ -248,31 +263,35 @@ export class Stave {
       return;
     }
 
-    util.sortBy(
-      voices,
-      (voice) => -voice.entryRenders.find((entry) => entry.type === 'note')!.vexflowTickable.getKeyLine(0)
-    );
+    util.sortBy(voices, (voice) => {
+      const vexflowStaveNotes = voice.entryRenders
+        .filter((e) => e.type === 'note')
+        .map((e) => e.vexflowNote)
+        .filter((v) => v instanceof vexflow.StaveNote);
+      const keyLine = vexflowStaveNotes.at(0)?.getKeyLine(0);
+      return typeof keyLine === 'number' ? -keyLine : 0;
+    });
 
     const top = voices.at(0)!;
     const middle = voices.slice(1, -1);
     const bottom = voices.at(-1)!;
 
     for (const entry of top.entryRenders) {
-      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+      if (entry.type == 'note' && entry.stemDirection === 'auto' && entry.vexflowNote instanceof vexflow.StaveNote) {
         entry.stemDirection = 'up';
-        entry.vexflowTickable.setStemDirection(vexflow.Stem.UP);
+        entry.vexflowNote.setStemDirection(vexflow.Stem.UP);
       }
     }
     for (const entry of middle.flatMap((v) => v.entryRenders)) {
-      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+      if (entry.type == 'note' && entry.stemDirection === 'auto' && entry.vexflowNote instanceof vexflow.StaveNote) {
         entry.stemDirection = 'none';
-        entry.vexflowTickable.setStemDirection(undefined);
+        entry.vexflowNote.setStemDirection(undefined);
       }
     }
     for (const entry of bottom.entryRenders) {
-      if (entry.type == 'note' && entry.stemDirection === 'auto') {
+      if (entry.type == 'note' && entry.stemDirection === 'auto' && entry.vexflowNote instanceof vexflow.StaveNote) {
         entry.stemDirection = 'down';
-        entry.vexflowTickable.setStemDirection(vexflow.Stem.DOWN);
+        entry.vexflowNote.setStemDirection(vexflow.Stem.DOWN);
       }
     }
   }

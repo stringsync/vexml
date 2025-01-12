@@ -290,6 +290,10 @@ export class Document {
     return key.staveIndex === this.getStaveCount(key) - 1;
   }
 
+  isTabStave(key: StaveKey): boolean {
+    return this.getStave(key).signature.clef.sign === 'tab';
+  }
+
   getStaveMultiRestCount(key: StaveKey): number {
     return this.getStave(key).multiRestCount;
   }

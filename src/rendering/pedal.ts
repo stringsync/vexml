@@ -66,12 +66,16 @@ export class Pedal {
     const vexflowStaveNotes = new Array<vexflow.StaveNote>();
 
     for (const noteRender of noteRenders) {
+      const vexflowNote = noteRender.vexflowNote;
+      if (!(vexflowNote instanceof vexflow.StaveNote)) {
+        continue;
+      }
       const note = this.document.getNote(noteRender.key);
       if (note.pedalMark?.pedalMarkType === 'change') {
         // This is required for vexflow to show pedal changes.
-        vexflowStaveNotes.push(noteRender.vexflowTickable, noteRender.vexflowTickable);
+        vexflowStaveNotes.push(vexflowNote, vexflowNote);
       } else {
-        vexflowStaveNotes.push(noteRender.vexflowTickable);
+        vexflowStaveNotes.push(vexflowNote);
       }
     }
 

@@ -10,24 +10,32 @@ export class Rest {
 
   render(): RestRender {
     const rest = this.document.getRest(this.key);
+    const isTabStave = this.document.isTabStave(this.key);
 
-    const vexflowStaveNote = new vexflow.StaveNote({
-      keys: this.getVexflowStaveKeys(),
-      duration: `${rest.durationType}r`,
-      dots: rest.dotCount,
-      clef: this.document.getStave(this.key).signature.clef.sign,
-      alignCenter: this.shouldAlignCenter(),
-    });
+    const vexflowNote = isTabStave
+      ? new vexflow.TabNote({
+          positions: [{ str: 0, fret: '' }],
+          duration: `${rest.durationType}r`,
+          dots: rest.dotCount,
+          alignCenter: this.shouldAlignCenter(),
+        })
+      : new vexflow.StaveNote({
+          keys: this.getVexflowStaveKeys(),
+          duration: `${rest.durationType}r`,
+          dots: rest.dotCount,
+          clef: this.document.getStave(this.key).signature.clef.sign,
+          alignCenter: this.shouldAlignCenter(),
+        });
 
     for (let index = 0; index < rest.dotCount; index++) {
-      vexflow.Dot.buildAndAttach([vexflowStaveNote]);
+      vexflow.Dot.buildAndAttach([vexflowNote]);
     }
 
     return {
       type: 'rest',
       key: this.key,
       rect: Rect.empty(), // placeholder
-      vexflowTickable: vexflowStaveNote,
+      vexflowNote: vexflowNote,
       beamId: rest.beamId,
       tupletIds: rest.tupletIds,
     };

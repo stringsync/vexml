@@ -9,6 +9,7 @@ import { NoopRenderContext } from './nooprenderctx';
 
 const CURVE_EXTRA_WIDTH = 20;
 const TUPLET_EXTRA_WIDTH = 15;
+const TAB_RECT_WIDTH = 10;
 
 // These modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out when calculating
 // the bounding box of the vexflow StaveNote. Remove each member when they are fixed upstream.
@@ -61,13 +62,13 @@ export class Ensemble {
       vexflowStave.setWidth(staveWidth);
     }
 
-    // Join the voices that belong on the _same stave_.
+    // Assign each voice to a stave.
     for (const staveRender of staveRenders) {
       const staveVexflowVoices = staveRender.voiceRenders
         .flatMap((v) => v.vexflowVoices)
         .filter((v) => v.getTickables().length > 0);
       if (staveVexflowVoices.length > 0) {
-        vexflowFormatter.joinVoices(staveVexflowVoices);
+        vexflowFormatter.joinVoices(staveVexflowVoices).format(staveVexflowVoices);
       }
     }
 
@@ -77,21 +78,25 @@ export class Ensemble {
       vexflowFormatter.format(vexflowVoices, voiceWidth);
     }
 
+    // Populate the rects by either using the cache or drawing.
     if (cache) {
-      this.populateRectsFromCache(fragmentRender, cache);
+      this.hydrate(fragmentRender, cache);
     } else {
-      this.populateRectsFromDraw(fragmentRender, { x, paddingLeft, paddingRight });
+      this.draw(fragmentRender, { x, paddingLeft, paddingRight });
     }
   }
 
-  private populateRectsFromDraw(
+  private draw(
     fragmentRender: FragmentRender,
     { x, paddingLeft, paddingRight }: { x: number; paddingLeft: number; paddingRight: number }
   ): void {
+    fragmentRender.rectSrc = 'draw';
+
     const vexflowVoices = fragmentRender.partRenders
       .flatMap((p) => p.staveRenders)
       .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.vexflowVoices);
+      .flatMap((v) => v.vexflowVoices)
+      .filter((v) => v.getTickables().length > 0);
 
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
     // mutates the objects. Before we set the rects, we need to draw the staves to a noop context, then unset the
@@ -114,7 +119,7 @@ export class Ensemble {
           }
           voiceRender.rect = Rect.merge(voiceRender.entryRenders.map((e) => e.rect));
         }
-        staveRender.rect = this.calculateStaveRect(staveRender, x, paddingLeft, paddingRight);
+        staveRender.rect = this.overrideVexflowStaveRect(staveRender, x, paddingLeft, paddingRight);
         staveRender.intrinsicRect = this.calculateStaveIntrinsicRect(staveRender);
         staveRender.excessHeight = this.getExcessHeight(staveRender);
         excessHeight = Math.max(excessHeight, staveRender.excessHeight);
@@ -124,11 +129,9 @@ export class Ensemble {
 
     fragmentRender.rect = Rect.merge(fragmentRender.partRenders.map((s) => s.rect));
     fragmentRender.excessHeight = excessHeight;
-
-    fragmentRender.rectSrc = 'draw';
   }
 
-  private populateRectsFromCache(fragmentRender: FragmentRender, cache: FragmentRender): void {
+  private hydrate(fragmentRender: FragmentRender, cache: FragmentRender): void {
     util.assert(cache.rectSrc === 'draw', 'expected cache fragment to be from draw');
 
     fragmentRender.rectSrc = 'cache';
@@ -269,20 +272,6 @@ export class Ensemble {
     return 0;
   }
 
-  private calculateStaveRect(staveRender: StaveRender, x: number, paddingLeft: number, paddingRight: number): Rect {
-    const vexflowStave = staveRender.vexflowStave;
-
-    const box = vexflowStave.getBoundingBox();
-
-    const y = box.y;
-    const w = box.w + paddingLeft + paddingRight;
-    const h = box.h;
-
-    const voiceRects = staveRender.voiceRenders.map((v) => v.rect);
-
-    return Rect.merge([new Rect(x, y, w, h), ...voiceRects]);
-  }
-
   /**
    * Returns the rect of the stave itself, ignoring any influence by child elements such as notes.
    */
@@ -299,6 +288,48 @@ export class Ensemble {
     const h = bottomLineY - topLineY;
 
     return new Rect(x, y, w, h);
+  }
+
+  private overrideVexflowStaveRect(
+    staveRender: StaveRender,
+    x: number,
+    paddingLeft: number,
+    paddingRight: number
+  ): Rect {
+    const vexflowStave = staveRender.vexflowStave;
+
+    const box = vexflowStave.getBoundingBox();
+
+    const y = box.y;
+    const w = box.w + paddingLeft + paddingRight;
+    const h = box.h;
+
+    const voiceRects = staveRender.voiceRenders.map((v) => v.rect);
+
+    return Rect.merge([new Rect(x, y, w, h), ...voiceRects]);
+  }
+
+  /** The vexflow text dynamics bounding box is incorrect. This method returns a reasonable approximation. */
+  private overrideVexflowTextDynamicsRect(vexflowTextDynamics: vexflow.TextDynamics, staveRender: StaveRender): Rect {
+    const textBox = vexflowTextDynamics.getBoundingBox();
+    const staveBox = staveRender.vexflowStave.getBoundingBox();
+
+    const x = vexflowTextDynamics.getAbsoluteX();
+    const y = staveBox.y - 2;
+    const w = textBox.w;
+    const h = textBox.h;
+
+    return new Rect(x, y, w, h);
+  }
+
+  private overrideVexflowTabNoteRect(vexflowTabNote: vexflow.TabNote): Rect {
+    const rects = new Array<Rect>();
+    const x = vexflowTabNote.getAbsoluteX();
+    for (const y of vexflowTabNote.getYs()) {
+      const rect = new Rect(x - TAB_RECT_WIDTH / 2, y - TAB_RECT_WIDTH / 2, TAB_RECT_WIDTH, TAB_RECT_WIDTH);
+      rects.push(rect);
+    }
+    return Rect.merge(rects);
   }
 
   /**
@@ -341,35 +372,25 @@ export class Ensemble {
     vexflowGraceNoteGroup.setY(y);
   }
 
-  /** The vexflow text dynamics bounding box is incorrect. This method returns a reasonable approximation. */
-  private overrideVexflowTextDynamicsRect(entryRender: VoiceEntryRender, staveRender: StaveRender): Rect {
-    const textBox = entryRender.vexflowTickable.getBoundingBox();
-    const staveBox = staveRender.vexflowStave.getBoundingBox();
-
-    const x = entryRender.vexflowTickable.getAbsoluteX();
-    const y = staveBox.y - 2;
-    const w = textBox.w;
-    const h = textBox.h;
-
-    return new Rect(x, y, w, h);
-  }
-
   private hackEntryRenderRect(entryRender: VoiceEntryRender, staveRender: StaveRender): Rect {
     this.maybefixVexflowGraceNoteGroupBoundingBox(entryRender);
 
-    if (entryRender.vexflowTickable instanceof vexflow.TextDynamics) {
-      return this.overrideVexflowTextDynamicsRect(entryRender, staveRender);
+    if (entryRender.vexflowNote instanceof vexflow.TextDynamics) {
+      return this.overrideVexflowTextDynamicsRect(entryRender.vexflowNote, staveRender);
+    }
+    if (entryRender.vexflowNote instanceof vexflow.TabNote) {
+      return this.overrideVexflowTabNoteRect(entryRender.vexflowNote);
     }
 
     // HACK! Some modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out here
     // and readd them later. We keep as much of the original modifiers as possible to get a more accurate bounding box.
     // See https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/stavenote.ts#L616
-    const vexflowTickable = entryRender.vexflowTickable;
+    const vexflowTickable = entryRender.vexflowNote;
     const originalMods = vexflowTickable.getModifiers();
     const sanitizedMods = originalMods.filter((m) => PROBLEMATIC_VEXFLOW_MODIFIERS.every((p) => !(m instanceof p)));
 
     (vexflowTickable as any).modifiers = sanitizedMods;
-    const rect = Rect.fromRectLike(entryRender.vexflowTickable.getBoundingBox());
+    const rect = Rect.fromRectLike(entryRender.vexflowNote.getBoundingBox());
     (vexflowTickable as any).modifiers = originalMods;
 
     return rect;

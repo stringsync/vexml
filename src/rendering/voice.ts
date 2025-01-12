@@ -66,26 +66,22 @@ export class Voice {
         const beats = measureBeat.subtract(currentMeasureBeat).divide(new Fraction(4));
         const vexflowGhostNote = this.renderVexflowGhostNote(beats);
         vexflowVoice.addTickable(vexflowGhostNote);
-        // NOTE: We don't need to add this is entryRenders because it's a vexflow-specific detail and vexml doesn't need
-        // to do anything with it.
+        // NOTE: We don't need to add this is entryRenders because it's a vexflow-specific detail for formatting and
+        // vexml doesn't need to do anything with it.
       }
       currentMeasureBeat = measureBeat.add(duration);
 
-      if (entry.type === 'note') {
+      if (entry.type === 'note' || entry.type === 'chord') {
         const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(noteRender.vexflowTickable);
+        vexflowVoice.addTickable(noteRender.vexflowNote);
         entryRenders.push(noteRender);
       } else if (entry.type === 'rest') {
         const restRender = new Rest(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(restRender.vexflowTickable);
+        vexflowVoice.addTickable(restRender.vexflowNote);
         entryRenders.push(restRender);
-      } else if (entry.type === 'chord') {
-        const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(noteRender.vexflowTickable);
-        entryRenders.push(noteRender);
       } else if (entry.type === 'dynamics') {
         const dynamicsRender = new Dynamics(this.config, this.log, this.document, voiceEntryKey).render();
-        vexflowVoice.addTickable(dynamicsRender.vexflowTickable);
+        vexflowVoice.addTickable(dynamicsRender.vexflowNote);
         entryRenders.push(dynamicsRender);
       } else {
         util.assertUnreachable();
@@ -144,7 +140,9 @@ export class Voice {
       if (!registry.has(entryRender.beamId)) {
         registry.set(entryRender.beamId, []);
       }
-      registry.get(entryRender.beamId)!.push(entryRender.vexflowTickable);
+      if (entryRender.vexflowNote instanceof vexflow.StemmableNote) {
+        registry.get(entryRender.beamId)!.push(entryRender.vexflowNote);
+      }
     }
 
     const beamRenders = new Array<BeamRender>();
