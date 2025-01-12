@@ -140,8 +140,14 @@ export class Voice {
       if (!registry.has(entryRender.beamId)) {
         registry.set(entryRender.beamId, []);
       }
-      if (entryRender.vexflowNote instanceof vexflow.StaveNote) {
-        registry.get(entryRender.beamId)!.push(entryRender.vexflowNote);
+      const vexflowNote = entryRender.vexflowNote;
+      if (
+        vexflowNote instanceof vexflow.StaveNote ||
+        // Rendering beams for tab notes will create stems for notes. Therefore, we only render beams for tab notes if
+        // the config specifies to show stems for tab staves.
+        (this.config.SHOW_TAB_STEMS && vexflowNote instanceof vexflow.TabNote)
+      ) {
+        registry.get(entryRender.beamId)!.push(vexflowNote);
       }
     }
 

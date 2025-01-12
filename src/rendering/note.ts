@@ -31,20 +31,24 @@ export class Note {
 
     const isTabStave = this.document.isTabStave(this.key);
 
-    const vexflowNote = isTabStave
-      ? new vexflow.TabNote({
-          positions: this.getVexflowTabNotePositions(voiceEntry),
-          duration: voiceEntry.durationType,
-          dots: voiceEntry.dotCount,
-        })
-      : new vexflow.StaveNote({
-          keys: this.getVexflowStaveNoteKeys(voiceEntry),
-          duration: voiceEntry.durationType,
-          dots: voiceEntry.dotCount,
-          autoStem,
-          stemDirection,
-          clef: this.document.getStave(this.key).signature.clef.sign,
-        });
+    let vexflowNote: vexflow.Note;
+    if (isTabStave) {
+      vexflowNote = new vexflow.TabNote({
+        positions: this.getVexflowTabNotePositions(voiceEntry),
+        duration: voiceEntry.durationType,
+        dots: voiceEntry.dotCount,
+      });
+      vexflowNote.renderOptions.drawStem = this.config.SHOW_TAB_STEMS;
+    } else {
+      vexflowNote = new vexflow.StaveNote({
+        keys: this.getVexflowStaveNoteKeys(voiceEntry),
+        duration: voiceEntry.durationType,
+        dots: voiceEntry.dotCount,
+        autoStem,
+        stemDirection,
+        clef: this.document.getStave(this.key).signature.clef.sign,
+      });
+    }
 
     if (!isTabStave) {
       for (let index = 0; index < voiceEntry.dotCount; index++) {

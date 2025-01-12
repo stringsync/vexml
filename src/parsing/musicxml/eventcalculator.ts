@@ -24,6 +24,8 @@ export class EventCalculator {
   private previousExplicitVoiceId: Record<string, string> = {};
   // partId -> staveNumber
   private previousExplicitStaveNumber: Record<string, number> = {};
+  // partId -> staveCount
+  private previousExplicitStaveCount: Record<string, number> = {};
 
   // staveNumber -> Key
   private previousKeys = new Map<number, Key>();
@@ -42,6 +44,7 @@ export class EventCalculator {
 
       this.previousExplicitStaveNumber[partId] = 1;
       this.previousExplicitVoiceId[partId] = '1';
+      this.previousExplicitStaveCount[partId] = 1;
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         this.measureBeat = Fraction.zero();
@@ -146,14 +149,16 @@ export class EventCalculator {
   private processAttributes(attributes: musicxml.Attributes, partId: string, measureIndex: number): void {
     this.quarterNoteDivisions = attributes.getQuarterNoteDivisions() ?? this.quarterNoteDivisions;
 
-    const staveCount = new StaveCount(partId, attributes.getStaveCount() ?? 1);
-    this.events.push({
-      type: 'stavecount',
-      partId,
-      measureIndex,
-      measureBeat: this.measureBeat,
-      staveCount,
-    });
+    const staveCount = attributes.getStaveCount() ?? this.previousExplicitStaveCount[partId];
+    if (attributes.getStaveCount()) {
+      this.events.push({
+        type: 'stavecount',
+        partId,
+        measureIndex,
+        measureBeat: this.measureBeat,
+        staveCount: new StaveCount(partId, staveCount),
+      });
+    }
 
     const staveLineCounts = attributes
       .getStaveDetails()
@@ -202,7 +207,7 @@ export class EventCalculator {
         });
       } else {
         // Otherwise, apply the key to all staves, checking the previous key as we go along.
-        for (let index = 0; index < staveCount.getValue(); index++) {
+        for (let index = 0; index < staveCount; index++) {
           const previousKey = this.previousKeys.get(index + 1) ?? null;
           const key = Key.create(partId, index + 1, previousKey, { key: attributeKey });
           this.previousKeys.set(index + 1, key);
@@ -225,7 +230,7 @@ export class EventCalculator {
         if (typeof staveNumber === 'number') {
           return [Time.create(partId, this.resolveStaveNumber(partId, staveNumber), { time })];
         } else {
-          return Time.createMulti(partId, staveCount.getValue(), { time });
+          return Time.createMulti(partId, staveCount, { time });
         }
       })
       .filter((time) => time !== null);

@@ -222,7 +222,7 @@ export type BeamRender = {
   type: 'beam';
   rect: Rect;
   key: BeamKey;
-  vexflowBeam: vexflow.Beam;
+  vexflowBeams: vexflow.Beam[];
 };
 
 export type TupletRender = {
