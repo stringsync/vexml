@@ -140,7 +140,7 @@ export class Voice {
       if (!registry.has(entryRender.beamId)) {
         registry.set(entryRender.beamId, []);
       }
-      if (entryRender.vexflowNote instanceof vexflow.StemmableNote) {
+      if (entryRender.vexflowNote instanceof vexflow.StaveNote) {
         registry.get(entryRender.beamId)!.push(entryRender.vexflowNote);
       }
     }

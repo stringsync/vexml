@@ -133,6 +133,12 @@ export class Stave {
   }
 
   private renderTime(vexflowStave: vexflow.Stave): TimeRender | null {
+    const isTabStave = this.document.isTabStave(this.key);
+    const isTimeEnabled = isTabStave ? this.config.SHOW_TAB_TIME_SIGNATURE : true;
+    if (!isTimeEnabled) {
+      return null;
+    }
+
     const isFirstSystem = this.document.isFirstSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
@@ -150,10 +156,7 @@ export class Stave {
           c.denominator !== previousTime?.components[i].denominator
       );
 
-    const isTabStave = this.document.isTabStave(this.key);
-    const isTimeEnabled = isTabStave && this.config.SHOW_TAB_TIME_SIGNATURE;
-
-    if ((isAbsolutelyFirst || didTimeChange) && isTimeEnabled) {
+    if (isAbsolutelyFirst || didTimeChange) {
       const timeRender = new Time(this.config, this.log, this.document, this.key).render();
       for (const vexflowTimeSignature of timeRender.vexflowTimeSignatures) {
         vexflowStave.addModifier(vexflowTimeSignature);
