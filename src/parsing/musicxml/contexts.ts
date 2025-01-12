@@ -155,20 +155,22 @@ export class ScoreContext {
       this.pedalStatuses.delete(partId);
     }
 
-    if (pedalMarkType === 'change') {
-      // We don't want to end the pedal mark on a change, so we reset the count.
-      status.count = 1;
-    } else {
-      status.count++;
-    }
+    status.count++;
 
     return { type: 'pedalmark', pedalMarkType, pedalId: status.id };
   }
 
   primeNextPedalMark(partId: string, pedalMarkType: data.PedalMarkType): void {
     const status = this.pedalStatuses.get(partId);
-    if (status) {
-      status.next = pedalMarkType;
+    if (!status) {
+      return;
+    }
+
+    status.next = pedalMarkType;
+
+    if (pedalMarkType === 'change') {
+      // We want to avoid ending the pedal on a change, so we'll reset the count.
+      status.count = 0;
     }
   }
 
