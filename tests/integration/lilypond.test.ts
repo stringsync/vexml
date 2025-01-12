@@ -83,7 +83,7 @@ describe('lilypond', () => {
     // { filename: '32b-Articulations-Texts.musicxml', width: 900 },
     // { filename: '32c-MultipleNotationChildren.musicxml', width: 900 },
     // { filename: '32d-Arpeggio.musicxml', width: 900 },
-    { filename: '33a-Spanners.musicxml', width: 900 },
+    { filename: '33a-Spanners.musicxml', width: 900, migrated: true },
     { filename: '33b-Spanners-Tie.musicxml', width: 900, migrated: true },
     { filename: '33c-Spanners-Slurs.musicxml', width: 900, migrated: true },
     // { filename: '33d-Spanners-OctaveShifts.musicxml', width: 900 },
