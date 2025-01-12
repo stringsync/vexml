@@ -43,48 +43,14 @@ export class Note {
       vexflow.Dot.buildAndAttach([vexflowStaveNote], { all: true });
     }
 
-    const vexflowAccidentals = this.renderVexflowAccidentals(voiceEntry);
-    for (let index = 0; index < vexflowAccidentals.length; index++) {
-      const vexflowAccidental = vexflowAccidentals[index];
-      if (vexflowAccidental) {
-        vexflowStaveNote.addModifier(vexflowAccidental, index);
-      }
-    }
-
-    for (const annotation of voiceEntry.annotations) {
-      const vexflowAnnotation = new vexflow.Annotation(annotation.text);
-      if (annotation.horizontalJustification) {
-        vexflowAnnotation.setJustification(annotation.horizontalJustification);
-      }
-      if (annotation.verticalJustification) {
-        vexflowAnnotation.setVerticalJustification(annotation.verticalJustification);
-      }
-      vexflowStaveNote.addModifier(vexflowAnnotation);
-    }
-
-    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderGraceEntries(voiceEntry);
-    if (vexflowGraceNoteGroup) {
-      vexflowGraceNoteGroup.setNote(vexflowStaveNote);
-      vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
-      vexflowStaveNote.addModifier(vexflowGraceNoteGroup);
-    }
-
-    // NOTE: Articulation modifiers have buggy bounding boxes and their draw() method is not idempotent.
-    // See https://github.com/vexflow/vexflow/issues/254
-    const articulationRenders = this.renderArticulations();
-    for (const articulationRender of articulationRenders) {
-      for (const vexflowModifier of articulationRender.vexflowModifiers) {
-        vexflowStaveNote.addModifier(vexflowModifier);
-      }
-    }
-
-    // NOTE: Bend modifiers have buggy bounding boxes and their draw() method is not idempotent.
-    const bendRenders = this.renderBends();
-    // for (const bendRender of bendRenders) {
-    //   for (const vexflowModifier of bendRender.vexflowModifiers) {
-    //     vexflowStaveNote.addModifier(vexflowModifier);
-    //   }
-    // }
+    this.renderVexflowAccidentals(vexflowStaveNote, voiceEntry);
+    this.renderVexflowAnnotations(vexflowStaveNote, voiceEntry);
+    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderGraceEntries(
+      vexflowStaveNote,
+      voiceEntry
+    );
+    const articulationRenders = this.renderArticulations(vexflowStaveNote);
+    const bendRenders = this.renderBends(vexflowStaveNote);
 
     return {
       type: 'note',
@@ -176,16 +142,54 @@ export class Note {
     return note.head ? `${step}/${octave}/${note.head}` : `${step}/${octave}`;
   }
 
+  private renderVexflowAnnotations(
+    vexflowStaveNote: vexflow.StaveNote,
+    voiceEntry: data.Note | data.Chord
+  ): vexflow.Annotation[] {
+    const vexflowAnnotations = new Array<vexflow.Annotation>();
+
+    for (const annotation of voiceEntry.annotations) {
+      const vexflowAnnotation = new vexflow.Annotation(annotation.text);
+      vexflowAnnotations.push(vexflowAnnotation);
+
+      if (annotation.horizontalJustification) {
+        vexflowAnnotation.setJustification(annotation.horizontalJustification);
+      }
+      if (annotation.verticalJustification) {
+        vexflowAnnotation.setVerticalJustification(annotation.verticalJustification);
+      }
+      vexflowStaveNote.addModifier(vexflowAnnotation);
+    }
+
+    return vexflowAnnotations;
+  }
+
   /**
    * Returns the vexflow.Accidental objects preserving the note index.
    */
-  private renderVexflowAccidentals(voiceEntry: data.Note | data.Chord): Array<vexflow.Accidental | null> {
+  private renderVexflowAccidentals(
+    vexflowStaveNote: vexflow.StaveNote,
+    voiceEntry: data.Note | data.Chord
+  ): Array<vexflow.Accidental | null> {
+    const vexflowAccidentals = new Array<vexflow.Accidental | null>();
+
     switch (voiceEntry.type) {
       case 'note':
-        return [this.renderVexflowAccidental(voiceEntry.accidental)];
+        vexflowAccidentals.push(this.renderVexflowAccidental(voiceEntry.accidental));
+        break;
       case 'chord':
-        return voiceEntry.notes.map((note) => this.renderVexflowAccidental(note.accidental));
+        vexflowAccidentals.push(...voiceEntry.notes.map((note) => this.renderVexflowAccidental(note.accidental)));
+        break;
     }
+
+    for (let index = 0; index < vexflowAccidentals.length; index++) {
+      const vexflowAccidental = vexflowAccidentals[index];
+      if (vexflowAccidental) {
+        vexflowStaveNote.addModifier(vexflowAccidental, index);
+      }
+    }
+
+    return vexflowAccidentals;
   }
 
   private renderVexflowAccidental(accidental: data.Accidental | null): vexflow.Accidental | null {
@@ -201,7 +205,10 @@ export class Note {
     return vexflowAccidental;
   }
 
-  private renderGraceEntries(voiceEntry: data.Note | data.Chord): {
+  private renderGraceEntries(
+    vexflowStaveNote: vexflow.StaveNote,
+    voiceEntry: data.Note | data.Chord
+  ): {
     vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
     graceBeamRenders: BeamRender[];
     graceCurves: GraceCurve[];
@@ -287,6 +294,9 @@ export class Note {
     }
 
     const vexflowGraceNoteGroup = new vexflow.GraceNoteGroup(vexflowGraceNotes);
+    vexflowGraceNoteGroup.setNote(vexflowStaveNote);
+    vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
+    vexflowStaveNote.addModifier(vexflowGraceNoteGroup);
 
     // Grace notes cannot span voice entries, so we perform all the beaming here.
     const beams = this.document.getBeams(this.key);
@@ -302,7 +312,7 @@ export class Note {
     return { vexflowGraceNoteGroup, graceBeamRenders, graceCurves };
   }
 
-  private renderArticulations(): ArticulationRender[] {
+  private renderArticulations(vexflowStaveNote: vexflow.StaveNote): ArticulationRender[] {
     const articulationRenders = new Array<ArticulationRender>();
 
     const articulations = this.document.getArticulations(this.key);
@@ -313,10 +323,16 @@ export class Note {
       articulationRenders.push(articulationRender);
     }
 
+    for (const articulationRender of articulationRenders) {
+      for (const vexflowModifier of articulationRender.vexflowModifiers) {
+        vexflowStaveNote.addModifier(vexflowModifier);
+      }
+    }
+
     return articulationRenders;
   }
 
-  private renderBends(): BendRender[] {
+  private renderBends(vexflowStaveNote: vexflow.StaveNote): BendRender[] {
     const bendRenders = new Array<BendRender>();
 
     const voiceEntry = this.document.getVoiceEntry(this.key);
@@ -325,6 +341,12 @@ export class Note {
     if (hasBends) {
       const bendRender = new Bend(this.config, this.log, this.document, this.key).render();
       bendRenders.push(bendRender);
+    }
+
+    for (const bendRender of bendRenders) {
+      for (const vexflowModifier of bendRender.vexflowModifiers) {
+        vexflowStaveNote.addModifier(vexflowModifier);
+      }
     }
 
     return bendRenders;
