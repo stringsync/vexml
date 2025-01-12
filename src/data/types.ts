@@ -3,7 +3,7 @@ import {
   AnnotationHorizontalJustification,
   AnnotationVerticalJustification,
   ArticulationPlacement,
-  ArticulationType,
+  ArticulationType as ArticulationType,
   BarlineStyle,
   BendType,
   ClefSign,
@@ -341,19 +341,14 @@ export type Metronome = {
   dots2?: number;
 };
 
-export type Articulation = {
-  type: 'articulation';
-  articulationType: ArticulationType;
-  placement: ArticulationPlacement;
-};
-
-export type StringNumber = {
-  type: 'stringnumber';
-  number: number;
-};
-
 export type Bend = {
   type: 'bend';
   bendType: BendType;
   semitones: number;
+};
+
+export type Articulation = {
+  type: 'articulation';
+  articulationType: ArticulationType;
+  placement: ArticulationPlacement;
 };

@@ -67,6 +67,16 @@ export class Articulation {
 
     musicXML.note
       .getNotations()
+      .flatMap((n) => n.getOrnaments())
+      .forEach((ornament) => {
+        ornament.getTrillMarks().forEach(() => add('trill-mark', 'above'));
+        ornament.getMordents().forEach(() => add('mordent', 'above'));
+        ornament.getInvertedMordents().forEach(() => add('inverted-mordent', 'above'));
+      });
+
+    musicXML.note
+      .getNotations()
+      .filter((n) => n.isArpeggiated())
       .flatMap((n) => n.getArpeggioDirection())
       .forEach((direction) => {
         switch (direction) {
