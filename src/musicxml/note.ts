@@ -78,13 +78,13 @@ export class Note {
   }
 
   /** Returns the voice this note belongs to. */
-  getVoice(): string {
-    return this.element.first('voice')?.content().str() ?? '1';
+  getVoice(): string | null {
+    return this.element.first('voice')?.content().str() ?? null;
   }
 
   /** Returns the stave the note belongs to. */
-  getStaveNumber(): number {
-    return this.element.first('staff')?.content().int() ?? 1;
+  getStaveNumber(): number | null {
+    return this.element.first('staff')?.content().int() ?? null;
   }
 
   /** Returns the step of the note. Defaults to 'C'. */

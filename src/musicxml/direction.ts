@@ -122,6 +122,6 @@ export class Direction {
 
   /** Returns the staff this direction belongs to. Defaults to null. */
   getStaveNumber(): number | null {
-    return this.element.first('staff')?.content().int() ?? 1;
+    return this.element.first('staff')?.content().int() ?? null;
   }
 }

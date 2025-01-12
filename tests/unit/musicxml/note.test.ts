@@ -119,10 +119,10 @@ describe(Note, () => {
       expect(note.getVoice()).toBe('2');
     });
 
-    it(`defaults '1' when voice is missing`, () => {
+    it(`defaults null when voice is missing`, () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getVoice()).toBe('1');
+      expect(note.getVoice()).toBeNull();
     });
   });
 
@@ -133,16 +133,16 @@ describe(Note, () => {
       expect(note.getStaveNumber()).toBe(42);
     });
 
-    it('defaults to 1 when stave number is invalid', () => {
+    it('defaults to null when stave number is invalid', () => {
       const node = xml.note({ staff: xml.staff({ number: NaN }) });
       const note = new Note(node);
-      expect(note.getStaveNumber()).toBe(1);
+      expect(note.getStaveNumber()).toBeNull();
     });
 
-    it('defaults to 1 when stave number is missing', () => {
+    it('defaults to null when stave number is missing', () => {
       const node = xml.note();
       const note = new Note(node);
-      expect(note.getStaveNumber()).toBe(1);
+      expect(note.getStaveNumber()).toBeNull();
     });
   });
 

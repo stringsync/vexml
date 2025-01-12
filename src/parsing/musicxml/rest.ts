@@ -68,6 +68,7 @@ export class Rest {
       duration: this.getDuration().parse(),
       displayPitch: this.getDisplayPitch()?.parse() ?? null,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
+      pedalMark: voiceEntryCtx.continueOpenPedal(),
       tupletIds,
     };
   }
