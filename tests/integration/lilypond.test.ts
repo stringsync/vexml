@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer';
-import { MusicXMLParser, Vexml, Renderer } from '@/index';
+import { MusicXMLParser, Renderer } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 import { setup, getSnapshotIdentifier } from './helpers';
@@ -7,7 +7,6 @@ import { setup, getSnapshotIdentifier } from './helpers';
 type TestCase = {
   filename: string;
   width: number;
-  migrated?: boolean; // TODO: Remove this when all tests are migrated.
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'lilypond');
@@ -25,74 +24,74 @@ describe('lilypond', () => {
 
   // https://lilypond.org/doc/v2.23/input/regression/musicxml/collated-files.html
   it.each<TestCase>([
-    { filename: '01a-Pitches-Pitches.musicxml', width: 900, migrated: true },
-    { filename: '01b-Pitches-Intervals.musicxml', width: 900, migrated: true },
-    { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900, migrated: true },
-    { filename: '01e-Pitches-ParenthesizedAccidentals.musicxml', width: 900, migrated: true },
-    { filename: '01d-Pitches-Microtones.musicxml', width: 900, migrated: true },
-    { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.musicxml', width: 900, migrated: true },
-    { filename: '02a-Rests-Durations.musicxml', width: 900, migrated: true },
-    { filename: '02b-Rests-PitchedRests.musicxml', width: 900, migrated: true },
-    { filename: '02c-Rests-MultiMeasureRests.musicxml', width: 900, migrated: true },
-    { filename: '02d-Rests-Multimeasure-TimeSignatures.musicxml', width: 900, migrated: true },
-    { filename: '02e-Rests-NoType.musicxml', width: 900, migrated: true },
-    { filename: '03a-Rhythm-Durations.musicxml', width: 900, migrated: true },
-    { filename: '03b-Rhythm-Backup.musicxml', width: 900, migrated: true },
-    { filename: '03c-Rhythm-DivisionChange.musicxml', width: 900, migrated: true },
-    { filename: '03d-Rhythm-DottedDurations-Factors.musicxml', width: 900, migrated: true },
-    { filename: '11a-TimeSignatures.musicxml', width: 900, migrated: true },
-    { filename: '11b-TimeSignatures-NoTime.musicxml', width: 900, migrated: true },
-    { filename: '11c-TimeSignatures-CompoundSimple.musicxml', width: 900, migrated: true },
-    { filename: '11d-TimeSignatures-CompoundMultiple.musicxml', width: 900, migrated: true },
-    { filename: '11e-TimeSignatures-CompoundMixed.musicxml', width: 900, migrated: true },
-    { filename: '11f-TimeSignatures-SymbolMeaning.musicxml', width: 900, migrated: true },
-    { filename: '11g-TimeSignatures-SingleNumber.musicxml', width: 900, migrated: true },
-    { filename: '11h-TimeSignatures-SenzaMisura.musicxml', width: 900, migrated: true },
-    { filename: '12a-Clefs.musicxml', width: 900, migrated: true },
-    { filename: '12b-Clefs-NoKeyOrClef.musicxml', width: 900, migrated: true },
-    { filename: '13a-KeySignatures.musicxml', width: 900, migrated: true },
-    { filename: '13b-KeySignatures-ChurchModes.musicxml', width: 900, migrated: true },
-    { filename: '13c-KeySignatures-NonTraditional.musicxml', width: 900, migrated: true },
-    { filename: '13d-KeySignatures-Microtones.musicxml', width: 900, migrated: true },
-    { filename: '14a-StaffDetails-LineChanges.musicxml', width: 900, migrated: true },
-    { filename: '21a-Chord-Basic.musicxml', width: 900, migrated: true },
-    { filename: '21b-Chords-TwoNotes.musicxml', width: 900, migrated: true },
-    { filename: '21c-Chords-ThreeNotesDuration.musicxml', width: 900, migrated: true },
+    { filename: '01a-Pitches-Pitches.musicxml', width: 900 },
+    { filename: '01b-Pitches-Intervals.musicxml', width: 900 },
+    { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900 },
+    { filename: '01e-Pitches-ParenthesizedAccidentals.musicxml', width: 900 },
+    { filename: '01d-Pitches-Microtones.musicxml', width: 900 },
+    { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.musicxml', width: 900 },
+    { filename: '02a-Rests-Durations.musicxml', width: 900 },
+    { filename: '02b-Rests-PitchedRests.musicxml', width: 900 },
+    { filename: '02c-Rests-MultiMeasureRests.musicxml', width: 900 },
+    { filename: '02d-Rests-Multimeasure-TimeSignatures.musicxml', width: 900 },
+    { filename: '02e-Rests-NoType.musicxml', width: 900 },
+    { filename: '03a-Rhythm-Durations.musicxml', width: 900 },
+    { filename: '03b-Rhythm-Backup.musicxml', width: 900 },
+    { filename: '03c-Rhythm-DivisionChange.musicxml', width: 900 },
+    { filename: '03d-Rhythm-DottedDurations-Factors.musicxml', width: 900 },
+    { filename: '11a-TimeSignatures.musicxml', width: 900 },
+    { filename: '11b-TimeSignatures-NoTime.musicxml', width: 900 },
+    { filename: '11c-TimeSignatures-CompoundSimple.musicxml', width: 900 },
+    { filename: '11d-TimeSignatures-CompoundMultiple.musicxml', width: 900 },
+    { filename: '11e-TimeSignatures-CompoundMixed.musicxml', width: 900 },
+    { filename: '11f-TimeSignatures-SymbolMeaning.musicxml', width: 900 },
+    { filename: '11g-TimeSignatures-SingleNumber.musicxml', width: 900 },
+    { filename: '11h-TimeSignatures-SenzaMisura.musicxml', width: 900 },
+    { filename: '12a-Clefs.musicxml', width: 900 },
+    { filename: '12b-Clefs-NoKeyOrClef.musicxml', width: 900 },
+    { filename: '13a-KeySignatures.musicxml', width: 900 },
+    { filename: '13b-KeySignatures-ChurchModes.musicxml', width: 900 },
+    { filename: '13c-KeySignatures-NonTraditional.musicxml', width: 900 },
+    { filename: '13d-KeySignatures-Microtones.musicxml', width: 900 },
+    { filename: '14a-StaffDetails-LineChanges.musicxml', width: 900 },
+    { filename: '21a-Chord-Basic.musicxml', width: 900 },
+    { filename: '21b-Chords-TwoNotes.musicxml', width: 900 },
+    { filename: '21c-Chords-ThreeNotesDuration.musicxml', width: 900 },
     { filename: '21d-Chords-SchubertStabatMater.musicxml', width: 900 },
-    { filename: '21e-Chords-PickupMeasures.musicxml', width: 900, migrated: true },
+    { filename: '21e-Chords-PickupMeasures.musicxml', width: 900 },
     { filename: '21f-Chord-ElementInBetween.musicxml', width: 900 },
-    { filename: '22a-Noteheads.musicxml', width: 900, migrated: true },
+    { filename: '22a-Noteheads.musicxml', width: 900 },
     // { filename: '22b-Staff-Notestyles.musicxml', width: 900 },
-    { filename: '22c-Noteheads-Chords.musicxml', width: 900, migrated: true },
-    { filename: '22d-Parenthesized-Noteheads.musicxml', width: 900, migrated: true },
-    { filename: '23a-Tuplets.musicxml', width: 900, migrated: true },
+    { filename: '22c-Noteheads-Chords.musicxml', width: 900 },
+    { filename: '22d-Parenthesized-Noteheads.musicxml', width: 900 },
+    { filename: '23a-Tuplets.musicxml', width: 900 },
     // { filename: '23b-Tuplets-Styles.musicxml', width: 900 },
     // { filename: '23c-Tuplet-Display-NonStandard.musicxml', width: 900 },
     // { filename: '23d-Tuplets-Nested.musicxml', width: 900 },
     // { filename: '23e-Tuplets-Tremolo.musicxml', width: 900 },
     // { filename: '23f-Tuplets-DurationButNoBracket.musicxml', width: 900 },
-    { filename: '24a-GraceNotes.musicxml', width: 900, migrated: true },
-    { filename: '24b-ChordAsGraceNote.musicxml', width: 900, migrated: true },
+    { filename: '24a-GraceNotes.musicxml', width: 900 },
+    { filename: '24b-ChordAsGraceNote.musicxml', width: 900 },
     // { filename: '24c-GraceNote-MeasureEnd.musicxml', width: 900 },
     // { filename: '24d-AfterGrace.musicxml', width: 900 },
     // { filename: '24e-GraceNote-StaffChange.musicxml', width: 900 },
-    { filename: '24f-GraceNote-Slur.musicxml', width: 900, migrated: true },
-    { filename: '31a-Directions.musicxml', width: 900, migrated: true },
-    { filename: '31c-MetronomeMarks.musicxml', width: 900, migrated: true },
-    { filename: '32a-Notations.musicxml', width: 900, migrated: true },
+    { filename: '24f-GraceNote-Slur.musicxml', width: 900 },
+    { filename: '31a-Directions.musicxml', width: 900 },
+    { filename: '31c-MetronomeMarks.musicxml', width: 900 },
+    { filename: '32a-Notations.musicxml', width: 900 },
     // { filename: '32b-Articulations-Texts.musicxml', width: 900 },
     // { filename: '32c-MultipleNotationChildren.musicxml', width: 900 },
     // { filename: '32d-Arpeggio.musicxml', width: 900 },
-    { filename: '33a-Spanners.musicxml', width: 900, migrated: true },
-    { filename: '33b-Spanners-Tie.musicxml', width: 900, migrated: true },
-    { filename: '33c-Spanners-Slurs.musicxml', width: 900, migrated: true },
+    { filename: '33a-Spanners.musicxml', width: 900 },
+    { filename: '33b-Spanners-Tie.musicxml', width: 900 },
+    { filename: '33c-Spanners-Slurs.musicxml', width: 900 },
     // { filename: '33d-Spanners-OctaveShifts.musicxml', width: 900 },
     // { filename: '33e-Spanners-OctaveShifts-InvalidSize.musicxml', width: 900 },
     // { filename: '33f-Trill-EndingOnGraceNote.musicxml', width: 900 },
-    { filename: '33g-Slur-ChordedNotes.musicxml', width: 900, migrated: true },
+    { filename: '33g-Slur-ChordedNotes.musicxml', width: 900 },
     // { filename: '33h-Spanners-Glissando.musicxml', width: 900 },
     // { filename: '33i-Ties-NotEnded.musicxml', width: 900 },
-    { filename: '41a-MultiParts-Partorder.musicxml', width: 900, migrated: true },
+    { filename: '41a-MultiParts-Partorder.musicxml', width: 900 },
     // { filename: '41b-MultiParts-MoreThan10.musicxml', width: 900 },
     // { filename: '41c-StaffGroups.musicxml', width: 900 },
     // { filename: '41d-StaffGroups-Nested.musicxml', width: 900 },
@@ -103,15 +102,15 @@ describe('lilypond', () => {
     // { filename: '41i-PartNameDisplay-Override.musicxml', width: 900 },
     // { filename: '42a-MultiVoice-TwoVoicesOnStaff-Lyrics.musicxml', width: 900 },
     // { filename: '42b-MultiVoice-MidMeasureClefChange.musicxml', width: 900 },
-    { filename: '43a-PianoStaff.musicxml', width: 900, migrated: true },
+    { filename: '43a-PianoStaff.musicxml', width: 900 },
     // { filename: '43b-MultiStaff-DifferentKeys.musicxml', width: 900 },
     // { filename: '43c-MultiStaff-DifferentKeysAfterBackup.musicxml', width: 900 },
     // { filename: '43d-MultiStaff-StaffChange.musicxml', width: 900 },
     // { filename: '43e-Multistaff-ClefDynamics.musicxml', width: 900 },
-    { filename: '45a-SimpleRepeat.musicxml', width: 900, migrated: true },
-    { filename: '45b-RepeatWithAlternatives.musicxml', width: 900, migrated: true },
-    { filename: '45c-RepeatMultipleTimes.musicxml', width: 900, migrated: true },
-    { filename: '45d-Repeats-Nested-Alternatives.musicxml', width: 900, migrated: true },
+    { filename: '45a-SimpleRepeat.musicxml', width: 900 },
+    { filename: '45b-RepeatWithAlternatives.musicxml', width: 900 },
+    { filename: '45c-RepeatMultipleTimes.musicxml', width: 900 },
+    { filename: '45d-Repeats-Nested-Alternatives.musicxml', width: 900 },
     // { filename: '45e-Repeats-Nested-Alternatives.musicxml', width: 900 },
     // { filename: '45f-Repeats-InvalidEndings.musicxml', width: 900 },
     // { filename: '45g-Repeats-NotEnded.musicxml', width: 900 },
@@ -141,7 +140,7 @@ describe('lilypond', () => {
     // { filename: '71a-Chordnames.musicxml', width: 900 },
     // { filename: '71c-ChordsFrets.musicxml', width: 900 },
     // { filename: '71d-ChordsFrets-Multistaff.musicxml', width: 900 },
-    { filename: '71e-TabStaves.musicxml', width: 900, migrated: true },
+    { filename: '71e-TabStaves.musicxml', width: 900 },
     // { filename: '71f-AllChordTypes.musicxml', width: 900 },
     // { filename: '71g-MultipleChordnames.musicxml', width: 900 },
     // { filename: '72a-TransposingInstruments.musicxml', width: 900 },
@@ -157,17 +156,10 @@ describe('lilypond', () => {
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
-    if (t.migrated) {
-      const parser = new MusicXMLParser();
-      const document = parser.parse(buffer.toString());
-      const renderer = new Renderer(document);
-      renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
-    } else {
-      Vexml.fromBuffer(buffer).render({
-        element: vexmlDiv,
-        width: t.width,
-      });
-    }
+    const parser = new MusicXMLParser();
+    const doc = parser.parse(buffer.toString());
+    const renderer = new Renderer(doc);
+    renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
 
     await page.setViewport({
       width: t.width,
@@ -179,7 +171,7 @@ describe('lilypond', () => {
     const element = await page.$(screenshotElementSelector);
     const screenshot = Buffer.from((await element!.screenshot()) as any);
     expect(screenshot).toMatchImageSnapshot({
-      customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width, migrated: t.migrated }),
+      customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width }),
     });
   });
 });
