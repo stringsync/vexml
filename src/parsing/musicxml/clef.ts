@@ -14,7 +14,7 @@ export class Clef {
     return new Clef(partId, staveNumber, 'treble', null);
   }
 
-  static fromMusicXML(partId: string, musicXML: { clef: musicxml.Clef }) {
+  static create(partId: string, musicXML: { clef: musicxml.Clef }) {
     const clefSign = conversions.fromClefPropertiesToClefSign(musicXML.clef.getSign(), musicXML.clef.getLine());
 
     return new Clef(partId, musicXML.clef.getStaveNumber(), clefSign, musicXML.clef.getOctaveChange());

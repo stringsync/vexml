@@ -60,6 +60,18 @@ export class Time {
     return Time.combine(partId, staveNumber, times);
   }
 
+  /** Creates a Time for each stave. */
+  static createMulti(partId: string, staveCount: number, musicXML: { time: musicxml.Time }): Array<Time | null> {
+    const times = new Array<Time | null>();
+
+    for (let index = 0; index < staveCount; index++) {
+      const time = Time.create(partId, index + 1, musicXML);
+      times.push(time);
+    }
+
+    return times;
+  }
+
   /** Returns a simple Time, composed of two numbers. */
   static simple(partId: string, staveNumber: number, beatsPerMeasure: number, beatValue: number): Time {
     const components = [new util.Fraction(beatsPerMeasure, beatValue)];

@@ -160,7 +160,7 @@ export class EventCalculator {
       });
     }
 
-    const clefs = attributes.getClefs().map((clef) => Clef.fromMusicXML(partId, { clef }));
+    const clefs = attributes.getClefs().map((clef) => Clef.create(partId, { clef }));
     for (const clef of clefs) {
       this.events.push({
         type: 'clef',
@@ -172,19 +172,40 @@ export class EventCalculator {
       });
     }
 
+    // Processing keys is particularly messy because they can be applied to a specific stave or all staves. We need to
+    // keep track of the previous key to know if we need to show cancel accidentals.
     for (const attributeKey of attributes.getKeys()) {
       const staveNumber = attributeKey.getStaveNumber();
-      const previousKey = this.previousKeys.get(staveNumber) ?? null;
-      const key = Key.fromMusicXML(partId, previousKey, { key: attributeKey });
-      this.previousKeys.set(staveNumber, key);
-      this.events.push({
-        type: 'key',
-        partId,
-        measureIndex,
-        measureBeat: this.measureBeat,
-        staveNumber,
-        key,
-      });
+
+      if (typeof staveNumber === 'number') {
+        // If the key is applied to a specific stave, proceed forward as normal.
+        const previousKey = this.previousKeys.get(staveNumber) ?? null;
+        const key = Key.create(partId, staveNumber, previousKey, { key: attributeKey });
+        this.previousKeys.set(staveNumber, key);
+        this.events.push({
+          type: 'key',
+          partId,
+          measureIndex,
+          measureBeat: this.measureBeat,
+          staveNumber,
+          key,
+        });
+      } else {
+        // Otherwise, apply the key to all staves, checking the previous key as we go along.
+        for (let index = 0; index < staveCount.getValue(); index++) {
+          const previousKey = this.previousKeys.get(index + 1) ?? null;
+          const key = Key.create(partId, index + 1, previousKey, { key: attributeKey });
+          this.previousKeys.set(index + 1, key);
+          this.events.push({
+            type: 'key',
+            partId,
+            measureIndex,
+            measureBeat: this.measureBeat,
+            staveNumber: index + 1,
+            key,
+          });
+        }
+      }
     }
 
     const times = attributes
@@ -192,15 +213,9 @@ export class EventCalculator {
       .flatMap((time) => {
         const staveNumber = time.getStaveNumber();
         if (typeof staveNumber === 'number') {
-          return Time.create(partId, staveNumber, { time });
+          return [Time.create(partId, staveNumber, { time })];
         } else {
-          // A null stave number implies to apply to all staves.
-          // See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/time/#:~:text=the%20entire%20document.-,number,-staff%2Dnumber
-          const times = new Array<Time | null>();
-          for (let staveNumber = 1; staveNumber <= staveCount.getValue(); staveNumber++) {
-            times.push(Time.create(partId, staveNumber, { time }));
-          }
-          return times;
+          return Time.createMulti(partId, staveCount.getValue(), { time });
         }
       })
       .filter((time) => time !== null);

@@ -20,14 +20,8 @@ export class Key {
     return new Key(partId, staveNumber, 0, null, 'none');
   }
 
-  static fromMusicXML(partId: string, previousKey: Key | null, musicXML: { key: musicxml.Key }): Key {
-    return new Key(
-      partId,
-      musicXML.key.getStaveNumber(),
-      musicXML.key.getFifthsCount(),
-      previousKey,
-      musicXML.key.getMode()
-    );
+  static create(partId: string, staveNumber: number, previousKey: Key | null, musicXML: { key: musicxml.Key }): Key {
+    return new Key(partId, staveNumber, musicXML.key.getFifthsCount(), previousKey, musicXML.key.getMode());
   }
 
   parse(): data.Key {
