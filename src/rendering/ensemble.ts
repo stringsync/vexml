@@ -10,6 +10,7 @@ import { NoopRenderContext } from './nooprenderctx';
 const CURVE_EXTRA_WIDTH = 20;
 const TUPLET_EXTRA_WIDTH = 15;
 const TAB_RECT_WIDTH = 10;
+const TAB_VOICE_PADDING_LEFT = 20;
 
 // These modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out when calculating
 // the bounding box of the vexflow StaveNote. Remove each member when they are fixed upstream.
@@ -60,6 +61,12 @@ export class Ensemble {
     // Set the width on the vexflow staves.
     for (const vexflowStave of vexflowStaves) {
       vexflowStave.setWidth(staveWidth);
+
+      // Nudge the tab stave to the right.
+      if (vexflowStave instanceof vexflow.TabStave) {
+        const noteStartX = vexflowStave.getNoteStartX();
+        vexflowStave.setNoteStartX(noteStartX + TAB_VOICE_PADDING_LEFT);
+      }
     }
 
     // Assign each voice to a stave.
