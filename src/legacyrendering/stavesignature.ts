@@ -149,7 +149,7 @@ export class StaveSignature {
     const keySignatures = {
       ...previousStaveSignature?.keySignatures,
       ...opts.musicXML.attributes.getKeys().reduce<StaveMap<KeySignature>>((map, key) => {
-        const staveNumber = key.getStaveNumber();
+        const staveNumber = key.getStaveNumber() ?? 1;
         const previousKeySignature = previousStaveSignature?.getKeySignature(staveNumber) ?? null;
         map[staveNumber] = KeySignature.from({ config, log, musicXML: { key }, previousKeySignature });
         return map;
