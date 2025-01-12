@@ -27,7 +27,7 @@ import { Curve } from './curve';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { RenderRegistry } from './renderregistry';
 import { Vibrato } from './vibrato';
 
 /**
@@ -44,7 +44,7 @@ export class Score {
     const titleRender = this.renderTitle(pen);
     const systemRenders = this.renderSystems(pen);
 
-    const registry = NoteRenderRegistry.create(systemRenders);
+    const registry = RenderRegistry.create(systemRenders);
 
     const curveRenders = this.renderCurves(registry);
     const wedgeRenders = this.renderWedges(registry);
@@ -97,7 +97,7 @@ export class Score {
     };
   }
 
-  private renderCurves(registry: NoteRenderRegistry): CurveRender[] {
+  private renderCurves(registry: RenderRegistry): CurveRender[] {
     const curves = this.document.getCurves();
     const curveRenders = new Array<CurveRender>();
 
@@ -115,7 +115,7 @@ export class Score {
     return curveRenders;
   }
 
-  private renderWedges(registry: NoteRenderRegistry): WedgeRender[] {
+  private renderWedges(registry: RenderRegistry): WedgeRender[] {
     const wedges = this.document.getWedges();
     const wedgeRenders = new Array<WedgeRender>();
 
@@ -133,7 +133,7 @@ export class Score {
     return wedgeRenders;
   }
 
-  private renderPedals(registry: NoteRenderRegistry): PedalRender[] {
+  private renderPedals(registry: RenderRegistry): PedalRender[] {
     const pedals = this.document.getPedals();
     const pedalRenders = new Array<PedalRender>();
 
@@ -151,7 +151,7 @@ export class Score {
     return pedalRenders;
   }
 
-  private renderOctaveShifts(registry: NoteRenderRegistry): OctaveShiftRender[] {
+  private renderOctaveShifts(registry: RenderRegistry): OctaveShiftRender[] {
     const octaveShifts = this.document.getOctaveShifts();
     const octaveShiftRenders = new Array<OctaveShiftRender>();
 
@@ -169,7 +169,7 @@ export class Score {
     return octaveShiftRenders;
   }
 
-  private renderVibratos(registry: NoteRenderRegistry): VibratoRender[] {
+  private renderVibratos(registry: RenderRegistry): VibratoRender[] {
     const vibratos = this.document.getVibratos();
     const vibratoRenders = new Array<VibratoRender>();
 

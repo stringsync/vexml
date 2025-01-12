@@ -6,7 +6,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { CurveKey, CurveRender, NoteRender, VoiceEntryKey } from './types';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { RenderRegistry } from './renderregistry';
 
 type Stem = 'up' | 'down' | 'none';
 
@@ -26,12 +26,12 @@ export class Curve {
     private log: Logger,
     private document: Document,
     private key: CurveKey,
-    private registry: NoteRenderRegistry
+    private registry: RenderRegistry
   ) {}
 
   render(): CurveRender {
     const curve = this.document.getCurve(this.key);
-    const noteRenders = this.registry.get(curve.id);
+    const noteRenders = this.registry.get(curve.id).filter((r) => r.type === 'note');
 
     const curveNotes = this.getCurveNotes(noteRenders);
 

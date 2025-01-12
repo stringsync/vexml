@@ -4,8 +4,8 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { NoteRender, OctaveShiftKey, OctaveShiftRender } from './types';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { NoteRender, OctaveShiftKey, OctaveShiftRender, RestRender } from './types';
+import { RenderRegistry } from './renderregistry';
 
 export class OctaveShift {
   constructor(
@@ -13,14 +13,14 @@ export class OctaveShift {
     private log: Logger,
     private document: Document,
     private key: OctaveShiftKey,
-    private registry: NoteRenderRegistry
+    private registry: RenderRegistry
   ) {}
 
   render(): OctaveShiftRender {
     const octaveShift = this.document.getOctaveShift(this.key);
-    const noteRenders = this.registry.get(octaveShift.id);
+    const renders = this.registry.get(octaveShift.id).filter((r) => r.type === 'note' || r.type === 'rest');
 
-    const vexflowTextBrackets = this.renderVexflowTextBrackets(noteRenders);
+    const vexflowTextBrackets = this.renderVexflowTextBrackets(renders);
 
     return {
       type: 'octaveshift',
@@ -30,8 +30,8 @@ export class OctaveShift {
     };
   }
 
-  private renderVexflowTextBrackets(noteRenders: NoteRender[]): vexflow.TextBracket[] {
-    if (noteRenders.length < 2) {
+  private renderVexflowTextBrackets(renders: Array<NoteRender | RestRender>): vexflow.TextBracket[] {
+    if (renders.length < 2) {
       this.log.warn('cannot render octave shift with less than 2 notes, skipping', {
         octaveShiftIndex: this.key.octaveShiftIndex,
       });
@@ -40,9 +40,9 @@ export class OctaveShift {
 
     const vexflowTextBrackets = new Array<vexflow.TextBracket>();
 
-    const systemIndexes = util.unique(noteRenders.map((n) => n.key.systemIndex));
+    const systemIndexes = util.unique(renders.map((n) => n.key.systemIndex));
     for (const systemIndex of systemIndexes) {
-      const systemNoteRenders = noteRenders.filter((n) => n.key.systemIndex === systemIndex);
+      const systemNoteRenders = renders.filter((n) => n.key.systemIndex === systemIndex);
       if (systemNoteRenders.length > 1) {
         const vexflowTextBracket = this.renderVexflowTextBracket(systemNoteRenders);
         vexflowTextBrackets.push(vexflowTextBracket);
@@ -52,11 +52,11 @@ export class OctaveShift {
     return vexflowTextBrackets;
   }
 
-  private renderVexflowTextBracket(noteRenders: NoteRender[]): vexflow.TextBracket {
+  private renderVexflowTextBracket(renders: Array<NoteRender | RestRender>): vexflow.TextBracket {
     const octaveShift = this.document.getOctaveShift(this.key);
 
-    const start = noteRenders.at(0)!.vexflowNote;
-    const stop = noteRenders.at(-1)!.vexflowNote;
+    const start = renders.at(0)!.vexflowNote;
+    const stop = renders.at(-1)!.vexflowNote;
 
     const text = Math.abs(octaveShift.size).toString();
 

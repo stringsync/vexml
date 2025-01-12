@@ -4,8 +4,8 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { NoteRender, PedalKey, PedalRender } from './types';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { NoteRender, PedalKey, PedalRender, RestRender } from './types';
+import { RenderRegistry } from './renderregistry';
 
 export class Pedal {
   constructor(
@@ -13,14 +13,14 @@ export class Pedal {
     private log: Logger,
     private document: Document,
     private key: PedalKey,
-    private registry: NoteRenderRegistry
+    private registry: RenderRegistry
   ) {}
 
   render(): PedalRender {
     const pedal = this.document.getPedal(this.key);
-    const noteRenders = this.registry.get(pedal.id);
+    const renders = this.registry.get(pedal.id).filter((r) => r.type === 'note' || r.type === 'rest');
 
-    const vexflowPedalMarkings = this.renderVexflowPedalMarkings(noteRenders);
+    const vexflowPedalMarkings = this.renderVexflowPedalMarkings(renders);
 
     let vexflowPedalMarkingType: number;
     switch (pedal.pedalType) {
@@ -47,14 +47,14 @@ export class Pedal {
     };
   }
 
-  private renderVexflowPedalMarkings(noteRenders: NoteRender[]): vexflow.PedalMarking[] {
+  private renderVexflowPedalMarkings(renders: Array<NoteRender | RestRender>): vexflow.PedalMarking[] {
     const vexflowPedalMarkings = new Array<vexflow.PedalMarking>();
 
-    const systemIndexes = util.unique(noteRenders.map((n) => n.key.systemIndex));
+    const systemIndexes = util.unique(renders.map((n) => n.key.systemIndex));
     for (const systemIndex of systemIndexes) {
-      const systemNoteRenders = noteRenders.filter((n) => n.key.systemIndex === systemIndex);
-      if (systemNoteRenders.length > 1) {
-        const vexflowPedalMarking = this.renderSinglePedalMarking(systemNoteRenders);
+      const systemScopedRenders = renders.filter((n) => n.key.systemIndex === systemIndex);
+      if (systemScopedRenders.length > 1) {
+        const vexflowPedalMarking = this.renderSinglePedalMarking(systemScopedRenders);
         vexflowPedalMarkings.push(vexflowPedalMarking);
       }
     }
@@ -62,10 +62,10 @@ export class Pedal {
     return vexflowPedalMarkings;
   }
 
-  private renderSinglePedalMarking(noteRenders: NoteRender[]): vexflow.PedalMarking {
+  private renderSinglePedalMarking(renders: Array<NoteRender | RestRender>): vexflow.PedalMarking {
     const vexflowStaveNotes = new Array<vexflow.StaveNote>();
 
-    for (const noteRender of noteRenders) {
+    for (const noteRender of renders) {
       const vexflowNote = noteRender.vexflowNote;
       if (!(vexflowNote instanceof vexflow.StaveNote)) {
         continue;

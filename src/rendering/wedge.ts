@@ -4,8 +4,8 @@ import { Config } from './config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
-import { NoteRender, WedgeKey, WedgeRender } from './types';
-import { NoteRenderRegistry } from './noterenderregistry';
+import { NoteRender, RestRender, WedgeKey, WedgeRender } from './types';
+import { RenderRegistry } from './renderregistry';
 
 export class Wedge {
   constructor(
@@ -13,14 +13,14 @@ export class Wedge {
     private log: Logger,
     private document: Document,
     private key: WedgeKey,
-    private registry: NoteRenderRegistry
+    private registry: RenderRegistry
   ) {}
 
   render(): WedgeRender {
     const wedge = this.document.getWedge(this.key);
-    const noteRenders = this.registry.get(wedge.id);
+    const renders = this.registry.get(wedge.id).filter((r) => r.type === 'note' || r.type === 'rest');
 
-    const vexflowStaveHairpins = this.renderVexflowStaveHairpins(noteRenders);
+    const vexflowStaveHairpins = this.renderVexflowStaveHairpins(renders);
 
     return {
       type: 'wedge',
@@ -30,19 +30,19 @@ export class Wedge {
     };
   }
 
-  private renderVexflowStaveHairpins(noteRenders: NoteRender[]): vexflow.StaveHairpin[] {
-    if (noteRenders.length < 2) {
+  private renderVexflowStaveHairpins(renders: Array<NoteRender | RestRender>): vexflow.StaveHairpin[] {
+    if (renders.length < 2) {
       this.log.warn('cannot render wedge with less than 2 notes, skipping', { wedgeIndex: this.key.wedgeIndex });
       return [];
     }
 
     const vexflowStaveHairpins = new Array<vexflow.StaveHairpin>();
 
-    const systemIndexes = util.unique(noteRenders.map((n) => n.key.systemIndex));
+    const systemIndexes = util.unique(renders.map((n) => n.key.systemIndex));
     for (const systemIndex of systemIndexes) {
-      const systemNoteRenders = noteRenders.filter((n) => n.key.systemIndex === systemIndex);
-      if (systemNoteRenders.length > 1) {
-        const vexflowStaveHairpin = this.renderSingleStaveHairpin(systemNoteRenders);
+      const systemScopedRenders = renders.filter((n) => n.key.systemIndex === systemIndex);
+      if (systemScopedRenders.length > 1) {
+        const vexflowStaveHairpin = this.renderSingleStaveHairpin(systemScopedRenders);
         vexflowStaveHairpins.push(vexflowStaveHairpin);
       }
     }
@@ -50,11 +50,11 @@ export class Wedge {
     return vexflowStaveHairpins;
   }
 
-  private renderSingleStaveHairpin(noteRenders: NoteRender[]): vexflow.StaveHairpin {
+  private renderSingleStaveHairpin(renders: Array<NoteRender | RestRender>): vexflow.StaveHairpin {
     const wedge = this.document.getWedge(this.key);
 
-    const firstNote = noteRenders.at(0)!.vexflowNote;
-    const lastNote = noteRenders.at(-1)!.vexflowNote;
+    const firstNote = renders.at(0)!.vexflowNote;
+    const lastNote = renders.at(-1)!.vexflowNote;
 
     let vexflowStaveHairpinType: number;
     switch (wedge.wedgeType) {
