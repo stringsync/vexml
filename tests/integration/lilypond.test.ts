@@ -141,7 +141,7 @@ describe('lilypond', () => {
     // { filename: '71a-Chordnames.musicxml', width: 900 },
     // { filename: '71c-ChordsFrets.musicxml', width: 900 },
     // { filename: '71d-ChordsFrets-Multistaff.musicxml', width: 900 },
-    { filename: '71e-TabStaves.musicxml', width: 900 },
+    { filename: '71e-TabStaves.musicxml', width: 900, migrated: true },
     // { filename: '71f-AllChordTypes.musicxml', width: 900 },
     // { filename: '71g-MultipleChordnames.musicxml', width: 900 },
     // { filename: '72a-TransposingInstruments.musicxml', width: 900 },

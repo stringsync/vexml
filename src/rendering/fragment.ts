@@ -179,6 +179,12 @@ export class Fragment {
       const key: PartKey = { ...this.key, partIndex };
       const partRender = new Part(this.config, this.log, this.document, key, pen.position()).render();
       partRenders.push(partRender);
+
+      const lastVexflowStave = partRender.staveRenders.at(-1)?.vexflowStave;
+      if (lastVexflowStave) {
+        pen.moveBy({ dy: lastVexflowStave.getHeight() });
+      }
+
       pen.moveBy({ dy: this.config.PART_MARGIN_BOTTOM });
     }
 

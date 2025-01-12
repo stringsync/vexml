@@ -69,7 +69,7 @@ export const CONFIG = {
     choices: ['right', 'left'] as const,
   }),
   PART_MARGIN_BOTTOM: t.number({
-    defaultValue: 80,
+    defaultValue: 40,
     help: 'PART_MARGIN_BOTTOM is the vertical distance between parts of a system.',
   }),
   DEFAULT_STAVE_MARGIN_BOTTOM: t.number({
