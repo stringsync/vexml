@@ -21,7 +21,7 @@ export class Dynamics {
       key: this.key,
       rect: Rect.empty(),
       dynamicType: dynamics.dynamicType,
-      vexflowTickable: vexflowTextDynamics,
+      vexflowNote: vexflowTextDynamics,
     };
   }
 }

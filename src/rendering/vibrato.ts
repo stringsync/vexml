@@ -40,8 +40,8 @@ export class Vibrato {
       const renders = noteRenders.filter((n) => n.key.systemIndex === systemIndex);
       if (renders.length > 1) {
         const vexflowVibratoBracket = new vexflow.VibratoBracket({
-          start: renders.at(0)!.vexflowTickable,
-          stop: renders.at(-1)!.vexflowTickable,
+          start: renders.at(0)!.vexflowNote,
+          stop: renders.at(-1)!.vexflowNote,
         });
         vexflowVibratoBrackets.push(vexflowVibratoBracket);
       }

@@ -15,7 +15,7 @@ type CurveNote = {
   rect: Rect;
   key: VoiceEntryKey;
   line: number;
-  vexflowStaveNote: vexflow.StaveNote;
+  vexflowStaveNote: vexflow.Note;
 };
 
 type CurvePlacement = 'above' | 'below';
@@ -227,11 +227,11 @@ export class Curve {
 
     for (const noteRender of noteRenders) {
       curveNotes.push({
-        stem: this.getStem(noteRender.vexflowTickable),
+        stem: this.getStem(noteRender.vexflowNote),
         rect: noteRender.rect,
         key: noteRender.key,
-        line: noteRender.vexflowTickable.getLineNumber(),
-        vexflowStaveNote: noteRender.vexflowTickable,
+        line: noteRender.vexflowNote.getLineNumber(),
+        vexflowStaveNote: noteRender.vexflowNote,
       });
 
       const vexflowGraceNotes = noteRender.vexflowGraceNoteGroup?.getGraceNotes() ?? [];
@@ -261,7 +261,7 @@ export class Curve {
   /**
    * Returns the actual stem direction of the note, including the concrete resulting stem when using auto-stem.
    */
-  private getStem(vexflowStaveNote: vexflow.StaveNote): Stem {
+  private getStem(vexflowStaveNote: vexflow.Note): Stem {
     // Calling getStemDirection will throw if there is no stem.
     // https://github.com/vexflow/vexflow/blob/d602715b1c05e21d3498f78b8b5904cb47ad3795/src/stemmablenote.ts#L123
     try {

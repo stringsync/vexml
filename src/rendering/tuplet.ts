@@ -37,7 +37,7 @@ export class Tuplet {
         break;
     }
 
-    const vexflowStaveNotes = voiceEntryRenders.map((entry) => entry.vexflowTickable);
+    const vexflowStaveNotes = voiceEntryRenders.map((entry) => entry.vexflowNote);
     const vexflowTuplet = new vexflow.Tuplet(vexflowStaveNotes, {
       location: vexflowTupletLocation,
       ratioed: tuplet.showNumber,

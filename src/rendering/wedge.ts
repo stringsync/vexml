@@ -53,8 +53,8 @@ export class Wedge {
   private renderSingleStaveHairpin(noteRenders: NoteRender[]): vexflow.StaveHairpin {
     const wedge = this.document.getWedge(this.key);
 
-    const firstNote = noteRenders.at(0)!.vexflowTickable;
-    const lastNote = noteRenders.at(-1)!.vexflowTickable;
+    const firstNote = noteRenders.at(0)!.vexflowNote;
+    const lastNote = noteRenders.at(-1)!.vexflowNote;
 
     let vexflowStaveHairpinType: number;
     switch (wedge.wedgeType) {

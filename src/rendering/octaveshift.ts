@@ -55,8 +55,8 @@ export class OctaveShift {
   private renderVexflowTextBracket(noteRenders: NoteRender[]): vexflow.TextBracket {
     const octaveShift = this.document.getOctaveShift(this.key);
 
-    const start = noteRenders.at(0)!.vexflowTickable;
-    const stop = noteRenders.at(-1)!.vexflowTickable;
+    const start = noteRenders.at(0)!.vexflowNote;
+    const stop = noteRenders.at(-1)!.vexflowNote;
 
     const text = Math.abs(octaveShift.size).toString();
 

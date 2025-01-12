@@ -239,19 +239,19 @@ export type NoteRender = {
   key: VoiceEntryKey;
   rect: Rect;
   stemDirection: StemDirection;
-  vexflowTickable: vexflow.StaveNote;
+  vexflowNote: vexflow.Note;
   curveIds: string[];
   beamId: string | null;
   wedgeId: string | null;
   tupletIds: string[];
   graceCurves: GraceCurve[];
-  graceBeamRenders: BeamRender[];
   vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
   pedalMark: data.PedalMark | null;
   octaveShiftId: string | null;
   vibratoIds: string[];
-  articulationRenders: ArticulationRender[];
   bendRenders: BendRender[];
+  graceBeamRenders: BeamRender[];
+  articulationRenders: ArticulationRender[];
 };
 
 export type GraceCurve = {
@@ -263,7 +263,7 @@ export type RestRender = {
   type: 'rest';
   key: VoiceEntryKey;
   rect: Rect;
-  vexflowTickable: vexflow.StaveNote;
+  vexflowNote: vexflow.Note;
   beamId: string | null;
   tupletIds: string[];
 };
@@ -273,7 +273,7 @@ export type DynamicsRender = {
   key: VoiceEntryKey;
   rect: Rect;
   dynamicType: data.DynamicType;
-  vexflowTickable: vexflow.TextDynamics;
+  vexflowNote: vexflow.TextDynamics;
 };
 
 export type KeyRender = {

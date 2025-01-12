@@ -88,6 +88,14 @@ export const CONFIG = {
       'MULTI_REST_MEASURE_WIDTH is how much extra width to give multi-rest measures ' +
       'when calculating stave minimum width.',
   }),
+  SHOW_TAB_CLEF: t.boolean({
+    defaultValue: true,
+    help: 'SHOW_TAB_CLEF specifies whether to show the tab clef.',
+  }),
+  SHOW_TAB_TIME_SIGNATURE: t.boolean({
+    defaultValue: false,
+    help: 'SHOW_TAB_TIME_SIGNATURE specifies whether to show the time signature for tab staves.',
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
