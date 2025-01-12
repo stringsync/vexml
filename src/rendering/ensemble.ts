@@ -4,60 +4,70 @@ import { Logger } from '../debug';
 import { Config } from './config';
 import { Document } from './document';
 import { Rect } from '@/spatial';
-import { FragmentKey, FragmentRender, StaveRender, VoiceEntryRender } from './types';
+import { FragmentKey, FragmentRender, StaveRender, VoiceEntryRender, VoiceRender } from './types';
 import { NoopRenderContext } from './nooprenderctx';
 
 const CURVE_EXTRA_WIDTH = 20;
 const TUPLET_EXTRA_WIDTH = 15;
 
-export class Ensemble {
-  private vexflowFormatter = new vexflow.Formatter();
+export type EnsembleFormatParams = {
+  x: number;
+  width: number | null;
+  paddingLeft: number;
+  paddingRight: number;
+};
 
-  constructor(
-    private config: Config,
-    private log: Logger,
-    private document: Document,
-    private key: FragmentKey,
-    private fragmentRender: FragmentRender
-  ) {}
+export class Ensemble {
+  constructor(private config: Config, private log: Logger, private document: Document, private key: FragmentKey) {}
 
   /** Formats the ensemble, updating the rects and vexflow objects in place. */
-  format(x: number, width: number | null, paddingLeft: number, paddingRight: number): void {
+  format(fragmentRender: FragmentRender, { x, width, paddingLeft, paddingRight }: EnsembleFormatParams): void {
+    const vexflowFormatter = new vexflow.Formatter();
+
+    // Explode out the components of the ensemble.
+    const staveRenders = fragmentRender.partRenders.flatMap((p) => p.staveRenders);
+    const vexflowStaves = staveRenders.map((s) => s.vexflowStave);
+    const voiceRenders = staveRenders.flatMap((s) => s.voiceRenders);
+    const vexflowVoices = voiceRenders.flatMap((v) => v.vexflowVoices).filter((v) => v.getTickables().length > 0);
+    const entryRenders = voiceRenders.flatMap((v) => v.entryRenders);
+
     // Calculate the non-voice width.
     const nonVoiceWidth =
       vexflow.Stave.defaultPadding +
-      this.getStartClefWidth() +
-      this.getEndClefWidth() +
-      this.getKeyWidth() +
-      this.getTimeWidth();
+      this.getStartClefWidth(staveRenders) +
+      this.getEndClefWidth(staveRenders) +
+      this.getKeyWidth(staveRenders) +
+      this.getTimeWidth(staveRenders);
 
     // Calculate stave width.
-    const staveWidth = (width ?? this.getVoiceWidth() + nonVoiceWidth) - paddingLeft - paddingRight;
+    let staveWidth: number;
+    if (width) {
+      staveWidth = width;
+    } else {
+      staveWidth = this.getVoiceWidth(staveRenders, voiceRenders, entryRenders) + nonVoiceWidth;
+    }
+    staveWidth -= paddingLeft;
+    staveWidth -= paddingRight;
 
     // Set the width on the vexflow staves.
-    const vexflowStaves = this.getStaveRenders().map((s) => s.vexflowStave);
     for (const vexflowStave of vexflowStaves) {
       vexflowStave.setWidth(staveWidth);
     }
 
     // Join the voices that belong on the _same stave_.
-    for (const staveRender of this.getStaveRenders()) {
-      const vexflowVoices = staveRender.voiceRenders
+    for (const staveRender of staveRenders) {
+      const staveVexflowVoices = staveRender.voiceRenders
         .flatMap((v) => v.vexflowVoices)
         .filter((v) => v.getTickables().length > 0);
-      if (vexflowVoices.length > 0) {
-        this.vexflowFormatter.joinVoices(vexflowVoices);
+      if (staveVexflowVoices.length > 0) {
+        vexflowFormatter.joinVoices(staveVexflowVoices);
       }
     }
 
     // Format _all_ the voices. The voice width must be smaller than the stave or the stave won't contain it.
-    const vexflowVoices = this.getStaveRenders()
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.vexflowVoices)
-      .filter((v) => v.getTickables().length > 0);
     const voiceWidth = staveWidth - nonVoiceWidth;
     if (vexflowVoices.length > 0) {
-      this.vexflowFormatter.format(vexflowVoices, voiceWidth);
+      vexflowFormatter.format(vexflowVoices, voiceWidth);
     }
 
     // At this point, we can call getBoundingBox() on everything, but vexflow does some extra formatting in draw() that
@@ -73,7 +83,7 @@ export class Ensemble {
     // rects accordingly.
     let excessHeight = 0;
 
-    for (const partRender of this.fragmentRender.partRenders) {
+    for (const partRender of fragmentRender.partRenders) {
       for (const staveRender of partRender.staveRenders) {
         for (const voiceRender of staveRender.voiceRenders) {
           for (const entryRender of voiceRender.entryRenders) {
@@ -88,38 +98,26 @@ export class Ensemble {
       partRender.rect = Rect.merge(partRender.staveRenders.map((s) => s.rect));
     }
 
-    this.fragmentRender.rect = Rect.merge(this.fragmentRender.partRenders.map((s) => s.rect));
-    this.fragmentRender.excessHeight = excessHeight;
-  }
-
-  private getStaveRenders(): StaveRender[] {
-    return this.fragmentRender.partRenders.flatMap((p) => p.staveRenders);
+    fragmentRender.rect = Rect.merge(fragmentRender.partRenders.map((s) => s.rect));
+    fragmentRender.excessHeight = excessHeight;
   }
 
   /** Returns extra width to accommodate curves */
-  private getCurveExtraWidth(): number {
-    const curveCount = util.unique(
-      this.getStaveRenders()
-        .flatMap((s) => s.voiceRenders)
-        .flatMap((v) => v.entryRenders)
-        .filter((e) => e.type === 'note')
-        .flatMap((n) => n.curveIds)
-    ).length;
+  private getCurveExtraWidth(entryRenders: VoiceEntryRender[]): number {
+    const curveCount = util.unique(entryRenders.filter((e) => e.type === 'note').flatMap((n) => n.curveIds)).length;
     if (curveCount <= 1) {
       return 0;
     }
     return curveCount * CURVE_EXTRA_WIDTH;
   }
 
-  private getTupletExtraWidth(): number {
-    const tupletCount = this.getStaveRenders()
-      .flatMap((s) => s.voiceRenders)
-      .flatMap((v) => v.tupletRenders).length;
+  private getTupletExtraWidth(voiceRenders: VoiceRender[]): number {
+    const tupletCount = voiceRenders.flatMap((v) => v.tupletRenders).length;
     return tupletCount * TUPLET_EXTRA_WIDTH;
   }
 
-  private getStartClefWidth(): number {
-    const widths = this.getStaveRenders()
+  private getStartClefWidth(staveRenders: StaveRender[]): number {
+    const widths = staveRenders
       .map((s) => s.startClefRender)
       .filter((c) => c !== null)
       .map((c) => c.width);
@@ -129,8 +127,8 @@ export class Ensemble {
     return 0;
   }
 
-  private getEndClefWidth(): number {
-    const widths = this.getStaveRenders()
+  private getEndClefWidth(staveRenders: StaveRender[]): number {
+    const widths = staveRenders
       .map((s) => s.endClefRender)
       .filter((c) => c !== null)
       .map((c) => c.width);
@@ -140,8 +138,8 @@ export class Ensemble {
     return 0;
   }
 
-  private getTimeWidth(): number {
-    const widths = this.getStaveRenders()
+  private getTimeWidth(staveRenders: StaveRender[]): number {
+    const widths = staveRenders
       .map((s) => s.timeRender)
       .filter((t) => t !== null)
       .flatMap((t) => t.width);
@@ -151,8 +149,8 @@ export class Ensemble {
     return 0;
   }
 
-  private getKeyWidth(): number {
-    const widths = this.getStaveRenders()
+  private getKeyWidth(staveRenders: StaveRender[]): number {
+    const widths = staveRenders
       .map((s) => s.keyRender)
       .filter((k) => k !== null)
       .map((k) => k.width);
@@ -162,18 +160,22 @@ export class Ensemble {
     return 0;
   }
 
-  private getVoiceWidth(): number {
+  private getVoiceWidth(
+    staveRenders: StaveRender[],
+    voiceRenders: VoiceRender[],
+    entryRenders: VoiceEntryRender[]
+  ): number {
     let width = 0;
 
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
     if (multiRestCount > 0) {
       width += this.getMultiRestStaveWidth();
     } else {
-      width += this.getMinRequiredStaveWidth();
+      width += this.getMinRequiredStaveWidth(staveRenders);
     }
 
-    width += this.getCurveExtraWidth();
-    width += this.getTupletExtraWidth();
+    width += this.getTupletExtraWidth(voiceRenders);
+    width += this.getCurveExtraWidth(entryRenders);
 
     return width;
   }
@@ -182,13 +184,13 @@ export class Ensemble {
     return this.config.BASE_MULTI_REST_MEASURE_WIDTH;
   }
 
-  private getMinRequiredStaveWidth(): number {
+  private getMinRequiredStaveWidth(staveRenders: StaveRender[]): number {
     const fragmentCount = this.document.getFragmentCount(this.key);
-    return this.config.BASE_VOICE_WIDTH / fragmentCount + this.getMinRequiredVoiceWidth();
+    return this.config.BASE_VOICE_WIDTH / fragmentCount + this.getMinRequiredVoiceWidth(staveRenders);
   }
 
-  private getMinRequiredVoiceWidth(): number {
-    const widths = this.getStaveRenders().map((s) => {
+  private getMinRequiredVoiceWidth(staveRenders: StaveRender[]): number {
+    const widths = staveRenders.map((s) => {
       const vexflowVoices = s.voiceRenders.flatMap((v) => v.vexflowVoices).filter((v) => v.getTickables().length > 0);
       if (vexflowVoices.length === 0) {
         return 0;

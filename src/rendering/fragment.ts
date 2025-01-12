@@ -70,12 +70,14 @@ export class Fragment {
       paddingRight += BARLINE_PADDING_RIGHT;
     }
 
-    new Ensemble(this.config, this.log, this.document, this.key, fragmentRender).format(
-      postPartLabelGroupPosition.x,
-      ensembleWidth,
+    const ensemble = new Ensemble(this.config, this.log, this.document, this.key);
+
+    ensemble.format(fragmentRender, {
+      x: postPartLabelGroupPosition.x,
+      width: ensembleWidth,
       paddingLeft,
-      paddingRight
-    );
+      paddingRight,
+    });
 
     // After formatting, we can trust the y positions of the staves. Now we can render the part labels.
     const partLabelGroupRender = this.renderPartLabelGroup(prePartLabelGroupPosition, partRenders);
