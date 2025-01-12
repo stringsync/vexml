@@ -173,12 +173,31 @@ export class Stave {
   }
 
   private renderMeasureLabel(vexflowStave: vexflow.Stave): void {
+    const measureLabel = this.document.getMeasure(this.key).label;
+    if (this.shouldShowMeasureLabel() && measureLabel) {
+      vexflowStave.setMeasure(measureLabel);
+    }
+  }
+
+  private shouldShowMeasureLabel(): boolean {
     const isFirstPart = this.document.isFirstPart(this.key);
     const isFirstStave = this.document.isFirstStave(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
-    const measureLabel = this.document.getMeasure(this.key).label;
-    if (isFirstPart && isFirstStave && isFirstFragment && measureLabel) {
-      vexflowStave.setMeasure(measureLabel);
+    if (!isFirstPart || !isFirstStave || !isFirstFragment) {
+      return false;
+    }
+
+    switch (this.config.MEASURE_LABELING_SCHEME) {
+      case 'all':
+        return true;
+      case 'every2':
+        return this.key.measureIndex % 2 === 0;
+      case 'every3':
+        return this.key.measureIndex % 3 === 0;
+      case 'system':
+        return this.key.measureIndex === 0;
+      case 'none':
+        return false;
     }
   }
 

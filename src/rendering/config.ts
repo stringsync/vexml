@@ -96,6 +96,11 @@ export const CONFIG = {
     defaultValue: false,
     help: 'SHOW_TAB_TIME_SIGNATURE specifies whether to show the time signature for tab staves.',
   }),
+  MEASURE_LABELING_SCHEME: t.enum({
+    choices: ['all', 'every2', 'every3', 'system', 'none'] as const,
+    defaultValue: 'all',
+    help: 'MEASURE_LABELING_SCHEME is the scheme for showing measure labels.',
+  }),
   SLOW_WARNING_THRESHOLD_MS: t.number({
     defaultValue: 1,
     help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
