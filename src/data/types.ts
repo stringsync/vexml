@@ -7,6 +7,7 @@ import {
   BarlineStyle,
   BendType,
   ClefSign,
+  CurveArticulation,
   CurveOpening,
   CurvePlacement,
   DurationType,
@@ -76,6 +77,7 @@ export type Curve = {
   id: string;
   placement: CurvePlacement;
   opening: CurveOpening;
+  articulation: CurveArticulation;
 };
 
 export type System = {

@@ -32,7 +32,7 @@ describe('vexml', () => {
     { filename: 'tabs_with_stave.musicxml', width: 900 },
     { filename: 'tabs_slurs.musicxml', width: 900 },
     { filename: 'tabs_natural_harmonics.musicxml', width: 900 },
-    // { filename: 'tabs_slides.musicxml', width: 900 },
+    { filename: 'tabs_slides.musicxml', width: 900 },
     { filename: 'tabs_taps.musicxml', width: 900 },
     { filename: 'tabs_dead_notes.musicxml', width: 900 },
     { filename: 'tabs_multi_voice.musicxml', width: 900 },

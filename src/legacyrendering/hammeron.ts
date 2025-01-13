@@ -67,7 +67,7 @@ export class HammerOn {
         log,
         fragment: {
           type: hammerOn.getType() ?? 'unspecified',
-          number: hammerOn.getNumber(),
+          number: hammerOn.getNumber() ?? 1,
           address: data.address,
           vexflow: {
             note: data.vexflow.note,
