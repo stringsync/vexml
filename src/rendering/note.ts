@@ -19,6 +19,14 @@ import { Beam } from './beam';
 import { Articulation } from './articulation';
 import { Bend } from './bend';
 
+const GRACE_TAB_NOTE_FONT_SIZE = 7;
+
+type NoteGraceComponents = {
+  vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
+  graceBeamRenders: BeamRender[];
+  graceCurves: GraceCurve[];
+};
+
 export class Note {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
 
@@ -62,10 +70,21 @@ export class Note {
 
     this.renderVexflowAnnotations(vexflowNote, voiceEntry);
 
-    const { vexflowGraceNoteGroup, graceBeamRenders, graceCurves } = this.renderStaveGraceEntries(
-      vexflowNote,
-      voiceEntry
-    );
+    let vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null = null;
+    let graceBeamRenders = new Array<BeamRender>();
+    let graceCurves = new Array<GraceCurve>();
+    if (isTabStave) {
+      const tabGraceEntries = this.renderTabGraceComponents(vexflowNote, voiceEntry);
+      vexflowGraceNoteGroup = tabGraceEntries.vexflowGraceNoteGroup;
+      graceBeamRenders = tabGraceEntries.graceBeamRenders;
+      graceCurves = tabGraceEntries.graceCurves;
+    } else {
+      const staveGraceEntries = this.renderStaveGraceComponents(vexflowNote, voiceEntry);
+      vexflowGraceNoteGroup = staveGraceEntries.vexflowGraceNoteGroup;
+      graceBeamRenders = staveGraceEntries.graceBeamRenders;
+      graceCurves = staveGraceEntries.graceCurves;
+    }
+
     const articulationRenders = this.renderArticulations(vexflowNote);
     const bendRenders = this.renderBends(vexflowNote);
 
@@ -242,14 +261,84 @@ export class Note {
     return vexflowAccidental;
   }
 
-  private renderStaveGraceEntries(
+  private renderTabGraceComponents(vexflowNote: vexflow.Note, voiceEntry: data.Note | data.Chord): NoteGraceComponents {
+    if (voiceEntry.graceEntries.length === 0) {
+      return { vexflowGraceNoteGroup: null, graceBeamRenders: [], graceCurves: [] };
+    }
+
+    const registry = new Map<string, vexflow.StemmableNote[]>();
+
+    const graceCurves = new Array<GraceCurve>();
+    const vexflowGraceTabNotes = new Array<vexflow.GraceTabNote>();
+
+    for (let graceEntryIndex = 0; graceEntryIndex < voiceEntry.graceEntries.length; graceEntryIndex++) {
+      const graceEntry = voiceEntry.graceEntries[graceEntryIndex];
+
+      const positions = new Array<vexflow.TabNotePosition>();
+      switch (graceEntry.type) {
+        case 'gracenote':
+          positions.push(...graceEntry.tabPositions.map((tabPosition) => this.toVexflowTabNotePosition(tabPosition)));
+          break;
+        case 'gracechord':
+          positions.push(
+            ...graceEntry.notes
+              .flatMap((note) => note.tabPositions)
+              .map((tabPosition) => this.toVexflowTabNotePosition(tabPosition))
+          );
+          break;
+      }
+
+      const vexflowGraceTabNote = new HackedVexflowGraceTabNote({
+        positions: positions,
+        duration: graceEntry.durationType,
+      }).setFontSize(GRACE_TAB_NOTE_FONT_SIZE);
+      vexflowGraceTabNote.renderOptions.yShift--;
+      vexflowGraceTabNotes.push(vexflowGraceTabNote);
+
+      if (graceEntry.beamId) {
+        if (!registry.has(graceEntry.beamId)) {
+          registry.set(graceEntry.beamId, []);
+        }
+        registry.get(graceEntry.beamId)!.push(vexflowGraceTabNote);
+      }
+
+      const curveIds = new Array<string>();
+      switch (graceEntry.type) {
+        case 'gracenote':
+          curveIds.push(...graceEntry.curveIds);
+          break;
+        case 'gracechord':
+          curveIds.push(...graceEntry.notes.flatMap((note) => note.curveIds));
+          break;
+      }
+      for (const curveId of curveIds) {
+        graceCurves.push({ curveId, graceEntryIndex });
+      }
+    }
+
+    const vexflowGraceNoteGroup = new vexflow.GraceNoteGroup(vexflowGraceTabNotes);
+    vexflowGraceNoteGroup.setNote(vexflowNote);
+    vexflowGraceNoteGroup.setPosition(vexflow.Modifier.Position.LEFT);
+    vexflowNote.addModifier(vexflowGraceNoteGroup);
+
+    // Grace notes cannot span voice entries, so we perform all the beaming here.
+    const beams = this.document.getBeams(this.key);
+    const beamKeys = Array.from(registry.keys()).map<BeamKey>((beamId) => ({
+      ...this.key,
+      beamIndex: beams.findIndex((beam) => beam.id === beamId),
+    }));
+
+    const graceBeamRenders = beamKeys.map((beamKey) =>
+      new Beam(this.config, this.log, this.document, beamKey, registry).render()
+    );
+
+    return { vexflowGraceNoteGroup, graceBeamRenders, graceCurves };
+  }
+
+  private renderStaveGraceComponents(
     vexflowNote: vexflow.Note,
     voiceEntry: data.Note | data.Chord
-  ): {
-    vexflowGraceNoteGroup: vexflow.GraceNoteGroup | null;
-    graceBeamRenders: BeamRender[];
-    graceCurves: GraceCurve[];
-  } {
+  ): NoteGraceComponents {
     if (voiceEntry.graceEntries.length === 0) {
       return { vexflowGraceNoteGroup: null, graceBeamRenders: [], graceCurves: [] };
     }
@@ -387,5 +476,15 @@ export class Note {
     }
 
     return bendRenders;
+  }
+}
+
+// See https://github.com/vexflow/vexflow/issues/255
+class HackedVexflowGraceTabNote extends vexflow.GraceTabNote {
+  setFontSize(size?: string | number): this {
+    for (const fretElement of this.fretElement) {
+      fretElement.setFontSize(size);
+    }
+    return this;
   }
 }

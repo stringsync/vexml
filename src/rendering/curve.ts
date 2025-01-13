@@ -276,17 +276,15 @@ export class Curve {
           this.log.warn('grace note not found for curve, continuing', { curveId: this.key.curveIndex });
           continue;
         }
-        if (!(vexflowGraceNote instanceof vexflow.StaveNote)) {
-          continue;
+        if (vexflowGraceNote instanceof vexflow.GraceNote || vexflowGraceNote instanceof vexflow.GraceTabNote) {
+          curveNotes.push({
+            stem: this.getStem(vexflowGraceNote),
+            rect: noteRender.rect,
+            key: noteRender.key,
+            line: vexflowGraceNote.getLineNumber(),
+            vexflowNote: vexflowGraceNote,
+          });
         }
-
-        curveNotes.push({
-          stem: this.getStem(vexflowGraceNote),
-          rect: noteRender.rect,
-          key: noteRender.key,
-          line: vexflowGraceNote.getLineNumber(),
-          vexflowNote: vexflowGraceNote,
-        });
       }
     }
 
