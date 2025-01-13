@@ -3,16 +3,18 @@ import * as components from '@/components';
 import * as rendering from '@/rendering';
 import { Logger } from '@/debug';
 import { Rect } from './types';
+import { System } from './system';
 
 /** Score is a rendered musical score. */
 export class Score {
-  constructor(
+  private constructor(
     private config: rendering.Config,
     private log: Logger,
     private document: rendering.Document,
     private ctx: vexflow.RenderContext,
     private root: components.Root,
-    private scoreRender: rendering.ScoreRender
+    private scoreRender: rendering.ScoreRender,
+    private systems: System[]
   ) {}
 
   static create(
@@ -22,11 +24,15 @@ export class Score {
     ctx: vexflow.RenderContext,
     root: components.Root,
     scoreRender: rendering.ScoreRender
-  ) {
-    return new Score(config, log, document, ctx, root, scoreRender);
+  ): Score {
+    const systems = scoreRender.systemRenders.map((system) => System.create(config, log, document, system));
+    return new Score(config, log, document, ctx, root, scoreRender, systems);
   }
 
-  /** Returns the bounding rect of the score. */
+  /** The name of the element, which can be used as a type discriminant. */
+  public readonly name = 'score';
+
+  /** Returns the bounding box of the score. */
   get rect(): Rect {
     return this.scoreRender.rect;
   }
@@ -39,6 +45,11 @@ export class Score {
   /** Returns the title of the score. */
   getTitle(): string | null {
     return this.document.getTitle();
+  }
+
+  /** Returns the systems of the score. */
+  getSystems(): System[] {
+    return this.systems;
   }
 
   /** Removes the score from the DOM. */
