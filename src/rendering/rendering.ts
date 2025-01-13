@@ -90,7 +90,7 @@ export class Rendering {
 
     // Draw the curves.
     scoreRender.curveRenders
-      .flatMap((c) => c.vexflowCurves)
+      .flatMap((c) => c.vexflowElements)
       .forEach((v) => {
         v.setContext(ctx).draw();
       });

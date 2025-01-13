@@ -166,7 +166,7 @@ export type CurveRender = {
   type: 'curve';
   rect: Rect;
   key: CurveKey;
-  vexflowCurves: vexflow.Curve[];
+  vexflowElements: vexflow.Element[];
 };
 
 export type PartRender = {

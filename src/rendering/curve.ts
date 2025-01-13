@@ -15,7 +15,7 @@ type CurveNote = {
   rect: Rect;
   key: VoiceEntryKey;
   line: number;
-  vexflowStaveNote: vexflow.Note;
+  vexflowNote: vexflow.Note;
 };
 
 type CurvePlacement = 'above' | 'below';
@@ -46,11 +46,11 @@ export class Curve {
       type: 'curve',
       rect,
       key: this.key,
-      vexflowCurves,
+      vexflowElements: vexflowCurves,
     };
   }
 
-  private renderVexflowCurves(curveNotes: CurveNote[]): vexflow.Curve[] {
+  private renderVexflowCurves(curveNotes: CurveNote[]): vexflow.Element[] {
     const curve = this.document.getCurve(this.key);
 
     if (curveNotes.length < 2) {
@@ -68,15 +68,25 @@ export class Curve {
     return [this.renderSingleVexflowCurve(curveNotes)];
   }
 
-  private renderSingleVexflowCurve(curveNotes: CurveNote[]): vexflow.Curve {
+  private renderSingleVexflowCurve(curveNotes: CurveNote[]): vexflow.Element {
     const firstCurveNote = curveNotes.at(0)!;
     const lastCurveNote = curveNotes.at(-1)!;
 
-    return new vexflow.Curve(
-      firstCurveNote.vexflowStaveNote,
-      lastCurveNote.vexflowStaveNote,
-      this.getVexflowCurveNoteOptions(firstCurveNote, lastCurveNote)
-    );
+    if (firstCurveNote.vexflowNote instanceof vexflow.TabNote && lastCurveNote.vexflowNote instanceof vexflow.TabNote) {
+      return new vexflow.TabTie(
+        {
+          firstNote: firstCurveNote.vexflowNote,
+          lastNote: lastCurveNote.vexflowNote,
+        },
+        this.getTabTieText(firstCurveNote.vexflowNote, lastCurveNote.vexflowNote)
+      );
+    } else {
+      return new vexflow.Curve(
+        firstCurveNote.vexflowNote,
+        lastCurveNote.vexflowNote,
+        this.getVexflowCurveNoteOptions(firstCurveNote, lastCurveNote)
+      );
+    }
   }
 
   private renderVexflowCurvesAcrossSystems(curveNotes: CurveNote[]): vexflow.Curve[] {
@@ -94,7 +104,7 @@ export class Curve {
 
       if (isFirst) {
         const vexflowCurve = new vexflow.Curve(
-          firstCurveNote.vexflowStaveNote,
+          firstCurveNote.vexflowNote,
           undefined,
           this.getVexflowCurveNoteOptions(firstCurveNote, undefined)
         );
@@ -102,7 +112,7 @@ export class Curve {
       } else if (isLast) {
         const vexflowCurve = new vexflow.Curve(
           undefined,
-          lastCurveNote.vexflowStaveNote,
+          lastCurveNote.vexflowNote,
           this.getVexflowCurveNoteOptions(undefined, lastCurveNote)
         );
         vexflowCurves.push(vexflowCurve);
@@ -112,8 +122,8 @@ export class Curve {
         // TODO: Render the curve from the beginning of the stave to the end of the stave instead of using the
         // notes as anchor points.
         const vexflowCurve = new vexflow.Curve(
-          firstCurveNote.vexflowStaveNote,
-          lastCurveNote.vexflowStaveNote,
+          firstCurveNote.vexflowNote,
+          lastCurveNote.vexflowNote,
           this.getVexflowCurveNoteOptions(firstCurveNote, lastCurveNote)
         );
         vexflowCurves.push(vexflowCurve);
@@ -161,6 +171,28 @@ export class Curve {
     const openingDirection = this.getOpeningDirection(placement);
 
     return { position, positionEnd, openingDirection };
+  }
+
+  private getTabTieText(firstTabNote: vexflow.TabNote, lastTabNote: vexflow.TabNote): string {
+    const firstPositions = firstTabNote.getPositions();
+    const lastPositions = lastTabNote.getPositions();
+    if (firstPositions.length !== 1 || lastPositions.length !== 1) {
+      return '';
+    }
+
+    const firstFret = parseInt(firstPositions[0].fret.toString(), 10);
+    const lastFret = parseInt(lastPositions[0].fret.toString(), 10);
+    if (Number.isNaN(firstFret) || Number.isNaN(lastFret)) {
+      return '';
+    }
+
+    if (firstFret < lastFret) {
+      return 'H';
+    } else if (firstFret > lastFret) {
+      return 'P';
+    } else {
+      return '';
+    }
   }
 
   private getOpeningDirection(placement: CurvePlacement): data.CurveOpening {
@@ -231,7 +263,7 @@ export class Curve {
         rect: noteRender.rect,
         key: noteRender.key,
         line: noteRender.vexflowNote.getLineNumber(),
-        vexflowStaveNote: noteRender.vexflowNote,
+        vexflowNote: noteRender.vexflowNote,
       });
 
       const vexflowGraceNotes = noteRender.vexflowGraceNoteGroup?.getGraceNotes() ?? [];
@@ -250,7 +282,7 @@ export class Curve {
           rect: noteRender.rect,
           key: noteRender.key,
           line: vexflowGraceNote.getLineNumber(),
-          vexflowStaveNote: vexflowGraceNote,
+          vexflowNote: vexflowGraceNote,
         });
       }
     }
