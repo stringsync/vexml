@@ -1,7 +1,8 @@
 export * from './vexml';
 export * from './legacyrendering/events';
 export { MusicXMLParser, MXLParser } from './parsing';
-export { Renderer, Rendering, type Config, CONFIG, DEFAULT_CONFIG } from './rendering';
+export { Renderer, type Config, CONFIG, DEFAULT_CONFIG } from './rendering';
+export { Score } from './elements';
 export { type SchemaDescriptor, type SchemaType, type SchemaConfig } from './schema';
 export { type LegacyRendering, type Gap } from './legacyrendering';
 export { SimpleCursor } from './components';

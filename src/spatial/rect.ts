@@ -86,6 +86,10 @@ export class Rect implements Shape {
     return point.x >= this.x && point.x <= this.x + this.w && point.y >= this.y && point.y <= this.y + this.h;
   }
 
+  toRectLike(): { x: number; y: number; w: number; h: number } {
+    return { x: this.x, y: this.y, w: this.w, h: this.h };
+  }
+
   getMinX(): number {
     return this.x;
   }

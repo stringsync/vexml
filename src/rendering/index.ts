@@ -1,3 +1,5 @@
 export * from './renderer';
 export * from './config';
-export * from './rendering';
+export * from './types';
+export * from './document';
+export * from './debugrect';
