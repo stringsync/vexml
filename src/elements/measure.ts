@@ -1,7 +1,7 @@
 import * as rendering from '@/rendering';
+import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { Fragment } from './fragment';
-import { Rect } from './types';
 
 export class Measure {
   private constructor(

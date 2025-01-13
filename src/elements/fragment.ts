@@ -1,6 +1,6 @@
 import * as rendering from '@/rendering';
+import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
-import { Rect } from './types';
 import { Part } from './part';
 
 export class Fragment {

@@ -1,9 +1,10 @@
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as rendering from '@/rendering';
+import { Rect } from '@/spatial';
 import { EventListener } from '@/events';
 import { Logger } from '@/debug';
-import { Rect, EventMap } from './types';
+import { EventMap } from './types';
 import { System } from './system';
 import { Events } from './events';
 
