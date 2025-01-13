@@ -99,7 +99,7 @@ export const CONFIG = {
     help: 'SHOW_TAB_TIME_SIGNATURE specifies whether to show the time signature for tab staves.',
   }),
   SHOW_TAB_STEMS: t.boolean({
-    defaultValue: true,
+    defaultValue: false,
     help: 'SHOW_TAB_STEMS specifies whether to show stems for tab staves.',
   }),
   MEASURE_LABELING_SCHEME: t.enum({
