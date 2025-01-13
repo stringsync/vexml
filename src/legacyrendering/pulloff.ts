@@ -67,7 +67,7 @@ export class PullOff {
         log,
         fragment: {
           type: pullOff.getType() ?? 'unspecified',
-          number: pullOff.getNumber(),
+          number: pullOff.getNumber() ?? 1,
           address: data.address,
           vexflow: {
             note: data.vexflow.note,

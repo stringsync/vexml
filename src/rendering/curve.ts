@@ -69,17 +69,20 @@ export class Curve {
   }
 
   private renderSingleVexflowCurve(curveNotes: CurveNote[]): vexflow.Element {
+    const curve = this.document.getCurve(this.key);
+
     const firstCurveNote = curveNotes.at(0)!;
     const lastCurveNote = curveNotes.at(-1)!;
 
     if (firstCurveNote.vexflowNote instanceof vexflow.TabNote && lastCurveNote.vexflowNote instanceof vexflow.TabNote) {
-      return new vexflow.TabTie(
-        {
-          firstNote: firstCurveNote.vexflowNote,
-          lastNote: lastCurveNote.vexflowNote,
-        },
-        this.getTabTieText(firstCurveNote.vexflowNote, lastCurveNote.vexflowNote)
-      );
+      if (curve.articulation === 'slide') {
+        return new vexflow.TabSlide({ firstNote: firstCurveNote.vexflowNote, lastNote: lastCurveNote.vexflowNote });
+      } else {
+        return new vexflow.TabTie(
+          { firstNote: firstCurveNote.vexflowNote, lastNote: lastCurveNote.vexflowNote },
+          this.inferTabTieText(firstCurveNote.vexflowNote, lastCurveNote.vexflowNote)
+        );
+      }
     } else {
       return new vexflow.Curve(
         firstCurveNote.vexflowNote,
@@ -173,7 +176,7 @@ export class Curve {
     return { position, positionEnd, openingDirection };
   }
 
-  private getTabTieText(firstTabNote: vexflow.TabNote, lastTabNote: vexflow.TabNote): string {
+  private inferTabTieText(firstTabNote: vexflow.TabNote, lastTabNote: vexflow.TabNote): string {
     const firstPositions = firstTabNote.getPositions();
     const lastPositions = lastTabNote.getPositions();
     if (firstPositions.length !== 1 || lastPositions.length !== 1) {

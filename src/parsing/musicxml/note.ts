@@ -8,8 +8,7 @@ import { Fraction } from './fraction';
 import { VoiceEntryContext, VoiceContext } from './contexts';
 import { Annotation } from './annotation';
 import { Pitch } from './pitch';
-import { Slur } from './slur';
-import { Tie } from './tie';
+import { Curve } from './curve';
 import { Beam } from './beam';
 import { Tuplet } from './tuplet';
 import { Vibrato } from './vibrato';
@@ -42,8 +41,7 @@ export class Note {
     private measureBeat: Fraction,
     private lyrics: Annotation[],
     private accidental: Accidental,
-    private ties: Tie[],
-    private slurs: Slur[],
+    private curves: Curve[],
     private tuplets: Tuplet[],
     private beam: Beam | null,
     private slash: boolean,
@@ -74,15 +72,7 @@ export class Note {
     const isCautionary = musicXML.note.hasAccidentalCautionary();
     const accidental = new Accidental(code, isCautionary);
 
-    const ties = musicXML.note
-      .getNotations()
-      .flatMap((notation) => notation.getTieds())
-      .map((tie) => Tie.create({ tied: tie }));
-
-    const slurs = musicXML.note
-      .getNotations()
-      .flatMap((notation) => notation.getSlurs())
-      .map((slur) => Slur.fromMusicXML({ slur }));
+    const curves = musicXML.note.getNotations().flatMap((notation) => Curve.create({ notation }));
 
     const tuplets = musicXML.note
       .getNotations()
@@ -144,8 +134,7 @@ export class Note {
       new Fraction(measureBeat),
       annotations,
       accidental,
-      ties,
-      slurs,
+      curves,
       tuplets,
       beam,
       slash,
@@ -179,7 +168,7 @@ export class Note {
       measureBeat: this.measureBeat.parse(),
       accidental: this.maybeParseAccidental(voiceEntryCtx) ?? null,
       annotations: this.parseAnnotations(),
-      curveIds: this.parseCurves(voiceEntryCtx),
+      curveIds: this.curves.map((curve) => curve.parse(voiceEntryCtx)),
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
       graceEntries,
@@ -195,10 +184,6 @@ export class Note {
 
   private parseAnnotations(): data.Annotation[] {
     return [...this.lyrics].map((annotation) => annotation.parse());
-  }
-
-  private parseCurves(voiceEntryCtx: VoiceEntryContext): string[] {
-    return [...this.slurs, ...this.ties].map((curve) => curve.parse(voiceEntryCtx));
   }
 
   private maybeParseAccidental(voiceEntryCtx: VoiceEntryContext): data.Accidental | null {
@@ -240,7 +225,7 @@ export class Note {
       accidental: note.maybeParseAccidental(voiceEntryCtx),
       beamId: note.beam?.parse(voiceEntryCtx) ?? null,
       durationType: note.durationType,
-      curveIds: note.parseCurves(voiceEntryCtx),
+      curveIds: note.curves.map((curve) => curve.parse(voiceEntryCtx)),
       pitch: note.pitch.parse(),
       slash: note.slash,
     };
@@ -252,7 +237,7 @@ export class Note {
       pitch: note.pitch.parse(),
       head: note.head,
       accidental: note.maybeParseAccidental(voiceEntryCtx),
-      curveIds: note.parseCurves(voiceEntryCtx),
+      curveIds: note.curves.map((curve) => curve.parse(voiceEntryCtx)),
       slash: note.slash,
     }));
 
