@@ -1,3 +1,4 @@
+import { Point } from '@/spatial';
 import { Fragment } from './fragment';
 import { Measure } from './measure';
 import { Note } from './note';
@@ -19,18 +20,6 @@ export type Element = Score | System | Measure | Fragment | Part | Stave | Voice
  * Leaf elements that are rendered as part of a voice.
  */
 export type VoiceEntry = Note | Rest;
-
-export type Rect = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
-
-export type Point = {
-  x: number;
-  y: number;
-};
 
 export type EventMap = {
   click: ClickEvent;

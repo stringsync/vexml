@@ -1,6 +1,7 @@
 import * as rendering from '@/rendering';
+import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
-import { Rect, VoiceEntry } from './types';
+import { VoiceEntry } from './types';
 import { Note } from './note';
 import { Rest } from './rest';
 

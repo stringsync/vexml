@@ -1,6 +1,6 @@
 import * as rendering from '@/rendering';
 import { Logger } from '@/debug';
-import { Rect } from './types';
+import { Rect } from '@/spatial';
 
 export class Rest {
   private constructor(

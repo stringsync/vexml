@@ -1,7 +1,7 @@
 import * as rendering from '@/rendering';
 import { Logger } from '@/debug';
-import { Rect } from './types';
 import { Voice } from './voice';
+import { Rect } from '@/spatial';
 
 export class Stave {
   private constructor(
