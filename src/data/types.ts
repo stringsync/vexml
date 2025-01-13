@@ -260,6 +260,7 @@ export type GraceNote = {
   durationType: DurationType;
   curveIds: string[];
   beamId: string | null;
+  tabPositions: TabPosition[];
 };
 
 export type GraceChord = {
@@ -276,6 +277,7 @@ export type GraceChordNote = {
   accidental: Accidental | null;
   curveIds: string[];
   slash: boolean;
+  tabPositions: TabPosition[];
 };
 
 export type Accidental = {

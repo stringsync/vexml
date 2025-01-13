@@ -49,7 +49,7 @@ export class Note {
     private vibratos: Vibrato[],
     private articulations: Articulation[],
     private bends: Bend[],
-    private fretPositions: TabPosition[]
+    private tabPositions: TabPosition[]
   ) {}
 
   static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
@@ -157,6 +157,8 @@ export class Note {
     // Grace entries need to be parsed before the curves because a slur may start on a grace entry.
     const graceEntries = this.parseGraceEntries(voiceEntryCtx);
 
+    const curveIds = this.curves.map((curve) => curve.parse(voiceEntryCtx));
+
     return {
       type: 'note',
       pitch: this.pitch.parse(),
@@ -168,7 +170,7 @@ export class Note {
       measureBeat: this.measureBeat.parse(),
       accidental: this.maybeParseAccidental(voiceEntryCtx) ?? null,
       annotations: this.parseAnnotations(),
-      curveIds: this.curves.map((curve) => curve.parse(voiceEntryCtx)),
+      curveIds,
       tupletIds,
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
       graceEntries,
@@ -178,7 +180,7 @@ export class Note {
       vibratoIds: this.vibratos.map((vibrato) => vibrato.parse(voiceEntryCtx)),
       articulations: this.articulations.map((articulation) => articulation.parse()),
       bends: this.bends.map((bend) => bend.parse()),
-      tabPositions: this.fretPositions.map((fretPosition) => fretPosition.parse()),
+      tabPositions: this.tabPositions.map((fretPosition) => fretPosition.parse()),
     };
   }
 
@@ -228,6 +230,7 @@ export class Note {
       curveIds: note.curves.map((curve) => curve.parse(voiceEntryCtx)),
       pitch: note.pitch.parse(),
       slash: note.slash,
+      tabPositions: note.tabPositions.map((tabPosition) => tabPosition.parse()),
     };
   }
 
@@ -239,6 +242,7 @@ export class Note {
       accidental: note.maybeParseAccidental(voiceEntryCtx),
       curveIds: note.curves.map((curve) => curve.parse(voiceEntryCtx)),
       slash: note.slash,
+      tabPositions: note.tabPositions.map((tabPosition) => tabPosition.parse()),
     }));
 
     return {
