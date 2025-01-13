@@ -2,28 +2,28 @@ import * as rendering from '@/rendering';
 import { Logger } from '@/debug';
 import { Rect } from './types';
 
-export class Note {
+export class Rest {
   private constructor(
     private config: rendering.Config,
     private log: Logger,
     private document: rendering.Document,
-    private noteRender: rendering.NoteRender
+    private restRender: rendering.RestRender
   ) {}
 
   static create(
     config: rendering.Config,
     log: Logger,
     document: rendering.Document,
-    noteRender: rendering.NoteRender
-  ): Note {
-    return new Note(config, log, document, noteRender);
+    restRender: rendering.RestRender
+  ): Rest {
+    return new Rest(config, log, document, restRender);
   }
 
   /** The name of the element, which can be used as a type discriminant. */
-  public readonly name = 'note';
+  public readonly name = 'rest';
 
   /** Returns the bounding box of the element. */
   get rect(): Rect {
-    return this.noteRender.rect;
+    return this.restRender.rect;
   }
 }
