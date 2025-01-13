@@ -1,9 +1,11 @@
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as rendering from '@/rendering';
+import { EventListener } from '@/events';
 import { Logger } from '@/debug';
-import { Rect } from './types';
+import { Rect, EventMap } from './types';
 import { System } from './system';
+import { Events } from './events';
 
 /** Score is a rendered musical score. */
 export class Score {
@@ -14,6 +16,7 @@ export class Score {
     private ctx: vexflow.RenderContext,
     private root: components.Root,
     private scoreRender: rendering.ScoreRender,
+    private events: Events,
     private systems: System[]
   ) {}
 
@@ -25,14 +28,15 @@ export class Score {
     root: components.Root,
     scoreRender: rendering.ScoreRender
   ): Score {
-    const systems = scoreRender.systemRenders.map((system) => System.create(config, log, document, system));
-    return new Score(config, log, document, ctx, root, scoreRender, systems);
+    const events = new Events();
+    const systems = scoreRender.systemRenders.map((systemRender) => System.create(config, log, document, systemRender));
+    return new Score(config, log, document, ctx, root, scoreRender, events, systems);
   }
 
   /** The name of the element, which can be used as a type discriminant. */
   public readonly name = 'score';
 
-  /** Returns the bounding box of the score. */
+  /** Returns the bounding box of the element. */
   get rect(): Rect {
     return this.scoreRender.rect;
   }
@@ -40,6 +44,16 @@ export class Score {
   /** Returns the element that houses the VexFlow score. */
   getVexflowElement(): SVGElement | HTMLCanvasElement {
     return this.root.getVexflowElement();
+  }
+
+  /** Returns the element used as an overlay. */
+  getOverlayElement(): HTMLDivElement {
+    return this.root.getOverlay().getElement();
+  }
+
+  /** Returns the element used for the scroll container. */
+  getScrollContainer(): HTMLDivElement {
+    return this.root.getScrollContainer();
   }
 
   /** Returns the title of the score. */
@@ -55,6 +69,21 @@ export class Score {
   /** Removes the score from the DOM. */
   destroy(): void {
     this.root?.remove();
+  }
+
+  /** Dispatches a native event to the overlay. */
+  dispatchNativeEvent(event: Event): void {
+    this.events.dispatchNativeEvent(event);
+  }
+
+  /** Adds an event listener to the score. */
+  addEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): void {
+    this.events.addEventListener(type, listener);
+  }
+
+  /** Removes an event listener from the score. */
+  removeEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): void {
+    this.events.removeEventListener(type, listener);
   }
 
   /** Renders the entire score. */
