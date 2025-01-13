@@ -2,11 +2,11 @@ import * as data from '@/data';
 import * as formatters from './formatters';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
+import * as elements from '@/elements';
 import { Document } from './document';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Logger, NoopLogger, Stopwatch } from '@/debug';
-import { Rendering } from './rendering';
 import { Formatter, ScoreRender } from './types';
 
 export type RenderOptions = {
@@ -21,7 +21,7 @@ export class Renderer {
     this.document = new Document(document);
   }
 
-  render(div: HTMLDivElement, opts?: RenderOptions): Rendering {
+  render(div: HTMLDivElement, opts?: RenderOptions): elements.Score {
     const config = { ...DEFAULT_CONFIG, ...opts?.config };
     const log = opts?.logger ?? new NoopLogger();
 
@@ -67,7 +67,8 @@ export class Renderer {
 
     const formattedScoreRender = formattedScore.render();
     const ctx = renderer.resize(formattedScoreRender.rect.w, formattedScoreRender.rect.h).getContext();
-    const rendering = Rendering.finalize(config, log, formattedDocument, ctx, root, formattedScoreRender);
+    const scoreElement = new elements.Score(config, log, formattedDocument, ctx, root, formattedScoreRender);
+    scoreElement.render();
 
     lap = stopwatch.lap();
     if (lap < 1) {
@@ -76,7 +77,7 @@ export class Renderer {
       log.info(`rendered score in ${Math.round(lap)}ms`);
     }
 
-    return rendering;
+    return scoreElement;
   }
 
   private getFormatter(config: Config, log: Logger, scoreRender: ScoreRender): Formatter {

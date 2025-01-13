@@ -31,14 +31,14 @@ export const Vexml = ({ musicXML, backend, config, onResult }: VexmlProps) => {
     }
 
     const start = new Date();
-    let rendering: vexml.Rendering;
+    let score: vexml.Score;
 
     try {
       const logger = new vexml.ConsoleLogger();
       const parser = new vexml.MusicXMLParser();
       const document = parser.parse(musicXML);
       const renderer = new vexml.Renderer(document);
-      rendering = renderer.render(div, {
+      score = renderer.render(div, {
         config: {
           ...config,
           DRAWING_BACKEND: backend,
@@ -46,7 +46,7 @@ export const Vexml = ({ musicXML, backend, config, onResult }: VexmlProps) => {
         },
         logger,
       });
-      const element = rendering.getVexflowElement();
+      const element = score.getVexflowElement();
 
       onResult({
         type: 'success',
@@ -66,7 +66,7 @@ export const Vexml = ({ musicXML, backend, config, onResult }: VexmlProps) => {
     }
 
     return () => {
-      rendering.clear();
+      score.destroy();
     };
   }, [div, backend, width, musicXML, config, onResult]);
 

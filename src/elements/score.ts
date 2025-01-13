@@ -1,30 +1,61 @@
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
+import * as rendering from '@/rendering';
 import { Logger } from '@/debug';
-import { Config } from './config';
-import { Document } from './document';
-import { DebugRect } from './debugrect';
-import { ScoreRender } from './types';
+import { Rect } from './types';
 
-export class Rendering {
-  private constructor(
-    private config: Config,
+/** Score is a rendered musical score. */
+export class Score {
+  constructor(
+    private config: rendering.Config,
     private log: Logger,
-    private document: Document,
+    private document: rendering.Document,
     private ctx: vexflow.RenderContext,
     private root: components.Root,
-    private scoreRender: ScoreRender
+    private scoreRender: rendering.ScoreRender
   ) {}
 
-  static finalize(
-    config: Config,
+  static create(
+    config: rendering.Config,
     log: Logger,
-    document: Document,
+    document: rendering.Document,
     ctx: vexflow.RenderContext,
     root: components.Root,
-    scoreRender: ScoreRender
-  ): Rendering {
+    scoreRender: rendering.ScoreRender
+  ) {
+    return new Score(config, log, document, ctx, root, scoreRender);
+  }
+
+  /** Returns the bounding rect of the score. */
+  get rect(): Rect {
+    return this.scoreRender.rect;
+  }
+
+  /** Returns the element that houses the VexFlow score. */
+  getVexflowElement(): SVGElement | HTMLCanvasElement {
+    return this.root.getVexflowElement();
+  }
+
+  /** Returns the title of the score. */
+  getTitle(): string | null {
+    return this.document.getTitle();
+  }
+
+  /** Removes the score from the DOM. */
+  destroy(): void {
+    this.root?.remove();
+  }
+
+  /** Renders the entire score. */
+  render(): void {
+    // TODO: For now, Score is the only renderable object. Eventually, I think it will be good to render/unrender
+    // subtrees of elements. This will unlock lazy rendering, which is useful for large scores and editing.
+
     // Collect all the render objects.
+    const config = this.config;
+    const log = this.log;
+    const ctx = this.ctx;
+    const scoreRender = this.scoreRender;
     const titleRender = scoreRender.titleRender;
     const systemRenders = scoreRender.systemRenders;
     const measureRenders = systemRenders.flatMap((s) => s.measureRenders);
@@ -138,48 +169,48 @@ export class Rendering {
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {
-        new DebugRect(config, log, `s${s.key.systemIndex}`, s.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `s${s.key.systemIndex}`, s.rect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug measure rects.
     if (config.DEBUG_DRAW_MEASURE_RECTS) {
       measureRenders.forEach((m) => {
-        new DebugRect(config, log, `m${m.key.measureIndex}`, m.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `m${m.key.measureIndex}`, m.rect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug fragment rects.
     if (config.DEBUG_DRAW_FRAGMENT_RECTS) {
       fragmentRenders.forEach((f) => {
-        new DebugRect(config, log, `f${f.key.fragmentIndex}`, f.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `f${f.key.fragmentIndex}`, f.rect).setContext(ctx).draw();
       });
     }
 
     if (config.DEBUG_DRAW_PART_RECTS) {
       partRenders.forEach((p) => {
-        new DebugRect(config, log, `p${p.key.partIndex}`, p.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `p${p.key.partIndex}`, p.rect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug stave rects.
     if (config.DEBUG_DRAW_STAVE_RECTS) {
       staveRenders.forEach((s) => {
-        new DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `s${s.key.staveIndex}`, s.rect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug stave intrinsic rects.
     if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
       staveRenders.forEach((s) => {
-        new DebugRect(config, log, `s${s.key.staveIndex}`, s.intrinsicRect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `s${s.key.staveIndex}`, s.intrinsicRect).setContext(ctx).draw();
       });
     }
 
     // Draw the debug voice rects.
     if (config.DEBUG_DRAW_VOICE_RECTS) {
       voiceRenders.forEach((v) => {
-        new DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `v${v.key.voiceIndex}`, v.rect).setContext(ctx).draw();
       });
     }
 
@@ -188,20 +219,8 @@ export class Rendering {
       const style = { fill: 'rgba(255, 0, 0, 0.1)' };
 
       voiceEntryRenders.forEach((e) => {
-        new DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
+        new rendering.DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
       });
     }
-
-    return new Rendering(config, log, document, ctx, root, scoreRender);
-  }
-
-  /** Returns the element that vexflow is directly rendered on. */
-  getVexflowElement(): SVGElement | HTMLCanvasElement {
-    return this.root.getVexflowElement();
-  }
-
-  /** Clears the rendering. */
-  clear(): void {
-    this.root.remove();
   }
 }
