@@ -67,7 +67,7 @@ export class Renderer {
 
     const formattedScoreRender = formattedScore.render();
     const ctx = renderer.resize(formattedScoreRender.rect.w, formattedScoreRender.rect.h).getContext();
-    const scoreElement = new elements.Score(config, log, formattedDocument, ctx, root, formattedScoreRender);
+    const scoreElement = elements.Score.create(config, log, formattedDocument, ctx, root, formattedScoreRender);
     scoreElement.render();
 
     lap = stopwatch.lap();
