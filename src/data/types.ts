@@ -89,15 +89,10 @@ export type Measure = {
   type: 'measure';
   label: number | null;
   fragments: Fragment[];
-  jumpGroup: JumpGroup;
+  jumps: Jump[];
   startBarlineStyle: BarlineStyle | null;
   endBarlineStyle: BarlineStyle | null;
   repetitionSymbols: RepetitionSymbol[];
-};
-
-export type JumpGroup = {
-  type: 'jumpgroup';
-  jumps: Jump[];
 };
 
 export type Jump =

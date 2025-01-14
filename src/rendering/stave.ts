@@ -252,7 +252,7 @@ export class Stave {
       return;
     }
 
-    const jumps = this.document.getJumps(this.key);
+    const jumps = this.document.getMeasure(this.key).jumps;
     const ending = jumps.find((jump) => jump.type === 'repeatending');
     if (!ending) {
       return;
@@ -260,9 +260,6 @@ export class Stave {
 
     let vexflowVoltaType = vexflow.VoltaType.NONE;
     switch (ending.endingBracketType) {
-      case 'none':
-        vexflowVoltaType = vexflow.VoltaType.NONE;
-        break;
       case 'begin':
         vexflowVoltaType = vexflow.VoltaType.BEGIN;
         break;
@@ -272,7 +269,7 @@ export class Stave {
       case 'end':
         vexflowVoltaType = vexflow.VoltaType.END;
         break;
-      case 'beginend':
+      case 'both':
         vexflowVoltaType = vexflow.VoltaType.BEGIN_END;
         break;
     }
