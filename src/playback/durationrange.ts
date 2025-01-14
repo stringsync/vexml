@@ -16,6 +16,10 @@ export class DurationRange {
     return Duration.ms(this.numberRange.getEnd());
   }
 
+  getSize(): Duration {
+    return Duration.ms(this.numberRange.getSize());
+  }
+
   includes(duration: Duration): boolean {
     return this.numberRange.includes(duration.ms);
   }
