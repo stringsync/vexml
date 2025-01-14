@@ -79,6 +79,8 @@ export class Pedal {
       }
     }
 
+    vexflowStaveNotes.sort((a, b) => a.getAbsoluteX() - b.getAbsoluteX());
+
     return new vexflow.PedalMarking(vexflowStaveNotes);
   }
 }
