@@ -1,11 +1,11 @@
 import * as vexml from '@/index';
 import React, { ChangeEvent, useId, useRef, useState } from 'react';
-import { Source, RenderingBackend } from '../types';
+import { Source } from '../types';
 import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { LegacyConfig, LEGACY_DEFAULT_CONFIG, MusicXMLParser, MXLParser } from '@/index';
+import { LegacyConfig, LEGACY_DEFAULT_CONFIG } from '@/index';
 import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
@@ -60,9 +60,7 @@ export const SourceForm = (props: SourceFormProps) => {
   const [modalSource, setModalSource] = useState<Source>({
     type: 'local',
     musicXML: '',
-    backend: 'svg',
     config: LEGACY_DEFAULT_CONFIG,
-    height: 0,
   });
   const onModalContinue = () => {
     updateNow(modalSource);
@@ -78,7 +76,7 @@ export const SourceForm = (props: SourceFormProps) => {
       throw new Error(`Invalid source type: ${type}`);
     }
 
-    const source = getDefaultSource(type, props.source.backend, props.source.config, props.source.height);
+    const source = getDefaultSource(type, props.source.config);
 
     const isSourceEmpty =
       (props.source.type === 'local' && props.source.musicXML.length === 0) ||
@@ -94,17 +92,8 @@ export const SourceForm = (props: SourceFormProps) => {
     }
   };
 
-  const heightId = useId();
-  const onHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const height = parseInt(e.target.value, 10);
-    updateLater({ ...source, height });
-  };
-
   const onConvertToLocalClick = () => {
-    const source = getDefaultSource('local', props.source.backend, props.source.config, props.source.height) as Extract<
-      Source,
-      { type: 'local' }
-    >;
+    const source = getDefaultSource('local', props.source.config) as Extract<Source, { type: 'local' }>;
     source.musicXML = props.musicXML;
     updateNow(source);
   };
@@ -212,31 +201,6 @@ export const SourceForm = (props: SourceFormProps) => {
             </label>
           </div>
         </div>
-
-        <div className="col-12 col-md-6 col-lg-4 my-4 my-md-0">
-          <div>
-            <label htmlFor={heightId} className="form-label">
-              Height
-            </label>
-            <small ref={heightTooltipRef} className="ms-2">
-              <i className="bi bi-question-circle"></i>
-            </small>
-            <div className="row">
-              <div className="col-8">
-                <input
-                  id={heightId}
-                  type="range"
-                  className="form-range"
-                  value={source.height ?? 0}
-                  min={0}
-                  max={2400}
-                  onChange={onHeightChange}
-                />
-              </div>
-              <div className="col-4">{source.height || 'auto'}</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <hr />
@@ -335,19 +299,14 @@ export const SourceForm = (props: SourceFormProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = (
-  type: Source['type'],
-  backend: RenderingBackend,
-  config: LegacyConfig,
-  height: number
-): Source => {
+const getDefaultSource = (type: Source['type'], config: LegacyConfig): Source => {
   switch (type) {
     case 'local':
-      return { type, musicXML: '', backend, config, height };
+      return { type, musicXML: '', config };
     case 'remote':
-      return { type, url: '', backend, config, height };
+      return { type, url: '', config };
     case 'example':
-      return { type, path: DEFAULT_EXAMPLE_PATH, backend, config, height };
+      return { type, path: DEFAULT_EXAMPLE_PATH, config };
     default:
       throw new Error(`Invalid source type: ${type}`);
   }

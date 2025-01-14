@@ -1,7 +1,7 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { RenderingBackend, Source } from '../types';
+import { Source } from '../types';
 import { useTooltip } from '../hooks/useTooltip';
 import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
@@ -101,13 +101,6 @@ export const SourceDisplay = (props: SourceProps) => {
   const onVexmlExit = enabledVexmlEventTypes.includes('exit') ? onVexmlEvent : undefined;
   const onVexmlScroll = enabledVexmlEventTypes.includes('scroll') ? onVexmlEvent : undefined;
 
-  const svgButtonId = useId();
-  const canvasButtonId = useId();
-  const vexmlModeName = useId();
-  const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
-  };
-
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
       <div className="card-body">
@@ -165,34 +158,6 @@ export const SourceDisplay = (props: SourceProps) => {
             </button>
           </div>
 
-          <div className="btn-group" role="group">
-            <input
-              type="radio"
-              className="btn-check"
-              name={vexmlModeName}
-              value="svg"
-              id={svgButtonId}
-              checked={props.source.backend === 'svg'}
-              onChange={onVexmlModeChange}
-            />
-            <label className="btn btn-outline-info" htmlFor={svgButtonId}>
-              SVG
-            </label>
-
-            <input
-              type="radio"
-              className="btn-check"
-              name={vexmlModeName}
-              value="canvas"
-              id={canvasButtonId}
-              checked={props.source.backend === 'canvas'}
-              onChange={onVexmlModeChange}
-            />
-            <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
-              Canvas
-            </label>
-          </div>
-
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
             <i className="bi bi-github"></i> Report an Issue
           </a>
@@ -241,7 +206,6 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              backend={props.source.backend}
               config={config}
               onResult={setVexmlResult}
               onClick={onVexmlClick}
