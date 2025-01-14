@@ -1,15 +1,23 @@
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as rendering from '@/rendering';
-import { Rect } from '@/spatial';
+import * as util from '@/util';
+import * as playback from '@/playback';
+import * as cursors from '@/cursors';
+import { VexmlElement } from './types';
+import { Point, Rect } from '@/spatial';
 import { EventListener } from '@/events';
 import { Logger } from '@/debug';
 import { EventMap } from './types';
 import { System } from './system';
 import { Events } from './events';
+import { Locator } from './locator';
 
 /** Score is a rendered musical score. */
 export class Score {
+  private isEventsCreated = false;
+  private cursors = new Array<cursors.Cursor>();
+
   private constructor(
     private config: rendering.Config,
     private log: Logger,
@@ -17,7 +25,6 @@ export class Score {
     private ctx: vexflow.RenderContext,
     private root: components.Root,
     private scoreRender: rendering.ScoreRender,
-    private events: Events,
     private systems: System[]
   ) {}
 
@@ -29,16 +36,15 @@ export class Score {
     root: components.Root,
     scoreRender: rendering.ScoreRender
   ): Score {
-    const events = new Events();
     const systems = scoreRender.systemRenders.map((systemRender) => System.create(config, log, document, systemRender));
-    return new Score(config, log, document, ctx, root, scoreRender, events, systems);
+    return new Score(config, log, document, ctx, root, scoreRender, systems);
   }
 
   /** The name of the element, which can be used as a type discriminant. */
   public readonly name = 'score';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.scoreRender.rect;
   }
 
@@ -57,6 +63,15 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
+  addCursor(opts?: { partIndex?: number }): cursors.Cursor {
+    const partIndex = opts?.partIndex ?? 0;
+    const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
+    util.assertDefined(sequence);
+    const cursor = cursors.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
+    this.cursors.push(cursor);
+    return cursor;
+  }
+
   /** Returns the title of the score. */
   getTitle(): string | null {
     return this.document.getTitle();
@@ -67,24 +82,54 @@ export class Score {
     return this.systems;
   }
 
+  /** Returns the duration of the score in milliseconds. */
+  getDurationMs(): number {
+    return Math.max(0, ...this.getSequences().map((sequence) => sequence.getDuration().ms));
+  }
+
+  /** Returns the max number of parts in this score. */
+  getPartCount(): number {
+    return Math.max(0, ...this.systems.map((system) => system.getPartCount()));
+  }
+
   /** Removes the score from the DOM. */
   destroy(): void {
     this.root?.remove();
+
+    if (this.isEventsCreated) {
+      this.events().removeAllEventListeners();
+    }
+
+    for (const cursor of this.cursors) {
+      cursor.removeAllEventListeners();
+    }
   }
 
   /** Dispatches a native event to the overlay. */
   dispatchNativeEvent(event: Event): void {
-    this.events.dispatchNativeEvent(event);
+    this.events().dispatchNativeEvent(event);
   }
 
   /** Adds an event listener to the score. */
-  addEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): void {
-    this.events.addEventListener(type, listener);
+  addEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): number {
+    return this.events().addEventListener(type, listener);
   }
 
   /** Removes an event listener from the score. */
-  removeEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): void {
-    this.events.removeEventListener(type, listener);
+  removeEventListener(...ids: number[]): void {
+    this.events().removeEventListener(...ids);
+  }
+
+  /**
+   * Returns all the elements at a given point.
+   *
+   * Functions similar to document.elementsFromPoint.
+   * See https://developer.mozilla.org/en-US/docs/Web/API/Document/elementsFromPoint
+   */
+  elementsFromPoint(x: number, y: number): VexmlElement[] {
+    const point = new Point(x, y);
+    // TODO: Order the elements by [paint order, distance]. The score should always be the last element.
+    return this.getElementLocator().locate(point);
   }
 
   /** Renders the entire score. */
@@ -263,5 +308,27 @@ export class Score {
         new rendering.DebugRect(config, log, `e${e.key.voiceEntryIndex}`, e.rect, style).setContext(ctx).draw();
       });
     }
+  }
+
+  @util.memoize()
+  private events(): Events {
+    this.isEventsCreated = true;
+    return Events.create(this.config, this.root, this.getElementLocator(), this.getTimestampLocator());
+  }
+
+  @util.memoize()
+  private getSequences(): playback.Sequence[] {
+    const sequences = new playback.SequenceFactory(this).create();
+    return sequences;
+  }
+
+  @util.memoize()
+  private getElementLocator(): Locator {
+    return Locator.create(this);
+  }
+
+  @util.memoize()
+  private getTimestampLocator(): playback.TimestampLocator {
+    return playback.TimestampLocator.create(this, this.getSequences());
   }
 }

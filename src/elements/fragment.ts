@@ -26,12 +26,22 @@ export class Fragment {
   public readonly name = 'fragment';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.fragmentRender.rect;
   }
 
   /** Returns the parts of the fragment. */
   getParts(): Part[] {
     return this.parts;
+  }
+
+  /** Returns the bpm of the fragment. */
+  getBpm(): number {
+    return this.document.getFragment(this.fragmentRender.key).signature.metronome.bpm ?? 100;
+  }
+
+  /** Returns the max number of parts in this score. */
+  getPartCount(): number {
+    return this.parts.length;
   }
 }

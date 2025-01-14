@@ -6,6 +6,10 @@ type Movable = {
   rect: Rect;
 };
 
+type HasIntrinsicRect = {
+  intrinsicRect: Rect;
+};
+
 /**
  * After a system is rendered, we may learn there is excess height from its components. This class recursivley moves
  * all the rects by the excess height such that we can honor the SYSTEM_MARGIN_BOTTOM configuration without
@@ -22,6 +26,9 @@ export class SystemRenderMover {
       seen.add(obj);
       if (this.isMovable(obj)) {
         obj.rect = obj.rect.translate({ dy });
+      }
+      if (this.hasIntrinsicRect(obj)) {
+        obj.intrinsicRect = obj.intrinsicRect.translate({ dy });
       }
       if (Array.isArray(obj)) {
         for (const item of obj) {
@@ -49,5 +56,9 @@ export class SystemRenderMover {
 
   private isMovable(obj: any): obj is Movable {
     return !!obj && obj.rect instanceof Rect;
+  }
+
+  private hasIntrinsicRect(obj: any): obj is HasIntrinsicRect {
+    return !!obj && obj.intrinsicRect instanceof Rect;
   }
 }

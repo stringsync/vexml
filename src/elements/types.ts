@@ -14,7 +14,7 @@ import { Voice } from './voice';
  *
  * NOTE: The type union order is the rendering hierarchy.
  */
-export type Element = Score | System | Measure | Fragment | Part | Stave | Voice | VoiceEntry;
+export type VexmlElement = Score | System | Measure | Fragment | Part | Stave | Voice | VoiceEntry;
 
 /**
  * Leaf elements that are rendered as part of a voice.
@@ -29,27 +29,21 @@ export type EventMap = {
   scroll: ScrollEvent;
 };
 
+export type EventType = keyof EventMap;
+
+export type AnyEvent = EventMap[EventType];
+
+export type AnyEventListener = (event: EventMap[EventType]) => void;
+export type ClickEventListener = (event: EventMap['click']) => void;
+export type EnterEventListener = (event: EventMap['enter']) => void;
+export type ExitEventListener = (event: EventMap['exit']) => void;
+export type LongpressEventListener = (event: EventMap['longpress']) => void;
+export type ScrollEventListener = (event: EventMap['scroll']) => void;
+
 export type ClickEvent = {
   type: 'click';
   timestampMs: number | null;
-  closestTarget: Element;
-  targets: Element[];
-  point: Point;
-  native: MouseEvent | TouchEvent;
-};
-
-export type EnterEvent = {
-  type: 'enter';
-  timestampMs: number | null;
-  target: Element;
-  point: Point;
-  native: MouseEvent | TouchEvent;
-};
-
-export type ExitEvent = {
-  type: 'exit';
-  timestampMs: number | null;
-  target: Element;
+  target: VexmlElement;
   point: Point;
   native: MouseEvent | TouchEvent;
 };
@@ -57,7 +51,23 @@ export type ExitEvent = {
 export type LongPressEvent = {
   type: 'longpress';
   timestampMs: number | null;
-  target: Element;
+  target: VexmlElement;
+  point: Point;
+  native: MouseEvent | TouchEvent;
+};
+
+export type EnterEvent = {
+  type: 'enter';
+  timestampMs: number | null;
+  target: VexmlElement;
+  point: Point;
+  native: MouseEvent | TouchEvent;
+};
+
+export type ExitEvent = {
+  type: 'exit';
+  timestampMs: number | null;
+  target: VexmlElement;
   point: Point;
   native: MouseEvent | TouchEvent;
 };

@@ -4,7 +4,7 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { LegacyConfig, Vexml, LEGACY_DEFAULT_CONFIG } from '@/index';
+import { LegacyConfig, LEGACY_DEFAULT_CONFIG, MusicXMLParser, MXLParser } from '@/index';
 import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
@@ -114,11 +114,11 @@ export const SourceForm = (props: SourceFormProps) => {
     }
 
     try {
-      const vexml = await Vexml.fromFile(files[0]);
+      // TODO: Readd functionality to add using a file.
       updateNow({
         ...source,
         type: 'local',
-        musicXML: vexml.getDocumentString(),
+        musicXML: '',
       });
     } catch (e) {
       console.error(`error reading file: ${e}`);

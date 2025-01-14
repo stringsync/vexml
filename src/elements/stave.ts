@@ -26,7 +26,7 @@ export class Stave {
   public readonly name = 'stave';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.staveRender.rect;
   }
 

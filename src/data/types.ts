@@ -350,7 +350,7 @@ export type Metronome = {
   parenthesis?: boolean;
   duration?: string;
   dots?: number;
-  bpm?: number | string;
+  bpm?: number;
   duration2?: string;
   dots2?: number;
 };

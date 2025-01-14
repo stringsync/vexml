@@ -20,6 +20,10 @@ export class Duration {
     return new Duration(min(v));
   }
 
+  static sum(durations: Duration[]) {
+    return Duration.ms(durations.reduce((acc, duration) => acc + duration.ms, 0));
+  }
+
   private readonly _ms: number;
 
   private constructor(ms: number) {

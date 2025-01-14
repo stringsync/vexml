@@ -1,38 +1,20 @@
-import * as rendering from '@/legacyrendering';
 import * as playback from '@/playback';
 import * as util from '@/util';
 import * as spatial from '@/spatial';
 import * as events from '@/events';
+import * as elements from '@/elements';
+import { Rect } from '@/spatial';
 import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 import { Scroller } from './scroller';
 
 const CURSOR_WIDTH_PX = 1.5;
 
-const PART_VERTICAL_SPAN_RENDERINGS = [
-  'stave',
-  'stavenote',
-  'stavechord',
-  'gracenote',
-  'gracechord',
-  'tabnote',
-  'tabchord',
-  'tabgracenote',
-  'tabgracechord',
-  'rest',
-] as const;
-
-const SYSTEM_VERTICAL_SPAN_RENDERINGS = ['measure'] as const;
-
 type CursorState = {
   index: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  partRect: spatial.Rect;
-  measureRect: spatial.Rect;
-  systemRect: spatial.Rect;
-  playableRect: spatial.Rect;
-  cursorRect: spatial.Rect;
+  cursorRect: Rect;
   sequenceEntry: playback.SequenceEntry;
 };
 
@@ -65,70 +47,50 @@ export class Cursor {
     this.expensiveLocator = opts.expensiveLocator;
   }
 
-  static create(opts: {
-    scrollContainer: HTMLElement;
-    score: rendering.ScoreRendering;
-    partId: string;
-    sequence: playback.Sequence;
-  }): Cursor {
-    const { score, partId, sequence } = opts;
-    const query = rendering.Query.of(score).where(rendering.filters.forPart(partId));
+  static create(
+    scrollContainer: HTMLElement,
+    score: elements.Score,
+    partIndex: number,
+    sequence: playback.Sequence
+  ): Cursor {
+    // NumberRange objects indexed by system index for the part.
+    const systemPartYRanges = new Array<util.NumberRange>();
 
-    const systemIndexes = query.select('system').map((system) => system.index);
+    for (const system of score.getSystems()) {
+      const rect = Rect.merge(
+        system
+          .getMeasures()
+          .flatMap((measure) => measure.getFragments())
+          .flatMap((fragment) => fragment.getParts())
+          .filter((part) => part.getIndex() === partIndex)
+          .map((part) => part.rect())
+      );
+      const yRange = new util.NumberRange(rect.getMinY(), rect.getMaxY());
+      systemPartYRanges.push(yRange);
+    }
 
-    const partRects = systemIndexes.map((systemIndex) => {
-      const rects = query
-        .where(rendering.filters.forSystem(systemIndex))
-        .select(...PART_VERTICAL_SPAN_RENDERINGS)
-        .map(rendering.InteractionModel.create)
-        .map((model) => model.getBoundingBox());
-      return { systemIndex, rect: spatial.Rect.merge(rects) };
-    });
+    const states = new Array<CursorState>(sequence.getCount());
 
-    const systemRects = systemIndexes.map((systemIndex) => {
-      const rects = query
-        .where(rendering.filters.forSystem(systemIndex))
-        .select(...SYSTEM_VERTICAL_SPAN_RENDERINGS)
-        .map(rendering.InteractionModel.create)
-        .map((model) => model.getBoundingBox());
-      return { systemIndex, rect: spatial.Rect.merge(rects) };
-    });
-
-    const measureRects = query
-      .select('measure')
-      .map(rendering.InteractionModel.create)
-      .map((model) => ({ measureIndex: model.value.index, rect: model.getBoundingBox() }));
-
-    const states = new Array<CursorState>(sequence.getLength());
-    for (let index = 0; index < sequence.getLength(); index++) {
+    for (let index = 0; index < sequence.getCount(); index++) {
       const sequenceEntry = sequence.getEntry(index);
       util.assertNotNull(sequenceEntry);
 
       const hasPrevious = index > 0;
-      const hasNext = index < sequence.getLength() - 1;
+      const hasNext = index < sequence.getCount() - 1;
 
-      const interactable = sequenceEntry.mostRecentInteractable;
+      const element = sequenceEntry.mostRecentElement;
 
-      util.assertDefined(interactable);
+      util.assertDefined(element);
 
-      const systemIndex = interactable.address.getSystemIndex();
-      const measureIndex = interactable.address.getMeasureIndex();
+      const systemIndex = element.getSystemIndex();
+      const yRange = systemPartYRanges.at(systemIndex);
 
-      const partRect = partRects.find((rect) => rect.systemIndex === systemIndex)?.rect;
-      util.assertDefined(partRect);
+      util.assertDefined(yRange);
 
-      const systemRect = systemRects.find((rect) => rect.systemIndex === systemIndex)?.rect;
-      util.assertDefined(systemRect);
-
-      const measureRect = measureRects.find((rect) => rect.measureIndex === measureIndex)?.rect;
-      util.assertDefined(measureRect);
-
-      const playableRect = rendering.InteractionModel.create(interactable).getBoundingBox();
-
-      const x = playableRect.center().x;
-      const y = partRect.y;
+      const x = element.rect().center().x;
+      const y = yRange.getStart();
       const w = CURSOR_WIDTH_PX;
-      const h = partRect.h;
+      const h = yRange.getSize();
 
       const cursorRect = new spatial.Rect(x, y, w, h);
 
@@ -136,16 +98,12 @@ export class Cursor {
         index,
         hasPrevious,
         hasNext,
-        systemRect,
-        measureRect,
-        partRect,
-        playableRect,
         cursorRect,
         sequenceEntry,
       };
     }
 
-    const scroller = new Scroller(opts.scrollContainer);
+    const scroller = new Scroller(scrollContainer);
     const cheapLocator = new CheapLocator(sequence);
     const expensiveLocator = new ExpensiveLocator(sequence);
 
@@ -176,7 +134,7 @@ export class Cursor {
   }
 
   next(): void {
-    if (this.index === this.sequence.getLength() - 1) {
+    if (this.index === this.sequence.getCount() - 1) {
       this.update(this.index, 1);
     } else {
       this.update(this.index + 1, 0);
@@ -235,6 +193,10 @@ export class Cursor {
     }
   }
 
+  removeAllEventListeners(): void {
+    this.topic.unsubscribeAll();
+  }
+
   private getScrollPoint(): spatial.Point {
     const cursorRect = this.getState().cursorRect;
     const x = cursorRect.center().x;
@@ -243,7 +205,7 @@ export class Cursor {
   }
 
   private update(index: number, alpha: number): void {
-    index = util.clamp(0, this.sequence.getLength() - 1, index);
+    index = util.clamp(0, this.sequence.getCount() - 1, index);
     alpha = util.clamp(0, 1, alpha);
     if (index !== this.index || alpha !== this.alpha) {
       this.index = index;

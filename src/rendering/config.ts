@@ -1,5 +1,6 @@
 import * as schema from '@/schema';
 import { t } from '@/schema';
+import { INPUT_TYPES } from './enums';
 
 export type Config = schema.SchemaConfig<typeof CONFIG>;
 
@@ -16,6 +17,11 @@ export const CONFIG = {
   HEIGHT: t.number({
     defaultValue: null,
     help: 'HEIGHT specifies the maximum height of the rendered score.',
+  }),
+  INPUT_TYPE: t.enum({
+    defaultValue: 'auto',
+    help: 'INPUT_TYPE specifies the type of input to use.',
+    choices: INPUT_TYPES.values,
   }),
   SCORE_PADDING_TOP: t.number({
     defaultValue: 40,
