@@ -9,12 +9,13 @@ import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Document } from './document';
 
 export type RenderOptions = {
+  formatter?: formatting.Formatter;
   config?: Partial<Config>;
   logger?: Logger;
 };
 
 export class Renderer {
-  constructor(private document: data.Document, private formatter?: formatting.Formatter) {}
+  constructor(private document: data.Document) {}
 
   render(div: HTMLDivElement, opts?: RenderOptions): elements.Score {
     const config = { ...DEFAULT_CONFIG, ...opts?.config };
@@ -44,7 +45,7 @@ export class Renderer {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
-    let formatter = this.formatter;
+    let formatter = opts?.formatter;
     if (!formatter) {
       if (width && height) {
         formatter = new formatting.DefaultFormatter();

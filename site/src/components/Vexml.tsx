@@ -106,13 +106,14 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
       const parser = new vexml.MusicXMLParser();
       const document = parser.parse(musicXML);
       const formatter = new vexml.MonitoredFormatter(new vexml.DefaultFormatter(), logger);
-      const renderer = new vexml.Renderer(document, formatter);
+      const renderer = new vexml.Renderer(document);
       score = renderer.render(div, {
+        formatter,
+        logger,
         config: {
           ...config,
           WIDTH: width,
         },
-        logger,
       });
       setScore(score);
 
