@@ -1,15 +1,15 @@
-import * as rendering from '@/rendering';
 import * as data from '@/data';
-import { Logger } from '@/debug';
+import * as rendering from '@/rendering';
+import * as util from '@/util';
 import { Formatter } from './types';
 
 /**
  * A formatter formats a document for infinite x-scrolling as a single system.
  */
 export class PanoramicFormatter implements Formatter {
-  constructor(private config: rendering.Config, private log: Logger) {}
+  format(config: rendering.Config, document: data.Document): data.Document {
+    util.assertNull(config.WIDTH, 'WIDTH must be null for PanoramicFormatter');
 
-  format(document: data.Document): data.Document {
     const clone = document.clone();
     const measures = clone.score.systems.flatMap((system) => system.measures);
     clone.score.systems = [{ type: 'system', measures }];

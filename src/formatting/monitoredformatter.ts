@@ -1,4 +1,5 @@
 import * as data from '@/data';
+import * as rendering from '@/rendering';
 import { Formatter } from './types';
 import { Logger, Stopwatch } from '@/debug';
 
@@ -8,14 +9,14 @@ import { Logger, Stopwatch } from '@/debug';
 export class MonitoredFormatter implements Formatter {
   constructor(private formatter: Formatter, private log: Logger) {}
 
-  format(document: data.Document): data.Document {
+  format(config: rendering.Config, document: data.Document): data.Document {
     const stopwatch = Stopwatch.start();
 
-    const formatted = this.formatter.format(document);
+    const formatted = this.formatter.format(config, document);
 
     const lap = stopwatch.lap();
     if (lap < 1) {
-      this.log.info(`formatted score in ${lap.toFixed(3)}ms`);
+      this.log.info(`formatted score in <1ms`);
     } else {
       this.log.info(`formatted score in ${Math.round(lap)}ms`);
     }

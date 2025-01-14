@@ -18,6 +18,13 @@ export type {
   ScrollEventListener,
   AnyEvent,
 } from './elements';
+export {
+  type Formatter,
+  DefaultFormatter,
+  PanoramicFormatter,
+  MonitoredFormatter,
+  MaxMeasureFormatter,
+} from './formatting';
 export { type SchemaDescriptor, type SchemaType, type SchemaConfig } from './schema';
 export { SimpleCursor } from './components';
 export { CONFIG_SCHEMA as LEGACY_CONFIG_SCHEMA, DEFAULT_CONFIG as LEGACY_DEFAULT_CONFIG } from './config';
