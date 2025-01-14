@@ -33,6 +33,11 @@ export function downloadSvgAsImage(
     canvas.width = image.width;
     canvas.height = image.height;
     const context = canvas.getContext('2d')!;
+
+    // Fill the canvas with a white background
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
     context.font = 'Bravura';
     context.drawImage(image, 0, 0);
 

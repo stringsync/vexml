@@ -53,6 +53,7 @@ export class Root {
     const vexmlContainer = document.createElement('div');
     vexmlContainer.classList.add('vexml-container');
     vexmlContainer.style.position = 'relative';
+    vexmlContainer.style.backgroundColor = 'white';
     vexmlRoot.append(vexmlContainer);
 
     const overlay = Overlay.render(vexmlContainer);
