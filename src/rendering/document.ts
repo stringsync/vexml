@@ -204,10 +204,6 @@ export class Document {
     return measures.indexOf(this.getMeasure(key));
   }
 
-  getJumps(key: MeasureKey): data.Jump[] {
-    return this.getMeasure(key).jumpGroup.jumps;
-  }
-
   getFragments(key: MeasureKey): data.Fragment[] {
     return this.getMeasure(key).fragments;
   }

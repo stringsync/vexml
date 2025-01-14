@@ -156,16 +156,7 @@ class Repeat {
           );
         }
 
-        if (jump.type === 'repeatending') {
-          const hasPreviousRepeatEnding =
-            measureIndex > 0 && measures.at(measureIndex - 1)!.jumps.some((jump) => jump.type === 'repeatending');
-          const isTerminalRepeatEnding =
-            measureIndex === measures.length - 1 ||
-            measures.at(measureIndex + 1)!.jumps.every((jump) => jump.type !== 'repeatending');
-          if (hasPreviousRepeatEnding && isTerminalRepeatEnding) {
-            continue;
-          }
-
+        if (jump.type === 'repeatending' && jump.times > 0) {
           // Not all repeatendings have a corresponding repeatstart. Assume they're supposed to repeat from the
           // beginning.
           const startMeasureIndex = startMeasureIndexes.pop() ?? 0;

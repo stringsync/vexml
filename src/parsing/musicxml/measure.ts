@@ -142,7 +142,7 @@ export class Measure {
       type: 'measure',
       label: this.label,
       fragments: this.fragments.map((fragment) => fragment.parse(measureCtx)),
-      jumpGroup: this.jumpGroup.parse(),
+      jumps: this.jumpGroup.parse(),
       startBarlineStyle: this.startBarlineStyle,
       endBarlineStyle: this.endBarlineStyle,
       repetitionSymbols: this.repetitionSymbols,
