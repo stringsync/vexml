@@ -112,6 +112,7 @@ export const SourceForm = (props: SourceFormProps) => {
         type: 'local',
         musicXML,
       });
+      return;
     } catch (e) {
       console.warn(`could not parse file as MXL, trying MusicXML: (Caught) ${e}`);
       // Could not parse the file as an MXL file, try to parse it as a MusicXML file.

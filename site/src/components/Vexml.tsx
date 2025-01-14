@@ -186,6 +186,9 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
     return () => {
       score?.destroy();
+      if (div.firstChild) {
+        div.removeChild(div.firstChild);
+      }
     };
   }, [div, width, musicXML, config, onResult, onClick, onLongpress, onEnter, onExit, onScroll, scrollBehavior]);
 
