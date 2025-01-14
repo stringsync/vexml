@@ -1,3 +1,4 @@
+import * as vexml from '@/index';
 import React, { ChangeEvent, useId, useRef, useState } from 'react';
 import { Source, RenderingBackend } from '../types';
 import { useModal } from '../hooks/useModal';
@@ -113,15 +114,41 @@ export const SourceForm = (props: SourceFormProps) => {
       return;
     }
 
+    let musicXML = '';
+
+    const mxlParser = new vexml.MXLParser();
     try {
-      // TODO: Readd functionality to add using a file.
+      musicXML = await mxlParser.raw(files[0]);
       updateNow({
         ...source,
         type: 'local',
-        musicXML: '',
+        musicXML,
       });
     } catch (e) {
-      console.error(`error reading file: ${e}`);
+      console.warn(`could not parse file as MXL, trying MusicXML: (Caught) ${e}`);
+      // Could not parse the file as an MXL file, try to parse it as a MusicXML file.
+    }
+
+    try {
+      const musicXML = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result;
+          if (typeof result === 'string') {
+            resolve(result);
+          } else {
+            reject(new Error(`expected string from reading file, got: ${typeof result}`));
+          }
+        };
+        reader.readAsText(files[0]);
+      });
+      updateNow({
+        ...source,
+        type: 'local',
+        musicXML,
+      });
+    } catch (e) {
+      console.error(`could not read file as MXL or MusicXML: ${e}`);
     }
   };
 

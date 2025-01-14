@@ -6,6 +6,7 @@ import { Player, PlayerState } from '../lib/Player';
 import { getDevice } from '../util/getDevice';
 
 const STRINGSYNC_RED = '#FC354C';
+const VEXML_HEIGHT = 400;
 
 export type VexmlProps = {
   musicXML: string;
@@ -105,6 +106,7 @@ export const Vexml = ({
       return;
     }
     if (musicXML.length === 0) {
+      onResult({ type: 'empty' });
       return;
     }
 
@@ -116,7 +118,7 @@ export const Vexml = ({
         ...config,
         DRAWING_BACKEND: backend,
         WIDTH: width,
-        HEIGHT: 500,
+        HEIGHT: VEXML_HEIGHT,
       };
       const logger = new vexml.ConsoleLogger();
       const parser = new vexml.MusicXMLParser();
