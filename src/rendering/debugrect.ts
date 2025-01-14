@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { Label, LabelFont } from './label';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Padding } from './types';
 

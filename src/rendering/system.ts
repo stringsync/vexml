@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Measure } from './measure';

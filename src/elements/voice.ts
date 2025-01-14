@@ -1,4 +1,5 @@
 import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { VoiceEntry } from './types';
@@ -7,19 +8,14 @@ import { Rest } from './rest';
 
 export class Voice {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private voiceRender: rendering.VoiceRender,
     private entries: VoiceEntry[]
   ) {}
 
-  static create(
-    config: rendering.Config,
-    log: Logger,
-    document: rendering.Document,
-    voiceRender: rendering.VoiceRender
-  ): Voice {
+  static create(config: Config, log: Logger, document: rendering.Document, voiceRender: rendering.VoiceRender): Voice {
     const entries = voiceRender.entryRenders
       .map((entryRender) => {
         switch (entryRender.type) {

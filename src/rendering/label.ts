@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { FontInfo } from 'vexflow';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Point, Rect } from '@/spatial';
 import { Drawable, Padding } from './types';

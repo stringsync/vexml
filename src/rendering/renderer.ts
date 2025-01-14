@@ -4,7 +4,7 @@ import * as components from '@/components';
 import * as elements from '@/elements';
 import * as formatting from '@/formatting';
 import { Score } from './score';
-import { Config, DEFAULT_CONFIG } from './config';
+import { Config, DEFAULT_CONFIG } from '@/config';
 import { Logger, NoopLogger, Stopwatch } from '@/debug';
 import { Document } from './document';
 

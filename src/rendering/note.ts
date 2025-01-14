@@ -2,7 +2,7 @@ import * as vexflow from 'vexflow';
 import * as data from '@/data';
 import * as util from '@/util';
 import { Logger } from '@/debug';
-import { Config } from './config';
+import { Config } from '@/config';
 import {
   ArticulationKey,
   ArticulationRender,

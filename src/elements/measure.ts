@@ -1,12 +1,13 @@
 import * as rendering from '@/rendering';
 import * as data from '@/data';
+import { Config } from '@/config';
 import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { Fragment } from './fragment';
 
 export class Measure {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private measureRender: rendering.MeasureRender,
@@ -14,7 +15,7 @@ export class Measure {
   ) {}
 
   static create(
-    config: rendering.Config,
+    config: Config,
     log: Logger,
     document: rendering.Document,
     measureRender: rendering.MeasureRender

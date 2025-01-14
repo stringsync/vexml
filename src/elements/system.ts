@@ -1,10 +1,11 @@
 import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Measure } from './measure';
 
 export class System {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private systemRender: rendering.SystemRender,
@@ -12,7 +13,7 @@ export class System {
   ) {}
 
   static create(
-    config: rendering.Config,
+    config: Config,
     log: Logger,
     document: rendering.Document,
     systemRender: rendering.SystemRender
