@@ -28,20 +28,22 @@ export class Renderer {
     let root: components.Root;
     let container: HTMLDivElement | HTMLCanvasElement;
     let renderer: vexflow.Renderer;
+    const width = config.WIDTH ?? undefined;
+    const height = config.HEIGHT ?? undefined;
     switch (config.DRAWING_BACKEND) {
       case 'svg':
-        root = components.Root.svg(div, config.HEIGHT ?? undefined);
+        root = components.Root.svg(div, width, height);
         container = root.getVexflowContainerElement() as HTMLDivElement;
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
         break;
       case 'canvas':
-        root = components.Root.canvas(div, config.HEIGHT ?? undefined);
+        root = components.Root.canvas(div, width, height);
         container = root.getVexflowContainerElement() as HTMLCanvasElement;
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.CANVAS);
         break;
       default:
         log.info(`backend not specified or supported, defaulting to 'svg'`);
-        root = components.Root.svg(div, config.HEIGHT ?? undefined);
+        root = components.Root.svg(div, width, height);
         container = root.getVexflowContainerElement() as HTMLDivElement;
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
@@ -84,9 +86,14 @@ export class Renderer {
     const width = config.WIDTH;
     const height = config.HEIGHT;
 
+    if (width && height) {
+      log.debug('using DefaultFormatter');
+      return new formatters.DefaultFormatter(config, log, scoreRender);
+    }
+
     if (width && !height) {
-      log.debug('using UndefinedHeightFormatter');
-      return new formatters.UndefinedHeightFormatter(config, log, scoreRender);
+      log.debug('using DefaultFormatter');
+      return new formatters.DefaultFormatter(config, log, scoreRender);
     }
 
     if (!width && height) {
@@ -99,7 +106,6 @@ export class Renderer {
       return new formatters.UndefinedWidthFormatter();
     }
 
-    log.debug('using DefaultFormatter');
-    return new formatters.DefaultFormatter();
+    throw new Error('unreachable');
   }
 }

@@ -4,10 +4,9 @@ import { Formatter, ScoreRender, SystemArrangement } from './types';
 import { Config } from './config';
 import { Logger } from '@/debug';
 
-export class UndefinedHeightFormatter implements Formatter {
+export class DefaultFormatter implements Formatter {
   constructor(private config: Config, private log: Logger, private scoreRender: ScoreRender) {
     util.assertNotNull(this.config.WIDTH);
-    util.assertNull(this.config.HEIGHT);
   }
 
   format(document: Document): Document {
@@ -45,19 +44,7 @@ export class UndefinedHeightFormatter implements Formatter {
 }
 
 export class UndefinedWidthFormatter implements Formatter {
-  format(): Document {
-    throw new Error('Method not implemented.');
-  }
-}
-
-export class DefaultFormatter implements Formatter {
-  format(): Document {
-    throw new Error('Method not implemented.');
-  }
-}
-
-export class PagedFormatter implements Formatter {
-  format(): Document {
-    throw new Error('Method not implemented.');
+  format(document: Document): Document {
+    return document;
   }
 }
