@@ -51,14 +51,14 @@ export class Renderer {
     // We'll create a score that thinks the configured dimensions are undefined. This is necessary since the score (and
     // its children) may need to render elements into order to compute rects. This will provide the formatter a
     // mechanism to measure the elements and make decisions on the system layout.
-    const unformattedScore = new Score({ ...config, WIDTH: null, HEIGHT: null }, log, this.document);
+    const unformattedScore = new Score({ ...config, WIDTH: null, HEIGHT: null }, log, this.document, null);
 
     const stopwatch = Stopwatch.start();
 
     const unformattedScoreRender = unformattedScore.render();
     const formatter = this.getFormatter(config, log, unformattedScoreRender);
     const formattedDocument = formatter.format(this.document);
-    const formattedScore = new Score(config, log, formattedDocument);
+    const formattedScore = new Score(config, log, formattedDocument, config.WIDTH);
 
     let lap = stopwatch.lap();
     if (lap < 1) {

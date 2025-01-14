@@ -1,3 +1,4 @@
+import * as util from '@/util';
 import { Score } from './types';
 
 /** Document is an interface for mutating a {@link Score}. */
@@ -22,5 +23,10 @@ export class Document {
   /** Inserts a gap at specified measure and fragment indexes. */
   insertGap(): void {
     throw new Error('Method not implemented.');
+  }
+
+  clone(): Document {
+    const score = util.deepClone(this.score);
+    return new Document(score);
   }
 }

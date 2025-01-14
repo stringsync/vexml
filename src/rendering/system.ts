@@ -13,6 +13,7 @@ export class System {
     private log: Logger,
     private document: Document,
     private key: SystemKey,
+    private width: number | null,
     private position: Point
   ) {}
 
@@ -58,7 +59,7 @@ export class System {
 
   private getMeasureWidths(): number[] | null {
     // If there is no width, we should use the minimum required widths by returning null.
-    if (!this.config.WIDTH) {
+    if (!this.width) {
       return null;
     }
 
@@ -66,7 +67,7 @@ export class System {
     const isLastSystem = this.document.isLastSystem(this.key);
     const measureCount = this.document.getMeasureCount(this.key);
     if (!isLastSystem && measureCount === 1) {
-      return [this.config.WIDTH];
+      return [this.width];
     }
 
     // Otherwise, we need to determine the minimum required widths of each measure by rendering it.
@@ -104,7 +105,7 @@ export class System {
     }
 
     const totalMinRequiredSystemWidth = util.sum(minRequiredMeasureWidths);
-    const systemFraction = totalMinRequiredSystemWidth / this.config.WIDTH;
+    const systemFraction = totalMinRequiredSystemWidth / this.width;
     if (this.document.isLastSystem(this.key) && systemFraction < this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD) {
       return minRequiredMeasureWidths;
     }
@@ -114,7 +115,7 @@ export class System {
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const minRequiredMeasureWidth = minRequiredMeasureWidths.at(measureIndex) ?? 0;
       const measureFraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
-      measureWidths.push(measureFraction * this.config.WIDTH);
+      measureWidths.push(measureFraction * this.width);
     }
 
     return measureWidths;

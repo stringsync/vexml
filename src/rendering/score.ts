@@ -34,7 +34,7 @@ import { Vibrato } from './vibrato';
  * Score is the top-level rendering object that is directly responsible for arranging systems.
  */
 export class Score {
-  constructor(private config: Config, private log: Logger, private document: Document) {}
+  constructor(private config: Config, private log: Logger, private document: Document, private width: number | null) {}
 
   render(): ScoreRender {
     const pen = new Pen();
@@ -54,7 +54,7 @@ export class Score {
 
     pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
 
-    const width = this.config.WIDTH ?? util.max(systemRenders.map((system) => system.rect.w));
+    const width = this.width ?? util.max(systemRenders.map((system) => system.rect.w));
     const rect = new Rect(0, 0, width, pen.position().y);
 
     return {
@@ -81,8 +81,8 @@ export class Score {
     const font = this.getTitleFont();
 
     let label: Label;
-    if (this.config.WIDTH) {
-      label = Label.centerAligned(this.config, this.log, this.config.WIDTH, title, position, padding, font);
+    if (this.width) {
+      label = Label.centerAligned(this.config, this.log, this.width, title, position, padding, font);
     } else {
       label = Label.singleLine(this.config, this.log, title, position, padding, font);
     }
@@ -208,7 +208,7 @@ export class Score {
     for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
       const key: SystemKey = { systemIndex };
 
-      const systemRender = new System(this.config, this.log, this.document, key, pen.position()).render();
+      const systemRender = new System(this.config, this.log, this.document, key, this.width, pen.position()).render();
       systemRenders.push(systemRender);
 
       const excessHeight = util.max(

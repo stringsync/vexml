@@ -1,3 +1,4 @@
+export * from './score';
 export * from './renderer';
 export * from './config';
 export * from './types';
