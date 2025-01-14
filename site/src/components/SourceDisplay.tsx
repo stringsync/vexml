@@ -1,10 +1,9 @@
 import * as vexml from '@/index';
 import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
-import { CursorInput, RenderingBackend, Source } from '../types';
-import { Vexml, VexmlResult } from './Vexml';
+import { Source } from '../types';
 import { useTooltip } from '../hooks/useTooltip';
-import { VEXML_VERSION } from '../constants';
+import { DEFAULT_CONFIG, VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
 import { SourceForm } from './SourceForm';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
@@ -14,7 +13,7 @@ import { EVENT_LOG_CAPACITY, EventLog, EventLogCard } from './EventLogCard';
 import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 import { ConfigForm } from './ConfigForm';
 import { EventTypeForm } from './EventTypeForm';
-import { CursorForm } from './CursorForm';
+import { Vexml, VexmlResult } from './Vexml';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -72,9 +71,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const configFormCardId = useId();
   const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
-  const onConfigChange = (config: vexml.Config) => {
-    props.onUpdate({ ...props.source, config });
-  };
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
@@ -98,22 +95,11 @@ export const SourceDisplay = (props: SourceProps) => {
     },
     [enabledVexmlEventTypes, nextKey]
   );
-
-  const cursorCardId = useId();
-  const cursorCardSelector = '#' + cursorCardId.replaceAll(':', '\\:');
-
-  const svgButtonId = useId();
-  const canvasButtonId = useId();
-  const vexmlModeName = useId();
-  const onVexmlModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.onUpdate({ ...props.source, backend: e.target.value as RenderingBackend });
-  };
-
-  const [partIds, setPartIds] = useState<string[]>([]);
-  const [cursorInputs, setCursorInputs] = useState(new Array<CursorInput>());
-  const onCursorInputsChange = (cursorInputs: CursorInput[]) => {
-    setCursorInputs(cursorInputs);
-  };
+  const onVexmlClick = enabledVexmlEventTypes.includes('click') ? onVexmlEvent : undefined;
+  const onVexmlLongpress = enabledVexmlEventTypes.includes('longpress') ? onVexmlEvent : undefined;
+  const onVexmlEnter = enabledVexmlEventTypes.includes('enter') ? onVexmlEvent : undefined;
+  const onVexmlExit = enabledVexmlEventTypes.includes('exit') ? onVexmlEvent : undefined;
+  const onVexmlScroll = enabledVexmlEventTypes.includes('scroll') ? onVexmlEvent : undefined;
 
   return (
     <div className="card shadow-sm p-3 mt-4 mb-4">
@@ -149,15 +135,6 @@ export const SourceDisplay = (props: SourceProps) => {
             >
               <i className="bi bi-gear"></i> <p className="d-md-inline d-none">Config</p>
             </button>
-
-            <button
-              type="button"
-              className="btn btn-outline-primary"
-              data-bs-toggle="collapse"
-              data-bs-target={cursorCardSelector}
-            >
-              <i className="bi bi-input-cursor"></i> <p className="d-md-inline d-none">Cursors</p>
-            </button>
           </div>
 
           <div className="btn-group" role="group">
@@ -179,34 +156,6 @@ export const SourceDisplay = (props: SourceProps) => {
             >
               <i className="bi bi-trash"></i> <p className="d-md-inline d-none">Remove</p>
             </button>
-          </div>
-
-          <div className="btn-group" role="group">
-            <input
-              type="radio"
-              className="btn-check"
-              name={vexmlModeName}
-              value="svg"
-              id={svgButtonId}
-              checked={props.source.backend === 'svg'}
-              onChange={onVexmlModeChange}
-            />
-            <label className="btn btn-outline-info" htmlFor={svgButtonId}>
-              SVG
-            </label>
-
-            <input
-              type="radio"
-              className="btn-check"
-              name={vexmlModeName}
-              value="canvas"
-              id={canvasButtonId}
-              checked={props.source.backend === 'canvas'}
-              onChange={onVexmlModeChange}
-            />
-            <label className="btn btn-outline-info" htmlFor={canvasButtonId}>
-              Canvas
-            </label>
           </div>
 
           <a href={BUG_REPORT_HREF} type="button" target="_blank" rel="noopener noreferrer" className="btn btn-light">
@@ -240,13 +189,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div id={configFormCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
             <h3 className="mb-3">Config</h3>
 
-            <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
-          </div>
-
-          <div id={cursorCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
-            <h3 className="mb-3">Cursors</h3>
-
-            <CursorForm partIds={partIds} onChange={onCursorInputsChange} />
+            <ConfigForm defaultValue={config} onChange={setConfig} />
           </div>
         </div>
 
@@ -263,13 +206,13 @@ export const SourceDisplay = (props: SourceProps) => {
           <div className="d-flex justify-content-center">
             <Vexml
               musicXML={musicXML}
-              height={props.source.height === 0 ? undefined : props.source.height}
-              cursorInputs={cursorInputs}
-              backend={props.source.backend}
-              config={props.source.config}
+              config={config}
               onResult={setVexmlResult}
-              onEvent={onVexmlEvent}
-              onPartIdsChange={setPartIds}
+              onClick={onVexmlClick}
+              onLongpress={onVexmlLongpress}
+              onEnter={onVexmlEnter}
+              onExit={onVexmlExit}
+              onScroll={onVexmlScroll}
             />
           </div>
         )}

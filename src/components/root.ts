@@ -14,23 +14,40 @@ export class Root {
     this.overlay = overlay;
   }
 
-  static svg(parent: HTMLElement, height: number | undefined) {
-    return Root.render('svg', parent, height);
+  static svg(parent: HTMLElement, width: number | undefined, height: number | undefined) {
+    return Root.render('svg', parent, width, height);
   }
 
-  static canvas(parent: HTMLElement, height: number | undefined) {
-    return Root.render('canvas', parent, height);
+  static canvas(parent: HTMLElement, width: number | undefined, height: number | undefined) {
+    return Root.render('canvas', parent, width, height);
   }
 
-  private static render(type: 'svg' | 'canvas', parent: HTMLElement, height: number | undefined): Root {
+  private static render(
+    type: 'svg' | 'canvas',
+    parent: HTMLElement,
+    width: number | undefined,
+    height: number | undefined
+  ): Root {
     const vexmlRoot = document.createElement('div');
     vexmlRoot.classList.add('vexml-root');
     vexmlRoot.classList.add('vexml-scroll-container');
 
-    if (typeof height === 'number') {
+    if (width && height) {
+      vexmlRoot.style.width = `${width}px`;
       vexmlRoot.style.height = `${height}px`;
-      vexmlRoot.style.overflowY = 'auto';
       vexmlRoot.style.overflowX = 'hidden';
+      vexmlRoot.style.overflowY = 'auto';
+    } else if (width) {
+      vexmlRoot.style.width = `${width}px`;
+      vexmlRoot.style.overflowX = 'hidden';
+      vexmlRoot.style.overflowY = 'auto';
+    } else if (height) {
+      vexmlRoot.style.height = `${height}px`;
+      vexmlRoot.style.overflowX = 'auto';
+      vexmlRoot.style.overflowY = 'auto';
+    } else {
+      vexmlRoot.style.overflowX = 'auto';
+      vexmlRoot.style.overflowY = 'auto';
     }
 
     const vexmlContainer = document.createElement('div');

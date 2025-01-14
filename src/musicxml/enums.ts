@@ -245,6 +245,15 @@ export type AboveBelow = EnumValues<typeof ABOVE_BELOW>;
 export const ABOVE_BELOW = new Enum(['above', 'below'] as const);
 
 /**
+ * The over-under type is used to indicate whether the tips of curved lines such as slurs and ties are overhand (tips
+ * down) or underhand (tips up).
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/over-under/
+ */
+export type OverUnder = EnumValues<typeof OVER_UNDER>;
+export const OVER_UNDER = new Enum(['over', 'under'] as const);
+
+/**
  * The start-stop-continue type is used for an attribute of musical elements that can either start or stop, but also
  * need to refer to an intermediate point in the symbol, as for complex slurs or for formatting of symbols across system
  * breaks.

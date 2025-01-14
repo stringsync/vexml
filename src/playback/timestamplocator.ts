@@ -1,52 +1,30 @@
 import * as spatial from '@/spatial';
-import * as rendering from '@/rendering';
+import * as elements from '@/elements';
 import * as util from '@/util';
 import { Duration } from './duration';
 import { Sequence } from './sequence';
-import { DurationRange } from './durationrange';
+import { SequenceEntry } from './types';
 
 type System = {
-  index: number;
   yRange: util.NumberRange;
-  entries: SystemEntry[];
-};
-
-type SystemEntry = {
-  xRange: util.NumberRange;
-  durationRange: DurationRange;
+  entries: SequenceEntry[];
 };
 
 export class TimestampLocator {
   private constructor(private systems: System[]) {}
 
-  static create(opts: { score: rendering.ScoreRendering; sequences: Sequence[] }): TimestampLocator {
-    const systemIndexes = rendering.Query.of(opts.score)
-      .select('system')
-      .map((system) => system.index);
+  static create(score: elements.Score, sequences: Sequence[]): TimestampLocator {
+    const systems = score.getSystems().map((system) => {
+      const yRange = new util.NumberRange(system.rect().getMinY(), system.rect().getMaxY());
 
-    const systems = systemIndexes.map((systemIndex) => {
-      const rects = rendering.Query.of(opts.score)
-        .where(rendering.filters.forSystem(systemIndex))
-        .select('measure')
-        .map(rendering.InteractionModel.create)
-        .map((model) => model.getBoundingBox());
-
-      const rect = spatial.Rect.merge(rects);
-      const yRange = new util.NumberRange(rect.getMinY(), rect.getMaxY());
-
-      const entries = new Array<SystemEntry>();
-
-      for (const sequence of opts.sequences) {
-        for (let index = 0; index < sequence.getLength(); index++) {
-          const entry = sequence.getEntry(index);
-          util.assertNotNull(entry);
-          if (entry.mostRecentInteractable.address.getSystemIndex() === systemIndex) {
-            entries.push({ xRange: entry.xRange, durationRange: entry.durationRange });
-          }
-        }
+      const entries = new Array<SequenceEntry>();
+      for (const sequence of sequences) {
+        entries.push(
+          ...sequence.getEntries().filter((entry) => entry.mostRecentElement.getSystemIndex() === system.getIndex())
+        );
       }
 
-      return { index: systemIndex, yRange, entries };
+      return { yRange, entries };
     });
 
     return new TimestampLocator(systems);

@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer';
-import { Vexml } from '@/index';
+import { MusicXMLParser, Renderer } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 import { setup, getSnapshotIdentifier } from './helpers';
@@ -7,6 +7,7 @@ import { setup, getSnapshotIdentifier } from './helpers';
 type TestCase = {
   filename: string;
   width: number;
+  migrated?: boolean;
 };
 
 const DATA_DIR = path.join(__dirname, '__data__', 'w3c-musicxml');
@@ -309,10 +310,10 @@ describe('vexml', () => {
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
-    Vexml.fromBuffer(buffer).render({
-      element: vexmlDiv,
-      width: t.width,
-    });
+    const parser = new MusicXMLParser();
+    const doc = parser.parse(buffer.toString());
+    const renderer = new Renderer(doc);
+    renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
 
     await page.setViewport({
       width: t.width,

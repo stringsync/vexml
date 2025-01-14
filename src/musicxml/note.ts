@@ -43,6 +43,30 @@ export class Note {
     return this.element.all('grace').length > 0;
   }
 
+  /** Whether the note has a grace note. */
+  hasGrace(): boolean {
+    const element = this.element.previous('note');
+    if (!element) {
+      return false;
+    }
+    return new Note(element).isGrace();
+  }
+
+  /** Returns the notes that are part of this note's grace note. */
+  getGraceNotes(): Note[] {
+    const notes = new Array<Note>();
+    let sibling = this.element.previous('note');
+    while (sibling) {
+      const note = new Note(sibling);
+      if (!note.isGrace()) {
+        break;
+      }
+      notes.push(note);
+      sibling = sibling.previous('note');
+    }
+    return notes.reverse();
+  }
+
   /** Whether or not the note has a glash slash. */
   hasGraceSlash(): boolean {
     return this.element.first('grace')?.attr('slash').str() === 'yes';
@@ -54,13 +78,13 @@ export class Note {
   }
 
   /** Returns the voice this note belongs to. */
-  getVoice(): string {
-    return this.element.first('voice')?.content().str() ?? '1';
+  getVoice(): string | null {
+    return this.element.first('voice')?.content().str() ?? null;
   }
 
   /** Returns the stave the note belongs to. */
-  getStaveNumber(): number {
-    return this.element.first('staff')?.content().int() ?? 1;
+  getStaveNumber(): number | null {
+    return this.element.first('staff')?.content().int() ?? null;
   }
 
   /** Returns the step of the note. Defaults to 'C'. */
@@ -79,9 +103,17 @@ export class Note {
    * Defaults to null. This is intended to only be used for notes that contain a <rest> element.
    */
   getRestDisplayPitch(): string | null {
-    const step = this.element.first('display-step')?.content().str();
-    const octave = this.element.first('display-octave')?.content().str();
-    return typeof step === 'string' && typeof octave === 'string' ? `${step}/${octave}` : null;
+    const step = this.getRestDisplayStep();
+    const octave = this.getRestDisplayOctave();
+    return typeof step === 'string' && typeof octave === 'number' ? `${step}/${octave}` : null;
+  }
+
+  getRestDisplayStep(): string | null {
+    return this.element.first('display-step')?.content().str() ?? null;
+  }
+
+  getRestDisplayOctave(): number | null {
+    return this.element.first('display-octave')?.content().int() ?? null;
   }
 
   /** Returns the accidental type of the note. Defaults to null. */
@@ -115,8 +147,10 @@ export class Note {
       return false;
     }
 
+    const note = new Note(sibling);
+
     // The next note has to be part of a chord tail, otherwise there would only one note in the chord.
-    return new Note(sibling).isChordTail();
+    return note.isChordTail() && note.isGrace() === this.isGrace();
   }
 
   /** Whether or not the note is part of a chord and *not* the first note of the chord. */
@@ -132,10 +166,12 @@ export class Note {
       return tail;
     }
 
+    const isGrace = this.isGrace();
+
     let sibling = this.element.next('note');
     while (sibling) {
       const note = new Note(sibling);
-      if (!note.isChordTail()) {
+      if (!note.isChordTail() || note.isGrace() !== isGrace) {
         break;
       }
       tail.push(note);

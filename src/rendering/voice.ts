@@ -1,521 +1,203 @@
-import * as debug from '@/debug';
-import { Division } from './division';
-import * as musicxml from '@/musicxml';
 import * as vexflow from 'vexflow';
-import * as conversions from './conversions';
 import * as util from '@/util';
-import {
-  DYNAMICS_CHARACETERS as DYNAMICS_CHARACTERS,
-  DynamicsCharacter,
-  NoteDurationDenominator,
-  StemDirection,
-} from './enums';
-import { StaveSignature } from './stavesignature';
+import { Logger } from '@/debug';
 import { Config } from '@/config';
-import { Spanners } from './spanners';
-import { Address } from './address';
-import { GraceNoteRendering, Note, StaveNoteRendering, TabGraceNoteRendering, TabNoteRendering } from './note';
-import { Chord, GraceChordRendering, StaveChordRendering, TabChordRendering, TabGraceChordRendering } from './chord';
-import { Rest, RestRendering } from './rest';
-import { GhostNote, GhostNoteRendering } from './ghostnote';
-import { TimeSignature } from './timesignature';
-import { SymbolNote, SymbolNoteRendering } from './symbolnote';
+import { Document } from './document';
+import { BeamKey, BeamRender, TupletKey, TupletRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
+import { Rect } from '@/spatial';
+import { Note } from './note';
+import { Rest } from './rest';
+import { Fraction } from '@/util';
+import { DurationType } from '@/data/enums';
+import { Beam } from './beam';
+import { Tuplet, TupletableRender } from './tuplet';
+import { Dynamics } from './dynamics';
 
-const DURATIONS_SHORTER_THAN_QUARTER_NOTE = ['1024', '512', '256', '128', '64', '32', '16', '8'];
+const DURATION_TYPE_VALUES: Array<{ type: DurationType; value: Fraction }> = [
+  { type: '1/2', value: new Fraction(2, 1) },
+  { type: '1', value: new Fraction(1, 1) },
+  { type: '2', value: new Fraction(1, 2) },
+  { type: '4', value: new Fraction(1, 4) },
+  { type: '8', value: new Fraction(1, 8) },
+  { type: '16', value: new Fraction(1, 16) },
+  { type: '32', value: new Fraction(1, 32) },
+  { type: '64', value: new Fraction(1, 64) },
+  { type: '128', value: new Fraction(1, 128) },
+  { type: '256', value: new Fraction(1, 256) },
+  { type: '512', value: new Fraction(1, 512) },
+  { type: '1024', value: new Fraction(1, 1024) },
+];
 
-/** The result of rendering a voice. */
-export type VoiceRendering = {
-  type: 'voice';
-  id: string;
-  address: Address<'voice'>;
-  vexflow: {
-    voice: vexflow.Voice;
-  };
-  placeholders: VoiceRendering[];
-  entries: VoiceEntryRendering[];
-};
-
-/** The result rendering a VoiceEntry. */
-export type VoiceEntryRendering =
-  | StaveNoteRendering
-  | StaveChordRendering
-  | GraceNoteRendering
-  | GraceChordRendering
-  | TabNoteRendering
-  | TabGraceNoteRendering
-  | TabChordRendering
-  | TabGraceChordRendering
-  | RestRendering
-  | GhostNoteRendering
-  | SymbolNoteRendering;
-
-/** The input data of a Voice. */
-export type VoiceInput = {
-  voiceId: string;
-  staveSignature: StaveSignature;
-  note: musicxml.Note;
-  stem: StemDirection;
-  start: Division;
-  end: Division;
-  directions: musicxml.Direction[];
-};
-
-/** The renderable objects of a Voice. */
-export type VoiceEntry = {
-  start: Division;
-  end: Division;
-  value: Note | Chord | Rest | GhostNote | SymbolNote;
-  directions: musicxml.Direction[];
-};
-
-/**
- * Represents a musical voice within a stave, containing a distinct sequence of notes, rests, and other musical
- * symbols.
- */
 export class Voice {
-  private config: Config;
-  private log: debug.Logger;
-  private id: string;
-  private entries: VoiceEntry[];
-  private timeSignature: TimeSignature;
-  private parent: Voice | null;
+  constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceKey) {}
 
-  constructor(opts: {
-    config: Config;
-    log: debug.Logger;
-    id: string;
-    entries: VoiceEntry[];
-    timeSignature: TimeSignature;
-    parent: Voice | null;
-  }) {
-    this.config = opts.config;
-    this.log = opts.log;
-    this.id = opts.id;
-    this.entries = opts.entries;
-    this.timeSignature = opts.timeSignature;
-    this.parent = opts.parent;
-  }
-
-  static fromInputs(opts: {
-    config: Config;
-    log: debug.Logger;
-    id: string;
-    inputs: VoiceInput[];
-    timeSignature: TimeSignature;
-  }): Voice {
-    const entries = new Array<VoiceEntry>();
-
-    let divisions = Division.zero();
-    let openOctaveShift: musicxml.OctaveShift | null = null;
-
-    for (const input of opts.inputs) {
-      const ghostNoteStart = divisions;
-      const ghostNoteEnd = input.start;
-      const ghostNoteDuration = ghostNoteEnd.subtract(ghostNoteStart);
-
-      if (ghostNoteDuration.isGreaterThan(Division.zero())) {
-        const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(ghostNoteDuration);
-        const ghostNote = new GhostNote({ config: opts.config, log: opts.log, durationDenominator });
-        entries.push({ start: ghostNoteStart, end: ghostNoteEnd, value: ghostNote, directions: [] });
-      }
-
-      let shouldCloseOctaveShift = false;
-      const octaveShifts = input.directions.flatMap((direction) => direction.getOctaveShifts());
-      for (const octaveShift of octaveShifts) {
-        switch (octaveShift.getType()) {
-          case 'up':
-          case 'down':
-            openOctaveShift = octaveShift;
-            break;
-          case 'continue':
-            // TODO: This won't work when an octave shift spans multiple measure fragments. Detect octave shifts
-            // upstream and handle continues correctly.
-            break;
-          case 'stop':
-            shouldCloseOctaveShift = true;
-            break;
-        }
-      }
-
-      const entry = this.toEntry({ config: opts.config, log: opts.log, input, octaveShift: openOctaveShift });
-      entries.push(entry);
-
-      if (shouldCloseOctaveShift) {
-        openOctaveShift = null;
-      }
-
-      divisions = input.end;
-    }
-
-    return new Voice({
-      config: opts.config,
-      log: opts.log,
-      id: opts.id,
-      entries,
-      timeSignature: opts.timeSignature,
-      parent: null,
-    });
-  }
-
-  private static toEntry(opts: {
-    config: Config;
-    log: debug.Logger;
-    input: VoiceInput;
-    octaveShift: musicxml.OctaveShift | null;
-  }): VoiceEntry {
-    const input = opts.input;
-    const config = opts.config;
-    const log = opts.log;
-    const octaveShift = opts.octaveShift;
-    const note = input.note;
-    const stem = input.stem;
-    const directions = input.directions;
-    const duration = input.end.subtract(input.start);
-    const staveNumber = note.getStaveNumber();
-    const clef = input.staveSignature.getClef(staveNumber);
-    const keySignature = input.staveSignature.getKeySignature(staveNumber);
-
-    const durationDenominator =
-      conversions.fromNoteTypeToNoteDurationDenominator(note.getType()) ??
-      conversions.fromDivisionsToNoteDurationDenominator(duration);
-
-    if (!note.printObject()) {
-      return {
-        start: input.start,
-        end: input.end,
-        value: new GhostNote({ config, log, durationDenominator }),
-        directions,
-      };
-    } else if (note.isChordHead()) {
-      return {
-        start: input.start,
-        end: input.end,
-        value: new Chord({
-          config,
-          log,
-          musicXML: { note, directions, octaveShift },
-          stem,
-          clef,
-          durationDenominator,
-          keySignature,
-        }),
-        directions,
-      };
-    } else if (note.isRest()) {
-      return {
-        start: input.start,
-        end: input.end,
-        value: new Rest({
-          config,
-          log,
-          musicXML: { note, directions },
-          clef,
-          durationDenominator,
-        }),
-        directions,
-      };
-    } else {
-      return {
-        start: input.start,
-        end: input.end,
-        value: new Note({
-          config,
-          log,
-          musicXML: { note, directions, octaveShift },
-          stem,
-          clef,
-          durationDenominator,
-          keySignature,
-        }),
-        directions,
-      };
-    }
-  }
-
-  /** Returns the voice ID. */
-  getId(): string {
-    return this.id;
-  }
-
-  /** Renders the voice. */
-  render(opts: { address: Address<'voice'>; spanners: Spanners }): VoiceRendering {
-    this.log.debug('rendering voice', { voiceId: this.id });
-
-    const address = opts.address;
-    const spanners = opts.spanners;
-
-    const voiceEntryRenderings = this.entries.map<VoiceEntryRendering>(({ value }) => {
-      if (value instanceof Note) {
-        return value.render({ address, spanners });
-      }
-      if (value instanceof Chord) {
-        return value.render({ address, spanners });
-      }
-      if (value instanceof Rest) {
-        return value.render({ address, spanners, voiceEntryCount: this.entries.length });
-      }
-      if (value instanceof GhostNote) {
-        return value.render({ address });
-      }
-      if (value instanceof SymbolNote) {
-        return value.render();
-      }
-      // If this error is thrown, this is a problem with vexml, not the musicXML document.
-      throw new Error(`unexpected voice entry: ${value}`);
-    });
-
-    const vfTickables = new Array<vexflow.Tickable>();
-
-    for (const rendering of voiceEntryRenderings) {
-      switch (rendering.type) {
-        case 'stavenote':
-          vfTickables.push(rendering.vexflow.staveNote);
-          break;
-        case 'stavechord':
-          vfTickables.push(rendering.notes[0].vexflow.staveNote);
-          break;
-        case 'tabnote':
-          vfTickables.push(rendering.vexflow.tabNote);
-          break;
-        case 'tabchord':
-          vfTickables.push(rendering.tabNotes[0].vexflow.tabNote);
-          break;
-        case 'rest':
-          vfTickables.push(rendering.vexflow.note);
-          break;
-        case 'ghostnote':
-          vfTickables.push(rendering.vexflow.ghostNote);
-          break;
-        case 'symbolnote':
-          vfTickables.push(rendering.vexflow.textDynamics);
-          break;
-      }
-    }
-
-    this.attachStaveGraceNotes(voiceEntryRenderings);
-    this.attachTabGraceNotes(voiceEntryRenderings);
-
-    const fraction = this.timeSignature.toFraction();
-    const vfVoice = new vexflow.Voice({
-      numBeats: fraction.numerator,
-      beatValue: fraction.denominator,
-    })
-      .setStrict(false)
-      .addTickables(vfTickables);
-
-    const placeholderVoiceRenderings = this.getPlaceholderVoices().map((voice) => voice.render({ address, spanners }));
+  render(): VoiceRender {
+    const { vexflowVoices, entryRenders } = this.renderVoices();
+    const beamRenders = this.renderBeams(entryRenders);
+    const tupletRenders = this.renderTuplets(entryRenders);
 
     return {
       type: 'voice',
-      id: this.id,
-      address,
-      vexflow: {
-        voice: vfVoice,
-      },
-      entries: voiceEntryRenderings,
-      placeholders: placeholderVoiceRenderings,
+      key: this.key,
+      rect: Rect.empty(), // placeholder
+      entryRenders,
+      beamRenders,
+      tupletRenders,
+      vexflowVoices,
     };
   }
 
-  private attachStaveGraceNotes(voiceEntryRenderings: VoiceEntryRendering[]) {
-    let vfGraceNotes = new Array<vexflow.GraceNote>();
-    let hasSlur = false;
+  private renderVoices(): { vexflowVoices: vexflow.Voice[]; entryRenders: VoiceEntryRender[] } {
+    const vexflowVoices = [new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT)];
+    const entryRenders = new Array<VoiceEntryRender>();
+    const entryCount = this.document.getVoiceEntryCount(this.key);
 
-    // Attach preceding stave grace notes to the nearest stave note.
-    for (const rendering of voiceEntryRenderings) {
-      let vfStaveNote: vexflow.StaveNote | null = null;
+    let currentMeasureBeat = this.getInitialMeasureBeat();
 
-      switch (rendering.type) {
-        case 'gracenote':
-          vfGraceNotes.push(rendering.vexflow.graceNote);
-          hasSlur = hasSlur || rendering.hasSlur;
-          break;
-        case 'gracechord':
-          vfGraceNotes.push(rendering.graceNotes[0].vexflow.graceNote);
-          hasSlur = hasSlur || rendering.graceNotes[0].hasSlur;
-          break;
-        case 'stavenote':
-          vfStaveNote = rendering.vexflow.staveNote;
-          break;
-        case 'stavechord':
-          vfStaveNote = rendering.notes[0].vexflow.staveNote;
-          break;
+    for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
+      const vexflowVoice = vexflowVoices[0];
+      const voiceEntryKey = { ...this.key, voiceEntryIndex };
+      const entry = this.document.getVoiceEntry(voiceEntryKey);
+
+      const measureBeat = Fraction.fromFractionLike(entry.measureBeat);
+      const duration = Fraction.fromFractionLike(entry.duration);
+
+      if (currentMeasureBeat.isLessThan(measureBeat)) {
+        const beats = measureBeat.subtract(currentMeasureBeat).divide(new Fraction(4));
+        const vexflowGhostNote = this.renderVexflowGhostNote(beats);
+        vexflowVoice.addTickable(vexflowGhostNote);
+        // NOTE: We don't need to add this is entryRenders because it's a vexflow-specific detail for formatting and
+        // vexml doesn't need to do anything with it.
       }
+      currentMeasureBeat = measureBeat.add(duration);
 
-      if (vfStaveNote && vfGraceNotes.length > 0) {
-        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceNotes, hasSlur).setPosition(
-          vexflow.ModifierPosition.LEFT
-        );
+      if (entry.type === 'note' || entry.type === 'chord') {
+        const noteRender = new Note(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(noteRender.vexflowNote);
+        entryRenders.push(noteRender);
+      } else if (entry.type === 'rest') {
+        const restRender = new Rest(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(restRender.vexflowNote);
+        entryRenders.push(restRender);
+      } else if (entry.type === 'dynamics') {
+        const dynamicsRender = new Dynamics(this.config, this.log, this.document, voiceEntryKey).render();
+        vexflowVoice.addTickable(dynamicsRender.vexflowNote);
+        entryRenders.push(dynamicsRender);
+      } else {
+        util.assertUnreachable();
+      }
+    }
 
-        if (
-          vfGraceNotes.length > 1 &&
-          vfGraceNotes.every((vfGraceNote) => DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration()))
-        ) {
-          vfGraceNoteGroup.beamNotes();
+    return { vexflowVoices, entryRenders };
+  }
+
+  private getInitialMeasureBeat(): Fraction {
+    let measureBeat = Fraction.zero();
+
+    this.document
+      .getMeasure(this.key)
+      .fragments.filter((_, fragmentIndex) => fragmentIndex < this.key.fragmentIndex)
+      .flatMap((f) => f.parts)
+      .flatMap((p) => p.staves)
+      .flatMap((s) => s.voices)
+      .flatMap((v) => v.entries)
+      .map((e) => Fraction.fromFractionLike(e.measureBeat).add(Fraction.fromFractionLike(e.duration)))
+      .forEach((m) => {
+        if (m.isGreaterThan(measureBeat)) {
+          measureBeat = m;
         }
+      });
 
-        vfStaveNote.addModifier(vfGraceNoteGroup);
-        vfGraceNotes = [];
-        hasSlur = false;
-      }
-    }
+    return measureBeat;
   }
 
-  private attachTabGraceNotes(voiceEntryRenderings: VoiceEntryRendering[]) {
-    let vfGraceTabNotes = new Array<vexflow.GraceTabNote>();
-    let hasSlur = false;
+  private renderVexflowGhostNote(beatDuration: Fraction): vexflow.GhostNote {
+    let closestDurationType: DurationType = '1/2';
 
-    // Attach preceding stave grace notes to the nearest stave note.
-    for (const rendering of voiceEntryRenderings) {
-      let vfTabNote: vexflow.TabNote | null = null;
-
-      switch (rendering.type) {
-        case 'tabgracenote':
-          vfGraceTabNotes.push(rendering.vexflow.graceTabNote);
-          hasSlur = hasSlur || rendering.hasSlur;
-          break;
-        case 'tabgracechord':
-          vfGraceTabNotes.push(rendering.tabGraceNotes[0].vexflow.graceTabNote);
-          hasSlur = hasSlur || rendering.tabGraceNotes[0].hasSlur;
-          break;
-        case 'tabnote':
-          vfTabNote = rendering.vexflow.tabNote;
-          break;
-        case 'tabchord':
-          vfTabNote = rendering.tabNotes[0].vexflow.tabNote;
-          break;
+    for (const { type, value } of DURATION_TYPE_VALUES) {
+      if (value.isLessThanOrEqualTo(beatDuration)) {
+        closestDurationType = type;
+        break;
       }
+    }
 
-      if (vfTabNote && vfGraceTabNotes.length > 0) {
-        const vfGraceNoteGroup = new vexflow.GraceNoteGroup(vfGraceTabNotes, hasSlur).setPosition(
-          vexflow.ModifierPosition.LEFT
-        );
+    return new vexflow.GhostNote({ duration: closestDurationType });
+  }
 
-        if (
-          vfGraceTabNotes.length > 1 &&
-          vfGraceTabNotes.every((vfGraceNote) =>
-            DURATIONS_SHORTER_THAN_QUARTER_NOTE.includes(vfGraceNote.getDuration())
-          )
-        ) {
-          vfGraceNoteGroup.beamNotes();
+  private renderBeams(entryRenders: VoiceEntryRender[]): BeamRender[] {
+    const registry = new Map<string, vexflow.StemmableNote[]>();
+
+    const beams = this.document.getBeams(this.key);
+
+    // This inherently ignores grace beams because we don't include grace beams in the entry render object.
+    for (const entryRender of entryRenders) {
+      if (entryRender.type !== 'note') {
+        continue;
+      }
+      if (!entryRender.beamId) {
+        continue;
+      }
+      if (!registry.has(entryRender.beamId)) {
+        registry.set(entryRender.beamId, []);
+      }
+      const vexflowNote = entryRender.vexflowNote;
+      if (
+        vexflowNote instanceof vexflow.StaveNote ||
+        // Rendering beams for tab notes will create stems for notes. Therefore, we only render beams for tab notes if
+        // the config specifies to show stems for tab staves.
+        (this.config.SHOW_TAB_STEMS && vexflowNote instanceof vexflow.TabNote)
+      ) {
+        registry.get(entryRender.beamId)!.push(vexflowNote);
+      }
+    }
+
+    const beamRenders = new Array<BeamRender>();
+
+    for (let beamIndex = 0; beamIndex < beams.length; beamIndex++) {
+      const beamKey: BeamKey = { ...this.key, beamIndex };
+      const beam = this.document.getBeam(beamKey);
+
+      const entryRenderCount = registry.get(beam.id)?.length ?? 0;
+
+      if (entryRenderCount > 1) {
+        const beamRender = new Beam(this.config, this.log, this.document, beamKey, registry).render();
+        beamRenders.push(beamRender);
+      }
+    }
+
+    return beamRenders;
+  }
+
+  private renderTuplets(entryRenders: VoiceEntryRender[]): TupletRender[] {
+    const registry = new Map<string, TupletableRender[]>();
+
+    const tuplets = this.document.getTuplets(this.key);
+
+    const tupletableRenders = entryRenders.filter<TupletableRender>((e) => e.type === 'note' || e.type === 'rest');
+
+    for (const entryRender of tupletableRenders) {
+      for (const tupletId of entryRender.tupletIds) {
+        if (!registry.has(tupletId)) {
+          registry.set(tupletId, []);
         }
-
-        vfTabNote.addModifier(vfGraceNoteGroup);
-        vfGraceTabNotes = [];
-        hasSlur = false;
-      }
-    }
-  }
-
-  private getPlaceholderVoices(): Voice[] {
-    // First, cluster directions that need to rendered on placeholder voices by the division start time.
-    const directionsByStartBeat: Record<number, musicxml.Direction[]> = {};
-    for (const entry of this.entries) {
-      const startBeat = entry.start.toBeats();
-      const directions = entry.directions.filter((direction) => this.isPlaceholderVoiceRequired(direction));
-      if (directions.length > 0) {
-        directionsByStartBeat[startBeat] ??= [];
-        directionsByStartBeat[startBeat].push(...directions);
+        registry.get(tupletId)!.push(entryRender);
       }
     }
 
-    // The maximum number of placeholder voices we need to accommodate all the special directions.
-    const placeholderVoiceCount = util.max(Object.values(directionsByStartBeat).map((directions) => directions.length));
-    const placeholderVoices = new Array<Voice>();
-    for (let ndx = 0; ndx < placeholderVoiceCount; ndx++) {
-      const placeholderVoice = this.toPlaceholderVoice();
-      placeholderVoices.push(placeholderVoice);
-    }
+    const tupletRenders = new Array<TupletRender>();
 
-    // Lastly, go through the direction clusters and determine where in the placeholder voices they should live.
-    for (const [startBeat, directions] of Object.entries(directionsByStartBeat)) {
-      for (let ndx = 0; ndx < directions.length; ndx++) {
-        const placeholderVoice = placeholderVoices[ndx];
+    for (let tupletIndex = 0; tupletIndex < tuplets.length; tupletIndex++) {
+      const tupletKey: TupletKey = { ...this.key, tupletIndex };
+      const tuplet = this.document.getTuplet(tupletKey);
 
-        const fraction = util.Fraction.fromDecimal(parseFloat(startBeat));
-        const start = new Division(fraction);
+      const entryRenderCount = registry.get(tuplet.id)?.length ?? 0;
 
-        const entry = placeholderVoice.getEntry(start);
-        if (!entry) {
-          throw new Error(`could not find a placeholder voice entry at beat: ${startBeat}`);
-        }
-
-        const duration = entry.end.subtract(entry.start);
-        const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(duration);
-
-        placeholderVoice.replaceEntry(start, {
-          ...entry,
-          value: this.toSymbolNote(directions[ndx], durationDenominator),
-        });
+      if (entryRenderCount > 1) {
+        const tupletRender = new Tuplet(this.config, this.log, this.document, tupletKey, registry).render();
+        tupletRenders.push(tupletRender);
       }
     }
 
-    return placeholderVoices;
-  }
-
-  private toSymbolNote(direction: musicxml.Direction, durationDenominator: NoteDurationDenominator): SymbolNote {
-    const dynamics = util.first(direction.getDynamics());
-    if (dynamics) {
-      return this.toDynamicsSymbolNote(dynamics, durationDenominator);
-    }
-    throw new Error(`unsupported direction`);
-  }
-
-  private toDynamicsSymbolNote(dynamics: musicxml.Dynamics, durationDenominator: NoteDurationDenominator): SymbolNote {
-    const type = util.first(dynamics.getTypes()) ?? '?';
-    if (!type) {
-      throw new Error('dynamics direction is missing a type');
-    }
-    const characters = type.split('').filter((char): char is DynamicsCharacter => DYNAMICS_CHARACTERS.includes(char));
-    return SymbolNote.dynamics({ config: this.config, log: this.log, characters, durationDenominator });
-  }
-
-  private getEntry(end: Division): VoiceEntry | null {
-    return this.entries.find((entry) => entry.start.isEqual(end)) ?? null;
-  }
-
-  private replaceEntry(start: Division, voiceEntry: VoiceEntry): void {
-    // NOTE: This is inefficient, but we don't expect Voice.entries to exceed 10 elements so we opt for simplicity.
-    const index = this.entries.findIndex((entry) => entry.start.isEqual(start));
-    if (index < 0) {
-      throw new Error(`could not find somewhere to replace placeholder voice entry at beat: ${start.toBeats()}`);
-    }
-
-    this.entries[index] = voiceEntry;
-  }
-
-  private isPlaceholderVoiceRequired(direction: musicxml.Direction): boolean {
-    return direction.getDynamics().length > 0;
-  }
-
-  private toPlaceholderVoice(): Voice {
-    if (this.parent) {
-      throw new Error(`cannot create a placeholder voice for a voice that is not a top-level voice`);
-    }
-
-    const entries = this.entries.map((entry) => this.toPlaceholderEntry(entry));
-
-    return new Voice({
-      config: this.config,
-      log: this.log,
-      id: this.id,
-      entries,
-      timeSignature: this.timeSignature,
-      parent: this,
-    });
-  }
-
-  private toPlaceholderEntry(entry: VoiceEntry): VoiceEntry {
-    const start = entry.start;
-    const end = entry.end;
-
-    const duration = end.subtract(start);
-    const durationDenominator = conversions.fromDivisionsToNoteDurationDenominator(duration);
-    return {
-      start,
-      end,
-      value: new GhostNote({ config: this.config, log: this.log, durationDenominator }),
-      directions: [], // avoid processing directions multiple times
-    };
+    return tupletRenders;
   }
 }

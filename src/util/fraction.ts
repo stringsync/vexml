@@ -30,6 +30,16 @@ export class Fraction {
     }
   }
 
+  /** Creates a 0 fraction. */
+  static zero(): Fraction {
+    return new Fraction(0);
+  }
+
+  /** Creates the maximum fraction. */
+  static max(): Fraction {
+    return new Fraction(Number.MAX_SAFE_INTEGER);
+  }
+
   /**
    * Creates a fraction from a decimal number.
    *
@@ -50,6 +60,11 @@ export class Fraction {
   /** Creates a fraction from something that appears to be a fraction. */
   static fromFractionLike(fractionLike: { numerator: number; denominator: number }): Fraction {
     return new Fraction(fractionLike.numerator, fractionLike.denominator);
+  }
+
+  /** Returns the sum of the fractions. */
+  static sum(...fractions: Fraction[]): Fraction {
+    return fractions.reduce((acc, f) => acc.add(f), Fraction.zero());
   }
 
   /** Returns the decimal of the fraction. */
@@ -78,14 +93,32 @@ export class Fraction {
 
   /** Returns whether the other fraction is equal to this fraction.  */
   isEquivalent(value: Fraction): boolean {
-    const v1 = this.simplify();
-    const v2 = value.simplify();
-    return v1.numerator === v2.numerator && v1.denominator === v2.denominator;
+    return this.numerator * value.denominator === value.numerator * this.denominator;
   }
 
   /** Returns whether the other fraction has the exact same numerator and denominator. */
   isEqual(value: Fraction): boolean {
     return this.numerator === value.numerator && this.denominator === value.denominator;
+  }
+
+  /** Returns whether this fraction is less than the other. */
+  isLessThan(value: Fraction): boolean {
+    return this.numerator * value.denominator < value.numerator * this.denominator;
+  }
+
+  /** Returns whether this fraction is less than or _equivalent_ to the other. */
+  isLessThanOrEqualTo(value: Fraction): boolean {
+    return this.isLessThan(value) || this.isEquivalent(value);
+  }
+
+  /** Returns whether this fraction is greater than the other. */
+  isGreaterThan(value: Fraction): boolean {
+    return this.numerator * value.denominator > value.numerator * this.denominator;
+  }
+
+  /** Returns whether this fraction is greater than or _equivalent_ to the other. */
+  isGreaterThanOrEqualTo(value: Fraction): boolean {
+    return this.isGreaterThan(value) || this.isEquivalent(value);
   }
 
   /** Reduces the numerator and denominator to its lowest common factor. */
@@ -119,6 +152,11 @@ export class Fraction {
   /** Returns the reciprocal a new fraction. */
   reciprocate(): Fraction {
     return new Fraction(this.denominator, this.numerator);
+  }
+
+  /** Returns a fraction-like POJO representing the fraction. */
+  toFractionLike(): { numerator: number; denominator: number } {
+    return { numerator: this.numerator, denominator: this.denominator };
   }
 
   /** Returns the greatest common denominator. */

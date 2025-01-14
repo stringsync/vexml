@@ -11,3 +11,4 @@ export * from './lru';
 export * from './device';
 export * from './numberrange';
 export * from './stack';
+export * from './object';

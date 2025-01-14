@@ -19,7 +19,7 @@ export class CheapLocator {
     }
 
     if (time.gt(this.sequence.getDuration())) {
-      return this.sequence.getLength() - 1;
+      return this.sequence.getCount() - 1;
     }
 
     const previousIndex = this.index - 1;
