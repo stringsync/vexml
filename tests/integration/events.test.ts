@@ -20,6 +20,7 @@ describe('events', () => {
     score = renderer.render(div, {
       config: {
         INPUT_TYPE: 'hybrid',
+        WIDTH: 900,
       },
     });
     jest.useFakeTimers();
