@@ -53,7 +53,7 @@ export class SequenceFactory {
     for (const measureIndex of iterator) {
       const measure = measures[measureIndex];
 
-      let nextCurrentTime = measureStartTime;
+      let nextMeasureStartTime = measureStartTime;
 
       for (const fragment of measure.fragments) {
         const voiceEntries = fragment
@@ -71,16 +71,16 @@ export class SequenceFactory {
           const duration = Duration.minutes(voiceEntry.getBeatCount().toDecimal() / bpm);
           const stop = start.plus(duration);
 
-          events.push({ type: 'start', time: measureStartTime.plus(start), element: voiceEntry });
-          events.push({ type: 'stop', time: measureStartTime.plus(stop), element: voiceEntry });
+          events.push({ type: 'start', time: start, element: voiceEntry });
+          events.push({ type: 'stop', time: stop, element: voiceEntry });
 
-          if (stop.gt(nextCurrentTime)) {
-            nextCurrentTime = stop;
+          if (stop.gt(nextMeasureStartTime)) {
+            nextMeasureStartTime = stop;
           }
         }
       }
 
-      measureStartTime = nextCurrentTime;
+      measureStartTime = nextMeasureStartTime;
     }
 
     return events.sort((a, b) => a.time.ms - b.time.ms);
