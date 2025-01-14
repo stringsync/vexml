@@ -1,9 +1,9 @@
-import * as vexml from '@/index';
 import { Fragment, useState } from 'react';
 import { useNextKey } from '../hooks/useNextKey';
 import { Keyed, Source } from '../types';
 import { SourceDisplay } from './SourceDisplay';
 import { isEqual } from '../util/isEqual';
+import { DEFAULT_CONFIG } from '../constants';
 
 export type SourceWorkspaceProps = {
   sources: Source[];
@@ -41,7 +41,7 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
   const onAddClick = (index: number) => () => {
     const keyedSource: Keyed<Source> = {
       key: nextKey(),
-      value: { type: 'local', musicXML: '', config: vexml.LEGACY_DEFAULT_CONFIG },
+      value: { type: 'local', musicXML: '', config: DEFAULT_CONFIG },
     };
     const nextKeyedSources = [...keyedSources];
     nextKeyedSources.splice(index, 0, keyedSource);

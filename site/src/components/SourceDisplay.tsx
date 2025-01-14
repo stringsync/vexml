@@ -3,7 +3,7 @@ import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
 import { useTooltip } from '../hooks/useTooltip';
-import { VEXML_VERSION } from '../constants';
+import { DEFAULT_CONFIG, VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
 import { SourceForm } from './SourceForm';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
@@ -71,7 +71,7 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const configFormCardId = useId();
   const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
-  const [config, setConfig] = useState(vexml.DEFAULT_CONFIG);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   const eventCardId = useId();
   const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');

@@ -1,6 +1,7 @@
 import * as vexml from '@/index';
 import { CSSProperties, useId, useRef, useState } from 'react';
 import { useTooltip } from '../hooks/useTooltip';
+import { DEFAULT_CONFIG } from '../constants';
 
 const DESCRIPTOR_CONTROL_BLOCKLIST = ['WIDTH'];
 
@@ -13,11 +14,6 @@ const SCHEMA_CONFIG_ENTRIES = Object.entries(vexml.CONFIG).sort((a, b) => {
   const bIndex = DESCRIPTOR_TYPE_ORDER.indexOf(b[1].type);
   return aIndex - bIndex;
 });
-
-const DEFAULT_CONFIG = {
-  ...vexml.DEFAULT_CONFIG,
-  HEIGHT: 400,
-};
 
 export type ConfigFormProps = {
   defaultValue: vexml.Config;

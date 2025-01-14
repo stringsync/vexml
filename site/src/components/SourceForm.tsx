@@ -5,7 +5,6 @@ import { useModal } from '../hooks/useModal';
 import DragUpload from './DragUpload';
 import { DEFAULT_EXAMPLE_PATH, EXAMPLES } from '../constants';
 import { Select, SelectEvent, SelectOptionGroup } from './Select';
-import { LegacyConfig, LEGACY_DEFAULT_CONFIG } from '@/index';
 import { useTooltip } from '../hooks/useTooltip';
 
 export type SourceFormProps = {
@@ -60,7 +59,7 @@ export const SourceForm = (props: SourceFormProps) => {
   const [modalSource, setModalSource] = useState<Source>({
     type: 'local',
     musicXML: '',
-    config: LEGACY_DEFAULT_CONFIG,
+    config: vexml.DEFAULT_CONFIG,
   });
   const onModalContinue = () => {
     updateNow(modalSource);
@@ -299,7 +298,7 @@ export const SourceForm = (props: SourceFormProps) => {
 const isSourceType = (value: any): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
-const getDefaultSource = (type: Source['type'], config: LegacyConfig): Source => {
+const getDefaultSource = (type: Source['type'], config: vexml.Config): Source => {
   switch (type) {
     case 'local':
       return { type, musicXML: '', config };

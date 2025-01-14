@@ -5,17 +5,17 @@ export type Source =
   | {
       type: 'local';
       musicXML: string;
-      config: vexml.LegacyConfig;
+      config: vexml.Config;
     }
   | {
       type: 'remote';
       url: string;
-      config: vexml.LegacyConfig;
+      config: vexml.Config;
     }
   | {
       type: 'example';
       path: string;
-      config: vexml.LegacyConfig;
+      config: vexml.Config;
     };
 
 /** A wrapper for keying values. */
