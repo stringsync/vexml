@@ -3,6 +3,7 @@ export type PlayerState = 'playing' | 'paused';
 export type PlayerEventMap = {
   progress: number;
   statechange: PlayerState;
+  seeked: number;
 };
 
 export type PlayerEventCallback<K extends keyof PlayerEventMap> = (event: PlayerEventMap[K]) => void;

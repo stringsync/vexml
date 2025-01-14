@@ -121,6 +121,7 @@ export const Vexml = ({
           ...config,
           DRAWING_BACKEND: backend,
           WIDTH: width,
+          HEIGHT: 500,
         },
         logger,
       });
@@ -154,6 +155,9 @@ export const Vexml = ({
 
       cursor.addEventListener('change', (e) => {
         simpleCursor.update(e.cursorRect);
+        if (!cursor.isFullyVisible()) {
+          cursor.scrollIntoView(scrollBehavior);
+        }
       });
       simpleCursor.update(cursor.getState().cursorRect);
 
@@ -194,7 +198,20 @@ export const Vexml = ({
     return () => {
       score.destroy();
     };
-  }, [div, backend, width, musicXML, config, onResult, onClick, onLongpress, onEnter, onExit, onScroll]);
+  }, [
+    div,
+    backend,
+    width,
+    musicXML,
+    config,
+    onResult,
+    onClick,
+    onLongpress,
+    onEnter,
+    onExit,
+    onScroll,
+    scrollBehavior,
+  ]);
 
   return (
     <div className="w-100">

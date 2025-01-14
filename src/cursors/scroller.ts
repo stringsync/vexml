@@ -1,5 +1,8 @@
 import * as spatial from '@/spatial';
 
+const SCROLLER_HORIZONTAL_PADDING = 20;
+const SCROLLER_VERTICAL_PADDING = 20;
+
 export class Scroller {
   constructor(private scrollContainer: HTMLElement) {}
 
@@ -16,8 +19,8 @@ export class Scroller {
   scrollTo(position: spatial.Point, behavior: ScrollBehavior = 'auto') {
     if (!this.isAt(position)) {
       this.scrollContainer.scrollTo({
-        top: position.y,
-        left: position.x,
+        top: position.y - SCROLLER_VERTICAL_PADDING,
+        left: position.x - SCROLLER_HORIZONTAL_PADDING,
         behavior,
       });
     }
