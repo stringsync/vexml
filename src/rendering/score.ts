@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import { Document } from './document';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { System } from './system';
 import {

@@ -2,7 +2,7 @@ import { Point, Rect } from '@/spatial';
 import { FragmentKey, Padding, PartLabelGroupRender, PartLabelKey, PartLabelRender, PartRender } from './types';
 import { Document } from './document';
 import { Label } from './label';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { TextMeasurer } from './textmeasurer';
 

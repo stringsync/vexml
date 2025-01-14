@@ -1,6 +1,6 @@
 import * as data from '@/data';
-import * as rendering from '@/rendering';
 import * as util from '@/util';
+import { Config } from '@/config';
 import { Formatter } from './types';
 
 /**
@@ -11,7 +11,7 @@ export class MaxMeasureFormatter implements Formatter {
     util.assert(maxMeasuresPerSystemCount > 0, 'maxMeasuresPerSystemCount must be greater than 0');
   }
 
-  format(config: rendering.Config, document: data.Document): data.Document {
+  format(config: Config, document: data.Document): data.Document {
     const clone = document.clone();
 
     const measures = clone.score.systems.flatMap((system) => system.measures);

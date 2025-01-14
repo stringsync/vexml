@@ -1,11 +1,12 @@
 import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { Part } from './part';
 
 export class Fragment {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private fragmentRender: rendering.FragmentRender,
@@ -13,7 +14,7 @@ export class Fragment {
   ) {}
 
   static create(
-    config: rendering.Config,
+    config: Config,
     log: Logger,
     document: rendering.Document,
     fragmentRender: rendering.FragmentRender

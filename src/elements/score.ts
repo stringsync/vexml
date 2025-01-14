@@ -1,9 +1,10 @@
+import * as rendering from '@/rendering';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
-import * as rendering from '@/rendering';
 import * as util from '@/util';
 import * as playback from '@/playback';
 import * as cursors from '@/cursors';
+import { Config } from '@/config';
 import { VexmlElement } from './types';
 import { Point, Rect } from '@/spatial';
 import { EventListener } from '@/events';
@@ -19,7 +20,7 @@ export class Score {
   private cursors = new Array<cursors.Cursor>();
 
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private ctx: vexflow.RenderContext,
@@ -29,7 +30,7 @@ export class Score {
   ) {}
 
   static create(
-    config: rendering.Config,
+    config: Config,
     log: Logger,
     document: rendering.Document,
     ctx: vexflow.RenderContext,

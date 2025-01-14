@@ -1,15 +1,15 @@
 import * as events from '@/events';
 import * as components from '@/components';
-import * as rendering from '@/rendering';
 import { EventListener } from '@/events';
 import { EventMap } from './types';
 import { EventMappingFactory } from './eventmappingfactory';
 import { Locator } from './locator';
 import { TimestampLocator } from '../playback';
+import { Config } from '@/config';
 
 export class Events {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private root: components.Root,
     private vexmlEventTopic: events.Topic<EventMap>,
     private nativeEventTopic: events.Topic<HTMLElementEventMap>,
@@ -17,7 +17,7 @@ export class Events {
   ) {}
 
   static create(
-    config: rendering.Config,
+    config: Config,
     root: components.Root,
     elementLocator: Locator,
     timestampLocator: TimestampLocator

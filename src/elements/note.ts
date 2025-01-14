@@ -1,22 +1,18 @@
 import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Fraction } from '@/util';
 
 export class Note {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private noteRender: rendering.NoteRender
   ) {}
 
-  static create(
-    config: rendering.Config,
-    log: Logger,
-    document: rendering.Document,
-    noteRender: rendering.NoteRender
-  ): Note {
+  static create(config: Config, log: Logger, document: rendering.Document, noteRender: rendering.NoteRender): Note {
     return new Note(config, log, document, noteRender);
   }
 

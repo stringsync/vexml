@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
 import * as util from '@/util';
 import { Logger } from '@/debug';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Document } from './document';
 import { BeamKey, BeamRender, TupletKey, TupletRender, VoiceEntryRender, VoiceKey, VoiceRender } from './types';
 import { Rect } from '@/spatial';

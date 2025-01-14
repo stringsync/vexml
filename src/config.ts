@@ -1,6 +1,5 @@
-import * as schema from '@/schema';
-import { t } from '@/schema';
-import { INPUT_TYPES } from './enums';
+import * as schema from './schema';
+import { t } from './schema';
 
 export type Config = schema.SchemaConfig<typeof CONFIG>;
 
@@ -21,7 +20,7 @@ export const CONFIG = {
   INPUT_TYPE: t.enum({
     defaultValue: 'auto',
     help: 'INPUT_TYPE specifies the type of input to use.',
-    choices: INPUT_TYPES.values,
+    choices: ['auto', 'mouse', 'touch', 'hybrid', 'none'] as const,
   }),
   SCORE_PADDING_TOP: t.number({
     defaultValue: 40,

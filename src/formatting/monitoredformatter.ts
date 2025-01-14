@@ -1,5 +1,5 @@
 import * as data from '@/data';
-import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Formatter } from './types';
 import { Logger, Stopwatch } from '@/debug';
 
@@ -9,7 +9,7 @@ import { Logger, Stopwatch } from '@/debug';
 export class MonitoredFormatter implements Formatter {
   constructor(private formatter: Formatter, private log: Logger) {}
 
-  format(config: rendering.Config, document: data.Document): data.Document {
+  format(config: Config, document: data.Document): data.Document {
     const stopwatch = Stopwatch.start();
 
     const formatted = this.formatter.format(config, document);

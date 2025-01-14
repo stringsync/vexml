@@ -1,5 +1,5 @@
 import * as vexflow from 'vexflow';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';

@@ -1,7 +1,7 @@
 import * as vexflow from 'vexflow';
 import { PartKey, PartRender, StaveKey, StaveRender } from './types';
 import { Point, Rect } from '@/spatial';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Stave } from './stave';

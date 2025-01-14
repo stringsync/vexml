@@ -1,22 +1,18 @@
 import * as rendering from '@/rendering';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Fraction } from '@/util';
 
 export class Rest {
   private constructor(
-    private config: rendering.Config,
+    private config: Config,
     private log: Logger,
     private document: rendering.Document,
     private restRender: rendering.RestRender
   ) {}
 
-  static create(
-    config: rendering.Config,
-    log: Logger,
-    document: rendering.Document,
-    restRender: rendering.RestRender
-  ): Rest {
+  static create(config: Config, log: Logger, document: rendering.Document, restRender: rendering.RestRender): Rest {
     return new Rest(config, log, document, restRender);
   }
 

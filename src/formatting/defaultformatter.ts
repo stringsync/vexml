@@ -1,6 +1,7 @@
 import * as rendering from '@/rendering';
 import * as data from '@/data';
 import * as util from '@/util';
+import { Config } from '@/config';
 import { Logger, NoopLogger } from '@/debug';
 import { Formatter } from './types';
 import { PanoramicFormatter } from './panoramicformatter';
@@ -20,7 +21,7 @@ export class DefaultFormatter implements Formatter {
     this.log = log ?? new NoopLogger();
   }
 
-  format(config: rendering.Config, document: data.Document): data.Document {
+  format(config: Config, document: data.Document): data.Document {
     util.assertNotNull(config.WIDTH, 'WIDTH must be set for DefaultFormatter');
 
     const clone = document.clone();
@@ -39,7 +40,7 @@ export class DefaultFormatter implements Formatter {
     return clone;
   }
 
-  private getSystemSlices(config: rendering.Config, scoreRender: rendering.ScoreRender): SystemSlice[] {
+  private getSystemSlices(config: Config, scoreRender: rendering.ScoreRender): SystemSlice[] {
     const slices = [{ from: 0, to: 0 }];
 
     let remaining = config.WIDTH!;

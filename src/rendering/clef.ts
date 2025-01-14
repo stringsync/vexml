@@ -1,6 +1,6 @@
 import * as vexflow from 'vexflow';
 import { ClefRender, StaveKey } from './types';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 

@@ -3,7 +3,7 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Point, Rect } from '@/spatial';
 import { ClefRender, KeyRender, StaveKey, StaveRender, TimeRender, VoiceRender } from './types';
-import { Config } from './config';
+import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Document } from './document';
 import { Voice } from './voice';

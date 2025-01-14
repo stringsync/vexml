@@ -1,6 +1,7 @@
 export * from './elements/eventmappingfactory';
 export { MusicXMLParser, MXLParser } from './parsing';
-export { Renderer, type Config, CONFIG, DEFAULT_CONFIG } from './rendering';
+export { type Config, CONFIG, DEFAULT_CONFIG } from './config';
+export { Renderer } from './rendering';
 export { Score } from './elements';
 export type {
   EventMap,
