@@ -13,3 +13,8 @@ export const EXAMPLES = Object.entries(import.meta.glob('./examples/**/*.musicxm
 );
 
 export const DEFAULT_EXAMPLE_PATH = './examples/lilypond/01a-Pitches-Pitches.musicxml';
+
+export const DEFAULT_CONFIG: vexml.Config = {
+  ...vexml.DEFAULT_CONFIG,
+  HEIGHT: 300,
+};

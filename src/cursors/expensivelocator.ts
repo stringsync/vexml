@@ -10,7 +10,7 @@ export class ExpensiveLocator {
 
   locate(time: playback.Duration): number | null {
     let left = 0;
-    let right = this.sequence.getLength() - 1;
+    let right = this.sequence.getCount() - 1;
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);

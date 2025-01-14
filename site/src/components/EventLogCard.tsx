@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTooltip } from '../hooks/useTooltip';
 
 export const EVENT_LOG_CAPACITY = 10;
-const EVENT_LOG_CARD_STYLE = { width: '300px', height: '400px' };
+const EVENT_LOG_CARD_STYLE = { width: '300px', height: '250px' };
 
 export type EventLog = {
   key: string;
@@ -24,7 +24,7 @@ export const EventLogCard = (props: EventLogCardProps) => {
 
   const timeAgo = useTimeAgo(log.timestamp);
 
-  const payload = stringify(log.event);
+  const payload = describe(log.event);
 
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   useTooltip(copyButtonRef, 'top', 'Copy to clipboard');
@@ -67,18 +67,20 @@ const opacity = (index: number): number => {
   return 1 - Math.pow(index / EVENT_LOG_CAPACITY, easing);
 };
 
-const stringify = (value: any): string => {
-  const seen = new Set();
+const stringify = (object: any): string => JSON.stringify(object, null, 2);
 
-  const replacer = (key: string, value: any) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return '[Circular]';
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-
-  return JSON.stringify(value, replacer, 2);
+const describe = (event: vexml.AnyEvent): string => {
+  switch (event.type) {
+    case 'click':
+    case 'longpress':
+    case 'enter':
+    case 'exit':
+      return stringify({
+        timestampMs: event.timestampMs,
+        target: `[${event.target.name}]`,
+        rect: event.target.rect(),
+      });
+    default:
+      return `[${event.type} details]`;
+  }
 };

@@ -24,6 +24,12 @@ export class Stack<T> {
   clear(): void {
     this.items = [];
   }
+
+  clone(): Stack<T> {
+    const stack = new Stack<T>();
+    stack.items = [...this.items];
+    return stack;
+  }
 }
 
 export default Stack;

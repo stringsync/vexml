@@ -1,164 +1,84 @@
-import { Config } from '@/config';
-import * as debug from '@/debug';
 import * as vexflow from 'vexflow';
-import * as musicxml from '@/musicxml';
 import * as util from '@/util';
-import { SpannerData } from './types';
-import { SpannerMap } from './spannermap';
-import { Address } from './address';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
+import { Rect } from '@/spatial';
+import { Document } from './document';
+import { NoteRender, PedalKey, PedalRender, RestRender } from './types';
+import { RenderRegistry } from './renderregistry';
 
-/** The result of rendering a pedal. */
-export type PedalRendering = {
-  type: 'pedal';
-  vexflow: {
-    pedalMarking: vexflow.PedalMarking;
-  };
-};
-
-type PedalContainer = SpannerMap<null, Pedal>;
-
-/** A piece of a pedal. */
-export type PedalFragment = {
-  type: PedalFragmentType;
-  address: Address<'voice'>;
-  musicXML: {
-    pedal: musicxml.Pedal;
-  };
-  vexflow: {
-    staveNote: vexflow.StaveNote;
-  };
-};
-
-type PedalFragmentType = musicxml.PedalType | 'unspecified';
-
-/** Represents piano pedal marks. */
 export class Pedal {
-  private config: Config;
-  private log: debug.Logger;
-  private fragments: [PedalFragment, ...PedalFragment[]];
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: PedalKey,
+    private registry: RenderRegistry
+  ) {}
 
-  private constructor(opts: { config: Config; log: debug.Logger; fragment: PedalFragment }) {
-    this.config = opts.config;
-    this.log = opts.log;
-    this.fragments = [opts.fragment];
-  }
+  render(): PedalRender {
+    const pedal = this.document.getPedal(this.key);
+    const renders = this.registry.get(pedal.id).filter((r) => r.type === 'note' || r.type === 'rest');
 
-  static process(opts: { config: Config; log: debug.Logger; data: SpannerData; container: PedalContainer }): void {
-    const { config, log, data, container } = opts;
-    if (data.vexflow.type !== 'stavenote') {
-      return;
+    const vexflowPedalMarkings = this.renderVexflowPedalMarkings(renders);
+
+    let vexflowPedalMarkingType: number;
+    switch (pedal.pedalType) {
+      case 'text':
+        vexflowPedalMarkingType = vexflow.PedalMarking.type.TEXT;
+        break;
+      case 'bracket':
+        vexflowPedalMarkingType = vexflow.PedalMarking.type.BRACKET;
+        break;
+      case 'mixed':
+        vexflowPedalMarkingType = vexflow.PedalMarking.type.MIXED;
+        break;
     }
 
-    const vfStaveNote = data.vexflow.note;
-
-    data.musicXML.directions
-      .flatMap((direction) => direction.getTypes())
-      .flatMap((directionType) => directionType.getContent())
-      .filter((content): content is musicxml.PedalDirectionTypeContent => content.type === 'pedal')
-      .map((content) => content.pedal)
-      .forEach((pedal) => {
-        const pedalType = pedal.getType();
-        Pedal.commit({
-          config,
-          log,
-          fragment: {
-            type: pedalType,
-            address: data.address,
-            musicXML: { pedal },
-            vexflow: { staveNote: vfStaveNote },
-          },
-          container,
-        });
-      });
-  }
-
-  private static commit(opts: {
-    config: Config;
-    log: debug.Logger;
-    fragment: PedalFragment;
-    container: PedalContainer;
-  }): void {
-    const { config, log, container, fragment } = opts;
-    const pedal = container.get(null);
-    const last = pedal?.getLastFragment();
-    const isAllowedType = Pedal.getAllowedTypes(last?.type).includes(fragment.type);
-    const isOnSameSystem = last?.address.isMemberOf('system', fragment.address) ?? false;
-
-    if (fragment.type === 'start' || fragment.type === 'resume') {
-      container.push(null, new Pedal({ config, log, fragment }));
-    } else if (pedal && isAllowedType && isOnSameSystem) {
-      pedal.fragments.push(fragment);
-    } else if (pedal && isAllowedType && !isOnSameSystem) {
-      container.push(null, new Pedal({ config, log, fragment }));
+    for (const vexflowPedalMarking of vexflowPedalMarkings) {
+      vexflowPedalMarking.setType(vexflowPedalMarkingType);
     }
-  }
-
-  private static getAllowedTypes(type: PedalFragmentType | undefined): PedalFragmentType[] {
-    switch (type) {
-      case 'start':
-      case 'sostenuto':
-      case 'resume':
-      case 'continue':
-      case 'change':
-        return ['continue', 'change', 'stop', 'discontinue'];
-      case 'stop':
-      case 'discontinue':
-        return [];
-      default:
-        return [];
-    }
-  }
-
-  /** Renders the pedal. */
-  render(): PedalRendering {
-    const vfStaveNotes = this.getVfStaveNotes();
-    const vfPedalMarkingType = this.getVfPedalMarkingType();
-    const vfPedalMarking = new vexflow.PedalMarking(vfStaveNotes).setType(vfPedalMarkingType);
 
     return {
       type: 'pedal',
-      vexflow: {
-        pedalMarking: vfPedalMarking,
-      },
+      key: this.key,
+      rect: Rect.empty(),
+      vexflowPedalMarkings,
     };
   }
 
-  private getLastFragment(): PedalFragment {
-    return util.last(this.fragments)!;
-  }
+  private renderVexflowPedalMarkings(renders: Array<NoteRender | RestRender>): vexflow.PedalMarking[] {
+    const vexflowPedalMarkings = new Array<vexflow.PedalMarking>();
 
-  private getVfStaveNotes(): vexflow.StaveNote[] {
-    const result = new Array<vexflow.StaveNote>();
-
-    for (const fragment of this.fragments) {
-      switch (fragment.musicXML.pedal.getType()) {
-        case 'change':
-          // This is required for vexflow to show pedal changes.
-          result.push(fragment.vexflow.staveNote, fragment.vexflow.staveNote);
-          break;
-        default:
-          result.push(fragment.vexflow.staveNote);
-          break;
+    const systemIndexes = util.unique(renders.map((n) => n.key.systemIndex));
+    for (const systemIndex of systemIndexes) {
+      const systemScopedRenders = renders.filter((n) => n.key.systemIndex === systemIndex);
+      if (systemScopedRenders.length > 1) {
+        const vexflowPedalMarking = this.renderSinglePedalMarking(systemScopedRenders);
+        vexflowPedalMarkings.push(vexflowPedalMarking);
       }
     }
 
-    return result;
+    return vexflowPedalMarkings;
   }
 
-  private getVfPedalMarkingType(): number {
-    const fragment = util.first(this.fragments)!;
+  private renderSinglePedalMarking(renders: Array<NoteRender | RestRender>): vexflow.PedalMarking {
+    const vexflowStaveNotes = new Array<vexflow.StaveNote>();
 
-    const sign = fragment.musicXML.pedal.sign();
-    const line = fragment.musicXML.pedal.line();
-
-    if (line && sign) {
-      return vexflow.PedalMarking.type.MIXED;
-    } else if (line) {
-      return vexflow.PedalMarking.type.BRACKET;
-    } else if (sign) {
-      return vexflow.PedalMarking.type.TEXT;
-    } else {
-      return vexflow.PedalMarking.type.BRACKET;
+    for (const noteRender of renders) {
+      const vexflowNote = noteRender.vexflowNote;
+      if (!(vexflowNote instanceof vexflow.StaveNote)) {
+        continue;
+      }
+      const note = this.document.getNote(noteRender.key);
+      if (note.pedalMark?.pedalMarkType === 'change') {
+        // This is required for vexflow to show pedal changes.
+        vexflowStaveNotes.push(vexflowNote, vexflowNote);
+      } else {
+        vexflowStaveNotes.push(vexflowNote);
+      }
     }
+
+    return new vexflow.PedalMarking(vexflowStaveNotes);
   }
 }

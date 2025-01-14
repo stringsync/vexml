@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer';
-import { Vexml } from '@/index';
+import { MusicXMLParser, Renderer } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 import { setup, getSnapshotIdentifier } from './helpers';
@@ -27,8 +27,8 @@ describe('lilypond', () => {
     { filename: '01a-Pitches-Pitches.musicxml', width: 900 },
     { filename: '01b-Pitches-Intervals.musicxml', width: 900 },
     { filename: '01c-Pitches-NoVoiceElement.musicxml', width: 900 },
-    { filename: '01d-Pitches-Microtones.musicxml', width: 900 },
     { filename: '01e-Pitches-ParenthesizedAccidentals.musicxml', width: 900 },
+    { filename: '01d-Pitches-Microtones.musicxml', width: 900 },
     { filename: '01f-Pitches-ParenthesizedMicrotoneAccidentals.musicxml', width: 900 },
     { filename: '02a-Rests-Durations.musicxml', width: 900 },
     { filename: '02b-Rests-PitchedRests.musicxml', width: 900 },
@@ -88,7 +88,7 @@ describe('lilypond', () => {
     // { filename: '33d-Spanners-OctaveShifts.musicxml', width: 900 },
     // { filename: '33e-Spanners-OctaveShifts-InvalidSize.musicxml', width: 900 },
     // { filename: '33f-Trill-EndingOnGraceNote.musicxml', width: 900 },
-    // { filename: '33g-Slur-ChordedNotes.musicxml', width: 900 },
+    { filename: '33g-Slur-ChordedNotes.musicxml', width: 900 },
     // { filename: '33h-Spanners-Glissando.musicxml', width: 900 },
     // { filename: '33i-Ties-NotEnded.musicxml', width: 900 },
     { filename: '41a-MultiParts-Partorder.musicxml', width: 900 },
@@ -156,10 +156,10 @@ describe('lilypond', () => {
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
 
-    Vexml.fromBuffer(buffer).render({
-      element: vexmlDiv,
-      width: t.width,
-    });
+    const parser = new MusicXMLParser();
+    const doc = parser.parse(buffer.toString());
+    const renderer = new Renderer(doc);
+    renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
 
     await page.setViewport({
       width: t.width,

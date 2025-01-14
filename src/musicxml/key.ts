@@ -20,7 +20,7 @@ export class Key {
   }
 
   /** Returns the stave number this key belongs to. */
-  getStaveNumber(): number {
-    return this.element.attr('number').withDefault(1).int();
+  getStaveNumber(): number | null {
+    return this.element.attr('number').int();
   }
 }

@@ -32,11 +32,8 @@
           "protected-static-method",
           "private-static-method",
           "#private-static-method",
-          "public-decorated-method",
           "public-method",
-          "protected-decorated-method",
           "protected-method",
-          "private-decorated-method",
           "private-method",
           "#private-method"
         ]

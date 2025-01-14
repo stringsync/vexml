@@ -1,5 +1,14 @@
 import { NamedElement } from '@/util';
-import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType, START_STOP_CONTINUE, StartStopContinue } from './enums';
+import {
+  ABOVE_BELOW,
+  AboveBelow,
+  LINE_TYPES,
+  LineType,
+  OVER_UNDER,
+  OverUnder,
+  START_STOP_CONTINUE,
+  StartStopContinue,
+} from './enums';
 
 /**
  * Most slurs are represented with two <slur> elements: one with a start type, and one with a stop type.
@@ -17,6 +26,11 @@ export class Slur {
   /** Returns the placement of the slur. Defaults to null. */
   getPlacement(): AboveBelow | null {
     return this.element.attr('placement').enum(ABOVE_BELOW);
+  }
+
+  /** Returns the orientation of the slur. Defaults to null. */
+  getOrientation(): OverUnder | null {
+    return this.element.attr('orientation').enum(OVER_UNDER);
   }
 
   /** Returns the number of the slur. Defaults to 1. */

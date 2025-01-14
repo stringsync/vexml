@@ -45,7 +45,7 @@ export class Attributes {
   }
 
   /** Returns the how many divisions per quarter note are used to indicate a note's duration. */
-  getQuarterNoteDivisions(): number {
-    return this.element.first('divisions')?.content().int() ?? 1;
+  getQuarterNoteDivisions(): number | null {
+    return this.element.first('divisions')?.content().int() ?? null;
   }
 }

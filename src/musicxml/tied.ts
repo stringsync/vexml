@@ -1,5 +1,5 @@
 import { NamedElement } from '@/util';
-import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType, TIED_TYPES, TiedType } from './enums';
+import { ABOVE_BELOW, AboveBelow, LINE_TYPES, LineType, OVER_UNDER, OverUnder, TIED_TYPES, TiedType } from './enums';
 
 /**
  * The <tied> element represents the notated tie.
@@ -17,6 +17,10 @@ export class Tied {
   /** Returns the placement of the tie. Defaults to null. */
   getPlacement(): AboveBelow | null {
     return this.element.attr('placement').enum(ABOVE_BELOW);
+  }
+
+  getOrientation(): OverUnder | null {
+    return this.element.attr('orientation').enum(OVER_UNDER);
   }
 
   /** Returns the number of the tie. Defaults to 1. */

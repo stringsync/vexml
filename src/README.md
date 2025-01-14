@@ -5,7 +5,7 @@
 - [musicxml](./musicxml/README.md): Organize data from a MusicXML document so that it can be read easily in TypeScript.
 - [mxl](./mxl/README.md): Organize data from a MXL document so that it can be read easily in TypeScript.
 - [rendering](./rendering/README.md): Take MusicXML data and transform it into `vexflow` objects.
-- [drawables](./drawables/README.md): Extend `vexflow`'s drawing capabilities.
+- [drawing](./drawing/README.md): Extend `vexflow`'s drawing capabilities.
 - [spatial](./spatial/README.md): Provide data structures for spatial contexts.
 - [events](./events/README.md): Exposes user interaction hooks.
 - [cursors](./cursors/README.md): Different utilities for navigating a rendered music sheet.

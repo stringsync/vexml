@@ -1,358 +1,225 @@
-import { System, SystemRendering } from './system';
-import * as musicxml from '@/musicxml';
-import * as vexflow from 'vexflow';
 import * as util from '@/util';
-import * as drawables from '@/drawables';
-import * as spatial from '@/spatial';
-import * as components from '@/components';
-import * as debug from '@/debug';
+import { Document } from './document';
 import { Config } from '@/config';
-import { Title, TitleRendering } from './title';
-import { MultiRestRendering } from './multirest';
-import { Seed } from './seed';
-import { Spanners } from './spanners';
-import { Address } from './address';
-import { ChorusRendering } from './chorus';
-import { Gap } from './types';
-
-const Y_SHIFT_PADDING = 10;
-
-/** The result of rendering a Score. */
-export type ScoreRendering = {
-  type: 'score';
-  partIds: string[];
-  systems: SystemRendering[];
-  boundary: spatial.Rect;
-  vexflow: {
-    renderer: vexflow.Renderer;
-  };
-};
+import { Logger } from '@/debug';
+import { System } from './system';
+import {
+  CurveKey,
+  CurveRender,
+  ScoreRender,
+  SystemKey,
+  SystemRender,
+  TitleRender,
+  WedgeRender,
+  WedgeKey,
+  PedalRender,
+  PedalKey,
+  OctaveShiftRender,
+  OctaveShiftKey,
+  VibratoRender,
+  VibratoKey,
+} from './types';
+import { Label } from './label';
+import { Rect } from '@/spatial';
+import { Pen } from './pen';
+import { SystemRenderMover } from './systemrendermover';
+import { Curve } from './curve';
+import { Wedge } from './wedge';
+import { Pedal } from './pedal';
+import { OctaveShift } from './octaveshift';
+import { RenderRegistry } from './renderregistry';
+import { Vibrato } from './vibrato';
 
 /**
- * Represents a Score in a musical composition, serving as the top-level container for all musical elements and
- * metadata. The Score encompasses the entirety of a piece, housing individual parts, systems, and other musical
- * components. It also provides contextual information like title, composer, and other pertinent details.
+ * Score is the top-level rendering object that is directly responsible for arranging systems.
  */
 export class Score {
-  private config: Config;
-  private log: debug.Logger;
-  private musicXML: {
-    scorePartwise: musicxml.ScorePartwise | null;
-  };
-  private gaps: Gap[];
+  constructor(private config: Config, private log: Logger, private document: Document, private width: number | null) {}
 
-  constructor(opts: {
-    config: Config;
-    log: debug.Logger;
-    musicXML: {
-      scorePartwise: musicxml.ScorePartwise | null;
+  render(): ScoreRender {
+    const pen = new Pen();
+
+    pen.moveBy({ dy: this.config.SCORE_PADDING_TOP });
+
+    const titleRender = this.renderTitle(pen);
+    const systemRenders = this.renderSystems(pen);
+
+    const registry = RenderRegistry.create(systemRenders);
+
+    const curveRenders = this.renderCurves(registry);
+    const wedgeRenders = this.renderWedges(registry);
+    const pedalRenders = this.renderPedals(registry);
+    const octaveShiftRenders = this.renderOctaveShifts(registry);
+    const vibratoRenders = this.renderVibratos(registry);
+
+    pen.moveBy({ dy: this.config.SCORE_PADDING_BOTTOM });
+
+    const width = this.width ?? util.max(systemRenders.map((system) => system.rect.w));
+    const rect = new Rect(0, 0, width, pen.position().y);
+
+    return {
+      type: 'score',
+      rect,
+      titleRender,
+      systemRenders,
+      curveRenders,
+      wedgeRenders,
+      pedalRenders,
+      octaveShiftRenders,
+      vibratoRenders,
     };
-    gaps: Gap[];
-  }) {
-    this.config = opts.config;
-    this.log = opts.log;
-    this.musicXML = opts.musicXML;
-    this.gaps = opts.gaps;
   }
 
-  /** Renders the Score. */
-  render(opts: { root: components.Root; width: number }): ScoreRendering {
-    // Track the system rendering results.
-    const systemRenderings = new Array<SystemRendering>();
-
-    // Create the systems.
-    const systems = this.seed().split(opts.width);
-
-    // Initialize the rendering coordinates.
-    const x = 0;
-    let y = 0;
-
-    // Initialize spanners for rendering.
-    const spanners = new Spanners({ config: this.config, log: this.log });
-
-    // Draw the title if it has text.
-    let titleRendering: TitleRendering | null = null;
-    const title = this.getTitle();
-    if (title.hasText()) {
-      y += this.config.TITLE_TOP_PADDING;
-      titleRendering = title.render({ y, containerWidth: opts.width });
-      y += titleRendering.approximateHeight;
+  private renderTitle(pen: Pen): TitleRender | null {
+    const title = this.document.getTitle();
+    if (!title) {
+      return null;
     }
 
-    y += this.getTopSystemDistance(systems);
+    const position = pen.position();
+    const padding = this.getTitlePadding();
+    const font = this.getTitleFont();
 
-    // Render the entire hierarchy.
-    util.forEachTriple(systems, ([previousSystem, currentSystem, nextSystem]) => {
-      const address = Address.system({
-        systemIndex: currentSystem.getIndex(),
-        origin: 'Score.prototype.render',
-      });
-
-      const systemRendering = currentSystem.render({
-        x,
-        y,
-        address,
-        previousSystem,
-        nextSystem,
-        spanners,
-      });
-      systemRenderings.push(systemRendering);
-
-      // TODO: Add height property to SystemRendering instead.
-      const maxY = util.max([
-        y,
-        ...systemRendering.measures
-          .flatMap((measure) => measure.fragments)
-          .flatMap((measureFragment) => measureFragment.parts)
-          .flatMap((part) => part.staves)
-          .map((stave) => {
-            const box = stave.vexflow.stave.getBoundingBox();
-            return box.getY() + box.getH();
-          }),
-      ]);
-      const height = maxY - y;
-
-      y += height;
-      y += this.getSystemDistance();
-    });
-
-    // Render spanners.
-    const spannersRendering = spanners.render();
-
-    // Precalculate different parts of the rendering for readability later.
-    const measures = systemRenderings.flatMap((system) => system.measures);
-    const measureFragments = measures.flatMap((measure) => measure.fragments);
-    const parts = measureFragments.flatMap((measureFragment) => measureFragment.parts);
-    const staves = measureFragments.flatMap((measureFragment) => measureFragment.parts).flatMap((part) => part.staves);
-
-    // Prepare the vexflow rendering objects.
-    const container = opts.root.getVexflowContainerElement();
-    const vfRenderer = this.getVfRenderer(container).resize(opts.width, y);
-    const vfContext = vfRenderer.getContext();
-
-    // Draw the title.
-    titleRendering?.text.draw(vfContext);
-
-    // Draw the part names.
-    parts
-      .map((part) => part.name?.text)
-      .filter((text): text is drawables.Text => text instanceof drawables.Text)
-      .forEach((text) => {
-        text.draw(vfContext);
-      });
-
-    // Draw vexflow.Stave elements.
-    staves
-      .map((stave) => stave.vexflow.stave)
-      .forEach((vfStave) => {
-        vfStave.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveConnector elements.
-    measureFragments
-      .flatMap((measureFragment) => measureFragment.vexflow.staveConnectors)
-      .forEach((vfStaveConnector) => {
-        vfStaveConnector.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.MultiMeasureRest elements.
-    staves
-      .map((stave) => stave.entry)
-      .filter((entry): entry is MultiRestRendering => entry.type === 'measurerest' && entry.coverage === 'multi')
-      .map((entry) => entry.vexflow.multiMeasureRest)
-      .filter(
-        (vfMultiMeasureRest): vfMultiMeasureRest is vexflow.MultiMeasureRest =>
-          vfMultiMeasureRest instanceof vexflow.MultiMeasureRest
-      )
-      .forEach((vfMultiMeasureRest) => {
-        vfMultiMeasureRest.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.Voice elements.
-    staves
-      .map((stave) => stave.entry)
-      .filter((entry): entry is ChorusRendering => entry.type === 'chorus')
-      .flatMap((entry) => entry.voices)
-      .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.map((voice) => voice.vexflow.voice)])
-      .forEach((vfVoice) => {
-        vfVoice.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.Beam elements.
-    spannersRendering.beams.forEach((beam) => {
-      beam.vexflow.beam?.setContext(vfContext).draw();
-    });
-
-    // Draw vexflow.Curve elements for slurs.
-    spannersRendering.slurs
-      .flatMap((slur) => slur.vexflow.curve)
-      .forEach((vfCurve) => {
-        vfCurve?.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveTie and vexflow.TabTie elements.
-    spannersRendering.ties
-      .flatMap((tie) => tie.vexflow.tie)
-      .forEach((vfStaveTie) => {
-        vfStaveTie.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveTie elements for hammer-ons.
-    spannersRendering.hammerOns
-      .flatMap((hammerOn) => hammerOn.vexflow.tie)
-      .forEach((vfStaveTie) => {
-        vfStaveTie.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveTie elements for pull-offs.
-    spannersRendering.pullOffs
-      .flatMap((pullOff) => pullOff.vexflow.tie)
-      .forEach((vfStaveTie) => {
-        vfStaveTie.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.Tuplet elements.
-    spannersRendering.tuplets
-      .map((tuplet) => tuplet.vexflow.tuplet)
-      .forEach((vfTuplet) => {
-        vfTuplet.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.StaveHairpin elements.
-    spannersRendering.wedges
-      .map((wedge) => wedge.vexflow.staveHairpin)
-      .forEach((vfStaveHairpin) => {
-        vfStaveHairpin.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.Vibrato elements.
-    spannersRendering.vibratos
-      .flatMap((wavyLine) => wavyLine.vexflow.vibratoBracket)
-      .forEach((vibratoBracket) => {
-        vibratoBracket.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.TextBracket elements.
-    spannersRendering.octaveShifts
-      .map((octaveShift) => octaveShift.vexflow.textBracket)
-      .forEach((vfTextBracket) => {
-        vfTextBracket.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.PedalMarking elements.
-    spannersRendering.pedals
-      .map((pedal) => pedal.vexflow.pedalMarking)
-      .forEach((vfPedalMarking) => {
-        vfPedalMarking.setContext(vfContext).draw();
-      });
-
-    // Draw vexflow.TabSlide elements.
-    spannersRendering.slides
-      .map((slide) => slide.vexflow.tabSlide)
-      .forEach((vfTabSlide) => {
-        vfTabSlide.setContext(vfContext).draw();
-      });
-
-    // Draw message measures.
-    measures.forEach((measure) => {
-      measure.rect?.draw(vfContext);
-      measure.text?.draw(vfContext);
-    });
-
-    // Now that everything is drawn, we expect the bounding boxes to be correct.
-    const boundary = new spatial.Rect(0, 0, opts.width, y);
-
-    // Extract the part IDs.
-    const partIds = util.unique(
-      measures
-        .flatMap((measure) => measure.fragments)
-        .flatMap((measureFragment) => measureFragment.parts)
-        .map((part) => part.id)
-    );
-
-    return { type: 'score', systems: systemRenderings, boundary, partIds, vexflow: { renderer: vfRenderer } };
-  }
-
-  @util.memoize()
-  private seed(): Seed {
-    return new Seed({
-      config: this.config,
-      log: this.log,
-      musicXML: {
-        parts: this.musicXML.scorePartwise?.getParts() ?? [],
-        partDetails: this.musicXML.scorePartwise?.getPartDetails() ?? [],
-        staveLayouts: this.musicXML.scorePartwise?.getDefaults()?.getStaveLayouts() ?? [],
-      },
-      gaps: this.gaps,
-    });
-  }
-
-  @util.memoize()
-  private getSystemLayout() {
-    return this.musicXML.scorePartwise?.getDefaults()?.getSystemLayout() ?? null;
-  }
-
-  @util.memoize()
-  private getSystemDistance() {
-    return this.getSystemLayout()?.systemDistance ?? this.config.DEFAULT_SYSTEM_DISTANCE;
-  }
-
-  @util.memoize()
-  private getTitle() {
-    return new Title({
-      config: this.config,
-      log: this.log,
-      text: this.musicXML.scorePartwise?.getTitle() ?? '',
-    });
-  }
-
-  private getVfRenderer(container: HTMLDivElement | HTMLCanvasElement) {
-    if (container instanceof HTMLCanvasElement) {
-      return new vexflow.Renderer(container, vexflow.Renderer.Backends.CANVAS);
+    let label: Label;
+    if (this.width) {
+      label = Label.centerAligned(this.config, this.log, this.width, title, position, padding, font);
+    } else {
+      label = Label.singleLine(this.config, this.log, title, position, padding, font);
     }
-    return new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
+
+    const rect = label.rect;
+    pen.moveBy({ dy: rect.h });
+
+    return {
+      type: 'title',
+      rect,
+      label,
+    };
   }
 
-  private getTopSystemDistance(systems: System[]) {
-    let result = 0;
+  private renderCurves(registry: RenderRegistry): CurveRender[] {
+    const curves = this.document.getCurves();
+    const curveRenders = new Array<CurveRender>();
 
-    result += this.getSystemLayout()?.topSystemDistance ?? 0;
+    for (let curveIndex = 0; curveIndex < curves.length; curveIndex++) {
+      const key: CurveKey = { curveIndex };
 
-    if (systems.length > 0) {
-      const systemRendering = systems[0].render({
-        address: Address.system({ systemIndex: 0, origin: 'Score.prototype.getTopSystemDistance' }),
-        x: 0,
-        y: 0,
-        previousSystem: null,
-        nextSystem: systems[1] ?? null,
-        spanners: new Spanners({ config: this.config, log: this.log }),
-      });
+      const noteRenderCount = registry.get(curves[curveIndex].id)?.length ?? 0;
 
-      const staves = systemRendering.measures
-        .flatMap((measure) => measure.fragments)
-        .flatMap((measureFragment) => measureFragment.parts)
-        .flatMap((part) => part.staves);
+      if (noteRenderCount >= 1) {
+        const curveRender = new Curve(this.config, this.log, this.document, key, registry).render();
+        curveRenders.push(curveRender);
+      }
+    }
 
-      const vfElements: vexflow.Element[] = [
-        ...staves.map((stave) => stave.vexflow.stave),
-        ...staves.map((stave) => stave.vexflow.stave).flatMap((vfStave) => vfStave.getModifiers()),
-        ...staves
-          .map((stave) => stave.entry)
-          .filter((staveEntry): staveEntry is ChorusRendering => staveEntry.type === 'chorus')
-          .flatMap((chorus) => chorus.voices)
-          .flatMap((voice) => [voice.vexflow.voice, ...voice.placeholders.flatMap((voice) => voice.vexflow.voice)]),
-      ];
+    return curveRenders;
+  }
 
-      // Calculate how much we need to shift the system down to make it fully visible. This should still work even when
-      // there is a title, because we don't want the notes clashing with the title.
-      result += util.max(
-        vfElements
-          .map((vfElement) => vfElement.getBoundingBox().getY())
-          .filter((y) => y < 0)
-          .map((y) => Math.abs(y) + Y_SHIFT_PADDING)
+  private renderWedges(registry: RenderRegistry): WedgeRender[] {
+    const wedges = this.document.getWedges();
+    const wedgeRenders = new Array<WedgeRender>();
+
+    for (let wedgeIndex = 0; wedgeIndex < wedges.length; wedgeIndex++) {
+      const key: WedgeKey = { wedgeIndex };
+
+      const noteRenderCount = registry.get(wedges[wedgeIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const wedgeRender = new Wedge(this.config, this.log, this.document, key, registry).render();
+        wedgeRenders.push(wedgeRender);
+      }
+    }
+
+    return wedgeRenders;
+  }
+
+  private renderPedals(registry: RenderRegistry): PedalRender[] {
+    const pedals = this.document.getPedals();
+    const pedalRenders = new Array<PedalRender>();
+
+    for (let pedalIndex = 0; pedalIndex < pedals.length; pedalIndex++) {
+      const key: PedalKey = { pedalIndex };
+
+      const noteRenderCount = registry.get(pedals[pedalIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const pedalRender = new Pedal(this.config, this.log, this.document, key, registry).render();
+        pedalRenders.push(pedalRender);
+      }
+    }
+
+    return pedalRenders;
+  }
+
+  private renderOctaveShifts(registry: RenderRegistry): OctaveShiftRender[] {
+    const octaveShifts = this.document.getOctaveShifts();
+    const octaveShiftRenders = new Array<OctaveShiftRender>();
+
+    for (let octaveShiftIndex = 0; octaveShiftIndex < octaveShifts.length; octaveShiftIndex++) {
+      const key: OctaveShiftKey = { octaveShiftIndex };
+
+      const noteRenderCount = registry.get(octaveShifts[octaveShiftIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const octaveShiftRender = new OctaveShift(this.config, this.log, this.document, key, registry).render();
+        octaveShiftRenders.push(octaveShiftRender);
+      }
+    }
+
+    return octaveShiftRenders;
+  }
+
+  private renderVibratos(registry: RenderRegistry): VibratoRender[] {
+    const vibratos = this.document.getVibratos();
+    const vibratoRenders = new Array<VibratoRender>();
+
+    for (let vibratoIndex = 0; vibratoIndex < vibratos.length; vibratoIndex++) {
+      const key: VibratoKey = { vibratoIndex };
+
+      const noteRenderCount = registry.get(vibratos[vibratoIndex].id)?.length ?? 0;
+
+      if (noteRenderCount >= 1) {
+        const vibratoRender = new Vibrato(this.config, this.log, this.document, key, registry).render();
+        vibratoRenders.push(vibratoRender);
+      }
+    }
+
+    return vibratoRenders;
+  }
+
+  private getTitlePadding() {
+    return { bottom: this.config.TITLE_PADDING_BOTTOM };
+  }
+
+  private getTitleFont() {
+    return {
+      color: 'black',
+      family: this.config.TITLE_FONT_FAMILY,
+      size: this.config.TITLE_FONT_SIZE,
+      lineHeight: this.config.TITLE_FONT_LINE_HEIGHT_PX,
+    };
+  }
+
+  private renderSystems(pen: Pen): SystemRender[] {
+    const systemRenders = new Array<SystemRender>();
+
+    const systemCount = this.document.getSystemCount();
+
+    for (let systemIndex = 0; systemIndex < systemCount; systemIndex++) {
+      const key: SystemKey = { systemIndex };
+
+      const systemRender = new System(this.config, this.log, this.document, key, this.width, pen.position()).render();
+      systemRenders.push(systemRender);
+
+      const excessHeight = util.max(
+        systemRender.measureRenders.flatMap((m) => m.fragmentRenders).flatMap((e) => e.excessHeight)
       );
+      new SystemRenderMover().moveBy(systemRender, excessHeight);
+
+      pen.moveTo(systemRender.rect.bottomLeft());
+      pen.moveBy({ dy: this.config.SYSTEM_MARGIN_BOTTOM });
     }
 
-    return result;
+    return systemRenders;
   }
 }

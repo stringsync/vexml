@@ -1,0 +1,7 @@
+{
+  "@/import": {
+    "description": "Import a module using @ syntax",
+    "prefix": "@import",
+    "body": "import * as ${1:module} from '@/${1:module}';"
+  }
+}

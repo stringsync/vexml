@@ -33,6 +33,6 @@ export class ConsoleLogger implements Logger {
         .map(([key, value]) => `${key}=${value}`)
         .join(' ')}`;
     }
-    return message;
+    return `[vexml] ${message}`;
   }
 }

@@ -1,112 +1,123 @@
-import { Config } from '@/config';
-import * as debug from '@/debug';
 import * as util from '@/util';
-import { Address } from './address';
-import { Measure, MeasureRendering } from './measure';
-import { Spanners } from './spanners';
-import { MeasureFragmentWidth } from './measurefragment';
+import { Point, Rect } from '@/spatial';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
+import { Document } from './document';
+import { Measure } from './measure';
+import { MeasureKey, MeasureRender, SystemKey, SystemRender } from './types';
+import { Pen } from './pen';
 
-const DEFAULT_BPM = 120;
-
-/** The result of rendering a system. */
-export type SystemRendering = {
-  type: 'system';
-  address: Address<'system'>;
-  index: number;
-  measures: MeasureRendering[];
-};
-
-/**
- * Represents a System in a musical score, a horizontal grouping of staves spanning the width of the viewport or page.
- * Each system contains a segment of musical content from one or more parts, and multiple systems collectively render
- * the entirety of those parts.
- */
 export class System {
-  private config: Config;
-  private log: debug.Logger;
-  private index: number;
-  private measures: Measure[];
-  private measureFragmentWidths: MeasureFragmentWidth[];
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private document: Document,
+    private key: SystemKey,
+    private width: number | null,
+    private position: Point
+  ) {}
 
-  constructor(opts: {
-    config: Config;
-    log: debug.Logger;
-    index: number;
-    measures: Measure[];
-    measureFragmentWidths: MeasureFragmentWidth[];
-  }) {
-    this.config = opts.config;
-    this.log = opts.log;
-    this.index = opts.index;
-    this.measures = opts.measures;
-    this.measureFragmentWidths = opts.measureFragmentWidths;
-  }
+  render(): SystemRender {
+    const pen = new Pen(this.position);
 
-  /** Returns the index of the system. */
-  getIndex(): number {
-    return this.index;
-  }
+    const measureRenders = this.renderMeasures(pen);
 
-  /** Renders the system. */
-  render(opts: {
-    x: number;
-    y: number;
-    address: Address<'system'>;
-    previousSystem: System | null;
-    nextSystem: System | null;
-    spanners: Spanners;
-  }): SystemRendering {
-    this.log.debug('rendering system', { index: this.index });
-
-    const measureRenderings = new Array<MeasureRendering>();
-
-    let x = opts.x;
-    const y = opts.y + this.getTopPadding();
-
-    let defaultBpm = DEFAULT_BPM;
-
-    util.forEachTriple(this.measures, ([previousMeasure, currentMeasure, nextMeasure], { isFirst, isLast, index }) => {
-      if (isFirst) {
-        previousMeasure = util.last(opts.previousSystem?.measures ?? []);
-      }
-      if (isLast) {
-        nextMeasure = util.first(opts.nextSystem?.measures ?? []);
-      }
-
-      const address = opts.address.measure({
-        systemMeasureIndex: index,
-        measureIndex: currentMeasure.getIndex(),
-      });
-
-      const fragmentWidths = this.measureFragmentWidths.filter(
-        ({ measureIndex }) => measureIndex === currentMeasure.getIndex()
-      );
-
-      const measureRendering = currentMeasure.render({
-        x,
-        y,
-        address,
-        fragmentWidths,
-        previousMeasure,
-        nextMeasure,
-        spanners: opts.spanners,
-        defaultBpm,
-      });
-      measureRenderings.push(measureRendering);
-
-      x += measureRendering.width;
-      defaultBpm = measureRendering.bpm;
-    });
+    const rect = Rect.merge(measureRenders.map((measure) => measure.rect));
 
     return {
       type: 'system',
-      index: this.index,
-      address: opts.address,
-      measures: measureRenderings,
+      key: this.key,
+      rect,
+      measureRenders,
     };
   }
 
-  private getTopPadding(): number {
-    return util.max(this.measures.map((measure) => measure.getTopPadding()));
+  private renderMeasures(pen: Pen): MeasureRender[] {
+    const measureRenders = new Array<MeasureRender>();
+    const measureCount = this.document.getMeasures(this.key).length;
+    const measureWidths = this.getMeasureWidths();
+
+    let multiRestCount = 0;
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const measureKey: MeasureKey = { ...this.key, measureIndex };
+      const width = measureWidths?.at(measureIndex) || null;
+
+      if (multiRestCount === 0) {
+        const measure = new Measure(this.config, this.log, this.document, measureKey, pen.position(), width);
+        const measureRender = measure.render();
+        measureRenders.push(measureRender);
+        multiRestCount = Math.max(0, measureRender.multiRestCount - 1);
+        pen.moveBy({ dx: measureRender.rect.w });
+      } else {
+        multiRestCount--;
+      }
+    }
+
+    return measureRenders;
+  }
+
+  private getMeasureWidths(): number[] | null {
+    // If there is no width, we should use the minimum required widths by returning null.
+    if (!this.width) {
+      return null;
+    }
+
+    // If there is only one measure, stretch it to the configured width.
+    const isLastSystem = this.document.isLastSystem(this.key);
+    const measureCount = this.document.getMeasureCount(this.key);
+    if (!isLastSystem && measureCount === 1) {
+      return [this.width];
+    }
+
+    // Otherwise, we need to determine the minimum required widths of each measure by rendering it.
+    const minRequiredMeasureWidths = new Array<number>();
+
+    // Collect the absolute measure indexes to reflow as a single system. This will allow us to account for contextual
+    // widths such as part labels (for first system and first measure) and stave connectors (for first measure entry in
+    // any system).
+    let document = this.document;
+
+    if (measureCount > 0) {
+      const from = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: 0 });
+      const to = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: measureCount - 1 });
+      document = this.document.reflow([{ from, to }]);
+      if (this.key.systemIndex > 0) {
+        document = document.withoutPartLabels();
+      }
+    }
+
+    let multiRestCount = 0;
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      // In here, we're not going to use `this.document`. We're going to use the modified document that only has a
+      // single system. We also need to update the key to reflect this.
+      const key: MeasureKey = { systemIndex: 0, measureIndex };
+
+      if (multiRestCount === 0) {
+        const measureRender = new Measure(this.config, this.log, document, key, Point.origin(), null).render();
+        minRequiredMeasureWidths.push(measureRender.rect.w);
+        multiRestCount = Math.max(0, measureRender.multiRestCount - 1);
+      } else {
+        minRequiredMeasureWidths.push(0);
+        multiRestCount--;
+      }
+    }
+
+    const totalMinRequiredSystemWidth = util.sum(minRequiredMeasureWidths);
+    const systemFraction = totalMinRequiredSystemWidth / this.width;
+    if (this.document.isLastSystem(this.key) && systemFraction < this.config.LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD) {
+      return minRequiredMeasureWidths;
+    }
+
+    const measureWidths = new Array<number>();
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
+      const minRequiredMeasureWidth = minRequiredMeasureWidths.at(measureIndex) ?? 0;
+      const measureFraction = minRequiredMeasureWidth / totalMinRequiredSystemWidth;
+      measureWidths.push(measureFraction * this.width);
+    }
+
+    return measureWidths;
   }
 }
