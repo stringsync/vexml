@@ -6,11 +6,9 @@ import { Player, PlayerState } from '../lib/Player';
 import { getDevice } from '../util/getDevice';
 
 const STRINGSYNC_RED = '#FC354C';
-const VEXML_HEIGHT = 400;
 
 export type VexmlProps = {
   musicXML: string;
-  backend: 'svg' | 'canvas';
   config: vexml.Config;
   onResult: (result: VexmlResult) => void;
   onClick?: vexml.ClickEventListener;
@@ -26,17 +24,7 @@ export type VexmlResult =
   | { type: 'success'; start: Date; end: Date; width: number; element: HTMLCanvasElement | SVGElement }
   | { type: 'error'; error: Error; start: Date; end: Date; width: number };
 
-export const Vexml = ({
-  musicXML,
-  backend,
-  config,
-  onResult,
-  onClick,
-  onLongpress,
-  onEnter,
-  onExit,
-  onScroll,
-}: VexmlProps) => {
+export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnter, onExit, onScroll }: VexmlProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const div = divRef.current;
 
@@ -111,21 +99,21 @@ export const Vexml = ({
     }
 
     const start = new Date();
-    let score: vexml.Score;
+    let score: vexml.Score | undefined;
 
     try {
-      const vexmlConfig: vexml.Config = {
-        ...config,
-        DRAWING_BACKEND: backend,
-        WIDTH: width,
-        HEIGHT: VEXML_HEIGHT,
-      };
       const logger = new vexml.ConsoleLogger();
       const parser = new vexml.MusicXMLParser();
       const document = parser.parse(musicXML);
       const formatter = new vexml.MonitoredFormatter(new vexml.DefaultFormatter(), logger);
       const renderer = new vexml.Renderer(document, formatter);
-      score = renderer.render(div, { config: vexmlConfig, logger });
+      score = renderer.render(div, {
+        config: {
+          ...config,
+          WIDTH: width,
+        },
+        logger,
+      });
       setScore(score);
 
       if (onClick) {
@@ -197,22 +185,9 @@ export const Vexml = ({
     }
 
     return () => {
-      score.destroy();
+      score?.destroy();
     };
-  }, [
-    div,
-    backend,
-    width,
-    musicXML,
-    config,
-    onResult,
-    onClick,
-    onLongpress,
-    onEnter,
-    onExit,
-    onScroll,
-    scrollBehavior,
-  ]);
+  }, [div, width, musicXML, config, onResult, onClick, onLongpress, onEnter, onExit, onScroll, scrollBehavior]);
 
   return (
     <div className="w-100">

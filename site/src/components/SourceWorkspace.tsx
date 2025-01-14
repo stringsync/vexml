@@ -41,7 +41,7 @@ export const SourceWorkspace = (props: SourceWorkspaceProps) => {
   const onAddClick = (index: number) => () => {
     const keyedSource: Keyed<Source> = {
       key: nextKey(),
-      value: { type: 'local', musicXML: '', backend: 'svg', config: vexml.LEGACY_DEFAULT_CONFIG, height: 0 },
+      value: { type: 'local', musicXML: '', config: vexml.LEGACY_DEFAULT_CONFIG },
     };
     const nextKeyedSources = [...keyedSources];
     nextKeyedSources.splice(index, 0, keyedSource);

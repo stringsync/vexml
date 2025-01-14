@@ -4,7 +4,7 @@ import { Source } from '../types';
 import { useJsonLocalStorage } from './useJsonLocalStorage';
 
 const DEFAULT_SOURCES: Source[] = [
-  { type: 'example', path: DEFAULT_EXAMPLE_PATH, backend: 'svg', config: vexml.LEGACY_DEFAULT_CONFIG, height: 0 },
+  { type: 'example', path: DEFAULT_EXAMPLE_PATH, config: vexml.LEGACY_DEFAULT_CONFIG },
 ];
 
 export const useSources = () => {
@@ -21,12 +21,6 @@ const isSources = (data: unknown): data is Source[] =>
   Array.isArray(data) &&
   data.every((item): item is Source => {
     if (typeof item !== 'object' && item !== null) {
-      return false;
-    }
-    if (item.backend !== 'svg' && item.backend !== 'canvas') {
-      return false;
-    }
-    if (typeof item.height !== 'undefined' && typeof item.height !== 'number') {
       return false;
     }
     if (!isConfig(item.config)) {
