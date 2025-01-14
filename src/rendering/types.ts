@@ -1,15 +1,8 @@
 import * as vexflow from 'vexflow';
 import * as data from '@/data';
-import { Document } from './document';
 import { Rect } from '@/spatial';
 import { Label } from './label';
 import { ClefSign, StemDirection } from './enums';
-import { Fraction } from '@/util';
-
-/** Formatter produces a new formatted document from an unformatted one. */
-export interface Formatter {
-  format(document: Document): Document;
-}
 
 export interface Drawable {
   setContext(ctx: vexflow.RenderContext): this;

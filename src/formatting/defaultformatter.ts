@@ -1,7 +1,7 @@
 import * as rendering from '@/rendering';
 import * as data from '@/data';
 import * as util from '@/util';
-import { Logger } from '@/debug';
+import { Logger, NoopLogger } from '@/debug';
 import { Formatter } from './types';
 import { PanoramicFormatter } from './panoramicformatter';
 
@@ -14,34 +14,35 @@ type SystemSlice = {
  * A formatter that splits the score into systems based on the width of the measures.
  */
 export class DefaultFormatter implements Formatter {
-  constructor(private config: rendering.Config, private log: Logger) {
-    util.assertNotNull(this.config.WIDTH);
+  private log: Logger;
+
+  constructor(log?: Logger) {
+    this.log = log ?? new NoopLogger();
   }
 
-  format(document: data.Document): data.Document {
+  format(config: rendering.Config, document: data.Document): data.Document {
+    util.assertNotNull(config.WIDTH, 'WIDTH must be set for DefaultFormatter');
+
+    const clone = document.clone();
+
     // First, ensure the document is formatted for infinite x-scrolling. This will allow us to measure the width of the
     // measures and make decisions on how to group them into systems.
-    const panoramicFormatter = new PanoramicFormatter(this.config, this.log);
-    const singleSystemDocument = panoramicFormatter.format(document);
+    const panoramicConfig = { ...config, WIDTH: null, HEIGHT: null };
+    const panoramicFormatter = new PanoramicFormatter();
+    const panoramicDocument = new rendering.Document(panoramicFormatter.format(panoramicConfig, document));
+    const panoramicScoreRender = new rendering.Score(panoramicConfig, this.log, panoramicDocument, null).render();
 
-    // We'll create a score that thinks the configured dimensions are undefined. This is necessary since the score (and
-    // its children) may need to render elements into order to compute rects. This will provide the formatter a
-    // mechanism to measure the elements and make decisions on the system layout.
-    const scoreRender = new rendering.Score(
-      { ...this.config, WIDTH: null, HEIGHT: null },
-      this.log,
-      new rendering.Document(singleSystemDocument),
-      null
-    ).render();
+    const slices = this.getSystemSlices(config, panoramicScoreRender);
 
-    const slices = this.getSystemSlices(scoreRender);
-    return this.applySystemSlices(document, slices);
+    this.applySystemSlices(clone, slices);
+
+    return clone;
   }
 
-  private getSystemSlices(scoreRender: rendering.ScoreRender): SystemSlice[] {
+  private getSystemSlices(config: rendering.Config, scoreRender: rendering.ScoreRender): SystemSlice[] {
     const slices = [{ from: 0, to: 0 }];
 
-    let remaining = this.config.WIDTH!;
+    let remaining = config.WIDTH!;
     let count = 0;
 
     const measureRenders = scoreRender.systemRenders.flatMap((systemRender) => systemRender.measureRenders);
@@ -53,7 +54,7 @@ export class DefaultFormatter implements Formatter {
 
       if (required > remaining && count > 0) {
         slices.push({ from: measure.absoluteIndex, to: measure.absoluteIndex });
-        remaining = this.config.WIDTH!;
+        remaining = config.WIDTH!;
         count = 0;
       }
 
@@ -67,12 +68,10 @@ export class DefaultFormatter implements Formatter {
     return slices;
   }
 
-  private applySystemSlices(document: data.Document, slices: SystemSlice[]): data.Document {
-    const clone = document.clone();
+  private applySystemSlices(document: data.Document, slices: SystemSlice[]): void {
+    const measures = document.score.systems.flatMap((s) => s.measures);
 
-    const measures = clone.score.systems.flatMap((s) => s.measures);
-
-    clone.score.systems = [];
+    document.score.systems = [];
 
     for (const slice of slices) {
       const system: data.System = {
@@ -82,9 +81,7 @@ export class DefaultFormatter implements Formatter {
 
       system.measures = measures.slice(slice.from, slice.to + 1);
 
-      clone.score.systems.push(system);
+      document.score.systems.push(system);
     }
-
-    return clone;
   }
 }

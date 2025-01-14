@@ -112,19 +112,18 @@ export const Vexml = ({
     let score: vexml.Score;
 
     try {
+      const vexmlConfig: vexml.Config = {
+        ...config,
+        DRAWING_BACKEND: backend,
+        WIDTH: width,
+        HEIGHT: 500,
+      };
       const logger = new vexml.ConsoleLogger();
       const parser = new vexml.MusicXMLParser();
       const document = parser.parse(musicXML);
-      const renderer = new vexml.Renderer(document);
-      score = renderer.render(div, {
-        config: {
-          ...config,
-          DRAWING_BACKEND: backend,
-          WIDTH: width,
-          HEIGHT: 500,
-        },
-        logger,
-      });
+      const formatter = new vexml.MonitoredFormatter(new vexml.DefaultFormatter(), logger);
+      const renderer = new vexml.Renderer(document, formatter);
+      score = renderer.render(div, { config: vexmlConfig, logger });
       setScore(score);
 
       if (onClick) {

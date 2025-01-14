@@ -1,13 +1,12 @@
 import * as data from '@/data';
-import * as formatters from './formatters';
 import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as elements from '@/elements';
-import { Document } from './document';
+import * as formatting from '@/formatting';
 import { Score } from './score';
 import { Config, DEFAULT_CONFIG } from './config';
 import { Logger, NoopLogger, Stopwatch } from '@/debug';
-import { Formatter, ScoreRender } from './types';
+import { Document } from './document';
 
 export type RenderOptions = {
   config?: Partial<Config>;
@@ -15,21 +14,18 @@ export type RenderOptions = {
 };
 
 export class Renderer {
-  private document: Document;
-
-  constructor(document: data.Document) {
-    this.document = new Document(document);
-  }
+  constructor(private document: data.Document, private formatter?: formatting.Formatter) {}
 
   render(div: HTMLDivElement, opts?: RenderOptions): elements.Score {
     const config = { ...DEFAULT_CONFIG, ...opts?.config };
     const log = opts?.logger ?? new NoopLogger();
 
+    const width = config.WIDTH ?? undefined;
+    const height = config.HEIGHT ?? undefined;
+
     let root: components.Root;
     let container: HTMLDivElement | HTMLCanvasElement;
     let renderer: vexflow.Renderer;
-    const width = config.WIDTH ?? undefined;
-    const height = config.HEIGHT ?? undefined;
     switch (config.DRAWING_BACKEND) {
       case 'svg':
         root = components.Root.svg(div, width, height);
@@ -48,31 +44,29 @@ export class Renderer {
         renderer = new vexflow.Renderer(container, vexflow.Renderer.Backends.SVG);
     }
 
-    // We'll create a score that thinks the configured dimensions are undefined. This is necessary since the score (and
-    // its children) may need to render elements into order to compute rects. This will provide the formatter a
-    // mechanism to measure the elements and make decisions on the system layout.
-    const unformattedScore = new Score({ ...config, WIDTH: null, HEIGHT: null }, log, this.document, null);
+    let formatter = this.formatter;
+    if (!formatter) {
+      if (width && height) {
+        formatter = new formatting.DefaultFormatter();
+      } else if (width) {
+        formatter = new formatting.DefaultFormatter();
+      } else if (height) {
+        formatter = new formatting.PanoramicFormatter();
+      } else {
+        formatter = new formatting.PanoramicFormatter();
+      }
+    }
 
     const stopwatch = Stopwatch.start();
 
-    const unformattedScoreRender = unformattedScore.render();
-    const formatter = this.getFormatter(config, log, unformattedScoreRender);
-    const formattedDocument = formatter.format(this.document);
-    const formattedScore = new Score(config, log, formattedDocument, config.WIDTH);
-
-    let lap = stopwatch.lap();
-    if (lap < 1) {
-      log.info(`formatted score in ${lap.toFixed(3)}ms`);
-    } else {
-      log.info(`formatted score in ${Math.round(lap)}ms`);
-    }
-
-    const formattedScoreRender = formattedScore.render();
-    const ctx = renderer.resize(formattedScoreRender.rect.w, formattedScoreRender.rect.h).getContext();
-    const scoreElement = elements.Score.create(config, log, formattedDocument, ctx, root, formattedScoreRender);
+    const formattedDocument = formatter.format(config, this.document);
+    const renderingDocument = new Document(formattedDocument);
+    const scoreRender = new Score(config, log, renderingDocument, config.WIDTH).render();
+    const ctx = renderer.resize(scoreRender.rect.w, scoreRender.rect.h).getContext();
+    const scoreElement = elements.Score.create(config, log, renderingDocument, ctx, root, scoreRender);
     scoreElement.render();
 
-    lap = stopwatch.lap();
+    const lap = stopwatch.lap();
     if (lap < 1) {
       log.info(`rendered score in ${lap.toFixed(3)}ms`);
     } else {
@@ -80,32 +74,5 @@ export class Renderer {
     }
 
     return scoreElement;
-  }
-
-  private getFormatter(config: Config, log: Logger, scoreRender: ScoreRender): Formatter {
-    const width = config.WIDTH;
-    const height = config.HEIGHT;
-
-    if (width && height) {
-      log.debug('using DefaultFormatter');
-      return new formatters.DefaultFormatter(config, log, scoreRender);
-    }
-
-    if (width && !height) {
-      log.debug('using DefaultFormatter');
-      return new formatters.DefaultFormatter(config, log, scoreRender);
-    }
-
-    if (!width && height) {
-      log.debug('using UndefinedWidthFormatter');
-      return new formatters.UndefinedWidthFormatter();
-    }
-
-    if (!width && !height) {
-      log.debug('using UndefinedWidthFormatter');
-      return new formatters.UndefinedWidthFormatter();
-    }
-
-    throw new Error('unreachable');
   }
 }
