@@ -1,4 +1,5 @@
 import * as rendering from '@/rendering';
+import * as data from '@/data';
 import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { Fragment } from './fragment';
@@ -28,12 +29,22 @@ export class Measure {
   public readonly name = 'measure';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.measureRender.rect;
   }
 
   /** Returns the fragments of the measure. */
   getFragments(): Fragment[] {
     return this.fragments;
+  }
+
+  /** Returns the max number of parts in this score. */
+  getPartCount(): number {
+    return Math.max(0, ...this.fragments.map((fragment) => fragment.getPartCount()));
+  }
+
+  /** Returns the jumps that occur in this measure. */
+  getJumps(): data.Jump[] {
+    return this.measureRender.jumps;
   }
 }

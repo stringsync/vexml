@@ -39,7 +39,7 @@ export class Voice {
   public readonly name = 'voice';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.voiceRender.rect;
   }
 

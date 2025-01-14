@@ -1,10 +1,24 @@
-export * from './vexml';
-export * from './legacyrendering/events';
+export * from './elements/eventmappingfactory';
 export { MusicXMLParser, MXLParser } from './parsing';
 export { Renderer, type Config, CONFIG, DEFAULT_CONFIG } from './rendering';
 export { Score } from './elements';
+export type {
+  EventMap,
+  EventType,
+  ClickEvent,
+  LongPressEvent,
+  EnterEvent,
+  ExitEvent,
+  ScrollEvent,
+  AnyEventListener,
+  ClickEventListener,
+  LongpressEventListener,
+  EnterEventListener,
+  ExitEventListener,
+  ScrollEventListener,
+  AnyEvent,
+} from './elements';
 export { type SchemaDescriptor, type SchemaType, type SchemaConfig } from './schema';
-export { type LegacyRendering, type Gap } from './legacyrendering';
 export { SimpleCursor } from './components';
 export { CONFIG_SCHEMA as LEGACY_CONFIG_SCHEMA, DEFAULT_CONFIG as LEGACY_DEFAULT_CONFIG } from './config';
 export type {

@@ -1,24 +1,72 @@
 import * as events from '@/events';
+import * as components from '@/components';
+import * as rendering from '@/rendering';
 import { EventListener } from '@/events';
 import { EventMap } from './types';
+import { EventMappingFactory } from './eventmappingfactory';
+import { Locator } from './locator';
+import { TimestampLocator } from '../playback';
 
 export class Events {
-  private vexmlEventTopic = new events.Topic<EventMap>();
-  private nativeEventTopic = new events.Topic<HTMLElementEventMap>();
+  private constructor(
+    private config: rendering.Config,
+    private root: components.Root,
+    private vexmlEventTopic: events.Topic<EventMap>,
+    private nativeEventTopic: events.Topic<HTMLElementEventMap>,
+    private bridge: events.NativeBridge<keyof EventMap>
+  ) {}
 
-  addEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): number {
-    throw new Error('not implemented');
+  static create(
+    config: rendering.Config,
+    root: components.Root,
+    elementLocator: Locator,
+    timestampLocator: TimestampLocator
+  ): Events {
+    const vexmlEventTopic = new events.Topic<EventMap>();
+    const nativeEventTopic = new events.Topic<HTMLElementEventMap>();
+    const mappings = EventMappingFactory.create(
+      root,
+      elementLocator,
+      timestampLocator,
+      vexmlEventTopic,
+      config.INPUT_TYPE
+    );
+    const bridge = new events.NativeBridge<keyof EventMap>(root, mappings, nativeEventTopic, {
+      touchstart: { passive: true },
+      touchmove: { passive: true },
+      touchcancel: { passive: true },
+      touchend: { passive: true },
+    });
+    return new Events(config, root, vexmlEventTopic, nativeEventTopic, bridge);
   }
 
-  removeEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): void {
-    throw new Error('not implemented');
+  addEventListener<N extends keyof EventMap>(type: N, listener: EventListener<EventMap[N]>): number {
+    if (!this.vexmlEventTopic.hasSubscribers(type) && !this.bridge.isActivated(type)) {
+      this.bridge.activate(type);
+    }
+    return this.vexmlEventTopic.subscribe(type, listener);
+  }
+
+  removeEventListener(...ids: number[]): void {
+    for (const id of ids) {
+      const subscription = this.vexmlEventTopic.unsubscribe(id);
+      if (!subscription) {
+        return;
+      }
+
+      if (!this.vexmlEventTopic.hasSubscribers(subscription.name) && this.bridge.isActivated(subscription.name)) {
+        this.bridge.deactivate(subscription.name);
+      }
+    }
   }
 
   removeAllEventListeners(): void {
-    throw new Error('not implemented');
+    this.bridge.deactivateAll();
+    this.vexmlEventTopic.unsubscribeAll();
+    this.nativeEventTopic.unsubscribeAll();
   }
 
   dispatchNativeEvent(event: Event): void {
-    throw new Error('not implemented');
+    this.root.getOverlay().getElement().dispatchEvent(event);
   }
 }

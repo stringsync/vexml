@@ -27,12 +27,22 @@ export class System {
   public readonly name = 'system';
 
   /** Returns the bounding box of the element. */
-  get rect() {
+  rect() {
     return this.systemRender.rect;
+  }
+
+  /** Returns the system index that this system resides in. */
+  getIndex(): number {
+    return this.systemRender.key.systemIndex;
   }
 
   /** Returns the measures of the system. */
   getMeasures(): Measure[] {
     return this.measures;
+  }
+
+  /** Returns the max number of parts in this score. */
+  getPartCount(): number {
+    return Math.max(0, ...this.measures.map((measure) => measure.getPartCount()));
   }
 }

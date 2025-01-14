@@ -2,59 +2,14 @@ import * as spatial from '@/spatial';
 import * as events from '@/events';
 import * as util from '@/util';
 import * as playback from '@/playback';
-import { InputType } from './types';
-import { InteractionModelType } from './interactions';
+import * as components from '@/components';
 import { Locator } from './locator';
+import { EventMap } from './types';
+import { InputType } from '@/rendering';
+import { VexmlElement } from './types';
 
 const MOUSEDOWN_MOVEMENT_TOLERANCE = 10;
 const LONGPRESS_DURATION_MS = 500;
-
-/** Events that vexml dispatches to listeners. */
-export type EventMap = {
-  click: {
-    type: 'click';
-    timestampMs: number | null;
-    closestTarget: InteractionModelType;
-    targets: InteractionModelType[];
-    point: spatial.Point;
-    native: MouseEvent | TouchEvent;
-  };
-  enter: {
-    type: 'enter';
-    timestampMs: number | null;
-    target: InteractionModelType;
-    point: spatial.Point;
-    native: MouseEvent | TouchEvent;
-  };
-  exit: {
-    type: 'exit';
-    timestampMs: number | null;
-    target: InteractionModelType;
-    point: spatial.Point;
-    native: MouseEvent | TouchEvent;
-  };
-  longpress: {
-    type: 'longpress';
-    timestampMs: number | null;
-    target: InteractionModelType;
-    point: spatial.Point;
-    native: MouseEvent | TouchEvent;
-  };
-  scroll: {
-    type: 'scroll';
-    scrollX: number;
-    scrollY: number;
-  };
-};
-
-export type EventType = keyof EventMap;
-
-export type AnyEventListener = (event: EventMap[EventType]) => void;
-export type ClickEventListener = (event: EventMap['click']) => void;
-export type EnterEventListener = (event: EventMap['enter']) => void;
-export type ExitEventListener = (event: EventMap['exit']) => void;
-export type LongpressEventListener = (event: EventMap['longpress']) => void;
-export type ScrollEventListener = (event: EventMap['scroll']) => void;
 
 type ClientPoint = {
   clientX: number;
@@ -63,41 +18,26 @@ type ClientPoint = {
 
 type LocateResult = {
   point: spatial.Point;
-  targets: InteractionModelType[];
-  closestTarget: InteractionModelType | null;
+  target: VexmlElement | null;
   timestampMs: number | null;
 };
 
 export class EventMappingFactory {
-  private scrollContainer: Element;
-  private overlayElement: Element;
-  private renderingLocator: Locator;
-  private timestampLocator: playback.TimestampLocator;
-  private topic: events.Topic<EventMap>;
+  private constructor(
+    private root: components.Root,
+    private elementLocator: Locator,
+    private timestampLocator: playback.TimestampLocator,
+    private topic: events.Topic<EventMap>
+  ) {}
 
-  private constructor(opts: {
-    scrollContainer: Element;
-    overlayElement: Element;
-    renderingLocator: Locator;
-    timestampLocator: playback.TimestampLocator;
-    topic: events.Topic<EventMap>;
-  }) {
-    this.scrollContainer = opts.scrollContainer;
-    this.overlayElement = opts.overlayElement;
-    this.renderingLocator = opts.renderingLocator;
-    this.timestampLocator = opts.timestampLocator;
-    this.topic = opts.topic;
-  }
-
-  static create(opts: {
-    scrollContainer: Element;
-    overlayElement: Element;
-    inputType: InputType;
-    renderingLocator: Locator;
-    timestampLocator: playback.TimestampLocator;
-    topic: events.Topic<EventMap>;
-  }): events.EventMapping<Array<keyof EventMap>>[] {
-    return new EventMappingFactory(opts).create(opts.inputType);
+  static create(
+    root: components.Root,
+    elementLocator: Locator,
+    timestampLocator: playback.TimestampLocator,
+    topic: events.Topic<EventMap>,
+    inputType: InputType
+  ): events.EventMapping<Array<keyof EventMap>>[] {
+    return new EventMappingFactory(root, elementLocator, timestampLocator, topic).create(inputType);
   }
 
   private create(inputType: InputType): events.EventMapping<Array<keyof EventMap>>[] {
@@ -127,32 +67,34 @@ export class EventMappingFactory {
   private locate(clientPoint: ClientPoint): LocateResult {
     const point = this.point(clientPoint);
 
-    let targets = this.renderingLocator.locate(point);
-    targets = this.renderingLocator.sort(point, targets);
+    const targets = this.elementLocator.locate(point);
     const closestTarget = targets[0] ?? null;
 
     const timestampMs = this.timestampLocator.locate(point)?.ms ?? null;
 
-    return { point, targets, closestTarget, timestampMs };
+    return { point, target: closestTarget, timestampMs };
   }
 
   private point(clientPoint: ClientPoint): spatial.Point {
-    const rect = this.overlayElement.getBoundingClientRect();
+    const rect = this.root.getOverlay().getElement().getBoundingClientRect();
     const x = clientPoint.clientX - rect.left;
     const y = clientPoint.clientY - rect.top;
     return new spatial.Point(x, y);
   }
 
   private scroll(): events.EventMapping<['scroll', 'scroll']> {
+    const scrollContainer = this.root.getScrollContainer();
+
     return {
       src: 'scroll',
       vexml: ['scroll', 'scroll'],
       native: {
-        scroll: () => {
+        scroll: (event) => {
           this.topic.publish('scroll', {
             type: 'scroll',
-            scrollX: this.scrollContainer.scrollLeft,
-            scrollY: this.scrollContainer.scrollTop,
+            scrollX: scrollContainer.scrollLeft,
+            scrollY: scrollContainer.scrollTop,
+            native: event,
           });
         },
       },
@@ -172,7 +114,7 @@ export class EventMappingFactory {
         mousedown: (event) => {
           const mouseDownInvocation = Symbol();
 
-          const { point, closestTarget, timestampMs } = this.locate(event);
+          const { point, target: closestTarget, timestampMs } = this.locate(event);
           if (!closestTarget) {
             return;
           }
@@ -202,9 +144,9 @@ export class EventMappingFactory {
         },
         mouseup: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget, timestampMs } = this.locate(event);
+            const { point, target: closestTarget, timestampMs } = this.locate(event);
             if (closestTarget) {
-              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event, timestampMs });
+              this.topic.publish('click', { type: 'click', target: closestTarget, point, native: event, timestampMs });
             }
           }
           clearTimeout(timeout);
@@ -226,19 +168,19 @@ export class EventMappingFactory {
         mousemove: (event) => {
           const result = this.locate(event);
 
-          if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
+          if (lastResult && lastResult.target && lastResult.target !== result.target) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: lastResult.closestTarget,
+              target: lastResult.target,
               point: lastResult.point,
               native: event,
               timestampMs: lastResult.timestampMs,
             });
           }
-          if (result.closestTarget && result.closestTarget !== lastResult?.closestTarget) {
+          if (result.target && result.target !== lastResult?.target) {
             this.topic.publish('enter', {
               type: 'enter',
-              target: result.closestTarget,
+              target: result.target,
               point: result.point,
               native: event,
               timestampMs: result.timestampMs,
@@ -263,7 +205,7 @@ export class EventMappingFactory {
         touchstart: (event) => {
           const touchStartInvocation = Symbol();
 
-          const { point, closestTarget, timestampMs } = this.locate(event.touches[0]);
+          const { point, target: closestTarget, timestampMs } = this.locate(event.touches[0]);
           if (!closestTarget) {
             return;
           }
@@ -290,9 +232,9 @@ export class EventMappingFactory {
         },
         touchend: (event) => {
           if (isPending) {
-            const { point, targets, closestTarget, timestampMs } = this.locate(event.changedTouches[0]);
+            const { point, target: closestTarget, timestampMs } = this.locate(event.changedTouches[0]);
             if (closestTarget) {
-              this.topic.publish('click', { type: 'click', closestTarget, targets, point, native: event, timestampMs });
+              this.topic.publish('click', { type: 'click', target: closestTarget, point, native: event, timestampMs });
             }
           }
           clearTimeout(timeout);
@@ -316,20 +258,20 @@ export class EventMappingFactory {
         touchmove: (event) => {
           const result = this.locate(event.touches[0]);
 
-          if (lastResult && lastResult.closestTarget && lastResult.closestTarget !== result.closestTarget) {
+          if (lastResult && lastResult.target && lastResult.target !== result.target) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: lastResult.closestTarget,
+              target: lastResult.target,
               point: lastResult.point,
               native: event,
               timestampMs: lastResult.timestampMs,
             });
           }
 
-          if (result.closestTarget && result.closestTarget !== lastResult?.closestTarget) {
+          if (result.target && result.target !== lastResult?.target) {
             this.topic.publish('enter', {
               type: 'enter',
-              target: result.closestTarget,
+              target: result.target,
               point: result.point,
               native: event,
               timestampMs: result.timestampMs,
@@ -339,10 +281,10 @@ export class EventMappingFactory {
           }
         },
         touchcancel: (event) => {
-          if (lastResult?.closestTarget) {
+          if (lastResult?.target) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: lastResult.closestTarget,
+              target: lastResult.target,
               point: lastResult.point,
               native: event,
               timestampMs: lastResult.timestampMs,
@@ -352,10 +294,10 @@ export class EventMappingFactory {
           }
         },
         touchend: (event) => {
-          if (lastResult?.closestTarget) {
+          if (lastResult?.target) {
             this.topic.publish('exit', {
               type: 'exit',
-              target: lastResult.closestTarget,
+              target: lastResult.target,
               point: lastResult.point,
               native: event,
               timestampMs: lastResult.timestampMs,

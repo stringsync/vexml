@@ -35,3 +35,7 @@ export const CLEF_SIGNS = new Enum([
  */
 export type AccidentalCode = EnumValues<typeof ACCIDENTAL_CODES>;
 export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', 'db', '+', '++'] as const);
+
+/** The different inputs a device could be interacting with a vexml rendering. */
+export type InputType = EnumValues<typeof INPUT_TYPES>;
+export const INPUT_TYPES = new Enum(['auto', 'mouse', 'touch', 'hybrid', 'none'] as const);

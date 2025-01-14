@@ -26,12 +26,23 @@ export class Part {
   public readonly name = 'part';
 
   /** Returns the bounding box of the element. */
-  get rect(): Rect {
+  rect(): Rect {
     return this.partRender.rect;
+  }
+
+  /**
+   * Returns the BPM.
+   */
+  getBpm(): number {
+    return this.document.getFragment(this.partRender.key).signature.metronome.bpm ?? 100;
   }
 
   /** Returns the staves of the part. */
   getStaves(): Stave[] {
     return this.staves;
+  }
+
+  getIndex(): number {
+    return this.partRender.key.partIndex;
   }
 }
