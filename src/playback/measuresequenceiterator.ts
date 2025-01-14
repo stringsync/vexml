@@ -134,12 +134,15 @@ class Repeat {
     for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
       const measure = measures[measureIndex];
 
+      const hasRepeatEnding = measure.jumps.some((jump) => jump.type === 'repeatending');
+
       for (const jump of measure.jumps) {
         if (jump.type === 'repeatstart') {
           startMeasureIndexes.push(measureIndex);
         }
 
-        if (jump.type === 'repeatend') {
+        // We only process repeatends if there is no repeatending in the same measure.
+        if (!hasRepeatEnding && jump.type === 'repeatend') {
           // Not all repeatends have a corresponding repeatstart. Assume they're supposed to repeat from the beginning.
           const startMeasureIndex = startMeasureIndexes.pop() ?? 0;
           result.push(
@@ -154,6 +157,15 @@ class Repeat {
         }
 
         if (jump.type === 'repeatending') {
+          const hasPreviousRepeatEnding =
+            measureIndex > 0 && measures.at(measureIndex - 1)!.jumps.some((jump) => jump.type === 'repeatending');
+          const isTerminalRepeatEnding =
+            measureIndex === measures.length - 1 ||
+            measures.at(measureIndex + 1)!.jumps.every((jump) => jump.type !== 'repeatending');
+          if (hasPreviousRepeatEnding && isTerminalRepeatEnding) {
+            continue;
+          }
+
           // Not all repeatendings have a corresponding repeatstart. Assume they're supposed to repeat from the
           // beginning.
           const startMeasureIndex = startMeasureIndexes.pop() ?? 0;
