@@ -15,12 +15,12 @@ export class TimestampLocator {
 
   static create(score: elements.Score, sequences: Sequence[]): TimestampLocator {
     const systems = score.getSystems().map((system) => {
-      const yRange = new util.NumberRange(system.rect().getMinY(), system.rect().getMaxY());
+      const yRange = new util.NumberRange(system.rect().top(), system.rect().bottom());
 
       const entries = new Array<SequenceEntry>();
       for (const sequence of sequences) {
         entries.push(
-          ...sequence.getEntries().filter((entry) => entry.mostRecentElement.getSystemIndex() === system.getIndex())
+          ...sequence.getEntries().filter((entry) => entry.anchorElement.getSystemIndex() === system.getIndex())
         );
       }
 
@@ -45,9 +45,9 @@ export class TimestampLocator {
         if (!entry.xRange.includes(point.x)) {
           continue;
         }
-        const startMs = entry.durationRange.getStart().ms;
-        const stopMs = entry.durationRange.getEnd().ms;
-        const alpha = (point.x - entry.xRange.getStart()) / entry.xRange.getSize();
+        const startMs = entry.durationRange.start.ms;
+        const stopMs = entry.durationRange.end.ms;
+        const alpha = (point.x - entry.xRange.start) / entry.xRange.getSize();
         const timestampMs = util.lerp(startMs, stopMs, alpha);
         return Duration.ms(timestampMs);
       }

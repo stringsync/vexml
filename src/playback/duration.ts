@@ -30,27 +30,27 @@ export class Duration {
     this._ms = ms;
   }
 
-  eq(duration: Duration) {
+  isEqual(duration: Duration) {
     return this.ms === duration.ms;
   }
 
-  plus(duration: Duration) {
+  add(duration: Duration) {
     return Duration.ms(duration.ms + this.ms);
   }
 
-  gt(duration: Duration) {
+  isGreaterThan(duration: Duration) {
     return this.ms > duration.ms;
   }
 
-  gteq(duration: Duration) {
+  isGreaterThanOrEqual(duration: Duration) {
     return this.ms >= duration.ms;
   }
 
-  lt(duration: Duration) {
+  isLessThan(duration: Duration) {
     return this.ms < duration.ms;
   }
 
-  lteq(duration: Duration) {
+  isLessThanOrEqualTo(duration: Duration) {
     return this.ms <= duration.ms;
   }
 

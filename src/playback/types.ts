@@ -3,8 +3,8 @@ import { NumberRange } from '@/util';
 import { DurationRange } from './durationrange';
 
 export type SequenceEntry = {
-  mostRecentElement: elements.VoiceEntry;
-  elements: elements.VoiceEntry[];
+  anchorElement: elements.VoiceEntry;
+  activeElements: elements.VoiceEntry[];
   durationRange: DurationRange;
   xRange: NumberRange;
 };

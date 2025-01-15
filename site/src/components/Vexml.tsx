@@ -68,7 +68,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
+    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
@@ -81,7 +81,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
+    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
