@@ -2,9 +2,16 @@ import * as data from '@/data';
 import * as util from '@/util';
 import { Fraction } from './fraction';
 import { DynamicType } from './enums';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Dynamics {
-  constructor(private measureBeat: util.Fraction, private dynamicType: DynamicType) {}
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private measureBeat: util.Fraction,
+    private dynamicType: DynamicType
+  ) {}
 
   parse(): data.Dynamics {
     const duration = new Fraction(util.Fraction.zero()).parse();

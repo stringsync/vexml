@@ -8,10 +8,14 @@ import { SignatureChange } from './types';
 import { FragmentSignature } from './fragmentsignature';
 import { PartSignature } from './partsignature';
 import { StaveSignature } from './stavesignature';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 /** Signature tracks how subsignatures evolve as the piece progresses. */
 export class Signature {
   constructor(
+    private config: Config,
+    private log: Logger,
     private metronome: Metronome | null,
     private staveCounts: StaveCount[],
     private staveLineCounts: StaveLineCount[],
@@ -21,24 +25,26 @@ export class Signature {
     private changes: SignatureChange[]
   ) {}
 
-  static default(): Signature {
-    return new Signature(null, [], [], [], [], [], []);
+  static default(config: Config, log: Logger): Signature {
+    return new Signature(config, log, null, [], [], [], [], [], []);
   }
 
-  static builder(): SignatureBuilder {
-    return new SignatureBuilder();
+  static builder(config: Config, log: Logger): SignatureBuilder {
+    return new SignatureBuilder(config, log);
   }
 
   asFragmentSignature(): FragmentSignature {
-    return new FragmentSignature(this.getMetronome());
+    return new FragmentSignature(this.config, this.log, this.getMetronome());
   }
 
   asPartSignature(partId: string): PartSignature {
-    return new PartSignature(this.getStaveCount(partId));
+    return new PartSignature(this.config, this.log, this.getStaveCount(partId));
   }
 
   asStaveSignature(partId: string, staveNumber: number): StaveSignature {
     return new StaveSignature(
+      this.config,
+      this.log,
       this.getStaveLineCount(partId, staveNumber),
       this.getClef(partId, staveNumber),
       this.getKey(partId, staveNumber),
@@ -47,11 +53,11 @@ export class Signature {
   }
 
   getMetronome(): Metronome {
-    return this.metronome ?? Metronome.default();
+    return this.metronome ?? Metronome.default(this.config, this.log);
   }
 
   getStaveCount(partId: string): StaveCount {
-    return this.staveCounts.find((s) => s.getPartId() === partId) ?? StaveCount.default(partId);
+    return this.staveCounts.find((s) => s.getPartId() === partId) ?? StaveCount.default(this.config, this.log, partId);
   }
 
   getStaveCounts(): StaveCount[] {
@@ -61,7 +67,7 @@ export class Signature {
   getStaveLineCount(partId: string, staveNumber: number): StaveLineCount {
     return (
       this.staveLineCounts.find((s) => s.getPartId() === partId && s.getStaveNumber() === staveNumber) ??
-      StaveLineCount.default(partId, staveNumber)
+      StaveLineCount.default(this.config, this.log, partId, staveNumber)
     );
   }
 
@@ -72,7 +78,7 @@ export class Signature {
   getClef(partId: string, staveNumber: number): Clef {
     return (
       this.clefs.find((c) => c.getPartId() === partId && c.getStaveNumber() === staveNumber) ??
-      Clef.default(partId, staveNumber)
+      Clef.default(this.config, this.log, partId, staveNumber)
     );
   }
 
@@ -83,7 +89,7 @@ export class Signature {
   getKey(partId: string, staveNumber: number): Key {
     return (
       this.keys.find((k) => k.getPartId() === partId && k.getStaveNumber() === staveNumber) ??
-      Key.default(partId, staveNumber)
+      Key.default(this.config, this.log, partId, staveNumber)
     );
   }
 
@@ -98,7 +104,7 @@ export class Signature {
   getTime(partId: string, staveNumber: number): Time {
     return (
       this.times.find((t) => t.getPartId() === partId && t.getStaveNumber() === staveNumber) ??
-      Time.default(partId, staveNumber)
+      Time.default(this.config, this.log, partId, staveNumber)
     );
   }
 
@@ -116,7 +122,7 @@ export class Signature {
 }
 
 class SignatureBuilder {
-  private previousSignature = Signature.default();
+  private previousSignature: Signature;
   private metronome: Metronome | null = null;
 
   // partId -> StaveCount
@@ -133,6 +139,10 @@ class SignatureBuilder {
 
   // partId -> staveNumber -> Time
   private times = new Map<string, Map<number, Time>>();
+
+  constructor(private config: Config, private log: Logger) {
+    this.previousSignature = Signature.default(this.config, this.log);
+  }
 
   setPreviousSignature(signature: Signature): SignatureBuilder {
     this.previousSignature = signature;
@@ -215,11 +225,11 @@ class SignatureBuilder {
       ...this.diffTimes(times),
     ];
 
-    return new Signature(metronome, staveCounts, staveLineCounts, clefs, keys, times, changes);
+    return new Signature(this.config, this.log, metronome, staveCounts, staveLineCounts, clefs, keys, times, changes);
   }
 
   private buildMetronome(): Metronome {
-    return this.metronome ?? Metronome.default();
+    return this.metronome ?? Metronome.default(this.config, this.log);
   }
 
   private buildStaveCounts(): StaveCount[] {

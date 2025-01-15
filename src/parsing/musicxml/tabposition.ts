@@ -1,10 +1,18 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class TabPosition {
-  private constructor(private fret: string, private string: number, private harmonic: boolean) {}
+  private constructor(
+    private config: Config,
+    private log: Logger,
+    private fret: string,
+    private string: number,
+    private harmonic: boolean
+  ) {}
 
-  static create(musicXML: { note: musicxml.Note }): TabPosition[] {
+  static create(config: Config, log: Logger, musicXML: { note: musicxml.Note }): TabPosition[] {
     const notehead = musicXML.note.getNotehead();
     const dead = notehead === 'cross' || notehead === 'x';
 
@@ -26,7 +34,7 @@ export class TabPosition {
           const fret = dead ? 'X' : frets[index] ?? '0';
           const string = strings[index] ?? 1;
           const harmonic = harmonics[index] === 'natural' || harmonics[index] === 'artificial';
-          tabPositions[index] = new TabPosition(fret, string, harmonic);
+          tabPositions[index] = new TabPosition(config, log, fret, string, harmonic);
         }
 
         return tabPositions;

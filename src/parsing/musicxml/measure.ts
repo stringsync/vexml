@@ -5,9 +5,13 @@ import { MeasureEvent, StaveEvent } from './types';
 import { Signature } from './signature';
 import { MeasureContext, SystemContext } from './contexts';
 import { JumpGroup } from './jumpgroup';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Measure {
   private constructor(
+    private config: Config,
+    private log: Logger,
     private initialSignature: Signature,
     private index: number,
     private label: number | null,
@@ -25,6 +29,8 @@ export class Measure {
   }
 
   static create(
+    config: Config,
+    log: Logger,
     initialSignature: Signature,
     index: number,
     label: number | null,
@@ -34,7 +40,7 @@ export class Measure {
     startBarlineStyle: data.BarlineStyle | null,
     endBarlineStyle: data.BarlineStyle | null
   ): Measure {
-    const fragments = Measure.fragmentize(events, initialSignature, partIds);
+    const fragments = Measure.fragmentize(config, log, events, initialSignature, partIds);
 
     // TODO: Incoporate this when calculating jumps.
     const repetitionSymbols = new Array<data.RepetitionSymbol>();
@@ -46,6 +52,8 @@ export class Measure {
     }
 
     return new Measure(
+      config,
+      log,
       initialSignature,
       index,
       label,
@@ -59,6 +67,8 @@ export class Measure {
   }
 
   private static fragmentize(
+    config: Config,
+    log: Logger,
     measureEvents: MeasureEvent[],
     initialSignature: Signature,
     partIds: string[]
@@ -80,7 +90,7 @@ export class Measure {
     for (const measureBeat of measureBeats) {
       const measureBeatEvents = sortedEvents.filter((e) => measureBeat.toDecimal() === e.measureBeat.toDecimal());
 
-      const builder = Signature.builder().setPreviousSignature(signature);
+      const builder = Signature.builder(config, log).setPreviousSignature(signature);
 
       // Apply all the signature-changing events.
       for (const event of measureBeatEvents) {
@@ -109,7 +119,7 @@ export class Measure {
       // If the signature changed and there are events in the buffer, materialize a fragment with the **old** signature.
       const nextSignature = builder.build();
       if (nextSignature.hasChanges() && buffer.length > 0) {
-        fragments.push(Fragment.create(signature, buffer, partIds));
+        fragments.push(Fragment.create(config, log, signature, buffer, partIds));
         buffer = [];
       }
 
@@ -121,7 +131,7 @@ export class Measure {
     }
 
     if (buffer.length > 0) {
-      fragments.push(Fragment.create(signature, buffer, partIds));
+      fragments.push(Fragment.create(config, log, signature, buffer, partIds));
     }
 
     return fragments;

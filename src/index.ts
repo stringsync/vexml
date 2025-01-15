@@ -1,3 +1,4 @@
+export { type RenderMusicXMLOptions, renderMusicXML, type RenderMXLOptions, renderMXL } from './render';
 export * from './elements/eventmappingfactory';
 export { MusicXMLParser, MXLParser } from './parsing';
 export { type Config, CONFIG, DEFAULT_CONFIG } from './config';
