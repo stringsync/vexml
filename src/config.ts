@@ -22,6 +22,10 @@ export const CONFIG = {
     help: 'INPUT_TYPE specifies the type of input to use.',
     choices: ['auto', 'mouse', 'touch', 'hybrid', 'none'] as const,
   }),
+  DEFAULT_BPM: t.number({
+    defaultValue: 100,
+    help: 'DEFAULT_BPM is the default beats per minute value. It can get overridden by metronome marks.',
+  }),
   SCORE_PADDING_TOP: t.number({
     defaultValue: 40,
     help: 'TOP_PADDING is the vertical distance from the top of the rendering.',

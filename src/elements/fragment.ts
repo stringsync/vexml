@@ -38,7 +38,7 @@ export class Fragment {
 
   /** Returns the bpm of the fragment. */
   getBpm(): number {
-    return this.document.getFragment(this.fragmentRender.key).signature.metronome.bpm ?? 100;
+    return this.document.getFragment(this.fragmentRender.key).signature.metronome.bpm || 1; // disallow 0;
   }
 
   /** Returns the max number of parts in this score. */

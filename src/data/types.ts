@@ -341,11 +341,16 @@ export type Fraction = {
 
 export type Metronome = {
   type: 'metronome';
+
+  /**
+   * The BPM used for playback. It should match `displayBpm` if provided.
+   */
+  bpm: number;
   name?: string;
   parenthesis?: boolean;
   duration?: string;
   dots?: number;
-  bpm?: number;
+  displayBpm?: number;
   duration2?: string;
   dots2?: number;
 };
