@@ -37,7 +37,8 @@ export class Fragment {
 
     return {
       type: 'fragment',
-      width: null,
+      kind: 'musical',
+      minWidth: null,
       signature: this.signature.asFragmentSignature().parse(),
       parts: this.parts.map((part) => part.parse(fragmentCtx)),
     };
