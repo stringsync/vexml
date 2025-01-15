@@ -100,24 +100,29 @@ export type Jump =
   | { type: 'repeatend'; times: number }
   | { type: 'repeatending'; times: number; label: string; endingBracketType: EndingBracketType };
 
-export type Fragment = {
+export type Fragment = MusicalFragment | NonMusicalFragment;
+
+export type MusicalFragment = {
   type: 'fragment';
+  kind: 'musical';
   signature: FragmentSignature;
   parts: Part[];
-  width: number | null;
+  minWidth: number | null;
+};
+
+export type NonMusicalFragment = {
+  type: 'fragment';
+  kind: 'nonmusical';
+  signature: FragmentSignature;
+  parts: Part[];
+  minWidth: number | null;
+  label: string | null;
+  durationMs: number;
 };
 
 export type FragmentSignature = {
   type: 'fragmentsignature';
   metronome: Metronome;
-};
-
-export type Gap = {
-  type: 'gap';
-  text: string | null;
-  width: number | null;
-  parts: Part[];
-  durationMs: number;
 };
 
 export type Part = {

@@ -362,7 +362,7 @@ export class Stave {
       currentMetronome.displayBpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
 
     if (hasMetronome && (isAbsolutelyFirst || didMetronomeChange)) {
-      vexflowStave.setTempo(currentMetronome, -METRONOME_TOP_PADDING);
+      vexflowStave.setTempo({ ...currentMetronome, bpm: currentMetronome.displayBpm }, -METRONOME_TOP_PADDING);
     }
   }
 

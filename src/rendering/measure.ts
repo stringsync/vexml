@@ -77,8 +77,13 @@ export class Measure {
 
     for (let fragmentIndex = 0; fragmentIndex < fragmentCount; fragmentIndex++) {
       const key: FragmentKey = { ...this.key, fragmentIndex };
-      const fragmentRender = new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
-      widths.push(fragmentRender.rect.w);
+      const fragment = this.document.getFragment(key);
+      if (typeof fragment.minWidth === 'number' && fragment.minWidth > 0) {
+        widths.push(fragment.minWidth);
+      } else {
+        const fragmentRender = new Fragment(this.config, this.log, this.document, key, Point.origin(), null).render();
+        widths.push(fragmentRender.rect.w);
+      }
     }
 
     const total = util.sum(widths);

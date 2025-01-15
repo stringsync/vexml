@@ -3,6 +3,7 @@ import * as data from '@/data';
 import { Rect } from '@/spatial';
 import { Label } from './label';
 import { ClefSign, StemDirection } from './enums';
+import { GapOverlay } from './gapoverlay';
 
 export interface Drawable {
   setContext(ctx: vexflow.RenderContext): this;
@@ -129,6 +130,7 @@ export type FragmentRender = {
   partLabelGroupRender: PartLabelGroupRender | null;
   partRenders: PartRender[];
   vexflowStaveConnectors: vexflow.StaveConnector[];
+  gapOverlay: GapOverlay | null;
 };
 
 /**

@@ -259,6 +259,13 @@ export class Score {
         v.setContext(ctx).draw();
       });
 
+    // Draw gap overlays.
+    fragmentRenders
+      .map((f) => f.gapOverlay)
+      .forEach((g) => {
+        g?.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {
