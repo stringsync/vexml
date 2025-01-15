@@ -353,13 +353,13 @@ export class Stave {
     const previousMetronome = this.document.getPreviousFragment(this.key)?.signature.metronome;
 
     const didMetronomeChange =
-      currentMetronome.bpm !== previousMetronome?.bpm ||
+      currentMetronome.displayBpm !== previousMetronome?.displayBpm ||
       currentMetronome.dots !== previousMetronome?.dots ||
       currentMetronome.dots2 !== previousMetronome?.dots2 ||
       currentMetronome.duration !== previousMetronome?.duration;
 
     const hasMetronome =
-      currentMetronome.bpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
+      currentMetronome.displayBpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
 
     if (hasMetronome && (isAbsolutelyFirst || didMetronomeChange)) {
       vexflowStave.setTempo(currentMetronome, -METRONOME_TOP_PADDING);
