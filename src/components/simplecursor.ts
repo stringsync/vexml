@@ -1,4 +1,4 @@
-const STRINGSYNC_RED = '#FC354C';
+const STRINGSYNC_RED = 'rgba(252, 53, 76, 0.8)';
 
 export class SimpleCursor {
   private element: HTMLElement;
@@ -11,7 +11,6 @@ export class SimpleCursor {
     const element = document.createElement('div');
     element.classList.add('vexml-cursor');
     element.style.display = 'block';
-    element.style.width = '1.5px';
     element.style.position = 'absolute';
     element.style.backgroundColor = color;
 

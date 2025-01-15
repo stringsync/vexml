@@ -34,6 +34,11 @@ export class Measure {
     return this.measureRender.rect;
   }
 
+  /** Returns whether this measure is the last in the system. */
+  isLastMeasureInSystem(): boolean {
+    return this.document.isLastMeasure(this.measureRender.key);
+  }
+
   /** Returns the fragments of the measure. */
   getFragments(): Fragment[] {
     return this.fragments;
