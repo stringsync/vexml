@@ -8,7 +8,7 @@ export class Metronome {
   constructor(
     private config: Config,
     private log: Logger,
-    private bpm: number,
+    private playbackBpm: number,
     private opts: {
       name?: string;
       parenthesis?: boolean;
@@ -21,7 +21,7 @@ export class Metronome {
   ) {}
 
   static default(config: Config, log: Logger): Metronome {
-    return new Metronome(config, log, config.DEFAULT_BPM, {});
+    return new Metronome(config, log, config.DEFAULT_PLAYBACK_BPM, {});
   }
 
   static create(
@@ -37,7 +37,13 @@ export class Metronome {
       case 'note':
         const duration2 = conversions.fromNoteTypeToDurationType(musicXML.mark.right.unit) ?? undefined;
         const dots2 = musicXML.mark.right.dotCount;
-        return new Metronome(config, log, config.DEFAULT_BPM, { parenthesis, duration, dots, duration2, dots2 });
+        return new Metronome(config, log, config.DEFAULT_PLAYBACK_BPM, {
+          parenthesis,
+          duration,
+          dots,
+          duration2,
+          dots2,
+        });
       case 'bpm':
         const displayBpm = musicXML.mark.right.bpm;
         return new Metronome(config, log, displayBpm, { parenthesis, duration, dots, displayBpm });
@@ -47,7 +53,7 @@ export class Metronome {
   parse(): data.Metronome {
     return {
       type: 'metronome',
-      bpm: this.bpm,
+      playbackBpm: this.playbackBpm,
       ...this.opts,
     };
   }

@@ -22,9 +22,11 @@ export const CONFIG = {
     help: 'INPUT_TYPE specifies the type of input to use.',
     choices: ['auto', 'mouse', 'touch', 'hybrid', 'none'] as const,
   }),
-  DEFAULT_BPM: t.number({
+  DEFAULT_PLAYBACK_BPM: t.number({
     defaultValue: 100,
-    help: 'DEFAULT_BPM is the default beats per minute value. It can get overridden by metronome marks.',
+    help:
+      'DEFAULT_PLAYBACK_BPM is the default beats per minute value used for playback. ' +
+      'It can get overridden by metronomes specified in the original document.',
   }),
   SCORE_PADDING_TOP: t.number({
     defaultValue: 40,

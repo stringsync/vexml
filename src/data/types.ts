@@ -345,7 +345,7 @@ export type Metronome = {
   /**
    * The BPM used for playback. It should match `displayBpm` if provided.
    */
-  bpm: number;
+  playbackBpm: number;
   name?: string;
   parenthesis?: boolean;
   duration?: string;
