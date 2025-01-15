@@ -1,6 +1,6 @@
 export class NumberRange {
-  private start: number;
-  private end: number;
+  public readonly start: number;
+  public readonly end: number;
 
   constructor(start: number, end: number) {
     if (start > end) {
@@ -8,14 +8,6 @@ export class NumberRange {
     }
     this.start = start;
     this.end = end;
-  }
-
-  getStart(): number {
-    return this.start;
-  }
-
-  getEnd(): number {
-    return this.end;
   }
 
   getSize(): number {

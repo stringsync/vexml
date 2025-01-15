@@ -19,12 +19,7 @@ export class Rect implements Shape {
   }
 
   static fromShape(shape: Shape) {
-    return new Rect(
-      shape.getMinX(),
-      shape.getMinY(),
-      shape.getMaxX() - shape.getMinX(),
-      shape.getMaxY() - shape.getMinY()
-    );
+    return new Rect(shape.left(), shape.top(), shape.right() - shape.left(), shape.bottom() - shape.top());
   }
 
   static empty() {
@@ -90,20 +85,20 @@ export class Rect implements Shape {
     return { x: this.x, y: this.y, w: this.w, h: this.h };
   }
 
-  getMinX(): number {
+  left(): number {
     return this.x;
   }
 
-  getMaxX(): number {
+  right(): number {
     return this.x + this.w;
   }
 
-  getMinY(): number {
+  top(): number {
     // NOTE: This assumes that the rectangle is not rotated.
     return this.y;
   }
 
-  getMaxY(): number {
+  bottom(): number {
     // NOTE: This assumes that the rectangle is not rotated.
     return this.y + this.h;
   }

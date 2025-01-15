@@ -65,7 +65,7 @@ export class Cursor {
           .filter((part) => part.getIndex() === partIndex)
           .map((part) => part.rect())
       );
-      const yRange = new util.NumberRange(rect.getMinY(), rect.getMaxY());
+      const yRange = new util.NumberRange(rect.top(), rect.bottom());
       systemPartYRanges.push(yRange);
     }
 
@@ -78,7 +78,7 @@ export class Cursor {
       const hasPrevious = index > 0;
       const hasNext = index < sequence.getCount() - 1;
 
-      const element = sequenceEntry.mostRecentElement;
+      const element = sequenceEntry.anchorElement;
 
       util.assertDefined(element);
 
@@ -88,7 +88,7 @@ export class Cursor {
       util.assertDefined(yRange);
 
       const x = element.rect().center().x;
-      const y = yRange.getStart();
+      const y = yRange.start;
       const w = CURSOR_WIDTH_PX;
       const h = yRange.getSize();
 
@@ -118,13 +118,15 @@ export class Cursor {
 
   getState(): CursorState {
     const state = this.states.at(this.index);
+    // TODO: We need a way to represent a zero state, when the sequence validly has no entries. Maybe we update the
+    // signature to be nullable.
     util.assertDefined(state);
 
     if (this.alpha === 0) {
       return { ...state };
     }
 
-    const x = util.lerp(state.sequenceEntry.xRange.getStart(), state.sequenceEntry.xRange.getEnd(), this.alpha);
+    const x = util.lerp(state.sequenceEntry.xRange.start, state.sequenceEntry.xRange.end, this.alpha);
     const y = state.cursorRect.y;
     const w = state.cursorRect.w;
     const h = state.cursorRect.h;
@@ -166,8 +168,8 @@ export class Cursor {
     const entry = this.sequence.getEntry(index);
     util.assertNotNull(entry);
 
-    const left = entry.durationRange.getStart();
-    const right = entry.durationRange.getEnd();
+    const left = entry.durationRange.start;
+    const right = entry.durationRange.end;
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
     this.update(index, alpha);

@@ -13,6 +13,7 @@ import { EventMap } from './types';
 import { System } from './system';
 import { Events } from './events';
 import { Locator } from './locator';
+import { Measure } from './measure';
 
 /** Score is a rendered musical score. */
 export class Score {
@@ -81,6 +82,11 @@ export class Score {
   /** Returns the systems of the score. */
   getSystems(): System[] {
     return this.systems;
+  }
+
+  /** Returns the measures of the score. */
+  getMeasures(): Measure[] {
+    return this.systems.flatMap((system) => system.getMeasures());
   }
 
   /** Returns the duration of the score in milliseconds. */

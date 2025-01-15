@@ -19,19 +19,19 @@ export class Circle implements Shape {
     return this.center().distance(point) <= this.r;
   }
 
-  getMinX() {
+  left() {
     return this.x - this.r;
   }
 
-  getMaxX() {
+  right() {
     return this.x + this.r;
   }
 
-  getMinY() {
+  top() {
     return this.y - this.r;
   }
 
-  getMaxY() {
+  bottom() {
     return this.y + this.r;
   }
 }

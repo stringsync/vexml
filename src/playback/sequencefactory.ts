@@ -1,12 +1,13 @@
 import * as elements from '@/elements';
 import * as util from '@/util';
+import { NumberRange } from '@/util';
 import { Duration } from './duration';
 import { Sequence } from './sequence';
 import { SequenceEntry } from './types';
 import { DurationRange } from './durationrange';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 
-const LAST_MEASURE_XRANGE_PADDING_RIGHT = 6;
+const LAST_MEASURE_X_RANGE_PADDING_RIGHT = 10;
 
 type SequenceEventType = 'start' | 'stop';
 
@@ -15,6 +16,13 @@ type SequenceEvent = {
   time: Duration;
   element: elements.VoiceEntry;
 };
+
+type VoiceEntryRelationship =
+  | 'normal'
+  | 'valid-jump-forwards'
+  | 'valid-jump-backwards'
+  | 'progressing-systems'
+  | 'backwards-formatting-edge-case';
 
 export class SequenceFactory {
   constructor(private score: elements.Score) {}
@@ -37,14 +45,11 @@ export class SequenceFactory {
   private getSequenceEvents(partIndex: number): SequenceEvent[] {
     const events = new Array<SequenceEvent>();
 
-    const measures = this.score
-      .getSystems()
-      .flatMap((system) => system.getMeasures())
-      .map((measure, index) => ({
-        index,
-        fragments: measure.getFragments(),
-        jumps: measure.getJumps(),
-      }));
+    const measures = this.score.getMeasures().map((measure, index) => ({
+      index,
+      fragments: measure.getFragments(),
+      jumps: measure.getJumps(),
+    }));
 
     const iterator = new MeasureSequenceIterator(measures);
 
@@ -67,14 +72,14 @@ export class SequenceFactory {
 
         for (const voiceEntry of voiceEntries) {
           // NOTE: getStartMeasureBeat() is relative to the start of the measure.
-          const start = measureStartTime.plus(Duration.minutes(voiceEntry.getStartMeasureBeat().toDecimal() / bpm));
+          const start = measureStartTime.add(Duration.minutes(voiceEntry.getStartMeasureBeat().toDecimal() / bpm));
           const duration = Duration.minutes(voiceEntry.getBeatCount().toDecimal() / bpm);
-          const stop = start.plus(duration);
+          const stop = start.add(duration);
 
           events.push({ type: 'start', time: start, element: voiceEntry });
           events.push({ type: 'stop', time: stop, element: voiceEntry });
 
-          if (stop.gt(nextMeasureStartTime)) {
+          if (stop.isGreaterThan(nextMeasureStartTime)) {
             nextMeasureStartTime = stop;
           }
         }
@@ -89,98 +94,155 @@ export class SequenceFactory {
   private toSequenceEntries(events: SequenceEvent[]): SequenceEntry[] {
     const entries = new Array<SequenceEntry>();
 
-    let time = Duration.zero();
-    const elements = new Array<elements.VoiceEntry>();
-    let mostRecentElement: elements.VoiceEntry | null = null;
-
-    for (let index = 0; index < events.length; index++) {
-      const currentEvent = events[index];
-      const nextEvent = events[index + 1];
-
-      if (currentEvent.type === 'start') {
-        mostRecentElement = currentEvent.element;
-        elements.push(currentEvent.element);
-      }
-
-      if (currentEvent.type === 'stop') {
-        elements.splice(elements.indexOf(currentEvent.element), 1);
-      }
-
-      if (nextEvent && elements.length > 0) {
-        const start = time;
-        const stop = nextEvent.time;
-        const durationRange = new DurationRange(start, stop);
-        time = stop;
-        util.assertNotNull(mostRecentElement);
-        // For now, the xRange will be initialized to be empty. After we've materialized all the sequence entries, we
-        // will go back and fill in the xRange values.
-        const xRange = new util.NumberRange(0, 0);
-        entries.push({
-          mostRecentElement,
-          elements: [...elements],
-          durationRange,
-          xRange,
-        });
-      }
+    if (events.length === 0) {
+      return entries;
     }
 
-    const measures = this.score.getSystems().flatMap((system) => system.getMeasures());
+    let anchorElement = events.at(0)!.element;
+    let activeElements = new Array<elements.VoiceEntry>();
+    let t1 = Duration.ms(-1);
+    let t2 = Duration.ms(-1);
+    let x1 = -1;
+    let x2 = -1;
 
-    // Fix the xRange values, now that we can look ahead easily.
-    for (let index = 0; index < entries.length; index++) {
-      const isLast = index === entries.length - 1;
+    function publish() {
+      const durationRange = new DurationRange(t1, t2);
+      const xRange = new NumberRange(x1, x2);
+      entries.push({ anchorElement, activeElements, durationRange, xRange });
+    }
 
-      const currentEntry = entries[index];
-      const currentSystemIndex = currentEntry.mostRecentElement.getSystemIndex();
-      const currentMeasureIndex = currentEntry.mostRecentElement.getAbsoluteMeasureIndex();
-      const currentEntryCenterX = currentEntry.mostRecentElement.rect().center().x;
-      const currentMeasureEndX = measures[currentMeasureIndex].rect().getMaxX();
+    function reset() {
+      activeElements = [...activeElements];
+      t1 = Duration.ms(-1);
+      t2 = Duration.ms(-1);
+      x1 = -1;
+      x2 = -1;
+    }
+
+    const measures = this.score.getMeasures();
+
+    for (let index = 0; index < events.length; index++) {
+      const isFirst = index === 0;
+      const isLast = index === events.length - 1;
+      const event = events[index];
+
+      // First, update the active elements.
+      if (event.type === 'start') {
+        activeElements.push(event.element);
+      } else if (event.type === 'stop') {
+        activeElements.splice(activeElements.indexOf(event.element), 1);
+      } else {
+        util.assertUnreachable();
+      }
+
+      // Next, handle the event based on the relationship to the anchor.
+      if (event.type === 'start') {
+        const relationship = this.getRelationshipBetween(anchorElement, event.element);
+        if (anchorElement.getAbsoluteMeasureIndex() === 0) {
+          console.log(relationship);
+        }
+        if (isFirst) {
+          // Set the start bounds of the first entry.
+          t1 = event.time;
+          x1 = event.element.rect().center().x;
+        } else if (relationship === 'normal') {
+          // Set the end bounds of the current entry.
+          t2 = event.time;
+          x2 = event.element.rect().center().x;
+
+          publish();
+          reset();
+
+          // Set the start bounds of the next entry.
+          anchorElement = event.element;
+          t1 = event.time;
+          x1 = event.element.rect().center().x;
+        } else if (relationship === 'valid-jump-forwards') {
+          // Set the end bounds of the current entry.
+          t2 = event.time;
+          x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right();
+
+          publish();
+          reset();
+
+          // Set the start bounds of the next entry.
+          anchorElement = event.element;
+          t1 = event.time;
+          x1 = event.element.rect().center().x;
+        } else if (relationship === 'valid-jump-backwards' || relationship === 'progressing-systems') {
+          // Set the end bounds of the current entry.
+          t2 = event.time;
+          x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right();
+
+          publish();
+          reset();
+
+          // Set the start bounds of the next entry.
+          anchorElement = event.element;
+          t1 = event.time;
+          x1 = event.element.rect().center().x;
+        } else if (relationship === 'backwards-formatting-edge-case') {
+          // When formatting causes a backwards relationship, we just need to adjust the bounds. We don't publish because
+          // we don't want the sequence to go backwards spatially.
+          t2 = event.time;
+        } else {
+          util.assertUnreachable();
+        }
+      }
 
       if (isLast) {
-        currentEntry.xRange = this.xRange(currentEntryCenterX, currentMeasureEndX - LAST_MEASURE_XRANGE_PADDING_RIGHT);
-        continue;
+        t2 = event.time;
+        x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right() - LAST_MEASURE_X_RANGE_PADDING_RIGHT;
+        publish();
       }
-
-      const nextEntry = entries[index + 1];
-      const nextEntryCenterX = nextEntry.mostRecentElement.rect().center().x;
-      const nextSystemIndex = nextEntry.mostRecentElement.getSystemIndex();
-      const nextMeasureIndex = nextEntry.mostRecentElement.getAbsoluteMeasureIndex();
-
-      const isChangingSystems = currentSystemIndex !== nextSystemIndex;
-      if (isChangingSystems) {
-        currentEntry.xRange = this.xRange(currentEntryCenterX, currentMeasureEndX);
-        continue;
-      }
-
-      // This can happen if there is a repeat range that spans a single measure and the measure only has one element.
-      const isRepeatingTheSameNote = currentEntry.mostRecentElement === nextEntry.mostRecentElement;
-      if (isRepeatingTheSameNote) {
-        currentEntry.xRange = this.xRange(currentEntryCenterX, currentMeasureEndX);
-        continue;
-      }
-
-      // This will happen if there's a jump in the sequence.
-      const isChangingMeasures = currentMeasureIndex !== nextMeasureIndex;
-      const isJumpingMeasures = currentMeasureIndex !== nextMeasureIndex - 1;
-      if (isChangingMeasures && isJumpingMeasures) {
-        currentEntry.xRange = this.xRange(currentEntryCenterX, currentMeasureEndX);
-        continue;
-      }
-
-      const isGoingBackwards = currentEntryCenterX > nextEntryCenterX;
-      if (isGoingBackwards) {
-        currentEntry.xRange = this.xRange(currentEntryCenterX, currentMeasureEndX);
-        continue;
-      }
-
-      // Otherwise, deduce that the next entry is on the same system and is moving forward normally.
-      currentEntry.xRange = this.xRange(currentEntryCenterX, nextEntryCenterX);
     }
 
     return entries;
   }
 
-  private xRange(x1: number, x2: number) {
-    return new util.NumberRange(x1, Math.max(x1, x2));
+  private getRelationshipBetween(
+    voiceEntry1: elements.VoiceEntry,
+    voiceEntry2: elements.VoiceEntry
+  ): VoiceEntryRelationship {
+    const systemIndex1 = voiceEntry1.getSystemIndex();
+    const systemIndex2 = voiceEntry2.getSystemIndex();
+    const measureIndex1 = voiceEntry1.getAbsoluteMeasureIndex();
+    const measureIndex2 = voiceEntry2.getAbsoluteMeasureIndex();
+    const startMeasureBeat1 = voiceEntry1.getStartMeasureBeat();
+    const startMeasureBeat2 = voiceEntry2.getStartMeasureBeat();
+
+    const x1 = voiceEntry1.rect().center().x;
+    const x2 = voiceEntry2.rect().center().x;
+
+    const isProgressingNormallyInTheSameMeasure =
+      measureIndex1 === measureIndex2 && startMeasureBeat1.isLessThan(startMeasureBeat2);
+    const isProgressingNormallyAcrossMeasures = measureIndex1 + 1 === measureIndex2;
+    const isProgressingNormally = isProgressingNormallyInTheSameMeasure || isProgressingNormallyAcrossMeasures;
+
+    if (isProgressingNormally && x1 < x2) {
+      return 'normal';
+    }
+
+    // Below this point, we need to figure out why this is not progressing normally x1 >= x2.
+
+    if (systemIndex1 < systemIndex2) {
+      return 'progressing-systems';
+    }
+
+    if (measureIndex1 === measureIndex2 && startMeasureBeat1.isGreaterThanOrEqualTo(startMeasureBeat2)) {
+      return 'valid-jump-backwards';
+    }
+
+    if (measureIndex1 > measureIndex2) {
+      return 'valid-jump-backwards';
+    }
+
+    // NOTE: Currently, we cannot detect a valid jump forward _in the same measure_. We consider this exceptionally
+    // rare and playback is not support for this case.
+    if (measureIndex1 + 1 < measureIndex2) {
+      return 'valid-jump-forwards';
+    }
+
+    return 'backwards-formatting-edge-case';
   }
 }

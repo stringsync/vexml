@@ -21,6 +21,6 @@ export class Sequence {
   }
 
   getDuration(): Duration {
-    return this.entries.at(-1)?.durationRange.getEnd() ?? Duration.zero();
+    return this.entries.at(-1)?.durationRange.end ?? Duration.zero();
   }
 }
