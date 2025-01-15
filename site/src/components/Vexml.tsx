@@ -5,8 +5,6 @@ import { useWidth } from '../hooks/useWidth';
 import { Player, PlayerState } from '../lib/Player';
 import { getDevice } from '../util/getDevice';
 
-const STRINGSYNC_RED = '#FC354C';
-
 export type VexmlProps = {
   musicXML: string;
   config: vexml.Config;
@@ -100,6 +98,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
     const start = new Date();
     let score: vexml.Score | undefined;
+    let player: Player | undefined;
 
     try {
       const logger = new vexml.ConsoleLogger();
@@ -134,25 +133,28 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
       }
 
       const durationMs = score.getDurationMs();
-      const player = new Player(durationMs);
+      player = new Player(durationMs);
       setPlayer(player);
       setPlayerState(player.getState());
 
       const cursor = score.addCursor();
       setCursor(cursor);
 
-      const simpleCursor = vexml.SimpleCursor.render(score.getOverlayElement(), STRINGSYNC_RED);
+      const simpleCursor = vexml.SimpleCursor.render(score.getOverlayElement());
 
-      cursor.addEventListener('change', (e) => {
-        simpleCursor.update(e.cursorRect);
-        if (!cursor.isFullyVisible()) {
-          cursor.scrollIntoView(scrollBehavior);
-        }
-      });
-      simpleCursor.update(cursor.getState().cursorRect);
+      cursor.addEventListener(
+        'change',
+        (e) => {
+          simpleCursor.update(e.cursorRect);
+          if (!cursor.isFullyVisible()) {
+            cursor.scrollIntoView(scrollBehavior);
+          }
+        },
+        { emitBootstrapEvent: true }
+      );
 
       player.addEventListener('statechange', () => {
-        setPlayerState(player.getState());
+        setPlayerState(player!.getState());
       });
 
       player.addEventListener('progress', (currentTimeMs) => {
@@ -162,7 +164,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
       score.addEventListener('click', (e) => {
         if (typeof e.timestampMs === 'number') {
-          player.seek(e.timestampMs);
+          player!.seek(e.timestampMs);
         }
       });
 
@@ -187,6 +189,9 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
     return () => {
       score?.destroy();
+
+      player?.reset();
+
       if (div.firstChild) {
         div.removeChild(div.firstChild);
       }

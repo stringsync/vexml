@@ -8,7 +8,9 @@ import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 import { Scroller } from './scroller';
 
-const CURSOR_WIDTH_PX = 1.5;
+// NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
+// it moves. This will happen even when rounding the position.
+const CURSOR_WIDTH_PX = 3;
 
 type CursorState = {
   index: number;
@@ -185,8 +187,16 @@ export class Cursor {
     this.scroller.scrollTo(scrollPoint, behavior);
   }
 
-  addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
-    return this.topic.subscribe(name, listener);
+  addEventListener<N extends keyof EventMap>(
+    name: N,
+    listener: events.EventListener<EventMap[N]>,
+    opts?: { emitBootstrapEvent?: boolean }
+  ): number {
+    const id = this.topic.subscribe(name, listener);
+    if (opts?.emitBootstrapEvent) {
+      listener(this.getState());
+    }
+    return id;
   }
 
   removeEventListener(...ids: number[]): void {
@@ -209,6 +219,8 @@ export class Cursor {
   private update(index: number, alpha: number): void {
     index = util.clamp(0, this.sequence.getCount() - 1, index);
     alpha = util.clamp(0, 1, alpha);
+    // Round to 3 decimal places to avoid overloading the event system with redundant updates.
+    alpha = Math.round(alpha * 1000) / 1000;
     if (index !== this.index || alpha !== this.alpha) {
       this.index = index;
       this.alpha = alpha;

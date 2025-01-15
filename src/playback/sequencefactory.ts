@@ -7,7 +7,7 @@ import { SequenceEntry } from './types';
 import { DurationRange } from './durationrange';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 
-const LAST_MEASURE_X_RANGE_PADDING_RIGHT = 10;
+const LAST_SYSTEM_MEASURE_X_RANGE_PADDING_RIGHT = 10;
 
 type SequenceEventType = 'start' | 'stop';
 
@@ -121,6 +121,15 @@ export class SequenceFactory {
 
     const measures = this.score.getMeasures();
 
+    function measureRight(absoluteMeasureIndex: number): number {
+      const measure = measures[absoluteMeasureIndex];
+      let right = measure.rect().right();
+      if (measure.isLastMeasureInSystem()) {
+        right -= LAST_SYSTEM_MEASURE_X_RANGE_PADDING_RIGHT;
+      }
+      return right;
+    }
+
     for (let index = 0; index < events.length; index++) {
       const isFirst = index === 0;
       const isLast = index === events.length - 1;
@@ -138,9 +147,6 @@ export class SequenceFactory {
       // Next, handle the event based on the relationship to the anchor.
       if (event.type === 'start') {
         const relationship = this.getRelationshipBetween(anchorElement, event.element);
-        if (anchorElement.getAbsoluteMeasureIndex() === 0) {
-          console.log(relationship);
-        }
         if (isFirst) {
           // Set the start bounds of the first entry.
           t1 = event.time;
@@ -160,7 +166,7 @@ export class SequenceFactory {
         } else if (relationship === 'valid-jump-forwards') {
           // Set the end bounds of the current entry.
           t2 = event.time;
-          x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right();
+          x2 = measureRight(anchorElement.getAbsoluteMeasureIndex());
 
           publish();
           reset();
@@ -172,7 +178,7 @@ export class SequenceFactory {
         } else if (relationship === 'valid-jump-backwards' || relationship === 'progressing-systems') {
           // Set the end bounds of the current entry.
           t2 = event.time;
-          x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right();
+          x2 = measureRight(anchorElement.getAbsoluteMeasureIndex());
 
           publish();
           reset();
@@ -192,7 +198,7 @@ export class SequenceFactory {
 
       if (isLast) {
         t2 = event.time;
-        x2 = measures[anchorElement.getAbsoluteMeasureIndex()].rect().right() - LAST_MEASURE_X_RANGE_PADDING_RIGHT;
+        x2 = measureRight(anchorElement.getAbsoluteMeasureIndex());
         publish();
       }
     }
