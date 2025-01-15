@@ -1,10 +1,17 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class JumpGroup {
-  constructor(private jumps: data.Jump[]) {}
+  constructor(private config: Config, private log: Logger, private jumps: data.Jump[]) {}
 
-  static create(measureIndex: number, musicXML: { scorePartwise: musicxml.ScorePartwise }): JumpGroup {
+  static create(
+    config: Config,
+    log: Logger,
+    measureIndex: number,
+    musicXML: { scorePartwise: musicxml.ScorePartwise }
+  ): JumpGroup {
     const barlines = musicXML.scorePartwise
       .getParts()
       .map((part) => part.getMeasures())
@@ -57,7 +64,7 @@ export class JumpGroup {
       jumps.push({ type: 'repeatend', times: repeatEnd.getRepeatTimes() ?? 1 });
     }
 
-    return new JumpGroup(jumps);
+    return new JumpGroup(config, log, jumps);
   }
 
   getStartBarlineStyle(): data.BarlineStyle | null {

@@ -15,6 +15,8 @@ import { Vibrato } from './vibrato';
 import { Articulation } from './articulation';
 import { Bend } from './bend';
 import { TabPosition } from './tabposition';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 type GraceNote = {
   type: 'gracenote';
@@ -32,6 +34,8 @@ type GraceEntry = GraceNote | GraceChord;
 
 export class Note {
   constructor(
+    private config: Config,
+    private log: Logger,
     private pitch: Pitch,
     private head: Notehead,
     private durationType: data.DurationType,
@@ -52,8 +56,14 @@ export class Note {
     private tabPositions: TabPosition[]
   ) {}
 
-  static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Note {
-    const pitch = new Pitch(musicXML.note.getStep(), musicXML.note.getOctave());
+  static create(
+    config: Config,
+    log: Logger,
+    measureBeat: util.Fraction,
+    duration: util.Fraction,
+    musicXML: { note: musicxml.Note }
+  ): Note {
+    const pitch = new Pitch(config, log, musicXML.note.getStep(), musicXML.note.getOctave());
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
 
     let durationType = conversions.fromNoteTypeToDurationType(musicXML.note.getType());
@@ -63,27 +73,27 @@ export class Note {
     }
 
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-    const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric({ lyric }));
+    const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric(config, log, { lyric }));
 
     const code =
       conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
       conversions.fromAlterToAccidentalCode(musicXML.note.getAlter()) ??
       'n';
     const isCautionary = musicXML.note.hasAccidentalCautionary();
-    const accidental = new Accidental(code, isCautionary);
+    const accidental = new Accidental(config, log, code, isCautionary);
 
-    const curves = musicXML.note.getNotations().flatMap((notation) => Curve.create({ notation }));
+    const curves = musicXML.note.getNotations().flatMap((notation) => Curve.create(config, log, { notation }));
 
     const tuplets = musicXML.note
       .getNotations()
       .flatMap((notation) => notation.getTuplets())
-      .map((tuplet) => Tuplet.create({ tuplet }));
+      .map((tuplet) => Tuplet.create(config, log, { tuplet }));
 
     const vibratos = musicXML.note
       .getNotations()
       .flatMap((notation) => notation.getOrnaments())
       .flatMap((ornament) => ornament.getWavyLines())
-      .map((entry) => Vibrato.create({ wavyLine: entry.value }));
+      .map((entry) => Vibrato.create(config, log, { wavyLine: entry.value }));
 
     // Since data.Note is a superset of data.GraceNote, we can use the same model. We terminate recursion by checking if
     // the note is a grace note.
@@ -94,10 +104,12 @@ export class Note {
           continue;
         }
 
-        const note = Note.create(measureBeat, util.Fraction.zero(), { note: graceNote });
+        const note = Note.create(config, log, measureBeat, util.Fraction.zero(), { note: graceNote });
 
         if (graceNote.isChordHead()) {
-          const tail = graceNote.getChordTail().map((note) => Note.create(measureBeat, util.Fraction.zero(), { note }));
+          const tail = graceNote
+            .getChordTail()
+            .map((note) => Note.create(config, log, measureBeat, util.Fraction.zero(), { note }));
           graceEntries.push({ type: 'gracechord', head: note, tail });
         } else {
           graceEntries.push({ type: 'gracenote', note });
@@ -109,22 +121,24 @@ export class Note {
     // the first one. vexflow will eventually do the heavy lifting of inferring the note durations and beam structures.
     let beam: Beam | null = null;
     if (musicXML.note.getBeams().length > 0) {
-      beam = Beam.create({ beam: musicXML.note.getBeams().at(0)! });
+      beam = Beam.create(config, log, { beam: musicXML.note.getBeams().at(0)! });
     }
 
-    const articulations = Articulation.create({ note: musicXML.note });
+    const articulations = Articulation.create(config, log, { note: musicXML.note });
 
     const bends = musicXML.note
       .getNotations()
       .flatMap((n) => n.getTechnicals())
       .flatMap((t) => t.getBends())
-      .map((bend) => Bend.create({ bend }));
+      .map((bend) => Bend.create(config, log, { bend }));
 
     const slash = musicXML.note.hasGraceSlash();
 
-    const fretPositions = TabPosition.create({ note: musicXML.note });
+    const fretPositions = TabPosition.create(config, log, { note: musicXML.note });
 
     return new Note(
+      config,
+      log,
       pitch,
       head,
       durationType,

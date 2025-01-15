@@ -26,13 +26,6 @@ export class Part {
     return this.partRender.rect;
   }
 
-  /**
-   * Returns the BPM.
-   */
-  getBpm(): number {
-    return this.document.getFragment(this.partRender.key).signature.metronome.bpm ?? 100;
-  }
-
   /** Returns the staves of the part. */
   getStaves(): Stave[] {
     return this.staves;

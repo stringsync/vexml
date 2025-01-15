@@ -1,9 +1,13 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Metronome {
   constructor(
+    private config: Config,
+    private log: Logger,
     private opts: {
       name?: string;
       parenthesis?: boolean;
@@ -15,11 +19,15 @@ export class Metronome {
     }
   ) {}
 
-  static default(): Metronome {
-    return new Metronome({});
+  static default(config: Config, log: Logger): Metronome {
+    return new Metronome(config, log, {});
   }
 
-  static create(musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }): Metronome {
+  static create(
+    config: Config,
+    log: Logger,
+    musicXML: { metronome: musicxml.Metronome; mark: musicxml.MetronomeMark }
+  ): Metronome {
     const parenthesis = musicXML.metronome.parentheses() ?? undefined;
     const duration = conversions.fromNoteTypeToDurationType(musicXML.mark.left.unit) ?? undefined;
     const dots = musicXML.mark.left.dotCount;
@@ -28,10 +36,10 @@ export class Metronome {
       case 'note':
         const duration2 = conversions.fromNoteTypeToDurationType(musicXML.mark.right.unit) ?? undefined;
         const dots2 = musicXML.mark.right.dotCount;
-        return new Metronome({ parenthesis, duration, dots, duration2, dots2 });
+        return new Metronome(config, log, { parenthesis, duration, dots, duration2, dots2 });
       case 'bpm':
         const bpm = musicXML.mark.right.bpm;
-        return new Metronome({ parenthesis, duration, dots, bpm });
+        return new Metronome(config, log, { parenthesis, duration, dots, bpm });
     }
   }
 

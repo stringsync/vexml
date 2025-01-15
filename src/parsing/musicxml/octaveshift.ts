@@ -1,12 +1,19 @@
 import * as musicxml from '@/musicxml';
 import { VoiceContext } from './contexts';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 type OctaveShiftPhase = 'start' | 'continue' | 'stop';
 
 export class OctaveShift {
-  private constructor(private phase: OctaveShiftPhase, private size: number) {}
+  private constructor(
+    private config: Config,
+    private log: Logger,
+    private phase: OctaveShiftPhase,
+    private size: number
+  ) {}
 
-  static create(musicXML: { octaveShift: musicxml.OctaveShift }): OctaveShift {
+  static create(config: Config, log: Logger, musicXML: { octaveShift: musicxml.OctaveShift }): OctaveShift {
     const type = musicXML.octaveShift.getType();
     const factor = type === 'down' ? -1 : 1;
     const size = factor * musicXML.octaveShift.getSize();
@@ -27,7 +34,7 @@ export class OctaveShift {
         break;
     }
 
-    return new OctaveShift(phase, size);
+    return new OctaveShift(config, log, phase, size);
   }
 
   parse(voiceCtx: VoiceContext): void {

@@ -1,17 +1,29 @@
 import * as data from '@/data';
 import * as util from '@/util';
-import { Config } from '@/config';
+import { Config, DEFAULT_CONFIG } from '@/config';
 import { Formatter } from './types';
+import { Logger, NoopLogger } from '@/debug';
+
+export type MaxMeasureFormatterOptions = {
+  config?: Config;
+  logger?: Logger;
+};
 
 /**
  * A formatter that limits the number of measures per system.
  */
 export class MaxMeasureFormatter implements Formatter {
-  constructor(private maxMeasuresPerSystemCount: number) {
+  private config: Config;
+  private log: Logger;
+
+  constructor(private maxMeasuresPerSystemCount: number, opts?: MaxMeasureFormatterOptions) {
+    this.config = { ...DEFAULT_CONFIG, ...opts?.config };
+    this.log = opts?.logger ?? new NoopLogger();
+
     util.assert(maxMeasuresPerSystemCount > 0, 'maxMeasuresPerSystemCount must be greater than 0');
   }
 
-  format(config: Config, document: data.Document): data.Document {
+  format(document: data.Document): data.Document {
     const clone = document.clone();
 
     const measures = clone.score.systems.flatMap((system) => system.measures);

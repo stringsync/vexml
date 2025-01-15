@@ -1,7 +1,7 @@
 import * as rendering from '@/rendering';
 import * as data from '@/data';
 import * as util from '@/util';
-import { Config } from '@/config';
+import { Config, DEFAULT_CONFIG } from '@/config';
 import { Logger, NoopLogger } from '@/debug';
 import { Formatter } from './types';
 import { PanoramicFormatter } from './panoramicformatter';
@@ -11,29 +11,36 @@ type SystemSlice = {
   to: number;
 };
 
+export type DefaultFormatterOptions = {
+  config?: Config;
+  logger?: Logger;
+};
+
 /**
  * A formatter that splits the score into systems based on the width of the measures.
  */
 export class DefaultFormatter implements Formatter {
+  private config: Config;
   private log: Logger;
 
-  constructor(log?: Logger) {
-    this.log = log ?? new NoopLogger();
+  constructor(opts?: DefaultFormatterOptions) {
+    this.config = { ...DEFAULT_CONFIG, ...opts?.config };
+    this.log = opts?.logger ?? new NoopLogger();
+
+    util.assertNotNull(this.config.WIDTH, 'WIDTH must be set for DefaultFormatter');
   }
 
-  format(config: Config, document: data.Document): data.Document {
-    util.assertNotNull(config.WIDTH, 'WIDTH must be set for DefaultFormatter');
-
+  format(document: data.Document): data.Document {
     const clone = document.clone();
 
     // First, ensure the document is formatted for infinite x-scrolling. This will allow us to measure the width of the
     // measures and make decisions on how to group them into systems.
-    const panoramicConfig = { ...config, WIDTH: null, HEIGHT: null };
-    const panoramicFormatter = new PanoramicFormatter();
-    const panoramicDocument = new rendering.Document(panoramicFormatter.format(panoramicConfig, document));
+    const panoramicConfig = { ...this.config, WIDTH: null, HEIGHT: null };
+    const panoramicFormatter = new PanoramicFormatter({ config: panoramicConfig });
+    const panoramicDocument = new rendering.Document(panoramicFormatter.format(document));
     const panoramicScoreRender = new rendering.Score(panoramicConfig, this.log, panoramicDocument, null).render();
 
-    const slices = this.getSystemSlices(config, panoramicScoreRender);
+    const slices = this.getSystemSlices(this.config, panoramicScoreRender);
 
     this.applySystemSlices(clone, slices);
 

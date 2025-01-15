@@ -1,23 +1,27 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Clef {
   constructor(
+    private config: Config,
+    private log: Logger,
     private partId: string,
     private staveNumber: number,
     private sign: data.ClefSign,
     private octaveChange: number | null
   ) {}
 
-  static default(partId: string, staveNumber: number) {
-    return new Clef(partId, staveNumber, 'treble', null);
+  static default(config: Config, log: Logger, partId: string, staveNumber: number) {
+    return new Clef(config, log, partId, staveNumber, 'treble', null);
   }
 
-  static create(partId: string, musicXML: { clef: musicxml.Clef }) {
+  static create(config: Config, log: Logger, partId: string, musicXML: { clef: musicxml.Clef }) {
     const clefSign = conversions.fromClefPropertiesToClefSign(musicXML.clef.getSign(), musicXML.clef.getLine());
 
-    return new Clef(partId, musicXML.clef.getStaveNumber(), clefSign, musicXML.clef.getOctaveChange());
+    return new Clef(config, log, partId, musicXML.clef.getStaveNumber(), clefSign, musicXML.clef.getOctaveChange());
   }
 
   parse(): data.Clef {

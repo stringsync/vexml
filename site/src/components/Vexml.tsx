@@ -100,20 +100,20 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     let score: vexml.Score | undefined;
     let player: Player | undefined;
 
+    const vexmlConfig = {
+      ...config,
+      WIDTH: width,
+    };
+
     try {
       const logger = new vexml.ConsoleLogger();
-      const parser = new vexml.MusicXMLParser();
+      const parser = new vexml.MusicXMLParser({ config: vexmlConfig });
+      const defaultFormatter = new vexml.DefaultFormatter({ config: vexmlConfig });
+      const monitoredFormatter = new vexml.MonitoredFormatter(defaultFormatter, logger, { config: vexmlConfig });
+      const renderer = new vexml.Renderer({ config: vexmlConfig, formatter: monitoredFormatter, logger });
       const document = parser.parse(musicXML);
-      const formatter = new vexml.MonitoredFormatter(new vexml.DefaultFormatter(), logger);
-      const renderer = new vexml.Renderer(document);
-      score = renderer.render(div, {
-        formatter,
-        logger,
-        config: {
-          ...config,
-          WIDTH: width,
-        },
-      });
+      const formattedDocument = monitoredFormatter.format(document);
+      score = renderer.render(div, formattedDocument);
       setScore(score);
 
       if (onClick) {
