@@ -32,7 +32,7 @@ export class Document {
     durationMs: number;
     minWidth?: number;
     label?: string;
-  }): void {
+  }): this {
     // Inserting gaps requires us to know about the part and stave signatures, so we can visually extend the measure
     // that precedes it.
 
@@ -77,6 +77,8 @@ export class Document {
     // Insert the gap into the score into the same system as the template.
     const systemIndex = this.score.systems.findIndex((system) => system.measures.includes(templateMeasure));
     this.score.systems[systemIndex].measures.splice(opts.absoluteMeasureIndex, 0, cloneMeasure);
+
+    return this;
   }
 
   clone(): Document {

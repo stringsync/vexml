@@ -3,6 +3,7 @@ import { Config } from '@/config';
 import { Rect } from '@/spatial';
 import { Logger } from '@/debug';
 import { Part } from './part';
+import { Fraction } from '@/util';
 
 export class Fragment {
   private constructor(
@@ -36,6 +37,26 @@ export class Fragment {
     return this.parts;
   }
 
+  /** Returns the system index for the fragment. */
+  getSystemIndex(): number {
+    return this.fragmentRender.key.systemIndex;
+  }
+
+  /** Returns the absolute measure index for the fragment. */
+  getAbsoluteMeasureIndex(): number {
+    return this.document.getAbsoluteMeasureIndex(this.fragmentRender.key);
+  }
+
+  /** Returns the start measure beat for the fragment. */
+  getStartMeasureBeat(): Fraction {
+    return (
+      this.parts
+        .map((part) => part.getStartMeasureBeat())
+        .sort((a, b) => a.toDecimal() - b.toDecimal())
+        .at(0) ?? Fraction.zero()
+    );
+  }
+
   /** Returns the bpm of the fragment. */
   getBpm(): number {
     return this.document.getFragment(this.fragmentRender.key).signature.metronome.playbackBpm || 1; // disallow 0;
@@ -44,5 +65,15 @@ export class Fragment {
   /** Returns the max number of parts in this score. */
   getPartCount(): number {
     return this.parts.length;
+  }
+
+  /** Returns whether the fragment is a non-musical gap. */
+  isNonMusicalGap(): boolean {
+    return this.document.getFragment(this.fragmentRender.key).kind === 'nonmusical';
+  }
+
+  /** Returns the non-musical duration of the gap. */
+  getNonMusicalDurationMs(): number {
+    return this.document.getNonMusicalFragment(this.fragmentRender.key).durationMs;
   }
 }

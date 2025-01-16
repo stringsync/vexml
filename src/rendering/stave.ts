@@ -324,7 +324,7 @@ export class Stave {
   private renderKeySignature(vexflowStave: vexflow.Stave): KeyRender | null {
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
-    const isFirstMeasureFragment = isFirstMeasure && isFirstFragment;
+    const isFirstMusicalMeasureFragment = isFirstMeasure && isFirstFragment;
 
     const currentKey = this.document.getStave(this.key).signature.key;
     const previousKey = this.document.getPreviouslyPlayedStave(this.key)?.signature.key;
@@ -334,7 +334,7 @@ export class Stave {
       currentKey.fifths !== previousKey?.fifths ||
       currentKey.mode !== previousKey?.mode;
 
-    if (isFirstMeasureFragment || didKeyChange) {
+    if (isFirstMusicalMeasureFragment || didKeyChange) {
       const keyRender = new Key(this.config, this.log, this.document, this.key).render();
       vexflowStave.addModifier(keyRender.vexflowKeySignature);
       return keyRender;

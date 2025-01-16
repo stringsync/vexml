@@ -235,6 +235,12 @@ export class Document {
     return entry;
   }
 
+  getNonMusicalFragment(key: FragmentKey): data.NonMusicalFragment {
+    const fragment = this.getFragment(key);
+    util.assert(fragment.kind === 'nonmusical', 'expected a non-musical fragment');
+    return fragment;
+  }
+
   getNextFragment(key: FragmentKey): data.Fragment | null {
     if (key.fragmentIndex < this.getFragmentCount(key) - 1) {
       const nextEntry = this.getFragments(key).at(key.fragmentIndex + 1);

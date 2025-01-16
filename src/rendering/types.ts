@@ -4,6 +4,7 @@ import { Rect } from '@/spatial';
 import { Label } from './label';
 import { ClefSign, StemDirection } from './enums';
 import { GapOverlay } from './gapoverlay';
+import { Fraction } from '@/util';
 
 export interface Drawable {
   setContext(ctx: vexflow.RenderContext): this;
@@ -208,6 +209,7 @@ export type VoiceRender = {
   type: 'voice';
   key: VoiceKey;
   rect: Rect;
+  startMeasureBeat: Fraction;
   vexflowVoices: vexflow.Voice[];
   entryRenders: VoiceEntryRender[];
   beamRenders: BeamRender[];

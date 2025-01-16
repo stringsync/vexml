@@ -84,12 +84,14 @@ export class Cursor {
 
       util.assertDefined(element);
 
+      const xRange = sequenceEntry.xRange;
+
       const systemIndex = element.getSystemIndex();
       const yRange = systemPartYRanges.at(systemIndex);
 
       util.assertDefined(yRange);
 
-      const x = element.rect().center().x;
+      const x = xRange.start;
       const y = yRange.start;
       const w = CURSOR_WIDTH_PX;
       const h = yRange.getSize();
