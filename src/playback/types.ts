@@ -9,4 +9,4 @@ export type SequenceEntry = {
   xRange: NumberRange;
 };
 
-export type PlaybackElement = elements.VoiceEntry | elements.Fragment;
+export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;

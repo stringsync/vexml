@@ -38,6 +38,7 @@ export class SequenceFactory {
 
     const measures = this.score.getMeasures().map((measure, index) => ({
       index,
+      value: measure,
       fragments: measure.getFragments(),
       jumps: measure.getJumps(),
     }));
@@ -50,6 +51,21 @@ export class SequenceFactory {
       const measure = measures[measureIndex];
 
       let nextMeasureStartTime = measureStartTime;
+
+      if (measure.value.isMultiMeasure()) {
+        const start = measureStartTime;
+        const bpm = measure.value.getBpm();
+        const duration = Duration.minutes(measure.value.getBeatCount().toDecimal() / bpm);
+        const stop = start.add(duration);
+
+        events.push({ type: 'start', time: start, element: measure.value });
+        events.push({ type: 'stop', time: stop, element: measure.value });
+
+        // measureStartTime, not nextMeasureStartTime!
+        measureStartTime = stop;
+
+        continue;
+      }
 
       for (const fragment of measure.fragments) {
         if (fragment.isNonMusicalGap()) {
@@ -137,12 +153,13 @@ class SequenceEntryBuilder {
     util.assert(!this.built, 'SequenceEntryBuilder has already built');
 
     if (this.entries.length > 0 && this.pending.length > 0) {
-      // We account for the last stop event by extending its time using the last pending event.
-      const entry = this.entries.pop()!;
-      const x1 = entry.xRange.start;
-      const x2 = entry.xRange.end;
-      const t1 = entry.durationRange.start;
-      const t2 = this.pending.at(-1)!.time;
+      // We account for the last stop event by using the time of the last entry as a start bound.
+      const entry = this.entries.at(-1)!;
+      const event = this.pending.at(-1)!;
+      const x1 = entry.xRange.end;
+      const x2 = this.getMeasureRightBoundaryX(event.element);
+      const t1 = entry.durationRange.end;
+      const t2 = event.time;
       this.push(x1, x2, t1, t2, entry.anchorElement, entry.activeElements);
     }
 
@@ -154,6 +171,7 @@ class SequenceEntryBuilder {
   private start(event: SequenceEvent): void {
     if (this.anchor) {
       const instruction = this.getXRangeInstruction(this.anchor, event.element);
+
       if (instruction === 'anchor-to-next-event') {
         const x1 = this.x;
         const x2 = this.getLeftBoundaryX(event.element);
@@ -168,7 +186,7 @@ class SequenceEntryBuilder {
         this.t = t2;
       } else if (instruction === 'terminate-to-measure-end-and-reanchor') {
         const x1 = this.x;
-        const x2 = this.getMeasureRightX(this.anchor);
+        const x2 = this.getMeasureRightBoundaryX(this.anchor);
         const t1 = this.t;
         const t2 = event.time;
 
@@ -245,6 +263,8 @@ class SequenceEntryBuilder {
     switch (element.name) {
       case 'fragment':
         return this.getFragmentLeftBoundaryX(element);
+      case 'measure':
+        return this.getMeasureLeftBoundaryX(element);
       case 'note':
       case 'rest':
         return this.getVoiceEntryBoundaryX(element);
@@ -253,8 +273,12 @@ class SequenceEntryBuilder {
     }
   }
 
-  private getMeasureRightX(element: PlaybackElement): number {
-    const measure = this.measures[element.getAbsoluteMeasureIndex()];
+  private getMeasureRightBoundaryX(element: PlaybackElement): number {
+    const measure = this.measures.find((measure) =>
+      measure.includesAbsoluteMeasureIndex(element.getAbsoluteMeasureIndex())
+    );
+    util.assertDefined(measure);
+
     let result = measure.rect().right();
     if (measure.isLastMeasureInSystem()) {
       result -= LAST_SYSTEM_MEASURE_X_RANGE_PADDING_RIGHT;
@@ -270,6 +294,14 @@ class SequenceEntryBuilder {
         .map((stave) => stave.intrinsicRect().left())
         .at(0) ?? fragment.rect().left()
     );
+  }
+
+  private getMeasureLeftBoundaryX(measure: elements.Measure): number {
+    const fragment = measure.getFragments().at(0);
+    if (fragment) {
+      return this.getFragmentLeftBoundaryX(fragment);
+    }
+    return measure.rect().left();
   }
 
   private getVoiceEntryBoundaryX(voiceEntry: elements.VoiceEntry): number {
