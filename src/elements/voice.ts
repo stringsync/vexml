@@ -5,6 +5,7 @@ import { Logger } from '@/debug';
 import { VoiceEntry } from './types';
 import { Note } from './note';
 import { Rest } from './rest';
+import { Fraction } from '@/util';
 
 export class Voice {
   private constructor(
@@ -42,5 +43,10 @@ export class Voice {
   /** Returns the entries of the voice. */
   getEntries(): VoiceEntry[] {
     return this.entries;
+  }
+
+  /** Returns the start measure beat for the voice. */
+  getStartMeasureBeat(): Fraction {
+    return this.voiceRender.startMeasureBeat;
   }
 }
