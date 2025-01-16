@@ -42,11 +42,6 @@ export type VibratoKey = {
   vibratoIndex: number;
 };
 
-export type SystemArrangement = {
-  from: number;
-  to: number;
-};
-
 export type SystemKey = {
   systemIndex: number;
 };

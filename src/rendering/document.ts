@@ -8,7 +8,6 @@ import {
   StaveKey,
   VoiceKey,
   VoiceEntryKey,
-  SystemArrangement,
   PartLabelKey,
   CurveKey,
   BeamKey,
@@ -422,37 +421,7 @@ export class Document {
     return articulation;
   }
 
-  /** Returns a new document with the system arrangements applied. */
-  reflow(arrangements: SystemArrangement[]): Document {
-    const clone = this.clone();
-
-    const measures = this.data.score.systems.flatMap((s) => s.measures);
-
-    clone.data.score.systems = [];
-
-    for (const arrangement of arrangements) {
-      const system: data.System = {
-        type: 'system',
-        measures: new Array<data.Measure>(),
-      };
-
-      system.measures = measures.slice(arrangement.from, arrangement.to + 1);
-
-      clone.data.score.systems.push(system);
-    }
-
-    return clone;
-  }
-
-  withoutPartLabels(): Document {
-    const clone = this.clone();
-    clone.data.score.partLabels = [];
-    return clone;
-  }
-
-  private clone(): Document {
-    const score = util.deepClone(this.data.score);
-    const document = new data.Document(score);
-    return new Document(document);
+  clone(): Document {
+    return new Document(this.data.clone());
   }
 }

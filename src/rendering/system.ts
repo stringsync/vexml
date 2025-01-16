@@ -81,9 +81,12 @@ export class System {
     if (measureCount > 0) {
       const from = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: 0 });
       const to = this.document.getAbsoluteMeasureIndex({ ...this.key, measureIndex: measureCount - 1 });
-      document = this.document.reflow([{ from, to }]);
+
+      document = this.document.clone();
+
+      this.sliceMeasures(document, from, to);
       if (this.key.systemIndex > 0) {
-        document = document.withoutPartLabels();
+        this.removePartLabels(document);
       }
     }
 
@@ -119,5 +122,15 @@ export class System {
     }
 
     return measureWidths;
+  }
+
+  private sliceMeasures(document: Document, from: number, to: number): void {
+    const measures = document.getSystems().flatMap((system) => system.measures);
+    const slice = measures.slice(from, to + 1);
+    document.getScore().systems = [{ type: 'system', measures: slice }];
+  }
+
+  private removePartLabels(document: Document): void {
+    document.getScore().partLabels = [];
   }
 }
