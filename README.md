@@ -62,7 +62,6 @@ This library empowers you to bring musical notation to the web, making it access
 
 ### Prerequisites
 
-- [yarn](https://classic.yarnpkg.com/lang/en/docs/install)
 - [docker](https://docs.docker.com/engine/install)
 
 ### Installing
@@ -70,7 +69,7 @@ This library empowers you to bring musical notation to the web, making it access
 Before you run any commands, install the dependencies.
 
 ```sh
-yarn install
+npm install
 ```
 
 ### Running the Dev Server
@@ -78,7 +77,7 @@ yarn install
 In order to run a dev server that hot reloads `vexml` changes, run:
 
 ```sh
-yarn dev
+npm run dev
 ```
 
 You should be able to "save" MusicXML documents in localstorage using the dev app, which will cause the documents to survive refreshing the page.
@@ -88,7 +87,7 @@ You should be able to "save" MusicXML documents in localstorage using the dev ap
 In order to run tests on x86 architecture, run:
 
 ```sh
-yarn test
+npm run test
 ```
 
 If you're running a machine using ARM architecture (such as an M series mac), try setting the default platform before running the command (or set it in your shell profile):
@@ -100,13 +99,13 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 These commands are just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
 
 ```
-yarn test --watchAll
+npm run test --watchAll
 ```
 
 To bypass Docker, run:
 
 ```
-yarn jest
+npm run jest
 ```
 
 This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshots__`, which is ignored by git. **It is important that you run it for the first time on a branch without any changes.** Doing this on a dirty branch could cause you to have an incorrect snapshot, which may cause problems when developing.
@@ -114,7 +113,7 @@ This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshot
 If you suspect issues with the tmp snapshots, run the following command to retake the snapshots (which is scripted to do this at origin/master):
 
 ```
-yarn resnap
+npm run resnap
 ```
 
 ### Debugging Tests
@@ -122,7 +121,7 @@ yarn resnap
 To run a debugger, run:
 
 ```
-yarn debug
+npm run debug
 ```
 
 If you're using VSCode, open the debugging tool and launch `Attach to Process`. You can set breakpoints in VSCode or insert `debugger` statements to cause execution to pause.
@@ -141,12 +140,12 @@ You can see diff images in the `__diff_output__` directory (nested under `__imag
 
 #### Updating Snapshots
 
-Rendering varies by platform, so it is important you run tests using the `yarn test*` commands, since that runs tests in a consistent environment (via Docker). This is also the environment that CI will use.
+Rendering varies by platform, so it is important you run tests using the `npm run test*` commands, since that runs tests in a consistent environment (via Docker). This is also the environment that CI will use.
 
 When you want to update all snapshots, rerun the test command with the `--updateSnapshot`.
 
 ```sh
-yarn test --updateSnapshot
+npm run test --updateSnapshot
 ```
 
 If you want to only update a single snapshot from specific test, you can use [`--testNamePattern`](https://jestjs.io/docs/cli#--testnamepatternregex).

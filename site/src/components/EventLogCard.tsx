@@ -67,7 +67,7 @@ const opacity = (index: number): number => {
   return 1 - Math.pow(index / EVENT_LOG_CAPACITY, easing);
 };
 
-const stringify = (object: any): string => JSON.stringify(object, null, 2);
+const stringify = (object: unknown): string => JSON.stringify(object, null, 2);
 
 const describe = (event: vexml.AnyEvent): string => {
   switch (event.type) {

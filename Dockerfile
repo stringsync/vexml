@@ -6,8 +6,8 @@ WORKDIR /vexml
 
 # Install dependencies.
 COPY package.json .
-COPY yarn.lock .
-RUN yarn install
+COPY package-lock.json .
+RUN npm install
 
 # Copy config.
 COPY jest.config.js .
@@ -22,4 +22,4 @@ COPY src src
 COPY tests tests
 
 # Run the test by default.
-CMD [ "yarn", "jest" ]
+CMD [ "npm", "run", "jest" ]

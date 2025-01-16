@@ -33,7 +33,7 @@ export const CLEF_SIGNS = new Enum([
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/mode/
  */
 export type KeyMode = EnumValues<typeof KEY_MODES>;
-const KEY_MODES = new Enum([
+export const KEY_MODES = new Enum([
   'none',
   'major',
   'minor',
