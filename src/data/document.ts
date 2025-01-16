@@ -83,6 +83,11 @@ export class Document {
     return this;
   }
 
+  removePartLabels(): this {
+    this.score.partLabels = [];
+    return this;
+  }
+
   clone(): Document {
     const score = util.deepClone(this.score);
     return new Document(score);
