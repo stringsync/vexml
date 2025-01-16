@@ -296,7 +296,7 @@ export const SourceForm = (props: SourceFormProps) => {
   );
 };
 
-const isSourceType = (value: any): value is Source['type'] =>
+const isSourceType = (value: unknown): value is Source['type'] =>
   value === 'local' || value === 'remote' || value === 'example';
 
 const getDefaultSource = (type: Source['type'], config: vexml.Config): Source => {

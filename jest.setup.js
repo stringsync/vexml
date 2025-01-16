@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path');
-const { configureToMatchImageSnapshot } = require('jest-image-snapshot');
+import path from 'path';
+import { configureToMatchImageSnapshot } from 'jest-image-snapshot';
 
 const customSnapshotsDir =
   process.env.VEXML_CANONICAL_TEST_ENV === 'true'
