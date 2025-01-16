@@ -291,7 +291,7 @@ class SequenceEntryBuilder {
       fragment
         .getParts()
         .flatMap((part) => part.getStaves())
-        .map((stave) => stave.intrinsicRect().left())
+        .map((stave) => stave.playableRect().left())
         .at(0) ?? fragment.rect().left()
     );
   }

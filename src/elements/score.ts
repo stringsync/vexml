@@ -307,6 +307,13 @@ export class Score {
       });
     }
 
+    // Draw the debug stave plyable rects.
+    if (config.DEBUG_DRAW_STAVE_PLAYABLE_RECTS) {
+      staveRenders.forEach((s) => {
+        new rendering.DebugRect(config, log, `s${s.key.staveIndex}`, s.playableRect).setContext(ctx).draw();
+      });
+    }
+
     // Draw the debug voice rects.
     if (config.DEBUG_DRAW_VOICE_RECTS) {
       voiceRenders.forEach((v) => {

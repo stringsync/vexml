@@ -54,7 +54,7 @@ export class Measure {
       // move to the edge of _any_ stave's intrinsic rect.
       const staveRender = fragmentRender.partRenders.flatMap((p) => p.staveRenders).at(0);
       if (staveRender) {
-        const upperRight = staveRender.intrinsicRect.upperRight();
+        const upperRight = staveRender.intrinsicRect.topRight();
         pen.moveTo({ x: upperRight.x, y: pen.y });
       } else {
         // If this happens, the fragment staves may not be aligned. There could be a gap or overlap.

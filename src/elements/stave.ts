@@ -32,6 +32,11 @@ export class Stave {
     return this.staveRender.intrinsicRect;
   }
 
+  /** Returns the playable rect of the stave. */
+  playableRect(): Rect {
+    return this.staveRender.playableRect;
+  }
+
   /** Returns the voices of the stave. */
   getVoices(): Voice[] {
     return this.voices;

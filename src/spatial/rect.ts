@@ -45,11 +45,11 @@ export class Rect implements Shape {
     return new Point(this.x + this.w / 2, this.y + this.h / 2);
   }
 
-  upperLeft(): Point {
+  topLeft(): Point {
     return new Point(this.x, this.y);
   }
 
-  upperRight(): Point {
+  topRight(): Point {
     return new Point(this.x + this.w, this.y);
   }
 
@@ -67,14 +67,14 @@ export class Rect implements Shape {
     return new Rect(this.x + dx, this.y + dy, this.w, this.h);
   }
 
-  quadrants(): [upperRight: Rect, upperLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
+  quadrants(): [topRight: Rect, topLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
     const halfWidth = this.w / 2;
     const halfHeight = this.h / 2;
-    const upperRight = new Rect(this.x + halfWidth, this.y, halfWidth, halfHeight);
-    const upperLeft = new Rect(this.x, this.y, halfWidth, halfHeight);
+    const topRight = new Rect(this.x + halfWidth, this.y, halfWidth, halfHeight);
+    const topLeft = new Rect(this.x, this.y, halfWidth, halfHeight);
     const bottomLeft = new Rect(this.x, this.y + halfHeight, halfWidth, halfHeight);
     const bottomRight = new Rect(this.x + halfWidth, this.y + halfHeight, halfWidth, halfHeight);
-    return [upperRight, upperLeft, bottomLeft, bottomRight];
+    return [topRight, topLeft, bottomLeft, bottomRight];
   }
 
   contains(point: Point): boolean {
