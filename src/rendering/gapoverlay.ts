@@ -8,6 +8,9 @@ import { TextMeasurer } from './textmeasurer';
 import { Label } from './label';
 
 export type GapOverlayStyle = {
+  fontSize?: string;
+  fontFamily?: string;
+  fontColor?: string;
   fill?: string;
 };
 
@@ -43,13 +46,17 @@ export class GapOverlay {
 
     ctx.save();
 
+    const fontSize = this.style?.fontSize ?? this.config.DEFAULT_GAP_OVERLAY_FONT_SIZE;
+    const fontFamily = this.style?.fontFamily ?? this.config.DEFAULT_GAP_OVERLAY_FONT_FAMILY;
+    const fontColor = this.style?.fontColor ?? this.config.DEFAULT_GAP_OVERLAY_FONT_COLOR;
+
     this.drawRect(rect);
 
     // Draw the label in the center of the overlay.
     if (this.label) {
       const textMeasurer = new TextMeasurer({
-        size: this.config.DEFAULT_GAP_OVERLAY_FONT_SIZE,
-        family: this.config.DEFAULT_GAP_OVERLAY_FONT_FAMILY,
+        size: fontSize,
+        family: fontFamily,
       });
       const measurement = textMeasurer.measure(this.label);
 
@@ -63,11 +70,7 @@ export class GapOverlay {
         this.label,
         position,
         {},
-        {
-          size: this.config.DEFAULT_GAP_OVERLAY_FONT_SIZE,
-          family: this.config.DEFAULT_GAP_OVERLAY_FONT_FAMILY,
-          color: this.config.DEFAULT_GAP_OVERLAY_FONT_COLOR,
-        }
+        { size: fontSize, family: fontFamily, color: fontColor }
       )
         .setContext(ctx)
         .draw();

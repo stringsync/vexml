@@ -118,6 +118,14 @@ export type NonMusicalFragment = {
   minWidth: number | null;
   label: string | null;
   durationMs: number;
+  style?: GapOverlayStyle;
+};
+
+export type GapOverlayStyle = {
+  fontSize?: string;
+  fontFamily?: string;
+  fontColor?: string;
+  fill?: string;
 };
 
 export type FragmentSignature = {
