@@ -179,6 +179,7 @@ export type StaveRender = {
   key: StaveKey;
   rect: Rect;
   intrinsicRect: Rect;
+  playableRect: Rect;
   excessHeight: number;
   voiceRenders: VoiceRender[];
   startClefRender: ClefRender | null;

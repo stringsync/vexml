@@ -10,6 +10,7 @@ import { NoopRenderContext } from './nooprenderctx';
 const CURVE_EXTRA_WIDTH = 20;
 const TUPLET_EXTRA_WIDTH = 15;
 const TAB_RECT_WIDTH = 10;
+const STAVE_PLAYABLE_RECT_PADDING_LEFT = 10;
 
 // These modifiers cause the bounding box of the vexflow stave note to be incorrect. We filter them out when calculating
 // the bounding box of the vexflow StaveNote. Remove each member when they are fixed upstream.
@@ -130,6 +131,7 @@ export class Ensemble {
         }
         staveRender.rect = this.overrideVexflowStaveRect(staveRender, x, paddingLeft, paddingRight);
         staveRender.intrinsicRect = this.calculateStaveIntrinsicRect(staveRender);
+        staveRender.playableRect = this.calculateStavePlayableRect(staveRender);
         staveRender.excessHeight = this.getExcessHeight(staveRender);
         excessHeight = Math.max(excessHeight, staveRender.excessHeight);
       }
@@ -160,6 +162,7 @@ export class Ensemble {
 
         staveRender.rect = cacheStaveRender.rect;
         staveRender.intrinsicRect = cacheStaveRender.intrinsicRect;
+        staveRender.playableRect = cacheStaveRender.playableRect;
         staveRender.excessHeight = cacheStaveRender.excessHeight;
 
         for (let voiceIndex = 0; voiceIndex < staveRender.voiceRenders.length; voiceIndex++) {
@@ -301,6 +304,32 @@ export class Ensemble {
     const y = topLineY;
     const w = box.w;
     const h = bottomLineY - topLineY;
+
+    return new Rect(x, y, w, h);
+  }
+
+  private calculateStavePlayableRect(staveRender: StaveRender): Rect {
+    const vexflowStave = staveRender.vexflowStave;
+
+    const intrinsicRect = this.calculateStaveIntrinsicRect(staveRender);
+
+    const hasStartingModifiers =
+      vexflowStave
+        .getModifiers()
+        .filter(
+          (modifier) =>
+            modifier instanceof vexflow.Clef ||
+            modifier instanceof vexflow.TimeSignature ||
+            modifier instanceof vexflow.KeySignature
+        ).length > 0;
+    if (!hasStartingModifiers) {
+      return intrinsicRect;
+    }
+
+    const x = vexflowStave.getNoteStartX() + STAVE_PLAYABLE_RECT_PADDING_LEFT;
+    const y = intrinsicRect.y;
+    const w = intrinsicRect.w - (x - intrinsicRect.x);
+    const h = intrinsicRect.h;
 
     return new Rect(x, y, w, h);
   }

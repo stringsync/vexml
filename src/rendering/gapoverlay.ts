@@ -7,15 +7,7 @@ import { FragmentRender } from './types';
 import { TextMeasurer } from './textmeasurer';
 import { Label } from './label';
 
-// TODO: Replace this with config, and/or maybe the data should live in data/types.
-const DEFAULT_FONT_SIZE = '16px';
-const DEFAULT_FONT_FAMILY = 'monospace';
-const DEFAULT_STYLE_FONT_COLOR = 'rgb(230, 0, 0)';
-const DEFAULT_STYLE_FILL = 'rgba(255, 0, 0, 0.2)';
-const DEFAULT_STYLE_STROKE = 'rgba(255, 0, 0, 0.5)';
-
 export type GapOverlayStyle = {
-  stroke?: string;
   fill?: string;
 };
 
@@ -41,10 +33,10 @@ export class GapOverlay {
     const ctx = this.ctx;
     util.assertNotNull(ctx);
 
-    const topRect = this.fragmentRender.partRenders.at(0)?.staveRenders.at(0)?.intrinsicRect;
+    const topRect = this.fragmentRender.partRenders.at(0)?.staveRenders.at(0)?.playableRect;
     util.assertDefined(topRect);
 
-    const bottomRect = this.fragmentRender.partRenders.at(-1)?.staveRenders.at(-1)?.intrinsicRect;
+    const bottomRect = this.fragmentRender.partRenders.at(-1)?.staveRenders.at(-1)?.playableRect;
     util.assertDefined(bottomRect);
 
     const rect = Rect.merge([topRect, bottomRect]);
@@ -55,7 +47,10 @@ export class GapOverlay {
 
     // Draw the label in the center of the overlay.
     if (this.label) {
-      const textMeasurer = new TextMeasurer({ size: DEFAULT_FONT_SIZE, family: DEFAULT_FONT_FAMILY });
+      const textMeasurer = new TextMeasurer({
+        size: this.config.DEFAULT_GAP_OVERLAY_FONT_SIZE,
+        family: this.config.DEFAULT_GAP_OVERLAY_FONT_FAMILY,
+      });
       const measurement = textMeasurer.measure(this.label);
 
       const x = rect.center().x - measurement.width / 2;
@@ -69,9 +64,9 @@ export class GapOverlay {
         position,
         {},
         {
-          size: DEFAULT_FONT_SIZE,
-          family: DEFAULT_FONT_FAMILY,
-          color: DEFAULT_STYLE_FONT_COLOR,
+          size: this.config.DEFAULT_GAP_OVERLAY_FONT_SIZE,
+          family: this.config.DEFAULT_GAP_OVERLAY_FONT_FAMILY,
+          color: this.config.DEFAULT_GAP_OVERLAY_FONT_COLOR,
         }
       )
         .setContext(ctx)
@@ -89,14 +84,7 @@ export class GapOverlay {
 
     ctx.save();
 
-    const stroke = this.style?.stroke ?? DEFAULT_STYLE_STROKE;
-    ctx.setStrokeStyle(stroke);
-    ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.w, rect.h);
-    ctx.stroke();
-    ctx.closePath();
-
-    const fill = this.style?.fill ?? DEFAULT_STYLE_FILL;
+    const fill = this.style?.fill ?? this.config.DEFAULT_GAP_OVERLAY_FILL_COLOR;
     ctx.setFillStyle(fill);
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 

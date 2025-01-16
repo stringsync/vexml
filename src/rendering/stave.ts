@@ -47,6 +47,7 @@ export class Stave {
       key: this.key,
       rect: Rect.empty(), // placeholder
       intrinsicRect: Rect.empty(), // placeholder
+      playableRect: Rect.empty(), // placeholder
       excessHeight: 0, // placeholder
       voiceRenders,
       vexflowMultiMeasureRest,
