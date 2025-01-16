@@ -127,7 +127,7 @@ export class Fragment {
 
     const fragment = this.document.getFragment(this.key);
     if (fragment.kind === 'nonmusical') {
-      fragmentRender.gapOverlay = new GapOverlay(this.config, this.log, fragment.label, fragmentRender);
+      fragmentRender.gapOverlay = new GapOverlay(this.config, this.log, fragment.label, fragmentRender, fragment.style);
     }
 
     return fragmentRender;

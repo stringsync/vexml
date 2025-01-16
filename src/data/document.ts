@@ -1,6 +1,6 @@
 import * as util from '@/util';
 import * as errors from '@/errors';
-import { NonMusicalFragment as NonMusicalFragment, Score } from './types';
+import { GapOverlayStyle, NonMusicalFragment as NonMusicalFragment, Score } from './types';
 
 const DEFAULT_FRAGMENT_WIDTH = 300;
 
@@ -32,6 +32,7 @@ export class Document {
     durationMs: number;
     minWidth?: number;
     label?: string;
+    style?: GapOverlayStyle;
   }): this {
     // Inserting gaps requires us to know about the part and stave signatures, so we can visually extend the measure
     // that precedes it.
@@ -66,6 +67,7 @@ export class Document {
     gapFragment.durationMs = opts.durationMs;
     gapFragment.label = opts.label ?? null;
     gapFragment.minWidth = opts.minWidth ?? DEFAULT_FRAGMENT_WIDTH;
+    gapFragment.style = opts.style;
 
     // Get rid of all the voices in the parts, since we're potentially just rendering a label.
     gapFragment.parts
