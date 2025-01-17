@@ -4,12 +4,12 @@
 
 ### Goals
 
-- **DO** Define data structures for handling musical data.
-- **DO** Provide utilities for manipulating and accessing data.
-- **DO** Ensure data integrity and consistency.
+- **DO** define data structures for handling musical data.
+- **DO** provide utilities for manipulating and accessing data.
+- **DO** ensure data integrity and consistency.
 
 ### Non-goals
 
-- **DO NOT** Handle rendering or presentation logic.
-- **DO NOT** Provide complex data transformation logic.
-- **DO NOT** Manage external data sources or APIs.
+- **DO NOT** handle rendering or presentation logic.
+- **DO NOT** provide complex data transformation logic.
+- **DO NOT** manage external data sources or APIs.
