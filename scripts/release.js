@@ -66,6 +66,7 @@ function main() {
   updateVersion(nextVersion);
 
   runCommand('npm install'); // Ensure dependencies are locked with the new version
+  runCommand('npm run build');
   runCommand(`git commit -am "Release ${nextVersion}"`);
   runCommand(`git tag v${nextVersion}`);
   runCommand(`git push origin v${nextVersion}`);

@@ -358,10 +358,7 @@ class SignatureBuilder {
   }
 
   private diffMetronome(metronome: Metronome): SignatureChange[] {
-    if (
-      !this.previousSignature ||
-      metronome.isEqual(!this.previousSignature || this.previousSignature.getMetronome())
-    ) {
+    if (!this.previousSignature || metronome.isEqual(this.previousSignature.getMetronome())) {
       return [];
     } else {
       return [{ type: 'metronome' }];
