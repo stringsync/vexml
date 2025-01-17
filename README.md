@@ -141,7 +141,7 @@ See [render.ts](./src/render.ts) and [Vexml.tsx](./site/src/components/Vexml.tsx
 
 ### Gap Measures
 
-Gap measures are non-musical fragments that optionally have a label. This is useful when syncing a `vexml` cursor with media that has non-musical pauses in it.
+Gap measures are non-musical fragments that optionally have a label. This is useful when syncing a `vexml` cursor with media that has non-musical pauses in it (e.g. a video of a teacher explaining a musical concept).
 
 ![gap measure example](https://github.com/user-attachments/assets/11023cbb-3d20-4405-a5c6-95f36585dd93)
 
@@ -274,3 +274,62 @@ npm run release [alpha|beta|rc|patch|minor|major]
 ```
 
 It should create the git tags needed to create a release on GitHub.
+
+## Design
+
+### Rendering Hiearchy
+
+The rendering hiearchy is the most important data structure in `vexml`. The tree-like structure is what allows `vexml` to query data efficiently in the data document instead of manually passing data directly from a node to its ancestors.
+
+> [!NOTE]  
+> You can visualize most of these structures on [vexml.dev](https://vexml.dev) by enabling the `DEBUG_DRAW_*` options.
+
+#### `Score`
+
+Score is the root of the hiearchy. It contains many systems and non-musical engravings such as the title.
+
+![system](https://github.com/user-attachments/assets/8789e09e-5230-40c5-afd6-c836e185466d)
+
+#### `System`
+
+System represents a collection of formatted measures across all parts.
+
+![score](https://github.com/user-attachments/assets/39470030-93e3-4d82-876c-d35301a6844d)
+
+#### `Measure`
+
+Measure represents a collection formatted fragments across all parts.
+
+![measure](https://github.com/user-attachments/assets/ddcb9470-4fb9-4af9-b11c-2e28e80611ec)
+
+#### `Fragment`
+
+Fragment represents a collection of parts formatted together. It is a music section with a distinct fragment signature (see [data/types.ts](./src/data/types.ts) for what makes a fragment signature). It is necessary because there are some elements that vexflow can only render one of per stave (e.g. start clef). Fragment also contains some non-musical elements, such as part labels.
+
+![fragment](https://github.com/user-attachments/assets/509dbee1-c34b-4d57-8224-4decdfa7dace)
+
+#### `Part`
+
+Part is a _fragment-scoped_ music section that usually corresponds to an instrument. It contains many staves.
+
+![part](https://github.com/user-attachments/assets/431b51b0-ddf7-47b7-a32a-a6c1f3b9a446)
+
+#### `Stave`
+
+Stave is a container for voices.
+
+![stave](https://github.com/user-attachments/assets/1d1e3cc7-4ff0-4479-a3b7-d06e5ee54ca6)
+
+_Shown here are stave intrinsic rects._
+
+#### `Voice`
+
+Voice represents a collection of entries. There can be multiple voices per stave.
+
+![voice](https://github.com/user-attachments/assets/07ae834b-947d-4d70-a19f-e6ef3a38ae4e)
+
+#### `Voice Entry`
+
+Voice entry is anything rendered within a voice. Some common examples are notes and rests.
+
+![voice entry](https://github.com/user-attachments/assets/0f13c5b3-6143-450b-a43e-31ed5ef4505b)
