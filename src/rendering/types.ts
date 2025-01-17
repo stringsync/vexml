@@ -3,6 +3,8 @@ import * as data from '@/data';
 import { Rect } from '@/spatial';
 import { Label } from './label';
 import { ClefSign, StemDirection } from './enums';
+import { GapOverlay } from './gapoverlay';
+import { Fraction } from '@/util';
 
 export interface Drawable {
   setContext(ctx: vexflow.RenderContext): this;
@@ -38,11 +40,6 @@ export type OctaveShiftKey = {
 
 export type VibratoKey = {
   vibratoIndex: number;
-};
-
-export type SystemArrangement = {
-  from: number;
-  to: number;
 };
 
 export type SystemKey = {
@@ -129,6 +126,7 @@ export type FragmentRender = {
   partLabelGroupRender: PartLabelGroupRender | null;
   partRenders: PartRender[];
   vexflowStaveConnectors: vexflow.StaveConnector[];
+  gapOverlay: GapOverlay | null;
 };
 
 /**
@@ -176,6 +174,7 @@ export type StaveRender = {
   key: StaveKey;
   rect: Rect;
   intrinsicRect: Rect;
+  playableRect: Rect;
   excessHeight: number;
   voiceRenders: VoiceRender[];
   startClefRender: ClefRender | null;
@@ -206,6 +205,7 @@ export type VoiceRender = {
   type: 'voice';
   key: VoiceKey;
   rect: Rect;
+  startMeasureBeat: Fraction;
   vexflowVoices: vexflow.Voice[];
   entryRenders: VoiceEntryRender[];
   beamRenders: BeamRender[];

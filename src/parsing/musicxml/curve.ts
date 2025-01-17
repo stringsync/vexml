@@ -1,12 +1,16 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import { VoiceEntryContext } from './contexts';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 type CurvePhase = 'start' | 'continue' | 'stop';
 
 /** A generic way of representing a curved connector in music notation. */
 export class Curve {
   constructor(
+    private config: Config,
+    private log: Logger,
     private curveNumber: number,
     private phase: CurvePhase,
     private placement: data.CurvePlacement,
@@ -14,11 +18,11 @@ export class Curve {
     private articulation: data.CurveArticulation
   ) {}
 
-  static create(musicXML: { notation: musicxml.Notations }): Curve[] {
-    return [...Curve.createSlurs(musicXML), ...Curve.createTies(musicXML)];
+  static create(config: Config, log: Logger, musicXML: { notation: musicxml.Notations }): Curve[] {
+    return [...Curve.createSlurs(config, log, musicXML), ...Curve.createTies(config, log, musicXML)];
   }
 
-  private static createSlurs(musicXML: { notation: musicxml.Notations }): Curve[] {
+  private static createSlurs(config: Config, log: Logger, musicXML: { notation: musicxml.Notations }): Curve[] {
     const curves = new Array<Curve>();
 
     for (const slur of musicXML.notation.getSlurs()) {
@@ -62,13 +66,13 @@ export class Curve {
         articulation = 'pulloff';
       }
 
-      curves.push(new Curve(curveNumber, phase, placement, opening, articulation));
+      curves.push(new Curve(config, log, curveNumber, phase, placement, opening, articulation));
     }
 
     return curves;
   }
 
-  private static createTies(musicXML: { notation: musicxml.Notations }): Curve[] {
+  private static createTies(config: Config, log: Logger, musicXML: { notation: musicxml.Notations }): Curve[] {
     const curves = new Array<Curve>();
 
     for (const tied of musicXML.notation.getTieds()) {
@@ -98,7 +102,7 @@ export class Curve {
       const curveNumber = tied.getNumber();
       const articulation = 'unspecified';
 
-      curves.push(new Curve(curveNumber, phase, placement, opening, articulation));
+      curves.push(new Curve(config, log, curveNumber, phase, placement, opening, articulation));
     }
 
     return curves;

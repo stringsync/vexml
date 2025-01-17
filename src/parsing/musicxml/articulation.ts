@@ -1,14 +1,21 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Articulation {
-  private constructor(private articulationType: data.ArticulationType, private placement: data.ArticulationPlacement) {}
+  private constructor(
+    private config: Config,
+    private log: Logger,
+    private articulationType: data.ArticulationType,
+    private placement: data.ArticulationPlacement
+  ) {}
 
-  static create(musicXML: { note: musicxml.Note }): Articulation[] {
+  static create(config: Config, log: Logger, musicXML: { note: musicxml.Note }): Articulation[] {
     const articulations = new Array<Articulation>();
 
     function add(articulationType: data.ArticulationType, placement: data.ArticulationPlacement) {
-      articulations.push(new Articulation(articulationType, placement));
+      articulations.push(new Articulation(config, log, articulationType, placement));
     }
 
     musicXML.note

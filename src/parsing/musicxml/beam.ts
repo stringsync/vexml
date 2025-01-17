@@ -1,12 +1,14 @@
 import * as musicxml from '@/musicxml';
 import { VoiceEntryContext } from './contexts';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 type BeamPhase = 'start' | 'continue';
 
 export class Beam {
-  constructor(private phase: BeamPhase) {}
+  constructor(private config: Config, private log: Logger, private phase: BeamPhase) {}
 
-  static create(musicXML: { beam: musicxml.Beam }): Beam {
+  static create(config: Config, log: Logger, musicXML: { beam: musicxml.Beam }): Beam {
     let phase: BeamPhase;
     switch (musicXML.beam.getBeamValue()) {
       case 'begin':
@@ -17,7 +19,7 @@ export class Beam {
         break;
     }
 
-    return new Beam(phase);
+    return new Beam(config, log, phase);
   }
 
   parse(voiceEntryCtx: VoiceEntryContext): string {

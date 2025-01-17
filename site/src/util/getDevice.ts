@@ -45,8 +45,12 @@ export const getDevice = (): Device => {
   // when providing a null callback.
   // https://github.com/rafgraph/detect-passive-events/pull/3
   const noop = () => {};
-  w.addEventListener && w.addEventListener('p', noop, options);
-  w.removeEventListener && w.removeEventListener('p', noop, false);
+  if (w.addEventListener) {
+    w.addEventListener('p', noop, options);
+  }
+  if (w.removeEventListener) {
+    w.removeEventListener('p', noop, false);
+  }
 
   const supportsPassiveEvents: boolean = passiveOptionAccessed;
 

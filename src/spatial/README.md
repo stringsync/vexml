@@ -4,12 +4,11 @@
 
 ### Goals
 
-- **DO** Provide music-agnostic utility classes for spatial contexts.
-- **DO** Encapsulate spatial algorithms.
-- **DO** Support 2D contexts.
+- **DO** provide music-agnostic utility classes for spatial contexts.
+- **DO** encapsulate spatial algorithms.
+- **DO** support 2D contexts.
 
 ### Non-goals
 
-- **DO NOT** Provide music engraving specific solutions.
-- **DO NOT** Have any references to vexflow.
-- **DO NOT** Support non-2D contexts.
+- **DO NOT** provide music-engraving-specific solutions.
+- **DO NOT** have any references to vexflow.

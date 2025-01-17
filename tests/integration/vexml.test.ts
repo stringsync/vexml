@@ -1,8 +1,8 @@
 import { Page } from 'puppeteer';
-import { MusicXMLParser, Renderer } from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 import { setup, getSnapshotIdentifier } from './helpers';
+import * as vexml from '@/index';
 
 type TestCase = {
   filename: string;
@@ -45,11 +45,8 @@ describe('vexml', () => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 
     const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
-
-    const parser = new MusicXMLParser();
-    const doc = parser.parse(buffer.toString());
-    const renderer = new Renderer(doc);
-    renderer.render(vexmlDiv, { config: { WIDTH: t.width } });
+    const musicXML = buffer.toString();
+    vexml.renderMusicXML(musicXML, vexmlDiv, { config: { WIDTH: t.width } });
 
     await page.setViewport({
       width: t.width,

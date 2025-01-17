@@ -6,14 +6,14 @@ export interface Shape {
   contains(point: Point): boolean;
 
   /** Returns the minimum X. */
-  getMinX(): number;
+  left(): number;
 
   /** Returns the maximum X. */
-  getMaxX(): number;
+  right(): number;
 
   /** Returns the minimum Y. */
-  getMinY(): number;
+  top(): number;
 
   /** Returns the maximum Y. */
-  getMaxY(): number;
+  bottom(): number;
 }

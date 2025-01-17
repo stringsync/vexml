@@ -1,6 +1,19 @@
 export function downloadCanvasAsImage(canvas: HTMLCanvasElement, imageName: string) {
-  // Convert the canvas to a data URL
-  const dataUrl = canvas.toDataURL('image/png');
+  // Create a new canvas to draw the image with a white background
+  const newCanvas = document.createElement('canvas');
+  newCanvas.width = canvas.width;
+  newCanvas.height = canvas.height;
+  const context = newCanvas.getContext('2d')!;
+
+  // Fill the new canvas with a white background
+  context.fillStyle = 'white';
+  context.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+  // Draw the original canvas onto the new canvas
+  context.drawImage(canvas, 0, 0);
+
+  // Convert the new canvas to a data URL
+  const dataUrl = newCanvas.toDataURL('image/png');
 
   // Create a link element for downloading
   const link = document.createElement('a');

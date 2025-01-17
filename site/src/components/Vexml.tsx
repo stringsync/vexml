@@ -5,8 +5,6 @@ import { useWidth } from '../hooks/useWidth';
 import { Player, PlayerState } from '../lib/Player';
 import { getDevice } from '../util/getDevice';
 
-const STRINGSYNC_RED = '#FC354C';
-
 export type VexmlProps = {
   musicXML: string;
   config: vexml.Config;
@@ -68,7 +66,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
+    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
@@ -81,7 +79,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.getStart().ms;
+    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
@@ -100,20 +98,24 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
     const start = new Date();
     let score: vexml.Score | undefined;
+    let player: Player | undefined;
+
+    const vexmlConfig = {
+      ...config,
+      WIDTH: width,
+    };
 
     try {
       const logger = new vexml.ConsoleLogger();
-      const parser = new vexml.MusicXMLParser();
+      const parser = new vexml.MusicXMLParser({ config: vexmlConfig });
+      const defaultFormatter = new vexml.DefaultFormatter({ config: vexmlConfig });
+      const monitoredFormatter = new vexml.MonitoredFormatter(defaultFormatter, logger, { config: vexmlConfig });
+      const renderer = new vexml.Renderer({ config: vexmlConfig, formatter: monitoredFormatter, logger });
+
       const document = parser.parse(musicXML);
-      const formatter = new vexml.MonitoredFormatter(new vexml.DefaultFormatter(), logger);
-      const renderer = new vexml.Renderer(document, formatter);
-      score = renderer.render(div, {
-        config: {
-          ...config,
-          WIDTH: width,
-        },
-        logger,
-      });
+      const formattedDocument = monitoredFormatter.format(document);
+
+      score = renderer.render(div, formattedDocument);
       setScore(score);
 
       if (onClick) {
@@ -133,25 +135,28 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
       }
 
       const durationMs = score.getDurationMs();
-      const player = new Player(durationMs);
+      player = new Player(durationMs);
       setPlayer(player);
       setPlayerState(player.getState());
 
       const cursor = score.addCursor();
       setCursor(cursor);
 
-      const simpleCursor = vexml.SimpleCursor.render(score.getOverlayElement(), STRINGSYNC_RED);
+      const simpleCursor = vexml.SimpleCursor.render(score.getOverlayElement());
 
-      cursor.addEventListener('change', (e) => {
-        simpleCursor.update(e.cursorRect);
-        if (!cursor.isFullyVisible()) {
-          cursor.scrollIntoView(scrollBehavior);
-        }
-      });
-      simpleCursor.update(cursor.getState().cursorRect);
+      cursor.addEventListener(
+        'change',
+        (e) => {
+          simpleCursor.update(e.cursorRect);
+          if (!cursor.isFullyVisible()) {
+            cursor.scrollIntoView(scrollBehavior);
+          }
+        },
+        { emitBootstrapEvent: true }
+      );
 
       player.addEventListener('statechange', () => {
-        setPlayerState(player.getState());
+        setPlayerState(player!.getState());
       });
 
       player.addEventListener('progress', (currentTimeMs) => {
@@ -161,7 +166,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
       score.addEventListener('click', (e) => {
         if (typeof e.timestampMs === 'number') {
-          player.seek(e.timestampMs);
+          player!.seek(e.timestampMs);
         }
       });
 
@@ -186,6 +191,14 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
 
     return () => {
       score?.destroy();
+
+      player?.reset();
+
+      if (div.firstChild) {
+        div.removeChild(div.firstChild);
+      }
+
+      setProgress(0);
     };
   }, [div, width, musicXML, config, onResult, onClick, onLongpress, onEnter, onExit, onScroll, scrollBehavior]);
 

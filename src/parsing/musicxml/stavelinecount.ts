@@ -1,14 +1,28 @@
 import * as musicxml from '@/musicxml';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class StaveLineCount {
-  constructor(private partId: string, private staveNumber: number, private value: number) {}
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private partId: string,
+    private staveNumber: number,
+    private value: number
+  ) {}
 
-  static default(partId: string, staveNumber: number) {
-    return new StaveLineCount(partId, staveNumber, 5);
+  static default(config: Config, log: Logger, partId: string, staveNumber: number) {
+    return new StaveLineCount(config, log, partId, staveNumber, 5);
   }
 
-  static create(partId: string, musicXML: { staveDetails: musicxml.StaveDetails }) {
-    return new StaveLineCount(partId, musicXML.staveDetails.getStaveNumber(), musicXML.staveDetails.getStaveLines());
+  static create(config: Config, log: Logger, partId: string, musicXML: { staveDetails: musicxml.StaveDetails }) {
+    return new StaveLineCount(
+      config,
+      log,
+      partId,
+      musicXML.staveDetails.getStaveNumber(),
+      musicXML.staveDetails.getStaveLines()
+    );
   }
 
   getPartId(): string {

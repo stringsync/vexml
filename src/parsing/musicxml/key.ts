@@ -2,6 +2,8 @@ import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as conversions from './conversions';
 import { KeyMode } from './enums';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 const CIRCLE_OF_FIFTHS_SHARP = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
 const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
@@ -9,6 +11,8 @@ const CIRCLE_OF_FIFTHS_FLAT = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
 /** Represents a key signature. */
 export class Key {
   constructor(
+    private config: Config,
+    private log: Logger,
     private partId: string,
     private staveNumber: number,
     private fifths: number,
@@ -16,12 +20,27 @@ export class Key {
     private mode: KeyMode
   ) {}
 
-  static default(partId: string, staveNumber: number): Key {
-    return new Key(partId, staveNumber, 0, null, 'none');
+  static default(config: Config, log: Logger, partId: string, staveNumber: number): Key {
+    return new Key(config, log, partId, staveNumber, 0, null, 'none');
   }
 
-  static create(partId: string, staveNumber: number, previousKey: Key | null, musicXML: { key: musicxml.Key }): Key {
-    return new Key(partId, staveNumber, musicXML.key.getFifthsCount(), previousKey, musicXML.key.getMode());
+  static create(
+    config: Config,
+    log: Logger,
+    partId: string,
+    staveNumber: number,
+    previousKey: Key | null,
+    musicXML: { key: musicxml.Key }
+  ): Key {
+    return new Key(
+      config,
+      log,
+      partId,
+      staveNumber,
+      musicXML.key.getFifthsCount(),
+      previousKey,
+      musicXML.key.getMode()
+    );
   }
 
   parse(): data.Key {

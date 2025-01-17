@@ -7,25 +7,27 @@ import { Signature } from './signature';
 import { ScoreContext, SystemContext } from './contexts';
 import { EventCalculator } from './eventcalculator';
 import { JumpGroup } from './jumpgroup';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class System {
-  private constructor(private measures: Measure[]) {}
+  private constructor(private config: Config, private log: Logger, private measures: Measure[]) {}
 
-  static create(musicXML: { scorePartwise: musicxml.ScorePartwise }): System {
+  static create(config: Config, log: Logger, musicXML: { scorePartwise: musicxml.ScorePartwise }): System {
     const partIds = musicXML.scorePartwise.getParts().map((part) => part.getId());
 
     const measureCount = util.max(musicXML.scorePartwise.getParts().map((part) => part.getMeasures().length));
     const measureLabels = System.getMeasureLabels(measureCount, musicXML);
-    const measureEvents = new EventCalculator({ scorePartwise: musicXML.scorePartwise }).calculate();
+    const measureEvents = new EventCalculator(config, log, { scorePartwise: musicXML.scorePartwise }).calculate();
 
-    const jumpGroups = System.getJumpGroups(measureCount, musicXML);
+    const jumpGroups = System.getJumpGroups(config, log, measureCount, musicXML);
 
     const startBarlineStyles = System.getBarlineStyles(measureCount, 'left', musicXML, jumpGroups);
     const endBarlineStyles = System.getBarlineStyles(measureCount, 'right', musicXML, jumpGroups);
 
     const measures = new Array<Measure>(measureCount);
 
-    let signature = Signature.default();
+    let signature = Signature.default(config, log);
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
       const measureLabel = measureLabels[measureIndex];
@@ -34,6 +36,8 @@ export class System {
       const endBarlineStyle = endBarlineStyles[measureIndex];
 
       const measure = Measure.create(
+        config,
+        log,
         signature,
         measureIndex,
         measureLabel,
@@ -47,7 +51,7 @@ export class System {
       signature = measure.getLastSignature();
     }
 
-    return new System(measures);
+    return new System(config, log, measures);
   }
 
   private static getMeasureLabels(
@@ -81,13 +85,15 @@ export class System {
   }
 
   private static getJumpGroups(
+    config: Config,
+    log: Logger,
     measureCount: number,
     musicXML: { scorePartwise: musicxml.ScorePartwise }
   ): Array<JumpGroup> {
     const jumpGroups = new Array<JumpGroup>();
 
     for (let measureIndex = 0; measureIndex < measureCount; measureIndex++) {
-      const jumpGroup = JumpGroup.create(measureIndex, musicXML);
+      const jumpGroup = JumpGroup.create(config, log, measureIndex, musicXML);
       jumpGroups.push(jumpGroup);
     }
 

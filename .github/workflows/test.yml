@@ -13,12 +13,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: install
-        run: yarn install
+        run: npm ci
       - name: lint
-        run: yarn lint
+        run: npm run lint
       - name: check format
-        run: yarn format --check
+        run: npm run formatcheck
       - name: typecheck
-        run: yarn typecheck
+        run: npm run typecheck
       - name: test
-        run: yarn test:ci
+        run: npm run test:ci

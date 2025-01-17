@@ -2,9 +2,13 @@ import * as elements from '@/elements';
 import { NumberRange } from '@/util';
 import { DurationRange } from './durationrange';
 
+export type CursorVerticalSpan = 'system' | 'part';
+
 export type SequenceEntry = {
-  mostRecentElement: elements.VoiceEntry;
-  elements: elements.VoiceEntry[];
+  anchorElement: PlaybackElement;
+  activeElements: PlaybackElement[];
   durationRange: DurationRange;
   xRange: NumberRange;
 };
+
+export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;

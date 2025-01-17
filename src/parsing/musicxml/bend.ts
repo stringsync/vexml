@@ -1,10 +1,17 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Bend {
-  private constructor(private bendType: data.BendType, private semitones: number) {}
+  private constructor(
+    private config: Config,
+    private log: Logger,
+    private bendType: data.BendType,
+    private semitones: number
+  ) {}
 
-  static create(musicXML: { bend: musicxml.Bend }): Bend {
+  static create(config: Config, log: Logger, musicXML: { bend: musicxml.Bend }): Bend {
     const semitones = musicXML.bend.getAlter();
 
     let bendType: data.BendType;
@@ -20,7 +27,7 @@ export class Bend {
         break;
     }
 
-    return new Bend(bendType, semitones);
+    return new Bend(config, log, bendType, semitones);
   }
 
   parse(): data.Bend {

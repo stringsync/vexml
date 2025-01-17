@@ -9,6 +9,7 @@ import { Pen } from './pen';
 import { PartLabelGroup } from './partlabelgroup';
 import { Budget } from './budget';
 import { Ensemble } from './ensemble';
+import { GapOverlay } from './gapoverlay';
 
 const BARLINE_PADDING_RIGHT = 6;
 const MEASURE_NUMBER_PADDING_LEFT = 6;
@@ -29,7 +30,12 @@ export class Fragment {
 
     let widthBudget: Budget;
     if (this.width === null) {
-      widthBudget = Budget.unlimited();
+      const minWidth = this.document.getFragment(this.key).minWidth;
+      if (minWidth) {
+        widthBudget = new Budget(minWidth);
+      } else {
+        widthBudget = Budget.unlimited();
+      }
     } else {
       widthBudget = new Budget(this.width);
     }
@@ -58,6 +64,7 @@ export class Fragment {
       partLabelGroupRender: null, // placeholder
       vexflowStaveConnectors: [], // placeholder
       partRenders,
+      gapOverlay: null, // placeholder
     };
     const throwawayFragmentRender: FragmentRender = {
       type: 'fragment',
@@ -68,6 +75,7 @@ export class Fragment {
       partLabelGroupRender: null, // placeholder
       vexflowStaveConnectors: [], // placeholder
       partRenders: throwawayPartRenders,
+      gapOverlay: null, // placeholder
     };
 
     let ensembleWidth: number | null;
@@ -115,6 +123,11 @@ export class Fragment {
     if (partLabelGroupRender) {
       fragmentRender.partLabelGroupRender = partLabelGroupRender;
       fragmentRender.rect = Rect.merge([fragmentRender.rect, partLabelGroupRender.rect]);
+    }
+
+    const fragment = this.document.getFragment(this.key);
+    if (fragment.kind === 'nonmusical') {
+      fragmentRender.gapOverlay = new GapOverlay(this.config, this.log, fragment.label, fragmentRender, fragment.style);
     }
 
     return fragmentRender;

@@ -1,8 +1,11 @@
-export class StaveCount {
-  constructor(private partId: string, private value: number) {}
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
-  static default(partId: string): StaveCount {
-    return new StaveCount(partId, 1);
+export class StaveCount {
+  constructor(private config: Config, private log: Logger, private partId: string, private value: number) {}
+
+  static default(config: Config, log: Logger, partId: string): StaveCount {
+    return new StaveCount(config, log, partId, 1);
   }
 
   getPartId(): string {

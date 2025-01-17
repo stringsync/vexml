@@ -10,6 +10,10 @@ type HasIntrinsicRect = {
   intrinsicRect: Rect;
 };
 
+type HasPlayableRect = {
+  playableRect: Rect;
+};
+
 /**
  * After a system is rendered, we may learn there is excess height from its components. This class recursivley moves
  * all the rects by the excess height such that we can honor the SYSTEM_MARGIN_BOTTOM configuration without
@@ -29,6 +33,9 @@ export class SystemRenderMover {
       }
       if (this.hasIntrinsicRect(obj)) {
         obj.intrinsicRect = obj.intrinsicRect.translate({ dy });
+      }
+      if (this.hasPlayableRect(obj)) {
+        obj.playableRect = obj.playableRect.translate({ dy });
       }
       if (Array.isArray(obj)) {
         for (const item of obj) {
@@ -60,5 +67,9 @@ export class SystemRenderMover {
 
   private hasIntrinsicRect(obj: any): obj is HasIntrinsicRect {
     return !!obj && obj.intrinsicRect instanceof Rect;
+  }
+
+  private hasPlayableRect(obj: any): obj is HasPlayableRect {
+    return !!obj && obj.playableRect instanceof Rect;
   }
 }
