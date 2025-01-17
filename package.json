@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": false,
   "description": "MusicXML to Vexflow",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/@types/index.d.ts",
   "type": "module",
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "package.json",
+    "README.md"
   ],
   "keywords": [
     "vexflow",
@@ -15,6 +18,10 @@
   ],
   "license": "MIT",
   "scripts": {
+    "build": "rimraf dist && npm run build:types && npm run build:cjs && npm run build:esm",
+    "build:cjs": "npm run tsc -- --project tsconfig.package.json --outDir dist/cjs --module commonjs",
+    "build:esm": "npm run tsc -- --project tsconfig.package.json --outDir dist/esm --module esnext",
+    "build:types": "npm run tsc -- --project tsconfig.package.json --outDir dist/@types --emitDeclarationOnly",
     "build:image": "docker build . --tag vexml:latest",
     "build:site": "vite --config site/vite.config.js build",
     "debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand",
@@ -27,6 +34,7 @@
     "resnap": "node scripts/resnap.js",
     "test:ci": "npm run build:image && docker run --rm vexml:latest npm run jest -- --runInBand --ci",
     "test": "npm run build:image && docker run -it --rm -v $(pwd)/src:/vexml/src -v $(pwd)/tests:/vexml/tests vexml:latest npm run jest -- --runInBand",
+    "tsc": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
