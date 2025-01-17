@@ -73,7 +73,7 @@ function main() {
   // Determine npm tag
   const npmTag = ['alpha', 'beta', 'rc'].includes(type) ? type : 'latest';
 
-  runCommand(`npm publish --tag ${npmTag}`);
+  runCommand(`npm publish --access public --tag ${npmTag}`);
   runCommand('git push origin master'); // Push changes to repo
 
   console.log(`\x1b[32m✅ Published ${nextVersion} with tag "${npmTag}".\x1b[0m`);
