@@ -72,7 +72,9 @@ export const SourceDisplay = (props: SourceProps) => {
 
   const configFormCardId = useId().replaceAll(':', '');
   const configFormCardSelector = '#' + configFormCardId;
-  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const onConfigChange = (config: vexml.Config) => {
+    props.onUpdate({ ...props.source, config });
+  };
 
   const eventCardId = useId().replaceAll(':', '');
   const eventCardSelector = '#' + eventCardId;
@@ -190,7 +192,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div id={configFormCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
             <h3 className="mb-3">Config</h3>
 
-            <ConfigForm defaultValue={config} onChange={setConfig} />
+            <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
           </div>
         </div>
 
@@ -208,7 +210,7 @@ export const SourceDisplay = (props: SourceProps) => {
             <ErrorBoundary>
               <Vexml
                 musicXML={musicXML}
-                config={config}
+                config={props.source.config}
                 onResult={setVexmlResult}
                 onClick={onVexmlClick}
                 onLongpress={onVexmlLongpress}
