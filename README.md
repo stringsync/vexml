@@ -26,7 +26,7 @@ npm install @stringsync/vexml
 Rendering requires you to provide a valid MusicXML string and an `HTMLDivElement`.
 
 ```ts
-import * as vexml from 'vexml';
+import * as vexml from '@stringsync/vexml';
 
 const musicXML = 'some valid musicXML string';
 const div = document.getElementById('my-id');
@@ -36,7 +36,7 @@ const score = vexml.renderMusicXML(musicXML, div);
 You can also render MXL given a `Blob` input.
 
 ```ts
-import * as vexml from 'vexml';
+import * as vexml from '@stringsync/vexml';
 
 const mxl = new Blob(['some', 'valid', 'mxl', 'bytes']);
 const div = document.getElementById('my-id');
@@ -76,7 +76,7 @@ Cursors mark a position in a rendered vexml score. You can step through a piece 
 - **Listen** update the component to react to model changes.
 
 ```ts
-import * as vexml from 'vexml';
+import * as vexml from '@stringsync/vexml';
 
 // ...
 
@@ -114,7 +114,7 @@ See [Vexml.tsx](./site/src/components/Vexml.tsx) for an example in React.
 - **Render** the formatted vexml data document.
 
 ```ts
-import * as vexml from 'vexml';
+import * as vexml from '@stringsync/vexml';
 
 // Declare
 const config = { ...vexml.DEFAULT_CONFIG, WIDTH: 600 };
