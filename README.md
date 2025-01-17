@@ -2,67 +2,178 @@
 
 ![test workflow](https://github.com/stringsync/vexml/actions/workflows/test.yml/badge.svg)
 
-- [vexml.dev](https://vexml.dev)
-- [MusicXML](https://www.w3.org/2021/06/musicxml40/)
-- [VexFlow](https://www.vexflow.com/)
+[Demo](https://vexml.dev)
+
+`vexml` is an open source library that renders [MusicXML](https://www.w3.org/2021/06/musicxml40/) using [vexflow](https://github.com/vexflow/vexflow).
 
 ## Usage
 
-### Installing
+### Installation
 
-You _will_ be able to use any JavaScript package manager (e.g. `yarn`, `npm`, `pnpm`) to install `vexml`. At the moment, `stringsync/vexml` is not published to any public registry.
+```sh
+npm install @stringsync/vexml
+```
+
+> [!NOTE]  
+> I recommend you to lock into a specific version to avoid breakages due to `vexml` API changes.
 
 ### ⚠️ IMPORTANT: Loading Fonts
 
-`vexml` uses VexFlow 5, which requires you to load the fonts you need to use. See the `vexflow` documentation TODO(TBD link) on how to do this.
+`vexml` uses `vexflow` 5^, which requires you to load the fonts you need to use. See the [vexflow](https://github.com/vexflow/vexflow) repo for more information.
 
 ### Rendering
 
+Rendering requires you to provide a valid MusicXML string and an `HTMLDivElement`.
+
 ```ts
-import { vexml } from 'vexml';
+import * as vexml from 'vexml';
 
-const width = 600;
-const height = 600;
-
-const div = document.createElement('div');
-div.style.width = `${width}px`;
-div.style.height = `${height}px`;
-
-const musicXML = 'some valid musicXML'; // see tests/integration/__data__ for valid musicXML documents
-
-vexml.Vexml.fromMusicXML(musicXML).render({ element: div, width: width });
+const musicXML = 'some valid musicXML string';
+const div = document.getElementById('my-id');
+const score = vexml.renderMusicXML(musicXML, div);
 ```
 
-This will render a child SVG element whose height will automatically adjust to fit the container. There is currently no option to disable this.
+You can also render MXL given a `Blob` input.
 
-## Motivation
+```ts
+import * as vexml from 'vexml';
 
-> [!NOTE]
-> At the time of writing, most of these features are aspirational. Please see the [Usage](#Usage) section for a list of available features.
+const mxl = new Blob(['some', 'valid', 'mxl', 'bytes']);
+const div = document.getElementById('my-id');
+const scorePromise = vexml.renderMXL(musicXML, div);
+```
 
-### Render MusicXML in Any Web Browser 🌐🎶
+## Advanced Usage
 
-MusicXML is the standard for digital sheet music, but visualizing it often requires specialized desktop software.
-This library empowers you to bring musical notation to the web, making it accessible on any device with a browser.
+### Config
 
-### Navigate Musical Renderings 🎼🗺️
+To see an exhaustive list of configuration options, see [config.ts](./src/config.ts). You can experiment with all configs on dev site or [vexml.dev](https://vexml.dev).
 
-- Programmatic scrolling and zooming to specific sections.
-- Jumping between measures or movements.
-- Synchronizing the visual score with audio playback.
-- Navigating based on musical events (e.g., chord changes).
+### Events
 
-### Interactive User Experience 🖱️🎹
+The event listening API is similar to `EventTarget.addEventListener`, except you need to save a reference to the returned handle to unsubscribe.
 
-- Built-in hooks for reacting to user input (clicks, keyboard events, MIDI).
-- Customizable interactions (e.g., highlighting notes, changing playback speed).
-- Opportunities to build educational tools, interactive performances, or adaptive learning experiences.
+```ts
+const score = vexml.renderMusicXML(musicXML, div);
+
+const handle = score.addEventListener('click', (e) => {
+  console.log(e);
+});
+
+// ...
+
+score.removeEventListener(handle);
+```
+
+Events work the same for both canvas and svg backends.
+
+### Cursors
+
+Cursors mark a position in a rendered vexml score. You can step through a piece entry-by-entry or seek a specific timestamp.
+
+- **Add** a cursor _model_ for the part you're interested in.
+- **Render** a cursor _component_ to the score's overlay.
+- **Listen** update the component to react to model changes.
+
+```ts
+import * as vexml from 'vexml';
+
+// ...
+
+const score = vexml.renderMusicXML(musicXML, div);
+
+// Add
+const cursorModel = score.addCursor();
+
+// Render
+const cursorComponent = vexml.SimpleCursor.render(score.getOverlayElement());
+
+// Listen
+cursorModel.addEventListener(
+  'change',
+  (e) => {
+    cursorComponent.update(e.cursorRect);
+    // The model infers its visibility via the cursorRect. It assumes you've updated appropriately.
+    if (!cursorModel.isFullyVisible()) {
+      cursorModel.scrollIntoView(scrollBehavior);
+    }
+  },
+  { emitBootstrapEvent: true }
+);
+```
+
+See [Vexml.tsx](./site/src/components/Vexml.tsx) for an example in React.
+
+### Custom Rendering
+
+`renderMusicXML` is the standard way to orchestrate `vexml` objects. If you need more grannular control, you need to do the following:
+
+- **Declare** a `vexml` configuration.
+- **Parse** the MusicXML into a vexml data document.
+- **Format** the vexml data document.
+- **Render** the formatted vexml data document.
+
+```ts
+import * as vexml from 'vexml';
+
+// Declare
+const config = { ...vexml.DEFAULT_CONFIG, WIDTH: 600 };
+const logger = new vexml.ConsoleLogger();
+
+// Parse
+const parser = new vexml.MusicXMLParser({ config });
+const document = parser.parse(musicXML);
+
+// Format
+const defaultFormatter = new vexml.DefaultFormatter({ config });
+const monitoredFormatter = new vexml.MonitoredFormatter(defaultFormatter, logger, { config });
+const formattedDocument = monitoredFormatter.format(document);
+
+// Render
+const renderer = new vexml.Renderer({ config, formatter: monitoredFormatter, logger });
+const score = renderer.render(div, formattedDocument);
+```
+
+> [!IMPORTANT]  
+> I highly recommend you pass the same config object to all vexml objects. Otherwise, you may get unexpected results.
+
+See [render.ts](./src/render.ts) and [Vexml.tsx](./site/src/components/Vexml.tsx) for more examples.
+
+### Gap Measures
+
+Gap measures are non-musical fragments that optionally have a label. This is useful when syncing a `vexml` cursor with media that has non-musical pauses in it.
+
+![gap measure example](https://github.com/user-attachments/assets/11023cbb-3d20-4405-a5c6-95f36585dd93)
+
+You should create these right after you parse a document, specifically before format you it. Otherwise, the gap may invalidate the format's output.
+
+```ts
+// ...
+
+const parser = new vexml.MusicXMLParser({ config });
+const document = parser.parse(musicXML);
+
+// Insert the gap measure **before** formatting.
+document.insertGapMeasureBefore({
+  absoluteMeasureIndex: 0,
+  durationMs: 5000,
+  minWidth: 500,
+  label: 'What are pitches?',
+  style: {
+    fontSize: '16px',
+  },
+});
+
+const formatter = new vexml.DefaultFormatter({ config });
+
+// render, etc.
+```
 
 ## Development
 
 ### Prerequisites
 
-- [docker](https://docs.docker.com/engine/install)
+You need [docker](https://docs.docker.com/engine/install) to run the integration tests.
 
 ### Installing
 
@@ -99,7 +210,7 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 These commands are just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
 
 ```
-npm run test --watchAll
+npm run test -- --watchAll
 ```
 
 To bypass Docker, run:
@@ -145,7 +256,7 @@ Rendering varies by platform, so it is important you run tests using the `npm ru
 When you want to update all snapshots, rerun the test command with the `--updateSnapshot`.
 
 ```sh
-npm run test --updateSnapshot
+npm run test -- --updateSnapshot
 ```
 
 If you want to only update a single snapshot from specific test, you can use [`--testNamePattern`](https://jestjs.io/docs/cli#--testnamepatternregex).
@@ -153,3 +264,13 @@ If you want to only update a single snapshot from specific test, you can use [`-
 #### Removing tests
 
 When removing a test, it is important to remove the corresponding snapshot. There is currently no automatic mechanism to do this. Alternatively, you can run the `vexml:latest` Docker image with `JEST_IMAGE_SNAPSHOT_TRACK_OBSOLETE=1`, but make sure you're running the entire test suite. See the [docs](https://github.com/americanexpress/jest-image-snapshot#removing-outdated-snapshots) for more information.
+
+### Publishing
+
+You can publish a `vexml` version by running the release script:
+
+```sh
+npm run release [alpha|beta|rc|patch|minor|major]
+```
+
+It should create the git tags needed to create a release on GitHub.
