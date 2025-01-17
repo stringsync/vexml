@@ -3,7 +3,7 @@ import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
 import { useTooltip } from '../hooks/useTooltip';
-import { DEFAULT_CONFIG, VEXML_VERSION } from '../constants';
+import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
 import { SourceForm } from './SourceForm';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
