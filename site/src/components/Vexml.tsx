@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWidth } from '../hooks/useWidth';
 import { Player, PlayerState } from '../lib/Player';
 import { getDevice } from '../util/getDevice';
-import { ErrorBoundary } from './ErrorBoundary';
 
 export type VexmlProps = {
   musicXML: string;
