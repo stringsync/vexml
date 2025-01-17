@@ -23,6 +23,7 @@
     "formatcheck": "prettier --check .",
     "jest": "jest",
     "lint": "eslint .",
+    "release": "node scripts/release.js",
     "resnap": "node scripts/resnap.js",
     "test:ci": "npm run build:image && docker run --rm vexml:latest npm run jest --runInBand --ci",
     "test": "npm run build:image && docker run -it --rm -v $(pwd)/src:/vexml/src -v $(pwd)/tests:/vexml/tests vexml:latest npm run jest --runInBand",
