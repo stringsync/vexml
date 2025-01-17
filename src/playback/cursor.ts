@@ -8,7 +8,9 @@ import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 import { Scroller } from './scroller';
 
-const CURSOR_WIDTH_PX = 1.5;
+// NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
+// it moves. This will happen even when rounding the position.
+const CURSOR_WIDTH_PX = 3;
 
 type CursorState = {
   index: number;
@@ -65,7 +67,7 @@ export class Cursor {
           .filter((part) => part.getIndex() === partIndex)
           .map((part) => part.rect())
       );
-      const yRange = new util.NumberRange(rect.getMinY(), rect.getMaxY());
+      const yRange = new util.NumberRange(rect.top(), rect.bottom());
       systemPartYRanges.push(yRange);
     }
 
@@ -78,17 +80,19 @@ export class Cursor {
       const hasPrevious = index > 0;
       const hasNext = index < sequence.getCount() - 1;
 
-      const element = sequenceEntry.mostRecentElement;
+      const element = sequenceEntry.anchorElement;
 
       util.assertDefined(element);
+
+      const xRange = sequenceEntry.xRange;
 
       const systemIndex = element.getSystemIndex();
       const yRange = systemPartYRanges.at(systemIndex);
 
       util.assertDefined(yRange);
 
-      const x = element.rect().center().x;
-      const y = yRange.getStart();
+      const x = xRange.start;
+      const y = yRange.start;
       const w = CURSOR_WIDTH_PX;
       const h = yRange.getSize();
 
@@ -118,13 +122,15 @@ export class Cursor {
 
   getState(): CursorState {
     const state = this.states.at(this.index);
+    // TODO: We need a way to represent a zero state, when the sequence validly has no entries. Maybe we update the
+    // signature to be nullable.
     util.assertDefined(state);
 
     if (this.alpha === 0) {
       return { ...state };
     }
 
-    const x = util.lerp(state.sequenceEntry.xRange.getStart(), state.sequenceEntry.xRange.getEnd(), this.alpha);
+    const x = util.lerp(state.sequenceEntry.xRange.start, state.sequenceEntry.xRange.end, this.alpha);
     const y = state.cursorRect.y;
     const w = state.cursorRect.w;
     const h = state.cursorRect.h;
@@ -166,8 +172,8 @@ export class Cursor {
     const entry = this.sequence.getEntry(index);
     util.assertNotNull(entry);
 
-    const left = entry.durationRange.getStart();
-    const right = entry.durationRange.getEnd();
+    const left = entry.durationRange.start;
+    const right = entry.durationRange.end;
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
     this.update(index, alpha);
@@ -183,8 +189,16 @@ export class Cursor {
     this.scroller.scrollTo(scrollPoint, behavior);
   }
 
-  addEventListener<N extends keyof EventMap>(name: N, listener: events.EventListener<EventMap[N]>): number {
-    return this.topic.subscribe(name, listener);
+  addEventListener<N extends keyof EventMap>(
+    name: N,
+    listener: events.EventListener<EventMap[N]>,
+    opts?: { emitBootstrapEvent?: boolean }
+  ): number {
+    const id = this.topic.subscribe(name, listener);
+    if (opts?.emitBootstrapEvent) {
+      listener(this.getState());
+    }
+    return id;
   }
 
   removeEventListener(...ids: number[]): void {
@@ -207,6 +221,8 @@ export class Cursor {
   private update(index: number, alpha: number): void {
     index = util.clamp(0, this.sequence.getCount() - 1, index);
     alpha = util.clamp(0, 1, alpha);
+    // Round to 3 decimal places to avoid overloading the event system with redundant updates.
+    alpha = Math.round(alpha * 1000) / 1000;
     if (index !== this.index || alpha !== this.alpha) {
       this.index = index;
       this.alpha = alpha;

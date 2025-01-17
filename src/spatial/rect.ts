@@ -19,12 +19,7 @@ export class Rect implements Shape {
   }
 
   static fromShape(shape: Shape) {
-    return new Rect(
-      shape.getMinX(),
-      shape.getMinY(),
-      shape.getMaxX() - shape.getMinX(),
-      shape.getMaxY() - shape.getMinY()
-    );
+    return new Rect(shape.left(), shape.top(), shape.right() - shape.left(), shape.bottom() - shape.top());
   }
 
   static empty() {
@@ -50,11 +45,11 @@ export class Rect implements Shape {
     return new Point(this.x + this.w / 2, this.y + this.h / 2);
   }
 
-  upperLeft(): Point {
+  topLeft(): Point {
     return new Point(this.x, this.y);
   }
 
-  upperRight(): Point {
+  topRight(): Point {
     return new Point(this.x + this.w, this.y);
   }
 
@@ -72,14 +67,14 @@ export class Rect implements Shape {
     return new Rect(this.x + dx, this.y + dy, this.w, this.h);
   }
 
-  quadrants(): [upperRight: Rect, upperLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
+  quadrants(): [topRight: Rect, topLeft: Rect, bottomLeft: Rect, bottomRight: Rect] {
     const halfWidth = this.w / 2;
     const halfHeight = this.h / 2;
-    const upperRight = new Rect(this.x + halfWidth, this.y, halfWidth, halfHeight);
-    const upperLeft = new Rect(this.x, this.y, halfWidth, halfHeight);
+    const topRight = new Rect(this.x + halfWidth, this.y, halfWidth, halfHeight);
+    const topLeft = new Rect(this.x, this.y, halfWidth, halfHeight);
     const bottomLeft = new Rect(this.x, this.y + halfHeight, halfWidth, halfHeight);
     const bottomRight = new Rect(this.x + halfWidth, this.y + halfHeight, halfWidth, halfHeight);
-    return [upperRight, upperLeft, bottomLeft, bottomRight];
+    return [topRight, topLeft, bottomLeft, bottomRight];
   }
 
   contains(point: Point): boolean {
@@ -90,20 +85,20 @@ export class Rect implements Shape {
     return { x: this.x, y: this.y, w: this.w, h: this.h };
   }
 
-  getMinX(): number {
+  left(): number {
     return this.x;
   }
 
-  getMaxX(): number {
+  right(): number {
     return this.x + this.w;
   }
 
-  getMinY(): number {
+  top(): number {
     // NOTE: This assumes that the rectangle is not rotated.
     return this.y;
   }
 
-  getMaxY(): number {
+  bottom(): number {
     // NOTE: This assumes that the rectangle is not rotated.
     return this.y + this.h;
   }

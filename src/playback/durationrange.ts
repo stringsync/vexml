@@ -8,12 +8,16 @@ export class DurationRange {
     this.numberRange = new util.NumberRange(start.ms, end.ms);
   }
 
-  getStart(): Duration {
-    return Duration.ms(this.numberRange.getStart());
+  public get start(): Duration {
+    return Duration.ms(this.numberRange.start);
   }
 
-  getEnd(): Duration {
-    return Duration.ms(this.numberRange.getEnd());
+  public get end(): Duration {
+    return Duration.ms(this.numberRange.end);
+  }
+
+  getSize(): Duration {
+    return Duration.ms(this.numberRange.getSize());
   }
 
   includes(duration: Duration): boolean {

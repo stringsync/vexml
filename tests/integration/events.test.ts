@@ -16,13 +16,8 @@ describe('events', () => {
   beforeEach(() => {
     const parser = new vexml.MusicXMLParser();
     const document = parser.parse(musicXML);
-    const renderer = new vexml.Renderer(document);
-    score = renderer.render(div, {
-      config: {
-        INPUT_TYPE: 'hybrid',
-        WIDTH: 900,
-      },
-    });
+    const renderer = new vexml.Renderer({ config: { INPUT_TYPE: 'hybrid', WIDTH: 900 } });
+    score = renderer.render(div, document);
     jest.useFakeTimers();
   });
 

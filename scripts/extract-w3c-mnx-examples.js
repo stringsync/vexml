@@ -2,11 +2,10 @@
  * Extract MusicXML examples from the W3C site: MNX specification
  */
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require('path');
-const process = require('process');
-const fs = require('fs');
-const cheerio = require('cheerio');
+import path from 'path';
+import process from 'process';
+import fs from 'fs';
+import cheerio from 'cheerio';
 
 const examplesUrl = 'https://w3c.github.io/mnx/docs/comparisons/musicxml/';
 

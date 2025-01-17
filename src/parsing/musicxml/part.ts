@@ -3,17 +3,27 @@ import { Stave } from './stave';
 import { Signature } from './signature';
 import { StaveEvent } from './types';
 import { FragmentContext, PartContext } from './contexts';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Part {
-  private constructor(private id: string, private signature: Signature, private staves: Stave[]) {}
+  private constructor(
+    config: Config,
+    log: Logger,
+    private id: string,
+    private signature: Signature,
+    private staves: Stave[]
+  ) {}
 
-  static create(id: string, signature: Signature, events: StaveEvent[]): Part {
+  static create(config: Config, log: Logger, id: string, signature: Signature, events: StaveEvent[]): Part {
     const staves = new Array<Stave>();
 
     const staveCount = signature.getStaveCount(id).getValue();
 
     for (let staveNumber = 1; staveNumber <= staveCount; staveNumber++) {
       const stave = Stave.create(
+        config,
+        log,
         staveNumber,
         id,
         signature,
@@ -22,7 +32,7 @@ export class Part {
       staves.push(stave);
     }
 
-    return new Part(id, signature, staves);
+    return new Part(config, log, id, signature, staves);
   }
 
   parse(fragmentCtx: FragmentContext): data.Part {

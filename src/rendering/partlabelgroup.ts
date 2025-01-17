@@ -59,8 +59,8 @@ export class PartLabelGroup {
       const staveCount = staveRenders?.length ?? 0;
 
       if (staveCount > 0) {
-        const top = staveRenders!.at(0)!.intrinsicRect.getMinY();
-        const bottom = staveRenders!.at(-1)!.intrinsicRect.getMaxY();
+        const top = staveRenders!.at(0)!.intrinsicRect.top();
+        const bottom = staveRenders!.at(-1)!.intrinsicRect.bottom();
         const middle = (top + bottom) / 2;
         const height = textMeasurer.measure(partLabel).approximateHeight;
         positions.push(new Point(this.position.x, middle + height / 2));

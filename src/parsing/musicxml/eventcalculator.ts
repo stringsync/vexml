@@ -14,6 +14,8 @@ import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class EventCalculator {
   private measureBeat = Fraction.zero();
@@ -30,7 +32,11 @@ export class EventCalculator {
   // staveNumber -> Key
   private previousKeys = new Map<number, Key>();
 
-  constructor(private musicXML: { scorePartwise: musicxml.ScorePartwise }) {}
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private musicXML: { scorePartwise: musicxml.ScorePartwise }
+  ) {}
 
   calculate(): MeasureEvent[] {
     this.events = [];
@@ -102,7 +108,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        chord: Chord.create(this.measureBeat, duration, { note }),
+        chord: Chord.create(this.config, this.log, this.measureBeat, duration, { note }),
       });
     } else if (note.isRest()) {
       this.events.push({
@@ -113,7 +119,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        rest: Rest.create(this.measureBeat, duration, { note }),
+        rest: Rest.create(this.config, this.log, this.measureBeat, duration, { note }),
       });
     } else {
       this.events.push({
@@ -124,7 +130,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        note: Note.create(this.measureBeat, duration, { note }),
+        note: Note.create(this.config, this.log, this.measureBeat, duration, { note }),
       });
     }
 
@@ -156,13 +162,13 @@ export class EventCalculator {
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        staveCount: new StaveCount(partId, staveCount),
+        staveCount: new StaveCount(this.config, this.log, partId, staveCount),
       });
     }
 
     const staveLineCounts = attributes
       .getStaveDetails()
-      .map((staveDetails) => StaveLineCount.create(partId, { staveDetails }));
+      .map((staveDetails) => StaveLineCount.create(this.config, this.log, partId, { staveDetails }));
     for (const staveLineCount of staveLineCounts) {
       this.events.push({
         type: 'stavelinecount',
@@ -174,7 +180,7 @@ export class EventCalculator {
       });
     }
 
-    const clefs = attributes.getClefs().map((clef) => Clef.create(partId, { clef }));
+    const clefs = attributes.getClefs().map((clef) => Clef.create(this.config, this.log, partId, { clef }));
     for (const clef of clefs) {
       this.events.push({
         type: 'clef',
@@ -195,7 +201,7 @@ export class EventCalculator {
         // If the key is applied to a specific stave, proceed forward as normal.
         this.resolveStaveNumber(partId, staveNumber);
         const previousKey = this.previousKeys.get(staveNumber) ?? null;
-        const key = Key.create(partId, staveNumber, previousKey, { key: attributeKey });
+        const key = Key.create(this.config, this.log, partId, staveNumber, previousKey, { key: attributeKey });
         this.previousKeys.set(staveNumber, key);
         this.events.push({
           type: 'key',
@@ -209,7 +215,7 @@ export class EventCalculator {
         // Otherwise, apply the key to all staves, checking the previous key as we go along.
         for (let index = 0; index < staveCount; index++) {
           const previousKey = this.previousKeys.get(index + 1) ?? null;
-          const key = Key.create(partId, index + 1, previousKey, { key: attributeKey });
+          const key = Key.create(this.config, this.log, partId, index + 1, previousKey, { key: attributeKey });
           this.previousKeys.set(index + 1, key);
           this.events.push({
             type: 'key',
@@ -228,9 +234,9 @@ export class EventCalculator {
       .flatMap((time) => {
         const staveNumber = time.getStaveNumber();
         if (typeof staveNumber === 'number') {
-          return [Time.create(partId, this.resolveStaveNumber(partId, staveNumber), { time })];
+          return [Time.create(this.config, this.log, partId, this.resolveStaveNumber(partId, staveNumber), { time })];
         } else {
-          return Time.createMulti(partId, staveCount, { time });
+          return Time.createMulti(this.config, this.log, partId, staveCount, { time });
         }
       })
       .filter((time) => time !== null);
@@ -267,7 +273,7 @@ export class EventCalculator {
         partId,
         measureIndex,
         measureBeat: this.measureBeat,
-        metronome: Metronome.create({ metronome, mark }),
+        metronome: Metronome.create(this.config, this.log, { metronome, mark }),
       });
     }
 
@@ -306,7 +312,7 @@ export class EventCalculator {
         staveNumber,
         voiceId,
         measureBeat: this.measureBeat,
-        dynamics: new Dynamics(this.measureBeat, dynamicType),
+        dynamics: new Dynamics(this.config, this.log, this.measureBeat, dynamicType),
       });
     }
 
@@ -331,7 +337,7 @@ export class EventCalculator {
 
     const pedal = direction
       .getPedals()
-      .map((pedal) => Pedal.create({ pedal }))
+      .map((pedal) => Pedal.create(this.config, this.log, { pedal }))
       .at(0);
     if (pedal) {
       const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());
@@ -350,7 +356,7 @@ export class EventCalculator {
 
     const octaveShift = direction
       .getOctaveShifts()
-      .map((octaveShift) => OctaveShift.create({ octaveShift }))
+      .map((octaveShift) => OctaveShift.create(this.config, this.log, { octaveShift }))
       .at(0);
     if (octaveShift) {
       const staveNumber = this.resolveStaveNumber(partId, direction.getStaveNumber());

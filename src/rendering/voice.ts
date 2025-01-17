@@ -32,7 +32,8 @@ export class Voice {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceKey) {}
 
   render(): VoiceRender {
-    const { vexflowVoices, entryRenders } = this.renderVoices();
+    const startMeasureBeat = this.getStartMeasureBeat();
+    const { vexflowVoices, entryRenders } = this.renderVoices(startMeasureBeat);
     const beamRenders = this.renderBeams(entryRenders);
     const tupletRenders = this.renderTuplets(entryRenders);
 
@@ -40,6 +41,7 @@ export class Voice {
       type: 'voice',
       key: this.key,
       rect: Rect.empty(), // placeholder
+      startMeasureBeat,
       entryRenders,
       beamRenders,
       tupletRenders,
@@ -47,12 +49,15 @@ export class Voice {
     };
   }
 
-  private renderVoices(): { vexflowVoices: vexflow.Voice[]; entryRenders: VoiceEntryRender[] } {
+  private renderVoices(startMeasureBeat: Fraction): {
+    vexflowVoices: vexflow.Voice[];
+    entryRenders: VoiceEntryRender[];
+  } {
     const vexflowVoices = [new vexflow.Voice().setMode(vexflow.Voice.Mode.SOFT)];
     const entryRenders = new Array<VoiceEntryRender>();
     const entryCount = this.document.getVoiceEntryCount(this.key);
 
-    let currentMeasureBeat = this.getInitialMeasureBeat();
+    let currentMeasureBeat = startMeasureBeat;
 
     for (let voiceEntryIndex = 0; voiceEntryIndex < entryCount; voiceEntryIndex++) {
       const vexflowVoice = vexflowVoices[0];
@@ -91,7 +96,7 @@ export class Voice {
     return { vexflowVoices, entryRenders };
   }
 
-  private getInitialMeasureBeat(): Fraction {
+  private getStartMeasureBeat(): Fraction {
     let measureBeat = Fraction.zero();
 
     this.document

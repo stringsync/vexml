@@ -3,7 +3,6 @@ import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as util from '@/util';
 import * as playback from '@/playback';
-import * as cursors from '@/cursors';
 import { Config } from '@/config';
 import { VexmlElement } from './types';
 import { Point, Rect } from '@/spatial';
@@ -13,11 +12,12 @@ import { EventMap } from './types';
 import { System } from './system';
 import { Events } from './events';
 import { Locator } from './locator';
+import { Measure } from './measure';
 
 /** Score is a rendered musical score. */
 export class Score {
   private isEventsCreated = false;
-  private cursors = new Array<cursors.Cursor>();
+  private cursors = new Array<playback.Cursor>();
 
   private constructor(
     private config: Config,
@@ -64,11 +64,11 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
-  addCursor(opts?: { partIndex?: number }): cursors.Cursor {
+  addCursor(opts?: { partIndex?: number }): playback.Cursor {
     const partIndex = opts?.partIndex ?? 0;
     const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
     util.assertDefined(sequence);
-    const cursor = cursors.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
+    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
     this.cursors.push(cursor);
     return cursor;
   }
@@ -81,6 +81,11 @@ export class Score {
   /** Returns the systems of the score. */
   getSystems(): System[] {
     return this.systems;
+  }
+
+  /** Returns the measures of the score. */
+  getMeasures(): Measure[] {
+    return this.systems.flatMap((system) => system.getMeasures());
   }
 
   /** Returns the duration of the score in milliseconds. */
@@ -253,6 +258,13 @@ export class Score {
         v.setContext(ctx).draw();
       });
 
+    // Draw gap overlays.
+    fragmentRenders
+      .map((f) => f.gapOverlay)
+      .forEach((g) => {
+        g?.setContext(ctx).draw();
+      });
+
     // Draw the debug system rects.
     if (config.DEBUG_DRAW_SYSTEM_RECTS) {
       systemRenders.forEach((s) => {
@@ -291,6 +303,13 @@ export class Score {
     if (config.DEBUG_DRAW_STAVE_INTRINSIC_RECTS) {
       staveRenders.forEach((s) => {
         new rendering.DebugRect(config, log, `s${s.key.staveIndex}`, s.intrinsicRect).setContext(ctx).draw();
+      });
+    }
+
+    // Draw the debug stave plyable rects.
+    if (config.DEBUG_DRAW_STAVE_PLAYABLE_RECTS) {
+      staveRenders.forEach((s) => {
+        new rendering.DebugRect(config, log, `s${s.key.staveIndex}`, s.playableRect).setContext(ctx).draw();
       });
     }
 

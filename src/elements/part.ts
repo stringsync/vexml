@@ -3,6 +3,7 @@ import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Stave } from './stave';
+import { Fraction } from '@/util';
 
 export class Part {
   private constructor(
@@ -26,19 +27,23 @@ export class Part {
     return this.partRender.rect;
   }
 
-  /**
-   * Returns the BPM.
-   */
-  getBpm(): number {
-    return this.document.getFragment(this.partRender.key).signature.metronome.bpm ?? 100;
-  }
-
   /** Returns the staves of the part. */
   getStaves(): Stave[] {
     return this.staves;
   }
 
+  /** Returns the part index. */
   getIndex(): number {
     return this.partRender.key.partIndex;
+  }
+
+  /** Returns the start measure beat for the part. */
+  getStartMeasureBeat(): Fraction {
+    return (
+      this.staves
+        .map((stave) => stave.getStartMeasureBeat())
+        .sort((a, b) => a.toDecimal() - b.toDecimal())
+        .at(0) ?? Fraction.zero()
+    );
   }
 }

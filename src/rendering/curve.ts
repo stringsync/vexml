@@ -307,6 +307,7 @@ export class Curve {
         default:
           return 'none';
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return 'none';
     }

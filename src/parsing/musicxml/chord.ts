@@ -3,16 +3,24 @@ import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Note } from './note';
 import { VoiceContext } from './contexts';
+import { Config } from '@/config';
+import { Logger } from '@/debug';
 
 export class Chord {
-  constructor(private notes: Note[]) {}
+  constructor(private config: Config, private log: Logger, private notes: Note[]) {}
 
-  static create(measureBeat: util.Fraction, duration: util.Fraction, musicXML: { note: musicxml.Note }): Chord {
+  static create(
+    config: Config,
+    log: Logger,
+    measureBeat: util.Fraction,
+    duration: util.Fraction,
+    musicXML: { note: musicxml.Note }
+  ): Chord {
     util.assert(musicXML.note.isChordHead(), 'Expected note to be a chord head');
     const notes = [musicXML.note, ...musicXML.note.getChordTail()].map((note) =>
-      Note.create(measureBeat, duration, { note })
+      Note.create(config, log, measureBeat, duration, { note })
     );
-    return new Chord(notes);
+    return new Chord(config, log, notes);
   }
 
   parse(voiceCtx: VoiceContext): data.Chord {

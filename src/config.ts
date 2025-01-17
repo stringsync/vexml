@@ -22,6 +22,12 @@ export const CONFIG = {
     help: 'INPUT_TYPE specifies the type of input to use.',
     choices: ['auto', 'mouse', 'touch', 'hybrid', 'none'] as const,
   }),
+  DEFAULT_PLAYBACK_BPM: t.number({
+    defaultValue: 100,
+    help:
+      'DEFAULT_PLAYBACK_BPM is the default beats per minute value used for playback. ' +
+      'It can get overridden by metronomes specified in the original document.',
+  }),
   SCORE_PADDING_TOP: t.number({
     defaultValue: 40,
     help: 'TOP_PADDING is the vertical distance from the top of the rendering.',
@@ -112,9 +118,21 @@ export const CONFIG = {
     defaultValue: 'all',
     help: 'MEASURE_LABELING_SCHEME is the scheme for showing measure labels.',
   }),
-  SLOW_WARNING_THRESHOLD_MS: t.number({
-    defaultValue: 1,
-    help: 'SLOW_WARNING_THRESHOLD_MS is the threshold for a slow operation warning in milliseconds.',
+  DEFAULT_GAP_OVERLAY_FONT_SIZE: t.string({
+    defaultValue: '12px',
+    help: 'DEFAULT_GAP_OVERLAY_FONT_SIZE is the font size for gap overlays.',
+  }),
+  DEFAULT_GAP_OVERLAY_FONT_FAMILY: t.string({
+    defaultValue: 'Arial',
+    help: 'DEFAULT_GAP_OVERLAY_FONT_FAMILY is the font family for gap overlays.',
+  }),
+  DEFAULT_GAP_OVERLAY_FONT_COLOR: t.string({
+    defaultValue: 'black',
+    help: 'DEFAULT_GAP_OVERLAY_FONT_COLOR is the font color for gap overlays.',
+  }),
+  DEFAULT_GAP_OVERLAY_FILL_COLOR: t.string({
+    defaultValue: 'rgba(255, 255, 255, 0.95)',
+    help: 'DEFAULT_GAP_OVERLAY_FILL_COLOR is the fill color for gap overlays.',
   }),
   DEBUG_DRAW_SYSTEM_RECTS: t.boolean({
     defaultValue: false,
@@ -139,6 +157,10 @@ export const CONFIG = {
   DEBUG_DRAW_STAVE_INTRINSIC_RECTS: t.boolean({
     defaultValue: false,
     help: 'DEBUG_DRAW_STAVE_INTRINSIC_RECTS enables drawing of stave intrinsic rectangles for debugging purposes.',
+  }),
+  DEBUG_DRAW_STAVE_PLAYABLE_RECTS: t.boolean({
+    defaultValue: false,
+    help: 'DEBUG_DRAW_STAVE_PLAYABLE_RECTS enables drawing of stave playable rectangles for debugging purposes.',
   }),
   DEBUG_DRAW_VOICE_RECTS: t.boolean({
     defaultValue: false,

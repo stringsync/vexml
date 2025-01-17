@@ -1,3 +1,4 @@
+export { type RenderMusicXMLOptions, renderMusicXML, type RenderMXLOptions, renderMXL } from './render';
 export * from './elements/eventmappingfactory';
 export { MusicXMLParser, MXLParser } from './parsing';
 export { type Config, CONFIG, DEFAULT_CONFIG } from './config';
@@ -28,5 +29,5 @@ export {
 } from './formatting';
 export { type SchemaDescriptor, type SchemaType, type SchemaConfig } from './schema';
 export { SimpleCursor } from './components';
-export type { Cursor } from './cursors';
+export { type Cursor } from './playback';
 export { type Logger, type LogLevel, ConsoleLogger, MemoryLogger, type MemoryLog, NoopLogger } from './debug';

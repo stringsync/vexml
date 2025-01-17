@@ -24,7 +24,7 @@ try {
       execSync('git -c advice.detachedHead=false checkout origin/master');
 
       console.log('Updating snapshots...');
-      execSync('JEST_IMAGE_SNAPSHOT_TRACK_OBSOLETE=1 yarn jest integration --updateSnapshot --silent');
+      execSync('JEST_IMAGE_SNAPSHOT_TRACK_OBSOLETE=1 npm run jest integration --updateSnapshot --silent');
 
       console.log(`Checking out ${branch}...`);
       execSync(`git checkout ${branch}`);

@@ -100,24 +100,37 @@ export type Jump =
   | { type: 'repeatend'; times: number }
   | { type: 'repeatending'; times: number; label: string; endingBracketType: EndingBracketType };
 
-export type Fragment = {
+export type Fragment = MusicalFragment | NonMusicalFragment;
+
+export type MusicalFragment = {
   type: 'fragment';
+  kind: 'musical';
   signature: FragmentSignature;
   parts: Part[];
-  width: number | null;
+  minWidth: number | null;
+};
+
+export type NonMusicalFragment = {
+  type: 'fragment';
+  kind: 'nonmusical';
+  signature: FragmentSignature;
+  parts: Part[];
+  minWidth: number | null;
+  label: string | null;
+  durationMs: number;
+  style?: GapOverlayStyle;
+};
+
+export type GapOverlayStyle = {
+  fontSize?: string;
+  fontFamily?: string;
+  fontColor?: string;
+  fill?: string;
 };
 
 export type FragmentSignature = {
   type: 'fragmentsignature';
   metronome: Metronome;
-};
-
-export type Gap = {
-  type: 'gap';
-  text: string | null;
-  width: number | null;
-  parts: Part[];
-  durationMs: number;
 };
 
 export type Part = {
@@ -341,11 +354,16 @@ export type Fraction = {
 
 export type Metronome = {
   type: 'metronome';
+
+  /**
+   * The BPM used for playback. It should match `displayBpm` if provided.
+   */
+  playbackBpm: number;
   name?: string;
   parenthesis?: boolean;
   duration?: string;
   dots?: number;
-  bpm?: number;
+  displayBpm?: number;
   duration2?: string;
   dots2?: number;
 };

@@ -3,7 +3,7 @@ import { useCallback, useId, useRef, useState } from 'react';
 import { useMusicXML } from '../hooks/useMusicXML';
 import { Source } from '../types';
 import { useTooltip } from '../hooks/useTooltip';
-import { DEFAULT_CONFIG, VEXML_VERSION } from '../constants';
+import { VEXML_VERSION } from '../constants';
 import { SourceInfo } from './SourceInfo';
 import { SourceForm } from './SourceForm';
 import { downloadSvgAsImage } from '../util/downloadSvgAsImage';
@@ -14,6 +14,7 @@ import { downloadCanvasAsImage } from '../util/downloadCanvasAsImage';
 import { ConfigForm } from './ConfigForm';
 import { EventTypeForm } from './EventTypeForm';
 import { Vexml, VexmlResult } from './Vexml';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const BUG_REPORT_HREF = `https://github.com/stringsync/vexml/issues/new?assignees=&labels=&projects=&template=bug-report.md&title=[BUG] (v${VEXML_VERSION}): <YOUR TITLE>`;
 const SNAPSHOT_NAME = `vexml_dev_${VEXML_VERSION.replace(/\./g, '_')}.png`;
@@ -60,21 +61,23 @@ export const SourceDisplay = (props: SourceProps) => {
   };
 
   // For some reason, the data attributes doesn't work correctly when there are colons in the id.
-  const collapseRootId = `source-display-collapse-${useId().replaceAll(':', '\\:')}`;
+  const collapseRootId = `source-display-collapse-${useId().replaceAll(':', '')}`;
   const collapseRootSelector = `#${collapseRootId}`;
 
-  const sourceInputCardId = useId();
-  const sourceInputCardSelector = '#' + sourceInputCardId.replaceAll(':', '\\:');
+  const sourceInputCardId = useId().replaceAll(':', '');
+  const sourceInputCardSelector = '#' + sourceInputCardId;
   const [sourceInputCardClassName] = useState(() =>
     props.source.type === 'local' && props.source.musicXML.length === 0 ? 'collapse show' : 'collapse'
   );
 
-  const configFormCardId = useId();
-  const configFormCardSelector = '#' + configFormCardId.replaceAll(':', '\\:');
-  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const configFormCardId = useId().replaceAll(':', '');
+  const configFormCardSelector = '#' + configFormCardId;
+  const onConfigChange = (config: vexml.Config) => {
+    props.onUpdate({ ...props.source, config });
+  };
 
-  const eventCardId = useId();
-  const eventCardSelector = '#' + eventCardId.replaceAll(':', '\\:');
+  const eventCardId = useId().replaceAll(':', '');
+  const eventCardSelector = '#' + eventCardId;
 
   const [enabledVexmlEventTypes, setEnabledVexmlEventTypes] = useState<vexml.EventType[]>(['click', 'longpress']);
 
@@ -189,7 +192,7 @@ export const SourceDisplay = (props: SourceProps) => {
           <div id={configFormCardId} className="collapse mb-3" data-bs-parent={collapseRootSelector}>
             <h3 className="mb-3">Config</h3>
 
-            <ConfigForm defaultValue={config} onChange={setConfig} />
+            <ConfigForm defaultValue={props.source.config} onChange={onConfigChange} />
           </div>
         </div>
 
@@ -204,16 +207,18 @@ export const SourceDisplay = (props: SourceProps) => {
 
         {!isMusicXMLLoading && !musicXMLError && (
           <div className="d-flex justify-content-center">
-            <Vexml
-              musicXML={musicXML}
-              config={config}
-              onResult={setVexmlResult}
-              onClick={onVexmlClick}
-              onLongpress={onVexmlLongpress}
-              onEnter={onVexmlEnter}
-              onExit={onVexmlExit}
-              onScroll={onVexmlScroll}
-            />
+            <ErrorBoundary>
+              <Vexml
+                musicXML={musicXML}
+                config={props.source.config}
+                onResult={setVexmlResult}
+                onClick={onVexmlClick}
+                onLongpress={onVexmlLongpress}
+                onEnter={onVexmlEnter}
+                onExit={onVexmlExit}
+                onScroll={onVexmlScroll}
+              />
+            </ErrorBoundary>
           </div>
         )}
       </div>

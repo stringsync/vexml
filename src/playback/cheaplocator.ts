@@ -14,11 +14,11 @@ export class CheapLocator {
   }
 
   locate(time: playback.Duration): number | null {
-    if (time.lt(playback.Duration.zero())) {
+    if (time.isLessThan(playback.Duration.zero())) {
       return 0;
     }
 
-    if (time.gt(this.sequence.getDuration())) {
+    if (time.isGreaterThan(this.sequence.getDuration())) {
       return this.sequence.getCount() - 1;
     }
 

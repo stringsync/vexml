@@ -11,8 +11,7 @@ import { LRU } from './lru';
  * this decorator.
  */
 export function memoize(opts: { degree: number } = { degree: 1 }): MethodDecorator {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  return function (target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<any>) {
+  return function (target: object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<any>) {
     const originalMethod = descriptor.value;
 
     // Using symbols to ensure uniqueness and avoid potential property name collisions
