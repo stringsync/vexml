@@ -3,7 +3,6 @@ import * as vexflow from 'vexflow';
 import * as components from '@/components';
 import * as util from '@/util';
 import * as playback from '@/playback';
-import * as cursors from '@/cursors';
 import { Config } from '@/config';
 import { VexmlElement } from './types';
 import { Point, Rect } from '@/spatial';
@@ -18,7 +17,7 @@ import { Measure } from './measure';
 /** Score is a rendered musical score. */
 export class Score {
   private isEventsCreated = false;
-  private cursors = new Array<cursors.Cursor>();
+  private cursors = new Array<playback.Cursor>();
 
   private constructor(
     private config: Config,
@@ -65,11 +64,11 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
-  addCursor(opts?: { partIndex?: number }): cursors.Cursor {
+  addCursor(opts?: { partIndex?: number }): playback.Cursor {
     const partIndex = opts?.partIndex ?? 0;
     const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
     util.assertDefined(sequence);
-    const cursor = cursors.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
+    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
     this.cursors.push(cursor);
     return cursor;
   }
