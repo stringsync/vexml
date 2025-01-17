@@ -38,7 +38,8 @@ jobs:
           node-version: 18
           cache: npm
       - name: Install dependencies
-        run: npm install --force
+        # We set the NODE_ENV to development to install all dependencies, including optional ones.
+        run: NODE_ENV=development npm install --force
       - name: Build
         run: npm run build:site
       - name: Setup Pages
