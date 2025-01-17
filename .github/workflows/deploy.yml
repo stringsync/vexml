@@ -38,8 +38,8 @@ jobs:
           node-version: 18
           cache: npm
       - name: Install dependencies
-        # We set the NODE_ENV to development to install all dependencies, including optional ones.
-        run: NODE_ENV=development npm install --force
+        # Includes @rollup/rollup-linux-x64-gnu, which is an optional dependency required for Vite.
+        run: npm install @rollup/rollup-linux-x64-gnu --save-dev
       - name: Build
         run: npm run build:site
       - name: Setup Pages
