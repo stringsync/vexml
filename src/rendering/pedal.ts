@@ -70,8 +70,8 @@ export class Pedal {
       if (!(vexflowNote instanceof vexflow.StaveNote)) {
         continue;
       }
-      const note = this.document.getNote(noteRender.key);
-      if (note.pedalMark?.pedalMarkType === 'change') {
+      const voiceEntry = this.document.getVoiceEntry(noteRender.key);
+      if (voiceEntry.type === 'note' && voiceEntry.pedalMark?.pedalMarkType === 'change') {
         // This is required for vexflow to show pedal changes.
         vexflowStaveNotes.push(vexflowNote, vexflowNote);
       } else {

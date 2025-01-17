@@ -323,6 +323,11 @@ export class Stave {
   }
 
   private renderKeySignature(vexflowStave: vexflow.Stave): KeyRender | null {
+    const isTabStave = this.document.isTabStave(this.key);
+    if (isTabStave) {
+      return null;
+    }
+
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
     const isFirstMusicalMeasureFragment = isFirstMeasure && isFirstFragment;

@@ -229,7 +229,7 @@ class SignatureBuilder {
   }
 
   private buildMetronome(): Metronome {
-    return this.metronome ?? Metronome.default(this.config, this.log);
+    return this.metronome ?? this.previousSignature?.getMetronome() ?? Metronome.default(this.config, this.log);
   }
 
   private buildStaveCounts(): StaveCount[] {

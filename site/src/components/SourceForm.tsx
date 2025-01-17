@@ -35,7 +35,7 @@ export const SourceForm = (props: SourceFormProps) => {
   const musicXML = source.type === 'local' ? source.musicXML : props.musicXML;
   const onMusicXMLChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (source.type === 'local') {
-      updateLater({ ...source, type: 'local', musicXML: e.target.value });
+      updateLater({ ...source, type: 'local', musicXML: e.target.value, config: props.source.config });
     }
   };
 
@@ -43,14 +43,14 @@ export const SourceForm = (props: SourceFormProps) => {
   const pathKey = EXAMPLE_OPTION_KEY_BY_PATH[path] ?? '';
   const onPathChange = (e: SelectEvent<string>) => {
     if (source.type === 'example') {
-      updateNow({ ...source, type: 'example', path: e.value });
+      updateNow({ ...source, type: 'example', path: e.value, config: props.source.config });
     }
   };
 
   const url = source.type === 'remote' ? source.url : '';
   const onUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (source.type === 'remote') {
-      updateLater({ ...source, type: 'remote', url: e.target.value });
+      updateLater({ ...source, type: 'remote', url: e.target.value, config: props.source.config });
     }
   };
 
@@ -59,7 +59,7 @@ export const SourceForm = (props: SourceFormProps) => {
   const [modalSource, setModalSource] = useState<Source>({
     type: 'local',
     musicXML: '',
-    config: vexml.DEFAULT_CONFIG,
+    config: props.source.config,
   });
   const onModalContinue = () => {
     updateNow(modalSource);
@@ -111,6 +111,7 @@ export const SourceForm = (props: SourceFormProps) => {
         ...source,
         type: 'local',
         musicXML,
+        config: props.source.config,
       });
       return;
     } catch (e) {
@@ -135,6 +136,7 @@ export const SourceForm = (props: SourceFormProps) => {
         ...source,
         type: 'local',
         musicXML,
+        config: props.source.config,
       });
     } catch (e) {
       console.error(`could not read file as MXL or MusicXML: ${e}`);
