@@ -14,7 +14,7 @@ The `musicxml` library is responsible for interfacing with [MusicXML](https://ww
 
 - **DO NOT** map 1:1 TypeScript classes to MusicXML elements.
 - **DO NOT** mutate data in a MusicXML document.
-- **DO NOT** transform the data to an intermediate data structure for `vexflow`.
+- **DO NOT** transform the data to a vexml data document.
 
 ## Design
 

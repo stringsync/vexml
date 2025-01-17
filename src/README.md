@@ -2,15 +2,21 @@
 
 `vexml` is composed of:
 
-- [musicxml](./musicxml/README.md): Organize data from a MusicXML document so that it can be read easily in TypeScript.
-- [mxl](./mxl/README.md): Organize data from a MXL document so that it can be read easily in TypeScript.
-- [rendering](./rendering/README.md): Take MusicXML data and transform it into `vexflow` objects.
-- [drawing](./drawing/README.md): Extend `vexflow`'s drawing capabilities.
-- [spatial](./spatial/README.md): Provide data structures for spatial contexts.
-- [events](./events/README.md): Exposes user interaction hooks.
-- [cursors](./cursors/README.md): Different utilities for navigating a rendered music sheet.
-- [components](./components/README.md): Creates UI components needed for vexml.
+- [components](./components/README.md): Wraps simple HTML operations.
+- [data](./data/README.md): Declares the data input for the rendering engine.
+- [debug](./debug/README.md): Provides basic debugging utilities.
+- [elements](./elements/README.md): Wraps the rendering engine output.
+- [errors](./errors/README.md): Houses vexml errors.
+- [events](./events/README.md): Provides utilities for pubsub-like communication.
+- [formatting](./formatting/README.md): Formats data documents to different schemes.
+- [musicxml](./musicxml/README.md): Makes MusicXML data more ergonomic.
+- [mxl](./mxl/README.md): Makes MXL data more ergonomic.
+- [parsing](./parsing/README.md): Transforms different music encodings to a data document.
 - [playback](./playback/README.md): Provide data structures for playing a rendering.
-- `util`: Miscellaneous functionality that doesn't neatly fit into either library or needs to be shared.
+- [rendering](./rendering/README.md): Transforms a data Document into `vexflow` objects.
+- [schema](./schema/README.md): Reifies TypeScript types.
+- [spatial](./spatial/README.md): Provides data structures for spatial algorithms.
+- `util`: Miscellaneous functionality.
 
-[src/vexml.ts](./vexml.ts) is the entrypoint for MusicXML rendering.
+- [config.ts](./config.ts): Declares the central configuration.
+- [render.ts](./render.ts): Orchestrates vexml components to render.
