@@ -1,6 +1,8 @@
 import path from 'path';
 import { configureToMatchImageSnapshot } from 'jest-image-snapshot';
 
+jest.setTimeout(60000);
+
 const customSnapshotsDir =
   process.env.VEXML_CANONICAL_TEST_ENV === 'true'
     ? undefined

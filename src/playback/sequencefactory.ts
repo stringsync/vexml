@@ -152,15 +152,14 @@ class SequenceEntryBuilder {
   build(): SequenceEntry[] {
     util.assert(!this.built, 'SequenceEntryBuilder has already built');
 
-    if (this.entries.length > 0 && this.pending.length > 0) {
+    if (this.anchor && this.pending.length > 0) {
       // We account for the last stop event by using the time of the last entry as a start bound.
-      const entry = this.entries.at(-1)!;
       const event = this.pending.at(-1)!;
-      const x1 = entry.xRange.end;
+      const x1 = this.x;
       const x2 = this.getMeasureRightBoundaryX(event.element);
-      const t1 = entry.durationRange.end;
+      const t1 = this.t;
       const t2 = event.time;
-      this.push(x1, x2, t1, t2, entry.anchorElement, entry.activeElements);
+      this.push(x1, x2, t1, t2, this.anchor, this.active);
     }
 
     this.built = true;
