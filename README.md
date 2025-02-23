@@ -41,6 +41,7 @@ import * as vexml from '@stringsync/vexml';
 const mxl = new Blob(['some', 'valid', 'mxl', 'bytes']);
 const div = document.getElementById('my-id');
 const scorePromise = vexml.renderMXL(musicXML, div);
+// From here, you need to await or call then() on the scorePromise to extract the score.
 ```
 
 ## Advanced Usage
