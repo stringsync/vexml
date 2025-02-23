@@ -10,7 +10,7 @@ import cheerio from 'cheerio';
 const examplesUrl = 'https://w3c.github.io/mnx/docs/comparisons/musicxml/';
 
 const cwd = process.cwd();
-const targetPath = path.join(cwd, 'tests', 'integration', '__data__', 'w3c-mnx');
+const targetPath = path.join(cwd, 'tests', '__data__', 'w3c-mnx');
 
 if (!fs.existsSync(targetPath)) {
   fs.mkdirSync(targetPath);

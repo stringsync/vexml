@@ -10,7 +10,7 @@ type TestCase = {
   migrated?: boolean;
 };
 
-const DATA_DIR = path.join(__dirname, '__data__', 'w3c-musicxml');
+const DATA_DIR = path.resolve(__dirname, '..', '__data__', 'w3c-musicxml');
 
 describe('vexml', () => {
   let page: Page;
