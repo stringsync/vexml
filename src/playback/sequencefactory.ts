@@ -108,7 +108,13 @@ export class SequenceFactory {
       measureStartTime = nextMeasureStartTime;
     }
 
-    return events.sort((a, b) => a.time.ms - b.time.ms);
+    return events.sort((a, b) => {
+      // When the times match, we want the stop event to come first.
+      if (a.time.ms === b.time.ms) {
+        return a.type === 'stop' ? -1 : 1;
+      }
+      return a.time.ms - b.time.ms;
+    });
   }
 
   private toSequenceEntries(events: SequenceEvent[]): SequenceEntry[] {
