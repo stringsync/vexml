@@ -71,7 +71,7 @@ export class Score {
     const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
     util.assertDefined(sequence);
 
-    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence, span);
+    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, sequence, span);
     this.cursors.push(cursor);
     return cursor;
   }
