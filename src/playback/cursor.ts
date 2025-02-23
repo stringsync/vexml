@@ -24,12 +24,18 @@ type EventMap = {
   change: CursorState;
 };
 
+export type CursorVerticalSpan = {
+  fromPartIndex: number;
+  toPartIndex: number;
+};
+
 export class Cursor {
   private scroller: Scroller;
   private states: CursorState[];
   private sequence: playback.Sequence;
   private cheapLocator: CheapLocator;
   private expensiveLocator: ExpensiveLocator;
+  private span: CursorVerticalSpan;
 
   private topic = new events.Topic<EventMap>();
   private index = 0;
@@ -41,19 +47,21 @@ export class Cursor {
     sequence: playback.Sequence;
     cheapLocator: CheapLocator;
     expensiveLocator: ExpensiveLocator;
+    span: CursorVerticalSpan;
   }) {
     this.scroller = opts.scroller;
     this.states = opts.states;
     this.sequence = opts.sequence;
     this.cheapLocator = opts.cheapLocator;
     this.expensiveLocator = opts.expensiveLocator;
+    this.span = opts.span;
   }
 
   static create(
     scrollContainer: HTMLElement,
     score: elements.Score,
-    partIndex: number,
-    sequence: playback.Sequence
+    sequence: playback.Sequence,
+    span: CursorVerticalSpan
   ): Cursor {
     // NumberRange objects indexed by system index for the part.
     const systemPartYRanges = new Array<util.NumberRange>();
@@ -64,7 +72,7 @@ export class Cursor {
           .getMeasures()
           .flatMap((measure) => measure.getFragments())
           .flatMap((fragment) => fragment.getParts())
-          .filter((part) => part.getIndex() === partIndex)
+          .filter((part) => span.fromPartIndex <= part.getIndex() && part.getIndex() <= span.toPartIndex)
           .map((part) => part.rect())
       );
       const yRange = new util.NumberRange(rect.top(), rect.bottom());
@@ -117,6 +125,7 @@ export class Cursor {
       sequence,
       cheapLocator,
       expensiveLocator,
+      span,
     });
   }
 
