@@ -70,7 +70,7 @@ export class Score {
     const partIndex = opts?.partIndex ?? 0;
     util.assert(0 <= partIndex && partIndex < partCount, 'partIndex out of bounds');
 
-    const span = opts?.span ?? { fromPartIndex: 0, toPartIndex: 0 };
+    const span = opts?.span ?? { fromPartIndex: 0, toPartIndex: partCount - 1 };
     util.assert(0 <= span.fromPartIndex && span.fromPartIndex < partCount, 'fromPartIndex out of bounds');
     util.assert(0 <= span.toPartIndex && span.toPartIndex < partCount, 'toPartIndex out of bounds');
     util.assert(span.fromPartIndex <= span.toPartIndex, 'fromPartIndex must be less than or equal to toPartIndex');
