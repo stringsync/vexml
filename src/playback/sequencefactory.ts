@@ -261,7 +261,7 @@ class SequenceEntryBuilder {
   ): void {
     const durationRange = new DurationRange(t1, t2);
     const xRange = new NumberRange(x1, x2);
-    this.entries.push({ durationRange, xRange, anchorElement: anchor, activeElements: active });
+    this.entries.push({ durationRange, xRange, anchorElement: anchor, activeElements: [...active] });
   }
 
   private getLeftBoundaryX(element: PlaybackElement): number {
