@@ -355,7 +355,7 @@ export class Stave {
     const isFirstFragment = this.document.isFirstFragment(this.key);
     const isFirstPart = this.document.isFirstPart(this.key);
     const isFirstStave = this.document.isFirstStave(this.key);
-    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment && isFirstPart && isFirstStave;
+    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment;
 
     const currentMetronome = this.document.getFragment(this.key).signature.metronome;
     const previousMetronome = this.document.getPreviousFragment(this.key)?.signature.metronome;
@@ -370,7 +370,7 @@ export class Stave {
     const hasMetronome =
       currentMetronome.displayBpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
 
-    if (hasMetronome && (isAbsolutelyFirst || didMetronomeChange)) {
+    if (hasMetronome && isFirstPart && isFirstStave && (isAbsolutelyFirst || didMetronomeChange)) {
       vexflowStave.setTempo({ ...currentMetronome, bpm: currentMetronome.displayBpm }, -METRONOME_TOP_PADDING);
     }
   }
