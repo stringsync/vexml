@@ -220,11 +220,14 @@ export class Fragment {
         );
       }
 
-      const isLastSystem = this.document.isLastSystem(this.key);
-      const isLastMeasure = this.document.isLastMeasure(this.key);
       const isLastFragment = this.document.isLastFragment(this.key);
+      const endBarlineStyle = this.document.getMeasure(this.key).endBarlineStyle;
       if (isLastFragment) {
-        if (isLastSystem && isLastMeasure) {
+        if (endBarlineStyle === 'double') {
+          vexflowStaveConnectors.push(
+            new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('thinDouble')
+          );
+        } else if (endBarlineStyle === 'end' || endBarlineStyle === 'repeatend') {
           vexflowStaveConnectors.push(
             new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
           );
