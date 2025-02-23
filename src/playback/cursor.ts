@@ -60,7 +60,6 @@ export class Cursor {
   static create(
     scrollContainer: HTMLElement,
     score: elements.Score,
-    partIndex: number,
     sequence: playback.Sequence,
     span: CursorVerticalSpan
   ): Cursor {
