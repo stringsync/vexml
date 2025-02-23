@@ -109,11 +109,17 @@ export class SequenceFactory {
     }
 
     return events.sort((a, b) => {
-      // When the times match, we want the stop event to come first.
-      if (a.time.ms === b.time.ms) {
+      if (a.time.ms !== b.time.ms) {
+        return a.time.ms - b.time.ms;
+      }
+
+      if (a.type !== b.type) {
+        // Stop events should come before start events.
         return a.type === 'stop' ? -1 : 1;
       }
-      return a.time.ms - b.time.ms;
+
+      // If two events occur at the same time and have the same type, sort by x-coordinate.
+      return a.element.rect().center().x - b.element.rect().center().x;
     });
   }
 
