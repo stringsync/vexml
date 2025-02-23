@@ -6,6 +6,7 @@ import { Sequence } from './sequence';
 import { PlaybackElement, SequenceEntry } from './types';
 import { DurationRange } from './durationrange';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
+import { Logger } from '@/debug';
 
 const LAST_SYSTEM_MEASURE_X_RANGE_PADDING_RIGHT = 10;
 
@@ -16,7 +17,7 @@ type SequenceEvent = {
 };
 
 export class SequenceFactory {
-  constructor(private score: elements.Score) {}
+  constructor(private log: Logger, private score: elements.Score) {}
 
   create(): Sequence[] {
     const sequences = new Array<Sequence>();
@@ -125,7 +126,7 @@ export class SequenceFactory {
 
   private toSequenceEntries(events: SequenceEvent[]): SequenceEntry[] {
     const measures = this.score.getMeasures();
-    const builder = new SequenceEntryBuilder(measures);
+    const builder = new SequenceEntryBuilder(this.log, measures);
 
     for (const event of events) {
       builder.add(event);
@@ -152,7 +153,7 @@ class SequenceEntryBuilder {
   private t = Duration.ms(-1);
   private built = false;
 
-  constructor(private measures: elements.Measure[]) {}
+  constructor(private log: Logger, private measures: elements.Measure[]) {}
 
   add(event: SequenceEvent): void {
     if (event.type === 'start') {
