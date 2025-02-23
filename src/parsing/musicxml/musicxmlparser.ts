@@ -20,9 +20,9 @@ export class MusicXMLParser {
   }
 
   /** Parses a MusicXML source into a vexml data document. */
-  parse(musicXMLSrc: string | XMLDocument): data.Document {
+  parse(musicXMLSrc: string | Document): data.Document {
     let musicXML: musicxml.MusicXML;
-    if (musicXMLSrc instanceof XMLDocument) {
+    if (musicXMLSrc instanceof Document) {
       musicXML = new musicxml.MusicXML(musicXMLSrc);
     } else if (typeof musicXMLSrc === 'string') {
       musicXML = new musicxml.MusicXML(new DOMParser().parseFromString(musicXMLSrc, 'application/xml'));
