@@ -131,6 +131,7 @@ export class SequenceFactory {
 
 type XRangeInstruction =
   | 'anchor-to-next-event'
+  | 'activate-only'
   | 'terminate-to-measure-end-and-reanchor'
   | 'defer-for-interpolation'
   | 'ignore';
@@ -205,6 +206,9 @@ class SequenceEntryBuilder {
         this.pending.push(event);
       } else if (instruction === 'ignore') {
         // noop
+      } else if (instruction === 'activate-only') {
+        this.entries.at(-1)?.activeElements.push(event.element);
+        this.active.push(event.element);
       } else {
         util.assertUnreachable();
       }
@@ -321,13 +325,19 @@ class SequenceEntryBuilder {
     const startMeasureBeat1 = previous.getStartMeasureBeat();
     const startMeasureBeat2 = current.getStartMeasureBeat();
 
+    const x1 = previous.rect().center().x;
+    const x2 = current.rect().center().x;
+
+    if (x1 === x2) {
+      // This is common when a part has multiple staves. When elements have the same x-coordinate, we'll just add the
+      // current element to the active list.
+      return 'activate-only';
+    }
+
     const isProgressingNormallyInTheSameMeasure =
       measureIndex1 === measureIndex2 && startMeasureBeat1.isLessThan(startMeasureBeat2);
     const isProgressingNormallyAcrossMeasures = measureIndex1 + 1 === measureIndex2;
     const isProgressingNormally = isProgressingNormallyInTheSameMeasure || isProgressingNormallyAcrossMeasures;
-
-    const x1 = previous.rect().center().x;
-    const x2 = current.rect().center().x;
 
     if (isProgressingNormally && x1 < x2) {
       return 'anchor-to-next-event';
