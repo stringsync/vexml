@@ -9,7 +9,7 @@ type TestCase = {
   width: number;
 };
 
-const DATA_DIR = path.join(__dirname, '__data__', 'vexml');
+const DATA_DIR = path.resolve(__dirname, '..', '__data__', 'vexml');
 
 describe('vexml', () => {
   let page: Page;

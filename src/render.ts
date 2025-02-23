@@ -10,7 +10,7 @@ export type RenderMusicXMLOptions = {
   logger?: Logger;
 };
 
-export function renderMusicXML(musicXML: string, div: HTMLDivElement, opts?: RenderMusicXMLOptions): Score {
+export function renderMusicXML(musicXML: string | Document, div: HTMLDivElement, opts?: RenderMusicXMLOptions): Score {
   const config = { ...DEFAULT_CONFIG, ...opts?.config };
   const logger = opts?.logger ?? new NoopLogger();
 
