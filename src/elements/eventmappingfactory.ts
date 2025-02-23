@@ -134,7 +134,7 @@ export class EventMappingFactory {
               });
             }
             isPending = false;
-          }, LONGPRESS_DURATION_MS);
+          }, LONGPRESS_DURATION_MS) as unknown as NodeJS.Timeout;
         },
         mousemove: (event) => {
           if (isPending && lastMouseDownPoint.distance(this.point(event)) > MOUSEDOWN_MOVEMENT_TOLERANCE) {
@@ -194,7 +194,7 @@ export class EventMappingFactory {
   }
 
   private touchPress(): events.EventMapping<['click', 'longpress']> {
-    let timeout = 0 as unknown as NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
     let isPending = false;
     let lastTouchStartInvocation = Symbol();
 
