@@ -353,7 +353,9 @@ export class Stave {
     const isFirstSystem = this.document.isFirstSystem(this.key);
     const isFirstMeasure = this.document.isFirstMeasure(this.key);
     const isFirstFragment = this.document.isFirstFragment(this.key);
-    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment;
+    const isFirstPart = this.document.isFirstPart(this.key);
+    const isFirstStave = this.document.isFirstStave(this.key);
+    const isAbsolutelyFirst = isFirstSystem && isFirstMeasure && isFirstFragment && isFirstPart && isFirstStave;
 
     const currentMetronome = this.document.getFragment(this.key).signature.metronome;
     const previousMetronome = this.document.getPreviousFragment(this.key)?.signature.metronome;
