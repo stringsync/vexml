@@ -186,10 +186,21 @@ class SequenceEntryBuilder {
       const instruction = this.getXRangeInstruction(this.anchor, event.element);
 
       if (instruction === 'anchor-to-next-event') {
-        const x1 = this.x;
+        let x1 = this.x;
         const x2 = this.getLeftBoundaryX(event.element);
         const t1 = this.t;
         const t2 = event.time;
+
+        if (x1 > x2) {
+          // See https://github.com/stringsync/vexml/issues/264 for context.
+          this.log.warn('encountered a sequence-building issue where x1 > x2, forcing a fix', {
+            x1,
+            x2,
+            x: this.x,
+            absoluteMeasureIndex: event.element.getAbsoluteMeasureIndex(),
+          });
+          x1 = this.anchor.rect().center().x;
+        }
 
         this.processPending(new NumberRange(x1, x2), t1);
         this.active.push(event.element);
