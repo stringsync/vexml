@@ -64,15 +64,14 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
-  addCursor(opts?: { partIndex?: number; span?: { fromPartIndex: number; toPartIndex: number } }): playback.Cursor {
+  addCursor(opts?: { partIndex?: number; span?: playback.CursorVerticalSpan }): playback.Cursor {
     const partIndex = opts?.partIndex ?? 0;
-    const span = opts?.span ?? { fromPartIndex: partIndex, toPartIndex: partIndex };
-    util.assert(span.fromPartIndex <= span.toPartIndex, 'fromPartIndex must be less than or equal to toPartIndex');
+    const span = opts?.span ?? { fromPartIndex: 0, toPartIndex: this.getPartCount() - 1 };
 
     const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
     util.assertDefined(sequence);
 
-    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence);
+    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, partIndex, sequence, span);
     this.cursors.push(cursor);
     return cursor;
   }
