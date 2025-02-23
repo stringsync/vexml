@@ -361,10 +361,11 @@ export class Stave {
     const previousMetronome = this.document.getPreviousFragment(this.key)?.signature.metronome;
 
     const didMetronomeChange =
-      currentMetronome.displayBpm !== previousMetronome?.displayBpm ||
-      currentMetronome.dots !== previousMetronome?.dots ||
-      currentMetronome.dots2 !== previousMetronome?.dots2 ||
-      currentMetronome.duration !== previousMetronome?.duration;
+      previousMetronome &&
+      (currentMetronome.displayBpm !== previousMetronome.displayBpm ||
+        currentMetronome.dots !== previousMetronome.dots ||
+        currentMetronome.dots2 !== previousMetronome.dots2 ||
+        currentMetronome.duration !== previousMetronome.duration);
 
     const hasMetronome =
       currentMetronome.displayBpm || currentMetronome.dots || currentMetronome.dots2 || currentMetronome.duration;
