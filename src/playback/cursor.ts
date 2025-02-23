@@ -63,8 +63,6 @@ export class Cursor {
     sequence: playback.Sequence,
     span: CursorVerticalSpan
   ): Cursor {
-    util.assert(span.fromPartIndex <= span.toPartIndex, 'fromPartIndex must be less than or equal to toPartIndex');
-
     // NumberRange objects indexed by system index for the part.
     const systemPartYRanges = new Array<util.NumberRange>();
 
