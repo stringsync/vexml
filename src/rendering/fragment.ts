@@ -223,13 +223,13 @@ export class Fragment {
       const isLastSystem = this.document.isLastSystem(this.key);
       const isLastMeasure = this.document.isLastMeasure(this.key);
       const isLastFragment = this.document.isLastFragment(this.key);
-      const isRepeatEnd = this.document.getMeasure(this.key).endBarlineStyle === 'repeatend';
+      const endBarlineStyle = this.document.getMeasure(this.key).endBarlineStyle;
       if (isLastFragment) {
         if (isLastSystem && isLastMeasure) {
           vexflowStaveConnectors.push(
             new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
           );
-        } else if (isRepeatEnd) {
+        } else if (endBarlineStyle === 'repeatend') {
           vexflowStaveConnectors.push(
             new vexflow.StaveConnector(firstVexflowStave, lastVexflowStave).setType('boldDoubleRight')
           );
