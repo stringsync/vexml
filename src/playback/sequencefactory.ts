@@ -6,6 +6,7 @@ import { Sequence } from './sequence';
 import { PlaybackElement, SequenceEntry } from './types';
 import { DurationRange } from './durationrange';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
+import { Logger } from '@/debug';
 
 const LAST_SYSTEM_MEASURE_X_RANGE_PADDING_RIGHT = 10;
 
@@ -16,7 +17,7 @@ type SequenceEvent = {
 };
 
 export class SequenceFactory {
-  constructor(private score: elements.Score) {}
+  constructor(private log: Logger, private score: elements.Score) {}
 
   create(): Sequence[] {
     const sequences = new Array<Sequence>();
@@ -108,12 +109,24 @@ export class SequenceFactory {
       measureStartTime = nextMeasureStartTime;
     }
 
-    return events.sort((a, b) => a.time.ms - b.time.ms);
+    return events.sort((a, b) => {
+      if (a.time.ms !== b.time.ms) {
+        return a.time.ms - b.time.ms;
+      }
+
+      if (a.type !== b.type) {
+        // Stop events should come before start events.
+        return a.type === 'stop' ? -1 : 1;
+      }
+
+      // If two events occur at the same time and have the same type, sort by x-coordinate.
+      return a.element.rect().center().x - b.element.rect().center().x;
+    });
   }
 
   private toSequenceEntries(events: SequenceEvent[]): SequenceEntry[] {
     const measures = this.score.getMeasures();
-    const builder = new SequenceEntryBuilder(measures);
+    const builder = new SequenceEntryBuilder(this.log, measures);
 
     for (const event of events) {
       builder.add(event);
@@ -125,6 +138,7 @@ export class SequenceFactory {
 
 type XRangeInstruction =
   | 'anchor-to-next-event'
+  | 'activate-only'
   | 'terminate-to-measure-end-and-reanchor'
   | 'defer-for-interpolation'
   | 'ignore';
@@ -139,7 +153,7 @@ class SequenceEntryBuilder {
   private t = Duration.ms(-1);
   private built = false;
 
-  constructor(private measures: elements.Measure[]) {}
+  constructor(private log: Logger, private measures: elements.Measure[]) {}
 
   add(event: SequenceEvent): void {
     if (event.type === 'start') {
@@ -172,10 +186,21 @@ class SequenceEntryBuilder {
       const instruction = this.getXRangeInstruction(this.anchor, event.element);
 
       if (instruction === 'anchor-to-next-event') {
-        const x1 = this.x;
+        let x1 = this.x;
         const x2 = this.getLeftBoundaryX(event.element);
         const t1 = this.t;
         const t2 = event.time;
+
+        if (x1 > x2) {
+          // See https://github.com/stringsync/vexml/issues/264 for context.
+          this.log.warn('encountered a sequence-building issue where x1 > x2, forcing a fix', {
+            x1,
+            x2,
+            x: this.x,
+            absoluteMeasureIndex: event.element.getAbsoluteMeasureIndex(),
+          });
+          x1 = this.anchor.rect().center().x;
+        }
 
         this.processPending(new NumberRange(x1, x2), t1);
         this.active.push(event.element);
@@ -199,6 +224,9 @@ class SequenceEntryBuilder {
         this.pending.push(event);
       } else if (instruction === 'ignore') {
         // noop
+      } else if (instruction === 'activate-only') {
+        this.entries.at(-1)?.activeElements.push(event.element);
+        this.active.push(event.element);
       } else {
         util.assertUnreachable();
       }
@@ -255,7 +283,7 @@ class SequenceEntryBuilder {
   ): void {
     const durationRange = new DurationRange(t1, t2);
     const xRange = new NumberRange(x1, x2);
-    this.entries.push({ durationRange, xRange, anchorElement: anchor, activeElements: active });
+    this.entries.push({ durationRange, xRange, anchorElement: anchor, activeElements: [...active] });
   }
 
   private getLeftBoundaryX(element: PlaybackElement): number {
@@ -315,13 +343,19 @@ class SequenceEntryBuilder {
     const startMeasureBeat1 = previous.getStartMeasureBeat();
     const startMeasureBeat2 = current.getStartMeasureBeat();
 
+    const x1 = previous.rect().center().x;
+    const x2 = current.rect().center().x;
+
+    if (x1 === x2) {
+      // This is common when a part has multiple staves. When elements have the same x-coordinate, we'll just add the
+      // current element to the active list.
+      return 'activate-only';
+    }
+
     const isProgressingNormallyInTheSameMeasure =
       measureIndex1 === measureIndex2 && startMeasureBeat1.isLessThan(startMeasureBeat2);
     const isProgressingNormallyAcrossMeasures = measureIndex1 + 1 === measureIndex2;
     const isProgressingNormally = isProgressingNormallyInTheSameMeasure || isProgressingNormallyAcrossMeasures;
-
-    const x1 = previous.rect().center().x;
-    const x2 = current.rect().center().x;
 
     if (isProgressingNormally && x1 < x2) {
       return 'anchor-to-next-event';
