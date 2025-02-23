@@ -9,7 +9,7 @@ type TestCase = {
   width: number;
 };
 
-const DATA_DIR = path.join(__dirname, '__data__', 'lilypond');
+const DATA_DIR = path.resolve(__dirname, '..', '__data__', 'lilypond');
 
 describe('lilypond', () => {
   let page: Page;

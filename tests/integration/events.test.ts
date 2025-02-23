@@ -2,7 +2,7 @@ import * as vexml from '@/index';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const MUSICXML_PATH = path.join(__dirname, '__data__', 'vexml', 'events.musicxml');
+const MUSICXML_PATH = path.resolve(__dirname, '..', '__data__', 'vexml', 'events.musicxml');
 
 describe('events', () => {
   const div = document.createElement('div');
