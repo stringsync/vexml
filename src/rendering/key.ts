@@ -40,9 +40,7 @@ export class Key {
   }
 
   private getWidth() {
-    const vexflowStave = new vexflow.Stave(0, 0, 0);
     const vexflowKeySignature = this.getVexflowKeySignature();
-    vexflowKeySignature.addToStave(vexflowStave);
     return vexflowKeySignature.getWidth() + KEY_SIGNATURE_PADDING;
   }
 
