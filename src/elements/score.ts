@@ -348,7 +348,7 @@ export class Score {
 
   @util.memoize()
   private getSequences(): playback.Sequence[] {
-    const sequences = new playback.SequenceFactory(this.log, this).create();
+    const sequences = new playback.LegacySequenceFactory(this.log, this).create();
     return sequences;
   }
 
