@@ -16,7 +16,7 @@ type SequenceEvent = {
   element: PlaybackElement;
 };
 
-export class SequenceFactory {
+export class LegacySequenceFactory {
   constructor(private log: Logger, private score: elements.Score) {}
 
   create(): Sequence[] {
