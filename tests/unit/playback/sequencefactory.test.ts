@@ -6,20 +6,89 @@ import { NoopLogger } from '@/debug';
 
 const DATA_DIR = path.resolve(__dirname, '..', '..', '__data__', 'vexml');
 
-// TODO: Create a mechanism for asserting the SequenceFactory output.
-
 describe(SequenceFactory, () => {
-  it('creates the correct sequence for a simple example', () => {
-    expect(() => createSequences('playback_simple.musicxml')).not.toThrow();
+  const logger = new NoopLogger();
+
+  it('creates for: single measure, single stave, different notes', () => {
+    const score = render('playback_simple.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: single measure, single stave, same notes', () => {
+    const score = render('playback_same_note.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: single measure, multiple staves, different notes', () => {
+    const score = render('playback_multi_stave.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: single measure, multiple staves, multiple parts', () => {
+    const score = render('playback_multi_part.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(2);
+  });
+
+  it('creates for: multiple measures, single stave, different notes', () => {
+    const score = render('playback_multi_measure.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: single measure, single stave, repeat', () => {
+    const score = render('playback_repeat.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: multiple measures, single stave, repeat with endings', () => {
+    const score = render('playback_repeat_endings.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
+  });
+
+  it('creates for: multiple measures, single stave, multiple systems', () => {
+    const score = render('playback_multi_system.musicxml');
+    const factory = new SequenceFactory(logger, score);
+
+    const sequences = factory.create();
+
+    expect(sequences).toHaveLength(1);
   });
 });
 
-function createSequences(filename: string) {
+function render(filename: string) {
   const musicXMLPath = path.resolve(DATA_DIR, filename);
   const musicXML = fs.readFileSync(musicXMLPath).toString();
   const div = document.createElement('div');
-  const score = vexml.renderMusicXML(musicXML, div);
-  const logger = new NoopLogger();
-  const sequenceFactory = new SequenceFactory(logger, score);
-  return sequenceFactory.create();
+  return vexml.renderMusicXML(musicXML, div, {
+    config: {
+      WIDTH: 900,
+    },
+  });
 }
