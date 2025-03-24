@@ -1,10 +1,10 @@
 import * as playback from '@/playback';
 
 export class CheapLocator {
-  private sequence: playback.Sequence;
+  private sequence: playback.LegacySequence;
   private index: number = 0;
 
-  constructor(sequence: playback.Sequence) {
+  constructor(sequence: playback.LegacySequence) {
     this.sequence = sequence;
   }
 

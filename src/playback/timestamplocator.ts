@@ -2,22 +2,22 @@ import * as spatial from '@/spatial';
 import * as elements from '@/elements';
 import * as util from '@/util';
 import { Duration } from './duration';
-import { Sequence } from './sequence';
-import { SequenceEntry } from './types';
+import { LegacySequence } from './legacysequence';
+import { LegacySequenceEntry } from './types';
 
 type System = {
   yRange: util.NumberRange;
-  entries: SequenceEntry[];
+  entries: LegacySequenceEntry[];
 };
 
 export class TimestampLocator {
   private constructor(private systems: System[]) {}
 
-  static create(score: elements.Score, sequences: Sequence[]): TimestampLocator {
+  static create(score: elements.Score, sequences: LegacySequence[]): TimestampLocator {
     const systems = score.getSystems().map((system) => {
       const yRange = new util.NumberRange(system.rect().top(), system.rect().bottom());
 
-      const entries = new Array<SequenceEntry>();
+      const entries = new Array<LegacySequenceEntry>();
       for (const sequence of sequences) {
         entries.push(
           ...sequence.getEntries().filter((entry) => entry.anchorElement.getSystemIndex() === system.getIndex())

@@ -1,18 +1,18 @@
 import { Duration } from './duration';
-import { SequenceEntry } from './types';
+import { LegacySequenceEntry } from './types';
 
-export class Sequence {
-  constructor(private partIndex: number, private entries: SequenceEntry[]) {}
+export class LegacySequence {
+  constructor(private partIndex: number, private entries: LegacySequenceEntry[]) {}
 
   getPartIndex(): number {
     return this.partIndex;
   }
 
-  getEntry(index: number): SequenceEntry | null {
+  getEntry(index: number): LegacySequenceEntry | null {
     return this.entries.at(index) ?? null;
   }
 
-  getEntries(): SequenceEntry[] {
+  getEntries(): LegacySequenceEntry[] {
     return this.entries;
   }
 
