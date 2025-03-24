@@ -27,11 +27,11 @@ describe(Sequence, () => {
     expect(sequences).toHaveLength(1);
     // TODO: Uncomment when we have a proper implementation.
     // expect(events).toHaveLength(5);
-    // expect(events[0]).toIncludeAllTransitions([start(elements[0])]);
-    // expect(events[1]).toIncludeAllTransitions([stop(elements[0]), start(elements[1])]);
-    // expect(events[2]).toIncludeAllTransitions([stop(elements[1]), start(elements[2])]);
-    // expect(events[3]).toIncludeAllTransitions([stop(elements[2]), start(elements[3])]);
-    // expect(events[4]).toIncludeAllTransitions([stop(elements[3])]);
+    // expect(events[0].transitions).toIncludeAllMembers([start(elements[0])]);
+    // expect(events[1].transitions).toIncludeAllMembers([stop(elements[0]), start(elements[1])]);
+    // expect(events[2].transitions).toIncludeAllMembers([stop(elements[1]), start(elements[2])]);
+    // expect(events[3].transitions).toIncludeAllMembers([stop(elements[2]), start(elements[3])]);
+    // expect(events[4].transitions).toIncludeAllMembers([stop(elements[3])]);
   });
 
   it('creates for: single measure, single stave, same notes', () => {
@@ -52,11 +52,11 @@ describe(Sequence, () => {
     expect(sequences).toHaveLength(1);
     // TODO: Uncomment when we have a proper implementation.
     // expect(events).toHaveLength(5);
-    // expect(events[0]).toIncludeAllTransitions([start(elements[0])]);
-    // expect(events[1]).toIncludeAllTransitions([stop(elements[0]), start(elements[1])]);
-    // expect(events[2]).toIncludeAllTransitions([stop(elements[1]), start(elements[2])]);
-    // expect(events[3]).toIncludeAllTransitions([stop(elements[2]), start(elements[3])]);
-    // expect(events[4]).toIncludeAllTransitions([stop(elements[3])]);
+    // expect(events[0].transitions).toIncludeAllMembers([start(elements[0])]);
+    // expect(events[1].transitions).toIncludeAllMembers([stop(elements[0]), start(elements[1])]);
+    // expect(events[2].transitions).toIncludeAllMembers([stop(elements[1]), start(elements[2])]);
+    // expect(events[3].transitions).toIncludeAllMembers([stop(elements[2]), start(elements[3])]);
+    // expect(events[4].transitions).toIncludeAllMembers([stop(elements[3])]);
   });
 
   it('creates for: single measure, multiple staves, different notes', () => {
@@ -106,32 +106,6 @@ describe(Sequence, () => {
 
     expect(sequences).toHaveLength(1);
   });
-});
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      toIncludeAllTransitions(expected: SequenceTransition[]): R;
-    }
-  }
-}
-
-expect.extend({
-  toIncludeAllTransitions(received: any, expected: SequenceTransition[]) {
-    try {
-      expect(received.transitions).toIncludeAllMembers(expected);
-      return {
-        pass: true,
-        message: () => 'expected objects not to match',
-      };
-    } catch (error) {
-      return {
-        pass: false,
-        message: () => (error instanceof Error ? error.message : 'Object mismatch'),
-      };
-    }
-  },
 });
 
 function render(filename: string) {
