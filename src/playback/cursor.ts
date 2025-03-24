@@ -17,7 +17,7 @@ type CursorState = {
   hasNext: boolean;
   hasPrevious: boolean;
   cursorRect: Rect;
-  sequenceEntry: playback.SequenceEntry;
+  sequenceEntry: playback.LegacySequenceEntry;
 };
 
 type EventMap = {
@@ -32,7 +32,7 @@ export type CursorVerticalSpan = {
 export class Cursor {
   private scroller: Scroller;
   private states: CursorState[];
-  private sequence: playback.Sequence;
+  private sequence: playback.LegacySequence;
   private cheapLocator: CheapLocator;
   private expensiveLocator: ExpensiveLocator;
   private span: CursorVerticalSpan;
@@ -44,7 +44,7 @@ export class Cursor {
   private constructor(opts: {
     scroller: Scroller;
     states: CursorState[];
-    sequence: playback.Sequence;
+    sequence: playback.LegacySequence;
     cheapLocator: CheapLocator;
     expensiveLocator: ExpensiveLocator;
     span: CursorVerticalSpan;
@@ -60,7 +60,7 @@ export class Cursor {
   static create(
     scrollContainer: HTMLElement,
     score: elements.Score,
-    sequence: playback.Sequence,
+    sequence: playback.LegacySequence,
     span: CursorVerticalSpan
   ): Cursor {
     // NumberRange objects indexed by system index for the part.

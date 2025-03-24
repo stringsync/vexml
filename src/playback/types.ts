@@ -2,7 +2,7 @@ import * as elements from '@/elements';
 import { NumberRange } from '@/util';
 import { DurationRange } from './durationrange';
 
-export type SequenceEntry = {
+export type LegacySequenceEntry = {
   anchorElement: PlaybackElement;
   activeElements: PlaybackElement[];
   durationRange: DurationRange;

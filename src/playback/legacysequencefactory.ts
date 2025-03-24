@@ -2,8 +2,8 @@ import * as elements from '@/elements';
 import * as util from '@/util';
 import { NumberRange } from '@/util';
 import { Duration } from './duration';
-import { Sequence } from './sequence';
-import { PlaybackElement, SequenceEntry } from './types';
+import { LegacySequence } from './legacysequence';
+import { PlaybackElement, LegacySequenceEntry } from './types';
 import { DurationRange } from './durationrange';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 import { Logger } from '@/debug';
@@ -19,15 +19,15 @@ type SequenceEvent = {
 export class LegacySequenceFactory {
   constructor(private log: Logger, private score: elements.Score) {}
 
-  create(): Sequence[] {
-    const sequences = new Array<Sequence>();
+  create(): LegacySequence[] {
+    const sequences = new Array<LegacySequence>();
 
     const partCount = this.score.getPartCount();
 
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
       const events = this.getSequenceEvents(partIndex);
       const entries = this.toSequenceEntries(events);
-      const sequence = new Sequence(partIndex, entries);
+      const sequence = new LegacySequence(partIndex, entries);
       sequences.push(sequence);
     }
 
@@ -124,7 +124,7 @@ export class LegacySequenceFactory {
     });
   }
 
-  private toSequenceEntries(events: SequenceEvent[]): SequenceEntry[] {
+  private toSequenceEntries(events: SequenceEvent[]): LegacySequenceEntry[] {
     const measures = this.score.getMeasures();
     const builder = new SequenceEntryBuilder(this.log, measures);
 
@@ -145,7 +145,7 @@ type XRangeInstruction =
 
 /** SequenceEntryBuilder incrementally transforms SequenceEvents to SequenceEntries. */
 class SequenceEntryBuilder {
-  private entries = new Array<SequenceEntry>();
+  private entries = new Array<LegacySequenceEntry>();
   private anchor: PlaybackElement | null = null;
   private active = new Array<PlaybackElement>();
   private pending = new Array<SequenceEvent>();
@@ -163,7 +163,7 @@ class SequenceEntryBuilder {
     }
   }
 
-  build(): SequenceEntry[] {
+  build(): LegacySequenceEntry[] {
     util.assert(!this.built, 'SequenceEntryBuilder has already built');
 
     if (this.anchor && this.pending.length > 0) {

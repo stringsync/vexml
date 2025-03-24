@@ -2,9 +2,9 @@ import * as playback from '@/playback';
 import * as util from '@/util';
 
 export class ExpensiveLocator {
-  private sequence: playback.Sequence;
+  private sequence: playback.LegacySequence;
 
-  constructor(sequence: playback.Sequence) {
+  constructor(sequence: playback.LegacySequence) {
     this.sequence = sequence;
   }
 
