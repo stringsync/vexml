@@ -10,25 +10,27 @@ export type LegacySequenceEntry = {
   xRange: NumberRange;
 };
 
-export type SequenceEvent = {
+export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;
+
+export type TimelineEvent = TransitionEvent | JumpEvent | SystemEndEvent;
+
+export type TransitionEvent = {
+  type: 'transition';
   time: Duration;
-  x: number;
-  transitions: SequenceTransition[];
+  transitions: ElementTransition[];
 };
 
-export type SequenceTransition = {
-  type: SequenceTransitionType;
+export type ElementTransition = {
+  type: 'start' | 'stop';
   element: PlaybackElement;
 };
 
-/**
- * Describes what is changing during a sequence event.
- */
-export enum SequenceTransitionType {
-  /** The element is transitioning from inactive to active.  */
-  Start = 'start',
-  /** The element is transitioning from active to inactive. */
-  Stop = 'stop',
-}
+export type JumpEvent = {
+  type: 'jump';
+  time: Duration;
+};
 
-export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;
+export type SystemEndEvent = {
+  type: 'systemend';
+  time: Duration;
+};
