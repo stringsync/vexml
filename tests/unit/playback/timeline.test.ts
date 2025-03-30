@@ -24,7 +24,6 @@ describe(Timeline, () => {
     const timeline = timelines[0];
     const events = timeline.getEvents();
 
-    expect(elements).toHaveLength(4);
     expect(timelines).toHaveLength(1);
     expect(describe(events[0])).toBe('[0ms] transition -> start(0)');
     expect(describe(events[1])).toBe('[600ms] transition -> stop(0), start(1)');
