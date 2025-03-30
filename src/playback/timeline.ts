@@ -52,6 +52,7 @@ class TimelineFactory {
     this.populateEvents();
     this.sortEvents();
     this.simplifyEvents();
+    this.sortTransitions();
 
     return new Timeline(this.partIndex, this.events);
   }
@@ -194,6 +195,17 @@ class TimelineFactory {
     }
 
     this.events = merged;
+  }
+
+  private sortTransitions(): void {
+    for (const event of this.events) {
+      if (event.type === 'transition') {
+        event.transitions.sort((a, b) => {
+          const typeOrder = { stop: 0, start: 1 };
+          return typeOrder[a.type] - typeOrder[b.type];
+        });
+      }
+    }
   }
 
   private addTransitionStartEvent(time: Duration, element: PlaybackElement): void {
