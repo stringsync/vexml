@@ -66,10 +66,10 @@ class TimelineFactory {
 
     const result = new Array<{ measure: elements.Measure; willJump: boolean }>();
 
-    for (let i: number = 0; i < measureIndexes.length; i++) {
+    for (let i = 0; i < measureIndexes.length; i++) {
       const current = measureIndexes[i];
       const next = measureIndexes.at(i + 1);
-      const willJump = !!next && next !== current + 1;
+      const willJump = typeof next === 'number' && next !== current + 1;
       const measure = measures[current];
       result.push({ measure, willJump });
     }
@@ -100,9 +100,7 @@ class TimelineFactory {
 
       if (willJump) {
         this.addJumpEvent(this.currentMeasureStartTime);
-      }
-
-      if (measure.isLastMeasureInSystem()) {
+      } else if (measure.isLastMeasureInSystem()) {
         this.addSystemEndEvent(this.currentMeasureStartTime);
       }
     }
@@ -167,12 +165,15 @@ class TimelineFactory {
   }
 
   private sortEvents(): void {
+    const maxTime = Duration.max(...this.events.map((event) => event.time));
     this.events.sort((a, b) => {
-      if (a.type === b.type) {
-        return a.time.compare(b.time);
+      if (a.time.isEqual(b.time)) {
+        const typeOrder = a.time.isEqual(maxTime)
+          ? { jump: 0, transition: 1, systemend: 2 }
+          : { jump: 0, systemend: 1, transition: 2 };
+        return typeOrder[a.type] - typeOrder[b.type];
       }
-      const typeOrder = { transition: 0, jump: 1, systemend: 2 };
-      return typeOrder[a.type] - typeOrder[b.type];
+      return a.time.compare(b.time);
     });
   }
 

@@ -9,54 +9,38 @@ const DATA_DIR = path.resolve(__dirname, '..', '..', '__data__', 'vexml');
 describe(Timeline, () => {
   const logger = new NoopLogger();
 
-  it.only('creates for: single measure, single stave, different notes', () => {
+  it('creates for: single measure, single stave, different notes', () => {
     const score = render('playback_simple.musicxml');
-    const elements = score
-      .getMeasures()
-      .flatMap((measure) => measure.getFragments())
-      .flatMap((fragment) => fragment.getParts())
-      .flatMap((part) => part.getStaves())
-      .flatMap((stave) => stave.getVoices())
-      .flatMap((voice) => voice.getEntries());
-    const describe = Describer.from(elements).describe;
 
     const timelines = Timeline.create(logger, score);
-    const timeline = timelines[0];
-    const events = timeline.getEvents();
 
     expect(timelines).toHaveLength(1);
-    expect(describe(events[0])).toBe('[0ms] transition -> start(0)');
-    expect(describe(events[1])).toBe('[600ms] transition -> stop(0), start(1)');
-    expect(describe(events[2])).toBe('[1200ms] transition -> stop(1), start(2)');
-    expect(describe(events[3])).toBe('[1800ms] transition -> stop(2), start(3)');
-    expect(describe(events[4])).toBe('[2400ms] transition -> stop(3)');
-    expect(describe(events[5])).toBe('[2400ms] systemend');
-    expect(describe(events[6])).toBe('undefined');
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] transition -> stop(3)',
+      '[2400ms] systemend',
+    ]);
   });
 
   it('creates for: single measure, single stave, same notes', () => {
     const score = render('playback_same_note.musicxml');
-    const elements = score
-      .getMeasures()
-      .flatMap((measure) => measure.getFragments())
-      .flatMap((fragment) => fragment.getParts())
-      .flatMap((part) => part.getStaves())
-      .flatMap((stave) => stave.getVoices())
-      .flatMap((voice) => voice.getEntries());
 
     const timelines = Timeline.create(logger, score);
-    const timeline = timelines[0];
-    const events = timeline.getEvents();
 
-    expect(elements).toHaveLength(4);
     expect(timelines).toHaveLength(1);
-    // TODO: Uncomment when we have a proper implementation.
-    // expect(events).toHaveLength(5);
-    // expect(events[0].transitions).toIncludeAllMembers([start(elements[0])]);
-    // expect(events[1].transitions).toIncludeAllMembers([stop(elements[0]), start(elements[1])]);
-    // expect(events[2].transitions).toIncludeAllMembers([stop(elements[1]), start(elements[2])]);
-    // expect(events[3].transitions).toIncludeAllMembers([stop(elements[2]), start(elements[3])]);
-    // expect(events[4].transitions).toIncludeAllMembers([stop(elements[3])]);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] transition -> stop(3)',
+      '[2400ms] systemend',
+    ]);
   });
 
   it('creates for: single measure, multiple staves, different notes', () => {
@@ -65,6 +49,20 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0   1   2   3
+      // stave1: 4 5 6 7 8 9 10 11
+      '[0ms] transition -> start(0), start(4)',
+      '[300ms] transition -> stop(4), start(5)',
+      '[600ms] transition -> stop(0), stop(5), start(1), start(6)',
+      '[900ms] transition -> stop(6), start(7)',
+      '[1200ms] transition -> stop(1), stop(7), start(2), start(8)',
+      '[1500ms] transition -> stop(8), start(9)',
+      '[1800ms] transition -> stop(2), stop(9), start(3), start(10)',
+      '[2100ms] transition -> stop(10), start(11)',
+      '[2400ms] transition -> stop(3), stop(11)',
+      '[2400ms] systemend',
+    ]);
   });
 
   it('creates for: single measure, multiple staves, multiple parts', () => {
@@ -73,6 +71,25 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(2);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] transition -> stop(3)',
+      '[2400ms] systemend',
+    ]);
+    expect(stringify({ score, partIndex: 1, timeline: timelines[1] })).toEqual([
+      // stave0: 0 1 2 3
+      // stave1: 4 5 6 7
+      '[0ms] transition -> start(0), start(4)',
+      '[600ms] transition -> stop(0), stop(4), start(1), start(5)',
+      '[1200ms] transition -> stop(1), stop(5), start(2), start(6)',
+      '[1800ms] transition -> stop(2), stop(6), start(3), start(7)',
+      '[2400ms] transition -> stop(3), stop(7)',
+      '[2400ms] systemend',
+    ]);
   });
 
   it('creates for: multiple measures, single stave, different notes', () => {
@@ -81,6 +98,19 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3 4 | 5 6 7 8
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] transition -> stop(3), start(4)',
+      '[3000ms] transition -> stop(4), start(5)',
+      '[3600ms] transition -> stop(5), start(6)',
+      '[4200ms] transition -> stop(6), start(7)',
+      '[4800ms] transition -> stop(7)',
+      '[4800ms] systemend',
+    ]);
   });
 
   it('creates for: single measure, single stave, repeat', () => {
@@ -89,6 +119,20 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3 :||
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] jump',
+      '[2400ms] transition -> stop(3), start(0)',
+      '[3000ms] transition -> stop(0), start(1)',
+      '[3600ms] transition -> stop(1), start(2)',
+      '[4200ms] transition -> stop(2), start(3)',
+      '[4800ms] transition -> stop(3)',
+      '[4800ms] systemend',
+    ]);
   });
 
   it('creates for: multiple measures, single stave, repeat with endings', () => {
@@ -97,6 +141,33 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // stave0: 0 1 2 3 | [ending1 -> 4 5 6 7] :|| [ending2 -> 8 9 10 11] | 12 13 14 15
+      '[0ms] transition -> start(0)',
+      '[600ms] transition -> stop(0), start(1)',
+      '[1200ms] transition -> stop(1), start(2)',
+      '[1800ms] transition -> stop(2), start(3)',
+      '[2400ms] transition -> stop(3), start(4)',
+      '[3000ms] transition -> stop(4), start(5)',
+      '[3600ms] transition -> stop(5), start(6)',
+      '[4200ms] transition -> stop(6), start(7)',
+      '[4800ms] jump',
+      '[4800ms] transition -> stop(7), start(0)',
+      '[5400ms] transition -> stop(0), start(1)',
+      '[6000ms] transition -> stop(1), start(2)',
+      '[6600ms] transition -> stop(2), start(3)',
+      '[7200ms] jump',
+      '[7200ms] transition -> stop(3), start(8)',
+      '[7800ms] transition -> stop(8), start(9)',
+      '[8400ms] transition -> stop(9), start(10)',
+      '[9000ms] transition -> stop(10), start(11)',
+      '[9600ms] transition -> stop(11), start(12)',
+      '[10200ms] transition -> stop(12), start(13)',
+      '[10800ms] transition -> stop(13), start(14)',
+      '[11400ms] transition -> stop(14), start(15)',
+      '[12000ms] transition -> stop(15)',
+      '[12000ms] systemend',
+    ]);
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
@@ -105,6 +176,22 @@ describe(Timeline, () => {
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
+    expect(stringify({ score, partIndex: 0, timeline: timelines[0] })).toEqual([
+      // system0, stave0: 0 | 1 | 2 | 3 | 4 | 5
+      // system1, stave0: 6 | 7 | 8
+      '[0ms] transition -> start(0)',
+      '[2400ms] transition -> stop(0), start(1)',
+      '[4800ms] transition -> stop(1), start(2)',
+      '[7200ms] transition -> stop(2), start(3)',
+      '[9600ms] transition -> stop(3), start(4)',
+      '[12000ms] transition -> stop(4), start(5)',
+      '[14400ms] systemend',
+      '[14400ms] transition -> stop(5), start(6)',
+      '[16800ms] transition -> stop(6), start(7)',
+      '[19200ms] transition -> stop(7), start(8)',
+      '[21600ms] transition -> stop(8)',
+      '[21600ms] systemend',
+    ]);
   });
 });
 
@@ -119,43 +206,50 @@ function render(filename: string) {
   });
 }
 
-/**
- * A helper class to describe playback events.
- *
- * This is done to make debugging failing tests easier. Otherwise,
- */
-class Describer {
-  private constructor(private elements: Map<PlaybackElement, number>) {}
-
-  static from(elements: PlaybackElement[]) {
-    const map = new Map<PlaybackElement, number>();
-    elements.forEach((element, index) => {
-      map.set(element, index);
+function stringify({
+  score,
+  partIndex,
+  timeline,
+}: {
+  score: vexml.Score;
+  partIndex: number;
+  timeline: Timeline;
+}): string[] {
+  const elements = new Map<PlaybackElement, number>();
+  score
+    .getMeasures()
+    .flatMap((measure) => measure.getFragments())
+    .flatMap((fragment) => fragment.getParts().at(partIndex) ?? [])
+    .flatMap((part) => part.getStaves())
+    .flatMap((stave) => stave.getVoices())
+    .flatMap((voice) => voice.getEntries())
+    .forEach((element, index) => {
+      elements.set(element, index);
     });
-    return new Describer(map);
+
+  function describeEvent(event: TimelineEvent): string {
+    switch (event.type) {
+      case 'transition':
+        return describeTransition(event);
+      case 'jump':
+        return describeJump(event);
+      case 'systemend':
+        return describeSystemEnd(event);
+    }
   }
 
-  describe = (event: TimelineEvent | undefined): string => {
-    switch (event?.type) {
-      case 'transition':
-        return this.describeTransition(event);
-      case 'jump':
-        return this.describeJump(event);
-      case 'systemend':
-        return this.describeSystemEnd(event);
-      default:
-        return 'undefined';
-    }
-  };
-
-  private describeTransition(event: TransitionEvent): string {
-    const transitions = event.transitions.map((t) => `${t.type}(${this.elements.get(t.element)})`).join(', ');
+  function describeTransition(event: TransitionEvent): string {
+    const transitions = event.transitions.map((t) => `${t.type}(${elements.get(t.element)})`).join(', ');
     return `[${event.time.ms}ms] transition -> ${transitions}`;
   }
-  private describeJump(event: JumpEvent): string {
+
+  function describeJump(event: JumpEvent): string {
     return `[${event.time.ms}ms] jump`;
   }
-  private describeSystemEnd(event: SystemEndEvent): string {
+
+  function describeSystemEnd(event: SystemEndEvent): string {
     return `[${event.time.ms}ms] systemend`;
   }
+
+  return timeline.getEvents().map((event) => describeEvent(event));
 }
