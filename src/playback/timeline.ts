@@ -1,6 +1,6 @@
 import { Logger } from '@/debug';
 import { Duration } from './duration';
-import { PlaybackElement, TimelineEvent, TransitionEvent } from './types';
+import { PlaybackElement, TimelineEvent, LegacyTransitionEvent } from './types';
 import * as elements from '@/elements';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 import * as util from '@/util';
@@ -180,7 +180,7 @@ class TimelineFactory {
   private simplifyEvents(): void {
     const merged = new Array<TimelineEvent>();
 
-    const transitions = new Map<number, TransitionEvent>();
+    const transitions = new Map<number, LegacyTransitionEvent>();
 
     for (const event of this.events) {
       if (event.type === 'transition') {

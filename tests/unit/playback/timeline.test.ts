@@ -1,7 +1,14 @@
 import * as vexml from '@/index';
 import * as path from 'path';
 import fs from 'fs';
-import { TransitionEvent, JumpEvent, PlaybackElement, SystemEndEvent, Timeline, TimelineEvent } from '@/playback';
+import {
+  LegacyTransitionEvent,
+  LegacyJumpEvent,
+  PlaybackElement,
+  LegacySystemEndEvent,
+  Timeline,
+  TimelineEvent,
+} from '@/playback';
 import { NoopLogger } from '@/debug';
 
 const DATA_DIR = path.resolve(__dirname, '..', '..', '__data__', 'vexml');
@@ -238,16 +245,16 @@ function stringify({
     }
   }
 
-  function describeTransition(event: TransitionEvent): string {
+  function describeTransition(event: LegacyTransitionEvent): string {
     const transitions = event.transitions.map((t) => `${t.type}(${elements.get(t.element)})`).join(', ');
     return `[${event.time.ms}ms] transition -> ${transitions}`;
   }
 
-  function describeJump(event: JumpEvent): string {
+  function describeJump(event: LegacyJumpEvent): string {
     return `[${event.time.ms}ms] jump`;
   }
 
-  function describeSystemEnd(event: SystemEndEvent): string {
+  function describeSystemEnd(event: LegacySystemEndEvent): string {
     return `[${event.time.ms}ms] systemend`;
   }
 

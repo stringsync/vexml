@@ -12,9 +12,9 @@ export type LegacySequenceEntry = {
 
 export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;
 
-export type TimelineEvent = TransitionEvent | JumpEvent | SystemEndEvent;
+export type TimelineEvent = LegacyTransitionEvent | LegacyJumpEvent | LegacySystemEndEvent;
 
-export type TransitionEvent = {
+export type LegacyTransitionEvent = {
   type: 'transition';
   time: Duration;
   transitions: ElementTransition[];
@@ -25,12 +25,33 @@ export type ElementTransition = {
   element: PlaybackElement;
 };
 
-export type JumpEvent = {
+export type LegacyJumpEvent = {
   type: 'jump';
   time: Duration;
 };
 
-export type SystemEndEvent = {
+export type LegacySystemEndEvent = {
   type: 'systemend';
   time: Duration;
+};
+
+export type Moment = {
+  time: Duration;
+  events: MomentEvent[];
+};
+
+export type MomentEvent = ElementTransitionEvent | JumpEvent | SystemEndEvent;
+
+export type ElementTransitionEvent = {
+  type: 'transition';
+  kind: 'start' | 'stop';
+  element: PlaybackElement;
+};
+
+export type JumpEvent = {
+  type: 'jump';
+};
+
+export type SystemEndEvent = {
+  type: 'systemend';
 };
