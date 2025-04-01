@@ -1,12 +1,12 @@
 import { Logger } from '@/debug';
 import { Duration } from './duration';
-import { PlaybackElement, Moment, MomentEvent, ElementTransitionEvent } from './types';
+import { PlaybackElement, TimelineMoment, TimelineMomentEvent, ElementTransitionEvent } from './types';
 import * as elements from '@/elements';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 import * as util from '@/util';
 
 export class Timeline {
-  constructor(private partIndex: number, private moments: Moment[], private describer: TimelineDescriber) {}
+  constructor(private partIndex: number, private moments: TimelineMoment[], private describer: TimelineDescriber) {}
 
   static create(logger: Logger, score: elements.Score): Timeline[] {
     const partCount = score.getPartCount();
@@ -21,11 +21,11 @@ export class Timeline {
     return this.partIndex;
   }
 
-  getMoment(index: number): Moment | null {
+  getMoment(index: number): TimelineMoment | null {
     return this.moments.at(index) ?? null;
   }
 
-  getMoments(): Moment[] {
+  getMoments(): TimelineMoment[] {
     return this.moments;
   }
 
@@ -44,14 +44,14 @@ export class Timeline {
 
 class TimelineFactory {
   // timeMs -> moment
-  private moments = new Map<number, Moment>();
+  private moments = new Map<number, TimelineMoment>();
   private currentMeasureStartTime = Duration.zero();
   private nextMeasureStartTime = Duration.zero();
 
   constructor(private logger: Logger, private score: elements.Score, private partIndex: number) {}
 
   create(): Timeline {
-    this.moments = new Map<number, Moment>();
+    this.moments = new Map<number, TimelineMoment>();
     this.currentMeasureStartTime = Duration.zero();
 
     this.populateMoments();
@@ -183,7 +183,7 @@ class TimelineFactory {
     }
   }
 
-  private upsert(time: Duration, event: MomentEvent): Moment {
+  private upsert(time: Duration, event: TimelineMomentEvent): TimelineMoment {
     const moment = this.moments.get(time.ms) ?? { time, events: [] };
     moment.events.push(event);
     this.moments.set(time.ms, moment);
@@ -214,7 +214,7 @@ class TimelineFactory {
     this.upsert(time, { type: 'systemend' });
   }
 
-  private getSortedMoments(): Moment[] {
+  private getSortedMoments(): TimelineMoment[] {
     const moments = Array.from(this.moments.values());
     return moments.sort((a, b) => a.time.compare(b.time));
   }
@@ -238,15 +238,15 @@ class TimelineDescriber {
     return new TimelineDescriber(elements);
   }
 
-  describe(moments: Moment[]): string[] {
+  describe(moments: TimelineMoment[]): string[] {
     return moments.map((moment) => this.describeMoment(moment));
   }
 
-  private describeMoment(moment: Moment): string {
+  private describeMoment(moment: TimelineMoment): string {
     return `[${moment.time.ms}ms] ${moment.events.map((event) => this.describeEvent(event)).join(', ')}`;
   }
 
-  private describeEvent(event: MomentEvent): string {
+  private describeEvent(event: TimelineMomentEvent): string {
     switch (event.type) {
       case 'transition':
         return this.describeTransition(event);
