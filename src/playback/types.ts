@@ -32,3 +32,22 @@ export type JumpEvent = {
 export type SystemEndEvent = {
   type: 'systemend';
 };
+
+export type CursorFrame = {
+  timeRange: DurationRange;
+  xRange: NumberRange;
+};
+
+export type CursorFrameHint = RetriggerHint | SustainHint;
+
+export type RetriggerHint = {
+  type: 'retrigger';
+  untriggerElement: PlaybackElement;
+  retriggerElement: PlaybackElement;
+};
+
+export type SustainHint = {
+  type: 'sustain';
+  previousElement: PlaybackElement;
+  currentElement: PlaybackElement;
+};
