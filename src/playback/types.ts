@@ -12,12 +12,12 @@ export type LegacySequenceEntry = {
 
 export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;
 
-export type Moment = {
+export type TimelineMoment = {
   time: Duration;
-  events: MomentEvent[];
+  events: TimelineMomentEvent[];
 };
 
-export type MomentEvent = ElementTransitionEvent | JumpEvent | SystemEndEvent;
+export type TimelineMomentEvent = ElementTransitionEvent | JumpEvent | SystemEndEvent;
 
 export type ElementTransitionEvent = {
   type: 'transition';
