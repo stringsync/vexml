@@ -3,6 +3,7 @@ import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Fraction } from '@/util';
+import { Pitch } from './types';
 
 export class Note {
   private constructor(
@@ -22,6 +23,19 @@ export class Note {
   /** Returns the bounding box of the element. */
   rect(): Rect {
     return this.noteRender.rect;
+  }
+
+  getPitch(): Pitch {
+    const note = this.document.getNote(this.noteRender.key);
+    return {
+      step: note.pitch.step,
+      octave: note.pitch.octave,
+      accidentalCode: note.accidental?.code ?? null,
+    };
+  }
+
+  sharesACurveWith(note: Note): boolean {
+    return this.noteRender.curveIds.some((curveId) => note.noteRender.curveIds.includes(curveId));
   }
 
   /** Returns the measure beat that this note starts on. */
