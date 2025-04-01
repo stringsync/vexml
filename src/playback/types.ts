@@ -12,29 +12,6 @@ export type LegacySequenceEntry = {
 
 export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements.Measure;
 
-export type TimelineEvent = LegacyTransitionEvent | LegacyJumpEvent | LegacySystemEndEvent;
-
-export type LegacyTransitionEvent = {
-  type: 'transition';
-  time: Duration;
-  transitions: ElementTransition[];
-};
-
-export type ElementTransition = {
-  type: 'start' | 'stop';
-  element: PlaybackElement;
-};
-
-export type LegacyJumpEvent = {
-  type: 'jump';
-  time: Duration;
-};
-
-export type LegacySystemEndEvent = {
-  type: 'systemend';
-  time: Duration;
-};
-
 export type Moment = {
   time: Duration;
   events: MomentEvent[];

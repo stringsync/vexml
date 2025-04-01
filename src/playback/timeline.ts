@@ -1,12 +1,12 @@
 import { Logger } from '@/debug';
 import { Duration } from './duration';
-import { PlaybackElement, TimelineEvent, LegacyTransitionEvent } from './types';
+import { PlaybackElement, Moment, MomentEvent, ElementTransitionEvent } from './types';
 import * as elements from '@/elements';
 import { MeasureSequenceIterator } from './measuresequenceiterator';
 import * as util from '@/util';
 
 export class Timeline {
-  constructor(private partIndex: number, private events: TimelineEvent[]) {}
+  constructor(private partIndex: number, private moments: Moment[], private describer: TimelineDescriber) {}
 
   static create(logger: Logger, score: elements.Score): Timeline[] {
     const partCount = score.getPartCount();
@@ -21,40 +21,46 @@ export class Timeline {
     return this.partIndex;
   }
 
-  getEvent(index: number): TimelineEvent | null {
-    return this.events.at(index) ?? null;
+  getMoment(index: number): Moment | null {
+    return this.moments.at(index) ?? null;
   }
 
-  getEvents(): TimelineEvent[] {
-    return this.events;
+  getMoments(): Moment[] {
+    return this.moments;
   }
 
   getCount(): number {
-    return this.events.length;
+    return this.moments.length;
   }
 
   getDuration(): Duration {
-    return this.events.at(-1)?.time ?? Duration.zero();
+    return this.moments.at(-1)?.time ?? Duration.zero();
+  }
+
+  toHumanReadable(): string[] {
+    return this.describer.describe(this.moments);
   }
 }
 
 class TimelineFactory {
-  private events = new Array<TimelineEvent>();
+  // timeMs -> moment
+  private moments = new Map<number, Moment>();
   private currentMeasureStartTime = Duration.zero();
   private nextMeasureStartTime = Duration.zero();
 
   constructor(private logger: Logger, private score: elements.Score, private partIndex: number) {}
 
   create(): Timeline {
-    this.events = [];
+    this.moments = new Map<number, Moment>();
     this.currentMeasureStartTime = Duration.zero();
 
-    this.populateEvents();
-    this.sortEvents();
-    this.simplifyEvents();
-    this.sortTransitions();
+    this.populateMoments();
+    this.sortEventsWithinMoments();
 
-    return new Timeline(this.partIndex, this.events);
+    const moments = this.getSortedMoments();
+    const describer = TimelineDescriber.create(this.score, this.partIndex);
+
+    return new Timeline(this.partIndex, moments, describer);
   }
 
   private getMeasuresInPlaybackOrder(): Array<{ measure: elements.Measure; willJump: boolean }> {
@@ -88,7 +94,7 @@ class TimelineFactory {
     return Duration.ms(ms);
   }
 
-  private populateEvents(): void {
+  private populateMoments(): void {
     for (const { measure, willJump } of this.getMeasuresInPlaybackOrder()) {
       if (measure.isMultiMeasure()) {
         this.populateMultiMeasureEvents(measure);
@@ -164,72 +170,102 @@ class TimelineFactory {
     }
   }
 
-  private sortEvents(): void {
-    const maxTime = Duration.max(...this.events.map((event) => event.time));
-    this.events.sort((a, b) => {
-      if (a.time.isEqual(b.time)) {
-        const typeOrder = a.time.isEqual(maxTime)
-          ? { jump: 0, transition: 1, systemend: 2 }
-          : { jump: 0, systemend: 1, transition: 2 };
+  private sortEventsWithinMoments(): void {
+    for (const moment of this.moments.values()) {
+      moment.events.sort((a, b) => {
+        const typeOrder = {
+          transition: 0,
+          jump: 1,
+          systemend: 2,
+        };
         return typeOrder[a.type] - typeOrder[b.type];
-      }
-      return a.time.compare(b.time);
-    });
+      });
+    }
   }
 
-  private simplifyEvents(): void {
-    const merged = new Array<TimelineEvent>();
-
-    const transitions = new Map<number, LegacyTransitionEvent>();
-
-    for (const event of this.events) {
-      if (event.type === 'transition') {
-        if (transitions.has(event.time.ms)) {
-          transitions.get(event.time.ms)!.transitions.push(...event.transitions);
-        } else {
-          transitions.set(event.time.ms, event);
-          merged.push(event);
-        }
-      } else {
-        merged.push(event);
-      }
-    }
-
-    this.events = merged;
-  }
-
-  private sortTransitions(): void {
-    for (const event of this.events) {
-      if (event.type === 'transition') {
-        event.transitions.sort((a, b) => {
-          const typeOrder = { stop: 0, start: 1 };
-          return typeOrder[a.type] - typeOrder[b.type];
-        });
-      }
-    }
+  private upsert(time: Duration, event: MomentEvent): Moment {
+    const moment = this.moments.get(time.ms) ?? { time, events: [] };
+    moment.events.push(event);
+    this.moments.set(time.ms, moment);
+    return moment;
   }
 
   private addTransitionStartEvent(time: Duration, element: PlaybackElement): void {
-    this.events.push({
+    this.upsert(time, {
       type: 'transition',
-      time,
-      transitions: [{ type: 'start', element }],
+      kind: 'start',
+      element,
     });
   }
 
   private addTransitionStopEvent(time: Duration, element: PlaybackElement): void {
-    this.events.push({
+    this.upsert(time, {
       type: 'transition',
-      time,
-      transitions: [{ type: 'stop', element }],
+      kind: 'stop',
+      element,
     });
   }
 
   private addJumpEvent(time: Duration): void {
-    this.events.push({ type: 'jump', time });
+    this.upsert(time, { type: 'jump' });
   }
 
   private addSystemEndEvent(time: Duration): void {
-    this.events.push({ type: 'systemend', time });
+    this.upsert(time, { type: 'systemend' });
+  }
+
+  private getSortedMoments(): Moment[] {
+    const moments = Array.from(this.moments.values());
+    return moments.sort((a, b) => a.time.compare(b.time));
+  }
+}
+
+class TimelineDescriber {
+  private constructor(private elements: Map<PlaybackElement, number>) {}
+
+  static create(score: elements.Score, partIndex: number): TimelineDescriber {
+    const elements = new Map<PlaybackElement, number>();
+    score
+      .getMeasures()
+      .flatMap((measure) => measure.getFragments())
+      .flatMap((fragment) => fragment.getParts().at(partIndex) ?? [])
+      .flatMap((part) => part.getStaves())
+      .flatMap((stave) => stave.getVoices())
+      .flatMap((voice) => voice.getEntries())
+      .forEach((element, index) => {
+        elements.set(element, index);
+      });
+    return new TimelineDescriber(elements);
+  }
+
+  describe(moments: Moment[]): string[] {
+    return moments.map((moment) => this.describeMoment(moment));
+  }
+
+  private describeMoment(moment: Moment): string {
+    return `[${moment.time.ms}ms] ${moment.events.map((event) => this.describeEvent(event)).join(', ')}`;
+  }
+
+  private describeEvent(event: MomentEvent): string {
+    switch (event.type) {
+      case 'transition':
+        return this.describeTransition(event);
+      case 'jump':
+        return this.describeJump();
+      case 'systemend':
+        return this.describeSystemEnd();
+    }
+  }
+
+  private describeTransition(event: ElementTransitionEvent): string {
+    return `${event.kind}(${this.elements.get(event.element)})`;
+  }
+
+  private describeJump(): string {
+    return 'jump';
+  }
+
+  private describeSystemEnd(): string {
+    return 'systemend';
   }
 }
