@@ -17,7 +17,7 @@ import { Measure } from './measure';
 /** Score is a rendered musical score. */
 export class Score {
   private isEventsCreated = false;
-  private cursors = new Array<playback.Cursor>();
+  private cursors = new Array<playback.LegacyCursor>();
 
   private constructor(
     private config: Config,
@@ -64,7 +64,7 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
-  addCursor(opts?: { partIndex?: number; span?: playback.CursorVerticalSpan }): playback.Cursor {
+  addCursor(opts?: { partIndex?: number; span?: playback.CursorVerticalSpan }): playback.LegacyCursor {
     const partCount = this.getPartCount();
 
     const partIndex = opts?.partIndex ?? 0;
@@ -78,7 +78,7 @@ export class Score {
     const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
     util.assertDefined(sequence);
 
-    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, sequence, span);
+    const cursor = playback.LegacyCursor.create(this.root.getScrollContainer(), this, sequence, span);
     this.cursors.push(cursor);
     return cursor;
   }
