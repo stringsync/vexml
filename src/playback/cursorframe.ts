@@ -17,6 +17,9 @@ export class CursorFrame {
 
   private getRetriggerHints(previousFrame: CursorFrame): RetriggerHint[] {
     const hints = new Array<RetriggerHint>();
+    if (this === previousFrame) {
+      return hints;
+    }
 
     const previousNotes = previousFrame.activeElements.filter((e) => e.name === 'note');
     const currentNotes = this.activeElements.filter((e) => e.name === 'note');
@@ -41,6 +44,9 @@ export class CursorFrame {
 
   private getSustainHints(previousFrame: CursorFrame): SustainHint[] {
     const hints = new Array<SustainHint>();
+    if (this === previousFrame) {
+      return hints;
+    }
 
     const previousNotes = previousFrame.activeElements.filter((e) => e.name === 'note');
     const currentNotes = this.activeElements.filter((e) => e.name === 'note');
