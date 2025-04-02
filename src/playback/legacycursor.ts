@@ -29,7 +29,7 @@ export type CursorVerticalSpan = {
   toPartIndex: number;
 };
 
-export class Cursor {
+export class LegacyCursor {
   private scroller: Scroller;
   private states: CursorState[];
   private sequence: playback.LegacySequence;
@@ -62,7 +62,7 @@ export class Cursor {
     score: elements.Score,
     sequence: playback.LegacySequence,
     span: CursorVerticalSpan
-  ): Cursor {
+  ): LegacyCursor {
     // NumberRange objects indexed by system index for the part.
     const systemPartYRanges = new Array<util.NumberRange>();
 
@@ -119,7 +119,7 @@ export class Cursor {
     const cheapLocator = new CheapLocator(sequence);
     const expensiveLocator = new ExpensiveLocator(sequence);
 
-    return new Cursor({
+    return new LegacyCursor({
       scroller,
       states,
       sequence,
