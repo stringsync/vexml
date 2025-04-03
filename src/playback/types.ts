@@ -51,3 +51,8 @@ export type SustainHint = {
   previousElement: PlaybackElement;
   currentElement: PlaybackElement;
 };
+
+export type CursorVerticalSpan = {
+  fromPartIndex: number;
+  toPartIndex: number;
+};

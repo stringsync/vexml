@@ -29,7 +29,7 @@ export class Timeline {
     return this.moments;
   }
 
-  getCount(): number {
+  getMomentCount(): number {
     return this.moments.length;
   }
 

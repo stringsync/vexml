@@ -3,10 +3,10 @@ import * as util from '@/util';
 import * as spatial from '@/spatial';
 import * as events from '@/events';
 import * as elements from '@/elements';
-import { Rect } from '@/spatial';
 import { CheapLocator } from './cheaplocator';
 import { ExpensiveLocator } from './expensivelocator';
 import { Scroller } from './scroller';
+import { CursorVerticalSpan } from './types';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
@@ -16,17 +16,12 @@ type CursorState = {
   index: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  cursorRect: Rect;
+  cursorRect: spatial.Rect;
   sequenceEntry: playback.LegacySequenceEntry;
 };
 
 type EventMap = {
   change: CursorState;
-};
-
-export type CursorVerticalSpan = {
-  fromPartIndex: number;
-  toPartIndex: number;
 };
 
 export class LegacyCursor {
@@ -67,7 +62,7 @@ export class LegacyCursor {
     const systemPartYRanges = new Array<util.NumberRange>();
 
     for (const system of score.getSystems()) {
-      const rect = Rect.merge(
+      const rect = spatial.Rect.merge(
         system
           .getMeasures()
           .flatMap((measure) => measure.getFragments())
