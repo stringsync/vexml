@@ -1,7 +1,9 @@
 import * as util from '@/util';
 import * as elements from '@/elements';
+import * as spatial from '@/spatial';
 import { DurationRange } from './durationrange';
-import { CursorFrameHint, PlaybackElement, RetriggerHint, SustainHint } from './types';
+import { CursorFrameHint, CursorVerticalSpan, PlaybackElement, RetriggerHint, SustainHint } from './types';
+import { Timeline } from './timeline';
 
 export class CursorFrame {
   constructor(
@@ -10,6 +12,11 @@ export class CursorFrame {
     public readonly yRange: util.NumberRange,
     public readonly activeElements: PlaybackElement[]
   ) {}
+
+  static create(score: elements.Score, timeline: Timeline, span: CursorVerticalSpan): CursorFrame[] {
+    const factory = new CursorFrameFactory(score, timeline, span);
+    return factory.create();
+  }
 
   getHints(previousFrame: CursorFrame): CursorFrameHint[] {
     return [...this.getRetriggerHints(previousFrame), ...this.getSustainHints(previousFrame)];
@@ -72,4 +79,48 @@ export class CursorFrame {
 
 function isPitchEqual(a: elements.Pitch, b: elements.Pitch): boolean {
   return a.step === b.step && a.octave === b.octave && a.accidentalCode === b.accidentalCode;
+}
+
+class CursorFrameFactory {
+  constructor(private score: elements.Score, private timeline: Timeline, private span: CursorVerticalSpan) {}
+
+  create(): CursorFrame[] {
+    // NumberRange objects indexed by system index for the part.
+    const systemPartYRanges = new Array<util.NumberRange>();
+    for (const system of this.score.getSystems()) {
+      const rect = spatial.Rect.merge(
+        system
+          .getMeasures()
+          .flatMap((measure) => measure.getFragments())
+          .flatMap((fragment) => fragment.getParts())
+          .filter((part) => this.span.fromPartIndex <= part.getIndex() && part.getIndex() <= this.span.toPartIndex)
+          .map((part) => part.rect())
+      );
+      const yRange = new util.NumberRange(rect.top(), rect.bottom());
+      systemPartYRanges.push(yRange);
+    }
+
+    const frames = new Array<CursorFrame>();
+
+    const activeElements = new Array<PlaybackElement>();
+
+    const momentCount = this.timeline.getMomentCount();
+    for (let index = 0; index < momentCount - 1; index++) {
+      const current = this.timeline.getMoment(index);
+      const next = this.timeline.getMoment(index + 1);
+
+      util.assertNotNull(current);
+      util.assertNotNull(next);
+
+      const tRange = new DurationRange(current.time, next.time);
+      // TODO: Decide what the anchor element should be and calculate these.
+      const xRange = new util.NumberRange(0, 0);
+      const yRange = systemPartYRanges[0];
+
+      const frame = new CursorFrame(tRange, xRange, yRange, [...activeElements]);
+      frames.push(frame);
+    }
+
+    return frames;
+  }
 }
