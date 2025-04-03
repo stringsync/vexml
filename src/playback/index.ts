@@ -5,3 +5,4 @@ export * from './legacysequence';
 export * from './legacysequencefactory';
 export * from './types';
 export * from './legacycursor';
+export * from './cursorframe';

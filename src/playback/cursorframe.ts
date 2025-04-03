@@ -88,11 +88,6 @@ export class CursorFrame {
   }
 }
 
-/**
- * An element used to spatially scope the cursor frame.
- */
-type Anchor = PlaybackElement | elements.System;
-
 class CursorFrameFactory {
   private frames = new Array<CursorFrame>();
   private activeElements = new Set<PlaybackElement>();
@@ -103,27 +98,13 @@ class CursorFrameFactory {
     this.frames = [];
     this.activeElements = new Set<PlaybackElement>();
 
-    const anchors = this.timeline.getMoments().map((moment) => this.identifyAnchor(moment));
-
-    const momentCount = this.timeline.getMomentCount();
-    for (let index = 0; index < momentCount - 1; index++) {
-      const currentMoment = this.timeline.getMoment(index);
-      const nextMoment = this.timeline.getMoment(index + 1);
-      util.assertNotNull(currentMoment);
-      util.assertNotNull(nextMoment);
-
-      const currentAnchor = anchors.at(index);
-      const nextAnchor = anchors.at(index + 1);
-      util.assertDefined(currentAnchor);
-      util.assertDefined(nextAnchor);
-
-      const tRange = new DurationRange(currentMoment.time, nextMoment.time);
-      const xRange = this.getXRange(currentMoment, currentAnchor, nextAnchor);
-      const yRange = this.getYRange(currentAnchor);
-
-      this.updateActiveElements(currentMoment);
-
-      this.addFrame(tRange, xRange, yRange);
+    for (let index = 0; index < this.timeline.getMomentCount() - 1; index++) {
+      // const [anchor1, anchor2] = this.identifyAnchorPair(momentIndex);
+      // const tRange = new DurationRange(currentMoment.time, nextMoment.time);
+      // const xRange = this.getXRange(currentMoment, currentAnchor, nextAnchor);
+      // const yRange = this.getYRange(currentAnchor);
+      // this.updateActiveElements(currentMoment);
+      // this.addFrame(tRange, xRange, yRange);
     }
 
     return this.frames;
@@ -139,78 +120,6 @@ class CursorFrameFactory {
         }
       }
     }
-  }
-
-  private getXRange(currentMoment: TimelineMoment, currentAnchor: Anchor, nextAnchor: Anchor): util.NumberRange {
-    const left = currentAnchor.rect().left();
-    let right = nextAnchor.rect().left();
-
-    // Check to see if the current moment has any events that should adjust the right boundary.
-    for (const event of currentMoment.events) {
-      if (event.type === 'systemend') {
-        right = event.system.rect().right();
-        break;
-      } else if (event.type === 'jump') {
-        right = event.measure.rect().right();
-        break;
-      }
-    }
-
-    return new util.NumberRange(left, right);
-  }
-
-  private getYRange(currentAnchor: Anchor) {
-    const systemIndex = this.getSystemIndex(currentAnchor);
-    const yRange = this.getYRangeBySystemIndex().at(systemIndex);
-    util.assertDefined(yRange);
-    return yRange;
-  }
-
-  private getSystemIndex(anchor: Anchor) {
-    if (anchor instanceof elements.System) {
-      return anchor.getIndex();
-    } else {
-      return anchor.getSystemIndex();
-    }
-  }
-
-  /**
-   * Returns the element that is considered the "main" element of the moment. This is used to determine the x-range of
-   * a frame.
-   */
-  private identifyAnchor(moment: TimelineMoment): Anchor {
-    // First, select the start elements.
-    const elements = moment.events
-      .filter((e) => e.type === 'transition')
-      .filter((e) => e.kind === 'start')
-      .map((e) => e.element);
-
-    // If there are no start elements, use the first measure.
-    if (elements.length === 0) {
-      for (const event of moment.events) {
-        if (event.type === 'transition') {
-          return event.measure;
-        } else if (event.type === 'jump') {
-          return event.measure;
-        } else if (event.type === 'systemend') {
-          return event.system;
-        } else {
-          util.assertUnreachable();
-        }
-      }
-    }
-
-    // Otherwise, select the leftmost element.
-    let anchor = elements[0];
-    let min = elements[0].rect().left();
-    for (const element of elements) {
-      const x = element.rect().left();
-      if (x < min) {
-        min = x;
-        anchor = element;
-      }
-    }
-    return anchor;
   }
 
   private addFrame(tRange: DurationRange, xRange: util.NumberRange, yRange: util.NumberRange): void {
