@@ -22,15 +22,18 @@ export type TimelineMomentEvent = ElementTransitionEvent | JumpEvent | SystemEnd
 export type ElementTransitionEvent = {
   type: 'transition';
   kind: 'start' | 'stop';
+  measure: elements.Measure;
   element: PlaybackElement;
 };
 
 export type JumpEvent = {
   type: 'jump';
+  measure: elements.Measure;
 };
 
 export type SystemEndEvent = {
   type: 'systemend';
+  system: elements.System;
 };
 
 export type CursorFrame = {

@@ -105,9 +105,11 @@ class TimelineFactory {
       this.currentMeasureStartTime = this.nextMeasureStartTime;
 
       if (willJump) {
-        this.addJumpEvent(this.currentMeasureStartTime);
+        this.addJumpEvent(this.currentMeasureStartTime, measure);
       } else if (measure.isLastMeasureInSystem()) {
-        this.addSystemEndEvent(this.currentMeasureStartTime);
+        const system = this.score.getSystems().at(measure.getSystemIndex());
+        util.assertDefined(system);
+        this.addSystemEndEvent(this.currentMeasureStartTime, system);
       }
     }
   }
@@ -120,8 +122,8 @@ class TimelineFactory {
     const startTime = this.currentMeasureStartTime;
     const stopTime = startTime.add(duration);
 
-    this.addTransitionStartEvent(startTime, measure);
-    this.addTransitionStopEvent(stopTime, measure);
+    this.addTransitionStartEvent(startTime, measure, measure);
+    this.addTransitionStopEvent(stopTime, measure, measure);
 
     this.proposeNextMeasureStartTime(stopTime);
   }
@@ -129,25 +131,25 @@ class TimelineFactory {
   private populateFragmentEvents(measure: elements.Measure): void {
     for (const fragment of measure.getFragments()) {
       if (fragment.isNonMusicalGap()) {
-        this.populateNonMusicalGapEvents(fragment);
+        this.populateNonMusicalGapEvents(fragment, measure);
       } else {
-        this.populateVoiceEntryEvents(fragment);
+        this.populateVoiceEntryEvents(fragment, measure);
       }
     }
   }
 
-  private populateNonMusicalGapEvents(fragment: elements.Fragment): void {
+  private populateNonMusicalGapEvents(fragment: elements.Fragment, measure: elements.Measure): void {
     const duration = Duration.ms(fragment.getNonMusicalDurationMs());
     const startTime = this.currentMeasureStartTime;
     const stopTime = startTime.add(duration);
 
-    this.addTransitionStartEvent(startTime, fragment);
-    this.addTransitionStopEvent(stopTime, fragment);
+    this.addTransitionStartEvent(startTime, measure, fragment);
+    this.addTransitionStopEvent(stopTime, measure, fragment);
 
     this.proposeNextMeasureStartTime(stopTime);
   }
 
-  private populateVoiceEntryEvents(fragment: elements.Fragment): void {
+  private populateVoiceEntryEvents(fragment: elements.Fragment, measure: elements.Measure): void {
     const voiceEntries = fragment
       .getParts()
       .filter((part) => part.getIndex() === this.partIndex)
@@ -163,8 +165,8 @@ class TimelineFactory {
       const startTime = this.currentMeasureStartTime.add(this.toDuration(voiceEntry.getStartMeasureBeat(), bpm));
       const stopTime = startTime.add(duration);
 
-      this.addTransitionStartEvent(startTime, voiceEntry);
-      this.addTransitionStopEvent(stopTime, voiceEntry);
+      this.addTransitionStartEvent(startTime, measure, voiceEntry);
+      this.addTransitionStopEvent(stopTime, measure, voiceEntry);
 
       this.proposeNextMeasureStartTime(stopTime);
     }
@@ -190,28 +192,30 @@ class TimelineFactory {
     return moment;
   }
 
-  private addTransitionStartEvent(time: Duration, element: PlaybackElement): void {
+  private addTransitionStartEvent(time: Duration, measure: elements.Measure, element: PlaybackElement): void {
     this.upsert(time, {
       type: 'transition',
       kind: 'start',
+      measure,
       element,
     });
   }
 
-  private addTransitionStopEvent(time: Duration, element: PlaybackElement): void {
+  private addTransitionStopEvent(time: Duration, measure: elements.Measure, element: PlaybackElement): void {
     this.upsert(time, {
       type: 'transition',
       kind: 'stop',
+      measure,
       element,
     });
   }
 
-  private addJumpEvent(time: Duration): void {
-    this.upsert(time, { type: 'jump' });
+  private addJumpEvent(time: Duration, measure: elements.Measure): void {
+    this.upsert(time, { type: 'jump', measure });
   }
 
-  private addSystemEndEvent(time: Duration): void {
-    this.upsert(time, { type: 'systemend' });
+  private addSystemEndEvent(time: Duration, system: elements.System): void {
+    this.upsert(time, { type: 'systemend', system });
   }
 
   private getSortedMoments(): TimelineMoment[] {
