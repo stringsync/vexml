@@ -36,11 +36,6 @@ export type SystemEndEvent = {
   system: elements.System;
 };
 
-export type CursorFrame = {
-  timeRange: DurationRange;
-  xRange: NumberRange;
-};
-
 export type CursorFrameHint = RetriggerHint | SustainHint;
 
 export type RetriggerHint = {
