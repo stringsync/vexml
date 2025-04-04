@@ -29,5 +29,5 @@ export {
 } from './formatting';
 export { type SchemaDescriptor, type SchemaType, type SchemaConfig } from './schema';
 export { SimpleCursor } from './components';
-export { type LegacyCursor as Cursor } from './playback';
+export { type Cursor } from './playback';
 export { type Logger, type LogLevel, ConsoleLogger, MemoryLogger, type MemoryLog, NoopLogger } from './debug';

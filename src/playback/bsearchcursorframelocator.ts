@@ -1,21 +1,23 @@
 import * as util from '@/util';
-import { CursorFrame } from './cursorframe';
 import { CursorFrameLocator } from './types';
 import { Duration } from './duration';
+import { CursorPath } from './cursorpath';
 
 /**
  * A CursorFrameLocator that uses binary search to locate the frame at a given time.
  */
 export class BSearchCursorFrameLocator implements CursorFrameLocator {
-  constructor(private frames: CursorFrame[]) {}
+  constructor(private path: CursorPath) {}
 
   locate(time: Duration): number | null {
+    const frames = this.path.getFrames();
+
     let left = 0;
-    let right = this.frames.length - 1;
+    let right = frames.length - 1;
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
-      const entry = this.frames.at(mid);
+      const entry = frames.at(mid);
 
       util.assertDefined(entry);
 
