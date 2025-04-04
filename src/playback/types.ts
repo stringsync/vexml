@@ -14,7 +14,7 @@ export type PlaybackElement = elements.VoiceEntry | elements.Fragment | elements
 
 export type TimelineMoment = {
   time: Duration;
-  events: TimelineMomentEvent[];
+  events: [TimelineMomentEvent, ...TimelineMomentEvent[]];
 };
 
 export type TimelineMomentEvent = ElementTransitionEvent | JumpEvent | SystemEndEvent;

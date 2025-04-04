@@ -1,16 +1,46 @@
 import * as vexml from '@/index';
 import * as path from 'path';
-import fs from 'fs';
 import { CursorFrame, Timeline } from '@/playback';
-import { NoopLogger } from '@/debug';
+import { NoopLogger, MemoryLogger } from '@/debug';
+import fs from 'fs';
 
 const DATA_DIR = path.resolve(__dirname, '..', '..', '__data__', 'vexml');
 
 describe(CursorFrame, () => {
-  it.only('creates for: single measure, single stave, different notes', () => {
+  let logger: MemoryLogger;
+
+  beforeEach(() => {
+    logger = new MemoryLogger();
+  });
+
+  it('creates for: single measure, single stave, different notes', () => {
     const [score, timelines] = render('playback_simple.musicxml');
 
-    const frames = CursorFrame.create(score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = CursorFrame.create(logger, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+
+    expect(logger.getLogs()).toBeEmpty();
+    expect(timelines).toHaveLength(1);
+    expect(frames).toHaveLength(4);
+    expect(frames[0].toHumanReadable()).toEqual([
+      't: [0ms - 600ms]',
+      'x: [left(element(0)) - left(element(1))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[1].toHumanReadable()).toEqual([
+      't: [600ms - 1200ms]',
+      'x: [left(element(1)) - left(element(2))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[2].toHumanReadable()).toEqual([
+      't: [1200ms - 1800ms]',
+      'x: [left(element(2)) - left(element(3))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[3].toHumanReadable()).toEqual([
+      't: [1800ms - 2400ms]',
+      'x: [left(element(3)) - right(measure(0))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
   });
 
   // it('creates for: single measure, single stave, same notes', () => {
