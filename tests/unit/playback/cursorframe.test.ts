@@ -238,9 +238,56 @@ describe(CursorFrame, () => {
     ]);
   });
 
-  // it('creates for: single measure, single stave, repeat', () => {
-  //   const [score, timelines] = render('playback_repeat.musicxml');
-  // });
+  it('creates for: single measure, single stave, repeat', () => {
+    const [score, timelines] = render('playback_repeat.musicxml');
+
+    const frames = CursorFrame.create(logger, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+
+    expect(logger.getLogs()).toBeEmpty();
+    expect(timelines).toHaveLength(1);
+    expect(frames).toHaveLength(8);
+    // stave0: 0 1 2 3 :||
+    expect(frames[0].toHumanReadable()).toEqual([
+      't: [0ms - 600ms]',
+      'x: [left(element(0)) - left(element(1))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[1].toHumanReadable()).toEqual([
+      't: [600ms - 1200ms]',
+      'x: [left(element(1)) - left(element(2))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[2].toHumanReadable()).toEqual([
+      't: [1200ms - 1800ms]',
+      'x: [left(element(2)) - left(element(3))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[3].toHumanReadable()).toEqual([
+      't: [1800ms - 2400ms]',
+      'x: [left(element(3)) - right(measure(0))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[4].toHumanReadable()).toEqual([
+      't: [2400ms - 3000ms]',
+      'x: [left(element(0)) - left(element(1))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[5].toHumanReadable()).toEqual([
+      't: [3000ms - 3600ms]',
+      'x: [left(element(1)) - left(element(2))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[6].toHumanReadable()).toEqual([
+      't: [3600ms - 4200ms]',
+      'x: [left(element(2)) - left(element(3))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(frames[7].toHumanReadable()).toEqual([
+      't: [4200ms - 4800ms]',
+      'x: [left(element(3)) - right(measure(0))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+  });
 
   // it('creates for: multiple measures, single stave, repeat with endings', () => {
   //   const [score, timelines] = render('playback_repeat_endings.musicxml');
