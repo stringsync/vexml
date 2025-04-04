@@ -76,6 +76,10 @@ export class CursorFrame {
     return [...this.getRetriggerHints(previousFrame), ...this.getSustainHints(previousFrame)];
   }
 
+  getActiveElements(): PlaybackElement[] {
+    return [...this.activeElements];
+  }
+
   toHumanReadable(): string[] {
     const tRangeDescription = this.describer.describeTRange(this.tRangeSources);
     const xRangeDescription = this.describer.describeXRange(this.xRangeSources);

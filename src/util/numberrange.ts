@@ -1,3 +1,5 @@
+import { lerp } from './math';
+
 export class NumberRange {
   public readonly start: number;
   public readonly end: number;
@@ -12,6 +14,10 @@ export class NumberRange {
 
   getSize(): number {
     return this.end - this.start;
+  }
+
+  lerp(alpha: number): number {
+    return lerp(this.start, this.end, alpha);
   }
 
   includes(value: number): boolean {
