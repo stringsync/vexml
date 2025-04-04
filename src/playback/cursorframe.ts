@@ -36,6 +36,20 @@ export class CursorFrame {
   ) {}
 
   static create(logger: Logger, score: elements.Score, timeline: Timeline, span: CursorVerticalSpan): CursorFrame[] {
+    const partCount = score.getPartCount();
+    if (partCount === 0) {
+      logger.warn('No parts found in score, returning empty cursor frames.');
+      return [];
+    }
+
+    if (0 > span.fromPartIndex || span.fromPartIndex >= partCount) {
+      throw new Error(`Invalid fromPartIndex: ${span.fromPartIndex}, must be in [0,${partCount - 1}]`);
+    }
+
+    if (0 > span.toPartIndex || span.toPartIndex >= partCount) {
+      throw new Error(`Invalid toPartIndex: ${span.toPartIndex}, must be in [0,${partCount - 1}]`);
+    }
+
     const factory = new CursorFrameFactory(logger, score, timeline, span);
     return factory.create();
   }
