@@ -127,9 +127,65 @@ describe(CursorFrame, () => {
     ]);
   });
 
-  // it('creates for: single measure, multiple staves, multiple parts', () => {
-  //   const [score, timelines] = render('playback_multi_part.musicxml');
-  // });
+  it('creates for: single measure, multiple staves, multiple parts', () => {
+    const [score, timelines] = render('playback_multi_part.musicxml');
+
+    // This ends up adding test coverage for y-spans.
+    const span0 = { fromPartIndex: 0, toPartIndex: 0 };
+    const span1 = { fromPartIndex: 0, toPartIndex: 1 };
+
+    const framesPart0 = CursorFrame.create(logger, score, timelines[0], span0);
+    const framesPart1 = CursorFrame.create(logger, score, timelines[1], span1);
+
+    expect(logger.getLogs()).toBeEmpty();
+    expect(timelines).toHaveLength(2);
+    expect(framesPart0).toHaveLength(4);
+    // part0, stave0: 0 1 2 3
+    expect(framesPart0[0].toHumanReadable()).toEqual([
+      't: [0ms - 600ms]',
+      'x: [left(element(0)) - left(element(1))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(framesPart0[1].toHumanReadable()).toEqual([
+      't: [600ms - 1200ms]',
+      'x: [left(element(1)) - left(element(2))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(framesPart0[2].toHumanReadable()).toEqual([
+      't: [1200ms - 1800ms]',
+      'x: [left(element(2)) - left(element(3))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+    expect(framesPart0[3].toHumanReadable()).toEqual([
+      't: [1800ms - 2400ms]',
+      'x: [left(element(3)) - right(measure(0))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    ]);
+
+    expect(framesPart1).toHaveLength(4);
+    // part1, stave0: 0 1 2 3
+    // part1, stave1: 4 5 6 7
+    expect(framesPart1[0].toHumanReadable()).toEqual([
+      't: [0ms - 600ms]',
+      'x: [left(element(0)) - left(element(1))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(1))]',
+    ]);
+    expect(framesPart1[1].toHumanReadable()).toEqual([
+      't: [600ms - 1200ms]',
+      'x: [left(element(1)) - left(element(2))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(1))]',
+    ]);
+    expect(framesPart1[2].toHumanReadable()).toEqual([
+      't: [1200ms - 1800ms]',
+      'x: [left(element(2)) - left(element(3))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(1))]',
+    ]);
+    expect(framesPart1[3].toHumanReadable()).toEqual([
+      't: [1800ms - 2400ms]',
+      'x: [left(element(3)) - right(measure(0))]',
+      'y: [top(system(0), part(0)) - bottom(system(0), part(1))]',
+    ]);
+  });
 
   // it('creates for: multiple measures, single stave, different notes', () => {
   //   const [score, timelines] = render('playback_multi_measure.musicxml');
