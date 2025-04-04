@@ -1,6 +1,5 @@
 import * as util from '@/util';
 import * as elements from '@/elements';
-import * as spatial from '@/spatial';
 import { Logger } from '@/debug';
 import { DurationRange } from './durationrange';
 import {
