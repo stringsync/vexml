@@ -30,8 +30,8 @@ export type CursorEventMap = {
 export class Cursor {
   private topic = new events.Topic<CursorEventMap>();
 
-  private index = 0;
-  private alpha = 0; // interpolation factor, ranging from 0 to 1
+  private currentIndex = 0;
+  private currentAlpha = 0; // interpolation factor, ranging from 0 to 1
 
   private previousIndex = -1;
   private previousAlpha = -1;
@@ -53,7 +53,7 @@ export class Cursor {
   }
 
   getCurrentState(): CursorState {
-    return this.getState(this.index, this.alpha);
+    return this.getState(this.currentIndex, this.currentAlpha);
   }
 
   getPreviousState(): CursorState | null {
@@ -64,15 +64,15 @@ export class Cursor {
   }
 
   next(): void {
-    if (this.index === this.frames.length - 1) {
-      this.update(this.index, { alpha: 1 });
+    if (this.currentIndex === this.frames.length - 1) {
+      this.update(this.currentIndex, { alpha: 1 });
     } else {
-      this.update(this.index + 1, { alpha: 0 });
+      this.update(this.currentIndex + 1, { alpha: 0 });
     }
   }
 
   previous(): void {
-    this.update(this.index - 1, { alpha: 0 });
+    this.update(this.currentIndex - 1, { alpha: 0 });
   }
 
   goTo(index: number): void {
@@ -180,11 +180,11 @@ export class Cursor {
     alpha = util.clamp(0, 1, alpha);
     // Round to 3 decimal places to avoid overloading the event system with redundant updates.
     alpha = Math.round(alpha * 1000) / 1000;
-    if (index !== this.index || alpha !== this.alpha) {
-      this.previousIndex = this.index;
-      this.previousAlpha = this.alpha;
-      this.index = index;
-      this.alpha = alpha;
+    if (index !== this.currentIndex || alpha !== this.currentAlpha) {
+      this.previousIndex = this.currentIndex;
+      this.previousAlpha = this.currentAlpha;
+      this.currentIndex = index;
+      this.currentAlpha = alpha;
       this.topic.publish('change', this.getCurrentState());
     }
   }
