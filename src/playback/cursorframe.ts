@@ -273,8 +273,8 @@ class CursorFrameFactory {
 
     const parts = this.score
       .getSystems()
-      .filter((system) => system.getIndex() === systemIndex)
-      .flatMap((system) => system.getMeasures())
+      .at(systemIndex)!
+      .getMeasures()
       .flatMap((measure) => measure.getFragments())
       .flatMap((fragment) => fragment.getParts());
 
@@ -290,7 +290,15 @@ class CursorFrameFactory {
   }
 
   private getSystemIndex(currentMoment: TimelineMoment): number {
-    for (const event of currentMoment.events) {
+    const events = currentMoment.events.toSorted((a, b) => {
+      const kindOrder = { start: 0, stop: 1 };
+      if (a.type === 'transition' && b.type === 'transition') {
+        return kindOrder[a.kind] - kindOrder[b.kind];
+      }
+      const typeOrder = { transition: 0, systemend: 1, jump: 2 };
+      return typeOrder[a.type] - typeOrder[b.type];
+    });
+    for (const event of events) {
       switch (event.type) {
         case 'transition':
           return event.measure.getSystemIndex();
