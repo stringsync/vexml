@@ -8,11 +8,11 @@ import * as util from '@/util';
 export class Timeline {
   constructor(private partIndex: number, private moments: TimelineMoment[], private describer: TimelineDescriber) {}
 
-  static create(logger: Logger, score: elements.Score): Timeline[] {
+  static create(log: Logger, score: elements.Score): Timeline[] {
     const partCount = score.getPartCount();
     const timelines = new Array<Timeline>(partCount);
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      timelines[partIndex] = new TimelineFactory(logger, score, partIndex).create();
+      timelines[partIndex] = new TimelineFactory(log, score, partIndex).create();
     }
     return timelines;
   }

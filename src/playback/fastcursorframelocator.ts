@@ -1,4 +1,4 @@
-import { CursorFrame } from './cursorframe';
+import { CursorPath } from './cursorpath';
 import { Duration } from './duration';
 import { CursorFrameLocator } from './types';
 
@@ -9,29 +9,31 @@ import { CursorFrameLocator } from './types';
 export class FastCursorFrameLocator implements CursorFrameLocator {
   private index = 0;
 
-  constructor(private frames: CursorFrame[], private fallback: CursorFrameLocator) {}
+  constructor(private path: CursorPath, private fallback: CursorFrameLocator) {}
 
   locate(time: Duration): number | null {
+    const frames = this.path.getFrames();
+
     if (time.isLessThan(Duration.zero())) {
       return this.update(0);
     }
 
     if (time.isGreaterThan(this.getDuration())) {
-      return this.update(this.frames.length - 1);
+      return this.update(frames.length - 1);
     }
 
     const previousIndex = this.index - 1;
-    if (previousIndex >= 0 && this.frames.at(previousIndex)?.tRange.includes(time)) {
+    if (previousIndex >= 0 && frames.at(previousIndex)?.tRange.includes(time)) {
       return this.update(previousIndex);
     }
 
     const currentIndex = this.index;
-    if (this.frames.at(currentIndex)?.tRange.includes(time)) {
+    if (frames.at(currentIndex)?.tRange.includes(time)) {
       return this.update(currentIndex);
     }
 
     const nextIndex = this.index + 1;
-    if (this.frames.at(nextIndex)?.tRange.includes(time)) {
+    if (frames.at(nextIndex)?.tRange.includes(time)) {
       return this.update(nextIndex);
     }
 
@@ -51,6 +53,6 @@ export class FastCursorFrameLocator implements CursorFrameLocator {
   }
 
   private getDuration(): Duration {
-    return this.frames.at(-1)?.tRange.end ?? Duration.zero();
+    return this.path.getFrames().at(-1)?.tRange.end ?? Duration.zero();
   }
 }

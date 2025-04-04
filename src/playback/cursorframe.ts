@@ -35,10 +35,10 @@ export class CursorFrame {
     private describer: CursorFrameDescriber
   ) {}
 
-  static create(logger: Logger, score: elements.Score, timeline: Timeline, span: CursorVerticalSpan): CursorFrame[] {
+  static create(log: Logger, score: elements.Score, timeline: Timeline, span: CursorVerticalSpan): CursorFrame[] {
     const partCount = score.getPartCount();
     if (partCount === 0) {
-      logger.warn('No parts found in score, returning empty cursor frames.');
+      log.warn('No parts found in score, returning empty cursor frames.');
       return [];
     }
 
@@ -50,7 +50,7 @@ export class CursorFrame {
       throw new Error(`Invalid toPartIndex: ${span.toPartIndex}, must be in [0,${partCount - 1}]`);
     }
 
-    const factory = new CursorFrameFactory(logger, score, timeline, span);
+    const factory = new CursorFrameFactory(log, score, timeline, span);
     return factory.create();
   }
 
@@ -89,13 +89,39 @@ export class CursorFrame {
   }
 
   private toXRangeBound(source: XRangeSource): number {
+    const rect = this.getXRangeRect(source);
     switch (source.type) {
       case 'system':
-        return source.bound === 'left' ? source.system.rect().left() : source.system.rect().right();
+        return source.bound === 'left' ? rect.left() : rect.right();
       case 'measure':
-        return source.bound === 'left' ? source.measure.rect().left() : source.measure.rect().right();
+        return source.bound === 'left' ? rect.left() : rect.right();
       case 'element':
-        return source.bound === 'left' ? source.element.rect().left() : source.element.rect().right();
+        return source.bound === 'left' ? rect.left() : rect.right();
+    }
+  }
+
+  private getXRangeRect(source: XRangeSource) {
+    switch (source.type) {
+      case 'system':
+        return (
+          source.system
+            .getMeasures()
+            .at(0)
+            ?.getFragments()
+            .at(0)
+            ?.getParts()
+            .at(0)
+            ?.getStaves()
+            .at(0)
+            ?.intrinsicRect() ?? source.system.rect()
+        );
+      case 'measure':
+        return (
+          source.measure.getFragments().at(0)?.getParts().at(0)?.getStaves().at(0)?.intrinsicRect() ??
+          source.measure.rect()
+        );
+      case 'element':
+        return source.element.rect();
     }
   }
 
