@@ -19,6 +19,11 @@ export type TimelineMoment = {
 
 export type TimelineMomentEvent = ElementTransitionEvent | JumpEvent | SystemEndEvent;
 
+export interface CursorFrameLocator {
+  /** Returns the index of the element that is active at the given time. */
+  locate(time: Duration): number | null;
+}
+
 export type ElementTransitionEvent = {
   type: 'transition';
   kind: 'start' | 'stop';
