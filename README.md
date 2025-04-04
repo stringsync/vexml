@@ -93,8 +93,8 @@ const cursorComponent = vexml.SimpleCursor.render(score.getOverlayElement());
 cursorModel.addEventListener(
   'change',
   (e) => {
-    cursorComponent.update(e.cursorRect);
-    // The model infers its visibility via the cursorRect. It assumes you've updated appropriately.
+    cursorComponent.update(e.rect);
+    // The model infers its visibility via the rect. It assumes you've updated appropriately.
     if (!cursorModel.isFullyVisible()) {
       cursorModel.scrollIntoView(scrollBehavior);
     }
