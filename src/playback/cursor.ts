@@ -3,6 +3,7 @@ import { Scroller } from './scroller';
 import { Timeline } from './timeline';
 import { CursorVerticalSpan } from './types';
 import * as elements from '@/elements';
+import { Logger } from '@/debug';
 
 export class Cursor {
   private constructor(
@@ -13,12 +14,13 @@ export class Cursor {
   ) {}
 
   static create(
+    logger: Logger,
     scrollContainer: HTMLElement,
     score: elements.Score,
     timeline: Timeline,
     span: CursorVerticalSpan
   ): Cursor {
-    const frames = CursorFrame.create(score, timeline, span);
+    const frames = CursorFrame.create(logger, score, timeline, span);
     const scroller = new Scroller(scrollContainer);
     return new Cursor(frames, scroller, timeline, span);
   }

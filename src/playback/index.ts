@@ -1,4 +1,5 @@
 export * from './duration';
+export * from './durationrange';
 export * from './timestamplocator';
 export * from './timeline';
 export * from './legacysequence';

@@ -37,6 +37,11 @@ export class Part {
     return this.partRender.key.partIndex;
   }
 
+  /** Returns the system index. */
+  getSystemIndex(): number {
+    return this.partRender.key.systemIndex;
+  }
+
   /** Returns the start measure beat for the part. */
   getStartMeasureBeat(): Fraction {
     return (

@@ -186,9 +186,14 @@ class TimelineFactory {
   }
 
   private upsert(time: Duration, event: TimelineMomentEvent): TimelineMoment {
-    const moment = this.moments.get(time.ms) ?? { time, events: [] };
-    moment.events.push(event);
-    this.moments.set(time.ms, moment);
+    let moment: TimelineMoment;
+    if (this.moments.has(time.ms)) {
+      moment = this.moments.get(time.ms)!;
+      moment.events.push(event);
+    } else {
+      moment = { time, events: [event] };
+      this.moments.set(time.ms, moment);
+    }
     return moment;
   }
 
