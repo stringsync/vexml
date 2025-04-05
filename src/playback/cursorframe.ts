@@ -229,7 +229,7 @@ class CursorFrameFactory {
   }
 
   private getXRangeSources(currentMoment: TimelineMoment, nextMoment: TimelineMoment): [XRangeSource, XRangeSource] {
-    return [this.getStartXSource(currentMoment), this.getEndXSource(currentMoment, nextMoment)];
+    return [this.getStartXSource(currentMoment), this.getEndXSource(nextMoment)];
   }
 
   private getStartXSource(moment: TimelineMoment): XRangeSource {
@@ -258,10 +258,10 @@ class CursorFrameFactory {
     }
   }
 
-  private getEndXSource(currentMoment: TimelineMoment, nextMoment: TimelineMoment): XRangeSource {
+  private getEndXSource(nextMoment: TimelineMoment): XRangeSource {
     const shouldUseMeasureEndBoundary = nextMoment.events.some((e) => e.type === 'jump' || e.type === 'systemend');
     if (shouldUseMeasureEndBoundary) {
-      const event = currentMoment.events.at(0);
+      const event = nextMoment.events.at(0);
       util.assertDefined(event);
 
       switch (event.type) {
