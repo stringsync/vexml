@@ -75,11 +75,15 @@ export class Score {
     util.assert(0 <= span.toPartIndex && span.toPartIndex < partCount, 'toPartIndex out of bounds');
     util.assert(span.fromPartIndex <= span.toPartIndex, 'fromPartIndex must be less than or equal to toPartIndex');
 
-    const sequence = this.getSequences().find((sequence) => sequence.getPartIndex() === partIndex);
-    util.assertDefined(sequence);
+    const timeline = this.getTimelines().find((timeline) => timeline.getPartIndex() === partIndex);
+    util.assertDefined(timeline);
 
-    const cursor = playback.Cursor.create(this.root.getScrollContainer(), this, sequence, span);
+    const frames = playback.CursorFrame.create(this.log, this, timeline, span);
+    const path = new playback.CursorPath(partIndex, frames);
+    const cursor = playback.Cursor.create(path, this.getScrollContainer());
+
     this.cursors.push(cursor);
+
     return cursor;
   }
 
@@ -100,7 +104,7 @@ export class Score {
 
   /** Returns the duration of the score in milliseconds. */
   getDurationMs(): number {
-    return Math.max(0, ...this.getSequences().map((sequence) => sequence.getDuration().ms));
+    return Math.max(0, ...this.getTimelines().map((timeline) => timeline.getDuration().ms));
   }
 
   /** Returns the max number of parts in this score. */
@@ -347,9 +351,8 @@ export class Score {
   }
 
   @util.memoize()
-  private getSequences(): playback.Sequence[] {
-    const sequences = new playback.SequenceFactory(this.log, this).create();
-    return sequences;
+  private getTimelines(): playback.Timeline[] {
+    return playback.Timeline.create(this.log, this);
   }
 
   @util.memoize()
@@ -359,6 +362,18 @@ export class Score {
 
   @util.memoize()
   private getTimestampLocator(): playback.TimestampLocator {
-    return playback.TimestampLocator.create(this, this.getSequences());
+    const paths = new Array<playback.CursorPath>();
+    const timelines = this.getTimelines();
+
+    for (let partIndex = 0; partIndex < this.getPartCount(); partIndex++) {
+      const timeline = timelines.find((timeline) => timeline.getPartIndex() === partIndex);
+      util.assertDefined(timeline);
+      const span = { fromPartIndex: partIndex, toPartIndex: partIndex };
+      const frames = playback.CursorFrame.create(this.log, this, timeline, span);
+      const path = new playback.CursorPath(partIndex, frames);
+      paths.push(path);
+    }
+
+    return playback.TimestampLocator.create(this, paths);
   }
 }

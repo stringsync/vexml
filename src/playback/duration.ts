@@ -24,6 +24,10 @@ export class Duration {
     return Duration.ms(durations.reduce((acc, duration) => acc + duration.ms, 0));
   }
 
+  static max(...durations: Duration[]): Duration {
+    return Duration.ms(Math.max(...durations.map((duration) => duration.ms)));
+  }
+
   private readonly _ms: number;
 
   private constructor(ms: number) {
@@ -52,6 +56,16 @@ export class Duration {
 
   isLessThanOrEqualTo(duration: Duration) {
     return this.ms <= duration.ms;
+  }
+
+  compare(duration: Duration): -1 | 0 | 1 {
+    if (this.isLessThan(duration)) {
+      return -1;
+    }
+    if (this.isGreaterThan(duration)) {
+      return 1;
+    }
+    return 0;
   }
 
   get ms() {

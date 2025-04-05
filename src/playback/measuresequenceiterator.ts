@@ -49,17 +49,7 @@ export class MeasureSequenceIterator<T extends Measure> implements Iterable<numb
         const { activeRepeat, measureRepeat, nextMeasureRepeat } = getState();
 
         const isMeasureExcluded = activeRepeat?.isMeasureExcluded(measureIndex);
-
-        // We need to skip this measure, but also account for the active repeat finishing.
-        // WARNING: Any subsequent repeats that "activate" (not start) on this measure will be ignored.
-        if (isMeasureExcluded && activeRepeat?.isFinished()) {
-          activeRepeats.pop();
-          measureIndex++;
-          return iterator.next();
-        }
-
-        // The active repeat simply excludes this measure, so we move onto the next one.
-        if (isMeasureExcluded && !activeRepeat?.isFinished()) {
+        if (isMeasureExcluded) {
           measureIndex++;
           return iterator.next();
         }
@@ -171,13 +161,22 @@ class Repeat {
               })
             );
           }
+
+          // Exclude all the previous repeatendings.
+          const excluding = new Array<number>();
+          let i = measureIndex;
+          while (i > startMeasureIndex && measures[i].jumps.some((jump) => jump.type === 'repeatending')) {
+            excluding.push(i);
+            i--;
+          }
+
           result.push(
             new Repeat({
               id: nextId++,
               times: 1,
               from: startMeasureIndex,
               to: measureIndex,
-              excluding: [measureIndex],
+              excluding,
             })
           );
         }
