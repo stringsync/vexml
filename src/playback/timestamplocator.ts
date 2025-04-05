@@ -2,29 +2,33 @@ import * as spatial from '@/spatial';
 import * as elements from '@/elements';
 import * as util from '@/util';
 import { Duration } from './duration';
-import { Sequence } from './sequence';
-import { SequenceEntry } from './types';
+import { CursorPath } from './cursorpath';
+import { CursorFrame } from './cursorframe';
 
 type System = {
   yRange: util.NumberRange;
-  entries: SequenceEntry[];
+  frames: CursorFrame[];
 };
 
 export class TimestampLocator {
   private constructor(private systems: System[]) {}
 
-  static create(score: elements.Score, sequences: Sequence[]): TimestampLocator {
+  static create(score: elements.Score, paths: CursorPath[]): TimestampLocator {
     const systems = score.getSystems().map((system) => {
       const yRange = new util.NumberRange(system.rect().top(), system.rect().bottom());
 
-      const entries = new Array<SequenceEntry>();
-      for (const sequence of sequences) {
-        entries.push(
-          ...sequence.getEntries().filter((entry) => entry.anchorElement.getSystemIndex() === system.getIndex())
+      const frames = new Array<CursorFrame>();
+      for (const path of paths) {
+        frames.push(
+          ...path
+            .getFrames()
+            .filter((frame) =>
+              frame.getActiveElements().some((element) => element.getSystemIndex() === system.getIndex())
+            )
         );
       }
 
-      return { yRange, entries };
+      return { yRange, frames };
     });
 
     return new TimestampLocator(systems);
@@ -41,13 +45,13 @@ export class TimestampLocator {
       if (!system.yRange.includes(point.y)) {
         continue;
       }
-      for (const entry of system.entries) {
-        if (!entry.xRange.includes(point.x)) {
+      for (const frame of system.frames) {
+        if (!frame.xRange.includes(point.x)) {
           continue;
         }
-        const startMs = entry.durationRange.start.ms;
-        const stopMs = entry.durationRange.end.ms;
-        const alpha = (point.x - entry.xRange.start) / entry.xRange.getSize();
+        const startMs = frame.tRange.start.ms;
+        const stopMs = frame.tRange.end.ms;
+        const alpha = (point.x - frame.xRange.start) / frame.xRange.getSize();
         const timestampMs = util.lerp(startMs, stopMs, alpha);
         return Duration.ms(timestampMs);
       }

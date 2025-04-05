@@ -66,7 +66,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
+    const currentTimeMs = cursor.getCurrentState().frame.tRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
@@ -79,7 +79,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
     if (!cursor.isFullyVisible()) {
       cursor.scrollIntoView(scrollBehavior);
     }
-    const currentTimeMs = cursor.getState().sequenceEntry.durationRange.start.ms;
+    const currentTimeMs = cursor.getCurrentState().frame.tRange.start.ms;
     player.seek(currentTimeMs, false);
     setProgress(currentTimeMs / durationMs);
   };
@@ -147,7 +147,7 @@ export const Vexml = ({ musicXML, config, onResult, onClick, onLongpress, onEnte
       cursor.addEventListener(
         'change',
         (e) => {
-          simpleCursor.update(e.cursorRect);
+          simpleCursor.update(e.rect);
           if (!cursor.isFullyVisible()) {
             cursor.scrollIntoView(scrollBehavior);
           }

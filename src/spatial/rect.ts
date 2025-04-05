@@ -1,5 +1,6 @@
 import { Point } from './point';
 import { Shape } from './types';
+import * as util from '@/util';
 
 /** Represents a rectangle in a 2D coordinate system. */
 export class Rect implements Shape {
@@ -20,6 +21,10 @@ export class Rect implements Shape {
 
   static fromShape(shape: Shape) {
     return new Rect(shape.left(), shape.top(), shape.right() - shape.left(), shape.bottom() - shape.top());
+  }
+
+  static fromRanges({ xRange, yRange }: { xRange: util.NumberRange; yRange: util.NumberRange }): Rect {
+    return new Rect(xRange.start, yRange.start, xRange.getSize(), yRange.getSize());
   }
 
   static empty() {

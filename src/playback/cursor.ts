@@ -1,195 +1,100 @@
-import * as playback from '@/playback';
-import * as util from '@/util';
-import * as spatial from '@/spatial';
 import * as events from '@/events';
-import * as elements from '@/elements';
-import { Rect } from '@/spatial';
-import { CheapLocator } from './cheaplocator';
-import { ExpensiveLocator } from './expensivelocator';
+import * as util from '@/util';
+import { Rect, Point } from '@/spatial';
+import { CursorFrame } from './cursorframe';
 import { Scroller } from './scroller';
+import { CursorFrameLocator } from './types';
+import { FastCursorFrameLocator } from './fastcursorframelocator';
+import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
+import { Duration } from './duration';
+import { CursorPath } from './cursorpath';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
 const CURSOR_WIDTH_PX = 3;
 
-type CursorState = {
+export type CursorState = {
   index: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  cursorRect: Rect;
-  sequenceEntry: playback.SequenceEntry;
+  rect: Rect;
+  frame: CursorFrame;
 };
 
-type EventMap = {
+export type CursorEventMap = {
   change: CursorState;
 };
 
-export type CursorVerticalSpan = {
-  fromPartIndex: number;
-  toPartIndex: number;
-};
-
 export class Cursor {
-  private scroller: Scroller;
-  private states: CursorState[];
-  private sequence: playback.Sequence;
-  private cheapLocator: CheapLocator;
-  private expensiveLocator: ExpensiveLocator;
-  private span: CursorVerticalSpan;
+  private topic = new events.Topic<CursorEventMap>();
 
-  private topic = new events.Topic<EventMap>();
-  private index = 0;
-  private alpha = 0; // interpolation factor, ranging from 0 to 1
+  private currentIndex = 0;
+  private currentAlpha = 0; // interpolation factor, ranging from 0 to 1
 
-  private constructor(opts: {
-    scroller: Scroller;
-    states: CursorState[];
-    sequence: playback.Sequence;
-    cheapLocator: CheapLocator;
-    expensiveLocator: ExpensiveLocator;
-    span: CursorVerticalSpan;
-  }) {
-    this.scroller = opts.scroller;
-    this.states = opts.states;
-    this.sequence = opts.sequence;
-    this.cheapLocator = opts.cheapLocator;
-    this.expensiveLocator = opts.expensiveLocator;
-    this.span = opts.span;
-  }
+  private previousIndex = -1;
+  private previousAlpha = -1;
 
-  static create(
-    scrollContainer: HTMLElement,
-    score: elements.Score,
-    sequence: playback.Sequence,
-    span: CursorVerticalSpan
-  ): Cursor {
-    // NumberRange objects indexed by system index for the part.
-    const systemPartYRanges = new Array<util.NumberRange>();
+  private constructor(private path: CursorPath, private locator: CursorFrameLocator, private scroller: Scroller) {}
 
-    for (const system of score.getSystems()) {
-      const rect = Rect.merge(
-        system
-          .getMeasures()
-          .flatMap((measure) => measure.getFragments())
-          .flatMap((fragment) => fragment.getParts())
-          .filter((part) => span.fromPartIndex <= part.getIndex() && part.getIndex() <= span.toPartIndex)
-          .map((part) => part.rect())
-      );
-      const yRange = new util.NumberRange(rect.top(), rect.bottom());
-      systemPartYRanges.push(yRange);
-    }
-
-    const states = new Array<CursorState>(sequence.getCount());
-
-    for (let index = 0; index < sequence.getCount(); index++) {
-      const sequenceEntry = sequence.getEntry(index);
-      util.assertNotNull(sequenceEntry);
-
-      const hasPrevious = index > 0;
-      const hasNext = index < sequence.getCount() - 1;
-
-      const element = sequenceEntry.anchorElement;
-
-      util.assertDefined(element);
-
-      const xRange = sequenceEntry.xRange;
-
-      const systemIndex = element.getSystemIndex();
-      const yRange = systemPartYRanges.at(systemIndex);
-
-      util.assertDefined(yRange);
-
-      const x = xRange.start;
-      const y = yRange.start;
-      const w = CURSOR_WIDTH_PX;
-      const h = yRange.getSize();
-
-      const cursorRect = new spatial.Rect(x, y, w, h);
-
-      states[index] = {
-        index,
-        hasPrevious,
-        hasNext,
-        cursorRect,
-        sequenceEntry,
-      };
-    }
-
+  static create(path: CursorPath, scrollContainer: HTMLElement): Cursor {
+    const bSearchLocator = new BSearchCursorFrameLocator(path);
+    const fastLocator = new FastCursorFrameLocator(path, bSearchLocator);
     const scroller = new Scroller(scrollContainer);
-    const cheapLocator = new CheapLocator(sequence);
-    const expensiveLocator = new ExpensiveLocator(sequence);
-
-    return new Cursor({
-      scroller,
-      states,
-      sequence,
-      cheapLocator,
-      expensiveLocator,
-      span,
-    });
+    return new Cursor(path, fastLocator, scroller);
   }
 
-  getState(): CursorState {
-    const state = this.states.at(this.index);
-    // TODO: We need a way to represent a zero state, when the sequence validly has no entries. Maybe we update the
-    // signature to be nullable.
-    util.assertDefined(state);
+  getCurrentState(): CursorState {
+    return this.getState(this.currentIndex, this.currentAlpha);
+  }
 
-    if (this.alpha === 0) {
-      return { ...state };
+  getPreviousState(): CursorState | null {
+    if (this.previousIndex === -1 || this.previousAlpha === -1) {
+      return null;
     }
-
-    const x = util.lerp(state.sequenceEntry.xRange.start, state.sequenceEntry.xRange.end, this.alpha);
-    const y = state.cursorRect.y;
-    const w = state.cursorRect.w;
-    const h = state.cursorRect.h;
-    const cursorRect = new spatial.Rect(x, y, w, h);
-
-    return { ...state, cursorRect };
+    return this.getState(this.previousIndex, this.previousAlpha);
   }
 
   next(): void {
-    if (this.index === this.sequence.getCount() - 1) {
-      this.update(this.index, 1);
+    if (this.currentIndex === this.path.getFrames().length - 1) {
+      this.update(this.currentIndex, { alpha: 1 });
     } else {
-      this.update(this.index + 1, 0);
+      this.update(this.currentIndex + 1, { alpha: 0 });
     }
   }
 
   previous(): void {
-    this.update(this.index - 1, 0);
+    this.update(this.currentIndex - 1, { alpha: 0 });
   }
 
   goTo(index: number): void {
-    this.update(index, 0);
+    this.update(index, { alpha: 0 });
   }
 
   /** Snaps to the closest sequence entry step. */
-  snap(timestampMs: number): void {
-    timestampMs = util.clamp(0, this.sequence.getDuration().ms, timestampMs);
-    const time = playback.Duration.ms(timestampMs);
-    const index = this.getIndexClosestTo(time);
-    this.update(index, 0);
+  snap(timeMs: number): void {
+    const time = this.normalize(timeMs);
+    const index = this.locator.locate(time);
+    util.assertNotNull(index, 'Cursor frame locator failed to find a frame.');
+    this.update(index, { alpha: 0 });
   }
 
   /** Seeks to the exact position, interpolating as needed. */
   seek(timestampMs: number): void {
-    timestampMs = util.clamp(0, this.sequence.getDuration().ms, timestampMs);
-    const time = playback.Duration.ms(timestampMs);
-    const index = this.getIndexClosestTo(time);
+    const time = this.normalize(timestampMs);
+    const index = this.locator.locate(time);
+    util.assertNotNull(index, 'Cursor frame locator failed to find a frame.');
+    const entry = this.path.getFrames().at(index);
+    util.assertDefined(entry);
 
-    const entry = this.sequence.getEntry(index);
-    util.assertNotNull(entry);
-
-    const left = entry.durationRange.start;
-    const right = entry.durationRange.end;
+    const left = entry.tRange.start;
+    const right = entry.tRange.end;
     const alpha = (time.ms - left.ms) / (right.ms - left.ms);
 
-    this.update(index, alpha);
+    this.update(index, { alpha });
   }
 
   isFullyVisible(): boolean {
-    const cursorRect = this.getState().cursorRect;
+    const cursorRect = this.getCurrentState().rect;
     return this.scroller.isFullyVisible(cursorRect);
   }
 
@@ -198,14 +103,14 @@ export class Cursor {
     this.scroller.scrollTo(scrollPoint, behavior);
   }
 
-  addEventListener<N extends keyof EventMap>(
+  addEventListener<N extends keyof CursorEventMap>(
     name: N,
-    listener: events.EventListener<EventMap[N]>,
+    listener: events.EventListener<CursorEventMap[N]>,
     opts?: { emitBootstrapEvent?: boolean }
   ): number {
     const id = this.topic.subscribe(name, listener);
     if (opts?.emitBootstrapEvent) {
-      listener(this.getState());
+      listener(this.getCurrentState());
     }
     return id;
   }
@@ -220,30 +125,58 @@ export class Cursor {
     this.topic.unsubscribeAll();
   }
 
-  private getScrollPoint(): spatial.Point {
-    const cursorRect = this.getState().cursorRect;
-    const x = cursorRect.center().x;
-    const y = cursorRect.y;
-    return new spatial.Point(x, y);
+  private getState(index: number, alpha: number): CursorState {
+    const frame = this.path.getFrames().at(index);
+    util.assertDefined(frame);
+
+    const rect = this.getCursorRect(frame, alpha);
+    const hasNext = index < this.path.getFrames().length - 1;
+    const hasPrevious = index > 0;
+
+    return {
+      index,
+      hasNext,
+      hasPrevious,
+      rect,
+      frame,
+    };
   }
 
-  private update(index: number, alpha: number): void {
-    index = util.clamp(0, this.sequence.getCount() - 1, index);
+  private getScrollPoint(): Point {
+    const cursorRect = this.getCurrentState().rect;
+    const x = cursorRect.center().x;
+    const y = cursorRect.y;
+    return new Point(x, y);
+  }
+
+  private normalize(timeMs: number): Duration {
+    const ms = util.clamp(0, this.getDuration().ms, timeMs);
+    return Duration.ms(ms);
+  }
+
+  private getDuration(): Duration {
+    return this.path.getFrames().at(-1)?.tRange.end ?? Duration.zero();
+  }
+
+  private getCursorRect(frame: CursorFrame, alpha: number): Rect {
+    const x = frame.xRange.lerp(alpha);
+    const y = frame.yRange.start;
+    const w = CURSOR_WIDTH_PX;
+    const h = frame.yRange.getSize();
+    return new Rect(x, y, w, h);
+  }
+
+  private update(index: number, { alpha }: { alpha: number }): void {
+    index = util.clamp(0, this.path.getFrames().length - 1, index);
     alpha = util.clamp(0, 1, alpha);
     // Round to 3 decimal places to avoid overloading the event system with redundant updates.
     alpha = Math.round(alpha * 1000) / 1000;
-    if (index !== this.index || alpha !== this.alpha) {
-      this.index = index;
-      this.alpha = alpha;
-      this.topic.publish('change', this.getState());
+    if (index !== this.currentIndex || alpha !== this.currentAlpha) {
+      this.previousIndex = this.currentIndex;
+      this.previousAlpha = this.currentAlpha;
+      this.currentIndex = index;
+      this.currentAlpha = alpha;
+      this.topic.publish('change', this.getCurrentState());
     }
-  }
-
-  private getIndexClosestTo(time: playback.Duration): number {
-    const index = this.cheapLocator.setStartingIndex(this.index).locate(time) ?? this.expensiveLocator.locate(time);
-    if (typeof index !== 'number') {
-      throw new Error(`locator coverage is insufficient to locate time ${time.ms}`);
-    }
-    return index;
   }
 }

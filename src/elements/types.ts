@@ -8,6 +8,7 @@ import { Score } from './score';
 import { Stave } from './stave';
 import { System } from './system';
 import { Voice } from './voice';
+import { Enum, EnumValues } from '@/util';
 
 /**
  * Represents a rendered musical element.
@@ -20,6 +21,15 @@ export type VexmlElement = Score | System | Measure | Fragment | Part | Stave | 
  * Leaf elements that are rendered as part of a voice.
  */
 export type VoiceEntry = Note | Rest;
+
+export type AccidentalCode = EnumValues<typeof ACCIDENTAL_CODES>;
+export const ACCIDENTAL_CODES = new Enum(['#', '##', 'b', 'bb', 'n', 'd', '_', 'db', '+', '++'] as const);
+
+export type Pitch = {
+  step: string;
+  octave: number;
+  accidentalCode: AccidentalCode | null;
+};
 
 export type EventMap = {
   click: ClickEvent;
