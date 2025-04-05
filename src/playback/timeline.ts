@@ -175,14 +175,25 @@ class TimelineFactory {
   private sortEventsWithinMoments(): void {
     for (const moment of this.moments.values()) {
       moment.events.sort((a, b) => {
-        const typeOrder = {
-          transition: 0,
-          jump: 1,
-          systemend: 2,
-        };
-        return typeOrder[a.type] - typeOrder[b.type];
+        return this.getEventTypeOrder(a) - this.getEventTypeOrder(b);
       });
     }
+  }
+
+  private getEventTypeOrder(event: TimelineMomentEvent): number {
+    if (event.type === 'transition' && event.kind === 'stop') {
+      return 0;
+    }
+    if (event.type === 'jump') {
+      return 1;
+    }
+    if (event.type === 'systemend') {
+      return 2;
+    }
+    if (event.type === 'transition' && event.kind === 'start') {
+      return 3;
+    }
+    util.assertUnreachable();
   }
 
   private upsert(time: Duration, event: TimelineMomentEvent): TimelineMoment {
