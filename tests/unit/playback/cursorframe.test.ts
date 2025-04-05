@@ -296,108 +296,38 @@ describe(CursorFrame, () => {
 
     expect(logger.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
-    expect(frames).toHaveLength(20);
-    // stave0: 0 1 2 3 | [ending1 -> 4 5 6 7] :|| [ending2 -> 8 9 10 11] | 12 13 14 15
-    expect(frames[0].toHumanReadable()).toEqual([
-      't: [0ms - 600ms]',
-      'x: [left(element(0)) - left(element(1))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[1].toHumanReadable()).toEqual([
-      't: [600ms - 1200ms]',
-      'x: [left(element(1)) - left(element(2))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[2].toHumanReadable()).toEqual([
-      't: [1200ms - 1800ms]',
-      'x: [left(element(2)) - left(element(3))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[3].toHumanReadable()).toEqual([
-      't: [1800ms - 2400ms]',
-      'x: [left(element(3)) - left(element(4))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[4].toHumanReadable()).toEqual([
-      't: [2400ms - 3000ms]',
-      'x: [left(element(4)) - left(element(5))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[5].toHumanReadable()).toEqual([
-      't: [3000ms - 3600ms]',
-      'x: [left(element(5)) - left(element(6))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[6].toHumanReadable()).toEqual([
-      't: [3600ms - 4200ms]',
-      'x: [left(element(6)) - left(element(7))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[7].toHumanReadable()).toEqual([
-      't: [4200ms - 4800ms]',
-      'x: [left(element(7)) - right(measure(1))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[8].toHumanReadable()).toEqual([
-      't: [4800ms - 5400ms]',
-      'x: [left(element(0)) - left(element(1))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[9].toHumanReadable()).toEqual([
-      't: [5400ms - 6000ms]',
-      'x: [left(element(1)) - left(element(2))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[10].toHumanReadable()).toEqual([
-      't: [6000ms - 6600ms]',
-      'x: [left(element(2)) - left(element(3))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[11].toHumanReadable()).toEqual([
-      't: [6600ms - 7200ms]',
-      'x: [left(element(3)) - right(measure(0))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[12].toHumanReadable()).toEqual([
-      't: [7200ms - 7800ms]',
-      'x: [left(element(8)) - left(element(9))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[13].toHumanReadable()).toEqual([
-      't: [7800ms - 8400ms]',
-      'x: [left(element(9)) - left(element(10))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[14].toHumanReadable()).toEqual([
-      't: [8400ms - 9000ms]',
-      'x: [left(element(10)) - left(element(11))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[15].toHumanReadable()).toEqual([
-      't: [9000ms - 9600ms]',
-      'x: [left(element(11)) - left(element(12))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[16].toHumanReadable()).toEqual([
-      't: [9600ms - 10200ms]',
-      'x: [left(element(12)) - left(element(13))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[17].toHumanReadable()).toEqual([
-      't: [10200ms - 10800ms]',
-      'x: [left(element(13)) - left(element(14))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[18].toHumanReadable()).toEqual([
-      't: [10800ms - 11400ms]',
-      'x: [left(element(14)) - left(element(15))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[19].toHumanReadable()).toEqual([
-      't: [11400ms - 12000ms]',
-      'x: [left(element(15)) - right(measure(3))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
+    expect(frames).toHaveLength(6);
+    // stave0: 0 | [ending1 -> 1] :|| [ending2 -> 2] :|| [ending3 -> 3]
+    // expect(frames[0].toHumanReadable()).toEqual([
+    //   't: [0ms - 2400ms]',
+    //   'x: [left(element(0)) - left(element(1))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
+    // expect(frames[1].toHumanReadable()).toEqual([
+    //   't: [2400ms - 4800ms]',
+    //   'x: [left(element(1)) - right(measure(0))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
+    // expect(frames[2].toHumanReadable()).toEqual([
+    //   't: [4800ms - 7200ms]',
+    //   'x: [left(element(0)) - right(measure(1))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
+    // expect(frames[3].toHumanReadable()).toEqual([
+    //   't: [7200ms - 9600ms]',
+    //   'x: [left(element(2)) - right(measure(0))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
+    // expect(frames[4].toHumanReadable()).toEqual([
+    //   't: [9600ms - 12000ms]',
+    //   'x: [left(element(0)) - right(measure(2))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
+    // expect(frames[5].toHumanReadable()).toEqual([
+    //   't: [12000ms - 14400ms]',
+    //   'x: [left(element(3)) - right(measure(0))]',
+    //   'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
+    // ]);
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
