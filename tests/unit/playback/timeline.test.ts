@@ -166,6 +166,36 @@ describe(Timeline, () => {
       '[21600ms] stop(8), systemend',
     ]);
   });
+
+  it('creates for: documents that have backwards formatting', () => {
+    const score = render('playback_backwards_formatting.musicxml');
+
+    const timelines = Timeline.create(logger, score);
+
+    expect(timelines).toHaveLength(1);
+    expect(timelines[0].toHumanReadable()).toEqual([
+      // stave0, voice0: 0     1  2  3  4  5  6  7     8  9 10 11 12 13
+      // stave1, voice0: 14 15       16          17 18      19
+      // stave2, voice1: 20                      21
+      '[0ms] start(0), start(14), start(20)',
+      '[150ms] stop(14), start(15)',
+      '[300ms] stop(0), start(1)',
+      '[450ms] stop(1), start(2)',
+      '[600ms] stop(2), stop(15), start(3), start(16)',
+      '[750ms] stop(3), start(4)',
+      '[900ms] stop(4), start(5)',
+      '[1050ms] stop(5), start(6)',
+      '[1200ms] stop(6), stop(16), stop(20), start(7), start(17), start(21)',
+      '[1350ms] stop(17), start(18)',
+      '[1500ms] stop(7), start(8)',
+      '[1650ms] stop(8), start(9)',
+      '[1800ms] stop(9), stop(18), start(10), start(19)',
+      '[1950ms] stop(10), start(11)',
+      '[2100ms] stop(11), start(12)',
+      '[2250ms] stop(12), start(13)',
+      '[2400ms] stop(13), stop(19), stop(21), systemend',
+    ]);
+  });
 });
 
 function render(filename: string) {
