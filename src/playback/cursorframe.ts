@@ -61,14 +61,14 @@ export class CursorFrame {
   }
 
   get xRange(): util.NumberRange {
-    const x1 = this.toXRangeBound(this.xRangeSources[0]);
-    const x2 = this.toXRangeBound(this.xRangeSources[1]);
+    const x1 = getXRangeBound(this.xRangeSources[0]);
+    const x2 = getXRangeBound(this.xRangeSources[1]);
     return new util.NumberRange(x1, x2);
   }
 
   get yRange(): util.NumberRange {
-    const y1 = this.getYRangeBound(this.yRangeSources[0]);
-    const y2 = this.getYRangeBound(this.yRangeSources[1]);
+    const y1 = getYRangeBound(this.yRangeSources[0]);
+    const y2 = getYRangeBound(this.yRangeSources[1]);
     return new util.NumberRange(y1, y2);
   }
 
@@ -86,47 +86,6 @@ export class CursorFrame {
     const yRangeDescription = this.describer.describeYRange(this.yRangeSources);
 
     return [`t: ${tRangeDescription}`, `x: ${xRangeDescription}`, `y: ${yRangeDescription}`];
-  }
-
-  private toXRangeBound(source: XRangeSource): number {
-    const rect = this.getXRangeRect(source);
-    switch (source.type) {
-      case 'system':
-        return source.bound === 'left' ? rect.left() : rect.right();
-      case 'measure':
-        return source.bound === 'left' ? rect.left() : rect.right();
-      case 'element':
-        return source.bound === 'left' ? rect.left() : rect.right();
-    }
-  }
-
-  private getXRangeRect(source: XRangeSource) {
-    switch (source.type) {
-      case 'system':
-        return (
-          source.system
-            .getMeasures()
-            .at(0)
-            ?.getFragments()
-            .at(0)
-            ?.getParts()
-            .at(0)
-            ?.getStaves()
-            .at(0)
-            ?.intrinsicRect() ?? source.system.rect()
-        );
-      case 'measure':
-        return (
-          source.measure.getFragments().at(0)?.getParts().at(0)?.getStaves().at(0)?.intrinsicRect() ??
-          source.measure.rect()
-        );
-      case 'element':
-        return source.element.rect();
-    }
-  }
-
-  private getYRangeBound(source: YRangeSource): number {
-    return source.bound === 'top' ? source.part.rect().top() : source.part.rect().bottom();
   }
 
   private getRetriggerHints(previousFrame: CursorFrame): RetriggerHint[] {
@@ -194,7 +153,7 @@ class CursorFrameFactory {
   private describer: CursorFrameDescriber;
 
   constructor(
-    private logger: Logger,
+    private log: Logger,
     private score: elements.Score,
     private timeline: Timeline,
     private span: CursorVerticalSpan
@@ -229,20 +188,23 @@ class CursorFrameFactory {
   }
 
   private getXRangeSources(currentMoment: TimelineMoment, nextMoment: TimelineMoment): [XRangeSource, XRangeSource] {
-    return [this.getStartXSource(currentMoment), this.getEndXSource(nextMoment)];
+    const startXRangeSource = this.getStartXRangeSource(currentMoment);
+    const endXRangeSource = this.getEndXRangeSource(startXRangeSource, nextMoment);
+
+    return [startXRangeSource, endXRangeSource];
   }
 
-  private getStartXSource(moment: TimelineMoment): XRangeSource {
+  private getStartXRangeSource(moment: TimelineMoment): XRangeSource {
     const hasStartingTransition = moment.events.some((e) => e.type === 'transition' && e.kind === 'start');
     if (hasStartingTransition) {
       return this.getLeftmostStartingXRangeSource(moment);
     }
 
-    this.logger.warn(
+    this.log.warn(
       'No starting transition found for moment, ' +
         'but the moment is trying to be used as a starting anchor. ' +
         'How was the moment created?',
-      { moment }
+      { momentTimeMs: moment.time.ms }
     );
 
     const event = moment.events.at(0);
@@ -258,7 +220,7 @@ class CursorFrameFactory {
     }
   }
 
-  private getEndXSource(nextMoment: TimelineMoment): XRangeSource {
+  private getEndXRangeSource(startXRangeSource: XRangeSource, nextMoment: TimelineMoment): XRangeSource {
     const shouldUseMeasureEndBoundary = nextMoment.events.some((e) => e.type === 'jump' || e.type === 'systemend');
     if (shouldUseMeasureEndBoundary) {
       const event = nextMoment.events.at(0);
@@ -274,7 +236,22 @@ class CursorFrameFactory {
       }
     }
 
-    return this.getStartXSource(nextMoment);
+    const proposedXRangeSource = this.getStartXRangeSource(nextMoment);
+    const startBound = getXRangeBound(startXRangeSource);
+    const proposedBound = getXRangeBound(proposedXRangeSource);
+
+    // Ensure that the proposed X range source is to the right of the start X range source. If it's not, we'll fall back
+    // to the start X range source's right bound (since we know the start X range source is based on the left bound).
+    if (proposedBound >= startBound) {
+      return proposedXRangeSource;
+    } else {
+      this.log.warn(
+        'Proposed end X range source is to the left of the start X range source. ' +
+          "Falling back to the start X range source's right bound.",
+        { momentTimeMs: nextMoment.time.ms }
+      );
+      return { ...startXRangeSource, bound: 'right' };
+    }
   }
 
   private getLeftmostStartingXRangeSource(currentMoment: TimelineMoment): XRangeSource {
@@ -413,4 +390,37 @@ class CursorFrameDescriber {
   private describeYRangeSource(source: YRangeSource): string {
     return `${source.bound}(system(${source.part.getSystemIndex()}), part(${source.part.getIndex()}))`;
   }
+}
+
+function getXRangeBound(source: XRangeSource): number {
+  const rect = getXRangeRect(source);
+  switch (source.type) {
+    case 'system':
+      return source.bound === 'left' ? rect.left() : rect.right();
+    case 'measure':
+      return source.bound === 'left' ? rect.left() : rect.right();
+    case 'element':
+      return source.bound === 'left' ? rect.left() : rect.right();
+  }
+}
+
+function getXRangeRect(source: XRangeSource) {
+  switch (source.type) {
+    case 'system':
+      return (
+        source.system.getMeasures().at(0)?.getFragments().at(0)?.getParts().at(0)?.getStaves().at(0)?.intrinsicRect() ??
+        source.system.rect()
+      );
+    case 'measure':
+      return (
+        source.measure.getFragments().at(0)?.getParts().at(0)?.getStaves().at(0)?.intrinsicRect() ??
+        source.measure.rect()
+      );
+    case 'element':
+      return source.element.rect();
+  }
+}
+
+function getYRangeBound(source: YRangeSource): number {
+  return source.bound === 'top' ? source.part.rect().top() : source.part.rect().bottom();
 }
