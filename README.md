@@ -76,6 +76,9 @@ Cursors mark a position in a rendered vexml score. You can step through a piece 
 - **Render** a cursor _component_ to the score's overlay.
 - **Listen** update the component to react to model changes.
 
+> [!TIP]  
+> Rendering a cursor _component_ is optional.
+
 ```ts
 import * as vexml from '@stringsync/vexml';
 
