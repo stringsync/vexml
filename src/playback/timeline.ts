@@ -89,8 +89,8 @@ class TimelineFactory {
 
   private toDuration(beat: util.Fraction, bpm: number): Duration {
     const duration = Duration.minutes(beat.divide(new util.Fraction(bpm)).toDecimal());
-    // Round to the nearest 100ms. This is needed to correctly group transitions that should belong together.
-    const ms = Math.round(duration.ms / 100) * 100;
+    // Round to the nearest ms. This is needed to correctly group transitions that should belong together.
+    const ms = Math.round(duration.ms);
     return Duration.ms(ms);
   }
 
@@ -133,7 +133,7 @@ class TimelineFactory {
       if (fragment.isNonMusicalGap()) {
         this.populateNonMusicalGapEvents(fragment, measure);
       } else {
-        this.populateVoiceEntryEvents(fragment, measure);
+        this.populateVoiceEvents(fragment, measure);
       }
     }
   }
@@ -149,17 +149,26 @@ class TimelineFactory {
     this.proposeNextMeasureStartTime(stopTime);
   }
 
-  private populateVoiceEntryEvents(fragment: elements.Fragment, measure: elements.Measure): void {
-    const voiceEntries = fragment
+  private populateVoiceEvents(fragment: elements.Fragment, measure: elements.Measure): void {
+    const voices = fragment
       .getParts()
       .filter((part) => part.getIndex() === this.partIndex)
       .flatMap((fragmentPart) => fragmentPart.getStaves())
-      .flatMap((stave) => stave.getVoices())
-      .flatMap((voice) => voice.getEntries());
+      .flatMap((stave) => stave.getVoices());
 
+    for (const voice of voices) {
+      this.populateVoiceEntryEvents(voice, fragment, measure);
+    }
+  }
+
+  private populateVoiceEntryEvents(
+    voice: elements.Voice,
+    fragment: elements.Fragment,
+    measure: elements.Measure
+  ): void {
     const bpm = fragment.getBpm();
 
-    for (const voiceEntry of voiceEntries) {
+    for (const voiceEntry of voice.getEntries()) {
       const duration = this.toDuration(voiceEntry.getBeatCount(), bpm);
       // NOTE: getStartMeasureBeat() is relative to the start of the measure.
       const startTime = this.currentMeasureStartTime.add(this.toDuration(voiceEntry.getStartMeasureBeat(), bpm));
