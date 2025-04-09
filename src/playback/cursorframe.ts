@@ -229,10 +229,10 @@ class CursorFrameFactory {
   }
 
   private getXRangeSources(currentMoment: TimelineMoment, nextMoment: TimelineMoment): [XRangeSource, XRangeSource] {
-    return [this.getStartXSource(currentMoment), this.getEndXSource(nextMoment)];
+    return [this.getStartXRangeSource(currentMoment), this.getEndXRangeSource(nextMoment)];
   }
 
-  private getStartXSource(moment: TimelineMoment): XRangeSource {
+  private getStartXRangeSource(moment: TimelineMoment): XRangeSource {
     const hasStartingTransition = moment.events.some((e) => e.type === 'transition' && e.kind === 'start');
     if (hasStartingTransition) {
       return this.getLeftmostStartingXRangeSource(moment);
@@ -242,7 +242,7 @@ class CursorFrameFactory {
       'No starting transition found for moment, ' +
         'but the moment is trying to be used as a starting anchor. ' +
         'How was the moment created?',
-      { moment }
+      { momentTimeMs: moment.time.ms }
     );
 
     const event = moment.events.at(0);
@@ -258,7 +258,7 @@ class CursorFrameFactory {
     }
   }
 
-  private getEndXSource(nextMoment: TimelineMoment): XRangeSource {
+  private getEndXRangeSource(nextMoment: TimelineMoment): XRangeSource {
     const shouldUseMeasureEndBoundary = nextMoment.events.some((e) => e.type === 'jump' || e.type === 'systemend');
     if (shouldUseMeasureEndBoundary) {
       const event = nextMoment.events.at(0);
@@ -274,7 +274,7 @@ class CursorFrameFactory {
       }
     }
 
-    return this.getStartXSource(nextMoment);
+    return this.getStartXRangeSource(nextMoment);
   }
 
   private getLeftmostStartingXRangeSource(currentMoment: TimelineMoment): XRangeSource {
