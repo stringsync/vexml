@@ -331,58 +331,23 @@ describe(CursorFrame, () => {
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
-    const [score, timelines] = render('playback_multi_system.musicxml');
+    const [score, timelines] = render('playback_multi_system.musicxml', 100);
 
     const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
-    // system0, stave0: 0 | 1 | 2 | 3 | 4 | 5
-    // system1, stave0: 6 | 7 | 8
-    expect(frames).toHaveLength(9);
+    // system0, stave0: 0
+    // system1, stave0: 1
+    expect(frames).toHaveLength(2);
     expect(frames[0].toHumanReadable()).toEqual([
       't: [0ms - 2400ms]',
-      'x: [left(element(0)) - left(element(1))]',
+      'x: [left(element(0)) - right(measure(0))]',
       'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
     ]);
     expect(frames[1].toHumanReadable()).toEqual([
       't: [2400ms - 4800ms]',
-      'x: [left(element(1)) - left(element(2))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[2].toHumanReadable()).toEqual([
-      't: [4800ms - 7200ms]',
-      'x: [left(element(2)) - left(element(3))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[3].toHumanReadable()).toEqual([
-      't: [7200ms - 9600ms]',
-      'x: [left(element(3)) - left(element(4))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[4].toHumanReadable()).toEqual([
-      't: [9600ms - 12000ms]',
-      'x: [left(element(4)) - left(element(5))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[5].toHumanReadable()).toEqual([
-      't: [12000ms - 14400ms]',
-      'x: [left(element(5)) - right(measure(5))]',
-      'y: [top(system(0), part(0)) - bottom(system(0), part(0))]',
-    ]);
-    expect(frames[6].toHumanReadable()).toEqual([
-      't: [14400ms - 16800ms]',
-      'x: [left(element(6)) - left(element(7))]',
-      'y: [top(system(1), part(0)) - bottom(system(1), part(0))]',
-    ]);
-    expect(frames[7].toHumanReadable()).toEqual([
-      't: [16800ms - 19200ms]',
-      'x: [left(element(7)) - left(element(8))]',
-      'y: [top(system(1), part(0)) - bottom(system(1), part(0))]',
-    ]);
-    expect(frames[8].toHumanReadable()).toEqual([
-      't: [19200ms - 21600ms]',
-      'x: [left(element(8)) - right(measure(8))]',
+      'x: [left(element(1)) - right(measure(1))]',
       'y: [top(system(1), part(0)) - bottom(system(1), part(0))]',
     ]);
   });
@@ -481,13 +446,13 @@ describe(CursorFrame, () => {
   });
 });
 
-function render(filename: string): [vexml.Score, Timeline[]] {
+function render(filename: string, width = 900): [vexml.Score, Timeline[]] {
   const musicXMLPath = path.resolve(DATA_DIR, filename);
   const musicXML = fs.readFileSync(musicXMLPath).toString();
   const div = document.createElement('div');
   const score = vexml.renderMusicXML(musicXML, div, {
     config: {
-      WIDTH: 900,
+      WIDTH: width,
     },
   });
   const timelines = Timeline.create(new NoopLogger(), score);

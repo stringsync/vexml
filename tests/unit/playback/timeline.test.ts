@@ -146,24 +146,17 @@ describe(Timeline, () => {
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
-    const score = render('playback_multi_system.musicxml');
+    const score = render('playback_multi_system.musicxml', 100);
 
     const timelines = Timeline.create(logger, score);
 
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
-      // system0, stave0: 0 | 1 | 2 | 3 | 4 | 5
-      // system1, stave0: 6 | 7 | 8
+      // system0, stave0: 0
+      // system1, stave0: 1
       '[0ms] start(0)',
-      '[2400ms] stop(0), start(1)',
-      '[4800ms] stop(1), start(2)',
-      '[7200ms] stop(2), start(3)',
-      '[9600ms] stop(3), start(4)',
-      '[12000ms] stop(4), start(5)',
-      '[14400ms] stop(5), systemend, start(6)',
-      '[16800ms] stop(6), start(7)',
-      '[19200ms] stop(7), start(8)',
-      '[21600ms] stop(8), systemend',
+      '[2400ms] stop(0), systemend, start(1)',
+      '[4800ms] stop(1), systemend',
     ]);
   });
 
@@ -198,13 +191,13 @@ describe(Timeline, () => {
   });
 });
 
-function render(filename: string) {
+function render(filename: string, width = 900): vexml.Score {
   const musicXMLPath = path.resolve(DATA_DIR, filename);
   const musicXML = fs.readFileSync(musicXMLPath).toString();
   const div = document.createElement('div');
   return vexml.renderMusicXML(musicXML, div, {
     config: {
-      WIDTH: 900,
+      WIDTH: width,
     },
   });
 }
