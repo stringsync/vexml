@@ -1,4 +1,4 @@
-import { CursorFrame } from './cursorframe';
+import { CursorFrame } from './types';
 
 /** A collection of cursor frames for a given part index.. */
 export class CursorPath {

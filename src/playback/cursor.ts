@@ -1,14 +1,14 @@
 import * as events from '@/events';
 import * as util from '@/util';
 import { Rect, Point } from '@/spatial';
-import { CursorFrame } from './cursorframe';
 import { Scroller } from './scroller';
-import { CursorFrameLocator, CursorStateHintProvider } from './types';
+import { CursorFrame, CursorFrameLocator, CursorStateHintProvider } from './types';
 import { FastCursorFrameLocator } from './fastcursorframelocator';
 import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
 import { Duration } from './duration';
 import { CursorPath } from './cursorpath';
 import { LazyCursorStateHintProvider } from './lazycursorstatehintprovider';
+import { EmptyCursorFrame } from './emptycursorframe';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
@@ -43,6 +43,12 @@ export class Cursor {
     const fastLocator = new FastCursorFrameLocator(path, bSearchLocator);
     const scroller = new Scroller(scrollContainer);
     return new Cursor(path, fastLocator, scroller);
+  }
+
+  toIterator(): Iterable<CursorState> {
+    // Clone the cursor to avoid modifying the index of this instance.
+    const cursor = new Cursor(this.path, this.locator, this.scroller);
+    return new CursorIterator(cursor);
   }
 
   getCurrentState(): CursorState {
@@ -128,8 +134,7 @@ export class Cursor {
   }
 
   private getState(index: number, alpha: number): CursorState {
-    const frame = this.path.getFrames().at(index);
-    util.assertDefined(frame);
+    const frame = this.path.getFrames().at(index) ?? new EmptyCursorFrame();
 
     const rect = this.getCursorRect(frame, alpha);
     const hasNext = index < this.path.getFrames().length - 1;
@@ -183,5 +188,22 @@ export class Cursor {
       this.currentAlpha = alpha;
       this.topic.publish('change', this.getCurrentState());
     }
+  }
+}
+
+class CursorIterator implements Iterable<CursorState> {
+  constructor(private cursor: Cursor) {}
+
+  [Symbol.iterator](): Iterator<CursorState> {
+    return {
+      next: () => {
+        const state = this.cursor.getCurrentState();
+        const done = !state.hasNext;
+        if (!done) {
+          this.cursor.next();
+        }
+        return { value: state, done };
+      },
+    };
   }
 }

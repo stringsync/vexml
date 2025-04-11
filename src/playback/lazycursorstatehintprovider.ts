@@ -1,7 +1,7 @@
 import * as elements from '@/elements';
 import * as util from '@/util';
-import { CursorFrame } from './cursorframe';
 import {
+  CursorFrame,
   CursorStateHint,
   CursorStateHintProvider,
   PlaybackElement,

@@ -78,7 +78,7 @@ export class Score {
     const timeline = this.getTimelines().find((timeline) => timeline.getPartIndex() === partIndex);
     util.assertDefined(timeline);
 
-    const frames = playback.CursorFrame.create(this.log, this, timeline, span);
+    const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span);
     const path = new playback.CursorPath(partIndex, frames);
     const cursor = playback.Cursor.create(path, this.getScrollContainer());
 
@@ -369,7 +369,7 @@ export class Score {
       const timeline = timelines.find((timeline) => timeline.getPartIndex() === partIndex);
       util.assertDefined(timeline);
       const span = { fromPartIndex: partIndex, toPartIndex: partIndex };
-      const frames = playback.CursorFrame.create(this.log, this, timeline, span);
+      const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span);
       const path = new playback.CursorPath(partIndex, frames);
       paths.push(path);
     }

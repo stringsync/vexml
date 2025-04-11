@@ -1,12 +1,12 @@
 import * as vexml from '@/index';
 import * as path from 'path';
-import { CursorFrame, Timeline } from '@/playback';
+import { DefaultCursorFrame, Timeline } from '@/playback';
 import { NoopLogger, MemoryLogger } from '@/debug';
 import fs from 'fs';
 
 const DATA_DIR = path.resolve(__dirname, '..', '..', '__data__', 'vexml');
 
-describe(CursorFrame, () => {
+describe(DefaultCursorFrame, () => {
   let log: MemoryLogger;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe(CursorFrame, () => {
   it('creates for: single measure, single stave, different notes', () => {
     const [score, timelines] = render('playback_simple.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -47,7 +47,7 @@ describe(CursorFrame, () => {
   it('creates for: single measure, single stave, same notes', () => {
     const [score, timelines] = render('playback_same_note.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -78,7 +78,7 @@ describe(CursorFrame, () => {
   it('creates for: single measure, multiple staves, different notes', () => {
     const [score, timelines] = render('playback_multi_stave.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -134,8 +134,8 @@ describe(CursorFrame, () => {
     const span0 = { fromPartIndex: 0, toPartIndex: 0 };
     const span1 = { fromPartIndex: 0, toPartIndex: 1 };
 
-    const framesPart0 = CursorFrame.create(log, score, timelines[0], span0);
-    const framesPart1 = CursorFrame.create(log, score, timelines[1], span1);
+    const framesPart0 = DefaultCursorFrame.create(log, score, timelines[0], span0);
+    const framesPart1 = DefaultCursorFrame.create(log, score, timelines[1], span1);
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(2);
@@ -190,7 +190,7 @@ describe(CursorFrame, () => {
   it('creates for: multiple measures, single stave, different notes', () => {
     const [score, timelines] = render('playback_multi_measure.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -241,7 +241,7 @@ describe(CursorFrame, () => {
   it('creates for: single measure, single stave, repeat', () => {
     const [score, timelines] = render('playback_repeat.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -292,7 +292,7 @@ describe(CursorFrame, () => {
   it('creates for: multiple measures, single stave, repeat with endings', () => {
     const [score, timelines] = render('playback_repeat_endings.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -333,7 +333,7 @@ describe(CursorFrame, () => {
   it('creates for: multiple measures, single stave, multiple systems', () => {
     const [score, timelines] = render('playback_multi_system.musicxml', 100);
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -355,7 +355,7 @@ describe(CursorFrame, () => {
   it('creates for: documents that have backwards formatting', () => {
     const [score, timelines] = render('playback_backwards_formatting.musicxml');
 
-    const frames = CursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
     expect(timelines).toHaveLength(1);
     expect(log.getLogs()).toBeEmpty();
