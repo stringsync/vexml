@@ -45,7 +45,7 @@ export class Cursor {
     return new Cursor(path, fastLocator, scroller);
   }
 
-  toIterator(): Iterable<CursorState> {
+  iterable(): Iterable<CursorState> {
     // Clone the cursor to avoid modifying the index of this instance.
     const cursor = new Cursor(this.path, this.locator, this.scroller);
     return new CursorIterator(cursor);
