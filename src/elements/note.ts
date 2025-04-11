@@ -25,17 +25,33 @@ export class Note {
     return this.noteRender.rect;
   }
 
-  getPitch(): Pitch {
-    const note = this.document.getNote(this.noteRender.key);
-    return {
-      step: note.pitch.step,
-      octave: note.pitch.octave,
-      accidentalCode: note.accidental?.code ?? null,
-    };
+  /** Returns the subtype of the note. */
+  getSubtype(): 'note' | 'chord' {
+    return this.noteRender.subtype;
   }
 
-  sharesACurveWith(note: Note): boolean {
-    return this.noteRender.curveIds.some((curveId) => note.noteRender.curveIds.includes(curveId));
+  /** Returns the pitches of the note. */
+  getPitches(): Pitch[] {
+    switch (this.getSubtype()) {
+      case 'note':
+        return this.getNotePitches();
+      case 'chord':
+        return this.getChordPitches();
+    }
+  }
+
+  /** Returns whether the note contains an equivalent pitch to another note. */
+  containsEquivalentPitch(otherNote: Note): boolean {
+    // Let N be the number of pitches a note has. This algorithm has a time complexity of O(N^2), but N should always
+    // be small (<10).
+    return this.getPitches().some((pitch) =>
+      otherNote.getPitches().some((otherPitch) => this.isPitchEqivalent(pitch, otherPitch))
+    );
+  }
+
+  /** Returns whether the note is connected to another note via a curve (tie or slur). */
+  sharesACurveWith(otherNote: Note): boolean {
+    return this.noteRender.curveIds.some((curveId) => otherNote.noteRender.curveIds.includes(curveId));
   }
 
   /** Returns the measure beat that this note starts on. */
@@ -56,5 +72,29 @@ export class Note {
   /** Returns the absolute measure index that this note resides in. */
   getAbsoluteMeasureIndex(): number {
     return this.document.getAbsoluteMeasureIndex(this.noteRender.key);
+  }
+
+  private getNotePitches(): Pitch[] {
+    const note = this.document.getNote(this.noteRender.key);
+    return [
+      {
+        step: note.pitch.step,
+        octave: note.pitch.octave,
+        accidentalCode: note.accidental?.code ?? null,
+      },
+    ];
+  }
+
+  private getChordPitches(): Pitch[] {
+    const chord = this.document.getChord(this.noteRender.key);
+    return chord.notes.map((note) => ({
+      step: note.pitch.step,
+      octave: note.pitch.octave,
+      accidentalCode: note.accidental?.code ?? null,
+    }));
+  }
+
+  private isPitchEqivalent(a: Pitch, b: Pitch): boolean {
+    return a.step === b.step && a.octave === b.octave && a.accidentalCode === b.accidentalCode;
   }
 }
