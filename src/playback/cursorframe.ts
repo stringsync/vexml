@@ -3,7 +3,7 @@ import * as elements from '@/elements';
 import { Logger } from '@/debug';
 import { DurationRange } from './durationrange';
 import {
-  CursorFrameHint,
+  CursorStateHint,
   CursorVerticalSpan,
   PlaybackElement,
   RetriggerHint,
@@ -72,7 +72,7 @@ export class CursorFrame {
     return new util.NumberRange(y1, y2);
   }
 
-  getHints(previousFrame: CursorFrame): CursorFrameHint[] {
+  getHints(previousFrame: CursorFrame): CursorStateHint[] {
     return [...this.getRetriggerHints(previousFrame), ...this.getSustainHints(previousFrame)];
   }
 
