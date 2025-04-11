@@ -64,12 +64,8 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
   private getRetriggerHints(currentNotes: elements.Note[], previousNotes: elements.Note[]): RetriggerHint[] {
     const hints = new Array<RetriggerHint>();
 
-    // Let N be the number of notes in a frame. This algorithm is O(N^2) in the worst case, but we expect to N to be
-    // very small.
     for (const currentNote of currentNotes) {
-      const previousNote = previousNotes.find((previousNote) =>
-        this.isPitchEqual(currentNote.getPitch(), previousNote.getPitch())
-      );
+      const previousNote = previousNotes.find((previousNote) => previousNote.containsEquivalentPitch(currentNote));
       if (previousNote && !previousNote.sharesACurveWith(currentNote)) {
         hints.push({
           type: 'retrigger',
@@ -85,12 +81,8 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
   private getSustainHints(currentNotes: elements.Note[], previousNotes: elements.Note[]): SustainHint[] {
     const hints = new Array<SustainHint>();
 
-    // Let N be the number of notes in a frame. This algorithm is O(N^2) in the worst case, but we expect to N to be
-    // very small.
     for (const currentNote of currentNotes) {
-      const previousNote = previousNotes.find((previousNote) =>
-        this.isPitchEqual(currentNote.getPitch(), previousNote.getPitch())
-      );
+      const previousNote = previousNotes.find((previousNote) => previousNote.containsEquivalentPitch(currentNote));
       if (previousNote && previousNote.sharesACurveWith(currentNote)) {
         hints.push({
           type: 'sustain',
@@ -101,9 +93,5 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
     }
 
     return hints;
-  }
-
-  private isPitchEqual(a: elements.Pitch, b: elements.Pitch): boolean {
-    return a.step === b.step && a.octave === b.octave && a.accidentalCode === b.accidentalCode;
   }
 }

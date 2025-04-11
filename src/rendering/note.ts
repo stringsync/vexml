@@ -90,6 +90,7 @@ export class Note {
 
     return {
       type: 'note',
+      subtype: voiceEntry.type,
       key: this.key,
       rect: Rect.empty(), // placeholder
       stemDirection: voiceEntry.stemDirection,

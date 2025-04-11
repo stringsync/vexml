@@ -230,6 +230,7 @@ export type VoiceEntryRender = NoteRender | RestRender | DynamicsRender;
 
 export type NoteRender = {
   type: 'note';
+  subtype: 'note' | 'chord';
   key: VoiceEntryKey;
   rect: Rect;
   stemDirection: StemDirection;
