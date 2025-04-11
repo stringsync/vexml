@@ -2,14 +2,7 @@ import * as util from '@/util';
 import * as elements from '@/elements';
 import { Logger } from '@/debug';
 import { DurationRange } from './durationrange';
-import {
-  CursorStateHint,
-  CursorVerticalSpan,
-  PlaybackElement,
-  RetriggerHint,
-  SustainHint,
-  TimelineMoment,
-} from './types';
+import { CursorVerticalSpan, PlaybackElement, TimelineMoment } from './types';
 import { Timeline } from './timeline';
 
 type TRangeSource = {
@@ -72,10 +65,6 @@ export class CursorFrame {
     return new util.NumberRange(y1, y2);
   }
 
-  getHints(previousFrame: CursorFrame): CursorStateHint[] {
-    return [...this.getRetriggerHints(previousFrame), ...this.getSustainHints(previousFrame)];
-  }
-
   getActiveElements(): PlaybackElement[] {
     return [...this.activeElements];
   }
@@ -86,64 +75,6 @@ export class CursorFrame {
     const yRangeDescription = this.describer.describeYRange(this.yRangeSources);
 
     return [`t: ${tRangeDescription}`, `x: ${xRangeDescription}`, `y: ${yRangeDescription}`];
-  }
-
-  private getRetriggerHints(previousFrame: CursorFrame): RetriggerHint[] {
-    const hints = new Array<RetriggerHint>();
-    if (this === previousFrame) {
-      return hints;
-    }
-
-    const previousNotes = previousFrame.activeElements.filter((e) => e.name === 'note');
-    const currentNotes = this.activeElements.filter((e) => e.name === 'note');
-
-    // Let N be the number of notes in a frame. This algorithm is O(N^2) in the worst case, but we expect to N to be
-    // very small.
-    for (const currentNote of currentNotes) {
-      const previousNote = previousNotes.find((previousNote) =>
-        this.isPitchEqual(currentNote.getPitch(), previousNote.getPitch())
-      );
-      if (previousNote && !previousNote.sharesACurveWith(currentNote)) {
-        hints.push({
-          type: 'retrigger',
-          untriggerElement: previousNote,
-          retriggerElement: currentNote,
-        });
-      }
-    }
-
-    return hints;
-  }
-
-  private getSustainHints(previousFrame: CursorFrame): SustainHint[] {
-    const hints = new Array<SustainHint>();
-    if (this === previousFrame) {
-      return hints;
-    }
-
-    const previousNotes = previousFrame.activeElements.filter((e) => e.name === 'note');
-    const currentNotes = this.activeElements.filter((e) => e.name === 'note');
-
-    // Let N be the number of notes in a frame. This algorithm is O(N^2) in the worst case, but we expect to N to be
-    // very small.
-    for (const currentNote of currentNotes) {
-      const previousNote = previousNotes.find((previousNote) =>
-        this.isPitchEqual(currentNote.getPitch(), previousNote.getPitch())
-      );
-      if (previousNote && previousNote.sharesACurveWith(currentNote)) {
-        hints.push({
-          type: 'sustain',
-          previousElement: previousNote,
-          currentElement: currentNote,
-        });
-      }
-    }
-
-    return hints;
-  }
-
-  private isPitchEqual(a: elements.Pitch, b: elements.Pitch): boolean {
-    return a.step === b.step && a.octave === b.octave && a.accidentalCode === b.accidentalCode;
   }
 }
 

@@ -41,6 +41,10 @@ export type SystemEndEvent = {
   system: elements.System;
 };
 
+export interface CursorStateHintProvider {
+  get(): CursorStateHint[];
+}
+
 export type CursorStateHint = StartHint | StopHint | RetriggerHint | SustainHint;
 
 export type StartHint = {

@@ -3,11 +3,12 @@ import * as util from '@/util';
 import { Rect, Point } from '@/spatial';
 import { CursorFrame } from './cursorframe';
 import { Scroller } from './scroller';
-import { CursorFrameLocator } from './types';
+import { CursorFrameLocator, CursorStateHintProvider } from './types';
 import { FastCursorFrameLocator } from './fastcursorframelocator';
 import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
 import { Duration } from './duration';
 import { CursorPath } from './cursorpath';
+import { LazyCursorStateHintProvider } from './lazycursorstatehintprovider';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
@@ -19,6 +20,7 @@ export type CursorState = {
   hasPrevious: boolean;
   rect: Rect;
   frame: CursorFrame;
+  hints: CursorStateHintProvider;
 };
 
 export type CursorEventMap = {
@@ -133,12 +135,15 @@ export class Cursor {
     const hasNext = index < this.path.getFrames().length - 1;
     const hasPrevious = index > 0;
 
+    const hints = new LazyCursorStateHintProvider(frame, this.getPreviousState()?.frame);
+
     return {
       index,
       hasNext,
       hasPrevious,
       rect,
       frame,
+      hints,
     };
   }
 
