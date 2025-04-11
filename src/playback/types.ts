@@ -41,7 +41,17 @@ export type SystemEndEvent = {
   system: elements.System;
 };
 
-export type CursorFrameHint = RetriggerHint | SustainHint;
+export type CursorStateHint = StartHint | StopHint | RetriggerHint | SustainHint;
+
+export type StartHint = {
+  type: 'start';
+  element: PlaybackElement;
+};
+
+export type StopHint = {
+  type: 'stop';
+  element: PlaybackElement;
+};
 
 export type RetriggerHint = {
   type: 'retrigger';
