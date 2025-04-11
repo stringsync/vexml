@@ -387,7 +387,7 @@ export class Document {
 
   getNote(key: VoiceEntryKey): data.Note {
     const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
-    util.assert(entry?.type === 'note', 'expected entry to be a note');
+    util.assert(entry?.type === 'note', 'expected entry to be a note got ' + entry?.type);
     return entry;
   }
 

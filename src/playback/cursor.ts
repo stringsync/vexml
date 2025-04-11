@@ -1,13 +1,14 @@
 import * as events from '@/events';
 import * as util from '@/util';
 import { Rect, Point } from '@/spatial';
-import { CursorFrame } from './cursorframe';
 import { Scroller } from './scroller';
-import { CursorFrameLocator } from './types';
+import { CursorFrame, CursorFrameLocator, CursorStateHintProvider } from './types';
 import { FastCursorFrameLocator } from './fastcursorframelocator';
 import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
 import { Duration } from './duration';
 import { CursorPath } from './cursorpath';
+import { LazyCursorStateHintProvider } from './lazycursorstatehintprovider';
+import { EmptyCursorFrame } from './emptycursorframe';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
@@ -19,6 +20,7 @@ export type CursorState = {
   hasPrevious: boolean;
   rect: Rect;
   frame: CursorFrame;
+  hints: CursorStateHintProvider;
 };
 
 export type CursorEventMap = {
@@ -28,11 +30,10 @@ export type CursorEventMap = {
 export class Cursor {
   private topic = new events.Topic<CursorEventMap>();
 
-  private currentIndex = 0;
-  private currentAlpha = 0; // interpolation factor, ranging from 0 to 1
+  private index = 0;
+  private alpha = 0; // interpolation factor, ranging from 0 to 1
 
-  private previousIndex = -1;
-  private previousAlpha = -1;
+  private previousFrame: CursorFrame = new EmptyCursorFrame();
 
   private constructor(private path: CursorPath, private locator: CursorFrameLocator, private scroller: Scroller) {}
 
@@ -43,27 +44,40 @@ export class Cursor {
     return new Cursor(path, fastLocator, scroller);
   }
 
-  getCurrentState(): CursorState {
-    return this.getState(this.currentIndex, this.currentAlpha);
+  iterable(): Iterable<CursorState> {
+    // Clone the cursor to avoid modifying the index of this instance.
+    const cursor = new Cursor(this.path, this.locator, this.scroller);
+    return new CursorIterator(cursor);
   }
 
-  getPreviousState(): CursorState | null {
-    if (this.previousIndex === -1 || this.previousAlpha === -1) {
-      return null;
-    }
-    return this.getState(this.previousIndex, this.previousAlpha);
+  getCurrentState(): CursorState {
+    const index = this.index;
+    const hasNext = index < this.path.getFrames().length - 1;
+    const hasPrevious = index > 0;
+    const frame = this.getCurrentFrame();
+    const rect = this.getCursorRect(frame, this.alpha);
+    const hints = new LazyCursorStateHintProvider(frame, this.previousFrame);
+
+    return {
+      index,
+      hasNext,
+      hasPrevious,
+      frame,
+      rect,
+      hints,
+    };
   }
 
   next(): void {
-    if (this.currentIndex === this.path.getFrames().length - 1) {
-      this.update(this.currentIndex, { alpha: 1 });
+    if (this.index === this.path.getFrames().length - 1) {
+      this.update(this.index, { alpha: 1 });
     } else {
-      this.update(this.currentIndex + 1, { alpha: 0 });
+      this.update(this.index + 1, { alpha: 0 });
     }
   }
 
   previous(): void {
-    this.update(this.currentIndex - 1, { alpha: 0 });
+    this.update(this.index - 1, { alpha: 0 });
   }
 
   goTo(index: number): void {
@@ -125,21 +139,8 @@ export class Cursor {
     this.topic.unsubscribeAll();
   }
 
-  private getState(index: number, alpha: number): CursorState {
-    const frame = this.path.getFrames().at(index);
-    util.assertDefined(frame);
-
-    const rect = this.getCursorRect(frame, alpha);
-    const hasNext = index < this.path.getFrames().length - 1;
-    const hasPrevious = index > 0;
-
-    return {
-      index,
-      hasNext,
-      hasPrevious,
-      rect,
-      frame,
-    };
+  private getCurrentFrame(): CursorFrame {
+    return this.path.getFrames().at(this.index) ?? new EmptyCursorFrame();
   }
 
   private getScrollPoint(): Point {
@@ -171,12 +172,28 @@ export class Cursor {
     alpha = util.clamp(0, 1, alpha);
     // Round to 3 decimal places to avoid overloading the event system with redundant updates.
     alpha = Math.round(alpha * 1000) / 1000;
-    if (index !== this.currentIndex || alpha !== this.currentAlpha) {
-      this.previousIndex = this.currentIndex;
-      this.previousAlpha = this.currentAlpha;
-      this.currentIndex = index;
-      this.currentAlpha = alpha;
+    if (index !== this.index || alpha !== this.alpha) {
+      this.previousFrame = this.getCurrentFrame();
+      this.index = index;
+      this.alpha = alpha;
       this.topic.publish('change', this.getCurrentState());
     }
+  }
+}
+
+class CursorIterator implements Iterable<CursorState> {
+  constructor(private cursor: Cursor) {}
+
+  [Symbol.iterator](): Iterator<CursorState> {
+    return {
+      next: () => {
+        const state = this.cursor.getCurrentState();
+        const done = !state.hasNext;
+        if (!done) {
+          this.cursor.next();
+        }
+        return { value: state, done };
+      },
+    };
   }
 }
