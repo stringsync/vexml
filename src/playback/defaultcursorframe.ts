@@ -2,7 +2,7 @@ import * as util from '@/util';
 import * as elements from '@/elements';
 import { Logger } from '@/debug';
 import { DurationRange } from './durationrange';
-import { CursorVerticalSpan, PlaybackElement, TimelineMoment } from './types';
+import { CursorFrame, CursorVerticalSpan, PlaybackElement, TimelineMoment } from './types';
 import { Timeline } from './timeline';
 
 type TRangeSource = {
@@ -19,7 +19,7 @@ type YRangeSource = {
   bound: 'top' | 'bottom';
 };
 
-export class CursorFrame {
+export class DefaultCursorFrame implements CursorFrame {
   constructor(
     private tRangeSources: [TRangeSource, TRangeSource],
     private xRangeSources: [XRangeSource, XRangeSource],
@@ -28,7 +28,12 @@ export class CursorFrame {
     private describer: CursorFrameDescriber
   ) {}
 
-  static create(log: Logger, score: elements.Score, timeline: Timeline, span: CursorVerticalSpan): CursorFrame[] {
+  static create(
+    log: Logger,
+    score: elements.Score,
+    timeline: Timeline,
+    span: CursorVerticalSpan
+  ): DefaultCursorFrame[] {
     const partCount = score.getPartCount();
     if (partCount === 0) {
       log.warn('No parts found in score, returning empty cursor frames.');
@@ -79,7 +84,7 @@ export class CursorFrame {
 }
 
 class CursorFrameFactory {
-  private frames = new Array<CursorFrame>();
+  private frames = new Array<DefaultCursorFrame>();
   private activeElements = new Set<PlaybackElement>();
   private describer: CursorFrameDescriber;
 
@@ -92,7 +97,7 @@ class CursorFrameFactory {
     this.describer = CursorFrameDescriber.create(score, timeline.getPartIndex());
   }
 
-  create(): CursorFrame[] {
+  create(): DefaultCursorFrame[] {
     this.frames = [];
     this.activeElements = new Set<PlaybackElement>();
 
@@ -266,7 +271,7 @@ class CursorFrameFactory {
     xRangeSources: [XRangeSource, XRangeSource],
     yRangeSources: [YRangeSource, YRangeSource]
   ): void {
-    const frame = new CursorFrame(
+    const frame = new DefaultCursorFrame(
       tRangeSources,
       xRangeSources,
       yRangeSources,

@@ -24,6 +24,14 @@ export interface CursorFrameLocator {
   locate(time: Duration): number | null;
 }
 
+export interface CursorFrame {
+  tRange: DurationRange;
+  xRange: NumberRange;
+  yRange: NumberRange;
+  getActiveElements(): PlaybackElement[];
+  toHumanReadable(): string[];
+}
+
 export type ElementTransitionEvent = {
   type: 'transition';
   kind: 'start' | 'stop';

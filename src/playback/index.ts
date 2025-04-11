@@ -5,4 +5,4 @@ export * from './durationrange';
 export * from './timestamplocator';
 export * from './timeline';
 export * from './types';
-export * from './cursorframe';
+export * from './defaultcursorframe';
