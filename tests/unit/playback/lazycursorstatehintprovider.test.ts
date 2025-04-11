@@ -113,7 +113,14 @@ describe(LazyCursorStateHintProvider, () => {
     }
   });
 
-  it.todo('does not throw for: chords');
+  it('does not throw for: chords', () => {
+    const score = render('playback_chords.musicxml');
+    const cursor = score.addCursor();
+
+    for (const state of cursor.iterable()) {
+      expect(() => state.hints.get()).not.toThrow();
+    }
+  });
 });
 
 function render(filename: string, config?: Partial<vexml.Config>): vexml.Score {
