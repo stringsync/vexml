@@ -3,7 +3,7 @@ import * as elements from '@/elements';
 import * as util from '@/util';
 import { Duration } from './duration';
 import { CursorPath } from './cursorpath';
-import { CursorFrame } from './cursorframe';
+import { CursorFrame } from './types';
 
 type System = {
   yRange: util.NumberRange;

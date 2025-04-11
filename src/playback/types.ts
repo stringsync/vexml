@@ -24,6 +24,14 @@ export interface CursorFrameLocator {
   locate(time: Duration): number | null;
 }
 
+export interface CursorFrame {
+  tRange: DurationRange;
+  xRange: NumberRange;
+  yRange: NumberRange;
+  getActiveElements(): PlaybackElement[];
+  toHumanReadable(): string[];
+}
+
 export type ElementTransitionEvent = {
   type: 'transition';
   kind: 'start' | 'stop';
@@ -41,7 +49,21 @@ export type SystemEndEvent = {
   system: elements.System;
 };
 
-export type CursorFrameHint = RetriggerHint | SustainHint;
+export interface CursorStateHintProvider {
+  get(): CursorStateHint[];
+}
+
+export type CursorStateHint = StartHint | StopHint | RetriggerHint | SustainHint;
+
+export type StartHint = {
+  type: 'start';
+  element: PlaybackElement;
+};
+
+export type StopHint = {
+  type: 'stop';
+  element: PlaybackElement;
+};
 
 export type RetriggerHint = {
   type: 'retrigger';
