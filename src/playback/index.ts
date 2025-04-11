@@ -6,3 +6,5 @@ export * from './timestamplocator';
 export * from './timeline';
 export * from './types';
 export * from './defaultcursorframe';
+export * from './lazycursorstatehintprovider';
+export * from './emptycursorframe';

@@ -331,7 +331,7 @@ describe(DefaultCursorFrame, () => {
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
-    const [score, timelines] = render('playback_multi_system.musicxml', 100);
+    const [score, timelines] = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
 
     const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
 
@@ -446,13 +446,14 @@ describe(DefaultCursorFrame, () => {
   });
 });
 
-function render(filename: string, width = 900): [vexml.Score, Timeline[]] {
+function render(filename: string, config?: Partial<vexml.Config>): [vexml.Score, Timeline[]] {
   const musicXMLPath = path.resolve(DATA_DIR, filename);
   const musicXML = fs.readFileSync(musicXMLPath).toString();
   const div = document.createElement('div');
   const score = vexml.renderMusicXML(musicXML, div, {
     config: {
-      WIDTH: width,
+      WIDTH: 900,
+      ...config,
     },
   });
   const timelines = Timeline.create(new NoopLogger(), score);
