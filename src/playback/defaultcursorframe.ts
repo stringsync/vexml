@@ -157,6 +157,8 @@ class CursorFrameFactory {
   }
 
   private getEndXRangeSource(startXRangeSource: XRangeSource, nextMoment: TimelineMoment): XRangeSource {
+    let proposedXRangeSource: XRangeSource;
+
     const shouldUseMeasureEndBoundary = nextMoment.events.some((e) => e.type === 'jump' || e.type === 'systemend');
     if (shouldUseMeasureEndBoundary) {
       const event = nextMoment.events.at(0);
@@ -164,15 +166,19 @@ class CursorFrameFactory {
 
       switch (event.type) {
         case 'transition':
-          return { type: 'measure', measure: event.measure, bound: 'right' };
+          proposedXRangeSource = { type: 'measure', measure: event.measure, bound: 'right' };
+          break;
         case 'systemend':
-          return { type: 'system', system: event.system, bound: 'right' };
+          proposedXRangeSource = { type: 'system', system: event.system, bound: 'right' };
+          break;
         case 'jump':
-          return { type: 'measure', measure: event.measure, bound: 'right' };
+          proposedXRangeSource = { type: 'measure', measure: event.measure, bound: 'right' };
+          break;
       }
+    } else {
+      proposedXRangeSource = this.getStartXRangeSource(nextMoment);
     }
 
-    const proposedXRangeSource = this.getStartXRangeSource(nextMoment);
     const startBound = getXRangeBound(startXRangeSource);
     const proposedBound = getXRangeBound(proposedXRangeSource);
 

@@ -146,7 +146,7 @@ describe(Timeline, () => {
   });
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
-    const score = render('playback_multi_system.musicxml', 100);
+    const score = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
 
     const timelines = Timeline.create(logger, score);
 
@@ -191,13 +191,14 @@ describe(Timeline, () => {
   });
 });
 
-function render(filename: string, width = 900): vexml.Score {
+function render(filename: string, config?: Partial<vexml.Config>): vexml.Score {
   const musicXMLPath = path.resolve(DATA_DIR, filename);
   const musicXML = fs.readFileSync(musicXMLPath).toString();
   const div = document.createElement('div');
   return vexml.renderMusicXML(musicXML, div, {
     config: {
-      WIDTH: width,
+      WIDTH: 900,
+      ...config,
     },
   });
 }
