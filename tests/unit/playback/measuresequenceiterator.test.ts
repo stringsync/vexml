@@ -1,14 +1,14 @@
-import { MeasureSequenceIterator } from '@/playback/measuresequenceiterator';
+import { LegacyMeasureSequenceIterator } from '@/playback/legacymeasuresequenceiterator';
 
-describe(MeasureSequenceIterator, () => {
+describe(LegacyMeasureSequenceIterator, () => {
   it('is empty when there are no measures', () => {
-    const iterator = new MeasureSequenceIterator([]);
+    const iterator = new LegacyMeasureSequenceIterator([]);
 
     expect(iterator).toBeEmpty();
   });
 
   it('is the same as the input when there are no repeats', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [] },
       { index: 1, jumps: [] },
       { index: 2, jumps: [] },
@@ -18,7 +18,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats a single measure', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }, { type: 'repeatend', times: 1 }] },
     ]);
 
@@ -26,7 +26,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats a single measure multiple times', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }, { type: 'repeatend', times: 3 }] },
     ]);
 
@@ -34,7 +34,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats a single measure when the start is not at the beginning', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [] },
       { index: 1, jumps: [{ type: 'repeatstart' }] },
       { index: 2, jumps: [{ type: 'repeatend', times: 1 }] },
@@ -44,7 +44,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats multiple measures', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }] },
       { index: 1, jumps: [{ type: 'repeatend', times: 1 }] },
     ]);
@@ -53,7 +53,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats multiple measures multiple times', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }] },
       { index: 1, jumps: [{ type: 'repeatend', times: 2 }] },
     ]);
@@ -62,7 +62,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats endings', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }] },
       { index: 1, jumps: [{ type: 'repeatending', times: 1 }] },
       { index: 2, jumps: [] },
@@ -72,7 +72,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('repeats multiple endings', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [{ type: 'repeatstart' }] },
       { index: 1, jumps: [{ type: 'repeatending', times: 2 }] },
       { index: 2, jumps: [] },
@@ -82,7 +82,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('handles implicit start repeats', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [] },
       { index: 1, jumps: [{ type: 'repeatend', times: 1 }] },
     ]);
@@ -91,7 +91,7 @@ describe(MeasureSequenceIterator, () => {
   });
 
   it('handles multiple implicit start repeats', () => {
-    const iterator = new MeasureSequenceIterator([
+    const iterator = new LegacyMeasureSequenceIterator([
       { index: 0, jumps: [] },
       { index: 1, jumps: [{ type: 'repeatend', times: 1 }] },
       { index: 2, jumps: [{ type: 'repeatend', times: 1 }] },
