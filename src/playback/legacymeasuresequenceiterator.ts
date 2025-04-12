@@ -10,7 +10,7 @@ type Jump = { type: 'repeatstart' } | { type: 'repeatend'; times: number } | { t
 /**
  * A class that iterates over measures in playback order (accounting for repeats and jumps).
  */
-export class MeasureSequenceIterator<T extends Measure> implements Iterable<number> {
+export class LegacyMeasureSequenceIterator<T extends Measure> implements Iterable<number> {
   private measures: T[];
 
   constructor(measures: T[]) {
