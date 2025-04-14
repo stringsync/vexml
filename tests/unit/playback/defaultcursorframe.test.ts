@@ -1,6 +1,6 @@
 import * as vexml from '@/index';
 import * as path from 'path';
-import { DefaultCursorFrame, Timeline } from '@/playback';
+import { DefaultCursorFrame, ElementDescriber, Timeline } from '@/playback';
 import { NoopLogger, MemoryLogger } from '@/debug';
 import fs from 'fs';
 
@@ -15,8 +15,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: single measure, single stave, different notes', () => {
     const [score, timelines] = render('playback_simple.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -46,8 +53,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: single measure, single stave, same notes', () => {
     const [score, timelines] = render('playback_same_note.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -77,8 +91,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: single measure, multiple staves, different notes', () => {
     const [score, timelines] = render('playback_multi_stave.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -129,13 +150,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: single measure, multiple staves, multiple parts', () => {
     const [score, timelines] = render('playback_multi_part.musicxml');
+    const elementDescriber0 = ElementDescriber.create(score, { partIndex: 0 });
+    const elementDescriber1 = ElementDescriber.create(score, { partIndex: 1 });
 
     // This ends up adding test coverage for y-spans.
     const span0 = { fromPartIndex: 0, toPartIndex: 0 };
     const span1 = { fromPartIndex: 0, toPartIndex: 1 };
 
-    const framesPart0 = DefaultCursorFrame.create(log, score, timelines[0], span0);
-    const framesPart1 = DefaultCursorFrame.create(log, score, timelines[1], span1);
+    const framesPart0 = DefaultCursorFrame.create(log, score, timelines[0], span0, elementDescriber0);
+    const framesPart1 = DefaultCursorFrame.create(log, score, timelines[1], span1, elementDescriber1);
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(2);
@@ -189,8 +212,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: multiple measures, single stave, different notes', () => {
     const [score, timelines] = render('playback_multi_measure.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -240,8 +270,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: single measure, single stave, repeat', () => {
     const [score, timelines] = render('playback_repeat.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -291,8 +328,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: multiple measures, single stave, repeat with endings', () => {
     const [score, timelines] = render('playback_repeat_endings.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -332,8 +376,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: multiple measures, single stave, multiple systems', () => {
     const [score, timelines] = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(log.getLogs()).toBeEmpty();
     expect(timelines).toHaveLength(1);
@@ -354,8 +405,15 @@ describe(DefaultCursorFrame, () => {
 
   it('creates for: documents that have backwards formatting', () => {
     const [score, timelines] = render('playback_backwards_formatting.musicxml');
+    const elementDescriber = ElementDescriber.create(score, { partIndex: 0 });
 
-    const frames = DefaultCursorFrame.create(log, score, timelines[0], { fromPartIndex: 0, toPartIndex: 0 });
+    const frames = DefaultCursorFrame.create(
+      log,
+      score,
+      timelines[0],
+      { fromPartIndex: 0, toPartIndex: 0 },
+      elementDescriber
+    );
 
     expect(timelines).toHaveLength(1);
     expect(log.getLogs()).toBeEmpty();
