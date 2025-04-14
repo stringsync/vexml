@@ -8,7 +8,7 @@ import * as util from '@/util';
 export class ElementDescriber {
   private constructor(private elements: Map<PlaybackElement, number>) {}
 
-  static create(score: elements.Score, partIndex: number): ElementDescriber {
+  static create(score: elements.Score, { partIndex }: { partIndex: number }): ElementDescriber {
     const elements = new Map<PlaybackElement, number>();
 
     score
@@ -25,8 +25,12 @@ export class ElementDescriber {
     return new ElementDescriber(elements);
   }
 
-  describe(element: PlaybackElement): string {
+  describe(element: PlaybackElement | elements.System | elements.Part): string {
     switch (element.name) {
+      case 'part':
+        return this.describePart(element);
+      case 'system':
+        return this.describeSystem(element);
       case 'note':
         return this.describeNote(element);
       case 'rest':
@@ -38,23 +42,31 @@ export class ElementDescriber {
     }
   }
 
-  private describeMeasure(element: elements.Measure): string {
-    return `measure(${element.getAbsoluteMeasureIndex()})`;
+  private describePart(part: elements.Part): string {
+    return `part(${part.getIndex()})`;
+  }
+
+  private describeSystem(system: elements.System): string {
+    return `system(${system.getIndex()})`;
+  }
+
+  private describeMeasure(measure: elements.Measure): string {
+    return `measure(${measure.getAbsoluteMeasureIndex()})`;
   }
 
   private describeFragment(): string {
     return '[fragment]';
   }
 
-  private describeRest(element: elements.Rest): string {
-    util.assert(this.elements.has(element), 'Expected element to be indexed');
-    const index = this.elements.get(element)!;
+  private describeRest(rest: elements.Rest): string {
+    util.assert(this.elements.has(rest), 'Expected element to be indexed');
+    const index = this.elements.get(rest)!;
     return `element(${index})`;
   }
 
-  private describeNote(element: elements.Note): string {
-    util.assert(this.elements.has(element), 'Expected element to be indexed');
-    const index = this.elements.get(element)!;
+  private describeNote(note: elements.Note): string {
+    util.assert(this.elements.has(note), 'Expected element to be indexed');
+    const index = this.elements.get(note)!;
     return `element(${index})`;
   }
 }
