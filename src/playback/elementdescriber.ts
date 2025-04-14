@@ -32,7 +32,7 @@ export class ElementDescriber {
       case 'rest':
         return this.describeRest(element);
       case 'fragment':
-        return this.describeFragment(element);
+        return this.describeFragment();
       case 'measure':
         return this.describeMeasure(element);
     }
@@ -42,7 +42,7 @@ export class ElementDescriber {
     return `measure(${element.getAbsoluteMeasureIndex()})`;
   }
 
-  private describeFragment(element: elements.Fragment): string {
+  private describeFragment(): string {
     return '[fragment]';
   }
 
