@@ -17,11 +17,11 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3
-      '[0ms] start(0)',
-      '[600ms] stop(0), start(1)',
-      '[1200ms] stop(1), start(2)',
-      '[1800ms] stop(2), start(3)',
-      '[2400ms] stop(3), systemend',
+      '[0ms] start(element(0))',
+      '[600ms] stop(element(0)), start(element(1))',
+      '[1200ms] stop(element(1)), start(element(2))',
+      '[1800ms] stop(element(2)), start(element(3))',
+      '[2400ms] stop(element(3)), systemend',
     ]);
   });
 
@@ -33,11 +33,11 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3
-      '[0ms] start(0)',
-      '[600ms] stop(0), start(1)',
-      '[1200ms] stop(1), start(2)',
-      '[1800ms] stop(2), start(3)',
-      '[2400ms] stop(3), systemend',
+      '[0ms] start(element(0))',
+      '[600ms] stop(element(0)), start(element(1))',
+      '[1200ms] stop(element(1)), start(element(2))',
+      '[1800ms] stop(element(2)), start(element(3))',
+      '[2400ms] stop(element(3)), systemend',
     ]);
   });
 
@@ -50,15 +50,15 @@ describe(Timeline, () => {
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0   1   2   3
       // stave1: 4 5 6 7 8 9 10 11
-      '[0ms] start(0), start(4)',
-      '[300ms] stop(4), start(5)',
-      '[600ms] stop(0), stop(5), start(1), start(6)',
-      '[900ms] stop(6), start(7)',
-      '[1200ms] stop(1), stop(7), start(2), start(8)',
-      '[1500ms] stop(8), start(9)',
-      '[1800ms] stop(2), stop(9), start(3), start(10)',
-      '[2100ms] stop(10), start(11)',
-      '[2400ms] stop(3), stop(11), systemend',
+      '[0ms] start(element(0)), start(element(4))',
+      '[300ms] stop(element(4)), start(element(5))',
+      '[600ms] stop(element(0)), stop(element(5)), start(element(1)), start(element(6))',
+      '[900ms] stop(element(6)), start(element(7))',
+      '[1200ms] stop(element(1)), stop(element(7)), start(element(2)), start(element(8))',
+      '[1500ms] stop(element(8)), start(element(9))',
+      '[1800ms] stop(element(2)), stop(element(9)), start(element(3)), start(element(10))',
+      '[2100ms] stop(element(10)), start(element(11))',
+      '[2400ms] stop(element(3)), stop(element(11)), systemend',
     ]);
   });
 
@@ -70,20 +70,20 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(2);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3
-      '[0ms] start(0)',
-      '[600ms] stop(0), start(1)',
-      '[1200ms] stop(1), start(2)',
-      '[1800ms] stop(2), start(3)',
-      '[2400ms] stop(3), systemend',
+      '[0ms] start(element(0))',
+      '[600ms] stop(element(0)), start(element(1))',
+      '[1200ms] stop(element(1)), start(element(2))',
+      '[1800ms] stop(element(2)), start(element(3))',
+      '[2400ms] stop(element(3)), systemend',
     ]);
     expect(timelines[1].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3
       // stave1: 4 5 6 7
-      '[0ms] start(0), start(4)',
-      '[600ms] stop(0), stop(4), start(1), start(5)',
-      '[1200ms] stop(1), stop(5), start(2), start(6)',
-      '[1800ms] stop(2), stop(6), start(3), start(7)',
-      '[2400ms] stop(3), stop(7), systemend',
+      '[0ms] start(element(0)), start(element(4))',
+      '[600ms] stop(element(0)), stop(element(4)), start(element(1)), start(element(5))',
+      '[1200ms] stop(element(1)), stop(element(5)), start(element(2)), start(element(6))',
+      '[1800ms] stop(element(2)), stop(element(6)), start(element(3)), start(element(7))',
+      '[2400ms] stop(element(3)), stop(element(7)), systemend',
     ]);
   });
 
@@ -95,15 +95,15 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3 4 | 5 6 7 8
-      '[0ms] start(0)',
-      '[600ms] stop(0), start(1)',
-      '[1200ms] stop(1), start(2)',
-      '[1800ms] stop(2), start(3)',
-      '[2400ms] stop(3), start(4)',
-      '[3000ms] stop(4), start(5)',
-      '[3600ms] stop(5), start(6)',
-      '[4200ms] stop(6), start(7)',
-      '[4800ms] stop(7), systemend',
+      '[0ms] start(element(0))',
+      '[600ms] stop(element(0)), start(element(1))',
+      '[1200ms] stop(element(1)), start(element(2))',
+      '[1800ms] stop(element(2)), start(element(3))',
+      '[2400ms] stop(element(3)), start(element(4))',
+      '[3000ms] stop(element(4)), start(element(5))',
+      '[3600ms] stop(element(5)), start(element(6))',
+      '[4200ms] stop(element(6)), start(element(7))',
+      '[4800ms] stop(element(7)), systemend',
     ]);
   });
 
@@ -115,15 +115,15 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 1 2 3 :||
-      '[0ms] start(0)',
-      '[600ms] stop(0), start(1)',
-      '[1200ms] stop(1), start(2)',
-      '[1800ms] stop(2), start(3)',
-      '[2400ms] stop(3), jump, start(0)',
-      '[3000ms] stop(0), start(1)',
-      '[3600ms] stop(1), start(2)',
-      '[4200ms] stop(2), start(3)',
-      '[4800ms] stop(3), systemend',
+      '[0ms] start(element(0))',
+      '[600ms] stop(element(0)), start(element(1))',
+      '[1200ms] stop(element(1)), start(element(2))',
+      '[1800ms] stop(element(2)), start(element(3))',
+      '[2400ms] stop(element(3)), jump, start(element(0))',
+      '[3000ms] stop(element(0)), start(element(1))',
+      '[3600ms] stop(element(1)), start(element(2))',
+      '[4200ms] stop(element(2)), start(element(3))',
+      '[4800ms] stop(element(3)), systemend',
     ]);
   });
 
@@ -135,13 +135,13 @@ describe(Timeline, () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0].toHumanReadable()).toEqual([
       // stave0: 0 | [ending1 -> 1] :|| [ending2 -> 2] :|| [ending3 -> 3]
-      '[0ms] start(0)',
-      '[2400ms] stop(0), start(1)',
-      '[4800ms] stop(1), jump, start(0)',
-      '[7200ms] stop(0), jump, start(2)',
-      '[9600ms] stop(2), jump, start(0)',
-      '[12000ms] stop(0), jump, start(3)',
-      '[14400ms] stop(3), systemend',
+      '[0ms] start(element(0))',
+      '[2400ms] stop(element(0)), start(element(1))',
+      '[4800ms] stop(element(1)), jump, start(element(0))',
+      '[7200ms] stop(element(0)), jump, start(element(2))',
+      '[9600ms] stop(element(2)), jump, start(element(0))',
+      '[12000ms] stop(element(0)), jump, start(element(3))',
+      '[14400ms] stop(element(3)), systemend',
     ]);
   });
 
@@ -154,9 +154,9 @@ describe(Timeline, () => {
     expect(timelines[0].toHumanReadable()).toEqual([
       // system0, stave0: 0
       // system1, stave0: 1
-      '[0ms] start(0)',
-      '[2400ms] stop(0), systemend, start(1)',
-      '[4800ms] stop(1), systemend',
+      '[0ms] start(element(0))',
+      '[2400ms] stop(element(0)), systemend, start(element(1))',
+      '[4800ms] stop(element(1)), systemend',
     ]);
   });
 
@@ -170,23 +170,23 @@ describe(Timeline, () => {
       // stave0, voice0: 0     1  2  3  4  5  6  7     8  9 10 11 12 13
       // stave1, voice0: 14 15       16          17 18      19
       // stave2, voice1: 20                      21
-      '[0ms] start(0), start(14), start(20)',
-      '[150ms] stop(14), start(15)',
-      '[300ms] stop(0), start(1)',
-      '[450ms] stop(1), start(2)',
-      '[600ms] stop(2), stop(15), start(3), start(16)',
-      '[750ms] stop(3), start(4)',
-      '[900ms] stop(4), start(5)',
-      '[1050ms] stop(5), start(6)',
-      '[1200ms] stop(6), stop(16), stop(20), start(7), start(17), start(21)',
-      '[1350ms] stop(17), start(18)',
-      '[1500ms] stop(7), start(8)',
-      '[1650ms] stop(8), start(9)',
-      '[1800ms] stop(9), stop(18), start(10), start(19)',
-      '[1950ms] stop(10), start(11)',
-      '[2100ms] stop(11), start(12)',
-      '[2250ms] stop(12), start(13)',
-      '[2400ms] stop(13), stop(19), stop(21), systemend',
+      '[0ms] start(element(0)), start(element(14)), start(element(20))',
+      '[150ms] stop(element(14)), start(element(15))',
+      '[300ms] stop(element(0)), start(element(1))',
+      '[450ms] stop(element(1)), start(element(2))',
+      '[600ms] stop(element(2)), stop(element(15)), start(element(3)), start(element(16))',
+      '[750ms] stop(element(3)), start(element(4))',
+      '[900ms] stop(element(4)), start(element(5))',
+      '[1050ms] stop(element(5)), start(element(6))',
+      '[1200ms] stop(element(6)), stop(element(16)), stop(element(20)), start(element(7)), start(element(17)), start(element(21))',
+      '[1350ms] stop(element(17)), start(element(18))',
+      '[1500ms] stop(element(7)), start(element(8))',
+      '[1650ms] stop(element(8)), start(element(9))',
+      '[1800ms] stop(element(9)), stop(element(18)), start(element(10)), start(element(19))',
+      '[1950ms] stop(element(10)), start(element(11))',
+      '[2100ms] stop(element(11)), start(element(12))',
+      '[2250ms] stop(element(12)), start(element(13))',
+      '[2400ms] stop(element(13)), stop(element(19)), stop(element(21)), systemend',
     ]);
   });
 });

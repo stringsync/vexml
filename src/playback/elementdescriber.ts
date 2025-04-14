@@ -55,7 +55,7 @@ export class ElementDescriber {
   }
 
   private describeFragment(): string {
-    return '[fragment]';
+    return 'fragment';
   }
 
   private describeRest(rest: elements.Rest): string {
