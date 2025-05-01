@@ -51,6 +51,7 @@ export type SystemEndEvent = {
 
 export interface CursorStateHintProvider {
   get(): CursorStateHint[];
+  toHumanReadable(): string[];
 }
 
 export type CursorStateHint = StartHint | StopHint | RetriggerHint | SustainHint;

@@ -8,6 +8,10 @@ import * as util from '@/util';
 export class ElementDescriber {
   private constructor(private elements: Map<PlaybackElement, number>) {}
 
+  static noop(): ElementDescriber {
+    return new ElementDescriber(new Map());
+  }
+
   static create(score: elements.Score, { partIndex }: { partIndex: number }): ElementDescriber {
     const elements = new Map<PlaybackElement, number>();
 

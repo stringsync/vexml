@@ -9,3 +9,4 @@ export * from './defaultcursorframe';
 export * from './lazycursorstatehintprovider';
 export * from './emptycursorframe';
 export * from './elementdescriber';
+export * from './hintdescriber';
