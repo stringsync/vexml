@@ -159,14 +159,36 @@ describe(LazyCursorStateHintProvider, () => {
     expect(states[6].hints.toHumanReadable()).toEqual(['stop(element(1))', 'start(element(2))']);
   });
 
-  // it('provides for: multiple measures, single stave, repeat with endings', () => {
-  //   const score = render('playback_repeat_endings.musicxml');
-  //   const cursor = score.addCursor();
+  it('provides for: multiple measures, single stave, repeat with endings', () => {
+    const score = render('playback_repeat_endings.musicxml');
+    const cursor = score.addCursor();
 
-  //   for (const state of cursor.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
-  // });
+    const states = Array.from(cursor.iterable());
+
+    expect(states).toHaveLength(5);
+    // stave0: 0 | [ending1 -> 1] :|| [ending2 -> 2] :|| [ending3 -> 3]
+    expect(states[0].hints.toHumanReadable()).toEqual(['start(element(0))']);
+    expect(states[1].hints.toHumanReadable()).toEqual([
+      'stop(element(0))',
+      'start(element(1))',
+      'retrigger(element(0), element(1))',
+    ]);
+    expect(states[2].hints.toHumanReadable()).toEqual([
+      'stop(element(1))',
+      'start(element(0))',
+      'retrigger(element(1), element(0))',
+    ]);
+    expect(states[3].hints.toHumanReadable()).toEqual([
+      'stop(element(0))',
+      'start(element(2))',
+      'retrigger(element(0), element(2))',
+    ]);
+    expect(states[4].hints.toHumanReadable()).toEqual([
+      'stop(element(2))',
+      'start(element(0))',
+      'retrigger(element(2), element(0))',
+    ]);
+  });
 
   // it('provides for: multiple measures, single stave, multiple systems', () => {
   //   const score = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
