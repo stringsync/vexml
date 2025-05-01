@@ -81,7 +81,7 @@ export class Score {
     const elementDescriber = playback.ElementDescriber.create(this, { partIndex });
     const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span, elementDescriber);
     const path = new playback.CursorPath(partIndex, frames);
-    const cursor = playback.Cursor.create(path, this.getScrollContainer());
+    const cursor = playback.Cursor.create(path, this.getScrollContainer(), elementDescriber);
 
     this.cursors.push(cursor);
 

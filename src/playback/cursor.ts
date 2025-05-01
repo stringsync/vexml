@@ -9,6 +9,8 @@ import { Duration } from './duration';
 import { CursorPath } from './cursorpath';
 import { LazyCursorStateHintProvider } from './lazycursorstatehintprovider';
 import { EmptyCursorFrame } from './emptycursorframe';
+import { ElementDescriber } from './elementdescriber';
+import { HintDescriber } from './hintdescriber';
 
 // NOTE: At 2px and below, there is some antialiasing issues on higher resolutions. The cursor will appear to "pulse" as
 // it moves. This will happen even when rounding the position.
@@ -35,18 +37,23 @@ export class Cursor {
 
   private previousFrame: CursorFrame = new EmptyCursorFrame();
 
-  private constructor(private path: CursorPath, private locator: CursorFrameLocator, private scroller: Scroller) {}
+  private constructor(
+    private path: CursorPath,
+    private locator: CursorFrameLocator,
+    private scroller: Scroller,
+    private elementDescriber: ElementDescriber
+  ) {}
 
-  static create(path: CursorPath, scrollContainer: HTMLElement): Cursor {
+  static create(path: CursorPath, scrollContainer: HTMLElement, elementDescriber: ElementDescriber): Cursor {
     const bSearchLocator = new BSearchCursorFrameLocator(path);
     const fastLocator = new FastCursorFrameLocator(path, bSearchLocator);
     const scroller = new Scroller(scrollContainer);
-    return new Cursor(path, fastLocator, scroller);
+    return new Cursor(path, fastLocator, scroller, elementDescriber);
   }
 
   iterable(): Iterable<CursorState> {
     // Clone the cursor to avoid modifying the index of this instance.
-    const cursor = new Cursor(this.path, this.locator, this.scroller);
+    const cursor = new Cursor(this.path, this.locator, this.scroller, this.elementDescriber);
     return new CursorIterator(cursor);
   }
 
@@ -56,7 +63,8 @@ export class Cursor {
     const hasPrevious = index > 0;
     const frame = this.getCurrentFrame();
     const rect = this.getCursorRect(frame, this.alpha);
-    const hints = new LazyCursorStateHintProvider(frame, this.previousFrame);
+    const hintDescriber = new HintDescriber(this.elementDescriber);
+    const hints = new LazyCursorStateHintProvider(frame, this.previousFrame, hintDescriber);
 
     return {
       index,
