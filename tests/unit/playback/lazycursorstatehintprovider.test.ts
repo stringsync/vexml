@@ -202,14 +202,56 @@ describe(LazyCursorStateHintProvider, () => {
     expect(states[0].hints.toHumanReadable()).toEqual(['start(element(0))']);
   });
 
-  // it('provides for: documents that have backwards formatting', () => {
-  //   const score = render('playback_backwards_formatting.musicxml');
-  //   const cursor = score.addCursor();
+  it('provides for: documents that have backwards formatting', () => {
+    const score = render('playback_backwards_formatting.musicxml');
+    const cursor = score.addCursor();
 
-  //   for (const state of cursor.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
-  // });
+    const states = Array.from(cursor.iterable());
+
+    expect(states).toHaveLength(15);
+    // stave0, voice0: 0     1  2  3  4  5  6  7     8  9 10 11 12 13
+    // stave1, voice0: 14 15       16          17 18      19
+    // stave2, voice1: 20                      21
+    expect(states[0].hints.toHumanReadable()).toEqual([
+      'start(element(0))',
+      'start(element(14))',
+      'start(element(20))',
+    ]);
+    expect(states[1].hints.toHumanReadable()).toEqual(['stop(element(14))', 'start(element(15))']);
+    expect(states[2].hints.toHumanReadable()).toEqual(['stop(element(0))', 'start(element(1))']);
+    expect(states[3].hints.toHumanReadable()).toEqual(['stop(element(1))', 'start(element(2))']);
+    expect(states[4].hints.toHumanReadable()).toEqual([
+      'stop(element(15))',
+      'stop(element(2))',
+      'start(element(3))',
+      'start(element(16))',
+      'sustain(element(15), element(16))',
+    ]);
+    expect(states[5].hints.toHumanReadable()).toEqual(['stop(element(3))', 'start(element(4))']);
+    expect(states[6].hints.toHumanReadable()).toEqual(['stop(element(4))', 'start(element(5))']);
+    expect(states[7].hints.toHumanReadable()).toEqual(['stop(element(5))', 'start(element(6))']);
+    expect(states[8].hints.toHumanReadable()).toEqual([
+      'stop(element(20))',
+      'stop(element(16))',
+      'stop(element(6))',
+      'start(element(7))',
+      'start(element(17))',
+      'start(element(21))',
+      'retrigger(element(20), element(21))',
+    ]);
+    expect(states[9].hints.toHumanReadable()).toEqual(['stop(element(17))', 'start(element(18))']);
+    expect(states[10].hints.toHumanReadable()).toEqual(['stop(element(7))', 'start(element(8))']);
+    expect(states[11].hints.toHumanReadable()).toEqual(['stop(element(8))', 'start(element(9))']);
+    expect(states[12].hints.toHumanReadable()).toEqual([
+      'stop(element(18))',
+      'stop(element(9))',
+      'start(element(10))',
+      'start(element(19))',
+      'sustain(element(18), element(19))',
+    ]);
+    expect(states[13].hints.toHumanReadable()).toEqual(['stop(element(10))', 'start(element(11))']);
+    expect(states[14].hints.toHumanReadable()).toEqual(['stop(element(11))', 'start(element(12))']);
+  });
 
   // it('provides for: chords', () => {
   //   const score = render('playback_chords.musicxml');
