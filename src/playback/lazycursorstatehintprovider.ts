@@ -92,7 +92,7 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
 
     for (const currentNote of currentNotes) {
       const previousNote = previousNotes.find((previousNote) => previousNote.containsEquivalentPitch(currentNote));
-      if (previousNote && previousNote.sharesACurveWith(currentNote)) {
+      if (previousNote && previousNote !== currentNote && previousNote.sharesACurveWith(currentNote)) {
         hints.push({
           type: 'sustain',
           previousElement: previousNote,
