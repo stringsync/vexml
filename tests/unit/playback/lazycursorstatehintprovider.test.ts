@@ -190,14 +190,17 @@ describe(LazyCursorStateHintProvider, () => {
     ]);
   });
 
-  // it('provides for: multiple measures, single stave, multiple systems', () => {
-  //   const score = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
-  //   const cursor = score.addCursor();
+  it('provides for: multiple measures, single stave, multiple systems', () => {
+    const score = render('playback_multi_system.musicxml', { BASE_VOICE_WIDTH: 900 });
+    const cursor = score.addCursor();
 
-  //   for (const state of cursor.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
-  // });
+    const states = Array.from(cursor.iterable());
+
+    expect(states).toHaveLength(1);
+    // system0, stave0: 0
+    // system1, stave0: 1
+    expect(states[0].hints.toHumanReadable()).toEqual(['start(element(0))']);
+  });
 
   // it('provides for: documents that have backwards formatting', () => {
   //   const score = render('playback_backwards_formatting.musicxml');
