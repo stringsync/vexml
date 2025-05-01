@@ -2,8 +2,9 @@ import { Logger } from '@/debug';
 import { Duration } from './duration';
 import { PlaybackElement, TimelineMoment, TimelineMomentEvent, ElementTransitionEvent } from './types';
 import * as elements from '@/elements';
-import { MeasureSequenceIterator } from './measuresequenceiterator';
+import { LegacyMeasureSequenceIterator } from './legacymeasuresequenceiterator';
 import * as util from '@/util';
+import { ElementDescriber } from './elementdescriber';
 
 export class Timeline {
   constructor(private partIndex: number, private moments: TimelineMoment[], private describer: TimelineDescriber) {}
@@ -12,7 +13,8 @@ export class Timeline {
     const partCount = score.getPartCount();
     const timelines = new Array<Timeline>(partCount);
     for (let partIndex = 0; partIndex < partCount; partIndex++) {
-      timelines[partIndex] = new TimelineFactory(log, score, partIndex).create();
+      const elementDescriber = ElementDescriber.create(score, { partIndex });
+      timelines[partIndex] = new TimelineFactory(log, score, partIndex).create(elementDescriber);
     }
     return timelines;
   }
@@ -50,7 +52,7 @@ class TimelineFactory {
 
   constructor(private logger: Logger, private score: elements.Score, private partIndex: number) {}
 
-  create(): Timeline {
+  create(elementDescriber: ElementDescriber): Timeline {
     this.moments = new Map<number, TimelineMoment>();
     this.currentMeasureStartTime = Duration.zero();
 
@@ -58,7 +60,7 @@ class TimelineFactory {
     this.sortEventsWithinMoments();
 
     const moments = this.getSortedMoments();
-    const describer = TimelineDescriber.create(this.score, this.partIndex);
+    const describer = new TimelineDescriber(elementDescriber);
 
     return new Timeline(this.partIndex, moments, describer);
   }
@@ -67,7 +69,7 @@ class TimelineFactory {
     const measures = this.score.getMeasures();
 
     const measureIndexes = Array.from(
-      new MeasureSequenceIterator(measures.map((measure, index) => ({ index, jumps: measure.getJumps() })))
+      new LegacyMeasureSequenceIterator(measures.map((measure, index) => ({ index, jumps: measure.getJumps() })))
     );
 
     const result = new Array<{ measure: elements.Measure; willJump: boolean }>();
@@ -250,22 +252,7 @@ class TimelineFactory {
 }
 
 class TimelineDescriber {
-  private constructor(private elements: Map<PlaybackElement, number>) {}
-
-  static create(score: elements.Score, partIndex: number): TimelineDescriber {
-    const elements = new Map<PlaybackElement, number>();
-    score
-      .getMeasures()
-      .flatMap((measure) => measure.getFragments())
-      .flatMap((fragment) => fragment.getParts().at(partIndex) ?? [])
-      .flatMap((part) => part.getStaves())
-      .flatMap((stave) => stave.getVoices())
-      .flatMap((voice) => voice.getEntries())
-      .forEach((element, index) => {
-        elements.set(element, index);
-      });
-    return new TimelineDescriber(elements);
-  }
+  constructor(private elementDescriber: ElementDescriber) {}
 
   describe(moments: TimelineMoment[]): string[] {
     return moments.map((moment) => this.describeMoment(moment));
@@ -287,7 +274,7 @@ class TimelineDescriber {
   }
 
   private describeTransition(event: ElementTransitionEvent): string {
-    return `${event.kind}(${this.elements.get(event.element)})`;
+    return `${event.kind}(${this.elementDescriber.describe(event.element)})`;
   }
 
   private describeJump(): string {
