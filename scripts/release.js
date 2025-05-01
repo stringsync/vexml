@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
 import path from 'path';
+import readline from 'readline';
 
 const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
 
@@ -62,22 +63,39 @@ function main() {
   const currentVersion = getCurrentVersion();
   const nextVersion = getNextVersion(type, currentVersion);
 
-  console.log(`\x1b[32m🚀 Publishing version ${nextVersion}...\x1b[0m`);
-  updateVersion(nextVersion);
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
-  runCommand('npm install'); // Ensure dependencies are locked with the new version
-  runCommand('npm run build');
-  runCommand(`git commit -am "Release ${nextVersion}"`);
-  runCommand(`git tag v${nextVersion}`);
-  runCommand(`git push origin v${nextVersion}`);
+  rl.question(
+    `\x1b[33mcurrent: ${currentVersion}, next: ${nextVersion} (${type}). Are you sure? (y/n) \x1b[0m`,
+    (answer) => {
+      rl.close();
 
-  // Determine npm tag
-  const npmTag = ['alpha', 'beta', 'rc'].includes(type) ? type : 'latest';
+      if (answer.toLowerCase() !== 'y') {
+        console.log('\x1b[31m❌ Aborted.\x1b[0m');
+        process.exit(0);
+      }
 
-  runCommand(`npm publish --access public --tag ${npmTag}`);
-  runCommand('git push origin master'); // Push changes to repo
+      console.log(`\x1b[32m🚀 Publishing version ${nextVersion}...\x1b[0m`);
+      updateVersion(nextVersion);
 
-  console.log(`\x1b[32m✅ Published ${nextVersion} with tag "${npmTag}".\x1b[0m`);
+      runCommand('npm install'); // Ensure dependencies are locked with the new version
+      runCommand('npm run build');
+      runCommand(`git commit -am "Release ${nextVersion}"`);
+      runCommand(`git tag v${nextVersion}`);
+      runCommand(`git push origin v${nextVersion}`);
+
+      // Determine npm tag
+      const npmTag = ['alpha', 'beta', 'rc'].includes(type) ? type : 'latest';
+
+      runCommand(`npm publish --access public --tag ${npmTag}`);
+      runCommand('git push origin master'); // Push changes to repo
+
+      console.log(`\x1b[32m✅ Published ${nextVersion} with tag "${npmTag}".\x1b[0m`);
+    }
+  );
 }
 
 main();
