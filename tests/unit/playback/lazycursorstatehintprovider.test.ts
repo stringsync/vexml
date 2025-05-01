@@ -253,14 +253,47 @@ describe(LazyCursorStateHintProvider, () => {
     expect(states[14].hints.toHumanReadable()).toEqual(['stop(element(11))', 'start(element(12))']);
   });
 
-  // it('provides for: chords', () => {
-  //   const score = render('playback_chords.musicxml');
-  //   const cursor = score.addCursor();
+  it('provides for: chords', () => {
+    const score = render('playback_chords.musicxml');
+    const cursor0 = score.addCursor({ partIndex: 0 });
+    const cursor1 = score.addCursor({ partIndex: 1 });
 
-  //   for (const state of cursor.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
-  // });
+    const states0 = Array.from(cursor0.iterable());
+    const states1 = Array.from(cursor1.iterable());
+
+    expect(states0).toHaveLength(4);
+    // NOTE: There are rests that overlap with the notes.
+    expect(states0[0].hints.toHumanReadable()).toEqual(['start(element(0))', 'start(element(3))']);
+    expect(states0[1].hints.toHumanReadable()).toEqual([
+      'stop(element(0))',
+      'stop(element(3))',
+      'start(element(1))',
+      'start(element(4))',
+      'start(element(7))',
+      'retrigger(element(0), element(1))',
+    ]);
+    expect(states0[2].hints.toHumanReadable()).toEqual(['stop(element(7))', 'start(element(8))']);
+    expect(states0[3].hints.toHumanReadable()).toEqual([
+      'stop(element(1))',
+      'stop(element(4))',
+      'stop(element(8))',
+      'start(element(2))',
+      'start(element(5))',
+      'start(element(9))',
+    ]);
+
+    expect(states1).toHaveLength(4);
+    // NOTE: There are rests that overlap with the notes.
+    expect(states1[0].hints.toHumanReadable()).toEqual(['start(element(0))']);
+    expect(states1[1].hints.toHumanReadable()).toEqual(['stop(element(0))', 'start(element(1))', 'start(element(4))']);
+    expect(states1[2].hints.toHumanReadable()).toEqual(['stop(element(4))', 'start(element(5))']);
+    expect(states1[3].hints.toHumanReadable()).toEqual([
+      'stop(element(1))',
+      'stop(element(5))',
+      'start(element(2))',
+      'start(element(6))',
+    ]);
+  });
 });
 
 function render(filename: string, config?: Partial<vexml.Config>): vexml.Score {
