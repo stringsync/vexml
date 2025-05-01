@@ -93,19 +93,37 @@ describe(LazyCursorStateHintProvider, () => {
     ]);
   });
 
-  // it('provides for: single measure, multiple staves, multiple parts', () => {
-  //   const score = render('playback_multi_part.musicxml');
-  //   const cursor0 = score.addCursor({ partIndex: 0 });
-  //   const cursor1 = score.addCursor({ partIndex: 1 });
+  it('provides for: single measure, multiple staves, multiple parts', () => {
+    const score = render('playback_multi_part.musicxml');
+    const cursor0 = score.addCursor({ partIndex: 0 });
+    const cursor1 = score.addCursor({ partIndex: 1 });
 
-  //   for (const state of cursor0.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
+    const states0 = Array.from(cursor0.iterable());
+    const states1 = Array.from(cursor1.iterable());
 
-  //   for (const state of cursor1.iterable()) {
-  //     expect(() => state.hints.get()).not.toThrow();
-  //   }
-  // });
+    expect(states0).toHaveLength(3);
+    // stave0: 0 1 2 3
+    expect(states0[0].hints.toHumanReadable()).toEqual(['start(element(0))']);
+    expect(states0[1].hints.toHumanReadable()).toEqual(['stop(element(0))', 'start(element(1))']);
+    expect(states0[2].hints.toHumanReadable()).toEqual(['stop(element(1))', 'start(element(2))']);
+
+    expect(states1).toHaveLength(3);
+    // stave0: 0 1 2 3
+    // stave1: 4 5 6 7
+    expect(states1[0].hints.toHumanReadable()).toEqual(['start(element(0))', 'start(element(4))']);
+    expect(states1[1].hints.toHumanReadable()).toEqual([
+      'stop(element(0))',
+      'stop(element(4))',
+      'start(element(1))',
+      'start(element(5))',
+    ]);
+    expect(states1[2].hints.toHumanReadable()).toEqual([
+      'stop(element(1))',
+      'stop(element(5))',
+      'start(element(2))',
+      'start(element(6))',
+    ]);
+  });
 
   // it('provides for: multiple measures, single stave, different notes', () => {
   //   const score = render('playback_multi_measure.musicxml');
