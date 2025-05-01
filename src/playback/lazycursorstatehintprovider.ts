@@ -10,9 +10,14 @@ import {
   StopHint,
   SustainHint,
 } from './types';
+import { HintDescriber } from './hintdescriber';
 
 export class LazyCursorStateHintProvider implements CursorStateHintProvider {
-  constructor(private currentFrame: CursorFrame, private previousFrame: CursorFrame | undefined) {}
+  constructor(
+    private currentFrame: CursorFrame,
+    private previousFrame: CursorFrame | undefined,
+    private hintDescriber: HintDescriber
+  ) {}
 
   @util.memoize()
   get(): CursorStateHint[] {
@@ -30,14 +35,18 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
     const currentNotes = this.currentFrame.getActiveElements().filter((e) => e.name === 'note');
 
     return [
-      ...this.getStartHints(currentElements, previousElements),
       ...this.getStopHints(currentElements, previousElements),
+      ...this.getStartHints(currentElements, previousElements),
       ...this.getRetriggerHints(currentNotes, previousNotes),
       ...this.getSustainHints(currentNotes, previousNotes),
     ];
   }
 
-  private getStartHints(previousElements: Set<PlaybackElement>, currentElements: Set<PlaybackElement>): StartHint[] {
+  toHumanReadable(): string[] {
+    return this.get().map((hint) => this.hintDescriber.describe(hint));
+  }
+
+  private getStartHints(currentElements: Set<PlaybackElement>, previousElements: Set<PlaybackElement>): StartHint[] {
     const hints = new Array<StartHint>();
 
     for (const element of currentElements) {
@@ -49,7 +58,7 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
     return hints;
   }
 
-  private getStopHints(previousElements: Set<PlaybackElement>, currentElements: Set<PlaybackElement>): StopHint[] {
+  private getStopHints(currentElements: Set<PlaybackElement>, previousElements: Set<PlaybackElement>): StopHint[] {
     const hints = new Array<StopHint>();
 
     for (const element of previousElements) {
@@ -66,7 +75,7 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
 
     for (const currentNote of currentNotes) {
       const previousNote = previousNotes.find((previousNote) => previousNote.containsEquivalentPitch(currentNote));
-      if (previousNote && !previousNote.sharesACurveWith(currentNote)) {
+      if (previousNote && previousNote !== currentNote && !previousNote.sharesACurveWith(currentNote)) {
         hints.push({
           type: 'retrigger',
           untriggerElement: previousNote,
@@ -83,7 +92,7 @@ export class LazyCursorStateHintProvider implements CursorStateHintProvider {
 
     for (const currentNote of currentNotes) {
       const previousNote = previousNotes.find((previousNote) => previousNote.containsEquivalentPitch(currentNote));
-      if (previousNote && previousNote.sharesACurveWith(currentNote)) {
+      if (previousNote && previousNote !== currentNote && previousNote.sharesACurveWith(currentNote)) {
         hints.push({
           type: 'sustain',
           previousElement: previousNote,

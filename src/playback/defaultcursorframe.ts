@@ -4,6 +4,7 @@ import { Logger } from '@/debug';
 import { DurationRange } from './durationrange';
 import { CursorFrame, CursorVerticalSpan, PlaybackElement, TimelineMoment } from './types';
 import { Timeline } from './timeline';
+import { ElementDescriber } from './elementdescriber';
 
 type TRangeSource = {
   moment: TimelineMoment;
@@ -32,7 +33,8 @@ export class DefaultCursorFrame implements CursorFrame {
     log: Logger,
     score: elements.Score,
     timeline: Timeline,
-    span: CursorVerticalSpan
+    span: CursorVerticalSpan,
+    elementDescriber: ElementDescriber
   ): DefaultCursorFrame[] {
     const partCount = score.getPartCount();
     if (partCount === 0) {
@@ -48,7 +50,7 @@ export class DefaultCursorFrame implements CursorFrame {
       throw new Error(`Invalid toPartIndex: ${span.toPartIndex}, must be in [0,${partCount - 1}]`);
     }
 
-    const factory = new CursorFrameFactory(log, score, timeline, span);
+    const factory = new CursorFrameFactory(log, score, timeline, span, elementDescriber);
     return factory.create();
   }
 
@@ -92,9 +94,10 @@ class CursorFrameFactory {
     private log: Logger,
     private score: elements.Score,
     private timeline: Timeline,
-    private span: CursorVerticalSpan
+    private span: CursorVerticalSpan,
+    elementDescriber: ElementDescriber
   ) {
-    this.describer = CursorFrameDescriber.create(score, timeline.getPartIndex());
+    this.describer = new CursorFrameDescriber(elementDescriber);
   }
 
   create(): DefaultCursorFrame[] {
@@ -289,22 +292,7 @@ class CursorFrameFactory {
 }
 
 class CursorFrameDescriber {
-  private constructor(private elements: Map<PlaybackElement, number>) {}
-
-  static create(score: elements.Score, partIndex: number): CursorFrameDescriber {
-    const elements = new Map<PlaybackElement, number>();
-    score
-      .getMeasures()
-      .flatMap((measure) => measure.getFragments())
-      .flatMap((fragment) => fragment.getParts().at(partIndex) ?? [])
-      .flatMap((part) => part.getStaves())
-      .flatMap((stave) => stave.getVoices())
-      .flatMap((voice) => voice.getEntries())
-      .forEach((element, index) => {
-        elements.set(element, index);
-      });
-    return new CursorFrameDescriber(elements);
-  }
+  constructor(private elementDescriber: ElementDescriber) {}
 
   describeTRange(tRangeSources: [TRangeSource, TRangeSource]): string {
     return `[${tRangeSources[0].moment.time.ms}ms - ${tRangeSources[1].moment.time.ms}ms]`;
@@ -321,16 +309,16 @@ class CursorFrameDescriber {
   private describeXRangeSource(source: XRangeSource): string {
     switch (source.type) {
       case 'system':
-        return `${source.bound}(system(${source.system.getIndex()}))`;
+        return `${source.bound}(${this.elementDescriber.describe(source.system)})`;
       case 'measure':
-        return `${source.bound}(measure(${source.measure.getAbsoluteMeasureIndex()}))`;
+        return `${source.bound}(${this.elementDescriber.describe(source.measure)})`;
       case 'element':
-        return `${source.bound}(element(${this.elements.get(source.element)}))`;
+        return `${source.bound}(${this.elementDescriber.describe(source.element)})`;
     }
   }
 
   private describeYRangeSource(source: YRangeSource): string {
-    return `${source.bound}(system(${source.part.getSystemIndex()}), part(${source.part.getIndex()}))`;
+    return `${source.bound}(system(${source.part.getSystemIndex()}), ${this.elementDescriber.describe(source.part)})`;
   }
 }
 

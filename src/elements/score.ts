@@ -78,9 +78,10 @@ export class Score {
     const timeline = this.getTimelines().find((timeline) => timeline.getPartIndex() === partIndex);
     util.assertDefined(timeline);
 
-    const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span);
+    const elementDescriber = playback.ElementDescriber.create(this, { partIndex });
+    const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span, elementDescriber);
     const path = new playback.CursorPath(partIndex, frames);
-    const cursor = playback.Cursor.create(path, this.getScrollContainer());
+    const cursor = playback.Cursor.create(path, this.getScrollContainer(), elementDescriber);
 
     this.cursors.push(cursor);
 
@@ -369,7 +370,8 @@ export class Score {
       const timeline = timelines.find((timeline) => timeline.getPartIndex() === partIndex);
       util.assertDefined(timeline);
       const span = { fromPartIndex: partIndex, toPartIndex: partIndex };
-      const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span);
+      const elementDescriber = playback.ElementDescriber.create(this, { partIndex });
+      const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span, elementDescriber);
       const path = new playback.CursorPath(partIndex, frames);
       paths.push(path);
     }
