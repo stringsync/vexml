@@ -73,7 +73,18 @@ export class Note {
     }
 
     const stem = conversions.fromStemToStemDirection(musicXML.note.getStem());
-    const annotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric(config, log, { lyric }));
+    const lyricAnnotations = musicXML.note.getLyrics().map((lyric) => Annotation.fromLyric(config, log, { lyric }));
+    const fingeringAnnotations = musicXML.note
+      .getNotations()
+      .flatMap(n => n.getTechnicals())
+      .flatMap(t => t.getFingerings())
+      .map(fingering => Annotation.fromFingering(config, log, { fingering }))
+      .filter(a => a !== undefined)
+
+    const annotations = [
+      ...lyricAnnotations,
+      ...fingeringAnnotations
+    ];
 
     const code =
       conversions.fromAccidentalTypeToAccidentalCode(musicXML.note.getAccidentalType()) ??
