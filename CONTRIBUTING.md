@@ -1,10 +1,10 @@
 # Contributing to vexml
 
-## Contribution Workflow
+## Workflow
 
 For development environment setup, please refer to the [Development section](README.md#development) in the README.md.
 
-1. **Fork the repository** (forking is preferred over branching)
+1. Fork the repository
 2. Make your changes, following the codebase's style
 3. Commit using conventional commit style: `"fix issue with X"`
 4. Push to your fork and open a Pull Request
