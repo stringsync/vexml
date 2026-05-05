@@ -103,6 +103,18 @@ export class Score {
     return this.systems.flatMap((system) => system.getMeasures());
   }
 
+  /**
+   * Returns the timestamp in milliseconds at a given point.
+   *
+   * @param x
+   * @param y
+   * @returns
+   */
+  getTimestampMs(x: number, y: number): number | null {
+    const point = new Point(x, y);
+    return this.getTimestampLocator().locate(point)?.ms ?? null;
+  }
+
   /** Returns the duration of the score in milliseconds. */
   getDurationMs(): number {
     return Math.max(0, ...this.getTimelines().map((timeline) => timeline.getDuration().ms));
