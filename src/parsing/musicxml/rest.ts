@@ -8,6 +8,7 @@ import { VoiceContext, VoiceEntryContext } from './contexts';
 import { Time } from './time';
 import { Beam } from './beam';
 import { Tuplet } from './tuplet';
+import { ChordSymbol } from './chordsymbol';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
@@ -21,7 +22,8 @@ export class Rest {
     private duration: util.Fraction,
     private displayPitch: Pitch | null,
     private beam: Beam | null,
-    private tuplets: Tuplet[]
+    private tuplets: Tuplet[],
+    private chordSymbol: ChordSymbol | null
   ) {}
 
   static create(
@@ -29,7 +31,8 @@ export class Rest {
     log: Logger,
     measureBeat: util.Fraction,
     duration: util.Fraction,
-    musicXML: { note: musicxml.Note }
+    musicXML: { note: musicxml.Note },
+    chordSymbol: ChordSymbol | null = null
   ): Rest {
     util.assert(musicXML.note.isRest(), 'Expected note to be a rest');
 
@@ -56,14 +59,25 @@ export class Rest {
       .flatMap((n) => n.getTuplets())
       .map((tuplet) => Tuplet.create(config, log, { tuplet }));
 
-    return new Rest(config, log, measureBeat, durationType, dotCount, duration, displayPitch, beam, tuplets);
+    return new Rest(
+      config,
+      log,
+      measureBeat,
+      durationType,
+      dotCount,
+      duration,
+      displayPitch,
+      beam,
+      tuplets,
+      chordSymbol
+    );
   }
 
   static whole(config: Config, log: Logger, time: Time): Rest {
     const measureBeat = util.Fraction.zero();
     const duration = time.toFraction().multiply(new util.Fraction(4, 1));
     const [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
-    return new Rest(config, log, measureBeat, durationType, dotCount, duration, null, null, []);
+    return new Rest(config, log, measureBeat, durationType, dotCount, duration, null, null, [], null);
   }
 
   parse(voiceCtx: VoiceContext): data.Rest {
@@ -84,6 +98,7 @@ export class Rest {
       beamId: this.beam?.parse(voiceEntryCtx) ?? null,
       pedalMark: voiceEntryCtx.continueOpenPedal(),
       tupletIds,
+      chordSymbol: this.chordSymbol?.parse() ?? null,
     };
   }
 

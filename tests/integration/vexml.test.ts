@@ -41,6 +41,7 @@ describe('vexml', () => {
     { filename: 'tabs_ties.musicxml', width: 900 },
     { filename: 'tabs_vibrato.musicxml', width: 900 },
     { filename: 'tabs_bends.musicxml', width: 900 },
+    { filename: 'chord_symbols.musicxml', width: 900 },
   ])(`$filename ($width px)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
 

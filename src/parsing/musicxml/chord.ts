@@ -2,25 +2,32 @@ import * as data from '@/data';
 import * as musicxml from '@/musicxml';
 import * as util from '@/util';
 import { Note } from './note';
+import { ChordSymbol } from './chordsymbol';
 import { VoiceContext } from './contexts';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
 export class Chord {
-  constructor(private config: Config, private log: Logger, private notes: Note[]) {}
+  constructor(
+    private config: Config,
+    private log: Logger,
+    private notes: Note[],
+    private chordSymbol: ChordSymbol | null
+  ) {}
 
   static create(
     config: Config,
     log: Logger,
     measureBeat: util.Fraction,
     duration: util.Fraction,
-    musicXML: { note: musicxml.Note }
+    musicXML: { note: musicxml.Note },
+    chordSymbol: ChordSymbol | null = null
   ): Chord {
     util.assert(musicXML.note.isChordHead(), 'Expected note to be a chord head');
     const notes = [musicXML.note, ...musicXML.note.getChordTail()].map((note) =>
       Note.create(config, log, measureBeat, duration, { note })
     );
-    return new Chord(config, log, notes);
+    return new Chord(config, log, notes, chordSymbol);
   }
 
   parse(voiceCtx: VoiceContext): data.Chord {
@@ -62,6 +69,7 @@ export class Chord {
       vibratoIds: first.vibratoIds,
       articulations: first.articulations,
       bends: first.bends,
+      chordSymbol: this.chordSymbol?.parse() ?? null,
     };
   }
 }

@@ -21,6 +21,7 @@ export * from './forward';
 export * from './fret';
 export * from './hammeron';
 export * from './harmonic';
+export * from './harmony';
 export * from './heel';
 export * from './invertedmordent';
 export * from './invertedturn';

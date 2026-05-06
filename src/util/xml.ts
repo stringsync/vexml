@@ -1533,3 +1533,142 @@ export const accidentalMark = createNamedElementFactory<'accidental-mark', { typ
     }
   }
 );
+
+export const harmony = createNamedElementFactory<
+  'harmony',
+  {
+    root: NamedElement<'root'>;
+    kind: NamedElement<'kind'>;
+    bass: NamedElement<'bass'>;
+    degrees: NamedElement<'degree'>[];
+    offset: NamedElement<'offset'>;
+  }
+>('harmony', (e, { root, kind, bass, degrees, offset }) => {
+  if (root) {
+    e.append(root);
+  }
+  if (kind) {
+    e.append(kind);
+  }
+  if (bass) {
+    e.append(bass);
+  }
+  if (degrees) {
+    e.append(...degrees);
+  }
+  if (offset) {
+    e.append(offset);
+  }
+});
+
+export const root = createNamedElementFactory<
+  'root',
+  {
+    rootStep: NamedElement<'root-step'>;
+    rootAlter: NamedElement<'root-alter'>;
+  }
+>('root', (e, { rootStep, rootAlter }) => {
+  if (rootStep) {
+    e.append(rootStep);
+  }
+  if (rootAlter) {
+    e.append(rootAlter);
+  }
+});
+
+export const rootStep = createNamedElementFactory<'root-step', { value: string }>('root-step', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const rootAlter = createNamedElementFactory<'root-alter', { value: number }>('root-alter', (e, { value }) => {
+  if (typeof value === 'number') {
+    e.setTextContent(value.toString());
+  }
+});
+
+export const kind = createNamedElementFactory<'kind', { value: string; text: string }>('kind', (e, { value, text }) => {
+  if (typeof value === 'string') {
+    e.setTextContent(value);
+  }
+  if (typeof text === 'string') {
+    e.setAttribute('text', text);
+  }
+});
+
+export const bass = createNamedElementFactory<
+  'bass',
+  {
+    bassStep: NamedElement<'bass-step'>;
+    bassAlter: NamedElement<'bass-alter'>;
+  }
+>('bass', (e, { bassStep, bassAlter }) => {
+  if (bassStep) {
+    e.append(bassStep);
+  }
+  if (bassAlter) {
+    e.append(bassAlter);
+  }
+});
+
+export const bassStep = createNamedElementFactory<'bass-step', { value: string }>('bass-step', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const bassAlter = createNamedElementFactory<'bass-alter', { value: number }>('bass-alter', (e, { value }) => {
+  if (typeof value === 'number') {
+    e.setTextContent(value.toString());
+  }
+});
+
+export const degree = createNamedElementFactory<
+  'degree',
+  {
+    degreeValue: NamedElement<'degree-value'>;
+    degreeAlter: NamedElement<'degree-alter'>;
+    degreeType: NamedElement<'degree-type'>;
+  }
+>('degree', (e, { degreeValue, degreeAlter, degreeType }) => {
+  if (degreeValue) {
+    e.append(degreeValue);
+  }
+  if (degreeAlter) {
+    e.append(degreeAlter);
+  }
+  if (degreeType) {
+    e.append(degreeType);
+  }
+});
+
+export const degreeValue = createNamedElementFactory<'degree-value', { value: number }>(
+  'degree-value',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const degreeAlter = createNamedElementFactory<'degree-alter', { value: number }>(
+  'degree-alter',
+  (e, { value }) => {
+    if (typeof value === 'number') {
+      e.setTextContent(value.toString());
+    }
+  }
+);
+
+export const degreeType = createNamedElementFactory<'degree-type', { value: string }>('degree-type', (e, { value }) => {
+  if (value) {
+    e.setTextContent(value);
+  }
+});
+
+export const offset = createNamedElementFactory<'offset', { value: number }>('offset', (e, { value }) => {
+  if (typeof value === 'number') {
+    e.setTextContent(value.toString());
+  }
+});

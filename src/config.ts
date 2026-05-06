@@ -118,6 +118,20 @@ export const CONFIG = {
     defaultValue: 'all',
     help: 'MEASURE_LABELING_SCHEME is the scheme for showing measure labels.',
   }),
+  CHORD_SYMBOL_FONT_FAMILY: t.string({
+    defaultValue: 'Roboto Slab, Times, Bravura, serif',
+    help:
+      'CHORD_SYMBOL_FONT_FAMILY is the font family used to render chord symbols above the staff. ' +
+      'Should include Bravura (or another SMuFL music font) as a fallback so accidental and chord-quality glyphs render.',
+  }),
+  CHORD_SYMBOL_FONT_SIZE: t.number({
+    defaultValue: 12,
+    help: 'CHORD_SYMBOL_FONT_SIZE is the font size in points used to render chord symbols above the staff.',
+  }),
+  CHORD_SYMBOL_FONT_WEIGHT: t.string({
+    defaultValue: 'normal',
+    help: 'CHORD_SYMBOL_FONT_WEIGHT is the font weight used to render chord symbols above the staff.',
+  }),
   DEFAULT_GAP_OVERLAY_FONT_SIZE: t.string({
     defaultValue: '12px',
     help: 'DEFAULT_GAP_OVERLAY_FONT_SIZE is the font size for gap overlays.',
