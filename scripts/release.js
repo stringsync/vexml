@@ -54,6 +54,13 @@ function main() {
     process.exit(1);
   }
 
+  try {
+    execSync('npm whoami', { stdio: 'ignore' });
+  } catch {
+    console.error('\x1b[31m❌ You are not logged in to npm. Run `npm login` before publishing.\x1b[0m');
+    process.exit(1);
+  }
+
   const type = process.argv[2]; // Get version type from CLI args
   if (!type) {
     console.error('\x1b[31m❌ Please specify a version type (alpha, beta, rc, patch, minor, major)\x1b[0m');
