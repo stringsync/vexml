@@ -4,6 +4,7 @@ import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Document } from './document';
 import { RestRender, VoiceEntryKey } from './types';
+import { ChordSymbol } from './chordsymbol';
 
 export class Rest {
   constructor(private config: Config, private log: Logger, private document: Document, private key: VoiceEntryKey) {}
@@ -31,6 +32,11 @@ export class Rest {
       vexflow.Dot.buildAndAttach([vexflowNote]);
     }
 
+    const chordSymbolRender = new ChordSymbol(this.config, this.log, this.document, this.key).render();
+    for (const vexflowModifier of chordSymbolRender.vexflowModifiers) {
+      vexflowNote.addModifier(vexflowModifier);
+    }
+
     return {
       type: 'rest',
       key: this.key,
@@ -38,6 +44,7 @@ export class Rest {
       vexflowNote: vexflowNote,
       beamId: rest.beamId,
       tupletIds: rest.tupletIds,
+      chordSymbolRender,
     };
   }
   private getVexflowStaveKeys(): string[] {

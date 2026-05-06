@@ -9,6 +9,7 @@ import {
   BeamKey,
   BeamRender,
   BendRender,
+  ChordSymbolRender,
   GraceCurve,
   NoteRender,
   VoiceEntryKey,
@@ -18,6 +19,7 @@ import { Rect } from '@/spatial';
 import { Beam } from './beam';
 import { Articulation } from './articulation';
 import { Bend } from './bend';
+import { ChordSymbol } from './chordsymbol';
 
 const GRACE_TAB_NOTE_FONT_SIZE = 7;
 
@@ -87,6 +89,7 @@ export class Note {
 
     const articulationRenders = this.renderArticulations(vexflowNote);
     const bendRenders = this.renderBends(vexflowNote);
+    const chordSymbolRender = this.renderChordSymbol(vexflowNote);
 
     return {
       type: 'note',
@@ -107,6 +110,7 @@ export class Note {
       vibratoIds: voiceEntry.vibratoIds,
       articulationRenders,
       bendRenders,
+      chordSymbolRender,
     };
   }
 
@@ -457,6 +461,14 @@ export class Note {
     }
 
     return articulationRenders;
+  }
+
+  private renderChordSymbol(vexflowNote: vexflow.Note): ChordSymbolRender {
+    const chordSymbolRender = new ChordSymbol(this.config, this.log, this.document, this.key).render();
+    for (const vexflowModifier of chordSymbolRender.vexflowModifiers) {
+      vexflowNote.addModifier(vexflowModifier, 0);
+    }
+    return chordSymbolRender;
   }
 
   private renderBends(vexflowNote: vexflow.Note): BendRender[] {

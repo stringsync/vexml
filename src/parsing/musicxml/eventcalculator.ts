@@ -14,6 +14,7 @@ import { Dynamics } from './dynamics';
 import { Wedge } from './wedge';
 import { Pedal } from './pedal';
 import { OctaveShift } from './octaveshift';
+import { ChordSymbol } from './chordsymbol';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
@@ -54,9 +55,11 @@ export class EventCalculator {
 
       for (let measureIndex = 0; measureIndex < measures.length; measureIndex++) {
         this.measureBeat = Fraction.zero();
+        const entries = measures[measureIndex].getEntries();
+        const chordSymbols = this.getChordSymbolByNote(entries);
 
-        for (const entry of measures[measureIndex].getEntries()) {
-          this.process(entry, partId, measureIndex);
+        for (const entry of entries) {
+          this.process(entry, partId, measureIndex, chordSymbols);
         }
       }
     }
@@ -64,9 +67,14 @@ export class EventCalculator {
     return this.events;
   }
 
-  private process(entry: musicxml.MeasureEntry, partId: string, measureIndex: number): void {
+  private process(
+    entry: musicxml.MeasureEntry,
+    partId: string,
+    measureIndex: number,
+    chordSymbols: Map<musicxml.Note, ChordSymbol>
+  ): void {
     if (entry instanceof musicxml.Note) {
-      this.processNote(entry, partId, measureIndex);
+      this.processNote(entry, partId, measureIndex, chordSymbols.get(entry) ?? null);
     }
 
     if (entry instanceof musicxml.Backup) {
@@ -86,7 +94,33 @@ export class EventCalculator {
     }
   }
 
-  private processNote(note: musicxml.Note, partId: string, measureIndex: number): void {
+  private getChordSymbolByNote(entries: musicxml.MeasureEntry[]): Map<musicxml.Note, ChordSymbol> {
+    const result = new Map<musicxml.Note, ChordSymbol>();
+
+    // Pairs each non-grace, non-chord-tail note with the most recent preceding <harmony>. MusicXML allows
+    // multiple <harmony>s before a single entry; we silently keep only the last.
+    let pending: ChordSymbol | null = null;
+    for (const entry of entries) {
+      if (entry instanceof musicxml.Harmony) {
+        pending = ChordSymbol.create(this.config, this.log, { harmony: entry }) ?? pending;
+      }
+
+      const isElgibleNote = entry instanceof musicxml.Note && !entry.isChordTail() && !entry.isGrace();
+      if (isElgibleNote && pending) {
+        result.set(entry, pending);
+        pending = null;
+      }
+    }
+
+    return result;
+  }
+
+  private processNote(
+    note: musicxml.Note,
+    partId: string,
+    measureIndex: number,
+    chordSymbol: ChordSymbol | null
+  ): void {
     const staveNumber = this.resolveStaveNumber(partId, note.getStaveNumber());
     const voiceId = this.resolveVoiceId(partId, note.getVoice());
 
@@ -108,7 +142,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        chord: Chord.create(this.config, this.log, this.measureBeat, duration, { note }),
+        chord: Chord.create(this.config, this.log, this.measureBeat, duration, { note }, chordSymbol),
       });
     } else if (note.isRest()) {
       this.events.push({
@@ -119,7 +153,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        rest: Rest.create(this.config, this.log, this.measureBeat, duration, { note }),
+        rest: Rest.create(this.config, this.log, this.measureBeat, duration, { note }, chordSymbol),
       });
     } else {
       this.events.push({
@@ -130,7 +164,7 @@ export class EventCalculator {
         voiceId,
         measureBeat: this.measureBeat,
         duration,
-        note: Note.create(this.config, this.log, this.measureBeat, duration, { note }),
+        note: Note.create(this.config, this.log, this.measureBeat, duration, { note }, chordSymbol),
       });
     }
 

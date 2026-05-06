@@ -15,6 +15,7 @@ import { Vibrato } from './vibrato';
 import { Articulation } from './articulation';
 import { Bend } from './bend';
 import { TabPosition } from './tabposition';
+import { ChordSymbol } from './chordsymbol';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
@@ -53,7 +54,8 @@ export class Note {
     private vibratos: Vibrato[],
     private articulations: Articulation[],
     private bends: Bend[],
-    private tabPositions: TabPosition[]
+    private tabPositions: TabPosition[],
+    private chordSymbol: ChordSymbol | null
   ) {}
 
   static create(
@@ -61,7 +63,8 @@ export class Note {
     log: Logger,
     measureBeat: util.Fraction,
     duration: util.Fraction,
-    musicXML: { note: musicxml.Note }
+    musicXML: { note: musicxml.Note },
+    chordSymbol: ChordSymbol | null = null
   ): Note {
     const pitch = new Pitch(config, log, musicXML.note.getStep(), musicXML.note.getOctave());
     const head = conversions.fromNoteheadToNotehead(musicXML.note.getNotehead());
@@ -156,7 +159,8 @@ export class Note {
       vibratos,
       articulations,
       bends,
-      fretPositions
+      fretPositions,
+      chordSymbol
     );
   }
 
@@ -195,6 +199,7 @@ export class Note {
       articulations: this.articulations.map((articulation) => articulation.parse()),
       bends: this.bends.map((bend) => bend.parse()),
       tabPositions: this.tabPositions.map((fretPosition) => fretPosition.parse()),
+      chordSymbol: this.chordSymbol?.parse() ?? null,
     };
   }
 

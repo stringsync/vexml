@@ -6,6 +6,8 @@ import {
   ArticulationType as ArticulationType,
   BarlineStyle,
   BendType,
+  ChordSymbolDegreeType,
+  ChordSymbolKind,
   ClefSign,
   CurveArticulation,
   CurveOpening,
@@ -212,6 +214,7 @@ export type Note = {
   vibratoIds: string[];
   bends: Bend[];
   tabPositions: TabPosition[];
+  chordSymbol: ChordSymbol | null;
 };
 
 export type TabPosition = {
@@ -246,6 +249,7 @@ export type Chord = {
   octaveShiftId: string | null;
   vibratoIds: string[];
   bends: Bend[];
+  chordSymbol: ChordSymbol | null;
 };
 
 export type ChordNote = {
@@ -311,6 +315,7 @@ export type Rest = {
   beamId: string | null;
   tupletIds: string[];
   pedalMark: PedalMark | null;
+  chordSymbol: ChordSymbol | null;
 };
 
 export type Pitch = {
@@ -378,4 +383,32 @@ export type Articulation = {
   type: 'articulation';
   articulationType: ArticulationType;
   placement: ArticulationPlacement;
+};
+
+export type ChordSymbol = {
+  type: 'chordsymbol';
+  root: ChordSymbolRoot;
+  kind: ChordSymbolKind;
+  kindText: string | null;
+  bass: ChordSymbolBass | null;
+  degrees: ChordSymbolDegree[];
+};
+
+export type ChordSymbolRoot = {
+  type: 'chordsymbolroot';
+  step: string;
+  alter: number;
+};
+
+export type ChordSymbolBass = {
+  type: 'chordsymbolbass';
+  step: string;
+  alter: number;
+};
+
+export type ChordSymbolDegree = {
+  type: 'chordsymboldegree';
+  value: number;
+  alter: number;
+  degreeType: ChordSymbolDegreeType;
 };

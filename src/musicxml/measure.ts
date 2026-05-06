@@ -7,8 +7,9 @@ import { Print } from './print';
 import { Backup } from './backup';
 import { Forward } from './forward';
 import { Direction } from './direction';
+import { Harmony } from './harmony';
 
-export type MeasureEntry = Attributes | Note | Backup | Forward | Direction;
+export type MeasureEntry = Attributes | Note | Backup | Forward | Direction | Harmony;
 
 /**
  * Measure is a basic musical data container that has notes and rests.
@@ -40,7 +41,7 @@ export class Measure {
 
   /** Returns the entries of the measure. */
   getEntries(): MeasureEntry[] {
-    return this.element.children('attributes', 'note', 'backup', 'forward', 'direction').map((element) => {
+    return this.element.children('attributes', 'note', 'backup', 'forward', 'direction', 'harmony').map((element) => {
       if (element.isNamed('attributes')) {
         return new Attributes(element);
       }
@@ -55,6 +56,9 @@ export class Measure {
       }
       if (element.isNamed('direction')) {
         return new Direction(element);
+      }
+      if (element.isNamed('harmony')) {
+        return new Harmony(element);
       }
       throw new Error(`unexpected element: <${element.name}>`);
     });

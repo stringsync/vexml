@@ -247,6 +247,7 @@ export type NoteRender = {
   bendRenders: BendRender[];
   graceBeamRenders: BeamRender[];
   articulationRenders: ArticulationRender[];
+  chordSymbolRender: ChordSymbolRender;
 };
 
 export type GraceCurve = {
@@ -261,6 +262,7 @@ export type RestRender = {
   vexflowNote: vexflow.Note;
   beamId: string | null;
   tupletIds: string[];
+  chordSymbolRender: ChordSymbolRender;
 };
 
 export type DynamicsRender = {
@@ -315,6 +317,13 @@ export type ArticulationRender = {
 
 export type BendRender = {
   type: 'bend';
+  key: VoiceEntryKey;
+  rect: Rect;
+  vexflowModifiers: vexflow.Modifier[];
+};
+
+export type ChordSymbolRender = {
+  type: 'chordsymbol';
   key: VoiceEntryKey;
   rect: Rect;
   vexflowModifiers: vexflow.Modifier[];

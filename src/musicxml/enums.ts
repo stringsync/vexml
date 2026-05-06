@@ -371,6 +371,56 @@ export type BendType = EnumValues<typeof BEND_TYPES>;
 export const BEND_TYPES = new Enum(['normal', 'pre-bend', 'release'] as const);
 
 /**
+ * The semantic kind of a chord symbol.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/kind-value/
+ */
+export type ChordSymbolKind = EnumValues<typeof CHORD_SYMBOL_KINDS>;
+export const CHORD_SYMBOL_KINDS = new Enum([
+  'major',
+  'minor',
+  'augmented',
+  'diminished',
+  'dominant',
+  'major-seventh',
+  'minor-seventh',
+  'diminished-seventh',
+  'augmented-seventh',
+  'half-diminished',
+  'major-minor',
+  'major-sixth',
+  'minor-sixth',
+  'dominant-ninth',
+  'major-ninth',
+  'minor-ninth',
+  'dominant-11th',
+  'major-11th',
+  'minor-11th',
+  'dominant-13th',
+  'major-13th',
+  'minor-13th',
+  'suspended-second',
+  'suspended-fourth',
+  'neapolitan',
+  'italian',
+  'french',
+  'german',
+  'pedal',
+  'power',
+  'tristan',
+  'other',
+  'none',
+] as const);
+
+/**
+ * The type of a chord symbol degree modification.
+ *
+ * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/degree-type/
+ */
+export type ChordSymbolDegreeType = EnumValues<typeof CHORD_SYMBOL_DEGREE_TYPES>;
+export const CHORD_SYMBOL_DEGREE_TYPES = new Enum(['add', 'alter', 'subtract'] as const);
+
+/**
  * The different kinds of dynamics.
  *
  * See https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/dynamics/
