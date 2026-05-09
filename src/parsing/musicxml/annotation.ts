@@ -21,6 +21,14 @@ export class Annotation {
     return new Annotation(config, log, machine.getText(), 'center', 'bottom');
   }
 
+  static fromFingering(config: Config, log: Logger, musicXML: { fingering: musicxml.Fingering }): Annotation | null {
+    const number = musicXML.fingering.getNumber();
+    if (typeof number === 'number') {
+      return new Annotation(config, log, `${number}`, 'center', 'top');
+    }
+    return null;
+  }
+
   parse(): data.Annotation {
     return {
       type: 'annotation',
