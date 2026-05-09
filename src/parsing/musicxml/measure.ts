@@ -134,6 +134,12 @@ export class Measure {
       fragments.push(Fragment.create(config, log, signature, buffer, partIds));
     }
 
+    // Ensure every measure has at least one fragment so the Part structure is preserved
+    // for empty measures (e.g. when <attributes> and notes are missing).
+    if (fragments.length === 0) {
+      fragments.push(Fragment.create(config, log, signature, [], partIds));
+    }
+
     return fragments;
   }
 
