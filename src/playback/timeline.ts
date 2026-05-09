@@ -96,6 +96,18 @@ class TimelineFactory {
     return Duration.ms(ms);
   }
 
+  /**
+   * Converts a beat offset relative to a base time into an absolute Duration, rounding only the
+   * final cumulative ms value.
+   *
+   * This avoids accumulating rounding error across voices that subdivide a measure differently
+   * (e.g., one voice uses 6 eighth notes while another uses 2 half notes — both should land on
+   * the same measure-end ms even though each note's rounded duration differs).
+   */
+  private toAbsoluteTime(beatOffset: util.Fraction, bpm: number): Duration {
+    return Duration.ms(Math.round(beatOffset.divide(new util.Fraction(bpm)).toDecimal() * 60000));
+  }
+
   private populateMoments(): void {
     for (const { measure, willJump } of this.getMeasuresInPlaybackOrder()) {
       if (measure.isMultiMeasure()) {
@@ -171,10 +183,13 @@ class TimelineFactory {
     const bpm = fragment.getBpm();
 
     for (const voiceEntry of voice.getEntries()) {
-      const duration = this.toDuration(voiceEntry.getBeatCount(), bpm);
-      // NOTE: getStartMeasureBeat() is relative to the start of the measure.
-      const startTime = this.currentMeasureStartTime.add(this.toDuration(voiceEntry.getStartMeasureBeat(), bpm));
-      const stopTime = startTime.add(duration);
+      // NOTE: getStartMeasureBeat() is relative to the start of the measure. We convert the
+      // absolute beat positions (start and stop) to ms and round once, so voices that subdivide
+      // the measure differently still align on shared beats.
+      const startBeat = voiceEntry.getStartMeasureBeat();
+      const stopBeat = startBeat.add(voiceEntry.getBeatCount());
+      const startTime = this.currentMeasureStartTime.add(this.toAbsoluteTime(startBeat, bpm));
+      const stopTime = this.currentMeasureStartTime.add(this.toAbsoluteTime(stopBeat, bpm));
 
       this.addTransitionStartEvent(startTime, measure, voiceEntry);
       this.addTransitionStopEvent(stopTime, measure, voiceEntry);
