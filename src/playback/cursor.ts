@@ -6,7 +6,6 @@ import { CursorFrame, CursorFrameLocator, CursorStateHintProvider } from './type
 import { FastCursorFrameLocator } from './fastcursorframelocator';
 import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
 import { Duration } from './duration';
-import { CursorPath } from './cursorpath';
 import { LazyCursorStateHintProvider } from './lazycursorstatehintprovider';
 import { EmptyCursorFrame } from './emptycursorframe';
 import { ElementDescriber } from './elementdescriber';
@@ -38,28 +37,28 @@ export class Cursor {
   private previousFrame: CursorFrame = new EmptyCursorFrame();
 
   private constructor(
-    private path: CursorPath,
+    private frames: CursorFrame[],
     private locator: CursorFrameLocator,
     private scroller: Scroller,
     private elementDescriber: ElementDescriber
   ) {}
 
-  static create(path: CursorPath, scrollContainer: HTMLElement, elementDescriber: ElementDescriber): Cursor {
-    const bSearchLocator = new BSearchCursorFrameLocator(path);
-    const fastLocator = new FastCursorFrameLocator(path, bSearchLocator);
+  static create(frames: CursorFrame[], scrollContainer: HTMLElement, elementDescriber: ElementDescriber): Cursor {
+    const bSearchLocator = new BSearchCursorFrameLocator(frames);
+    const fastLocator = new FastCursorFrameLocator(frames, bSearchLocator);
     const scroller = new Scroller(scrollContainer);
-    return new Cursor(path, fastLocator, scroller, elementDescriber);
+    return new Cursor(frames, fastLocator, scroller, elementDescriber);
   }
 
   iterable(): Iterable<CursorState> {
     // Clone the cursor to avoid modifying the index of this instance.
-    const cursor = new Cursor(this.path, this.locator, this.scroller, this.elementDescriber);
+    const cursor = new Cursor(this.frames, this.locator, this.scroller, this.elementDescriber);
     return new CursorIterator(cursor);
   }
 
   getCurrentState(): CursorState {
     const index = this.index;
-    const hasNext = index < this.path.getFrames().length - 1;
+    const hasNext = index < this.frames.length - 1;
     const hasPrevious = index > 0;
     const frame = this.getCurrentFrame();
     const rect = this.getCursorRect(frame, this.alpha);
@@ -77,11 +76,11 @@ export class Cursor {
   }
 
   getCursorFrames(): CursorFrame[] {
-    return this.path.getFrames();
+    return this.frames;
   }
 
   next(): void {
-    if (this.index === this.path.getFrames().length - 1) {
+    if (this.index === this.frames.length - 1) {
       this.update(this.index, { alpha: 1 });
     } else {
       this.update(this.index + 1, { alpha: 0 });
@@ -109,7 +108,7 @@ export class Cursor {
     const time = this.normalize(timestampMs);
     const index = this.locator.locate(time);
     util.assertNotNull(index, 'Cursor frame locator failed to find a frame.');
-    const entry = this.path.getFrames().at(index);
+    const entry = this.frames.at(index);
     util.assertDefined(entry);
 
     const left = entry.tRange.start;
@@ -152,7 +151,7 @@ export class Cursor {
   }
 
   private getCurrentFrame(): CursorFrame {
-    return this.path.getFrames().at(this.index) ?? new EmptyCursorFrame();
+    return this.frames.at(this.index) ?? new EmptyCursorFrame();
   }
 
   private getScrollPoint(): Point {
@@ -168,7 +167,7 @@ export class Cursor {
   }
 
   private getDuration(): Duration {
-    return this.path.getFrames().at(-1)?.tRange.end ?? Duration.zero();
+    return this.frames.at(-1)?.tRange.end ?? Duration.zero();
   }
 
   private getCursorRect(frame: CursorFrame, alpha: number): Rect {
@@ -180,7 +179,7 @@ export class Cursor {
   }
 
   private update(index: number, { alpha }: { alpha: number }): void {
-    index = util.clamp(0, this.path.getFrames().length - 1, index);
+    index = util.clamp(0, this.frames.length - 1, index);
     alpha = util.clamp(0, 1, alpha);
     // Round to 3 decimal places to avoid overloading the event system with redundant updates.
     alpha = Math.round(alpha * 1000) / 1000;
