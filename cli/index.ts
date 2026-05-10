@@ -35,11 +35,12 @@ program
   .description('run jest in Docker')
   .allowUnknownOption(true)
   .option('-l, --local', 'run jest locally instead of in Docker', false)
+  .option('--ci', 'run in CI mode (no TTY, forwards --ci to jest)', false)
   .argument('[args...]', 'extra args forwarded to jest', [])
   .action(
     withErrorHandling(
-      withTiming(async (args: string[], opts: { local: boolean }) => {
-        await test({ local: opts.local, args });
+      withTiming(async (args: string[], opts: { local: boolean; ci: boolean }) => {
+        await test({ local: opts.local, ci: opts.ci, args });
       })
     )
   );
