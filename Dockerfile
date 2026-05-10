@@ -12,7 +12,8 @@ WORKDIR /vexml
 # Install dependencies.
 COPY package.json .
 COPY package-lock.json .
-RUN npm install
+COPY .npmrc .
+RUN npm ci
 
 # Copy config.
 COPY jest.config.js .
@@ -27,4 +28,4 @@ COPY src src
 COPY tests tests
 
 # Run the test by default.
-CMD [ "npm", "run", "jest" ]
+CMD ["npx", "jest"]

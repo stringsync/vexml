@@ -33,15 +33,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
       - name: Install dependencies
         # Includes @rollup/rollup-linux-x64-gnu, which is an optional dependency required for Vite.
         run: npm install @rollup/rollup-linux-x64-gnu --save-dev
       - name: Build
-        run: npm run build:site
+        run: npx vex build site
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

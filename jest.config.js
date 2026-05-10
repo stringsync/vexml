@@ -4,6 +4,7 @@ export default {
   setupFilesAfterEnv: ['jest-extended/all', './jest.setup.js'],
   testEnvironment: './PuppeteerEnvironment.js',
   testTimeout: 30000,
+  testPathIgnorePatterns: ['/node_modules/', '/cli/'],
   moduleNameMapper: {
     '@/(.*)': '<rootDir>/src/$1',
   },
