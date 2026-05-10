@@ -27,4 +27,4 @@ COPY src src
 COPY tests tests
 
 # Run the test by default.
-CMD [ "npm", "run", "jest" ]
+CMD ["npx", "jest"]

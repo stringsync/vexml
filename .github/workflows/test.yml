@@ -12,13 +12,14 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - name: install
         run: npm ci
-      - name: lint
-        run: npm run lint
-      - name: check format
-        run: npm run formatcheck
-      - name: typecheck
-        run: npm run typecheck
+      - name: fix
+        run: npx vex fix --check
       - name: test
-        run: npm run test:ci
+        run: npx vex test --ci

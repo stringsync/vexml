@@ -4,3 +4,4 @@ node_modules
 __diff_output__
 coverage
 __tmp_image_snapshots__
+.claude

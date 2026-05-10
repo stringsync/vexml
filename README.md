@@ -177,6 +177,8 @@ const formatter = new vexml.DefaultFormatter({ config });
 
 ### Prerequisites
 
+You need [Node.js](https://nodejs.org) `>= 22.6` to run the `vex` CLI (it relies on `--experimental-strip-types` to execute TypeScript directly, which was added in [Node.js 22.6.0](https://nodejs.org/en/blog/release/v22.6.0)).
+
 You need [docker](https://docs.docker.com/engine/install) to run the integration tests.
 
 ### Installing
@@ -187,12 +189,29 @@ Before you run any commands, install the dependencies.
 npm install
 ```
 
+### The `vex` CLI
+
+All dev tasks run through the `vex` CLI defined under [`cli/`](cli). After `npm install`, you have two ways to invoke it:
+
+- **`npx vex <command>`** — works out of the box, no extra setup.
+- **`vex <command>`** — shorter, but requires a one-time install. Run `npm link` from the repo root to add `vex` to your PATH; run `npm unlink` from the repo root to remove it.
+
+```sh
+npx vex --help
+# or, after `npm link`:
+vex --help
+```
+
+The rest of this README uses `npx vex` for the examples; substitute `vex` if you've installed it globally.
+
+The CLI requires Node.js >= 22.6 (it uses `--experimental-strip-types` to run TypeScript directly).
+
 ### Running the Dev Server
 
 In order to run a dev server that hot reloads `vexml` changes, run:
 
 ```sh
-npm run dev
+npx vex dev
 ```
 
 You should be able to "save" MusicXML documents in localstorage using the dev app, which will cause the documents to survive refreshing the page.
@@ -202,7 +221,7 @@ You should be able to "save" MusicXML documents in localstorage using the dev ap
 In order to run tests on x86 architecture, run:
 
 ```sh
-npm run test
+npx vex test
 ```
 
 If you're running a machine using ARM architecture (such as an M series mac), try setting the default platform before running the command (or set it in your shell profile):
@@ -211,39 +230,23 @@ If you're running a machine using ARM architecture (such as an M series mac), tr
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
 ```
 
-These commands are just an alias for `jest`, so you use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
+Extra arguments are forwarded to jest, so you can use all the [jest CLI options](https://jestjs.io/docs/cli). For example, to run in watch mode:
 
-```
-npm run test -- --watchAll
-```
-
-To bypass Docker, run:
-
-```
-npm run jest
+```sh
+npx vex test --watchAll
 ```
 
-This will cause snapshots to be saved to `tests/integration/__tmp_image_snapshots__`, which is ignored by git. **It is important that you run it for the first time on a branch without any changes.** Doing this on a dirty branch could cause you to have an incorrect snapshot, which may cause problems when developing.
+To skip Docker and run jest directly against your local environment, use `--local` (or `-l`). This is faster, but image snapshots will likely diff against the canonical Docker-rendered ones:
 
-If you suspect issues with the tmp snapshots, run the following command to retake the snapshots (which is scripted to do this at origin/master):
-
-```
-npm run resnap
+```sh
+npx vex test --local
 ```
 
-### Debugging Tests
+If you suspect issues with the tmp snapshots, run the following command to retake the snapshots from `origin/master`:
 
-To run a debugger, run:
-
+```sh
+npx vex resnap
 ```
-npm run debug
-```
-
-If you're using VSCode, open the debugging tool and launch `Attach to Process`. You can set breakpoints in VSCode or insert `debugger` statements to cause execution to pause.
-
-If you're not using VSCode, open Chrome and visit chrome://inspect. You should see a virtual device that starts with `./node_modules/.bin/jest` with an "inspect" button. Clicking this will allow you to use the Chrome debugger.
-
-If you're still having issues, check the jest [docs](https://jestjs.io/docs/troubleshooting) or file an issue.
 
 ### Snapshots
 
@@ -255,12 +258,12 @@ You can see diff images in the `__diff_output__` directory (nested under `__imag
 
 #### Updating Snapshots
 
-Rendering varies by platform, so it is important you run tests using the `npm run test*` commands, since that runs tests in a consistent environment (via Docker). This is also the environment that CI will use.
+Rendering varies by platform, so it is important you run tests using `npx vex test`, since that runs tests in a consistent environment (via Docker). This is also the environment that CI will use.
 
-When you want to update all snapshots, rerun the test command with the `--updateSnapshot`.
+When you want to update all snapshots, rerun the test command with `--updateSnapshot`.
 
 ```sh
-npm run test -- --updateSnapshot
+npx vex test --updateSnapshot
 ```
 
 If you want to only update a single snapshot from specific test, you can use [`--testNamePattern`](https://jestjs.io/docs/cli#--testnamepatternregex).
@@ -274,7 +277,7 @@ When removing a test, it is important to remove the corresponding snapshot. Ther
 You can publish a `vexml` version by running the release script:
 
 ```sh
-npm run release [alpha|beta|rc|patch|minor|major]
+npx vex release [patch|minor|major]
 ```
 
 It should create the git tags needed to create a release on GitHub.
