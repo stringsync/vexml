@@ -2,7 +2,6 @@ import * as spatial from '@/spatial';
 import * as elements from '@/elements';
 import * as util from '@/util';
 import { Duration } from './duration';
-import { CursorPath } from './cursorpath';
 import { CursorFrame } from './types';
 
 type System = {
@@ -13,18 +12,16 @@ type System = {
 export class TimestampLocator {
   private constructor(private systems: System[]) {}
 
-  static create(score: elements.Score, paths: CursorPath[]): TimestampLocator {
+  static create(score: elements.Score, partFrames: CursorFrame[][]): TimestampLocator {
     const systems = score.getSystems().map((system) => {
       const yRange = new util.NumberRange(system.rect().top(), system.rect().bottom());
 
       const frames = new Array<CursorFrame>();
-      for (const path of paths) {
+      for (const framesForPart of partFrames) {
         frames.push(
-          ...path
-            .getFrames()
-            .filter((frame) =>
-              frame.getActiveElements().some((element) => element.getSystemIndex() === system.getIndex())
-            )
+          ...framesForPart.filter((frame) =>
+            frame.getActiveElements().some((element) => element.getSystemIndex() === system.getIndex())
+          )
         );
       }
 
