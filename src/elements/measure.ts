@@ -72,6 +72,14 @@ export class Measure {
   }
 
   /**
+   * Returns the continuation metadata if this measure is part of a continuation chain (a measure that was too wide
+   * and got fragmented into pieces). Returns null otherwise.
+   */
+  getContinuation(): data.Continuation | null {
+    return this.measureRender.continuation;
+  }
+
+  /**
    * Sometimes document measures are folded into one (e.g. multimeasure rest). This method returns the [start, end]
    * _absolute_ index range that the measure covers.
    */
