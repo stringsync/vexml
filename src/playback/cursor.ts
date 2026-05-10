@@ -43,6 +43,7 @@ export class Cursor {
     private elementDescriber: ElementDescriber
   ) {}
 
+  /** Creates a Cursor over the given frames, scrolling within the provided container. */
   static create(frames: CursorFrame[], scrollContainer: HTMLElement, elementDescriber: ElementDescriber): Cursor {
     const bSearchLocator = new BSearchCursorFrameLocator(frames);
     const fastLocator = new FastCursorFrameLocator(frames, bSearchLocator);
@@ -50,12 +51,17 @@ export class Cursor {
     return new Cursor(frames, fastLocator, scroller, elementDescriber);
   }
 
+  /**
+   * Returns an iterable that walks every frame from the current position to the end. Iteration uses
+   * an internal clone, so this cursor's position is not modified.
+   */
   iterable(): Iterable<CursorState> {
     // Clone the cursor to avoid modifying the index of this instance.
     const cursor = new Cursor(this.frames, this.locator, this.scroller, this.elementDescriber);
     return new CursorIterator(cursor);
   }
 
+  /** Returns the cursor's current state. */
   getCurrentState(): CursorState {
     const index = this.index;
     const hasNext = index < this.frames.length - 1;
@@ -75,10 +81,12 @@ export class Cursor {
     };
   }
 
+  /** Returns the underlying frame array backing this cursor. */
   getCursorFrames(): CursorFrame[] {
     return this.frames;
   }
 
+  /** Advances to the next frame, or completes the final frame (alpha = 1) if already at the end. */
   next(): void {
     if (this.index === this.frames.length - 1) {
       this.update(this.index, { alpha: 1 });
@@ -87,10 +95,12 @@ export class Cursor {
     }
   }
 
+  /** Moves to the previous frame. Clamped at the first frame. */
   previous(): void {
     this.update(this.index - 1, { alpha: 0 });
   }
 
+  /** Jumps to the frame at the given frame index. Out-of-range indices are clamped. */
   goTo(index: number): void {
     this.update(index, { alpha: 0 });
   }
@@ -118,16 +128,24 @@ export class Cursor {
     this.update(index, { alpha });
   }
 
+  /** Returns whether the cursor's current rect is fully within the scroll container's viewport. */
   isFullyVisible(): boolean {
     const cursorRect = this.getCurrentState().rect;
     return this.scroller.isFullyVisible(cursorRect);
   }
 
+  /** Scrolls the container so the cursor is centered horizontally and aligned to the top. */
   scrollIntoView(behavior: ScrollBehavior = 'auto'): void {
     const scrollPoint = this.getScrollPoint();
     this.scroller.scrollTo(scrollPoint, behavior);
   }
 
+  /**
+   * Subscribes a listener to a cursor event.
+   *
+   * @param opts.emitBootstrapEvent When true, immediately invokes the listener with the current state.
+   * @returns A subscription id that can be passed to `removeEventListener` to detach.
+   */
   addEventListener<N extends keyof CursorEventMap>(
     name: N,
     listener: events.EventListener<CursorEventMap[N]>,
@@ -140,12 +158,14 @@ export class Cursor {
     return id;
   }
 
+  /** Detaches one or more listeners by their subscription ids. */
   removeEventListener(...ids: number[]): void {
     for (const id of ids) {
       this.topic.unsubscribe(id);
     }
   }
 
+  /** Detaches every listener registered on this cursor. */
   removeAllEventListeners(): void {
     this.topic.unsubscribeAll();
   }
