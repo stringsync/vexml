@@ -12,7 +12,8 @@ WORKDIR /vexml
 # Install dependencies.
 COPY package.json .
 COPY package-lock.json .
-RUN npm install
+COPY .npmrc .
+RUN npm ci
 
 # Copy config.
 COPY jest.config.js .
