@@ -78,11 +78,17 @@ describe('vexml', () => {
       width: 1200,
       continuationThreshold: null,
     },
-    // Narrow system width → eligible measures fragment, each piece on its own system.
+    // Narrow system width → eligible measures fragment across multiple systems.
     {
       filename: 'continuation_measures_basic.musicxml',
-      width: 350,
-      continuationThreshold: 200,
+      width: 400,
+      continuationThreshold: 250,
+    },
+    // Very narrow viewport → a single wide measure spans more than 2 systems (>=3 pieces).
+    {
+      filename: 'continuation_measures_basic.musicxml',
+      width: 300,
+      continuationThreshold: 120,
     },
   ])(`continuation: $filename (width=$width, threshold=$continuationThreshold)`, async (t) => {
     const { document, vexmlDiv, screenshotElementSelector } = setup();
