@@ -16,17 +16,14 @@ We want minimal friction in the contribution process, so standalone improvements
 Before submitting your contribution, ensure the following checks pass:
 
 ```sh
-# Run ESLint
-npm run lint
+# Format, lint, and typecheck (writes fixes)
+npx vex fix
 
-# Check code formatting
-npm run formatcheck
-
-# Run type checking
-npm run typecheck
+# Or check without fixing (what CI runs)
+npx vex fix --check
 
 # Run tests (requires Docker)
-npm run test
+npx vex test
 ```
 
 All of these checks are run automatically in CI via GitHub Actions and must pass before your PR can be merged.
