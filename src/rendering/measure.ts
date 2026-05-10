@@ -23,7 +23,7 @@ export class Measure {
     const absoluteIndex = this.document.getAbsoluteMeasureIndex(this.key);
     const multiRestCount = this.document.getMeasureMultiRestCount(this.key);
     const fragmentRenders = this.renderFragments(pen);
-    const jumps = this.document.getMeasure(this.key).jumps;
+    const measure = this.document.getMeasure(this.key);
 
     const rect = Rect.merge(fragmentRenders.map((fragment) => fragment.rect));
 
@@ -34,7 +34,8 @@ export class Measure {
       fragmentRenders,
       multiRestCount,
       absoluteIndex,
-      jumps,
+      jumps: measure.jumps,
+      continuation: measure.continuation,
     };
   }
 

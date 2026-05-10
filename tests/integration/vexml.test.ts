@@ -9,6 +9,13 @@ type TestCase = {
   width: number;
 };
 
+type ContinuationCase = {
+  filename: string;
+  /** Score WIDTH config (must be set; PanoramicFormatter does not support continuation). */
+  width: number;
+  continuationThreshold: number | null;
+};
+
 const DATA_DIR = path.resolve(__dirname, '..', '__data__', 'vexml');
 
 describe('vexml', () => {
@@ -61,6 +68,43 @@ describe('vexml', () => {
     const screenshot = Buffer.from((await element!.screenshot()) as any);
     expect(screenshot).toMatchImageSnapshot({
       customSnapshotIdentifier: getSnapshotIdentifier({ filename: t.filename, width: t.width }),
+    });
+  });
+
+  it.each<ContinuationCase>([
+    // Baseline: feature disabled — should match the un-fragmented rendering.
+    {
+      filename: 'continuation_measures_basic.musicxml',
+      width: 1200,
+      continuationThreshold: null,
+    },
+    // Narrow system width → eligible measures fragment, each piece on its own system.
+    {
+      filename: 'continuation_measures_basic.musicxml',
+      width: 350,
+      continuationThreshold: 200,
+    },
+  ])(`continuation: $filename (width=$width, threshold=$continuationThreshold)`, async (t) => {
+    const { document, vexmlDiv, screenshotElementSelector } = setup();
+
+    const buffer = fs.readFileSync(path.join(DATA_DIR, t.filename));
+    const musicXML = buffer.toString();
+    vexml.renderMusicXML(musicXML, vexmlDiv, {
+      config: {
+        WIDTH: t.width,
+        CONTINUATION_MEASURE_WIDTH_THRESHOLD: t.continuationThreshold,
+      },
+    });
+
+    await page.setViewport({ width: t.width, height: 0 });
+    await page.setContent(document.documentElement.outerHTML);
+
+    const element = await page.$(screenshotElementSelector);
+    const screenshot = Buffer.from((await element!.screenshot()) as any);
+    expect(screenshot).toMatchImageSnapshot({
+      customSnapshotIdentifier: `continuation_${path.basename(t.filename, path.extname(t.filename))}_w${t.width}_t${
+        t.continuationThreshold ?? 'null'
+      }`,
     });
   });
 });

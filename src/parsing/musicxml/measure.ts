@@ -162,6 +162,7 @@ export class Measure {
       startBarlineStyle: this.startBarlineStyle,
       endBarlineStyle: this.endBarlineStyle,
       repetitionSymbols: this.repetitionSymbols,
+      continuation: null,
     };
   }
 }
