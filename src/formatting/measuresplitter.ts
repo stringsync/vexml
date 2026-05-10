@@ -74,7 +74,7 @@ export class MeasureSplitter {
     };
 
     const eligibility = this.isEligible(measure, measureRender);
-    if (!eligibility.eligible) {
+    if ('reason' in eligibility) {
       return reject(eligibility.reason);
     }
 
