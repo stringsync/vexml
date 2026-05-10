@@ -63,11 +63,9 @@ function analyzeStructure(measures: Measure[]): Structure {
       }
     }
 
-    const endingJump = findEndingJump(jumps);
+    const endingJump = findJump(jumps, 'repeatending');
 
     if (endingJump) {
-      // This measure is part of a volta. Extend the current group, or start a new one
-      // anchored at the matching `repeatstart` (implicitly 0 if none is on the stack).
       if (currentVolta === null) {
         currentVolta = { startIndex: startStack.peek() ?? 0, endings: [], totalPasses: 0 };
         voltas.push(currentVolta);
@@ -84,7 +82,6 @@ function analyzeStructure(measures: Measure[]): Structure {
       continue;
     }
 
-    // Not an ending — close any volta that just ended.
     if (currentVolta !== null) {
       if (startStack.peek() === currentVolta.startIndex) {
         startStack.pop();
@@ -92,9 +89,8 @@ function analyzeStructure(measures: Measure[]): Structure {
       currentVolta = null;
     }
 
-    const endJump = findEndJump(jumps);
+    const endJump = findJump(jumps, 'repeatend');
     if (endJump) {
-      // Pair with the most recent `repeatstart`, or fall back to 0 (implicit start).
       const startIndex = startStack.pop() ?? 0;
       repeatEndsByMeasure.set(i, { measureIndex: i, startIndex, times: endJump.times });
     }
@@ -211,16 +207,6 @@ function resetNestedState(
   }
 }
 
-function findEndingJump(jumps: Jump[]): { type: 'repeatending'; times: number } | null {
-  for (const jump of jumps) {
-    if (jump.type === 'repeatending') return jump;
-  }
-  return null;
-}
-
-function findEndJump(jumps: Jump[]): { type: 'repeatend'; times: number } | null {
-  for (const jump of jumps) {
-    if (jump.type === 'repeatend') return jump;
-  }
-  return null;
+function findJump<K extends Jump['type']>(jumps: Jump[], type: K): Extract<Jump, { type: K }> | undefined {
+  return jumps.find((jump): jump is Extract<Jump, { type: K }> => jump.type === type);
 }
