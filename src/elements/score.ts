@@ -29,6 +29,7 @@ export class Score {
     private systems: System[]
   ) {}
 
+  /** Creates a Score from the given rendering context and score render tree. */
   static create(
     config: Config,
     log: Logger,
@@ -64,6 +65,13 @@ export class Score {
     return this.root.getScrollContainer();
   }
 
+  /**
+   * Creates and registers a playback cursor scoped to a single part.
+   *
+   * @param opts.partIndex The part the cursor advances through. Defaults to the first part.
+   * @param opts.span The vertical range of parts the cursor visually spans. Defaults to spanning all parts.
+   * @returns The newly created cursor. The cursor is owned by the Score and will be cleaned up on `destroy()`.
+   */
   addCursor(opts?: { partIndex?: number; span?: playback.CursorVerticalSpan }): playback.Cursor {
     const partCount = this.getPartCount();
 
