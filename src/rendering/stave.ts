@@ -174,9 +174,12 @@ export class Stave {
   }
 
   private renderMeasureLabel(vexflowStave: vexflow.Stave): void {
-    const measureLabel = this.document.getMeasure(this.key).label;
-    if (this.shouldShowMeasureLabel() && measureLabel) {
-      vexflowStave.setMeasure(measureLabel);
+    if (!this.shouldShowMeasureLabel()) {
+      return;
+    }
+    const measure = this.document.getMeasure(this.key);
+    if (measure.label) {
+      vexflowStave.setMeasure(measure.label);
     }
   }
 
