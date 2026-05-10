@@ -1,26 +1,27 @@
 import { build } from './build.ts';
 import { run } from './util.ts';
 
-export async function test(opts: { local: boolean; args: string[] }): Promise<void> {
+export async function test(opts: { local: boolean; ci: boolean; args: string[] }): Promise<void> {
+  const jestArgs = ['--runInBand', ...(opts.ci ? ['--ci'] : []), ...opts.args];
   if (opts.local) {
-    await testLocal({ args: opts.args });
+    await testLocal({ args: jestArgs });
   } else {
-    await testDocker({ args: opts.args });
+    await testDocker({ ci: opts.ci, args: jestArgs });
   }
 }
 
 async function testLocal(opts: { args: string[] }): Promise<void> {
-  run('npx', ['jest', '--runInBand', ...opts.args]);
+  run('npx', ['jest', ...opts.args]);
 }
 
-async function testDocker(opts: { args: string[] }): Promise<void> {
+async function testDocker(opts: { ci: boolean; args: string[] }): Promise<void> {
   await build.image();
 
   const cwd = process.cwd();
   const dockerArgs = [
     'run',
     '--rm',
-    '-it',
+    opts.ci ? '-i' : '-it',
     '-v',
     `${cwd}/src:/vexml/src`,
     '-v',
@@ -28,7 +29,6 @@ async function testDocker(opts: { args: string[] }): Promise<void> {
     'vexml:latest',
     'npx',
     'jest',
-    '--runInBand',
     ...opts.args,
   ];
 
