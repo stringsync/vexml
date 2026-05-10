@@ -2,7 +2,7 @@ import { Logger } from '@/debug';
 import { Duration } from './duration';
 import { PlaybackElement, TimelineMoment, TimelineMomentEvent, ElementTransitionEvent } from './types';
 import * as elements from '@/elements';
-import { LegacyMeasureSequenceIterator } from './legacymeasuresequenceiterator';
+import { MeasureSequenceIterator } from './measuresequenceiterator';
 import * as util from '@/util';
 import { ElementDescriber } from './elementdescriber';
 
@@ -69,7 +69,7 @@ class TimelineFactory {
     const measures = this.score.getMeasures();
 
     const measureIndexes = Array.from(
-      new LegacyMeasureSequenceIterator(measures.map((measure, index) => ({ index, jumps: measure.getJumps() })))
+      new MeasureSequenceIterator(measures.map((measure, index) => ({ index, jumps: measure.getJumps() })))
     );
 
     const result = new Array<{ measure: elements.Measure; willJump: boolean }>();
