@@ -16,10 +16,6 @@ type Jump = { type: 'repeatstart' } | { type: 'repeatend'; times: number } | { t
  *      form volta groups.
  *   2. Walk the measures linearly, consulting the map to decide when to back-jump
  *      and when to skip an exhausted volta ending.
- *
- * The full sequence is computed eagerly — music scores are small enough that the
- * cost is negligible and the code is dramatically simpler than a per-`next()`
- * state machine.
  */
 export class MeasureSequenceIterator<T extends Measure> implements Iterable<number> {
   constructor(private measures: T[]) {}
@@ -78,7 +74,7 @@ function analyzeStructure(measures: Measure[]): Structure {
       };
       currentVolta.endings.push(ending);
       endingByMeasure.set(i, { volta: currentVolta, ending });
-      // Per legacy: a `repeatend` co-located with a `repeatending` is intentionally dropped.
+      // A `repeatend` co-located with a `repeatending` is intentionally dropped.
       continue;
     }
 
