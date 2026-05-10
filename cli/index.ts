@@ -1,11 +1,11 @@
 import { program } from 'commander';
-import { build } from './build.ts';
-import { dev } from './dev.ts';
-import { fix } from './fix.ts';
-import { release } from './release.ts';
-import { resnap } from './resnap.ts';
-import { test } from './test.ts';
-import { withErrorHandling, withTiming } from './util.ts';
+import { build } from './build';
+import { dev } from './dev';
+import { fix } from './fix';
+import { release } from './release';
+import { resnap } from './resnap';
+import { test } from './test';
+import { withErrorHandling, withTiming } from './util';
 
 program.name('vex').description('vexml dev CLI');
 
