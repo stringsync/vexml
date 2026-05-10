@@ -76,6 +76,10 @@ export class Cursor {
     };
   }
 
+  getCursorFrames(): CursorFrame[] {
+    return this.path.getFrames();
+  }
+
   next(): void {
     if (this.index === this.path.getFrames().length - 1) {
       this.update(this.index, { alpha: 1 });
