@@ -80,8 +80,7 @@ export class Score {
 
     const elementDescriber = playback.ElementDescriber.create(this, { partIndex });
     const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span, elementDescriber);
-    const path = new playback.CursorPath(partIndex, frames);
-    const cursor = playback.Cursor.create(path, this.getScrollContainer(), elementDescriber);
+    const cursor = playback.Cursor.create(frames, this.getScrollContainer(), elementDescriber);
 
     this.cursors.push(cursor);
 
@@ -375,7 +374,7 @@ export class Score {
 
   @util.memoize()
   private getTimestampLocator(): playback.TimestampLocator {
-    const paths = new Array<playback.CursorPath>();
+    const partFrames = new Array<playback.CursorFrame[]>();
     const timelines = this.getTimelines();
 
     for (let partIndex = 0; partIndex < this.getPartCount(); partIndex++) {
@@ -384,10 +383,9 @@ export class Score {
       const span = { fromPartIndex: partIndex, toPartIndex: partIndex };
       const elementDescriber = playback.ElementDescriber.create(this, { partIndex });
       const frames = playback.DefaultCursorFrame.create(this.log, this, timeline, span, elementDescriber);
-      const path = new playback.CursorPath(partIndex, frames);
-      paths.push(path);
+      partFrames.push(frames);
     }
 
-    return playback.TimestampLocator.create(this, paths);
+    return playback.TimestampLocator.create(this, partFrames);
   }
 }

@@ -1,6 +1,5 @@
-import { CursorPath } from './cursorpath';
 import { Duration } from './duration';
-import { CursorFrameLocator } from './types';
+import { CursorFrame, CursorFrameLocator } from './types';
 
 /**
  * A CursorFrameLocator that uses O(1) time complexity to locate the frame at a given time before falling back to a more
@@ -9,10 +8,10 @@ import { CursorFrameLocator } from './types';
 export class FastCursorFrameLocator implements CursorFrameLocator {
   private index = 0;
 
-  constructor(private path: CursorPath, private fallback: CursorFrameLocator) {}
+  constructor(private frames: CursorFrame[], private fallback: CursorFrameLocator) {}
 
   locate(time: Duration): number | null {
-    const frames = this.path.getFrames();
+    const frames = this.frames;
 
     if (time.isLessThan(Duration.zero())) {
       return this.update(0);
@@ -53,6 +52,6 @@ export class FastCursorFrameLocator implements CursorFrameLocator {
   }
 
   private getDuration(): Duration {
-    return this.path.getFrames().at(-1)?.tRange.end ?? Duration.zero();
+    return this.frames.at(-1)?.tRange.end ?? Duration.zero();
   }
 }

@@ -1,5 +1,4 @@
 export * from './cursor';
-export * from './cursorpath';
 export * from './duration';
 export * from './durationrange';
 export * from './timestamplocator';
