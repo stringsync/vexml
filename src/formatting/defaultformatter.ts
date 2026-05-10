@@ -5,6 +5,7 @@ import { Config, DEFAULT_CONFIG } from '@/config';
 import { Logger, NoopLogger } from '@/debug';
 import { Formatter } from './types';
 import { PanoramicFormatter } from './panoramicformatter';
+import { applyContinuationSplit } from './continuationpass';
 
 type SystemSlice = {
   from: number;
@@ -35,40 +36,46 @@ export class DefaultFormatter implements Formatter {
 
     // First, ensure the document is formatted for infinite x-scrolling. This will allow us to measure the width of the
     // measures and make decisions on how to group them into systems.
-    const panoramicConfig = { ...this.config, WIDTH: null, HEIGHT: null };
+    const panoramicConfig = {
+      ...this.config,
+      WIDTH: null,
+      HEIGHT: null,
+      CONTINUATION_MEASURE_WIDTH_THRESHOLD: null,
+    };
     const panoramicFormatter = new PanoramicFormatter({ config: panoramicConfig });
     const panoramicDocument = new rendering.Document(panoramicFormatter.format(document));
     const panoramicScoreRender = new rendering.Score(panoramicConfig, this.log, panoramicDocument, null).render();
 
-    const slices = this.getSystemSlices(this.config, panoramicScoreRender);
+    const { measures, measureRenders } = applyContinuationSplit(clone, panoramicScoreRender, this.config, this.log);
 
-    this.applySystemSlices(clone, slices);
+    const slices = this.getSystemSlices(this.config, measureRenders);
+
+    this.applySystemSlices(clone, slices, measures);
 
     return clone;
   }
 
-  private getSystemSlices(config: Config, scoreRender: rendering.ScoreRender): SystemSlice[] {
-    const slices = [{ from: 0, to: 0 }];
+  private getSystemSlices(config: Config, measureRenders: rendering.MeasureRender[]): SystemSlice[] {
+    const slices: SystemSlice[] = [];
+    let remaining = 0;
+    // Continuation pieces occupy their own system, and the system following a continuation piece must start fresh.
+    let lockedFromContinuation = false;
 
-    let remaining = config.WIDTH!;
-    let count = 0;
-
-    const measureRenders = scoreRender.systemRenders.flatMap((systemRender) => systemRender.measureRenders);
-
-    for (let measureIndex = 0; measureIndex < measureRenders.length; measureIndex++) {
-      const measure = measureRenders[measureIndex];
-
+    for (const measure of measureRenders) {
       const required = measure.rect.w;
+      const isContinuationPiece = measure.continuation !== null;
+      const currentSlice = slices.at(-1);
 
-      if (required > remaining && count > 0) {
+      const needNewSlice = !currentSlice || isContinuationPiece || lockedFromContinuation || required > remaining;
+
+      if (needNewSlice) {
         slices.push({ from: measure.absoluteIndex, to: measure.absoluteIndex });
-        remaining = config.WIDTH!;
-        count = 0;
+        remaining = config.WIDTH! - required;
+      } else {
+        currentSlice!.to = measure.absoluteIndex;
+        remaining -= required;
       }
-
-      slices.at(-1)!.to = measure.absoluteIndex;
-      remaining -= required;
-      count++;
+      lockedFromContinuation = isContinuationPiece;
     }
 
     this.log.debug(`grouped ${measureRenders.length} measures into ${slices.length} system(s)`);
@@ -76,9 +83,7 @@ export class DefaultFormatter implements Formatter {
     return slices;
   }
 
-  private applySystemSlices(document: data.Document, slices: SystemSlice[]): void {
-    const measures = document.score.systems.flatMap((s) => s.measures);
-
+  private applySystemSlices(document: data.Document, slices: SystemSlice[], measures: data.Measure[]): void {
     document.score.systems = [];
 
     for (const slice of slices) {

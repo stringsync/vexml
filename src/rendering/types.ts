@@ -115,6 +115,7 @@ export type MeasureRender = {
   fragmentRenders: FragmentRender[];
   multiRestCount: number;
   jumps: data.Jump[];
+  continuation: data.Continuation | null;
 };
 
 export type FragmentRender = {

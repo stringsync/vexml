@@ -21,6 +21,10 @@ export class PanoramicFormatter implements Formatter {
     this.log = opts?.logger ?? new NoopLogger();
 
     util.assertNull(this.config.WIDTH, 'WIDTH must be null for PanoramicFormatter');
+    util.assertNull(
+      this.config.CONTINUATION_MEASURE_WIDTH_THRESHOLD,
+      'CONTINUATION_MEASURE_WIDTH_THRESHOLD must be null for PanoramicFormatter'
+    );
   }
 
   format(document: data.Document): data.Document {

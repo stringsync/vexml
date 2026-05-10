@@ -62,6 +62,14 @@ export const CONFIG = {
       'LAST_SYSTEM_WIDTH_STRETCH_THRESHOLD is the total width fraction that the measures must exceed to stretch the ' +
       'measures in the last system.',
   }),
+  CONTINUATION_MEASURE_WIDTH_THRESHOLD: t.number({
+    defaultValue: null,
+    help:
+      'CONTINUATION_MEASURE_WIDTH_THRESHOLD is the calculated measure width (in pixels) above which an eligible ' +
+      'measure is split into continuation pieces. Pieces flow across systems via the normal bin-packer, with the ' +
+      'inner pieces having no start or end barlines as the continuation cue. Only supported by DefaultFormatter ' +
+      '(requires WIDTH to be set). When this is null, no fragmentation occurs.',
+  }),
   PART_LABEL_FONT_FAMILY: t.string({
     defaultValue: 'Arial',
     help: 'PART_LABEL_FONT_FAMILY is the font family for part names.',

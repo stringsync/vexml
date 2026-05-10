@@ -95,6 +95,19 @@ export type Measure = {
   startBarlineStyle: BarlineStyle | null;
   endBarlineStyle: BarlineStyle | null;
   repetitionSymbols: RepetitionSymbol[];
+  /**
+   * Non-null when this measure is part of a continuation chain (a measure that was too wide and got split into
+   * pieces). Otherwise null.
+   */
+  continuation: Continuation | null;
+};
+
+export type Continuation = {
+  type: 'continuation';
+  /** 0-based position of this piece in its continuation chain. */
+  index: number;
+  /** Total number of pieces in the chain (>= 2). */
+  total: number;
 };
 
 export type Jump =
