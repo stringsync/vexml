@@ -3,7 +3,7 @@ import { Config } from '@/config';
 import { Logger } from '@/debug';
 import { Rect } from '@/spatial';
 import { Fraction } from '@/util';
-import { Pitch } from './types';
+import { Pitch, TabPosition } from './types';
 
 export class Note {
   private constructor(
@@ -37,6 +37,20 @@ export class Note {
         return this.getNotePitches();
       case 'chord':
         return this.getChordPitches();
+    }
+  }
+
+  /**
+   * Returns the tab (tablature) positions of the note.
+   *
+   * Each position describes a fret on a string. Non-tab notes return an empty array.
+   */
+  getTabPositions(): TabPosition[] {
+    switch (this.getSubtype()) {
+      case 'note':
+        return this.getNoteTabPositions();
+      case 'chord':
+        return this.getChordTabPositions();
     }
   }
 
@@ -92,6 +106,26 @@ export class Note {
       octave: note.pitch.octave,
       accidentalCode: note.accidental?.code ?? null,
     }));
+  }
+
+  private getNoteTabPositions(): TabPosition[] {
+    const note = this.document.getNote(this.noteRender.key);
+    return note.tabPositions.map((tabPosition) => ({
+      fret: tabPosition.fret,
+      string: tabPosition.string,
+      harmonic: tabPosition.harmonic,
+    }));
+  }
+
+  private getChordTabPositions(): TabPosition[] {
+    const chord = this.document.getChord(this.noteRender.key);
+    return chord.notes
+      .flatMap((note) => note.tabPositions)
+      .map((tabPosition) => ({
+        fret: tabPosition.fret,
+        string: tabPosition.string,
+        harmonic: tabPosition.harmonic,
+      }));
   }
 
   private isPitchEqivalent(a: Pitch, b: Pitch): boolean {

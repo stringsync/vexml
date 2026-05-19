@@ -31,6 +31,12 @@ export type Pitch = {
   accidentalCode: AccidentalCode | null;
 };
 
+export type TabPosition = {
+  fret: string;
+  string: number;
+  harmonic: boolean;
+};
+
 export type EventMap = {
   click: ClickEvent;
   enter: EnterEvent;
