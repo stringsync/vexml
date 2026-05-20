@@ -37,6 +37,9 @@ export class Part {
 
     for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
       const key: StaveKey = { ...this.key, staveIndex };
+      if (!this.shouldRenderStave(key)) {
+        continue;
+      }
       const staveRender = new Stave(this.config, this.log, this.document, key, pen.position()).render();
       staveRenders.push(staveRender);
 
@@ -45,6 +48,17 @@ export class Part {
     }
 
     return staveRenders;
+  }
+
+  private shouldRenderStave(key: StaveKey): boolean {
+    const isTab = this.document.isTabStave(key);
+    if (isTab && !this.config.SHOW_TABS) {
+      return false;
+    }
+    if (!isTab && !this.config.SHOW_STANDARD_NOTATION) {
+      return false;
+    }
+    return true;
   }
 
   private renderVexflowBrace(staveRenders: StaveRender[]): vexflow.StaveConnector | null {
