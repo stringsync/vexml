@@ -109,6 +109,16 @@ export const CONFIG = {
       'MULTI_REST_MEASURE_WIDTH is how much extra width to give multi-rest measures ' +
       'when calculating stave minimum width.',
   }),
+  SHOW_TABS: t.boolean({
+    defaultValue: true,
+    help: 'SHOW_TABS specifies whether to render tab staves. ' + 'No-ops if there are no tab staves in the score.',
+  }),
+  SHOW_STANDARD_NOTATION: t.boolean({
+    defaultValue: true,
+    help:
+      'SHOW_STANDARD_NOTATION specifies whether to render standard notation staves. ' +
+      'No-ops if there are no standard notation staves in the score.',
+  }),
   SHOW_TAB_CLEF: t.boolean({
     defaultValue: true,
     help: 'SHOW_TAB_CLEF specifies whether to show the tab clef.',
