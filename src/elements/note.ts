@@ -1,3 +1,4 @@
+import * as data from '@/data';
 import * as rendering from '@/rendering';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
@@ -44,14 +45,17 @@ export class Note {
    * Returns the tab (tablature) positions of the note.
    *
    * Each position describes a fret on a string. Non-tab notes return an empty array.
+   *
+   * Positions are aggregated across all musically-concurrent voice entries within the same part
+   * (e.g., a sibling tab stave's note at the same beat). This means the result is stable
+   * regardless of whether `SHOW_TABS` or `SHOW_STANDARD_NOTATION` is enabled.
    */
   getTabPositions(): TabPosition[] {
-    switch (this.getSubtype()) {
-      case 'note':
-        return this.getNoteTabPositions();
-      case 'chord':
-        return this.getChordTabPositions();
-    }
+    const own = this.collectTabPositions(this.getOwnVoiceEntry());
+    const concurrent = this.document
+      .getConcurrentVoiceEntries(this.noteRender.key)
+      .flatMap((entry) => this.collectTabPositions(entry));
+    return this.dedupeTabPositions([...own, ...concurrent]);
   }
 
   /** Returns whether the note contains an equivalent pitch to another note. */
@@ -108,27 +112,39 @@ export class Note {
     }));
   }
 
-  private getNoteTabPositions(): TabPosition[] {
-    const note = this.document.getNote(this.noteRender.key);
-    return note.tabPositions.map((tabPosition) => ({
-      fret: tabPosition.fret,
-      string: tabPosition.string,
-      harmonic: tabPosition.harmonic,
-    }));
-  }
-
-  private getChordTabPositions(): TabPosition[] {
-    const chord = this.document.getChord(this.noteRender.key);
-    return chord.notes
-      .flatMap((note) => note.tabPositions)
-      .map((tabPosition) => ({
-        fret: tabPosition.fret,
-        string: tabPosition.string,
-        harmonic: tabPosition.harmonic,
-      }));
+  private getOwnVoiceEntry(): data.VoiceEntry {
+    switch (this.getSubtype()) {
+      case 'note':
+        return this.document.getNote(this.noteRender.key);
+      case 'chord':
+        return this.document.getChord(this.noteRender.key);
+    }
   }
 
   private isPitchEqivalent(a: Pitch, b: Pitch): boolean {
     return a.step === b.step && a.octave === b.octave && a.accidentalCode === b.accidentalCode;
+  }
+
+  private collectTabPositions(entry: data.VoiceEntry): TabPosition[] {
+    if (entry.type === 'note') {
+      return entry.tabPositions;
+    }
+    if (entry.type === 'chord') {
+      return entry.notes.flatMap((note) => note.tabPositions);
+    }
+    return [];
+  }
+
+  private dedupeTabPositions(positions: TabPosition[]): TabPosition[] {
+    const seen = new Set<string>();
+    const out: TabPosition[] = [];
+    for (const position of positions) {
+      const key = `${position.fret}|${position.string}|${position.harmonic}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(position);
+      }
+    }
+    return out;
   }
 }

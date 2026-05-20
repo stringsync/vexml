@@ -385,6 +385,44 @@ export class Document {
     return entry;
   }
 
+  /**
+   * Returns voice entries that share the same measure beat as the entry at `key`, across every
+   * stave and voice within the same part/fragment. The entry at `key` itself is excluded.
+   *
+   * Intended for accessors that need to reach data on staves which may or may not be rendered
+   * (e.g., a standard-notation note reaching its sibling tab-stave note when `SHOW_TABS` is off).
+   *
+   * @internal
+   */
+  getConcurrentVoiceEntries(key: VoiceEntryKey): data.VoiceEntry[] {
+    const target = this.getVoiceEntry(key);
+    const targetBeat = util.Fraction.fromFractionLike(target.measureBeat);
+
+    const results: data.VoiceEntry[] = [];
+    const staveCount = this.getStaveCount(key);
+    for (let staveIndex = 0; staveIndex < staveCount; staveIndex++) {
+      const staveKey: StaveKey = { ...key, staveIndex };
+      const voiceCount = this.getVoiceCount(staveKey);
+      for (let voiceIndex = 0; voiceIndex < voiceCount; voiceIndex++) {
+        const voiceKey: VoiceKey = { ...staveKey, voiceIndex };
+        const entries = this.getVoiceEntries(voiceKey);
+        for (let voiceEntryIndex = 0; voiceEntryIndex < entries.length; voiceEntryIndex++) {
+          const isSelf =
+            staveIndex === key.staveIndex && voiceIndex === key.voiceIndex && voiceEntryIndex === key.voiceEntryIndex;
+          if (isSelf) {
+            continue;
+          }
+          const entry = entries[voiceEntryIndex];
+          const beat = util.Fraction.fromFractionLike(entry.measureBeat);
+          if (beat.isEquivalent(targetBeat)) {
+            results.push(entry);
+          }
+        }
+      }
+    }
+    return results;
+  }
+
   getNote(key: VoiceEntryKey): data.Note {
     const entry = this.getVoiceEntries(key).at(key.voiceEntryIndex);
     util.assert(entry?.type === 'note', 'expected entry to be a note');
