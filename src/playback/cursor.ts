@@ -1,7 +1,7 @@
 import * as events from '@/events';
 import * as util from '@/util';
 import { Rect, Point } from '@/spatial';
-import { Scroller } from './scroller';
+import { Scroller, ScrollResult } from './scroller';
 import { CursorFrame, CursorFrameLocator, CursorStateHintProvider } from './types';
 import { FastCursorFrameLocator } from './fastcursorframelocator';
 import { BSearchCursorFrameLocator } from './bsearchcursorframelocator';
@@ -134,10 +134,14 @@ export class Cursor {
     return this.scroller.isFullyVisible(cursorRect);
   }
 
-  /** Scrolls the container so the cursor is centered horizontally and aligned to the top. */
-  scrollIntoView(behavior: ScrollBehavior = 'auto'): void {
+  /**
+   * Scrolls the container so the cursor is centered horizontally and aligned to the top.
+   *
+   * @returns A promise that resolves with how the scroll settled — see {@link ScrollResult}.
+   */
+  scrollIntoView(behavior: ScrollBehavior = 'auto'): Promise<ScrollResult> {
     const scrollPoint = this.getScrollPoint();
-    this.scroller.scrollTo(scrollPoint, behavior);
+    return this.scroller.scrollTo(scrollPoint, behavior);
   }
 
   /**

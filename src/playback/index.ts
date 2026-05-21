@@ -1,4 +1,5 @@
 export * from './cursor';
+export type { ScrollResult } from './scroller';
 export * from './duration';
 export * from './durationrange';
 export * from './timestamplocator';
