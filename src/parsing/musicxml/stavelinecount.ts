@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
@@ -23,6 +24,13 @@ export class StaveLineCount {
       musicXML.staveDetails.getStaveNumber(),
       musicXML.staveDetails.getStaveLines()
     );
+  }
+
+  static fromMdom(config: Config, log: Logger, partId: string, mdom: { staveDetails: mdom.MElement }): StaveLineCount {
+    const staveDetails = mdom.staveDetails;
+    const staveNumber = parseInt(staveDetails.getAttribute('number') ?? '1', 10);
+    const lines = parseInt(staveDetails.child('staff-lines')?.text ?? '5', 10);
+    return new StaveLineCount(config, log, partId, staveNumber, lines);
   }
 
   getPartId(): string {

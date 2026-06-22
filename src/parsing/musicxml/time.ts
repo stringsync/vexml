@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import * as util from '@/util';
 import { Fraction } from './fraction';
 import { Config } from '@/config';
@@ -85,6 +86,61 @@ export class Time {
       times.push(time);
     }
 
+    return times;
+  }
+
+  static fromMdom(
+    config: Config,
+    log: Logger,
+    partId: string,
+    staveNumber: number,
+    mdom: { time: mdom.Time }
+  ): Time | null {
+    const time = mdom.time;
+
+    if (time.isSenzaMisura) {
+      return Time.hidden(config, log, partId, staveNumber);
+    }
+
+    const symbol = time.symbol;
+    switch (symbol) {
+      case 'common':
+        return Time.common(config, log, partId, staveNumber);
+      case 'cut':
+        return Time.cut(config, log, partId, staveNumber);
+      case 'hidden':
+        return Time.hidden(config, log, partId, staveNumber);
+    }
+
+    const components = time.components;
+    const times = new Array<Time>();
+    for (const component of components) {
+      times.push(Time.parse(config, log, partId, staveNumber, component.beats, component.beatType));
+    }
+
+    if (times.length === 0) {
+      return null;
+    }
+    if (symbol === 'single-number') {
+      return Time.singleNumber(config, log, partId, staveNumber, Time.combine(config, log, partId, staveNumber, times));
+    }
+    if (times.length === 1) {
+      return times[0];
+    }
+    return Time.combine(config, log, partId, staveNumber, times);
+  }
+
+  static fromMdomMulti(
+    config: Config,
+    log: Logger,
+    partId: string,
+    staveCount: number,
+    mdom: { time: mdom.Time }
+  ): Array<Time | null> {
+    const times = new Array<Time | null>();
+    for (let index = 0; index < staveCount; index++) {
+      times.push(Time.fromMdom(config, log, partId, index + 1, mdom));
+    }
     return times;
   }
 

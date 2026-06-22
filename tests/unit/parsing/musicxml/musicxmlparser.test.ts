@@ -1,4 +1,4 @@
-import { MusicXMLParser } from '@/parsing';
+import { MusicXMLParser } from '@/parsing/musicxml';
 import path from 'path';
 import fs from 'fs';
 

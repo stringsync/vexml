@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { VoiceContext } from './contexts';
 
 type WedgePhase = 'start' | 'continue' | 'stop';
@@ -42,6 +43,38 @@ export class Wedge {
     }
 
     const placement = musicXML.direction.getPlacement() ?? 'below';
+
+    return new Wedge(phase, wedgeType, placement);
+  }
+
+  static fromMdom(mdom: { direction: mdom.Direction; wedge: mdom.Wedge }): Wedge {
+    let phase: WedgePhase;
+    switch (mdom.wedge.wedgeType) {
+      case 'crescendo':
+      case 'diminuendo':
+        phase = 'start';
+        break;
+      case 'stop':
+        phase = 'stop';
+        break;
+      default:
+        phase = 'continue';
+        break;
+    }
+
+    let wedgeType: data.WedgeType;
+    switch (mdom.wedge.wedgeType) {
+      case 'diminuendo':
+        wedgeType = 'diminuendo';
+        break;
+      default:
+        wedgeType = 'crescendo';
+        break;
+    }
+
+    const rawPlacement = mdom.direction.getAttribute('placement');
+    const placement: data.WedgePlacement =
+      rawPlacement === 'above' || rawPlacement === 'below' ? rawPlacement : 'below';
 
     return new Wedge(phase, wedgeType, placement);
   }

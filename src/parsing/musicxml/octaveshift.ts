@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { VoiceContext } from './contexts';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
@@ -23,6 +24,28 @@ export class OctaveShift {
       case 'down':
         phase = 'start';
         break;
+      case 'up':
+        phase = 'start';
+        break;
+      case 'stop':
+        phase = 'stop';
+        break;
+      default:
+        phase = 'continue';
+        break;
+    }
+
+    return new OctaveShift(config, log, phase, size);
+  }
+
+  static fromMdom(config: Config, log: Logger, mdom: { octaveShift: mdom.OctaveShift }): OctaveShift {
+    const type = mdom.octaveShift.octaveShiftType;
+    const factor = type === 'down' ? -1 : 1;
+    const size = factor * mdom.octaveShift.size;
+
+    let phase: OctaveShiftPhase;
+    switch (type) {
+      case 'down':
       case 'up':
         phase = 'start';
         break;

@@ -25,6 +25,7 @@
   "license": "MIT",
   "scripts": {},
   "dependencies": {
+    "@stringsync/mdom": "^0.1.0",
     "jszip": "3.10.1",
     "vexflow": "5.0.0"
   },
