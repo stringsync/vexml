@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import * as util from '@/util';
 import { Note } from './note';
 import { ChordSymbol } from './chordsymbol';
@@ -26,6 +27,22 @@ export class Chord {
     util.assert(musicXML.note.isChordHead(), 'Expected note to be a chord head');
     const notes = [musicXML.note, ...musicXML.note.getChordTail()].map((note) =>
       Note.create(config, log, measureBeat, duration, { note })
+    );
+    return new Chord(config, log, notes, chordSymbol);
+  }
+
+  static fromMdom(
+    config: Config,
+    log: Logger,
+    measureBeat: util.Fraction,
+    duration: util.Fraction,
+    mdom: { notes: mdom.Note[] },
+    chordSymbol: ChordSymbol | null = null,
+    graceNotes: mdom.Note[] = []
+  ): Chord {
+    // Grace notes attach to the chord's lead note (the head carries the chord's grace entries).
+    const notes = mdom.notes.map((note, index) =>
+      Note.fromMdom(config, log, measureBeat, duration, { note }, null, index === 0 ? graceNotes : [])
     );
     return new Chord(config, log, notes, chordSymbol);
   }

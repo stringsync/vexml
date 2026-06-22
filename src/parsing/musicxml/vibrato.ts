@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { VoiceEntryContext } from './contexts';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
@@ -26,6 +27,12 @@ export class Vibrato {
 
     const number = musicXML.wavyLine.getNumber();
 
+    return new Vibrato(config, log, number, phase);
+  }
+
+  static fromMdom(config: Config, log: Logger, mdom: { wavyLine: mdom.WavyLine }): Vibrato {
+    const phase: VibratoPhase = mdom.wavyLine.wavyLineType === 'start' ? 'start' : 'continue';
+    const number = parseInt(mdom.wavyLine.number, 10);
     return new Vibrato(config, log, number, phase);
   }
 

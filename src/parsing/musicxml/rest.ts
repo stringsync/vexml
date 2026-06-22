@@ -1,6 +1,7 @@
 import * as data from '@/data';
 import * as util from '@/util';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import * as conversions from './conversions';
 import { Fraction } from './fraction';
 import { Pitch } from './pitch';
@@ -58,6 +59,48 @@ export class Rest {
       .getNotations()
       .flatMap((n) => n.getTuplets())
       .map((tuplet) => Tuplet.create(config, log, { tuplet }));
+
+    return new Rest(
+      config,
+      log,
+      measureBeat,
+      durationType,
+      dotCount,
+      duration,
+      displayPitch,
+      beam,
+      tuplets,
+      chordSymbol
+    );
+  }
+
+  static fromMdom(
+    config: Config,
+    log: Logger,
+    measureBeat: util.Fraction,
+    duration: util.Fraction,
+    mdom: { note: mdom.Note },
+    chordSymbol: ChordSymbol | null = null
+  ): Rest {
+    const note = mdom.note;
+    const restEl = note.child('rest');
+    const displayStep = restEl?.child('display-step')?.text ?? null;
+    const rawDisplayOctave = restEl?.child('display-octave')?.text;
+    const displayOctave = typeof rawDisplayOctave === 'string' ? parseInt(rawDisplayOctave, 10) : null;
+    let displayPitch: Pitch | null = null;
+    if (displayStep && typeof displayOctave === 'number') {
+      displayPitch = new Pitch(config, log, displayStep, displayOctave);
+    }
+
+    let durationType = conversions.fromNoteTypeToDurationType((note.type ?? null) as musicxml.NoteType | null);
+    let dotCount = note.childrenNamed('dot').length;
+    if (!durationType) {
+      [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
+    }
+
+    // TODO(mdom): port beams and tuplets.
+    const beam: Beam | null = null;
+    const tuplets: Tuplet[] = [];
 
     return new Rest(
       config,

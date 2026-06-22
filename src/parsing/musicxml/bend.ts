@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
 
@@ -25,6 +26,23 @@ export class Bend {
       default:
         bendType = 'normal';
         break;
+    }
+
+    return new Bend(config, log, bendType, semitones);
+  }
+
+  static fromMdom(config: Config, log: Logger, mdom: { bend: mdom.MElement }): Bend {
+    const bend = mdom.bend;
+    const alterText = bend.child('bend-alter')?.text;
+    const semitones = typeof alterText === 'string' ? parseFloat(alterText) : 1;
+
+    let bendType: data.BendType;
+    if (bend.child('pre-bend')) {
+      bendType = 'prebend';
+    } else if (bend.child('release')) {
+      bendType = 'release';
+    } else {
+      bendType = 'normal';
     }
 
     return new Bend(config, log, bendType, semitones);
