@@ -1,4 +1,5 @@
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { VoiceEntryContext } from './contexts';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
@@ -19,6 +20,11 @@ export class Beam {
         break;
     }
 
+    return new Beam(config, log, phase);
+  }
+
+  static fromMdom(config: Config, log: Logger, mdom: { beam: mdom.Beam }): Beam {
+    const phase: BeamPhase = mdom.beam.beamValue === 'begin' ? 'start' : 'continue';
     return new Beam(config, log, phase);
   }
 

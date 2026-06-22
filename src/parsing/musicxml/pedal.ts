@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import { VoiceContext } from './contexts';
 import { Config } from '@/config';
 import { Logger } from '@/debug';
@@ -51,6 +52,40 @@ export class Pedal {
         pedalMarkType = 'default';
         break;
     }
+
+    return new Pedal(config, log, phase, pedalType, pedalMarkType);
+  }
+
+  static fromMdom(config: Config, log: Logger, mdom: { pedal: mdom.Pedal }): Pedal {
+    const pedal = mdom.pedal;
+
+    let phase: PedalPhase;
+    switch (pedal.pedalType) {
+      case 'start':
+        phase = 'start';
+        break;
+      case 'stop':
+        phase = 'stop';
+        break;
+      default:
+        phase = 'continue';
+        break;
+    }
+
+    const line = pedal.getAttribute('line') === 'yes';
+    const sign = pedal.getAttribute('sign') === 'yes';
+    let pedalType: data.PedalType;
+    if (line && sign) {
+      pedalType = 'mixed';
+    } else if (line) {
+      pedalType = 'bracket';
+    } else if (sign) {
+      pedalType = 'text';
+    } else {
+      pedalType = 'bracket';
+    }
+
+    const pedalMarkType: data.PedalMarkType = pedal.pedalType === 'change' ? 'change' : 'default';
 
     return new Pedal(config, log, phase, pedalType, pedalMarkType);
   }

@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import * as conversions from './conversions';
 import * as util from '@/util';
 import { Notehead, StemDirection } from './enums';
@@ -167,6 +168,123 @@ export class Note {
       articulations,
       bends,
       fretPositions,
+      chordSymbol
+    );
+  }
+
+  static fromMdom(
+    config: Config,
+    log: Logger,
+    measureBeat: util.Fraction,
+    duration: util.Fraction,
+    mdom: { note: mdom.Note },
+    chordSymbol: ChordSymbol | null = null,
+    /** Grace notes that precede this note in document order (only meaningful for a principal note). */
+    graceNotes: mdom.Note[] = []
+  ): Note {
+    const note = mdom.note;
+    const notations = note.childrenNamed('notations');
+
+    // Mirror the legacy defaults (step 'C', octave 4) for rests / unpitched notes that carry no <pitch>.
+    const pitch = new Pitch(config, log, note.pitch?.step ?? 'C', note.pitch?.octave ?? 4);
+    const head = conversions.fromNoteheadToNotehead((note.child('notehead')?.text ?? null) as musicxml.Notehead | null);
+
+    let durationType = conversions.fromNoteTypeToDurationType((note.type ?? null) as musicxml.NoteType | null);
+    let dotCount = note.childrenNamed('dot').length;
+    if (!durationType) {
+      [durationType, dotCount] = conversions.fromFractionToDurationType(duration);
+    }
+
+    const stem = conversions.fromStemToStemDirection((note.child('stem')?.text ?? null) as musicxml.Stem | null);
+
+    const lyricAnnotations = note
+      .childrenNamed('lyric')
+      .map((lyric) => Annotation.fromMdomLyric(config, log, { lyric }));
+    const fingeringAnnotations = notations
+      .flatMap((n) => n.childrenNamed('technical'))
+      .flatMap((t) => t.childrenNamed('fingering'))
+      .map((fingering) => Annotation.fromMdomFingering(config, log, { fingering }))
+      .filter((a): a is Annotation => a !== null);
+    const annotations = [...lyricAnnotations, ...fingeringAnnotations];
+
+    const code =
+      conversions.fromAccidentalTypeToAccidentalCode(
+        (note.accidental?.value ?? null) as musicxml.AccidentalType | null
+      ) ??
+      conversions.fromAlterToAccidentalCode(note.pitch?.alter ?? null) ??
+      'n';
+    const isCautionary = note.accidental?.cautionary ?? false;
+    const accidental = new Accidental(config, log, code, isCautionary);
+
+    const curves = notations.flatMap((notations) => Curve.fromMdom(config, log, { notations }));
+    const tuplets = note.tuplets.map((tuplet) => Tuplet.fromMdom(config, log, { tuplet }));
+    const vibratos = note.wavyLines.map((wavyLine) => Vibrato.fromMdom(config, log, { wavyLine }));
+
+    // Since data.Note is a superset of data.GraceNote, we use the same model. We terminate recursion by only attaching
+    // grace notes to a principal (non-grace) note.
+    const graceEntries = new Array<GraceEntry>();
+    if (!note.isGrace) {
+      for (let index = 0; index < graceNotes.length; index++) {
+        const graceNote = graceNotes[index];
+        if (graceNote.isChordMember) {
+          continue;
+        }
+
+        const head = Note.fromMdom(config, log, measureBeat, util.Fraction.zero(), { note: graceNote });
+
+        const tail = new Array<Note>();
+        while (index + 1 < graceNotes.length && graceNotes[index + 1].isChordMember) {
+          tail.push(Note.fromMdom(config, log, measureBeat, util.Fraction.zero(), { note: graceNotes[index + 1] }));
+          index++;
+        }
+
+        if (tail.length > 0) {
+          graceEntries.push({ type: 'gracechord', head, tail });
+        } else {
+          graceEntries.push({ type: 'gracenote', note: head });
+        }
+      }
+    }
+
+    // MusicXML encodes each beam line as a separate <beam>. We only care about the presence of beams, so we only check
+    // the first one.
+    let beam: Beam | null = null;
+    if (note.beams.length > 0) {
+      beam = Beam.fromMdom(config, log, { beam: note.beams[0] });
+    }
+
+    const articulations = Articulation.fromMdom(config, log, { note });
+
+    const bends = notations
+      .flatMap((n) => n.childrenNamed('technical'))
+      .flatMap((t) => t.childrenNamed('bend'))
+      .map((bend) => Bend.fromMdom(config, log, { bend }));
+
+    const slash = note.child('grace')?.getAttribute('slash') === 'yes';
+
+    const tabPositions = TabPosition.fromMdom(config, log, { note });
+
+    return new Note(
+      config,
+      log,
+      pitch,
+      head,
+      durationType,
+      dotCount,
+      stem,
+      new Fraction(duration),
+      new Fraction(measureBeat),
+      annotations,
+      accidental,
+      curves,
+      tuplets,
+      beam,
+      slash,
+      graceEntries,
+      vibratos,
+      articulations,
+      bends,
+      tabPositions,
       chordSymbol
     );
   }
