@@ -1,5 +1,6 @@
 import * as data from '@/data';
 import * as musicxml from '@/musicxml';
+import type * as mdom from '@stringsync/mdom';
 import * as conversions from './conversions';
 import { KeyMode } from './enums';
 import { Config } from '@/config';
@@ -41,6 +42,18 @@ export class Key {
       previousKey,
       musicXML.key.getMode()
     );
+  }
+
+  static fromMdom(
+    config: Config,
+    log: Logger,
+    partId: string,
+    staveNumber: number,
+    previousKey: Key | null,
+    mdom: { key: mdom.Key }
+  ): Key {
+    const key = mdom.key;
+    return new Key(config, log, partId, staveNumber, key.fifths ?? 0, previousKey, (key.mode ?? 'none') as KeyMode);
   }
 
   parse(): data.Key {
