@@ -152,7 +152,7 @@ export function drawScore(
 			continue;
 		}
 		const { x: measureX, width: measureWidth, systemIndex } = box;
-		const { isSystemStart, isSystemEnd } = box;
+		const { isSystemStart } = box;
 		const isLastMeasure = m === measureCount - 1;
 		if (systemIndex !== currentSystem) {
 			if (currentSystem >= 0) {
@@ -305,14 +305,14 @@ export function drawScore(
 					.setContext(context)
 					.draw();
 			}
-			if (isSystemEnd) {
-				// The piece's final measure gets a bold thin-thick connector to match
-				// its end barline; other system ends get a plain single line.
-				new StaveConnector(systemTop, systemBottom)
-					.setType(isLastMeasure ? 'boldDoubleRight' : 'singleRight')
-					.setContext(context)
-					.draw();
-			}
+			// Every measure's end line gets a connector joining the part's staves, so
+			// internal barlines are tied across staves and not just drawn per-stave.
+			// The piece's final measure gets a bold thin-thick connector to match its
+			// end barline; all other measure ends get a plain single line.
+			new StaveConnector(systemTop, systemBottom)
+				.setType(isLastMeasure ? 'boldDoubleRight' : 'singleRight')
+				.setContext(context)
+				.draw();
 		}
 	}
 
