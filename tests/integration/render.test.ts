@@ -148,13 +148,22 @@ const TEST_CASES = [
 	// varies.
 	testCase('articulations.musicxml', 'articulations.png'),
 
-	// Treble stave, 4/4: two voices sharing one stave — voice 1 (stems up) a mixed
-	// quarter/eighth line spanning the whole measure; voice 2 (stems down) a distinct
-	// lower line that is silent on beats 1 and 4 via <forward> (no rests drawn). The
-	// silence is held open by invisible ghost tickables (src/stave-notes.ts), so voice 2
-	// starts aligned on beat 2 (G4 under voice 1's F5) and its last note (G4 on beat 3.5)
-	// keeps a full beat of space to its right before voice 1's final C5 on beat 4 —
-	// rather than being crammed against it.
+	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
+	// complexity, exercising <backup>/<forward> in different ways.
+	// Measure 1: voice 1 (stems up) a mixed quarter/eighth line spanning the whole measure;
+	// voice 2 (stems down) silent on beats 1 and 4 via leading and trailing <forward> (no
+	// rests drawn). The silence is held open by invisible ghost tickables (src/stave-notes.ts),
+	// so voice 2 starts aligned on beat 2 (G4 under voice 1's F5) and its last note (G4 on
+	// beat 3.5) keeps a full beat of space to its right before voice 1's final C5 on beat 4.
+	// Measure 2: a full <backup> to the measure start — voice 1 a dotted half (D5, dot to its
+	// right) then a quarter (C5); voice 2 four quarters (G4, A4, B4, A4) filling every beat.
+	// Measure 3 (most complex): mid-measure <forward> gaps in both voices. Voice 1 a flagged
+	// dotted-quarter F5 + eighth E5, a <forward> skipping beat 3, then a quarter D5. Voice 2 a
+	// quarter G4, a <forward> skipping beat 2, two beamed eighths (A4, G4), then a quarter F4.
+	// The dotted notes carry their dotted duration in vexflow's tick count (src/stave-notes.ts
+	// passes `dots` to the StaveNote), so voice 1's beat-3 note stays vertically aligned with
+	// voice 2's beat-3 note rather than drifting half a beat / a beat early. May wrap across
+	// systems.
 	testCase('two_voices.musicxml', 'two_voices.png'),
 
 	// Eight identical C5 whole-note measures wrapping onto two systems of four measures

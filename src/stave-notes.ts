@@ -96,14 +96,23 @@ function applyStem(staveNote: StaveNote, note: Note): void {
 export function vexflowChord(chord: Chord, clef: string): StaveNote {
 	const lead = chord.lead;
 	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+	// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
+	// (Dot.buildAndAttach only draws the glyph, it never changes duration). Without it
+	// a dotted note is one tick-position short and its voice falls out of alignment
+	// with the others sharing the stave.
 	if (lead.isRest) {
-		const rest = new StaveNote({ keys: ['b/4'], duration: `${duration}r` });
+		const rest = new StaveNote({
+			keys: ['b/4'],
+			duration: `${duration}r`,
+			dots: lead.dots,
+		});
 		addDots(rest, lead);
 		return rest;
 	}
 	const staveNote = new StaveNote({
 		keys: chord.notes.map(vexflowKey),
 		duration,
+		dots: lead.dots,
 		clef,
 		// No explicit <stem>: let vexflow choose the direction from staff position.
 		autoStem: !lead.stem,
