@@ -77,7 +77,7 @@ function addArticulations(staveNote: StaveNote, note: Note): void {
 }
 
 // Honor an explicit <stem>up|down (e.g. to separate two voices on one stave).
-// Absent, vexflow picks the stem direction itself.
+// Absent, auto-pick from staff position (see vexflowChord's auto_stem).
 function applyStem(staveNote: StaveNote, note: Note): void {
 	switch (note.stem) {
 		case 'up':
@@ -105,6 +105,8 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 		keys: chord.notes.map(vexflowKey),
 		duration,
 		clef,
+		// No explicit <stem>: let vexflow choose the direction from staff position.
+		autoStem: !lead.stem,
 	});
 	chord.notes.forEach((note, i) => {
 		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];

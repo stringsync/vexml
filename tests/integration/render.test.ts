@@ -67,6 +67,12 @@ const TEST_CASES = [
 	// rest; measure 2 half, quarter, eighth, sixteenth, then two thirty-second rests.
 	testCase('rest.musicxml', 'rest.png'),
 
+	// Treble stave, 3/4: stem direction on G4/B4/D5. Measure 1 has no <stem>, so the
+	// default follows staff position (middle line B4) — low G4 stems up, middle B4 and
+	// high D5 stem down. Measure 2 repeats the three pitches with an explicit <stem>
+	// that overrides each default — G4 down, B4 up, D5 up.
+	testCase('note_stem_direction.musicxml', 'note_stem_direction.png'),
+
 	// Treble stave, 4/4: four C5 quarter notes at one staff position — sharp, flat,
 	// natural, then no accidental — so only the accidental glyph varies.
 	testCase('accidentals.musicxml', 'accidentals.png'),
@@ -112,10 +118,11 @@ const TEST_CASES = [
 	// (G5/A5) on top.
 	testCase('chord.musicxml', 'chord.png'),
 
-	// Treble stave, 4/4: ledger lines on quarter notes and chords — a high C6 (two
-	// ledger lines above), a middle C4 (one ledger line below), an A5/C6/E6 chord
-	// above the staff, then a wide C4/C5/C6 chord spanning ledger lines above and
-	// below.
+	// Treble stave, 3/4: an ascending run of quarter notes covering every natural
+	// pitch from F3 (three ledger lines below the staff) up to E6 (three ledger lines
+	// above), three notes per measure across seven measures — ledger lines grow from
+	// three below, shrink to none on the staff, then grow to three above. Wraps across
+	// systems.
 	testCase('ledger_lines.musicxml', 'ledger_lines.png'),
 
 	// Treble stave, 4/4, on C5: measure 1 two half notes tied within the measure;
