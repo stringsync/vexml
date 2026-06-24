@@ -68,6 +68,14 @@ const TEST_CASES = [
 	// (C5, same pitch in both).
 	testCase('measures_two.musicxml', 'measures_two.png'),
 
+	// Grand staff (empty treble over empty bass), two measures. The internal barline
+	// between measures 1 and 2 is a plain single line on each staff. The piece's final
+	// measure closes with a thin-thick end barline, and the connector joining the two
+	// staves at that right edge is the matching bold thin-thick double line
+	// (boldDoubleRight) rather than the plain single line drawn at non-final system
+	// ends.
+	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
+
 	// One system, treble 4/4: a key change mid-system. Measure 1 opens the system with
 	// a treble clef, a 2-sharp key signature, and a 4/4 time signature. Measure 2
 	// changes the key to 4 sharps — only the new key signature is redrawn at the

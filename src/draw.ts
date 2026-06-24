@@ -153,6 +153,7 @@ export function drawScore(
 		}
 		const { x: measureX, width: measureWidth, systemIndex } = box;
 		const { isSystemStart, isSystemEnd } = box;
+		const isLastMeasure = m === measureCount - 1;
 		if (systemIndex !== currentSystem) {
 			if (currentSystem >= 0) {
 				systemTopY = systemContentBottom + systemGap;
@@ -191,9 +192,12 @@ export function drawScore(
 				// Only draw the end barline. Each measure's end barline is the same line
 				// as the next measure's left edge, so internal measures still get a divider;
 				// only the first measure of a system loses its left barline (intended). The
-				// stave connector marks the system's left edge for multi-staff parts.
+				// stave connector marks the system's left edge for multi-staff parts. The
+				// final measure of the piece closes with a thin-thick end barline.
 				stave.setBegBarType(Barline.type.NONE);
-				stave.setEndBarType(Barline.type.SINGLE);
+				stave.setEndBarType(
+					isLastMeasure ? Barline.type.END : Barline.type.SINGLE,
+				);
 
 				// The previous measure's effective signatures (carried forward), used to
 				// spot a mid-system change. getKey/getTime return what's in effect at the
@@ -302,8 +306,10 @@ export function drawScore(
 					.draw();
 			}
 			if (isSystemEnd) {
+				// The piece's final measure gets a bold thin-thick connector to match
+				// its end barline; other system ends get a plain single line.
 				new StaveConnector(systemTop, systemBottom)
-					.setType('singleRight')
+					.setType(isLastMeasure ? 'boldDoubleRight' : 'singleRight')
 					.setContext(context)
 					.draw();
 			}
