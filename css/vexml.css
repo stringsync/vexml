@@ -1,0 +1,15 @@
+/* Optional explicit-import stylesheet. The library also injects these programmatically
+   via render(), so importing this file is only for users who prefer static CSS. */
+@font-face {
+	font-family: "Bravura";
+	src: url("../assets/fonts/Bravura.woff2") format("woff2");
+	font-weight: normal;
+	font-style: normal;
+	font-display: block; /* Music font must not flash — use block */
+}
+
+:root {
+	--vexml-font-music: "Bravura", serif;
+	--vexml-font-text: "EB Garamond", serif;
+	--vexml-font-ui: "Source Sans 3", sans-serif;
+}

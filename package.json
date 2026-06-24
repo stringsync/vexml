@@ -1,10 +1,25 @@
 {
 	"name": "vexml",
-	"module": "src/index.ts",
+	"version": "0.2.3",
 	"type": "module",
-	"bin": {
-		"vex": "cli/index.ts"
+	"license": "MIT",
+	"sideEffects": false,
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		},
+		"./css": "./css/vexml.css"
 	},
+	"files": [
+		"src",
+		"assets",
+		"css",
+		"!src/**/*.test.ts"
+	],
 	"dependencies": {
 		"@stringsync/mdom": "0.1.3",
 		"vexflow": "5.0.0"

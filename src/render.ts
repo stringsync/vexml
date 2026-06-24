@@ -1,8 +1,12 @@
 import { MDOMParser, type MDocument } from '@stringsync/mdom';
 import { drawScore } from './draw';
+import { type FontConfig, loadFonts } from './font-loader';
 import { computeLayout, type Layout } from './layout';
 
 export type RenderOptions = {
+	/** Font overrides. CSS custom properties on the container are the primary override API;
+	 * use this for self-hosted or offline fonts. */
+	fonts?: FontConfig;
 	/** How measures are placed across systems (default: standard at 1000px). */
 	layout?: Layout;
 	/** *How much space the notes get* (not how its divided): horizontal px per tick of musical
@@ -20,6 +24,7 @@ export async function render(
 	element: HTMLElement,
 	options?: RenderOptions,
 ) {
+	loadFonts(element, options?.fonts);
 	if (typeof input === 'string') {
 		return renderMusicXML(input, element, options);
 	}
