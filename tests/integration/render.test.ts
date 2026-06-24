@@ -110,7 +110,8 @@ const TEST_CASES = [
 	// on D6/E6 and below on C4/D4); (3) two double-beamed sixteenth groups then a half
 	// rest; (4) one beat of triple-beamed 32nds then half + quarter rests; (5) mixed
 	// eighth+sixteenth beats with partial secondary beams; (6) a beamed eighth group
-	// spanning an internal eighth rest. Wraps across systems.
+	// spanning an internal eighth rest; (7) beamed eighths in a low range (below the
+	// middle line) so the auto stem direction flips up. Wraps across systems.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second

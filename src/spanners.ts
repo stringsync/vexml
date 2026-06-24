@@ -13,7 +13,11 @@ export function buildBeams(
 			.map((note) => byLead.get(note))
 			.filter((note): note is StaveNote => note !== undefined);
 		if (notes.length > 1) {
-			beams.push(new Beam(notes));
+			// auto_stem=true picks one direction for the whole group (notes' own
+			// autoStem would conflict). But explicit <stem>s (e.g. voice separation)
+			// must stand, so only auto-stem when no note in the group has one.
+			const autoStem = group.every((note) => !note.stem);
+			beams.push(new Beam(notes, autoStem));
 		}
 	}
 	return beams;
