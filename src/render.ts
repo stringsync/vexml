@@ -334,24 +334,33 @@ function measureNoteArea(
 	return Math.max(floor, minNotes, ticks * pxPerTick);
 }
 
+/** How measures are placed across systems. */
+export type Layout =
+	| {
+			/** Wrap measures onto stacked systems (print-like). */
+			type: 'standard';
+			/** Reference layout width in px. The score is laid out to this width once;
+			 * the SVG viewBox then scales the result to whatever container it's placed
+			 * in, so resizing the container never re-flows or re-spaces it. */
+			width: number;
+	  }
+	| {
+			/** Lay every measure on one system (horizontal scroll); width is computed
+			 * from the content. */
+			type: 'panoramic';
+	  };
+
 export type RenderOptions = {
-	config?: {
-		/** Reference layout width in px. The score is laid out to this width once; the
-		 * SVG viewBox then scales the result to whatever container it's placed in, so
-		 * resizing the container never re-flows or re-spaces the music. */
-		WIDTH?: number;
-		/** 'standard' wraps measures onto stacked systems (print-like); 'panoramic'
-		 * lays every measure on one system (horizontal scroll). */
-		LAYOUT?: 'standard' | 'panoramic';
-		/** Absolute floor for a measure's note area. */
-		BASE_VOICE_WIDTH?: number;
-		/** Horizontal px per tick of musical time — the global spacing density that
-		 * makes identical content the same width everywhere in the piece. */
-		PX_PER_TICK?: number;
-		/** vexflow note-spacing curve: higher exaggerates long-vs-short note spacing. */
-		SOFTMAX_FACTOR?: number;
-		[key: string]: unknown;
-	};
+	/** How measures are placed across systems (default: standard at 1000px). */
+	layout?: Layout;
+	/** *How much space the notes get* (not how its divided): horizontal px per tick of musical
+	 * time. The spacing-density knob — bigger spreads every measure wider, so identical content
+	 * stays the same width everywhere in the piece. */
+	pxPerTick?: number;
+	/** *How the space notes get is divided* (not how much): vexflow's note-spacing curve.
+	 * Given the width pxPerTick allots, higher exaggerates the long-vs-short note ratio. A
+	 * shape constant, independent of overall density. */
+	softmaxFactor?: number;
 };
 
 export async function render(
@@ -379,11 +388,14 @@ function renderMDoc(
 		return;
 	}
 
-	const width = options?.config?.WIDTH ?? 1000;
-	const layoutMode = options?.config?.LAYOUT ?? 'standard';
-	const baseVoiceWidth = options?.config?.BASE_VOICE_WIDTH ?? 80;
-	const pxPerTick = options?.config?.PX_PER_TICK ?? 0.012;
-	const softmaxFactor = options?.config?.SOFTMAX_FACTOR ?? 10;
+	const layout = options?.layout ?? { type: 'standard', width: 1000 };
+	const layoutMode = layout.type;
+	// Panoramic computes its own width; 1000 is the page's starting floor.
+	const width = layout.type === 'standard' ? layout.width : 1000;
+	// Absolute floor for a measure's note area.
+	const baseVoiceWidth = 80;
+	const pxPerTick = options?.pxPerTick ?? 0.012;
+	const softmaxFactor = options?.softmaxFactor ?? 10;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
 	const renderer = new Renderer(
@@ -426,10 +438,10 @@ function renderMDoc(
 
 	// --- Spacing (content only) ---------------------------------------------------
 	// A measure's note area is a pure function of its music: the musical-time width
-	// (ticks * PX_PER_TICK), floored at the collision-free minimum and
-	// BASE_VOICE_WIDTH. One global PX_PER_TICK means identical content is identically
-	// wide everywhere in the piece. The container never changes this — it only scales
-	// the finished layout via the SVG viewBox.
+	// (ticks * pxPerTick), floored at the collision-free minimum and baseVoiceWidth.
+	// One global pxPerTick means identical content is identically wide everywhere in
+	// the piece. The container never changes this — it only scales the finished layout
+	// via the SVG viewBox.
 	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
 		const staves: { voices: ScoreVoice[]; clef: string }[] = [];
 		for (const part of parts) {
@@ -475,7 +487,7 @@ function renderMDoc(
 	// --- Breaks -------------------------------------------------------------------
 	// Standard: wrap to a new system once the next measure's note area would overrun
 	// the reference width. Panoramic: one system holding every measure. Either way
-	// breaks depend only on the music and WIDTH, never on the live container.
+	// breaks depend only on the music and width, never on the live container.
 	const systems: number[][] = [];
 	if (layoutMode === 'panoramic') {
 		systems.push(Array.from({ length: measureCount }, (_, m) => m));

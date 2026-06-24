@@ -1,5 +1,6 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { type Browser, chromium } from 'playwright';
+import type { RenderOptions } from '../../src';
 import { serve } from './serve';
 
 const PORT = 3100;
@@ -18,20 +19,27 @@ afterAll(async () => {
 	server?.stop(true);
 });
 
-// Every fixture is laid out to one reference width; the SVG viewBox scales the
-// result to any container at runtime, so a single static width exercises the
-// layout deterministically.
-const WIDTH = 1000;
+// A fixture is laid out to its reference width (default 1000); the SVG viewBox
+// scales the result to any container at runtime, so a single static width
+// exercises the layout deterministically.
+const DEFAULT_WIDTH = 1000;
 
 /** Render a corpus file in the browser and return its screenshot PNG. */
-export async function render(file: string): Promise<Buffer> {
+export async function render(
+	file: string,
+	renderOptions: RenderOptions,
+): Promise<Buffer> {
+	const width =
+		renderOptions.layout?.type === 'standard'
+			? renderOptions.layout.width
+			: DEFAULT_WIDTH;
 	const page = await browser.newPage({
-		viewport: { width: WIDTH + 64, height: 600 },
+		viewport: { width: width + 64, height: 600 },
 	});
 	try {
 		await page.goto(`http://localhost:${PORT}/`);
 		await page.evaluate(
-			async ({ file, width }) => {
+			async ({ file, renderOptions }) => {
 				const res = await fetch(`/data/${file}`);
 				const input = file.endsWith('.mxl')
 					? await res.blob()
@@ -40,9 +48,9 @@ export async function render(file: string): Promise<Buffer> {
 				if (!element) {
 					throw new Error('element not found');
 				}
-				await window.render(input, element, { config: { WIDTH: width } });
+				await window.render(input, element, renderOptions);
 			},
-			{ file, width: WIDTH },
+			{ file, renderOptions },
 		);
 		return await page.locator('#screenshot').screenshot();
 	} finally {

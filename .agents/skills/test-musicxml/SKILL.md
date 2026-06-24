@@ -14,8 +14,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Reuse or extend an existing case when that is the least surprising option.
 
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
-   - Name the file `NN_category_variant.musicxml`: a gapped numeric prefix (10, 20, 30, …) placing it in incremental order, a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …), then a short variant. Gaps leave room to insert related cases without renumbering. Match the existing files in `tests/integration/__data__/`.
-   - Register it in `tests/integration/render.test.ts` with `it('<filename>.musicxml')`. That file keeps a roadmap of planned cases as commented `it(...)` lines — uncomment the matching one rather than re-adding it.
+   - Name the file `category_variant.musicxml`: a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …) then a short variant. Match the existing files in `tests/integration/__data__/`.
+   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', {})` to the `TEST_CASES` array, in the position that reads in logical order (the array order is the only ordering — there is no numeric prefix). Pass any non-default `RenderOptions` as the second argument; they are encoded into the screenshot name.
    - Keep the fixture as small as practical while still demonstrating the behavior.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 
@@ -53,10 +53,10 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 8. If the target render is correct, update only that baseline:
 
    ```sh
-   vex test --update -t <name>
+   vex test --update <name>
    ```
 
-   Where `<name>` is the baseline/test title — the MusicXML basename plus `_<width>px` (e.g. `50_clef_treble_375px`), as registered by `it()` in `tests/integration/render.test.ts` (helper in `tests/testing/it.ts`). A prefix such as `50_clef_treble` also matches.
+   Where `<name>` is the test title — the screenshot filename: the MusicXML basename plus any encoded `RenderOptions` (e.g. `clef_treble.png`, or `clef_treble__width-500.png`), as registered by `testCase()` in `tests/integration/render.test.ts` (helper in `tests/testing/test-case.ts`). The pattern is the first positional argument and matches by prefix, so `clef_treble` also matches.
 
 9. Validate that there are no regressions.
    - Run `vex test` again after the selective baseline update.

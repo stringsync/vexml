@@ -87,15 +87,15 @@ if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 
 expect.extend({
 	/** Diff a screenshot against its baseline; record when missing or UPDATE_SCREENSHOTS=1. */
-	toMatchBaseline(received: unknown, name: string) {
+	toMatchScreenshot(received: unknown, filename: string) {
 		const buf = received as Buffer;
-		seen.add(`${name}.png`);
-		const baseline = path.join(SCREENSHOTS_DIR, `${name}.png`);
+		seen.add(filename);
+		const baseline = path.join(SCREENSHOTS_DIR, filename);
 
 		if (UPDATE || !existsSync(baseline)) {
 			mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 			writeFileSync(baseline, buf);
-			return { pass: true, message: () => `wrote baseline ${name}.png` };
+			return { pass: true, message: () => `wrote baseline ${filename}` };
 		}
 
 		const expected = PNG.sync.read(readFileSync(baseline));
@@ -105,7 +105,7 @@ expect.extend({
 			return {
 				pass: false,
 				message: () =>
-					`${name}: size ${got.width}x${got.height} != baseline ${expected.width}x${expected.height}`,
+					`${filename}: size ${got.width}x${got.height} != baseline ${expected.width}x${expected.height}`,
 			};
 		}
 
@@ -120,25 +120,25 @@ expect.extend({
 		);
 
 		if (mismatch > 0) {
-			seenDiffs.add(`${name}.png`);
+			seenDiffs.add(filename);
 			mkdirSync(DIFF_DIR, { recursive: true });
 			writeFileSync(
-				path.join(DIFF_DIR, `${name}.png`),
+				path.join(DIFF_DIR, filename),
 				composite(expected, diff, got, expected.width, expected.height),
 			);
 			return {
 				pass: false,
 				message: () =>
-					`${name}: ${mismatch} pixels differ — see __diffs__/${name}.png`,
+					`${filename}: ${mismatch} pixels differ — see __diffs__/${filename}`,
 			};
 		}
 
-		return { pass: true, message: () => `${name} matches baseline` };
+		return { pass: true, message: () => `${filename} matches baseline` };
 	},
 });
 
 declare module 'bun:test' {
 	interface Matchers {
-		toMatchBaseline(name: string): void;
+		toMatchScreenshot(filename: string): void;
 	}
 }

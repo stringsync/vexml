@@ -16,22 +16,21 @@ program
 	});
 
 program
-	.command('test')
-	.description('run integration (visual regression) tests')
+	.command('test [pattern]')
+	.description('run integration (visual regression) tests; pattern filters by name')
 	.option('--update', 'update screenshot baselines')
 	.option('--local', 'run on the host instead of the pinned Docker image')
 	.option('--clean', 'delete orphaned screenshots')
-	.option('-t, --test <pattern>', 'only run tests matching the name pattern')
-	.action(async (opts) => {
-		if (opts.clean && opts.test) {
-			console.error('vex test: --clean and --test are incompatible');
+	.action(async (pattern, opts) => {
+		if (opts.clean && pattern) {
+			console.error('vex test: --clean and a pattern are incompatible');
 			process.exit(1);
 		}
 		await test({
 			local: opts.local ?? false,
 			update: opts.update ?? false,
 			clean: opts.clean ?? false,
-			test: opts.test,
+			pattern,
 		});
 	});
 

@@ -7,10 +7,10 @@ export async function test(opts: {
 	local: boolean;
 	update: boolean;
 	clean: boolean;
-	test?: string;
+	pattern?: string;
 }) {
 	// bun's -t filters tests by name.
-	const args = opts.test ? ['-t', opts.test] : [];
+	const args = opts.pattern ? ['-t', opts.pattern] : [];
 	if (opts.local) {
 		return testLocal(opts, args);
 	} else {
