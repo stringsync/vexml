@@ -139,8 +139,10 @@ const TEST_CASES = [
 	// two stem-up and the slur stays clear of both noteheads and the stem-up stem tips;
 	// (7) one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so the
 	// stems alternate down-up-down-up under the slur; (8) one slur beneath an ascending
-	// low line E4, F4, G4, A4 (all stem-up), the slur bowing below the noteheads. Wraps
-	// across systems.
+	// low line E4, F4, G4, A4 (all stem-up), the slur bowing below the noteheads; (9)
+	// three chained slurs over E4, G4, E5, C5 — a slur below the first pair, a slur
+	// above the last pair, and a third slur bridging note 2 to note 3. Wraps across
+	// systems.
 	testCase('slur.musicxml', 'slur.png'),
 
 	// Tuplets on C5: measure 1 a beamed eighth-note triplet ("3"), a bracketed
