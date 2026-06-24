@@ -57,11 +57,13 @@ function renderMDoc(
 	// ponytail: measures laid left-to-right; every part's staves stack vertically
 	// down the page. A part with >1 stave is joined by a brace; multiple parts are
 	// grouped by a bracket, and the whole system shares a left/right barline.
-	// Inter-part spacing reuses the intra-part spacing for simplicity.
+	// Staves within a part sit further apart than the gap between parts, so the
+	// brace-joined group reads as one instrument.
 	// Left margin leaves room for the brace/bracket, which draw left of the stave's x.
 	const x = 30;
 	const y = 40;
-	const staveSpacing = 80;
+	const intraPartSpacing = 120;
+	const interPartSpacing = 80;
 	const measureCount = Math.max(parts[0]?.measures.length ?? 0, 1);
 	const totalStaves = parts.reduce(
 		(sum, part) => sum + Math.max(part.staveCount, 1),
@@ -69,8 +71,20 @@ function renderMDoc(
 	);
 	const measureWidth = (width - 2 * x) / measureCount;
 
+	// Precompute each stave's y-offset (same for every measure): a within-part gap
+	// after every stave except a part's last, which gets the smaller inter-part gap.
+	const staveOffsets: number[] = [];
+	let offset = 0;
+	for (const part of parts) {
+		const staveCount = Math.max(part.staveCount, 1);
+		for (let s = 0; s < staveCount; s++) {
+			staveOffsets.push(offset);
+			offset += s === staveCount - 1 ? interPartSpacing : intraPartSpacing;
+		}
+	}
+
 	// Height grows with the full stave stack so the bottom stave isn't clipped.
-	renderer.resize(width, y + totalStaves * staveSpacing + 40);
+	renderer.resize(width, y + offset + 40);
 
 	for (let m = 0; m < measureCount; m++) {
 		const measureX = x + m * measureWidth;
@@ -92,13 +106,13 @@ function renderMDoc(
 			for (let s = 0; s < staveCount; s++) {
 				const stave = new Stave(
 					measureX,
-					y + staveRow * staveSpacing,
+					y + (staveOffsets[staveRow] ?? 0),
 					measureWidth,
 				);
 				stave.setBegBarType(Barline.type.SINGLE);
 				stave.setEndBarType(Barline.type.SINGLE);
 
-				const clef = measure.getClef();
+				const clef = measure.getClef(String(s + 1));
 				if (clef) {
 					stave.addClef(vexflowClef(clef.sign, clef.line));
 				}
