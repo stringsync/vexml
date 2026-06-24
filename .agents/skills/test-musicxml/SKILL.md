@@ -16,6 +16,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
    - Name the file descriptively.
    - Keep the fixture as small as practical while still demonstrating the behavior.
+   - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 
 3. Run:
 

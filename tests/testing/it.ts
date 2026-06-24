@@ -5,5 +5,5 @@ export function it(name: string, filename: string, width: number) {
 		throw new Error(`Expected musicxml to end with .musicxml, got ${filename}`);
 	}
 	const baseline = `${filename.replace(/\.musicxml$/, '')}_${width}px`;
-	return { name, width, filename, baseline };
+	return { name: `${name} (${baseline})`, width, filename, baseline };
 }

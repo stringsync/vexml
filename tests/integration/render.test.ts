@@ -5,8 +5,13 @@ import { it, WIDTHS } from '../testing/it';
 const TEST_CASES = [
 	it('should render an empty score', 'empty.musicxml', WIDTHS.mobile),
 	it(
-		'should render a single part with a single staff',
-		'single_part_single_staff.musicxml',
+		'should render a single part with a single stave',
+		'one_part_one_stave.musicxml',
+		WIDTHS.mobile,
+	),
+	it(
+		'should render a single part with two staves connected by a brace',
+		'one_part_two_staves.musicxml',
 		WIDTHS.mobile,
 	),
 ];

@@ -1,5 +1,5 @@
 import { MDOMParser, type MDocument } from '@stringsync/mdom';
-import { Renderer, Stave } from 'vexflow';
+import { Barline, Renderer, Stave, StaveConnector } from 'vexflow';
 
 // MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
 // unknown combinations fall back to treble.
@@ -53,32 +53,68 @@ function renderMDoc(
 		Renderer.Backends.SVG,
 	);
 	const context = renderer.getContext();
-	renderer.resize(width, 200);
 
-	// ponytail: one part, measures laid left-to-right; signatures drawn when the
-	// measure declares them. Notes/multi-part/multi-staff layout come with the
-	// fixtures that need them.
-	const x = 10;
+	// ponytail: one part, measures laid left-to-right; a part's staves stack
+	// vertically and are joined by a brace. Signatures drawn when the measure
+	// declares them. Notes/multi-part layout come with the fixtures that need them.
+	// Left margin leaves room for the brace, which draws left of the stave's x.
+	const x = 30;
 	const y = 40;
+	const staveSpacing = 80;
+	const staveCount = Math.max(part.staveCount, 1);
 	const measureWidth = (width - 2 * x) / Math.max(part.measures.length, 1);
 
+	// Height grows with the stave stack so the bottom stave isn't clipped.
+	renderer.resize(width, y + staveCount * staveSpacing + 40);
+
 	for (const measure of part.measures) {
-		const stave = new Stave(x + measure.index * measureWidth, y, measureWidth);
+		const measureX = x + measure.index * measureWidth;
+		let topStave: Stave | undefined;
+		let bottomStave: Stave | undefined;
 
-		const clef = measure.getClef();
-		if (clef) {
-			stave.addClef(vexflowClef(clef.sign, clef.line));
-		}
-		const key = measure.getKey();
-		if (key?.rootNote) {
-			stave.addKeySignature(key.rootNote);
-		}
-		const time = measure.getTime();
-		if (time?.beats && time?.beatType) {
-			stave.addTimeSignature(`${time.beats}/${time.beatType}`);
+		for (let s = 0; s < staveCount; s++) {
+			const stave = new Stave(measureX, y + s * staveSpacing, measureWidth);
+			stave.setBegBarType(Barline.type.SINGLE);
+			stave.setEndBarType(Barline.type.SINGLE);
+
+			const clef = measure.getClef();
+			if (clef) {
+				stave.addClef(vexflowClef(clef.sign, clef.line));
+			}
+			const key = measure.getKey();
+			if (key?.rootNote) {
+				stave.addKeySignature(key.rootNote);
+			}
+			const time = measure.getTime();
+			if (time?.beats && time?.beatType) {
+				stave.addTimeSignature(`${time.beats}/${time.beatType}`);
+			}
+
+			stave.setContext(context).draw();
+			topStave ??= stave;
+			bottomStave = stave;
 		}
 
-		stave.setContext(context).draw();
+		// Join the part's staves into a system: brace + left line on the first
+		// measure, and a closing line on the right edge.
+		if (topStave && bottomStave && staveCount > 1) {
+			if (measure.index === 0) {
+				new StaveConnector(topStave, bottomStave)
+					.setType('brace')
+					.setContext(context)
+					.draw();
+				new StaveConnector(topStave, bottomStave)
+					.setType('singleLeft')
+					.setContext(context)
+					.draw();
+			}
+			if (measure.index === part.measures.length - 1) {
+				new StaveConnector(topStave, bottomStave)
+					.setType('singleRight')
+					.setContext(context)
+					.draw();
+			}
+		}
 	}
 }
 
