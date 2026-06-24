@@ -1,0 +1,4 @@
+node_modules
+.git
+tests/integration/__diffs__
+test-results

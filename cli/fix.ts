@@ -1,6 +1,11 @@
-import { $ } from 'bun';
+import { run } from './run';
 
 export async function fix({ check }: { check: boolean }) {
-	await $`bunx biome check ${check ? [] : ['--write']} .`;
-	await $`bunx tsc --noEmit`;
+	await run('bunx', [
+		'biome',
+		'check',
+		...(check ? [] : ['--write', '--unsafe']),
+		'.',
+	]);
+	await run('bunx', ['tsc', '--noEmit']);
 }
