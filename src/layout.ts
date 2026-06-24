@@ -1,6 +1,12 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
 import { Formatter, Voice } from 'vexflow';
-import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
+import {
+	endBeatOf,
+	meterBeats,
+	vexflowClef,
+	vexflowTabTickables,
+	vexflowVoiceTickables,
+} from './notes';
 
 /** Horizontal gap between a right-aligned part label and the stave it sits beside.
  * Wide enough to clear the brace drawn on multi-stave parts. Shared with draw so the
@@ -23,11 +29,20 @@ export type Layout =
 			type: 'panoramic';
 	  };
 
+/** When to print measure numbers above the staff. */
+export type MeasureNumbering =
+	| 'none'
+	| 'system'
+	| 'every'
+	| 'every-2'
+	| 'every-3';
+
 export type LayoutOptions = {
 	layout?: Layout;
 	pxPerTick?: number;
 	softmaxFactor?: number;
 	showPartLabels?: boolean;
+	measureNumbering?: MeasureNumbering;
 };
 
 /** A measure's placed box within its system. */
@@ -61,27 +76,47 @@ export type ScoreLayout = {
 	/** Resolved spacing curve, shared by this measurement and the draw pass so the
 	 * drawn notes land where the spacing was computed for. */
 	softmaxFactor: number;
+	/** When the draw pass prints measure numbers. */
+	measureNumbering: MeasureNumbering;
 };
+
+// Minimum width per tab note. vexflow's preCalculateMinTotalWidth packs tab notes
+// by their narrow fret-digit glyphs, which reads as cramped at eighth/sixteenth
+// rhythms; this floors each note's share so dense tab measures still breathe.
+const TAB_MIN_NOTE_SPACING = 32;
 
 // A measure's note-area width: the musical-time width (ticks * pxPerTick) so equal
 // durations get equal space everywhere, never below the collision-free minimum or
 // the floor. Builds throwaway notes so the draw pass is untouched. The busiest
 // staff wins (all staves in a measure share one width).
 function measureNoteArea(
-	staves: { voices: ScoreVoice[]; clef: string }[],
+	staves: {
+		voices: ScoreVoice[];
+		clef: string;
+		meterFloor: number;
+		isTab: boolean;
+	}[],
 	floor: number,
 	pxPerTick: number,
 	softmaxFactor: number,
 ): number {
 	let minNotes = 0;
 	let ticks = 0;
-	for (const { voices, clef } of staves) {
-		const endBeat = endBeatOf(voices);
-		const vexVoices = voices.map((voice) =>
+	for (const { voices, clef, meterFloor, isTab } of staves) {
+		// Match drawNotes: pad underfull measures to the meter so the measured width
+		// reserves the same trailing space the draw pass will leave.
+		const endBeat = Math.max(endBeatOf(voices), meterFloor);
+		// Tab voices build TabNotes (no ghost padding), matching drawTabNotes.
+		const perVoice = voices.map((voice) =>
+			isTab
+				? vexflowTabTickables(voice.chords)
+				: vexflowVoiceTickables(voice.chords, clef, endBeat),
+		);
+		const vexVoices = perVoice.map((tickables) =>
 			new Voice()
 				.setMode(Voice.Mode.SOFT)
 				.setSoftmaxFactor(softmaxFactor)
-				.addTickables(vexflowVoiceTickables(voice.chords, clef, endBeat)),
+				.addTickables(tickables),
 		);
 		if (vexVoices.length === 0) {
 			continue;
@@ -92,6 +127,11 @@ function measureNoteArea(
 				.joinVoices(vexVoices)
 				.preCalculateMinTotalWidth(vexVoices),
 		);
+		// Floor a tab measure's width by its note count so dense rhythms stay legible.
+		if (isTab) {
+			const noteCount = Math.max(0, ...perVoice.map((t) => t.length));
+			minNotes = Math.max(minNotes, noteCount * TAB_MIN_NOTE_SPACING);
+		}
 		for (const vexVoice of vexVoices) {
 			ticks = Math.max(ticks, vexVoice.getTicksUsed().value());
 		}
@@ -166,7 +206,12 @@ export function computeLayout(
 	// One global pxPerTick means identical content is identically wide everywhere in
 	// the piece.
 	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
-		const staves: { voices: ScoreVoice[]; clef: string }[] = [];
+		const staves: {
+			voices: ScoreVoice[];
+			clef: string;
+			meterFloor: number;
+			isTab: boolean;
+		}[] = [];
 		for (const part of parts) {
 			const measure = part.measures[m];
 			if (!measure) {
@@ -176,10 +221,6 @@ export function computeLayout(
 			for (let s = 0; s < staveCount; s++) {
 				const staffNumber = String(s + 1);
 				const clef = measure.getClef(staffNumber);
-				// TAB notes aren't drawn yet, so they reserve no note width.
-				if (clef?.sign === 'TAB') {
-					continue;
-				}
 				const voices = measure.voices.filter(
 					(v) => v.staff === staffNumber && v.chords.length > 0,
 				);
@@ -187,6 +228,8 @@ export function computeLayout(
 					staves.push({
 						voices,
 						clef: clef ? vexflowClef(clef.sign, clef.line) : 'treble',
+						meterFloor: meterBeats(measure.getTime(staffNumber)),
+						isTab: clef?.sign === 'TAB',
 					});
 				}
 			}
@@ -290,5 +333,6 @@ export function computeLayout(
 		floorHeight,
 		softmaxFactor,
 		labelIndent,
+		measureNumbering: options?.measureNumbering ?? 'system',
 	};
 }

@@ -176,6 +176,22 @@ const TEST_CASES = [
 	//   above the last pair, and a third slur bridging note 2 to note 3.
 	testCase('slur.musicxml', 'slur.png'),
 
+	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain
+	// <slur>s, the "H"/"P" label inferred from fret motion (higher target = hammer-on,
+	// lower = pull-off). No <time>, so no time signature is drawn.
+	// - M1: single note on string 2, fret 5 -> 7 (ascending) — a hammer-on "H".
+	// - M2: single note on string 2, fret 7 -> 5 (descending) — a pull-off "P".
+	// - M3: a two-string chord (strings 3+2) hammered up (5/5 -> 7/8); the lead string's
+	//   ascending motion drives the whole chord. The target chord also starts a pull-off
+	//   slur that resolves in M4.
+	// - M4: the pull-off chord resolves back down (7/8 -> 5/5, "P"), then a pull-off to an
+	//   open string on string 1 (fret 7 -> 0, "P"), the open string drawn as "0".
+	// - M5: the same gestures on eighth notes (string 1) — two hammer-on pairs (5 -> 7)
+	//   then two pull-off pairs (7 -> 5) — to show the technique at a tighter rhythm.
+	// - M6: sixteenth notes (string 2) — a hammer-on pair (5 -> 7) then a pull-off pair
+	//   (7 -> 5), closing on a pull-off to the open string (fret 5 -> 0).
+	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.
@@ -188,12 +204,22 @@ const TEST_CASES = [
 	// varies.
 	testCase('articulations.musicxml', 'articulations.png'),
 
+	// Treble stave, 4/4: grace notes (small notes that steal no beat, drawn just left of
+	// the main note they ornament). Every main note is a plain C5 quarter so only the
+	// grace varies.
+	// - M1: a C5 quarter preceded by an unslashed 16th D5 (appoggiatura); a slashed 16th
+	//   D5 (acciaccatura, with a stroke through its flag); a beamed pair of 16ths (E5, D5)
+	//   sharing one grace beam; then an unslashed 8th D5 (single flag).
+	// - M2: grace notes carrying printed accidentals — a sharp D#5 grace, then a flat Db5
+	//   grace, each before a C5 quarter; a half rest fills the rest of the bar.
+	testCase('grace_notes.musicxml', 'grace_notes.png'),
+
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
 	// down. May wrap across systems.
 	// - M1: V1 a mixed quarter/eighth line spanning the whole measure; V2 silent on beats 1
 	//   and 4 via leading and trailing <forward> (no rests drawn). The silence is held open
-	//   by invisible ghost tickables (src/stave-notes.ts), so V2 starts aligned on beat 2
+	//   by invisible ghost tickables (src/notes.ts), so V2 starts aligned on beat 2
 	//   (G4 under V1's F5) and its last note (G4 on beat 3.5) keeps a full beat of space to
 	//   its right before V1's final C5 on beat 4.
 	// - M2: a full <backup> to the measure start — V1 a dotted half (D5, dot to its right)
@@ -202,7 +228,7 @@ const TEST_CASES = [
 	//   dotted-quarter F5 + eighth E5, a <forward> skipping beat 3, then a quarter D5. V2 a
 	//   quarter G4, a <forward> skipping beat 2, two beamed eighths (A4, G4), then a quarter
 	//   F4. The dotted notes carry their dotted duration in vexflow's tick count
-	//   (src/stave-notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
+	//   (src/notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
 	//   vertically aligned with V2's beat-3 note rather than drifting half a beat / a beat
 	//   early.
 	testCase('two_voices.musicxml', 'two_voices.png'),
@@ -220,13 +246,36 @@ const TEST_CASES = [
 	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
 
 	// Eight identical C5 whole-note measures wrapping onto two systems of four measures
-	// each (default layout).
+	// each (default layout). The default 'system' measure numbering prints a "1" above
+	// the top system's first measure and a "5" above the bottom system's first measure.
 	testCase('system_break.musicxml', 'system_break.png'),
 
 	// The same eight C5 whole-note measures, but with panoramic layout: all eight sit
 	// on a single uninterrupted system (no system break).
 	testCase('system_break.musicxml', 'layout_panoramic.png', {
 		layout: { type: 'panoramic' },
+	}),
+
+	// The eight C5 whole-note measures (two systems of four), with a measure number
+	// printed above the left edge of every measure (measureNumbering 'every'):
+	// "1 2 3 4" across the top system, "5 6 7 8" across the bottom.
+	testCase('system_break.musicxml', 'measure_numbering_every.png', {
+		measureNumbering: 'every',
+	}),
+
+	// The same two systems with measure numbering turned off (measureNumbering
+	// 'none'): no measure numbers anywhere, opting out of the 'system' default.
+	testCase('system_break.musicxml', 'measure_numbering_none.png', {
+		measureNumbering: 'none',
+	}),
+
+	// The same two systems with measureNumbering 'every-3': every 3rd measure plus
+	// every system start. Numbered measures are 1, 4, 7 (every 3rd) and 5 (the second
+	// system's start, which is not a multiple of 3) — so 1 and 4 on the top system, 5
+	// and 7 on the bottom. This is the case that proves the "plus every system start"
+	// union: measure 5 is numbered only because it begins a system.
+	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
+		measureNumbering: 'every-3',
 	}),
 ];
 

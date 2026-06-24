@@ -1,5 +1,13 @@
 import type { Chord, Note } from '@stringsync/mdom';
-import { Beam, Curve, type StaveNote, StaveTie, Tuplet } from 'vexflow';
+import {
+	Beam,
+	Curve,
+	type StaveNote,
+	StaveTie,
+	type TabNote,
+	TabTie,
+	Tuplet,
+} from 'vexflow';
 
 // Beams: mdom groups the <beam> runs (measure.beams); map each group's notes to
 // their StaveNotes. Built before formatting so the beamed notes drop their flags.
@@ -83,6 +91,65 @@ export function buildTies(
 					}),
 				);
 			}
+		}
+	}
+	return ties;
+}
+
+// An explicit hammer-on/pull-off marker in <notations><technical>, or null when
+// neither is present (the common case — most tab is notated with only a slur).
+function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
+	const technical = note.child('notations')?.child('technical');
+	if (technical?.child('hammer-on')) {
+		return 'hammer';
+	}
+	if (technical?.child('pull-off')) {
+		return 'pull';
+	}
+	return null;
+}
+
+// Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur>;
+// vexflow draws each as a TabTie labelled "H" or "P". When no explicit
+// <hammer-on>/<pull-off> marker says which, infer from the fret motion of the
+// lead string: a higher target fret is a hammer-on, a lower one a pull-off (pulling
+// off to an open string is just a target fret of 0).
+export function buildHammerPulls(
+	chords: Chord[],
+	byTabLead: Map<Note, TabNote>,
+): TabTie[] {
+	const ties: TabTie[] = [];
+	for (const chord of chords) {
+		const firstNote = byTabLead.get(chord.lead);
+		if (!firstNote) {
+			continue;
+		}
+		const firstIndexes = firstNote.getPositions().map((_, i) => i);
+		for (const slur of chord.lead.slurs) {
+			if (slur.slurType !== 'start') {
+				continue;
+			}
+			const partner = slur.partner?.note;
+			const lastNote = partner && byTabLead.get(partner);
+			// An unclosed slur (no resolved partner) isn't a real hammer-on/pull-off;
+			// skip it rather than drawing a dangling tie.
+			if (!partner || !lastNote) {
+				continue;
+			}
+			const hammer =
+				(explicitTechnique(chord.lead) ??
+					((partner.fret ?? 0) > (chord.lead.fret ?? 0)
+						? 'hammer'
+						: 'pull')) === 'hammer';
+			const notes = {
+				firstNote,
+				lastNote,
+				firstIndexes,
+				lastIndexes: lastNote.getPositions().map((_, i) => i),
+			};
+			ties.push(
+				hammer ? TabTie.createHammeron(notes) : TabTie.createPulloff(notes),
+			);
 		}
 	}
 	return ties;

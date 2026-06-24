@@ -1,12 +1,15 @@
-import type { Chord, Note } from '@stringsync/mdom';
+import type { Chord, Note, Time } from '@stringsync/mdom';
 import {
 	Accidental,
 	Articulation,
 	Dot,
 	GhostNote,
+	GraceNote,
+	GraceNoteGroup,
 	StaveNote,
 	Stem,
 	type StemmableNote,
+	TabNote,
 } from 'vexflow';
 
 // MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
@@ -89,10 +92,22 @@ function applyStem(staveNote: StaveNote, note: Note): void {
 	}
 }
 
+// Stack each chord member's printed <accidental> onto its notehead.
+function addAccidentals(staveNote: StaveNote, chord: Chord): void {
+	chord.notes.forEach((note, i) => {
+		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
+		if (code) {
+			staveNote.addModifier(new Accidental(code), i);
+		}
+	});
+}
+
 // Build a vexflow StaveNote for one chord (a lead note plus any <chord/> members;
 // a single note is a one-member chord). Rests render as a centered rest glyph;
-// pitched notes stack their keys and carry each member's printed accidental,
-// dots, stem direction, and articulations.
+// grace notes (no <duration>) become small GraceNotes — slashed for an
+// acciaccatura — which vexflowVoiceTickables groups onto their host note; pitched
+// notes stack their keys and carry each member's printed accidental, dots, stem
+// direction, and articulations.
 export function vexflowChord(chord: Chord, clef: string): StaveNote {
 	const lead = chord.lead;
 	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
@@ -109,6 +124,17 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 		addDots(rest, lead);
 		return rest;
 	}
+	if (lead.isGrace) {
+		const grace = new GraceNote({
+			keys: chord.notes.map(vexflowKey),
+			duration,
+			// slash="yes" on the <grace> element marks an acciaccatura (a stroke
+			// through the stem/flag); its absence is a plain appoggiatura.
+			slash: lead.child('grace')?.getAttribute('slash') === 'yes',
+		});
+		addAccidentals(grace, chord);
+		return grace;
+	}
 	const staveNote = new StaveNote({
 		keys: chord.notes.map(vexflowKey),
 		duration,
@@ -117,16 +143,47 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 		// No explicit <stem>: let vexflow choose the direction from staff position.
 		autoStem: !lead.stem,
 	});
-	chord.notes.forEach((note, i) => {
-		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
-		if (code) {
-			staveNote.addModifier(new Accidental(code), i);
-		}
-	});
+	addAccidentals(staveNote, chord);
 	addDots(staveNote, lead);
 	applyStem(staveNote, lead);
 	addArticulations(staveNote, lead);
 	return staveNote;
+}
+
+// Build a vexflow TabNote for one chord on a tablature stave: each member's
+// <string>/<fret> becomes a position (string 1 = highest-pitched). Tab notes carry
+// no clef, accidentals, or stems — just the fret numbers stacked on their strings.
+export function vexflowTabChord(chord: Chord): TabNote {
+	const lead = chord.lead;
+	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+	return new TabNote({
+		positions: chord.notes.map((note) => ({
+			str: note.string ?? 1,
+			fret: note.fret ?? 0,
+		})),
+		duration,
+	});
+}
+
+// A tab voice's tickables: one TabNote per non-rest, non-grace chord, in onset
+// order. Unlike vexflowVoiceTickables there's no ghost-note gap filling — the
+// roadmap's tab lines are single-voice and contiguous. `record` captures each
+// chord's lead -> TabNote for later hammer-on/pull-off resolution; the layout pass
+// reuses this to size tab measures and passes none.
+export function vexflowTabTickables(
+	chords: Chord[],
+	record?: (lead: Note, tabNote: TabNote) => void,
+): TabNote[] {
+	const tickables: TabNote[] = [];
+	for (const chord of chords) {
+		if (chord.lead.isRest || chord.lead.isGrace) {
+			continue;
+		}
+		const tabNote = vexflowTabChord(chord);
+		record?.(chord.lead, tabNote);
+		tickables.push(tabNote);
+	}
+	return tickables;
 }
 
 // VexFlow duration code -> quarter-note beats, largest first.
@@ -157,6 +214,23 @@ function ghostNotes(beats: number): GhostNote[] {
 		}
 	}
 	return ghosts;
+}
+
+// A meter's length in quarter-note beats (4/4 -> 4, 6/8 -> 3, 2/2 -> 4). 0 when
+// unmetered or absent, so callers fall back to the content's own end. Flooring a
+// measure's endBeat at this pads an underfull measure (e.g. a final fragment) with
+// trailing ghosts, reserving the missing time as blank space instead of letting the
+// formatter justify the last note flush against the end barline.
+export function meterBeats(time: Time | null): number {
+	if (!time || time.isSenzaMisura) {
+		return 0;
+	}
+	const beats = Number(time.beats);
+	const beatType = Number(time.beatType);
+	if (!beats || !beatType) {
+		return 0;
+	}
+	return (beats / beatType) * 4;
 }
 
 // The beat a measure's voices run out to: the latest onset+duration across them.
@@ -190,16 +264,38 @@ export function vexflowVoiceTickables(
 ): StemmableNote[] {
 	const tickables: StemmableNote[] = [];
 	let cursor = 0;
+	// Grace notes steal no time, so they aren't tickables: they accumulate here and
+	// attach to the next real note as a GraceNoteGroup modifier, drawn just left of it.
+	let pendingGrace: { note: GraceNote; lead: Note }[] = [];
 	for (const chord of chords) {
+		if (chord.lead.isGrace) {
+			pendingGrace.push({
+				note: vexflowChord(chord, clef) as GraceNote,
+				lead: chord.lead,
+			});
+			continue;
+		}
 		const onset = chord.measureBeat ?? cursor;
 		if (onset > cursor + 1e-6) {
 			tickables.push(...ghostNotes(onset - cursor));
 		}
 		const staveNote = vexflowChord(chord, clef);
+		if (pendingGrace.length > 0) {
+			const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
+			// Beam the group when its grace notes carry <beam> markers (the main beam
+			// pass skips them — grace notes never enter `byLead`).
+			if (pendingGrace.some((g) => g.lead.beams.length > 0)) {
+				group.beamNotes();
+			}
+			staveNote.addModifier(group, 0);
+			pendingGrace = [];
+		}
 		record?.(chord.lead, staveNote);
 		tickables.push(staveNote);
 		cursor = onset + (chord.lead.beats ?? 0);
 	}
+	// ponytail: trailing grace notes with no following host note are dropped — vexflow
+	// anchors a GraceNoteGroup to the note it precedes. Add an anchor if a fixture needs it.
 	if (endBeat > cursor + 1e-6) {
 		tickables.push(...ghostNotes(endBeat - cursor));
 	}

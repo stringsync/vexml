@@ -2,7 +2,9 @@ import { MDOMParser, type MDocument } from '@stringsync/mdom';
 import { VexFlow } from 'vexflow';
 import { drawScore } from './draw';
 import { type FontConfig, loadFonts } from './font-loader';
-import { computeLayout, type Layout } from './layout';
+import { computeLayout, type Layout, type MeasureNumbering } from './layout';
+
+export type { MeasureNumbering };
 
 export type RenderOptions = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
@@ -20,6 +22,10 @@ export type RenderOptions = {
 	softmaxFactor?: number;
 	/** Print each part's instrument name to the left of the first system (default: false). */
 	showPartLabels?: boolean;
+	/** When to print measure numbers above the staff (default: 'system'). 'none' prints
+	 * none; 'system' numbers the first measure of each system; 'every' numbers every
+	 * measure; 'every-2'/'every-3' number every 2nd/3rd measure plus every system start. */
+	measureNumbering?: MeasureNumbering;
 };
 
 export async function render(

@@ -13,12 +13,25 @@ import {
 	Stave,
 	StaveConnector,
 	type StaveNote,
+	type TabNote,
 	TabStave,
 	Voice,
 } from 'vexflow';
-import { LABEL_GAP, type ScoreLayout } from './layout';
-import { buildBeams, buildSlurs, buildTies, buildTuplets } from './spanners';
-import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
+import { LABEL_GAP, type MeasureNumbering, type ScoreLayout } from './layout';
+import {
+	endBeatOf,
+	meterBeats,
+	vexflowClef,
+	vexflowTabTickables,
+	vexflowVoiceTickables,
+} from './notes';
+import {
+	buildBeams,
+	buildHammerPulls,
+	buildSlurs,
+	buildTies,
+	buildTuplets,
+} from './spanners';
 
 // MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
 // "beats/beat-type". null when there's nothing drawable. Doubles as the equality
@@ -49,8 +62,11 @@ function drawNotes(
 	clef: string,
 	softmaxFactor: number,
 	byLead: Map<Note, StaveNote>,
+	meterFloor: number,
 ): number {
-	const endBeat = endBeatOf(voices);
+	// Floor the run-out beat at the meter so an underfull measure pads trailing
+	// ghosts instead of jamming its last note against the end barline.
+	const endBeat = Math.max(endBeatOf(voices), meterFloor);
 	const perVoice = voices.map((voice) => {
 		// Real notes only (no gap-filling ghosts), for the bottom-bound calc below.
 		const staveNotes: StaveNote[] = [];
@@ -105,6 +121,58 @@ function drawNotes(
 	return bottom;
 }
 
+// Draw a tablature staff's notes: each mdom voice becomes a vexflow voice of
+// TabNotes (fret numbers on their strings). Tab notes carry no clef/key, no
+// ghost-note gap filling, and no beams here — the roadmap cases are single-voice
+// fretted lines — so this is a slimmer sibling of drawNotes. Hammer-ons/pull-offs
+// span measures, so the caller resolves them once over the whole score (this only
+// records each chord's TabNote in the shared `byTabLead` map).
+function drawTabNotes(
+	context: RenderContext,
+	stave: TabStave,
+	voices: ScoreVoice[],
+	softmaxFactor: number,
+	byTabLead: Map<Note, TabNote>,
+): void {
+	const vexVoices = voices.map((voice) =>
+		new Voice()
+			.setMode(Voice.Mode.SOFT)
+			.setSoftmaxFactor(softmaxFactor)
+			.addTickables(
+				vexflowTabTickables(voice.chords, (lead, tabNote) =>
+					byTabLead.set(lead, tabNote),
+				),
+			),
+	);
+	new Formatter({ softmaxFactor })
+		.joinVoices(vexVoices)
+		.formatToStave(vexVoices, stave);
+	for (const vexVoice of vexVoices) {
+		vexVoice.draw(context, stave);
+	}
+}
+
+// Whether measure at 0-based `index` (system-start or not) shows its number under
+// the given mode. 'every-N' numbers every Nth measure plus every system start.
+function showsMeasureNumber(
+	mode: MeasureNumbering,
+	index: number,
+	isSystemStart: boolean,
+): boolean {
+	switch (mode) {
+		case 'none':
+			return false;
+		case 'system':
+			return isSystemStart;
+		case 'every':
+			return true;
+		case 'every-2':
+			return isSystemStart || index % 2 === 0;
+		case 'every-3':
+			return isSystemStart || index % 3 === 0;
+	}
+}
+
 // Draw the whole score onto the element: one SVG stave per part-staff per measure,
 // placed at the boxes computed by computeLayout, with clefs/keys/time signatures,
 // notes, and the brace/barline connectors that group parts into systems.
@@ -123,6 +191,7 @@ export function drawScore(
 		width,
 		floorHeight,
 		labelIndent,
+		measureNumbering,
 	} = layout;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
@@ -145,6 +214,11 @@ export function drawScore(
 	const byLead = new Map<Note, StaveNote>();
 	const allChords: Chord[] = [];
 
+	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
+	// barlines, so TAB notes record into their own map and resolve at the end.
+	const byTabLead = new Map<Note, TabNote>();
+	const allTabChords: Chord[] = [];
+
 	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
 	// drawn content (notes + staff lines), so deep ledger lines push the next system
 	// down instead of colliding with it — fixed spacing can't, since note range is
@@ -161,6 +235,13 @@ export function drawScore(
 		const { x: measureX, width: measureWidth, systemIndex } = box;
 		const { isSystemStart } = box;
 		const isLastMeasure = m === measureCount - 1;
+		const showMeasureNumber = showsMeasureNumber(
+			measureNumbering,
+			m,
+			isSystemStart,
+		);
+		// Number is printed once per measure, above the system's top stave only.
+		let measureNumbered = false;
 		if (systemIndex !== currentSystem) {
 			if (currentSystem >= 0) {
 				systemTopY = systemContentBottom + systemGap;
@@ -264,18 +345,36 @@ export function drawScore(
 					stave.addTimeSignature(timeSpec);
 				}
 
+				// vexflow's setMeasure draws the number centered above the stave's left
+				// edge; only the top stave of each measure column gets it.
+				if (showMeasureNumber && !measureNumbered) {
+					stave.setMeasure(Number(measure.number));
+					measureNumbered = true;
+				}
+
 				stave.setContext(context).draw();
 				const staveBottom = stave.getBottomY();
 				pageBottom = Math.max(pageBottom, staveBottom);
 				systemContentBottom = Math.max(systemContentBottom, staveBottom);
 
-				// Draw this staff's notes on top of the stave. TAB notes need their own
-				// glyphs (string/fret), which no roadmap case exercises yet — skip them.
+				// Draw this staff's notes on top of the stave. A TAB stave draws its
+				// notes as fretted TabNotes; everything else uses the notation path.
 				// An empty voice (no chords) would crash the formatter, so it's filtered.
 				const voices = measure.voices.filter(
 					(v) => v.staff === staffNumber && v.chords.length > 0,
 				);
-				if (!isTab && voices.length > 0) {
+				if (isTab && voices.length > 0) {
+					drawTabNotes(
+						context,
+						stave as TabStave,
+						voices,
+						softmaxFactor,
+						byTabLead,
+					);
+					for (const voice of voices) {
+						allTabChords.push(...voice.chords);
+					}
+				} else if (voices.length > 0) {
 					const clefName = clef ? vexflowClef(clef.sign, clef.line) : 'treble';
 					const noteBottom = drawNotes(
 						context,
@@ -285,6 +384,7 @@ export function drawScore(
 						clefName,
 						softmaxFactor,
 						byLead,
+						meterBeats(measure.getTime(staffNumber)),
 					);
 					pageBottom = Math.max(pageBottom, noteBottom);
 					systemContentBottom = Math.max(systemContentBottom, noteBottom);
@@ -362,6 +462,10 @@ export function drawScore(
 	}
 	for (const slur of buildSlurs(allChords, byLead)) {
 		slur.setContext(context).draw();
+	}
+	// Tablature hammer-ons/pull-offs, likewise resolved over the whole score.
+	for (const tie of buildHammerPulls(allTabChords, byTabLead)) {
+		tie.setContext(context).draw();
 	}
 
 	// Grow the page to the lowest thing actually drawn so deep ledger lines in the

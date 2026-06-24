@@ -20,20 +20,20 @@ function composite(
 	w: number,
 	h: number,
 ): Buffer {
-	const header = 16;
+	const header = 32;
 	const canvas = createCanvas(w * 3, h + header);
 	const ctx = canvas.getContext('2d');
 	ctx.fillStyle = '#fff';
 	ctx.fillRect(0, 0, w * 3, header);
 	ctx.fillStyle = '#000';
-	ctx.font = '12px sans-serif';
+	ctx.font = '24px sans-serif';
 	const panels: [string, PNG][] = [
 		['old', expected],
 		['diff', diff],
 		['new', got],
 	];
 	panels.forEach(([label, png], i) => {
-		ctx.fillText(label, i * w + 4, 12);
+		ctx.fillText(label, i * w + 4, 24);
 		const img = createImageData(w, h);
 		img.data.set(png.data);
 		ctx.putImageData(img, i * w, header);
