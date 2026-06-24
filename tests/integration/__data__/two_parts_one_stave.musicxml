@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music 1</part-name>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Music 2</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <staves>1</staves>
+      </attributes>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <staves>1</staves>
+      </attributes>
+    </measure>
+  </part>
+</score-partwise>

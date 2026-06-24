@@ -40,8 +40,8 @@ function renderMDoc(
 	options?: RenderOptions,
 ) {
 	// An empty score has no parts and nothing to draw; leave the element empty.
-	const part = mdoc.score.parts[0];
-	if (!part) {
+	const parts = mdoc.score.parts;
+	if (parts.length === 0) {
 		return;
 	}
 
@@ -54,62 +54,91 @@ function renderMDoc(
 	);
 	const context = renderer.getContext();
 
-	// ponytail: one part, measures laid left-to-right; a part's staves stack
-	// vertically and are joined by a brace. Signatures drawn when the measure
-	// declares them. Notes/multi-part layout come with the fixtures that need them.
-	// Left margin leaves room for the brace, which draws left of the stave's x.
+	// ponytail: measures laid left-to-right; every part's staves stack vertically
+	// down the page. A part with >1 stave is joined by a brace; multiple parts are
+	// grouped by a bracket, and the whole system shares a left/right barline.
+	// Inter-part spacing reuses the intra-part spacing for simplicity.
+	// Left margin leaves room for the brace/bracket, which draw left of the stave's x.
 	const x = 30;
 	const y = 40;
 	const staveSpacing = 80;
-	const staveCount = Math.max(part.staveCount, 1);
-	const measureWidth = (width - 2 * x) / Math.max(part.measures.length, 1);
+	const measureCount = Math.max(parts[0]?.measures.length ?? 0, 1);
+	const totalStaves = parts.reduce(
+		(sum, part) => sum + Math.max(part.staveCount, 1),
+		0,
+	);
+	const measureWidth = (width - 2 * x) / measureCount;
 
-	// Height grows with the stave stack so the bottom stave isn't clipped.
-	renderer.resize(width, y + staveCount * staveSpacing + 40);
+	// Height grows with the full stave stack so the bottom stave isn't clipped.
+	renderer.resize(width, y + totalStaves * staveSpacing + 40);
 
-	for (const measure of part.measures) {
-		const measureX = x + measure.index * measureWidth;
-		let topStave: Stave | undefined;
-		let bottomStave: Stave | undefined;
+	for (let m = 0; m < measureCount; m++) {
+		const measureX = x + m * measureWidth;
+		let staveRow = 0;
+		let systemTop: Stave | undefined;
+		let systemBottom: Stave | undefined;
 
-		for (let s = 0; s < staveCount; s++) {
-			const stave = new Stave(measureX, y + s * staveSpacing, measureWidth);
-			stave.setBegBarType(Barline.type.SINGLE);
-			stave.setEndBarType(Barline.type.SINGLE);
-
-			const clef = measure.getClef();
-			if (clef) {
-				stave.addClef(vexflowClef(clef.sign, clef.line));
-			}
-			const key = measure.getKey();
-			if (key?.rootNote) {
-				stave.addKeySignature(key.rootNote);
-			}
-			const time = measure.getTime();
-			if (time?.beats && time?.beatType) {
-				stave.addTimeSignature(`${time.beats}/${time.beatType}`);
+		for (const part of parts) {
+			const staveCount = Math.max(part.staveCount, 1);
+			const measure = part.measures[m];
+			if (!measure) {
+				staveRow += staveCount;
+				continue;
 			}
 
-			stave.setContext(context).draw();
-			topStave ??= stave;
-			bottomStave = stave;
-		}
+			let partTop: Stave | undefined;
+			let partBottom: Stave | undefined;
 
-		// Join the part's staves into a system: brace + left line on the first
-		// measure, and a closing line on the right edge.
-		if (topStave && bottomStave && staveCount > 1) {
-			if (measure.index === 0) {
-				new StaveConnector(topStave, bottomStave)
+			for (let s = 0; s < staveCount; s++) {
+				const stave = new Stave(
+					measureX,
+					y + staveRow * staveSpacing,
+					measureWidth,
+				);
+				stave.setBegBarType(Barline.type.SINGLE);
+				stave.setEndBarType(Barline.type.SINGLE);
+
+				const clef = measure.getClef();
+				if (clef) {
+					stave.addClef(vexflowClef(clef.sign, clef.line));
+				}
+				const key = measure.getKey();
+				if (key?.rootNote) {
+					stave.addKeySignature(key.rootNote);
+				}
+				const time = measure.getTime();
+				if (time?.beats && time?.beatType) {
+					stave.addTimeSignature(`${time.beats}/${time.beatType}`);
+				}
+
+				stave.setContext(context).draw();
+				partTop ??= stave;
+				partBottom = stave;
+				systemTop ??= stave;
+				systemBottom = stave;
+				staveRow++;
+			}
+
+			// A part's own staves are joined by a brace on the first measure.
+			if (partTop && partBottom && staveCount > 1 && m === 0) {
+				new StaveConnector(partTop, partBottom)
 					.setType('brace')
 					.setContext(context)
 					.draw();
-				new StaveConnector(topStave, bottomStave)
+			}
+		}
+
+		// Join the whole system across all parts with a shared left line on the
+		// first measure, and a closing line on the right.
+		if (systemTop && systemBottom && totalStaves > 1) {
+			if (m === 0) {
+				new StaveConnector(systemTop, systemBottom)
 					.setType('singleLeft')
 					.setContext(context)
 					.draw();
 			}
-			if (measure.index === part.measures.length - 1) {
-				new StaveConnector(topStave, bottomStave)
+			if (m === measureCount - 1) {
+				new StaveConnector(systemTop, systemBottom)
 					.setType('singleRight')
 					.setContext(context)
 					.draw();

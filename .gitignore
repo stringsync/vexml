@@ -2,3 +2,4 @@ node_modules
 .zed
 tests/integration/__diffs__/
 tests/integration/__local_screenshots__/
+.DS_Store

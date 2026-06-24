@@ -14,6 +14,16 @@ const TEST_CASES = [
 		'one_part_two_staves.musicxml',
 		WIDTHS.mobile,
 	),
+	it(
+		'should render two parts, each with a single stave',
+		'two_parts_one_stave.musicxml',
+		WIDTHS.mobile,
+	),
+	it(
+		'should render two parts, one with a single stave and one with two staves',
+		'two_parts_mixed_staves.musicxml',
+		WIDTHS.mobile,
+	),
 ];
 
 for (const { name, width, filename, baseline } of TEST_CASES) {
