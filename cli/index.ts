@@ -20,19 +20,18 @@ program
 	.description('run integration (visual regression) tests')
 	.option('--update', 'update screenshot baselines')
 	.option('--local', 'run on the host instead of the pinned Docker image')
-	// Unknown flags/operands are forwarded to the underlying `bun test`.
-	.allowUnknownOption()
-	.allowExcessArguments()
-	.action(async (opts, command) => {
-		// --watch can't work: src/ is bundled into the browser, not bun's module graph.
-		if (command.args.some((a: string) => a === '--watch' || a === '-w')) {
-			console.error('vex test: watch is not supported');
+	.option('--clean', 'delete orphaned screenshots')
+	.option('-t, --test <pattern>', 'only run tests matching the name pattern')
+	.action(async (opts) => {
+		if (opts.clean && opts.test) {
+			console.error('vex test: --clean and --test are incompatible');
 			process.exit(1);
 		}
 		await test({
 			local: opts.local ?? false,
 			update: opts.update ?? false,
-			args: command.args,
+			clean: opts.clean ?? false,
+			test: opts.test,
 		});
 	});
 

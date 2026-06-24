@@ -1,0 +1,3 @@
+[test]
+# Preloaded so matcher's afterAll cleanup scopes to the whole run, not one file.
+preload = ["./tests/testing/setup.ts"]
