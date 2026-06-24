@@ -1,4 +1,10 @@
-import type { Note, Part, Voice as ScoreVoice } from '@stringsync/mdom';
+import type {
+	Chord,
+	Note,
+	Part,
+	Voice as ScoreVoice,
+	Time,
+} from '@stringsync/mdom';
 import {
 	Barline,
 	Formatter,
@@ -14,9 +20,27 @@ import type { ScoreLayout } from './layout';
 import { buildBeams, buildSlurs, buildTies, buildTuplets } from './spanners';
 import { vexflowChord, vexflowClef } from './stave-notes';
 
+// MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
+// "beats/beat-type". null when there's nothing drawable. Doubles as the equality
+// key for detecting a mid-piece meter change.
+function timeSignatureSpec(time: Time | null): string | null {
+	if (time?.symbol === 'common') {
+		return 'C';
+	}
+	if (time?.symbol === 'cut') {
+		return 'C|';
+	}
+	if (time?.beats && time?.beatType) {
+		return `${time.beats}/${time.beatType}`;
+	}
+	return null;
+}
+
 // Draw a staff's notes on top of an already-drawn stave. Each mdom voice becomes
 // a vexflow voice; multiple voices are aligned together and stem apart. Beams and
-// tuplets are per-voice (positional); ties and slurs resolve across the staff.
+// tuplets are per-voice (positional) and built here; ties and slurs can span
+// measures, so the caller resolves them once over the whole score (this only
+// records each chord's StaveNote in the shared `byLead` map).
 function drawNotes(
 	context: RenderContext,
 	stave: Stave,
@@ -24,8 +48,8 @@ function drawNotes(
 	beamGroups: Note[][],
 	clef: string,
 	softmaxFactor: number,
+	byLead: Map<Note, StaveNote>,
 ): number {
-	const byLead = new Map<Note, StaveNote>();
 	const perVoice = voices.map((voice) => {
 		const staveNotes = voice.chords.map((chord) => {
 			const staveNote = vexflowChord(chord, clef);
@@ -43,9 +67,6 @@ function drawNotes(
 	// built before formatting.
 	const beams = buildBeams(beamGroups, byLead);
 	const tuplets = voices.flatMap((v) => buildTuplets(v.chords, byLead));
-	const allChords = voices.flatMap((v) => v.chords);
-	const ties = buildTies(allChords, byLead);
-	const slurs = buildSlurs(allChords, byLead);
 
 	// Fill the stave's note area (its width minus the lead glyphs) with the notes.
 	// The note area was sized to a global px-per-tick, so spacing stays consistent
@@ -63,12 +84,6 @@ function drawNotes(
 	}
 	for (const tuplet of tuplets) {
 		tuplet.setContext(context).draw();
-	}
-	for (const tie of ties) {
-		tie.setContext(context).draw();
-	}
-	for (const slur of slurs) {
-		slur.setContext(context).draw();
 	}
 
 	// Lowest y any note reaches, so the page can grow to fit (deep ledger lines
@@ -109,6 +124,12 @@ export function drawScore(
 	);
 	const context = renderer.getContext();
 	renderer.resize(width, floorHeight); // provisional; grown after drawing
+
+	// One note map for the whole score: ties and slurs can span a barline, so their
+	// two endpoints may live in different measures. Notes are drawn measure by
+	// measure (recording into this map); the spanners are resolved once at the end.
+	const byLead = new Map<Note, StaveNote>();
+	const allChords: Chord[] = [];
 
 	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
 	// drawn content (notes + staff lines), so deep ledger lines push the next system
@@ -163,8 +184,19 @@ export function drawScore(
 				stave.setBegBarType(Barline.type.SINGLE);
 				stave.setEndBarType(Barline.type.SINGLE);
 
-				// Clef, key, and time signature print at the start of each system;
-				// later measures on the same row carry them forward silently.
+				// The previous measure's effective signatures (carried forward), used to
+				// spot a mid-system change. getKey/getTime return what's in effect at the
+				// measure start, so M3 of a piece that changed key at M2 reads the same
+				// key as M2 — no spurious redraw.
+				const prevMeasure = part.measures[m - 1];
+				const key = measure.getKey(staffNumber);
+				const keyChanged =
+					(key?.rootNote ?? null) !==
+					(prevMeasure?.getKey(staffNumber)?.rootNote ?? null);
+
+				// Clef and key print at every system start (re-stated on each new line).
+				// A mid-system key change is also redrawn where it happens (clef and time
+				// are not repeated for it).
 				if (isSystemStart) {
 					if (isTab) {
 						(stave as TabStave).addTabGlyph();
@@ -186,25 +218,22 @@ export function drawScore(
 					} else if (clef) {
 						stave.addClef(vexflowClef(clef.sign, clef.line));
 					}
-					const key = measure.getKey();
 					if (key?.rootNote) {
 						stave.addKeySignature(key.rootNote);
 					}
+				} else if (key?.rootNote && keyChanged) {
+					stave.addKeySignature(key.rootNote);
 				}
 
-				// Unlike clef and key (which repeat every system), the time signature
-				// prints once at the start of the piece.
-				// ponytail: piece-start only; add change-detection when a mid-piece
-				// meter change needs to redraw it.
-				if (m === 0) {
-					const time = measure.getTime();
-					if (time?.symbol === 'common') {
-						stave.addTimeSignature('C');
-					} else if (time?.symbol === 'cut') {
-						stave.addTimeSignature('C|');
-					} else if (time?.beats && time?.beatType) {
-						stave.addTimeSignature(`${time.beats}/${time.beatType}`);
-					}
+				// Unlike clef and key, the time signature is not re-stated at every
+				// system start — only at the piece start and wherever the meter changes
+				// (a change that lands on a system break still redraws here).
+				const timeSpec = timeSignatureSpec(measure.getTime(staffNumber));
+				const prevTimeSpec = timeSignatureSpec(
+					prevMeasure?.getTime(staffNumber) ?? null,
+				);
+				if (timeSpec && (m === 0 || timeSpec !== prevTimeSpec)) {
+					stave.addTimeSignature(timeSpec);
 				}
 
 				stave.setContext(context).draw();
@@ -227,9 +256,13 @@ export function drawScore(
 						measure.beams,
 						clefName,
 						softmaxFactor,
+						byLead,
 					);
 					pageBottom = Math.max(pageBottom, noteBottom);
 					systemContentBottom = Math.max(systemContentBottom, noteBottom);
+					for (const voice of voices) {
+						allChords.push(...voice.chords);
+					}
 				}
 
 				partTop ??= stave;
@@ -264,6 +297,16 @@ export function drawScore(
 					.draw();
 			}
 		}
+	}
+
+	// Ties and slurs are resolved over the whole score now that every note is
+	// placed, so a span can cross a barline (its endpoints sit in different
+	// measures). Drawn last, on top of the notes.
+	for (const tie of buildTies(allChords, byLead)) {
+		tie.setContext(context).draw();
+	}
+	for (const slur of buildSlurs(allChords, byLead)) {
+		slur.setContext(context).draw();
 	}
 
 	// Grow the page to the lowest thing actually drawn so deep ledger lines in the
