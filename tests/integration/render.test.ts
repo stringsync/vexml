@@ -86,11 +86,12 @@ const TEST_CASES = [
 
 	// Grand staff (empty treble over empty bass), two measures. Because the system has
 	// multiple staves, the per-stave end barlines are suppressed and the dividing lines
-	// are drawn entirely by stave connectors. The internal barline between measures 1
-	// and 2 is a single thin line spanning both staves (the singleRight connector). The
-	// piece's final measure closes with a bold thin-thick double line spanning both
-	// staves (boldDoubleRight) rather than the plain single line drawn at every other
-	// measure end.
+	// are drawn entirely by stave connectors.
+	// - M1: closes with the internal barline between measures — a single thin line
+	//   spanning both staves (the singleRight connector).
+	// - M2: the piece's final measure closes with a bold thin-thick double line spanning
+	//   both staves (boldDoubleRight) rather than the plain single line drawn at every
+	//   other measure end.
 	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
 
 	// One system, treble 4/4: a key change mid-system. Each measure holds one C5 whole
