@@ -18,6 +18,14 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array. Pass any non-default `RenderOptions` as the third argument.
    - Keep `TEST_CASES` ordered by increasing rendering complexity. A `render` implementer should be able to build a correct renderer progressively by going through the tests in array order: basic structure before clefs, clefs before key/time signatures, simple notes/rests before accidentals, measures, beams, chords, ties/slurs, tuplets, articulations, voices, system layout, and broad stress cases. Insert new cases where they fit this progression; the array order is the only ordering — there is no numeric prefix.
    - Above each `testCase(...)` declaration, write a detailed comment describing what the screenshot should render: the clefs, staves, notes, and any distinctive notation or layout (positions, accidentals, beams, slurs, ledger lines, system breaks, …). Describe what is actually drawn so the comment alone tells a reader what to expect without opening the PNG. Match the descriptive style of the surrounding cases.
+   - For cases spanning more than one measure, split the comment by measure for readability. Start with a one-line lead describing the global setup (stave/clef/time signature and any wrap behavior), then add one bulleted line per measure using a stable `M<n>:` marker (`M2-3:` for a span). Wrap continuation lines so they align under the bullet text. For multi-voice cases, use inline `V<n>` markers (e.g. `V1`, `V2`) inside each measure bullet. This keeps the comment scannable for humans and greppable for tools, with each `M<n>` mapping directly to a `<measure number="n">` in the fixture. Example:
+
+     ```ts
+     // Treble stave, 4/4: dotted-note variations.
+     // - M1: dotted-quarter + eighth pairs (single dots).
+     // - M2: double-dotted-quarter + sixteenth pairs (double dots).
+     testCase('dotted_notes.musicxml', 'dotted_notes.png'),
+     ```
    - Each test should try to test only one thing. Avoid varying unrelated musical features unless the variation is part of what the case is proving.
    - Wrong pattern: when testing articulations, do not vary duration or pitch needlessly; use stable, boring notes unless pitch or duration affects the articulation behavior being tested.
    - Right pattern: when testing beams, varying pitch can be useful if the goal is to show how the beam renders under normal and extreme stem/ledger-line conditions. There should be a clear reason for every extra variation.

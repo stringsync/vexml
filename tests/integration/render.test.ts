@@ -53,24 +53,27 @@ const TEST_CASES = [
 	// Treble stave with the cut-time (¢) symbol.
 	testCase('time_cut.musicxml', 'time_cut.png'),
 
-	// Treble stave, 4/4: note durations on C5 — measure 1 a whole note; measure 2 a
-	// half, quarter, eighth, sixteenth, then two thirty-seconds (increasing flag
-	// counts).
+	// Treble stave, 4/4: note durations on C5, increasing flag counts.
+	// - M1: a whole note.
+	// - M2: a half, quarter, eighth, sixteenth, then two thirty-seconds.
 	testCase('note_durations.musicxml', 'note_durations.png'),
 
-	// Treble stave, 4/4, all on C5: measure 1 dotted-quarter + eighth pairs (single
-	// dots); measure 2 double-dotted-quarter + sixteenth pairs (double dots);
-	// measure 3 four beamed dotted-eighth + sixteenth pairs (dots inside beams).
+	// Treble stave, 4/4, all on C5: dotted-note variations.
+	// - M1: dotted-quarter + eighth pairs (single dots).
+	// - M2: double-dotted-quarter + sixteenth pairs (double dots).
+	// - M3: four beamed dotted-eighth + sixteenth pairs (dots inside beams).
 	testCase('dotted_notes.musicxml', 'dotted_notes.png'),
 
-	// Treble stave, 4/4: the rest counterpart of note_durations — measure 1 a whole
-	// rest; measure 2 half, quarter, eighth, sixteenth, then two thirty-second rests.
+	// Treble stave, 4/4: the rest counterpart of note_durations.
+	// - M1: a whole rest.
+	// - M2: half, quarter, eighth, sixteenth, then two thirty-second rests.
 	testCase('rest.musicxml', 'rest.png'),
 
-	// Treble stave, 3/4: stem direction on G4/B4/D5. Measure 1 has no <stem>, so the
-	// default follows staff position (middle line B4) — low G4 stems up, middle B4 and
-	// high D5 stem down. Measure 2 repeats the three pitches with an explicit <stem>
-	// that overrides each default — G4 down, B4 up, D5 up.
+	// Treble stave, 3/4: stem direction on G4/B4/D5.
+	// - M1: no <stem>, so the default follows staff position (middle line B4) — low G4
+	//   stems up, middle B4 and high D5 stem down.
+	// - M2: the same three pitches with an explicit <stem> that overrides each default —
+	//   G4 down, B4 up, D5 up.
 	testCase('note_stem_direction.musicxml', 'note_stem_direction.png'),
 
 	// Treble stave, 4/4: four C5 quarter notes at one staff position — sharp, flat,
@@ -90,28 +93,33 @@ const TEST_CASES = [
 	// measure end.
 	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
 
-	// One system, treble 4/4: a key change mid-system. Measure 1 opens the system with
-	// a treble clef, a 2-sharp key signature, and a 4/4 time signature. Measure 2
-	// changes the key to 4 sharps — only the new key signature is redrawn at the
-	// change (the clef and time signature are NOT repeated). Measure 3 continues in 4
-	// sharps with no key signature redrawn. Each measure holds one C5 whole note.
+	// One system, treble 4/4: a key change mid-system. Each measure holds one C5 whole
+	// note.
+	// - M1: opens the system with a treble clef, a 2-sharp key signature, and a 4/4 time
+	//   signature.
+	// - M2: changes the key to 4 sharps — only the new key signature is redrawn at the
+	//   change (the clef and time signature are NOT repeated).
+	// - M3: continues in 4 sharps with no key signature redrawn.
 	testCase('key_change.musicxml', 'key_change.png'),
 
-	// One system, treble: a time signature change mid-system. Measure 1 opens the
-	// system with a treble clef and a 4/4 time signature and holds four C5 quarter
-	// notes. Measure 2 changes the meter to 3/4 — only the new time signature is
-	// redrawn at the change (the clef is NOT repeated) — and holds three C5 quarter
-	// notes. Measure 3 continues in 3/4 with no time signature redrawn, holding three
-	// C5 quarter notes.
+	// One system, treble: a time signature change mid-system.
+	// - M1: opens the system with a treble clef and a 4/4 time signature; four C5 quarter
+	//   notes.
+	// - M2: changes the meter to 3/4 — only the new time signature is redrawn at the
+	//   change (the clef is NOT repeated); three C5 quarter notes.
+	// - M3: continues in 3/4 with no time signature redrawn; three C5 quarter notes.
 	testCase('time_change.musicxml', 'time_change.png'),
 
-	// Beam variations across six 4/4 measures: (1) simple beamed eighths in a small
-	// range; (2) beamed eighths leaping a wide range (steep beams, ledger lines above
-	// on D6/E6 and below on C4/D4); (3) two double-beamed sixteenth groups then a half
-	// rest; (4) one beat of triple-beamed 32nds then half + quarter rests; (5) mixed
-	// eighth+sixteenth beats with partial secondary beams; (6) a beamed eighth group
-	// spanning an internal eighth rest; (7) beamed eighths in a low range (below the
-	// middle line) so the auto stem direction flips up. Wraps across systems.
+	// Beam variations across seven 4/4 measures. Wraps across systems.
+	// - M1: simple beamed eighths in a small range.
+	// - M2: beamed eighths leaping a wide range (steep beams, ledger lines above on
+	//   D6/E6 and below on C4/D4).
+	// - M3: two double-beamed sixteenth groups then a half rest.
+	// - M4: one beat of triple-beamed 32nds then half + quarter rests.
+	// - M5: mixed eighth+sixteenth beats with partial secondary beams.
+	// - M6: a beamed eighth group spanning an internal eighth rest.
+	// - M7: beamed eighths in a low range (below the middle line) so the auto stem
+	//   direction flips up.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
@@ -126,29 +134,34 @@ const TEST_CASES = [
 	// systems.
 	testCase('ledger_lines.musicxml', 'ledger_lines.png'),
 
-	// Treble stave, 4/4, on C5: measure 1 two half notes tied within the measure;
-	// measures 2–3 a whole note tied across the barline into the next whole note (the
-	// tie arc spans the barline).
+	// Treble stave, 4/4, on C5: ties.
+	// - M1: two half notes tied within the measure.
+	// - M2-3: a whole note tied across the barline into the next whole note (the tie arc
+	//   spans the barline).
 	testCase('tie.musicxml', 'tie.png'),
 
-	// Slurs, with the quarter-note measures grouped first: (1) four quarters, slur
-	// below (default); (2) four quarters, slur above; (3) four quarters carrying two
-	// separate two-note slurs; (4) eight beamed eighths under one slur; (5) two half
-	// notes slurred across a wide leap; (6) one slur over a descending line D5, C5, A4,
-	// G4 that crosses the middle line, so the first two notes are stem-down and the last
-	// two stem-up and the slur stays clear of both noteheads and the stem-up stem tips;
-	// (7) one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so the
-	// stems alternate down-up-down-up under the slur; (8) one slur beneath an ascending
-	// low line E4, F4, G4, A4 (all stem-up), the slur bowing below the noteheads; (9)
-	// three chained slurs over E4, G4, E5, C5 — a slur below the first pair, a slur
-	// above the last pair, and a third slur bridging note 2 to note 3. Wraps across
-	// systems.
+	// Slurs, with the quarter-note measures grouped first. Wraps across systems.
+	// - M1: four quarters, slur below (default).
+	// - M2: four quarters, slur above.
+	// - M3: four quarters carrying two separate two-note slurs.
+	// - M4: eight beamed eighths under one slur.
+	// - M5: two half notes slurred across a wide leap.
+	// - M6: one slur over a descending line D5, C5, A4, G4 that crosses the middle line,
+	//   so the first two notes are stem-down and the last two stem-up and the slur stays
+	//   clear of both noteheads and the stem-up stem tips.
+	// - M7: one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so
+	//   the stems alternate down-up-down-up under the slur.
+	// - M8: one slur beneath an ascending low line E4, F4, G4, A4 (all stem-up), the
+	//   slur bowing below the noteheads.
+	// - M9: three chained slurs over E4, G4, E5, C5 — a slur below the first pair, a slur
+	//   above the last pair, and a third slur bridging note 2 to note 3.
 	testCase('slur.musicxml', 'slur.png'),
 
-	// Tuplets on C5: measure 1 a beamed eighth-note triplet ("3"), a bracketed
-	// quarter-note triplet ("3"), then a plain quarter; measure 2 a beamed
-	// sixteenth-note sextuplet ("6"), a beamed eighth-note triplet ("3"), then a half
-	// note.
+	// Tuplets on C5.
+	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
+	//   then a plain quarter.
+	// - M2: a beamed sixteenth-note sextuplet ("6"), a beamed eighth-note triplet ("3"),
+	//   then a half note.
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
 	// Treble stave, 4/4: four C5 quarter notes at one staff position — staccato (dot),
@@ -157,22 +170,35 @@ const TEST_CASES = [
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
-	// complexity, exercising <backup>/<forward> in different ways.
-	// Measure 1: voice 1 (stems up) a mixed quarter/eighth line spanning the whole measure;
-	// voice 2 (stems down) silent on beats 1 and 4 via leading and trailing <forward> (no
-	// rests drawn). The silence is held open by invisible ghost tickables (src/stave-notes.ts),
-	// so voice 2 starts aligned on beat 2 (G4 under voice 1's F5) and its last note (G4 on
-	// beat 3.5) keeps a full beat of space to its right before voice 1's final C5 on beat 4.
-	// Measure 2: a full <backup> to the measure start — voice 1 a dotted half (D5, dot to its
-	// right) then a quarter (C5); voice 2 four quarters (G4, A4, B4, A4) filling every beat.
-	// Measure 3 (most complex): mid-measure <forward> gaps in both voices. Voice 1 a flagged
-	// dotted-quarter F5 + eighth E5, a <forward> skipping beat 3, then a quarter D5. Voice 2 a
-	// quarter G4, a <forward> skipping beat 2, two beamed eighths (A4, G4), then a quarter F4.
-	// The dotted notes carry their dotted duration in vexflow's tick count (src/stave-notes.ts
-	// passes `dots` to the StaveNote), so voice 1's beat-3 note stays vertically aligned with
-	// voice 2's beat-3 note rather than drifting half a beat / a beat early. May wrap across
-	// systems.
+	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
+	// down. May wrap across systems.
+	// - M1: V1 a mixed quarter/eighth line spanning the whole measure; V2 silent on beats 1
+	//   and 4 via leading and trailing <forward> (no rests drawn). The silence is held open
+	//   by invisible ghost tickables (src/stave-notes.ts), so V2 starts aligned on beat 2
+	//   (G4 under V1's F5) and its last note (G4 on beat 3.5) keeps a full beat of space to
+	//   its right before V1's final C5 on beat 4.
+	// - M2: a full <backup> to the measure start — V1 a dotted half (D5, dot to its right)
+	//   then a quarter (C5); V2 four quarters (G4, A4, B4, A4) filling every beat.
+	// - M3 (most complex): mid-measure <forward> gaps in both voices. V1 a flagged
+	//   dotted-quarter F5 + eighth E5, a <forward> skipping beat 3, then a quarter D5. V2 a
+	//   quarter G4, a <forward> skipping beat 2, two beamed eighths (A4, G4), then a quarter
+	//   F4. The dotted notes carry their dotted duration in vexflow's tick count
+	//   (src/stave-notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
+	//   vertically aligned with V2's beat-3 note rather than drifting half a beat / a beat
+	//   early.
 	testCase('two_voices.musicxml', 'two_voices.png'),
+
+	// Grand staff (treble over bass, braced), 4/4, three measures of a four-voice SATB
+	// chorale — two voices on each stave to exercise voice distribution across staves. On
+	// the treble stave voice 1 (soprano) stems up and voice 2 (alto) stems down; on the bass
+	// stave voice 3 (tenor) stems up and voice 4 (bass) stems down. The per-stave end
+	// barlines are suppressed in favor of stave connectors. May wrap across systems.
+	// - M1: soprano E5 quarter, beamed F5/G5 eighths, A5 + G5 quarters; alto four quarters
+	//   (C5 C5 D5 D5); tenor two half notes (G4, F4); bass a walking quarter line (C3 E3 F3 G3).
+	// - M2-3: settle into quarter-quarter-half motion in every voice, the alto/tenor halves
+	//   aligning vertically with the soprano/bass halves, closing on a C-major chord
+	//   (E5/C5/G4/C3).
+	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
 
 	// Eight identical C5 whole-note measures wrapping onto two systems of four measures
 	// each (default layout).
