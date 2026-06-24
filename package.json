@@ -6,7 +6,7 @@
 		"vex": "cli/index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "0.1.0",
+		"@stringsync/mdom": "0.1.2",
 		"vexflow": "5.0.0"
 	},
 	"devDependencies": {
