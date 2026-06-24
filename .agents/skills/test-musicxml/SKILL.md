@@ -15,7 +15,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
    - Name the file `category_variant.musicxml`: a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …) then a short variant. Match the existing files in `tests/integration/__data__/`.
-   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array, in the position that reads in logical order (the array order is the only ordering — there is no numeric prefix). Pass any non-default `RenderOptions` as the third argument.
+   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array. Pass any non-default `RenderOptions` as the third argument.
+   - Keep `TEST_CASES` ordered by increasing rendering complexity. A `render` implementer should be able to build a correct renderer progressively by going through the tests in array order: basic structure before clefs, clefs before key/time signatures, simple notes/rests before accidentals, measures, beams, chords, ties/slurs, tuplets, articulations, voices, system layout, and broad stress cases. Insert new cases where they fit this progression; the array order is the only ordering — there is no numeric prefix.
    - Above each `testCase(...)` declaration, write a detailed comment describing what the screenshot should render: the clefs, staves, notes, and any distinctive notation or layout (positions, accidentals, beams, slurs, ledger lines, system breaks, …). Describe what is actually drawn so the comment alone tells a reader what to expect without opening the PNG. Match the descriptive style of the surrounding cases.
    - Keep the fixture as small as practical while still demonstrating the behavior.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
@@ -26,14 +27,10 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    vex test
    ```
 
-4. Assert that the new or existing test produces the wrong output in `__screenshots__`.
-   - Inspect the generated diff or screenshot artifact.
-   - Make a note of the expected output; this expectation is the guiding success criterion for the implementation work.
-   - If the test is erroneously passing because the current screenshot baseline is wrong, add a `TODO` comment above that test case explaining what must change for the screenshot to be correct.
-   - Use this comment anatomy: `// TODO: Expected: <content>. Actual: <content>.`
-   - The `Expected` content should describe the intended correct render. The `Actual` content should describe the current incorrect render.
-   - Compare `Actual` against the relevant artifact in `tests/integration/__screenshots__/` as a double check before using it as the work queue item.
-   - Treat these comments as pragmatic TODOs: they should be specific enough to guide the implementation and easy to remove once satisfied.
+4. Interpret screenshot results carefully. Screenshot tests can fail or pass for two different reasons:
+   - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
+   - **True negative:** an existing screenshot test failed because a previously accepted baseline is no longer reproducible. Inspect the diff artifact and leave a `TODO` comment above the `testCase(...)` that describes the visual difference in plain language and links to the diff. Do not prescribe a fix unless the root cause is already clear. Prefer wording like: `// TODO: True negative: the accepted baseline shows <expected visual>, but the new render shows <actual visual>. Diff: <path-or-link>.`
+   - In both cases, describe what a human should look for in the screenshot. Make the TODO specific enough that another agent can continue from it without opening unrelated files.
    - If the correct rendering is ambiguous, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
 
 5. Update the implementation in `src/` to fill the rendering gap.
@@ -47,11 +44,28 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    ```
 
 7. The target test may still fail. That is useful if it shows the implementation changed the rendered output.
-   - For the target test file, inspect the new render and confirm it matches the expected output from step 4.
-   - When the screenshot satisfies the `TODO` expectation, remove the corresponding comment before updating the baseline.
+   - For the target test file, inspect the new render and confirm it matches the intended rendering described by the relevant test comment or TODO.
+   - Before updating any screenshot baseline, always perform the screenshot review checklist below.
+   - If a `TODO` describes a false positive, keep it until the screenshot has been manually reviewed and intentionally accepted with `vex test <name> --update`.
+   - If a `TODO` describes a true negative, keep it until the changed screenshot has been explained, fixed, or intentionally accepted.
    - Do not update baselines until you have evaluated the screenshot output.
 
-8. If the target render is correct, update only that baseline:
+## Screenshot Review Checklist
+
+Always run this checklist before accepting or updating a screenshot baseline. Answer these questions from the actual screenshot or diff artifact, not from assumptions about the code:
+
+- Is everything visible? Look for clefs, key signatures, time signatures, notes, rests, articulations, accidentals, ledger lines, beams, ties, slurs, lyrics, barlines, and other symbols that are cut off by the image bounds or page margins.
+- Are the results sized appropriately for the render options and the fixture? The image should not look accidentally zoomed in, zoomed out, cropped, or padded with excessive empty space.
+- Are musical glyphs clashing when they should not? Check collisions between noteheads, stems, beams, flags, accidentals, dots, rests, text, ties, slurs, clefs, key signatures, time signatures, and neighboring staves/measures.
+- Given the render options, does the music feel too cramped? Look for notation that is technically visible but hard to read because horizontal or vertical spacing is too tight.
+- Given the render options, does the music feel too spaced out? Look for measures, systems, or glyphs that are spread so far apart that the fixture no longer demonstrates the intended behavior clearly.
+- What does the test comment describe? Does the screenshot match that description, including the named clefs, staves, notes, rests, accidentals, beams, slurs, ledger lines, system breaks, and layout expectations?
+- Are all expected musical elements present exactly once, with no obvious duplicates, missing glyphs, wrong glyphs, or stale artifacts from a previous render?
+- Are stems, beams, flags, dots, accidentals, and rests positioned in musically plausible places relative to the staff and notes?
+- If this is a diff, can you explain the visual change in plain language? If not, inspect the artifacts more carefully before updating the baseline.
+- If any answer is uncertain, do not update the baseline yet. Add or keep a `TODO` that names the uncertainty and links to the screenshot or diff artifact.
+
+8. If the target render passes the screenshot review checklist, update only that baseline:
 
    ```sh
    vex test --update <name>
@@ -63,9 +77,9 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Run `vex test` again after the selective baseline update.
    - Per project rules, also run `vex fix` after code changes.
    - If you deleted any integration test cases, run `vex test --clean` globally to remove orphaned screenshot baselines. Do not target a single test when cleaning deleted cases.
-   - If regressions appear, eagerly add or list `TODO` TODOs for each regression using the `Expected`/`Actual` anatomy. Include what changed, what the expected render should be, and the likely implementation area if known.
+   - If regressions appear, eagerly add or list `TODO` comments for each regression using the false-positive or true-negative language from step 4. Include the plain-language visual difference and the relevant diff path or artifact link.
    - Do not update the whole suite by default. Create a plan for each regression and explain whether it is expected or unexpected.
 
 ## Baseline Update Guidance
 
-Avoid running `vex test --update` for the whole suite unless the change is intentionally global and every affected render has been reviewed. Prefer one-by-one baseline updates after confirming why each render changed.
+Avoid running `vex test --update` for the whole suite unless the change is intentionally global and every affected render has passed the screenshot review checklist. Prefer one-by-one baseline updates after confirming why each render changed.
