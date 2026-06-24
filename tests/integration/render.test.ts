@@ -22,6 +22,15 @@ const TEST_CASES = [
 		showPartLabels: true,
 	}),
 
+	// Same two labelled parts as structure_part_labels, but with the UI font
+	// overridden to a serif family (fonts.ui). The two instrument names render in
+	// serif instead of the default sans-serif, proving the ui FontConfig option
+	// flows through to the part labels (the only UI text vexml draws).
+	testCase('structure_part_labels.musicxml', 'font_ui_label.png', {
+		showPartLabels: true,
+		fonts: { ui: { family: 'Times New Roman' } },
+	}),
+
 	// A single empty stave with a treble (G) clef.
 	testCase('clef_treble.musicxml', 'clef_treble.png'),
 
