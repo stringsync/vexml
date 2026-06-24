@@ -26,8 +26,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 4. Assert that the new or existing test produces the wrong output in `__screenshots__`.
    - Inspect the generated diff or screenshot artifact.
    - Make a note of the expected output; this expectation is the guiding success criterion for the implementation work.
-   - If the test is erroneously passing because the current screenshot baseline is wrong, add a `FIXME` comment above that test case explaining what must change for the screenshot to be correct.
-   - Use this comment anatomy: `// FIXME: Expected: <content>. Actual: <content>.`
+   - If the test is erroneously passing because the current screenshot baseline is wrong, add a `TODO` comment above that test case explaining what must change for the screenshot to be correct.
+   - Use this comment anatomy: `// TODO: Expected: <content>. Actual: <content>.`
    - The `Expected` content should describe the intended correct render. The `Actual` content should describe the current incorrect render.
    - Compare `Actual` against the relevant artifact in `tests/integration/__screenshots__/` as a double check before using it as the work queue item.
    - Treat these comments as pragmatic TODOs: they should be specific enough to guide the implementation and easy to remove once satisfied.
@@ -45,7 +45,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 7. The target test may still fail. That is useful if it shows the implementation changed the rendered output.
    - For the target test file, inspect the new render and confirm it matches the expected output from step 4.
-   - When the screenshot satisfies the `FIXME` expectation, remove the corresponding comment before updating the baseline.
+   - When the screenshot satisfies the `TODO` expectation, remove the corresponding comment before updating the baseline.
    - Do not update baselines until you have evaluated the screenshot output.
 
 8. If the target render is correct, update only that baseline:
@@ -60,7 +60,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Run `vex test` again after the selective baseline update.
    - Per project rules, also run `vex fix` after code changes.
    - If you deleted any integration test cases, run `vex test --clean` globally to remove orphaned screenshot baselines. Do not target a single test when cleaning deleted cases.
-   - If regressions appear, eagerly add or list `FIXME` TODOs for each regression using the `Expected`/`Actual` anatomy. Include what changed, what the expected render should be, and the likely implementation area if known.
+   - If regressions appear, eagerly add or list `TODO` TODOs for each regression using the `Expected`/`Actual` anatomy. Include what changed, what the expected render should be, and the likely implementation area if known.
    - Do not update the whole suite by default. Create a plan for each regression and explain whether it is expected or unexpected.
 
 ## Baseline Update Guidance
