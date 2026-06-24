@@ -15,7 +15,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
    - Name the file `category_variant.musicxml`: a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …) then a short variant. Match the existing files in `tests/integration/__data__/`.
-   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', {})` to the `TEST_CASES` array, in the position that reads in logical order (the array order is the only ordering — there is no numeric prefix). Pass any non-default `RenderOptions` as the second argument; they are encoded into the screenshot name.
+   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array, in the position that reads in logical order (the array order is the only ordering — there is no numeric prefix). Pass any non-default `RenderOptions` as the third argument.
+   - Above each `testCase(...)` declaration, write a detailed comment describing what the screenshot should render: the clefs, staves, notes, and any distinctive notation or layout (positions, accidentals, beams, slurs, ledger lines, system breaks, …). Describe what is actually drawn so the comment alone tells a reader what to expect without opening the PNG. Match the descriptive style of the surrounding cases.
    - Keep the fixture as small as practical while still demonstrating the behavior.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 
@@ -56,7 +57,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    vex test --update <name>
    ```
 
-   Where `<name>` is the test title — the screenshot filename: the MusicXML basename plus any encoded `RenderOptions` (e.g. `clef_treble.png`, or `clef_treble__width-500.png`), as registered by `testCase()` in `tests/integration/render.test.ts` (helper in `tests/testing/test-case.ts`). The pattern is the first positional argument and matches by prefix, so `clef_treble` also matches.
+   Where `<name>` is the test title — the screenshot filename passed as the second argument to `testCase()` in `tests/integration/render.test.ts` (helper in `tests/testing/test-case.ts`), e.g. `clef_treble.png`. The pattern matches by prefix, so `clef_treble` also matches.
 
 9. Validate that there are no regressions.
    - Run `vex test` again after the selective baseline update.
