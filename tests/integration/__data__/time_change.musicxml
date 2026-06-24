@@ -6,6 +6,7 @@
     </score-part>
   </part-list>
   <part id="P1">
+    <!-- M1: start of system — treble clef, 4/4, four quarter notes. -->
     <measure number="1">
       <attributes>
         <divisions>1</divisions>
@@ -21,57 +22,65 @@
       </attributes>
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
-    </measure>
-    <measure number="2">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
     </measure>
+    <!-- M2: mid-system time change to 3/4 (only the new time signature should be drawn here, not the clef). -->
+    <measure number="2">
+      <attributes>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <!-- M3: continues in 3/4 with no time signature redrawn. -->
     <measure number="3">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
-    </measure>
-    <measure number="4">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
-    </measure>
-    <measure number="5">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
-      </note>
-    </measure>
-    <measure number="6">
-      <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
-      </note>
-    </measure>
-    <measure number="7">
-      <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
-      </note>
-    </measure>
-    <measure number="8">
-      <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
     </measure>
   </part>

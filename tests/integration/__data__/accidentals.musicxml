@@ -31,7 +31,7 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>C</step>
           <alter>-1</alter>
           <octave>5</octave>
         </pitch>
@@ -50,8 +50,8 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
-          <octave>4</octave>
+          <step>C</step>
+          <octave>5</octave>
         </pitch>
         <duration>1</duration>
         <type>quarter</type>

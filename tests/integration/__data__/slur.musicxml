@@ -6,6 +6,7 @@
     </score-part>
   </part-list>
   <part id="P1">
+    <!-- M1: four quarters, one slur (default below placement). -->
     <measure number="1">
       <attributes>
         <divisions>2</divisions>
@@ -20,170 +21,146 @@
         </clef>
       </attributes>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
-        <notations>
-          <slur number="1" type="start" />
-        </notations>
+        <notations><slur number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>D</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>E</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>F</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>F</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
-        <notations>
-          <slur number="1" type="stop" />
-        </notations>
+        <notations><slur number="1" type="stop" /></notations>
       </note>
     </measure>
+    <!-- M2: four quarters, one slur with explicit placement above. -->
     <measure number="2">
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>G</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
-        <notations>
-          <slur number="1" type="start" placement="above" />
-        </notations>
+        <notations><slur number="1" type="start" placement="above" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>A</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>A</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>B</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>B</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>A</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>A</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
-        <notations>
-          <slur number="1" type="stop" placement="above" />
-        </notations>
+        <notations><slur number="1" type="stop" placement="above" /></notations>
       </note>
     </measure>
+    <!-- M3: four quarters carrying two separate two-note slurs. -->
     <measure number="3">
       <note>
-        <pitch>
-          <step>A</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>4</duration>
-        <type>half</type>
-        <notations>
-          <slur number="1" type="start" />
-        </notations>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>4</duration>
-        <type>half</type>
-        <notations>
-          <slur number="1" type="stop" />
-        </notations>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="2" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="2" type="stop" /></notations>
       </note>
     </measure>
+    <!-- M4: eight beamed eighths under a single slur (slur over a beamed run). -->
     <measure number="4">
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>4</duration>
-        <type>half</type>
-        <notations>
-          <slur number="1" type="start" />
-        </notations>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+        <notations><slur number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>A</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>4</duration>
-        <type>half</type>
-        <notations>
-          <slur number="1" type="stop" />
-        </notations>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+        <notations><slur number="1" type="stop" /></notations>
       </note>
     </measure>
+    <!-- M5: two half notes slurred across a wide leap. -->
     <measure number="5">
       <note>
-        <pitch>
-          <step>F</step>
-          <octave>3</octave>
-        </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
-        <notations>
-          <slur number="1" type="start" />
-        </notations>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slur number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>E</step>
-          <octave>3</octave>
-        </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>3</octave>
-        </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>C</step>
-          <octave>3</octave>
-        </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
-        <notations>
-          <slur number="1" type="stop" />
-        </notations>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slur number="1" type="stop" /></notations>
       </note>
     </measure>
   </part>

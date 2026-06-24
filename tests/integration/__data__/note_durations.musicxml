@@ -6,9 +6,10 @@
     </score-part>
   </part-list>
   <part id="P1">
+    <!-- M1: a whole note. -->
     <measure number="1">
       <attributes>
-        <divisions>2</divisions>
+        <divisions>8</divisions>
         <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
@@ -20,36 +21,42 @@
         </clef>
       </attributes>
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>2</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>32</duration>
+        <type>whole</type>
+      </note>
+    </measure>
+    <!-- M2: half, quarter, eighth, 16th, then two 32nds (increasing flag counts). -->
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>16</duration>
         <type>half</type>
       </note>
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
         <type>eighth</type>
       </note>
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>4</octave>
-        </pitch>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
         <duration>1</duration>
-        <type>eighth</type>
+        <type>32nd</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>32nd</type>
       </note>
     </measure>
   </part>

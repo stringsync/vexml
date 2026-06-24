@@ -6,9 +6,10 @@
     </score-part>
   </part-list>
   <part id="P1">
+    <!-- M1: an eighth-note triplet, then a quarter-note triplet, then a plain quarter. -->
     <measure number="1">
       <attributes>
-        <divisions>6</divisions>
+        <divisions>12</divisions>
         <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
@@ -20,73 +21,133 @@
         </clef>
       </attributes>
       <note>
-        <pitch>
-          <step>G</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>2</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
         <type>eighth</type>
-        <time-modification>
-          <actual-notes>3</actual-notes>
-          <normal-notes>2</normal-notes>
-        </time-modification>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
         <beam number="1">begin</beam>
-        <notations>
-          <tuplet number="1" type="start" />
-        </notations>
+        <notations><tuplet number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>2</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
         <type>eighth</type>
-        <time-modification>
-          <actual-notes>3</actual-notes>
-          <normal-notes>2</normal-notes>
-        </time-modification>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
         <beam number="1">continue</beam>
       </note>
       <note>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>2</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
         <type>eighth</type>
-        <time-modification>
-          <actual-notes>3</actual-notes>
-          <normal-notes>2</normal-notes>
-        </time-modification>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
         <beam number="1">end</beam>
-        <notations>
-          <tuplet number="1" type="stop" />
-        </notations>
+        <notations><tuplet number="1" type="stop" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>6</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
         <type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet number="1" type="start" /></notations>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>6</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
         <type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>6</duration>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
         <type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>12</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <!-- M2: a sixteenth-note sextuplet, then an eighth-note triplet, then a half note. -->
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+        <notations><tuplet number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>16th</type>
+        <time-modification><actual-notes>6</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+        <notations><tuplet number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">begin</beam>
+        <notations><tuplet number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">end</beam>
+        <notations><tuplet number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>24</duration>
+        <type>half</type>
       </note>
     </measure>
   </part>
