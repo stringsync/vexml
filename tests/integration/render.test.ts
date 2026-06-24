@@ -4,8 +4,8 @@ import '../testing/matcher';
 import { testCase, WIDTHS } from '../testing/cases';
 
 const TEST_CASES = [
-	testCase('empty', WIDTHS.mobile, 'empty.musicxml'),
-	testCase('quarter_notes', WIDTHS.mobile, 'quarter_notes.musicxml'),
+	testCase('empty', 'empty.musicxml', WIDTHS.mobile),
+	testCase('quarter_notes', 'quarter_notes.musicxml', WIDTHS.mobile),
 ];
 
 for (const { name, width, musicxml, baseline } of TEST_CASES) {
