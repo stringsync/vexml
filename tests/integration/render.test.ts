@@ -134,7 +134,13 @@ const TEST_CASES = [
 	// Slurs, with the quarter-note measures grouped first: (1) four quarters, slur
 	// below (default); (2) four quarters, slur above; (3) four quarters carrying two
 	// separate two-note slurs; (4) eight beamed eighths under one slur; (5) two half
-	// notes slurred across a wide leap. Wraps across systems.
+	// notes slurred across a wide leap; (6) one slur over a descending line D5, C5, A4,
+	// G4 that crosses the middle line, so the first two notes are stem-down and the last
+	// two stem-up and the slur stays clear of both noteheads and the stem-up stem tips;
+	// (7) one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so the
+	// stems alternate down-up-down-up under the slur; (8) one slur beneath an ascending
+	// low line E4, F4, G4, A4 (all stem-up), the slur bowing below the noteheads. Wraps
+	// across systems.
 	testCase('slur.musicxml', 'slur.png'),
 
 	// Tuplets on C5: measure 1 a beamed eighth-note triplet ("3"), a bracketed

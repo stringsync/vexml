@@ -88,32 +88,102 @@ export function buildTies(
 	return ties;
 }
 
+// The highest (smallest y) and lowest (largest y) drawn point of a note,
+// covering both its noteheads and, when present, its stem tip.
+function noteExtents(note: StaveNote): { top: number; bottom: number } {
+	const { yTop, yBottom } = note.getNoteHeadBounds();
+	let top = yTop;
+	let bottom = yBottom;
+	if (note.hasStem()) {
+		const { topY, baseY } = note.getStemExtents();
+		top = Math.min(top, topY, baseY);
+		bottom = Math.max(bottom, topY, baseY);
+	}
+	return { top, bottom };
+}
+
+// vexflow anchors a Curve only at its two endpoints, so the arc ignores notes in
+// between and a high (or low) middle note pokes through it. We anchor each
+// endpoint on the bulge side of its own noteheads, then raise the bezier control
+// points so the arc clears the most extreme note it spans.
 export function buildSlurs(
 	chords: Chord[],
 	byLead: Map<Note, StaveNote>,
 ): Curve[] {
 	const slurs: Curve[] = [];
-	for (const chord of chords) {
+	chords.forEach((chord, i) => {
 		const from = byLead.get(chord.lead);
 		for (const slur of chord.lead.slurs) {
 			if (slur.slurType !== 'start' || !slur.partner || !from) {
 				continue;
 			}
-			const to = byLead.get(slur.partner.note);
-			if (to) {
-				// <slur placement="above"> arcs over the top (anchored at the stem
-				// tops, opening downward); otherwise vexflow picks the side from the
-				// notes' stems.
-				const options =
-					slur.placement === 'above'
-						? {
-								position: Curve.Position.NEAR_TOP,
-								openingDirection: 'down' as const,
-							}
-						: {};
-				slurs.push(new Curve(from, to, options));
+			const partner = slur.partner.note;
+			const to = byLead.get(partner);
+			if (!to) {
+				continue;
 			}
+			const j = chords.findIndex((c) => c.lead === partner);
+			const span =
+				j > i
+					? chords
+							.slice(i, j + 1)
+							.map((c) => byLead.get(c.lead))
+							.filter((n): n is StaveNote => n !== undefined)
+					: [from, to];
+
+			// Bulge up for placement="above", down for "below", otherwise opposite the
+			// stems (slurs sit on the notehead side). The opening direction forces the
+			// arc's sign even when the two endpoints' stems disagree.
+			const bulgeUp =
+				slur.placement === 'above'
+					? true
+					: slur.placement === 'below'
+						? false
+						: from.getStemDirection() !== 1;
+
+			// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
+			// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
+			// (outer notehead). This keeps an "above" slur on stem-down notes pinned to
+			// the noteheads instead of the stem tips below them.
+			const metric = (note: StaveNote) => {
+				const stemUp = note.getStemDirection() === 1;
+				return stemUp === bulgeUp
+					? Curve.Position.NEAR_TOP
+					: Curve.Position.NEAR_HEAD;
+			};
+
+			// Lift the control points so the arc midpoint clears the most extreme note
+			// in the span and bows well off the noteheads. yShift raises the endpoints
+			// off the notes; 0.75*cps.y is the extra rise the cubic bezier gains at its
+			// midpoint. The arc height also grows with the slur's width so long slurs get
+			// a rounder, taller bow instead of a flat line skimming the noteheads.
+			const yShift = 12;
+			const margin = 14;
+			const width = Math.abs(to.getTieLeftX() - from.getTieRightX());
+			const fromY = noteExtents(from);
+			const toY = noteExtents(to);
+			const midEnd = bulgeUp
+				? (fromY.top + toY.top) / 2
+				: (fromY.bottom + toY.bottom) / 2;
+			const extreme = bulgeUp
+				? Math.min(...span.map((n) => noteExtents(n).top))
+				: Math.max(...span.map((n) => noteExtents(n).bottom));
+			const need = Math.abs(midEnd - extreme) + margin;
+			const cpY = Math.max(16, width * 0.12, (need - yShift) / 0.75);
+
+			slurs.push(
+				new Curve(from, to, {
+					position: metric(from),
+					positionEnd: metric(to),
+					openingDirection: bulgeUp ? 'down' : 'up',
+					yShift,
+					cps: [
+						{ x: 0, y: cpY },
+						{ x: 0, y: cpY },
+					],
+				}),
+			);
 		}
-	}
+	});
 	return slurs;
 }

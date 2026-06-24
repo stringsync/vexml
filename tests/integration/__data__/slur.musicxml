@@ -163,5 +163,83 @@
         <notations><slur number="1" type="stop" /></notations>
       </note>
     </measure>
+    <!-- M6: one slur over a descending line D5, C5, A4, G4 that crosses the middle
+         line, so the first two notes are stem-down and the last two stem-up. -->
+    <measure number="6">
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+    </measure>
+    <!-- M7: one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line,
+         so the stems alternate down-up-down-up under the slur. -->
+    <measure number="7">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+    </measure>
+    <!-- M8: one slur beneath an ascending low line E4, F4, G4, A4. All notes sit below
+         the middle line so their stems point up, and the slur bows below the noteheads. -->
+    <measure number="8">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>
