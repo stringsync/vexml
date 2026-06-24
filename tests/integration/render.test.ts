@@ -15,6 +15,13 @@ const TEST_CASES = [
 	// A single-stave part above a two-stave (braced) part — mixed stave counts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
 
+	// A single-stave part above a two-stave (braced) part, each with its instrument
+	// name printed to the left of the first system (showPartLabels): "Violin"
+	// centered on the single top stave, "Piano" centered on the braced pair.
+	testCase('structure_part_labels.musicxml', 'structure_part_labels.png', {
+		showPartLabels: true,
+	}),
+
 	// A single empty stave with a treble (G) clef.
 	testCase('clef_treble.musicxml', 'clef_treble.png'),
 

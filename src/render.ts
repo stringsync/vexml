@@ -17,6 +17,8 @@ export type RenderOptions = {
 	 * Given the width pxPerTick allots, higher exaggerates the long-vs-short note ratio. A
 	 * shape constant, independent of overall density. */
 	softmaxFactor?: number;
+	/** Print each part's instrument name to the left of the first system (default: false). */
+	showPartLabels?: boolean;
 };
 
 export async function render(

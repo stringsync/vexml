@@ -2,6 +2,11 @@ import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
 import { Formatter, Voice } from 'vexflow';
 import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
 
+/** Horizontal gap between a right-aligned part label and the stave it sits beside.
+ * Wide enough to clear the brace drawn on multi-stave parts. Shared with draw so the
+ * reserved indent and the drawn position agree. */
+export const LABEL_GAP = 28;
+
 /** How measures are placed across systems. */
 export type Layout =
 	| {
@@ -22,6 +27,7 @@ export type LayoutOptions = {
 	layout?: Layout;
 	pxPerTick?: number;
 	softmaxFactor?: number;
+	showPartLabels?: boolean;
 };
 
 /** A measure's placed box within its system. */
@@ -47,6 +53,9 @@ export type ScoreLayout = {
 	systemGap: number;
 	/** Page width (reference width, or content width in panoramic). */
 	width: number;
+	/** Left space reserved on the first system for part labels (0 when no part is
+	 * labelled). Where draw places the instrument names. */
+	labelIndent: number;
 	/** Starting page height, before the draw pass grows it for deep ledger lines. */
 	floorHeight: number;
 	/** Resolved spacing curve, shared by this measurement and the draw pass so the
@@ -137,6 +146,20 @@ export function computeLayout(
 
 	const usable = width - 2 * x;
 
+	// The first system indents to make room for the part labels printed left of the
+	// staves; later systems have none. 0 when nothing is labelled. Sized to the
+	// widest label plus LABEL_GAP so labels right-align just before the stave and the
+	// longest still fits inside the margin without clipping.
+	// ponytail: label width estimated at ~7.5px/char for 13px Arial (no render context
+	// here to measure) — a hair over the ~6.9px actual, so the longest never clips its
+	// left edge. Measure exactly if a font change makes the estimate drift.
+	const labelChars = options?.showPartLabels
+		? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
+		: 0;
+	const labelIndent = labelChars > 0 ? labelChars * 7.5 + LABEL_GAP : 0;
+	const usableOf = (systemIndex: number) =>
+		systemIndex === 0 ? usable - labelIndent : usable;
+
 	// --- Spacing (content only) ---------------------------------------------------
 	// A measure's note area is a pure function of its music: the musical-time width
 	// (ticks * pxPerTick), floored at the collision-free minimum and baseVoiceWidth.
@@ -196,7 +219,10 @@ export function computeLayout(
 		let rowWidth = 0;
 		for (let m = 0; m < measureCount; m++) {
 			const area = noteAreas[m] ?? baseVoiceWidth;
-			if (row.length > 0 && rowWidth + leadCont + area > usable) {
+			if (
+				row.length > 0 &&
+				rowWidth + leadCont + area > usableOf(systems.length)
+			) {
 				systems.push(row);
 				row = [];
 				rowWidth = 0;
@@ -224,9 +250,9 @@ export function computeLayout(
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
 		const justify =
 			layoutMode === 'standard' && systemIndex < systems.length - 1;
-		const slack = justify ? Math.max(0, usable - intrinsic) : 0;
+		const slack = justify ? Math.max(0, usableOf(systemIndex) - intrinsic) : 0;
 		const areaScale = areaSum > 0 ? (areaSum + slack) / areaSum : 1;
-		let cx = x;
+		let cx = x + (systemIndex === 0 ? labelIndent : 0);
 		measures.forEach((m, i) => {
 			const w = (leads[i] ?? 0) + (areas[i] ?? 0) * areaScale;
 			boxes[m] = {
@@ -263,5 +289,6 @@ export function computeLayout(
 		width: naturalWidth,
 		floorHeight,
 		softmaxFactor,
+		labelIndent,
 	};
 }

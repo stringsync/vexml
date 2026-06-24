@@ -16,7 +16,7 @@ import {
 	TabStave,
 	Voice,
 } from 'vexflow';
-import type { ScoreLayout } from './layout';
+import { LABEL_GAP, type ScoreLayout } from './layout';
 import { buildBeams, buildSlurs, buildTies, buildTuplets } from './spanners';
 import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
 
@@ -122,6 +122,7 @@ export function drawScore(
 		systemGap,
 		width,
 		floorHeight,
+		labelIndent,
 	} = layout;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
@@ -293,6 +294,31 @@ export function drawScore(
 					.setType('brace')
 					.setContext(context)
 					.draw();
+			}
+
+			// Print the instrument name in the first system's reserved left indent,
+			// right-aligned just before the stave and vertically centered on the part's
+			// staves.
+			if (
+				labelIndent > 0 &&
+				part.label &&
+				systemIndex === 0 &&
+				isSystemStart &&
+				partTop &&
+				partBottom
+			) {
+				context.save();
+				context.setFont('Arial', 13);
+				const tw = context.measureText(part.label).width;
+				// Center on the staff lines themselves: top line of the part's first stave
+				// to bottom line of its last, so a single stave centers on its middle line
+				// and a multi-stave part centers on the group. +1.5 lands the cap-height
+				// visual center on cy (a plain baseline at cy sits ~2.5px low).
+				const cy = (partTop.getYForLine(0) + partBottom.getBottomLineY()) / 2;
+				// Right-align every label to a fixed gap before the stave, so all parts'
+				// names end at the same x (the gap clears the brace on multi-stave parts).
+				context.fillText(part.label, measureX - LABEL_GAP - tw, cy + 1.5);
+				context.restore();
 			}
 		}
 
