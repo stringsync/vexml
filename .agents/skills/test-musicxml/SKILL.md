@@ -15,7 +15,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
    - Name the file `NN_category_variant.musicxml`: a gapped numeric prefix (10, 20, 30, …) placing it in incremental order, a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …), then a short variant. Gaps leave room to insert related cases without renumbering. Match the existing files in `tests/integration/__data__/`.
-   - Register it in `tests/integration/render.test.ts` with `it('<filename>.musicxml', WIDTHS.<size>)`. That file keeps a roadmap of planned cases as commented `it(...)` lines — uncomment the matching one rather than re-adding it.
+   - Register it in `tests/integration/render.test.ts` with `it('<filename>.musicxml')`. That file keeps a roadmap of planned cases as commented `it(...)` lines — uncomment the matching one rather than re-adding it.
    - Keep the fixture as small as practical while still demonstrating the behavior.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 

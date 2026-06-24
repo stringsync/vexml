@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"includes": ["**", "!dist", "!**/*.musicxml"]
 	},
 	"formatter": {
 		"enabled": true,

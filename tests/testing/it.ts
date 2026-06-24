@@ -1,9 +1,7 @@
-export const WIDTHS = { desktop: 900, mobile: 375 };
-
-export function it(filename: string, width: number) {
+export function it(filename: string) {
 	if (!filename.endsWith('.musicxml')) {
 		throw new Error(`Expected musicxml to end with .musicxml, got ${filename}`);
 	}
-	const baseline = `${filename.replace(/\.musicxml$/, '')}_${width}px`;
-	return { width, filename, baseline };
+	const baseline = filename.replace(/\.musicxml$/, '');
+	return { filename, baseline };
 }

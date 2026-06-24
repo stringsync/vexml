@@ -239,7 +239,8 @@ function drawNotes(
 	voices: ScoreVoice[],
 	beamGroups: Note[][],
 	clef: string,
-): void {
+	softmaxFactor: number,
+): number {
 	const byLead = new Map<Note, StaveNote>();
 	const perVoice = voices.map((voice) => {
 		const staveNotes = voice.chords.map((chord) => {
@@ -247,27 +248,30 @@ function drawNotes(
 			byLead.set(chord.lead, staveNote);
 			return staveNote;
 		});
-		return { chords: voice.chords, staveNotes };
+		const vexVoice = new Voice()
+			.setMode(Voice.Mode.SOFT)
+			.setSoftmaxFactor(softmaxFactor)
+			.addTickables(staveNotes);
+		return { staveNotes, vexVoice };
 	});
 
 	// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
 	// built before formatting.
 	const beams = buildBeams(beamGroups, byLead);
-	const tuplets = perVoice.flatMap((v) => buildTuplets(v.chords, byLead));
+	const tuplets = voices.flatMap((v) => buildTuplets(v.chords, byLead));
 	const allChords = voices.flatMap((v) => v.chords);
 	const ties = buildTies(allChords, byLead);
 	const slurs = buildSlurs(allChords, byLead);
 
-	if (perVoice.length === 1) {
-		Formatter.FormatAndDraw(context, stave, perVoice[0]?.staveNotes ?? []);
-	} else {
-		const vexVoices = perVoice.map((v) =>
-			new Voice().setMode(Voice.Mode.SOFT).addTickables(v.staveNotes),
-		);
-		new Formatter().joinVoices(vexVoices).formatToStave(vexVoices, stave);
-		for (const voice of vexVoices) {
-			voice.draw(context, stave);
-		}
+	// Fill the stave's note area (its width minus the lead glyphs) with the notes.
+	// The note area was sized to a global px-per-tick, so spacing stays consistent
+	// across measures.
+	const vexVoices = perVoice.map((v) => v.vexVoice);
+	new Formatter({ softmaxFactor })
+		.joinVoices(vexVoices)
+		.formatToStave(vexVoices, stave);
+	for (const vexVoice of vexVoices) {
+		vexVoice.draw(context, stave);
 	}
 
 	for (const beam of beams) {
@@ -282,10 +286,72 @@ function drawNotes(
 	for (const slur of slurs) {
 		slur.setContext(context).draw();
 	}
+
+	// Lowest y any note reaches, so the page can grow to fit (deep ledger lines
+	// below the staff would otherwise be clipped).
+	let bottom = 0;
+	for (const v of perVoice) {
+		for (const note of v.staveNotes) {
+			const box = note.getBoundingBox();
+			bottom = Math.max(bottom, box.getY() + box.getH());
+		}
+	}
+	return bottom;
+}
+
+// A measure's note-area width: the musical-time width (ticks * pxPerTick) so equal
+// durations get equal space everywhere, never below the collision-free minimum or
+// the floor. Builds throwaway notes so the draw pass is untouched. The busiest
+// staff wins (all staves in a measure share one width).
+function measureNoteArea(
+	staves: { voices: ScoreVoice[]; clef: string }[],
+	floor: number,
+	pxPerTick: number,
+	softmaxFactor: number,
+): number {
+	let minNotes = 0;
+	let ticks = 0;
+	for (const { voices, clef } of staves) {
+		const vexVoices = voices.map((voice) =>
+			new Voice()
+				.setMode(Voice.Mode.SOFT)
+				.setSoftmaxFactor(softmaxFactor)
+				.addTickables(voice.chords.map((chord) => vexflowChord(chord, clef))),
+		);
+		if (vexVoices.length === 0) {
+			continue;
+		}
+		minNotes = Math.max(
+			minNotes,
+			new Formatter({ softmaxFactor })
+				.joinVoices(vexVoices)
+				.preCalculateMinTotalWidth(vexVoices),
+		);
+		for (const vexVoice of vexVoices) {
+			ticks = Math.max(ticks, vexVoice.getTicksUsed().value());
+		}
+	}
+	return Math.max(floor, minNotes, ticks * pxPerTick);
 }
 
 export type RenderOptions = {
-	config?: { WIDTH?: number; [key: string]: unknown };
+	config?: {
+		/** Reference layout width in px. The score is laid out to this width once; the
+		 * SVG viewBox then scales the result to whatever container it's placed in, so
+		 * resizing the container never re-flows or re-spaces the music. */
+		WIDTH?: number;
+		/** 'standard' wraps measures onto stacked systems (print-like); 'panoramic'
+		 * lays every measure on one system (horizontal scroll). */
+		LAYOUT?: 'standard' | 'panoramic';
+		/** Absolute floor for a measure's note area. */
+		BASE_VOICE_WIDTH?: number;
+		/** Horizontal px per tick of musical time — the global spacing density that
+		 * makes identical content the same width everywhere in the piece. */
+		PX_PER_TICK?: number;
+		/** vexflow note-spacing curve: higher exaggerates long-vs-short note spacing. */
+		SOFTMAX_FACTOR?: number;
+		[key: string]: unknown;
+	};
 };
 
 export async function render(
@@ -313,7 +379,11 @@ function renderMDoc(
 		return;
 	}
 
-	const width = options?.config?.WIDTH ?? 500;
+	const width = options?.config?.WIDTH ?? 1000;
+	const layoutMode = options?.config?.LAYOUT ?? 'standard';
+	const baseVoiceWidth = options?.config?.BASE_VOICE_WIDTH ?? 80;
+	const pxPerTick = options?.config?.PX_PER_TICK ?? 0.012;
+	const softmaxFactor = options?.config?.SOFTMAX_FACTOR ?? 10;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
 	const renderer = new Renderer(
@@ -332,7 +402,10 @@ function renderMDoc(
 	const y = 40;
 	const intraPartSpacing = 120;
 	const interPartSpacing = 80;
-	const measureCount = Math.max(parts[0]?.measures.length ?? 0, 1);
+	const measureCount = Math.max(
+		1,
+		...parts.map((part) => part.measures.length),
+	);
 	const totalStaves = parts.reduce(
 		(sum, part) => sum + Math.max(part.staveCount, 1),
 		0,
@@ -349,31 +422,155 @@ function renderMDoc(
 		}
 	}
 
-	// Measures wrap onto a new system (row) once a row is full; each system is the
-	// full stave stack plus a gap before the next.
-	const minMeasureWidth = 150;
-	const measuresPerSystem = Math.max(
-		1,
-		Math.floor((width - 2 * x) / minMeasureWidth),
-	);
-	const systemHeight = offset + 40;
-	const systemCount = Math.ceil(measureCount / measuresPerSystem);
+	const usable = width - 2 * x;
 
-	// Height grows with every system so the bottom one isn't clipped.
-	renderer.resize(width, y + (systemCount - 1) * systemHeight + offset + 40);
+	// --- Spacing (content only) ---------------------------------------------------
+	// A measure's note area is a pure function of its music: the musical-time width
+	// (ticks * PX_PER_TICK), floored at the collision-free minimum and
+	// BASE_VOICE_WIDTH. One global PX_PER_TICK means identical content is identically
+	// wide everywhere in the piece. The container never changes this — it only scales
+	// the finished layout via the SVG viewBox.
+	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
+		const staves: { voices: ScoreVoice[]; clef: string }[] = [];
+		for (const part of parts) {
+			const measure = part.measures[m];
+			if (!measure) {
+				continue;
+			}
+			const staveCount = Math.max(part.staveCount, 1);
+			for (let s = 0; s < staveCount; s++) {
+				const staffNumber = String(s + 1);
+				const clef = measure.getClef(staffNumber);
+				// TAB notes aren't drawn yet, so they reserve no note width.
+				if (clef?.sign === 'TAB') {
+					continue;
+				}
+				const voices = measure.voices.filter(
+					(v) => v.staff === staffNumber && v.chords.length > 0,
+				);
+				if (voices.length > 0) {
+					staves.push({
+						voices,
+						clef: clef ? vexflowClef(clef.sign, clef.line) : 'treble',
+					});
+				}
+			}
+		}
+		return measureNoteArea(staves, baseVoiceWidth, pxPerTick, softmaxFactor);
+	});
 
+	// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
+	// repeats at every system start; the time signature prints once at the piece
+	// start; mid-system measures carry only a barline.
+	// ponytail: fixed, deliberately generous estimates so notes never collide with
+	// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
+	const leadCont = 12;
+	const leadFull = (m: number) => {
+		const hasKey = parts.some((part) => part.measures[m]?.getKey()?.rootNote);
+		return 12 + 32 + (hasKey ? 40 : 0) + (m === 0 ? 32 : 0);
+	};
+	const leadOf = (m: number, systemStart: boolean) =>
+		systemStart ? leadFull(m) : leadCont;
+
+	// --- Breaks -------------------------------------------------------------------
+	// Standard: wrap to a new system once the next measure's note area would overrun
+	// the reference width. Panoramic: one system holding every measure. Either way
+	// breaks depend only on the music and WIDTH, never on the live container.
+	const systems: number[][] = [];
+	if (layoutMode === 'panoramic') {
+		systems.push(Array.from({ length: measureCount }, (_, m) => m));
+	} else {
+		let row: number[] = [];
+		let rowWidth = 0;
+		for (let m = 0; m < measureCount; m++) {
+			const area = noteAreas[m] ?? baseVoiceWidth;
+			if (row.length > 0 && rowWidth + leadCont + area > usable) {
+				systems.push(row);
+				row = [];
+				rowWidth = 0;
+			}
+			rowWidth += leadOf(m, row.length === 0) + area;
+			row.push(m);
+		}
+		if (row.length > 0) {
+			systems.push(row);
+		}
+	}
+
+	// --- Placement ----------------------------------------------------------------
+	// Lay each system left to right at intrinsic (note-area) widths. Full systems are
+	// justified to the reference width by stretching note areas proportionally (the
+	// per-tick rate stays uniform within the system); the last/partial system — and
+	// all of panoramic — stay ragged, so a short line or lone measure keeps its
+	// natural width instead of being needlessly stretched.
+	type MeasureBox = {
+		x: number;
+		width: number;
+		systemIndex: number;
+		isSystemStart: boolean;
+		isSystemEnd: boolean;
+	};
+	const boxes: MeasureBox[] = [];
+	let naturalWidth = width;
+	systems.forEach((measures, systemIndex) => {
+		const leads = measures.map((m, i) => leadOf(m, i === 0));
+		const areas = measures.map((m) => noteAreas[m] ?? baseVoiceWidth);
+		const areaSum = areas.reduce((sum, a) => sum + a, 0);
+		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
+		const justify =
+			layoutMode === 'standard' && systemIndex < systems.length - 1;
+		const slack = justify ? Math.max(0, usable - intrinsic) : 0;
+		const areaScale = areaSum > 0 ? (areaSum + slack) / areaSum : 1;
+		let cx = x;
+		measures.forEach((m, i) => {
+			const w = (leads[i] ?? 0) + (areas[i] ?? 0) * areaScale;
+			boxes[m] = {
+				x: cx,
+				width: w,
+				systemIndex,
+				isSystemStart: i === 0,
+				isSystemEnd: i === measures.length - 1,
+			};
+			cx += w;
+		});
+		// Standard stays at the reference width (short lines sit left with margin,
+		// never scaled up; an over-wide measure overflows rather than rescaling the
+		// page); panoramic grows the page to fit its single long system.
+		if (layoutMode === 'panoramic') {
+			naturalWidth = Math.max(naturalWidth, cx + x);
+		}
+	});
+
+	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
+	// drawn content (notes + staff lines), so deep ledger lines push the next system
+	// down instead of colliding with it — fixed spacing can't, since note range is
+	// unbounded. SYSTEM_GAP is the visual gap plus room for the next system's notes
+	// that rise above its top staff.
+	// ponytail: fixed upward clearance in SYSTEM_GAP; pre-measure per-system note
+	// extent if an extreme tessitura ever rises into the system above.
+	const SYSTEM_GAP = 90;
+	const floorHeight = y + offset + 40;
+	renderer.resize(naturalWidth, floorHeight); // provisional; grown after drawing
+
+	let pageBottom = 0;
+	let systemTopY = y;
+	let systemContentBottom = y;
+	let currentSystem = -1;
 	for (let m = 0; m < measureCount; m++) {
-		const systemIndex = Math.floor(m / measuresPerSystem);
-		const posInSystem = m % measuresPerSystem;
-		const measuresInSystem = Math.min(
-			measuresPerSystem,
-			measureCount - systemIndex * measuresPerSystem,
-		);
-		const measureWidth = (width - 2 * x) / measuresInSystem;
-		const measureX = x + posInSystem * measureWidth;
-		const systemY = y + systemIndex * systemHeight;
-		const isSystemStart = posInSystem === 0;
-		const isSystemEnd = posInSystem === measuresInSystem - 1;
+		const box = boxes[m];
+		if (!box) {
+			continue;
+		}
+		const { x: measureX, width: measureWidth, systemIndex } = box;
+		const { isSystemStart, isSystemEnd } = box;
+		if (systemIndex !== currentSystem) {
+			if (currentSystem >= 0) {
+				systemTopY = systemContentBottom + SYSTEM_GAP;
+			}
+			currentSystem = systemIndex;
+			systemContentBottom = systemTopY;
+		}
+		const systemY = systemTopY;
 		let staveRow = 0;
 		let systemTop: Stave | undefined;
 		let systemBottom: Stave | undefined;
@@ -449,13 +646,28 @@ function renderMDoc(
 				}
 
 				stave.setContext(context).draw();
+				const staveBottom = stave.getBottomY();
+				pageBottom = Math.max(pageBottom, staveBottom);
+				systemContentBottom = Math.max(systemContentBottom, staveBottom);
 
 				// Draw this staff's notes on top of the stave. TAB notes need their own
 				// glyphs (string/fret), which no roadmap case exercises yet — skip them.
-				const voices = measure.voices.filter((v) => v.staff === staffNumber);
+				// An empty voice (no chords) would crash the formatter, so it's filtered.
+				const voices = measure.voices.filter(
+					(v) => v.staff === staffNumber && v.chords.length > 0,
+				);
 				if (!isTab && voices.length > 0) {
 					const clefName = clef ? vexflowClef(clef.sign, clef.line) : 'treble';
-					drawNotes(context, stave, voices, measure.beams, clefName);
+					const noteBottom = drawNotes(
+						context,
+						stave,
+						voices,
+						measure.beams,
+						clefName,
+						softmaxFactor,
+					);
+					pageBottom = Math.max(pageBottom, noteBottom);
+					systemContentBottom = Math.max(systemContentBottom, noteBottom);
 				}
 
 				partTop ??= stave;
@@ -491,6 +703,10 @@ function renderMDoc(
 			}
 		}
 	}
+
+	// Grow the page to the lowest thing actually drawn so deep ledger lines in the
+	// bottom system aren't clipped.
+	renderer.resize(naturalWidth, Math.max(floorHeight, pageBottom + 40));
 }
 
 function renderMusicXML(

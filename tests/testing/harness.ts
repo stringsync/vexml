@@ -18,23 +18,20 @@ afterAll(async () => {
 	server?.stop(true);
 });
 
-export type RenderOptions = {
-	width: number;
-	config?: Record<string, unknown>;
-};
+// Every fixture is laid out to one reference width; the SVG viewBox scales the
+// result to any container at runtime, so a single static width exercises the
+// layout deterministically.
+const WIDTH = 1000;
 
 /** Render a corpus file in the browser and return its screenshot PNG. */
-export async function render(
-	file: string,
-	opts: RenderOptions,
-): Promise<Buffer> {
+export async function render(file: string): Promise<Buffer> {
 	const page = await browser.newPage({
-		viewport: { width: opts.width, height: 600 },
+		viewport: { width: WIDTH + 64, height: 600 },
 	});
 	try {
 		await page.goto(`http://localhost:${PORT}/`);
 		await page.evaluate(
-			async ({ file, width, config }) => {
+			async ({ file, width }) => {
 				const res = await fetch(`/data/${file}`);
 				const input = file.endsWith('.mxl')
 					? await res.blob()
@@ -43,11 +40,9 @@ export async function render(
 				if (!element) {
 					throw new Error('element not found');
 				}
-				await window.render(input, element, {
-					config: { WIDTH: width, ...config },
-				});
+				await window.render(input, element, { config: { WIDTH: width } });
 			},
-			{ file, width: opts.width, config: opts.config ?? {} },
+			{ file, width: WIDTH },
 		);
 		return await page.locator('#screenshot').screenshot();
 	} finally {
