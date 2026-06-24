@@ -7,8 +7,8 @@ import { PNG } from 'pngjs';
 // Local (host) runs override this so host pixels don't diff against the committed Docker baselines.
 const SNAP_DIR = process.env.SCREENSHOTS_DIR
 	? path.resolve(process.env.SCREENSHOTS_DIR)
-	: path.resolve(import.meta.dir, '__screenshots__');
-const DIFF_DIR = path.resolve(import.meta.dir, '__diffs__');
+	: path.resolve(import.meta.dir, '../integration/__screenshots__');
+const DIFF_DIR = path.resolve(import.meta.dir, '../integration/__diffs__');
 const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
 
 expect.extend({

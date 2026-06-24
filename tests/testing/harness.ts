@@ -1,15 +1,15 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { type Browser, chromium } from 'playwright';
-import { startServer } from './serve';
+import { serve } from './serve';
 
 const PORT = 3100;
 
 let browser: Browser;
-let server: ReturnType<typeof startServer>;
+let server: ReturnType<typeof serve>;
 
 // Importing this module registers the hooks against the importing test file.
 beforeAll(async () => {
-	server = startServer(PORT);
+	server = serve(PORT);
 	browser = await chromium.launch();
 });
 

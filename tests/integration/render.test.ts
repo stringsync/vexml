@@ -1,12 +1,7 @@
 import { expect, test } from 'bun:test';
-import { render } from './harness';
-import './matcher';
-
-const WIDTHS = { desktop: 900, mobile: 375 };
-
-function testCase(name: string, width: number, musicxml: string) {
-	return { name, width, musicxml, baseline: `${name}_${width}px` };
-}
+import { render } from '../testing/harness';
+import '../testing/matcher';
+import { testCase, WIDTHS } from '../testing/cases';
 
 const TEST_CASES = [
 	testCase('empty', WIDTHS.mobile, 'empty.musicxml'),
