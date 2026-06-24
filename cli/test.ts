@@ -60,6 +60,7 @@ async function testDocker(
 
 function buildSilently(): Promise<void> {
 	process.stdout.write('Building...\n');
+	const start = Date.now();
 	return new Promise((resolve, reject) => {
 		const child = spawn('docker', ['build', '-t', 'vexml-tests', '.']);
 		let output = '';
@@ -68,6 +69,9 @@ function buildSilently(): Promise<void> {
 		child.on('error', reject);
 		child.on('exit', (code) => {
 			if (code === 0) {
+				process.stdout.write(
+					`Built in ${((Date.now() - start) / 1000).toFixed(1)}s\n`,
+				);
 				return resolve();
 			}
 			process.stderr.write(output);
