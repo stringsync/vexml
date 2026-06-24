@@ -14,7 +14,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Reuse or extend an existing case when that is the least surprising option.
 
 2. If the use case is not already covered, add a focused MusicXML document to `tests/integration/__data__/`.
-   - Name the file descriptively.
+   - Name the file `NN_category_variant.musicxml`: a gapped numeric prefix (10, 20, 30, …) placing it in incremental order, a category (`structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …), then a short variant. Gaps leave room to insert related cases without renumbering. Match the existing files in `tests/integration/__data__/`.
+   - Register it in `tests/integration/render.test.ts` with `it('<filename>.musicxml', WIDTHS.<size>)`. That file keeps a roadmap of planned cases as commented `it(...)` lines — uncomment the matching one rather than re-adding it.
    - Keep the fixture as small as practical while still demonstrating the behavior.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 
@@ -55,7 +56,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    vex test --update -t <name>
    ```
 
-   Where `<name>` is the basename of the MusicXML file, matching the convention in `tests/testing/cases.ts`:
+   Where `<name>` is the baseline/test title — the MusicXML basename plus `_<width>px` (e.g. `50_clef_treble_375px`), as registered by `it()` in `tests/integration/render.test.ts` (helper in `tests/testing/it.ts`). A prefix such as `50_clef_treble` also matches.
 
 9. Validate that there are no regressions.
    - Run `vex test` again after the selective baseline update.
