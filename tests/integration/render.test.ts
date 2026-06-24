@@ -125,8 +125,12 @@ const TEST_CASES = [
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave — voice 1 (stems up) a mixed
-	// quarter/eighth line spanning the measure; voice 2 (stems down) a distinct lower
-	// line that rests on beats 1 and 4, so it starts and ends inside voice 1.
+	// quarter/eighth line spanning the whole measure; voice 2 (stems down) a distinct
+	// lower line that is silent on beats 1 and 4 via <forward> (no rests drawn). The
+	// silence is held open by invisible ghost tickables (src/stave-notes.ts), so voice 2
+	// starts aligned on beat 2 (G4 under voice 1's F5) and its last note (G4 on beat 3.5)
+	// keeps a full beat of space to its right before voice 1's final C5 on beat 4 —
+	// rather than being crammed against it.
 	testCase('two_voices.musicxml', 'two_voices.png'),
 
 	// Eight identical C5 whole-note measures wrapping onto two systems of four measures

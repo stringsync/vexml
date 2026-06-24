@@ -1,6 +1,6 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
 import { Formatter, Voice } from 'vexflow';
-import { vexflowChord, vexflowClef } from './stave-notes';
+import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
 
 /** How measures are placed across systems. */
 export type Layout =
@@ -67,11 +67,12 @@ function measureNoteArea(
 	let minNotes = 0;
 	let ticks = 0;
 	for (const { voices, clef } of staves) {
+		const endBeat = endBeatOf(voices);
 		const vexVoices = voices.map((voice) =>
 			new Voice()
 				.setMode(Voice.Mode.SOFT)
 				.setSoftmaxFactor(softmaxFactor)
-				.addTickables(voice.chords.map((chord) => vexflowChord(chord, clef))),
+				.addTickables(vexflowVoiceTickables(voice.chords, clef, endBeat)),
 		);
 		if (vexVoices.length === 0) {
 			continue;

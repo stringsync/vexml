@@ -60,13 +60,10 @@
       <backup>
         <duration>8</duration>
       </backup>
-      <!-- Voice 2 (lower, stems down): rests on beats 1 and 4, so it starts and ends inside voice 1. -->
-      <note>
-        <rest />
+      <!-- Voice 2 (lower, stems down): silent on beats 1 and 4 via <forward>, so it starts and ends inside voice 1. -->
+      <forward>
         <duration>2</duration>
-        <voice>2</voice>
-        <type>quarter</type>
-      </note>
+      </forward>
       <note>
         <pitch><step>G</step><octave>4</octave></pitch>
         <duration>2</duration>
@@ -90,12 +87,9 @@
         <stem>down</stem>
         <beam number="1">end</beam>
       </note>
-      <note>
-        <rest />
+      <forward>
         <duration>2</duration>
-        <voice>2</voice>
-        <type>quarter</type>
-      </note>
+      </forward>
     </measure>
   </part>
 </score-partwise>

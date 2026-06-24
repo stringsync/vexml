@@ -18,7 +18,7 @@ import {
 } from 'vexflow';
 import type { ScoreLayout } from './layout';
 import { buildBeams, buildSlurs, buildTies, buildTuplets } from './spanners';
-import { vexflowChord, vexflowClef } from './stave-notes';
+import { endBeatOf, vexflowClef, vexflowVoiceTickables } from './stave-notes';
 
 // MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
 // "beats/beat-type". null when there's nothing drawable. Doubles as the equality
@@ -50,16 +50,23 @@ function drawNotes(
 	softmaxFactor: number,
 	byLead: Map<Note, StaveNote>,
 ): number {
+	const endBeat = endBeatOf(voices);
 	const perVoice = voices.map((voice) => {
-		const staveNotes = voice.chords.map((chord) => {
-			const staveNote = vexflowChord(chord, clef);
-			byLead.set(chord.lead, staveNote);
-			return staveNote;
-		});
+		// Real notes only (no gap-filling ghosts), for the bottom-bound calc below.
+		const staveNotes: StaveNote[] = [];
+		const tickables = vexflowVoiceTickables(
+			voice.chords,
+			clef,
+			endBeat,
+			(lead, note) => {
+				byLead.set(lead, note);
+				staveNotes.push(note);
+			},
+		);
 		const vexVoice = new Voice()
 			.setMode(Voice.Mode.SOFT)
 			.setSoftmaxFactor(softmaxFactor)
-			.addTickables(staveNotes);
+			.addTickables(tickables);
 		return { staveNotes, vexVoice };
 	});
 
