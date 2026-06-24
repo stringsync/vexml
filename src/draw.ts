@@ -181,7 +181,11 @@ export function drawScore(
 				const stave = isTab
 					? new TabStave(measureX, staveY, measureWidth, { numLines: tabLines })
 					: new Stave(measureX, staveY, measureWidth);
-				stave.setBegBarType(Barline.type.SINGLE);
+				// Only draw the end barline. Each measure's end barline is the same line
+				// as the next measure's left edge, so internal measures still get a divider;
+				// only the first measure of a system loses its left barline (intended). The
+				// stave connector marks the system's left edge for multi-staff parts.
+				stave.setBegBarType(Barline.type.NONE);
 				stave.setEndBarType(Barline.type.SINGLE);
 
 				// The previous measure's effective signatures (carried forward), used to
