@@ -35,10 +35,10 @@ Use custom fonts (optional).
 ```ts
 await render(musicXML, element, {
   fonts: {
-    // noteheads, clefs, rests, accidentals, etc.
+    // noteheads, clefs, rests, accidentals, etc., default is Bravura
     music: { family: 'Petaluma' },
-    // optionally specify a font url
-    labels: { family: 'Inter', url: '/fonts/inter.woff2' },
+    // optionally specify a font url if it's not already available locally
+    label: { family: 'Inter', url: '/fonts/inter.woff2' },
     // lyrics, titles, and directions
     text: { family: 'EB Garamond' },
   },
