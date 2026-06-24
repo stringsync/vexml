@@ -22,13 +22,22 @@ const TEST_CASES = [
 		showPartLabels: true,
 	}),
 
-	// Same two labelled parts as structure_part_labels, but with the UI font
-	// overridden to a serif family (fonts.ui). The two instrument names render in
-	// serif instead of the default sans-serif, proving the ui FontConfig option
-	// flows through to the part labels (the only UI text vexml draws).
-	testCase('structure_part_labels.musicxml', 'font_ui_label.png', {
+	// Same two labelled parts as structure_part_labels, but with the label font
+	// overridden to a serif family (fonts.label). The two instrument names render in
+	// serif instead of the default sans-serif, proving the label FontConfig option
+	// flows through to the part labels (the only text vexml draws in the margin).
+	testCase('structure_part_labels.musicxml', 'font_label.png', {
 		showPartLabels: true,
-		fonts: { ui: { family: 'Times New Roman' } },
+		fonts: { label: { family: 'Times New Roman' } },
+	}),
+
+	// Treble stave, 4/4, one measure (two quarters, two flagged eighths, a quarter
+	// rest, all on C5), engraved with VexFlow's Petaluma font instead of the default
+	// Bravura (fonts.notation). The notehead, stem flags, treble clef, and rest glyph
+	// all take Petaluma's rounder, hand-drawn shapes — proving the notation FontConfig
+	// option swaps the engraving font.
+	testCase('font_notation_petaluma.musicxml', 'font_notation_petaluma.png', {
+		fonts: { notation: { family: 'Petaluma' } },
 	}),
 
 	// A single empty stave with a treble (G) clef.

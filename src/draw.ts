@@ -133,10 +133,10 @@ export function drawScore(
 	const context = renderer.getContext();
 	renderer.resize(width, floorHeight); // provisional; grown after drawing
 
-	// Part labels use the UI font set on the container by loadFonts() (the only
-	// reader of --vexml-font-ui). Falls back to Arial if unset (e.g. SSR/no fonts).
-	const uiFont =
-		getComputedStyle(element).getPropertyValue('--vexml-font-ui').trim() ||
+	// Part labels use the label font set on the container by loadFonts() (the only
+	// reader of --vexml-font-label). Falls back to Arial if unset (e.g. SSR/no fonts).
+	const labelFont =
+		getComputedStyle(element).getPropertyValue('--vexml-font-label').trim() ||
 		'Arial';
 
 	// One note map for the whole score: ties and slurs can span a barline, so their
@@ -320,7 +320,7 @@ export function drawScore(
 				partBottom
 			) {
 				context.save();
-				context.setFont(uiFont, 13);
+				context.setFont(labelFont, 13);
 				const tw = context.measureText(part.label).width;
 				// Center on the staff lines themselves: top line of the part's first stave
 				// to bottom line of its last, so a single stave centers on its middle line

@@ -1,4 +1,5 @@
 import { MDOMParser, type MDocument } from '@stringsync/mdom';
+import { VexFlow } from 'vexflow';
 import { drawScore } from './draw';
 import { type FontConfig, loadFonts } from './font-loader';
 import { computeLayout, type Layout } from './layout';
@@ -27,6 +28,12 @@ export async function render(
 	options?: RenderOptions,
 ) {
 	loadFonts(element, options?.fonts);
+	// VexFlow engraves glyphs from its own bundled font modules via global state, not the
+	// --vexml-font-notation CSS var. Set it here so fonts.notation actually swaps the
+	// engraving font (e.g. Petaluma). Reset to Bravura each call so one render's choice
+	// can't leak into the next. ponytail: global font stack is vexflow's only API;
+	// per-render fonts would need upstream support.
+	VexFlow.setFonts(options?.fonts?.notation?.family ?? 'Bravura', 'Academico');
 	if (typeof input === 'string') {
 		return renderMusicXML(input, element, options);
 	}

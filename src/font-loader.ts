@@ -5,9 +5,12 @@ export interface FontOverride {
 }
 
 export interface FontConfig {
-	music?: FontOverride;
+	/** Engraving glyphs: noteheads, clefs, rests, accidentals. */
+	notation?: FontOverride;
+	/** Typeset words inside the score: lyrics, titles, directions. */
 	text?: FontOverride;
-	ui?: FontOverride;
+	/** Part/instrument names printed in the margin. */
+	label?: FontOverride;
 }
 
 // Module-level dedup: tracks what's been injected into <head> by "family|url" key.
@@ -20,12 +23,12 @@ export function loadFonts(container: HTMLElement, config?: FontConfig): void {
 		return; // SSR guard
 	}
 
-	injectMusicFont(config?.music);
-	injectTextFonts(config?.text, config?.ui);
+	injectNotationFont(config?.notation);
+	injectTextFonts(config?.text, config?.label);
 	applyFontVariables(container, config);
 }
 
-function injectMusicFont(override?: FontOverride): void {
+function injectNotationFont(override?: FontOverride): void {
 	const family = override?.family ?? 'Bravura';
 	const url =
 		override?.url ??
@@ -35,18 +38,18 @@ function injectMusicFont(override?: FontOverride): void {
 
 function injectTextFonts(
 	textOverride?: FontOverride,
-	uiOverride?: FontOverride,
+	labelOverride?: FontOverride,
 ): void {
 	// Load Google Fonts for any role not fully overridden with a custom URL.
-	if (!textOverride?.url || !uiOverride?.url) {
+	if (!textOverride?.url || !labelOverride?.url) {
 		injectGoogleFonts();
 	}
 
 	if (textOverride?.url) {
 		injectFontFace(textOverride.family, textOverride.url, 'swap');
 	}
-	if (uiOverride?.url) {
-		injectFontFace(uiOverride.family, uiOverride.url, 'swap');
+	if (labelOverride?.url) {
+		injectFontFace(labelOverride.family, labelOverride.url, 'swap');
 	}
 }
 
@@ -89,11 +92,17 @@ function injectFontFace(
 // Scopes CSS variables to the render container — not :root — so two render() calls
 // on the same page can use different fonts independently.
 function applyFontVariables(container: HTMLElement, config?: FontConfig): void {
-	const musicFamily = config?.music?.family ?? 'Bravura';
+	const notationFamily = config?.notation?.family ?? 'Bravura';
 	const textFamily = config?.text?.family ?? 'EB Garamond';
-	const uiFamily = config?.ui?.family ?? 'Source Sans 3';
+	const labelFamily = config?.label?.family ?? 'Source Sans 3';
 
-	container.style.setProperty('--vexml-font-music', `'${musicFamily}', serif`);
+	container.style.setProperty(
+		'--vexml-font-notation',
+		`'${notationFamily}', serif`,
+	);
 	container.style.setProperty('--vexml-font-text', `'${textFamily}', serif`);
-	container.style.setProperty('--vexml-font-ui', `'${uiFamily}', sans-serif`);
+	container.style.setProperty(
+		'--vexml-font-label',
+		`'${labelFamily}', sans-serif`,
+	);
 }

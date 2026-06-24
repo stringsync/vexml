@@ -35,9 +35,9 @@ test('default render injects bravura + google fonts, scopes vars to container', 
 	// 1 google <link> + 1 bravura <style>
 	expect(head.filter((n) => n.tag === 'link').length).toBe(1);
 	expect(head.filter((n) => n.tag === 'style').length).toBe(1);
-	expect(vars['--vexml-font-music']).toBe("'Bravura', serif");
+	expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
 	expect(vars['--vexml-font-text']).toBe("'EB Garamond', serif");
-	expect(vars['--vexml-font-ui']).toBe("'Source Sans 3', sans-serif");
+	expect(vars['--vexml-font-label']).toBe("'Source Sans 3', sans-serif");
 });
 
 test('idempotent: second default call injects nothing new', () => {
@@ -48,10 +48,10 @@ test('idempotent: second default call injects nothing new', () => {
 	expect(head.length).toBe(after); // no new tags
 });
 
-test('custom music url injects that url, not bundled path', () => {
+test('custom notation url injects that url, not bundled path', () => {
 	const { head, container } = fakeDom();
 	loadFonts(container, {
-		music: { family: 'Bravura', url: '/static/Custom.woff2' },
+		notation: { family: 'Bravura', url: '/static/Custom.woff2' },
 	});
 	const styleText = head
 		.filter((n) => n.tag === 'style')
