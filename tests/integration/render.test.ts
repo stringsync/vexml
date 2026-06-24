@@ -33,6 +33,16 @@ const TEST_CASES = [
 		'one_part_two_staves_treble_bass_clefs.musicxml',
 		WIDTHS.mobile,
 	),
+	it(
+		'should render a TAB clef with 6 strings',
+		'one_part_one_stave_tab_clef_6_strings.musicxml',
+		WIDTHS.mobile,
+	),
+	it(
+		'should render a TAB clef with 4 strings',
+		'one_part_one_stave_tab_clef_4_strings.musicxml',
+		WIDTHS.mobile,
+	),
 ];
 
 for (const { name, width, filename, baseline } of TEST_CASES) {

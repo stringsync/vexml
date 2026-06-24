@@ -1,5 +1,5 @@
 import { MDOMParser, type MDocument } from '@stringsync/mdom';
-import { Barline, Renderer, Stave, StaveConnector } from 'vexflow';
+import { Barline, Renderer, Stave, StaveConnector, TabStave } from 'vexflow';
 
 // MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
 // unknown combinations fall back to treble.
@@ -104,16 +104,38 @@ function renderMDoc(
 			let partBottom: Stave | undefined;
 
 			for (let s = 0; s < staveCount; s++) {
-				const stave = new Stave(
-					measureX,
-					y + (staveOffsets[staveRow] ?? 0),
-					measureWidth,
-				);
+				const staffNumber = String(s + 1);
+				const clef = measure.getClef(staffNumber);
+				const staveY = y + (staveOffsets[staveRow] ?? 0);
+
+				// A TAB clef draws on a TabStave whose line count matches the
+				// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
+				const isTab = clef?.sign === 'TAB';
+				const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
+				const stave = isTab
+					? new TabStave(measureX, staveY, measureWidth, { numLines: tabLines })
+					: new Stave(measureX, staveY, measureWidth);
 				stave.setBegBarType(Barline.type.SINGLE);
 				stave.setEndBarType(Barline.type.SINGLE);
 
-				const clef = measure.getClef(String(s + 1));
-				if (clef) {
+				if (isTab) {
+					(stave as TabStave).addTabGlyph();
+					// The "TAB" glyph is drawn for a 6-line staff; shrink and re-center
+					// it so the word fits a shorter staff (e.g. a 4-string bass).
+					if (tabLines !== 6) {
+						const [tabClef] = stave.getModifiers(
+							undefined,
+							'Clef',
+						) as unknown as Array<{
+							line: number;
+							fontInfo: { size: number };
+						}>;
+						if (tabClef) {
+							tabClef.fontInfo.size *= (tabLines - 1) / 5;
+							tabClef.line = (tabLines - 1) / 2;
+						}
+					}
+				} else if (clef) {
 					stave.addClef(vexflowClef(clef.sign, clef.line));
 				}
 				const key = measure.getKey();
