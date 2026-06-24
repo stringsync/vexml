@@ -75,12 +75,13 @@ const TEST_CASES = [
 	// (C5, same pitch in both).
 	testCase('measures_two.musicxml', 'measures_two.png'),
 
-	// Grand staff (empty treble over empty bass), two measures. The internal barline
-	// between measures 1 and 2 is a plain single line on each staff, joined across the
-	// two staves by a thin single-line connector. The piece's final measure closes with
-	// a thin-thick end barline, and the connector joining the two staves at that right
-	// edge is the matching bold thin-thick double line (boldDoubleRight) rather than the
-	// plain single line drawn at every other measure end.
+	// Grand staff (empty treble over empty bass), two measures. Because the system has
+	// multiple staves, the per-stave end barlines are suppressed and the dividing lines
+	// are drawn entirely by stave connectors. The internal barline between measures 1
+	// and 2 is a single thin line spanning both staves (the singleRight connector). The
+	// piece's final measure closes with a bold thin-thick double line spanning both
+	// staves (boldDoubleRight) rather than the plain single line drawn at every other
+	// measure end.
 	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
 
 	// One system, treble 4/4: a key change mid-system. Measure 1 opens the system with

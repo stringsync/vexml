@@ -193,11 +193,17 @@ export function drawScore(
 				// Only draw the end barline. Each measure's end barline is the same line
 				// as the next measure's left edge, so internal measures still get a divider;
 				// only the first measure of a system loses its left barline (intended). The
-				// stave connector marks the system's left edge for multi-staff parts. The
 				// final measure of the piece closes with a thin-thick end barline.
+				// When the system has multiple staves, the per-measure stave connector
+				// already draws this line across the staves, so the per-stave end barline
+				// is suppressed to avoid doubling it.
 				stave.setBegBarType(Barline.type.NONE);
 				stave.setEndBarType(
-					isLastMeasure ? Barline.type.END : Barline.type.SINGLE,
+					totalStaves > 1
+						? Barline.type.NONE
+						: isLastMeasure
+							? Barline.type.END
+							: Barline.type.SINGLE,
 				);
 
 				// The previous measure's effective signatures (carried forward), used to
