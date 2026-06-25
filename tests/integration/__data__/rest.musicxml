@@ -26,7 +26,7 @@
         <type>whole</type>
       </note>
     </measure>
-    <!-- M2: half, quarter, eighth, 16th, then two 32nd rests (mirrors note_durations). -->
+    <!-- M2: half, quarter, eighth, 16th, then two 32nd rests (mirrors note.musicxml M2). -->
     <measure number="2">
       <note>
         <rest />

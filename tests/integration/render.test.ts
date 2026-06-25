@@ -56,25 +56,33 @@ const TEST_CASES = [
 	// A treble notation stave above a 6-line TAB stave, joined by a brace.
 	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
 
-	// Treble stave with a 3-sharp key signature (F#, C#, G#).
-	testCase('key_sharps.musicxml', 'key_sharps.png'),
+	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
+	// holds one C5 whole note.
+	// - M1: opens the system with a treble clef, a 3-sharp key signature (F#, C#, G#),
+	//   and a 4/4 time signature.
+	// - M2: changes the key to 2 flats (Bb, Eb) — only the new key signature is redrawn
+	//   at the change (the clef and time signature are NOT repeated).
+	// - M3: continues in 2 flats with no key signature redrawn.
+	testCase('key.musicxml', 'key.png'),
 
-	// Treble stave with a 2-flat key signature (Bb, Eb).
-	testCase('key_flats.musicxml', 'key_flats.png'),
+	// One system, treble: time signatures and mid-system meter changes.
+	// - M1: opens the system with a treble clef and common time (the "C" symbol = 4/4);
+	//   four C5 quarters.
+	// - M2: changes the meter to cut time (the "¢" symbol = 2/2) — only the new time
+	//   signature is redrawn (the clef is NOT repeated); two C5 half notes.
+	// - M3: changes the meter to a numeric 3/4 (stacked numerals); three C5 quarters.
+	// - M4: continues in 3/4 with no time signature redrawn; three C5 quarters.
+	testCase('time.musicxml', 'time.png'),
 
-	// Treble stave with a numeric 3/4 time signature (stacked numerals).
-	testCase('time_numeric.musicxml', 'time_numeric.png'),
-
-	// Treble stave with the common-time (C) symbol.
-	testCase('time_common.musicxml', 'time_common.png'),
-
-	// Treble stave with the cut-time (¢) symbol.
-	testCase('time_cut.musicxml', 'time_cut.png'),
-
-	// Treble stave, 4/4: note durations on C5, increasing flag counts.
-	// - M1: a whole note.
-	// - M2: a half, quarter, eighth, sixteenth, then two thirty-seconds.
-	testCase('note_durations.musicxml', 'note_durations.png'),
+	// Treble stave, 4/4: single-note rendering — durations then stem direction.
+	// - M1: a whole note (C5).
+	// - M2: a half, quarter, eighth, sixteenth, then two thirty-seconds on C5 (increasing
+	//   flag counts).
+	// - M3: stem direction by staff position (no <stem>) — the treble middle line is B4,
+	//   so E4 and G4 stem up while B4 and D5 stem down.
+	// - M4: the same four pitches with an explicit <stem> overriding each position default
+	//   — E4 down, G4 down, B4 up, D5 up.
+	testCase('note.musicxml', 'note.png'),
 
 	// Treble stave, 4/4, all on C5: dotted-note variations.
 	// - M1: dotted-quarter + eighth pairs (single dots).
@@ -82,17 +90,10 @@ const TEST_CASES = [
 	// - M3: four beamed dotted-eighth + sixteenth pairs (dots inside beams).
 	testCase('dotted_notes.musicxml', 'dotted_notes.png'),
 
-	// Treble stave, 4/4: the rest counterpart of note_durations.
+	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations (M1-M2).
 	// - M1: a whole rest.
 	// - M2: half, quarter, eighth, sixteenth, then two thirty-second rests.
 	testCase('rest.musicxml', 'rest.png'),
-
-	// Treble stave, 3/4: stem direction on G4/B4/D5.
-	// - M1: no <stem>, so the default follows staff position (middle line B4) — low G4
-	//   stems up, middle B4 and high D5 stem down.
-	// - M2: the same three pitches with an explicit <stem> that overrides each default —
-	//   G4 down, B4 up, D5 up.
-	testCase('note_stem_direction.musicxml', 'note_stem_direction.png'),
 
 	// Treble stave, 4/4: four C5 quarter notes at one staff position — sharp, flat,
 	// natural, then no accidental — so only the accidental glyph varies.
@@ -111,23 +112,6 @@ const TEST_CASES = [
 	//   both staves (boldDoubleRight) rather than the plain single line drawn at every
 	//   other measure end.
 	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
-
-	// One system, treble 4/4: a key change mid-system. Each measure holds one C5 whole
-	// note.
-	// - M1: opens the system with a treble clef, a 2-sharp key signature, and a 4/4 time
-	//   signature.
-	// - M2: changes the key to 4 sharps — only the new key signature is redrawn at the
-	//   change (the clef and time signature are NOT repeated).
-	// - M3: continues in 4 sharps with no key signature redrawn.
-	testCase('key_change.musicxml', 'key_change.png'),
-
-	// One system, treble: a time signature change mid-system.
-	// - M1: opens the system with a treble clef and a 4/4 time signature; four C5 quarter
-	//   notes.
-	// - M2: changes the meter to 3/4 — only the new time signature is redrawn at the
-	//   change (the clef is NOT repeated); three C5 quarter notes.
-	// - M3: continues in 3/4 with no time signature redrawn; three C5 quarter notes.
-	testCase('time_change.musicxml', 'time_change.png'),
 
 	// Beam variations across seven 4/4 measures. Wraps across systems.
 	// - M1: simple beamed eighths in a small range.

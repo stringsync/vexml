@@ -6,12 +6,12 @@
     </score-part>
   </part-list>
   <part id="P1">
-    <!-- M1: start of system — treble clef, 2-sharp key, 4/4. -->
+    <!-- M1: start of system — treble clef, 3-sharp key (F#, C#, G#), 4/4. -->
     <measure number="1">
       <attributes>
         <divisions>1</divisions>
         <key>
-          <fifths>2</fifths>
+          <fifths>3</fifths>
         </key>
         <time>
           <beats>4</beats>
@@ -29,11 +29,12 @@
         <type>whole</type>
       </note>
     </measure>
-    <!-- M2: mid-system key change to 4 sharps (only the new key signature should be drawn here). -->
+    <!-- M2: mid-system key change to 2 flats (Bb, Eb) — only the new key signature is
+         redrawn here (clef and time are not repeated). -->
     <measure number="2">
       <attributes>
         <key>
-          <fifths>4</fifths>
+          <fifths>-2</fifths>
         </key>
       </attributes>
       <note>
@@ -42,7 +43,7 @@
         <type>whole</type>
       </note>
     </measure>
-    <!-- M3: continues in 4 sharps with no key signature redrawn. -->
+    <!-- M3: continues in 2 flats with no key signature redrawn. -->
     <measure number="3">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
