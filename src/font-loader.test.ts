@@ -36,8 +36,7 @@ test('default render injects bravura + google fonts, scopes vars to container', 
 	expect(head.filter((n) => n.tag === 'link').length).toBe(1);
 	expect(head.filter((n) => n.tag === 'style').length).toBe(1);
 	expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
-	expect(vars['--vexml-font-text']).toBe("'EB Garamond', serif");
-	expect(vars['--vexml-font-label']).toBe("'Source Sans 3', sans-serif");
+	expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
 });
 
 test('idempotent: second default call injects nothing new', () => {

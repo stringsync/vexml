@@ -9,7 +9,6 @@
 }
 
 :root {
-	--vexml-font-music: "Bravura", serif;
-	--vexml-font-text: "EB Garamond", serif;
-	--vexml-font-ui: "Source Sans 3", sans-serif;
+	--vexml-font-notation: "Bravura", serif;
+	--vexml-font-text: "Source Sans 3", sans-serif;
 }

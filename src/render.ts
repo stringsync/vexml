@@ -35,10 +35,13 @@ export async function render(
 ) {
 	loadFonts(element, options?.fonts);
 	// VexFlow engraves glyphs from its own bundled font modules via global state, not the
-	// --vexml-font-notation CSS var. Set it here so fonts.notation actually swaps the
-	// engraving font (e.g. Petaluma). Reset to Bravura each call so one render's choice
-	// can't leak into the next. ponytail: global font stack is vexflow's only API;
-	// per-render fonts would need upstream support.
+	// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack "notation,text":
+	// the first name renders music glyphs (e.g. Petaluma), the second is the text font for
+	// everything VexFlow types itself — tab fret numbers, "H"/"P", bend/annotation labels.
+	// Set it here so fonts.notation actually swaps the engraving font. Reset each call so one
+	// render's choice can't leak into the next. ponytail: the tab text font stays Academico
+	// (not wired to fonts.text) — feeding an unregistered family into the global stack
+	// destabilizes VexFlow's text layout; honoring fonts.text here needs upstream support.
 	VexFlow.setFonts(options?.fonts?.notation?.family ?? 'Bravura', 'Academico');
 	if (typeof input === 'string') {
 		return renderMusicXML(input, element, options);

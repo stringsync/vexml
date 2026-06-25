@@ -7,10 +7,10 @@ export interface FontOverride {
 export interface FontConfig {
 	/** Engraving glyphs: noteheads, clefs, rests, accidentals. */
 	notation?: FontOverride;
-	/** Typeset words inside the score: lyrics, titles, directions. */
+	/** Typeset words vexml draws itself: part/instrument names, lyrics, titles, directions.
+	 * (Tablature text — fret numbers, "H"/"P", bend labels — is drawn by VexFlow in its own
+	 * Academico text font, not this one.) */
 	text?: FontOverride;
-	/** Part/instrument names printed in the margin. */
-	label?: FontOverride;
 }
 
 // Module-level dedup: tracks what's been injected into <head> by "family|url" key.
@@ -24,7 +24,7 @@ export function loadFonts(container: HTMLElement, config?: FontConfig): void {
 	}
 
 	injectNotationFont(config?.notation);
-	injectTextFonts(config?.text, config?.label);
+	injectTextFont(config?.text);
 	applyFontVariables(container, config);
 }
 
@@ -36,20 +36,13 @@ function injectNotationFont(override?: FontOverride): void {
 	injectFontFace(family, url, 'block'); // block: music font must never flash
 }
 
-function injectTextFonts(
-	textOverride?: FontOverride,
-	labelOverride?: FontOverride,
-): void {
-	// Load Google Fonts for any role not fully overridden with a custom URL.
-	if (!textOverride?.url || !labelOverride?.url) {
+function injectTextFont(override?: FontOverride): void {
+	// Load the bundled text font (Source Sans 3) unless the user supplied their own URL.
+	if (!override?.url) {
 		injectGoogleFonts();
 	}
-
-	if (textOverride?.url) {
-		injectFontFace(textOverride.family, textOverride.url, 'swap');
-	}
-	if (labelOverride?.url) {
-		injectFontFace(labelOverride.family, labelOverride.url, 'swap');
+	if (override?.url) {
+		injectFontFace(override.family, override.url, 'swap');
 	}
 }
 
@@ -61,7 +54,7 @@ function injectGoogleFonts(): void {
 	const link = document.createElement('link');
 	link.rel = 'stylesheet';
 	link.href =
-		'https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Source+Sans+3:wght@300;400;600&display=swap';
+		'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&display=swap';
 	document.head.appendChild(link);
 }
 
@@ -93,16 +86,14 @@ function injectFontFace(
 // on the same page can use different fonts independently.
 function applyFontVariables(container: HTMLElement, config?: FontConfig): void {
 	const notationFamily = config?.notation?.family ?? 'Bravura';
-	const textFamily = config?.text?.family ?? 'EB Garamond';
-	const labelFamily = config?.label?.family ?? 'Source Sans 3';
+	const textFamily = config?.text?.family ?? 'Source Sans 3';
 
 	container.style.setProperty(
 		'--vexml-font-notation',
 		`'${notationFamily}', serif`,
 	);
-	container.style.setProperty('--vexml-font-text', `'${textFamily}', serif`);
 	container.style.setProperty(
-		'--vexml-font-label',
-		`'${labelFamily}', sans-serif`,
+		'--vexml-font-text',
+		`'${textFamily}', sans-serif`,
 	);
 }

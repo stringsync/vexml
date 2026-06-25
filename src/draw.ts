@@ -203,10 +203,10 @@ export function drawScore(
 	const context = renderer.getContext();
 	renderer.resize(width, floorHeight); // provisional; grown after drawing
 
-	// Part labels use the label font set on the container by loadFonts() (the only
-	// reader of --vexml-font-label). Falls back to Arial if unset (e.g. SSR/no fonts).
+	// Part labels use the text font set on the container by loadFonts() (the only
+	// reader of --vexml-font-text). Falls back to Arial if unset (e.g. SSR/no fonts).
 	const labelFont =
-		getComputedStyle(element).getPropertyValue('--vexml-font-label').trim() ||
+		getComputedStyle(element).getPropertyValue('--vexml-font-text').trim() ||
 		'Arial';
 
 	// One note map for the whole score: ties and slurs can span a barline, so their

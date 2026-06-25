@@ -36,11 +36,10 @@ Use custom fonts (optional).
 await render(musicXML, element, {
   fonts: {
     // noteheads, clefs, rests, accidentals, etc., default is Bravura
-    music: { family: 'Petaluma' },
+    notation: { family: 'Petaluma' },
+    // part/instrument names, lyrics, titles, directions (default is Source Sans 3);
     // optionally specify a font url if it's not already available locally
-    label: { family: 'Inter', url: '/fonts/inter.woff2' },
-    // lyrics, titles, and directions
-    text: { family: 'EB Garamond' },
+    text: { family: 'Inter', url: '/fonts/inter.woff2' },
   },
 });
 ```

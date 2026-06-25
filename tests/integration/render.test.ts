@@ -22,13 +22,13 @@ const TEST_CASES = [
 		showPartLabels: true,
 	}),
 
-	// Same two labelled parts as structure_part_labels, but with the label font
-	// overridden to a serif family (fonts.label). The two instrument names render in
-	// serif instead of the default sans-serif, proving the label FontConfig option
-	// flows through to the part labels (the only text vexml draws in the margin).
-	testCase('structure_part_labels.musicxml', 'font_label.png', {
+	// Same two labelled parts as structure_part_labels, but with the text font
+	// overridden to Times New Roman (fonts.text). The two instrument names render in
+	// that family instead of the default Source Sans 3, proving the text FontConfig option
+	// flows through to the part labels (the text vexml draws in the margin).
+	testCase('structure_part_labels.musicxml', 'font_text.png', {
 		showPartLabels: true,
-		fonts: { label: { family: 'Times New Roman' } },
+		fonts: { text: { family: 'Times New Roman' } },
 	}),
 
 	// Treble stave, 4/4, one measure (two quarters, two flagged eighths, a quarter
