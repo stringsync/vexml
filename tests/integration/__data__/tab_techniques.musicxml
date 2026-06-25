@@ -136,15 +136,25 @@
         </notations>
       </note>
     </measure>
-    <!-- Vibrato on string 3, fret 7: a <wavy-line> in <ornaments> trails the fret with
-         a wavy line. A whole note gives the squiggle room. -->
+    <!-- Vibrato via a <wavy-line> in <ornaments>: the squiggle stretches to the next
+         note or the bar's end, whichever comes first. The first (string 3, fret 7) runs
+         up to the second note; the second (fret 5) is last, so it runs to the bar's end. -->
     <measure number="5">
       <note>
         <pitch><step>D</step><octave>4</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>2</duration>
+        <type>half</type>
         <notations>
           <technical><string>3</string><fret>7</fret></technical>
+          <ornaments><wavy-line type="start" /></ornaments>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
           <ornaments><wavy-line type="start" /></ornaments>
         </notations>
       </note>

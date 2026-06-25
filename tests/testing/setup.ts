@@ -102,6 +102,7 @@ afterAll(() => {
 	report(chalk.green('✓'), 'added', added);
 	report(chalk.yellow('↻'), 'updated', updated);
 	report(chalk.red('✗'), 'deleted', deleted);
+	report(chalk.magenta('Δ'), 'diffed', seenDiffs);
 	if (added.size + updated.size + deleted.size === 0) {
 		console.log(`${chalk.green('✓')} no screenshot changes`);
 	}

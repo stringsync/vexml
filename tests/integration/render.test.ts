@@ -47,14 +47,25 @@ const TEST_CASES = [
 	// brace.
 	testCase('clef_treble_bass.musicxml', 'clef_treble_bass.png'),
 
-	// A 6-line tablature stave with a stacked "TAB" label at the left.
+	// A 6-line tablature stave with a stacked "TAB" label at the left. With no
+	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	testCase('clef_tab_6_string.musicxml', 'clef_tab_6_string.png'),
 
-	// A 4-line tablature stave with a stacked "TAB" label at the left.
+	// A 4-line tablature stave with a stacked "TAB" label at the left. With no
+	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	testCase('clef_tab_4_string.musicxml', 'clef_tab_4_string.png'),
 
 	// A treble notation stave above a 6-line TAB stave, joined by a brace.
 	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
+
+	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket
+	// (<part-symbol>bracket</part-symbol>) rather than a brace. 4/4, an ascending line
+	// on string 1 — notation E4/F4/G4/A4 quarters sitting on the treble staff, with the
+	// matching TAB frets 0/1/3/5 below, proving the fret -> pitch mapping.
+	testCase(
+		'clef_notation_and_tab_bracket.musicxml',
+		'clef_notation_and_tab_bracket.png',
+	),
 
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
@@ -193,10 +204,11 @@ const TEST_CASES = [
 	// - M2: slides — a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7),
 	//   each a diagonal TabSlide line tilted by the fret motion. The "sl." labels are off
 	//   by default (showTabSlideText). Four quarter notes.
-	// - M3: bends — a whole-step bend labelled "full" on string 3 fret 7, then a
+	// - M3: bends — a whole-step bend labelled "1" on string 3 fret 7, then a
 	//   half-step bend labelled "½" on string 2 fret 5; each an upward arrow + label.
 	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
-	// - M5: vibrato on string 3 fret 7 (whole note) — a wavy line trailing the fret.
+	// - M5: vibrato (wavy line) stretching to the next note or bar's end, whichever comes
+	//   first — string 3 fret 7 runs up to the second note; fret 5 (last) runs to bar end.
 	// - M6: a natural harmonic drawn as its fret in angle brackets ("<12>"), then text
 	//   annotations above the frets — a palm mute "P.M." and a dead note "x" (both fret 7),
 	//   then a plain fret-5 note.

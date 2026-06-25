@@ -7,6 +7,7 @@ import type {
 } from '@stringsync/mdom';
 import {
 	Barline,
+	Bend,
 	Formatter,
 	type RenderContext,
 	Renderer,
@@ -15,6 +16,7 @@ import {
 	type StaveNote,
 	type TabNote,
 	TabStave,
+	Vibrato,
 	Voice,
 } from 'vexflow';
 import type { Config } from './config';
@@ -50,6 +52,23 @@ function timeSignatureSpec(time: Time | null): string | null {
 		return `${time.beats}/${time.beatType}`;
 	}
 	return null;
+}
+
+// The stave connector that joins a multi-staff part's own staves, from the first
+// <part-symbol> declared in any measure's attributes. brace (the MusicXML default) for
+// piano grand staves; bracket for guitar notation+tab pairs; null for 'none' (no
+// connector). Other values (line, square) fall back to brace.
+function partSymbol(part: Part): 'brace' | 'bracket' | null {
+	for (const measure of part.measures) {
+		const symbol = measure.child('attributes')?.child('part-symbol')?.text;
+		if (symbol) {
+			if (symbol === 'none') {
+				return null;
+			}
+			return symbol === 'bracket' ? 'bracket' : 'brace';
+		}
+	}
+	return 'brace';
 }
 
 // Draw a staff's notes on top of an already-drawn stave. Each mdom voice becomes
@@ -150,8 +169,86 @@ function drawTabNotes(
 	new Formatter({ softmaxFactor })
 		.joinVoices(vexVoices)
 		.formatToStave(vexVoices, stave);
+	// setStave before stretching so each note's getAbsoluteX() is in true stave
+	// coordinates — the stretch helpers compare it against stave.getNoteEndX(), which
+	// is absolute. Voice.draw sets the stave again (idempotent). Without this, an
+	// unset stave makes getAbsoluteX() stave-relative, and the last note's bend/vibrato
+	// (clamped to getNoteEndX) overshoots off the page.
+	for (const vexVoice of vexVoices) {
+		for (const note of vexVoice.getTickables()) {
+			note.setStave(stave);
+		}
+	}
+	stretchVibratos(stave, vexVoices);
+	stretchBends(stave, vexVoices);
 	for (const vexVoice of vexVoices) {
 		vexVoice.draw(context, stave);
+	}
+}
+
+// VexFlow draws a bend arrow at a fixed ~8px width. A guitar bend reads as sliding
+// into the next note, so stretch each so its arrow reaches the next note — or the
+// bar's end if it's the last note (same span as stretchVibratos). The arrow draws
+// from getAbsoluteX() + width + 2 + 3 (TabNote RIGHT modifier x, +3 in Bend.draw),
+// mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
+// is in stave coordinates only because drawTabNotes setStave's the notes first — else
+// it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
+// Bend.draw uses each phrase leg's drawWidth, which is protected — hence the cast. A
+// bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
+function stretchBends(stave: TabStave, voices: Voice[]): void {
+	for (const voice of voices) {
+		const tickables = voice.getTickables() as TabNote[];
+		tickables.forEach((note, i) => {
+			const bend = note
+				.getModifiers()
+				.find((m) => m.getCategory() === Bend.CATEGORY) as Bend | undefined;
+			if (!bend) {
+				return;
+			}
+			const startX = note.getAbsoluteX() + note.getWidth() + 5;
+			const endX = tickables[i + 1]?.getAbsoluteX() ?? stave.getNoteEndX();
+			const width = Math.max(0, endX - startX);
+			const { phrase } = bend as unknown as {
+				phrase: { drawWidth?: number }[];
+			};
+			const [up, down] = phrase;
+			if (!up) {
+				return;
+			}
+			if (down) {
+				up.drawWidth = width / 2;
+				down.drawWidth = 0;
+			} else {
+				up.drawWidth = width;
+			}
+		});
+	}
+}
+
+// VexFlow's Vibrato draws a fixed 20px wavy line trailing the fret. A real vibrato
+// sustains for the note's full sounding length, so stretch each to span up to the
+// next note — or the bar's end if it's the last note. Widths depend on the formatted
+// x positions, so this runs after formatToStave: set each Vibrato's width from the
+// fret's right edge to the next note's x (or the stave's note-end x). The Vibrato
+// draws from getAbsoluteX() + width + 2 (TabNote.getModifierStartXY for RIGHT), mirrored
+// here. Like stretchBends, this relies on drawTabNotes having setStave'd the notes so
+// getAbsoluteX() is in stave coordinates and the last note's span clamps to the barline.
+function stretchVibratos(stave: TabStave, voices: Voice[]): void {
+	for (const voice of voices) {
+		const tickables = voice.getTickables() as TabNote[];
+		tickables.forEach((note, i) => {
+			const vibrato = note
+				.getModifiers()
+				.find((m) => m.getCategory() === Vibrato.CATEGORY) as
+				| Vibrato
+				| undefined;
+			if (!vibrato) {
+				return;
+			}
+			const startX = note.getAbsoluteX() + note.getWidth() + 2;
+			const endX = tickables[i + 1]?.getAbsoluteX() ?? stave.getNoteEndX();
+			vibrato.setVibratoWidth(Math.max(0, endX - startX));
+		});
 	}
 }
 
@@ -305,7 +402,13 @@ export function drawScore(
 				// When the system has multiple staves, the per-measure stave connector
 				// already draws this line across the staves, so the per-stave end barline
 				// is suppressed to avoid doubling it.
-				stave.setBegBarType(Barline.type.NONE);
+				// Exception: a lone TAB stave has no system connector to close its left
+				// edge, so its system-start measure draws an explicit begin barline.
+				stave.setBegBarType(
+					isTab && totalStaves === 1 && isSystemStart
+						? Barline.type.SINGLE
+						: Barline.type.NONE,
+				);
 				stave.setEndBarType(
 					totalStaves > 1
 						? Barline.type.NONE
@@ -406,10 +509,13 @@ export function drawScore(
 				staveRow++;
 			}
 
-			// A part's own staves are joined by a brace at each system start.
-			if (partTop && partBottom && staveCount > 1 && isSystemStart) {
+			// A part's own staves are joined at each system start by the symbol named in
+			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
+			// 'none' suppresses the connector entirely.
+			const symbol = partSymbol(part);
+			if (partTop && partBottom && staveCount > 1 && isSystemStart && symbol) {
 				new StaveConnector(partTop, partBottom)
-					.setType('brace')
+					.setType(symbol)
 					.setContext(context)
 					.draw();
 			}

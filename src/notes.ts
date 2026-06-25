@@ -184,11 +184,8 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 }
 
 // <bend-alter> in semitones -> the label drawn above the bend arrow. Guitar bends
-// are notated in whole steps: 2 semitones = "full", 1 = "½", 3 = "1½", 4 = "2".
+// are notated in whole steps: 2 semitones = "1", 1 = "½", 3 = "1½", 4 = "2".
 function bendLabel(semitones: number): string {
-	if (semitones === 2) {
-		return 'full';
-	}
 	const whole = Math.floor(semitones / 2);
 	const half = semitones % 2 === 1 ? '½' : '';
 	return whole > 0 ? `${whole}${half}` : half || '0';
@@ -291,6 +288,11 @@ function styleFrets(
 // full size — same as GraceNote does for standard notation, which scales its glyphs.
 const TAB_GRACE_SCALE = 2 / 3;
 
+// VexFlow's GraceNoteGroup.format uses groupSpacingTab = 0, so tab grace frets butt
+// right up against the main note. Pad the group's reserved width to open Soundslice-
+// style breathing room before the host note (the extra width becomes a trailing gap).
+const TAB_GRACE_SPACING = 14;
+
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
 // note it precedes by vexflowTabTickables. Frets are scaled to TAB_GRACE_SCALE of the
 // (already enlarged) main-note size so graces stay proportionally smaller.
@@ -330,7 +332,11 @@ export function vexflowTabTickables(
 			// No beamNotes() unlike the standard-notation path: tab grace notes have no
 			// stem to anchor a beam, so beaming floats it off the staff — they render as
 			// plain small fret numbers.
-			tabNote.addModifier(new GraceNoteGroup(pendingGrace), 0);
+			const group = new GraceNoteGroup(pendingGrace);
+			// preFormat now so the width pad survives format()'s preFormatted guard.
+			group.preFormat();
+			group.setWidth(group.getWidth() + TAB_GRACE_SPACING);
+			tabNote.addModifier(group, 0);
 			pendingGrace = [];
 		}
 		record?.(chord.lead, tabNote);
