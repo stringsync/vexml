@@ -5,6 +5,7 @@ import {
 	Articulation,
 	Bend,
 	Dot,
+	type Element,
 	GhostNote,
 	GraceNote,
 	GraceNoteGroup,
@@ -258,6 +259,11 @@ function boldFrets(tabNote: TabNote): void {
 	}
 }
 
+// VexFlow's GraceTabNote.fontScale (2/3) only shrinks the stem; the fret digits are
+// separate Elements typed 'TabNote.text' (fontScale 1.0), so without this they draw
+// full size — same as GraceNote does for standard notation, which scales its glyphs.
+const TAB_GRACE_SCALE = 2 / 3;
+
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
 // note it precedes by vexflowTabTickables.
 function vexflowTabGrace(chord: Chord): GraceTabNote {
@@ -267,7 +273,22 @@ function vexflowTabGrace(chord: Chord): GraceTabNote {
 		duration,
 	});
 	boldFrets(grace);
+	shrinkGraceFrets(grace);
 	return grace;
+}
+
+// Shrink the fret digits to TAB_GRACE_SCALE and rebuild the note's width and each
+// digit's vertical centering off the smaller glyphs, so the formatter reserves the
+// narrower space (otherwise the grace would draw small but still hog full width).
+function shrinkGraceFrets(tabNote: GraceTabNote): void {
+	const note = tabNote as unknown as { fretElement: Element[]; width: number };
+	let width = 0;
+	for (const el of note.fretElement) {
+		el.setFontSize(el.fontSizeInPoints * TAB_GRACE_SCALE);
+		el.setYShift(el.getHeight() / 2);
+		width = Math.max(el.getWidth(), width);
+	}
+	note.width = width;
 }
 
 // A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
