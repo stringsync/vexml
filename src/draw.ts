@@ -17,10 +17,12 @@ import {
 	TabStave,
 	Voice,
 } from 'vexflow';
+import type { Config } from './config';
 import { LABEL_GAP, type MeasureNumbering, type ScoreLayout } from './layout';
 import {
 	endBeatOf,
 	meterBeats,
+	staffVoices,
 	vexflowClef,
 	vexflowTabTickables,
 	vexflowVoiceTickables,
@@ -153,6 +155,23 @@ function drawTabNotes(
 	}
 }
 
+// The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
+// (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
+// modifier directly — there's no public API for this.
+function resizeTabClef(stave: TabStave, tabLines: number): void {
+	if (tabLines === 6) {
+		return;
+	}
+	const [tabClef] = stave.getModifiers(undefined, 'Clef') as unknown as Array<{
+		line: number;
+		fontInfo: { size: number };
+	}>;
+	if (tabClef) {
+		tabClef.fontInfo.size *= (tabLines - 1) / 5;
+		tabClef.line = (tabLines - 1) / 2;
+	}
+}
+
 // Whether measure at 0-based `index` (system-start or not) shows its number under
 // the given mode. 'every-N' numbers every Nth measure plus every system start.
 function showsMeasureNumber(
@@ -181,6 +200,7 @@ export function drawScore(
 	element: HTMLElement,
 	parts: Part[],
 	layout: ScoreLayout,
+	config: Config,
 ): void {
 	const {
 		measureCount,
@@ -192,10 +212,8 @@ export function drawScore(
 		width,
 		floorHeight,
 		labelIndent,
-		measureNumbering,
-		showTabHammerPullText,
-		showTabSlideText,
 	} = layout;
+	const { measureNumbering, showTabHammerPullText, showTabSlideText } = config;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
 	const renderer = new Renderer(
@@ -311,22 +329,9 @@ export function drawScore(
 				// are not repeated for it).
 				if (isSystemStart) {
 					if (isTab) {
-						(stave as TabStave).addTabGlyph();
-						// The "TAB" glyph is drawn for a 6-line staff; shrink and re-center
-						// it so the word fits a shorter staff (e.g. a 4-string bass).
-						if (tabLines !== 6) {
-							const [tabClef] = stave.getModifiers(
-								undefined,
-								'Clef',
-							) as unknown as Array<{
-								line: number;
-								fontInfo: { size: number };
-							}>;
-							if (tabClef) {
-								tabClef.fontInfo.size *= (tabLines - 1) / 5;
-								tabClef.line = (tabLines - 1) / 2;
-							}
-						}
+						const tabStave = stave as TabStave;
+						tabStave.addTabGlyph();
+						resizeTabClef(tabStave, tabLines);
 					} else if (clef) {
 						stave.addClef(vexflowClef(clef.sign, clef.line));
 					}
@@ -363,9 +368,7 @@ export function drawScore(
 				// Draw this staff's notes on top of the stave. A TAB stave draws its
 				// notes as fretted TabNotes; everything else uses the notation path.
 				// An empty voice (no chords) would crash the formatter, so it's filtered.
-				const voices = measure.voices.filter(
-					(v) => v.staff === staffNumber && v.chords.length > 0,
-				);
+				const voices = staffVoices(measure.voices, staffNumber);
 				if (isTab && voices.length > 0) {
 					drawTabNotes(
 						context,

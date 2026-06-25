@@ -7,6 +7,7 @@ import {
 	type TabNote,
 	TabSlide,
 	TabTie,
+	type TieNotes,
 	Tuplet,
 } from 'vexflow';
 
@@ -143,7 +144,7 @@ export function buildHammerPulls(
 					((partner.fret ?? 0) > (chord.lead.fret ?? 0)
 						? 'hammer'
 						: 'pull')) === 'hammer';
-			const notes = {
+			const notes: TieNotes = {
 				firstNote,
 				lastNote,
 				firstIndexes,
@@ -195,7 +196,7 @@ export function buildSlides(
 				if (!from) {
 					continue;
 				}
-				const notes = {
+				const notes: TieNotes = {
 					firstNote: from.note,
 					lastNote: tabNote,
 					firstIndexes: from.note.getPositions().map((_, i) => i),

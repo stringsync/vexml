@@ -1,4 +1,4 @@
-import type { Chord, Note, Time } from '@stringsync/mdom';
+import type { Chord, Note, Voice as ScoreVoice, Time } from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -15,6 +15,16 @@ import {
 	TabNote,
 	Vibrato,
 } from 'vexflow';
+
+// One staff's renderable voices in a measure: voices assigned to this staff that
+// actually carry notes (an empty voice would crash the formatter). The layout
+// (measuring) and draw passes must select identically, so the predicate lives here.
+export function staffVoices(
+	voices: ScoreVoice[],
+	staffNumber: string,
+): ScoreVoice[] {
+	return voices.filter((v) => v.staff === staffNumber && v.chords.length > 0);
+}
 
 // MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
 // unknown combinations fall back to treble.
@@ -42,6 +52,12 @@ const DURATION_CODES: Record<string, string> = {
 	'64th': '64',
 	'128th': '128',
 };
+
+// A note's vexflow duration code. An absent <type> defaults to a quarter; an
+// unrecognized type also falls back to 'q'.
+function durationCode(lead: Note): string {
+	return DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+}
 
 // MusicXML <accidental> glyph name -> vexflow accidental code.
 const ACCIDENTAL_CODES: Record<string, string> = {
@@ -114,7 +130,7 @@ function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 // direction, and articulations.
 export function vexflowChord(chord: Chord, clef: string): StaveNote {
 	const lead = chord.lead;
-	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+	const duration = durationCode(lead);
 	// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
 	// (Dot.buildAndAttach only draws the glyph, it never changes duration). Without it
 	// a dotted note is one tick-position short and its voice falls out of alignment
@@ -203,18 +219,24 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 	}
 }
 
+// Each chord member's <string>/<fret> as a vexflow tab position (string 1 =
+// highest-pitched, an open string is fret 0).
+function tabPositions(chord: Chord) {
+	return chord.notes.map((note) => ({
+		str: note.string ?? 1,
+		fret: note.fret ?? 0,
+	}));
+}
+
 // Build a vexflow TabNote for one chord on a tablature stave: each member's
 // <string>/<fret> becomes a position (string 1 = highest-pitched). Tab notes carry
 // no clef, accidentals, or stems — just the fret numbers stacked on their strings,
 // plus any bend/harmonic/vibrato/annotation modifiers from <notations>.
 export function vexflowTabChord(chord: Chord): TabNote {
 	const lead = chord.lead;
-	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+	const duration = durationCode(lead);
 	const tabNote = new TabNote({
-		positions: chord.notes.map((note) => ({
-			str: note.string ?? 1,
-			fret: note.fret ?? 0,
-		})),
+		positions: tabPositions(chord),
 		duration,
 	});
 	addTabModifiers(tabNote, lead);
@@ -239,12 +261,9 @@ function boldFrets(tabNote: TabNote): void {
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
 // note it precedes by vexflowTabTickables.
 function vexflowTabGrace(chord: Chord): GraceTabNote {
-	const duration = DURATION_CODES[chord.lead.type ?? 'quarter'] ?? 'q';
+	const duration = durationCode(chord.lead);
 	const grace = new GraceTabNote({
-		positions: chord.notes.map((note) => ({
-			str: note.string ?? 1,
-			fret: note.fret ?? 0,
-		})),
+		positions: tabPositions(chord),
 		duration,
 	});
 	boldFrets(grace);

@@ -52,5 +52,5 @@ function renderMDoc(mdoc: MDocument, element: HTMLElement, config: Config) {
 	if (parts.length === 0) {
 		return;
 	}
-	drawScore(element, parts, computeLayout(parts, config));
+	drawScore(element, parts, computeLayout(parts, config), config);
 }

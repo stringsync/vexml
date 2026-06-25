@@ -68,34 +68,42 @@ afterAll(() => {
 // Every baseline touched this run; orphans are whatever's left over in SNAP_DIR.
 const seen = new Set<string>();
 
-// Baselines that didn't exist before this run.
+// Baseline changes this run, for the end-of-run report.
 const added = new Set<string>();
-afterAll(() => {
-	if (added.size === 0) {
-		return;
-	}
-	console.log(`added ${added.size} new screenshot(s):`);
-	for (const f of [...added].sort()) {
-		console.log(`  ${f}`);
-	}
-});
+const updated = new Set<string>();
+const deleted = new Set<string>();
+
 if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 	afterAll(() => {
-		let removed = 0;
 		if (existsSync(SCREENSHOTS_DIR)) {
 			for (const f of readdirSync(SCREENSHOTS_DIR)) {
 				if (f.endsWith('.png') && !seen.has(f)) {
 					rmSync(path.join(SCREENSHOTS_DIR, f));
-					console.log(`removed orphaned screenshot ${f}`);
-					removed++;
+					deleted.add(f);
 				}
 			}
 		}
-		if (removed === 0) {
-			console.log('no orphaned screenshots to clean');
-		}
 	});
 }
+
+// Report registered last so it runs after the cleanup afterAll above.
+afterAll(() => {
+	const report = (icon: string, label: string, set: Set<string>) => {
+		if (set.size === 0) {
+			return;
+		}
+		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
+		for (const f of [...set].sort()) {
+			console.log(`    ${f}`);
+		}
+	};
+	report('✨', 'added', added);
+	report('🔄', 'updated', updated);
+	report('🗑️', 'deleted', deleted);
+	if (added.size + updated.size + deleted.size === 0) {
+		console.log('✅ no screenshot changes');
+	}
+});
 
 expect.extend({
 	/** Diff a screenshot against its baseline; record when missing or UPDATE_SCREENSHOTS=1. */
@@ -107,6 +115,8 @@ expect.extend({
 		if (UPDATE || !existsSync(baseline)) {
 			if (!existsSync(baseline)) {
 				added.add(filename);
+			} else if (!buf.equals(readFileSync(baseline))) {
+				updated.add(filename);
 			}
 			mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 			writeFileSync(baseline, buf);

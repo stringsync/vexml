@@ -4,6 +4,7 @@ import type { Config } from './config';
 import {
 	endBeatOf,
 	meterBeats,
+	staffVoices,
 	vexflowClef,
 	vexflowTabTickables,
 	vexflowVoiceTickables,
@@ -69,12 +70,6 @@ export type ScoreLayout = {
 	/** Resolved spacing curve, shared by this measurement and the draw pass so the
 	 * drawn notes land where the spacing was computed for. */
 	softmaxFactor: number;
-	/** When the draw pass prints measure numbers. */
-	measureNumbering: MeasureNumbering;
-	/** Whether the draw pass prints "H"/"P" labels on tab hammer-ons/pull-offs. */
-	showTabHammerPullText: boolean;
-	/** Whether the draw pass prints "sl." labels on tab slides. */
-	showTabSlideText: boolean;
 };
 
 // Minimum width per tab note. vexflow's preCalculateMinTotalWidth packs tab notes
@@ -82,17 +77,21 @@ export type ScoreLayout = {
 // rhythms; this floors each note's share so dense tab measures still breathe.
 const TAB_MIN_NOTE_SPACING = 32;
 
+/** One stave's inputs to the note-area measurement: the voices to size plus the
+ * clef/meter/tab context that shapes their tickables. */
+type StaveSpec = {
+	voices: ScoreVoice[];
+	clef: string;
+	meterFloor: number;
+	isTab: boolean;
+};
+
 // A measure's note-area width: the musical-time width (ticks * pxPerTick) so equal
 // durations get equal space everywhere, never below the collision-free minimum or
 // the floor. Builds throwaway notes so the draw pass is untouched. The busiest
 // staff wins (all staves in a measure share one width).
 function measureNoteArea(
-	staves: {
-		voices: ScoreVoice[];
-		clef: string;
-		meterFloor: number;
-		isTab: boolean;
-	}[],
+	staves: StaveSpec[],
 	floor: number,
 	pxPerTick: number,
 	softmaxFactor: number,
@@ -200,12 +199,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// One global pxPerTick means identical content is identically wide everywhere in
 	// the piece.
 	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
-		const staves: {
-			voices: ScoreVoice[];
-			clef: string;
-			meterFloor: number;
-			isTab: boolean;
-		}[] = [];
+		const staves: StaveSpec[] = [];
 		for (const part of parts) {
 			const measure = part.measures[m];
 			if (!measure) {
@@ -215,9 +209,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 			for (let s = 0; s < staveCount; s++) {
 				const staffNumber = String(s + 1);
 				const clef = measure.getClef(staffNumber);
-				const voices = measure.voices.filter(
-					(v) => v.staff === staffNumber && v.chords.length > 0,
-				);
+				const voices = staffVoices(measure.voices, staffNumber);
 				if (voices.length > 0) {
 					staves.push({
 						voices,
@@ -327,8 +319,5 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		floorHeight,
 		softmaxFactor,
 		labelIndent,
-		measureNumbering: config.measureNumbering,
-		showTabHammerPullText: config.showTabHammerPullText,
-		showTabSlideText: config.showTabSlideText,
 	};
 }
