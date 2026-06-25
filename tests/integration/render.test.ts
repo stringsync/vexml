@@ -269,6 +269,15 @@ const TEST_CASES = [
 		measureNumbering: 'none',
 	}),
 
+	// The same two systems with measureNumbering 'every-2': every 2nd measure plus
+	// every system start. Numbered measures are the odd ones 1, 3, 5, 7 (every 2nd,
+	// 0-based) — 1 and 3 on the top system, 5 and 7 on the bottom. Both system starts
+	// (1, 5) already fall on the every-2 cadence, so here the union adds nothing beyond
+	// it.
+	testCase('system_break.musicxml', 'measure_numbering_every_2.png', {
+		measureNumbering: 'every-2',
+	}),
+
 	// The same two systems with measureNumbering 'every-3': every 3rd measure plus
 	// every system start. Numbered measures are 1, 4, 7 (every 3rd) and 5 (the second
 	// system's start, which is not a multiple of 3) — so 1 and 4 on the top system, 5

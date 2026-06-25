@@ -7,9 +7,8 @@ export interface FontOverride {
 export interface FontConfig {
 	/** Engraving glyphs: noteheads, clefs, rests, accidentals. */
 	notation?: FontOverride;
-	/** Typeset words vexml draws itself: part/instrument names, lyrics, titles, directions.
-	 * (Tablature text — fret numbers, "H"/"P", bend labels — is drawn by VexFlow in its own
-	 * Academico text font, not this one.) */
+	/** Typeset words: part/instrument names, lyrics, titles, directions that vexml draws
+	 * itself, plus the tablature text VexFlow types (fret numbers, "H"/"P", bend labels). */
 	text?: FontOverride;
 }
 

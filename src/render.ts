@@ -35,14 +35,19 @@ export async function render(
 ) {
 	loadFonts(element, options?.fonts);
 	// VexFlow engraves glyphs from its own bundled font modules via global state, not the
-	// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack "notation,text":
-	// the first name renders music glyphs (e.g. Petaluma), the second is the text font for
-	// everything VexFlow types itself — tab fret numbers, "H"/"P", bend/annotation labels.
-	// Set it here so fonts.notation actually swaps the engraving font. Reset each call so one
-	// render's choice can't leak into the next. ponytail: the tab text font stays Academico
-	// (not wired to fonts.text) — feeding an unregistered family into the global stack
-	// destabilizes VexFlow's text layout; honoring fonts.text here needs upstream support.
-	VexFlow.setFonts(options?.fonts?.notation?.family ?? 'Bravura', 'Academico');
+	// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
+	// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
+	// notation font, and everything VexFlow types — tab fret numbers, "H"/"P", bend/annotation
+	// labels — from the next family that has the letter, so it matches the part labels (both
+	// default to Source Sans 3). The trailing sans-serif keeps text off the browser's serif
+	// default. Families MUST be quoted: an unquoted multi-word name like Source Sans 3 makes
+	// the whole CSS font string invalid and every glyph falls back to serif. Reset each call
+	// so one render's font choice can't leak into the next.
+	VexFlow.setFonts(
+		`'${options?.fonts?.notation?.family ?? 'Bravura'}'`,
+		`'${options?.fonts?.text?.family ?? 'Source Sans 3'}'`,
+		'sans-serif',
+	);
 	if (typeof input === 'string') {
 		return renderMusicXML(input, element, options);
 	}

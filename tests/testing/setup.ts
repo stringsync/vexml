@@ -129,7 +129,7 @@ expect.extend({
 			return {
 				pass: false,
 				message: () =>
-					`${filename}: ${mismatch} pixels differ — see __diffs__/${filename}`,
+					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.join(DIFF_DIR, filename)} (3 panels left-to-right: old, diff, new)`,
 			};
 		}
 
