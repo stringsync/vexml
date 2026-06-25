@@ -44,3 +44,10 @@ await render(musicXML, element, {
   },
 });
 ```
+
+## Development
+
+```sh
+bun link # install the mdom command
+mdom
+```
