@@ -197,8 +197,9 @@ const TEST_CASES = [
 	//   half-step bend labelled "½" on string 2 fret 5; each an upward arrow + label.
 	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
 	// - M5: vibrato on string 3 fret 7 (whole note) — a wavy line trailing the fret.
-	// - M6: text annotations above the frets — a natural harmonic "harm." (fret 12), a
-	//   palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
+	// - M6: a natural harmonic drawn as its fret in angle brackets ("<12>"), then text
+	//   annotations above the frets — a palm mute "P.M." and a dead note "x" (both fret 7),
+	//   then a plain fret-5 note.
 	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
 
 	// Same fixture with showTabSlideText: true — the "sl." labels print above the M2
@@ -218,6 +219,12 @@ const TEST_CASES = [
 	// accent (>), tenuto (—), then staccatissimo (wedge) — so only the articulation
 	// varies.
 	testCase('articulations.musicxml', 'articulations.png'),
+
+	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
+	// <harmonic><natural/>) — an open diamond for the half note, then filled diamonds for
+	// the two quarters (the diamond fill follows duration). All on E5 so only the notehead
+	// varies. The tab counterpart (angle-bracketed fret) lives in tab_techniques M6.
+	testCase('harmonic.musicxml', 'harmonic.png'),
 
 	// Treble stave, 4/4: grace notes (small notes that steal no beat, drawn just left of
 	// the main note they ornament). Every main note is a plain C5 quarter so only the

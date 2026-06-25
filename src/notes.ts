@@ -69,10 +69,22 @@ const ACCIDENTAL_CODES: Record<string, string> = {
 	'flat-flat': 'bb',
 };
 
-// A note's vexflow key, e.g. C#5 -> 'c/5'. Rests have no pitch; callers handle them.
+// A <harmonic> in this note's <notations><technical>: drawn as a diamond notehead on a
+// notation stave (see vexflowKey) and as an angle-bracketed fret on tab (see tabPositions).
+function isHarmonic(note: Note): boolean {
+	return !!note.child('notations')?.child('technical')?.child('harmonic');
+}
+
+// A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' notehead code so
+// vexflow draws a diamond (open for half+/whole, filled for quarter). Rests have no pitch;
+// callers handle them.
 function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
-	return pitch ? `${pitch.step.toLowerCase()}/${pitch.octave}` : 'b/4';
+	if (!pitch) {
+		return 'b/4';
+	}
+	const key = `${pitch.step.toLowerCase()}/${pitch.octave}`;
+	return isHarmonic(note) ? `${key}/H` : key;
 }
 
 // Augmentation dots.
@@ -182,8 +194,8 @@ function bendLabel(semitones: number): string {
 	return whole > 0 ? `${whole}${half}` : half || '0';
 }
 
-// A tab-stave text Annotation (harmonic "harm.", palm mute "P.M.", a dead-note
-// "x", …), justified above the fret numbers.
+// A tab-stave text Annotation (palm mute "P.M.", a dead-note "x", …), justified above
+// the fret numbers.
 function tabAnnotation(text: string): Annotation {
 	return new Annotation(text).setVerticalJustification(
 		Annotation.VerticalJustify.TOP,
@@ -191,10 +203,11 @@ function tabAnnotation(text: string): Annotation {
 }
 
 // Attach the lead note's tablature articulations to its TabNote, reading straight
-// from <notations>: a <bend> (with optional <release/> for a bend-and-release), a
-// <harmonic>, free-text <other-technical>, and <ornaments><wavy-line> vibrato. All
-// are vexflow modifiers, so attaching them here means the layout pass — which also
-// calls this — sizes measures with the extra width they take.
+// from <notations>: a <bend> (with optional <release/> for a bend-and-release),
+// free-text <other-technical>, and <ornaments><wavy-line> vibrato. All are vexflow
+// modifiers, so attaching them here means the layout pass — which also calls this —
+// sizes measures with the extra width they take. (A <harmonic> is drawn as an
+// angle-bracketed fret in tabPositions, not a modifier.)
 function addTabModifiers(tabNote: TabNote, lead: Note): void {
 	const technical = lead.child('notations')?.child('technical');
 	const bend = technical?.child('bend');
@@ -208,9 +221,6 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 		}
 		tabNote.addModifier(new Bend(phrase), 0);
 	}
-	if (technical?.child('harmonic')) {
-		tabNote.addModifier(tabAnnotation('harm.'), 0);
-	}
 	const other = technical?.child('other-technical')?.text;
 	if (other) {
 		tabNote.addModifier(tabAnnotation(other), 0);
@@ -221,18 +231,22 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 }
 
 // Each chord member's <string>/<fret> as a vexflow tab position (string 1 =
-// highest-pitched, an open string is fret 0).
+// highest-pitched, an open string is fret 0). A natural harmonic is notated as the fret
+// in angle brackets, e.g. <12> — vexflow renders the fret string verbatim.
 function tabPositions(chord: Chord) {
-	return chord.notes.map((note) => ({
-		str: note.string ?? 1,
-		fret: note.fret ?? 0,
-	}));
+	return chord.notes.map((note) => {
+		const fret = note.fret ?? 0;
+		return {
+			str: note.string ?? 1,
+			fret: isHarmonic(note) ? `<${fret}>` : fret,
+		};
+	});
 }
 
 // Build a vexflow TabNote for one chord on a tablature stave: each member's
 // <string>/<fret> becomes a position (string 1 = highest-pitched). Tab notes carry
 // no clef, accidentals, or stems — just the fret numbers stacked on their strings,
-// plus any bend/harmonic/vibrato/annotation modifiers from <notations>.
+// plus any bend/vibrato/annotation modifiers from <notations>.
 export function vexflowTabChord(chord: Chord): TabNote {
 	const lead = chord.lead;
 	const duration = durationCode(lead);
@@ -241,22 +255,35 @@ export function vexflowTabChord(chord: Chord): TabNote {
 		duration,
 	});
 	addTabModifiers(tabNote, lead);
-	boldFrets(tabNote);
+	styleFrets(tabNote);
 	return tabNote;
 }
 
-// Bump the fret numbers to bold — thin digits get lost against the staff lines.
-// VexFlow has no public API to set the 'TabNote.text' metric weight globally
-// (Metrics isn't exported), so override each fret Element built in the TabNote
-// constructor. fretElement is protected, hence the cast. Width was measured at
-// normal weight; for 1-2 digit frets the difference is negligible.
-function boldFrets(tabNote: TabNote): void {
-	const { fretElement } = tabNote as unknown as {
-		fretElement: { fontWeight: string }[];
+// The default tab fret digits are thin and small — hard to read against the staff
+// lines. Bump them bold and a touch larger.
+const TAB_FRET_SCALE = 1.3;
+
+// Restyle a TabNote's fret digits in place. VexFlow has no public API to set the
+// 'TabNote.text' metric globally (Metrics isn't exported), so override each fret Element
+// built in the constructor — fretElement is protected, hence the cast. Resizing rebuilds
+// each digit's vertical centering and the note width off the new glyphs so the formatter
+// reserves the right horizontal space. Grace notes pass a smaller scale.
+function styleFrets(
+	tabNote: TabNote | GraceTabNote,
+	scale = TAB_FRET_SCALE,
+): void {
+	const note = tabNote as unknown as {
+		fretElement: (Element & { fontWeight: string })[];
+		width: number;
 	};
-	for (const el of fretElement) {
+	let width = 0;
+	for (const el of note.fretElement) {
 		el.fontWeight = 'bold';
+		el.setFontSize(el.fontSizeInPoints * scale);
+		el.setYShift(el.getHeight() / 2);
+		width = Math.max(el.getWidth(), width);
 	}
+	note.width = width;
 }
 
 // VexFlow's GraceTabNote.fontScale (2/3) only shrinks the stem; the fret digits are
@@ -265,30 +292,16 @@ function boldFrets(tabNote: TabNote): void {
 const TAB_GRACE_SCALE = 2 / 3;
 
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
-// note it precedes by vexflowTabTickables.
+// note it precedes by vexflowTabTickables. Frets are scaled to TAB_GRACE_SCALE of the
+// (already enlarged) main-note size so graces stay proportionally smaller.
 function vexflowTabGrace(chord: Chord): GraceTabNote {
 	const duration = durationCode(chord.lead);
 	const grace = new GraceTabNote({
 		positions: tabPositions(chord),
 		duration,
 	});
-	boldFrets(grace);
-	shrinkGraceFrets(grace);
+	styleFrets(grace, TAB_FRET_SCALE * TAB_GRACE_SCALE);
 	return grace;
-}
-
-// Shrink the fret digits to TAB_GRACE_SCALE and rebuild the note's width and each
-// digit's vertical centering off the smaller glyphs, so the formatter reserves the
-// narrower space (otherwise the grace would draw small but still hog full width).
-function shrinkGraceFrets(tabNote: GraceTabNote): void {
-	const note = tabNote as unknown as { fretElement: Element[]; width: number };
-	let width = 0;
-	for (const el of note.fretElement) {
-		el.setFontSize(el.fontSizeInPoints * TAB_GRACE_SCALE);
-		el.setYShift(el.getHeight() / 2);
-		width = Math.max(el.getWidth(), width);
-	}
-	note.width = width;
 }
 
 // A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
