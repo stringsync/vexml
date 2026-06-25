@@ -305,7 +305,7 @@ const TEST_CASES = [
 
 for (const t of TEST_CASES) {
 	test(t.screenshotFilename, async () => {
-		const png = await render(t.musicXMLFilename, t.renderOptions);
+		const png = await render(t.musicXMLFilename, t.config);
 		expect(png).toMatchScreenshot(t.screenshotFilename);
 	});
 }

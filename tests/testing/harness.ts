@@ -1,6 +1,6 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { type Browser, chromium } from 'playwright';
-import type { RenderOptions } from '../../src';
+import type { Config } from '../../src';
 import { serve } from './serve';
 
 const PORT = 3100;
@@ -27,19 +27,17 @@ const DEFAULT_WIDTH = 1000;
 /** Render a corpus file in the browser and return its screenshot PNG. */
 export async function render(
 	file: string,
-	renderOptions: RenderOptions,
+	config: Partial<Config>,
 ): Promise<Buffer> {
 	const width =
-		renderOptions.layout?.type === 'standard'
-			? renderOptions.layout.width
-			: DEFAULT_WIDTH;
+		config.layout?.type === 'standard' ? config.layout.width : DEFAULT_WIDTH;
 	const page = await browser.newPage({
 		viewport: { width: width + 64, height: 600 },
 	});
 	try {
 		await page.goto(`http://localhost:${PORT}/`);
 		await page.evaluate(
-			async ({ file, renderOptions }) => {
+			async ({ file, config }) => {
 				const res = await fetch(`/data/${file}`);
 				const input = file.endsWith('.mxl')
 					? await res.blob()
@@ -48,9 +46,9 @@ export async function render(
 				if (!element) {
 					throw new Error('element not found');
 				}
-				await window.render(input, element, renderOptions);
+				await window.render(input, element, config);
 			},
-			{ file, renderOptions },
+			{ file, config },
 		);
 		return await page.locator('#screenshot').screenshot();
 	} finally {

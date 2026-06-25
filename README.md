@@ -32,6 +32,12 @@ await render(mxl, element);
 
 Use custom fonts (optional).
 
+> [!IMPORTANT]
+> Font `family` and `url` are interpolated into a `<style>` rule and CSS variables. vexml
+> strips quote/backslash/angle/newline characters as a backstop against CSS injection (it's
+> not script-executing XSS), but this is not full CSS escaping. Treat font config as
+> developer-controlled; don't pass raw untrusted user input.
+
 ```ts
 await render(musicXML, element, {
   fonts: {

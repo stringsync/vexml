@@ -18,7 +18,7 @@ program
 program
 	.command('test [pattern]')
 	.description(
-		'run integration (visual regression) tests; pattern filters by name',
+		'run unit (src) + integration (visual regression) tests; pattern filters by name',
 	)
 	.option('--update', 'update screenshot baselines')
 	.option('--local', 'run on the host instead of the pinned Docker image')

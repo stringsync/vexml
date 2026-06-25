@@ -1,5 +1,6 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
 import { Formatter, Voice } from 'vexflow';
+import type { Config } from './config';
 import {
 	endBeatOf,
 	meterBeats,
@@ -36,16 +37,6 @@ export type MeasureNumbering =
 	| 'every'
 	| 'every-2'
 	| 'every-3';
-
-export type LayoutOptions = {
-	layout?: Layout;
-	pxPerTick?: number;
-	softmaxFactor?: number;
-	showPartLabels?: boolean;
-	measureNumbering?: MeasureNumbering;
-	showTabHammerPullText?: boolean;
-	showTabSlideText?: boolean;
-};
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -149,18 +140,15 @@ function measureNoteArea(
  * staves stack within a system, and how tall/wide the page starts. Depends only on
  * the music and the options, never on the live container — the SVG viewBox scales
  * the finished result to fit. */
-export function computeLayout(
-	parts: Part[],
-	options?: LayoutOptions,
-): ScoreLayout {
-	const layout = options?.layout ?? { type: 'standard', width: 1000 };
+export function computeLayout(parts: Part[], config: Config): ScoreLayout {
+	const layout = config.layout;
 	const layoutMode = layout.type;
 	// Panoramic computes its own width; 1000 is the page's starting floor.
 	const width = layout.type === 'standard' ? layout.width : 1000;
 	// Absolute floor for a measure's note area.
 	const baseVoiceWidth = 80;
-	const pxPerTick = options?.pxPerTick ?? 0.012;
-	const softmaxFactor = options?.softmaxFactor ?? 10;
+	const pxPerTick = config.pxPerTick;
+	const softmaxFactor = config.softmaxFactor;
 
 	// Measures lay left-to-right; every part's staves stack vertically down the page.
 	// Staves within a part sit further apart than the gap between parts, so a
@@ -199,7 +187,7 @@ export function computeLayout(
 	// ponytail: label width estimated at ~7.5px/char for 13px Arial (no render context
 	// here to measure) — a hair over the ~6.9px actual, so the longest never clips its
 	// left edge. Measure exactly if a font change makes the estimate drift.
-	const labelChars = options?.showPartLabels
+	const labelChars = config.showPartLabels
 		? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
 		: 0;
 	const labelIndent = labelChars > 0 ? labelChars * 7.5 + LABEL_GAP : 0;
@@ -339,8 +327,8 @@ export function computeLayout(
 		floorHeight,
 		softmaxFactor,
 		labelIndent,
-		measureNumbering: options?.measureNumbering ?? 'system',
-		showTabHammerPullText: options?.showTabHammerPullText ?? false,
-		showTabSlideText: options?.showTabSlideText ?? false,
+		measureNumbering: config.measureNumbering,
+		showTabHammerPullText: config.showTabHammerPullText,
+		showTabSlideText: config.showTabSlideText,
 	};
 }

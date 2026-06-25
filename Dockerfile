@@ -11,6 +11,6 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-# Visual tests only; Chromium already lives in the base image.
+# No dir: bun discovers all *.test.ts (unit + integration), skipping node_modules.
 # ENTRYPOINT (not CMD) so `docker run vexml-tests <args>` appends to bun test.
-ENTRYPOINT ["bun", "test", "tests/integration"]
+ENTRYPOINT ["bun", "test"]

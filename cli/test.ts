@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { run } from './run';
 
-const DIR = 'tests/integration';
+const INTEGRATION_TESTS_DIR = 'tests/integration';
 
 export async function test(opts: {
 	local: boolean;
@@ -9,7 +9,8 @@ export async function test(opts: {
 	clean: boolean;
 	pattern?: string;
 }) {
-	// bun's -t filters tests by name.
+	// No dir: bun discovers every *.test.ts (unit in src/ + integration), skipping
+	// node_modules. bun's -t filters tests by name.
 	const args = opts.pattern ? ['-t', opts.pattern] : [];
 	if (opts.local) {
 		return testLocal(opts, args);
@@ -23,11 +24,11 @@ function testLocal(
 	testArgs: string[],
 ) {
 	// Host pixels differ from the Docker baselines, so compare against a gitignored local set.
-	return run('bun', ['test', DIR, ...testArgs], {
+	return run('bun', ['test', ...testArgs], {
 		...process.env,
 		UPDATE_SCREENSHOTS: opts.update ? '1' : '',
 		CLEANUP_ORPHANED_SCREENSHOTS: opts.clean ? '1' : '',
-		SCREENSHOTS_DIR: `${DIR}/__local_screenshots__`,
+		SCREENSHOTS_DIR: `${INTEGRATION_TESTS_DIR}/__local_screenshots__`,
 	});
 }
 

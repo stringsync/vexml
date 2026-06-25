@@ -1,9 +1,9 @@
-import type { RenderOptions } from '../../src';
+import type { Config } from '../../src';
 
 export function testCase(
 	musicXMLFilename: string,
 	screenshotFilename: string,
-	renderOptions: RenderOptions = {},
+	config: Partial<Config> = {},
 ) {
 	if (!musicXMLFilename.endsWith('.musicxml')) {
 		throw new Error(
@@ -18,6 +18,6 @@ export function testCase(
 	return {
 		musicXMLFilename,
 		screenshotFilename,
-		renderOptions,
+		config,
 	};
 }

@@ -1,6 +1,22 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: minimal DOM mocks for unit testing
 import { expect, test } from 'bun:test';
-import { loadFonts } from './font-loader';
+import { loadFonts, sanitizeFontValue } from './font-loader';
+
+test('sanitizeFontValue leaves legitimate family names and urls untouched', () => {
+	expect(sanitizeFontValue('Source Sans 3')).toBe('Source Sans 3');
+	expect(sanitizeFontValue('Times New Roman')).toBe('Times New Roman');
+	expect(sanitizeFontValue('/fonts/inter.woff2')).toBe('/fonts/inter.woff2');
+	expect(sanitizeFontValue('https://x.test/a-b_c.woff2?v=1')).toBe(
+		'https://x.test/a-b_c.woff2?v=1',
+	);
+});
+
+test('sanitizeFontValue removes characters that break out of a quoted CSS string', () => {
+	const attack =
+		"Bravura'; } body { background: url(//evil) } @font-face { font-family: 'x";
+	expect(sanitizeFontValue(attack)).not.toMatch(/['"\\<>]/);
+	expect(sanitizeFontValue('a"<b>\\c\nd')).toBe('abcd');
+});
 
 // SSR safety: no document → must not throw, no container mutation needed.
 test('SSR guard: no throw without document', () => {
