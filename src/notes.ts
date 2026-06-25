@@ -218,20 +218,37 @@ export function vexflowTabChord(chord: Chord): TabNote {
 		duration,
 	});
 	addTabModifiers(tabNote, lead);
+	boldFrets(tabNote);
 	return tabNote;
+}
+
+// Bump the fret numbers to bold — thin digits get lost against the staff lines.
+// VexFlow has no public API to set the 'TabNote.text' metric weight globally
+// (Metrics isn't exported), so override each fret Element built in the TabNote
+// constructor. fretElement is protected, hence the cast. Width was measured at
+// normal weight; for 1-2 digit frets the difference is negligible.
+function boldFrets(tabNote: TabNote): void {
+	const { fretElement } = tabNote as unknown as {
+		fretElement: { fontWeight: string }[];
+	};
+	for (const el of fretElement) {
+		el.fontWeight = 'bold';
+	}
 }
 
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
 // note it precedes by vexflowTabTickables.
 function vexflowTabGrace(chord: Chord): GraceTabNote {
 	const duration = DURATION_CODES[chord.lead.type ?? 'quarter'] ?? 'q';
-	return new GraceTabNote({
+	const grace = new GraceTabNote({
 		positions: chord.notes.map((note) => ({
 			str: note.string ?? 1,
 			fret: note.fret ?? 0,
 		})),
 		duration,
 	});
+	boldFrets(grace);
+	return grace;
 }
 
 // A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace

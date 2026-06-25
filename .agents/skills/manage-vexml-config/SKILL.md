@@ -1,5 +1,5 @@
 ---
-name: manage-render-config
+name: manage-vexml-config
 description: Add or change vexml Config (aka render options or render config) properties in src/config.ts, including docs, public config type, render wiring, integration coverage, and validation.
 ---
 
