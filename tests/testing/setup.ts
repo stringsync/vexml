@@ -9,6 +9,7 @@ import {
 } from 'node:fs';
 import * as path from 'node:path';
 import { createCanvas, createImageData } from 'canvas';
+import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
@@ -97,11 +98,12 @@ afterAll(() => {
 			console.log(`    ${f}`);
 		}
 	};
-	report('✨', 'added', added);
-	report('🔄', 'updated', updated);
-	report('🗑️', 'deleted', deleted);
+	console.log(chalk.bold('\nScreenshot report'));
+	report(chalk.green('✓'), 'added', added);
+	report(chalk.yellow('↻'), 'updated', updated);
+	report(chalk.red('✗'), 'deleted', deleted);
 	if (added.size + updated.size + deleted.size === 0) {
-		console.log('✅ no screenshot changes');
+		console.log(`${chalk.green('✓')} no screenshot changes`);
 	}
 });
 
