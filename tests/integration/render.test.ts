@@ -176,6 +176,22 @@ const TEST_CASES = [
 	//   (7 -> 5), closing on a pull-off to the open string (fret 5 -> 0).
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
 
+	// 6-line TAB stave: an advanced companion to tab_hammer_pull showcasing grace
+	// notes plus slides, bends, vibrato, and text annotations. No <time>, so no time
+	// signature is drawn. Each technique reads straight from <notations>.
+	// - M1: grace notes (small fret numbers just left of their main note) — a single
+	//   grace (fret 7) before a fret-5 half note, then a grace pair (frets 7, 9) before
+	//   another fret-5 half note, all on string 3.
+	// - M2: slides — a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7),
+	//   each a diagonal TabSlide line tilted by the fret motion. Four quarter notes.
+	// - M3: bends — a whole-step bend labelled "full" on string 3 fret 7, then a
+	//   half-step bend labelled "½" on string 2 fret 5; each an upward arrow + label.
+	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
+	// - M5: vibrato on string 3 fret 7 (whole note) — a wavy line trailing the fret.
+	// - M6: text annotations above the frets — a natural harmonic "harm." (fret 12), a
+	//   palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
+	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.

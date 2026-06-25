@@ -5,6 +5,7 @@ import {
 	type StaveNote,
 	StaveTie,
 	type TabNote,
+	TabSlide,
 	TabTie,
 	Tuplet,
 } from 'vexflow';
@@ -153,6 +154,55 @@ export function buildHammerPulls(
 		}
 	}
 	return ties;
+}
+
+// Slides on a TAB stave: a <slide> (or <glissando>) start..stop pair, drawn as a
+// TabSlide — a diagonal line between the two frets, angled up or down by the fret
+// motion. Paired by `number` like every spanner; resolved over the whole score so a
+// slide can cross a barline. (Unlike hammer/pull there's no "H"/"P" label, so the
+// slide direction is purely cosmetic — vexflow just tilts the line.)
+export function buildSlides(
+	chords: Chord[],
+	byTabLead: Map<Note, TabNote>,
+): TabSlide[] {
+	const slides: TabSlide[] = [];
+	const open = new Map<string, { note: TabNote; fret: number }>();
+	for (const chord of chords) {
+		const tabNote = byTabLead.get(chord.lead);
+		const notations = chord.lead.child('notations');
+		if (!tabNote || !notations) {
+			continue;
+		}
+		const markers = [
+			...notations.childrenNamed('slide'),
+			...notations.childrenNamed('glissando'),
+		];
+		for (const marker of markers) {
+			const number = marker.getAttribute('number') ?? '1';
+			const fret = chord.lead.fret ?? 0;
+			if (marker.getAttribute('type') === 'start') {
+				open.set(number, { note: tabNote, fret });
+			} else if (marker.getAttribute('type') === 'stop') {
+				const from = open.get(number);
+				open.delete(number);
+				if (!from) {
+					continue;
+				}
+				const notes = {
+					firstNote: from.note,
+					lastNote: tabNote,
+					firstIndexes: from.note.getPositions().map((_, i) => i),
+					lastIndexes: tabNote.getPositions().map((_, i) => i),
+				};
+				slides.push(
+					fret > from.fret
+						? TabSlide.createSlideUp(notes)
+						: TabSlide.createSlideDown(notes),
+				);
+			}
+		}
+	}
+	return slides;
 }
 
 // The highest (smallest y) and lowest (largest y) drawn point of a note,

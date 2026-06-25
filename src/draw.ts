@@ -28,6 +28,7 @@ import {
 import {
 	buildBeams,
 	buildHammerPulls,
+	buildSlides,
 	buildSlurs,
 	buildTies,
 	buildTuplets,
@@ -463,9 +464,12 @@ export function drawScore(
 	for (const slur of buildSlurs(allChords, byLead)) {
 		slur.setContext(context).draw();
 	}
-	// Tablature hammer-ons/pull-offs, likewise resolved over the whole score.
+	// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
 	for (const tie of buildHammerPulls(allTabChords, byTabLead)) {
 		tie.setContext(context).draw();
+	}
+	for (const slide of buildSlides(allTabChords, byTabLead)) {
+		slide.setContext(context).draw();
 	}
 
 	// Grow the page to the lowest thing actually drawn so deep ledger lines in the

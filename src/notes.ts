@@ -1,15 +1,19 @@
 import type { Chord, Note, Time } from '@stringsync/mdom';
 import {
 	Accidental,
+	Annotation,
 	Articulation,
+	Bend,
 	Dot,
 	GhostNote,
 	GraceNote,
 	GraceNoteGroup,
+	GraceTabNote,
 	StaveNote,
 	Stem,
 	type StemmableNote,
 	TabNote,
+	Vibrato,
 } from 'vexflow';
 
 // MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
@@ -150,13 +154,78 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 	return staveNote;
 }
 
+// <bend-alter> in semitones -> the label drawn above the bend arrow. Guitar bends
+// are notated in whole steps: 2 semitones = "full", 1 = "½", 3 = "1½", 4 = "2".
+function bendLabel(semitones: number): string {
+	if (semitones === 2) {
+		return 'full';
+	}
+	const whole = Math.floor(semitones / 2);
+	const half = semitones % 2 === 1 ? '½' : '';
+	return whole > 0 ? `${whole}${half}` : half || '0';
+}
+
+// A tab-stave text Annotation (harmonic "harm.", palm mute "P.M.", a dead-note
+// "x", …), justified above the fret numbers.
+function tabAnnotation(text: string): Annotation {
+	return new Annotation(text).setVerticalJustification(
+		Annotation.VerticalJustify.TOP,
+	);
+}
+
+// Attach the lead note's tablature articulations to its TabNote, reading straight
+// from <notations>: a <bend> (with optional <release/> for a bend-and-release), a
+// <harmonic>, free-text <other-technical>, and <ornaments><wavy-line> vibrato. All
+// are vexflow modifiers, so attaching them here means the layout pass — which also
+// calls this — sizes measures with the extra width they take.
+function addTabModifiers(tabNote: TabNote, lead: Note): void {
+	const technical = lead.child('notations')?.child('technical');
+	const bend = technical?.child('bend');
+	if (bend) {
+		const semitones = Number(bend.child('bend-alter')?.text ?? '0');
+		const phrase = [{ type: Bend.UP, text: bendLabel(semitones) }];
+		// ponytail: a <release/> child draws a bend-then-release (up-down arrow); a
+		// release to a non-zero target would need its own label — add when a fixture wants it.
+		if (bend.child('release')) {
+			phrase.push({ type: Bend.DOWN, text: '' });
+		}
+		tabNote.addModifier(new Bend(phrase), 0);
+	}
+	if (technical?.child('harmonic')) {
+		tabNote.addModifier(tabAnnotation('harm.'), 0);
+	}
+	const other = technical?.child('other-technical')?.text;
+	if (other) {
+		tabNote.addModifier(tabAnnotation(other), 0);
+	}
+	if (lead.wavyLines.some((w) => w.wavyLineType === 'start')) {
+		tabNote.addModifier(new Vibrato(), 0);
+	}
+}
+
 // Build a vexflow TabNote for one chord on a tablature stave: each member's
 // <string>/<fret> becomes a position (string 1 = highest-pitched). Tab notes carry
-// no clef, accidentals, or stems — just the fret numbers stacked on their strings.
+// no clef, accidentals, or stems — just the fret numbers stacked on their strings,
+// plus any bend/harmonic/vibrato/annotation modifiers from <notations>.
 export function vexflowTabChord(chord: Chord): TabNote {
 	const lead = chord.lead;
 	const duration = DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
-	return new TabNote({
+	const tabNote = new TabNote({
+		positions: chord.notes.map((note) => ({
+			str: note.string ?? 1,
+			fret: note.fret ?? 0,
+		})),
+		duration,
+	});
+	addTabModifiers(tabNote, lead);
+	return tabNote;
+}
+
+// A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
+// note it precedes by vexflowTabTickables.
+function vexflowTabGrace(chord: Chord): GraceTabNote {
+	const duration = DURATION_CODES[chord.lead.type ?? 'quarter'] ?? 'q';
+	return new GraceTabNote({
 		positions: chord.notes.map((note) => ({
 			str: note.string ?? 1,
 			fret: note.fret ?? 0,
@@ -165,8 +234,10 @@ export function vexflowTabChord(chord: Chord): TabNote {
 	});
 }
 
-// A tab voice's tickables: one TabNote per non-rest, non-grace chord, in onset
-// order. Unlike vexflowVoiceTickables there's no ghost-note gap filling — the
+// A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
+// chords steal no time, so like vexflowVoiceTickables they're held aside and
+// attached to the next real note as a GraceNoteGroup modifier (drawn just left of
+// it). Unlike vexflowVoiceTickables there's no ghost-note gap filling — the
 // roadmap's tab lines are single-voice and contiguous. `record` captures each
 // chord's lead -> TabNote for later hammer-on/pull-off resolution; the layout pass
 // reuses this to size tab measures and passes none.
@@ -175,11 +246,23 @@ export function vexflowTabTickables(
 	record?: (lead: Note, tabNote: TabNote) => void,
 ): TabNote[] {
 	const tickables: TabNote[] = [];
+	let pendingGrace: GraceTabNote[] = [];
 	for (const chord of chords) {
-		if (chord.lead.isRest || chord.lead.isGrace) {
+		if (chord.lead.isRest) {
+			continue;
+		}
+		if (chord.lead.isGrace) {
+			pendingGrace.push(vexflowTabGrace(chord));
 			continue;
 		}
 		const tabNote = vexflowTabChord(chord);
+		if (pendingGrace.length > 0) {
+			// No beamNotes() unlike the standard-notation path: tab grace notes have no
+			// stem to anchor a beam, so beaming floats it off the staff — they render as
+			// plain small fret numbers.
+			tabNote.addModifier(new GraceNoteGroup(pendingGrace), 0);
+			pendingGrace = [];
+		}
 		record?.(chord.lead, tabNote);
 		tickables.push(tabNote);
 	}
