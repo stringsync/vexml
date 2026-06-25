@@ -67,6 +67,18 @@ afterAll(() => {
 
 // Every baseline touched this run; orphans are whatever's left over in SNAP_DIR.
 const seen = new Set<string>();
+
+// Baselines that didn't exist before this run.
+const added = new Set<string>();
+afterAll(() => {
+	if (added.size === 0) {
+		return;
+	}
+	console.log(`added ${added.size} new screenshot(s):`);
+	for (const f of [...added].sort()) {
+		console.log(`  ${f}`);
+	}
+});
 if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 	afterAll(() => {
 		let removed = 0;
@@ -93,6 +105,9 @@ expect.extend({
 		const baseline = path.join(SCREENSHOTS_DIR, filename);
 
 		if (UPDATE || !existsSync(baseline)) {
+			if (!existsSync(baseline)) {
+				added.add(filename);
+			}
 			mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 			writeFileSync(baseline, buf);
 			return { pass: true, message: () => `wrote baseline ${filename}` };
