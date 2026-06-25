@@ -118,6 +118,7 @@ function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
 export function buildHammerPulls(
 	chords: Chord[],
 	byTabLead: Map<Note, TabNote>,
+	showText: boolean,
 ): TabTie[] {
 	const ties: TabTie[] = [];
 	for (const chord of chords) {
@@ -148,9 +149,14 @@ export function buildHammerPulls(
 				firstIndexes,
 				lastIndexes: lastNote.getPositions().map((_, i) => i),
 			};
-			ties.push(
-				hammer ? TabTie.createHammeron(notes) : TabTie.createPulloff(notes),
-			);
+			const tie = hammer
+				? TabTie.createHammeron(notes)
+				: TabTie.createPulloff(notes);
+			// The arc always draws; clear the "H"/"P" label when the text is off.
+			if (!showText) {
+				tie.setText('');
+			}
+			ties.push(tie);
 		}
 	}
 	return ties;
@@ -164,6 +170,7 @@ export function buildHammerPulls(
 export function buildSlides(
 	chords: Chord[],
 	byTabLead: Map<Note, TabNote>,
+	showText: boolean,
 ): TabSlide[] {
 	const slides: TabSlide[] = [];
 	const open = new Map<string, { note: TabNote; fret: number }>();
@@ -194,11 +201,15 @@ export function buildSlides(
 					firstIndexes: from.note.getPositions().map((_, i) => i),
 					lastIndexes: tabNote.getPositions().map((_, i) => i),
 				};
-				slides.push(
+				const slide =
 					fret > from.fret
 						? TabSlide.createSlideUp(notes)
-						: TabSlide.createSlideDown(notes),
-				);
+						: TabSlide.createSlideDown(notes);
+				// The line always draws; clear the "sl." label when the text is off.
+				if (!showText) {
+					slide.setText('');
+				}
+				slides.push(slide);
 			}
 		}
 	}

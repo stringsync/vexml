@@ -26,6 +26,12 @@ export type RenderOptions = {
 	 * none; 'system' numbers the first measure of each system; 'every' numbers every
 	 * measure; 'every-2'/'every-3' number every 2nd/3rd measure plus every system start. */
 	measureNumbering?: MeasureNumbering;
+	/** Print the "H"/"P" labels on tablature hammer-ons/pull-offs (default: false). The
+	 * connecting tie arc always draws; this only toggles the letters above it. */
+	showTabHammerPullText?: boolean;
+	/** Print the "sl." label on tablature slides (default: false). The slide line always
+	 * draws; this only toggles the label above it. */
+	showTabSlideText?: boolean;
 };
 
 export async function render(

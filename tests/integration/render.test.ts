@@ -174,7 +174,15 @@ const TEST_CASES = [
 	//   then two pull-off pairs (7 -> 5) — to show the technique at a tighter rhythm.
 	// - M6: sixteenth notes (string 2) — a hammer-on pair (5 -> 7) then a pull-off pair
 	//   (7 -> 5), closing on a pull-off to the open string (fret 5 -> 0).
+	// Default render: the tie arcs draw but the "H"/"P" labels are off
+	// (showTabHammerPullText defaults to false).
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
+
+	// Same fixture with showTabHammerPullText: true — the "H"/"P" labels print above
+	// each hammer-on/pull-off arc.
+	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_text.png', {
+		showTabHammerPullText: true,
+	}),
 
 	// 6-line TAB stave: an advanced companion to tab_hammer_pull showcasing grace
 	// notes plus slides, bends, vibrato, and text annotations. No <time>, so no time
@@ -183,7 +191,8 @@ const TEST_CASES = [
 	//   grace (fret 7) before a fret-5 half note, then a grace pair (frets 7, 9) before
 	//   another fret-5 half note, all on string 3.
 	// - M2: slides — a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7),
-	//   each a diagonal TabSlide line tilted by the fret motion. Four quarter notes.
+	//   each a diagonal TabSlide line tilted by the fret motion. The "sl." labels are off
+	//   by default (showTabSlideText). Four quarter notes.
 	// - M3: bends — a whole-step bend labelled "full" on string 3 fret 7, then a
 	//   half-step bend labelled "½" on string 2 fret 5; each an upward arrow + label.
 	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
@@ -191,6 +200,12 @@ const TEST_CASES = [
 	// - M6: text annotations above the frets — a natural harmonic "harm." (fret 12), a
 	//   palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
 	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
+
+	// Same fixture with showTabSlideText: true — the "sl." labels print above the M2
+	// slide lines.
+	testCase('tab_techniques.musicxml', 'tab_techniques_slide_text.png', {
+		showTabSlideText: true,
+	}),
 
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),

@@ -193,6 +193,8 @@ export function drawScore(
 		floorHeight,
 		labelIndent,
 		measureNumbering,
+		showTabHammerPullText,
+		showTabSlideText,
 	} = layout;
 
 	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
@@ -465,10 +467,14 @@ export function drawScore(
 		slur.setContext(context).draw();
 	}
 	// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
-	for (const tie of buildHammerPulls(allTabChords, byTabLead)) {
+	for (const tie of buildHammerPulls(
+		allTabChords,
+		byTabLead,
+		showTabHammerPullText,
+	)) {
 		tie.setContext(context).draw();
 	}
-	for (const slide of buildSlides(allTabChords, byTabLead)) {
+	for (const slide of buildSlides(allTabChords, byTabLead, showTabSlideText)) {
 		slide.setContext(context).draw();
 	}
 

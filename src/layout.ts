@@ -43,6 +43,8 @@ export type LayoutOptions = {
 	softmaxFactor?: number;
 	showPartLabels?: boolean;
 	measureNumbering?: MeasureNumbering;
+	showTabHammerPullText?: boolean;
+	showTabSlideText?: boolean;
 };
 
 /** A measure's placed box within its system. */
@@ -78,6 +80,10 @@ export type ScoreLayout = {
 	softmaxFactor: number;
 	/** When the draw pass prints measure numbers. */
 	measureNumbering: MeasureNumbering;
+	/** Whether the draw pass prints "H"/"P" labels on tab hammer-ons/pull-offs. */
+	showTabHammerPullText: boolean;
+	/** Whether the draw pass prints "sl." labels on tab slides. */
+	showTabSlideText: boolean;
 };
 
 // Minimum width per tab note. vexflow's preCalculateMinTotalWidth packs tab notes
@@ -334,5 +340,7 @@ export function computeLayout(
 		softmaxFactor,
 		labelIndent,
 		measureNumbering: options?.measureNumbering ?? 'system',
+		showTabHammerPullText: options?.showTabHammerPullText ?? false,
+		showTabSlideText: options?.showTabSlideText ?? false,
 	};
 }

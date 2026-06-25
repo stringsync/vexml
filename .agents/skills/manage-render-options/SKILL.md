@@ -1,6 +1,6 @@
 ---
 name: manage-render-options
-description: Add or change vexml RenderOptions properties in src/render.ts, including docs, public option types, render wiring, integration coverage, and validation.
+description: Add or change vexml RenderOptions (aka render options or render config) properties in src/render.ts, including docs, public option types, render wiring, integration coverage, and validation.
 ---
 
 # Manage RenderOptions
