@@ -366,6 +366,13 @@ const TEST_CASES = [
 	// TODO: False positive: This was just rendered to get an initial idea of how this library will
 	// render it. Work with the user to figure out what each measure is supposed to look like.
 	testCase('aloof.musicxml', 'aloof.png'),
+
+	// Individual measures extracted from 'aloof' for focused testing.
+	testCase('aloof_measure_1.musicxml', 'aloof_measure_1.png'),
+	testCase('aloof_measure_2.musicxml', 'aloof_measure_2.png'),
+	testCase('aloof_measure_7.musicxml', 'aloof_measure_7.png'),
+	testCase('aloof_measure_14.musicxml', 'aloof_measure_14.png'),
+	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
 ];
 
 for (const t of TEST_CASES) {

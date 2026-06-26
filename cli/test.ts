@@ -26,6 +26,7 @@ function testLocal(
 	// Host pixels differ from the Docker baselines, so compare against a gitignored local set.
 	return run('bun', ['test', ...testArgs], {
 		...process.env,
+		I_AM_RUNNING_TESTS_USING_VEX_TEST: '1',
 		UPDATE_SCREENSHOTS: opts.update ? '1' : '',
 		CLEANUP_ORPHANED_SCREENSHOTS: opts.clean ? '1' : '',
 		SCREENSHOTS_DIR: `${INTEGRATION_TESTS_DIR}/__local_screenshots__`,
@@ -43,6 +44,8 @@ async function testDocker(
 		'--rm',
 		'-e',
 		'FORCE_COLOR=1',
+		'-e',
+		'I_AM_RUNNING_TESTS_USING_VEX_TEST=1',
 		'-v',
 		`${cwd}/tests:/app/tests`,
 	];
