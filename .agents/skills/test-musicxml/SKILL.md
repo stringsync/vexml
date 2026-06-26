@@ -45,8 +45,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    ```
 
 4. Interpret screenshot results carefully. Screenshot tests can fail or pass for two different reasons:
-   - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` If the user provides a golden-standard image for the case, confirm correctness by comparing it against vexml's render via the describe-measure subagent (see Describing Screenshot Diffs) before accepting. Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
-   - **True negative:** an existing screenshot test failed because a previously accepted baseline is no longer reproducible. Delegate the diff artifact to the describe-measure subagent (see Describing Screenshot Diffs), then use its summary to leave a `TODO` comment above the `testCase(...)` that describes the visual difference in plain language and links to the diff. Do not prescribe a fix unless the root cause is already clear. Prefer wording like: `// TODO: True negative: the accepted baseline shows <expected visual>, but the new render shows <actual visual>. Diff: <path-or-link>.`
+   - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` If the user provides a golden-standard image for the case, compare it against vexml's render before accepting. Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
+   - **True negative:** an existing screenshot test failed because a previously accepted baseline is no longer reproducible. Inspect the diff artifact and leave a `TODO` comment above the `testCase(...)` that describes the visual difference in plain language and links to the diff. Do not prescribe a fix unless the root cause is already clear. Prefer wording like: `// TODO: True negative: the accepted baseline shows <expected visual>, but the new render shows <actual visual>. Diff: <path-or-link>.`
    - In both cases, describe what a human should look for in the screenshot. Make the TODO specific enough that another agent can continue from it without opening unrelated files.
    - If the correct rendering is ambiguous, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
 
@@ -79,7 +79,7 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 - What does the test comment describe? Does the screenshot match that description, including the named clefs, staves, notes, rests, accidentals, beams, slurs, ledger lines, system breaks, and layout expectations?
 - Are all expected musical elements present exactly once, with no obvious duplicates, missing glyphs, wrong glyphs, or stale artifacts from a previous render?
 - Are stems, beams, flags, dots, accidentals, and rests positioned in musically plausible places relative to the staff and notes?
-- If this is a diff, can you explain the visual change in plain language from the describe-measure subagent's summary? If not, delegate the artifact to the describe-measure subagent before updating the baseline.
+- If this is a diff, can you explain the visual change in plain language from the diff artifact before updating the baseline?
 - If any answer is uncertain, do not update the baseline yet. Add or keep a `TODO` that names the uncertainty and links to the screenshot or diff artifact.
 
 8. If the target render passes the screenshot review checklist, update only that baseline:
@@ -94,19 +94,14 @@ Always run this checklist before accepting or updating a screenshot baseline. An
    - Run `vex test` again after the selective baseline update.
    - Per project rules, also run `vex fix` after code changes.
    - If you deleted any integration test cases, run `vex test --clean` globally to remove orphaned screenshot baselines. Do not target a single test when cleaning deleted cases.
-   - If regressions appear, eagerly add or list `TODO` comments for each regression using the false-positive or true-negative language from step 4. Produce each plain-language visual difference via the describe-measure subagent (see Describing Screenshot Diffs). Include that difference and the relevant diff path or artifact link.
+   - If regressions appear, eagerly add or list `TODO` comments for each regression using the false-positive or true-negative language from step 4. Include the plain-language visual difference and the relevant diff path or artifact link.
    - Do not update the whole suite by default. Create a plan for each regression and explain whether it is expected or unexpected.
 
 ## Describing Screenshot Diffs
 
-Whenever you need to verbalize a screenshot difference — a regression diff artifact in `tests/integration/__diffs__`, or a comparison of vexml's current render against a golden-standard image the user provided (common for new test cases) — delegate the comparison to a subagent so the pixel-level detail stays out of the main context.
+Whenever you need to verbalize a screenshot difference — a regression diff artifact in `tests/integration/__diffs__`, or a comparison of vexml's current render against a golden-standard image the user provided (common for new test cases) — inspect the original image path(s) directly and describe the difference in plain language.
 
-Do **not** perform image transformations yourself for diff work. Do not crop, zoom, resize, rotate, annotate, split, or otherwise transform screenshots or diff artifacts in the main agent context. The main agent should not open transformed image derivatives to describe differences. Instead, spawn a subagent that applies the `describe-measure` skill and use only that subagent's severity-ranked summary for TODOs and user-facing explanations.
-
-- Spawn a `general-purpose` (or `claude`) subagent. Tell it to read and follow `.agents/skills/describe-measure/SKILL.md`; subagents cannot invoke skills directly, so it must apply the skill from that file.
-- Give it the original image path(s), not cropped, zoomed, resized, or otherwise transformed derivatives. For a `__diffs__` artifact, tell it the image has old / diff / new vertical sections. For a golden-standard comparison, give it both the vexml render and the golden image and state which is which.
-- Tell it which measure(s) to target. For a regression diff, point it at the measure(s) the diff band highlights and let it infer the range. For a golden-standard comparison, name the measure(s) under review.
-- The agent returns a severity-ranked difference list. Surface that summary and use it for the relevant `TODO`; do not re-inspect the raw images yourself.
+Do **not** create transformed derivatives for diff work unless there is no other practical way to understand the artifact. Prefer the original screenshot or diff artifact. For a `__diffs__` artifact, remember that the image has old / diff / new vertical sections. For a golden-standard comparison, keep clear which image is the vexml render and which is the golden image.
 
 ## Baseline Update Guidance
 
