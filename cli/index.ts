@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { program } from 'commander';
+import { dev } from './dev';
 import { fix } from './fix';
 import { render } from './render';
 import { test } from './test';
@@ -9,6 +10,13 @@ const invocationDir = process.cwd();
 process.chdir(`${import.meta.dir}/..`);
 
 program.name('vex').description('vexml dev CLI');
+
+program
+	.command('dev')
+	.description('run the dev playground site')
+	.action(async () => {
+		await dev();
+	});
 
 program
 	.command('fix')
