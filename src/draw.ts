@@ -456,14 +456,32 @@ export function drawScore(
 					stave.addTimeSignature(timeSpec);
 				}
 
-				// vexflow's setMeasure draws the number centered above the stave's left
-				// edge; only the top stave of each measure column gets it.
-				if (showMeasureNumber && !measureNumbered) {
+				// A multi-stave part's bracket (drawn below) has a top curl that sits where
+				// vexflow's setMeasure centers the measure number, so the number gets
+				// occluded. Only for a bracket do we draw the number ourselves, left-aligned
+				// just right of the barline and lifted above the curl; the curly brace
+				// doesn't reach that high, so it keeps vexflow's placement. Top stave only.
+				const numberOccluded =
+					isSystemStart && staveCount > 1 && partSymbol(part) === 'bracket';
+				if (showMeasureNumber && !measureNumbered && !numberOccluded) {
 					stave.setMeasure(Number(measure.number));
 					measureNumbered = true;
 				}
 
 				stave.setContext(context).draw();
+
+				if (showMeasureNumber && !measureNumbered && numberOccluded) {
+					context.save();
+					context.setFont(stave.getFont());
+					context.setFillStyle('#000000');
+					context.fillText(
+						measure.number,
+						stave.getX() + 4,
+						stave.getYForTopText(0) - 14,
+					);
+					context.restore();
+					measureNumbered = true;
+				}
 				const staveBottom = stave.getBottomY();
 				pageBottom = Math.max(pageBottom, staveBottom);
 				systemContentBottom = Math.max(systemContentBottom, staveBottom);
