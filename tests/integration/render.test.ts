@@ -165,13 +165,23 @@ const TEST_CASES = [
 	// systems.
 	testCase('ledger_lines.musicxml', 'ledger_lines.png'),
 
-	// Treble stave, 4/4, on C5: ties.
+	// Treble stave, 4/4: ties, single notes then chords of increasing size.
 	// - M1: two half notes tied within the measure.
-	// - M2-3: a whole note tied across the barline into the next whole note (the tie arc
-	//   spans the barline).
+	// - M2-3: a whole note tied into the next whole note across a system break — M2 ends one
+	//   system and M3 begins the next, so the tie splits into two partial arcs: one bowing off
+	//   the right edge of M2 ("tie to nothing") and one bowing in from the left edge of M3
+	//   ("tie from nothing"), rather than one line slanting down across the page.
 	// - M4: two stem-up half-note chords (C5/E5/G5); the upper two members (E5, G5) carry
 	//   tie arcs to the next chord while the bottom member (C5) has none. The arcs bow over
 	//   the top (concave down) instead of tucking under the up-stems.
+	// - M5: a two-note chord (C5/E5) with both members tied — the lower bows under (concave
+	//   up), the upper bows over (concave down), so the ties diverge from the chord center.
+	// - M6: a four-note chord (C5/E5/G5/C6) with all members tied — the lower half (C5, E5)
+	//   bows under and the upper half (G5, C6) bows over, a two-under / two-over split.
+	// - M7: spacing variant — a two-note second (C5/D5) with both members tied; the second
+	//   offsets the noteheads across the stem, C5 bowing under and D5 over.
+	// - M8: spacing variant — a four-note cluster of stacked seconds (C5/D5/E5/F5) with all
+	//   members tied; zig-zag offset noteheads, lower half under and upper half over.
 	testCase('tie.musicxml', 'tie.png'),
 
 	// Slurs, with the quarter-note measures grouped first. Wraps across systems.

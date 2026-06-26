@@ -102,21 +102,53 @@ export function buildTies(
 				if (tie.tieType !== 'start' || !from || !to) {
 					continue;
 				}
-				const staveTie = new StaveTie({
-					firstNote: from.staveNote,
-					lastNote: to.staveNote,
-					firstIndexes: [from.index],
-					lastIndexes: [to.index],
-				});
 				// A chord member's tie bows away from the chord's center: upper-half
 				// notes arc over the top (direction -1), the lower half under the bottom
 				// (+1). Otherwise vexflow defaults every tie to the stem direction, so a
 				// stem-up chord's top notes would tuck underneath instead of over. Single
 				// notes keep that default (a tie opposite the lone stem).
-				if (heads > 1) {
-					staveTie.setDirection(from.index >= (heads - 1) / 2 ? -1 : 1);
+				const direction =
+					heads > 1 ? (from.index >= (heads - 1) / 2 ? -1 : 1) : null;
+
+				// When the stop note wraps onto a later system its stave sits to the left
+				// of the start note's; one StaveTie would then draw as a single long diagonal
+				// slanting across the page. Split it into two partial ties — one bowing off
+				// the right edge of the start note's stave ("tie to nothing") and one bowing
+				// in from the left edge of the stop note's stave ("tie from nothing"). vexflow
+				// renders a StaveTie given only a firstNote (or only a lastNote) exactly so.
+				// ponytail: the x-compare assumes a tie's two ends share a staff (true for a
+				// pitch continuation); a cross-staff tie would also split here.
+				const wraps =
+					(to.staveNote.getStave()?.getX() ?? 0) <
+					(from.staveNote.getStave()?.getX() ?? 0);
+				const specs: TieNotes[] = wraps
+					? [
+							{
+								firstNote: from.staveNote,
+								firstIndexes: [from.index],
+								lastIndexes: [from.index],
+							},
+							{
+								lastNote: to.staveNote,
+								firstIndexes: [to.index],
+								lastIndexes: [to.index],
+							},
+						]
+					: [
+							{
+								firstNote: from.staveNote,
+								lastNote: to.staveNote,
+								firstIndexes: [from.index],
+								lastIndexes: [to.index],
+							},
+						];
+				for (const spec of specs) {
+					const staveTie = new StaveTie(spec);
+					if (direction !== null) {
+						staveTie.setDirection(direction);
+					}
+					ties.push(staveTie);
 				}
-				ties.push(staveTie);
 			}
 		}
 	}

@@ -107,5 +107,210 @@
         <notations><tied type="stop" /></notations>
       </note>
     </measure>
+    <!-- M5: a two-note half-note chord (C5/E5) where both members tie to the next chord.
+         The lower member (C5) bows under (concave up) and the upper member (E5) bows over
+         (concave down), so the two ties diverge away from the chord's center. -->
+    <measure number="5">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <!-- M6: a four-note half-note chord (C5/E5/G5/C6) where all four members tie. The lower
+         half (C5, E5) bows under and the upper half (G5, C6) bows over, so the ties split
+         two-under / two-over around the chord's center across a one-octave spread. -->
+    <measure number="6">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <!-- M7: spacing variant — a two-note half-note chord a second apart (C5/D5) where both
+         members tie. The second forces the noteheads onto opposite sides of the stem, so the
+         ties attach to offset noteheads: C5 bows under, D5 bows over. -->
+    <measure number="7">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <!-- M8: spacing variant — a four-note cluster of stacked seconds (C5/D5/E5/F5) where all
+         members tie. Every adjacent pair is a second so the noteheads zig-zag across the stem;
+         the lower half (C5, D5) bows under and the upper half (E5, F5) bows over, stress-testing
+         tie placement under the tightest vertical spacing and offset noteheads. -->
+    <measure number="8">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>
