@@ -11,10 +11,13 @@ import {
 	LEAD_CLEF,
 	LEAD_KEY,
 	LEAD_TIME,
+	LOG_SPACING_RATIO,
+	MIN_LOG_FACTOR,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
 	PAGE_MARGIN_TOP_WITH_TEMPO,
 	PAGE_MARGIN_X,
+	QUARTER_NOTE_TICKS,
 	REFERENCE_WIDTH,
 	SYSTEM_GAP,
 	TAB_MIN_NOTE_SPACING,
@@ -95,18 +98,30 @@ type StaveSpec = {
 	isTab: boolean;
 };
 
-// A measure's note-area width: the musical-time width (ticks * pxPerTick) so equal
-// durations get equal space everywhere, never below the collision-free minimum or
-// the floor. Builds throwaway notes so the draw pass is untouched. The busiest
-// staff wins (all staves in a measure share one width).
+// A note's horizontal share under the logarithmic spacing curve: `noteSpacing` px at a
+// quarter note, LOG_SPACING_RATIO more/less per doubling/halving of duration, floored so
+// very short notes keep a sane share. Sub-linear in duration, so a measure's note *count*
+// drives its width far more than note *value* does.
+function noteLogWidth(ticks: number, noteSpacing: number): number {
+	if (ticks <= 0) {
+		return 0;
+	}
+	const factor = 1 + LOG_SPACING_RATIO * Math.log2(ticks / QUARTER_NOTE_TICKS);
+	return noteSpacing * Math.max(MIN_LOG_FACTOR, factor);
+}
+
+// A measure's note-area width: the sum of its notes' logarithmic widths, never below the
+// collision-free minimum or the floor. Denser measures get more space; a long note adds
+// only a little. Builds throwaway notes so the draw pass is untouched. The busiest staff
+// wins (all staves in a measure share one width).
 function measureNoteArea(
 	staves: StaveSpec[],
 	floor: number,
-	pxPerTick: number,
+	noteSpacing: number,
 	softmaxFactor: number,
 ): number {
 	let minNotes = 0;
-	let ticks = 0;
+	let logWidth = 0;
 	for (const { voices, clef, meterFloor, isTab } of staves) {
 		// Match drawNotes: pad underfull measures to the meter so the measured width
 		// reserves the same trailing space the draw pass will leave.
@@ -137,11 +152,16 @@ function measureNoteArea(
 			const noteCount = Math.max(0, ...perVoice.map((t) => t.length));
 			minNotes = Math.max(minNotes, noteCount * TAB_MIN_NOTE_SPACING);
 		}
-		for (const vexVoice of vexVoices) {
-			ticks = Math.max(ticks, vexVoice.getTicksUsed().value());
+		// Sum each voice's per-note logarithmic widths; the busiest voice sets the width.
+		for (const tickables of perVoice) {
+			let w = 0;
+			for (const t of tickables) {
+				w += noteLogWidth(t.getTicks().value(), noteSpacing);
+			}
+			logWidth = Math.max(logWidth, w);
 		}
 	}
-	return Math.max(floor, minNotes, ticks * pxPerTick);
+	return Math.max(floor, minNotes, logWidth);
 }
 
 /** Lay the parts out at the reference width: where every measure box sits, how
@@ -153,7 +173,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const layoutMode = layout.type;
 	// Panoramic computes its own width; REFERENCE_WIDTH is the page's starting floor.
 	const width = layout.type === 'standard' ? layout.width : REFERENCE_WIDTH;
-	const pxPerTick = config.pxPerTick;
+	const noteSpacing = config.noteSpacing;
 	const softmaxFactor = config.softmaxFactor;
 
 	// Measures lay left-to-right; every part's staves stack vertically down the page.
@@ -206,10 +226,10 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		systemIndex === 0 ? usable - labelIndent : usable;
 
 	// --- Spacing (content only) ---------------------------------------------------
-	// A measure's note area is a pure function of its music: the musical-time width
-	// (ticks * pxPerTick), floored at the collision-free minimum and BASE_VOICE_WIDTH.
-	// One global pxPerTick means identical content is identically wide everywhere in
-	// the piece.
+	// A measure's note area is a pure function of its music: the sum of its notes'
+	// logarithmic widths (noteSpacing per quarter, sub-linear in duration), floored at the
+	// collision-free minimum and BASE_VOICE_WIDTH. More notes mean a wider measure; a long
+	// note adds only a little — so identical content is identically wide everywhere.
 	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
 		const staves: StaveSpec[] = [];
 		for (const part of parts) {
@@ -232,7 +252,12 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 				}
 			}
 		}
-		return measureNoteArea(staves, BASE_VOICE_WIDTH, pxPerTick, softmaxFactor);
+		return measureNoteArea(
+			staves,
+			BASE_VOICE_WIDTH,
+			noteSpacing,
+			softmaxFactor,
+		);
 	});
 
 	// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)

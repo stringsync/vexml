@@ -99,6 +99,23 @@ const TEST_CASES = [
 	//   — E4 down, G4 down, B4 up, D5 up.
 	testCase('note.musicxml', 'note.png'),
 
+	// Treble stave, 4/4, all on C5: note density per measure (beat counts deliberately
+	// ignored). Each measure varies the number and kind of notes. Under the logarithmic
+	// spacing model a measure's width tracks its note *count* (with a weak pull from note
+	// value), so denser measures are wider — the opposite of a fixed px-per-tick, which
+	// would make every 16-tick measure equally wide. Wraps to three systems (M1-3, M4-5,
+	// M6); complete systems are justified to full width.
+	// - M1: one whole note (1 event) — floors at the minimum width, the narrowest measure.
+	// - M2: four quarters (4 events) — wider than M1.
+	// - M3: eight beamed eighths (8 events) — wider still; M1-M3 share the first system.
+	// - M4: sixteen beamed sixteenths (16 events) — the densest, so the widest natural
+	//   width; leads the second system.
+	// - M5: eight quarters (8 events) — shares the second system with M4.
+	// - M6: mixed kinds in one measure — quarter, two beamed eighths, four beamed
+	//   sixteenths, then a half. Trailing system, left unjustified at its natural width, so
+	//   the uneven within-measure spacing (wide quarter, then progressively tighter) shows.
+	testCase('note_density.musicxml', 'note_density.png'),
+
 	// Treble stave, 4/4, all on C5: dotted-note variations.
 	// - M1: dotted-quarter + eighth pairs (single dots).
 	// - M2: double-dotted-quarter + sixteenth pairs (double dots).
@@ -385,20 +402,21 @@ const TEST_CASES = [
 	//   (E5/C5/G4/C3).
 	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
 
-	// Eight identical C5 whole-note measures wrapping onto two systems of four measures
-	// each (default layout). The default 'system' measure numbering prints a "1" above
-	// the top system's first measure and a "5" above the bottom system's first measure.
+	// Sixteen identical C5 whole-note measures wrapping onto two systems (nine then seven
+	// measures — each whole note floors at its minimum width) under the default layout. The
+	// default 'system' measure numbering prints a "1" above the top system's first measure
+	// and a "10" above the bottom system's first measure.
 	testCase('system_break.musicxml', 'system_break.png'),
 
-	// The same eight C5 whole-note measures, but with panoramic layout: all eight sit
+	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	testCase('system_break.musicxml', 'layout_panoramic.png', {
 		layout: { type: 'panoramic' },
 	}),
 
-	// The eight C5 whole-note measures (two systems of four), with a measure number
-	// printed above the left edge of every measure (measureNumbering 'every'):
-	// "1 2 3 4" across the top system, "5 6 7 8" across the bottom.
+	// The same two systems (nine then seven C5 whole-note measures), with a measure number
+	// printed above the left edge of every measure (measureNumbering 'every'): "1"-"9"
+	// across the top system, "10"-"16" across the bottom.
 	testCase('system_break.musicxml', 'measure_numbering_every.png', {
 		measureNumbering: 'every',
 	}),
@@ -409,20 +427,20 @@ const TEST_CASES = [
 		measureNumbering: 'none',
 	}),
 
-	// The same two systems with measureNumbering 'every-2': every 2nd measure plus
-	// every system start. Numbered measures are the odd ones 1, 3, 5, 7 (every 2nd,
-	// 0-based) — 1 and 3 on the top system, 5 and 7 on the bottom. Both system starts
-	// (1, 5) already fall on the every-2 cadence, so here the union adds nothing beyond
-	// it.
+	// The same two systems with measureNumbering 'every-2': every 2nd measure plus every
+	// system start. The every-2 cadence (0-based) falls on the odd measures 1, 3, 5, 7, 9,
+	// 11, 13, 15 — so 1, 3, 5, 7, 9 on the top system and 11, 13, 15 on the bottom. The
+	// second system's start, M10, is even and off the cadence, so it is numbered only
+	// because it begins a system — the case that proves the "plus every system start" union.
 	testCase('system_break.musicxml', 'measure_numbering_every_2.png', {
 		measureNumbering: 'every-2',
 	}),
 
-	// The same two systems with measureNumbering 'every-3': every 3rd measure plus
-	// every system start. Numbered measures are 1, 4, 7 (every 3rd) and 5 (the second
-	// system's start, which is not a multiple of 3) — so 1 and 4 on the top system, 5
-	// and 7 on the bottom. This is the case that proves the "plus every system start"
-	// union: measure 5 is numbered only because it begins a system.
+	// The same two systems with measureNumbering 'every-3': every 3rd measure plus every
+	// system start. The every-3 cadence falls on 1, 4, 7, 10, 13, 16 — so 1, 4, 7 on the
+	// top system and 10, 13, 16 on the bottom. Here the second system's start (M10) already
+	// lands on the cadence, so the "plus system start" union adds nothing visible (see
+	// measure_numbering_every_2 for the case where it does).
 	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
 		measureNumbering: 'every-3',
 	}),

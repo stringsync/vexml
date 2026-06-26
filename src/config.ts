@@ -11,12 +11,16 @@ export type Config = {
 	fonts: FontConfig;
 	/** How measures are placed across systems (default: standard at 1000px). */
 	layout: Layout;
-	/** *How much space the notes get* (not how its divided): horizontal px per tick of musical
-	 * time. The spacing-density knob — bigger spreads every measure wider, so identical content
-	 * stays the same width everywhere in the piece. */
-	pxPerTick: number;
+	/** *How much space the notes get* (not how it's divided): the px a quarter note gets,
+	 * the base of a logarithmic spacing curve. A note gets a little more space per doubling
+	 * of its duration and a little less per halving (see LOG_SPACING_RATIO), so a measure's
+	 * width grows mostly with its note *count* and only weakly with note *value* — denser
+	 * measures are wider, the way engravers space music. The spacing-density knob: bigger
+	 * spreads every measure wider. (Replaces a fixed px-per-tick, which made width purely
+	 * proportional to total duration regardless of note count.) */
+	noteSpacing: number;
 	/** *How the space notes get is divided* (not how much): vexflow's note-spacing curve.
-	 * Given the width pxPerTick allots, higher exaggerates the long-vs-short note ratio. A
+	 * Given the width noteSpacing allots, higher exaggerates the long-vs-short note ratio. A
 	 * shape constant, independent of overall density. */
 	softmaxFactor: number;
 	/** Print each part's instrument name to the left of the first system (default: false). */
@@ -46,7 +50,7 @@ export const DEFAULT_FONT_CONFIG = {
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
 	layout: { type: 'standard', width: 1000 },
-	pxPerTick: 0.02,
+	noteSpacing: 36,
 	softmaxFactor: 10,
 	showPartLabels: false,
 	measureNumbering: 'system',

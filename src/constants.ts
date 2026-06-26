@@ -31,6 +31,20 @@ export const INTER_PART_SPACING = 80;
 /** Absolute floor for a measure's note area. */
 export const BASE_VOICE_WIDTH = 80;
 
+/** Reference note value for the logarithmic spacing curve: VexFlow ticks in a quarter
+ * note (RESOLUTION / 4). A quarter note gets exactly one `noteSpacing` of width. */
+export const QUARTER_NOTE_TICKS = 4096;
+
+/** Logarithmic spacing curve shape: extra note width per *doubling* of duration, as a
+ * fraction of `noteSpacing` (and that much less per halving). ~0.17 reproduces the
+ * ~+50px-per-8-notes-per-doubling that engravers use. The shape is fixed here; `noteSpacing`
+ * scales the whole curve. */
+export const LOG_SPACING_RATIO = 0.17;
+
+/** Floor on the curve's per-note multiplier, so very short notes (32nds and below) keep
+ * a sane share before the collision-free minimum takes over. */
+export const MIN_LOG_FACTOR = 0.4;
+
 /** Lead glyph width estimate (px a stave prints before its notes): a continuation
  * measure carries only a barline. Lead estimates are deliberately generous so notes
  * never collide with the glyphs; measure stave.getNoteStartX() if exact alignment is
