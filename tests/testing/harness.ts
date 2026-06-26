@@ -42,11 +42,11 @@ export async function render(
 				const input = file.endsWith('.mxl')
 					? await res.blob()
 					: await res.text();
-				const element = document.getElementById('vexml');
-				if (!element) {
-					throw new Error('element not found');
+				const canvas = document.getElementById('vexml');
+				if (!(canvas instanceof HTMLCanvasElement)) {
+					throw new Error('canvas not found');
 				}
-				await window.render(input, element, config);
+				await window.render(input, canvas, config);
 			},
 			{ file, config },
 		);

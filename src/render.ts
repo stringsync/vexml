@@ -7,11 +7,11 @@ import { computeLayout } from './layout';
 
 export async function render(
 	input: string | Blob,
-	element: HTMLElement,
+	canvas: HTMLCanvasElement,
 	config?: Partial<Config>,
 ) {
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config };
-	const { notation, text } = loadFonts(element, resolved.fonts);
+	const { notation, text } = loadFonts(canvas, resolved.fonts);
 	// VexFlow engraves glyphs from its own bundled font modules via global state, not the
 	// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
 	// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
@@ -23,34 +23,38 @@ export async function render(
 	// so one render's font choice can't leak into the next.
 	VexFlow.setFonts(`'${notation}'`, `'${text}'`, 'sans-serif');
 	if (typeof input === 'string') {
-		return renderMusicXML(input, element, resolved);
+		return renderMusicXML(input, canvas, resolved);
 	}
 	if (input instanceof Blob) {
-		return renderMXL(input, element, resolved);
+		return renderMXL(input, canvas, resolved);
 	}
 	throw new TypeError('render: input is not a string or Blob');
 }
 
 function renderMusicXML(
 	musicXML: string,
-	element: HTMLElement,
+	canvas: HTMLCanvasElement,
 	config: Config,
 ) {
 	const parser = new MDOMParser();
 	const mdoc = parser.parseFromString(musicXML);
-	return renderMDoc(mdoc, element, config);
+	return renderMDoc(mdoc, canvas, config);
 }
 
-async function renderMXL(mxl: Blob, element: HTMLElement, config: Config) {
+async function renderMXL(mxl: Blob, canvas: HTMLCanvasElement, config: Config) {
 	const parser = new MDOMParser();
 	const mdoc = await parser.parseFromBlob(mxl);
-	return renderMDoc(mdoc, element, config);
+	return renderMDoc(mdoc, canvas, config);
 }
 
-function renderMDoc(mdoc: MDocument, element: HTMLElement, config: Config) {
+function renderMDoc(
+	mdoc: MDocument,
+	canvas: HTMLCanvasElement,
+	config: Config,
+) {
 	const parts = mdoc.score.parts;
 	if (parts.length === 0) {
 		return;
 	}
-	drawScore(element, parts, computeLayout(parts, config), config);
+	drawScore(canvas, parts, computeLayout(parts, config), config);
 }

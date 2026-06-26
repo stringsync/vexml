@@ -294,7 +294,7 @@ function showsMeasureNumber(
 // placed at the boxes computed by computeLayout, with clefs/keys/time signatures,
 // notes, and the brace/barline connectors that group parts into systems.
 export function drawScore(
-	element: HTMLElement,
+	canvas: HTMLCanvasElement,
 	parts: Part[],
 	layout: ScoreLayout,
 	config: Config,
@@ -312,18 +312,29 @@ export function drawScore(
 	} = layout;
 	const { measureNumbering, showTabHammerPullText, showTabSlideText } = config;
 
-	// vexflow's type only admits div/canvas; the SVG backend appends a child to any element.
-	const renderer = new Renderer(
-		element as HTMLDivElement,
-		Renderer.Backends.SVG,
-	);
+	// Canvas is immediate-mode: resizing a canvas clears its bitmap, so the final
+	// page height must be known before drawing — but it's only discovered while
+	// drawing (systems stack downward, deep ledger lines extend further). So draw
+	// once onto an oversized offscreen canvas, then blit the used region into the
+	// real canvas cropped to content. SVG could grow after drawing; canvas can't.
+	const systemCount =
+		boxes.reduce((n, b) => (b ? Math.max(n, b.systemIndex + 1) : n), 0) || 1;
+	// ponytail: per-system slack for content below the stave (deep ledger lines);
+	// bump if an extreme low tessitura ever clips at the scratch canvas bottom.
+	const LEDGER_HEADROOM = 300;
+	const perSystem = floorHeight - layout.top + systemGap + LEDGER_HEADROOM;
+	const scratchHeight = layout.top + systemCount * perSystem;
+
+	const scratch = document.createElement('canvas');
+	const renderer = new Renderer(scratch, Renderer.Backends.CANVAS);
 	const context = renderer.getContext();
-	renderer.resize(width, floorHeight); // provisional; grown after drawing
+	renderer.resize(width, scratchHeight);
 
 	// Part labels use the text font set on the container by loadFonts() (the only
 	// reader of --vexml-font-text). Falls back to Arial if unset (e.g. SSR/no fonts).
+	// Read from the real (in-DOM) canvas — the offscreen scratch has no CSS vars.
 	const labelFont =
-		getComputedStyle(element).getPropertyValue('--vexml-font-text').trim() ||
+		getComputedStyle(canvas).getPropertyValue('--vexml-font-text').trim() ||
 		'Arial';
 
 	// One note map for the whole score: ties and slurs can span a barline, so their
@@ -605,7 +616,15 @@ export function drawScore(
 		slide.setContext(context).draw();
 	}
 
-	// Grow the page to the lowest thing actually drawn so deep ledger lines in the
-	// bottom system aren't clipped.
-	renderer.resize(width, Math.max(floorHeight, pageBottom + 40));
+	// Crop to the lowest thing actually drawn so deep ledger lines in the bottom
+	// system aren't clipped and there's no trailing whitespace. Sizing the real
+	// canvas resets it to an identity transform, so the blit copies device pixels
+	// 1:1 from the scratch's top-left; the unused bottom is simply not copied.
+	const cssHeight = Math.max(floorHeight, pageBottom + 40);
+	const dpr = scratch.width / parseFloat(scratch.style.width);
+	canvas.width = scratch.width;
+	canvas.height = Math.round(cssHeight * dpr);
+	canvas.style.width = scratch.style.width;
+	canvas.style.height = `${cssHeight}px`;
+	canvas.getContext('2d')?.drawImage(scratch, 0, 0);
 }
