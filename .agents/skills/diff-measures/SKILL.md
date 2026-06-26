@@ -1,5 +1,5 @@
 ---
-name: describe-measure-screenshot-diffs
+name: diff-measures
 description: Compare two music notation screenshots at specific measure numbers and verbalize granular visual differences, including vexml integration test screenshots and __diffs__ images with old/diff/new vertical sections.
 ---
 
