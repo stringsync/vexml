@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- A four-note half-note chord (C5/E5/G5/C6) where all four members tie. The lower
+         half (C5, E5) bows under and the upper half (G5, C6) bows over, so the ties split
+         two-under / two-over around the chord's center across a one-octave spread. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

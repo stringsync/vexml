@@ -160,24 +160,39 @@ const TEST_CASES = [
 	// systems.
 	testCase('ledger_lines.musicxml', 'ledger_lines.png'),
 
-	// Treble stave, 4/4: ties, single notes then chords of increasing size.
+	// Treble stave, 4/4: ties on single notes (the tied-chord variants live in the
+	// tie_chord_* fixtures below).
 	// - M1: two half notes tied within the measure.
 	// - M2-3: a whole note tied into the next whole note across a system break — M2 ends one
 	//   system and M3 begins the next, so the tie splits into two partial arcs: one bowing off
 	//   the right edge of M2 ("tie to nothing") and one bowing in from the left edge of M3
 	//   ("tie from nothing"), rather than one line slanting down across the page.
-	// - M4: two stem-up half-note chords (C5/E5/G5) with all three members tied — the bottom
-	//   member (C5) bows under (concave up) and the upper two (E5, G5) bow over (concave
-	//   down), sandwiching the chord while the over-arcs clear the up-stems.
-	// - M5: a two-note chord (C5/E5) with both members tied — the lower bows under (concave
-	//   up), the upper bows over (concave down), so the ties diverge from the chord center.
-	// - M6: a four-note chord (C5/E5/G5/C6) with all members tied — the lower half (C5, E5)
-	//   bows under and the upper half (G5, C6) bows over, a two-under / two-over split.
-	// - M7: spacing variant — a two-note second (C5/D5) with both members tied; the second
-	//   offsets the noteheads across the stem, C5 bowing under and D5 over.
-	// - M8: spacing variant — a four-note cluster of stacked seconds (C5/D5/E5/F5) with all
-	//   members tied; zig-zag offset noteheads, lower half under and upper half over.
 	testCase('tie.musicxml', 'tie.png'),
+
+	// Treble stave, 4/4, one measure: two stem-up half-note chords (C5/E5/G5) with all three
+	// members tied — the bottom member (C5) bows under (concave up) and the upper two (E5, G5)
+	// bow over (concave down), sandwiching the chord while the over-arcs clear the up-stems.
+	testCase('tie_chord_triad.musicxml', 'tie_chord_triad.png'),
+
+	// Treble stave, 4/4, one measure: a two-note chord (C5/E5) with both members tied — the
+	// lower bows under (concave up), the upper bows over (concave down), so the ties diverge
+	// from the chord center.
+	testCase('tie_chord_dyad.musicxml', 'tie_chord_dyad.png'),
+
+	// Treble stave, 4/4, one measure: a four-note chord (C5/E5/G5/C6) with all members tied —
+	// the lower half (C5, E5) bows under and the upper half (G5, C6) bows over, a two-under /
+	// two-over split across a one-octave spread.
+	testCase('tie_chord_octave.musicxml', 'tie_chord_octave.png'),
+
+	// Treble stave, 4/4, one measure: spacing variant — a two-note second (C5/D5) with both
+	// members tied; the second offsets the noteheads across the stem, C5 bowing under and D5
+	// over.
+	testCase('tie_chord_second.musicxml', 'tie_chord_second.png'),
+
+	// Treble stave, 4/4, one measure: spacing variant — a four-note cluster of stacked seconds
+	// (C5/D5/E5/F5) with all members tied; zig-zag offset noteheads, lower half under and upper
+	// half over.
+	testCase('tie_chord_cluster.musicxml', 'tie_chord_cluster.png'),
 
 	// Slurs, with the quarter-note measures grouped first. Wraps across systems.
 	// - M1: four quarters, slur below (default).

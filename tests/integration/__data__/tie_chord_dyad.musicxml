@@ -6,7 +6,9 @@
     </score-part>
   </part-list>
   <part id="P1">
-    <!-- M1: two half notes tied within the measure. -->
+    <!-- A two-note half-note chord (C5/E5) where both members tie to the next chord. The
+         lower member (C5) bows under (concave up) and the upper member (E5) bows over
+         (concave down), so the two ties diverge away from the chord's center. -->
     <measure number="1">
       <attributes>
         <divisions>2</divisions>
@@ -28,29 +30,26 @@
         <notations><tied type="start" /></notations>
       </note>
       <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
         <pitch><step>C</step><octave>5</octave></pitch>
         <duration>4</duration>
         <tie type="stop" />
         <type>half</type>
         <notations><tied type="stop" /></notations>
       </note>
-    </measure>
-    <!-- M2-M3: a whole note tied across the barline into the next whole note. -->
-    <measure number="2">
       <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>8</duration>
-        <tie type="start" />
-        <type>whole</type>
-        <notations><tied type="start" /></notations>
-      </note>
-    </measure>
-    <measure number="3">
-      <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>8</duration>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
         <tie type="stop" />
-        <type>whole</type>
+        <type>half</type>
         <notations><tied type="stop" /></notations>
       </note>
     </measure>
