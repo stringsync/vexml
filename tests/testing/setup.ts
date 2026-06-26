@@ -91,6 +91,7 @@ if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 
 // Report registered last so it runs after the cleanup afterAll above.
 afterAll(() => {
+	let first = true;
 	const report = (
 		icon: string,
 		label: string,
@@ -100,6 +101,10 @@ afterAll(() => {
 		if (set.size === 0) {
 			return;
 		}
+		if (!first) {
+			console.log();
+		}
+		first = false;
 		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
 		for (const f of [...set].sort()) {
 			console.log(`    ${path.relative(ROOT, path.join(dir, f))}`);

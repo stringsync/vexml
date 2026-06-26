@@ -209,10 +209,9 @@ const TEST_CASES = [
 	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
 	// - M5: vibrato (wavy line) stretching to the next note or bar's end, whichever comes
 	//   first — string 3 fret 7 runs up to the second note; fret 5 (last) runs to bar end.
-	// - M6: a natural harmonic drawn as its fret in angle brackets ("<12>") — rendered at
-	//   the default thin (unbolded) weight, unlike the surrounding bold frets, so the
-	//   brackets stay narrow and clear the start barline. Then text annotations above the
-	//   frets — a palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
+	// - M6: a leading quarter rest, then text annotations above the frets — a palm mute
+	//   "P.M." and a dead note "x" (both string 3, fret 7) via <other-technical> — then a
+	//   trailing quarter rest. (Natural harmonics live in their own fixture, tab_harmonic.)
 	// - M7: a grace note slurred to its main note — a slur curves from the small grace fret 7
 	//   to the fret-5 half note, both on string 3.
 	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
@@ -237,6 +236,19 @@ const TEST_CASES = [
 	//   "0"s beside "2"s.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 
+	// 6-line TAB stave: natural harmonics drawn as the fret in angle brackets. A <harmonic>
+	// in <technical> wraps the fret in <> (src/notes.ts tabPositions); styleFrets bolds the
+	// digit but leaves the brackets thin/unbolded, so a harmonic reads as light "<>" around a
+	// bold fret. No <time>, so no time signature is drawn.
+	// - M1: single-note harmonics, one per beat — "<12>" on string 3 hard against the start
+	//   barline, "<7>" on string 2, "<5>" on string 4, "<12>" on string 1 — exercising bracket
+	//   weight, single- vs double-digit width, and barline clearance of the leading harmonic.
+	// - M2: harmonic chords (every member bracketed) — a 12th-fret triad (strings 3/2/1, three
+	//   stacked "<12>"), a 7th-fret dyad (strings 2/1, "<7>"), a mixed chord ("<12>" on string 3
+	//   over a plain "0" on string 1, so only the harmonic is bracketed), then a 5th-fret triad
+	//   (strings 3/2/1, single-digit "<5>"). Watch the stacked brackets for vertical clashing.
+	testCase('tab_harmonic.musicxml', 'tab_harmonic.png'),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.
@@ -250,9 +262,11 @@ const TEST_CASES = [
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
-	// <harmonic><natural/>) — an open diamond for the half note, then filled diamonds for
-	// the two quarters (the diamond fill follows duration). All on E5 so only the notehead
-	// varies. The tab counterpart (angle-bracketed fret) lives in tab_techniques M6.
+	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
+	// - M1: single notes on E5 — an open diamond for the half note, then filled diamonds for
+	//   the two quarters (the diamond fill follows duration), so only the notehead varies.
+	// - M2: harmonic chords (open diamonds, every member a harmonic) — an E5/G5 dyad a third
+	//   apart, then a C5/E5/G5 triad of three stacked diamonds.
 	testCase('harmonic.musicxml', 'harmonic.png'),
 
 	// Treble stave, 4/4: grace notes (small notes that steal no beat, drawn just left of

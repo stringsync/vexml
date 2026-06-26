@@ -8,8 +8,9 @@
   <part id="P1">
     <!-- Treble 4/4: natural harmonics drawn as diamond noteheads. Each note carries
          <notations><technical><harmonic><natural/>, which src/notes.ts vexflowKey maps to
-         the '/H' notehead code (open diamond for half+/whole, filled for quarter). Stable
-         E5 pitch so only the notehead — and its duration-driven fill — varies. -->
+         the '/H' notehead code (open diamond for half+/whole, filled for quarter).
+         M1 isolates single notes (stable E5, so only the notehead and its duration-driven
+         fill vary); M2 stacks them into chords (every chord member is a harmonic). -->
     <measure number="1">
       <attributes>
         <divisions>2</divisions>
@@ -39,6 +40,43 @@
         <pitch><step>E</step><octave>5</octave></pitch>
         <duration>2</duration>
         <type>quarter</type>
+        <notations><technical><harmonic><natural /></harmonic></technical></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <!-- A two-note harmonic chord (E5/G5) — two open diamonds a third apart. -->
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- A three-note harmonic chord (C5/E5/G5 triad) — three stacked open diamonds. -->
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
         <notations><technical><harmonic><natural /></harmonic></technical></notations>
       </note>
     </measure>

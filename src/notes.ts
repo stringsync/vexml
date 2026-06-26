@@ -5,7 +5,7 @@ import {
 	Articulation,
 	Bend,
 	Dot,
-	type Element,
+	Element,
 	GhostNote,
 	GraceNote,
 	GraceNoteGroup,
@@ -286,6 +286,50 @@ export function getNoteheadHalfWidth(): number {
 	return noteheadHalfWidth;
 }
 
+type FretElement = Element & { fontWeight: string };
+
+// Bold and enlarge a fret digit Element, re-centering it vertically on its string line.
+function boldFret(el: FretElement, scale: number): void {
+	el.fontWeight = 'bold';
+	el.setFontSize(el.fontSizeInPoints * scale);
+	el.setYShift(el.getHeight() / 2);
+}
+
+// One thin (non-bold) angle bracket, sized to match the bolded digits it flanks. Mirrors
+// VexFlow's TabNote.tabToElement so it picks up the default 'TabNote.text' font. The +1
+// drops the bracket a pixel below dead-center so it sits optically level with the heavier
+// bold digits (the thin glyph otherwise reads as floating high).
+function harmonicBracket(glyph: '<' | '>', scale: number): Element {
+	const el = new Element('TabNote.text');
+	el.setText(glyph);
+	el.setFontSize(el.fontSizeInPoints * scale);
+	el.setYShift(el.getHeight() / 2 + 1);
+	return el;
+}
+
+// A natural harmonic fret reads as "<12>": the angle brackets stay thin/unbolded while the
+// fret number inside is bold like an ordinary fret. VexFlow draws one fillText per Element,
+// so a single element can't mix weights — make the parent hold the bold digits and hang the
+// two thin brackets off it as child Elements (renderText draws children with their own
+// font). The pieces lay out left-to-right within the parent's reported width, which
+// drawPositions centers on the note x and clears the staff line behind.
+function styleHarmonicFret(el: FretElement, scale: number): void {
+	const open = harmonicBracket('<', scale);
+	const close = harmonicBracket('>', scale);
+	el.setText(el.getText().replace(/[<>]/g, ''));
+	boldFret(el, scale);
+	const openWidth = open.getWidth();
+	const digitsWidth = el.getWidth();
+	open.setX(0);
+	el.setXShift(openWidth);
+	close.setX(openWidth + digitsWidth);
+	el.addChild(open);
+	el.addChild(close);
+	// Set width last: any font/text change reinvalidates and would recompute it to the bare
+	// digit width, dropping the brackets from centering and the cleared background.
+	el.setWidth(openWidth + digitsWidth + close.getWidth());
+}
+
 // Restyle a TabNote's fret digits in place. VexFlow has no public API to set the
 // 'TabNote.text' metric globally (Metrics isn't exported), so override each fret Element
 // built in the constructor — fretElement is protected, hence the cast. Resizing rebuilds
@@ -296,21 +340,15 @@ function styleFrets(
 	scale = TAB_FRET_SCALE,
 ): void {
 	const note = tabNote as unknown as {
-		fretElement: (Element & { fontWeight: string })[];
+		fretElement: FretElement[];
 		width: number;
 	};
 	let width = 0;
 	for (const el of note.fretElement) {
-		// ponytail: harmonics carry bracket text ("<12>") — left at default thin, unbolded
-		// size so the brackets stay narrow. VexFlow centers the digits on the note x, so the
-		// wide bracketed text overhangs the start barline; nudge it right by half its width to
-		// clear it.
 		if (el.getText().includes('<')) {
-			el.setXShift(el.getWidth() / 2);
+			styleHarmonicFret(el, scale);
 		} else {
-			el.fontWeight = 'bold';
-			el.setFontSize(el.fontSizeInPoints * scale);
-			el.setYShift(el.getHeight() / 2);
+			boldFret(el, scale);
 		}
 		width = Math.max(el.getWidth(), width);
 	}

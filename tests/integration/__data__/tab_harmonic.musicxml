@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave: natural harmonics, notated as the fret in angle brackets, e.g.
+         "<12>". A <harmonic> in <technical> makes tabPositions wrap the fret in <> (see
+         src/notes.ts), and styleFrets draws the digits bold like ordinary frets while the
+         brackets stay thin/unbolded. No <time>, so no time signature is drawn. M1 isolates
+         single-note harmonics; M2 stacks them into chords. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+      </attributes>
+      <!-- Double-digit harmonic against the start barline (string 3, fret 12 -> "<12>"). -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- Single-digit harmonic (string 2, fret 7 -> "<7>"). -->
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>7</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- Single-digit harmonic on a lower string (string 4, fret 5 -> "<5>"). -->
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>4</string><fret>5</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- Double-digit harmonic on the top string (string 1, fret 12 -> "<12>"). -->
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+    </measure>
+    <!-- Harmonic chords: every member carries its own <harmonic>, so each fret gets its own
+         angle brackets. -->
+    <measure number="2">
+      <!-- 12th-fret harmonic triad (strings 3/2/1) — three stacked "<12>". -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- 7th-fret harmonic dyad (strings 2/1) — two stacked "<7>". -->
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>7</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>7</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <!-- Mixed chord: a harmonic (string 3, fret 12 -> "<12>") over a plain open string
+           (string 1, fret 0 -> "0") — only the harmonic member is bracketed. -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>12</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <!-- 5th-fret harmonic triad (strings 3/2/1) — three stacked single-digit "<5>". -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>5</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>5</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>5</fret><harmonic><natural /></harmonic></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
