@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Notation stave over a 6-line TAB stave: the same line duplicated as voice 1
+         (pitched, staff 1) and voice 2 (fretted, staff 2). The voices are formatted
+         together, so a rest must reserve its time on BOTH staves or the tab frets
+         after it slide left and fall out of vertical alignment with the noteheads.
+         Tab convention draws no rest glyph, so the tab rest reserves its beat as
+         blank space. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>TAB</sign><line>5</line></clef>
+        <staff-details number="2"><staff-lines>6</staff-lines></staff-details>
+      </attributes>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <note>
+        <rest /><duration>2</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <backup><duration>8</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <rest /><duration>2</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

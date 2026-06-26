@@ -379,18 +379,21 @@ function vexflowTabGrace(chord: Chord): GraceTabNote {
 // A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
 // chords steal no time, so like vexflowVoiceTickables they're held aside and
 // attached to the next real note as a GraceNoteGroup modifier (drawn just left of
-// it). Unlike vexflowVoiceTickables there's no ghost-note gap filling — the
-// roadmap's tab lines are single-voice and contiguous. `record` captures each
-// chord's lead -> TabNote for later hammer-on/pull-off resolution; the layout pass
-// reuses this to size tab measures and passes none.
+// it). A rest reserves its duration with invisible GhostNotes rather than a drawn
+// rest glyph (tab convention omits rests) — without that reserved time, a tab note
+// after a rest slides left and falls out of vertical alignment with the notation
+// stave it's formatted against. `record` captures each chord's lead -> TabNote for
+// later hammer-on/pull-off resolution; the layout pass reuses this to size tab
+// measures and passes none.
 export function vexflowTabTickables(
 	chords: Chord[],
 	record?: (lead: Note, tabNote: TabNote) => void,
-): TabNote[] {
-	const tickables: TabNote[] = [];
+): StemmableNote[] {
+	const tickables: StemmableNote[] = [];
 	let pendingGrace: { note: GraceTabNote; lead: Note }[] = [];
 	for (const chord of chords) {
 		if (chord.lead.isRest) {
+			tickables.push(...ghostNotes(chord.lead.beats ?? 0));
 			continue;
 		}
 		if (chord.lead.isGrace) {

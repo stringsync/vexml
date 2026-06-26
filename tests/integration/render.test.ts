@@ -308,6 +308,14 @@ const TEST_CASES = [
 	//   (strings 3/2/1, single-digit "<5>"). Watch the stacked brackets for vertical clashing.
 	testCase('tab_harmonic.musicxml', 'tab_harmonic.png'),
 
+	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
+	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
+	// voice reserves the same beat as blank space (tab omits rest glyphs).
+	// - M1: quarter (E4 / fret 0), quarter rest, quarter (G4 / fret 3), quarter (A4 / fret
+	//   5). Each tab fret sits directly under its notehead, with an empty gap on the tab
+	//   stave under the rest — frets read 0, (gap), 3, 5.
+	testCase('tab_notation_rest.musicxml', 'tab_notation_rest.png'),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.
