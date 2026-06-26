@@ -266,7 +266,8 @@ export function vexflowTabChord(chord: Chord): TabNote {
 
 // The default tab fret digits are thin and small — hard to read against the staff
 // lines. Bump them bold and a touch larger.
-const TAB_FRET_SCALE = 1.3;
+// 1.258 * 9pt base ≈ 11.3pt ≈ 15.1px
+const TAB_FRET_SCALE = 1.258;
 
 // Restyle a TabNote's fret digits in place. VexFlow has no public API to set the
 // 'TabNote.text' metric globally (Metrics isn't exported), so override each fret Element

@@ -48,6 +48,7 @@ const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR
 	? path.resolve(process.env.SCREENSHOTS_DIR)
 	: path.resolve(import.meta.dir, '../integration/__screenshots__');
 const DIFF_DIR = path.resolve(import.meta.dir, '../integration/__diffs__');
+const ROOT = path.resolve(import.meta.dir, '../..');
 const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
 
 // Every diff written this run; stale ones are whatever's left over in DIFF_DIR.
@@ -90,7 +91,6 @@ if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 
 // Report registered last so it runs after the cleanup afterAll above.
 afterAll(() => {
-	const root = path.resolve(import.meta.dir, '../..');
 	const report = (
 		icon: string,
 		label: string,
@@ -102,7 +102,7 @@ afterAll(() => {
 		}
 		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
 		for (const f of [...set].sort()) {
-			console.log(`    ${path.relative(root, path.join(dir, f))}`);
+			console.log(`    ${path.relative(ROOT, path.join(dir, f))}`);
 		}
 	};
 	console.log(chalk.bold('\nScreenshot report'));
@@ -164,7 +164,7 @@ expect.extend({
 			return {
 				pass: false,
 				message: () =>
-					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.join(DIFF_DIR, filename)} (3 panels top-to-bottom: old, diff, new)`,
+					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels top-to-bottom: old, diff, new)`,
 			};
 		}
 

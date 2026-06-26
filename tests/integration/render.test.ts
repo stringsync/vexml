@@ -221,6 +221,20 @@ const TEST_CASES = [
 		showTabSlideText: true,
 	}),
 
+	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own
+	// string/fret; members after the first are <chord/>. No <time>, so no time
+	// signature is drawn.
+	// - M1: chord density/layout. Adjacent 3-string triad (strings 3/2/1, frets 0/1/0);
+	//   full 6-string open-E chord (strings 6..1, frets 0/2/2/1/0/0) with a fret on every
+	//   line; a string-skipping chord (strings 5/3/1 open, skipping 4 and 2); a wide
+	//   outer-string dyad (strings 6 and 1 at fret 3) spanning the full stave height.
+	// - M2: a 16th grace note (small fret 4, string 1) just left of a 3-string D-major
+	//   chord (strings 3/2/1, frets 2/3/2); a double-digit-fret chord (strings 3/2/1 all
+	//   at fret 12, two-digit numbers); an adjacent low dyad (strings 5/4, frets 2/2); a
+	//   mixed open/fretted chord on the lower 4 strings (6/5/4/3, frets 0/0/2/2) with
+	//   "0"s beside "2"s.
+	testCase('tab_chord.musicxml', 'tab_chord.png'),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.
