@@ -14,6 +14,7 @@ import {
 	Stave,
 	StaveConnector,
 	type StaveNote,
+	StaveTempo,
 	type TabNote,
 	TabStave,
 	Vibrato,
@@ -26,6 +27,8 @@ import {
 	getNoteheadHalfWidth,
 	meterBeats,
 	staffVoices,
+	type TempoMark,
+	tempoOf,
 	vexflowClef,
 	vexflowTabTickables,
 	vexflowVoiceTickables,
@@ -200,6 +203,40 @@ function formatAndDrawPart(
 		}
 	}
 	return bottom;
+}
+
+// Clearance kept between the bottom of a metronome mark and the top of the first
+// note it sits over.
+const TEMPO_NOTE_CLEARANCE = 6;
+
+// Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
+// clef/key/time (StaveTempo's own placement, over the first note). It normally sits
+// one text line above the staff; if the first note reaches up into that band (a high
+// note with ledger lines), lift the mark with a negative y-shift so its bottom clears
+// the notehead — the layout reserves the matching top headroom. Drawn after the notes
+// are formatted so firstNote's bounding box is real.
+function drawTempo(
+	context: RenderContext,
+	stave: Stave,
+	tempo: TempoMark,
+	firstNote: StaveNote | undefined,
+): void {
+	const baseY = stave.getYForTopText(1);
+	let shiftY = 0;
+	if (firstNote) {
+		const clearY = firstNote.getBoundingBox().getY() - TEMPO_NOTE_CLEARANCE;
+		if (clearY < baseY) {
+			shiftY = clearY - baseY;
+		}
+	}
+	new StaveTempo(
+		{ duration: tempo.duration, bpm: tempo.bpm },
+		stave.getX(),
+		shiftY,
+	)
+		.setStave(stave)
+		.setContext(context)
+		.draw();
 }
 
 // Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
@@ -595,6 +632,15 @@ export function drawScore(
 			);
 			pageBottom = Math.max(pageBottom, noteBottom);
 			systemContentBottom = Math.max(systemContentBottom, noteBottom);
+
+			// A metronome mark (from a <direction><metronome>) prints on this part's top
+			// staff wherever it appears — the piece start or a mid-piece tempo change.
+			// Drawn now that the notes are formatted so it can clear a high first note.
+			const tempo = tempoOf(measure);
+			if (tempo && pendingStaves.length > 0) {
+				const topStave = pendingStaves[0];
+				drawTempo(context, topStave.stave, tempo, topStave.staveNotes[0]);
+			}
 
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).

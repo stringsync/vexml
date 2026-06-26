@@ -21,7 +21,6 @@ program
 		'run unit (src) + integration (visual regression) tests; pattern filters by name',
 	)
 	.option('--update', 'update screenshot baselines')
-	.option('--local', 'run on the host instead of the pinned Docker image')
 	.option('--clean', 'delete orphaned screenshots')
 	.action(async (pattern, opts) => {
 		if (opts.clean && pattern) {
@@ -29,7 +28,6 @@ program
 			process.exit(1);
 		}
 		await test({
-			local: opts.local ?? false,
 			update: opts.update ?? false,
 			clean: opts.clean ?? false,
 			pattern,

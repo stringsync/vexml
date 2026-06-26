@@ -9,7 +9,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 ## Workflow
 
-**Important:** Do not use `vex test --local` for MusicXML screenshot work. Always use the normal `vex test` commands shown below, plus selective `vex test --update <name>` only after reviewing the screenshot output. Do not add `--local` to any command in this workflow.
+**Important:** Use the `vex test` commands shown below, plus selective `vex test --update <name>` only after reviewing the screenshot output.
 
 1. First, check whether an existing test in `tests/integration/` already covers the use case.
    - Inspect the relevant integration case definitions and existing files under `tests/integration/__data__/`.
@@ -38,13 +38,11 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Keep each measure as small as practical while still demonstrating its variant, and the fixture as a whole no larger than its variants require.
    - Keep generated MusicXML fixtures as simple and barebones as possible; inspect nearby existing files and match their minimal structure and style.
 
-3. Run the normal integration test command, not local mode:
+3. Run the integration test command:
 
    ```sh
    vex test
    ```
-
-   Do not use `vex test --local`; it is not appropriate for validating or managing MusicXML screenshot baselines.
 
 4. Interpret screenshot results carefully. Screenshot tests can fail or pass for two different reasons:
    - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` If the user provides a golden-standard image for the case, confirm correctness by comparing it against vexml's render via the describe-measure subagent (see Describing Screenshot Diffs) before accepting. Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
@@ -56,13 +54,11 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - Prefer a minimal, root-cause fix.
    - Keep changes consistent with the existing renderer and test patterns.
 
-6. Run the normal test command again, not local mode:
+6. Run the test command again:
 
    ```sh
    vex test
    ```
-
-   Do not use `vex test --local` when checking rendering changes.
 
 7. The target test may still fail. That is useful if it shows the implementation changed the rendered output.
    - For the target test file, inspect the new render and confirm it matches the intended rendering described by the relevant test comment or TODO.
@@ -115,5 +111,3 @@ Do **not** perform image transformations yourself for diff work. Do not crop, zo
 ## Baseline Update Guidance
 
 Avoid running `vex test --update` for the whole suite unless the change is intentionally global and every affected render has passed the screenshot review checklist. Prefer one-by-one baseline updates after confirming why each render changed.
-
-Never use `vex test --local` as a substitute for review or baseline management; it can hide the behavior this workflow is meant to validate.

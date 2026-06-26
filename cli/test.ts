@@ -1,36 +1,21 @@
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { run } from './run';
 
-const INTEGRATION_TESTS_DIR = 'tests/integration';
-
 export async function test(opts: {
-	local: boolean;
 	update: boolean;
 	clean: boolean;
 	pattern?: string;
 }) {
+	// Tests run in Docker for stable baselines; docker-in-docker isn't supported.
+	if (existsSync('/.dockerenv')) {
+		console.error('vex test: already running inside Docker');
+		process.exit(1);
+	}
 	// No dir: bun discovers every *.test.ts (unit in src/ + integration), skipping
 	// node_modules. bun's -t filters tests by name.
 	const args = opts.pattern ? ['-t', opts.pattern] : [];
-	if (opts.local) {
-		return testLocal(opts, args);
-	} else {
-		return testDocker(opts, args);
-	}
-}
-
-function testLocal(
-	opts: { update: boolean; clean: boolean },
-	testArgs: string[],
-) {
-	// Host pixels differ from the Docker baselines, so compare against a gitignored local set.
-	return run('bun', ['test', ...testArgs], {
-		...process.env,
-		I_AM_RUNNING_TESTS_USING_VEX_TEST: '1',
-		UPDATE_SCREENSHOTS: opts.update ? '1' : '',
-		CLEANUP_ORPHANED_SCREENSHOTS: opts.clean ? '1' : '',
-		SCREENSHOTS_DIR: `${INTEGRATION_TESTS_DIR}/__local_screenshots__`,
-	});
+	return testDocker(opts, args);
 }
 
 async function testDocker(

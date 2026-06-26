@@ -1,4 +1,10 @@
-import type { Chord, Note, Voice as ScoreVoice, Time } from '@stringsync/mdom';
+import type {
+	Chord,
+	Measure,
+	Note,
+	Voice as ScoreVoice,
+	Time,
+} from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -467,6 +473,30 @@ export function meterBeats(time: Time | null): number {
 		return 0;
 	}
 	return (beats / beatType) * 4;
+}
+
+/** A metronome mark: the beat-unit's vexflow duration code plus its bpm. */
+export type TempoMark = { duration: string; bpm: number };
+
+// A measure's metronome mark from the first <direction> that carries a
+// <metronome>, or null when none does. MusicXML's <beat-unit> names ('quarter',
+// 'eighth', 'half', ...) already match StaveTempo's duration codes. bpm comes from
+// <per-minute>, falling back to the <sound tempo>, then to 120 — so a metronome
+// directive without a number still prints "= 120".
+// ponytail: dotted beat-units (<beat-unit-dot/>) ignored; add a `dots` field if a
+// fixture needs a dotted metronome note.
+export function tempoOf(measure: Measure): TempoMark | null {
+	for (const direction of measure.directions) {
+		const metronome = direction.child('direction-type')?.child('metronome');
+		if (!metronome) {
+			continue;
+		}
+		const duration = metronome.child('beat-unit')?.text ?? 'quarter';
+		const perMinute = metronome.child('per-minute')?.text;
+		const sound = direction.child('sound')?.getAttribute('tempo');
+		return { duration, bpm: Number(perMinute ?? sound) || 120 };
+	}
+	return null;
 }
 
 // The beat a measure's voices run out to: the latest onset+duration across them.

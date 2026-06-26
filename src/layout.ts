@@ -5,6 +5,7 @@ import {
 	endBeatOf,
 	meterBeats,
 	staffVoices,
+	tempoOf,
 	vexflowClef,
 	vexflowTabTickables,
 	vexflowVoiceTickables,
@@ -154,7 +155,13 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// brace-joined group reads as one instrument. The left margin leaves room for the
 	// brace/bracket, which draw left of the stave's x.
 	const x = 30;
-	const y = 40;
+	// A metronome mark on the first measure sits above the top staff, so give the
+	// first system extra headroom when one is present (and room to lift the mark
+	// clear of a high first note). Without a tempo the top margin is unchanged.
+	const hasTopTempo = parts.some(
+		(part) => part.measures[0] && tempoOf(part.measures[0]),
+	);
+	const y = hasTopTempo ? 70 : 40;
 	const intraPartSpacing = 120;
 	const interPartSpacing = 80;
 	const measureCount = Math.max(

@@ -14,13 +14,13 @@ import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
 // Guard: tests must go through `vex test`, which renders in the pinned Docker
-// image (or `--local`, a gitignored host baseline set). Bare `bun test` on the
-// host compares against the committed Docker baselines and silently "fails" on
-// font/anti-aliasing differences. vex sets this sentinel; nothing else does.
+// image. Bare `bun test` on the host compares against the committed Docker
+// baselines and silently "fails" on font/anti-aliasing differences. vex sets
+// this sentinel; nothing else does.
 if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	// process.exit, not throw: bun catches a preload throw and runs tests anyway.
 	console.error(
-		'\nRun tests with `vex test` (or `vex test --local`), not `bun test` directly.\n' +
+		'\nRun tests with `vex test`, not `bun test` directly.\n' +
 			'Bare bun test diffs host pixels against the Docker baselines. See cli/test.ts.\n',
 	);
 	process.exit(1);
@@ -56,10 +56,10 @@ function composite(
 	return canvas.toBuffer('image/png');
 }
 
-// Local (host) runs override this so host pixels don't diff against the committed Docker baselines.
-const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR
-	? path.resolve(process.env.SCREENSHOTS_DIR)
-	: path.resolve(import.meta.dir, '../integration/__screenshots__');
+const SCREENSHOTS_DIR = path.resolve(
+	import.meta.dir,
+	'../integration/__screenshots__',
+);
 const DIFF_DIR = path.resolve(import.meta.dir, '../integration/__diffs__');
 const ROOT = path.resolve(import.meta.dir, '../..');
 const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
