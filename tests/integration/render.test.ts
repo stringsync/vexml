@@ -194,22 +194,41 @@ const TEST_CASES = [
 	// half over.
 	testCase('tie_chord_cluster.musicxml', 'tie_chord_cluster.png'),
 
-	// Slurs, with the quarter-note measures grouped first. Wraps across systems.
-	// - M1: four quarters, slur below (default).
-	// - M2: four quarters, slur above.
-	// - M3: four quarters carrying two separate two-note slurs.
-	// - M4: eight beamed eighths under one slur.
-	// - M5: two half notes slurred across a wide leap.
-	// - M6: one slur over a descending line D5, C5, A4, G4 that crosses the middle line,
-	//   so the first two notes are stem-down and the last two stem-up and the slur stays
-	//   clear of both noteheads and the stem-up stem tips.
-	// - M7: one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so
-	//   the stems alternate down-up-down-up under the slur.
-	// - M8: one slur beneath an ascending low line E4, F4, G4, A4 (all stem-up), the
-	//   slur bowing below the noteheads.
-	// - M9: three chained slurs over E4, G4, E5, C5 — a slur below the first pair, a slur
-	//   above the last pair, and a third slur bridging note 2 to note 3.
-	testCase('slur.musicxml', 'slur.png'),
+	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
+	// attribute (default). The stem-down notes push the slur above the noteheads.
+	testCase('slur_default.musicxml', 'slur_default.png'),
+
+	// Treble stave, 4/4: four quarters G5, A5, B5, A5 under one slur with explicit
+	// placement="above" — the slur arcs above the noteheads.
+	testCase('slur_above.musicxml', 'slur_above.png'),
+
+	// Treble stave, 4/4: one slur beneath an ascending low line E4, F4, G4, A4. All
+	// notes sit below the middle line so their stems point up, and the slur bows below
+	// the noteheads (opposite side from the stems).
+	testCase('slur_stem_up.musicxml', 'slur_stem_up.png'),
+
+	// Treble stave, 4/4: one slur over a zig-zag line C5, G4, D5, A4 straddling the
+	// middle line, so the stems alternate down-up-down-up. The slur arcs above, clear of
+	// both the noteheads and the up-stem tips.
+	testCase('slur_mixed_stems.musicxml', 'slur_mixed_stems.png'),
+
+	// Treble stave, 4/4: two half notes A5 and C4 slurred across a wide downward leap —
+	// the slur spans the measure between the distant noteheads.
+	testCase('slur_leap.musicxml', 'slur_leap.png'),
+
+	// Treble stave, 4/4: eight beamed eighths (two four-note beams) under a single slur
+	// arcing above the whole beamed run.
+	testCase('slur_beamed.musicxml', 'slur_beamed.png'),
+
+	// Treble stave, 4/4: four quarters carrying two separate two-note slurs (C5-D5 and
+	// E5-D5) using distinct slur numbers — two short independent arcs above.
+	testCase('slur_multiple.musicxml', 'slur_multiple.png'),
+
+	// Treble stave, 4/4: three chained slurs over E4, G4, E5, C5 — a slur below the
+	// first pair (E4-G4, stem-up), a slur bridging note 2 to note 3 (G4-E5) below, and a
+	// slur above the last pair (E5-C5, stem-down). Overlapping slurs use distinct
+	// numbers, so notes 2 and 3 each carry both a stop and a start.
+	testCase('slur_chained.musicxml', 'slur_chained.png'),
 
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain
 	// <slur>s, the "H"/"P" label inferred from fret motion (higher target = hammer-on,

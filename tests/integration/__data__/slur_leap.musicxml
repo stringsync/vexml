@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Two half notes slurred across a wide leap (A5 down to C4). -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

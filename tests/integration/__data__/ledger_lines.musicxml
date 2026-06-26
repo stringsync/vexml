@@ -6,7 +6,7 @@
     </score-part>
   </part-list>
   <part id="P1">
-    <!-- Ascending quarter notes covering every natural pitch from F3 (three ledger lines below the treble stave) to E6 (three ledger lines above), in 3/4 so each measure holds three notes. -->
+    <!-- Quarter notes that all require ledger lines on the treble stave: F3-C4 below and A5-E6 above. In-stave pitches (D4-G5, which need no ledger lines) are omitted. -->
     <measure number="1">
       <attributes>
         <divisions>1</divisions>
@@ -48,80 +48,17 @@
         <type>quarter</type>
       </note>
       <note>
-        <pitch><step>D</step><octave>4</octave></pitch>
+        <pitch><step>A</step><octave>5</octave></pitch>
         <duration>1</duration>
         <type>quarter</type>
       </note>
     </measure>
     <measure number="3">
       <note>
-        <pitch><step>E</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>F</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>G</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-    </measure>
-    <measure number="4">
-      <note>
-        <pitch><step>A</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>B</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-    </measure>
-    <measure number="5">
-      <note>
-        <pitch><step>D</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>E</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>F</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-    </measure>
-    <measure number="6">
-      <note>
-        <pitch><step>G</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch><step>A</step><octave>5</octave></pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
         <pitch><step>B</step><octave>5</octave></pitch>
         <duration>1</duration>
         <type>quarter</type>
       </note>
-    </measure>
-    <measure number="7">
       <note>
         <pitch><step>C</step><octave>6</octave></pitch>
         <duration>1</duration>
@@ -132,8 +69,20 @@
         <duration>1</duration>
         <type>quarter</type>
       </note>
+    </measure>
+    <measure number="4">
       <note>
         <pitch><step>E</step><octave>6</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <rest/>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <rest/>
         <duration>1</duration>
         <type>quarter</type>
       </note>
