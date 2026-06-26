@@ -71,6 +71,12 @@ export const TAB_GRACE_SCALE = 2 / 3;
 /** Padding added to a tab grace group's width (vexflow's groupSpacingTab is 0). */
 export const TAB_GRACE_SPACING = 14;
 
+/** Top/bottom control points for a tab hammer-on/pull-off arc. vexflow's TabTie
+ * narrows these to 9/11 (a ~1px filled band); widening back to the StaveTie default
+ * 8/12 gives a ~2px band so the arc weight matches the stave-note slurs. */
+export const TAB_TIE_CP1 = 8;
+export const TAB_TIE_CP2 = 12;
+
 /** Clearance between the bottom of a metronome mark and the top of the first note. */
 export const TEMPO_NOTE_CLEARANCE = 6;
 

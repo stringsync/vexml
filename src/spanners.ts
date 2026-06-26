@@ -15,6 +15,8 @@ import {
 	SLUR_MIN_CP_Y,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
+	TAB_TIE_CP1,
+	TAB_TIE_CP2,
 } from './constants';
 
 // Beams: mdom groups the <beam> runs (measure.beams); map each group's notes to
@@ -244,6 +246,10 @@ export function buildHammerPulls(
 			const tie = hammer
 				? TabTie.createHammeron(notes)
 				: TabTie.createPulloff(notes);
+			// Widen TabTie's narrowed control points so the filled arc is as thick as
+			// the stave-note slurs (vexflow defaults it thinner than a StaveTie).
+			tie.renderOptions.cp1 = TAB_TIE_CP1;
+			tie.renderOptions.cp2 = TAB_TIE_CP2;
 			// The arc always draws; clear the "H"/"P" label when the text is off.
 			if (!showText) {
 				tie.setText('');
