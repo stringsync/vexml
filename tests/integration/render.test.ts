@@ -213,6 +213,8 @@ const TEST_CASES = [
 	//   the default thin (unbolded) weight, unlike the surrounding bold frets, so the
 	//   brackets stay narrow and clear the start barline. Then text annotations above the
 	//   frets — a palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
+	// - M7: a grace note slurred to its main note — a slur curves from the small grace fret 7
+	//   to the fret-5 half note, both on string 3.
 	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
 
 	// Same fixture with showTabSlideText: true — the "sl." labels print above the M2
@@ -261,6 +263,14 @@ const TEST_CASES = [
 	//   sharing one grace beam; then an unslashed 8th D5 (single flag).
 	// - M2: grace notes carrying printed accidentals — a sharp D#5 grace, then a flat Db5
 	//   grace, each before a C5 quarter; a half rest fills the rest of the bar.
+	// - M3: a grace note slurred to its main note — an 8th D5 grace whose slur hugs underneath,
+	//   running head-to-head down to the C5 quarter (stem down); a dotted-half rest fills the bar.
+	// - M4: the same, but the main note's stem faces the other way — an 8th D5 grace slurred
+	//   under to an E4 quarter (stem up); the slur still hugs the noteheads, clearing the up-stem.
+	// - M5: a placement override — an 8th D5 grace forced above (placement="above"), so the slur
+	//   arcs over the top to the C5 quarter instead of hugging under.
+	// - M6: a multi-grace slur — a beamed grace pair (E5, D5) with one arc spanning from the first
+	//   grace under to the C5 quarter.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing

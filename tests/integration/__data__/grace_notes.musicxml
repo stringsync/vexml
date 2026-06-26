@@ -101,5 +101,104 @@
         <type>half</type>
       </note>
     </measure>
+    <!-- M3: a grace note slurred to its main note — an 8th D5 grace with a slur
+         that hugs underneath, running head-to-head down to the C5 quarter (stem
+         down); a dotted-half rest fills the bar. -->
+    <measure number="3">
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M4: same grace slur but the main note's stem faces the other way — an 8th
+         D5 grace slurred under to an E4 quarter (stem up). The slur still hugs the
+         noteheads, clearing the up-stem; a dotted-half rest fills the bar. -->
+    <measure number="4">
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M5: a placement override — an 8th D5 grace forced above (placement="above")
+         so the slur arcs over the top to the C5 quarter instead of hugging under; a
+         dotted-half rest fills the bar. -->
+    <measure number="5">
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slur number="1" type="start" placement="above" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M6: a multi-grace slur — a beamed grace pair (E5, D5) with the slur starting
+         on the first grace and running under to the C5 quarter, so one arc spans the
+         whole ornament; a dotted-half rest fills the bar. -->
+    <measure number="6">
+      <note>
+        <grace />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
   </part>
 </score-partwise>

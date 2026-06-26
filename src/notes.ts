@@ -335,13 +335,13 @@ export function vexflowTabTickables(
 	record?: (lead: Note, tabNote: TabNote) => void,
 ): TabNote[] {
 	const tickables: TabNote[] = [];
-	let pendingGrace: GraceTabNote[] = [];
+	let pendingGrace: { note: GraceTabNote; lead: Note }[] = [];
 	for (const chord of chords) {
 		if (chord.lead.isRest) {
 			continue;
 		}
 		if (chord.lead.isGrace) {
-			pendingGrace.push(vexflowTabGrace(chord));
+			pendingGrace.push({ note: vexflowTabGrace(chord), lead: chord.lead });
 			continue;
 		}
 		const tabNote = vexflowTabChord(chord);
@@ -349,11 +349,16 @@ export function vexflowTabTickables(
 			// No beamNotes() unlike the standard-notation path: tab grace notes have no
 			// stem to anchor a beam, so beaming floats it off the staff — they render as
 			// plain small fret numbers.
-			const group = new GraceNoteGroup(pendingGrace);
+			const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 			// preFormat now so the width pad survives format()'s preFormatted guard.
 			group.preFormat();
 			group.setWidth(group.getWidth() + TAB_GRACE_SPACING);
 			tabNote.addModifier(group, 0);
+			// Record grace leads too so a slur from a grace note to its main note
+			// resolves in buildHammerPulls (the GraceTabNote is a valid tie endpoint).
+			for (const g of pendingGrace) {
+				record?.(g.lead, g.note);
+			}
 			pendingGrace = [];
 		}
 		record?.(chord.lead, tabNote);
@@ -464,6 +469,11 @@ export function vexflowVoiceTickables(
 				group.beamNotes();
 			}
 			staveNote.addModifier(group, 0);
+			// Record grace leads too so a slur from a grace note to its main note
+			// resolves in buildSlurs (the GraceNote is a valid Curve endpoint).
+			for (const g of pendingGrace) {
+				record?.(g.lead, g.note);
+			}
 			pendingGrace = [];
 		}
 		record?.(chord.lead, staveNote);

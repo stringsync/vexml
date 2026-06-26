@@ -195,5 +195,27 @@
         <type>quarter</type>
       </note>
     </measure>
+    <!-- A grace (string 3, fret 7) slurred to its main note (fret 5) — a slur line
+         curves from the small grace fret to the half note. -->
+    <measure number="7">
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <notations>
+          <technical><string>3</string><fret>7</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

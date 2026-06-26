@@ -20,6 +20,10 @@ export function buildBeams(
 	const beams: Beam[] = [];
 	for (const group of groups) {
 		const notes = group
+			// Grace notes are beamed by their own GraceNoteGroup; they live in byLead
+			// only for slur resolution, so skip them here to avoid a second, conflicting
+			// auto-stemmed beam drawn over the ornament.
+			.filter((note) => !note.isGrace)
 			.map((note) => byLead.get(note))
 			.filter((note): note is StaveNote => note !== undefined);
 		if (notes.length > 1) {
@@ -242,6 +246,7 @@ export function buildSlurs(
 	const slurs: Curve[] = [];
 	chords.forEach((chord, i) => {
 		const from = byLead.get(chord.lead);
+		const isGrace = chord.lead.isGrace;
 		for (const slur of chord.lead.slurs) {
 			if (slur.slurType !== 'start' || !slur.partner || !from) {
 				continue;
@@ -261,20 +266,27 @@ export function buildSlurs(
 					: [from, to];
 
 			// Bulge up for placement="above", down for "below", otherwise opposite the
-			// stems (slurs sit on the notehead side). The opening direction forces the
-			// arc's sign even when the two endpoints' stems disagree.
+			// stems (slurs sit on the notehead side). Grace-to-main slurs default below
+			// (under the grace, down to the main notehead) when unspecified. The opening
+			// direction forces the arc's sign even when the two endpoints' stems disagree.
 			const bulgeUp =
 				slur.placement === 'above'
 					? true
 					: slur.placement === 'below'
 						? false
-						: from.getStemDirection() !== 1;
+						: isGrace
+							? false
+							: from.getStemDirection() !== 1;
 
 			// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
 			// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
 			// (outer notehead). This keeps an "above" slur on stem-down notes pinned to
-			// the noteheads instead of the stem tips below them.
+			// the noteheads instead of the stem tips below them. A grace-to-main slur
+			// always hugs the noteheads so it runs head-to-head regardless of stems.
 			const metric = (note: StaveNote) => {
+				if (isGrace) {
+					return Curve.Position.NEAR_HEAD;
+				}
 				const stemUp = note.getStemDirection() === 1;
 				return stemUp === bulgeUp
 					? Curve.Position.NEAR_TOP
@@ -285,18 +297,28 @@ export function buildSlurs(
 			// in the span and bows well off the noteheads. yShift raises the endpoints
 			// off the notes; 0.75*cps.y is the extra rise the cubic bezier gains at its
 			// midpoint. The arc height also grows with the slur's width so long slurs get
-			// a rounder, taller bow instead of a flat line skimming the noteheads.
+			// a rounder, taller bow instead of a flat line skimming the noteheads. A grace
+			// slur clears the grace cluster's full extent (its flag/beam may hang past the
+			// noteheads) but only the main note's notehead, so it tucks under the heads
+			// instead of chasing the main note's full stem.
+			const extentsOf = (n: StaveNote) => {
+				if (isGrace && n === to) {
+					const { yTop, yBottom } = n.getNoteHeadBounds();
+					return { top: yTop, bottom: yBottom };
+				}
+				return noteExtents(n);
+			};
 			const yShift = 12;
 			const margin = 14;
 			const width = Math.abs(to.getTieLeftX() - from.getTieRightX());
-			const fromY = noteExtents(from);
-			const toY = noteExtents(to);
+			const fromY = extentsOf(from);
+			const toY = extentsOf(to);
 			const midEnd = bulgeUp
 				? (fromY.top + toY.top) / 2
 				: (fromY.bottom + toY.bottom) / 2;
 			const extreme = bulgeUp
-				? Math.min(...span.map((n) => noteExtents(n).top))
-				: Math.max(...span.map((n) => noteExtents(n).bottom));
+				? Math.min(...span.map((n) => extentsOf(n).top))
+				: Math.max(...span.map((n) => extentsOf(n).bottom));
 			const need = Math.abs(midEnd - extreme) + margin;
 			const cpY = Math.max(16, width * 0.12, (need - yShift) / 0.75);
 
