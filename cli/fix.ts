@@ -8,4 +8,6 @@ export async function fix({ check }: { check: boolean }) {
 		'.',
 	]);
 	await run('bunx', ['tsc', '--noEmit']);
+	// Validate all .musicxml fixtures against the MusicXML XSD.
+	await run('./xmllint/validate.sh', []);
 }

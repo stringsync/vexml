@@ -171,9 +171,9 @@ const TEST_CASES = [
 	//   system and M3 begins the next, so the tie splits into two partial arcs: one bowing off
 	//   the right edge of M2 ("tie to nothing") and one bowing in from the left edge of M3
 	//   ("tie from nothing"), rather than one line slanting down across the page.
-	// - M4: two stem-up half-note chords (C5/E5/G5); the upper two members (E5, G5) carry
-	//   tie arcs to the next chord while the bottom member (C5) has none. The arcs bow over
-	//   the top (concave down) instead of tucking under the up-stems.
+	// - M4: two stem-up half-note chords (C5/E5/G5) with all three members tied — the bottom
+	//   member (C5) bows under (concave up) and the upper two (E5, G5) bow over (concave
+	//   down), sandwiching the chord while the over-arcs clear the up-stems.
 	// - M5: a two-note chord (C5/E5) with both members tied — the lower bows under (concave
 	//   up), the upper bows over (concave down), so the ties diverge from the chord center.
 	// - M6: a four-note chord (C5/E5/G5/C6) with all members tied — the lower half (C5, E5)

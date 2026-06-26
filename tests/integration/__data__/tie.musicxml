@@ -54,15 +54,18 @@
         <notations><tied type="stop" /></notations>
       </note>
     </measure>
-    <!-- M4: two stem-up half-note chords (C5/E5/G5); the upper two members (E5, G5) tie
-         to the next chord while the bottom member (C5) does not. The tie arcs bow over
-         the top (concave down) rather than tucking under the up-stems. -->
+    <!-- M4: two stem-up half-note chords (C5/E5/G5) with all three members tied to the next
+         chord. The bottom member (C5) bows under (concave up) while the upper two (E5, G5)
+         bow over (concave down), so the ties sandwich the chord — the over-arcs clearing the
+         up-stems rather than tucking under them. -->
     <measure number="4">
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
         <duration>4</duration>
+        <tie type="start" />
         <type>half</type>
         <stem>up</stem>
+        <notations><tied type="start" /></notations>
       </note>
       <note>
         <chord/>
@@ -85,8 +88,10 @@
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
         <duration>4</duration>
+        <tie type="stop" />
         <type>half</type>
         <stem>up</stem>
+        <notations><tied type="stop" /></notations>
       </note>
       <note>
         <chord/>
