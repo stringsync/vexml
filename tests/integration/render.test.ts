@@ -359,6 +359,11 @@ const TEST_CASES = [
 	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
 		measureNumbering: 'every-3',
 	}),
+
+	// It should render the score 'aloof'.
+	// TODO: False positive: This was just rendered to get an initial idea of how this library will
+	// render it. Work with the user to figure out what each measure is supposed to look like.
+	testCase('aloof.musicxml', 'aloof.png'),
 ];
 
 for (const t of TEST_CASES) {
