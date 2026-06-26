@@ -89,11 +89,13 @@ export function buildTies(
 	// to its StaveNote and notehead index — the tie must land on the right notehead,
 	// and its partner may itself be a chord member.
 	const placement = new Map<Note, { staveNote: StaveNote; index: number }>();
+	const chordOf = new Map<Note, Chord>();
 	for (const chord of chords) {
 		const staveNote = byLead.get(chord.lead);
 		if (staveNote) {
 			chord.notes.forEach((note, index) => {
 				placement.set(note, { staveNote, index });
+				chordOf.set(note, chord);
 			});
 		}
 	}
@@ -104,7 +106,16 @@ export function buildTies(
 		for (const note of chord.notes) {
 			const from = placement.get(note);
 			for (const tie of note.ties) {
-				const to = tie.partner && placement.get(tie.partner.note);
+				// A tie always joins two notes of the same pitch. When the partner is a
+				// chord, mdom can't tell which member it lands on — chord <tied>s usually
+				// share number "1", so partner() pairs every start to the chord's first
+				// stop. Re-resolve to the same-pitch member so the tie hits the right
+				// notehead.
+				const partnerNote =
+					(tie.partner &&
+						samePitchMember(note, chordOf.get(tie.partner.note))) ??
+					tie.partner?.note;
+				const to = partnerNote && placement.get(partnerNote);
 				if (tie.tieType !== 'start' || !from || !to) {
 					continue;
 				}
@@ -159,6 +170,23 @@ export function buildTies(
 		}
 	}
 	return ties;
+}
+
+// The member of `chord` whose pitch matches `note` (a tie's two ends are always the
+// same pitch), or null when there's no chord or no match.
+function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
+	const p = note.pitch;
+	if (!chord || !p) {
+		return null;
+	}
+	return (
+		chord.notes.find(
+			(n) =>
+				n.pitch?.step === p.step &&
+				n.pitch?.octave === p.octave &&
+				n.pitch?.alter === p.alter,
+		) ?? null
+	);
 }
 
 // An explicit hammer-on/pull-off marker in <notations><technical>, or null when
