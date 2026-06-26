@@ -14,13 +14,13 @@
       <attributes>
         <divisions>1</divisions>
         <staves>1</staves>
-        <staff-details>
-          <staff-lines>6</staff-lines>
-        </staff-details>
         <clef>
           <sign>TAB</sign>
           <line>5</line>
         </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
       </attributes>
       <!-- Adjacent 3-string triad on strings 3/2/1 (frets 0/1/0) — C major. -->
       <note>

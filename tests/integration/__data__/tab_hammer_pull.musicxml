@@ -13,13 +13,13 @@
       <attributes>
         <divisions>1</divisions>
         <staves>1</staves>
-        <staff-details>
-          <staff-lines>6</staff-lines>
-        </staff-details>
         <clef>
           <sign>TAB</sign>
           <line>5</line>
         </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
       </attributes>
       <!-- string 2, fret 5 -> 7: ascending, so a hammer-on ("H"). -->
       <note>

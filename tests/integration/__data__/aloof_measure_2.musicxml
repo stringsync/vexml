@@ -52,34 +52,7 @@
      <sign>TAB</sign>
      <line>5</line>
     </clef>
-    <staff-details number="1">d<?GP
-<root>
-<staff-tuning line="1">
-<tuning-step>E</tuning-step>
-<tuning-octave>2</tuning-octave>
-</staff-tuning>
-<staff-tuning line="2">
-<tuning-step>A</tuning-step>
-<tuning-octave>2</tuning-octave>
-</staff-tuning>
-<staff-tuning line="3">
-<tuning-step>D</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="4">
-<tuning-step>G</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="5">
-<tuning-step>B</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="6">
-<tuning-step>E</tuning-step>
-<tuning-octave>4</tuning-octave>
-</staff-tuning>
-</root>
-?>
+    <staff-details number="1">
     </staff-details>
     <staff-details number="2">
      <staff-lines>6</staff-lines>
@@ -127,12 +100,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>5</string>
-<fret>4</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -150,12 +118,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>2</string>
-<fret>5</fret>
-</root>
-?>
+     <technical>
      </technical>
      <tied type="start"/>
     </notations>
@@ -175,12 +138,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>1</string>
-<fret>4</fret>
-</root>
-?>
+     <technical>
      </technical>
      <tied type="start"/>
     </notations>
@@ -198,12 +156,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>2</string>
-<fret>5</fret>
-</root>
-?>
+     <technical>
      </technical>
      <tied type="stop"/>
     </notations>
@@ -223,12 +176,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>1</string>
-<fret>4</fret>
-</root>
-?>
+     <technical>
      </technical>
      <tied type="stop"/>
     </notations>
@@ -247,12 +195,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>4</string>
-<fret>6</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -277,12 +220,7 @@
     <beam number="1">begin</beam>
     <notations>
      <technical>
-      <hammer-on number="1" type="start">H</hammer-on>d<?GP
-<root>
-<string>2</string>
-<fret>5</fret>
-</root>
-?>
+      <hammer-on number="1" type="start">H</hammer-on>
      </technical>
      <slur type="start"/>
     </notations>
@@ -302,12 +240,7 @@
     <beam number="1">end</beam>
     <notations>
      <technical>
-      <hammer-on number="1" type="stop"/>d<?GP
-<root>
-<string>2</string>
-<fret>7</fret>
-</root>
-?>
+      <hammer-on number="1" type="stop"/>
      </technical>
      <slur type="stop"/>
     </notations>
@@ -327,12 +260,7 @@
     <beam number="1">begin</beam>
     <notations>
      <technical>
-      <hammer-on number="1" type="start">H</hammer-on>d<?GP
-<root>
-<string>1</string>
-<fret>4</fret>
-</root>
-?>
+      <hammer-on number="1" type="start">H</hammer-on>
      </technical>
      <slur type="start"/>
     </notations>
@@ -351,12 +279,7 @@
     <beam number="1">end</beam>
     <notations>
      <technical>
-      <hammer-on number="1" type="stop"/>d<?GP
-<root>
-<string>1</string>
-<fret>5</fret>
-</root>
-?>
+      <hammer-on number="1" type="stop"/>
      </technical>
      <slur type="stop"/>
     </notations>

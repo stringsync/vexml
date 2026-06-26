@@ -9,13 +9,13 @@
     <measure number="1">
       <attributes>
         <staves>1</staves>
-        <staff-details>
-          <staff-lines>4</staff-lines>
-        </staff-details>
         <clef>
           <sign>TAB</sign>
           <line>3</line>
         </clef>
+        <staff-details>
+          <staff-lines>4</staff-lines>
+        </staff-details>
       </attributes>
     </measure>
   </part>

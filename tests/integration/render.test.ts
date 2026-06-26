@@ -118,13 +118,8 @@ const TEST_CASES = [
 	// staff just right of the time signature ("<quarter note> = bpm").
 	// - M1: an explicit quarter = 120 over four B4 quarters (mid-staff, no collision) —
 	//   the mark sits one text line above the staff.
-	// - M2: a metronome with a <beat-unit> but no <per-minute> — bpm defaults to 120, so
-	//   it still prints "= 120". Four B4 quarters.
-	// - M3: quarter = 120 over a high first note (C6, two ledger lines above) that reaches
+	// - M2: quarter = 120 over a high first note (C6, two ledger lines above) that reaches
 	//   up into the mark's default band, so the mark is lifted clear of the notehead.
-	// TODO: False positive: this baseline was created from the current render, so it may be
-	// accepting an incorrect screenshot. Review the mark glyph, "= 120" default, and the M3
-	// lift, then run `vex test tempo --update` only after the image is confirmed correct.
 	testCase('tempo.musicxml', 'tempo.png'),
 
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note

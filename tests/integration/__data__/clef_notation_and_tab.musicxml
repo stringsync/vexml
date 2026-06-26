@@ -16,9 +16,6 @@
           <beat-type>4</beat-type>
         </time>
         <staves>2</staves>
-        <staff-details number="2">
-          <staff-lines>6</staff-lines>
-        </staff-details>
         <clef number="1">
           <sign>G</sign>
           <line>2</line>
@@ -27,6 +24,9 @@
           <sign>TAB</sign>
           <line>5</line>
         </clef>
+        <staff-details number="2">
+          <staff-lines>6</staff-lines>
+        </staff-details>
       </attributes>
     </measure>
   </part>

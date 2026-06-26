@@ -53,34 +53,7 @@
      <sign>TAB</sign>
      <line>5</line>
     </clef>
-    <staff-details number="1">d<?GP
-<root>
-<staff-tuning line="1">
-<tuning-step>E</tuning-step>
-<tuning-octave>2</tuning-octave>
-</staff-tuning>
-<staff-tuning line="2">
-<tuning-step>A</tuning-step>
-<tuning-octave>2</tuning-octave>
-</staff-tuning>
-<staff-tuning line="3">
-<tuning-step>D</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="4">
-<tuning-step>G</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="5">
-<tuning-step>B</tuning-step>
-<tuning-octave>3</tuning-octave>
-</staff-tuning>
-<staff-tuning line="6">
-<tuning-step>E</tuning-step>
-<tuning-octave>4</tuning-octave>
-</staff-tuning>
-</root>
-?>
+    <staff-details number="1">
     </staff-details>
     <staff-details number="2">
      <staff-lines>6</staff-lines>
@@ -128,12 +101,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>5</string>
-<fret>11</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -150,12 +118,7 @@
     <notehead>normal</notehead>
     <staff>1</staff>
     <notations>
-     <technical>d<?GP
-<root>
-<string>4</string>
-<fret>13</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -179,12 +142,7 @@
     <beam number="2">begin</beam>
     <notations>
      <tuplet bracket="yes" placement="below" number="1" type="start"/>
-     <technical>d<?GP
-<root>
-<string>1</string>
-<fret>11</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -207,12 +165,7 @@
     <beam number="1">continue</beam>
     <beam number="2">continue</beam>
     <notations>
-     <technical>d<?GP
-<root>
-<string>1</string>
-<fret>14</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -236,12 +189,7 @@
     <beam number="2">end</beam>
     <notations>
      <tuplet bracket="yes" placement="below" number="1" type="stop"/>
-     <technical>d<?GP
-<root>
-<string>1</string>
-<fret>11</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -260,12 +208,7 @@
     <beam number="1">continue</beam>
     <beam number="2">continue</beam>
     <notations>
-     <technical>d<?GP
-<root>
-<string>2</string>
-<fret>14</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -283,12 +226,7 @@
     <beam number="1">end</beam>
     <beam number="2">end</beam>
     <notations>
-     <technical>d<?GP
-<root>
-<string>2</string>
-<fret>12</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -306,12 +244,7 @@
     <staff>1</staff>
     <beam number="1">begin</beam>
     <notations>
-     <technical>d<?GP
-<root>
-<string>3</string>
-<fret>13</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>
@@ -328,12 +261,7 @@
     <staff>1</staff>
     <beam number="1">end</beam>
     <notations>
-     <technical>d<?GP
-<root>
-<string>2</string>
-<fret>12</fret>
-</root>
-?>
+     <technical>
      </technical>
     </notations>
    </note>

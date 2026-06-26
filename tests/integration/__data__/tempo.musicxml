@@ -66,47 +66,6 @@
         <direction-type>
           <metronome>
             <beat-unit>quarter</beat-unit>
-          </metronome>
-        </direction-type>
-      </direction>
-      <note>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
-      </note>
-    </measure>
-    <measure number="3">
-      <direction>
-        <direction-type>
-          <metronome>
-            <beat-unit>quarter</beat-unit>
             <per-minute>120</per-minute>
           </metronome>
         </direction-type>

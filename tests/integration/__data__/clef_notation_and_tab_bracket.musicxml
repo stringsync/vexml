@@ -16,9 +16,6 @@
         <divisions>1</divisions>
         <staves>2</staves>
         <part-symbol>bracket</part-symbol>
-        <staff-details number="2">
-          <staff-lines>6</staff-lines>
-        </staff-details>
         <clef number="1">
           <sign>G</sign>
           <line>2</line>
@@ -27,6 +24,9 @@
           <sign>TAB</sign>
           <line>5</line>
         </clef>
+        <staff-details number="2">
+          <staff-lines>6</staff-lines>
+        </staff-details>
       </attributes>
       <note>
         <pitch><step>E</step><octave>4</octave></pitch>
