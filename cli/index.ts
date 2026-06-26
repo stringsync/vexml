@@ -1,8 +1,11 @@
 #!/usr/bin/env bun
 import { program } from 'commander';
 import { fix } from './fix';
+import { render } from './render';
 import { test } from './test';
 
+// Where the user actually ran `vex`, before we chdir to the repo root below.
+const invocationDir = process.cwd();
 process.chdir(`${import.meta.dir}/..`);
 
 program.name('vex').description('vexml dev CLI');
@@ -31,6 +34,22 @@ program
 			update: opts.update ?? false,
 			clean: opts.clean ?? false,
 			pattern,
+		});
+	});
+
+program
+	.command('render')
+	.description('render a musicxml file to a png')
+	.requiredOption('-i, --input <path>', 'input musicxml file')
+	.option(
+		'-o, --output <path>',
+		'output png path (default: ./vexml YYYY-MM-DD HH.MM.SS.png)',
+	)
+	.action(async (opts) => {
+		await render({
+			input: opts.input,
+			output: opts.output,
+			cwd: invocationDir,
 		});
 	});
 
