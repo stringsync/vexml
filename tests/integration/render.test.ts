@@ -209,9 +209,10 @@ const TEST_CASES = [
 	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
 	// - M5: vibrato (wavy line) stretching to the next note or bar's end, whichever comes
 	//   first — string 3 fret 7 runs up to the second note; fret 5 (last) runs to bar end.
-	// - M6: a natural harmonic drawn as its fret in angle brackets ("<12>"), then text
-	//   annotations above the frets — a palm mute "P.M." and a dead note "x" (both fret 7),
-	//   then a plain fret-5 note.
+	// - M6: a natural harmonic drawn as its fret in angle brackets ("<12>") — rendered at
+	//   the default thin (unbolded) weight, unlike the surrounding bold frets, so the
+	//   brackets stay narrow and clear the start barline. Then text annotations above the
+	//   frets — a palm mute "P.M." and a dead note "x" (both fret 7), then a plain fret-5 note.
 	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
 
 	// Same fixture with showTabSlideText: true — the "sl." labels print above the M2

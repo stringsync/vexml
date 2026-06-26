@@ -193,10 +193,17 @@ function bendLabel(semitones: number): string {
 
 // A tab-stave text Annotation (palm mute "P.M.", a dead-note "x", …), justified above
 // the fret numbers.
-function tabAnnotation(text: string): Annotation {
-	return new Annotation(text).setVerticalJustification(
+function tabAnnotation(text: string, noteWidth: number): Annotation {
+	const annotation = new Annotation(text).setVerticalJustification(
 		Annotation.VerticalJustify.TOP,
 	);
+	// The fret glyph draws centered on the note's x (drawPositions: tabX = x - width/2), but the
+	// formatter lands an ABOVE annotation half a note-width to the right of it. The modifier
+	// formatter treats xShift as a leftward shift, so half a note-width re-centers the text over
+	// the fret. (Centering is width-independent here, so the text font's measured width — narrow
+	// in the notation-first stack — doesn't affect it.)
+	annotation.setXShift(noteWidth / 2);
+	return annotation;
 }
 
 // Attach the lead note's tablature articulations to its TabNote, reading straight
@@ -220,7 +227,8 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 	}
 	const other = technical?.child('other-technical')?.text;
 	if (other) {
-		tabNote.addModifier(tabAnnotation(other), 0);
+		const noteWidth = (tabNote as unknown as { width: number }).width;
+		tabNote.addModifier(tabAnnotation(other, noteWidth), 0);
 	}
 	if (lead.wavyLines.some((w) => w.wavyLineType === 'start')) {
 		tabNote.addModifier(new Vibrato(), 0);
@@ -251,8 +259,8 @@ export function vexflowTabChord(chord: Chord): TabNote {
 		positions: tabPositions(chord),
 		duration,
 	});
-	addTabModifiers(tabNote, lead);
 	styleFrets(tabNote);
+	addTabModifiers(tabNote, lead);
 	return tabNote;
 }
 
@@ -275,9 +283,17 @@ function styleFrets(
 	};
 	let width = 0;
 	for (const el of note.fretElement) {
-		el.fontWeight = 'bold';
-		el.setFontSize(el.fontSizeInPoints * scale);
-		el.setYShift(el.getHeight() / 2);
+		// ponytail: harmonics carry bracket text ("<12>") — left at default thin, unbolded
+		// size so the brackets stay narrow. VexFlow centers the digits on the note x, so the
+		// wide bracketed text overhangs the start barline; nudge it right by half its width to
+		// clear it.
+		if (el.getText().includes('<')) {
+			el.setXShift(el.getWidth() / 2);
+		} else {
+			el.fontWeight = 'bold';
+			el.setFontSize(el.fontSizeInPoints * scale);
+			el.setYShift(el.getHeight() / 2);
+		}
 		width = Math.max(el.getWidth(), width);
 	}
 	note.width = width;

@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
-// [old][diff][new] side by side, each captioned, returned as a PNG buffer.
+// [old][diff][new] stacked vertically, each captioned, returned as a PNG buffer.
 function composite(
 	expected: PNG,
 	diff: PNG,
@@ -22,11 +22,9 @@ function composite(
 	h: number,
 ): Buffer {
 	const header = 32;
-	const canvas = createCanvas(w * 3, h + header);
+	const cell = h + header;
+	const canvas = createCanvas(w, cell * 3);
 	const ctx = canvas.getContext('2d');
-	ctx.fillStyle = '#fff';
-	ctx.fillRect(0, 0, w * 3, header);
-	ctx.fillStyle = '#000';
 	ctx.font = '24px sans-serif';
 	const panels: [string, PNG][] = [
 		['old', expected],
@@ -34,10 +32,13 @@ function composite(
 		['new', got],
 	];
 	panels.forEach(([label, png], i) => {
-		ctx.fillText(label, i * w + 4, 24);
+		ctx.fillStyle = '#fff';
+		ctx.fillRect(0, i * cell, w, header);
+		ctx.fillStyle = '#000';
+		ctx.fillText(label, 4, i * cell + 24);
 		const img = createImageData(w, h);
 		img.data.set(png.data);
-		ctx.putImageData(img, i * w, header);
+		ctx.putImageData(img, 0, i * cell + header);
 	});
 	return canvas.toBuffer('image/png');
 }
@@ -89,20 +90,26 @@ if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
 
 // Report registered last so it runs after the cleanup afterAll above.
 afterAll(() => {
-	const report = (icon: string, label: string, set: Set<string>) => {
+	const root = path.resolve(import.meta.dir, '../..');
+	const report = (
+		icon: string,
+		label: string,
+		set: Set<string>,
+		dir: string,
+	) => {
 		if (set.size === 0) {
 			return;
 		}
 		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
 		for (const f of [...set].sort()) {
-			console.log(`    ${f}`);
+			console.log(`    ${path.relative(root, path.join(dir, f))}`);
 		}
 	};
 	console.log(chalk.bold('\nScreenshot report'));
-	report(chalk.green('✓'), 'added', added);
-	report(chalk.yellow('↻'), 'updated', updated);
-	report(chalk.red('✗'), 'deleted', deleted);
-	report(chalk.magenta('Δ'), 'diffed', seenDiffs);
+	report(chalk.green('✓'), 'added', added, SCREENSHOTS_DIR);
+	report(chalk.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
+	report(chalk.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
+	report(chalk.magenta('Δ'), 'diffed', seenDiffs, DIFF_DIR);
 	if (added.size + updated.size + deleted.size === 0) {
 		console.log(`${chalk.green('✓')} no screenshot changes`);
 	}
@@ -157,7 +164,7 @@ expect.extend({
 			return {
 				pass: false,
 				message: () =>
-					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.join(DIFF_DIR, filename)} (3 panels left-to-right: old, diff, new)`,
+					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.join(DIFF_DIR, filename)} (3 panels top-to-bottom: old, diff, new)`,
 			};
 		}
 

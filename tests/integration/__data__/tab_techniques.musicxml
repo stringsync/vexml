@@ -159,20 +159,13 @@
         </notations>
       </note>
     </measure>
-    <!-- A natural harmonic, drawn as its fret in angle brackets ("<12>", from <harmonic>),
-         then text annotations above the frets: a palm mute ("P.M.") and a dead note ("x"),
-         both via <other-technical>, then a plain note for contrast. -->
+    <!-- A leading rest, then text annotations above the frets: a palm mute ("P.M.") and a
+         dead note ("x"), both via <other-technical>, then a trailing rest. -->
     <measure number="6">
       <note>
-        <pitch><step>B</step><octave>4</octave></pitch>
+        <rest />
         <duration>1</duration>
         <type>quarter</type>
-        <notations>
-          <technical>
-            <string>3</string><fret>12</fret>
-            <harmonic><natural /></harmonic>
-          </technical>
-        </notations>
       </note>
       <note>
         <pitch><step>D</step><octave>4</octave></pitch>
@@ -197,10 +190,9 @@
         </notations>
       </note>
       <note>
-        <pitch><step>C</step><octave>4</octave></pitch>
+        <rest />
         <duration>1</duration>
         <type>quarter</type>
-        <notations><technical><string>3</string><fret>5</fret></technical></notations>
       </note>
     </measure>
   </part>
