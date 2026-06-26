@@ -79,23 +79,44 @@ export function buildTies(
 	chords: Chord[],
 	byLead: Map<Note, StaveNote>,
 ): StaveTie[] {
+	// Each chord member can carry its own tie, so map every note (not just the lead)
+	// to its StaveNote and notehead index — the tie must land on the right notehead,
+	// and its partner may itself be a chord member.
+	const placement = new Map<Note, { staveNote: StaveNote; index: number }>();
+	for (const chord of chords) {
+		const staveNote = byLead.get(chord.lead);
+		if (staveNote) {
+			chord.notes.forEach((note, index) => {
+				placement.set(note, { staveNote, index });
+			});
+		}
+	}
+
 	const ties: StaveTie[] = [];
 	for (const chord of chords) {
-		const firstNote = byLead.get(chord.lead);
-		for (const tie of chord.lead.ties) {
-			if (tie.tieType !== 'start' || !tie.partner || !firstNote) {
-				continue;
-			}
-			const lastNote = byLead.get(tie.partner.note);
-			if (lastNote) {
-				ties.push(
-					new StaveTie({
-						firstNote,
-						lastNote,
-						firstIndexes: [0],
-						lastIndexes: [0],
-					}),
-				);
+		const heads = chord.notes.length;
+		for (const note of chord.notes) {
+			const from = placement.get(note);
+			for (const tie of note.ties) {
+				const to = tie.partner && placement.get(tie.partner.note);
+				if (tie.tieType !== 'start' || !from || !to) {
+					continue;
+				}
+				const staveTie = new StaveTie({
+					firstNote: from.staveNote,
+					lastNote: to.staveNote,
+					firstIndexes: [from.index],
+					lastIndexes: [to.index],
+				});
+				// A chord member's tie bows away from the chord's center: upper-half
+				// notes arc over the top (direction -1), the lower half under the bottom
+				// (+1). Otherwise vexflow defaults every tie to the stem direction, so a
+				// stem-up chord's top notes would tuck underneath instead of over. Single
+				// notes keep that default (a tie opposite the lone stem).
+				if (heads > 1) {
+					staveTie.setDirection(from.index >= (heads - 1) / 2 ? -1 : 1);
+				}
+				ties.push(staveTie);
 			}
 		}
 	}

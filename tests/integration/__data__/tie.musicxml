@@ -54,5 +54,58 @@
         <notations><tied type="stop" /></notations>
       </note>
     </measure>
+    <!-- M4: two stem-up half-note chords (C5/E5/G5); the upper two members (E5, G5) tie
+         to the next chord while the bottom member (C5) does not. The tie arcs bow over
+         the top (concave down) rather than tucking under the up-stems. -->
+    <measure number="4">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <stem>up</stem>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <stem>up</stem>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <stem>up</stem>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <stem>up</stem>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <stem>up</stem>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <stem>up</stem>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

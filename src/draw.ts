@@ -58,10 +58,28 @@ function timeSignatureSpec(time: Time | null): string | null {
 	return null;
 }
 
-// The stave connector that joins a multi-staff part's own staves, from the first
-// <part-symbol> declared in any measure's attributes. brace (the MusicXML default) for
-// piano grand staves; bracket for guitar notation+tab pairs; null for 'none' (no
-// connector). Other values (line, square) fall back to brace.
+// True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
+// the guitar notation+tab pairing, which is bracketed rather than braced by convention.
+function pairsTabWithNotation(part: Part): boolean {
+	const measure = part.measures[0];
+	if (!measure) {
+		return false;
+	}
+	const signs: string[] = [];
+	for (let staff = 1; staff <= part.staveCount; staff++) {
+		const sign = measure.getClef(String(staff))?.sign;
+		if (sign) {
+			signs.push(sign);
+		}
+	}
+	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
+}
+
+// The stave connector that joins a multi-staff part's own staves. An explicit
+// <part-symbol> in any measure's attributes wins: bracket, none (no connector), or
+// brace (the MusicXML default; line/square fall back to it). With none declared, a
+// guitar notation+tab pair brackets by convention and everything else (piano grand
+// staves, …) braces.
 function partSymbol(part: Part): 'brace' | 'bracket' | null {
 	for (const measure of part.measures) {
 		const symbol = measure.child('attributes')?.child('part-symbol')?.text;
@@ -72,7 +90,7 @@ function partSymbol(part: Part): 'brace' | 'bracket' | null {
 			return symbol === 'bracket' ? 'bracket' : 'brace';
 		}
 	}
-	return 'brace';
+	return pairsTabWithNotation(part) ? 'bracket' : 'brace';
 }
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are

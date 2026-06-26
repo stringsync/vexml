@@ -55,15 +55,17 @@ const TEST_CASES = [
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	testCase('clef_tab_4_string.musicxml', 'clef_tab_4_string.png'),
 
-	// A treble notation stave above a 6-line TAB stave, joined by a brace. 3-sharp key
-	// and 4/4 time: both print on the notation stave only — the TAB stave shows neither
-	// key signature nor time signature, just its stacked "TAB" glyph.
+	// A treble notation stave above a 6-line TAB stave, joined by a bracket (the
+	// notation+tab convention, applied automatically with no <part-symbol> declared).
+	// 3-sharp key and 4/4 time: both print on the notation stave only — the TAB stave
+	// shows neither key signature nor time signature, just its stacked "TAB" glyph.
 	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
 
-	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket
-	// (<part-symbol>bracket</part-symbol>) rather than a brace. 4/4, an ascending line
-	// on string 1 — notation E4/F4/G4/A4 quarters sitting on the treble staff, with the
-	// matching TAB frets 0/1/3/5 below, proving the fret -> pitch mapping.
+	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket, here
+	// stated explicitly via <part-symbol>bracket</part-symbol> (the same connector the
+	// pairing gets by default). 4/4, an ascending line on string 1 — notation E4/F4/G4/A4
+	// quarters sitting on the treble staff, with the matching TAB frets 0/1/3/5 below,
+	// proving the fret -> pitch mapping.
 	testCase(
 		'clef_notation_and_tab_bracket.musicxml',
 		'clef_notation_and_tab_bracket.png',
@@ -167,6 +169,9 @@ const TEST_CASES = [
 	// - M1: two half notes tied within the measure.
 	// - M2-3: a whole note tied across the barline into the next whole note (the tie arc
 	//   spans the barline).
+	// - M4: two stem-up half-note chords (C5/E5/G5); the upper two members (E5, G5) carry
+	//   tie arcs to the next chord while the bottom member (C5) has none. The arcs bow over
+	//   the top (concave down) instead of tucking under the up-stems.
 	testCase('tie.musicxml', 'tie.png'),
 
 	// Slurs, with the quarter-note measures grouped first. Wraps across systems.
