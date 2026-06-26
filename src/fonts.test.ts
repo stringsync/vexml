@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: minimal DOM mocks for unit testing
 import { expect, test } from 'bun:test';
-import { loadFonts, sanitizeFontValue } from './font-loader';
+import { loadFonts, sanitizeFontValue } from './fonts';
 
 test('sanitizeFontValue leaves legitimate family names and urls untouched', () => {
 	expect(sanitizeFontValue('Source Sans 3')).toBe('Source Sans 3');

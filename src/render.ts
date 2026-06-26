@@ -2,7 +2,7 @@ import { MDOMParser, type MDocument } from '@stringsync/mdom';
 import { VexFlow } from 'vexflow';
 import { type Config, DEFAULT_CONFIG } from './config';
 import { drawScore } from './draw';
-import { loadFonts } from './font-loader';
+import { loadFonts } from './fonts';
 import { computeLayout } from './layout';
 
 export async function render(
