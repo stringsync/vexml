@@ -2,6 +2,24 @@ import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
 import { Formatter, Voice } from 'vexflow';
 import type { Config } from './config';
 import {
+	BASE_VOICE_WIDTH,
+	INTER_PART_SPACING,
+	INTRA_PART_SPACING,
+	LABEL_CHAR_WIDTH,
+	LABEL_GAP,
+	LEAD_BARLINE,
+	LEAD_CLEF,
+	LEAD_KEY,
+	LEAD_TIME,
+	PAGE_MARGIN_BOTTOM,
+	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_TOP_WITH_TEMPO,
+	PAGE_MARGIN_X,
+	REFERENCE_WIDTH,
+	SYSTEM_GAP,
+	TAB_MIN_NOTE_SPACING,
+} from './constants';
+import {
 	endBeatOf,
 	meterBeats,
 	staffVoices,
@@ -10,11 +28,6 @@ import {
 	vexflowTabTickables,
 	vexflowVoiceTickables,
 } from './notes';
-
-/** Horizontal gap between a right-aligned part label and the stave it sits beside.
- * Wide enough to clear the brace drawn on multi-stave parts. Shared with draw so the
- * reserved indent and the drawn position agree. */
-export const LABEL_GAP = 28;
 
 /** How measures are placed across systems. */
 export type Layout =
@@ -72,11 +85,6 @@ export type ScoreLayout = {
 	 * drawn notes land where the spacing was computed for. */
 	softmaxFactor: number;
 };
-
-// Minimum width per tab note. vexflow's preCalculateMinTotalWidth packs tab notes
-// by their narrow fret-digit glyphs, which reads as cramped at eighth/sixteenth
-// rhythms; this floors each note's share so dense tab measures still breathe.
-const TAB_MIN_NOTE_SPACING = 32;
 
 /** One stave's inputs to the note-area measurement: the voices to size plus the
  * clef/meter/tab context that shapes their tickables. */
@@ -143,10 +151,8 @@ function measureNoteArea(
 export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const layout = config.layout;
 	const layoutMode = layout.type;
-	// Panoramic computes its own width; 1000 is the page's starting floor.
-	const width = layout.type === 'standard' ? layout.width : 1000;
-	// Absolute floor for a measure's note area.
-	const baseVoiceWidth = 80;
+	// Panoramic computes its own width; REFERENCE_WIDTH is the page's starting floor.
+	const width = layout.type === 'standard' ? layout.width : REFERENCE_WIDTH;
 	const pxPerTick = config.pxPerTick;
 	const softmaxFactor = config.softmaxFactor;
 
@@ -154,16 +160,14 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// Staves within a part sit further apart than the gap between parts, so a
 	// brace-joined group reads as one instrument. The left margin leaves room for the
 	// brace/bracket, which draw left of the stave's x.
-	const x = 30;
+	const x = PAGE_MARGIN_X;
 	// A metronome mark on the first measure sits above the top staff, so give the
 	// first system extra headroom when one is present (and room to lift the mark
 	// clear of a high first note). Without a tempo the top margin is unchanged.
 	const hasTopTempo = parts.some(
 		(part) => part.measures[0] && tempoOf(part.measures[0]),
 	);
-	const y = hasTopTempo ? 70 : 40;
-	const intraPartSpacing = 120;
-	const interPartSpacing = 80;
+	const y = hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP;
 	const measureCount = Math.max(
 		1,
 		...parts.map((part) => part.measures.length),
@@ -180,7 +184,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		const staveCount = Math.max(part.staveCount, 1);
 		for (let s = 0; s < staveCount; s++) {
 			staveOffsets.push(offset);
-			offset += s === staveCount - 1 ? interPartSpacing : intraPartSpacing;
+			offset += s === staveCount - 1 ? INTER_PART_SPACING : INTRA_PART_SPACING;
 		}
 	}
 
@@ -196,13 +200,14 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const labelChars = config.showPartLabels
 		? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
 		: 0;
-	const labelIndent = labelChars > 0 ? labelChars * 7.5 + LABEL_GAP : 0;
+	const labelIndent =
+		labelChars > 0 ? labelChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0;
 	const usableOf = (systemIndex: number) =>
 		systemIndex === 0 ? usable - labelIndent : usable;
 
 	// --- Spacing (content only) ---------------------------------------------------
 	// A measure's note area is a pure function of its music: the musical-time width
-	// (ticks * pxPerTick), floored at the collision-free minimum and baseVoiceWidth.
+	// (ticks * pxPerTick), floored at the collision-free minimum and BASE_VOICE_WIDTH.
 	// One global pxPerTick means identical content is identically wide everywhere in
 	// the piece.
 	const noteAreas = Array.from({ length: measureCount }, (_, m) => {
@@ -227,7 +232,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 				}
 			}
 		}
-		return measureNoteArea(staves, baseVoiceWidth, pxPerTick, softmaxFactor);
+		return measureNoteArea(staves, BASE_VOICE_WIDTH, pxPerTick, softmaxFactor);
 	});
 
 	// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
@@ -235,13 +240,17 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// start; mid-system measures carry only a barline.
 	// ponytail: fixed, deliberately generous estimates so notes never collide with
 	// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
-	const leadCont = 12;
 	const leadFull = (m: number) => {
 		const hasKey = parts.some((part) => part.measures[m]?.getKey()?.rootNote);
-		return 12 + 32 + (hasKey ? 40 : 0) + (m === 0 ? 32 : 0);
+		return (
+			LEAD_BARLINE +
+			LEAD_CLEF +
+			(hasKey ? LEAD_KEY : 0) +
+			(m === 0 ? LEAD_TIME : 0)
+		);
 	};
 	const leadOf = (m: number, systemStart: boolean) =>
-		systemStart ? leadFull(m) : leadCont;
+		systemStart ? leadFull(m) : LEAD_BARLINE;
 
 	// --- Breaks -------------------------------------------------------------------
 	// Standard: wrap to a new system once the next measure's note area would overrun
@@ -254,10 +263,10 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		let row: number[] = [];
 		let rowWidth = 0;
 		for (let m = 0; m < measureCount; m++) {
-			const area = noteAreas[m] ?? baseVoiceWidth;
+			const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
 			if (
 				row.length > 0 &&
-				rowWidth + leadCont + area > usableOf(systems.length)
+				rowWidth + LEAD_BARLINE + area > usableOf(systems.length)
 			) {
 				systems.push(row);
 				row = [];
@@ -281,7 +290,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	let naturalWidth = width;
 	systems.forEach((measures, systemIndex) => {
 		const leads = measures.map((m, i) => leadOf(m, i === 0));
-		const areas = measures.map((m) => noteAreas[m] ?? baseVoiceWidth);
+		const areas = measures.map((m) => noteAreas[m] ?? BASE_VOICE_WIDTH);
 		const areaSum = areas.reduce((sum, a) => sum + a, 0);
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
 		const justify =
@@ -308,12 +317,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		}
 	});
 
-	// SYSTEM_GAP is the visual gap between stacked systems plus room for the next
-	// system's notes that rise above its top staff.
-	// ponytail: fixed upward clearance; pre-measure per-system note extent if an
-	// extreme tessitura ever rises into the system above.
-	const SYSTEM_GAP = 90;
-	const floorHeight = y + offset + 40;
+	const floorHeight = y + offset + PAGE_MARGIN_BOTTOM;
 
 	return {
 		measureCount,

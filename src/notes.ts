@@ -22,6 +22,13 @@ import {
 	TabNote,
 	Vibrato,
 } from 'vexflow';
+import {
+	DEFAULT_TEMPO_BPM,
+	EPSILON,
+	TAB_FRET_SCALE,
+	TAB_GRACE_SCALE,
+	TAB_GRACE_SPACING,
+} from './constants';
 
 // One staff's renderable voices in a measure: voices assigned to this staff that
 // actually carry notes (an empty voice would crash the formatter). The layout
@@ -270,11 +277,6 @@ export function vexflowTabChord(chord: Chord): TabNote {
 	return tabNote;
 }
 
-// The default tab fret digits are thin and small — hard to read against the staff
-// lines. Bump them bold and a touch larger.
-// 1.258 * 9pt base ≈ 11.3pt ≈ 15.1px
-const TAB_FRET_SCALE = 1.258;
-
 // VexFlow draws a TabNote's fret digits — and the staff-line gap it clears behind them —
 // centered on the note's start x, but a StaveNote anchors its notehead's LEFT edge there
 // (the notehead's center sits half a glyph-width to the right). So a fret lines up under
@@ -361,16 +363,6 @@ function styleFrets(
 	note.width = width;
 }
 
-// VexFlow's GraceTabNote.fontScale (2/3) only shrinks the stem; the fret digits are
-// separate Elements typed 'TabNote.text' (fontScale 1.0), so without this they draw
-// full size — same as GraceNote does for standard notation, which scales its glyphs.
-const TAB_GRACE_SCALE = 2 / 3;
-
-// VexFlow's GraceNoteGroup.format uses groupSpacingTab = 0, so tab grace frets butt
-// right up against the main note. Pad the group's reserved width to open Soundslice-
-// style breathing room before the host note (the extra width becomes a trailing gap).
-const TAB_GRACE_SPACING = 14;
-
 // A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
 // note it precedes by vexflowTabTickables. Frets are scaled to TAB_GRACE_SCALE of the
 // (already enlarged) main-note size so graces stay proportionally smaller.
@@ -450,7 +442,7 @@ function ghostNotes(beats: number): GhostNote[] {
 	const ghosts: GhostNote[] = [];
 	let remaining = beats;
 	for (const [duration, value] of GHOST_DURATIONS) {
-		while (remaining >= value - 1e-6) {
+		while (remaining >= value - EPSILON) {
 			ghosts.push(new GhostNote({ duration }));
 			remaining -= value;
 		}
@@ -494,7 +486,7 @@ export function tempoOf(measure: Measure): TempoMark | null {
 		const duration = metronome.child('beat-unit')?.text ?? 'quarter';
 		const perMinute = metronome.child('per-minute')?.text;
 		const sound = direction.child('sound')?.getAttribute('tempo');
-		return { duration, bpm: Number(perMinute ?? sound) || 120 };
+		return { duration, bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM };
 	}
 	return null;
 }
@@ -542,7 +534,7 @@ export function vexflowVoiceTickables(
 			continue;
 		}
 		const onset = chord.measureBeat ?? cursor;
-		if (onset > cursor + 1e-6) {
+		if (onset > cursor + EPSILON) {
 			tickables.push(...ghostNotes(onset - cursor));
 		}
 		const staveNote = vexflowChord(chord, clef);
@@ -567,7 +559,7 @@ export function vexflowVoiceTickables(
 	}
 	// ponytail: trailing grace notes with no following host note are dropped — vexflow
 	// anchors a GraceNoteGroup to the note it precedes. Add an anchor if a fixture needs it.
-	if (endBeat > cursor + 1e-6) {
+	if (endBeat > cursor + EPSILON) {
 		tickables.push(...ghostNotes(endBeat - cursor));
 	}
 	return tickables;

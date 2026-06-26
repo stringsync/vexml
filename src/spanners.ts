@@ -10,6 +10,12 @@ import {
 	type TieNotes,
 	Tuplet,
 } from 'vexflow';
+import {
+	SLUR_MARGIN,
+	SLUR_MIN_CP_Y,
+	SLUR_WIDTH_FACTOR,
+	SLUR_Y_SHIFT,
+} from './constants';
 
 // Beams: mdom groups the <beam> runs (measure.beams); map each group's notes to
 // their StaveNotes. Built before formatting so the beamed notes drop their flags.
@@ -361,8 +367,7 @@ export function buildSlurs(
 				}
 				return noteExtents(n);
 			};
-			const yShift = 12;
-			const margin = 14;
+			const yShift = SLUR_Y_SHIFT;
 			const width = Math.abs(to.getTieLeftX() - from.getTieRightX());
 			const fromY = extentsOf(from);
 			const toY = extentsOf(to);
@@ -372,8 +377,12 @@ export function buildSlurs(
 			const extreme = bulgeUp
 				? Math.min(...span.map((n) => extentsOf(n).top))
 				: Math.max(...span.map((n) => extentsOf(n).bottom));
-			const need = Math.abs(midEnd - extreme) + margin;
-			const cpY = Math.max(16, width * 0.12, (need - yShift) / 0.75);
+			const need = Math.abs(midEnd - extreme) + SLUR_MARGIN;
+			const cpY = Math.max(
+				SLUR_MIN_CP_Y,
+				width * SLUR_WIDTH_FACTOR,
+				(need - yShift) / 0.75,
+			);
 
 			slurs.push(
 				new Curve(from, to, {

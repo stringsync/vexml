@@ -21,7 +21,14 @@ import {
 	Voice,
 } from 'vexflow';
 import type { Config } from './config';
-import { LABEL_GAP, type MeasureNumbering, type ScoreLayout } from './layout';
+import {
+	LABEL_FONT_SIZE,
+	LABEL_GAP,
+	LEDGER_HEADROOM,
+	PAGE_MARGIN_BOTTOM,
+	TEMPO_NOTE_CLEARANCE,
+} from './constants';
+import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
 	endBeatOf,
 	getNoteheadHalfWidth,
@@ -222,10 +229,6 @@ function formatAndDrawPart(
 	}
 	return bottom;
 }
-
-// Clearance kept between the bottom of a metronome mark and the top of the first
-// note it sits over.
-const TEMPO_NOTE_CLEARANCE = 6;
 
 // Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
 // clef/key/time (StaveTempo's own placement, over the first note). It normally sits
@@ -430,9 +433,6 @@ export function drawScore(
 	// real canvas cropped to content. SVG could grow after drawing; canvas can't.
 	const systemCount =
 		boxes.reduce((n, b) => (b ? Math.max(n, b.systemIndex + 1) : n), 0) || 1;
-	// ponytail: per-system slack for content below the stave (deep ledger lines);
-	// bump if an extreme low tessitura ever clips at the scratch canvas bottom.
-	const LEDGER_HEADROOM = 300;
 	const perSystem = floorHeight - layout.top + systemGap + LEDGER_HEADROOM;
 	const scratchHeight = layout.top + systemCount * perSystem;
 
@@ -690,7 +690,7 @@ export function drawScore(
 				partBottom
 			) {
 				context.save();
-				context.setFont(labelFont, 13);
+				context.setFont(labelFont, LABEL_FONT_SIZE);
 				const tw = context.measureText(part.label).width;
 				// Center on the staff lines themselves: top line of the part's first stave
 				// to bottom line of its last, so a single stave centers on its middle line
@@ -749,7 +749,7 @@ export function drawScore(
 	// system aren't clipped and there's no trailing whitespace. Sizing the real
 	// canvas resets it to an identity transform, so the blit copies device pixels
 	// 1:1 from the scratch's top-left; the unused bottom is simply not copied.
-	const cssHeight = Math.max(floorHeight, pageBottom + 40);
+	const cssHeight = Math.max(floorHeight, pageBottom + PAGE_MARGIN_BOTTOM);
 	const dpr = scratch.width / parseFloat(scratch.style.width);
 	canvas.width = scratch.width;
 	canvas.height = Math.round(cssHeight * dpr);
