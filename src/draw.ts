@@ -71,13 +71,26 @@ function partSymbol(part: Part): 'brace' | 'bracket' | null {
 	return 'brace';
 }
 
-// Draw a staff's notes on top of an already-drawn stave. Each mdom voice becomes
-// a vexflow voice; multiple voices are aligned together and stem apart. Beams and
+// One stave's notes, built but not yet formatted or drawn. A part's staves are
+// formatted together (see formatAndDrawPart) so notes at the same tick line up
+// vertically across staves, so the build (voice/spanner construction) is split from
+// the format+draw step.
+type PendingStave = {
+	stave: Stave;
+	isTab: boolean;
+	vexVoices: Voice[];
+	beams: ReturnType<typeof buildBeams>;
+	tuplets: ReturnType<typeof buildTuplets>;
+	// Real notes only (no gap-filling ghosts), for the bottom-bound calc.
+	staveNotes: StaveNote[];
+};
+
+// Build a notation staff's notes into vexflow voices. Each mdom voice becomes a
+// vexflow voice; multiple voices are aligned together and stem apart. Beams and
 // tuplets are per-voice (positional) and built here; ties and slurs can span
 // measures, so the caller resolves them once over the whole score (this only
 // records each chord's StaveNote in the shared `byLead` map).
-function drawNotes(
-	context: RenderContext,
+function buildNotes(
 	stave: Stave,
 	voices: ScoreVoice[],
 	beamGroups: Note[][],
@@ -85,13 +98,12 @@ function drawNotes(
 	softmaxFactor: number,
 	byLead: Map<Note, StaveNote>,
 	meterFloor: number,
-): number {
+): PendingStave {
 	// Floor the run-out beat at the meter so an underfull measure pads trailing
 	// ghosts instead of jamming its last note against the end barline.
 	const endBeat = Math.max(endBeatOf(voices), meterFloor);
-	const perVoice = voices.map((voice) => {
-		// Real notes only (no gap-filling ghosts), for the bottom-bound calc below.
-		const staveNotes: StaveNote[] = [];
+	const staveNotes: StaveNote[] = [];
+	const vexVoices = voices.map((voice) => {
 		const tickables = vexflowVoiceTickables(
 			voice.chords,
 			clef,
@@ -101,11 +113,10 @@ function drawNotes(
 				staveNotes.push(note);
 			},
 		);
-		const vexVoice = new Voice()
+		return new Voice()
 			.setMode(Voice.Mode.SOFT)
 			.setSoftmaxFactor(softmaxFactor)
 			.addTickables(tickables);
-		return { staveNotes, vexVoice };
 	});
 
 	// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
@@ -113,29 +124,70 @@ function drawNotes(
 	const beams = buildBeams(beamGroups, byLead);
 	const tuplets = voices.flatMap((v) => buildTuplets(v.chords, byLead));
 
-	// Fill the stave's note area (its width minus the lead glyphs) with the notes.
-	// The note area was sized to a global px-per-tick, so spacing stays consistent
-	// across measures.
-	const vexVoices = perVoice.map((v) => v.vexVoice);
-	new Formatter({ softmaxFactor })
-		.joinVoices(vexVoices)
-		.formatToStave(vexVoices, stave);
-	for (const vexVoice of vexVoices) {
-		vexVoice.draw(context, stave);
+	return { stave, isTab: false, vexVoices, beams, tuplets, staveNotes };
+}
+
+// Format a part's staves together and draw their notes. A note's absolute x is its
+// (shared) tick-context x plus its own stave's note-start x, so two things must hold
+// for same-tick notes to line up across staves: a single Formatter shares the tick
+// contexts, and every stave starts its note area at the same x. Staves are equalized
+// to the widest note start (a treble clef is wider than the "TAB" glyph) — otherwise
+// the columns shear apart even when the ticks match. Returns the lowest y any note
+// reaches so the page can grow to fit deep ledger lines.
+function formatAndDrawPart(
+	context: RenderContext,
+	pending: PendingStave[],
+	softmaxFactor: number,
+): number {
+	if (pending.length === 0) {
+		return 0;
 	}
 
-	for (const beam of beams) {
-		beam.setContext(context).draw();
-	}
-	for (const tuplet of tuplets) {
-		tuplet.setContext(context).draw();
+	const startX = Math.max(...pending.map((p) => p.stave.getNoteStartX()));
+	let noteEndX = 0;
+	for (const p of pending) {
+		p.stave.setNoteStartX(startX);
+		noteEndX = p.stave.getNoteEndX();
+		for (const vexVoice of p.vexVoices) {
+			vexVoice.setStave(p.stave);
+		}
 	}
 
-	// Lowest y any note reaches, so the page can grow to fit (deep ledger lines
-	// below the staff would otherwise be clipped).
+	// joinVoices per stave (voices on one stave share accidental/stem columns), then
+	// format every voice at once to share tick contexts across staves. The note area
+	// was sized to a global px-per-tick, so spacing stays consistent across measures.
+	const formatter = new Formatter({ softmaxFactor });
+	for (const p of pending) {
+		formatter.joinVoices(p.vexVoices);
+	}
+	const allVoices = pending.flatMap((p) => p.vexVoices);
+	const justifyWidth = noteEndX - startX - Stave.defaultPadding;
+	formatter.format(allVoices, justifyWidth, { context });
+
 	let bottom = 0;
-	for (const v of perVoice) {
-		for (const note of v.staveNotes) {
+	for (const p of pending) {
+		if (p.isTab) {
+			// setStave before stretching so each note's getAbsoluteX() is in true stave
+			// coordinates — the stretch helpers compare it against stave.getNoteEndX().
+			const tabStave = p.stave as TabStave;
+			for (const vexVoice of p.vexVoices) {
+				for (const note of vexVoice.getTickables()) {
+					note.setStave(tabStave);
+				}
+			}
+			stretchVibratos(tabStave, p.vexVoices);
+			stretchBends(tabStave, p.vexVoices);
+		}
+		for (const vexVoice of p.vexVoices) {
+			vexVoice.draw(context, p.stave);
+		}
+		for (const beam of p.beams) {
+			beam.setContext(context).draw();
+		}
+		for (const tuplet of p.tuplets) {
+			tuplet.setContext(context).draw();
+		}
+		for (const note of p.staveNotes) {
 			const box = note.getBoundingBox();
 			bottom = Math.max(bottom, box.getY() + box.getH());
 		}
@@ -143,19 +195,19 @@ function drawNotes(
 	return bottom;
 }
 
-// Draw a tablature staff's notes: each mdom voice becomes a vexflow voice of
-// TabNotes (fret numbers on their strings). Tab notes carry no clef/key, no
-// ghost-note gap filling, and no beams here — the roadmap cases are single-voice
-// fretted lines — so this is a slimmer sibling of drawNotes. Hammer-ons/pull-offs
-// span measures, so the caller resolves them once over the whole score (this only
-// records each chord's TabNote in the shared `byTabLead` map).
-function drawTabNotes(
-	context: RenderContext,
+// Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
+// their strings). Tab notes carry no clef/key, no ghost-note gap filling, and no
+// beams — the roadmap cases are single-voice fretted lines — so this is a slimmer
+// sibling of buildNotes. The bend/vibrato stretching and drawing happen in
+// formatAndDrawPart, after the part's staves are formatted together. Hammer-ons/
+// pull-offs span measures, so the caller resolves them once over the whole score
+// (this only records each chord's TabNote in the shared `byTabLead` map).
+function buildTabNotes(
 	stave: TabStave,
 	voices: ScoreVoice[],
 	softmaxFactor: number,
 	byTabLead: Map<Note, TabNote>,
-): void {
+): PendingStave {
 	const vexVoices = voices.map((voice) =>
 		new Voice()
 			.setMode(Voice.Mode.SOFT)
@@ -166,24 +218,14 @@ function drawTabNotes(
 				),
 			),
 	);
-	new Formatter({ softmaxFactor })
-		.joinVoices(vexVoices)
-		.formatToStave(vexVoices, stave);
-	// setStave before stretching so each note's getAbsoluteX() is in true stave
-	// coordinates — the stretch helpers compare it against stave.getNoteEndX(), which
-	// is absolute. Voice.draw sets the stave again (idempotent). Without this, an
-	// unset stave makes getAbsoluteX() stave-relative, and the last note's bend/vibrato
-	// (clamped to getNoteEndX) overshoots off the page.
-	for (const vexVoice of vexVoices) {
-		for (const note of vexVoice.getTickables()) {
-			note.setStave(stave);
-		}
-	}
-	stretchVibratos(stave, vexVoices);
-	stretchBends(stave, vexVoices);
-	for (const vexVoice of vexVoices) {
-		vexVoice.draw(context, stave);
-	}
+	return {
+		stave,
+		isTab: true,
+		vexVoices,
+		beams: [],
+		tuplets: [],
+		staveNotes: [],
+	};
 }
 
 // VexFlow draws a bend arrow at a fixed ~8px width. A guitar bend reads as sliding
@@ -191,7 +233,7 @@ function drawTabNotes(
 // bar's end if it's the last note (same span as stretchVibratos). The arrow draws
 // from getAbsoluteX() + width + 2 + 3 (TabNote RIGHT modifier x, +3 in Bend.draw),
 // mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
-// is in stave coordinates only because drawTabNotes setStave's the notes first — else
+// is in stave coordinates only because formatAndDrawPart setStave's the notes first — else
 // it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
 // Bend.draw uses each phrase leg's drawWidth, which is protected — hence the cast. A
 // bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
@@ -231,7 +273,7 @@ function stretchBends(stave: TabStave, voices: Voice[]): void {
 // x positions, so this runs after formatToStave: set each Vibrato's width from the
 // fret's right edge to the next note's x (or the stave's note-end x). The Vibrato
 // draws from getAbsoluteX() + width + 2 (TabNote.getModifierStartXY for RIGHT), mirrored
-// here. Like stretchBends, this relies on drawTabNotes having setStave'd the notes so
+// here. Like stretchBends, this relies on formatAndDrawPart having setStave'd the notes so
 // getAbsoluteX() is in stave coordinates and the last note's span clamps to the barline.
 function stretchVibratos(stave: TabStave, voices: Voice[]): void {
 	for (const voice of voices) {
@@ -393,6 +435,9 @@ export function drawScore(
 
 			let partTop: Stave | undefined;
 			let partBottom: Stave | undefined;
+			// A part's staves are built here, then formatted and drawn together below so
+			// notes at the same tick align vertically across staves (notation over tab).
+			const pendingStaves: PendingStave[] = [];
 
 			for (let s = 0; s < staveCount; s++) {
 				const staffNumber = String(s + 1);
@@ -497,35 +542,31 @@ export function drawScore(
 				pageBottom = Math.max(pageBottom, staveBottom);
 				systemContentBottom = Math.max(systemContentBottom, staveBottom);
 
-				// Draw this staff's notes on top of the stave. A TAB stave draws its
-				// notes as fretted TabNotes; everything else uses the notation path.
-				// An empty voice (no chords) would crash the formatter, so it's filtered.
+				// Build this staff's notes; they're formatted and drawn together with the
+				// rest of the part's staves below. A TAB stave builds fretted TabNotes;
+				// everything else uses the notation path. An empty voice (no chords) would
+				// crash the formatter, so it's filtered.
 				const voices = staffVoices(measure.voices, staffNumber);
 				if (isTab && voices.length > 0) {
-					drawTabNotes(
-						context,
-						stave as TabStave,
-						voices,
-						softmaxFactor,
-						byTabLead,
+					pendingStaves.push(
+						buildTabNotes(stave as TabStave, voices, softmaxFactor, byTabLead),
 					);
 					for (const voice of voices) {
 						allTabChords.push(...voice.chords);
 					}
 				} else if (voices.length > 0) {
 					const clefName = clef ? vexflowClef(clef.sign, clef.line) : 'treble';
-					const noteBottom = drawNotes(
-						context,
-						stave,
-						voices,
-						measure.beams,
-						clefName,
-						softmaxFactor,
-						byLead,
-						meterBeats(measure.getTime(staffNumber)),
+					pendingStaves.push(
+						buildNotes(
+							stave,
+							voices,
+							measure.beams,
+							clefName,
+							softmaxFactor,
+							byLead,
+							meterBeats(measure.getTime(staffNumber)),
+						),
 					);
-					pageBottom = Math.max(pageBottom, noteBottom);
-					systemContentBottom = Math.max(systemContentBottom, noteBottom);
 					for (const voice of voices) {
 						allChords.push(...voice.chords);
 					}
@@ -537,6 +578,15 @@ export function drawScore(
 				systemBottom = stave;
 				staveRow++;
 			}
+
+			// Format and draw the part's staves together so same-tick notes line up.
+			const noteBottom = formatAndDrawPart(
+				context,
+				pendingStaves,
+				softmaxFactor,
+			);
+			pageBottom = Math.max(pageBottom, noteBottom);
+			systemContentBottom = Math.max(systemContentBottom, noteBottom);
 
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
