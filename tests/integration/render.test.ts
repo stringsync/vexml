@@ -55,7 +55,9 @@ const TEST_CASES = [
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	testCase('clef_tab_4_string.musicxml', 'clef_tab_4_string.png'),
 
-	// A treble notation stave above a 6-line TAB stave, joined by a brace.
+	// A treble notation stave above a 6-line TAB stave, joined by a brace. 3-sharp key
+	// and 4/4 time: both print on the notation stave only — the TAB stave shows neither
+	// key signature nor time signature, just its stacked "TAB" glyph.
 	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
 
 	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket

@@ -501,10 +501,11 @@ export function drawScore(
 					} else if (clef) {
 						stave.addClef(vexflowClef(clef.sign, clef.line));
 					}
-					if (key?.rootNote) {
+					// Tab staves carry no key signature.
+					if (key?.rootNote && !isTab) {
 						stave.addKeySignature(key.rootNote);
 					}
-				} else if (key?.rootNote && keyChanged) {
+				} else if (key?.rootNote && keyChanged && !isTab) {
 					stave.addKeySignature(key.rootNote);
 				}
 
@@ -515,7 +516,7 @@ export function drawScore(
 				const prevTimeSpec = timeSignatureSpec(
 					prevMeasure?.getTime(staffNumber) ?? null,
 				);
-				if (timeSpec && (m === 0 || timeSpec !== prevTimeSpec)) {
+				if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {
 					stave.addTimeSignature(timeSpec);
 				}
 

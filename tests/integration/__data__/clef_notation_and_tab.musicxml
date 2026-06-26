@@ -8,6 +8,13 @@
   <part id="P1">
     <measure number="1">
       <attributes>
+        <key>
+          <fifths>3</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
         <staves>2</staves>
         <staff-details number="2">
           <staff-lines>6</staff-lines>
