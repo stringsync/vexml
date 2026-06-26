@@ -375,11 +375,6 @@ const TEST_CASES = [
 		measureNumbering: 'every-3',
 	}),
 
-	// It should render the score 'aloof'.
-	// TODO: False positive: This was just rendered to get an initial idea of how this library will
-	// render it. Work with the user to figure out what each measure is supposed to look like.
-	testCase('aloof.musicxml', 'aloof.png'),
-
 	// Individual measures extracted from 'aloof' for focused testing.
 	testCase('aloof_measure_1.musicxml', 'aloof_measure_1.png'),
 	testCase('aloof_measure_2.musicxml', 'aloof_measure_2.png'),

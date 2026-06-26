@@ -46,7 +46,7 @@ export const DEFAULT_FONT_CONFIG = {
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
 	layout: { type: 'standard', width: 1000 },
-	pxPerTick: 0.012,
+	pxPerTick: 0.02,
 	softmaxFactor: 10,
 	showPartLabels: false,
 	measureNumbering: 'system',

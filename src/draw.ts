@@ -229,12 +229,19 @@ function drawTempo(
 			shiftY = clearY - baseY;
 		}
 	}
+	// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
+	// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
+	// indexes modifiers[3], which is undefined — and throws — on a system-start stave that
+	// re-states a clef but no time signature (begin barline + clef + end barline = 3
+	// modifiers). CENTER (0) points at the always-present begin barline instead, yielding
+	// the same start-of-notes x offset without the out-of-bounds read.
 	new StaveTempo(
 		{ duration: tempo.duration, bpm: tempo.bpm },
 		stave.getX(),
 		shiftY,
 	)
 		.setStave(stave)
+		.setPosition(0)
 		.setContext(context)
 		.draw();
 }
