@@ -637,8 +637,8 @@ export function drawScore(
 			// staff wherever it appears — the piece start or a mid-piece tempo change.
 			// Drawn now that the notes are formatted so it can clear a high first note.
 			const tempo = tempoOf(measure);
-			if (tempo && pendingStaves.length > 0) {
-				const topStave = pendingStaves[0];
+			const topStave = pendingStaves[0];
+			if (tempo && topStave) {
 				drawTempo(context, topStave.stave, tempo, topStave.staveNotes[0]);
 			}
 
