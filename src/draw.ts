@@ -23,6 +23,7 @@ import type { Config } from './config';
 import { LABEL_GAP, type MeasureNumbering, type ScoreLayout } from './layout';
 import {
 	endBeatOf,
+	getNoteheadHalfWidth,
 	meterBeats,
 	staffVoices,
 	vexflowClef,
@@ -170,6 +171,12 @@ function formatAndDrawPart(
 			// setStave before stretching so each note's getAbsoluteX() is in true stave
 			// coordinates — the stretch helpers compare it against stave.getNoteEndX().
 			const tabStave = p.stave as TabStave;
+			// Center each fret (and its cleared staff-line gap) under the notation
+			// notehead, which is left-anchored at the shared start x: shift the tab note
+			// area right by half a notehead. Safe post-format — the stave is already drawn
+			// (line ~527) and the formatter never reads getAbsoluteX, so only the notes,
+			// their gaps, and note-anchored modifiers (bends/annotations) move.
+			tabStave.setNoteStartX(startX + getNoteheadHalfWidth());
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
 					note.setStave(tabStave);

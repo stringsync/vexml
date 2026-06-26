@@ -1,4 +1,4 @@
-import type { FontConfig } from './font-loader';
+import type { FontConfig } from './fonts';
 import type { Layout, MeasureNumbering } from './layout';
 
 /** Fully-resolved render configuration. Every property is required: `render` fills

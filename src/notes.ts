@@ -269,6 +269,23 @@ export function vexflowTabChord(chord: Chord): TabNote {
 // 1.258 * 9pt base ≈ 11.3pt ≈ 15.1px
 const TAB_FRET_SCALE = 1.258;
 
+// VexFlow draws a TabNote's fret digits — and the staff-line gap it clears behind them —
+// centered on the note's start x, but a StaveNote anchors its notehead's LEFT edge there
+// (the notehead's center sits half a glyph-width to the right). So a fret lines up under
+// the notehead's left edge, not its center. formatAndDrawPart recenters by shifting the
+// whole tab note area right by this; doing it there rather than via the fret's own xShift
+// keeps the cleared gap moving with the digit (clearRect ignores xShift). The width is a
+// font metric needing a live canvas, so probe it lazily off a throwaway StaveNote and
+// cache the first non-zero read.
+let noteheadHalfWidth = 0;
+export function getNoteheadHalfWidth(): number {
+	if (noteheadHalfWidth === 0) {
+		noteheadHalfWidth =
+			new StaveNote({ keys: ['c/4'], duration: 'q' }).getGlyphWidth() / 2;
+	}
+	return noteheadHalfWidth;
+}
+
 // Restyle a TabNote's fret digits in place. VexFlow has no public API to set the
 // 'TabNote.text' metric globally (Metrics isn't exported), so override each fret Element
 // built in the constructor — fretElement is protected, hence the cast. Resizing rebuilds
