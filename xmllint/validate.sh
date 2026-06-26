@@ -27,20 +27,22 @@ for f in "${files[@]}"; do
 	esac
 done
 
+# Drop the per-file "<file> validates" lines; blank-line-separate each invalid
+# file's error group (each ends in "<file> fails to validate").
+filter() { awk '/ validates$/ {next} {print} / fails to validate$/ {print ""}'; }
+
 status=0
 if command -v xmllint >/dev/null 2>&1; then
-	xmllint --noout --schema "$schema" "${rel[@]}" || status=$?
+	xmllint --noout --schema "$schema" "${rel[@]}" 2>&1 | filter >&2 || status=$?
 else
 	if ! docker image inspect "$image" >/dev/null 2>&1; then
 		docker build -t "$image" "$here"
 	fi
-	docker run --rm -v "$repo:/work:ro" "$image" --noout --schema "$schema" "${rel[@]}" || status=$?
+	docker run --rm -v "$repo:/work:ro" "$image" --noout --schema "$schema" "${rel[@]}" 2>&1 | filter >&2 || status=$?
 fi
 
-# xmllint prints "<file> fails to validate" per bad file above; add a one-line summary.
 if [ "$status" -eq 0 ]; then
 	echo "xmllint: all ${#rel[@]} MusicXML file(s) valid"
 else
-	echo "xmllint: validation FAILED — see the 'fails to validate' line(s) above" >&2
 	exit 1
 fi
