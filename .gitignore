@@ -1,7 +1,6 @@
-dist
 node_modules
-.DS_STORE
-__diff_output__
-coverage
-__tmp_image_snapshots__
-.claude
+site/dist
+.zed
+tests/integration/__diffs__/
+.DS_Store
+.playwright-mcp

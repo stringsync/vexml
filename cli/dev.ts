@@ -1,5 +1,7 @@
-import { run } from './util.ts';
+import { run } from './run';
 
-export async function dev(): Promise<void> {
-  run('npx', ['vite', '--config', 'site/vite.config.js']);
+// Vite dev server for the site/ playground. Vite uses site/ as its root and finds
+// site/vite.config.ts there.
+export async function dev() {
+	await run('bunx', ['vite', 'site']);
 }

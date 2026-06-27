@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave. Hammer-ons and pull-offs are notated with a plain <slur>; the
+         renderer infers "H" vs "P" from the fret motion (higher target = hammer-on, lower =
+         pull-off), so no explicit <hammer-on>/<pull-off> markers are needed. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <!-- string 2, fret 5 -> 7: ascending, so a hammer-on ("H"). -->
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- string 2, fret 7 -> 5: descending, so a pull-off ("P"). -->
+    <measure number="2">
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>7</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- Two-string chords: ascending hammer-on chord then descending pull-off chord.
+         The lead string (3) drives the inference for the whole chord. -->
+    <measure number="3">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+          <slur number="2" type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>8</fret></technical>
+        </notations>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <slur number="2" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+        </notations>
+      </note>
+      <!-- A pull-off to an open string: string 1, fret 7 -> fret 0 (descending, so "P"),
+           the open string drawn as "0". -->
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="6" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>0</fret></technical>
+          <slur number="6" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- Eighth notes (string 1): the same hammer-on/pull-off gestures at a tighter
+         rhythm — two hammer-on pairs (5 -> 7) then two pull-off pairs (7 -> 5). -->
+    <measure number="5">
+      <attributes>
+        <divisions>4</divisions>
+      </attributes>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="2" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="2" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="3" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="3" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="4" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>eighth</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="4" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- Sixteenth notes (string 2): a hammer-on pair then a pull-off pair at the tightest
+         rhythm, closing on a pull-off "into nothing" off the final note. -->
+    <measure number="6">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <notations>
+          <technical><string>2</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <notations>
+          <technical><string>2</string><fret>7</fret></technical>
+          <slur number="2" type="start" />
+        </notations>
+      </note>
+      <!-- pulled back to fret 5, which then pulls off to the open string (fret 0). -->
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <slur number="2" type="stop" />
+          <slur number="5" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <notations>
+          <technical><string>2</string><fret>0</fret></technical>
+          <slur number="5" type="stop" />
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

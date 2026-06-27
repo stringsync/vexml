@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave: quarter-note tab chords. Each note of a chord carries its own
+         <technical><string>/<fret>; chord members after the first have <chord/>. No
+         <time>, so no time signature is drawn. M1 covers adjacency/density/skipping; M2
+         covers a grace-before-chord, double-digit frets, and open/fretted mixes. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <!-- Adjacent 3-string triad on strings 3/2/1 (frets 0/1/0) — C major. -->
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <!-- Full 6-string chord — open E major (strings 6..1, frets 0/2/2/1/0/0). -->
+      <note>
+        <pitch><step>E</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>6</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>5</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><alter>1</alter><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <!-- String-skipping chord: strings 5/3/1 (skipping 4 and 2), all open. -->
+      <note>
+        <pitch><step>A</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>5</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <!-- Wide outer-string dyad: strings 6 and 1 only (frets 3/3), spanning the stave. -->
+      <note>
+        <pitch><step>G</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>6</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <!-- Grace note before a chord: a single grace (string 1, fret 4) ahead of a
+           3-string D-major chord on strings 3/2/1 (frets 2/3/2). -->
+      <note>
+        <grace />
+        <pitch><step>G</step><alter>1</alter><octave>4</octave></pitch>
+        <type>16th</type>
+        <notations><technical><string>1</string><fret>4</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>2</fret></technical></notations>
+      </note>
+      <!-- Double-digit fret chord: strings 3/2/1 all at fret 12 (wide two-digit numbers). -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>12</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>2</string><fret>12</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>12</fret></technical></notations>
+      </note>
+      <!-- Adjacent low dyad: two neighbouring strings 5/4 (frets 2/2). -->
+      <note>
+        <pitch><step>B</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>5</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <!-- Mixed open/fretted chord: lower 4 strings 6/5/4/3 (frets 0/0/2/2) — open "0"s
+           sitting beside fretted "2"s in one chord. -->
+      <note>
+        <pitch><step>E</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>6</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>A</step><octave>2</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>5</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>2</fret></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

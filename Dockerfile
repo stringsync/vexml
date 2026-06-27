@@ -1,31 +1,16 @@
-FROM ghcr.io/puppeteer/puppeteer:23.9.0
+# Pinned to the installed playwright version so the bundled Chromium matches.
+# This image is the source of pixel determinism: same OS, fonts, and browser build as CI.
+FROM mcr.microsoft.com/playwright:v1.61.1-jammy
 
-ENV VEXML_CANONICAL_TEST_ENV=true
+# Bun, copied from its official image (no curl install needed).
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Workaround for puppeteer base image setting USER:
-# https://github.com/puppeteer/puppeteer/blob/c764f82c7435bdc10e6a9007892ab8dba111d21c/docker/Dockerfile#
-# Also see: https://github.com/nodejs/docker-node/issues/740
-USER root
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
-WORKDIR /vexml
+COPY . .
 
-# Install dependencies.
-COPY package.json .
-COPY package-lock.json .
-COPY .npmrc .
-RUN npm ci
-
-# Copy config.
-COPY jest.config.js .
-COPY babel.config.json .
-COPY PuppeteerEnvironment.js .
-COPY globalSetup.js .
-COPY globalTeardown.js .
-COPY jest.setup.js .
-
-# Copy the code needed to run the dev server and tests.
-COPY src src
-COPY tests tests
-
-# Run the test by default.
-CMD ["npx", "jest"]
+# No dir: bun discovers all *.test.ts (unit + integration), skipping node_modules.
+# ENTRYPOINT (not CMD) so `docker run vexml-tests <args>` appends to bun test.
+ENTRYPOINT ["bun", "test"]

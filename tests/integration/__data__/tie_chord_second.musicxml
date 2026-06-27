@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Spacing variant — a two-note half-note chord a second apart (C5/D5) where both
+         members tie. The second forces the noteheads onto opposite sides of the stem, so the
+         ties attach to offset noteheads: C5 bows under, D5 bows over. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

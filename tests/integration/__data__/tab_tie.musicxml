@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave. A tie holds a string without re-striking it, so the held (tie
+         stop) fret is omitted from the tab; a slur that changes fret (hammer-on/pull-off)
+         is drawn. This fixture contrasts the two. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <!-- Beat 1: a struck dyad (strings 3+2, frets 5/5), both members tied into beat 2. -->
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <tied type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <tied type="start" />
+        </notations>
+      </note>
+      <!-- Beat 2: the two tied strings are held (omitted from the tab); only the newly
+           struck string 1 (fret 7) prints. -->
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <tied type="stop" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <tied type="stop" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+        </notations>
+      </note>
+    </measure>
+    <!-- Slur contrast: a hammer-on on string 1 (fret 5 -> 7). The fret changes, so both
+         numbers print and the arc is drawn — unlike a tie, a slur is notated. -->
+    <measure number="2">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- Fallback: a lone tied note. With no other struck string in the chord, the held fret
+         can't be dropped (a tab note needs at least one position), so string 1 fret 7 still
+         prints on beat 2 rather than rendering blank. -->
+    <measure number="3">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <tied type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <tied type="stop" />
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave. Text annotations above the frets come from <other-technical>.
+         No <time>, so no time signature is drawn. -->
+    <!-- A leading rest, then a palm mute ("P.M.") and a dead note ("x"), then a trailing
+         rest. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <note>
+        <rest />
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <other-technical>P.M.</other-technical>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <other-technical>x</other-technical>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <rest />
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

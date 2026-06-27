@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Run the dev CLI. Add this bin/ dir to PATH and `vex` works anywhere.
+exec bun "$(dirname "$0")/../cli/index.ts" "$@"

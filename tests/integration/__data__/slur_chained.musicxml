@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Three chained slurs over E4, G4, E5, C5 — a slur below the first pair
+         (E4-G4, stem-up), a slur above the last pair (E5-C5, stem-down), and a third
+         slur bridging note 2 to note 3 (G4-E5). Overlapping slurs use distinct
+         <slur number>s so note 2 and note 3 each carry a stop and a start. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" placement="below" /></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations>
+          <slur number="1" type="stop" placement="below" />
+          <slur number="2" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations>
+          <slur number="2" type="stop" />
+          <slur number="1" type="start" placement="above" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" placement="above" /></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
