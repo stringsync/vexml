@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- 6-line TAB stave. Slides read as a <slide> start/stop pair (see src/spanners.ts
+         buildSlides), drawn as a tilted TabSlide line. No <time>, so no time signature. -->
+    <!-- A slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7). -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>3</string><fret>5</fret></technical>
+          <slide number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>3</string><fret>7</fret></technical>
+          <slide number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>3</string><fret>9</fret></technical>
+          <slide number="2" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>3</string><fret>7</fret></technical>
+          <slide number="2" type="stop" />
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

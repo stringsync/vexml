@@ -279,32 +279,56 @@ const TEST_CASES = [
 		layout: { type: 'standard', width: 491 },
 	}),
 
-	// 6-line TAB stave: an advanced companion to tab_hammer_pull showcasing grace
-	// notes plus slides, bends, vibrato, and text annotations. No <time>, so no time
-	// signature is drawn. Each technique reads straight from <notations>.
-	// - M1: grace notes (small fret numbers just left of their main note) — a single
-	//   grace (fret 7) before a fret-5 half note, then a grace pair (frets 7, 9) before
-	//   another fret-5 half note, all on string 3.
-	// - M2: slides — a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7),
-	//   each a diagonal TabSlide line tilted by the fret motion. The "sl." labels are off
-	//   by default (showTabSlideText). Four quarter notes.
-	// - M3: bends — a whole-step bend labelled "1" on string 3 fret 7, then a
-	//   half-step bend labelled "½" on string 2 fret 5; each an upward arrow + label.
-	// - M4: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
-	// - M5: vibrato (wavy line) stretching to the next note or bar's end, whichever comes
-	//   first — string 3 fret 7 runs up to the second note; fret 5 (last) runs to bar end.
-	// - M6: a leading quarter rest, then text annotations above the frets — a palm mute
-	//   "P.M." and a dead note "x" (both string 3, fret 7) via <other-technical> — then a
-	//   trailing quarter rest. (Natural harmonics live in their own fixture, tab_harmonic.)
-	// - M7: a grace note slurred to its main note — a slur curves from the small grace fret 7
-	//   to the fret-5 half note, both on string 3.
-	testCase('tab_techniques.musicxml', 'tab_techniques.png'),
+	// 6-line TAB stave, half notes: how ties vs slurs render in tab. A tie holds a string
+	// without re-striking it, so its held (tie-stop) fret is dropped; a slur changes fret
+	// and is drawn.
+	// - M1: beat 1 strikes a dyad (strings 3/2, frets 5/5) tied into beat 2. On beat 2 both
+	//   tied strings are held, so only the newly struck string 1 (fret 7) prints — the held
+	//   5/5 are omitted.
+	// - M2: a hammer-on on string 1 (fret 5 -> 7). The fret changes, so both numbers print
+	//   under one slur arc — a slur is notated where a tie is not.
+	// - M3: a lone tied note (string 1, fret 7). With no other struck string to keep the tab
+	//   note alive, the held fret can't be dropped, so fret 7 still prints on beat 2 (the
+	//   single-note fallback, see tabPositions).
+	testCase('tab_tie.musicxml', 'tab_tie.png'),
 
-	// Same fixture with showTabSlideText: true — the "sl." labels print above the M2
-	// slide lines.
-	testCase('tab_techniques.musicxml', 'tab_techniques_slide_text.png', {
+	// 6-line TAB stave: grace notes (small fret numbers just left of their main note).
+	// No <time>, so no time signature is drawn.
+	// - M1: a single grace (string 3, fret 7) before a fret-5 half note, then a grace pair
+	//   (frets 7, 9) before another fret-5 half note, all on string 3.
+	// - M2: a grace note slurred to its main note — a slur curves from the small grace
+	//   fret 7 to the fret-5 half note, both on string 3.
+	testCase('tab_grace.musicxml', 'tab_grace.png'),
+
+	// 6-line TAB stave: slides drawn as diagonal TabSlide lines tilted by the fret motion.
+	// No <time>, so no time signature is drawn.
+	// - M1: a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7); four
+	//   quarter notes. The "sl." labels are off by default (showTabSlideText).
+	testCase('tab_slide.musicxml', 'tab_slide.png'),
+
+	// Same fixture with showTabSlideText: true — the "sl." labels print above the slide
+	// lines.
+	testCase('tab_slide.musicxml', 'tab_slide_text.png', {
 		showTabSlideText: true,
 	}),
+
+	// 6-line TAB stave: bends, each drawn as an upward arrow + label. No <time>, so no
+	// time signature is drawn.
+	// - M1: a whole-step bend labelled "1" on string 3 fret 7, then a half-step bend
+	//   labelled "½" on string 2 fret 5.
+	// - M2: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
+	testCase('tab_bend.musicxml', 'tab_bend.png'),
+
+	// 6-line TAB stave: vibrato (wavy line) stretching to the next note or the bar's end,
+	// whichever comes first. No <time>, so no time signature is drawn.
+	// - M1: string 3 fret 7 runs up to the second note; fret 5 (last) runs to the bar's end.
+	testCase('tab_vibrato.musicxml', 'tab_vibrato.png'),
+
+	// 6-line TAB stave: text annotations above the frets via <other-technical>. No <time>,
+	// so no time signature is drawn.
+	// - M1: a leading quarter rest, then a palm mute "P.M." and a dead note "x" (both
+	//   string 3, fret 7), then a trailing quarter rest.
+	testCase('tab_annotation.musicxml', 'tab_annotation.png'),
 
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own
 	// string/fret; members after the first are <chord/>. No <time>, so no time
@@ -457,6 +481,11 @@ const TEST_CASES = [
 
 	// Individual measures extracted from 'aloof' for focused testing.
 	testCase('aloof_measure_1.musicxml', 'aloof_measure_1.png'),
+	// Treble + 6-line TAB, A major, 4/4. Beat 1 strikes a chord that ties into beat 2;
+	// the notation stave draws both noteheads joined by a tie arc, but the TAB omits the
+	// held frets (beat 2 shows only the newly struck bass fret, not the tied 4/5) — a
+	// re-struck string is shown, a held one is not. The two beamed eighth pairs carry
+	// slurs that change fret (5→7, 4→5), so those are drawn as hammer/pull arcs in the tab.
 	testCase('aloof_measure_2.musicxml', 'aloof_measure_2.png'),
 	testCase('aloof_measure_7.musicxml', 'aloof_measure_7.png'),
 	testCase('aloof_measure_14.musicxml', 'aloof_measure_14.png'),

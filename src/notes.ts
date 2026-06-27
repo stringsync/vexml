@@ -260,14 +260,29 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 // Each chord member's <string>/<fret> as a vexflow tab position (string 1 =
 // highest-pitched, an open string is fret 0). A natural harmonic is notated as the fret
 // in angle brackets, e.g. <12> — vexflow renders the fret string verbatim.
+//
+// A tie-stop fret is the held tail of a tie: the string isn't re-struck, so guitar tab
+// convention omits its number (unlike a slur/hammer-on/pull-off, which changes fret and
+// is drawn). Filter those out; if every member is held (vexflow needs at least one
+// position) fall back to drawing them all.
+// ponytail: a fully-held chord still shows its frets — drawing a truly empty tab slot
+// would need a ghost TabNote; not worth it until a fixture needs it.
 function tabPositions(chord: Chord) {
-	return chord.notes.map((note) => {
+	const toPosition = (note: Chord['notes'][number]) => {
 		const fret = note.fret ?? 0;
 		return {
 			str: note.string ?? 1,
 			fret: isHarmonic(note) ? `<${fret}>` : fret,
 		};
-	});
+	};
+	const struck = chord.notes.filter((note) => !isTieStop(note));
+	return (struck.length > 0 ? struck : chord.notes).map(toPosition);
+}
+
+// True when the note is the held tail of a tie (carries a tieType 'stop'). Such a string
+// isn't re-struck, so its fret is omitted from the tab.
+function isTieStop(note: Chord['notes'][number]): boolean {
+	return note.ties.some((tie) => tie.tieType === 'stop');
 }
 
 // Build a vexflow TabNote for one chord on a tablature stave: each member's
