@@ -48,6 +48,12 @@ async function testDocker(
 }
 
 function buildSilently(): Promise<void> {
+	// CI pre-builds the vexml-tests image with layer caching, then sets this to
+	// reuse it instead of rebuilding from scratch every run.
+	if (process.env.VEX_TEST_SKIP_BUILD) {
+		process.stdout.write('Skipping build (VEX_TEST_SKIP_BUILD set)\n');
+		return Promise.resolve();
+	}
 	process.stdout.write('Building...\n');
 	const start = Date.now();
 	return new Promise((resolve, reject) => {

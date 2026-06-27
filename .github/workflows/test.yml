@@ -1,0 +1,33 @@
+# Premerge checks: format/lint/typecheck + unit and visual-regression tests.
+# `vex test` builds the Dockerfile and runs the suite inside it, so screenshot
+# baselines match local runs. Docker is preinstalled on ubuntu-latest.
+name: test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  premerge:
+    name: run premerge code checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vex fix --check
+      # Build the test image once with gha layer caching and load it into the
+      # daemon. vex test then reuses it (VEX_TEST_SKIP_BUILD) instead of rebuilding.
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: vexml-tests
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: bunx vex test
+        env:
+          VEX_TEST_SKIP_BUILD: '1'
