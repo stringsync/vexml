@@ -26,6 +26,7 @@ import {
 	LABEL_GAP,
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
+	PAGE_MARGIN_TOP,
 	TEMPO_NOTE_CLEARANCE,
 } from './constants';
 import type { MeasureNumbering, ScoreLayout } from './layout';
@@ -156,20 +157,33 @@ function buildNotes(
 	return { stave, isTab: false, vexVoices, beams, tuplets, staveNotes };
 }
 
+// The highest y a single note reaches: its top notehead, and — when it has a stem —
+// the stem tip, which a beam extends up to its beam line. Excludes modifiers on
+// purpose (see formatAndDrawPart). Falls back to the notehead bound if the stem
+// extents aren't available (e.g. a stemless whole note).
+function noteTop(note: StaveNote): number {
+	let top = note.getNoteHeadBounds().yTop;
+	if (note.getStem()) {
+		const { topY, baseY } = note.getStemExtents();
+		top = Math.min(top, topY, baseY);
+	}
+	return top;
+}
+
 // Format a part's staves together and draw their notes. A note's absolute x is its
 // (shared) tick-context x plus its own stave's note-start x, so two things must hold
 // for same-tick notes to line up across staves: a single Formatter shares the tick
 // contexts, and every stave starts its note area at the same x. Staves are equalized
 // to the widest note start (a treble clef is wider than the "TAB" glyph) — otherwise
-// the columns shear apart even when the ticks match. Returns the lowest y any note
-// reaches so the page can grow to fit deep ledger lines.
+// the columns shear apart even when the ticks match. Returns the topmost/lowest y any
+// content reaches so the page can grow to fit high notes and deep ledger lines.
 function formatAndDrawPart(
 	context: RenderContext,
 	pending: PendingStave[],
 	softmaxFactor: number,
-): number {
+): { top: number; bottom: number } {
 	if (pending.length === 0) {
-		return 0;
+		return { top: Infinity, bottom: 0 };
 	}
 
 	const startX = Math.max(...pending.map((p) => p.stave.getNoteStartX()));
@@ -194,6 +208,13 @@ function formatAndDrawPart(
 	formatter.format(allVoices, justifyWidth, { context });
 
 	let bottom = 0;
+	// Track how high content rises above the staves from each note's noteheads and its
+	// (beam-extended) stem tip. Deliberately NOT note.getBoundingBox().getY(): that
+	// unions in attached modifiers, and a GraceNoteGroup's box reports a bogus near-
+	// origin y that would wrongly claim the note reaches the top of the page. Beams/
+	// tuplets sit a hair higher than the stem; the PAGE_MARGIN_TOP buffer the crop keeps
+	// above this top covers them (their own getBoundingBox is unreliable too).
+	let top = Infinity;
 	for (const p of pending) {
 		if (p.isTab) {
 			// setStave before stretching so each note's getAbsoluteX() is in true stave
@@ -225,9 +246,10 @@ function formatAndDrawPart(
 		for (const note of p.staveNotes) {
 			const box = note.getBoundingBox();
 			bottom = Math.max(bottom, box.getY() + box.getH());
+			top = Math.min(top, noteTop(note));
 		}
 	}
-	return bottom;
+	return { top, bottom };
 }
 
 // Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
@@ -434,7 +456,11 @@ export function drawScore(
 	const systemCount =
 		boxes.reduce((n, b) => (b ? Math.max(n, b.systemIndex + 1) : n), 0) || 1;
 	const perSystem = floorHeight - layout.top + systemGap + LEDGER_HEADROOM;
-	const scratchHeight = layout.top + systemCount * perSystem;
+	// The first system starts this far down so notes/beams that rise above its top
+	// staff have room instead of being clipped off the canvas top. The unused slack is
+	// cropped back out in the blit (mirrors how LEDGER_HEADROOM gives the bottom slack).
+	const topSlack = LEDGER_HEADROOM;
+	const scratchHeight = layout.top + topSlack + systemCount * perSystem;
 
 	const scratch = document.createElement('canvas');
 	const renderer = new Renderer(scratch, Renderer.Backends.CANVAS);
@@ -464,8 +490,9 @@ export function drawScore(
 	// down instead of colliding with it — fixed spacing can't, since note range is
 	// unbounded.
 	let pageBottom = 0;
-	let systemTopY = layout.top;
-	let systemContentBottom = layout.top;
+	let pageTop = Infinity;
+	let systemTopY = layout.top + topSlack;
+	let systemContentBottom = systemTopY;
 	let currentSystem = -1;
 	for (let m = 0; m < measureCount; m++) {
 		const box = boxes[m];
@@ -650,13 +677,14 @@ export function drawScore(
 			}
 
 			// Format and draw the part's staves together so same-tick notes line up.
-			const noteBottom = formatAndDrawPart(
+			const noteExtent = formatAndDrawPart(
 				context,
 				pendingStaves,
 				softmaxFactor,
 			);
-			pageBottom = Math.max(pageBottom, noteBottom);
-			systemContentBottom = Math.max(systemContentBottom, noteBottom);
+			pageBottom = Math.max(pageBottom, noteExtent.bottom);
+			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
+			pageTop = Math.min(pageTop, noteExtent.top);
 
 			// A metronome mark (from a <direction><metronome>) prints on this part's top
 			// staff wherever it appears — the piece start or a mid-piece tempo change.
@@ -749,11 +777,32 @@ export function drawScore(
 	// system aren't clipped and there's no trailing whitespace. Sizing the real
 	// canvas resets it to an identity transform, so the blit copies device pixels
 	// 1:1 from the scratch's top-left; the unused bottom is simply not copied.
-	const cssHeight = Math.max(floorHeight, pageBottom + PAGE_MARGIN_BOTTOM);
+	// Crop the top slack back out: keep PAGE_MARGIN_TOP above the highest content, but
+	// never crop past the slack (so a normal score keeps its usual top margin — this is
+	// then a pure shift-and-crop, leaving its output unchanged). Only scores whose first
+	// system rises into the slack show extra headroom.
+	const cropTop =
+		pageTop === Infinity
+			? topSlack
+			: Math.max(0, Math.min(topSlack, pageTop - PAGE_MARGIN_TOP));
+	const cssHeight =
+		Math.max(floorHeight + topSlack, pageBottom + PAGE_MARGIN_BOTTOM) - cropTop;
 	const dpr = scratch.width / parseFloat(scratch.style.width);
 	canvas.width = scratch.width;
 	canvas.height = Math.round(cssHeight * dpr);
 	canvas.style.width = scratch.style.width;
 	canvas.style.height = `${cssHeight}px`;
-	canvas.getContext('2d')?.drawImage(scratch, 0, 0);
+	canvas
+		.getContext('2d')
+		?.drawImage(
+			scratch,
+			0,
+			Math.round(cropTop * dpr),
+			scratch.width,
+			canvas.height,
+			0,
+			0,
+			scratch.width,
+			canvas.height,
+		);
 }

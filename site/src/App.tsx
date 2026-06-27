@@ -390,7 +390,7 @@ export default function App() {
 					{input != null && (
 						// White page sized like a real sheet; music reflows to its width. Horizontal
 						// padding (and the paper inset) collapse on small viewports for max room.
-						<div className="relative mx-auto w-full max-w-[900px] bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
+						<div className="relative mx-auto w-full max-w-225 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
 							{width != null && height != null && (
 								<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
 									{Math.round(width)}×{Math.round(height)}
