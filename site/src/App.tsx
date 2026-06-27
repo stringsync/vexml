@@ -504,7 +504,7 @@ export default function App() {
 						</div>
 					)}
 					{(resizing || debouncing) && (
-						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
 							<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
 								<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
 								<span className="text-sm font-medium text-zinc-600">
