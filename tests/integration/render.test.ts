@@ -271,6 +271,14 @@ const TEST_CASES = [
 		showTabHammerPullText: true,
 	}),
 
+	// Same fixture at a narrow width that breaks the system between M3 and M4, where a
+	// hammer-on/pull-off slur spans the break. The split tie must bow off the right edge
+	// of M3's stave and in from the left edge of M4's — not draw one diagonal across the
+	// page gap.
+	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_wrap.png', {
+		layout: { type: 'standard', width: 491 },
+	}),
+
 	// 6-line TAB stave: an advanced companion to tab_hammer_pull showcasing grace
 	// notes plus slides, bends, vibrato, and text annotations. No <time>, so no time
 	// signature is drawn. Each technique reads straight from <notations>.

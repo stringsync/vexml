@@ -237,24 +237,35 @@ export function buildHammerPulls(
 					((partner.fret ?? 0) > (chord.lead.fret ?? 0)
 						? 'hammer'
 						: 'pull')) === 'hammer';
-			const notes: TieNotes = {
-				firstNote,
-				lastNote,
-				firstIndexes,
-				lastIndexes: lastNote.getPositions().map((_, i) => i),
-			};
-			const tie = hammer
-				? TabTie.createHammeron(notes)
-				: TabTie.createPulloff(notes);
-			// Widen TabTie's narrowed control points so the filled arc is as thick as
-			// the stave-note slurs (vexflow defaults it thinner than a StaveTie).
-			tie.renderOptions.cp1 = TAB_TIE_CP1;
-			tie.renderOptions.cp2 = TAB_TIE_CP2;
-			// The arc always draws; clear the "H"/"P" label when the text is off.
-			if (!showText) {
-				tie.setText('');
+			const lastIndexes = lastNote.getPositions().map((_, i) => i);
+			// When the stop note wraps onto a later system its stave sits to the left
+			// of the start note's; one TabTie would then draw as a single long diagonal
+			// across the page. Split it into a tie bowing off the right edge of the start
+			// note's stave and one bowing in from the left edge of the stop note's — same
+			// boundary handling as buildTies().
+			const wraps =
+				(lastNote.getStave()?.getX() ?? 0) <
+				(firstNote.getStave()?.getX() ?? 0);
+			const specs: TieNotes[] = wraps
+				? [
+						{ firstNote, firstIndexes, lastIndexes: firstIndexes },
+						{ lastNote, firstIndexes: lastIndexes, lastIndexes },
+					]
+				: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
+			for (const notes of specs) {
+				const tie = hammer
+					? TabTie.createHammeron(notes)
+					: TabTie.createPulloff(notes);
+				// Widen TabTie's narrowed control points so the filled arc is as thick as
+				// the stave-note slurs (vexflow defaults it thinner than a StaveTie).
+				tie.renderOptions.cp1 = TAB_TIE_CP1;
+				tie.renderOptions.cp2 = TAB_TIE_CP2;
+				// The arc always draws; clear the "H"/"P" label when the text is off.
+				if (!showText) {
+					tie.setText('');
+				}
+				ties.push(tie);
 			}
-			ties.push(tie);
 		}
 	}
 	return ties;
