@@ -53,10 +53,15 @@ program
 		'-o, --output <path>',
 		'output png path (default: ./vexml YYYY-MM-DD HH.MM.SS.png)',
 	)
+	.option(
+		'-c, --config <json>',
+		'partial render config as JSON, e.g. \'{"noteSpacing":40,"showPartLabels":true}\'',
+	)
 	.action(async (opts) => {
 		await render({
 			input: opts.input,
 			output: opts.output,
+			config: opts.config,
 			cwd: invocationDir,
 		});
 	});

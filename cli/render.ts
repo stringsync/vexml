@@ -9,12 +9,16 @@ import { serve } from '../tests/testing/serve';
 export async function render(opts: {
 	input: string;
 	output?: string;
+	config?: string;
 	cwd: string;
 }) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
 	const at = (p: string) => (isAbsolute(p) ? p : resolve(opts.cwd, p));
 	const musicXML = readFileSync(at(opts.input), 'utf8');
 	const output = at(opts.output ?? `vexml ${timestamp()}.png`);
+	// Passed straight to window.render as a Partial<Config>; render fills the rest
+	// from DEFAULT_CONFIG, so this knows nothing about config's shape.
+	const config = opts.config ? JSON.parse(opts.config) : {};
 
 	const server = serve(3101);
 	const browser = await chromium.launch();
@@ -23,13 +27,16 @@ export async function render(opts: {
 			viewport: { width: 1064, height: 600 },
 		});
 		await page.goto('http://localhost:3101/');
-		await page.evaluate(async (musicXML) => {
-			const canvas = document.getElementById('vexml');
-			if (!(canvas instanceof HTMLCanvasElement)) {
-				throw new Error('canvas not found');
-			}
-			await window.render(musicXML, canvas, {});
-		}, musicXML);
+		await page.evaluate(
+			async ({ musicXML, config }) => {
+				const canvas = document.getElementById('vexml');
+				if (!(canvas instanceof HTMLCanvasElement)) {
+					throw new Error('canvas not found');
+				}
+				await window.render(musicXML, canvas, config);
+			},
+			{ musicXML, config },
+		);
 		const buf = await page.locator('#screenshot').screenshot();
 		writeFileSync(output, buf);
 		console.log(`wrote ${output}`);

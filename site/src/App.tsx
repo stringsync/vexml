@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Config } from '../../src';
 import { render } from '../../src';
 
@@ -17,39 +17,107 @@ for (const [path, load] of Object.entries(
 }
 const fixtureNames = Object.keys(fixtures).sort();
 
+function Or() {
+	return (
+		<div className="flex items-center gap-2 text-xs text-zinc-400">
+			<span className="h-px flex-1 bg-zinc-200" />
+			or
+			<span className="h-px flex-1 bg-zinc-200" />
+		</div>
+	);
+}
+
 export default function App() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [text, setText] = useState('');
 	const [input, setInput] = useState<string | Blob | null>(null);
-	const [fileName, setFileName] = useState<string | null>(null);
 	const [fixture, setFixture] = useState('');
 	const [error, setError] = useState<string | null>(null);
 	const [renderMs, setRenderMs] = useState<number | null>(null);
-	// Knobs go here: switch to `const [config, setConfig]` and wire inputs to setConfig.
+	const [dragging, setDragging] = useState(false);
+	const [debouncing, setDebouncing] = useState(false);
+	const [resizing, setResizing] = useState(false);
+	const [width, setWidth] = useState<number | null>(null);
+	const [height, setHeight] = useState<number | null>(null);
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const lastWidthRef = useRef<number | null>(null);
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+	const resizeRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+	const roRef = useRef<ResizeObserver | null>(null);
 	// The effect below re-renders the last input whenever config changes.
-	const [config] = useState<Partial<Config>>({});
+	const [config, setConfig] = useState<Partial<Config>>({});
+	const noteSpacing = config.noteSpacing ?? 36;
+	const softmaxFactor = config.softmaxFactor ?? 10;
+	const reset = (key: 'noteSpacing' | 'softmaxFactor') =>
+		setConfig(({ [key]: _, ...rest }) => rest);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas || input == null) {
+		if (!canvas || input == null || width == null) {
 			return;
 		}
 		setError(null);
 		const start = performance.now();
-		render(input, canvas, config)
-			.then(() => setRenderMs(performance.now() - start))
+		render(input, canvas, { ...config, layout: { type: 'standard', width } })
+			.then(() => {
+				setRenderMs(performance.now() - start);
+				setHeight(canvas.clientHeight);
+			})
 			.catch((e: unknown) => {
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
 			});
-	}, [input, config]);
+	}, [input, config, width]);
 
-	function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (!file) {
+	// Reflow the score to the container's width. Callback ref so the observer attaches
+	// exactly when the page div mounts (it only exists once there's input). The observer
+	// fires once on observe for the initial width, then on viewport changes; debounce so
+	// dragging the window doesn't re-render every frame, showing a spinner meanwhile.
+	const pageRef = useCallback((el: HTMLDivElement | null) => {
+		roRef.current?.disconnect();
+		if (!el) {
 			return;
 		}
-		setFileName(file.name);
+		lastWidthRef.current = el.clientWidth;
+		setWidth(el.clientWidth);
+		const ro = new ResizeObserver(() => {
+			// Ignore height-only changes (the canvas grows after each render); only a
+			// width change means the score must re-flow.
+			if (el.clientWidth === lastWidthRef.current) {
+				return;
+			}
+			clearTimeout(resizeRef.current);
+			setResizing(true);
+			resizeRef.current = setTimeout(() => {
+				setResizing(false);
+				lastWidthRef.current = el.clientWidth;
+				setWidth(el.clientWidth);
+			}, 300);
+		});
+		ro.observe(el);
+		roRef.current = ro;
+	}, []);
+
+	// Open with a random example rendered.
+	useEffect(() => {
+		const name = fixtureNames[Math.floor(Math.random() * fixtureNames.length)];
+		if (!name) {
+			return;
+		}
+		setFixture(name);
+		fixtures[name]?.().then((xml) => {
+			setText(xml);
+			setInput(xml);
+		});
+	}, []);
+
+	function loadFile(file: File) {
+		clearTimeout(debounceRef.current);
+		setDebouncing(false);
 		setFixture('');
 		// .mxl is a zip; render() detects MXL from a Blob. MusicXML is plain text we also
 		// drop into the textarea so it can be tweaked.
@@ -64,22 +132,68 @@ export default function App() {
 		}
 	}
 
+	function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (file) {
+			loadFile(file);
+		}
+	}
+
+	function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+		const value = e.target.value;
+		setText(value);
+		setFixture('');
+		clearTimeout(debounceRef.current);
+		if (!value.trim()) {
+			setDebouncing(false);
+			return;
+		}
+		// Spinner shows while we wait out the typing, then render the settled text.
+		setDebouncing(true);
+		debounceRef.current = setTimeout(() => {
+			setDebouncing(false);
+			setInput(value);
+		}, 500);
+	}
+
+	function onDragOver(e: React.DragEvent) {
+		e.preventDefault();
+		setDragging(true);
+	}
+
+	function onDragLeave(e: React.DragEvent) {
+		// Leaving into a child still counts as inside; only clear when truly exiting.
+		if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+			setDragging(false);
+		}
+	}
+
+	function onDrop(e: React.DragEvent) {
+		e.preventDefault();
+		setDragging(false);
+		const file = e.dataTransfer.files[0];
+		if (file) {
+			loadFile(file);
+		}
+	}
+
 	async function onPickFixture(e: React.ChangeEvent<HTMLSelectElement>) {
 		const name = e.target.value;
 		setFixture(name);
+		clearTimeout(debounceRef.current);
+		setDebouncing(false);
 		const load = fixtures[name];
 		if (!load) {
 			return;
 		}
 		const xml = await load();
-		setFileName(`${name}.musicxml`);
 		setText(xml);
 		setInput(xml);
 	}
 
 	return (
 		<div className="flex h-screen flex-col bg-zinc-50 text-zinc-900">
-			<header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3">
+			<header className="flex items-center gap-3 border-b border-zinc-200 bg-white px-6 py-3">
 				<h1 className="font-mono text-xl font-bold tracking-tight">vexml</h1>
 				<a
 					href="https://github.com/stringsync/vexml"
@@ -94,72 +208,201 @@ export default function App() {
 			</header>
 
 			<main className="flex min-h-0 flex-1">
-				<aside className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-r border-zinc-200 bg-white p-4">
-					<label className="cursor-pointer rounded-md bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
-						Upload MusicXML / MXL
-						<input
-							type="file"
-							accept=".xml,.musicxml,.mxl"
-							className="hidden"
-							onChange={onFile}
-						/>
-					</label>
-
-					<select
-						value={fixture}
-						onChange={onPickFixture}
-						className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+				<aside className="fixed inset-x-0 bottom-0 z-20 flex max-h-[75vh] flex-col overflow-y-auto rounded-t-xl border-t border-zinc-200 bg-white p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+					<button
+						type="button"
+						onClick={() => setMobileOpen((o) => !o)}
+						className="mb-2 flex items-center justify-center gap-2 text-sm font-medium text-zinc-600 md:hidden"
 					>
-						<option value="">Load an example…</option>
-						{fixtureNames.map((name) => (
-							<option key={name} value={name}>
-								{name}
-							</option>
-						))}
-					</select>
+						{mobileOpen ? 'Hide controls ▾' : 'Show controls ▴'}
+					</button>
 
-					{fileName && (
-						<p className="truncate text-xs text-zinc-500">{fileName}</p>
-					)}
+					<div
+						className={`flex-col gap-4 ${mobileOpen ? 'flex' : 'hidden'} md:flex`}
+					>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-xs font-medium text-zinc-500">
+								Upload file
+							</span>
+							<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-zinc-700">
+								Choose File
+								<input
+									type="file"
+									accept=".xml,.musicxml,.mxl"
+									className="hidden"
+									onChange={onFile}
+								/>
+							</label>
+						</div>
 
-					<div className="flex flex-col gap-2">
-						<textarea
-							value={text}
-							onChange={(e) => setText(e.target.value)}
-							placeholder="…or paste MusicXML here"
-							spellCheck={false}
-							className="h-48 resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
-						/>
-						<button
-							type="button"
-							onClick={() => setInput(text)}
-							disabled={!text.trim()}
-							className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:opacity-40"
-						>
-							Render
-						</button>
-						{renderMs != null && !error && (
-							<p className="rounded-md bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
-								Rendered in {renderMs.toFixed(1)} ms
+						<Or />
+
+						<div className="flex flex-col gap-1.5">
+							<label
+								htmlFor="example"
+								className="text-xs font-medium text-zinc-500"
+							>
+								Select an Example
+							</label>
+							<select
+								id="example"
+								value={fixture}
+								onChange={onPickFixture}
+								className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+							>
+								<option value="">Load an example…</option>
+								{fixtureNames.map((name) => (
+									<option key={name} value={name}>
+										{name}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<Or />
+
+						<div className="flex flex-col gap-1.5">
+							<label
+								htmlFor="musicxml"
+								className="text-xs font-medium text-zinc-500"
+							>
+								MusicXML
+							</label>
+							<textarea
+								id="musicxml"
+								value={text}
+								onChange={onTextChange}
+								placeholder="Paste MusicXML here"
+								spellCheck={false}
+								className="h-48 resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
+							/>
+							{debouncing && (
+								<div className="flex items-center gap-2 text-xs text-zinc-500">
+									<span className="size-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" />
+									Rendering…
+								</div>
+							)}
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<label
+								htmlFor="noteSpacing"
+								className="flex items-center justify-between text-xs font-medium text-zinc-500"
+							>
+								Note spacing
+								<span className="flex items-center gap-1.5">
+									<span className="font-mono text-zinc-400">{noteSpacing}</span>
+									<button
+										type="button"
+										onClick={() => reset('noteSpacing')}
+										className="text-zinc-400 underline hover:text-zinc-600"
+									>
+										reset
+									</button>
+								</span>
+							</label>
+							<input
+								id="noteSpacing"
+								type="range"
+								min={12}
+								max={120}
+								step={1}
+								value={noteSpacing}
+								onChange={(e) =>
+									setConfig((c) => ({
+										...c,
+										noteSpacing: e.target.valueAsNumber,
+									}))
+								}
+							/>
+							<p className="text-xs text-zinc-400">
+								How much horizontal space notes get: the px a quarter note is
+								allotted. Higher spreads every measure wider.
 							</p>
-						)}
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<label
+								htmlFor="softmaxFactor"
+								className="flex items-center justify-between text-xs font-medium text-zinc-500"
+							>
+								Softmax factor
+								<span className="flex items-center gap-1.5">
+									<span className="font-mono text-zinc-400">
+										{softmaxFactor}
+									</span>
+									<button
+										type="button"
+										onClick={() => reset('softmaxFactor')}
+										className="text-zinc-400 underline hover:text-zinc-600"
+									>
+										reset
+									</button>
+								</span>
+							</label>
+							<input
+								id="softmaxFactor"
+								type="range"
+								min={1}
+								max={30}
+								step={1}
+								value={softmaxFactor}
+								onChange={(e) =>
+									setConfig((c) => ({
+										...c,
+										softmaxFactor: e.target.valueAsNumber,
+									}))
+								}
+							/>
+							<p className="text-xs text-zinc-400">
+								How that space is divided among notes. Higher exaggerates the
+								width difference between long and short notes.
+							</p>
+						</div>
 					</div>
-
-					{error && (
-						<pre className="whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700">
-							{error}
-						</pre>
-					)}
-
-					{/* config knobs go here */}
 				</aside>
 
-				<section className="min-w-0 flex-1 overflow-auto p-6">
-					<canvas ref={canvasRef} />
-					{input == null && (
-						<p className="text-sm text-zinc-400">
-							Upload a file or paste MusicXML to render.
-						</p>
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose File is the keyboard-accessible path */}
+				<section
+					onDragOver={onDragOver}
+					onDragLeave={onDragLeave}
+					onDrop={onDrop}
+					className={`relative min-w-0 flex-1 overflow-auto border-2 border-dashed py-6 pb-20 sm:px-6 md:pb-6 ${dragging ? 'border-blue-400 bg-blue-50/40' : 'border-transparent'}`}
+				>
+					{error ? (
+						<pre className="mx-auto mb-4 w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+							{error}
+						</pre>
+					) : (
+						renderMs != null && (
+							<p className="mx-auto mb-4 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+								Rendered in {renderMs.toFixed(1)} ms
+							</p>
+						)
+					)}
+					{input != null && (
+						// White page sized like a real sheet; music reflows to its width. Horizontal
+						// padding (and the paper inset) collapse on small viewports for max room.
+						<div className="relative mx-auto w-full max-w-204 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
+							{width != null && height != null && (
+								<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
+									{Math.round(width)} × {Math.round(height)}
+								</span>
+							)}
+							<div ref={pageRef}>
+								<canvas ref={canvasRef} className="block" />
+							</div>
+						</div>
+					)}
+					{resizing && (
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+							<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
+								<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
+								<span className="text-sm font-medium text-zinc-600">
+									Loading…
+								</span>
+							</div>
+						</div>
 					)}
 				</section>
 			</main>
