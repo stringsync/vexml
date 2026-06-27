@@ -17,6 +17,46 @@ for (const [path, load] of Object.entries(
 }
 const fixtureNames = Object.keys(fixtures).sort();
 
+const STORAGE_KEY = 'vexml:musicxml';
+
+function ResetIcon() {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 16 16"
+			fill="currentColor"
+			className="size-4"
+			aria-hidden="true"
+		>
+			<path
+				fillRule="evenodd"
+				d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z"
+				clipRule="evenodd"
+			/>
+		</svg>
+	);
+}
+
+function CheckIcon() {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			className="size-4"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="m4.5 12.75 6 6 9-13.5"
+			/>
+		</svg>
+	);
+}
+
 function Or() {
 	return (
 		<div className="flex items-center gap-2 text-xs text-zinc-400">
@@ -40,6 +80,10 @@ export default function App() {
 	const [width, setWidth] = useState<number | null>(null);
 	const [height, setHeight] = useState<number | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [stored, setStored] = useState(
+		() => localStorage.getItem(STORAGE_KEY) !== null,
+	);
+	const [cleared, setCleared] = useState(false);
 	const lastWidthRef = useRef<number | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
@@ -115,6 +159,18 @@ export default function App() {
 		});
 	}, []);
 
+	function save(value: string) {
+		localStorage.setItem(STORAGE_KEY, value);
+		setStored(true);
+	}
+
+	function clearStorage() {
+		localStorage.removeItem(STORAGE_KEY);
+		setStored(false);
+		setCleared(true);
+		setTimeout(() => setCleared(false), 1500);
+	}
+
 	function loadFile(file: File) {
 		clearTimeout(debounceRef.current);
 		setDebouncing(false);
@@ -124,10 +180,12 @@ export default function App() {
 		if (file.name.toLowerCase().endsWith('.mxl')) {
 			setText('');
 			setInput(file);
+			save(`[mxl] ${file.name}`);
 		} else {
 			file.text().then((t) => {
 				setText(t);
 				setInput(t);
+				save(t);
 			});
 		}
 	}
@@ -142,6 +200,7 @@ export default function App() {
 	function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
 		const value = e.target.value;
 		setText(value);
+		save(value);
 		setFixture('');
 		clearTimeout(debounceRef.current);
 		if (!value.trim()) {
@@ -189,11 +248,12 @@ export default function App() {
 		const xml = await load();
 		setText(xml);
 		setInput(xml);
+		save(xml);
 	}
 
 	return (
 		<div className="flex h-screen flex-col bg-zinc-50 text-zinc-900">
-			<header className="flex items-center gap-3 border-b border-zinc-200 bg-white px-6 py-3">
+			<header className="flex items-center gap-3 border-b border-zinc-200 bg-white px-6 py-2">
 				<h1 className="font-mono text-xl font-bold tracking-tight">vexml</h1>
 				<a
 					href="https://github.com/stringsync/vexml"
@@ -212,9 +272,9 @@ export default function App() {
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="mb-2 py-4 flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 active:bg-zinc-200 active:text-zinc-900 md:hidden"
+						className="mb-2 py-2 flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 active:bg-zinc-200 active:text-zinc-900 md:hidden"
 					>
-						{mobileOpen ? 'Hide controls ▾' : 'Show controls ▴'}
+						{mobileOpen ? 'Hide' : 'Show'}
 					</button>
 
 					<div
@@ -224,7 +284,7 @@ export default function App() {
 							<span className="text-xs font-medium text-zinc-500">
 								Upload file
 							</span>
-							<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-zinc-700">
+							<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
 								Choose File
 								<input
 									type="file"
@@ -284,6 +344,22 @@ export default function App() {
 							)}
 						</div>
 
+						<button
+							type="button"
+							onClick={clearStorage}
+							disabled={!stored || cleared}
+							className="flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{cleared ? (
+								<>
+									Cleared
+									<CheckIcon />
+								</>
+							) : (
+								'Clear local storage'
+							)}
+						</button>
+
 						<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
 							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
 								Config
@@ -301,9 +377,11 @@ export default function App() {
 										<button
 											type="button"
 											onClick={() => reset('noteSpacing')}
-											className="text-zinc-400 underline hover:text-zinc-600"
+											disabled={config.noteSpacing === undefined}
+											aria-label="Reset note spacing"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 										>
-											reset
+											<ResetIcon />
 										</button>
 									</span>
 								</label>
@@ -340,9 +418,11 @@ export default function App() {
 										<button
 											type="button"
 											onClick={() => reset('softmaxFactor')}
-											className="text-zinc-400 underline hover:text-zinc-600"
+											disabled={config.softmaxFactor === undefined}
+											aria-label="Reset softmax factor"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 										>
-											reset
+											<ResetIcon />
 										</button>
 									</span>
 								</label>
@@ -382,7 +462,7 @@ export default function App() {
 						</pre>
 					) : (
 						renderMs != null && (
-							<p className="mx-auto mb-4 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+							<p className="mx-auto mb-6 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
 								Rendered in {renderMs.toFixed(1)} ms
 							</p>
 						)

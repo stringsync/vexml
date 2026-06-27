@@ -48,6 +48,7 @@ import {
 	buildSlurs,
 	buildTies,
 	buildTuplets,
+	groupBeams,
 } from './spanners';
 
 // MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -123,7 +124,6 @@ type PendingStave = {
 function buildNotes(
 	stave: Stave,
 	voices: ScoreVoice[],
-	beamGroups: Note[][],
 	clef: string,
 	softmaxFactor: number,
 	byLead: Map<Note, StaveNote>,
@@ -151,7 +151,10 @@ function buildNotes(
 
 	// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
 	// built before formatting.
-	const beams = buildBeams(beamGroups, byLead);
+	const beams = buildBeams(
+		voices.flatMap((v) => groupBeams(v.chords)),
+		byLead,
+	);
 	const tuplets = voices.flatMap((v) => buildTuplets(v.chords, byLead));
 
 	return { stave, isTab: false, vexVoices, beams, tuplets, staveNotes };
@@ -312,6 +315,13 @@ function buildTabNotes(
 				),
 			),
 	);
+	// Build (but discard) the tab tuplets: their construction rescales the notes'
+	// ticks (Tuplet.attach), which the part's shared formatter needs so a triplet's
+	// tab frets stay aligned under their notation notes. The bracket/number is drawn
+	// on the notation staff, so these aren't kept for drawing.
+	for (const voice of voices) {
+		buildTuplets(voice.chords, byTabLead);
+	}
 	return {
 		stave,
 		isTab: true,
@@ -657,7 +667,6 @@ export function drawScore(
 						buildNotes(
 							stave,
 							voices,
-							measure.beams,
 							clefName,
 							softmaxFactor,
 							byLead,

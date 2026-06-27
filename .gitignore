@@ -3,3 +3,4 @@ site/dist
 .zed
 tests/integration/__diffs__/
 .DS_Store
+.playwright-mcp
