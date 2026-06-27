@@ -87,6 +87,14 @@ export function buildBeams(
 			// must stand, so only auto-stem when no note in the group has one.
 			const autoStem = group.notes.every((note) => !note.stem);
 			const beam = new Beam(notes, autoStem);
+			// Flatten only "complex" runs — those with varying rhythm: more than one
+			// note value (e.g. 8ths + 16ths), or sub-beam breaks splitting the run into
+			// rhythmically distinct groups (e.g. a 16th triplet then straight 16ths,
+			// all the same note type). Uniform runs keep vexflow's default slant.
+			const distinctTypes = new Set(group.notes.map((note) => note.type));
+			if (distinctTypes.size > 1 || group.secondaryBreaks.length > 0) {
+				beam.renderOptions.flatBeams = true;
+			}
 			if (group.secondaryBreaks.length > 0) {
 				beam.breakSecondaryAt(group.secondaryBreaks);
 			}
