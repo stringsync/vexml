@@ -295,7 +295,8 @@ function formatAndDrawPart(
 // one text line above the staff; if the first note reaches up into that band (a high
 // note with ledger lines), lift the mark with a negative y-shift so its bottom clears
 // the notehead — the layout reserves the matching top headroom. Drawn after the notes
-// are formatted so firstNote's bounding box is real.
+// are formatted so firstNote's extents are real. Uses noteTop, not the bounding box: an
+// attached grace-note group makes the box report a bogus near-origin y.
 function drawTempo(
 	context: RenderContext,
 	stave: Stave,
@@ -305,7 +306,7 @@ function drawTempo(
 	const baseY = stave.getYForTopText(1);
 	let shiftY = 0;
 	if (firstNote) {
-		const clearY = firstNote.getBoundingBox().getY() - TEMPO_NOTE_CLEARANCE;
+		const clearY = noteTop(firstNote) - TEMPO_NOTE_CLEARANCE;
 		if (clearY < baseY) {
 			shiftY = clearY - baseY;
 		}
@@ -338,6 +339,11 @@ function drawTempo(
 	context.restore();
 }
 
+// Accidental glyphs in a chord symbol; pulled tight against their root letter.
+const HARMONY_ACCIDENTALS = new Set(['♯', '♭', '♮']);
+const HARMONY_ACCIDENTAL_KERN = 2.5;
+const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
+
 // Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at
 // the note's x — the laid-out position of the note the harmony applies to. Returns
 // the y the text reaches up to so the caller can grow the page crop to keep a margin
@@ -355,14 +361,33 @@ function drawHarmony(
 		return Infinity;
 	}
 	// Sit a fixed gap above the top staff line, but lift higher when the note rises into
-	// that band (a high note or its ledger lines) so the symbol clears the notehead.
+	// that band (a high note or its ledger lines) so the symbol clears the notehead. Uses
+	// noteTop, not the bounding box: an attached grace-note group makes the box report a
+	// bogus near-origin y, which would fling the symbol to the top of the page and defeat
+	// the top crop (leaving a huge blank margin above the first system).
 	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
-	const noteClearY = staveNote.getBoundingBox().getY() - HARMONY_NOTE_CLEARANCE;
+	const noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
 	const y = Math.min(baseY, noteClearY);
 	context.save();
 	context.setFont(font, HARMONY_FONT_SIZE);
 	context.setFillStyle('#000000');
-	context.fillText(text, staveNote.getAbsoluteX(), y);
+	// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
+	// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
+	// so it sits tight against its root letter.
+	let x = staveNote.getAbsoluteX();
+	for (const ch of text) {
+		const accidental = HARMONY_ACCIDENTALS.has(ch);
+		if (accidental) {
+			x -= HARMONY_ACCIDENTAL_KERN;
+			context.setFont(font, HARMONY_ACCIDENTAL_FONT_SIZE);
+		}
+		context.fillText(ch, x, y);
+		x += context.measureText(ch).width;
+		if (accidental) {
+			x -= HARMONY_ACCIDENTAL_KERN;
+			context.setFont(font, HARMONY_FONT_SIZE);
+		}
+	}
 	context.restore();
 	return y - HARMONY_FONT_SIZE;
 }
@@ -372,7 +397,8 @@ function drawHarmony(
 // line, but lifts higher when the first note rises into that band (a high note or its ledger
 // lines) so the text clears the notehead. Returns the y the text reaches up to so the caller
 // can grow the page crop above it (like drawHarmony). Drawn after the notes are formatted so
-// getAbsoluteX/getBoundingBox are real.
+// getAbsoluteX is real. Uses noteTop, not the bounding box, to clear the note: an attached
+// grace-note group makes the box report a bogus near-origin y.
 function drawWords(
 	context: RenderContext,
 	stave: Stave,
@@ -382,7 +408,7 @@ function drawWords(
 ): number {
 	const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
 	const noteClearY = firstNote
-		? firstNote.getBoundingBox().getY() - WORDS_NOTE_CLEARANCE
+		? noteTop(firstNote) - WORDS_NOTE_CLEARANCE
 		: baseY;
 	const y = Math.min(baseY, noteClearY);
 	const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();

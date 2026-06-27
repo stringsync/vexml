@@ -212,6 +212,17 @@ const TEST_CASES = [
 	//   ("tie from nothing"), rather than one line slanting down across the page.
 	testCase('tie.musicxml', 'tie.png'),
 
+	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
+	// quarter — where the middle note carries both tie start and stop, so two arcs join end to
+	// end across the same pitch. Beat 1 leads in with a 16th E4 beamed to the dotted eighth;
+	// beats 3-4 add a below-placed slur over a 16th run (F#4-G4) into a slashed grace E4 that
+	// slurs into the closing F#4 eighth.
+	// TODO: False positive: this baseline was created from the current render, so it may be
+	// accepting an incorrect tie-chain rendering. The user reports "something wrong" here.
+	// Review the render (focus on the F#4 tie chain — the middle note's two arcs and whether
+	// they connect cleanly), then run vex test tie_chain --update only once confirmed correct.
+	testCase('tie_chain.musicxml', 'tie_chain.png'),
+
 	// Treble stave, 4/4, one measure: two stem-up half-note chords (C5/E5/G5) with all three
 	// members tied — the bottom member (C5) bows under (concave up) and the upper two (E5, G5)
 	// bow over (concave down), sandwiching the chord while the over-arcs clear the up-stems.
@@ -458,10 +469,19 @@ const TEST_CASES = [
 	// - M1: a bare major triad — root C, kind text empty — prints just "C".
 	// - M2: a dominant seventh — root G, kind text "7" — prints "G7".
 	// - M3: an altered-root minor — root F with <root-alter>1</root-alter>, kind text
-	//   "m" — prints "F#m" (ASCII '#', which the text font renders tightly).
+	//   "m" — prints "F♯m" (real Unicode sharp).
 	// - M4: a high first note (C6, two ledger lines above the staff) under a "D" symbol —
 	//   the symbol lifts above the notehead/ledger lines instead of colliding with them.
+	// - M5: a flat root — root B with <root-alter>-1</root-alter> — prints "B♭".
+	// - M6: an explicit natural root — root B with <root-alter>0</root-alter> — prints "B♮".
 	testCase('harmony.musicxml', 'harmony.png'),
+
+	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
+	// note's group gives the main note a bogus near-origin bounding box; the harmony must
+	// position from the notehead (noteTop), not that box — otherwise it flies to the top of
+	// the page and defeats the top crop, leaving a huge blank margin above the system.
+	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
+	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.

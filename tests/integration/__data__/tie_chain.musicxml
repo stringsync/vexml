@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: a three-note tie chain on F#4 (dotted-eighth -> quarter -> quarter); the middle
+         note carries both tie start and stop. Followed by a slurred 16th run (F#4-G4) into a
+         slashed grace E4 that slurs into the closing F#4 eighth. -->
+    <measure number="1">
+      <attributes>
+        <divisions>96</divisions>
+        <key>
+          <fifths>2</fifths>
+          <mode>major</mode>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>72</duration>
+        <tie type="start" />
+        <type>eighth</type>
+        <dot/>
+        <beam number="1">end</beam>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>96</duration>
+        <tie type="start" />
+        <tie type="stop" />
+        <type>quarter</type>
+        <notations><tied type="start" /><tied type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>96</duration>
+        <tie type="stop" />
+        <type>quarter</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <notations>
+          <slur placement="below" type="start" number="1" />
+          <slur placement="below" type="continue" number="1" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+        <notations><slur placement="below" type="stop" number="1" /></notations>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+        <notations>
+          <slur placement="below" type="start" number="1" />
+          <slur placement="below" type="continue" number="1" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>48</duration>
+        <type>eighth</type>
+        <notations><slur placement="below" type="stop" number="1" /></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

@@ -98,6 +98,7 @@ export default function App() {
 	const noteSpacing = config.noteSpacing ?? 36;
 	const softmaxFactor = config.softmaxFactor ?? 10;
 	const systemSpacing = config.systemSpacing ?? 30;
+	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const reset = (key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing') =>
 		setConfig(({ [key]: _, ...rest }) => rest);
 
@@ -515,6 +516,41 @@ export default function App() {
 								<p className="text-xs text-zinc-400">
 									Vertical gap between stacked systems. Lower packs systems
 									closer together down the page.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="notationFont"
+									className="text-xs font-medium text-zinc-500"
+								>
+									Notation font
+								</label>
+								<select
+									id="notationFont"
+									value={notationFont}
+									onChange={(e) =>
+										setConfig((c) =>
+											e.target.value === 'Bravura'
+												? (({ fonts: _, ...rest }) => rest)(c)
+												: {
+														...c,
+														fonts: {
+															...c.fonts,
+															notation: { family: e.target.value },
+														},
+													},
+										)
+									}
+									className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
+								>
+									<option value="Bravura">Bravura</option>
+									<option value="Petaluma">Petaluma</option>
+									<option value="Gonville">Gonville</option>
+								</select>
+								<p className="text-xs text-zinc-400">
+									The engraving font for noteheads, clefs, accidentals, and
+									rests. Bravura is the default.
 								</p>
 							</div>
 						</div>

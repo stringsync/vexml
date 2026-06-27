@@ -610,12 +610,11 @@ export function wordsOf(measure: Measure): string[] {
 	return out;
 }
 
-// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign. ASCII
-// '#'/'b' (not the Unicode ♯/♭), which the text font has glyphs for — the music-symbol
-// codepoints fall back to a system font with loose side-bearings that space the symbol out.
-// ponytail: real ♯/♭ engraving would need the notation font's accidental glyph drawn as a
-// separate block (vexflow's ChordSymbol); add it if a fixture wants typeset accidentals.
-const HARMONY_ALTER: Record<string, string> = { '1': '#', '-1': 'b' };
+// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
+// real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural — rare in a root, but
+// MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
+// nothing (no sign), so plain roots stay bare.
+const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
 
 // A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
 // any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
