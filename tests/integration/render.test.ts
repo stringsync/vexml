@@ -348,9 +348,11 @@ const TEST_CASES = [
 	//   then a half note.
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
-	// Treble stave, 4/4: four C5 quarter notes at one staff position — staccato (dot),
-	// accent (>), tenuto (—), then staccatissimo (wedge) — so only the articulation
-	// varies.
+	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
+	// (wedge) — only the articulation varies within a measure; the measure sets the
+	// stem direction.
+	// - M1: four C5 quarters (stems down) — articulations sit above the noteheads.
+	// - M2: four E4 quarters (stems up) — articulations sit below the noteheads.
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from

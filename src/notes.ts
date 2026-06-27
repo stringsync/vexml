@@ -16,6 +16,7 @@ import {
 	GraceNote,
 	GraceNoteGroup,
 	GraceTabNote,
+	Modifier,
 	StaveNote,
 	Stem,
 	type StemmableNote,
@@ -117,10 +118,18 @@ const ARTICULATION_CODES: Record<string, string> = {
 };
 
 function addArticulations(staveNote: StaveNote, note: Note): void {
+	// Staccato/accent/tenuto sit on the notehead side, opposite the stem. Vexflow's
+	// Articulation always defaults to ABOVE, so flip it for stem-up notes. The stem
+	// direction is resolved by here (explicit via applyStem, or auto in the StaveNote
+	// constructor).
+	const position =
+		staveNote.getStemDirection() === Stem.UP
+			? Modifier.Position.BELOW
+			: Modifier.Position.ABOVE;
 	for (const name of note.articulations) {
 		const code = ARTICULATION_CODES[name];
 		if (code) {
-			staveNote.addModifier(new Articulation(code));
+			staveNote.addModifier(new Articulation(code).setPosition(position));
 		}
 	}
 }
