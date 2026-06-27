@@ -476,43 +476,49 @@ export default function App() {
 					onDragOver={onDragOver}
 					onDragLeave={onDragLeave}
 					onDrop={onDrop}
-					className={`relative min-w-0 flex-1 overflow-auto border-2 border-dashed py-6 pb-20 sm:px-6 md:pb-6 ${dragging ? 'border-blue-400 bg-blue-50/40' : 'border-transparent'}`}
+					className={`min-w-0 flex-1 overflow-auto border-2 border-dashed ${dragging ? 'border-blue-400 bg-blue-50/40' : 'border-transparent'}`}
 				>
-					{error ? (
-						<pre className="mx-auto mb-4 w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-							{error}
-						</pre>
-					) : (
-						renderMs != null && (
-							<p className="mx-auto mb-6 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
-								Rendered in {renderMs.toFixed(1)} ms
-							</p>
-						)
-					)}
-					{input != null && (
-						// White page sized like a real sheet; music reflows to its width. Horizontal
-						// padding (and the paper inset) collapse on small viewports for max room.
-						<div className="relative mx-auto w-full max-w-225 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
-							{width != null && height != null && (
-								<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
-									{Math.round(width)}×{Math.round(height)}
-								</span>
-							)}
-							<div ref={pageRef}>
-								<canvas ref={canvasRef} className="block" />
+					{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. Padding lives here (not on section) so inset-0 covers it too. */}
+					<div className="relative min-h-full py-6 pb-20 sm:px-6 md:pb-6">
+						{error ? (
+							<pre className="mx-auto mb-4 w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+								{error}
+							</pre>
+						) : (
+							renderMs != null && (
+								<p className="mx-auto mb-6 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+									Rendered in {renderMs.toFixed(1)} ms
+								</p>
+							)
+						)}
+						{input != null && (
+							// White page sized like a real sheet; music reflows to its width. Horizontal
+							// padding (and the paper inset) collapse on small viewports for max room.
+							<div className="relative mx-auto w-full max-w-257 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
+								{width != null && height != null && (
+									<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
+										{Math.round(width)}×{Math.round(height)}
+									</span>
+								)}
+								<div ref={pageRef}>
+									<canvas ref={canvasRef} className="block" />
+								</div>
 							</div>
-						</div>
-					)}
-					{(resizing || debouncing) && (
-						<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
-							<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
-								<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
-								<span className="text-sm font-medium text-zinc-600">
-									Loading…
-								</span>
+						)}
+						{(resizing || debouncing) && (
+							<div className="pointer-events-none absolute inset-0 bg-black/40">
+								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
+								<div className="sticky top-0 flex h-screen items-center justify-center">
+									<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
+										<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
+										<span className="text-sm font-medium text-zinc-600">
+											Loading…
+										</span>
+									</div>
+								</div>
 							</div>
-						</div>
-					)}
+						)}
+					</div>
 				</section>
 			</main>
 		</div>

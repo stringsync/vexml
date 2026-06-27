@@ -22,12 +22,14 @@ import {
 } from 'vexflow';
 import type { Config } from './config';
 import {
+	BRACKET_X_SHIFT,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
 	TEMPO_NOTE_CLEARANCE,
+	TEMPO_SCALE,
 } from './constants';
 import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
@@ -79,6 +81,31 @@ function pairsTabWithNotation(part: Part): boolean {
 		const sign = measure.getClef(String(staff))?.sign;
 		if (sign) {
 			signs.push(sign);
+		}
+	}
+	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
+}
+
+// True when a notation+tab pair is split across separate single-stave parts (a
+// guitar's notation in one part, its TAB in another) rather than stacked in one
+// two-stave part. Such a system is bracketed by convention, the cross-part analog
+// of pairsTabWithNotation. Only meaningful for multi-part systems — a single
+// notation+tab part already brackets itself via partSymbol.
+function partsPairTabWithNotation(parts: Part[]): boolean {
+	if (parts.length < 2) {
+		return false;
+	}
+	const signs: string[] = [];
+	for (const part of parts) {
+		const measure = part.measures[0];
+		if (!measure) {
+			continue;
+		}
+		for (let staff = 1; staff <= Math.max(part.staveCount, 1); staff++) {
+			const sign = measure.getClef(String(staff))?.sign;
+			if (sign) {
+				signs.push(sign);
+			}
 		}
 	}
 	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
@@ -281,15 +308,26 @@ function drawTempo(
 	// re-states a clef but no time signature (begin barline + clef + end barline = 3
 	// modifiers). CENTER (0) points at the always-present begin barline instead, yielding
 	// the same start-of-notes x offset without the out-of-bounds read.
+	const position = 0;
+	const shiftX = stave.getModifierXShift(position);
+	// StaveTempo's font sizes come from vexflow Metrics, which isn't reachable to override,
+	// so shrink the whole mark with a context scale. Scaling multiplies every coordinate by
+	// TEMPO_SCALE, which would also drag the mark up and left; pre-divide the x/y inputs so it
+	// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
+	// baseY + this.yShift); solving s·(passed) = target gives the compensated inputs below.
+	const targetX = stave.getX() + shiftX + 10;
+	context.save();
+	context.scale(TEMPO_SCALE, TEMPO_SCALE);
 	new StaveTempo(
 		{ duration: tempo.duration, bpm: tempo.bpm },
-		stave.getX(),
-		shiftY,
+		targetX / TEMPO_SCALE - shiftX - 10,
+		(baseY + shiftY) / TEMPO_SCALE - baseY,
 	)
 		.setStave(stave)
-		.setPosition(0)
+		.setPosition(position)
 		.setContext(context)
 		.draw();
+	context.restore();
 }
 
 // Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
@@ -619,13 +657,17 @@ export function drawScore(
 					stave.addTimeSignature(timeSpec);
 				}
 
-				// A multi-stave part's bracket (drawn below) has a top curl that sits where
-				// vexflow's setMeasure centers the measure number, so the number gets
-				// occluded. Only for a bracket do we draw the number ourselves, left-aligned
-				// just right of the barline and lifted above the curl; the curly brace
-				// doesn't reach that high, so it keeps vexflow's placement. Top stave only.
+				// A bracket (drawn below) has a top curl that sits where vexflow's
+				// setMeasure centers the measure number, so the number gets occluded — true
+				// both for a multi-stave part's own bracket and for the system bracket of a
+				// notation+tab pair split across parts. Only for a bracket do we draw the
+				// number ourselves, left-aligned just right of the barline and lifted above
+				// the curl; the curly brace doesn't reach that high, so it keeps vexflow's
+				// placement. The number prints once (measureNumbered), on the top stave.
 				const numberOccluded =
-					isSystemStart && staveCount > 1 && partSymbol(part) === 'bracket';
+					isSystemStart &&
+					((staveCount > 1 && partSymbol(part) === 'bracket') ||
+						partsPairTabWithNotation(parts));
 				if (showMeasureNumber && !measureNumbered && !numberOccluded) {
 					stave.setMeasure(Number(measure.number));
 					measureNumbered = true;
@@ -709,10 +751,17 @@ export function drawScore(
 			// 'none' suppresses the connector entirely.
 			const symbol = partSymbol(part);
 			if (partTop && partBottom && staveCount > 1 && isSystemStart && symbol) {
+				// Match the cross-part path: a bracket's x comes entirely from its top
+				// stave, so nudge it 4px left to sit just outside the system line with a
+				// small gap, then restore. A brace keeps its own placement.
+				if (symbol === 'bracket') {
+					partTop.setX(measureX - BRACKET_X_SHIFT);
+				}
 				new StaveConnector(partTop, partBottom)
 					.setType(symbol)
 					.setContext(context)
 					.draw();
+				partTop.setX(measureX);
 			}
 
 			// Print the instrument name in the first system's reserved left indent,
@@ -745,10 +794,24 @@ export function drawScore(
 		// system start, and a closing line at the system end.
 		if (systemTop && systemBottom && totalStaves > 1) {
 			if (isSystemStart) {
+				// Every multi-stave system gets a plain left line closing the staves' left
+				// edge. A notation+tab pair split across separate parts also gets a bracket
+				// (the cross-part analog of the single-part bracket), drawn just outside it.
 				new StaveConnector(systemTop, systemBottom)
 					.setType('singleLeft')
 					.setContext(context)
 					.draw();
+				if (partsPairTabWithNotation(parts)) {
+					// The bracket's x comes entirely from its top stave; nudge that 4px left
+					// so the bracket sits just outside the system line with a small gap, then
+					// restore.
+					systemTop.setX(measureX - BRACKET_X_SHIFT);
+					new StaveConnector(systemTop, systemBottom)
+						.setType('bracket')
+						.setContext(context)
+						.draw();
+					systemTop.setX(measureX);
+				}
 			}
 			// Every measure's end line gets a connector joining the part's staves, so
 			// internal barlines are tied across staves and not just drawn per-stave.

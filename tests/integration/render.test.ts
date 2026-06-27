@@ -15,6 +15,17 @@ const TEST_CASES = [
 	// A single-stave part above a two-stave (braced) part — mixed stave counts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
 
+	// A guitar split across two single-stave parts — a treble notation stave (P1)
+	// above a 6-line TAB stave (P2) — joined by a bracket plus the system's left line.
+	// The notation+tab pairing is bracketed by convention even when the two staves
+	// live in separate parts rather than one two-stave part. An ascending E4/F4/G4/A4
+	// line on string 1 (frets 0/1/3/5) appears as notation on top and matching frets
+	// below.
+	testCase(
+		'structure_notation_and_tab_parts.musicxml',
+		'structure_notation_and_tab_parts.png',
+	),
+
 	// A single-stave part above a two-stave (braced) part, each with its instrument
 	// name printed to the left of the first system (showPartLabels): "Violin"
 	// centered on the single top stave, "Piano" centered on the braced pair.
@@ -123,7 +134,7 @@ const TEST_CASES = [
 	testCase('dotted_notes.musicxml', 'dotted_notes.png'),
 
 	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations (M1-M2).
-	// - M1: a whole rest.
+	// - M1: a whole rest, centered horizontally in the measure (full-measure-rest convention).
 	// - M2: half, quarter, eighth, sixteenth, then two thirty-second rests.
 	testCase('rest.musicxml', 'rest.png'),
 
@@ -364,6 +375,16 @@ const TEST_CASES = [
 	//   5). Each tab fret sits directly under its notehead, with an empty gap on the tab
 	//   stave under the rest — frets read 0, (gap), 3, 5.
 	testCase('tab_notation_rest.musicxml', 'tab_notation_rest.png'),
+
+	// Notation stave over a 6-line TAB stave, 4/4: the same ascending string-1 line on both
+	// staves (E4/fret0, F4/fret1, G4/fret3, A4/fret5), varying only the durations to exercise
+	// dotted rhythms. The rhythm prints on the notation stave only — the TAB stave shows bare
+	// fret numbers (no stems or dots) aligned under their noteheads.
+	// - M1: single dots — dotted-quarter + eighth pairs; the two long notes carry one
+	//   augmentation dot each.
+	// - M2: double dots — double-dotted-quarter + sixteenth pairs; the two long notes carry
+	//   two augmentation dots each.
+	testCase('tab_notation_durations.musicxml', 'tab_notation_durations.png'),
 
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),

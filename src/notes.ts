@@ -163,7 +163,11 @@ function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 // acciaccatura — which vexflowVoiceTickables groups onto their host note; pitched
 // notes stack their keys and carry each member's printed accidental, dots, stem
 // direction, and articulations.
-export function vexflowChord(chord: Chord, clef: string): StaveNote {
+export function vexflowChord(
+	chord: Chord,
+	clef: string,
+	alignCenter = false,
+): StaveNote {
 	const lead = chord.lead;
 	const duration = durationCode(lead);
 	// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
@@ -175,6 +179,9 @@ export function vexflowChord(chord: Chord, clef: string): StaveNote {
 			keys: ['b/4'],
 			duration: `${duration}r`,
 			dots: lead.dots,
+			// A whole rest alone in a measure is a full-measure rest: engraving convention
+			// centers it horizontally (the formatter does the centering, see vexflowVoiceTickables).
+			alignCenter,
 		});
 		addDots(rest, lead);
 		return rest;
@@ -548,6 +555,12 @@ export function vexflowVoiceTickables(
 	record?: (lead: Note, staveNote: StaveNote) => void,
 ): StemmableNote[] {
 	const tickables: StemmableNote[] = [];
+	// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
+	const soleLead = chords.filter((c) => !c.lead.isGrace).map((c) => c.lead);
+	const centerWholeRest =
+		soleLead.length === 1 &&
+		soleLead[0]?.isRest &&
+		soleLead[0]?.type === 'whole';
 	let cursor = 0;
 	// Grace notes steal no time, so they aren't tickables: they accumulate here and
 	// attach to the next real note as a GraceNoteGroup modifier, drawn just left of it.
@@ -564,7 +577,7 @@ export function vexflowVoiceTickables(
 		if (onset > cursor + EPSILON) {
 			tickables.push(...ghostNotes(onset - cursor));
 		}
-		const staveNote = vexflowChord(chord, clef);
+		const staveNote = vexflowChord(chord, clef, centerWholeRest);
 		if (pendingGrace.length > 0) {
 			const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 			// Beam the group when its grace notes carry <beam> markers (the main beam

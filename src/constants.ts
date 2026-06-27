@@ -91,8 +91,16 @@ export const TAB_GRACE_SPACING = 14;
 export const TAB_TIE_CP1 = 8;
 export const TAB_TIE_CP2 = 12;
 
+/** Pixels a notation+tab bracket is shifted left of the stave, so it sits just outside
+ * the system's left line with a small gap. */
+export const BRACKET_X_SHIFT = 3;
+
 /** Clearance between the bottom of a metronome mark and the top of the first note. */
 export const TEMPO_NOTE_CLEARANCE = 6;
+
+/** Uniform scale applied to the metronome mark — vexflow's StaveTempo defaults
+ * (14pt text, 25pt note glyph) render oversized, so shrink it. */
+export const TEMPO_SCALE = 0.7;
 
 /** bpm a metronome directive falls back to when it carries no number. */
 export const DEFAULT_TEMPO_BPM = 120;

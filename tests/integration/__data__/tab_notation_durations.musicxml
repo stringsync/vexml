@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Notation stave over a 6-line TAB stave, 4/4: the same ascending line on string 1
+         duplicated as voice 1 (pitched, staff 1) and voice 2 (fretted, staff 2). Only the
+         note durations vary per measure, so the dotted rhythms render on both staves with
+         the tab frets staying aligned under their noteheads. divisions=4. -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>TAB</sign><line>5</line></clef>
+        <staff-details number="2"><staff-lines>6</staff-lines></staff-details>
+      </attributes>
+      <!-- Single dots: dotted-quarter + eighth pairs (6+2+6+2). -->
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>quarter</type><dot /><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>eighth</type><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>quarter</type><dot /><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>eighth</type><staff>1</staff>
+      </note>
+      <backup><duration>16</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>2</voice><type>quarter</type><dot /><staff>2</staff>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>eighth</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>2</voice><type>quarter</type><dot /><staff>2</staff>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>eighth</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <!-- Double dots: double-dotted-quarter + sixteenth pairs (7+1+7+1). -->
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>7</duration><voice>1</voice><type>quarter</type><dot /><dot /><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration><voice>1</voice><type>16th</type><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>7</duration><voice>1</voice><type>quarter</type><dot /><dot /><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>1</duration><voice>1</voice><type>16th</type><staff>1</staff>
+      </note>
+      <backup><duration>16</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>7</duration><voice>2</voice><type>quarter</type><dot /><dot /><staff>2</staff>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration><voice>2</voice><type>16th</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>7</duration><voice>2</voice><type>quarter</type><dot /><dot /><staff>2</staff>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>1</duration><voice>2</voice><type>16th</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
