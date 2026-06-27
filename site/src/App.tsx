@@ -99,6 +99,24 @@ export default function App() {
 	const reset = (key: 'noteSpacing' | 'softmaxFactor') =>
 		setConfig(({ [key]: _, ...rest }) => rest);
 
+	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
+	// behind it by the debounce so dragging a slider re-renders once it settles, not on
+	// every step. The loading overlay shows while waiting (shared `debouncing` flag).
+	const [renderConfig, setRenderConfig] = useState<Partial<Config>>({});
+	const skipConfigDebounce = useRef(true);
+	useEffect(() => {
+		if (skipConfigDebounce.current) {
+			skipConfigDebounce.current = false;
+			return;
+		}
+		setDebouncing(true);
+		const t = setTimeout(() => {
+			setRenderConfig(config);
+			setDebouncing(false);
+		}, 500);
+		return () => clearTimeout(t);
+	}, [config]);
+
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas || input == null || width == null) {
@@ -106,7 +124,10 @@ export default function App() {
 		}
 		setError(null);
 		const start = performance.now();
-		render(input, canvas, { ...config, layout: { type: 'standard', width } })
+		render(input, canvas, {
+			...renderConfig,
+			layout: { type: 'standard', width },
+		})
 			.then(() => {
 				setRenderMs(performance.now() - start);
 				setHeight(canvas.clientHeight);
@@ -115,7 +136,7 @@ export default function App() {
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
 			});
-	}, [input, config, width]);
+	}, [input, renderConfig, width]);
 
 	// Reflow the score to the container's width. Callback ref so the observer attaches
 	// exactly when the page div mounts (it only exists once there's input). The observer
@@ -146,8 +167,15 @@ export default function App() {
 		roRef.current = ro;
 	}, []);
 
-	// Open with a random example rendered.
+	// Restore the last-edited MusicXML, or open with a random example.
 	useEffect(() => {
+		const saved = localStorage.getItem(STORAGE_KEY);
+		// ponytail: .mxl saves a `[mxl] name` placeholder, not the file — can't restore it, so fall through to a random example.
+		if (saved != null && !saved.startsWith('[mxl] ')) {
+			setText(saved);
+			setInput(saved);
+			return;
+		}
 		const name = fixtureNames[Math.floor(Math.random() * fixtureNames.length)];
 		if (!name) {
 			return;
@@ -336,12 +364,6 @@ export default function App() {
 								spellCheck={false}
 								className="h-48 resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
 							/>
-							{debouncing && (
-								<div className="flex items-center gap-2 text-xs text-zinc-500">
-									<span className="size-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" />
-									Rendering…
-								</div>
-							)}
 						</div>
 
 						<button
@@ -481,7 +503,7 @@ export default function App() {
 							</div>
 						</div>
 					)}
-					{resizing && (
+					{(resizing || debouncing) && (
 						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
 							<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
 								<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
