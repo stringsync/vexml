@@ -320,7 +320,13 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
 		const justify =
 			layoutMode === 'standard' && systemIndex < systems.length - 1;
-		const slack = justify ? Math.max(0, usableOf(systemIndex) - intrinsic) : 0;
+		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+		// Justified systems fill the page; ragged systems keep their intrinsic width —
+		// but every standard system is capped at the page width, so a measure too wide
+		// to fit (e.g. a large noteSpacing) shrinks to fit instead of spilling off the
+		// edge. Panoramic (cap = Infinity) is untouched and grows the page instead.
+		const target = Math.min(cap, justify ? cap : intrinsic);
+		const slack = target - intrinsic;
 		const areaScale = areaSum > 0 ? (areaSum + slack) / areaSum : 1;
 		let cx = x + (systemIndex === 0 ? labelIndent : 0);
 		measures.forEach((m, i) => {

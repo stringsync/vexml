@@ -212,7 +212,7 @@ export default function App() {
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="mb-2 flex items-center justify-center gap-2 text-sm font-medium text-zinc-600 md:hidden"
+						className="mb-2 py-4 flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 active:bg-zinc-200 active:text-zinc-900 md:hidden"
 					>
 						{mobileOpen ? 'Hide controls ▾' : 'Show controls ▴'}
 					</button>
@@ -266,7 +266,7 @@ export default function App() {
 								htmlFor="musicxml"
 								className="text-xs font-medium text-zinc-500"
 							>
-								MusicXML
+								Edit MusicXML
 							</label>
 							<textarea
 								id="musicxml"
@@ -284,80 +284,87 @@ export default function App() {
 							)}
 						</div>
 
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="noteSpacing"
-								className="flex items-center justify-between text-xs font-medium text-zinc-500"
-							>
-								Note spacing
-								<span className="flex items-center gap-1.5">
-									<span className="font-mono text-zinc-400">{noteSpacing}</span>
-									<button
-										type="button"
-										onClick={() => reset('noteSpacing')}
-										className="text-zinc-400 underline hover:text-zinc-600"
-									>
-										reset
-									</button>
-								</span>
-							</label>
-							<input
-								id="noteSpacing"
-								type="range"
-								min={12}
-								max={120}
-								step={1}
-								value={noteSpacing}
-								onChange={(e) =>
-									setConfig((c) => ({
-										...c,
-										noteSpacing: e.target.valueAsNumber,
-									}))
-								}
-							/>
-							<p className="text-xs text-zinc-400">
-								How much horizontal space notes get: the px a quarter note is
-								allotted. Higher spreads every measure wider.
-							</p>
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="softmaxFactor"
-								className="flex items-center justify-between text-xs font-medium text-zinc-500"
-							>
-								Softmax factor
-								<span className="flex items-center gap-1.5">
-									<span className="font-mono text-zinc-400">
-										{softmaxFactor}
+						<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Config
+							</span>
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="noteSpacing"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Note spacing
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{noteSpacing}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('noteSpacing')}
+											className="text-zinc-400 underline hover:text-zinc-600"
+										>
+											reset
+										</button>
 									</span>
-									<button
-										type="button"
-										onClick={() => reset('softmaxFactor')}
-										className="text-zinc-400 underline hover:text-zinc-600"
-									>
-										reset
-									</button>
-								</span>
-							</label>
-							<input
-								id="softmaxFactor"
-								type="range"
-								min={1}
-								max={30}
-								step={1}
-								value={softmaxFactor}
-								onChange={(e) =>
-									setConfig((c) => ({
-										...c,
-										softmaxFactor: e.target.valueAsNumber,
-									}))
-								}
-							/>
-							<p className="text-xs text-zinc-400">
-								How that space is divided among notes. Higher exaggerates the
-								width difference between long and short notes.
-							</p>
+								</label>
+								<input
+									id="noteSpacing"
+									type="range"
+									min={12}
+									max={120}
+									step={1}
+									value={noteSpacing}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											noteSpacing: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									How much horizontal space notes get: the px a quarter note is
+									allotted. Higher spreads every measure wider.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="softmaxFactor"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Softmax factor
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{softmaxFactor}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('softmaxFactor')}
+											className="text-zinc-400 underline hover:text-zinc-600"
+										>
+											reset
+										</button>
+									</span>
+								</label>
+								<input
+									id="softmaxFactor"
+									type="range"
+									min={1}
+									max={30}
+									step={1}
+									value={softmaxFactor}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											softmaxFactor: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									How that space is divided among notes. Higher exaggerates the
+									width difference between long and short notes.
+								</p>
+							</div>
 						</div>
 					</div>
 				</aside>
@@ -386,7 +393,7 @@ export default function App() {
 						<div className="relative mx-auto w-full max-w-204 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
 							{width != null && height != null && (
 								<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
-									{Math.round(width)} × {Math.round(height)}
+									{Math.round(width)}×{Math.round(height)}
 								</span>
 							)}
 							<div ref={pageRef}>
