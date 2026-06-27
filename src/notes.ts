@@ -1,10 +1,10 @@
 import type {
 	Chord,
 	Measure,
-	Note,
 	Voice as ScoreVoice,
 	Time,
 } from '@stringsync/mdom';
+import { MElement, Note } from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -17,6 +17,7 @@ import {
 	GraceNoteGroup,
 	GraceTabNote,
 	Modifier,
+	Parenthesis,
 	StaveNote,
 	Stem,
 	type StemmableNote,
@@ -89,16 +90,35 @@ function isHarmonic(note: Note): boolean {
 	return !!note.child('notations')?.child('technical')?.child('harmonic');
 }
 
+// A <notehead>x</notehead>: an X-shaped notehead (a dead/muted note), drawn as a cross on a
+// notation stave (see vexflowKey) and as an "X" in place of the fret on tab (see tabPositions).
+function isXNotehead(note: Note): boolean {
+	return note.child('notehead')?.text === 'x';
+}
+
+// A <notehead parentheses="yes">: a ghost/optional note, drawn with round brackets around the
+// notehead on a notation stave (see addParentheses) and the fret wrapped in "()" on tab (see
+// tabPositions).
+function isParenthesized(note: Note): boolean {
+	return note.child('notehead')?.getAttribute('parentheses') === 'yes';
+}
+
 // A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' notehead code so
-// vexflow draws a diamond (open for half+/whole, filled for quarter). Rests have no pitch;
-// callers handle them.
+// vexflow draws a diamond (open for half+/whole, filled for quarter); an X notehead appends
+// '/X2' for a cross. Rests have no pitch; callers handle them.
 function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
 	if (!pitch) {
 		return 'b/4';
 	}
 	const key = `${pitch.step.toLowerCase()}/${pitch.octave}`;
-	return isHarmonic(note) ? `${key}/H` : key;
+	if (isHarmonic(note)) {
+		return `${key}/H`;
+	}
+	if (isXNotehead(note)) {
+		return `${key}/X2`;
+	}
+	return key;
 }
 
 // Augmentation dots.
@@ -134,6 +154,24 @@ function addArticulations(staveNote: StaveNote, note: Note): void {
 	}
 }
 
+// A <notations><fermata>: the held-note arc-over-dot. Default placement is above
+// (vexflow "a@a"); type="inverted" mirrors it below ("a@u"). Unlike articulations,
+// the side is the fermata's type, not the stem direction.
+function addFermata(staveNote: StaveNote, note: Note): void {
+	const fermata = note.child('notations')?.child('fermata');
+	if (!fermata) {
+		return;
+	}
+	const inverted = fermata.getAttribute('type') === 'inverted';
+	const articulation = new Articulation(inverted ? 'a@u' : 'a@a');
+	// Vexflow defaults every Articulation to ABOVE; the below-shaped glyph also needs the
+	// BELOW position so it sits under the note instead of floating over it.
+	articulation.setPosition(
+		inverted ? Modifier.Position.BELOW : Modifier.Position.ABOVE,
+	);
+	staveNote.addModifier(articulation);
+}
+
 // Honor an explicit <stem>up|down (e.g. to separate two voices on one stave).
 // Absent, auto-pick from staff position (see vexflowChord's auto_stem).
 function applyStem(staveNote: StaveNote, note: Note): void {
@@ -153,6 +191,17 @@ function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
 		if (code) {
 			staveNote.addModifier(new Accidental(code), i);
+		}
+	});
+}
+
+// Wrap each parenthesized chord member's notehead in round brackets. Per-member (like
+// accidentals) rather than Parenthesis.buildAndAttach, which brackets every notehead.
+function addParentheses(staveNote: StaveNote, chord: Chord): void {
+	chord.notes.forEach((note, i) => {
+		if (isParenthesized(note)) {
+			staveNote.addModifier(new Parenthesis(Modifier.Position.LEFT), i);
+			staveNote.addModifier(new Parenthesis(Modifier.Position.RIGHT), i);
 		}
 	});
 }
@@ -206,9 +255,11 @@ export function vexflowChord(
 		autoStem: !lead.stem,
 	});
 	addAccidentals(staveNote, chord);
+	addParentheses(staveNote, chord);
 	addDots(staveNote, lead);
 	applyStem(staveNote, lead);
 	addArticulations(staveNote, lead);
+	addFermata(staveNote, lead);
 	return staveNote;
 }
 
@@ -277,9 +328,23 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 function tabPositions(chord: Chord) {
 	const toPosition = (note: Chord['notes'][number]) => {
 		const fret = note.fret ?? 0;
+		// A dead note (<notehead>x</notehead>) prints "X" on its string instead of a fret;
+		// a harmonic angle-brackets its fret. vexflow renders the fret string verbatim.
+		let fretText: string | number = fret;
+		if (isXNotehead(note)) {
+			// A dingbat "✕" (U+2715), not an ASCII "X": the notation font (Bravura) draws an
+			// ornate glyph for "X" and would win the CSS font fallthrough, but it lacks this
+			// dingbat, so the fret falls through to the plain text font like the fret digits do.
+			fretText = '✕';
+		} else if (isHarmonic(note)) {
+			fretText = `<${fret}>`;
+		} else if (isParenthesized(note)) {
+			// A ghost/optional fret reads as "(2)". vexflow renders the fret string verbatim.
+			fretText = `(${fret})`;
+		}
 		return {
 			str: note.string ?? 1,
-			fret: isHarmonic(note) ? `<${fret}>` : fret,
+			fret: fretText,
 		};
 	};
 	const struck = chord.notes.filter((note) => !isTieStop(note));
@@ -527,6 +592,63 @@ export function tempoOf(measure: Measure): TempoMark | null {
 		return { duration, bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM };
 	}
 	return null;
+}
+
+// A measure's <direction><direction-type><words> text directives (e.g. "ritardando",
+// "dolce"), in document order. These are free-text expressions printed above the stave.
+// ponytail: placement and font-style attributes ignored — every words direction prints
+// above the staff in italics; add a placement/style field if a fixture needs below or
+// upright words.
+export function wordsOf(measure: Measure): string[] {
+	const out: string[] = [];
+	for (const direction of measure.directions) {
+		const words = direction.child('direction-type')?.child('words')?.text;
+		if (words) {
+			out.push(words);
+		}
+	}
+	return out;
+}
+
+// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign. ASCII
+// '#'/'b' (not the Unicode ♯/♭), which the text font has glyphs for — the music-symbol
+// codepoints fall back to a system font with loose side-bearings that space the symbol out.
+// ponytail: real ♯/♭ engraving would need the notation font's accidental glyph drawn as a
+// separate block (vexflow's ChordSymbol); add it if a fixture wants typeset accidentals.
+const HARMONY_ALTER: Record<string, string> = { '1': '#', '-1': 'b' };
+
+// A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
+// any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
+// exactly this (a major triad's text is empty, so it prints the bare root).
+// ponytail: a <kind> without a text attribute prints just the root — no
+// kind-name->suffix table (major-seventh -> "maj7", …); add one if a fixture needs it.
+function harmonyText(harmony: MElement): string {
+	const root = harmony.child('root');
+	const step = root?.child('root-step')?.text ?? '';
+	const alter = root?.child('root-alter')?.text ?? '';
+	const kind = harmony.child('kind')?.getAttribute('text') ?? '';
+	return step + (HARMONY_ALTER[alter] ?? '') + kind;
+}
+
+// Each <harmony> in a measure paired with the lead note it sits above. <harmony>
+// elements are interleaved with <note>s in document order and apply to the note
+// that follows, so walk the measure's children tracking the pending harmony and
+// bind it to the next chord lead (the next non-<chord/> note).
+export function harmoniesOf(measure: Measure): { lead: Note; text: string }[] {
+	const harmonies: { lead: Note; text: string }[] = [];
+	let pending: MElement | null = null;
+	for (const child of measure.children) {
+		if (child instanceof MElement && child.tag === 'harmony') {
+			pending = child;
+		} else if (pending && child instanceof Note && !child.isChordMember) {
+			const text = harmonyText(pending);
+			if (text) {
+				harmonies.push({ lead: child, text });
+			}
+			pending = null;
+		}
+	}
+	return harmonies;
 }
 
 // The beat a measure's voices run out to: the latest onset+duration across them.

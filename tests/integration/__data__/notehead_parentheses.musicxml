@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guitar</part-name>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Guitar</part-name>
+    </score-part>
+  </part-list>
+  <!-- Parenthesized noteheads (<notehead parentheses="yes">): a ghost/optional note. The
+       notation part draws round brackets around the notehead; the tab part wraps the fret
+       number in parentheses on the matching string. A plain note is interleaved so the
+       parenthesized one reads against an un-bracketed neighbor.
+       - M1: a parenthesized single note, then a plain single note, then a parenthesized chord
+         (brackets stack around each chord member / each fret). -->
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead parentheses="yes">normal</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+      </note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead parentheses="yes">normal</notehead>
+        <notations><technical><string>1</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead parentheses="yes">normal</notehead>
+        <notations><technical><string>1</string><fret>2</fret></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

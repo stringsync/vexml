@@ -18,8 +18,8 @@ export const PAGE_MARGIN_TOP_WITH_TEMPO = 70;
 export const PAGE_MARGIN_BOTTOM = 40;
 
 /** Vertical gap between stacked systems, plus room for the next system's notes that
- * rise above its top staff. */
-export const SYSTEM_GAP = 90;
+ * rise above its top staff. The default for `Config.systemSpacing`. */
+export const SYSTEM_GAP = 30;
 
 /** Vertical gap between staves within one part (a brace-joined group reads as one
  * instrument because this exceeds INTER_PART_SPACING). */
@@ -94,6 +94,28 @@ export const TAB_TIE_CP2 = 12;
 /** Pixels a notation+tab bracket is shifted left of the stave, so it sits just outside
  * the system's left line with a small gap. */
 export const BRACKET_X_SHIFT = 3;
+
+/** Chord-symbol (from `<harmony>`) text size — a touch smaller than the part label so it
+ * reads as an annotation above the notes. */
+export const HARMONY_FONT_SIZE = 13;
+
+/** How far a chord symbol's baseline sits above the top staff line. */
+export const HARMONY_Y_OFFSET = 14;
+
+/** Clearance kept between a chord symbol's baseline and the top of a high note it
+ * sits over, so the symbol lifts clear instead of colliding with the notehead. */
+export const HARMONY_NOTE_CLEARANCE = 8;
+
+/** Words-direction (e.g. "ritardando") text size — matches the chord-symbol size so
+ * both read as annotations above the notes. */
+export const WORDS_FONT_SIZE = 13;
+
+/** How far a words-direction baseline sits above the top staff line. */
+export const WORDS_Y_OFFSET = 14;
+
+/** Clearance kept between a words-direction baseline and the top of a high note it sits
+ * over, so the directive lifts clear instead of colliding with the notehead. */
+export const WORDS_NOTE_CLEARANCE = 8;
 
 /** Clearance between the bottom of a metronome mark and the top of the first note. */
 export const TEMPO_NOTE_CLEARANCE = 6;

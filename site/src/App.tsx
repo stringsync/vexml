@@ -97,7 +97,8 @@ export default function App() {
 	const [config, setConfig] = useState<Partial<Config>>({});
 	const noteSpacing = config.noteSpacing ?? 36;
 	const softmaxFactor = config.softmaxFactor ?? 10;
-	const reset = (key: 'noteSpacing' | 'softmaxFactor') =>
+	const systemSpacing = config.systemSpacing ?? 30;
+	const reset = (key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing') =>
 		setConfig(({ [key]: _, ...rest }) => rest);
 
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
@@ -473,6 +474,47 @@ export default function App() {
 								<p className="text-xs text-zinc-400">
 									How that space is divided among notes. Higher exaggerates the
 									width difference between long and short notes.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="systemSpacing"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									System spacing
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{systemSpacing}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('systemSpacing')}
+											disabled={config.systemSpacing === undefined}
+											aria-label="Reset system spacing"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="systemSpacing"
+									type="range"
+									min={10}
+									max={50}
+									step={1}
+									value={systemSpacing}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											systemSpacing: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									Vertical gap between stacked systems. Lower packs systems
+									closer together down the page.
 								</p>
 							</div>
 						</div>

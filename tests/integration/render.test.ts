@@ -150,6 +150,15 @@ const TEST_CASES = [
 	//   up into the mark's default band, so the mark is lifted clear of the notehead.
 	testCase('tempo.musicxml', 'tempo.png'),
 
+	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
+	// in italics above the staff at the first note's x. Four boring quarters per measure so
+	// only the directive and the first note's height vary.
+	// - M1: "*ritardando..." over B4 quarters (mid-staff, no collision) — the text sits one
+	//   fixed gap above the staff.
+	// - M2: "*ritardando..." over a high first note (C6, two ledger lines above) that reaches
+	//   up into the text's default band, so the text is lifted clear of the notehead.
+	testCase('words.musicxml', 'words.png'),
+
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
 	// (C5, same pitch in both).
 	testCase('measures_two.musicxml', 'measures_two.png'),
@@ -163,6 +172,12 @@ const TEST_CASES = [
 	//   both staves (boldDoubleRight) rather than the plain single line drawn at every
 	//   other measure end.
 	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
+
+	// Treble stave, 4/4, two whole-note measures (C5 in both). M1 carries an explicit
+	// right <barline> with <bar-style>light-light</bar-style>, so the divider between M1
+	// and M2 renders as a thin double line instead of the default single line; M2 closes
+	// with the usual thin-thick end barline.
+	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
 	// Beam variations across seven 4/4 measures. Wraps across systems.
 	// - M1: simple beamed eighths in a small range.
@@ -368,6 +383,35 @@ const TEST_CASES = [
 	//   (strings 3/2/1, single-digit "<5>"). Watch the stacked brackets for vertical clashing.
 	testCase('tab_harmonic.musicxml', 'tab_harmonic.png'),
 
+	// Notation stave over a 6-line TAB stave: X noteheads (<notehead>x</notehead>) for
+	// dead/muted notes. The notation stave draws a cross at each pitch (vexflow "/X2"); the tab
+	// stave prints "✕" in place of the fret on the matching string (src/notes.ts). No <time>, so
+	// no time signature is drawn.
+	// - M1: four quarters, the notation pitch held at B4 (middle line, no ledger lines) so the
+	//   four crosses sit in a row at one height — only the glyph is under test there. The tab
+	//   <string> is what varies (6, 4, 2, 1), so the tab "✕" rises from the bottom (string 6)
+	//   to the top (string 1) line left to right, proving each lands on the right string.
+	// - M2: eight beamed eighths (two beam groups of four), notation pitch B4 and tab string 1
+	//   both held — the cross noteheads carry stems and beam normally; the tab "✕" marks stay
+	//   bare (tab draws no stems/beams), just spaced at the eighth rhythm.
+	// - M3: a whole-note chord — three stacked cross noteheads (G4/B4/D5) over three stacked tab
+	//   "✕" marks (strings 3/2/1), proving the X glyph stacks as a chord on both staves.
+	// - M4: a realistic dead-note strum — a normal note (G4 / tab fret "0") beamed with an
+	//   X-notehead dyad (A3+D4 / tab strings 2+1 "✕"), twice, then a plain G4 half note. Shows
+	//   X noteheads beamed alongside normal ones and the tab "✕" next to a real fret digit; the
+	//   X notes carry real pitches (A3 dips to a ledger line below the staff).
+	testCase('notehead_x.musicxml', 'notehead_x.png'),
+
+	// Notation stave over a 6-line TAB stave: parenthesized noteheads
+	// (<notehead parentheses="yes">) for ghost/optional notes. The notation stave wraps each
+	// notehead in round brackets (vexflow Parenthesis modifier); the tab stave wraps the fret
+	// number in "()" on the matching string (src/notes.ts). No <time>, so no time signature is
+	// drawn. A plain note sits between the parenthesized ones for contrast.
+	// - M1: a parenthesized B4 quarter (tab string 1, fret "(2)"), a plain B4 quarter (fret 5),
+	//   then a parenthesized G4/B4/D5 half-note chord — each notehead bracketed on the notation
+	//   stave and each fret "(0)"/"(0)"/"(2)" bracketed on tab strings 3/2/1.
+	testCase('notehead_parentheses.musicxml', 'notehead_parentheses.png'),
+
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
 	// voice reserves the same beat as blank space (tab omits rest glyphs).
@@ -399,6 +443,25 @@ const TEST_CASES = [
 	// - M1: four C5 quarters (stems down) — articulations sit above the noteheads.
 	// - M2: four E4 quarters (stems up) — articulations sit below the noteheads.
 	testCase('articulations.musicxml', 'articulations.png'),
+
+	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
+	// arc-over-dot above (or below) the note. Unlike articulations, a fermata's side is
+	// set by its type, not the stem direction.
+	// - M1: a normal fermata above a C5 whole note (default placement).
+	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
+	testCase('fermata.musicxml', 'fermata.png'),
+
+	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
+	// note of its measure (four boring B4 quarters per measure so only the symbol
+	// varies). The display string is the root step + alter sign + the <kind text="…">
+	// suffix.
+	// - M1: a bare major triad — root C, kind text empty — prints just "C".
+	// - M2: a dominant seventh — root G, kind text "7" — prints "G7".
+	// - M3: an altered-root minor — root F with <root-alter>1</root-alter>, kind text
+	//   "m" — prints "F#m" (ASCII '#', which the text font renders tightly).
+	// - M4: a high first note (C6, two ledger lines above the staff) under a "D" symbol —
+	//   the symbol lifts above the notehead/ledger lines instead of colliding with them.
+	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.

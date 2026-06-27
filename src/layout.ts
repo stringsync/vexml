@@ -19,7 +19,6 @@ import {
 	PAGE_MARGIN_X,
 	QUARTER_NOTE_TICKS,
 	REFERENCE_WIDTH,
-	SYSTEM_GAP,
 	TAB_MIN_NOTE_SPACING,
 } from './constants';
 import {
@@ -358,7 +357,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		boxes,
 		staveOffsets,
 		top: y,
-		systemGap: SYSTEM_GAP,
+		systemGap: config.systemSpacing,
 		width: naturalWidth,
 		floorHeight,
 		softmaxFactor,
