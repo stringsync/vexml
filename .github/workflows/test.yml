@@ -17,7 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bunx vex fix --check
+      - run: echo "$PWD/bin" >> "$GITHUB_PATH"
+      - run: vex fix --check
       # Build the test image once with gha layer caching and load it into the
       # daemon. vex test then reuses it (VEX_TEST_SKIP_BUILD) instead of rebuilding.
       - uses: docker/setup-buildx-action@v3
@@ -28,6 +29,6 @@ jobs:
           tags: vexml-tests
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - run: bunx vex test
+      - run: vex test
         env:
           VEX_TEST_SKIP_BUILD: '1'

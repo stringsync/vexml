@@ -52,7 +52,20 @@ await render(musicXML, element, {
 
 ## Development
 
+The `vex` CLI (`bin/vex`) wraps the dev tasks. It needs [bun](https://bun.sh).
+Add the repo's `bin/` to your `PATH` so `vex` works anywhere:
+
 ```sh
-bun link # install the mdom command
-mdom
+export PATH="$PWD/bin:$PATH" # run from the repo root; add to your shell profile to persist
 ```
+
+Then:
+
+```sh
+vex dev                     # run the playground site (localhost:5174)
+vex fix                     # format, lint, and typecheck (--check to verify only)
+vex test                    # run unit + visual-regression tests in Docker
+vex render -i song.musicxml # render a MusicXML file to a png
+```
+
+Don't want it on your `PATH`? Run it directly with `./bin/vex <command>`.
