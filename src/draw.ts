@@ -568,6 +568,17 @@ export function drawScore(
 		let staveRow = 0;
 		let systemTop: Stave | undefined;
 		let systemBottom: Stave | undefined;
+		// Every part's staves are formatted together as one column so notes at the same
+		// tick line up vertically across the whole system — not just within a part.
+		// Standard engraving aligns all instruments on the beat, and a notation+tab pair
+		// split into separate MusicXML parts must align the same as a single two-stave
+		// part. Built per part below, then formatted and drawn once after the part loop.
+		const systemPending: PendingStave[] = [];
+		const tempoTasks: Array<{
+			stave: Stave;
+			tempo: TempoMark;
+			firstNote: StaveNote | undefined;
+		}> = [];
 
 		for (const part of parts) {
 			const staveCount = Math.max(part.staveCount, 1);
@@ -727,23 +738,21 @@ export function drawScore(
 				staveRow++;
 			}
 
-			// Format and draw the part's staves together so same-tick notes line up.
-			const noteExtent = formatAndDrawPart(
-				context,
-				pendingStaves,
-				softmaxFactor,
-			);
-			pageBottom = Math.max(pageBottom, noteExtent.bottom);
-			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
-			pageTop = Math.min(pageTop, noteExtent.top);
+			// Defer formatting to one pass over the whole system (below) so notes align
+			// across parts, not just within this part.
+			systemPending.push(...pendingStaves);
 
 			// A metronome mark (from a <direction><metronome>) prints on this part's top
 			// staff wherever it appears — the piece start or a mid-piece tempo change.
-			// Drawn now that the notes are formatted so it can clear a high first note.
+			// Drawn after the system is formatted so it can clear a high first note.
 			const tempo = tempoOf(measure);
 			const topStave = pendingStaves[0];
 			if (tempo && topStave) {
-				drawTempo(context, topStave.stave, tempo, topStave.staveNotes[0]);
+				tempoTasks.push({
+					stave: topStave.stave,
+					tempo,
+					firstNote: topStave.staveNotes[0],
+				});
 			}
 
 			// A part's own staves are joined at each system start by the symbol named in
@@ -788,6 +797,17 @@ export function drawScore(
 				context.fillText(part.label, measureX - LABEL_GAP - tw, cy + 1.5);
 				context.restore();
 			}
+		}
+
+		// Format and draw every part's staves together so same-tick notes line up
+		// vertically across the whole system (notation over its own tab, and across
+		// separate parts that share a beat).
+		const noteExtent = formatAndDrawPart(context, systemPending, softmaxFactor);
+		pageBottom = Math.max(pageBottom, noteExtent.bottom);
+		systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
+		pageTop = Math.min(pageTop, noteExtent.top);
+		for (const t of tempoTasks) {
+			drawTempo(context, t.stave, t.tempo, t.firstNote);
 		}
 
 		// Join the whole system across all parts with a shared left line at the

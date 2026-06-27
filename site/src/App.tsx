@@ -45,7 +45,7 @@ function CheckIcon() {
 			viewBox="0 0 24 24"
 			strokeWidth={1.5}
 			stroke="currentColor"
-			className="size-4"
+			className="size-4 text-green-600"
 			aria-hidden="true"
 		>
 			<path
@@ -84,6 +84,7 @@ export default function App() {
 		() => localStorage.getItem(STORAGE_KEY) !== null,
 	);
 	const [cleared, setCleared] = useState(false);
+	const [restored, setRestored] = useState(false);
 	const lastWidthRef = useRef<number | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
@@ -174,6 +175,8 @@ export default function App() {
 		if (saved != null && !saved.startsWith('[mxl] ')) {
 			setText(saved);
 			setInput(saved);
+			setRestored(true);
+			setTimeout(() => setRestored(false), 1500);
 			return;
 		}
 		const name = fixtureNames[Math.floor(Math.random() * fixtureNames.length)];
@@ -369,12 +372,17 @@ export default function App() {
 						<button
 							type="button"
 							onClick={clearStorage}
-							disabled={!stored || cleared}
+							disabled={!stored || cleared || restored}
 							className="flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							{cleared ? (
 								<>
 									Cleared
+									<CheckIcon />
+								</>
+							) : restored ? (
+								<>
+									Retrieved from local storage
 									<CheckIcon />
 								</>
 							) : (

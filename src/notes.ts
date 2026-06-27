@@ -302,6 +302,10 @@ export function vexflowTabChord(chord: Chord): TabNote {
 	const tabNote = new TabNote({
 		positions: tabPositions(chord),
 		duration,
+		// Count the dot(s) in the note's ticks (as the notation path does) so a dotted
+		// tab note isn't a tick-position short and drift out of alignment with the
+		// notation stave it's formatted against. Tab omits the drawn dot glyph.
+		dots: lead.dots,
 	});
 	styleFrets(tabNote);
 	addTabModifiers(tabNote, lead);

@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { program } from 'commander';
+import { deploy } from './deploy';
 import { dev } from './dev';
 import { fix } from './fix';
 import { render } from './render';
@@ -16,6 +17,13 @@ program
 	.description('run the dev playground site')
 	.action(async () => {
 		await dev();
+	});
+
+program
+	.command('deploy')
+	.description('build the site and publish it to the gh-pages branch')
+	.action(async () => {
+		await deploy();
 	});
 
 program
