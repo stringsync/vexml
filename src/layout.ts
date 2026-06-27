@@ -308,9 +308,10 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// --- Placement ----------------------------------------------------------------
 	// Lay each system left to right at intrinsic (note-area) widths. Full systems are
 	// justified to the reference width by stretching note areas proportionally (the
-	// per-tick rate stays uniform within the system); the last/partial system — and
-	// all of panoramic — stay ragged, so a short line or lone measure keeps its
-	// natural width instead of being needlessly stretched.
+	// per-tick rate stays uniform within the system); the last/partial system of a
+	// multi-system score — and all of panoramic — stay ragged, so a short trailing
+	// line keeps its natural width instead of being needlessly stretched. A score that
+	// fits on a single system is justified, so a lone line fills the page width.
 	const boxes: MeasureBox[] = [];
 	let naturalWidth = width;
 	systems.forEach((measures, systemIndex) => {
@@ -319,7 +320,8 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		const areaSum = areas.reduce((sum, a) => sum + a, 0);
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
 		const justify =
-			layoutMode === 'standard' && systemIndex < systems.length - 1;
+			layoutMode === 'standard' &&
+			(systemIndex < systems.length - 1 || systems.length === 1);
 		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
 		// Justified systems fill the page; ragged systems keep their intrinsic width —
 		// but every standard system is capped at the page width, so a measure too wide
