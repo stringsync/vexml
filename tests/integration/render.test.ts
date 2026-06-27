@@ -214,13 +214,11 @@ const TEST_CASES = [
 
 	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
 	// quarter — where the middle note carries both tie start and stop, so two arcs join end to
-	// end across the same pitch. Beat 1 leads in with a 16th E4 beamed to the dotted eighth;
-	// beats 3-4 add a below-placed slur over a 16th run (F#4-G4) into a slashed grace E4 that
-	// slurs into the closing F#4 eighth.
-	// TODO: False positive: this baseline was created from the current render, so it may be
-	// accepting an incorrect tie-chain rendering. The user reports "something wrong" here.
-	// Review the render (focus on the F#4 tie chain — the middle note's two arcs and whether
-	// they connect cleanly), then run vex test tie_chain --update only once confirmed correct.
+	// end across the same pitch. The exporter orders this note's <tied start> before its <tied
+	// stop>, which mdom's document-order pairing mis-matched to the note's OWN stop (a
+	// degenerate self-tie drawing nothing); buildTies re-resolves it so both links draw. Beat
+	// 1 leads in with a 16th E4 beamed to the dotted eighth; beats 3-4 add a below-placed slur
+	// over a 16th run (F#4-G4) into a slashed grace E4 that slurs into the closing F#4 eighth.
 	testCase('tie_chain.musicxml', 'tie_chain.png'),
 
 	// Treble stave, 4/4, one measure: two stem-up half-note chords (C5/E5/G5) with all three
