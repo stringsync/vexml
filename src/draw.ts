@@ -1143,6 +1143,14 @@ export function drawScore(
 			for (const t of tempoTasks) {
 				drawTempo(context, t.stave, t.tempo, t.firstNote);
 			}
+			// Words go before the diagrams so a chord diagram draws on top of any words it
+			// shares a measure with — the fret box stays fully legible, the text yields.
+			for (const w of wordsTasks) {
+				pageTop = Math.min(
+					pageTop,
+					drawWords(context, w.stave, w.text, w.firstNote, labelFont),
+				);
+			}
 			// Diagrams sit at their lead note's x; two on notes either side of a barline can
 			// be close enough to overlap (especially at a narrow width). Push each box's left
 			// edge past the previous diagram's right edge + a gap (tracked across measures in
@@ -1188,12 +1196,6 @@ export function drawScore(
 						drawHarmony(context, h.staveNote, h.text, labelFont, h.hasTie),
 					);
 				}
-			}
-			for (const w of wordsTasks) {
-				pageTop = Math.min(
-					pageTop,
-					drawWords(context, w.stave, w.text, w.firstNote, labelFont),
-				);
 			}
 
 			// Join the whole system across all parts with a shared left line at the

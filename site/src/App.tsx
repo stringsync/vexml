@@ -622,9 +622,9 @@ export default function App() {
 									}
 								/>
 								<p className="text-xs text-zinc-400">
-									The width the score is engraved to; the rendering then scales up
-									or down to fit its container. Wider fits more measures per system
-									before wrapping.
+									The width the score is engraved to; the rendering then scales
+									up or down to fit its container. Wider fits more measures per
+									system before wrapping.
 								</p>
 							</div>
 						</div>

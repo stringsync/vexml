@@ -600,6 +600,8 @@ const TEST_CASES = [
 	//   string-5's dot one row down.
 	// - M9: G♯m7♭5, string 6 at fret 4, string 5 muted, strings 4/3/2 across frets 3-4 → box
 	//   from fret 3, "4" beside string-6's dot one row down.
+	// - M10: Bm7 fret box plus an italic "(as taught)" words direction in the same measure —
+	//   the diagram draws on top, staying fully legible where the text overlaps it.
 	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
 
 	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
