@@ -310,9 +310,10 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// Lay each system left to right at intrinsic (note-area) widths. Full systems are
 	// justified to the reference width by stretching note areas proportionally (the
 	// per-tick rate stays uniform within the system); the last/partial system of a
-	// multi-system score — and all of panoramic — stay ragged, so a short trailing
-	// line keeps its natural width instead of being needlessly stretched. A score that
-	// fits on a single system is justified, so a lone line fills the page width.
+	// multi-system score stays ragged unless it already fills minLastSystemFill
+	// of the line (then it justifies too), and all of panoramic stays ragged, so a short
+	// trailing line keeps its natural width instead of being needlessly stretched. A score
+	// that fits on a single system is justified, so a lone line fills the page width.
 	const boxes: MeasureBox[] = [];
 	let naturalWidth = width;
 	systems.forEach((measures, systemIndex) => {
@@ -320,10 +321,16 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		const areas = measures.map((m) => noteAreas[m] ?? BASE_VOICE_WIDTH);
 		const areaSum = areas.reduce((sum, a) => sum + a, 0);
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
+		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+		// The last system of a multi-system score stays ragged unless its measures already
+		// fill most of the line: once their intrinsic width reaches minLastSystemFill
+		// of the reference width, justify it so a nearly-full trailing line snaps to the page
+		// edge instead of leaving a sliver of margin. Full systems and a lone line always justify.
+		const isLastOfMany =
+			systemIndex === systems.length - 1 && systems.length > 1;
 		const justify =
 			layoutMode === 'standard' &&
-			(systemIndex < systems.length - 1 || systems.length === 1);
-		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+			(!isLastOfMany || intrinsic >= cap * config.minLastSystemFill);
 		// Justified systems fill the page; ragged systems keep their intrinsic width —
 		// but every standard system is capped at the page width, so a measure too wide
 		// to fit (e.g. a large noteSpacing) shrinks to fit instead of spilling off the

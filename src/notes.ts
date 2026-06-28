@@ -185,9 +185,15 @@ function applyStem(staveNote: StaveNote, note: Note): void {
 	}
 }
 
-// Stack each chord member's printed <accidental> onto its notehead.
+// Stack each chord member's printed <accidental> onto its notehead. A dead/muted note
+// (X notehead) has no definite pitch, so a printed accidental on it is meaningless —
+// skip it. (Transcription exports sometimes emit one anyway; on a grace note it also
+// collides with the cross glyph instead of sitting clear to its left.)
 function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 	chord.notes.forEach((note, i) => {
+		if (isXNotehead(note)) {
+			return;
+		}
 		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
 		if (code) {
 			staveNote.addModifier(new Accidental(code), i);
@@ -610,6 +616,50 @@ export function wordsOf(measure: Measure): string[] {
 	return out;
 }
 
+// A <direction><direction-type><pedal> spanner marker, bound to the lead note it
+// anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
+// default "Ped…*" text); it rides on every marker so the stop knows the style.
+export type PedalMark = {
+	lead: Note;
+	type: 'start' | 'stop';
+	number: string;
+	line: boolean;
+};
+
+// A measure's pedal markers, in document order: a "start" binds to the next note
+// (the pedal goes down there), a "stop" to the previous note (the last note still
+// held). Directions sit between notes, so walk the children tracking the last lead
+// and any starts pending a note.
+// ponytail: only start/stop handled — change/continue/sostenuto/discontinue
+// pedal directions are ignored; add them if a fixture needs a re-pedal or sostenuto.
+export function pedalsOf(measure: Measure): PedalMark[] {
+	const out: PedalMark[] = [];
+	const pendingStarts: { number: string; line: boolean }[] = [];
+	let lastLead: Note | null = null;
+	for (const child of measure.children) {
+		if (child instanceof MElement && child.tag === 'direction') {
+			const pedal = child.child('direction-type')?.child('pedal');
+			const type = pedal?.getAttribute('type');
+			if (type === 'start' || type === 'stop') {
+				const number = pedal?.getAttribute('number') ?? '1';
+				const line = pedal?.getAttribute('line') === 'yes';
+				if (type === 'start') {
+					pendingStarts.push({ number, line });
+				} else if (lastLead) {
+					out.push({ lead: lastLead, type, number, line });
+				}
+			}
+		} else if (child instanceof Note && !child.isChordMember) {
+			for (const start of pendingStarts) {
+				out.push({ lead: child, type: 'start', ...start });
+			}
+			pendingStarts.length = 0;
+			lastLead = child;
+		}
+	}
+	return out;
+}
+
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
 // real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural — rare in a root, but
 // MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
@@ -618,7 +668,8 @@ const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '�
 
 // A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
 // any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
-// exactly this (a major triad's text is empty, so it prints the bare root).
+// exactly this (a major triad's text is empty, so it prints the bare root). A
+// <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
 // ponytail: a <kind> without a text attribute prints just the root — no
 // kind-name->suffix table (major-seventh -> "maj7", …); add one if a fixture needs it.
 function harmonyText(harmony: MElement): string {
@@ -626,7 +677,13 @@ function harmonyText(harmony: MElement): string {
 	const step = root?.child('root-step')?.text ?? '';
 	const alter = root?.child('root-alter')?.text ?? '';
 	const kind = harmony.child('kind')?.getAttribute('text') ?? '';
-	return step + (HARMONY_ALTER[alter] ?? '') + kind;
+	const bass = harmony.child('bass');
+	const bassStep = bass?.child('bass-step')?.text ?? '';
+	const bassAlter = bass?.child('bass-alter')?.text ?? '';
+	const bassText = bassStep
+		? `/${bassStep}${HARMONY_ALTER[bassAlter] ?? ''}`
+		: '';
+	return step + (HARMONY_ALTER[alter] ?? '') + kind + bassText;
 }
 
 // Each <harmony> in a measure paired with the lead note it sits above. <harmony>

@@ -2,6 +2,7 @@ import type { Chord, Note } from '@stringsync/mdom';
 import {
 	Beam,
 	Curve,
+	PedalMarking,
 	type StaveNote,
 	StaveTie,
 	type TabNote,
@@ -18,6 +19,7 @@ import {
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
 } from './constants';
+import type { PedalMark } from './notes';
 
 // A beam run: the notes joined by their primary (8th-level) beam, plus the indexes
 // within the run where the secondary (16th+) beam breaks into sub-beams.
@@ -411,6 +413,43 @@ export function buildSlides(
 		}
 	}
 	return slides;
+}
+
+// Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
+// PedalMarking under the stave — the "Ped…*" text by default, or a bracket line
+// when the MusicXML carries line="yes". Paired by `number` and resolved over the
+// whole score (a pedal can span barlines) like the other spanners; the markers
+// arrive in document order, so each stop closes the matching open start.
+// ponytail: a pedal whose stop wraps onto a later system isn't split — vexflow
+// throws on descending x, so a wrapping pedal would need the partial-span handling
+// buildTies uses; add it if a fixture needs one.
+export function buildPedals(
+	markers: PedalMark[],
+	byLead: Map<Note, StaveNote>,
+): PedalMarking[] {
+	const pedals: PedalMarking[] = [];
+	const open = new Map<string, { note: StaveNote; line: boolean }>();
+	for (const marker of markers) {
+		const staveNote = byLead.get(marker.lead);
+		if (!staveNote) {
+			continue;
+		}
+		if (marker.type === 'start') {
+			open.set(marker.number, { note: staveNote, line: marker.line });
+		} else {
+			const from = open.get(marker.number);
+			open.delete(marker.number);
+			if (!from) {
+				continue;
+			}
+			const pedal = PedalMarking.createSustain([from.note, staveNote]);
+			if (from.line) {
+				pedal.setType(PedalMarking.type.BRACKET);
+			}
+			pedals.push(pedal);
+		}
+	}
+	return pedals;
 }
 
 // The highest (smallest y) and lowest (largest y) drawn point of a note,

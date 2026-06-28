@@ -39,6 +39,12 @@ export type Config = {
 	/** Print the "sl." label on tablature slides (default: false). The slide line always
 	 * draws; this only toggles the label above it. */
 	showTabSlideText: boolean;
+	/** Fraction (0–1) of the reference width the last system's measures must already fill
+	 * before it is justified to the page edge (default: 0.75). Below it the trailing line
+	 * stays ragged at its natural width; at or above it the line stretches to fill, so a
+	 * nearly-full last system snaps flush instead of leaving an awkward sliver of margin.
+	 * 0 always stretches, 1 never does. */
+	minLastSystemFill: number;
 };
 
 /** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only —
@@ -61,4 +67,5 @@ export const DEFAULT_CONFIG: Config = {
 	measureNumbering: 'system',
 	showTabHammerPullText: false,
 	showTabSlideText: false,
+	minLastSystemFill: 0.75,
 };

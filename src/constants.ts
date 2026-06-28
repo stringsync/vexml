@@ -18,6 +18,12 @@ export const PAGE_MARGIN_TOP_WITH_TEMPO = 70;
 /** Bottom whitespace kept below the lowest drawn content. */
 export const PAGE_MARGIN_BOTTOM = 40;
 
+/** Pedal "Ped…*" text / bracket draws at the stave's bottom-text line 3 (vexflow's
+ * PedalMarking adds 3 to its line=0). The crop grows to this line plus the glyph
+ * descent below so the mark isn't clipped. */
+export const PEDAL_BOTTOM_TEXT_LINE = 3;
+export const PEDAL_BOTTOM_MARGIN = 12;
+
 /** Vertical gap between stacked systems, plus room for the next system's notes that
  * rise above its top staff. The default for `Config.systemSpacing`. */
 export const SYSTEM_GAP = 30;

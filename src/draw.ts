@@ -9,6 +9,7 @@ import {
 	Barline,
 	Bend,
 	Formatter,
+	GraceNoteGroup,
 	type RenderContext,
 	Renderer,
 	Stave,
@@ -31,6 +32,8 @@ import {
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
+	PEDAL_BOTTOM_MARGIN,
+	PEDAL_BOTTOM_TEXT_LINE,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
 	WORDS_FONT_SIZE,
@@ -43,6 +46,8 @@ import {
 	getNoteheadHalfWidth,
 	harmoniesOf,
 	meterBeats,
+	type PedalMark,
+	pedalsOf,
 	staffVoices,
 	type TempoMark,
 	tempoOf,
@@ -54,6 +59,7 @@ import {
 import {
 	buildBeams,
 	buildHammerPulls,
+	buildPedals,
 	buildSlides,
 	buildSlurs,
 	buildTies,
@@ -253,6 +259,22 @@ function formatAndDrawPart(
 	// tuplets sit a hair higher than the stem; the PAGE_MARGIN_TOP buffer the crop keeps
 	// above this top covers them (their own getBoundingBox is unreliable too).
 	let top = Infinity;
+	// A notation grace group's width, keyed by its main note's (shared) tick context, so a
+	// tab grace group at the same tick can match its notation counterpart by identity.
+	const notationGraceWidths = new Map<unknown, number>();
+	for (const p of pending) {
+		if (p.isTab) {
+			continue;
+		}
+		for (const vexVoice of p.vexVoices) {
+			for (const note of vexVoice.getTickables() as StaveNote[]) {
+				const group = graceGroupOf(note);
+				if (group) {
+					notationGraceWidths.set(note.getTickContext(), group.getWidth());
+				}
+			}
+		}
+	}
 	for (const p of pending) {
 		if (p.isTab) {
 			// setStave before stretching so each note's getAbsoluteX() is in true stave
@@ -271,6 +293,7 @@ function formatAndDrawPart(
 			}
 			stretchVibratos(tabStave, p.vexVoices);
 			stretchBends(tabStave, p.vexVoices);
+			alignTabGraces(p.vexVoices, notationGraceWidths);
 		}
 		for (const vexVoice of p.vexVoices) {
 			vexVoice.draw(context, p.stave);
@@ -526,6 +549,54 @@ function stretchVibratos(stave: TabStave, voices: Voice[]): void {
 	}
 }
 
+// The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
+function graceGroupOf(note: {
+	getModifiers(): { getCategory(): string }[];
+}): GraceNoteGroup | undefined {
+	return note
+		.getModifiers()
+		.find((m) => m.getCategory() === GraceNoteGroup.CATEGORY) as
+		| GraceNoteGroup
+		| undefined;
+}
+
+// vexflow's GraceNoteGroup.format spaces a stave grace group GRACE_GROUP_SPACING_STAVE px
+// off its note; tab groups get 0. The value is private to vexflow, mirrored here.
+const GRACE_GROUP_SPACING_STAVE = 4;
+
+// A tab grace group reserves no accidental space, so its frets would land left of the
+// notation grace noteheads, which a flat/sharp pushes right within their own group. Shift
+// each tab grace group right so its frets sit under the notehead: by the notation grace
+// group's own left reservation (its width + GRACE_GROUP_SPACING_STAVE) minus the tab
+// group's (note.getMetrics().modLeftPx). Match the notation group by the shared tick
+// context — every stave formatted together shares one per tick. Deliberately NOT the tick
+// context's modLeftPx: that's the max across the stave, so a main note with its OWN
+// accidental (a chord) inflates it and overshoots the grace shift. With no notation
+// counterpart (tab-only score) nothing moves. Runs before draw, which reads
+// spacingFromNextModifier when positioning the grace notes.
+function alignTabGraces(
+	voices: Voice[],
+	notationGraceWidths: Map<unknown, number>,
+): void {
+	for (const voice of voices) {
+		for (const note of voice.getTickables() as TabNote[]) {
+			const group = graceGroupOf(note);
+			if (!group) {
+				continue;
+			}
+			const notationWidth = notationGraceWidths.get(note.getTickContext());
+			if (notationWidth === undefined) {
+				continue;
+			}
+			const own = note.getMetrics().modLeftPx;
+			group.setSpacingFromNextModifier(
+				group.getSpacingFromNextModifier() +
+					Math.max(0, notationWidth + GRACE_GROUP_SPACING_STAVE - own),
+			);
+		}
+	}
+}
+
 // The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
 // (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
 // modifier directly — there's no public API for this.
@@ -617,6 +688,9 @@ export function drawScore(
 	// measure (recording into this map); the spanners are resolved once at the end.
 	const byLead = new Map<Note, StaveNote>();
 	const allChords: Chord[] = [];
+	// Pedal directions are spanners too (a start..stop pair), collected per measure
+	// and resolved over the whole score alongside ties and slurs.
+	const allPedals: PedalMark[] = [];
 
 	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
 	// barlines, so TAB notes record into their own map and resolve at the end.
@@ -887,6 +961,10 @@ export function drawScore(
 				}
 			}
 
+			// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
+			// can span barlines) after every note is placed — see below the measure loop.
+			allPedals.push(...pedalsOf(measure));
+
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
@@ -1013,6 +1091,22 @@ export function drawScore(
 	}
 	for (const slide of buildSlides(allTabChords, byTabLead, showTabSlideText)) {
 		slide.setContext(context).draw();
+	}
+	// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
+	// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
+	// ponytail: only the final crop is grown — a pedal on a non-last system isn't
+	// reserved against the system below it; add that if a fixture stacks one there.
+	for (const pedal of buildPedals(allPedals, byLead)) {
+		pedal.setContext(context).draw();
+	}
+	for (const marker of allPedals) {
+		const stave = byLead.get(marker.lead)?.getStave();
+		if (stave) {
+			pageBottom = Math.max(
+				pageBottom,
+				stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE) + PEDAL_BOTTOM_MARGIN,
+			);
+		}
 	}
 
 	// Crop to the lowest thing actually drawn so deep ledger lines in the bottom

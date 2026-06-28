@@ -4,6 +4,7 @@ import { dev } from './dev';
 import { fix } from './fix';
 import { render } from './render';
 import { test } from './test';
+import { validate } from './validate';
 
 // Where the user actually ran `vex`, before we chdir to the repo root below.
 const invocationDir = process.cwd();
@@ -64,6 +65,14 @@ program
 			config: opts.config,
 			cwd: invocationDir,
 		});
+	});
+
+program
+	.command('validate')
+	.description('validate a musicxml file against the MusicXML XSD with xmllint')
+	.requiredOption('-i, --input <path>', 'input musicxml file')
+	.action(async (opts) => {
+		await validate({ input: opts.input, cwd: invocationDir });
 	});
 
 program.parse();

@@ -282,6 +282,15 @@ const TEST_CASES = [
 	// numbers, so notes 2 and 3 each carry both a stop and a start.
 	testCase('slur_chained.musicxml', 'slur_chained.png'),
 
+	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
+	// under the staff spanning four B4 quarters. The pedal goes down under the first
+	// note and releases past the last.
+	// - M1: a text pedal (line="no") — the "Ped" glyph under the first note, the "*"
+	//   release glyph near the end barline.
+	// - M2: a bracket pedal (line="yes") — an L-shaped bracket line under the staff from
+	//   the first note to the last instead of the text glyphs.
+	testCase('pedal.musicxml', 'pedal.png'),
+
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain
 	// <slur>s, the "H"/"P" label inferred from fret motion (higher target = hammer-on,
 	// lower = pull-off). No <time>, so no time signature is drawn.
@@ -334,6 +343,31 @@ const TEST_CASES = [
 	// - M2: a grace note slurred to its main note — a slur curves from the small grace
 	//   fret 7 to the fret-5 half note, both on string 3.
 	testCase('tab_grace.musicxml', 'tab_grace.png'),
+
+	// A notation stave (P1) stacked over a 6-line TAB stave (P2) as two separate parts,
+	// formatted together so same-tick notes align vertically. Each measure has a grace
+	// note before a whole note: a small notehead on top, a small fret number below. The
+	// TAB grace fret must sit directly under the notation grace notehead in both bars —
+	// the notation accidental in M1 must not drag it left (the bug this guards).
+	// - M1: a Db5 grace (notation draws a flat accidental left of the notehead; TAB draws
+	//   only "6" on string 2) before a C5 whole note (fret 5). The "6" lines up under the
+	//   grace notehead, not under the accidental.
+	// - M2: the same layout without an accidental — a D5 grace ("7", string 2) before the
+	//   C5 whole note. Control: graces line up the same with or without the accidental.
+	testCase('tab_grace_notation_align.musicxml', 'tab_grace_notation_align.png'),
+
+	// A notation stave (P1) over a 6-line TAB stave (P2), key of Bb (-2), 4/4, formatted
+	// together. Like tab_grace_notation_align but the graces and the notes they precede are
+	// CHORDS, and the MAIN chords carry their own accidentals. Each grace chord's TAB frets
+	// must sit under its grace noteheads, not be dragged right by the main chord's accidental
+	// (the bug this guards: the main note's accidental inflated the shared modLeftPx the old
+	// alignment leaned on). Quarter F5 / F4-fret6, a quarter rest, then on beats 3 and 4:
+	// - Beat 3: a slashed grace chord (E4-natural + A4 + Db5-flat; TAB "2" on strings 4/3/2)
+	//   before a main chord (F4 + Bb4 + D5-natural; TAB "3" on strings 4/3/2). The three "2"
+	//   frets line up under the grace noteheads; the "3" frets under the main noteheads.
+	// - Beat 4: a slashed grace chord (E4 + Ab4-flat + Db5-flat; TAB "7/6/6" strings 5/4/3)
+	//   before a main chord (Eb4-flat + G4 + C5; TAB "6/5/5" strings 5/4/3). Same alignment.
+	testCase('tab_grace_chord_align.musicxml', 'tab_grace_chord_align.png'),
 
 	// 6-line TAB stave: slides drawn as diagonal TabSlide lines tilted by the fret motion.
 	// No <time>, so no time signature is drawn.
@@ -409,6 +443,10 @@ const TEST_CASES = [
 	//   X-notehead dyad (A3+D4 / tab strings 2+1 "✕"), twice, then a plain G4 half note. Shows
 	//   X noteheads beamed alongside normal ones and the tab "✕" next to a real fret digit; the
 	//   X notes carry real pitches (A3 dips to a ledger line below the staff).
+	// - M5: four B4 quarters, all with a printed <accidental>natural</accidental>, alternating
+	//   round / X / round / X notehead. The natural draws only on the two round noteheads; the
+	//   X (dead/muted, no definite pitch) noteheads suppress it (src/notes.ts addAccidentals).
+	//   The tab stave is unaffected (it never prints accidentals): fret "0" / "✕" / "0" / "✕".
 	testCase('notehead_x.musicxml', 'notehead_x.png'),
 
 	// Notation stave over a 6-line TAB stave: parenthesized noteheads
@@ -472,6 +510,7 @@ const TEST_CASES = [
 	//   the symbol lifts above the notehead/ledger lines instead of colliding with them.
 	// - M5: a flat root — root B with <root-alter>-1</root-alter> — prints "B♭".
 	// - M6: an explicit natural root — root B with <root-alter>0</root-alter> — prints "B♮".
+	// - M7: a slash chord — root E♭ with a <bass> of B♭ — prints "E♭/B♭".
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
@@ -548,6 +587,20 @@ const TEST_CASES = [
 	// on a single uninterrupted system (no system break).
 	testCase('system_break.musicxml', 'layout_panoramic.png', {
 		layout: { type: 'panoramic' },
+	}),
+
+	// The same two systems (nine then seven C5 whole-note measures), but with
+	// minLastSystemFill lowered to 0 so the last system always justifies: the
+	// seven bottom measures stretch to fill the full page width (flush right edge, wider
+	// note spacing) instead of staying ragged at their natural width like in
+	// system_break.png. The top nine-measure system is unchanged.
+	// TODO: False positive: this baseline is created from the current render, so it may
+	// accept an incorrect screenshot. The render suite is currently also blocked by an
+	// unrelated in-progress `buildPedals` change from another agent. Once the tree builds,
+	// confirm the bottom system spans the full page width, then run
+	// `vex test last_system_stretch --update` only after confirming it.
+	testCase('system_break.musicxml', 'last_system_stretch.png', {
+		minLastSystemFill: 0,
 	}),
 
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number

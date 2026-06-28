@@ -11,6 +11,9 @@ export async function render(
 	config?: Partial<Config>,
 ) {
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config };
+	if (resolved.minLastSystemFill < 0 || resolved.minLastSystemFill > 1) {
+		throw new RangeError('render: minLastSystemFill must be between 0 and 1');
+	}
 	const { notation, text } = loadFonts(canvas, resolved.fonts);
 	// VexFlow engraves glyphs from its own bundled font modules via global state, not the
 	// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
