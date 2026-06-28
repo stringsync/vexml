@@ -138,19 +138,39 @@ const ARTICULATION_CODES: Record<string, string> = {
 	'strong-accent': 'a^',
 };
 
+// Notehead-side articulations sit opposite the stem: BELOW for stem-up notes,
+// ABOVE otherwise.
+function articulationPosition(staveNote: StaveNote): number {
+	return staveNote.getStemDirection() === Stem.UP
+		? Modifier.Position.BELOW
+		: Modifier.Position.ABOVE;
+}
+
 function addArticulations(staveNote: StaveNote, note: Note): void {
-	// Staccato/accent/tenuto sit on the notehead side, opposite the stem. Vexflow's
-	// Articulation always defaults to ABOVE, so flip it for stem-up notes. The stem
-	// direction is resolved by here (explicit via applyStem, or auto in the StaveNote
-	// constructor).
-	const position =
-		staveNote.getStemDirection() === Stem.UP
-			? Modifier.Position.BELOW
-			: Modifier.Position.ABOVE;
+	// Vexflow's Articulation always defaults to ABOVE, so flip it for stem-up notes.
+	// The stem direction is resolved by here (explicit via applyStem, or auto in the
+	// StaveNote constructor) — except for beamed notes, whose direction the Beam only
+	// settles later; reorientArticulations fixes those up after buildBeams runs.
+	const position = articulationPosition(staveNote);
 	for (const name of note.articulations) {
 		const code = ARTICULATION_CODES[name];
 		if (code) {
 			staveNote.addModifier(new Articulation(code).setPosition(position));
+		}
+	}
+}
+
+const ARTICULATION_CODE_SET = new Set(Object.values(ARTICULATION_CODES));
+
+// A Beam reassigns one stem direction across its group, which can flip a note's
+// direction after addArticulations already placed its marks on the old side. Re-pin
+// each notehead-side articulation to the now-final stem direction. Fermatas (a@a/a@u)
+// keep their fixed side, so leave them alone.
+export function reorientArticulations(staveNote: StaveNote): void {
+	const position = articulationPosition(staveNote);
+	for (const mod of staveNote.getModifiers()) {
+		if (mod instanceof Articulation && ARTICULATION_CODE_SET.has(mod.type)) {
+			mod.setPosition(position);
 		}
 	}
 }
@@ -768,19 +788,22 @@ export function vexflowVoiceTickables(
 			if (pendingGrace.some((g) => g.lead.beams.length > 0)) {
 				group.beamNotes();
 			}
-			// preFormat now so the group's width is available to the layout pass (which
-			// reads it to allocate the measure extra room) and stable for draw.
+			// preFormat now so the group's width is available to the layout pass (which reads
+			// it to allocate the measure extra room) and stable for draw.
 			group.preFormat();
 			staveNote.addModifier(group, 0);
-			// Give the grace cluster breathing room from the preceding note. Pad that note's
-			// RIGHT, not the host's left: vexflow draws the grace at the left edge of the
-			// host's left reservation, so inflating that reservation only makes the grace
-			// drift left off its host. Padding the preceding note instead pushes the host
-			// (and its attached grace) right together, opening the gap before the grace while
-			// it stays snug to its host. setRightDisplacedHeadPx survives format — it's only
-			// reset by the note's constructor (calcNoteDisplacements), already run by now.
+			// Give the grace cluster breathing room from the preceding note by padding that
+			// note's RIGHT, which pushes the host (and its attached grace) right together so
+			// the gap opens before the grace while it stays snug to its host. Inflating the
+			// host's own left reservation instead would just let the grace drift left off it.
+			// setRightDisplacedHeadPx survives format (only the constructor resets it), but
+			// vexflow draws augmentation dots after that displaced-head gap — so skip a note
+			// that carries dots, which would otherwise be flung out to the right.
 			const prev = tickables.at(-1);
-			if (prev) {
+			const prevHasDots = prev
+				?.getModifiers()
+				.some((m) => m.getCategory() === 'Dot');
+			if (prev && !prevHasDots) {
 				prev.setRightDisplacedHeadPx(
 					prev.getRightDisplacedHeadPx() + GRACE_SPACING,
 				);

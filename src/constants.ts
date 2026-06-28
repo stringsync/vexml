@@ -89,7 +89,9 @@ export const TAB_FRET_SCALE = 1.258;
  * that precedes the grace's host, so the host and its attached grace shift right together
  * and the grace gets breathing room from that note while staying snug to its host. The
  * measure's width allocation grows by this too (see graceWidthOf) so the clearance is real
- * space, not stolen from the bar's other notes. */
+ * space, not stolen from the bar's other notes. Skipped when the preceding note carries
+ * augmentation dots — vexflow draws those after the displaced-head gap, so padding it would
+ * fling the dots out to the right. */
 export const GRACE_SPACING = 16;
 
 /** Grace tab frets, as a fraction of the (enlarged) main-note size. */

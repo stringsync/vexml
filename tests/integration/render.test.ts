@@ -558,6 +558,11 @@ const TEST_CASES = [
 	// - M7: Bb harmony; a lone F5 whole note tied into M8 — a plain narrow bar, no graces.
 	// - M8: Eb/Bb harmony; F5 quarter (tie stop) + quarter rest, then two slashed grace
 	//   chords, each just left of a quarter chord — stacked graces that get room to read.
+	// - M9: a dotted chord followed by a grace. Beat 3 is a dotted-8th chord (D4/F4/Bb4, tie
+	//   stop) whose three augmentation dots sit snug to the right of its noteheads — the grace
+	//   cluster's lead clearance is skipped for a dotted preceding note, since padding its
+	//   right would fling the dots out. The chord is flagged, not beamed (its only beam
+	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths.
 	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing

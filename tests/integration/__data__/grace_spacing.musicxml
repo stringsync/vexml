@@ -1,11 +1,11 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.0 Partwise//EN"
+    "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
   <identification>
     <encoding>
-      <supports element="accidental" type="yes"/>
-      <supports element="transpose" type="yes"/>
-      <software>Soundslice MusicXML exporter</software>
+      <supports element="accidental" type="yes" />
+      <supports element="transpose" type="yes" />
       <encoding-date>2026-06-13</encoding-date>
     </encoding>
   </identification>
@@ -49,12 +49,12 @@
         </bass>
       </harmony>
       <note>
-        <rest/>
+        <rest />
         <duration>192</duration>
         <type>half</type>
       </note>
       <note>
-        <rest/>
+        <rest />
         <duration>48</duration>
         <type>eighth</type>
       </note>
@@ -68,12 +68,12 @@
         <type>eighth</type>
         <notations>
           <articulations>
-            <staccato/>
+            <staccato />
           </articulations>
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>F</step>
           <octave>5</octave>
@@ -87,7 +87,7 @@
         </pitch>
         <duration>72</duration>
         <type>eighth</type>
-        <dot/>
+        <dot />
         <beam number="1">begin</beam>
       </note>
       <note>
@@ -123,10 +123,10 @@
           <octave>5</octave>
         </pitch>
         <duration>384</duration>
-        <tie type="start"/>
+        <tie type="start" />
         <type>whole</type>
         <notations>
-          <tied type="start"/>
+          <tied type="start" />
         </notations>
       </note>
     </measure>
@@ -148,19 +148,19 @@
           <octave>5</octave>
         </pitch>
         <duration>96</duration>
-        <tie type="stop"/>
+        <tie type="stop" />
         <type>quarter</type>
         <notations>
-          <tied type="stop"/>
+          <tied type="stop" />
         </notations>
       </note>
       <note>
-        <rest/>
+        <rest />
         <duration>96</duration>
         <type>quarter</type>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>E</step>
           <octave>4</octave>
@@ -169,8 +169,8 @@
         <accidental>natural</accidental>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>A</step>
           <octave>4</octave>
@@ -178,8 +178,8 @@
         <type>eighth</type>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>D</step>
           <alter>-1</alter>
@@ -197,7 +197,7 @@
         <type>quarter</type>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -207,7 +207,7 @@
         <type>quarter</type>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>D</step>
           <octave>5</octave>
@@ -217,7 +217,7 @@
         <accidental>natural</accidental>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>E</step>
           <octave>4</octave>
@@ -225,8 +225,8 @@
         <type>eighth</type>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>A</step>
           <alter>-1</alter>
@@ -236,8 +236,8 @@
         <accidental>flat</accidental>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>D</step>
           <alter>-1</alter>
@@ -257,7 +257,7 @@
         <accidental>flat</accidental>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>G</step>
           <octave>4</octave>
@@ -266,13 +266,163 @@
         <type>quarter</type>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>C</step>
           <octave>5</octave>
         </pitch>
         <duration>96</duration>
         <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="9">
+      <harmony>
+        <root>
+          <root-step>B</root-step>
+          <root-alter>-1</root-alter>
+        </root>
+        <kind text="">major</kind>
+      </harmony>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+        </notations>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>48</duration>
+        <tie type="start" />
+        <type>eighth</type>
+        <notations>
+          <tied type="start" />
+        </notations>
       </note>
     </measure>
   </part>
@@ -312,12 +462,12 @@
       </staff-details>
       </attributes>
       <note>
-        <rest/>
+        <rest />
         <duration>192</duration>
         <type>half</type>
       </note>
       <note>
-        <rest/>
+        <rest />
         <duration>48</duration>
         <type>eighth</type>
       </note>
@@ -335,12 +485,12 @@
             <string>4</string>
           </technical>
           <articulations>
-            <staccato/>
+            <staccato />
           </articulations>
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>F</step>
           <octave>4</octave>
@@ -360,7 +510,7 @@
         </pitch>
         <duration>72</duration>
         <type>eighth</type>
-        <dot/>
+        <dot />
         <beam number="1">begin</beam>
         <notations>
           <technical>
@@ -421,10 +571,10 @@
           <octave>4</octave>
         </pitch>
         <duration>384</duration>
-        <tie type="start"/>
+        <tie type="start" />
         <type>whole</type>
         <notations>
-          <tied type="start"/>
+          <tied type="start" />
           <technical>
             <fret>6</fret>
             <string>2</string>
@@ -449,10 +599,10 @@
           <octave>4</octave>
         </pitch>
         <duration>96</duration>
-        <tie type="stop"/>
+        <tie type="stop" />
         <type>quarter</type>
         <notations>
-          <tied type="stop"/>
+          <tied type="stop" />
           <technical>
             <fret>6</fret>
             <string>2</string>
@@ -460,12 +610,12 @@
         </notations>
       </note>
       <note>
-        <rest/>
+        <rest />
         <duration>96</duration>
         <type>quarter</type>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>E</step>
           <octave>3</octave>
@@ -480,8 +630,8 @@
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>A</step>
           <octave>3</octave>
@@ -495,8 +645,8 @@
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>D</step>
           <alter>-1</alter>
@@ -526,7 +676,7 @@
         </notations>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -542,7 +692,7 @@
         </notations>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>D</step>
           <octave>4</octave>
@@ -558,7 +708,7 @@
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
+        <grace slash="yes" />
         <pitch>
           <step>E</step>
           <octave>3</octave>
@@ -572,8 +722,8 @@
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>A</step>
           <alter>-1</alter>
@@ -589,8 +739,8 @@
         </notations>
       </note>
       <note>
-        <grace slash="yes"/>
-        <chord/>
+        <grace slash="yes" />
+        <chord />
         <pitch>
           <step>D</step>
           <alter>-1</alter>
@@ -622,7 +772,7 @@
         </notations>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>G</step>
           <octave>3</octave>
@@ -637,7 +787,7 @@
         </notations>
       </note>
       <note>
-        <chord/>
+        <chord />
         <pitch>
           <step>C</step>
           <octave>4</octave>
@@ -664,6 +814,217 @@
           <bass-step>B</bass-step>
           <bass-alter>-1</bass-alter>
         </bass>
+      </harmony>
+    </measure>
+    <measure number="9">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+          <technical>
+            <fret>5</fret>
+            <string>5</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>F</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+          <technical>
+            <fret>3</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>3</octave>
+        </pitch>
+        <duration>192</duration>
+        <tie type="start" />
+        <type>half</type>
+        <notations>
+          <tied type="start" />
+          <technical>
+            <fret>3</fret>
+            <string>3</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+          <technical>
+            <fret>5</fret>
+            <string>5</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>F</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+          <technical>
+            <fret>3</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <chord />
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>3</octave>
+        </pitch>
+        <duration>72</duration>
+        <tie type="stop" />
+        <type>eighth</type>
+        <dot />
+        <beam number="1">begin</beam>
+        <notations>
+          <tied type="stop" />
+          <technical>
+            <fret>3</fret>
+            <string>3</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch>
+          <step>F</step>
+          <octave>3</octave>
+        </pitch>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+        <notations>
+          <technical>
+            <fret>3</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <notations>
+          <technical>
+            <fret>5</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>3</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <notations>
+          <technical>
+            <fret>3</fret>
+            <string>3</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>24</duration>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+        <notations>
+          <technical>
+            <fret>5</fret>
+            <string>3</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch>
+          <step>F</step>
+          <octave>3</octave>
+        </pitch>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+        <notations>
+          <technical>
+            <fret>3</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>48</duration>
+        <tie type="start" />
+        <type>eighth</type>
+        <notations>
+          <tied type="start" />
+          <technical>
+            <fret>5</fret>
+            <string>4</string>
+          </technical>
+        </notations>
+      </note>
+      <backup>
+        <duration>384</duration>
+      </backup>
+      <harmony>
+        <root>
+          <root-step>B</root-step>
+          <root-alter>-1</root-alter>
+        </root>
+        <kind text="">major</kind>
       </harmony>
     </measure>
   </part>

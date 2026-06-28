@@ -19,7 +19,7 @@ import {
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
 } from './constants';
-import type { PedalMark } from './notes';
+import { type PedalMark, reorientArticulations } from './notes';
 
 // A beam run: the notes joined by their primary (8th-level) beam, plus the indexes
 // within the run where the secondary (16th+) beam breaks into sub-beams.
@@ -89,6 +89,11 @@ export function buildBeams(
 			// must stand, so only auto-stem when no note in the group has one.
 			const autoStem = group.notes.every((note) => !note.stem);
 			const beam = new Beam(notes, autoStem);
+			// The beam just settled stem directions; re-pin articulations placed
+			// against each note's pre-beam direction onto the notehead side.
+			if (autoStem) {
+				notes.forEach(reorientArticulations);
+			}
 			// Flatten dense runs: 4+ notes with at least one 16th. Shorter or
 			// coarser runs keep vexflow's default slant.
 			const has16th = group.notes.some((note) => note.type === '16th');

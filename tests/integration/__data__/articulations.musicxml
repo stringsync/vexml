@@ -8,7 +8,7 @@
   <part id="P1">
     <measure number="1">
       <attributes>
-        <divisions>1</divisions>
+        <divisions>2</divisions>
         <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
@@ -24,8 +24,8 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <staccato />
@@ -37,8 +37,8 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <accent />
@@ -50,8 +50,8 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <tenuto />
@@ -63,8 +63,8 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <staccatissimo />
@@ -78,8 +78,8 @@
           <step>E</step>
           <octave>4</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <staccato />
@@ -91,8 +91,8 @@
           <step>E</step>
           <octave>4</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <accent />
@@ -104,8 +104,8 @@
           <step>E</step>
           <octave>4</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <tenuto />
@@ -117,13 +117,38 @@
           <step>E</step>
           <octave>4</octave>
         </pitch>
-        <duration>1</duration>
-        <type>quarter</type>
+        <duration>2</duration>
+        <type>quarterg</type>
         <notations>
           <articulations>
             <staccatissimo />
           </articulations>
         </notations>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+        <notations>
+          <articulations>
+            <staccato />
+          </articulations>
+        </notations>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
       </note>
     </measure>
   </part>
