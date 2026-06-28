@@ -1,8 +1,10 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
-import { Formatter, Voice } from 'vexflow';
+import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from './config';
 import {
 	BASE_VOICE_WIDTH,
+	DEFAULT_WIDTH,
+	GRACE_SPACING,
 	INTER_PART_SPACING,
 	INTRA_PART_SPACING,
 	LABEL_CHAR_WIDTH,
@@ -11,7 +13,6 @@ import {
 	LEAD_CLEF,
 	LEAD_KEY,
 	LEAD_TIME,
-	LETTER_WIDTH,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
 	PAGE_MARGIN_BOTTOM,
@@ -23,7 +24,9 @@ import {
 } from './constants';
 import {
 	endBeatOf,
+	findModifier,
 	meterBeats,
+	softVoice,
 	staffVoices,
 	tempoOf,
 	vexflowClef,
@@ -36,9 +39,9 @@ export type Layout =
 	| {
 			/** Wrap measures onto stacked systems (print-like). */
 			type: 'standard';
-			/** Reference layout width in px (default: US Letter, 8.5in → 816px). The score
-			 * is laid out to this width once; the result is then scaled to whatever container
-			 * it's placed in, so resizing the container never re-flows or re-spaces it. */
+			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
+			 * to this width once; the result is then scaled to whatever container it's placed
+			 * in, so resizing the container never re-flows or re-spaces it. */
 			width?: number;
 	  }
 	| {
@@ -109,6 +112,16 @@ function noteLogWidth(ticks: number, noteSpacing: number): number {
 	return noteSpacing * Math.max(MIN_LOG_FACTOR, factor);
 }
 
+// The horizontal space a note's attached grace cluster needs: its preformatted width plus
+// the GRACE_SPACING lead clearance notes.ts pads before it, or 0 if it has none. Lets the
+// measure grow to hold the grace instead of compressing its real notes.
+function graceWidthOf(t: {
+	getModifiers(): { getCategory(): string }[];
+}): number {
+	const group = findModifier<GraceNoteGroup>(t, GraceNoteGroup.CATEGORY);
+	return group ? group.getWidth() + GRACE_SPACING : 0;
+}
+
 // A measure's note-area width: the sum of its notes' logarithmic widths, never below the
 // collision-free minimum or the floor. Denser measures get more space; a long note adds
 // only a little. Builds throwaway notes so the draw pass is untouched. The busiest staff
@@ -132,10 +145,7 @@ function measureNoteArea(
 				: vexflowVoiceTickables(voice.chords, clef, endBeat),
 		);
 		const vexVoices = perVoice.map((tickables) =>
-			new Voice()
-				.setMode(Voice.Mode.SOFT)
-				.setSoftmaxFactor(softmaxFactor)
-				.addTickables(tickables),
+			softVoice(tickables, softmaxFactor),
 		);
 		if (vexVoices.length === 0) {
 			continue;
@@ -152,10 +162,14 @@ function measureNoteArea(
 			minNotes = Math.max(minNotes, noteCount * TAB_MIN_NOTE_SPACING);
 		}
 		// Sum each voice's per-note logarithmic widths; the busiest voice sets the width.
+		// Grace notes steal no time, so they get no logarithmic share — but they still
+		// occupy horizontal space left of their host. Add each grace cluster's width on top
+		// so a grace-bearing measure is allocated the extra room it needs, instead of the
+		// graces compressing the real notes into the same width (see graceWidthOf).
 		for (const tickables of perVoice) {
 			let w = 0;
 			for (const t of tickables) {
-				w += noteLogWidth(t.getTicks().value(), noteSpacing);
+				w += noteLogWidth(t.getTicks().value(), noteSpacing) + graceWidthOf(t);
 			}
 			logWidth = Math.max(logWidth, w);
 		}
@@ -171,9 +185,9 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const layout = config.layout;
 	const layoutMode = layout.type;
 	// Standard without an explicit width, and panoramic's starting floor, both default
-	// to LETTER_WIDTH (panoramic then grows the page to fit its single system).
+	// to DEFAULT_WIDTH (panoramic then grows the page to fit its single system).
 	const width =
-		(layout.type === 'standard' ? layout.width : undefined) ?? LETTER_WIDTH;
+		(layout.type === 'standard' ? layout.width : undefined) ?? DEFAULT_WIDTH;
 	const noteSpacing = config.noteSpacing;
 	const softmaxFactor = config.softmaxFactor;
 
@@ -292,7 +306,8 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 			const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
 			if (
 				row.length > 0 &&
-				rowWidth + LEAD_BARLINE + area > usableOf(systems.length)
+				rowWidth + LEAD_BARLINE + area >
+					usableOf(systems.length) * config.maxSystemFill
 			) {
 				systems.push(row);
 				row = [];
@@ -310,9 +325,10 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// Lay each system left to right at intrinsic (note-area) widths. Full systems are
 	// justified to the reference width by stretching note areas proportionally (the
 	// per-tick rate stays uniform within the system); the last/partial system of a
-	// multi-system score — and all of panoramic — stay ragged, so a short trailing
-	// line keeps its natural width instead of being needlessly stretched. A score that
-	// fits on a single system is justified, so a lone line fills the page width.
+	// multi-system score stays ragged unless it already fills minLastSystemFill
+	// of the line (then it justifies too), and all of panoramic stays ragged, so a short
+	// trailing line keeps its natural width instead of being needlessly stretched. A score
+	// that fits on a single system is justified, so a lone line fills the page width.
 	const boxes: MeasureBox[] = [];
 	let naturalWidth = width;
 	systems.forEach((measures, systemIndex) => {
@@ -320,10 +336,16 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		const areas = measures.map((m) => noteAreas[m] ?? BASE_VOICE_WIDTH);
 		const areaSum = areas.reduce((sum, a) => sum + a, 0);
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
+		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+		// The last system of a multi-system score stays ragged unless its measures already
+		// fill most of the line: once their intrinsic width reaches minLastSystemFill
+		// of the reference width, justify it so a nearly-full trailing line snaps to the page
+		// edge instead of leaving a sliver of margin. Full systems and a lone line always justify.
+		const isLastOfMany =
+			systemIndex === systems.length - 1 && systems.length > 1;
 		const justify =
 			layoutMode === 'standard' &&
-			(systemIndex < systems.length - 1 || systems.length === 1);
-		const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+			(!isLastOfMany || intrinsic >= cap * config.minLastSystemFill);
 		// Justified systems fill the page; ragged systems keep their intrinsic width —
 		// but every standard system is capped at the page width, so a measure too wide
 		// to fit (e.g. a large noteSpacing) shrinks to fit instead of spilling off the

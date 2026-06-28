@@ -63,6 +63,23 @@ test('idempotent: second default call injects nothing new', () => {
 	expect(head.length).toBe(after); // no new tags
 });
 
+test('color override sets sanitized color CSS vars; omitted color sets none', () => {
+	const { vars, container } = fakeDom();
+	loadFonts(container, {
+		notation: { family: 'Bravura', color: 'red' },
+		text: { family: 'Source Sans 3', color: 'rgb(0,0,0)"<x>' },
+	});
+	expect(vars['--vexml-color-notation']).toBe('red');
+	expect(vars['--vexml-color-text']).toBe('rgb(0,0,0)x'); // quotes/brackets stripped
+});
+
+test('no color override leaves color vars unset', () => {
+	const { vars, container } = fakeDom();
+	loadFonts(container, { notation: { family: 'Bravura' } });
+	expect(vars['--vexml-color-notation']).toBeUndefined();
+	expect(vars['--vexml-color-text']).toBeUndefined();
+});
+
 test('custom notation url injects that url, not bundled path', () => {
 	const { head, container } = fakeDom();
 	loadFonts(container, {

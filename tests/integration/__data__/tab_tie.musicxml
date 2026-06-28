@@ -98,9 +98,9 @@
         </notations>
       </note>
     </measure>
-    <!-- Fallback: a lone tied note. With no other struck string in the chord, the held fret
-         can't be dropped (a tab note needs at least one position), so string 1 fret 7 still
-         prints on beat 2 rather than rendering blank. -->
+    <!-- Wholly-held note: a lone tied note with no other struck string in the chord. Every
+         member is held, so the tab omits all frets and reserves beat 2 as blank space (an
+         invisible ghost note keeps the tick alignment) rather than printing the held fret. -->
     <measure number="3">
       <note>
         <pitch><step>B</step><octave>4</octave></pitch>

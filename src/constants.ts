@@ -1,12 +1,11 @@
 // Tunable magic numbers, centralized. Spacing/margins are px at the reference layout
 // width; the finished result is then scaled to its container.
 
-/** Default standard-layout width: US Letter portrait (8.5in) at 96dpi = 816px. Also
- * the panoramic mode's starting width / page-width floor. */
-export const LETTER_WIDTH = 8.5 * 96;
+/** Default standard-layout width. */
+export const DEFAULT_WIDTH = 900;
 
 /** Left/right page margin. Leaves room for the brace/bracket drawn left of the stave. */
-export const PAGE_MARGIN_X = 30;
+export const PAGE_MARGIN_X = 15;
 
 /** Top margin: the first system's y. */
 export const PAGE_MARGIN_TOP = 40;
@@ -17,6 +16,12 @@ export const PAGE_MARGIN_TOP_WITH_TEMPO = 70;
 
 /** Bottom whitespace kept below the lowest drawn content. */
 export const PAGE_MARGIN_BOTTOM = 40;
+
+/** Pedal "Ped…*" text / bracket draws at the stave's bottom-text line 3 (vexflow's
+ * PedalMarking adds 3 to its line=0). The crop grows to this line plus the glyph
+ * descent below so the mark isn't clipped. */
+export const PEDAL_BOTTOM_TEXT_LINE = 3;
+export const PEDAL_BOTTOM_MARGIN = 12;
 
 /** Vertical gap between stacked systems, plus room for the next system's notes that
  * rise above its top staff. The default for `Config.systemSpacing`. */
@@ -80,6 +85,15 @@ export const TAB_MIN_NOTE_SPACING = 32;
 /** Bump tab fret digits bolder/larger than vexflow's thin default (1.258 * 9pt ≈ 15px). */
 export const TAB_FRET_SCALE = 1.258;
 
+/** Lead clearance (px) before a notation grace cluster: padded onto the RIGHT of the note
+ * that precedes the grace's host, so the host and its attached grace shift right together
+ * and the grace gets breathing room from that note while staying snug to its host. The
+ * measure's width allocation grows by this too (see graceWidthOf) so the clearance is real
+ * space, not stolen from the bar's other notes. Skipped when the preceding note carries
+ * augmentation dots — vexflow draws those after the displaced-head gap, so padding it would
+ * fling the dots out to the right. */
+export const GRACE_SPACING = 16;
+
 /** Grace tab frets, as a fraction of the (enlarged) main-note size. */
 export const TAB_GRACE_SCALE = 2 / 3;
 
@@ -106,6 +120,21 @@ export const HARMONY_Y_OFFSET = 14;
 /** Clearance kept between a chord symbol's baseline and the top of a high note it
  * sits over, so the symbol lifts clear instead of colliding with the notehead. */
 export const HARMONY_NOTE_CLEARANCE = 8;
+
+/** How far a single note's tie ribbon peaks above the notehead center when it bows
+ * upward (stem-down note). Vexflow draws the tie as a bezier whose outer edge clears
+ * the notehead by its yShift (7) plus the deeper control-point excursion (cp2 12) —
+ * ~13px. A chord symbol over a tied note lifts past this so it doesn't touch the arc. */
+export const TIE_APEX_RISE = 13;
+
+/** Chord-diagram (fret box from a `<harmony><frame>`) overall width/height, drawn
+ * above the stave at the lead note's x. Smaller than vexchords' 100×120 default so the
+ * box reads as an inline annotation over the music. */
+export const CHORD_DIAGRAM_WIDTH = 88;
+export const CHORD_DIAGRAM_HEIGHT = 84;
+
+/** Gap kept between the bottom of a chord diagram and the top staff line. */
+export const CHORD_DIAGRAM_GAP = 6;
 
 /** Words-direction (e.g. "ritardando") text size — matches the chord-symbol size so
  * both read as annotations above the notes. */

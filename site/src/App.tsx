@@ -77,6 +77,7 @@ export default function App() {
 	const [dragging, setDragging] = useState(false);
 	const [debouncing, setDebouncing] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [dark, setDark] = useState(false);
 	const [stored, setStored] = useState(
 		() => localStorage.getItem(STORAGE_KEY) !== null,
 	);
@@ -90,9 +91,13 @@ export default function App() {
 	const noteSpacing = config.noteSpacing ?? 36;
 	const softmaxFactor = config.softmaxFactor ?? 10;
 	const systemSpacing = config.systemSpacing ?? 30;
+	const maxSystemFill = config.maxSystemFill ?? 0.9;
+	const width =
+		config.layout?.type === 'standard' ? (config.layout.width ?? 900) : 900;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
-	const reset = (key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing') =>
-		setConfig(({ [key]: _, ...rest }) => rest);
+	const reset = (
+		key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing' | 'maxSystemFill',
+	) => setConfig(({ [key]: _, ...rest }) => rest);
 
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
 	// behind it by the debounce so dragging a slider re-renders once it settles, not on
@@ -119,10 +124,17 @@ export default function App() {
 		}
 		setError(null);
 		const start = performance.now();
-		// Engrave once at the default (8.5in) width; CSS then scales the canvas to fit its
-		// container — down when narrow, never past 100% when wide — so resizing the window
-		// re-scales instantly without re-rendering.
-		render(input, canvas, { ...renderConfig, layout: { type: 'standard' } })
+		// Engrave once at the configured reference width; CSS then scales the canvas to fit
+		// its container — down when narrow, never past 100% when wide — so resizing the
+		// window re-scales instantly without re-rendering.
+		const layoutWidth =
+			renderConfig.layout?.type === 'standard'
+				? renderConfig.layout.width
+				: undefined;
+		render(input, canvas, {
+			...renderConfig,
+			layout: { type: 'standard', width: layoutWidth },
+		})
 			.then(() => {
 				canvas.style.width = '100%';
 				canvas.style.height = 'auto';
@@ -360,6 +372,18 @@ export default function App() {
 							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
 								Config
 							</span>
+							<label
+								htmlFor="darkMode"
+								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+							>
+								<input
+									id="darkMode"
+									type="checkbox"
+									checked={dark}
+									onChange={(e) => setDark(e.target.checked)}
+								/>
+								Dark mode
+							</label>
 							<div className="flex flex-col gap-1.5">
 								<label
 									htmlFor="notationFont"
@@ -517,6 +541,92 @@ export default function App() {
 									closer together down the page.
 								</p>
 							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="maxSystemFill"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Max system fill
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{maxSystemFill.toFixed(2)}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('maxSystemFill')}
+											disabled={config.maxSystemFill === undefined}
+											aria-label="Reset max system fill"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="maxSystemFill"
+									type="range"
+									min={0.1}
+									max={1}
+									step={0.05}
+									value={maxSystemFill}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											maxSystemFill: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									How full a system gets before the next measure wraps to a new
+									line. Lower leaves more air; 1 packs each line to the edge.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="width"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Reference width
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">{width}</span>
+										<button
+											type="button"
+											onClick={() =>
+												setConfig(({ layout: _, ...rest }) => rest)
+											}
+											disabled={config.layout === undefined}
+											aria-label="Reset width"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="width"
+									type="range"
+									min={400}
+									max={2000}
+									step={50}
+									value={width}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											layout: {
+												type: 'standard',
+												width: e.target.valueAsNumber,
+											},
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									The width the score is engraved to; the rendering then scales
+									up or down to fit its container. Wider fits more measures per
+									system before wrapping.
+								</p>
+							</div>
 						</div>
 					</div>
 				</aside>
@@ -542,10 +652,15 @@ export default function App() {
 							)
 						)}
 						{input != null && (
-							// White page capped at 8.5in (US Letter). The canvas is engraved at that width
-							// and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
-							<div className="relative mx-auto w-full max-w-204 bg-white py-8 shadow-md ring-1 ring-zinc-200 sm:py-16">
-								<canvas ref={canvasRef} className="block" />
+							// The canvas is engraved at that width and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
+							<div
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${dark ? 'bg-zinc-900 ring-zinc-700' : 'bg-white ring-zinc-200'}`}
+							>
+								{/* ponytail: invert the black glyphs to light for dark mode instead of re-engraving in a light color. */}
+								<canvas
+									ref={canvasRef}
+									className={`block ${dark ? 'invert' : ''}`}
+								/>
 							</div>
 						)}
 						{debouncing && (

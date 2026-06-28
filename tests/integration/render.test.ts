@@ -186,9 +186,12 @@ const TEST_CASES = [
 	// - M3: two double-beamed sixteenth groups then a half rest.
 	// - M4: one beat of triple-beamed 32nds then half + quarter rests.
 	// - M5: mixed eighth+sixteenth beats with partial secondary beams.
-	// - M6: a beamed eighth group spanning an internal eighth rest.
+	// - M6: a beamed eighth group spanning an internal eighth rest (rest carries a
+	//   beam marker).
 	// - M7: beamed eighths in a low range (below the middle line) so the auto stem
 	//   direction flips up.
+	// - M8: a beam run spanning an eighth rest that carries NO beam markers; the rest
+	//   sits under one continuous beam (C5-D5-rest-E5) rather than breaking it.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
@@ -210,6 +213,9 @@ const TEST_CASES = [
 	//   system and M3 begins the next, so the tie splits into two partial arcs: one bowing off
 	//   the right edge of M2 ("tie to nothing") and one bowing in from the left edge of M3
 	//   ("tie from nothing"), rather than one line slanting down across the page.
+	// - M4: two F#5 half notes tied; both notes declare a superfluous <accidental>sharp</accidental>
+	//   in the MusicXML, but only the tie-start note prints the sharp — the tied note carries the
+	//   accidental implicitly, so its glyph is suppressed.
 	testCase('tie.musicxml', 'tie.png'),
 
 	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
@@ -246,6 +252,19 @@ const TEST_CASES = [
 	// half over.
 	testCase('tie_chord_cluster.musicxml', 'tie_chord_cluster.png'),
 
+	// Treble, 4/4, narrowed to 360px so the system breaks between M1 and M2. A three-note
+	// chord (C5/E5/G5) is tied from M1's last beat into M2's first beat, straddling the
+	// break. Because M1 is the first measure of its system it shares M2's left X, so the
+	// wrap is detected by stave row (Y), not X; otherwise all three ties draw as diagonals
+	// slanting across the page gap (regression from a real lead sheet, measures 15-16).
+	// - M1 (system 1): three filler C5 quarters then the tied chord; the three ties bow off
+	//   the right edge of the stave into nothing ("tie to nothing").
+	// - M2 (system 2): the tied half chord + half rest; the three ties bow in from the left
+	//   edge of the stave into the chord ("tie from nothing").
+	testCase('tie_system_break.musicxml', 'tie_system_break.png', {
+		layout: { type: 'standard', width: 360 },
+	}),
+
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
 	testCase('slur_default.musicxml', 'slur_default.png'),
@@ -281,6 +300,27 @@ const TEST_CASES = [
 	// slur above the last pair (E5-C5, stem-down). Overlapping slurs use distinct
 	// numbers, so notes 2 and 3 each carry both a stop and a start.
 	testCase('slur_chained.musicxml', 'slur_chained.png'),
+
+	// Treble, 4/4, narrowed to 350px so the system breaks between M1 and M2. A slur runs
+	// from M1's last note (F5) into M2's first note (G5), straddling the break. Like a
+	// wrapped tie, the slur must NOT draw one curve slanting across the page gap; it splits
+	// into two partial arcs.
+	// - M1 (system 1): four ascending quarters C5-F5; the slur bows off the right edge of
+	//   the stave past F5 into nothing ("slur to nothing").
+	// - M2 (system 2): four descending quarters G5-D5; the slur bows in from the left edge
+	//   of the stave into G5 ("slur from nothing").
+	testCase('slur_system_break.musicxml', 'slur_system_break.png', {
+		layout: { type: 'standard', width: 350 },
+	}),
+
+	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
+	// under the staff spanning four B4 quarters. The pedal goes down under the first
+	// note and releases past the last.
+	// - M1: a text pedal (line="no") — the "Ped" glyph under the first note, the "*"
+	//   release glyph near the end barline.
+	// - M2: a bracket pedal (line="yes") — an L-shaped bracket line under the staff from
+	//   the first note to the last instead of the text glyphs.
+	testCase('pedal.musicxml', 'pedal.png'),
 
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain
 	// <slur>s, the "H"/"P" label inferred from fret motion (higher target = hammer-on,
@@ -322,9 +362,9 @@ const TEST_CASES = [
 	//   5/5 are omitted.
 	// - M2: a hammer-on on string 1 (fret 5 -> 7). The fret changes, so both numbers print
 	//   under one slur arc — a slur is notated where a tie is not.
-	// - M3: a lone tied note (string 1, fret 7). With no other struck string to keep the tab
-	//   note alive, the held fret can't be dropped, so fret 7 still prints on beat 2 (the
-	//   single-note fallback, see tabPositions).
+	// - M3: a lone tied note (string 1, fret 7). Every member is held, so the tab omits all
+	//   frets and leaves beat 2 blank — an invisible ghost note reserves the tick so the tab
+	//   stays aligned with the notation stave (see vexflowTabTickables).
 	testCase('tab_tie.musicxml', 'tab_tie.png'),
 
 	// 6-line TAB stave: grace notes (small fret numbers just left of their main note).
@@ -334,6 +374,31 @@ const TEST_CASES = [
 	// - M2: a grace note slurred to its main note — a slur curves from the small grace
 	//   fret 7 to the fret-5 half note, both on string 3.
 	testCase('tab_grace.musicxml', 'tab_grace.png'),
+
+	// A notation stave (P1) stacked over a 6-line TAB stave (P2) as two separate parts,
+	// formatted together so same-tick notes align vertically. Each measure has a grace
+	// note before a whole note: a small notehead on top, a small fret number below. The
+	// TAB grace fret must sit directly under the notation grace notehead in both bars —
+	// the notation accidental in M1 must not drag it left (the bug this guards).
+	// - M1: a Db5 grace (notation draws a flat accidental left of the notehead; TAB draws
+	//   only "6" on string 2) before a C5 whole note (fret 5). The "6" lines up under the
+	//   grace notehead, not under the accidental.
+	// - M2: the same layout without an accidental — a D5 grace ("7", string 2) before the
+	//   C5 whole note. Control: graces line up the same with or without the accidental.
+	testCase('tab_grace_notation_align.musicxml', 'tab_grace_notation_align.png'),
+
+	// A notation stave (P1) over a 6-line TAB stave (P2), key of Bb (-2), 4/4, formatted
+	// together. Like tab_grace_notation_align but the graces and the notes they precede are
+	// CHORDS, and the MAIN chords carry their own accidentals. Each grace chord's TAB frets
+	// must sit under its grace noteheads, not be dragged right by the main chord's accidental
+	// (the bug this guards: the main note's accidental inflated the shared modLeftPx the old
+	// alignment leaned on). Quarter F5 / F4-fret6, a quarter rest, then on beats 3 and 4:
+	// - Beat 3: a slashed grace chord (E4-natural + A4 + Db5-flat; TAB "2" on strings 4/3/2)
+	//   before a main chord (F4 + Bb4 + D5-natural; TAB "3" on strings 4/3/2). The three "2"
+	//   frets line up under the grace noteheads; the "3" frets under the main noteheads.
+	// - Beat 4: a slashed grace chord (E4 + Ab4-flat + Db5-flat; TAB "7/6/6" strings 5/4/3)
+	//   before a main chord (Eb4-flat + G4 + C5; TAB "6/5/5" strings 5/4/3). Same alignment.
+	testCase('tab_grace_chord_align.musicxml', 'tab_grace_chord_align.png'),
 
 	// 6-line TAB stave: slides drawn as diagonal TabSlide lines tilted by the fret motion.
 	// No <time>, so no time signature is drawn.
@@ -409,6 +474,10 @@ const TEST_CASES = [
 	//   X-notehead dyad (A3+D4 / tab strings 2+1 "✕"), twice, then a plain G4 half note. Shows
 	//   X noteheads beamed alongside normal ones and the tab "✕" next to a real fret digit; the
 	//   X notes carry real pitches (A3 dips to a ledger line below the staff).
+	// - M5: four B4 quarters, all with a printed <accidental>natural</accidental>, alternating
+	//   round / X / round / X notehead. The natural draws only on the two round noteheads; the
+	//   X (dead/muted, no definite pitch) noteheads suppress it (src/notes.ts addAccidentals).
+	//   The tab stave is unaffected (it never prints accidentals): fret "0" / "✕" / "0" / "✕".
 	testCase('notehead_x.musicxml', 'notehead_x.png'),
 
 	// Notation stave over a 6-line TAB stave: parenthesized noteheads
@@ -451,6 +520,8 @@ const TEST_CASES = [
 	// stem direction.
 	// - M1: four C5 quarters (stems down) — articulations sit above the noteheads.
 	// - M2: four E4 quarters (stems up) — articulations sit below the noteheads.
+	// - M3: a C5+G4 beamed eighth pair — the beam forces stems up (driven by the low
+	//   G4), so the C5's staccato sits below its notehead, not above the beam.
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
@@ -459,6 +530,14 @@ const TEST_CASES = [
 	// - M1: a normal fermata above a C5 whole note (default placement).
 	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
 	testCase('fermata.musicxml', 'fermata.png'),
+
+	// Treble stave, 4/4: arpeggios from <notations><arpeggiate>, drawn as a wavy vertical
+	// line down the left side of a C5/E5/G5 whole-note chord (one chord per measure). The
+	// stroke spans all three noteheads; direction sets the arrowhead.
+	// - M1: undirected arpeggiate — a plain wiggle, no arrowhead.
+	// - M2: direction="up" — the wiggle with an arrowhead pointing up at the top.
+	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
+	testCase('arpeggio.musicxml', 'arpeggio.png'),
 
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
 	// note of its measure (four boring B4 quarters per measure so only the symbol
@@ -472,6 +551,22 @@ const TEST_CASES = [
 	//   the symbol lifts above the notehead/ledger lines instead of colliding with them.
 	// - M5: a flat root — root B with <root-alter>-1</root-alter> — prints "B♭".
 	// - M6: an explicit natural root — root B with <root-alter>0</root-alter> — prints "B♮".
+	// - M7: a slash chord — root E♭ with a <bass> of B♭ — prints "E♭/B♭".
+	// - M8: a high staccato note under its symbol — a B♭5 quarter (stem down, so the
+	//   staccato dot sits above the notehead) + dotted-half rest, under a "B♭" symbol. The
+	//   symbol lifts to clear the staccato dot, not just the notehead, so the dot and the
+	//   text don't touch.
+	// - M9: a high tied pair under its symbol — two A♭5 quarters tied together (stem down,
+	//   so the tie bows up over the noteheads) + half rest, under an "A♭" symbol. The
+	//   symbol lifts to clear the tie's arc, not just the noteheads, so the arc and the
+	//   text don't touch.
+	// - M10: extension accidentals — a dominant with kind text="7(b9#11)" over four B4
+	//   quarters prints "G7(♭9♯11)". The ASCII b/# in the extension render as the real
+	//   ♭/♯ glyphs at the same smaller size as the root's accidental, not literal "b"/"#".
+	// - M11: a tied chord under its symbol — an A4/D♯5/G♯5 chord tied to itself (two
+	//   quarters) + half rest, under a "B13" symbol. The chord's upper tie bows up over
+	//   the high top note (G♯5), so the symbol lifts to clear that arc, not just the
+	//   noteheads — like M9 but the tie sits on a chord member, not a lone note.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
@@ -480,6 +575,47 @@ const TEST_CASES = [
 	// the page and defeats the top crop, leaving a huge blank margin above the system.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
+
+	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
+	// drawn above the stave at its measure's first note, with the chord name as the box's
+	// title. Four boring B4 quarters per measure so only the diagram varies. Strings run
+	// low-E (left) to high-E (right); a string with no <frame-note> is muted (X above the
+	// nut), <fret>0</fret> is an open ring, a fretted note is a filled dot.
+	// - M1: open-position C major (first-fret 1, so the nut bar shows) — string 6 muted,
+	//   strings 5/4/2 fretted (3/2/1), strings 3/1 open.
+	// - M2: a movable G♯m7♭5 up the neck (first-fret 4, drawn as a "4" label left of the
+	//   board instead of a nut) — strings 5 and 1 muted, the rest fretted.
+	// - M3: a barre F major (first-fret 1) — a filled bar spans string 6 to string 1 at
+	//   fret 1 (from a <barre> start/stop pair), with strings 5/4/3 fretted above it.
+	// M4-9 are real jazz voicings (from "Bumpin' on Wes"). None carry <first-fret>, so the
+	// box is laid out from the lowest fret (dots stay compact, no nut), and the position
+	// label to the left shows the fret of the lowest-sounding string, drawn beside that
+	// note's row.
+	// - M4: Bm7, strings 4/3/2 at fret 7 → "7" beside the (only) top-row dots.
+	// - M5: B7(♯5), strings 4/3/2/1 across frets 7-8 → "7" at top (lowest string-4 at 7).
+	// - M6: Em11, strings 4/3/2/1 across frets 5-7 → "5" at top (lowest string-4 at 5).
+	// - M7: GΔ7(sus2), strings 4/3/2/1 across frets 2-5 → box from fret 2, "5" at the bottom
+	//   row beside string-4's dot.
+	// - M8: F♯7(♯9), strings 5/4/3/2 across frets 8-10 → box from fret 8, "9" beside
+	//   string-5's dot one row down.
+	// - M9: G♯m7♭5, string 6 at fret 4, string 5 muted, strings 4/3/2 across frets 3-4 → box
+	//   from fret 3, "4" beside string-6's dot one row down.
+	// - M10: Bm7 fret box plus an italic "(as taught)" words direction in the same measure —
+	//   the diagram draws on top, staying fully legible where the text overlaps it.
+	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
+
+	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
+	// note near the barline on each side, proving two adjacent diagrams don't collide even
+	// when the music is packed tight. Diagrams sit at their lead note's x, so these two are
+	// the closest a pair can get without sharing a note; the narrow width pulls those notes
+	// close enough that the boxes would overlap if drawn at their raw note x.
+	// - M1: four B4 quarters; a C-major fret box (X-muted string 6) above the LAST quarter.
+	// - M2: four B4 quarters; a G-major fret box above the FIRST quarter.
+	// The C box (anchored at M1's last beat) and the G box (anchored at M2's first beat)
+	// are nudged apart so they clear each other — no overlapping boards or titles.
+	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
+		layout: { type: 'standard', width: 500 },
+	}),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
@@ -506,6 +642,28 @@ const TEST_CASES = [
 	// - M6: a multi-grace slur — a beamed grace pair (E5, D5) with one arc spanning from the first
 	//   grace under to the C5 quarter.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
+
+	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
+	// measure-width allocation in a dense real-world excerpt (measures 6-8 of a lead sheet).
+	// A measure with grace notes is allocated extra width to fit them, so the graces get
+	// breathing room from the preceding note AND the real notes keep their spacing — instead
+	// of the graces compressing the bar's other notes. M7 (no graces) is a narrow control
+	// between the two grace-heavy bars.
+	// - M6: Eb/Bb harmony; a half rest + eighth rest, a staccato Bb eighth, then a slashed
+	//   F5 grace before a beamed G5 dotted-8th + F5/D5 32nds. The grace clears the staccato
+	//   eighth and the 32nds stay evenly spaced (the bar widened to hold the grace).
+	// - M7: Bb harmony; a lone F5 whole note tied into M8 — a plain narrow bar, no graces.
+	// - M8: Eb/Bb harmony; F5 quarter (tie stop) + quarter rest, then two slashed grace
+	//   chords, each just left of a quarter chord — stacked graces that get room to read. The
+	//   F5 tie stop is wholly held, so the tab omits its fret (beat 1 blank); only the struck
+	//   grace/quarter chords print frets.
+	// - M9: a dotted chord followed by a grace. Beat 3 is a dotted-8th chord (D4/F4/Bb4, tie
+	//   stop) whose three augmentation dots sit snug to the right of its noteheads — the grace
+	//   cluster's lead clearance is skipped for a dotted preceding note, since padding its
+	//   right would fling the dots out. The chord is flagged, not beamed (its only beam
+	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths. Beat 3's chord is wholly
+	//   tied, so the tab omits all three of its frets (the held beat is blank).
+	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
@@ -550,6 +708,20 @@ const TEST_CASES = [
 		layout: { type: 'panoramic' },
 	}),
 
+	// The same two systems (nine then seven C5 whole-note measures), but with
+	// minLastSystemFill lowered to 0 so the last system always justifies: the
+	// seven bottom measures stretch to fill the full page width (flush right edge, wider
+	// note spacing) instead of staying ragged at their natural width like in
+	// system_break.png. The top nine-measure system is unchanged.
+	// TODO: False positive: this baseline is created from the current render, so it may
+	// accept an incorrect screenshot. The render suite is currently also blocked by an
+	// unrelated in-progress `buildPedals` change from another agent. Once the tree builds,
+	// confirm the bottom system spans the full page width, then run
+	// `vex test last_system_stretch --update` only after confirming it.
+	testCase('system_break.musicxml', 'last_system_stretch.png', {
+		minLastSystemFill: 0,
+	}),
+
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number
 	// printed above the left edge of every measure (measureNumbering 'every'): "1"-"9"
 	// across the top system, "10"-"16" across the bottom.
@@ -579,6 +751,17 @@ const TEST_CASES = [
 	// measure_numbering_every_2 for the case where it does).
 	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
 		measureNumbering: 'every-3',
+	}),
+
+	// Treble, 4/4, narrowed to 660px so it wraps to two systems of three measures each.
+	// Tests vertical spacing between stacked systems: the first system's notes hang far
+	// below its staff and the second system's notes rise far above its staff, the worst
+	// case for a system clash. The two systems must stay clear of each other.
+	// - M1-3 (system 1): very low quarter notes (C3) with many ledger lines below the staff.
+	// - M4-6 (system 2): very high quarter notes (C7) with many ledger lines above the staff,
+	//   which must not collide with system 1's low notes.
+	testCase('system_spacing.musicxml', 'system_spacing.png', {
+		layout: { type: 'standard', width: 660 },
 	}),
 
 	// Individual measures extracted from 'aloof' for focused testing.

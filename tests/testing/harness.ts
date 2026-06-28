@@ -1,7 +1,7 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { type Browser, chromium } from 'playwright';
 import type { Config } from '../../src';
-import { LETTER_WIDTH } from '../../src/constants';
+import { DEFAULT_WIDTH } from '../../src/constants';
 import { serve } from './serve';
 
 const PORT = 3100;
@@ -31,7 +31,7 @@ export async function render(
 ): Promise<Buffer> {
 	const width =
 		(config.layout?.type === 'standard' ? config.layout.width : undefined) ??
-		LETTER_WIDTH;
+		DEFAULT_WIDTH;
 	const page = await browser.newPage({
 		viewport: { width: width + 64, height: 600 },
 	});
