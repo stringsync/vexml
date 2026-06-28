@@ -340,13 +340,17 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		// The last system of a multi-system score stays ragged unless its measures already
 		// fill most of the line: once their intrinsic width reaches minLastSystemFill
 		// of the reference width, justify it so a nearly-full trailing line snaps to the page
-		// edge instead of leaving a sliver of margin. Full systems and a lone line always justify.
+		// edge instead of leaving a sliver of margin. Full systems always justify. A lone
+		// single system also always justifies — unless stretchSingleSystem is off, which
+		// makes it obey the same minLastSystemFill rule as a trailing line, so a short
+		// excerpt keeps its natural width instead of being blown up across the page.
 		const isLastOfMany =
 			systemIndex === systems.length - 1 && systems.length > 1;
+		const isRaggableLone = systems.length === 1 && !config.stretchSingleSystem;
+		const obeysMinFill = isLastOfMany || isRaggableLone;
 		const justify =
 			layoutMode === 'standard' &&
-			(config.fillFirstSystem || systemIndex !== 0) &&
-			(!isLastOfMany || intrinsic >= cap * config.minLastSystemFill);
+			(!obeysMinFill || intrinsic >= cap * config.minLastSystemFill);
 		// Justified systems fill the page; ragged systems keep their intrinsic width —
 		// but every standard system is capped at the page width, so a measure too wide
 		// to fit (e.g. a large noteSpacing) shrinks to fit instead of spilling off the

@@ -723,13 +723,13 @@ const TEST_CASES = [
 		minLastSystemFill: 0,
 	}),
 
-	// The same sixteen C5 whole-note measures (wrapping 7/8/1 across three systems), but
-	// with fillFirstSystem false: the top seven-measure system stays ragged at its natural
-	// width (left-aligned, ending well short of the right page edge) instead of justifying
-	// to the page edge like in system_break.png. The middle full system still justifies and
-	// the lone last measure is ragged either way, so both are unchanged.
-	testCase('system_break.musicxml', 'fill_first_system_off.png', {
-		fillFirstSystem: false,
+	// A score that fits on a single system, rendered with stretchSingleSystem false. The
+	// lone system's few measures fill well under minLastSystemFill of the page, so instead
+	// of stretching to the full page width (the default — see aloof_measure_1.png) it stays
+	// ragged at its natural width: the staff ends well short of the right page edge with
+	// empty margin beyond it.
+	testCase('aloof_measure_1.musicxml', 'stretch_single_system_off.png', {
+		stretchSingleSystem: false,
 	}),
 
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number
