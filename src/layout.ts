@@ -11,6 +11,7 @@ import {
 	LEAD_CLEF,
 	LEAD_KEY,
 	LEAD_TIME,
+	LETTER_WIDTH,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
 	PAGE_MARGIN_BOTTOM,
@@ -18,7 +19,6 @@ import {
 	PAGE_MARGIN_TOP_WITH_TEMPO,
 	PAGE_MARGIN_X,
 	QUARTER_NOTE_TICKS,
-	REFERENCE_WIDTH,
 	TAB_MIN_NOTE_SPACING,
 } from './constants';
 import {
@@ -36,10 +36,10 @@ export type Layout =
 	| {
 			/** Wrap measures onto stacked systems (print-like). */
 			type: 'standard';
-			/** Reference layout width in px. The score is laid out to this width once;
-			 * the SVG viewBox then scales the result to whatever container it's placed
-			 * in, so resizing the container never re-flows or re-spaces it. */
-			width: number;
+			/** Reference layout width in px (default: US Letter, 8.5in → 816px). The score
+			 * is laid out to this width once; the result is then scaled to whatever container
+			 * it's placed in, so resizing the container never re-flows or re-spaces it. */
+			width?: number;
 	  }
 	| {
 			/** Lay every measure on one system (horizontal scroll); width is computed
@@ -165,13 +165,15 @@ function measureNoteArea(
 
 /** Lay the parts out at the reference width: where every measure box sits, how
  * staves stack within a system, and how tall/wide the page starts. Depends only on
- * the music and the options, never on the live container — the SVG viewBox scales
- * the finished result to fit. */
+ * the music and the options, never on the live container — the finished result is
+ * scaled to fit its container. */
 export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const layout = config.layout;
 	const layoutMode = layout.type;
-	// Panoramic computes its own width; REFERENCE_WIDTH is the page's starting floor.
-	const width = layout.type === 'standard' ? layout.width : REFERENCE_WIDTH;
+	// Standard without an explicit width, and panoramic's starting floor, both default
+	// to LETTER_WIDTH (panoramic then grows the page to fit its single system).
+	const width =
+		(layout.type === 'standard' ? layout.width : undefined) ?? LETTER_WIDTH;
 	const noteSpacing = config.noteSpacing;
 	const softmaxFactor = config.softmaxFactor;
 

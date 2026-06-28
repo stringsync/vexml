@@ -1,8 +1,9 @@
 // Tunable magic numbers, centralized. Spacing/margins are px at the reference layout
-// width; the SVG viewBox scales the finished result to its container.
+// width; the finished result is then scaled to its container.
 
-/** Page width floor, and the panoramic mode's starting width. */
-export const REFERENCE_WIDTH = 1000;
+/** Default standard-layout width: US Letter portrait (8.5in) at 96dpi = 816px. Also
+ * the panoramic mode's starting width / page-width floor. */
+export const LETTER_WIDTH = 8.5 * 96;
 
 /** Left/right page margin. Leaves room for the brace/bracket drawn left of the stave. */
 export const PAGE_MARGIN_X = 30;
