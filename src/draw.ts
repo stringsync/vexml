@@ -23,6 +23,9 @@ import {
 import type { Config } from './config';
 import {
 	BRACKET_X_SHIFT,
+	HARMONY_FONT_SIZE,
+	HARMONY_NOTE_CLEARANCE,
+	HARMONY_Y_OFFSET,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LEDGER_HEADROOM,
@@ -30,11 +33,15 @@ import {
 	PAGE_MARGIN_TOP,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
+	WORDS_FONT_SIZE,
+	WORDS_NOTE_CLEARANCE,
+	WORDS_Y_OFFSET,
 } from './constants';
 import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
 	endBeatOf,
 	getNoteheadHalfWidth,
+	harmoniesOf,
 	meterBeats,
 	staffVoices,
 	type TempoMark,
@@ -42,6 +49,7 @@ import {
 	vexflowClef,
 	vexflowTabTickables,
 	vexflowVoiceTickables,
+	wordsOf,
 } from './notes';
 import {
 	buildBeams,
@@ -287,7 +295,8 @@ function formatAndDrawPart(
 // one text line above the staff; if the first note reaches up into that band (a high
 // note with ledger lines), lift the mark with a negative y-shift so its bottom clears
 // the notehead — the layout reserves the matching top headroom. Drawn after the notes
-// are formatted so firstNote's bounding box is real.
+// are formatted so firstNote's extents are real. Uses noteTop, not the bounding box: an
+// attached grace-note group makes the box report a bogus near-origin y.
 function drawTempo(
 	context: RenderContext,
 	stave: Stave,
@@ -297,7 +306,7 @@ function drawTempo(
 	const baseY = stave.getYForTopText(1);
 	let shiftY = 0;
 	if (firstNote) {
-		const clearY = firstNote.getBoundingBox().getY() - TEMPO_NOTE_CLEARANCE;
+		const clearY = noteTop(firstNote) - TEMPO_NOTE_CLEARANCE;
 		if (clearY < baseY) {
 			shiftY = clearY - baseY;
 		}
@@ -328,6 +337,87 @@ function drawTempo(
 		.setContext(context)
 		.draw();
 	context.restore();
+}
+
+// Accidental glyphs in a chord symbol; pulled tight against their root letter.
+const HARMONY_ACCIDENTALS = new Set(['♯', '♭', '♮']);
+const HARMONY_ACCIDENTAL_KERN = 2.5;
+const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
+
+// Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at
+// the note's x — the laid-out position of the note the harmony applies to. Returns
+// the y the text reaches up to so the caller can grow the page crop to keep a margin
+// above it (drawTempo relies on reserved layout headroom instead; harmony feeds the
+// crop directly so no extra top margin is needed). Drawn after the notes are
+// formatted so getAbsoluteX is real.
+function drawHarmony(
+	context: RenderContext,
+	staveNote: StaveNote,
+	text: string,
+	font: string,
+): number {
+	const stave = staveNote.getStave();
+	if (!stave) {
+		return Infinity;
+	}
+	// Sit a fixed gap above the top staff line, but lift higher when the note rises into
+	// that band (a high note or its ledger lines) so the symbol clears the notehead. Uses
+	// noteTop, not the bounding box: an attached grace-note group makes the box report a
+	// bogus near-origin y, which would fling the symbol to the top of the page and defeat
+	// the top crop (leaving a huge blank margin above the first system).
+	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
+	const noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
+	const y = Math.min(baseY, noteClearY);
+	context.save();
+	context.setFont(font, HARMONY_FONT_SIZE);
+	context.setFillStyle('#000000');
+	// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
+	// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
+	// so it sits tight against its root letter.
+	let x = staveNote.getAbsoluteX();
+	for (const ch of text) {
+		const accidental = HARMONY_ACCIDENTALS.has(ch);
+		if (accidental) {
+			x -= HARMONY_ACCIDENTAL_KERN;
+			context.setFont(font, HARMONY_ACCIDENTAL_FONT_SIZE);
+		}
+		context.fillText(ch, x, y);
+		x += context.measureText(ch).width;
+		if (accidental) {
+			x -= HARMONY_ACCIDENTAL_KERN;
+			context.setFont(font, HARMONY_FONT_SIZE);
+		}
+	}
+	context.restore();
+	return y - HARMONY_FONT_SIZE;
+}
+
+// Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
+// the first note's x — where the directive applies. Sits a fixed gap above the top staff
+// line, but lifts higher when the first note rises into that band (a high note or its ledger
+// lines) so the text clears the notehead. Returns the y the text reaches up to so the caller
+// can grow the page crop above it (like drawHarmony). Drawn after the notes are formatted so
+// getAbsoluteX is real. Uses noteTop, not the bounding box, to clear the note: an attached
+// grace-note group makes the box report a bogus near-origin y.
+function drawWords(
+	context: RenderContext,
+	stave: Stave,
+	text: string,
+	firstNote: StaveNote | undefined,
+	font: string,
+): number {
+	const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
+	const noteClearY = firstNote
+		? noteTop(firstNote) - WORDS_NOTE_CLEARANCE
+		: baseY;
+	const y = Math.min(baseY, noteClearY);
+	const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();
+	context.save();
+	context.setFont(font, WORDS_FONT_SIZE, 'normal', 'italic');
+	context.setFillStyle('#000000');
+	context.fillText(text, x, y);
+	context.restore();
+	return y - WORDS_FONT_SIZE;
 }
 
 // Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
@@ -550,6 +640,13 @@ export function drawScore(
 		const { x: measureX, width: measureWidth, systemIndex } = box;
 		const { isSystemStart } = box;
 		const isLastMeasure = m === measureCount - 1;
+		// An explicit right <barline> with <bar-style>light-light</bar-style> draws a thin
+		// double line at this measure's end instead of the default single divider (or, on
+		// the final measure, the thin-thick end). Read from the first part — a light-light
+		// boundary applies across the system.
+		const isLightLight =
+			parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
+				?.barStyle === 'light-light';
 		const showMeasureNumber = showsMeasureNumber(
 			measureNumbering,
 			m,
@@ -577,6 +674,16 @@ export function drawScore(
 		const tempoTasks: Array<{
 			stave: Stave;
 			tempo: TempoMark;
+			firstNote: StaveNote | undefined;
+		}> = [];
+		// Chord symbols, drawn after the system is formatted so each sits at its
+		// note's laid-out x.
+		const harmonyTasks: Array<{ staveNote: StaveNote; text: string }> = [];
+		// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
+		// the first note's laid-out x.
+		const wordsTasks: Array<{
+			stave: Stave;
+			text: string;
 			firstNote: StaveNote | undefined;
 		}> = [];
 
@@ -623,9 +730,11 @@ export function drawScore(
 				stave.setEndBarType(
 					totalStaves > 1
 						? Barline.type.NONE
-						: isLastMeasure
-							? Barline.type.END
-							: Barline.type.SINGLE,
+						: isLightLight
+							? Barline.type.DOUBLE
+							: isLastMeasure
+								? Barline.type.END
+								: Barline.type.SINGLE,
 				);
 
 				// The previous measure's effective signatures (carried forward), used to
@@ -742,6 +851,16 @@ export function drawScore(
 			// across parts, not just within this part.
 			systemPending.push(...pendingStaves);
 
+			// Chord symbols from this measure's <harmony> elements, each bound to the
+			// lead note it sits above. Resolved via byLead (the notation staff's notes);
+			// a harmony over a tab-only note isn't drawn.
+			for (const { lead, text } of harmoniesOf(measure)) {
+				const staveNote = byLead.get(lead);
+				if (staveNote) {
+					harmonyTasks.push({ staveNote, text });
+				}
+			}
+
 			// A metronome mark (from a <direction><metronome>) prints on this part's top
 			// staff wherever it appears — the piece start or a mid-piece tempo change.
 			// Drawn after the system is formatted so it can clear a high first note.
@@ -753,6 +872,19 @@ export function drawScore(
 					tempo,
 					firstNote: topStave.staveNotes[0],
 				});
+			}
+
+			// Words directions (e.g. "ritardando") print on this part's top staff, like
+			// the metronome mark. Drawn after the system is formatted so the first note's
+			// x is real.
+			if (topStave) {
+				for (const text of wordsOf(measure)) {
+					wordsTasks.push({
+						stave: topStave.stave,
+						text,
+						firstNote: topStave.staveNotes[0],
+					});
+				}
 			}
 
 			// A part's own staves are joined at each system start by the symbol named in
@@ -809,6 +941,18 @@ export function drawScore(
 		for (const t of tempoTasks) {
 			drawTempo(context, t.stave, t.tempo, t.firstNote);
 		}
+		for (const h of harmonyTasks) {
+			pageTop = Math.min(
+				pageTop,
+				drawHarmony(context, h.staveNote, h.text, labelFont),
+			);
+		}
+		for (const w of wordsTasks) {
+			pageTop = Math.min(
+				pageTop,
+				drawWords(context, w.stave, w.text, w.firstNote, labelFont),
+			);
+		}
 
 		// Join the whole system across all parts with a shared left line at the
 		// system start, and a closing line at the system end.
@@ -838,7 +982,13 @@ export function drawScore(
 			// The piece's final measure gets a bold thin-thick connector to match its
 			// end barline; all other measure ends get a plain single line.
 			new StaveConnector(systemTop, systemBottom)
-				.setType(isLastMeasure ? 'boldDoubleRight' : 'singleRight')
+				.setType(
+					isLightLight
+						? 'thinDouble'
+						: isLastMeasure
+							? 'boldDoubleRight'
+							: 'singleRight',
+				)
 				.setContext(context)
 				.draw();
 		}

@@ -97,7 +97,9 @@ export default function App() {
 	const [config, setConfig] = useState<Partial<Config>>({});
 	const noteSpacing = config.noteSpacing ?? 36;
 	const softmaxFactor = config.softmaxFactor ?? 10;
-	const reset = (key: 'noteSpacing' | 'softmaxFactor') =>
+	const systemSpacing = config.systemSpacing ?? 30;
+	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
+	const reset = (key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing') =>
 		setConfig(({ [key]: _, ...rest }) => rest);
 
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
@@ -396,6 +398,41 @@ export default function App() {
 							</span>
 							<div className="flex flex-col gap-1.5">
 								<label
+									htmlFor="notationFont"
+									className="text-xs font-medium text-zinc-500"
+								>
+									Notation font
+								</label>
+								<select
+									id="notationFont"
+									value={notationFont}
+									onChange={(e) =>
+										setConfig((c) =>
+											e.target.value === 'Bravura'
+												? (({ fonts: _, ...rest }) => rest)(c)
+												: {
+														...c,
+														fonts: {
+															...c.fonts,
+															notation: { family: e.target.value },
+														},
+													},
+										)
+									}
+									className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
+								>
+									<option value="Bravura">Bravura</option>
+									<option value="Petaluma">Petaluma</option>
+									<option value="Gonville">Gonville</option>
+								</select>
+								<p className="text-xs text-zinc-400">
+									The engraving font for noteheads, clefs, accidentals, and
+									rests. Bravura is the default.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
 									htmlFor="noteSpacing"
 									className="flex items-center justify-between text-xs font-medium text-zinc-500"
 								>
@@ -473,6 +510,47 @@ export default function App() {
 								<p className="text-xs text-zinc-400">
 									How that space is divided among notes. Higher exaggerates the
 									width difference between long and short notes.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="systemSpacing"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									System spacing
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{systemSpacing}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('systemSpacing')}
+											disabled={config.systemSpacing === undefined}
+											aria-label="Reset system spacing"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="systemSpacing"
+									type="range"
+									min={10}
+									max={50}
+									step={1}
+									value={systemSpacing}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											systemSpacing: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									Vertical gap between stacked systems. Lower packs systems
+									closer together down the page.
 								</p>
 							</div>
 						</div>

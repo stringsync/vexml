@@ -1,3 +1,4 @@
+import { SYSTEM_GAP } from './constants';
 import type { FontConfig } from './fonts';
 import type { Layout, MeasureNumbering } from './layout';
 
@@ -23,6 +24,9 @@ export type Config = {
 	 * Given the width noteSpacing allots, higher exaggerates the long-vs-short note ratio. A
 	 * shape constant, independent of overall density. */
 	softmaxFactor: number;
+	/** Vertical gap in px between stacked systems (default: SYSTEM_GAP). Smaller packs
+	 * systems closer together down the page. */
+	systemSpacing: number;
 	/** Print each part's instrument name to the left of the first system (default: false). */
 	showPartLabels: boolean;
 	/** When to print measure numbers above the staff (default: 'system'). 'none' prints
@@ -52,6 +56,7 @@ export const DEFAULT_CONFIG: Config = {
 	layout: { type: 'standard', width: 1000 },
 	noteSpacing: 36,
 	softmaxFactor: 10,
+	systemSpacing: SYSTEM_GAP,
 	showPartLabels: false,
 	measureNumbering: 'system',
 	showTabHammerPullText: false,

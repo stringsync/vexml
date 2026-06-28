@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: a normal fermata above a C5 whole note (default placement). -->
+    <measure number="1">
+      <attributes>
+        <divisions>8</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>32</duration>
+        <type>whole</type>
+        <notations>
+          <fermata>normal</fermata>
+        </notations>
+      </note>
+    </measure>
+    <!-- M2: an inverted fermata below a C5 whole note (type="inverted"). -->
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>32</duration>
+        <type>whole</type>
+        <notations>
+          <fermata type="inverted">normal</fermata>
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

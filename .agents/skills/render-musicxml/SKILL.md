@@ -1,6 +1,6 @@
 ---
 name: render-musicxml
-description: Render a MusicXML file in vexml by running `vex render -i <path/to/musicxml>`, inspect the generated screenshot when needed, and delete ephemeral render output when finished.
+description: Render a MusicXML file in vexml by running `vex render -i <path/to/musicxml>`, optionally pass render configuration with `--config <json>`, inspect the generated screenshot when needed, and delete ephemeral render output when finished.
 ---
 
 # Render MusicXML
@@ -17,10 +17,18 @@ vex render -i <path/to/musicxml>
 
 Replace `<path/to/musicxml>` with the project-relative or absolute path to the MusicXML file the user wants rendered.
 
+To override render settings, pass a partial render config as JSON with `-c`/`--config`:
+
+```sh
+vex render -i <path/to/musicxml> --config '{"noteSpacing":40,"showPartLabels":true}'
+```
+
+The JSON object corresponds to `Partial<Config>` from `src/config.ts`; use that file as the source of truth for available options and defaults.
+
 ## Workflow
 
 1. Identify the MusicXML input path from the user's request or from the repository.
-2. Run `vex render -i <path/to/musicxml>` from `vexml`.
+2. Run `vex render -i <path/to/musicxml>` from `vexml`. If the user asks for non-default render settings, include `-c`/`--config <json>` using option names from `src/config.ts`.
 3. Read the command output to find the generated screenshot path.
 4. If visual inspection is needed, open or inspect the generated screenshot with available tools.
 5. When finished, delete the generated screenshot if it was only meant to be ephemeral.
