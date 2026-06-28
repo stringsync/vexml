@@ -77,6 +77,7 @@ export default function App() {
 	const [dragging, setDragging] = useState(false);
 	const [debouncing, setDebouncing] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [dark, setDark] = useState(false);
 	const [stored, setStored] = useState(
 		() => localStorage.getItem(STORAGE_KEY) !== null,
 	);
@@ -360,6 +361,18 @@ export default function App() {
 							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
 								Config
 							</span>
+							<label
+								htmlFor="darkMode"
+								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+							>
+								<input
+									id="darkMode"
+									type="checkbox"
+									checked={dark}
+									onChange={(e) => setDark(e.target.checked)}
+								/>
+								Dark mode
+							</label>
 							<div className="flex flex-col gap-1.5">
 								<label
 									htmlFor="notationFont"
@@ -543,8 +556,14 @@ export default function App() {
 						)}
 						{input != null && (
 							// The canvas is engraved at that width and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
-							<div className="relative mx-auto w-full max-w-237.5 bg-white py-8 px-4 shadow-md ring-1 ring-zinc-200 sm:py-16">
-								<canvas ref={canvasRef} className="block" />
+							<div
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${dark ? 'bg-zinc-900 ring-zinc-700' : 'bg-white ring-zinc-200'}`}
+							>
+								{/* ponytail: invert the black glyphs to light for dark mode instead of re-engraving in a light color. */}
+								<canvas
+									ref={canvasRef}
+									className={`block ${dark ? 'invert' : ''}`}
+								/>
 							</div>
 						)}
 						{debouncing && (

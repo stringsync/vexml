@@ -4,6 +4,8 @@ export interface FontOverride {
 	family: string;
 	/** woff2 URL; if omitted, assumed already loaded (system font or user's own @font-face). */
 	url?: string;
+	/** CSS color for glyphs drawn in this font; if omitted, the renderer's default is used. */
+	color?: string;
 }
 
 export interface FontConfig {
@@ -40,6 +42,12 @@ export function loadFonts(
 	injectNotationFont(notation, config?.notation?.url);
 	injectTextFont(config?.text);
 	applyFontVariables(container, notation, text);
+	applyColorVariable(
+		container,
+		'--vexml-color-notation',
+		config?.notation?.color,
+	);
+	applyColorVariable(container, '--vexml-color-text', config?.text?.color);
 	return { notation, text };
 }
 
@@ -124,4 +132,16 @@ function applyFontVariables(
 		'--vexml-font-text',
 		`'${textFamily}', sans-serif`,
 	);
+}
+
+// ponytail: just exposes the color as a CSS var; the renderer doesn't read it yet.
+// Wire it into draw.ts (alongside the --vexml-font-text reader) when color is needed.
+function applyColorVariable(
+	container: HTMLElement,
+	name: string,
+	color?: string,
+): void {
+	if (color) {
+		container.style.setProperty(name, sanitizeFontValue(color));
+	}
 }
