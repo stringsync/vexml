@@ -53,6 +53,17 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 5. Update the implementation in `src/` to fill the rendering gap.
    - Prefer a minimal, root-cause fix.
    - Keep changes consistent with the existing renderer and test patterns.
+   - **Collisions must go through the collision pipeline.** When a fix involves moving an
+     element so it clears another (an above-stave annotation over a notehead/tie, a chord
+     diagram next to another, two annotations stacking) — or detecting that content is clipped
+     ("no-man's land") — route it through `CollisionDetector` (`src/collision.ts`):
+     register the fixed thing as an obstacle (`add`/`addRect`), resolve the movable thing
+     (`liftClear` to lift above-stave text, `pushRightOf` to space diagrams), then draw at the
+     resolved position and register it. Do **not** add new bespoke magic-offset clearance
+     logic. Not everything is movable — noteheads, stems, and ties are obstacles, not nudge
+     targets. Fixed structural placement (page margins, part spacing, bracket offsets,
+     widget-internal geometry) is exempt — it is deterministic, not clash resolution. See
+     `docs/collision-audit.md` for what is and isn't in scope.
 
 6. Run the test command again:
 

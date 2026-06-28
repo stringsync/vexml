@@ -570,9 +570,10 @@ const TEST_CASES = [
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
-	// note's group gives the main note a bogus near-origin bounding box; the harmony must
-	// position from the notehead (noteTop), not that box — otherwise it flies to the top of
-	// the page and defeats the top crop, leaving a huge blank margin above the system.
+	// note's group gives the main note a bogus near-origin bounding box; the collision
+	// pipeline builds obstacles from the notehead (noteTop), not that box — otherwise the
+	// symbol flies to the top of the page and defeats the top crop, leaving a huge blank
+	// margin above the system. The symbol also lifts a hair to clear the grace's stem tip.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
 
@@ -720,6 +721,15 @@ const TEST_CASES = [
 	// `vex test last_system_stretch --update` only after confirming it.
 	testCase('system_break.musicxml', 'last_system_stretch.png', {
 		minLastSystemFill: 0,
+	}),
+
+	// A score that fits on a single system, rendered with stretchSingleSystem false. The
+	// lone system's few measures fill well under minLastSystemFill of the page, so instead
+	// of stretching to the full page width (the default — see aloof_measure_1.png) it stays
+	// ragged at its natural width: the staff ends well short of the right page edge with
+	// empty margin beyond it.
+	testCase('aloof_measure_1.musicxml', 'stretch_single_system_off.png', {
+		stretchSingleSystem: false,
 	}),
 
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number

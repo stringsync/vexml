@@ -95,9 +95,23 @@ export default function App() {
 	const width =
 		config.layout?.type === 'standard' ? (config.layout.width ?? 900) : 900;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
-	const reset = (
-		key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing' | 'maxSystemFill',
-	) => setConfig(({ [key]: _, ...rest }) => rest);
+	const resetKeys = [
+		'noteSpacing',
+		'softmaxFactor',
+		'systemSpacing',
+		'maxSystemFill',
+	] as const;
+	const reset = (key: (typeof resetKeys)[number]) =>
+		setConfig(({ [key]: _, ...rest }) => rest);
+	const canReset = resetKeys.some((k) => config[k] !== undefined);
+	const resetAll = () =>
+		setConfig((c) => {
+			const next = { ...c };
+			for (const k of resetKeys) {
+				delete next[k];
+			}
+			return next;
+		});
 
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
 	// behind it by the debounce so dragging a slider re-renders once it settles, not on
@@ -109,13 +123,20 @@ export default function App() {
 			skipConfigDebounce.current = false;
 			return;
 		}
+		// If the last render was fast, apply config changes immediately; only debounce
+		// once renders get slow enough to lag the sliders.
+		if (renderMs != null && renderMs <= 50) {
+			setRenderConfig(config);
+			setDebouncing(false);
+			return;
+		}
 		setDebouncing(true);
 		const t = setTimeout(() => {
 			setRenderConfig(config);
 			setDebouncing(false);
 		}, 500);
 		return () => clearTimeout(t);
-	}, [config]);
+	}, [config, renderMs]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -214,6 +235,13 @@ export default function App() {
 		clearTimeout(debounceRef.current);
 		if (!value.trim()) {
 			setDebouncing(false);
+			return;
+		}
+		// If the last render was fast, just render on every keystroke; only debounce
+		// once renders get slow enough to lag typing.
+		if (renderMs != null && renderMs <= 50) {
+			setDebouncing(false);
+			setInput(value);
 			return;
 		}
 		// Spinner shows while we wait out the typing, then render the settled text.
@@ -369,9 +397,23 @@ export default function App() {
 						</button>
 
 						<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-								Config
-							</span>
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+									Config
+								</span>
+								<button
+									type="button"
+									onClick={resetAll}
+									disabled={!canReset}
+									className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+								>
+									Reset all
+								</button>
+							</div>
+							<p className="text-xs text-zinc-400">
+								With only a single system, some controls (e.g. system spacing
+								and max system fill) won't have a visible effect.
+							</p>
 							<label
 								htmlFor="darkMode"
 								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
