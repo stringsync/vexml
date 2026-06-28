@@ -345,6 +345,7 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 			systemIndex === systems.length - 1 && systems.length > 1;
 		const justify =
 			layoutMode === 'standard' &&
+			(config.fillFirstSystem || systemIndex !== 0) &&
 			(!isLastOfMany || intrinsic >= cap * config.minLastSystemFill);
 		// Justified systems fill the page; ragged systems keep their intrinsic width —
 		// but every standard system is capped at the page width, so a measure too wide

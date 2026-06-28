@@ -45,6 +45,11 @@ export type Config = {
 	 * nearly-full last system snaps flush instead of leaving an awkward sliver of margin.
 	 * 0 always stretches, 1 never does. */
 	minLastSystemFill: number;
+	/** Whether the first system is justified to the reference width (default: true). When
+	 * false the first system stays ragged at its intrinsic width, like a short trailing
+	 * line — useful for incipits or single-line excerpts that shouldn't stretch to the page
+	 * edge. Other systems still justify per maxSystemFill/minLastSystemFill. */
+	fillFirstSystem: boolean;
 	/** Fraction (0–1) of the reference width a system may fill before the breaker bumps
 	 * the next measure to a new system (default: 0.9). Lower leaves more air; 1 packs each
 	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
@@ -72,6 +77,7 @@ export const DEFAULT_CONFIG: Config = {
 	measureNumbering: 'system',
 	showTabHammerPullText: false,
 	showTabSlideText: false,
+	fillFirstSystem: true,
 	minLastSystemFill: 0.75,
 	maxSystemFill: 0.9,
 };

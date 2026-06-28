@@ -570,9 +570,10 @@ const TEST_CASES = [
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
-	// note's group gives the main note a bogus near-origin bounding box; the harmony must
-	// position from the notehead (noteTop), not that box — otherwise it flies to the top of
-	// the page and defeats the top crop, leaving a huge blank margin above the system.
+	// note's group gives the main note a bogus near-origin bounding box; the collision
+	// pipeline builds obstacles from the notehead (noteTop), not that box — otherwise the
+	// symbol flies to the top of the page and defeats the top crop, leaving a huge blank
+	// margin above the system. The symbol also lifts a hair to clear the grace's stem tip.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
 
@@ -720,6 +721,15 @@ const TEST_CASES = [
 	// `vex test last_system_stretch --update` only after confirming it.
 	testCase('system_break.musicxml', 'last_system_stretch.png', {
 		minLastSystemFill: 0,
+	}),
+
+	// The same sixteen C5 whole-note measures (wrapping 7/8/1 across three systems), but
+	// with fillFirstSystem false: the top seven-measure system stays ragged at its natural
+	// width (left-aligned, ending well short of the right page edge) instead of justifying
+	// to the page edge like in system_break.png. The middle full system still justifies and
+	// the lone last measure is ragged either way, so both are unchanged.
+	testCase('system_break.musicxml', 'fill_first_system_off.png', {
+		fillFirstSystem: false,
 	}),
 
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number

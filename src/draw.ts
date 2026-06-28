@@ -24,6 +24,7 @@ import {
 	type Voice,
 } from 'vexflow';
 import { ChordDiagram, type ChordSpec } from './chord-diagram';
+import { CollisionDetector, type CollisionKind } from './collision';
 import type { Config } from './config';
 import {
 	BRACKET_X_SHIFT,
@@ -47,6 +48,7 @@ import {
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from './constants';
+import { Rect } from './geometry';
 import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
 	endBeatOf,
@@ -172,6 +174,9 @@ type PendingStave = {
 	tuplets: ReturnType<typeof buildTuplets>;
 	// Real notes only (no gap-filling ghosts), for the bottom-bound calc.
 	staveNotes: StaveNote[];
+	// StaveNotes whose lead carries a tie — they get a tie-apex collision obstacle once their
+	// stem direction is final (stem-down ties bow up over the noteheads). See tieApexRect.
+	tiedNotes: Set<StaveNote>;
 };
 
 /*
@@ -193,6 +198,7 @@ function buildNotes(
 	// ghosts instead of jamming its last note against the end barline.
 	const endBeat = Math.max(endBeatOf(voices), meterFloor);
 	const staveNotes: StaveNote[] = [];
+	const tiedNotes = new Set<StaveNote>();
 	const vexVoices = voices.map((voice) => {
 		const tickables = vexflowVoiceTickables(
 			voice.chords,
@@ -201,6 +207,9 @@ function buildNotes(
 			(lead, note) => {
 				byLead.set(lead, note);
 				staveNotes.push(note);
+				if (lead.ties.length > 0) {
+					tiedNotes.add(note);
+				}
 			},
 		);
 		return softVoice(tickables, softmaxFactor);
@@ -214,7 +223,15 @@ function buildNotes(
 	);
 	const tuplets = voices.flatMap((v) => buildTuplets(v.chords, byLead));
 
-	return { stave, isTab: false, vexVoices, beams, tuplets, staveNotes };
+	return {
+		stave,
+		isTab: false,
+		vexVoices,
+		beams,
+		tuplets,
+		staveNotes,
+		tiedNotes,
+	};
 }
 
 /*
@@ -245,6 +262,41 @@ function noteTop(note: StaveNote): number {
 	return top;
 }
 
+// Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
+// chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
+// nudge logic funnels through the CollisionDetector; see docs/collision-audit.md.
+const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
+
+/*
+ * The collision obstacle for a note: a box from its top (noteTop — notehead ∪ beam-extended
+ * stem tip ∪ above articulations) down to its bottom notehead, one notehead wide, centered on
+ * its laid-out x. Deliberately built from noteTop/getNoteHeadBounds, NOT note.getBoundingBox()
+ * (which unions attached modifiers and reports a bogus near-origin y for grace groups).
+ */
+function noteRect(note: StaveNote): Rect {
+	const top = noteTop(note);
+	const bottom = note.getNoteHeadBounds().yBottom;
+	const hw = getNoteheadHalfWidth();
+	return new Rect(note.getAbsoluteX() - hw, top, 2 * hw, bottom - top);
+}
+
+/*
+ * The collision obstacle for a stem-down note's tie: the band the tie ribbon bows up into,
+ * from its reconstructed apex (TIE_APEX_RISE above the top notehead) down to that notehead.
+ * The tie is a separate spanner drawn later, so there's no glyph to measure — this lets an
+ * annotation clear the arc the same way it clears a notehead.
+ */
+function tieApexRect(note: StaveNote): Rect {
+	const headTop = Math.min(...note.getYs());
+	const hw = getNoteheadHalfWidth();
+	return new Rect(
+		note.getAbsoluteX() - hw,
+		headTop - TIE_APEX_RISE,
+		2 * hw,
+		TIE_APEX_RISE,
+	);
+}
+
 /*
  * Format a system's staves together and draw their notes. A note's absolute x is its
  * (shared) tick-context x plus its own stave's note-start x, so two things must hold
@@ -258,6 +310,7 @@ function formatAndDrawSystem(
 	context: RenderContext,
 	pending: PendingStave[],
 	softmaxFactor: number,
+	detector: CollisionDetector,
 ): { top: number; bottom: number } {
 	if (pending.length === 0) {
 		return { top: Infinity, bottom: 0 };
@@ -341,6 +394,12 @@ function formatAndDrawSystem(
 			const box = note.getBoundingBox();
 			bottom = Math.max(bottom, box.getY() + box.getH());
 			top = Math.min(top, noteTop(note));
+			// Register each note as a collision obstacle now that its position is final, so the
+			// above-stave annotations drawn next can be nudged clear of it (and of high ties).
+			detector.add({ rect: noteRect(note), kind: 'note' });
+			if (p.tiedNotes.has(note) && note.getStemDirection() === Stem.DOWN) {
+				detector.add({ rect: tieApexRect(note), kind: 'tie' });
+			}
 		}
 	}
 	return { top, bottom };
@@ -403,53 +462,68 @@ const HARMONY_ACCIDENTAL_KERN = 2.5;
 const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
 
 /*
- * Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at
- * the note's x — the laid-out position of the note the harmony applies to. Returns
- * the y the text reaches up to so the caller can grow the page crop to keep a margin
- * above it (drawTempo relies on reserved layout headroom instead; harmony feeds the
- * crop directly so no extra top margin is needed). Drawn after the notes are
- * formatted so getAbsoluteX is real.
+ * The total kerned advance of a chord symbol as drawHarmony draws it: accidentals render a
+ * touch smaller and pull in by HARMONY_ACCIDENTAL_KERN on each side. Measured so the symbol's
+ * collision box matches the glyphs that get drawn.
+ */
+function harmonyWidth(
+	context: RenderContext,
+	text: string,
+	font: string,
+): number {
+	let width = 0;
+	for (const ch of text) {
+		const accidental = HARMONY_ACCIDENTALS.has(ch);
+		context.setFont(
+			font,
+			accidental ? HARMONY_ACCIDENTAL_FONT_SIZE : HARMONY_FONT_SIZE,
+		);
+		width +=
+			context.measureText(ch).width -
+			(accidental ? 2 * HARMONY_ACCIDENTAL_KERN : 0);
+	}
+	return width;
+}
+
+/*
+ * Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at the note's
+ * x — the laid-out position of the note the harmony applies to. The collision detector lifts
+ * it clear of any notehead, high tie, or already-placed annotation it would land on (all
+ * registered as obstacles); it sits at a fixed gap above the top staff line when nothing is in
+ * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
+ * Drawn after the notes are formatted so getAbsoluteX is real.
  */
 function drawHarmony(
 	context: RenderContext,
 	staveNote: StaveNote,
 	text: string,
 	font: string,
-	hasTie: boolean,
+	detector: CollisionDetector,
 ): number {
 	const stave = staveNote.getStave();
 	if (!stave) {
 		return Infinity;
 	}
-	// Sit a fixed gap above the top staff line, but lift higher when the note rises into
-	// that band (a high note or its ledger lines) so the symbol clears the notehead. Uses
-	// noteTop, not the bounding box: an attached grace-note group makes the box report a
-	// bogus near-origin y, which would fling the symbol to the top of the page and defeat
-	// the top crop (leaving a huge blank margin above the first system).
 	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
-	let noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
-	// A stem-down note's tie bows up over the noteheads (vexflow bows a single note's, and
-	// a chord's upper, tie opposite the stem), peaking past what noteTop sees. The tie is a
-	// separate spanner drawn later — there's no glyph to measure here — so reconstruct its
-	// apex from the top notehead center (a constant rise, independent of tie length) and
-	// clear that too, otherwise the symbol lands on the arc. Gate on the apex itself rising
-	// above where the symbol would otherwise sit (baseY): only then does the tie actually
-	// pass through the text. A low note's tie — including a long tie whose far-right apex
-	// stays below the baseline — sits clear of the symbol, so leave it at baseY.
-	if (hasTie && staveNote.getStemDirection() === Stem.DOWN) {
-		const tieApexY = Math.min(...staveNote.getYs()) - TIE_APEX_RISE;
-		if (tieApexY < baseY) {
-			noteClearY = Math.min(noteClearY, tieApexY - HARMONY_NOTE_CLEARANCE);
-		}
-	}
-	const y = Math.min(baseY, noteClearY);
 	context.save();
-	context.setFont(font, HARMONY_FONT_SIZE);
 	context.setFillStyle('#000000');
+	const natural = new Rect(
+		staveNote.getAbsoluteX(),
+		baseY - HARMONY_FONT_SIZE,
+		harmonyWidth(context, text, font),
+		HARMONY_FONT_SIZE,
+	);
+	const placed = detector.liftClear(
+		natural,
+		HARMONY_NOTE_CLEARANCE,
+		TEXT_CLEAR_KINDS,
+	);
+	const y = placed.bottom;
 	// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
 	// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
 	// so it sits tight against its root letter.
-	let x = staveNote.getAbsoluteX();
+	context.setFont(font, HARMONY_FONT_SIZE);
+	let x = placed.x;
 	for (const ch of text) {
 		const accidental = HARMONY_ACCIDENTALS.has(ch);
 		if (accidental) {
@@ -464,17 +538,17 @@ function drawHarmony(
 		}
 	}
 	context.restore();
-	return y - HARMONY_FONT_SIZE;
+	// Register the placed symbol so a later annotation in this system stacks above it.
+	detector.add({ rect: placed, kind: 'annotation' });
+	return placed.y;
 }
 
 /*
  * Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
- * the first note's x — where the directive applies. Sits a fixed gap above the top staff
- * line, but lifts higher when the first note rises into that band (a high note or its ledger
- * lines) so the text clears the notehead. Returns the y the text reaches up to so the caller
- * can grow the page crop above it (like drawHarmony). Drawn after the notes are formatted so
- * getAbsoluteX is real. Uses noteTop, not the bounding box, to clear the note: an attached
- * grace-note group makes the box report a bogus near-origin y.
+ * the first note's x — where the directive applies. The collision detector lifts it clear of
+ * any notehead/tie/annotation it would land on; it sits at a fixed gap above the top staff
+ * line otherwise. Returns the y the text reaches up to so the caller can grow the page crop
+ * above it (like drawHarmony). Drawn after the notes are formatted so getAbsoluteX is real.
  */
 function drawWords(
 	context: RenderContext,
@@ -482,19 +556,28 @@ function drawWords(
 	text: string,
 	firstNote: StaveNote | undefined,
 	font: string,
+	detector: CollisionDetector,
 ): number {
 	const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
-	const noteClearY = firstNote
-		? noteTop(firstNote) - WORDS_NOTE_CLEARANCE
-		: baseY;
-	const y = Math.min(baseY, noteClearY);
 	const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();
 	context.save();
 	context.setFont(font, WORDS_FONT_SIZE, 'normal', 'italic');
 	context.setFillStyle('#000000');
-	context.fillText(text, x, y);
+	const natural = new Rect(
+		x,
+		baseY - WORDS_FONT_SIZE,
+		context.measureText(text).width,
+		WORDS_FONT_SIZE,
+	);
+	const placed = detector.liftClear(
+		natural,
+		WORDS_NOTE_CLEARANCE,
+		TEXT_CLEAR_KINDS,
+	);
+	context.fillText(text, placed.x, placed.bottom);
 	context.restore();
-	return y - WORDS_FONT_SIZE;
+	detector.add({ rect: placed, kind: 'annotation' });
+	return placed.y;
 }
 
 /*
@@ -534,6 +617,7 @@ function buildTabNotes(
 		beams: [],
 		tuplets: [],
 		staveNotes: [],
+		tiedNotes: new Set(),
 	};
 }
 
@@ -776,10 +860,28 @@ export function drawScore(
 		let systemTopY = layout.top + topSlack;
 		let systemContentBottom = systemTopY;
 		let currentSystem = -1;
-		// The right edge (+ gap) of the last chord diagram drawn in the current system, so a
-		// diagram near a barline can be pushed clear of the one before it across the measure
-		// boundary. Reset when a new system starts (x coordinates restart at the left).
-		let prevDiagramRight = -Infinity;
+		// Per-system collision index of everything already drawn (notes, high ties, placed
+		// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
+		// obstacles, and chord diagrams use it to space apart across a barline (replacing an old
+		// running-cursor). Reset at each system start (x/y restart) — see the system-change
+		// block. ALL nudge logic funnels through here; see docs/collision-audit.md.
+		const detector = new CollisionDetector(
+			new Rect(0, 0, width, scratchHeight),
+		);
+		// The drawable region of the scratch canvas. Anything escaping it is in "no-man's land"
+		// and gets clipped, so warn — the slack that prevents this (LEDGER_HEADROOM/topSlack)
+		// is then the knob to grow. Vertical edges only; horizontal page overflow is separate.
+		const scratchViewport = new Rect(0, 0, width, scratchHeight);
+		const warnEscapes = () => {
+			for (const { item, edges } of detector.escaping(scratchViewport)) {
+				if (edges.includes('top') || edges.includes('bottom')) {
+					console.warn(
+						`vexml: ${item.kind} clipped past the ${edges.join('/')} of the canvas ` +
+							"(content in no-man's land — bump LEDGER_HEADROOM / topSlack).",
+					);
+				}
+			}
+		};
 		// Per system: the stave-top y it was placed at, and the highest (smallest) y any of
 		// its content reached. Their difference is how far the system overflows above its
 		// top stave — reserved above it on a redraw so it can't clash with the system above.
@@ -819,7 +921,10 @@ export function drawScore(
 				currentSystem = systemIndex;
 				systemContentBottom = systemTopY;
 				systemTopByIndex.set(systemIndex, systemTopY);
-				prevDiagramRight = -Infinity;
+				// Leaving the previous system: flag anything that escaped the canvas, then reset
+				// the collision index so the new system (coordinates restart) starts clean.
+				warnEscapes();
+				detector.clear();
 			}
 			const systemY = systemTopY;
 			let staveRow = 0;
@@ -841,7 +946,6 @@ export function drawScore(
 			const harmonyTasks: Array<{
 				staveNote: StaveNote;
 				text: string;
-				hasTie: boolean;
 				frame: ChordSpec | null;
 			}> = [];
 			// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
@@ -1034,7 +1138,6 @@ export function drawScore(
 						harmonyTasks.push({
 							staveNote,
 							text,
-							hasTie: lead.ties.length > 0,
 							frame,
 						});
 					}
@@ -1127,6 +1230,7 @@ export function drawScore(
 				context,
 				systemPending,
 				softmaxFactor,
+				detector,
 			);
 			pageBottom = Math.max(pageBottom, noteExtent.bottom);
 			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
@@ -1148,13 +1252,13 @@ export function drawScore(
 			for (const w of wordsTasks) {
 				pageTop = Math.min(
 					pageTop,
-					drawWords(context, w.stave, w.text, w.firstNote, labelFont),
+					drawWords(context, w.stave, w.text, w.firstNote, labelFont, detector),
 				);
 			}
-			// Diagrams sit at their lead note's x; two on notes either side of a barline can
-			// be close enough to overlap (especially at a narrow width). Push each box's left
-			// edge past the previous diagram's right edge + a gap (tracked across measures in
-			// prevDiagramRight) so crowded diagrams separate instead of stacking.
+			// Diagrams sit at their lead note's x; two on notes either side of a barline can be
+			// close enough to overlap (especially at a narrow width). The detector pushes each
+			// box clear of any already-placed diagram in its band (replacing the old running
+			// cursor) so crowded diagrams separate instead of stacking.
 			for (const h of harmonyTasks) {
 				// A <harmony> with a <frame> draws as a fret box (chord name as its title)
 				// above the stave; one without draws as the plain chord-symbol text.
@@ -1168,9 +1272,19 @@ export function drawScore(
 						...h.frame.chord.map(([, f]) => (typeof f === 'number' ? f : 0)),
 						...(h.frame.barres ?? []).map((b) => b.fret),
 					];
-					const x = Math.max(h.staveNote.getAbsoluteX(), prevDiagramRight);
-					prevDiagramRight = x + CHORD_DIAGRAM_WIDTH + CHORD_DIAGRAM_GAP;
-					const diagram = new ChordDiagram(x, top, {
+					const natural = new Rect(
+						h.staveNote.getAbsoluteX(),
+						top,
+						CHORD_DIAGRAM_WIDTH,
+						CHORD_DIAGRAM_HEIGHT,
+					);
+					const placed = detector.pushRightOf(
+						natural,
+						'diagram',
+						CHORD_DIAGRAM_GAP,
+					);
+					detector.add({ rect: placed, kind: 'diagram' });
+					const diagram = new ChordDiagram(placed.x, top, {
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
 						numStrings: h.frame.chord.length,
@@ -1193,7 +1307,7 @@ export function drawScore(
 				} else {
 					pageTop = Math.min(
 						pageTop,
-						drawHarmony(context, h.staveNote, h.text, labelFont, h.hasTie),
+						drawHarmony(context, h.staveNote, h.text, labelFont, detector),
 					);
 				}
 			}
@@ -1237,6 +1351,9 @@ export function drawScore(
 					.draw();
 			}
 		}
+		// The last system's content is never followed by a system-change reset, so check it
+		// for clipped content here.
+		warnEscapes();
 
 		// Ties and slurs are resolved over the whole score now that every note is
 		// placed, so a span can cross a barline (its endpoints sit in different
