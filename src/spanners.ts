@@ -25,14 +25,16 @@ import { type PedalMark, reorientArticulations } from './notes';
 // within the run where the secondary (16th+) beam breaks into sub-beams.
 type BeamGroup = { notes: Note[]; secondaryBreaks: number[] };
 
-// Group a voice's chord run into beam runs off the primary <beam number="1">
-// markers. Unlike mdom's measure.beams, an "end" does NOT close the run: only a
-// "begin" (new run) or a non-beamed note does. This keeps a beat whose primary beam
-// is split at a sub-beam boundary — e.g. Guitar Pro encoding a triplet-of-16ths +
-// 2-16ths beat as begin,continue,end,continue,end — as one continuous primary beam
-// (mdom instead drops the orphaned continue/end notes, leaving them flagged).
-// The secondary beam still breaks at those boundaries: any <beam number="2"> "end"
-// that isn't the run's last note marks where the 16th beam splits.
+/*
+ * Group a voice's chord run into beam runs off the primary <beam number="1">
+ * markers. Unlike mdom's measure.beams, an "end" does NOT close the run: only a
+ * "begin" (new run) or a non-beamed note does. This keeps a beat whose primary beam
+ * is split at a sub-beam boundary — e.g. Guitar Pro encoding a triplet-of-16ths +
+ * 2-16ths beat as begin,continue,end,continue,end — as one continuous primary beam
+ * (mdom instead drops the orphaned continue/end notes, leaving them flagged).
+ * The secondary beam still breaks at those boundaries: any <beam number="2"> "end"
+ * that isn't the run's last note marks where the 16th beam splits.
+ */
 export function groupBeams(chords: Chord[]): BeamGroup[] {
 	const groups: BeamGroup[] = [];
 	let current: BeamGroup | null = null;
@@ -68,8 +70,10 @@ export function groupBeams(chords: Chord[]): BeamGroup[] {
 	return groups;
 }
 
-// Beams: map each beam group's notes to their StaveNotes. Built before formatting
-// so the beamed notes drop their flags.
+/*
+ * Beams: map each beam group's notes to their StaveNotes. Built before formatting
+ * so the beamed notes drop their flags.
+ */
 export function buildBeams(
 	groups: BeamGroup[],
 	byLead: Map<Note, StaveNote>,
@@ -109,9 +113,11 @@ export function buildBeams(
 	return beams;
 }
 
-// Tuplets: a <tuplet>start..stop span covers every note between the two markers
-// (the inner notes carry no marker), so slice the chord run by index. The ratio
-// comes from the start note's <time-modification> (e.g. 3:2 -> "3").
+/*
+ * Tuplets: a <tuplet>start..stop span covers every note between the two markers
+ * (the inner notes carry no marker), so slice the chord run by index. The ratio
+ * comes from the start note's <time-modification> (e.g. 3:2 -> "3").
+ */
 export function buildTuplets<T extends StaveNote | TabNote>(
 	chords: Chord[],
 	byLead: Map<Note, T>,
@@ -145,8 +151,37 @@ export function buildTuplets<T extends StaveNote | TabNote>(
 	return tuplets;
 }
 
-// Ties (<tied>) and slurs (<slur>) both connect a start note to its partner;
-// ties draw as a StaveTie, slurs as a Curve. Drawn after the notes are placed.
+/*
+ * The vexflow TieNotes spec(s) for a tie/slur from firstNote to lastNote on the given
+ * notehead/position indexes. Normally one spec spanning both notes; but when the stop note
+ * wraps onto a later system its stave sits to the LEFT of the start note's, so a single tie
+ * would draw as one long diagonal across the page — split it into two partial ties, one
+ * bowing off the right edge of the start note's stave ("tie to nothing") and one bowing in
+ * from the left edge of the stop note's ("tie from nothing"). vexflow renders a tie given
+ * only a firstNote (or only a lastNote) exactly so. Shared by buildTies and buildHammerPulls.
+ * ponytail: the x-compare assumes the two ends share a staff (true for a pitch continuation
+ * or a fretted line); a cross-staff tie would also split here.
+ */
+function tieSpecs(
+	firstNote: StaveNote | TabNote,
+	lastNote: StaveNote | TabNote,
+	firstIndexes: number[],
+	lastIndexes: number[],
+): TieNotes[] {
+	const wraps =
+		(lastNote.getStave()?.getX() ?? 0) < (firstNote.getStave()?.getX() ?? 0);
+	return wraps
+		? [
+				{ firstNote, firstIndexes, lastIndexes: firstIndexes },
+				{ lastNote, firstIndexes: lastIndexes, lastIndexes },
+			]
+		: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
+}
+
+/*
+ * Ties (<tied>) and slurs (<slur>) both connect a start note to its partner;
+ * ties draw as a StaveTie, slurs as a Curve. Drawn after the notes are placed.
+ */
 export function buildTies(
 	chords: Chord[],
 	byLead: Map<Note, StaveNote>,
@@ -201,38 +236,12 @@ export function buildTies(
 				const direction =
 					heads > 1 ? (from.index >= (heads - 1) / 2 ? -1 : 1) : null;
 
-				// When the stop note wraps onto a later system its stave sits to the left
-				// of the start note's; one StaveTie would then draw as a single long diagonal
-				// slanting across the page. Split it into two partial ties — one bowing off
-				// the right edge of the start note's stave ("tie to nothing") and one bowing
-				// in from the left edge of the stop note's stave ("tie from nothing"). vexflow
-				// renders a StaveTie given only a firstNote (or only a lastNote) exactly so.
-				// ponytail: the x-compare assumes a tie's two ends share a staff (true for a
-				// pitch continuation); a cross-staff tie would also split here.
-				const wraps =
-					(to.staveNote.getStave()?.getX() ?? 0) <
-					(from.staveNote.getStave()?.getX() ?? 0);
-				const specs: TieNotes[] = wraps
-					? [
-							{
-								firstNote: from.staveNote,
-								firstIndexes: [from.index],
-								lastIndexes: [from.index],
-							},
-							{
-								lastNote: to.staveNote,
-								firstIndexes: [to.index],
-								lastIndexes: [to.index],
-							},
-						]
-					: [
-							{
-								firstNote: from.staveNote,
-								lastNote: to.staveNote,
-								firstIndexes: [from.index],
-								lastIndexes: [to.index],
-							},
-						];
+				const specs = tieSpecs(
+					from.staveNote,
+					to.staveNote,
+					[from.index],
+					[to.index],
+				);
 				for (const spec of specs) {
 					const staveTie = new StaveTie(spec);
 					if (direction !== null) {
@@ -246,9 +255,11 @@ export function buildTies(
 	return ties;
 }
 
-// The next same-pitch note after `note` (in document order) that carries a tie stop.
-// Used to recover the partner of a chain-middle tie start when mdom mis-pairs it to
-// the note's own stop (see buildTies). null when the chain dangles past the score.
+/*
+ * The next same-pitch note after `note` (in document order) that carries a tie stop.
+ * Used to recover the partner of a chain-middle tie start when mdom mis-pairs it to
+ * the note's own stop (see buildTies). null when the chain dangles past the score.
+ */
 function nextTieStopMember(note: Note, chords: Chord[]): Note | undefined {
 	const p = note.pitch;
 	if (!p) {
@@ -269,8 +280,10 @@ function nextTieStopMember(note: Note, chords: Chord[]): Note | undefined {
 	return undefined;
 }
 
-// The member of `chord` whose pitch matches `note` (a tie's two ends are always the
-// same pitch), or null when there's no chord or no match.
+/*
+ * The member of `chord` whose pitch matches `note` (a tie's two ends are always the
+ * same pitch), or null when there's no chord or no match.
+ */
 function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
 	const p = note.pitch;
 	if (!chord || !p) {
@@ -286,8 +299,10 @@ function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
 	);
 }
 
-// An explicit hammer-on/pull-off marker in <notations><technical>, or null when
-// neither is present (the common case — most tab is notated with only a slur).
+/*
+ * An explicit hammer-on/pull-off marker in <notations><technical>, or null when
+ * neither is present (the common case — most tab is notated with only a slur).
+ */
 function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
 	const technical = note.child('notations')?.child('technical');
 	if (technical?.child('hammer-on')) {
@@ -299,11 +314,13 @@ function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
 	return null;
 }
 
-// Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur>;
-// vexflow draws each as a TabTie labelled "H" or "P". When no explicit
-// <hammer-on>/<pull-off> marker says which, infer from the fret motion of the
-// lead string: a higher target fret is a hammer-on, a lower one a pull-off (pulling
-// off to an open string is just a target fret of 0).
+/*
+ * Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur>;
+ * vexflow draws each as a TabTie labelled "H" or "P". When no explicit
+ * <hammer-on>/<pull-off> marker says which, infer from the fret motion of the
+ * lead string: a higher target fret is a hammer-on, a lower one a pull-off (pulling
+ * off to an open string is just a target fret of 0).
+ */
 export function buildHammerPulls(
 	chords: Chord[],
 	byTabLead: Map<Note, TabNote>,
@@ -333,20 +350,7 @@ export function buildHammerPulls(
 						? 'hammer'
 						: 'pull')) === 'hammer';
 			const lastIndexes = lastNote.getPositions().map((_, i) => i);
-			// When the stop note wraps onto a later system its stave sits to the left
-			// of the start note's; one TabTie would then draw as a single long diagonal
-			// across the page. Split it into a tie bowing off the right edge of the start
-			// note's stave and one bowing in from the left edge of the stop note's — same
-			// boundary handling as buildTies().
-			const wraps =
-				(lastNote.getStave()?.getX() ?? 0) <
-				(firstNote.getStave()?.getX() ?? 0);
-			const specs: TieNotes[] = wraps
-				? [
-						{ firstNote, firstIndexes, lastIndexes: firstIndexes },
-						{ lastNote, firstIndexes: lastIndexes, lastIndexes },
-					]
-				: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
+			const specs = tieSpecs(firstNote, lastNote, firstIndexes, lastIndexes);
 			for (const notes of specs) {
 				const tie = hammer
 					? TabTie.createHammeron(notes)
@@ -366,11 +370,13 @@ export function buildHammerPulls(
 	return ties;
 }
 
-// Slides on a TAB stave: a <slide> (or <glissando>) start..stop pair, drawn as a
-// TabSlide — a diagonal line between the two frets, angled up or down by the fret
-// motion. Paired by `number` like every spanner; resolved over the whole score so a
-// slide can cross a barline. (Unlike hammer/pull there's no "H"/"P" label, so the
-// slide direction is purely cosmetic — vexflow just tilts the line.)
+/*
+ * Slides on a TAB stave: a <slide> (or <glissando>) start..stop pair, drawn as a
+ * TabSlide — a diagonal line between the two frets, angled up or down by the fret
+ * motion. Paired by `number` like every spanner; resolved over the whole score so a
+ * slide can cross a barline. (Unlike hammer/pull there's no "H"/"P" label, so the
+ * slide direction is purely cosmetic — vexflow just tilts the line.)
+ */
 export function buildSlides(
 	chords: Chord[],
 	byTabLead: Map<Note, TabNote>,
@@ -420,14 +426,16 @@ export function buildSlides(
 	return slides;
 }
 
-// Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
-// PedalMarking under the stave — the "Ped…*" text by default, or a bracket line
-// when the MusicXML carries line="yes". Paired by `number` and resolved over the
-// whole score (a pedal can span barlines) like the other spanners; the markers
-// arrive in document order, so each stop closes the matching open start.
-// ponytail: a pedal whose stop wraps onto a later system isn't split — vexflow
-// throws on descending x, so a wrapping pedal would need the partial-span handling
-// buildTies uses; add it if a fixture needs one.
+/*
+ * Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
+ * PedalMarking under the stave — the "Ped…*" text by default, or a bracket line
+ * when the MusicXML carries line="yes". Paired by `number` and resolved over the
+ * whole score (a pedal can span barlines) like the other spanners; the markers
+ * arrive in document order, so each stop closes the matching open start.
+ * ponytail: a pedal whose stop wraps onto a later system isn't split — vexflow
+ * throws on descending x, so a wrapping pedal would need the partial-span handling
+ * buildTies uses; add it if a fixture needs one.
+ */
 export function buildPedals(
 	markers: PedalMark[],
 	byLead: Map<Note, StaveNote>,
@@ -457,8 +465,10 @@ export function buildPedals(
 	return pedals;
 }
 
-// The highest (smallest y) and lowest (largest y) drawn point of a note,
-// covering both its noteheads and, when present, its stem tip.
+/*
+ * The highest (smallest y) and lowest (largest y) drawn point of a note,
+ * covering both its noteheads and, when present, its stem tip.
+ */
 function noteExtents(note: StaveNote): { top: number; bottom: number } {
 	const { yTop, yBottom } = note.getNoteHeadBounds();
 	let top = yTop;
@@ -471,10 +481,12 @@ function noteExtents(note: StaveNote): { top: number; bottom: number } {
 	return { top, bottom };
 }
 
-// vexflow anchors a Curve only at its two endpoints, so the arc ignores notes in
-// between and a high (or low) middle note pokes through it. We anchor each
-// endpoint on the bulge side of its own noteheads, then raise the bezier control
-// points so the arc clears the most extreme note it spans.
+/*
+ * vexflow anchors a Curve only at its two endpoints, so the arc ignores notes in
+ * between and a high (or low) middle note pokes through it. We anchor each
+ * endpoint on the bulge side of its own noteheads, then raise the bezier control
+ * points so the arc clears the most extreme note it spans.
+ */
 export function buildSlurs(
 	chords: Chord[],
 	byLead: Map<Note, StaveNote>,

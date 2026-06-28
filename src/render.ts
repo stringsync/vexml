@@ -5,6 +5,11 @@ import { drawScore } from './draw';
 import { loadFonts } from './fonts';
 import { computeLayout } from './layout';
 
+/*
+ * Render a MusicXML score onto a canvas: parse the input (a MusicXML string or a
+ * compressed .mxl Blob), lay it out, and draw it. Merges the caller's partial config
+ * over the defaults and sets VexFlow's global glyph fonts before drawing.
+ */
 export async function render(
 	input: string | Blob,
 	canvas: HTMLCanvasElement,

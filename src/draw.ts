@@ -19,7 +19,7 @@ import {
 	type TabNote,
 	TabStave,
 	Vibrato,
-	Voice,
+	type Voice,
 } from 'vexflow';
 import type { Config } from './config';
 import {
@@ -43,11 +43,13 @@ import {
 import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
 	endBeatOf,
+	findModifier,
 	getNoteheadHalfWidth,
 	harmoniesOf,
 	meterBeats,
 	type PedalMark,
 	pedalsOf,
+	softVoice,
 	staffVoices,
 	type TempoMark,
 	tempoOf,
@@ -67,9 +69,11 @@ import {
 	groupBeams,
 } from './spanners';
 
-// MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
-// "beats/beat-type". null when there's nothing drawable. Doubles as the equality
-// key for detecting a mid-piece meter change.
+/*
+ * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
+ * "beats/beat-type". null when there's nothing drawable. Doubles as the equality
+ * key for detecting a mid-piece meter change.
+ */
 function timeSignatureSpec(time: Time | null): string | null {
 	if (time?.symbol === 'common') {
 		return 'C';
@@ -83,8 +87,10 @@ function timeSignatureSpec(time: Time | null): string | null {
 	return null;
 }
 
-// True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
-// the guitar notation+tab pairing, which is bracketed rather than braced by convention.
+/*
+ * True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
+ * the guitar notation+tab pairing, which is bracketed rather than braced by convention.
+ */
 function pairsTabWithNotation(part: Part): boolean {
 	const measure = part.measures[0];
 	if (!measure) {
@@ -100,11 +106,13 @@ function pairsTabWithNotation(part: Part): boolean {
 	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
 }
 
-// True when a notation+tab pair is split across separate single-stave parts (a
-// guitar's notation in one part, its TAB in another) rather than stacked in one
-// two-stave part. Such a system is bracketed by convention, the cross-part analog
-// of pairsTabWithNotation. Only meaningful for multi-part systems — a single
-// notation+tab part already brackets itself via partSymbol.
+/*
+ * True when a notation+tab pair is split across separate single-stave parts (a
+ * guitar's notation in one part, its TAB in another) rather than stacked in one
+ * two-stave part. Such a system is bracketed by convention, the cross-part analog
+ * of pairsTabWithNotation. Only meaningful for multi-part systems — a single
+ * notation+tab part already brackets itself via partSymbol.
+ */
 function partsPairTabWithNotation(parts: Part[]): boolean {
 	if (parts.length < 2) {
 		return false;
@@ -125,11 +133,13 @@ function partsPairTabWithNotation(parts: Part[]): boolean {
 	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
 }
 
-// The stave connector that joins a multi-staff part's own staves. An explicit
-// <part-symbol> in any measure's attributes wins: bracket, none (no connector), or
-// brace (the MusicXML default; line/square fall back to it). With none declared, a
-// guitar notation+tab pair brackets by convention and everything else (piano grand
-// staves, …) braces.
+/*
+ * The stave connector that joins a multi-staff part's own staves. An explicit
+ * <part-symbol> in any measure's attributes wins: bracket, none (no connector), or
+ * brace (the MusicXML default; line/square fall back to it). With none declared, a
+ * guitar notation+tab pair brackets by convention and everything else (piano grand
+ * staves, …) braces.
+ */
 function partSymbol(part: Part): 'brace' | 'bracket' | null {
 	for (const measure of part.measures) {
 		const symbol = measure.child('attributes')?.child('part-symbol')?.text;
@@ -144,7 +154,7 @@ function partSymbol(part: Part): 'brace' | 'bracket' | null {
 }
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
-// formatted together (see formatAndDrawPart) so notes at the same tick line up
+// formatted together (see formatAndDrawSystem) so notes at the same tick line up
 // vertically across staves, so the build (voice/spanner construction) is split from
 // the format+draw step.
 type PendingStave = {
@@ -157,11 +167,13 @@ type PendingStave = {
 	staveNotes: StaveNote[];
 };
 
-// Build a notation staff's notes into vexflow voices. Each mdom voice becomes a
-// vexflow voice; multiple voices are aligned together and stem apart. Beams and
-// tuplets are per-voice (positional) and built here; ties and slurs can span
-// measures, so the caller resolves them once over the whole score (this only
-// records each chord's StaveNote in the shared `byLead` map).
+/*
+ * Build a notation staff's notes into vexflow voices. Each mdom voice becomes a
+ * vexflow voice; multiple voices are aligned together and stem apart. Beams and
+ * tuplets are per-voice (positional) and built here; ties and slurs can span
+ * measures, so the caller resolves them once over the whole score (this only
+ * records each chord's StaveNote in the shared `byLead` map).
+ */
 function buildNotes(
 	stave: Stave,
 	voices: ScoreVoice[],
@@ -184,10 +196,7 @@ function buildNotes(
 				staveNotes.push(note);
 			},
 		);
-		return new Voice()
-			.setMode(Voice.Mode.SOFT)
-			.setSoftmaxFactor(softmaxFactor)
-			.addTickables(tickables);
+		return softVoice(tickables, softmaxFactor);
 	});
 
 	// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
@@ -201,10 +210,12 @@ function buildNotes(
 	return { stave, isTab: false, vexVoices, beams, tuplets, staveNotes };
 }
 
-// The highest y a single note reaches: its top notehead, and — when it has a stem —
-// the stem tip, which a beam extends up to its beam line. Excludes modifiers on
-// purpose (see formatAndDrawPart). Falls back to the notehead bound if the stem
-// extents aren't available (e.g. a stemless whole note).
+/*
+ * The highest y a single note reaches: its top notehead, and — when it has a stem —
+ * the stem tip, which a beam extends up to its beam line. Excludes modifiers on
+ * purpose (see formatAndDrawSystem). Falls back to the notehead bound if the stem
+ * extents aren't available (e.g. a stemless whole note).
+ */
 function noteTop(note: StaveNote): number {
 	let top = note.getNoteHeadBounds().yTop;
 	if (note.getStem()) {
@@ -214,14 +225,16 @@ function noteTop(note: StaveNote): number {
 	return top;
 }
 
-// Format a part's staves together and draw their notes. A note's absolute x is its
-// (shared) tick-context x plus its own stave's note-start x, so two things must hold
-// for same-tick notes to line up across staves: a single Formatter shares the tick
-// contexts, and every stave starts its note area at the same x. Staves are equalized
-// to the widest note start (a treble clef is wider than the "TAB" glyph) — otherwise
-// the columns shear apart even when the ticks match. Returns the topmost/lowest y any
-// content reaches so the page can grow to fit high notes and deep ledger lines.
-function formatAndDrawPart(
+/*
+ * Format a system's staves together and draw their notes. A note's absolute x is its
+ * (shared) tick-context x plus its own stave's note-start x, so two things must hold
+ * for same-tick notes to line up across staves: a single Formatter shares the tick
+ * contexts, and every stave starts its note area at the same x. Staves are equalized
+ * to the widest note start (a treble clef is wider than the "TAB" glyph) — otherwise
+ * the columns shear apart even when the ticks match. Returns the topmost/lowest y any
+ * content reaches so the page can grow to fit high notes and deep ledger lines.
+ */
+function formatAndDrawSystem(
 	context: RenderContext,
 	pending: PendingStave[],
 	softmaxFactor: number,
@@ -313,13 +326,15 @@ function formatAndDrawPart(
 	return { top, bottom };
 }
 
-// Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
-// clef/key/time (StaveTempo's own placement, over the first note). It normally sits
-// one text line above the staff; if the first note reaches up into that band (a high
-// note with ledger lines), lift the mark with a negative y-shift so its bottom clears
-// the notehead — the layout reserves the matching top headroom. Drawn after the notes
-// are formatted so firstNote's extents are real. Uses noteTop, not the bounding box: an
-// attached grace-note group makes the box report a bogus near-origin y.
+/*
+ * Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
+ * clef/key/time (StaveTempo's own placement, over the first note). It normally sits
+ * one text line above the staff; if the first note reaches up into that band (a high
+ * note with ledger lines), lift the mark with a negative y-shift so its bottom clears
+ * the notehead — the layout reserves the matching top headroom. Drawn after the notes
+ * are formatted so firstNote's extents are real. Uses noteTop, not the bounding box: an
+ * attached grace-note group makes the box report a bogus near-origin y.
+ */
 function drawTempo(
 	context: RenderContext,
 	stave: Stave,
@@ -367,12 +382,14 @@ const HARMONY_ACCIDENTALS = new Set(['♯', '♭', '♮']);
 const HARMONY_ACCIDENTAL_KERN = 2.5;
 const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
 
-// Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at
-// the note's x — the laid-out position of the note the harmony applies to. Returns
-// the y the text reaches up to so the caller can grow the page crop to keep a margin
-// above it (drawTempo relies on reserved layout headroom instead; harmony feeds the
-// crop directly so no extra top margin is needed). Drawn after the notes are
-// formatted so getAbsoluteX is real.
+/*
+ * Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at
+ * the note's x — the laid-out position of the note the harmony applies to. Returns
+ * the y the text reaches up to so the caller can grow the page crop to keep a margin
+ * above it (drawTempo relies on reserved layout headroom instead; harmony feeds the
+ * crop directly so no extra top margin is needed). Drawn after the notes are
+ * formatted so getAbsoluteX is real.
+ */
 function drawHarmony(
 	context: RenderContext,
 	staveNote: StaveNote,
@@ -415,13 +432,15 @@ function drawHarmony(
 	return y - HARMONY_FONT_SIZE;
 }
 
-// Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
-// the first note's x — where the directive applies. Sits a fixed gap above the top staff
-// line, but lifts higher when the first note rises into that band (a high note or its ledger
-// lines) so the text clears the notehead. Returns the y the text reaches up to so the caller
-// can grow the page crop above it (like drawHarmony). Drawn after the notes are formatted so
-// getAbsoluteX is real. Uses noteTop, not the bounding box, to clear the note: an attached
-// grace-note group makes the box report a bogus near-origin y.
+/*
+ * Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
+ * the first note's x — where the directive applies. Sits a fixed gap above the top staff
+ * line, but lifts higher when the first note rises into that band (a high note or its ledger
+ * lines) so the text clears the notehead. Returns the y the text reaches up to so the caller
+ * can grow the page crop above it (like drawHarmony). Drawn after the notes are formatted so
+ * getAbsoluteX is real. Uses noteTop, not the bounding box, to clear the note: an attached
+ * grace-note group makes the box report a bogus near-origin y.
+ */
 function drawWords(
 	context: RenderContext,
 	stave: Stave,
@@ -443,13 +462,15 @@ function drawWords(
 	return y - WORDS_FONT_SIZE;
 }
 
-// Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
-// their strings). Tab notes carry no clef/key, no ghost-note gap filling, and no
-// beams — the roadmap cases are single-voice fretted lines — so this is a slimmer
-// sibling of buildNotes. The bend/vibrato stretching and drawing happen in
-// formatAndDrawPart, after the part's staves are formatted together. Hammer-ons/
-// pull-offs span measures, so the caller resolves them once over the whole score
-// (this only records each chord's TabNote in the shared `byTabLead` map).
+/*
+ * Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
+ * their strings). Tab notes carry no clef/key, no ghost-note gap filling, and no
+ * beams — the roadmap cases are single-voice fretted lines — so this is a slimmer
+ * sibling of buildNotes. The bend/vibrato stretching and drawing happen in
+ * formatAndDrawSystem, after the part's staves are formatted together. Hammer-ons/
+ * pull-offs span measures, so the caller resolves them once over the whole score
+ * (this only records each chord's TabNote in the shared `byTabLead` map).
+ */
 function buildTabNotes(
 	stave: TabStave,
 	voices: ScoreVoice[],
@@ -457,14 +478,12 @@ function buildTabNotes(
 	byTabLead: Map<Note, TabNote>,
 ): PendingStave {
 	const vexVoices = voices.map((voice) =>
-		new Voice()
-			.setMode(Voice.Mode.SOFT)
-			.setSoftmaxFactor(softmaxFactor)
-			.addTickables(
-				vexflowTabTickables(voice.chords, (lead, tabNote) =>
-					byTabLead.set(lead, tabNote),
-				),
+		softVoice(
+			vexflowTabTickables(voice.chords, (lead, tabNote) =>
+				byTabLead.set(lead, tabNote),
 			),
+			softmaxFactor,
+		),
 	);
 	// Build (but discard) the tab tuplets: their construction rescales the notes'
 	// ticks (Tuplet.attach), which the part's shared formatter needs so a triplet's
@@ -483,22 +502,22 @@ function buildTabNotes(
 	};
 }
 
-// VexFlow draws a bend arrow at a fixed ~8px width. A guitar bend reads as sliding
-// into the next note, so stretch each so its arrow reaches the next note — or the
-// bar's end if it's the last note (same span as stretchVibratos). The arrow draws
-// from getAbsoluteX() + width + 2 + 3 (TabNote RIGHT modifier x, +3 in Bend.draw),
-// mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
-// is in stave coordinates only because formatAndDrawPart setStave's the notes first — else
-// it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
-// Bend.draw uses each phrase leg's drawWidth, which is protected — hence the cast. A
-// bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
+/*
+ * VexFlow draws a bend arrow at a fixed ~8px width. A guitar bend reads as sliding
+ * into the next note, so stretch each so its arrow reaches the next note — or the
+ * bar's end if it's the last note (same span as stretchVibratos). The arrow draws
+ * from getAbsoluteX() + width + 2 + 3 (TabNote RIGHT modifier x, +3 in Bend.draw),
+ * mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
+ * is in stave coordinates only because formatAndDrawSystem setStave's the notes first — else
+ * it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
+ * Bend.draw uses each phrase leg's drawWidth, which is protected — hence the cast. A
+ * bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
+ */
 function stretchBends(stave: TabStave, voices: Voice[]): void {
 	for (const voice of voices) {
 		const tickables = voice.getTickables() as TabNote[];
 		tickables.forEach((note, i) => {
-			const bend = note
-				.getModifiers()
-				.find((m) => m.getCategory() === Bend.CATEGORY) as Bend | undefined;
+			const bend = findModifier<Bend>(note, Bend.CATEGORY);
 			if (!bend) {
 				return;
 			}
@@ -522,23 +541,21 @@ function stretchBends(stave: TabStave, voices: Voice[]): void {
 	}
 }
 
-// VexFlow's Vibrato draws a fixed 20px wavy line trailing the fret. A real vibrato
-// sustains for the note's full sounding length, so stretch each to span up to the
-// next note — or the bar's end if it's the last note. Widths depend on the formatted
-// x positions, so this runs after formatToStave: set each Vibrato's width from the
-// fret's right edge to the next note's x (or the stave's note-end x). The Vibrato
-// draws from getAbsoluteX() + width + 2 (TabNote.getModifierStartXY for RIGHT), mirrored
-// here. Like stretchBends, this relies on formatAndDrawPart having setStave'd the notes so
-// getAbsoluteX() is in stave coordinates and the last note's span clamps to the barline.
+/*
+ * VexFlow's Vibrato draws a fixed 20px wavy line trailing the fret. A real vibrato
+ * sustains for the note's full sounding length, so stretch each to span up to the
+ * next note — or the bar's end if it's the last note. Widths depend on the formatted
+ * x positions, so this runs after formatToStave: set each Vibrato's width from the
+ * fret's right edge to the next note's x (or the stave's note-end x). The Vibrato
+ * draws from getAbsoluteX() + width + 2 (TabNote.getModifierStartXY for RIGHT), mirrored
+ * here. Like stretchBends, this relies on formatAndDrawSystem having setStave'd the notes so
+ * getAbsoluteX() is in stave coordinates and the last note's span clamps to the barline.
+ */
 function stretchVibratos(stave: TabStave, voices: Voice[]): void {
 	for (const voice of voices) {
 		const tickables = voice.getTickables() as TabNote[];
 		tickables.forEach((note, i) => {
-			const vibrato = note
-				.getModifiers()
-				.find((m) => m.getCategory() === Vibrato.CATEGORY) as
-				| Vibrato
-				| undefined;
+			const vibrato = findModifier<Vibrato>(note, Vibrato.CATEGORY);
 			if (!vibrato) {
 				return;
 			}
@@ -549,31 +566,31 @@ function stretchVibratos(stave: TabStave, voices: Voice[]): void {
 	}
 }
 
-// The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
+/*
+ * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
+ */
 function graceGroupOf(note: {
 	getModifiers(): { getCategory(): string }[];
 }): GraceNoteGroup | undefined {
-	return note
-		.getModifiers()
-		.find((m) => m.getCategory() === GraceNoteGroup.CATEGORY) as
-		| GraceNoteGroup
-		| undefined;
+	return findModifier<GraceNoteGroup>(note, GraceNoteGroup.CATEGORY);
 }
 
 // vexflow's GraceNoteGroup.format spaces a stave grace group GRACE_GROUP_SPACING_STAVE px
 // off its note; tab groups get 0. The value is private to vexflow, mirrored here.
 const GRACE_GROUP_SPACING_STAVE = 4;
 
-// A tab grace group reserves no accidental space, so its frets would land left of the
-// notation grace noteheads, which a flat/sharp pushes right within their own group. Shift
-// each tab grace group right so its frets sit under the notehead: by the notation grace
-// group's own left reservation (its width + GRACE_GROUP_SPACING_STAVE) minus the tab
-// group's (note.getMetrics().modLeftPx). Match the notation group by the shared tick
-// context — every stave formatted together shares one per tick. Deliberately NOT the tick
-// context's modLeftPx: that's the max across the stave, so a main note with its OWN
-// accidental (a chord) inflates it and overshoots the grace shift. With no notation
-// counterpart (tab-only score) nothing moves. Runs before draw, which reads
-// spacingFromNextModifier when positioning the grace notes.
+/*
+ * A tab grace group reserves no accidental space, so its frets would land left of the
+ * notation grace noteheads, which a flat/sharp pushes right within their own group. Shift
+ * each tab grace group right so its frets sit under the notehead: by the notation grace
+ * group's own left reservation (its width + GRACE_GROUP_SPACING_STAVE) minus the tab
+ * group's (note.getMetrics().modLeftPx). Match the notation group by the shared tick
+ * context — every stave formatted together shares one per tick. Deliberately NOT the tick
+ * context's modLeftPx: that's the max across the stave, so a main note with its OWN
+ * accidental (a chord) inflates it and overshoots the grace shift. With no notation
+ * counterpart (tab-only score) nothing moves. Runs before draw, which reads
+ * spacingFromNextModifier when positioning the grace notes.
+ */
 function alignTabGraces(
 	voices: Voice[],
 	notationGraceWidths: Map<unknown, number>,
@@ -597,9 +614,11 @@ function alignTabGraces(
 	}
 }
 
-// The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
-// (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
-// modifier directly — there's no public API for this.
+/*
+ * The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
+ * (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
+ * modifier directly — there's no public API for this.
+ */
 function resizeTabClef(stave: TabStave, tabLines: number): void {
 	if (tabLines === 6) {
 		return;
@@ -614,8 +633,10 @@ function resizeTabClef(stave: TabStave, tabLines: number): void {
 	}
 }
 
-// Whether measure at 0-based `index` (system-start or not) shows its number under
-// the given mode. 'every-N' numbers every Nth measure plus every system start.
+/*
+ * Whether measure at 0-based `index` (system-start or not) shows its number under
+ * the given mode. 'every-N' numbers every Nth measure plus every system start.
+ */
 function showsMeasureNumber(
 	mode: MeasureNumbering,
 	index: number,
@@ -635,9 +656,11 @@ function showsMeasureNumber(
 	}
 }
 
-// Draw the whole score onto the element: one SVG stave per part-staff per measure,
-// placed at the boxes computed by computeLayout, with clefs/keys/time signatures,
-// notes, and the brace/barline connectors that group parts into systems.
+/*
+ * Draw the whole score onto the element: one SVG stave per part-staff per measure,
+ * placed at the boxes computed by computeLayout, with clefs/keys/time signatures,
+ * notes, and the brace/barline connectors that group parts into systems.
+ */
 export function drawScore(
 	canvas: HTMLCanvasElement,
 	parts: Part[],
@@ -1012,7 +1035,11 @@ export function drawScore(
 		// Format and draw every part's staves together so same-tick notes line up
 		// vertically across the whole system (notation over its own tab, and across
 		// separate parts that share a beat).
-		const noteExtent = formatAndDrawPart(context, systemPending, softmaxFactor);
+		const noteExtent = formatAndDrawSystem(
+			context,
+			systemPending,
+			softmaxFactor,
+		);
 		pageBottom = Math.max(pageBottom, noteExtent.bottom);
 		systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
 		pageTop = Math.min(pageTop, noteExtent.top);

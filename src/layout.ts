@@ -1,5 +1,5 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
-import { Formatter, GraceNoteGroup, Voice } from 'vexflow';
+import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from './config';
 import {
 	BASE_VOICE_WIDTH,
@@ -24,7 +24,9 @@ import {
 } from './constants';
 import {
 	endBeatOf,
+	findModifier,
 	meterBeats,
+	softVoice,
 	staffVoices,
 	tempoOf,
 	vexflowClef,
@@ -112,16 +114,11 @@ function noteLogWidth(ticks: number, noteSpacing: number): number {
 
 // The horizontal space a note's attached grace cluster needs: its preformatted width plus
 // the GRACE_SPACING lead clearance notes.ts pads before it, or 0 if it has none. Lets the
-// measure grow to hold the grace instead of compressing its real notes. Mirrors draw's
-// graceGroupOf.
+// measure grow to hold the grace instead of compressing its real notes.
 function graceWidthOf(t: {
 	getModifiers(): { getCategory(): string }[];
 }): number {
-	const group = t
-		.getModifiers()
-		.find((m) => m.getCategory() === GraceNoteGroup.CATEGORY) as
-		| GraceNoteGroup
-		| undefined;
+	const group = findModifier<GraceNoteGroup>(t, GraceNoteGroup.CATEGORY);
 	return group ? group.getWidth() + GRACE_SPACING : 0;
 }
 
@@ -148,10 +145,7 @@ function measureNoteArea(
 				: vexflowVoiceTickables(voice.chords, clef, endBeat),
 		);
 		const vexVoices = perVoice.map((tickables) =>
-			new Voice()
-				.setMode(Voice.Mode.SOFT)
-				.setSoftmaxFactor(softmaxFactor)
-				.addTickables(tickables),
+			softVoice(tickables, softmaxFactor),
 		);
 		if (vexVoices.length === 0) {
 			continue;
