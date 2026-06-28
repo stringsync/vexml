@@ -92,6 +92,8 @@ export default function App() {
 	const softmaxFactor = config.softmaxFactor ?? 10;
 	const systemSpacing = config.systemSpacing ?? 30;
 	const maxSystemFill = config.maxSystemFill ?? 0.9;
+	const width =
+		config.layout?.type === 'standard' ? (config.layout.width ?? 900) : 900;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const reset = (
 		key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing' | 'maxSystemFill',
@@ -122,10 +124,17 @@ export default function App() {
 		}
 		setError(null);
 		const start = performance.now();
-		// Engrave once at the default (8.5in) width; CSS then scales the canvas to fit its
-		// container — down when narrow, never past 100% when wide — so resizing the window
-		// re-scales instantly without re-rendering.
-		render(input, canvas, { ...renderConfig, layout: { type: 'standard' } })
+		// Engrave once at the configured reference width; CSS then scales the canvas to fit
+		// its container — down when narrow, never past 100% when wide — so resizing the
+		// window re-scales instantly without re-rendering.
+		const layoutWidth =
+			renderConfig.layout?.type === 'standard'
+				? renderConfig.layout.width
+				: undefined;
+		render(input, canvas, {
+			...renderConfig,
+			layout: { type: 'standard', width: layoutWidth },
+		})
 			.then(() => {
 				canvas.style.width = '100%';
 				canvas.style.height = 'auto';
@@ -571,6 +580,51 @@ export default function App() {
 								<p className="text-xs text-zinc-400">
 									How full a system gets before the next measure wraps to a new
 									line. Lower leaves more air; 1 packs each line to the edge.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="width"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Reference width
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">{width}</span>
+										<button
+											type="button"
+											onClick={() =>
+												setConfig(({ layout: _, ...rest }) => rest)
+											}
+											disabled={config.layout === undefined}
+											aria-label="Reset width"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="width"
+									type="range"
+									min={400}
+									max={2000}
+									step={50}
+									value={width}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											layout: {
+												type: 'standard',
+												width: e.target.valueAsNumber,
+											},
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									The width the score is engraved to; the rendering then scales up
+									or down to fit its container. Wider fits more measures per system
+									before wrapping.
 								</p>
 							</div>
 						</div>

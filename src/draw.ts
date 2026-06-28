@@ -776,6 +776,10 @@ export function drawScore(
 		let systemTopY = layout.top + topSlack;
 		let systemContentBottom = systemTopY;
 		let currentSystem = -1;
+		// The right edge (+ gap) of the last chord diagram drawn in the current system, so a
+		// diagram near a barline can be pushed clear of the one before it across the measure
+		// boundary. Reset when a new system starts (x coordinates restart at the left).
+		let prevDiagramRight = -Infinity;
 		// Per system: the stave-top y it was placed at, and the highest (smallest) y any of
 		// its content reached. Their difference is how far the system overflows above its
 		// top stave — reserved above it on a redraw so it can't clash with the system above.
@@ -815,6 +819,7 @@ export function drawScore(
 				currentSystem = systemIndex;
 				systemContentBottom = systemTopY;
 				systemTopByIndex.set(systemIndex, systemTopY);
+				prevDiagramRight = -Infinity;
 			}
 			const systemY = systemTopY;
 			let staveRow = 0;
@@ -1138,6 +1143,10 @@ export function drawScore(
 			for (const t of tempoTasks) {
 				drawTempo(context, t.stave, t.tempo, t.firstNote);
 			}
+			// Diagrams sit at their lead note's x; two on notes either side of a barline can
+			// be close enough to overlap (especially at a narrow width). Push each box's left
+			// edge past the previous diagram's right edge + a gap (tracked across measures in
+			// prevDiagramRight) so crowded diagrams separate instead of stacking.
 			for (const h of harmonyTasks) {
 				// A <harmony> with a <frame> draws as a fret box (chord name as its title)
 				// above the stave; one without draws as the plain chord-symbol text.
@@ -1151,7 +1160,9 @@ export function drawScore(
 						...h.frame.chord.map(([, f]) => (typeof f === 'number' ? f : 0)),
 						...(h.frame.barres ?? []).map((b) => b.fret),
 					];
-					const diagram = new ChordDiagram(h.staveNote.getAbsoluteX(), top, {
+					const x = Math.max(h.staveNote.getAbsoluteX(), prevDiagramRight);
+					prevDiagramRight = x + CHORD_DIAGRAM_WIDTH + CHORD_DIAGRAM_GAP;
+					const diagram = new ChordDiagram(x, top, {
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
 						numStrings: h.frame.chord.length,

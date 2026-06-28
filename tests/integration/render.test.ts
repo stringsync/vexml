@@ -602,6 +602,19 @@ const TEST_CASES = [
 	//   from fret 3, "4" beside string-6's dot one row down.
 	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
 
+	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
+	// note near the barline on each side, proving two adjacent diagrams don't collide even
+	// when the music is packed tight. Diagrams sit at their lead note's x, so these two are
+	// the closest a pair can get without sharing a note; the narrow width pulls those notes
+	// close enough that the boxes would overlap if drawn at their raw note x.
+	// - M1: four B4 quarters; a C-major fret box (X-muted string 6) above the LAST quarter.
+	// - M2: four B4 quarters; a G-major fret box above the FIRST quarter.
+	// The C box (anchored at M1's last beat) and the G box (anchored at M2's first beat)
+	// are nudged apart so they clear each other — no overlapping boards or titles.
+	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
+		layout: { type: 'standard', width: 500 },
+	}),
+
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
 	// - M1: single notes on E5 — an open diamond for the half note, then filled diamonds for
