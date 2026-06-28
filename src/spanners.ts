@@ -154,13 +154,16 @@ export function buildTuplets<T extends StaveNote | TabNote>(
 /*
  * The vexflow TieNotes spec(s) for a tie/slur from firstNote to lastNote on the given
  * notehead/position indexes. Normally one spec spanning both notes; but when the stop note
- * wraps onto a later system its stave sits to the LEFT of the start note's, so a single tie
+ * wraps onto a later system its stave sits lower on the page (greater Y), so a single tie
  * would draw as one long diagonal across the page — split it into two partial ties, one
  * bowing off the right edge of the start note's stave ("tie to nothing") and one bowing in
  * from the left edge of the stop note's ("tie from nothing"). vexflow renders a tie given
  * only a firstNote (or only a lastNote) exactly so. Shared by buildTies and buildHammerPulls.
- * ponytail: the x-compare assumes the two ends share a staff (true for a pitch continuation
- * or a fretted line); a cross-staff tie would also split here.
+ * Y, not X: a tie whose start note is the first in its system shares the stop note's left X
+ * but not its row, so an X-compare would miss the wrap and draw the diagonal.
+ * ponytail: the y-compare assumes the two ends share a system row when not wrapped (true for
+ * a single-stave pitch continuation or a fretted line); a cross-staff tie on one system would
+ * misfire as a wrap.
  */
 function tieSpecs(
 	firstNote: StaveNote | TabNote,
@@ -169,7 +172,7 @@ function tieSpecs(
 	lastIndexes: number[],
 ): TieNotes[] {
 	const wraps =
-		(lastNote.getStave()?.getX() ?? 0) < (firstNote.getStave()?.getX() ?? 0);
+		(lastNote.getStave()?.getY() ?? 0) > (firstNote.getStave()?.getY() ?? 0);
 	return wraps
 		? [
 				{ firstNote, firstIndexes, lastIndexes: firstIndexes },
@@ -557,33 +560,98 @@ export function buildSlurs(
 				return noteExtents(n);
 			};
 			const yShift = SLUR_Y_SHIFT;
+
+			// The control-point lift needed for a curve whose endpoints both sit at
+			// `midEnd` (the bulge-side Y) and that must clear the extreme note among
+			// `spanNotes` over the horizontal `width`.
+			const cpYFor = (
+				midEnd: number,
+				spanNotes: StaveNote[],
+				width: number,
+			) => {
+				const extreme = bulgeUp
+					? Math.min(...spanNotes.map((n) => extentsOf(n).top))
+					: Math.max(...spanNotes.map((n) => extentsOf(n).bottom));
+				const need = Math.abs(midEnd - extreme) + SLUR_MARGIN;
+				return Math.max(
+					SLUR_MIN_CP_Y,
+					width * SLUR_WIDTH_FACTOR,
+					(need - yShift) / 0.75,
+				);
+			};
+			const pushCurve = (
+				curveFrom: StaveNote | undefined,
+				curveTo: StaveNote | undefined,
+				position: number,
+				positionEnd: number,
+				cpY: number,
+			) => {
+				slurs.push(
+					new Curve(curveFrom, curveTo, {
+						position,
+						positionEnd,
+						openingDirection: bulgeUp ? 'down' : 'up',
+						yShift,
+						cps: [
+							{ x: 0, y: cpY },
+							{ x: 0, y: cpY },
+						],
+					}),
+				);
+			};
+
+			// When the stop note wraps onto a later system its stave sits lower on the
+			// page (greater Y), so a single Curve would slant across the page gap. Split
+			// it into two partial curves like a wrapped tie (see tieSpecs): one bowing off
+			// the right edge of the start note's stave ("slur to nothing") and one bowing
+			// in from the left edge of the stop note's ("slur from nothing"). vexflow
+			// renders a Curve given only a `from` or only a `to` exactly so, anchoring the
+			// open end at the stave's tie edge. (Y, not X: a slur whose start note is the
+			// first in its system shares the stop note's left X but not its row.)
+			const fromStave = from.getStave();
+			const toStave = to.getStave();
+			if (toStave && fromStave && toStave.getY() > fromStave.getY()) {
+				const fromSpan = span.filter((n) => n.getStave() === fromStave);
+				const toSpan = span.filter((n) => n.getStave() === toStave);
+				const fromY = extentsOf(from);
+				const toY = extentsOf(to);
+				pushCurve(
+					from,
+					undefined,
+					metric(from),
+					metric(from),
+					cpYFor(
+						bulgeUp ? fromY.top : fromY.bottom,
+						fromSpan,
+						fromStave.getTieEndX() - from.getTieRightX(),
+					),
+				);
+				pushCurve(
+					undefined,
+					to,
+					metric(to),
+					metric(to),
+					cpYFor(
+						bulgeUp ? toY.top : toY.bottom,
+						toSpan,
+						to.getTieLeftX() - toStave.getTieStartX(),
+					),
+				);
+				continue;
+			}
+
 			const width = Math.abs(to.getTieLeftX() - from.getTieRightX());
 			const fromY = extentsOf(from);
 			const toY = extentsOf(to);
 			const midEnd = bulgeUp
 				? (fromY.top + toY.top) / 2
 				: (fromY.bottom + toY.bottom) / 2;
-			const extreme = bulgeUp
-				? Math.min(...span.map((n) => extentsOf(n).top))
-				: Math.max(...span.map((n) => extentsOf(n).bottom));
-			const need = Math.abs(midEnd - extreme) + SLUR_MARGIN;
-			const cpY = Math.max(
-				SLUR_MIN_CP_Y,
-				width * SLUR_WIDTH_FACTOR,
-				(need - yShift) / 0.75,
-			);
-
-			slurs.push(
-				new Curve(from, to, {
-					position: metric(from),
-					positionEnd: metric(to),
-					openingDirection: bulgeUp ? 'down' : 'up',
-					yShift,
-					cps: [
-						{ x: 0, y: cpY },
-						{ x: 0, y: cpY },
-					],
-				}),
+			pushCurve(
+				from,
+				to,
+				metric(from),
+				metric(to),
+				cpYFor(midEnd, span, width),
 			);
 		}
 	});

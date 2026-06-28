@@ -306,7 +306,8 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 			const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
 			if (
 				row.length > 0 &&
-				rowWidth + LEAD_BARLINE + area > usableOf(systems.length)
+				rowWidth + LEAD_BARLINE + area >
+					usableOf(systems.length) * config.maxSystemFill
 			) {
 				systems.push(row);
 				row = [];

@@ -249,6 +249,19 @@ const TEST_CASES = [
 	// half over.
 	testCase('tie_chord_cluster.musicxml', 'tie_chord_cluster.png'),
 
+	// Treble, 4/4, narrowed to 360px so the system breaks between M1 and M2. A three-note
+	// chord (C5/E5/G5) is tied from M1's last beat into M2's first beat, straddling the
+	// break. Because M1 is the first measure of its system it shares M2's left X, so the
+	// wrap is detected by stave row (Y), not X; otherwise all three ties draw as diagonals
+	// slanting across the page gap (regression from a real lead sheet, measures 15-16).
+	// - M1 (system 1): three filler C5 quarters then the tied chord; the three ties bow off
+	//   the right edge of the stave into nothing ("tie to nothing").
+	// - M2 (system 2): the tied half chord + half rest; the three ties bow in from the left
+	//   edge of the stave into the chord ("tie from nothing").
+	testCase('tie_system_break.musicxml', 'tie_system_break.png', {
+		layout: { type: 'standard', width: 360 },
+	}),
+
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
 	testCase('slur_default.musicxml', 'slur_default.png'),
@@ -284,6 +297,18 @@ const TEST_CASES = [
 	// slur above the last pair (E5-C5, stem-down). Overlapping slurs use distinct
 	// numbers, so notes 2 and 3 each carry both a stop and a start.
 	testCase('slur_chained.musicxml', 'slur_chained.png'),
+
+	// Treble, 4/4, narrowed to 350px so the system breaks between M1 and M2. A slur runs
+	// from M1's last note (F5) into M2's first note (G5), straddling the break. Like a
+	// wrapped tie, the slur must NOT draw one curve slanting across the page gap; it splits
+	// into two partial arcs.
+	// - M1 (system 1): four ascending quarters C5-F5; the slur bows off the right edge of
+	//   the stave past F5 into nothing ("slur to nothing").
+	// - M2 (system 2): four descending quarters G5-D5; the slur bows in from the left edge
+	//   of the stave into G5 ("slur from nothing").
+	testCase('slur_system_break.musicxml', 'slur_system_break.png', {
+		layout: { type: 'standard', width: 350 },
+	}),
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
 	// under the staff spanning four B4 quarters. The pedal goes down under the first
@@ -527,6 +552,10 @@ const TEST_CASES = [
 	// - M10: extension accidentals — a dominant with kind text="7(b9#11)" over four B4
 	//   quarters prints "G7(♭9♯11)". The ASCII b/# in the extension render as the real
 	//   ♭/♯ glyphs at the same smaller size as the root's accidental, not literal "b"/"#".
+	// - M11: a tied chord under its symbol — an A4/D♯5/G♯5 chord tied to itself (two
+	//   quarters) + half rest, under a "B13" symbol. The chord's upper tie bows up over
+	//   the high top note (G♯5), so the symbol lifts to clear that arc, not just the
+	//   noteheads — like M9 but the tie sits on a chord member, not a lone note.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace

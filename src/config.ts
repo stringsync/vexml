@@ -45,6 +45,11 @@ export type Config = {
 	 * nearly-full last system snaps flush instead of leaving an awkward sliver of margin.
 	 * 0 always stretches, 1 never does. */
 	minLastSystemFill: number;
+	/** Fraction (0–1) of the reference width a system may fill before the breaker bumps
+	 * the next measure to a new system (default: 0.9). Lower leaves more air; 1 packs each
+	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
+	 * whose measures already sit below this fill breaks at the same place either way. */
+	maxSystemFill: number;
 };
 
 /** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only —
@@ -68,4 +73,5 @@ export const DEFAULT_CONFIG: Config = {
 	showTabHammerPullText: false,
 	showTabSlideText: false,
 	minLastSystemFill: 0.75,
+	maxSystemFill: 0.9,
 };

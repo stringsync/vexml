@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1-M2: a three-note chord (C5/E5/G5) tied from the last beat of M1 into the first
+         beat of M2. A narrow width breaks the system between M1 and M2, and because M1 is
+         the first measure of its system it shares M2's left X — so the wrap must be detected
+         by stave row (Y), not X, or all three ties draw as diagonals across the page gap. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <tie type="start" />
+        <type>quarter</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <tie type="start" />
+        <type>quarter</type>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <tie type="start" />
+        <type>quarter</type>
+        <notations><tied type="start" /></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>half</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
