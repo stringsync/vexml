@@ -579,6 +579,19 @@ const TEST_CASES = [
 	//   board instead of a nut) — strings 5 and 1 muted, the rest fretted.
 	// - M3: a barre F major (first-fret 1) — a filled bar spans string 6 to string 1 at
 	//   fret 1 (from a <barre> start/stop pair), with strings 5/4/3 fretted above it.
+	// M4-9 are real jazz voicings (from "Bumpin' on Wes"). None carry <first-fret>, so the
+	// box is laid out from the lowest fret (dots stay compact, no nut), and the position
+	// label to the left shows the fret of the lowest-sounding string, drawn beside that
+	// note's row.
+	// - M4: Bm7, strings 4/3/2 at fret 7 → "7" beside the (only) top-row dots.
+	// - M5: B7(♯5), strings 4/3/2/1 across frets 7-8 → "7" at top (lowest string-4 at 7).
+	// - M6: Em11, strings 4/3/2/1 across frets 5-7 → "5" at top (lowest string-4 at 5).
+	// - M7: GΔ7(sus2), strings 4/3/2/1 across frets 2-5 → box from fret 2, "5" at the bottom
+	//   row beside string-4's dot.
+	// - M8: F♯7(♯9), strings 5/4/3/2 across frets 8-10 → box from fret 8, "9" beside
+	//   string-5's dot one row down.
+	// - M9: G♯m7♭5, string 6 at fret 4, string 5 muted, strings 4/3/2 across frets 3-4 → box
+	//   from fret 3, "4" beside string-6's dot one row down.
 	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from

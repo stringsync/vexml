@@ -1161,6 +1161,16 @@ export function drawScore(
 					});
 					diagram.draw(context, { ...h.frame, title: h.text || undefined });
 					pageTop = Math.min(pageTop, diagram.top);
+					// The diagram rises above the stave, so it also counts toward this system's
+					// upward overflow — otherwise no systemSpacing is reserved for it and a
+					// diagram on a stacked system collides with the system above.
+					systemHighestTop.set(
+						systemIndex,
+						Math.min(
+							systemHighestTop.get(systemIndex) ?? Infinity,
+							diagram.top,
+						),
+					);
 				} else {
 					pageTop = Math.min(
 						pageTop,

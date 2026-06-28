@@ -817,13 +817,33 @@ function frameOf(harmony: MElement): ChordSpec | null {
 		return null;
 	}
 	const numStrings = Number(frame.child('frame-strings')?.text) || 6;
-	const firstFret = Number(frame.child('first-fret')?.text) || 1;
+	const frameNotes = frame.childrenNamed('frame-note');
+
+	// string -> absolute fret (0 = open); skip notes with a non-numeric string.
+	const absFret = new Map<number, number>();
+	for (const fn of frameNotes) {
+		const string = Number(fn.child('string')?.text);
+		if (Number.isFinite(string)) {
+			absFret.set(string, Number(fn.child('fret')?.text) || 0);
+		}
+	}
+	const fretted = [...absFret.values()].filter((f) => f > 0);
+
+	// <first-fret> is the absolute fret of the box's top line. Lead sheets often omit it, so
+	// derive it: a chord with no open strings whose lowest fretted note is past the nut
+	// starts the box at that fret instead of drawing a tall, mostly-empty box down from the
+	// nut. Open strings pin the box to the nut (firstFret 1).
+	const explicitFirstFret = Number(frame.child('first-fret')?.text);
+	const hasOpen = [...absFret.values()].includes(0);
+	const firstFret =
+		explicitFirstFret ||
+		(fretted.length > 0 && !hasOpen ? Math.min(...fretted) : 1);
 	const toRelative = (abs: number) => (abs === 0 ? 0 : abs - firstFret + 1);
 
 	const played = new Map<number, number>(); // string -> relative fret
 	const barreStart = new Map<number, number>(); // relative fret -> from string
 	const barres: ChordSpec['barres'] = [];
-	for (const fn of frame.childrenNamed('frame-note')) {
+	for (const fn of frameNotes) {
 		const string = Number(fn.child('string')?.text);
 		if (!Number.isFinite(string)) {
 			continue;
@@ -841,11 +861,27 @@ function frameOf(harmony: MElement): ChordSpec | null {
 		}
 	}
 
+	// Position label, for movable shapes only (box not at the nut). Its number is the fret of
+	// the lowest-sounding fretted string (the highest played string number), drawn beside
+	// that note's row rather than at the box top — guitarists finger from the lowest string
+	// up, so the number marks where the hand sits. The box layout still keys off firstFret
+	// (the lowest fret), so the dots stay compact regardless of where the label lands.
+	let position = firstFret;
+	let positionText = 0;
+	if (firstFret > 1 && fretted.length > 0) {
+		const lowString = Math.max(
+			...[...absFret].filter(([, f]) => f > 0).map(([s]) => s),
+		);
+		const lowFret = absFret.get(lowString) as number;
+		position = lowFret;
+		positionText = lowFret - firstFret;
+	}
+
 	const chord: ChordSpec['chord'] = [];
 	for (let s = 1; s <= numStrings; s += 1) {
 		chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
 	}
-	return { chord, position: firstFret, barres };
+	return { chord, position, positionText, barres };
 }
 
 /*
