@@ -21,6 +21,7 @@ import {
 	StaveNote,
 	Stem,
 	type StemmableNote,
+	Stroke,
 	TabNote,
 	Vibrato,
 	Voice,
@@ -218,6 +219,29 @@ function addFermata(staveNote: StaveNote, note: Note): void {
 }
 
 /*
+ * A <notations><arpeggiate>: the wavy vertical line rolled down the left of a chord.
+ * Drawn as a vexflow Stroke spanning every notehead (it reads the note's full y-range,
+ * so attaching at index 0 covers the whole chord). MusicXML's direction is the arrow's
+ * heading; vexflow names its roll types by the opposite end, so "up" (arrowhead up, at
+ * the top) is ROLL_DOWN and "down" (arrowhead down, at the bottom) is ROLL_UP. An
+ * undirected arpeggiate is a plain wiggle with no arrow (ARPEGGIO_DIRECTIONLESS).
+ */
+function addArpeggio(staveNote: StaveNote, note: Note): void {
+	const arpeggiate = note.child('notations')?.child('arpeggiate');
+	if (!arpeggiate) {
+		return;
+	}
+	const direction = arpeggiate.getAttribute('direction');
+	const type =
+		direction === 'up'
+			? Stroke.Type.ROLL_DOWN
+			: direction === 'down'
+				? Stroke.Type.ROLL_UP
+				: Stroke.Type.ARPEGGIO_DIRECTIONLESS;
+	staveNote.addModifier(new Stroke(type), 0);
+}
+
+/*
  * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave).
  * Absent, auto-pick from staff position (see vexflowChord's auto_stem).
  */
@@ -322,6 +346,7 @@ export function vexflowChord(
 	applyStem(staveNote, lead);
 	addArticulations(staveNote, lead);
 	addFermata(staveNote, lead);
+	addArpeggio(staveNote, lead);
 	return staveNote;
 }
 

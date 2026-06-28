@@ -130,7 +130,7 @@ export const TIE_APEX_RISE = 13;
 /** Chord-diagram (fret box from a `<harmony><frame>`) overall width/height, drawn
  * above the stave at the lead note's x. Smaller than vexchords' 100×120 default so the
  * box reads as an inline annotation over the music. */
-export const CHORD_DIAGRAM_WIDTH = 78;
+export const CHORD_DIAGRAM_WIDTH = 88;
 export const CHORD_DIAGRAM_HEIGHT = 84;
 
 /** Gap kept between the bottom of a chord diagram and the top staff line. */

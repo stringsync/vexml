@@ -531,6 +531,14 @@ const TEST_CASES = [
 	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
 	testCase('fermata.musicxml', 'fermata.png'),
 
+	// Treble stave, 4/4: arpeggios from <notations><arpeggiate>, drawn as a wavy vertical
+	// line down the left side of a C5/E5/G5 whole-note chord (one chord per measure). The
+	// stroke spans all three noteheads; direction sets the arrowhead.
+	// - M1: undirected arpeggiate — a plain wiggle, no arrowhead.
+	// - M2: direction="up" — the wiggle with an arrowhead pointing up at the top.
+	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
+	testCase('arpeggio.musicxml', 'arpeggio.png'),
+
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
 	// note of its measure (four boring B4 quarters per measure so only the symbol
 	// varies). The display string is the root step + alter sign + the <kind text="…">

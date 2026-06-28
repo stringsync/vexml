@@ -21,6 +21,9 @@ import {
 } from './constants';
 import { type PedalMark, reorientArticulations } from './notes';
 
+// Note types with 2+ beams (16th and shorter). Used to decide when to flatten beams.
+const MULTI_BEAM_TYPES = new Set(['16th', '32nd', '64th', '128th']);
+
 // A beam run: the notes joined by their primary (8th-level) beam, plus the indexes
 // within the run where the secondary (16th+) beam breaks into sub-beams.
 type BeamGroup = { notes: Note[]; secondaryBreaks: number[] };
@@ -105,10 +108,14 @@ export function buildBeams(
 			if (autoStem) {
 				notes.forEach(reorientArticulations);
 			}
-			// Flatten dense runs: 4+ notes with at least one 16th. Shorter or
+			// Flatten dense runs: 4+ notes with at least one 16th (or shorter). Shorter or
 			// coarser runs keep vexflow's default slant.
-			const has16th = group.notes.some((note) => note.type === '16th');
-			if (notes.length >= 4 && has16th) {
+			const hasMultiBeams = group.notes.some(
+				(note) => note.type && MULTI_BEAM_TYPES.has(note.type),
+			);
+			const hasMixedDurations =
+				new Set(group.notes.map((note) => note.type)).size > 1;
+			if (notes.length >= 4 && hasMultiBeams && hasMixedDurations) {
 				beam.renderOptions.flatBeams = true;
 			}
 			if (group.secondaryBreaks.length > 0) {
