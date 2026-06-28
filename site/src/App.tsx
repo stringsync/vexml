@@ -542,9 +542,8 @@ export default function App() {
 							)
 						)}
 						{input != null && (
-							// White page capped at 8.5in (US Letter). The canvas is engraved at that width
-							// and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
-							<div className="relative mx-auto w-full max-w-204 bg-white py-8 shadow-md ring-1 ring-zinc-200 sm:py-16">
+							// The canvas is engraved at that width and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
+							<div className="relative mx-auto w-full max-w-237.5 bg-white py-8 px-4 shadow-md ring-1 ring-zinc-200 sm:py-16">
 								<canvas ref={canvasRef} className="block" />
 							</div>
 						)}

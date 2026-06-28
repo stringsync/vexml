@@ -3,6 +3,7 @@ import { Formatter, Voice } from 'vexflow';
 import type { Config } from './config';
 import {
 	BASE_VOICE_WIDTH,
+	DEFAULT_WIDTH,
 	INTER_PART_SPACING,
 	INTRA_PART_SPACING,
 	LABEL_CHAR_WIDTH,
@@ -11,7 +12,6 @@ import {
 	LEAD_CLEF,
 	LEAD_KEY,
 	LEAD_TIME,
-	LETTER_WIDTH,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
 	PAGE_MARGIN_BOTTOM,
@@ -36,9 +36,9 @@ export type Layout =
 	| {
 			/** Wrap measures onto stacked systems (print-like). */
 			type: 'standard';
-			/** Reference layout width in px (default: US Letter, 8.5in → 816px). The score
-			 * is laid out to this width once; the result is then scaled to whatever container
-			 * it's placed in, so resizing the container never re-flows or re-spaces it. */
+			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
+			 * to this width once; the result is then scaled to whatever container it's placed
+			 * in, so resizing the container never re-flows or re-spaces it. */
 			width?: number;
 	  }
 	| {
@@ -171,9 +171,9 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	const layout = config.layout;
 	const layoutMode = layout.type;
 	// Standard without an explicit width, and panoramic's starting floor, both default
-	// to LETTER_WIDTH (panoramic then grows the page to fit its single system).
+	// to DEFAULT_WIDTH (panoramic then grows the page to fit its single system).
 	const width =
-		(layout.type === 'standard' ? layout.width : undefined) ?? LETTER_WIDTH;
+		(layout.type === 'standard' ? layout.width : undefined) ?? DEFAULT_WIDTH;
 	const noteSpacing = config.noteSpacing;
 	const softmaxFactor = config.softmaxFactor;
 

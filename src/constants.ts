@@ -1,12 +1,11 @@
 // Tunable magic numbers, centralized. Spacing/margins are px at the reference layout
 // width; the finished result is then scaled to its container.
 
-/** Default standard-layout width: US Letter portrait (8.5in) at 96dpi = 816px. Also
- * the panoramic mode's starting width / page-width floor. */
-export const LETTER_WIDTH = 8.5 * 96;
+/** Default standard-layout width. */
+export const DEFAULT_WIDTH = 900;
 
 /** Left/right page margin. Leaves room for the brace/bracket drawn left of the stave. */
-export const PAGE_MARGIN_X = 30;
+export const PAGE_MARGIN_X = 15;
 
 /** Top margin: the first system's y. */
 export const PAGE_MARGIN_TOP = 40;
