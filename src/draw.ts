@@ -424,22 +424,19 @@ function drawHarmony(
 	// the top crop (leaving a huge blank margin above the first system).
 	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
 	let noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
-	// A stem-down note's tie bows up over the noteheads (vexflow bows a single note's tie
-	// opposite the stem), peaking past what noteTop sees. The tie is a separate spanner
-	// drawn later — there's no glyph to measure here — so reconstruct its apex from the
-	// notehead center and clear that too, otherwise the symbol lands on the arc. Only do
-	// this when the notehead already pushes the symbol above its baseline: a note that
-	// high carries its tie up into the symbol band, whereas a low note's tie sits well
-	// below the text — and a long tie's apex is off to the right of the left-anchored
-	// text anyway (it starts at the notehead and rises rightward), so clearing its apex
-	// would lift the symbol for a tie that never passes under it.
-	if (
-		hasTie &&
-		noteClearY < baseY &&
-		staveNote.getStemDirection() === Stem.DOWN
-	) {
+	// A stem-down note's tie bows up over the noteheads (vexflow bows a single note's, and
+	// a chord's upper, tie opposite the stem), peaking past what noteTop sees. The tie is a
+	// separate spanner drawn later — there's no glyph to measure here — so reconstruct its
+	// apex from the top notehead center (a constant rise, independent of tie length) and
+	// clear that too, otherwise the symbol lands on the arc. Gate on the apex itself rising
+	// above where the symbol would otherwise sit (baseY): only then does the tie actually
+	// pass through the text. A low note's tie — including a long tie whose far-right apex
+	// stays below the baseline — sits clear of the symbol, so leave it at baseY.
+	if (hasTie && staveNote.getStemDirection() === Stem.DOWN) {
 		const tieApexY = Math.min(...staveNote.getYs()) - TIE_APEX_RISE;
-		noteClearY = Math.min(noteClearY, tieApexY - HARMONY_NOTE_CLEARANCE);
+		if (tieApexY < baseY) {
+			noteClearY = Math.min(noteClearY, tieApexY - HARMONY_NOTE_CLEARANCE);
+		}
 	}
 	const y = Math.min(baseY, noteClearY);
 	context.save();
