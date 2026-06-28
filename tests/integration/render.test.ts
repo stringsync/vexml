@@ -568,6 +568,19 @@ const TEST_CASES = [
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
 
+	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
+	// drawn above the stave at its measure's first note, with the chord name as the box's
+	// title. Four boring B4 quarters per measure so only the diagram varies. Strings run
+	// low-E (left) to high-E (right); a string with no <frame-note> is muted (X above the
+	// nut), <fret>0</fret> is an open ring, a fretted note is a filled dot.
+	// - M1: open-position C major (first-fret 1, so the nut bar shows) — string 6 muted,
+	//   strings 5/4/2 fretted (3/2/1), strings 3/1 open.
+	// - M2: a movable G♯m7♭5 up the neck (first-fret 4, drawn as a "4" label left of the
+	//   board instead of a nut) — strings 5 and 1 muted, the rest fretted.
+	// - M3: a barre F major (first-fret 1) — a filled bar spans string 6 to string 1 at
+	//   fret 1 (from a <barre> start/stop pair), with strings 5/4/3 fretted above it.
+	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
+
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
 	// - M1: single notes on E5 — an open diamond for the half note, then filled diamonds for

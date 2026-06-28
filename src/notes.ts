@@ -25,6 +25,7 @@ import {
 	Vibrato,
 	Voice,
 } from 'vexflow';
+import type { ChordSpec } from './chord-diagram';
 import {
 	DEFAULT_TEMPO_BPM,
 	EPSILON,
@@ -801,21 +802,72 @@ function harmonyText(harmony: MElement): string {
 }
 
 /*
+ * The chord-diagram (<frame>) carried by a <harmony>, parsed into the ChordDiagram
+ * spec. MusicXML <fret>s are absolute, so they're shifted to be relative to
+ * <first-fret> (the top displayed fret line, drawn as the position label). Strings
+ * with no <frame-note> are muted ('x'); fret 0 is an open string. A <barre> spans
+ * from its `start` frame-note's string to its `stop` frame-note's string, at the
+ * shared (relative) fret. Returns null when the harmony carries no <frame>.
+ * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagram's
+ * left-to-right (string 1 rightmost) convention.
+ */
+function frameOf(harmony: MElement): ChordSpec | null {
+	const frame = harmony.child('frame');
+	if (!frame) {
+		return null;
+	}
+	const numStrings = Number(frame.child('frame-strings')?.text) || 6;
+	const firstFret = Number(frame.child('first-fret')?.text) || 1;
+	const toRelative = (abs: number) => (abs === 0 ? 0 : abs - firstFret + 1);
+
+	const played = new Map<number, number>(); // string -> relative fret
+	const barreStart = new Map<number, number>(); // relative fret -> from string
+	const barres: ChordSpec['barres'] = [];
+	for (const fn of frame.childrenNamed('frame-note')) {
+		const string = Number(fn.child('string')?.text);
+		if (!Number.isFinite(string)) {
+			continue;
+		}
+		const relFret = toRelative(Number(fn.child('fret')?.text) || 0);
+		played.set(string, relFret);
+		const barre = fn.child('barre')?.getAttribute('type');
+		if (barre === 'start') {
+			barreStart.set(relFret, string);
+		} else if (barre === 'stop') {
+			const from = barreStart.get(relFret);
+			if (from !== undefined) {
+				barres?.push({ fromString: from, toString: string, fret: relFret });
+			}
+		}
+	}
+
+	const chord: ChordSpec['chord'] = [];
+	for (let s = 1; s <= numStrings; s += 1) {
+		chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
+	}
+	return { chord, position: firstFret, barres };
+}
+
+/*
  * Each <harmony> in a measure paired with the lead note it sits above. <harmony>
  * elements are interleaved with <note>s in document order and apply to the note
  * that follows, so walk the measure's children tracking the pending harmony and
- * bind it to the next chord lead (the next non-<chord/> note).
+ * bind it to the next chord lead (the next non-<chord/> note). `frame` is the
+ * chord-diagram spec when the harmony carries a <frame>, else null.
  */
-export function harmoniesOf(measure: Measure): { lead: Note; text: string }[] {
-	const harmonies: { lead: Note; text: string }[] = [];
+export function harmoniesOf(
+	measure: Measure,
+): { lead: Note; text: string; frame: ChordSpec | null }[] {
+	const harmonies: { lead: Note; text: string; frame: ChordSpec | null }[] = [];
 	let pending: MElement | null = null;
 	for (const child of measure.children) {
 		if (child instanceof MElement && child.tag === 'harmony') {
 			pending = child;
 		} else if (pending && child instanceof Note && !child.isChordMember) {
 			const text = harmonyText(pending);
-			if (text) {
-				harmonies.push({ lead: child, text });
+			const frame = frameOf(pending);
+			if (text || frame) {
+				harmonies.push({ lead: child, text, frame });
 			}
 			pending = null;
 		}

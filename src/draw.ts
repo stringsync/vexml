@@ -23,9 +23,13 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow';
+import { ChordDiagram, type ChordSpec } from './chord-diagram';
 import type { Config } from './config';
 import {
 	BRACKET_X_SHIFT,
+	CHORD_DIAGRAM_GAP,
+	CHORD_DIAGRAM_HEIGHT,
+	CHORD_DIAGRAM_WIDTH,
 	HARMONY_FONT_SIZE,
 	HARMONY_NOTE_CLEARANCE,
 	HARMONY_Y_OFFSET,
@@ -833,6 +837,7 @@ export function drawScore(
 				staveNote: StaveNote;
 				text: string;
 				hasTie: boolean;
+				frame: ChordSpec | null;
 			}> = [];
 			// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
 			// the first note's laid-out x.
@@ -1018,13 +1023,14 @@ export function drawScore(
 				// Chord symbols from this measure's <harmony> elements, each bound to the
 				// lead note it sits above. Resolved via byLead (the notation staff's notes);
 				// a harmony over a tab-only note isn't drawn.
-				for (const { lead, text } of harmoniesOf(measure)) {
+				for (const { lead, text, frame } of harmoniesOf(measure)) {
 					const staveNote = byLead.get(lead);
 					if (staveNote) {
 						harmonyTasks.push({
 							staveNote,
 							text,
 							hasTie: lead.ties.length > 0,
+							frame,
 						});
 					}
 				}
@@ -1133,10 +1139,34 @@ export function drawScore(
 				drawTempo(context, t.stave, t.tempo, t.firstNote);
 			}
 			for (const h of harmonyTasks) {
-				pageTop = Math.min(
-					pageTop,
-					drawHarmony(context, h.staveNote, h.text, labelFont, h.hasTie),
-				);
+				// A <harmony> with a <frame> draws as a fret box (chord name as its title)
+				// above the stave; one without draws as the plain chord-symbol text.
+				const stave = h.frame ? h.staveNote.getStave() : null;
+				if (h.frame && stave) {
+					const top =
+						stave.getYForLine(0) - CHORD_DIAGRAM_GAP - CHORD_DIAGRAM_HEIGHT;
+					// Size to the frame: one column per string, enough fret rows to hold the
+					// deepest dot/barre (min 4 so a sparse chord still looks like a fretboard).
+					const frets = [
+						...h.frame.chord.map(([, f]) => (typeof f === 'number' ? f : 0)),
+						...(h.frame.barres ?? []).map((b) => b.fret),
+					];
+					const diagram = new ChordDiagram(h.staveNote.getAbsoluteX(), top, {
+						width: CHORD_DIAGRAM_WIDTH,
+						height: CHORD_DIAGRAM_HEIGHT,
+						numStrings: h.frame.chord.length,
+						numFrets: Math.max(4, ...frets),
+						showTuning: false,
+						fontFamily: labelFont,
+					});
+					diagram.draw(context, { ...h.frame, title: h.text || undefined });
+					pageTop = Math.min(pageTop, diagram.top);
+				} else {
+					pageTop = Math.min(
+						pageTop,
+						drawHarmony(context, h.staveNote, h.text, labelFont, h.hasTie),
+					);
+				}
 			}
 			for (const w of wordsTasks) {
 				pageTop = Math.min(

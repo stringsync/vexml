@@ -127,6 +127,15 @@ export const HARMONY_NOTE_CLEARANCE = 8;
  * ~13px. A chord symbol over a tied note lifts past this so it doesn't touch the arc. */
 export const TIE_APEX_RISE = 13;
 
+/** Chord-diagram (fret box from a `<harmony><frame>`) overall width/height, drawn
+ * above the stave at the lead note's x. Smaller than vexchords' 100×120 default so the
+ * box reads as an inline annotation over the music. */
+export const CHORD_DIAGRAM_WIDTH = 78;
+export const CHORD_DIAGRAM_HEIGHT = 84;
+
+/** Gap kept between the bottom of a chord diagram and the top staff line. */
+export const CHORD_DIAGRAM_GAP = 6;
+
 /** Words-direction (e.g. "ritardando") text size — matches the chord-symbol size so
  * both read as annotations above the notes. */
 export const WORDS_FONT_SIZE = 13;
