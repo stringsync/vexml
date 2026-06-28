@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Config } from '../../src';
 import { render } from '../../src';
 
@@ -76,23 +76,15 @@ export default function App() {
 	const [renderMs, setRenderMs] = useState<number | null>(null);
 	const [dragging, setDragging] = useState(false);
 	const [debouncing, setDebouncing] = useState(false);
-	const [resizing, setResizing] = useState(false);
-	const [width, setWidth] = useState<number | null>(null);
-	const [height, setHeight] = useState<number | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [stored, setStored] = useState(
 		() => localStorage.getItem(STORAGE_KEY) !== null,
 	);
 	const [cleared, setCleared] = useState(false);
 	const [restored, setRestored] = useState(false);
-	const lastWidthRef = useRef<number | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
-	const resizeRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-		undefined,
-	);
-	const roRef = useRef<ResizeObserver | null>(null);
 	// The effect below re-renders the last input whenever config changes.
 	const [config, setConfig] = useState<Partial<Config>>({});
 	const noteSpacing = config.noteSpacing ?? 36;
@@ -122,53 +114,25 @@ export default function App() {
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas || input == null || width == null) {
+		if (!canvas || input == null) {
 			return;
 		}
 		setError(null);
 		const start = performance.now();
-		render(input, canvas, {
-			...renderConfig,
-			layout: { type: 'standard', width },
-		})
+		// Engrave once at the default (8.5in) width; CSS then scales the canvas to fit its
+		// container — down when narrow, never past 100% when wide — so resizing the window
+		// re-scales instantly without re-rendering.
+		render(input, canvas, { ...renderConfig, layout: { type: 'standard' } })
 			.then(() => {
+				canvas.style.width = '100%';
+				canvas.style.height = 'auto';
 				setRenderMs(performance.now() - start);
-				setHeight(canvas.clientHeight);
 			})
 			.catch((e: unknown) => {
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
 			});
-	}, [input, renderConfig, width]);
-
-	// Reflow the score to the container's width. Callback ref so the observer attaches
-	// exactly when the page div mounts (it only exists once there's input). The observer
-	// fires once on observe for the initial width, then on viewport changes; debounce so
-	// dragging the window doesn't re-render every frame, showing a spinner meanwhile.
-	const pageRef = useCallback((el: HTMLDivElement | null) => {
-		roRef.current?.disconnect();
-		if (!el) {
-			return;
-		}
-		lastWidthRef.current = el.clientWidth;
-		setWidth(el.clientWidth);
-		const ro = new ResizeObserver(() => {
-			// Ignore height-only changes (the canvas grows after each render); only a
-			// width change means the score must re-flow.
-			if (el.clientWidth === lastWidthRef.current) {
-				return;
-			}
-			clearTimeout(resizeRef.current);
-			setResizing(true);
-			resizeRef.current = setTimeout(() => {
-				setResizing(false);
-				lastWidthRef.current = el.clientWidth;
-				setWidth(el.clientWidth);
-			}, 300);
-		});
-		ro.observe(el);
-		roRef.current = ro;
-	}, []);
+	}, [input, renderConfig]);
 
 	// Restore the last-edited MusicXML, or open with a random example.
 	useEffect(() => {
@@ -578,20 +542,13 @@ export default function App() {
 							)
 						)}
 						{input != null && (
-							// White page sized like a real sheet; music reflows to its width. Horizontal
-							// padding (and the paper inset) collapse on small viewports for max room.
-							<div className="relative mx-auto w-full max-w-257 bg-white px-2 py-8 shadow-md ring-1 ring-zinc-200 sm:p-16">
-								{width != null && height != null && (
-									<span className="absolute top-1 left-1 font-mono text-[10px] text-zinc-400">
-										{Math.round(width)}×{Math.round(height)}
-									</span>
-								)}
-								<div ref={pageRef}>
-									<canvas ref={canvasRef} className="block" />
-								</div>
+							// White page capped at 8.5in (US Letter). The canvas is engraved at that width
+							// and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
+							<div className="relative mx-auto w-full max-w-204 bg-white py-8 shadow-md ring-1 ring-zinc-200 sm:py-16">
+								<canvas ref={canvasRef} className="block" />
 							</div>
 						)}
-						{(resizing || debouncing) && (
+						{debouncing && (
 							<div className="pointer-events-none absolute inset-0 bg-black/40">
 								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
 								<div className="sticky top-0 flex h-screen items-center justify-center">

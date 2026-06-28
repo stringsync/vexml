@@ -1,6 +1,7 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { type Browser, chromium } from 'playwright';
 import type { Config } from '../../src';
+import { LETTER_WIDTH } from '../../src/constants';
 import { serve } from './serve';
 
 const PORT = 3100;
@@ -19,10 +20,9 @@ afterAll(async () => {
 	server?.stop(true);
 });
 
-// A fixture is laid out to its reference width (default 1000); the SVG viewBox
-// scales the result to any container at runtime, so a single static width
-// exercises the layout deterministically.
-const DEFAULT_WIDTH = 1000;
+// A fixture is laid out to its reference width (8.5in unless the test overrides it);
+// the result scales to any container at runtime, so a static viewport exercises the
+// layout deterministically.
 
 /** Render a corpus file in the browser and return its screenshot PNG. */
 export async function render(
@@ -30,7 +30,8 @@ export async function render(
 	config: Partial<Config>,
 ): Promise<Buffer> {
 	const width =
-		config.layout?.type === 'standard' ? config.layout.width : DEFAULT_WIDTH;
+		(config.layout?.type === 'standard' ? config.layout.width : undefined) ??
+		LETTER_WIDTH;
 	const page = await browser.newPage({
 		viewport: { width: width + 64, height: 600 },
 	});

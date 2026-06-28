@@ -10,7 +10,7 @@ export type Config = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
 	 * use this for self-hosted or offline fonts. */
 	fonts: FontConfig;
-	/** How measures are placed across systems (default: standard at 1000px). */
+	/** How measures are placed across systems (default: standard at 8.5in / 816px). */
 	layout: Layout;
 	/** *How much space the notes get* (not how it's divided): the px a quarter note gets,
 	 * the base of a logarithmic spacing curve. A note gets a little more space per doubling
@@ -53,7 +53,7 @@ export const DEFAULT_FONT_CONFIG = {
 /** The defaults `render` merges a caller's `Partial<Config>` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
-	layout: { type: 'standard', width: 1000 },
+	layout: { type: 'standard' },
 	noteSpacing: 36,
 	softmaxFactor: 10,
 	systemSpacing: SYSTEM_GAP,
