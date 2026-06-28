@@ -306,5 +306,34 @@
         <type>quarter</type>
       </note>
     </measure>
+    <measure number="8">
+      <harmony>
+        <root>
+          <root-step>B</root-step>
+          <root-alter>-1</root-alter>
+        </root>
+        <kind text="">major</kind>
+      </harmony>
+      <note>
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <articulations>
+            <staccato/>
+          </articulations>
+        </notations>
+      </note>
+      <note>
+        <rest/>
+        <duration>3</duration>
+        <type>half</type>
+        <dot/>
+      </note>
+    </measure>
   </part>
 </score-partwise>

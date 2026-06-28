@@ -513,6 +513,10 @@ const TEST_CASES = [
 	// - M5: a flat root — root B with <root-alter>-1</root-alter> — prints "B♭".
 	// - M6: an explicit natural root — root B with <root-alter>0</root-alter> — prints "B♮".
 	// - M7: a slash chord — root E♭ with a <bass> of B♭ — prints "E♭/B♭".
+	// - M8: a high staccato note under its symbol — a B♭5 quarter (stem down, so the
+	//   staccato dot sits above the notehead) + dotted-half rest, under a "B♭" symbol. The
+	//   symbol lifts to clear the staccato dot, not just the notehead, so the dot and the
+	//   text don't touch.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
@@ -653,6 +657,17 @@ const TEST_CASES = [
 	// measure_numbering_every_2 for the case where it does).
 	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
 		measureNumbering: 'every-3',
+	}),
+
+	// Treble, 4/4, narrowed to 660px so it wraps to two systems of three measures each.
+	// Tests vertical spacing between stacked systems: the first system's notes hang far
+	// below its staff and the second system's notes rise far above its staff, the worst
+	// case for a system clash. The two systems must stay clear of each other.
+	// - M1-3 (system 1): very low quarter notes (C3) with many ledger lines below the staff.
+	// - M4-6 (system 2): very high quarter notes (C7) with many ledger lines above the staff,
+	//   which must not collide with system 1's low notes.
+	testCase('system_spacing.musicxml', 'system_spacing.png', {
+		layout: { type: 'standard', width: 660 },
 	}),
 
 	// Individual measures extracted from 'aloof' for focused testing.

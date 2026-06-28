@@ -10,6 +10,7 @@ import {
 	Bend,
 	Formatter,
 	GraceNoteGroup,
+	Modifier,
 	type RenderContext,
 	Renderer,
 	Stave,
@@ -221,6 +222,19 @@ function noteTop(note: StaveNote): number {
 	if (note.getStem()) {
 		const { topY, baseY } = note.getStemExtents();
 		top = Math.min(top, topY, baseY);
+	}
+	// Clear articulations sitting above the notehead too (e.g. a staccato dot on a
+	// stem-down note). They're drawn before the harmony/words/tempo pass, so their
+	// bounding box is final; the notehead and stem alone miss them, which would let a
+	// chord symbol land on the dot. Only above-side marks raise the top — below-side
+	// ones (stem-up notes) don't.
+	for (const mod of note.getModifiers()) {
+		if (
+			mod.getCategory() === 'Articulation' &&
+			mod.getPosition() === Modifier.Position.ABOVE
+		) {
+			top = Math.min(top, mod.getBoundingBox().getY());
+		}
 	}
 	return top;
 }
@@ -706,434 +720,507 @@ export function drawScore(
 		getComputedStyle(canvas).getPropertyValue('--vexml-font-text').trim() ||
 		'Arial';
 
-	// One note map for the whole score: ties and slurs can span a barline, so their
-	// two endpoints may live in different measures. Notes are drawn measure by
-	// measure (recording into this map); the spanners are resolved once at the end.
-	const byLead = new Map<Note, StaveNote>();
-	const allChords: Chord[] = [];
-	// Pedal directions are spanners too (a start..stop pair), collected per measure
-	// and resolved over the whole score alongside ties and slurs.
-	const allPedals: PedalMark[] = [];
+	// Draw every measure once. `topOverflow` maps a systemIndex to extra space to reserve
+	// above that system so its notes (which rise above its own top stave) clear the system
+	// before it — measured on a first pass and applied on a second (see the driver below).
+	// Returns the page extents drawn plus the overflow this pass observed per system.
+	const runPass = (
+		topOverflow: Map<number, number>,
+	): {
+		pageTop: number;
+		pageBottom: number;
+		observedOverflow: Map<number, number>;
+	} => {
+		// One note map for the whole score: ties and slurs can span a barline, so their
+		// two endpoints may live in different measures. Notes are drawn measure by
+		// measure (recording into this map); the spanners are resolved once at the end.
+		const byLead = new Map<Note, StaveNote>();
+		const allChords: Chord[] = [];
+		// Pedal directions are spanners too (a start..stop pair), collected per measure
+		// and resolved over the whole score alongside ties and slurs.
+		const allPedals: PedalMark[] = [];
 
-	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
-	// barlines, so TAB notes record into their own map and resolve at the end.
-	const byTabLead = new Map<Note, TabNote>();
-	const allTabChords: Chord[] = [];
+		// The same arrangement for tablature staves: hammer-ons/pull-offs also span
+		// barlines, so TAB notes record into their own map and resolve at the end.
+		const byTabLead = new Map<Note, TabNote>();
+		const allTabChords: Chord[] = [];
 
-	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
-	// drawn content (notes + staff lines), so deep ledger lines push the next system
-	// down instead of colliding with it — fixed spacing can't, since note range is
-	// unbounded.
-	let pageBottom = 0;
-	let pageTop = Infinity;
-	let systemTopY = layout.top + topSlack;
-	let systemContentBottom = systemTopY;
-	let currentSystem = -1;
-	for (let m = 0; m < measureCount; m++) {
-		const box = boxes[m];
-		if (!box) {
-			continue;
-		}
-		const { x: measureX, width: measureWidth, systemIndex } = box;
-		const { isSystemStart } = box;
-		const isLastMeasure = m === measureCount - 1;
-		// An explicit right <barline> with <bar-style>light-light</bar-style> draws a thin
-		// double line at this measure's end instead of the default single divider (or, on
-		// the final measure, the thin-thick end). Read from the first part — a light-light
-		// boundary applies across the system.
-		const isLightLight =
-			parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
-				?.barStyle === 'light-light';
-		const showMeasureNumber = showsMeasureNumber(
-			measureNumbering,
-			m,
-			isSystemStart,
-		);
-		// Number is printed once per measure, above the system's top stave only.
-		let measureNumbered = false;
-		if (systemIndex !== currentSystem) {
-			if (currentSystem >= 0) {
-				systemTopY = systemContentBottom + systemGap;
-			}
-			currentSystem = systemIndex;
-			systemContentBottom = systemTopY;
-		}
-		const systemY = systemTopY;
-		let staveRow = 0;
-		let systemTop: Stave | undefined;
-		let systemBottom: Stave | undefined;
-		// Every part's staves are formatted together as one column so notes at the same
-		// tick line up vertically across the whole system — not just within a part.
-		// Standard engraving aligns all instruments on the beat, and a notation+tab pair
-		// split into separate MusicXML parts must align the same as a single two-stave
-		// part. Built per part below, then formatted and drawn once after the part loop.
-		const systemPending: PendingStave[] = [];
-		const tempoTasks: Array<{
-			stave: Stave;
-			tempo: TempoMark;
-			firstNote: StaveNote | undefined;
-		}> = [];
-		// Chord symbols, drawn after the system is formatted so each sits at its
-		// note's laid-out x.
-		const harmonyTasks: Array<{ staveNote: StaveNote; text: string }> = [];
-		// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
-		// the first note's laid-out x.
-		const wordsTasks: Array<{
-			stave: Stave;
-			text: string;
-			firstNote: StaveNote | undefined;
-		}> = [];
-
-		for (const part of parts) {
-			const staveCount = Math.max(part.staveCount, 1);
-			const measure = part.measures[m];
-			if (!measure) {
-				staveRow += staveCount;
+		// Systems stack top-to-bottom. Each is placed below the previous system's lowest
+		// drawn content (notes + staff lines), so deep ledger lines push the next system
+		// down instead of colliding with it — fixed spacing can't, since note range is
+		// unbounded. The symmetric hazard — the next system's notes rising above its own
+		// top stave into that gap — is covered by topOverflow, measured on a prior pass.
+		let pageBottom = 0;
+		let pageTop = Infinity;
+		let systemTopY = layout.top + topSlack;
+		let systemContentBottom = systemTopY;
+		let currentSystem = -1;
+		// Per system: the stave-top y it was placed at, and the highest (smallest) y any of
+		// its content reached. Their difference is how far the system overflows above its
+		// top stave — reserved above it on a redraw so it can't clash with the system above.
+		const systemTopByIndex = new Map<number, number>();
+		const systemHighestTop = new Map<number, number>();
+		for (let m = 0; m < measureCount; m++) {
+			const box = boxes[m];
+			if (!box) {
 				continue;
 			}
+			const { x: measureX, width: measureWidth, systemIndex } = box;
+			const { isSystemStart } = box;
+			const isLastMeasure = m === measureCount - 1;
+			// An explicit right <barline> with <bar-style>light-light</bar-style> draws a thin
+			// double line at this measure's end instead of the default single divider (or, on
+			// the final measure, the thin-thick end). Read from the first part — a light-light
+			// boundary applies across the system.
+			const isLightLight =
+				parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
+					?.barStyle === 'light-light';
+			const showMeasureNumber = showsMeasureNumber(
+				measureNumbering,
+				m,
+				isSystemStart,
+			);
+			// Number is printed once per measure, above the system's top stave only.
+			let measureNumbered = false;
+			if (systemIndex !== currentSystem) {
+				if (currentSystem >= 0) {
+					// Gap below the previous system, plus room reserved for this system's own
+					// upward overflow (high notes/ledger lines) so they clear it, not collide.
+					systemTopY =
+						systemContentBottom +
+						systemGap +
+						(topOverflow.get(systemIndex) ?? 0);
+				}
+				currentSystem = systemIndex;
+				systemContentBottom = systemTopY;
+				systemTopByIndex.set(systemIndex, systemTopY);
+			}
+			const systemY = systemTopY;
+			let staveRow = 0;
+			let systemTop: Stave | undefined;
+			let systemBottom: Stave | undefined;
+			// Every part's staves are formatted together as one column so notes at the same
+			// tick line up vertically across the whole system — not just within a part.
+			// Standard engraving aligns all instruments on the beat, and a notation+tab pair
+			// split into separate MusicXML parts must align the same as a single two-stave
+			// part. Built per part below, then formatted and drawn once after the part loop.
+			const systemPending: PendingStave[] = [];
+			const tempoTasks: Array<{
+				stave: Stave;
+				tempo: TempoMark;
+				firstNote: StaveNote | undefined;
+			}> = [];
+			// Chord symbols, drawn after the system is formatted so each sits at its
+			// note's laid-out x.
+			const harmonyTasks: Array<{ staveNote: StaveNote; text: string }> = [];
+			// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
+			// the first note's laid-out x.
+			const wordsTasks: Array<{
+				stave: Stave;
+				text: string;
+				firstNote: StaveNote | undefined;
+			}> = [];
 
-			let partTop: Stave | undefined;
-			let partBottom: Stave | undefined;
-			// A part's staves are built here, then formatted and drawn together below so
-			// notes at the same tick align vertically across staves (notation over tab).
-			const pendingStaves: PendingStave[] = [];
+			for (const part of parts) {
+				const staveCount = Math.max(part.staveCount, 1);
+				const measure = part.measures[m];
+				if (!measure) {
+					staveRow += staveCount;
+					continue;
+				}
 
-			for (let s = 0; s < staveCount; s++) {
-				const staffNumber = String(s + 1);
-				const clef = measure.getClef(staffNumber);
-				const staveY = systemY + (staveOffsets[staveRow] ?? 0);
+				let partTop: Stave | undefined;
+				let partBottom: Stave | undefined;
+				// A part's staves are built here, then formatted and drawn together below so
+				// notes at the same tick align vertically across staves (notation over tab).
+				const pendingStaves: PendingStave[] = [];
 
-				// A TAB clef draws on a TabStave whose line count matches the
-				// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
-				const isTab = clef?.sign === 'TAB';
-				const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
-				const stave = isTab
-					? new TabStave(measureX, staveY, measureWidth, { numLines: tabLines })
-					: new Stave(measureX, staveY, measureWidth);
-				// Only draw the end barline. Each measure's end barline is the same line
-				// as the next measure's left edge, so internal measures still get a divider;
-				// only the first measure of a system loses its left barline (intended). The
-				// final measure of the piece closes with a thin-thick end barline.
-				// When the system has multiple staves, the per-measure stave connector
-				// already draws this line across the staves, so the per-stave end barline
-				// is suppressed to avoid doubling it.
-				// Exception: a lone TAB stave has no system connector to close its left
-				// edge, so its system-start measure draws an explicit begin barline.
-				stave.setBegBarType(
-					isTab && totalStaves === 1 && isSystemStart
-						? Barline.type.SINGLE
-						: Barline.type.NONE,
-				);
-				stave.setEndBarType(
-					totalStaves > 1
-						? Barline.type.NONE
-						: isLightLight
-							? Barline.type.DOUBLE
-							: isLastMeasure
-								? Barline.type.END
-								: Barline.type.SINGLE,
-				);
+				for (let s = 0; s < staveCount; s++) {
+					const staffNumber = String(s + 1);
+					const clef = measure.getClef(staffNumber);
+					const staveY = systemY + (staveOffsets[staveRow] ?? 0);
 
-				// The previous measure's effective signatures (carried forward), used to
-				// spot a mid-system change. getKey/getTime return what's in effect at the
-				// measure start, so M3 of a piece that changed key at M2 reads the same
-				// key as M2 — no spurious redraw.
-				const prevMeasure = part.measures[m - 1];
-				const key = measure.getKey(staffNumber);
-				const keyChanged =
-					(key?.rootNote ?? null) !==
-					(prevMeasure?.getKey(staffNumber)?.rootNote ?? null);
+					// A TAB clef draws on a TabStave whose line count matches the
+					// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
+					const isTab = clef?.sign === 'TAB';
+					const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
+					const stave = isTab
+						? new TabStave(measureX, staveY, measureWidth, {
+								numLines: tabLines,
+							})
+						: new Stave(measureX, staveY, measureWidth);
+					// Only draw the end barline. Each measure's end barline is the same line
+					// as the next measure's left edge, so internal measures still get a divider;
+					// only the first measure of a system loses its left barline (intended). The
+					// final measure of the piece closes with a thin-thick end barline.
+					// When the system has multiple staves, the per-measure stave connector
+					// already draws this line across the staves, so the per-stave end barline
+					// is suppressed to avoid doubling it.
+					// Exception: a lone TAB stave has no system connector to close its left
+					// edge, so its system-start measure draws an explicit begin barline.
+					stave.setBegBarType(
+						isTab && totalStaves === 1 && isSystemStart
+							? Barline.type.SINGLE
+							: Barline.type.NONE,
+					);
+					stave.setEndBarType(
+						totalStaves > 1
+							? Barline.type.NONE
+							: isLightLight
+								? Barline.type.DOUBLE
+								: isLastMeasure
+									? Barline.type.END
+									: Barline.type.SINGLE,
+					);
 
-				// Clef and key print at every system start (re-stated on each new line).
-				// A mid-system key change is also redrawn where it happens (clef and time
-				// are not repeated for it).
-				if (isSystemStart) {
-					if (isTab) {
-						const tabStave = stave as TabStave;
-						tabStave.addTabGlyph();
-						resizeTabClef(tabStave, tabLines);
-					} else if (clef) {
-						stave.addClef(vexflowClef(clef.sign, clef.line));
-					}
-					// Tab staves carry no key signature.
-					if (key?.rootNote && !isTab) {
+					// The previous measure's effective signatures (carried forward), used to
+					// spot a mid-system change. getKey/getTime return what's in effect at the
+					// measure start, so M3 of a piece that changed key at M2 reads the same
+					// key as M2 — no spurious redraw.
+					const prevMeasure = part.measures[m - 1];
+					const key = measure.getKey(staffNumber);
+					const keyChanged =
+						(key?.rootNote ?? null) !==
+						(prevMeasure?.getKey(staffNumber)?.rootNote ?? null);
+
+					// Clef and key print at every system start (re-stated on each new line).
+					// A mid-system key change is also redrawn where it happens (clef and time
+					// are not repeated for it).
+					if (isSystemStart) {
+						if (isTab) {
+							const tabStave = stave as TabStave;
+							tabStave.addTabGlyph();
+							resizeTabClef(tabStave, tabLines);
+						} else if (clef) {
+							stave.addClef(vexflowClef(clef.sign, clef.line));
+						}
+						// Tab staves carry no key signature.
+						if (key?.rootNote && !isTab) {
+							stave.addKeySignature(key.rootNote);
+						}
+					} else if (key?.rootNote && keyChanged && !isTab) {
 						stave.addKeySignature(key.rootNote);
 					}
-				} else if (key?.rootNote && keyChanged && !isTab) {
-					stave.addKeySignature(key.rootNote);
-				}
 
-				// Unlike clef and key, the time signature is not re-stated at every
-				// system start — only at the piece start and wherever the meter changes
-				// (a change that lands on a system break still redraws here).
-				const timeSpec = timeSignatureSpec(measure.getTime(staffNumber));
-				const prevTimeSpec = timeSignatureSpec(
-					prevMeasure?.getTime(staffNumber) ?? null,
-				);
-				if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {
-					stave.addTimeSignature(timeSpec);
-				}
-
-				// A bracket (drawn below) has a top curl that sits where vexflow's
-				// setMeasure centers the measure number, so the number gets occluded — true
-				// both for a multi-stave part's own bracket and for the system bracket of a
-				// notation+tab pair split across parts. Only for a bracket do we draw the
-				// number ourselves, left-aligned just right of the barline and lifted above
-				// the curl; the curly brace doesn't reach that high, so it keeps vexflow's
-				// placement. The number prints once (measureNumbered), on the top stave.
-				const numberOccluded =
-					isSystemStart &&
-					((staveCount > 1 && partSymbol(part) === 'bracket') ||
-						partsPairTabWithNotation(parts));
-				if (showMeasureNumber && !measureNumbered && !numberOccluded) {
-					stave.setMeasure(Number(measure.number));
-					measureNumbered = true;
-				}
-
-				stave.setContext(context).draw();
-
-				if (showMeasureNumber && !measureNumbered && numberOccluded) {
-					context.save();
-					context.setFont(stave.getFont());
-					context.setFillStyle('#000000');
-					context.fillText(
-						measure.number,
-						stave.getX() + 4,
-						stave.getYForTopText(0) - 14,
+					// Unlike clef and key, the time signature is not re-stated at every
+					// system start — only at the piece start and wherever the meter changes
+					// (a change that lands on a system break still redraws here).
+					const timeSpec = timeSignatureSpec(measure.getTime(staffNumber));
+					const prevTimeSpec = timeSignatureSpec(
+						prevMeasure?.getTime(staffNumber) ?? null,
 					);
-					context.restore();
-					measureNumbered = true;
-				}
-				const staveBottom = stave.getBottomY();
-				pageBottom = Math.max(pageBottom, staveBottom);
-				systemContentBottom = Math.max(systemContentBottom, staveBottom);
-
-				// Build this staff's notes; they're formatted and drawn together with the
-				// rest of the part's staves below. A TAB stave builds fretted TabNotes;
-				// everything else uses the notation path. An empty voice (no chords) would
-				// crash the formatter, so it's filtered.
-				const voices = staffVoices(measure.voices, staffNumber);
-				if (isTab && voices.length > 0) {
-					pendingStaves.push(
-						buildTabNotes(stave as TabStave, voices, softmaxFactor, byTabLead),
-					);
-					for (const voice of voices) {
-						allTabChords.push(...voice.chords);
+					if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {
+						stave.addTimeSignature(timeSpec);
 					}
-				} else if (voices.length > 0) {
-					const clefName = clef ? vexflowClef(clef.sign, clef.line) : 'treble';
-					pendingStaves.push(
-						buildNotes(
-							stave,
-							voices,
-							clefName,
-							softmaxFactor,
-							byLead,
-							meterBeats(measure.getTime(staffNumber)),
-						),
-					);
-					for (const voice of voices) {
-						allChords.push(...voice.chords);
+
+					// A bracket (drawn below) has a top curl that sits where vexflow's
+					// setMeasure centers the measure number, so the number gets occluded — true
+					// both for a multi-stave part's own bracket and for the system bracket of a
+					// notation+tab pair split across parts. Only for a bracket do we draw the
+					// number ourselves, left-aligned just right of the barline and lifted above
+					// the curl; the curly brace doesn't reach that high, so it keeps vexflow's
+					// placement. The number prints once (measureNumbered), on the top stave.
+					const numberOccluded =
+						isSystemStart &&
+						((staveCount > 1 && partSymbol(part) === 'bracket') ||
+							partsPairTabWithNotation(parts));
+					if (showMeasureNumber && !measureNumbered && !numberOccluded) {
+						stave.setMeasure(Number(measure.number));
+						measureNumbered = true;
+					}
+
+					stave.setContext(context).draw();
+
+					if (showMeasureNumber && !measureNumbered && numberOccluded) {
+						context.save();
+						context.setFont(stave.getFont());
+						context.setFillStyle('#000000');
+						context.fillText(
+							measure.number,
+							stave.getX() + 4,
+							stave.getYForTopText(0) - 14,
+						);
+						context.restore();
+						measureNumbered = true;
+					}
+					const staveBottom = stave.getBottomY();
+					pageBottom = Math.max(pageBottom, staveBottom);
+					systemContentBottom = Math.max(systemContentBottom, staveBottom);
+
+					// Build this staff's notes; they're formatted and drawn together with the
+					// rest of the part's staves below. A TAB stave builds fretted TabNotes;
+					// everything else uses the notation path. An empty voice (no chords) would
+					// crash the formatter, so it's filtered.
+					const voices = staffVoices(measure.voices, staffNumber);
+					if (isTab && voices.length > 0) {
+						pendingStaves.push(
+							buildTabNotes(
+								stave as TabStave,
+								voices,
+								softmaxFactor,
+								byTabLead,
+							),
+						);
+						for (const voice of voices) {
+							allTabChords.push(...voice.chords);
+						}
+					} else if (voices.length > 0) {
+						const clefName = clef
+							? vexflowClef(clef.sign, clef.line)
+							: 'treble';
+						pendingStaves.push(
+							buildNotes(
+								stave,
+								voices,
+								clefName,
+								softmaxFactor,
+								byLead,
+								meterBeats(measure.getTime(staffNumber)),
+							),
+						);
+						for (const voice of voices) {
+							allChords.push(...voice.chords);
+						}
+					}
+
+					partTop ??= stave;
+					partBottom = stave;
+					systemTop ??= stave;
+					systemBottom = stave;
+					staveRow++;
+				}
+
+				// Defer formatting to one pass over the whole system (below) so notes align
+				// across parts, not just within this part.
+				systemPending.push(...pendingStaves);
+
+				// Chord symbols from this measure's <harmony> elements, each bound to the
+				// lead note it sits above. Resolved via byLead (the notation staff's notes);
+				// a harmony over a tab-only note isn't drawn.
+				for (const { lead, text } of harmoniesOf(measure)) {
+					const staveNote = byLead.get(lead);
+					if (staveNote) {
+						harmonyTasks.push({ staveNote, text });
 					}
 				}
 
-				partTop ??= stave;
-				partBottom = stave;
-				systemTop ??= stave;
-				systemBottom = stave;
-				staveRow++;
-			}
-
-			// Defer formatting to one pass over the whole system (below) so notes align
-			// across parts, not just within this part.
-			systemPending.push(...pendingStaves);
-
-			// Chord symbols from this measure's <harmony> elements, each bound to the
-			// lead note it sits above. Resolved via byLead (the notation staff's notes);
-			// a harmony over a tab-only note isn't drawn.
-			for (const { lead, text } of harmoniesOf(measure)) {
-				const staveNote = byLead.get(lead);
-				if (staveNote) {
-					harmonyTasks.push({ staveNote, text });
-				}
-			}
-
-			// A metronome mark (from a <direction><metronome>) prints on this part's top
-			// staff wherever it appears — the piece start or a mid-piece tempo change.
-			// Drawn after the system is formatted so it can clear a high first note.
-			const tempo = tempoOf(measure);
-			const topStave = pendingStaves[0];
-			if (tempo && topStave) {
-				tempoTasks.push({
-					stave: topStave.stave,
-					tempo,
-					firstNote: topStave.staveNotes[0],
-				});
-			}
-
-			// Words directions (e.g. "ritardando") print on this part's top staff, like
-			// the metronome mark. Drawn after the system is formatted so the first note's
-			// x is real.
-			if (topStave) {
-				for (const text of wordsOf(measure)) {
-					wordsTasks.push({
+				// A metronome mark (from a <direction><metronome>) prints on this part's top
+				// staff wherever it appears — the piece start or a mid-piece tempo change.
+				// Drawn after the system is formatted so it can clear a high first note.
+				const tempo = tempoOf(measure);
+				const topStave = pendingStaves[0];
+				if (tempo && topStave) {
+					tempoTasks.push({
 						stave: topStave.stave,
-						text,
+						tempo,
 						firstNote: topStave.staveNotes[0],
 					});
 				}
-			}
 
-			// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
-			// can span barlines) after every note is placed — see below the measure loop.
-			allPedals.push(...pedalsOf(measure));
-
-			// A part's own staves are joined at each system start by the symbol named in
-			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
-			// 'none' suppresses the connector entirely.
-			const symbol = partSymbol(part);
-			if (partTop && partBottom && staveCount > 1 && isSystemStart && symbol) {
-				// Match the cross-part path: a bracket's x comes entirely from its top
-				// stave, so nudge it 4px left to sit just outside the system line with a
-				// small gap, then restore. A brace keeps its own placement.
-				if (symbol === 'bracket') {
-					partTop.setX(measureX - BRACKET_X_SHIFT);
+				// Words directions (e.g. "ritardando") print on this part's top staff, like
+				// the metronome mark. Drawn after the system is formatted so the first note's
+				// x is real.
+				if (topStave) {
+					for (const text of wordsOf(measure)) {
+						wordsTasks.push({
+							stave: topStave.stave,
+							text,
+							firstNote: topStave.staveNotes[0],
+						});
+					}
 				}
-				new StaveConnector(partTop, partBottom)
-					.setType(symbol)
-					.setContext(context)
-					.draw();
-				partTop.setX(measureX);
-			}
 
-			// Print the instrument name in the first system's reserved left indent,
-			// right-aligned just before the stave and vertically centered on the part's
-			// staves.
-			if (
-				labelIndent > 0 &&
-				part.label &&
-				systemIndex === 0 &&
-				isSystemStart &&
-				partTop &&
-				partBottom
-			) {
-				context.save();
-				context.setFont(labelFont, LABEL_FONT_SIZE);
-				const tw = context.measureText(part.label).width;
-				// Center on the staff lines themselves: top line of the part's first stave
-				// to bottom line of its last, so a single stave centers on its middle line
-				// and a multi-stave part centers on the group. +1.5 lands the cap-height
-				// visual center on cy (a plain baseline at cy sits ~2.5px low).
-				const cy = (partTop.getYForLine(0) + partBottom.getBottomLineY()) / 2;
-				// Right-align every label to a fixed gap before the stave, so all parts'
-				// names end at the same x (the gap clears the brace on multi-stave parts).
-				context.fillText(part.label, measureX - LABEL_GAP - tw, cy + 1.5);
-				context.restore();
-			}
-		}
+				// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
+				// can span barlines) after every note is placed — see below the measure loop.
+				allPedals.push(...pedalsOf(measure));
 
-		// Format and draw every part's staves together so same-tick notes line up
-		// vertically across the whole system (notation over its own tab, and across
-		// separate parts that share a beat).
-		const noteExtent = formatAndDrawSystem(
-			context,
-			systemPending,
-			softmaxFactor,
-		);
-		pageBottom = Math.max(pageBottom, noteExtent.bottom);
-		systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
-		pageTop = Math.min(pageTop, noteExtent.top);
-		for (const t of tempoTasks) {
-			drawTempo(context, t.stave, t.tempo, t.firstNote);
-		}
-		for (const h of harmonyTasks) {
-			pageTop = Math.min(
-				pageTop,
-				drawHarmony(context, h.staveNote, h.text, labelFont),
-			);
-		}
-		for (const w of wordsTasks) {
-			pageTop = Math.min(
-				pageTop,
-				drawWords(context, w.stave, w.text, w.firstNote, labelFont),
-			);
-		}
-
-		// Join the whole system across all parts with a shared left line at the
-		// system start, and a closing line at the system end.
-		if (systemTop && systemBottom && totalStaves > 1) {
-			if (isSystemStart) {
-				// Every multi-stave system gets a plain left line closing the staves' left
-				// edge. A notation+tab pair split across separate parts also gets a bracket
-				// (the cross-part analog of the single-part bracket), drawn just outside it.
-				new StaveConnector(systemTop, systemBottom)
-					.setType('singleLeft')
-					.setContext(context)
-					.draw();
-				if (partsPairTabWithNotation(parts)) {
-					// The bracket's x comes entirely from its top stave; nudge that 4px left
-					// so the bracket sits just outside the system line with a small gap, then
-					// restore.
-					systemTop.setX(measureX - BRACKET_X_SHIFT);
-					new StaveConnector(systemTop, systemBottom)
-						.setType('bracket')
+				// A part's own staves are joined at each system start by the symbol named in
+				// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
+				// 'none' suppresses the connector entirely.
+				const symbol = partSymbol(part);
+				if (
+					partTop &&
+					partBottom &&
+					staveCount > 1 &&
+					isSystemStart &&
+					symbol
+				) {
+					// Match the cross-part path: a bracket's x comes entirely from its top
+					// stave, so nudge it 4px left to sit just outside the system line with a
+					// small gap, then restore. A brace keeps its own placement.
+					if (symbol === 'bracket') {
+						partTop.setX(measureX - BRACKET_X_SHIFT);
+					}
+					new StaveConnector(partTop, partBottom)
+						.setType(symbol)
 						.setContext(context)
 						.draw();
-					systemTop.setX(measureX);
+					partTop.setX(measureX);
+				}
+
+				// Print the instrument name in the first system's reserved left indent,
+				// right-aligned just before the stave and vertically centered on the part's
+				// staves.
+				if (
+					labelIndent > 0 &&
+					part.label &&
+					systemIndex === 0 &&
+					isSystemStart &&
+					partTop &&
+					partBottom
+				) {
+					context.save();
+					context.setFont(labelFont, LABEL_FONT_SIZE);
+					const tw = context.measureText(part.label).width;
+					// Center on the staff lines themselves: top line of the part's first stave
+					// to bottom line of its last, so a single stave centers on its middle line
+					// and a multi-stave part centers on the group. +1.5 lands the cap-height
+					// visual center on cy (a plain baseline at cy sits ~2.5px low).
+					const cy = (partTop.getYForLine(0) + partBottom.getBottomLineY()) / 2;
+					// Right-align every label to a fixed gap before the stave, so all parts'
+					// names end at the same x (the gap clears the brace on multi-stave parts).
+					context.fillText(part.label, measureX - LABEL_GAP - tw, cy + 1.5);
+					context.restore();
 				}
 			}
-			// Every measure's end line gets a connector joining the part's staves, so
-			// internal barlines are tied across staves and not just drawn per-stave.
-			// The piece's final measure gets a bold thin-thick connector to match its
-			// end barline; all other measure ends get a plain single line.
-			new StaveConnector(systemTop, systemBottom)
-				.setType(
-					isLightLight
-						? 'thinDouble'
-						: isLastMeasure
-							? 'boldDoubleRight'
-							: 'singleRight',
-				)
-				.setContext(context)
-				.draw();
-		}
-	}
 
-	// Ties and slurs are resolved over the whole score now that every note is
-	// placed, so a span can cross a barline (its endpoints sit in different
-	// measures). Drawn last, on top of the notes.
-	for (const tie of buildTies(allChords, byLead)) {
-		tie.setContext(context).draw();
-	}
-	for (const slur of buildSlurs(allChords, byLead)) {
-		slur.setContext(context).draw();
-	}
-	// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
-	for (const tie of buildHammerPulls(
-		allTabChords,
-		byTabLead,
-		showTabHammerPullText,
-	)) {
-		tie.setContext(context).draw();
-	}
-	for (const slide of buildSlides(allTabChords, byTabLead, showTabSlideText)) {
-		slide.setContext(context).draw();
-	}
-	// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
-	// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
-	// ponytail: only the final crop is grown — a pedal on a non-last system isn't
-	// reserved against the system below it; add that if a fixture stacks one there.
-	for (const pedal of buildPedals(allPedals, byLead)) {
-		pedal.setContext(context).draw();
-	}
-	for (const marker of allPedals) {
-		const stave = byLead.get(marker.lead)?.getStave();
-		if (stave) {
-			pageBottom = Math.max(
-				pageBottom,
-				stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE) + PEDAL_BOTTOM_MARGIN,
+			// Format and draw every part's staves together so same-tick notes line up
+			// vertically across the whole system (notation over its own tab, and across
+			// separate parts that share a beat).
+			const noteExtent = formatAndDrawSystem(
+				context,
+				systemPending,
+				softmaxFactor,
 			);
+			pageBottom = Math.max(pageBottom, noteExtent.bottom);
+			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
+			pageTop = Math.min(pageTop, noteExtent.top);
+			if (noteExtent.top < Infinity) {
+				systemHighestTop.set(
+					systemIndex,
+					Math.min(
+						systemHighestTop.get(systemIndex) ?? Infinity,
+						noteExtent.top,
+					),
+				);
+			}
+			for (const t of tempoTasks) {
+				drawTempo(context, t.stave, t.tempo, t.firstNote);
+			}
+			for (const h of harmonyTasks) {
+				pageTop = Math.min(
+					pageTop,
+					drawHarmony(context, h.staveNote, h.text, labelFont),
+				);
+			}
+			for (const w of wordsTasks) {
+				pageTop = Math.min(
+					pageTop,
+					drawWords(context, w.stave, w.text, w.firstNote, labelFont),
+				);
+			}
+
+			// Join the whole system across all parts with a shared left line at the
+			// system start, and a closing line at the system end.
+			if (systemTop && systemBottom && totalStaves > 1) {
+				if (isSystemStart) {
+					// Every multi-stave system gets a plain left line closing the staves' left
+					// edge. A notation+tab pair split across separate parts also gets a bracket
+					// (the cross-part analog of the single-part bracket), drawn just outside it.
+					new StaveConnector(systemTop, systemBottom)
+						.setType('singleLeft')
+						.setContext(context)
+						.draw();
+					if (partsPairTabWithNotation(parts)) {
+						// The bracket's x comes entirely from its top stave; nudge that 4px left
+						// so the bracket sits just outside the system line with a small gap, then
+						// restore.
+						systemTop.setX(measureX - BRACKET_X_SHIFT);
+						new StaveConnector(systemTop, systemBottom)
+							.setType('bracket')
+							.setContext(context)
+							.draw();
+						systemTop.setX(measureX);
+					}
+				}
+				// Every measure's end line gets a connector joining the part's staves, so
+				// internal barlines are tied across staves and not just drawn per-stave.
+				// The piece's final measure gets a bold thin-thick connector to match its
+				// end barline; all other measure ends get a plain single line.
+				new StaveConnector(systemTop, systemBottom)
+					.setType(
+						isLightLight
+							? 'thinDouble'
+							: isLastMeasure
+								? 'boldDoubleRight'
+								: 'singleRight',
+					)
+					.setContext(context)
+					.draw();
+			}
 		}
+
+		// Ties and slurs are resolved over the whole score now that every note is
+		// placed, so a span can cross a barline (its endpoints sit in different
+		// measures). Drawn last, on top of the notes.
+		for (const tie of buildTies(allChords, byLead)) {
+			tie.setContext(context).draw();
+		}
+		for (const slur of buildSlurs(allChords, byLead)) {
+			slur.setContext(context).draw();
+		}
+		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
+		for (const tie of buildHammerPulls(
+			allTabChords,
+			byTabLead,
+			showTabHammerPullText,
+		)) {
+			tie.setContext(context).draw();
+		}
+		for (const slide of buildSlides(
+			allTabChords,
+			byTabLead,
+			showTabSlideText,
+		)) {
+			slide.setContext(context).draw();
+		}
+		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
+		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
+		// ponytail: only the final crop is grown — a pedal on a non-last system isn't
+		// reserved against the system below it; add that if a fixture stacks one there.
+		for (const pedal of buildPedals(allPedals, byLead)) {
+			pedal.setContext(context).draw();
+		}
+		for (const marker of allPedals) {
+			const stave = byLead.get(marker.lead)?.getStave();
+			if (stave) {
+				pageBottom = Math.max(
+					pageBottom,
+					stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE) + PEDAL_BOTTOM_MARGIN,
+				);
+			}
+		}
+
+		// How far each system rose above its top stave. The first system uses the cropped top
+		// slack instead, so it's excluded (it never reserves space against a system above it).
+		const observedOverflow = new Map<number, number>();
+		for (const [idx, topY] of systemTopByIndex) {
+			const highest = systemHighestTop.get(idx);
+			if (idx > 0 && highest !== undefined) {
+				observedOverflow.set(idx, Math.max(0, topY - highest));
+			}
+		}
+		return { pageTop, pageBottom, observedOverflow };
+	};
+
+	// Multi-system scores can clash where a system's notes rise above its top stave into
+	// the previous system's depth. Pass one measures that per-system overflow; if any is
+	// found, pass two redraws (onto the freshly cleared scratch) with the overflow reserved
+	// above each system. Single-system scores never stack, so one pass suffices.
+	let { pageTop, pageBottom, observedOverflow } = runPass(new Map());
+	if (systemCount > 1 && [...observedOverflow.values()].some((v) => v > 0)) {
+		renderer.resize(width, scratchHeight);
+		({ pageTop, pageBottom } = runPass(observedOverflow));
 	}
 
 	// Crop to the lowest thing actually drawn so deep ledger lines in the bottom
