@@ -27,6 +27,7 @@ import {
 import {
 	DEFAULT_TEMPO_BPM,
 	EPSILON,
+	GRACE_SPACING,
 	TAB_FRET_SCALE,
 	TAB_GRACE_SCALE,
 	TAB_GRACE_SPACING,
@@ -767,7 +768,23 @@ export function vexflowVoiceTickables(
 			if (pendingGrace.some((g) => g.lead.beams.length > 0)) {
 				group.beamNotes();
 			}
+			// preFormat now so the group's width is available to the layout pass (which
+			// reads it to allocate the measure extra room) and stable for draw.
+			group.preFormat();
 			staveNote.addModifier(group, 0);
+			// Give the grace cluster breathing room from the preceding note. Pad that note's
+			// RIGHT, not the host's left: vexflow draws the grace at the left edge of the
+			// host's left reservation, so inflating that reservation only makes the grace
+			// drift left off its host. Padding the preceding note instead pushes the host
+			// (and its attached grace) right together, opening the gap before the grace while
+			// it stays snug to its host. setRightDisplacedHeadPx survives format — it's only
+			// reset by the note's constructor (calcNoteDisplacements), already run by now.
+			const prev = tickables.at(-1);
+			if (prev) {
+				prev.setRightDisplacedHeadPx(
+					prev.getRightDisplacedHeadPx() + GRACE_SPACING,
+				);
+			}
 			// Record grace leads too so a slur from a grace note to its main note
 			// resolves in buildSlurs (the GraceNote is a valid Curve endpoint).
 			for (const g of pendingGrace) {

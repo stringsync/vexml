@@ -1,9 +1,10 @@
 import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
-import { Formatter, Voice } from 'vexflow';
+import { Formatter, GraceNoteGroup, Voice } from 'vexflow';
 import type { Config } from './config';
 import {
 	BASE_VOICE_WIDTH,
 	DEFAULT_WIDTH,
+	GRACE_SPACING,
 	INTER_PART_SPACING,
 	INTRA_PART_SPACING,
 	LABEL_CHAR_WIDTH,
@@ -109,6 +110,21 @@ function noteLogWidth(ticks: number, noteSpacing: number): number {
 	return noteSpacing * Math.max(MIN_LOG_FACTOR, factor);
 }
 
+// The horizontal space a note's attached grace cluster needs: its preformatted width plus
+// the GRACE_SPACING lead clearance notes.ts pads before it, or 0 if it has none. Lets the
+// measure grow to hold the grace instead of compressing its real notes. Mirrors draw's
+// graceGroupOf.
+function graceWidthOf(t: {
+	getModifiers(): { getCategory(): string }[];
+}): number {
+	const group = t
+		.getModifiers()
+		.find((m) => m.getCategory() === GraceNoteGroup.CATEGORY) as
+		| GraceNoteGroup
+		| undefined;
+	return group ? group.getWidth() + GRACE_SPACING : 0;
+}
+
 // A measure's note-area width: the sum of its notes' logarithmic widths, never below the
 // collision-free minimum or the floor. Denser measures get more space; a long note adds
 // only a little. Builds throwaway notes so the draw pass is untouched. The busiest staff
@@ -152,10 +168,14 @@ function measureNoteArea(
 			minNotes = Math.max(minNotes, noteCount * TAB_MIN_NOTE_SPACING);
 		}
 		// Sum each voice's per-note logarithmic widths; the busiest voice sets the width.
+		// Grace notes steal no time, so they get no logarithmic share — but they still
+		// occupy horizontal space left of their host. Add each grace cluster's width on top
+		// so a grace-bearing measure is allocated the extra room it needs, instead of the
+		// graces compressing the real notes into the same width (see graceWidthOf).
 		for (const tickables of perVoice) {
 			let w = 0;
 			for (const t of tickables) {
-				w += noteLogWidth(t.getTicks().value(), noteSpacing);
+				w += noteLogWidth(t.getTicks().value(), noteSpacing) + graceWidthOf(t);
 			}
 			logWidth = Math.max(logWidth, w);
 		}

@@ -85,6 +85,13 @@ export const TAB_MIN_NOTE_SPACING = 32;
 /** Bump tab fret digits bolder/larger than vexflow's thin default (1.258 * 9pt ≈ 15px). */
 export const TAB_FRET_SCALE = 1.258;
 
+/** Lead clearance (px) before a notation grace cluster: padded onto the RIGHT of the note
+ * that precedes the grace's host, so the host and its attached grace shift right together
+ * and the grace gets breathing room from that note while staying snug to its host. The
+ * measure's width allocation grows by this too (see graceWidthOf) so the clearance is real
+ * space, not stolen from the bar's other notes. */
+export const GRACE_SPACING = 16;
+
 /** Grace tab frets, as a fraction of the (enlarged) main-note size. */
 export const TAB_GRACE_SCALE = 2 / 3;
 

@@ -546,6 +546,20 @@ const TEST_CASES = [
 	//   grace under to the C5 quarter.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
 
+	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
+	// measure-width allocation in a dense real-world excerpt (measures 6-8 of a lead sheet).
+	// A measure with grace notes is allocated extra width to fit them, so the graces get
+	// breathing room from the preceding note AND the real notes keep their spacing — instead
+	// of the graces compressing the bar's other notes. M7 (no graces) is a narrow control
+	// between the two grace-heavy bars.
+	// - M6: Eb/Bb harmony; a half rest + eighth rest, a staccato Bb eighth, then a slashed
+	//   F5 grace before a beamed G5 dotted-8th + F5/D5 32nds. The grace clears the staccato
+	//   eighth and the 32nds stay evenly spaced (the bar widened to hold the grace).
+	// - M7: Bb harmony; a lone F5 whole note tied into M8 — a plain narrow bar, no graces.
+	// - M8: Eb/Bb harmony; F5 quarter (tie stop) + quarter rest, then two slashed grace
+	//   chords, each just left of a quarter chord — stacked graces that get room to read.
+	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
+
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
 	// down. May wrap across systems.
