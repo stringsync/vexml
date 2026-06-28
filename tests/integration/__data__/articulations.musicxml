@@ -25,7 +25,7 @@
           <octave>5</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <staccato />
@@ -38,7 +38,7 @@
           <octave>5</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <accent />
@@ -51,7 +51,7 @@
           <octave>5</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <tenuto />
@@ -64,7 +64,7 @@
           <octave>5</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <staccatissimo />
@@ -79,7 +79,7 @@
           <octave>4</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <staccato />
@@ -92,7 +92,7 @@
           <octave>4</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <accent />
@@ -105,7 +105,7 @@
           <octave>4</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <tenuto />
@@ -118,7 +118,7 @@
           <octave>4</octave>
         </pitch>
         <duration>2</duration>
-        <type>quarterg</type>
+        <type>quarter</type>
         <notations>
           <articulations>
             <staccatissimo />

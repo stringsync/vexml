@@ -489,6 +489,8 @@ const TEST_CASES = [
 	// stem direction.
 	// - M1: four C5 quarters (stems down) — articulations sit above the noteheads.
 	// - M2: four E4 quarters (stems up) — articulations sit below the noteheads.
+	// - M3: a C5+G4 beamed eighth pair — the beam forces stems up (driven by the low
+	//   G4), so the C5's staccato sits below its notehead, not above the beam.
 	testCase('articulations.musicxml', 'articulations.png'),
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
