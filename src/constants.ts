@@ -121,6 +121,12 @@ export const HARMONY_Y_OFFSET = 14;
  * sits over, so the symbol lifts clear instead of colliding with the notehead. */
 export const HARMONY_NOTE_CLEARANCE = 8;
 
+/** How far a single note's tie ribbon peaks above the notehead center when it bows
+ * upward (stem-down note). Vexflow draws the tie as a bezier whose outer edge clears
+ * the notehead by its yShift (7) plus the deeper control-point excursion (cp2 12) —
+ * ~13px. A chord symbol over a tied note lifts past this so it doesn't touch the arc. */
+export const TIE_APEX_RISE = 13;
+
 /** Words-direction (e.g. "ritardando") text size — matches the chord-symbol size so
  * both read as annotations above the notes. */
 export const WORDS_FONT_SIZE = 13;

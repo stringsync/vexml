@@ -54,5 +54,25 @@
         <notations><tied type="stop" /></notations>
       </note>
     </measure>
+    <!-- M4: two F#5 half notes tied; both declare a superfluous <accidental>sharp</accidental>,
+         but only the tie-start note should print the sharp. -->
+    <measure number="4">
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start" />
+        <type>half</type>
+        <accidental>sharp</accidental>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop" />
+        <type>half</type>
+        <accidental>sharp</accidental>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

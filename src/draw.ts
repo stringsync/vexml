@@ -17,6 +17,7 @@ import {
 	StaveConnector,
 	type StaveNote,
 	StaveTempo,
+	Stem,
 	type TabNote,
 	TabStave,
 	Vibrato,
@@ -37,6 +38,7 @@ import {
 	PEDAL_BOTTOM_TEXT_LINE,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
+	TIE_APEX_RISE,
 	WORDS_FONT_SIZE,
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
@@ -409,6 +411,7 @@ function drawHarmony(
 	staveNote: StaveNote,
 	text: string,
 	font: string,
+	hasTie: boolean,
 ): number {
 	const stave = staveNote.getStave();
 	if (!stave) {
@@ -420,7 +423,24 @@ function drawHarmony(
 	// bogus near-origin y, which would fling the symbol to the top of the page and defeat
 	// the top crop (leaving a huge blank margin above the first system).
 	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
-	const noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
+	let noteClearY = noteTop(staveNote) - HARMONY_NOTE_CLEARANCE;
+	// A stem-down note's tie bows up over the noteheads (vexflow bows a single note's tie
+	// opposite the stem), peaking past what noteTop sees. The tie is a separate spanner
+	// drawn later — there's no glyph to measure here — so reconstruct its apex from the
+	// notehead center and clear that too, otherwise the symbol lands on the arc. Only do
+	// this when the notehead already pushes the symbol above its baseline: a note that
+	// high carries its tie up into the symbol band, whereas a low note's tie sits well
+	// below the text — and a long tie's apex is off to the right of the left-anchored
+	// text anyway (it starts at the notehead and rises rightward), so clearing its apex
+	// would lift the symbol for a tie that never passes under it.
+	if (
+		hasTie &&
+		noteClearY < baseY &&
+		staveNote.getStemDirection() === Stem.DOWN
+	) {
+		const tieApexY = Math.min(...staveNote.getYs()) - TIE_APEX_RISE;
+		noteClearY = Math.min(noteClearY, tieApexY - HARMONY_NOTE_CLEARANCE);
+	}
 	const y = Math.min(baseY, noteClearY);
 	context.save();
 	context.setFont(font, HARMONY_FONT_SIZE);
@@ -812,7 +832,11 @@ export function drawScore(
 			}> = [];
 			// Chord symbols, drawn after the system is formatted so each sits at its
 			// note's laid-out x.
-			const harmonyTasks: Array<{ staveNote: StaveNote; text: string }> = [];
+			const harmonyTasks: Array<{
+				staveNote: StaveNote;
+				text: string;
+				hasTie: boolean;
+			}> = [];
 			// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
 			// the first note's laid-out x.
 			const wordsTasks: Array<{
@@ -1000,7 +1024,11 @@ export function drawScore(
 				for (const { lead, text } of harmoniesOf(measure)) {
 					const staveNote = byLead.get(lead);
 					if (staveNote) {
-						harmonyTasks.push({ staveNote, text });
+						harmonyTasks.push({
+							staveNote,
+							text,
+							hasTie: lead.ties.length > 0,
+						});
 					}
 				}
 
@@ -1110,7 +1138,7 @@ export function drawScore(
 			for (const h of harmonyTasks) {
 				pageTop = Math.min(
 					pageTop,
-					drawHarmony(context, h.staveNote, h.text, labelFont),
+					drawHarmony(context, h.staveNote, h.text, labelFont, h.hasTie),
 				);
 			}
 			for (const w of wordsTasks) {

@@ -210,6 +210,9 @@ const TEST_CASES = [
 	//   system and M3 begins the next, so the tie splits into two partial arcs: one bowing off
 	//   the right edge of M2 ("tie to nothing") and one bowing in from the left edge of M3
 	//   ("tie from nothing"), rather than one line slanting down across the page.
+	// - M4: two F#5 half notes tied; both notes declare a superfluous <accidental>sharp</accidental>
+	//   in the MusicXML, but only the tie-start note prints the sharp — the tied note carries the
+	//   accidental implicitly, so its glyph is suppressed.
 	testCase('tie.musicxml', 'tie.png'),
 
 	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
@@ -517,6 +520,13 @@ const TEST_CASES = [
 	//   staccato dot sits above the notehead) + dotted-half rest, under a "B♭" symbol. The
 	//   symbol lifts to clear the staccato dot, not just the notehead, so the dot and the
 	//   text don't touch.
+	// - M9: a high tied pair under its symbol — two A♭5 quarters tied together (stem down,
+	//   so the tie bows up over the noteheads) + half rest, under an "A♭" symbol. The
+	//   symbol lifts to clear the tie's arc, not just the noteheads, so the arc and the
+	//   text don't touch.
+	// - M10: extension accidentals — a dominant with kind text="7(b9#11)" over four B4
+	//   quarters prints "G7(♭9♯11)". The ASCII b/# in the extension render as the real
+	//   ♭/♯ glyphs at the same smaller size as the root's accidental, not literal "b"/"#".
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace

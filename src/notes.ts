@@ -236,10 +236,13 @@ function applyStem(staveNote: StaveNote, note: Note): void {
  * (X notehead) has no definite pitch, so a printed accidental on it is meaningless —
  * skip it. (Transcription exports sometimes emit one anyway; on a grace note it also
  * collides with the cross glyph instead of sitting clear to its left.)
+ *
+ * A tie-stop note is the same sounding pitch as its tie-start: the accidental was already
+ * declared there and carries over, so skip it even when the MusicXML redundantly repeats it.
  */
 function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 	chord.notes.forEach((note, i) => {
-		if (isXNotehead(note)) {
+		if (isXNotehead(note) || isTieStop(note)) {
 			return;
 		}
 		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
@@ -755,6 +758,18 @@ export function pedalsOf(measure: Measure): PedalMark[] {
 const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
 
 /*
+ * Swap the ASCII accidentals a <kind text="…"> suffix carries for an extension (e.g.
+ * "7(b9#11)") for the real Unicode signs ("7(♭9♯11)"), so they match the root's ♭/♯
+ * and pick up drawHarmony's smaller accidental sizing. An accidental in an extension
+ * always sits before its scale-degree number, so the digit lookahead avoids touching
+ * any letter that just happens to be a "b" (none of the suffix words use one, but the
+ * lookahead keeps it unambiguous).
+ */
+function harmonyExtensionSigns(kind: string): string {
+	return kind.replace(/b(?=\d)/g, '♭').replace(/#(?=\d)/g, '♯');
+}
+
+/*
  * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
  * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
  * exactly this (a major triad's text is empty, so it prints the bare root). A
@@ -766,7 +781,9 @@ function harmonyText(harmony: MElement): string {
 	const root = harmony.child('root');
 	const step = root?.child('root-step')?.text ?? '';
 	const alter = root?.child('root-alter')?.text ?? '';
-	const kind = harmony.child('kind')?.getAttribute('text') ?? '';
+	const kind = harmonyExtensionSigns(
+		harmony.child('kind')?.getAttribute('text') ?? '',
+	);
 	const bass = harmony.child('bass');
 	const bassStep = bass?.child('bass-step')?.text ?? '';
 	const bassAlter = bass?.child('bass-alter')?.text ?? '';
