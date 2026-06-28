@@ -91,9 +91,11 @@ export default function App() {
 	const noteSpacing = config.noteSpacing ?? 36;
 	const softmaxFactor = config.softmaxFactor ?? 10;
 	const systemSpacing = config.systemSpacing ?? 30;
+	const maxSystemFill = config.maxSystemFill ?? 0.9;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
-	const reset = (key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing') =>
-		setConfig(({ [key]: _, ...rest }) => rest);
+	const reset = (
+		key: 'noteSpacing' | 'softmaxFactor' | 'systemSpacing' | 'maxSystemFill',
+	) => setConfig(({ [key]: _, ...rest }) => rest);
 
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
 	// behind it by the debounce so dragging a slider re-renders once it settles, not on
@@ -528,6 +530,47 @@ export default function App() {
 								<p className="text-xs text-zinc-400">
 									Vertical gap between stacked systems. Lower packs systems
 									closer together down the page.
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label
+									htmlFor="maxSystemFill"
+									className="flex items-center justify-between text-xs font-medium text-zinc-500"
+								>
+									Max system fill
+									<span className="flex items-center gap-1.5">
+										<span className="font-mono text-zinc-400">
+											{maxSystemFill.toFixed(2)}
+										</span>
+										<button
+											type="button"
+											onClick={() => reset('maxSystemFill')}
+											disabled={config.maxSystemFill === undefined}
+											aria-label="Reset max system fill"
+											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+										>
+											<ResetIcon />
+										</button>
+									</span>
+								</label>
+								<input
+									id="maxSystemFill"
+									type="range"
+									min={0.1}
+									max={1}
+									step={0.05}
+									value={maxSystemFill}
+									onChange={(e) =>
+										setConfig((c) => ({
+											...c,
+											maxSystemFill: e.target.valueAsNumber,
+										}))
+									}
+								/>
+								<p className="text-xs text-zinc-400">
+									How full a system gets before the next measure wraps to a new
+									line. Lower leaves more air; 1 packs each line to the edge.
 								</p>
 							</div>
 						</div>

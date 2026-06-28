@@ -186,9 +186,12 @@ const TEST_CASES = [
 	// - M3: two double-beamed sixteenth groups then a half rest.
 	// - M4: one beat of triple-beamed 32nds then half + quarter rests.
 	// - M5: mixed eighth+sixteenth beats with partial secondary beams.
-	// - M6: a beamed eighth group spanning an internal eighth rest.
+	// - M6: a beamed eighth group spanning an internal eighth rest (rest carries a
+	//   beam marker).
 	// - M7: beamed eighths in a low range (below the middle line) so the auto stem
 	//   direction flips up.
+	// - M8: a beam run spanning an eighth rest that carries NO beam markers; the rest
+	//   sits under one continuous beam (C5-D5-rest-E5) rather than breaking it.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
@@ -359,9 +362,9 @@ const TEST_CASES = [
 	//   5/5 are omitted.
 	// - M2: a hammer-on on string 1 (fret 5 -> 7). The fret changes, so both numbers print
 	//   under one slur arc — a slur is notated where a tie is not.
-	// - M3: a lone tied note (string 1, fret 7). With no other struck string to keep the tab
-	//   note alive, the held fret can't be dropped, so fret 7 still prints on beat 2 (the
-	//   single-note fallback, see tabPositions).
+	// - M3: a lone tied note (string 1, fret 7). Every member is held, so the tab omits all
+	//   frets and leaves beat 2 blank — an invisible ghost note reserves the tick so the tab
+	//   stays aligned with the notation stave (see vexflowTabTickables).
 	testCase('tab_tie.musicxml', 'tab_tie.png'),
 
 	// 6-line TAB stave: grace notes (small fret numbers just left of their main note).
@@ -602,12 +605,15 @@ const TEST_CASES = [
 	//   eighth and the 32nds stay evenly spaced (the bar widened to hold the grace).
 	// - M7: Bb harmony; a lone F5 whole note tied into M8 — a plain narrow bar, no graces.
 	// - M8: Eb/Bb harmony; F5 quarter (tie stop) + quarter rest, then two slashed grace
-	//   chords, each just left of a quarter chord — stacked graces that get room to read.
+	//   chords, each just left of a quarter chord — stacked graces that get room to read. The
+	//   F5 tie stop is wholly held, so the tab omits its fret (beat 1 blank); only the struck
+	//   grace/quarter chords print frets.
 	// - M9: a dotted chord followed by a grace. Beat 3 is a dotted-8th chord (D4/F4/Bb4, tie
 	//   stop) whose three augmentation dots sit snug to the right of its noteheads — the grace
 	//   cluster's lead clearance is skipped for a dotted preceding note, since padding its
 	//   right would fling the dots out. The chord is flagged, not beamed (its only beam
-	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths.
+	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths. Beat 3's chord is wholly
+	//   tied, so the tab omits all three of its frets (the held beat is blank).
 	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing

@@ -389,10 +389,9 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
  *
  * A tie-stop fret is the held tail of a tie: the string isn't re-struck, so guitar tab
  * convention omits its number (unlike a slur/hammer-on/pull-off, which changes fret and
- * is drawn). Filter those out; if every member is held (vexflow needs at least one
- * position) fall back to drawing them all.
- * ponytail: a fully-held chord still shows its frets — drawing a truly empty tab slot
- * would need a ghost TabNote; not worth it until a fixture needs it.
+ * is drawn). Filter those out; a wholly-held chord never reaches here — vexflowTabTickables
+ * replaces it with a ghost note — but keep an all-members fallback so the grace path (which
+ * also calls this) can never hand vexflow an empty position list.
  */
 function tabPositions(chord: Chord) {
 	const toPosition = (note: Chord['notes'][number]) => {
@@ -585,6 +584,14 @@ export function vexflowTabTickables(
 		}
 		if (chord.lead.isGrace) {
 			pendingGrace.push({ note: vexflowTabGrace(chord), lead: chord.lead });
+			continue;
+		}
+		// A wholly tied-into (held) chord re-strikes no string, so guitar tab convention
+		// omits every fret. Reserve its time with invisible ghosts (keeping the tab aligned
+		// with the notation stave, which still draws the tied noteheads) rather than printing
+		// the held frets.
+		if (chord.notes.every(isTieStop)) {
+			tickables.push(...ghostNotes(chord.lead.beats ?? 0));
 			continue;
 		}
 		const tabNote = vexflowTabChord(chord);

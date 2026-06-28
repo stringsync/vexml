@@ -34,6 +34,8 @@ type BeamGroup = { notes: Note[]; secondaryBreaks: number[] };
  * (mdom instead drops the orphaned continue/end notes, leaving them flagged).
  * The secondary beam still breaks at those boundaries: any <beam number="2"> "end"
  * that isn't the run's last note marks where the 16th beam splits.
+ * A rest with no beam markers does NOT close the run either: it can sit under a
+ * beam, so it's skipped and the surrounding notes stay in one beam.
  */
 export function groupBeams(chords: Chord[]): BeamGroup[] {
 	const groups: BeamGroup[] = [];
@@ -51,6 +53,11 @@ export function groupBeams(chords: Chord[]): BeamGroup[] {
 			} else {
 				current.notes.push(note);
 			}
+		} else if (note.isRest) {
+			// A rest carries no beam markers but can sit *under* a beam (a "continue"
+			// run that resumes after it). Don't close the run — skip the rest so the
+			// following notes stay in the same beam, as the golden engraving shows.
+			continue;
 		} else {
 			current = null;
 			continue;
