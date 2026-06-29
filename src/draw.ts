@@ -30,6 +30,7 @@ import {
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
+	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
 	HARMONY_FONT_SIZE,
 	HARMONY_NOTE_CLEARANCE,
@@ -1429,8 +1430,9 @@ export function drawScore(
 			// close enough to overlap (especially at a narrow width). The detector pushes each
 			// box clear of any already-placed diagram in its band (replacing the old running
 			// cursor) so crowded diagrams separate instead of stacking. It also lifts each box
-			// above any words drawn in its column (the diagrams pass runs after the words pass),
-			// so a word like "(as taught)" stays at its normal spot and the box rises over it.
+			// above any notes, ties, or words in its column (the diagrams pass runs after the
+			// notes and words), so a high note or a word like "(as taught)" stays put and the
+			// box rises over it.
 			for (const h of harmonyTasks) {
 				// A <harmony> with a <frame> draws as a fret box (chord name as its title)
 				// above the stave; one without draws as the plain chord-symbol text.
@@ -1455,9 +1457,28 @@ export function drawScore(
 						'diagram',
 						CHORD_DIAGRAM_GAP,
 					);
-					const placed = detector.liftClear(spaced, CHORD_DIAGRAM_GAP, [
-						'annotation',
-					]);
+					// Pad the box below its bottom so the lift-clear probe reaches a high note
+					// (or its tie) poking up into the box's column — the same padding treatment
+					// a chord symbol uses. The box then rises off the note instead of overlapping
+					// it; with nothing in the way it keeps its default position.
+					const padded = new Rect(
+						spaced.x,
+						spaced.y,
+						spaced.w,
+						CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
+					);
+					const lifted = detector.liftClear(
+						padded,
+						CHORD_DIAGRAM_GAP,
+						TEXT_CLEAR_KINDS,
+					);
+					// Recover the real (unpadded) box; the padding only extended the probe.
+					const placed = new Rect(
+						lifted.x,
+						lifted.y,
+						CHORD_DIAGRAM_WIDTH,
+						CHORD_DIAGRAM_HEIGHT,
+					);
 					detector.add({ rect: placed, kind: 'diagram' });
 					const diagram = new ChordDiagram(placed.x, placed.y, {
 						width: CHORD_DIAGRAM_WIDTH,

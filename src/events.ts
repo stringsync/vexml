@@ -67,6 +67,16 @@ export interface PointerTargetEvent {
 	readonly native: PointerEvent;
 }
 
+/* The target under the pointer changed: entered, left, or moved between targets. `target` is null
+ * when nothing is under the pointer (empty space, or the pointer left the score); `point` is the
+ * pointer in score space, or null once the pointer is off the score. Unlike pointermove, this also
+ * fires when scrolling slides a different target under a stationary pointer — so it fires at most
+ * once per change, not once per pixel. */
+export interface HoverEvent {
+	readonly target: PointerTarget | null;
+	readonly point: { x: number; y: number } | null;
+}
+
 /* The container scrolled: its new scroll offset plus the raw event. */
 export interface ScoreScrollEvent {
 	readonly left: number;
@@ -86,6 +96,7 @@ export interface ScoreEventMap {
 	pointerdown: PointerTargetEvent;
 	pointerup: PointerTargetEvent;
 	click: PointerTargetEvent;
+	hover: HoverEvent;
 	scroll: ScoreScrollEvent;
 	resize: ScoreResizeEvent;
 }

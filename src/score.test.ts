@@ -47,6 +47,7 @@ class FakeHost implements Host {
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		return { x: clientX, y: clientY };
 	}
+	scrollListener: (() => void) | null = null;
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void {
@@ -54,6 +55,12 @@ class FakeHost implements Host {
 		return () => {
 			this.resizeUnobserved = true;
 			this.resizeListener = null;
+		};
+	}
+	observeScroll(onScroll: () => void): () => void {
+		this.scrollListener = onScroll;
+		return () => {
+			this.scrollListener = null;
 		};
 	}
 	createLayer(kind: LayerKind): Layer {
@@ -165,6 +172,31 @@ test('scroll events carry the offset and the score.scroll getter reflects the ho
 	host.events.dispatchEvent(new Event('scroll'));
 	expect(seen).toEqual([{ left: 12, top: 34 }]);
 	expect(score.scroll).toEqual({ left: 12, top: 34 });
+});
+
+test('hover fires only on target change and recomputes on scroll; unsubscribe detaches scroll', () => {
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
+	const host = new FakeHost();
+	// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
+	// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
+	let hit: PointerTarget | null = target;
+	const index: HitTester = { hitTest: () => hit };
+	const score = new Score(host, index, new Decorations(host));
+
+	const seen: Array<PointerTarget | null> = [];
+	const listener = (e: { target: PointerTarget | null }) => seen.push(e.target);
+	score.addEventListener('hover', listener);
+
+	host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5)); // enter target
+	host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
+	expect(seen).toEqual([target]);
+
+	hit = null; // scroll slid the target away
+	host.scrollListener?.();
+	expect(seen).toEqual([target, null]);
+
+	score.removeEventListener('hover', listener);
+	expect(host.scrollListener).toBeNull(); // window-scroll subscription released
 });
 
 test('resize is observed from construction and re-fits viewport layers before emitting', () => {

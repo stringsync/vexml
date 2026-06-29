@@ -37,6 +37,11 @@ export interface Host extends LayerHost {
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void;
+	/* Subscribe to any scroll that slides the score within the viewport — the container's own, or
+	 * any ancestor's (scroll doesn't bubble, so the real host listens on window in the capture
+	 * phase). Returns an unsubscribe. Drives hover: content can move under a stationary pointer with
+	 * no pointer event. */
+	observeScroll(onScroll: () => void): () => void;
 	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
 	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
 	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
@@ -172,6 +177,18 @@ export class Stage implements Viewport, Host {
 		});
 		observer.observe(this.container);
 		return () => observer.disconnect();
+	}
+
+	observeScroll(onScroll: () => void): () => void {
+		// Capture phase on window catches every scroll container (the score's own or any ancestor),
+		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
+		const handler = () => onScroll();
+		window.addEventListener('scroll', handler, {
+			capture: true,
+			passive: true,
+		});
+		return () =>
+			window.removeEventListener('scroll', handler, { capture: true });
 	}
 
 	createLayer(kind: LayerKind): Layer {

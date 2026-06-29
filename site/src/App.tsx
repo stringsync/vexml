@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
 	Config,
+	HoverEvent,
 	Note,
 	PointerTarget,
 	PointerTargetEvent,
@@ -203,7 +204,7 @@ export default function App() {
 				? renderConfig.layout.width
 				: undefined;
 		let cancelled = false;
-		// Turn off the lit halo and hide the tooltip; called on move-to-empty and on leave.
+		// Turn off the lit halo and hide the tooltip; used to reset on teardown/re-render.
 		const clearHalo = () => {
 			haloRef.current?.halo.off();
 			haloRef.current?.color.off();
@@ -228,12 +229,18 @@ export default function App() {
 				setRenderMs(renderMsRef.current);
 				setInitialized(true);
 
-				const onPointer = (e: PointerTargetEvent) => {
+				// A click/tap pins a target (toggle); hover is transient. The pinned one wins, so
+				// hovering elsewhere — or scrolling it out from under the pointer — never clears the
+				// pin. Clicking it again, or clicking empty space, unpins.
+				let pinned: PointerTarget | null = null;
+				let hovered: PointerTarget | null = null;
+				const apply = () => {
+					const target = pinned ?? hovered;
 					const note =
-						e.target?.type === 'note'
-							? e.target
-							: e.target?.type === 'tab-position'
-								? e.target.getNote()
+						target?.type === 'note'
+							? target
+							: target?.type === 'tab-position'
+								? target.getNote()
 								: null;
 					if (note !== haloRef.current) {
 						haloRef.current?.halo.off();
@@ -241,26 +248,38 @@ export default function App() {
 						note?.halo.on('rgba(255, 0, 105, 0.9)');
 						note?.color.on('#f4f800');
 						haloRef.current = note;
-						container.style.cursor = note ? 'pointer' : '';
 					}
-					if (note && e.target && showInfoRef.current) {
-						const r = e.target.getBoundingClientRect();
+					container.style.cursor = note ? 'pointer' : '';
+					// Only note-bearing targets get a tooltip; describe() is empty for a measure.
+					if (note && target && showInfoRef.current) {
+						const r = target.getBoundingClientRect();
 						setTooltip({
 							x: r.left + r.width / 2,
 							y: r.top,
-							text: describe(e.target),
+							text: describe(target),
 						});
 					} else {
 						setTooltip(null);
 					}
 				};
-				score.addEventListener('pointermove', onPointer);
-				score.addEventListener('pointerdown', onPointer);
-				container.addEventListener('pointerleave', clearHalo);
-				detach = () => {
-					container.removeEventListener('pointerleave', clearHalo);
-					clearHalo();
+				// hover fires once per target change — on move, and (unlike pointermove) when a scroll
+				// slides a different target under the pointer, so it tracks what's actually hovered.
+				const onHover = (e: HoverEvent) => {
+					hovered = e.target;
+					apply();
 				};
+				const onClick = (e: PointerTargetEvent) => {
+					// Only notes/frets are pinnable; clicking a measure or empty space unpins.
+					const t =
+						e.target?.type === 'note' || e.target?.type === 'tab-position'
+							? e.target
+							: null;
+					pinned = pinned === t ? null : t;
+					apply();
+				};
+				score.addEventListener('hover', onHover);
+				score.addEventListener('click', onClick);
+				detach = clearHalo;
 			})
 			.catch((e: unknown) => {
 				renderMsRef.current = null;

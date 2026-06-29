@@ -2,6 +2,7 @@ import type { Decorations } from './decorations';
 import { EventBus, type EventListenable, type ScoreEventMap } from './events';
 import type { HitTester } from './hit';
 import type { Host, Layer, LayerKind } from './stage';
+import type { PointerTarget } from './targets';
 
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
@@ -17,10 +18,19 @@ import type { Host, Layer, LayerKind } from './stage';
  */
 export class Score implements EventListenable<ScoreEventMap> {
 	private readonly bus = new EventBus<ScoreEventMap>();
-	// The live DOM listeners (pointer/scroll), keyed by event name so unbind can remove the exact
-	// reference. Resize isn't here — it's a ResizeObserver, set up once below.
-	private readonly bound = new Map<string, EventListener>();
+	// The live DOM listeners backing each Score event, so unbind can remove the exact references.
+	// Most events map to one DOM listener; hover maps to several (move/down/leave). Resize isn't
+	// here — it's a ResizeObserver, set up once below.
+	private readonly bound = new Map<
+		keyof ScoreEventMap,
+		Array<[string, EventListener]>
+	>();
 	private readonly unobserveResize: () => void;
+	// Hover state: the target last reported and the last pointer position (client coords) to
+	// re-hit-test on scroll. unobserveScroll is hover's window-scroll subscription.
+	private hovered: PointerTarget | null = null;
+	private lastClient: { x: number; y: number } | null = null;
+	private unobserveScroll: (() => void) | null = null;
 
 	constructor(
 		private readonly host: Host,
@@ -76,32 +86,57 @@ export class Score implements EventListenable<ScoreEventMap> {
 	}
 
 	dispose(): void {
-		for (const [type, handler] of this.bound) {
-			this.host.events.removeEventListener(type, handler);
+		for (const handlers of this.bound.values()) {
+			for (const [domType, handler] of handlers) {
+				this.host.events.removeEventListener(domType, handler);
+			}
 		}
 		this.bound.clear();
+		this.unobserveScroll?.();
+		this.unobserveScroll = null;
 		this.unobserveResize();
 		this.decorations.dispose();
 		this.host.dispose();
 	}
 
 	// Attach the underlying source for a Score event on its first subscriber. Pointer events
-	// hit-test the point under them; scroll carries the new offset; resize is already observed
-	// from construction (for the layers), so there's nothing to bind here.
+	// hit-test the point under them; scroll carries the new offset; hover tracks the target under
+	// the pointer (recomputed on move/down/leave and scroll); resize is already observed from
+	// construction (for the layers), so there's nothing to bind here.
 	private bind(type: keyof ScoreEventMap): void {
 		switch (type) {
 			case 'resize':
 				return;
 			case 'scroll': {
-				const handler: EventListener = (native) => {
+				this.listen(type, 'scroll', (native) => {
 					this.bus.emit('scroll', { ...this.host.scroll, native });
+				});
+				return;
+			}
+			case 'hover': {
+				const track: EventListener = (native) => {
+					const pointer = native as PointerEvent;
+					this.lastClient = { x: pointer.clientX, y: pointer.clientY };
+					this.recomputeHover();
 				};
-				this.bound.set(type, handler);
-				this.host.events.addEventListener(type, handler);
+				this.listen(type, 'pointermove', track);
+				this.listen(type, 'pointerdown', track);
+				// Clear on leave and on cancel: a touch pointer ceases to exist on lift (pointerleave
+				// follows pointerup) or when the UA steals the gesture to scroll (pointercancel) — drop
+				// the stale position so a momentum-scroll recompute doesn't relight a phantom target.
+				const clear: EventListener = () => {
+					this.lastClient = null;
+					this.recomputeHover();
+				};
+				this.listen(type, 'pointerleave', clear);
+				this.listen(type, 'pointercancel', clear);
+				this.unobserveScroll = this.host.observeScroll(() =>
+					this.recomputeHover(),
+				);
 				return;
 			}
 			default: {
-				const handler: EventListener = (native) => {
+				this.listen(type, type, (native) => {
 					const pointer = native as PointerEvent;
 					const point = this.host.toScoreSpace(
 						pointer.clientX,
@@ -112,9 +147,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 						point,
 						native: pointer,
 					});
-				};
-				this.bound.set(type, handler);
-				this.host.events.addEventListener(type, handler);
+				});
 			}
 		}
 	}
@@ -125,10 +158,43 @@ export class Score implements EventListenable<ScoreEventMap> {
 		if (type === 'resize') {
 			return;
 		}
-		const handler = this.bound.get(type);
-		if (handler) {
-			this.host.events.removeEventListener(type, handler);
+		const handlers = this.bound.get(type);
+		if (handlers) {
+			for (const [domType, handler] of handlers) {
+				this.host.events.removeEventListener(domType, handler);
+			}
 			this.bound.delete(type);
+		}
+		if (type === 'hover') {
+			this.unobserveScroll?.();
+			this.unobserveScroll = null;
+			this.hovered = null;
+			this.lastClient = null;
+		}
+	}
+
+	// Bind a DOM listener for a Score event and record it for later removal.
+	private listen(
+		type: keyof ScoreEventMap,
+		domType: string,
+		handler: EventListener,
+	): void {
+		this.host.events.addEventListener(domType, handler);
+		const handlers = this.bound.get(type) ?? [];
+		handlers.push([domType, handler]);
+		this.bound.set(type, handlers);
+	}
+
+	// Re-hit-test the last pointer position and emit hover only when the target changes — so a
+	// scroll or a move within the same target stays quiet, but sliding onto/off a target fires.
+	private recomputeHover(): void {
+		const point = this.lastClient
+			? this.host.toScoreSpace(this.lastClient.x, this.lastClient.y)
+			: null;
+		const target = point ? this.index.hitTest(point) : null;
+		if (target !== this.hovered) {
+			this.hovered = target;
+			this.bus.emit('hover', { target, point });
 		}
 	}
 }

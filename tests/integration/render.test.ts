@@ -611,6 +611,9 @@ const TEST_CASES = [
 	//   rising, not by overlapping).
 	// - M11: same Bm7 box but with a high D5/F♯5 chord on beat 1 that pushes the "(as taught)"
 	//   text up — the box lifts further so it still clears the raised word.
+	// - M12: same Bm7 box over four C6 quarters (two ledger lines above the staff) — the box
+	//   lifts until it clears the high noteheads/ledger lines, using the same padded
+	//   lift-clear treatment a chord symbol uses, instead of overlapping them.
 	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
 
 	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a

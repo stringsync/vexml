@@ -143,6 +143,12 @@ export const CHORD_DIAGRAM_HEIGHT = 84;
 /** Gap kept between the bottom of a chord diagram and the top staff line. */
 export const CHORD_DIAGRAM_GAP = 6;
 
+/** Padding added below a chord diagram's collision box (which sits CHORD_DIAGRAM_GAP above
+ * the top staff line). Lets the lift-clear probe reach a note sitting in the top stave space
+ * — just under the box — so the box rises off it instead of overlapping, the same padding
+ * treatment a chord symbol's box uses (see HARMONY_PADDING). */
+export const CHORD_DIAGRAM_PADDING = 15;
+
 /** Words-direction (e.g. "ritardando") text size — matches the chord-symbol size so
  * both read as annotations above the notes. */
 export const WORDS_FONT_SIZE = 13;
