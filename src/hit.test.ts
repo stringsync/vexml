@@ -68,6 +68,7 @@ function build() {
 			chord: [mC, mE],
 			measureIndex: 0,
 			tab: null,
+			glyph: null,
 		},
 		{
 			mnote: mE,
@@ -75,6 +76,7 @@ function build() {
 			chord: [mC, mE],
 			measureIndex: 0,
 			tab: null,
+			glyph: null,
 		},
 		{
 			mnote: mBb,
@@ -82,6 +84,7 @@ function build() {
 			chord: [mBb],
 			measureIndex: 0,
 			tab: { string: 2, fret: 3 },
+			glyph: null,
 		},
 	];
 	const geometry: RawGeometry = {

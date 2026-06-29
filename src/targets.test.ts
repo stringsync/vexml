@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from './geometry';
 import {
-	type Bounded,
+	type Decoratable,
 	type Decorator,
 	Measure,
 	Note,
@@ -33,26 +33,26 @@ class FakeViewport implements Viewport {
 }
 
 class FakeDecorator implements Decorator {
-	readonly colors = new Map<Bounded, string>();
-	readonly halos = new Set<Bounded>();
-	setColor(target: Bounded, color: string | null): void {
+	readonly colors = new Map<Decoratable, string>();
+	readonly halos = new Set<Decoratable>();
+	setColor(target: Decoratable, color: string | null): void {
 		if (color === null) {
 			this.colors.delete(target);
 		} else {
 			this.colors.set(target, color);
 		}
 	}
-	setHalo(target: Bounded, on: boolean): void {
+	setHalo(target: Decoratable, on: boolean): void {
 		if (on) {
 			this.halos.add(target);
 		} else {
 			this.halos.delete(target);
 		}
 	}
-	isColored(target: Bounded): boolean {
+	isColored(target: Decoratable): boolean {
 		return this.colors.has(target);
 	}
-	isHaloed(target: Bounded): boolean {
+	isHaloed(target: Decoratable): boolean {
 		return this.halos.has(target);
 	}
 }
@@ -105,6 +105,7 @@ function fixture() {
 			chord,
 			notes: notesByMnote,
 			tabs: tabsByMnote,
+			glyph: null,
 		});
 		notesByMnote.set(mnote, note);
 		return note;

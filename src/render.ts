@@ -66,9 +66,9 @@ export async function render(
 			: EMPTY_GEOMETRY;
 
 	// The stage is the Viewport (score<->client transform) the targets map through, and the
-	// decorations are the Decorator their color/halo toggles delegate to. Both feed buildTargets,
-	// which links the targets and indexes them for hit-testing.
-	const decorations = new Decorations();
+	// decorations are the Decorator their color/halo toggles delegate to (drawing on a content
+	// layer the stage hands them). Both feed buildTargets, which links the targets and indexes them.
+	const decorations = new Decorations(stage);
 	const index = buildTargets(geometry, stage, decorations);
 	return new Score(stage, index, decorations);
 }

@@ -3,10 +3,36 @@ import { Decorations } from './decorations';
 import { Rect } from './geometry';
 import type { HitTester } from './hit';
 import { Score } from './score';
-import type { Host } from './stage';
+import type { Host, Layer, LayerKind } from './stage';
 import { Measure, type PointerTarget, type Viewport } from './targets';
 
 // Separate fake classes fulfilling the injected seams (preferred over mocks).
+
+// A no-op 2D context: the real Decorations draws on the layer it gets from the host, so the fake
+// layer's context must absorb those calls. (What's painted is asserted in decorations.test.ts.)
+function noopContext(): CanvasRenderingContext2D {
+	return {
+		canvas: { width: 0, height: 0 },
+		fillStyle: '',
+		save() {},
+		restore() {},
+		setTransform() {},
+		clearRect() {},
+		beginPath() {},
+		ellipse() {},
+		arc() {},
+		fill() {},
+	} as unknown as CanvasRenderingContext2D;
+}
+
+class FakeLayer implements Layer {
+	disposed = false;
+	readonly ctx = noopContext();
+	constructor(readonly kind: LayerKind) {}
+	dispose(): void {
+		this.disposed = true;
+	}
+}
 
 class FakeHost implements Host {
 	readonly events = new EventTarget();
@@ -15,6 +41,8 @@ class FakeHost implements Host {
 		null;
 	resizeUnobserved = false;
 	disposed = false;
+	resizeViewportLayersCalls = 0;
+	readonly created: FakeLayer[] = [];
 	// Identity transform: client coords are score coords, so tests assert on the input directly.
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		return { x: clientX, y: clientY };
@@ -27,6 +55,14 @@ class FakeHost implements Host {
 			this.resizeUnobserved = true;
 			this.resizeListener = null;
 		};
+	}
+	createLayer(kind: LayerKind): Layer {
+		const layer = new FakeLayer(kind);
+		this.created.push(layer);
+		return layer;
+	}
+	resizeViewportLayers(): void {
+		this.resizeViewportLayersCalls++;
 	}
 	dispose(): void {
 		this.disposed = true;
@@ -62,7 +98,7 @@ const viewport: Viewport = {
 function fixture(target: PointerTarget | null) {
 	const host = new FakeHost();
 	const index = new FakeHitTester(target);
-	const decorations = new Decorations();
+	const decorations = new Decorations(host);
 	const score = new Score(host, index, decorations);
 	return { host, index, decorations, score };
 }
@@ -131,21 +167,31 @@ test('scroll events carry the offset and the score.scroll getter reflects the ho
 	expect(score.scroll).toEqual({ left: 12, top: 34 });
 });
 
-test('resize subscribes through observeResize and unsubscribes on the last removal', () => {
+test('resize is observed from construction and re-fits viewport layers before emitting', () => {
 	const { host, score } = fixture(null);
-	const seen: Array<{ width: number; height: number }> = [];
-	const a = (_e: { width: number; height: number }) => {};
-	const b = (e: { width: number; height: number }) => seen.push(e);
-	score.addEventListener('resize', a);
-	score.addEventListener('resize', b);
+	// Observed eagerly (it also drives viewport-layer sizing), not lazily on first subscriber.
 	expect(host.resizeListener).not.toBeNull();
-	host.resizeListener?.({ width: 100, height: 50 });
-	expect(seen).toEqual([{ width: 100, height: 50 }]);
 
-	score.removeEventListener('resize', a);
-	expect(host.resizeUnobserved).toBe(false); // b still subscribed
-	score.removeEventListener('resize', b);
-	expect(host.resizeUnobserved).toBe(true); // last one gone -> ResizeObserver disconnected
+	const seen: Array<{ width: number; height: number }> = [];
+	let layersResizedAtEmit = -1;
+	score.addEventListener('resize', (e) => {
+		layersResizedAtEmit = host.resizeViewportLayersCalls;
+		seen.push({ width: e.width, height: e.height });
+	});
+	host.resizeListener?.({ width: 100, height: 50 });
+
+	expect(seen).toEqual([{ width: 100, height: 50 }]);
+	// Layers were re-fit (and cleared) before the caller's handler ran, so its redraw lands clean.
+	expect(layersResizedAtEmit).toBe(1);
+});
+
+test('addLayer delegates to the host; removeLayer disposes the layer', () => {
+	const { host, score } = fixture(null);
+	const layer = score.addLayer('content');
+	expect(host.created).toHaveLength(1);
+	expect(host.created[0]).toBe(layer as FakeLayer);
+	score.removeLayer(layer);
+	expect(host.created[0]?.disposed).toBe(true);
 });
 
 test('dispose detaches every listener and tears down decorations and host', () => {

@@ -37,7 +37,7 @@ toggles), and add their own drawing layers. Callers are coupled **only** to vexm
       (`Stage.frame()` is the only place the transform is read).
 - [x] Anything a caller uses is exported from `src/index.ts` (`render`, `Score`, `Rect`, `Bounded`,
       `Toggle`, `Note`, `Measure`, `TabPosition`, `PointerTarget`).
-- [x] `vex fix` and `vex test` pass (Phase 4: 144 pass / 0 fail, **no screenshot changes**).
+- [x] `vex fix` and `vex test` pass (Phase 6: 155 pass / 0 fail; 2 decoration baselines added).
 
 ## Testing approach (per the Java-y DI request)
 
@@ -125,22 +125,48 @@ coordinate transform. Fakes live beside the tests that use them.
 > in the preloaded `setup.ts` as a single shared instance (`testBrowser()` / `testServer()` /
 > `TEST_URL`), launched once and closed once. `harness.ts` and the events smoke test both reuse it.
 
-## Phase 5 — Layers (public)
+## Phase 5 — Layers (public) ✅ DONE
 
-- [ ] `addLayer('viewport' | 'content')` / `removeLayer` / `layer.dispose()`
-- [ ] sizing policy per kind; resize -> resize+clear+dispatch contract
-- [ ] Tests: dimensions per kind; resize fires
+- [x] `Stage.createLayer` (deferred from Phase 3): dpr-scaled absolute overlay canvas, `Layer`
+      ({ ctx, dispose }) + `LayerKind`; `pointer-events: none` so layers never capture input
+      (the Score hit-tests centrally), aligned to the base canvas via its offset
+- [x] `Score.addLayer('content' | 'viewport')` / `removeLayer` / `layer.dispose()`
+- [x] sizing policy per kind: content = base canvas (score space), viewport = container visible box
+- [x] resize -> re-fit (clear) viewport layers **then** dispatch `resize`, so the caller's redraw
+      lands on a correctly sized, cleared surface; content layers are fixed (engraved once)
+- [x] `index.ts` exports `Layer`, `LayerKind`
+- [x] Tests: `Score.addLayer`/`removeLayer` delegation + resize-before-emit ordering (score.test.ts,
+      with `FakeHost`/`FakeLayer`); browser test — content vs base size, viewport vs visible box,
+      resize re-fits the viewport layer (tests/integration/layers.test.ts)
 
-## Phase 6 — Decorations + toggles live (`decorations.ts`)
+> **Plan refinements made here:**
+> - Resize observation is now **always-on** (set up in the Score constructor), not lazy as in
+>   Phase 4 — it has to drive viewport-layer sizing even with no `resize` subscriber. Pointer/scroll
+>   stay lazy (the frequent, hit-testing ones). The Phase 4 lazy-resize unit test was updated to
+>   match.
+> - Viewport layers are positioned at the content origin (absolute). Scroll-**following** (staying
+>   fixed in view as content scrolls) is deferred until an overflow/scroll container is actually
+>   wired — the container has no `overflow` yet, so it doesn't manifest.
 
-`decorations.ts` already exists from Phase 4 as the state-only `Decorations implements Decorator`
-(color/halo Maps + `dispose`). Phase 6 adds the drawing:
+## Phase 6 — Decorations + toggles live (`decorations.ts`) ✅ DONE
 
-- [ ] give `Decorations` an internal `content` layer (needs Stage `createLayer` — deferred from
-      Phase 3) and repaint from the retained active-set (halo under color)
-- [ ] `Note.color` / `Note.halo` already delegate here (Phase 1) — verify they paint end to end
-- [ ] Unit tests with a recording 2D context (clear+redraw, `off()` removes)
-- [ ] integration screenshots: a colored note, a halo
+`decorations.ts` existed from Phase 4 as the state-only `Decorations implements Decorator`. Phase 6
+added the drawing:
+
+- [x] `Decorations` lazily creates an internal `content` layer (via a `LayerHost` seam — `Stage`,
+      now that `createLayer` exists) and repaints the whole overlay from the retained active set on
+      every change (halos under colors). Repaint-the-lot is the answer to "how does `off()` work
+      without disturbing neighbors": clearing one rect could wipe an overlapping decoration.
+- [x] color = a filled ellipse over the notehead box in the caller's color; halo = a soft
+      semi-transparent circle centered on the notehead (the halo toggle is argument-less, fixed look)
+- [x] **notehead geometry fix**: the hit box now uses the glyph's true x-span
+      (`getNoteHeadBeginX/EndX`), not `getAbsoluteX()` (the tick anchor, left of the notehead) — so
+      decorations land *on* the note (color) and *evenly around* it (halo), not offset
+- [x] `Note.color` / `Note.halo` delegate here (Phase 1); verified end to end in the browser
+- [x] Unit tests with a recording 2D context: lazy layer, clear-then-redraw, halo-under-color,
+      `off()` removes, dispose (decorations.test.ts, 7)
+- [x] integration screenshots: a colored note, a halo (tests/integration/decorations.test.ts) —
+      driven through the real hover -> hit-test -> toggle flow
 
 ---
 

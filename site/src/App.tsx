@@ -1,6 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Config } from '../../src';
+import type {
+	Config,
+	Note,
+	PointerTarget,
+	PointerTargetEvent,
+} from '../../src';
 import { render, type Score } from '../../src';
+
+// One-line summary of the hovered target for the tooltip.
+function describe(target: PointerTarget): string {
+	if (target.type === 'note') {
+		const beats = target.getBeats();
+		const parts = [
+			target.getPitch() ?? 'rest',
+			`${beats} beat${beats === 1 ? '' : 's'}`,
+		];
+		if (target.isGrace()) {
+			parts.push('grace');
+		}
+		if (target.isChordMember()) {
+			parts.push('chord');
+		}
+		return parts.join(' · ');
+	}
+	if (target.type === 'tab-position') {
+		return `string ${target.getString()} · fret ${target.getFret()} · ${target.getNote().getPitch() ?? 'rest'}`;
+	}
+	return '';
+}
 
 // Vite reads the test fixtures straight from ../tests at build time (fs.allow: ['..'] in
 // vite.config permits it) and hands us the file list — no symlink or hand-written manifest.
@@ -84,6 +111,17 @@ export default function App() {
 	);
 	const [cleared, setCleared] = useState(false);
 	const [restored, setRestored] = useState(false);
+	const [showInfo, setShowInfo] = useState(true);
+	const [tooltip, setTooltip] = useState<{
+		x: number;
+		y: number;
+		text: string;
+	} | null>(null);
+	// Read live inside the pointer handler so toggling the checkbox doesn't re-subscribe.
+	const showInfoRef = useRef(showInfo);
+	showInfoRef.current = showInfo;
+	// The note whose halo is currently lit, so the next move can turn it back off.
+	const haloRef = useRef<Note | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
@@ -158,6 +196,13 @@ export default function App() {
 				? renderConfig.layout.width
 				: undefined;
 		let cancelled = false;
+		// Turn off the lit halo and hide the tooltip; called on move-to-empty and on leave.
+		const clearHalo = () => {
+			haloRef.current?.halo.off();
+			haloRef.current = null;
+			setTooltip(null);
+		};
+		let detach: (() => void) | undefined;
 		render(input, container, {
 			...renderConfig,
 			layout: { type: 'standard', width: layoutWidth },
@@ -171,6 +216,37 @@ export default function App() {
 				}
 				scoreRef.current = score;
 				setRenderMs(performance.now() - start);
+
+				const onPointer = (e: PointerTargetEvent) => {
+					const note =
+						e.target?.type === 'note'
+							? e.target
+							: e.target?.type === 'tab-position'
+								? e.target.getNote()
+								: null;
+					if (note !== haloRef.current) {
+						haloRef.current?.halo.off();
+						note?.halo.on();
+						haloRef.current = note;
+					}
+					if (note && e.target && showInfoRef.current) {
+						const r = e.target.getBoundingClientRect();
+						setTooltip({
+							x: r.left + r.width / 2,
+							y: r.top,
+							text: describe(e.target),
+						});
+					} else {
+						setTooltip(null);
+					}
+				};
+				score.addEventListener('pointermove', onPointer);
+				score.addEventListener('pointerdown', onPointer);
+				container.addEventListener('pointerleave', clearHalo);
+				detach = () => {
+					container.removeEventListener('pointerleave', clearHalo);
+					clearHalo();
+				};
 			})
 			.catch((e: unknown) => {
 				setRenderMs(null);
@@ -178,6 +254,8 @@ export default function App() {
 			});
 		return () => {
 			cancelled = true;
+			// score.dispose() drops its own listeners; this only unbinds the DOM-level leave handler.
+			detach?.();
 			scoreRef.current?.dispose();
 			scoreRef.current = null;
 		};
@@ -441,6 +519,23 @@ export default function App() {
 									onChange={(e) => setDark(e.target.checked)}
 								/>
 								Dark mode
+							</label>
+							<label
+								htmlFor="showInfo"
+								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+							>
+								<input
+									id="showInfo"
+									type="checkbox"
+									checked={showInfo}
+									onChange={(e) => {
+										setShowInfo(e.target.checked);
+										if (!e.target.checked) {
+											setTooltip(null);
+										}
+									}}
+								/>
+								Show note info on hover
 							</label>
 							<div className="flex flex-col gap-1.5">
 								<label
@@ -737,6 +832,15 @@ export default function App() {
 					</div>
 				</section>
 			</main>
+
+			{tooltip && (
+				<div
+					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full rounded bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+					style={{ left: tooltip.x, top: tooltip.y - 8 }}
+				>
+					{tooltip.text}
+				</div>
+			)}
 		</div>
 	);
 }

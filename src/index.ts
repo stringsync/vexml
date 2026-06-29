@@ -18,10 +18,12 @@ export { Rect } from './geometry';
 export type { Layout, MeasureNumbering } from './layout';
 export * from './render';
 export { Score } from './score';
+export type { Layer, LayerKind } from './stage';
 export {
 	type Bounded,
 	Measure,
 	Note,
+	type NoteGlyph,
 	type PointerTarget,
 	TabPosition,
 	type Toggle,

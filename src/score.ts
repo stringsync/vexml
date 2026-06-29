@@ -1,34 +1,55 @@
 import type { Decorations } from './decorations';
 import { EventBus, type EventListenable, type ScoreEventMap } from './events';
 import type { HitTester } from './hit';
-import type { Host } from './stage';
+import type { Host, Layer, LayerKind } from './stage';
 
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
- * lets callers subscribe to pointer/scroll/resize events through the EventListenable interface;
- * pointer events are hit-tested against the index to the target under the pointer. dispose()
- * tears the whole thing down so a caller can re-render or unmount cleanly.
+ * lets callers subscribe to pointer/scroll/resize events through the EventListenable interface,
+ * and stack their own drawing layers over the score. Pointer events are hit-tested against the
+ * index to the target under the pointer. dispose() tears the whole thing down so a caller can
+ * re-render or unmount cleanly.
  *
- * DOM listeners are bound lazily: the underlying source is attached only while at least one
- * caller is subscribed to that event, so an unobserved score does no per-pointer hit-testing.
+ * Pointer/scroll DOM listeners are bound lazily: the underlying source is attached only while at
+ * least one caller is subscribed, so an unobserved score does no per-pointer hit-testing. Resize
+ * is observed from construction instead — it also resizes viewport layers, which must happen even
+ * with no resize subscriber.
  */
 export class Score implements EventListenable<ScoreEventMap> {
 	private readonly bus = new EventBus<ScoreEventMap>();
 	// The live DOM listeners (pointer/scroll), keyed by event name so unbind can remove the exact
-	// reference. Resize isn't here — it's a ResizeObserver, torn down via unobserveResize.
+	// reference. Resize isn't here — it's a ResizeObserver, set up once below.
 	private readonly bound = new Map<string, EventListener>();
-	private unobserveResize: (() => void) | null = null;
+	private readonly unobserveResize: () => void;
 
 	constructor(
 		private readonly host: Host,
 		private readonly index: HitTester,
 		private readonly decorations: Decorations,
-	) {}
+	) {
+		// On resize: re-fit the viewport layers (clearing them) before telling the caller, so their
+		// redraw in the resize handler lands on correctly sized, cleared surfaces.
+		this.unobserveResize = host.observeResize((size) => {
+			host.resizeViewportLayers();
+			this.bus.emit('resize', size);
+		});
+	}
 
 	/* The container's current scroll offset (score space and client space differ only by it and
 	 * any zoom — getBoundingClientRect already folds scroll into hit-testing). */
 	get scroll(): { left: number; top: number } {
 		return this.host.scroll;
+	}
+
+	/* Add a caller-owned drawing layer over the score; returns it for drawing (via ctx) and removal
+	 * (via dispose, or removeLayer). A content layer spans the engraved score; a viewport layer
+	 * spans the visible box and is re-fit on resize. */
+	addLayer(kind: LayerKind): Layer {
+		return this.host.createLayer(kind);
+	}
+
+	removeLayer(layer: Layer): void {
+		layer.dispose();
 	}
 
 	addEventListener<K extends keyof ScoreEventMap>(
@@ -57,23 +78,18 @@ export class Score implements EventListenable<ScoreEventMap> {
 			this.host.events.removeEventListener(type, handler);
 		}
 		this.bound.clear();
-		this.unobserveResize?.();
-		this.unobserveResize = null;
+		this.unobserveResize();
 		this.decorations.dispose();
 		this.host.dispose();
 	}
 
-	// Attach the underlying source for a Score event on its first subscriber. Resize is a
-	// ResizeObserver; everything else is a DOM listener on the host's event source. Pointer
-	// events hit-test the point under them; scroll carries the new offset.
+	// Attach the underlying source for a Score event on its first subscriber. Pointer events
+	// hit-test the point under them; scroll carries the new offset; resize is already observed
+	// from construction (for the layers), so there's nothing to bind here.
 	private bind(type: keyof ScoreEventMap): void {
 		switch (type) {
-			case 'resize': {
-				this.unobserveResize = this.host.observeResize((size) =>
-					this.bus.emit('resize', size),
-				);
+			case 'resize':
 				return;
-			}
 			case 'scroll': {
 				const handler: EventListener = (native) => {
 					this.bus.emit('scroll', { ...this.host.scroll, native });
@@ -101,11 +117,10 @@ export class Score implements EventListenable<ScoreEventMap> {
 		}
 	}
 
-	// Detach the underlying source when the last subscriber for a Score event leaves.
+	// Detach the underlying source when the last subscriber for a Score event leaves. Resize stays
+	// observed (it serves the layers), so it's a no-op here.
 	private unbind(type: keyof ScoreEventMap): void {
 		if (type === 'resize') {
-			this.unobserveResize?.();
-			this.unobserveResize = null;
 			return;
 		}
 		const handler = this.bound.get(type);

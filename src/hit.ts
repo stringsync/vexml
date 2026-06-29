@@ -5,6 +5,7 @@ import {
 	type Decorator,
 	Measure,
 	Note,
+	type NoteGlyph,
 	type PointerTarget,
 	TabPosition,
 	type Viewport,
@@ -26,6 +27,8 @@ export interface RawNote {
 	chord: MNote[];
 	measureIndex: number;
 	tab: { string: number; fret: number } | null;
+	/* The engraved notehead glyph (for recoloring); null for a tab fret or a rest. */
+	glyph: NoteGlyph | null;
 }
 
 export interface RawMeasure {
@@ -113,6 +116,7 @@ export function buildTargets(
 				chord: rn.chord,
 				notes: noteByMnote,
 				tabs: tabByMnote,
+				glyph: rn.glyph,
 			}),
 		);
 	}

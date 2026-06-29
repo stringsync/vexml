@@ -15,6 +15,23 @@ export interface Bounded {
 	getBoundingClientRect(): DOMRect;
 }
 
+/* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
+ * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
+ * Replaying vexflow's own fillText reproduces the notehead precisely — hollow notes stay hollow. */
+export interface NoteGlyph {
+	readonly text: string;
+	readonly font: string;
+	readonly x: number;
+	readonly y: number;
+}
+
+/* What a decoration paints: a target's box (for the halo) and its glyph (to recolor the notehead),
+ * the glyph being null when there is none (a measure, a rest). The decoration seam operates on
+ * this rather than bare Bounded so it can stamp the actual notehead glyph. */
+export interface Decoratable extends Bounded {
+	readonly glyph: NoteGlyph | null;
+}
+
 /* A reversible on/off effect carrying an optional value (color string, etc.). `off()` is the
  * whole undo — these are view state, not document edits, so there is no history. */
 export interface Toggle<T = void> {
@@ -41,10 +58,10 @@ export type DecorationKind = 'color' | 'halo';
  * overlay layer, repaints from the active set). Tests: a FakeDecorator that records state.
  */
 export interface Decorator {
-	setColor(target: Bounded, color: string | null): void;
-	setHalo(target: Bounded, on: boolean): void;
-	isColored(target: Bounded): boolean;
-	isHaloed(target: Bounded): boolean;
+	setColor(target: Decoratable, color: string | null): void;
+	setHalo(target: Decoratable, on: boolean): void;
+	isColored(target: Decoratable): boolean;
+	isHaloed(target: Decoratable): boolean;
 }
 
 /*
@@ -63,7 +80,7 @@ export interface TabLookup {
 /* The color decoration as an on/off toggle, delegating to the Decorator. */
 class ColorToggle implements Toggle<string> {
 	constructor(
-		private readonly target: Bounded,
+		private readonly target: Decoratable,
 		private readonly decorator: Decorator,
 	) {}
 	on(color: string): void {
@@ -80,7 +97,7 @@ class ColorToggle implements Toggle<string> {
 /* The halo decoration as an on/off toggle, delegating to the Decorator. */
 class HaloToggle implements Toggle {
 	constructor(
-		private readonly target: Bounded,
+		private readonly target: Decoratable,
 		private readonly decorator: Decorator,
 	) {}
 	on(): void {
@@ -94,12 +111,16 @@ class HaloToggle implements Toggle {
 	}
 }
 
-/* Shared base for every target: holds the score-space rect and maps it to the page on demand. */
-abstract class BoundedTarget implements Bounded {
+/* Shared base for every target: holds the score-space rect and maps it to the page on demand.
+ * Decoratable with no glyph by default; Note overrides glyph with its notehead stamp. */
+abstract class BoundedTarget implements Decoratable {
 	constructor(
 		readonly rect: Rect,
 		protected readonly viewport: Viewport,
 	) {}
+	get glyph(): NoteGlyph | null {
+		return null;
+	}
 	getBoundingClientRect(): DOMRect {
 		return this.viewport.clientRectOf(this.rect);
 	}
@@ -129,6 +150,8 @@ export interface NoteDeps {
 	/* Resolves chord members to their Notes, and this note's mnote to its tab fret rendering. */
 	notes: NoteLookup;
 	tabs: TabLookup;
+	/* The engraved notehead glyph, for recoloring; null for a rest (no notehead). */
+	glyph: NoteGlyph | null;
 }
 
 /* A single musical note (one notehead). The unit of selection, playback, and editing. */
@@ -141,6 +164,11 @@ export class Note extends BoundedTarget {
 		super(deps.rect, deps.viewport);
 		this.color = new ColorToggle(this, deps.decorator);
 		this.halo = new HaloToggle(this, deps.decorator);
+	}
+
+	/* The engraved notehead glyph (for recoloring), or null for a rest. */
+	override get glyph(): NoteGlyph | null {
+		return this.deps.glyph;
 	}
 
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */

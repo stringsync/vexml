@@ -806,9 +806,9 @@ function showsMeasureNumber(
 	}
 }
 
-// Approximate half-extents (CSS px) for the hit-index boxes. The notehead/fret glyphs aren't
-// measured exactly here — a box centered on the laid-out position is enough to pick a target;
-// decoration drawing refines the exact shape later. Notehead width comes from getNoteheadHalfWidth.
+// Half-heights (CSS px) for the hit-index boxes. A notehead's x-span is measured exactly (from
+// getNoteHeadBeginX/EndX) so decorations land on the glyph; its height and the fret box are
+// approximated to ~one notehead — enough to pick a target and to draw a centered color/halo.
 const NOTEHEAD_HALF_H = 5;
 const FRET_HALF_W = 6;
 const FRET_HALF_H = 7;
@@ -1307,30 +1307,52 @@ export function drawScore(
 								chord: chord.notes,
 								measureIndex: m,
 								tab: { string, fret },
+								glyph: null,
 							});
 						}
 					}
 				} else {
-					const hw = getNoteheadHalfWidth();
 					for (const { note, chord } of p.noteChords) {
-						const x = note.getAbsoluteX();
+						// The notehead glyph's true x-span (getAbsoluteX is the tick anchor, left of
+						// the notehead — centering on it puts decorations off the note). y per
+						// notehead comes from getYs; noteHeads is indexed in the same (chord.notes)
+						// order, so heads[i] is this note's glyph.
+						const headX = note.getNoteHeadBeginX();
+						const headWidth = note.getNoteHeadEndX() - headX;
 						const ys = note.getYs();
+						const heads = note.noteHeads;
 						chord.notes.forEach((mnote, i) => {
 							const y = ys[i];
 							if (y === undefined) {
 								return;
 							}
+							// Capture the exact stamp vexflow drew (text + font + baseline) so a
+							// decoration can replay it in color — see Decorations. Scratch space; the
+							// caller shifts y by cropTop into score space alongside the rect. Read x
+							// from the bounding box (this.x + xShift), not getX(): a NoteHead borrows
+							// its StaveNote's tick context, so the inherited Tickable.getX() throws.
+							// The baseline y is the notehead's staff y (ys[i]); noteheads carry no yShift.
+							const head = heads[i];
+							const glyph = head
+								? {
+										text: head.getText(),
+										font: head.getFont(),
+										x: head.getBoundingBox().getX(),
+										y,
+									}
+								: null;
 							rawNotes.push({
 								mnote,
 								rect: new Rect(
-									x - hw,
+									headX,
 									y - NOTEHEAD_HALF_H,
-									2 * hw,
+									headWidth,
 									2 * NOTEHEAD_HALF_H,
 								),
 								chord: chord.notes,
 								measureIndex: m,
 								tab: null,
+								glyph,
 							});
 						});
 					}
@@ -1572,9 +1594,15 @@ export function drawScore(
 	// translate every box into final score space (the canvas's own coordinates). dpr stays out —
 	// these are CSS px, like getAbsoluteX/getYs.
 	const toScore = (r: Rect) => r.translate(0, -cropTop);
+	const toScoreGlyph = (g: RawNote['glyph']) =>
+		g ? { ...g, y: g.y - cropTop } : null;
 	return {
 		bounds: new Rect(0, 0, width, cssHeight),
-		notes: pass.rawNotes.map((n) => ({ ...n, rect: toScore(n.rect) })),
+		notes: pass.rawNotes.map((n) => ({
+			...n,
+			rect: toScore(n.rect),
+			glyph: toScoreGlyph(n.glyph),
+		})),
 		measures: pass.rawMeasures.map((mm) => ({ ...mm, rect: toScore(mm.rect) })),
 	};
 }
