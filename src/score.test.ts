@@ -28,7 +28,10 @@ function noopContext(): CanvasRenderingContext2D {
 class FakeLayer implements Layer {
 	disposed = false;
 	readonly ctx = noopContext();
-	constructor(readonly kind: LayerKind) {}
+	constructor(
+		readonly kind: LayerKind,
+		readonly zIndex?: number,
+	) {}
 	dispose(): void {
 		this.disposed = true;
 	}
@@ -63,8 +66,8 @@ class FakeHost implements Host {
 			this.scrollListener = null;
 		};
 	}
-	createLayer(kind: LayerKind): Layer {
-		const layer = new FakeLayer(kind);
+	createLayer(kind: LayerKind, zIndex?: number): Layer {
+		const layer = new FakeLayer(kind, zIndex);
 		this.created.push(layer);
 		return layer;
 	}
@@ -224,6 +227,14 @@ test('addLayer delegates to the host; removeLayer disposes the layer', () => {
 	expect(host.created[0]).toBe(layer as FakeLayer);
 	score.removeLayer(layer);
 	expect(host.created[0]?.disposed).toBe(true);
+});
+
+test('addLayer forwards zIndex to the host and rejects non-integers', () => {
+	const { host, score } = fixture(null);
+	score.addLayer('content', -2);
+	expect(host.created[0]?.zIndex).toBe(-2);
+	expect(() => score.addLayer('content', 1.5)).toThrow();
+	expect(() => score.addLayer('content', Number.NaN)).toThrow();
 });
 
 test('dispose detaches every listener and tears down decorations and host', () => {

@@ -63,14 +63,22 @@ await render(musicXML, element, {
 
 ## Adding a canvas layer
 
+A layer is a `<canvas>` that you can draw arbitrary content on without affecting the sheet music. vexml controls its size and position.
+
 ```ts
 const score = await render(musicXML, element);
 
-const layer = score.createLayer('content');
-// ctx is a standard CanvasRenderingContext2D, you can draw anything you want here
-layer.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-layer.ctx.fillRect(50, 50, 100, 80);
+const background = score.addLayer('content', -1); // draws behind the score
+// ctx is a standard CanvasRenderingContext2D
+background.ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+background.ctx.fillRect(50, 50, 100, 80);
+
+const foreground = score.addLayer('content', 1); // draws in front of the score
+foreground.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+foreground.ctx.fillRect(50, 50, 100, 80);
 ```
+
+Pass an optional `zIndex` to order a layer relative to the canvas the score is drawn on, which sits at `zIndex` 0. A positive value draws in front; a negative value draws behind, showing through the score's transparent pixels. Layers with the same `zIndex` stack in the order they were created.
 
 ## Cleaning up
 

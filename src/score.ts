@@ -54,9 +54,17 @@ export class Score implements EventListenable<ScoreEventMap> {
 
 	/* Add a caller-owned drawing layer over the score; returns it for drawing (via ctx) and removal
 	 * (via dispose, or removeLayer). A content layer spans the engraved score; a viewport layer
-	 * spans the visible box and is re-fit on resize. */
-	addLayer(kind: LayerKind): Layer {
-		return this.host.createLayer(kind);
+	 * spans the visible box and is re-fit on resize.
+	 *
+	 * zIndex (an integer, may be negative) orders the layer relative to the canvas the score is drawn
+	 * on, which sits at zIndex 0: positive draws in front, negative behind (showing through the
+	 * score's transparent pixels). Layers with the same zIndex stack in creation order. Omit it to
+	 * use the kind's default (background behind, everything else in front). */
+	addLayer(kind: LayerKind, zIndex?: number): Layer {
+		if (zIndex !== undefined && !Number.isInteger(zIndex)) {
+			throw new Error('vexml: layer zIndex must be an integer');
+		}
+		return this.host.createLayer(kind, zIndex);
 	}
 
 	/* Remove a layer added with addLayer (a shorthand for layer.dispose()). */

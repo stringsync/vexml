@@ -20,7 +20,7 @@ export interface Layer {
  * on its own content layer but needs nothing else). Stage satisfies it; a unit test injects a
  * fake whose layer carries a recording context. */
 export interface LayerHost {
-	createLayer(kind: LayerKind): Layer;
+	createLayer(kind: LayerKind, zIndex?: number): Layer;
 }
 
 /*
@@ -191,7 +191,7 @@ export class Stage implements Viewport, Host {
 			window.removeEventListener('scroll', handler, { capture: true });
 	}
 
-	createLayer(kind: LayerKind): Layer {
+	createLayer(kind: LayerKind, zIndex?: number): Layer {
 		const canvas = document.createElement('canvas');
 		// Overlay absolutely positioned within the (positioned) container. Purely visual: pointer
 		// events pass through to the container, where the Score hit-tests them — layers never capture
@@ -199,8 +199,13 @@ export class Stage implements Viewport, Host {
 		canvas.className = 'vexml-layer';
 		canvas.style.position = 'absolute';
 		canvas.style.pointerEvents = 'none';
-		// A background layer paints behind the (in-flow) base canvas; everything else stacks over it.
-		if (kind === 'background') {
+		// The base canvas is in-flow at z-index 0. An explicit zIndex orders the layer against it
+		// (negative drops behind, where it shows through the score's transparent pixels); otherwise a
+		// background layer defaults behind and everything else stacks over it. Equal z-indexes fall
+		// back to DOM order, which is creation order since layers are appended as created.
+		if (zIndex !== undefined) {
+			canvas.style.zIndex = String(zIndex);
+		} else if (kind === 'background') {
 			canvas.style.zIndex = '-1';
 		}
 		const layer = new ManagedLayer(kind, canvas, this);
