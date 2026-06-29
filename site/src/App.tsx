@@ -434,386 +434,413 @@ export default function App() {
 			</header>
 
 			<main className="flex min-h-0 flex-1">
-				<aside className="fixed inset-x-0 bottom-0 z-20 flex max-h-[75vh] flex-col overflow-y-auto rounded-t-xl border-t border-zinc-200 bg-white p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+				{/* underlay: tap-to-close backdrop behind the panel (mobile only) */}
+				<div
+					onClick={() => setMobileOpen(false)}
+					aria-hidden="true"
+					className={`fixed inset-0 z-10 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+				/>
+
+				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:overflow-y-auto md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+					{/* top part: always visible, taps toggle the panel */}
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="mb-2 py-2 flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 active:bg-zinc-200 active:text-zinc-900 md:hidden"
+						aria-expanded={mobileOpen}
+						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
+						className="flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 hover:bg-zinc-100 active:bg-zinc-200 md:hidden"
 					>
-						{mobileOpen ? 'Hide' : 'Show'}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth={1.5}
+							stroke="currentColor"
+							aria-hidden="true"
+							className={`size-6 transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="m4.5 15.75 7.5-7.5 7.5 7.5"
+							/>
+						</svg>
 					</button>
 
+					{/* grid-rows 0fr↔1fr animates the height open/closed */}
 					<div
-						className={`flex-col gap-4 ${mobileOpen ? 'flex' : 'hidden'} md:flex`}
+						className={`grid transition-[grid-template-rows] duration-300 md:grid-rows-[1fr] ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
-						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-medium text-zinc-500">
-								Upload file
-							</span>
-							<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
-								Choose File
-								<input
-									type="file"
-									accept=".xml,.musicxml,.mxl"
-									className="hidden"
-									onChange={onFile}
-								/>
-							</label>
-						</div>
+						<div className="min-h-0 overflow-hidden">
+							<div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-none md:overflow-visible">
+								<div className="flex flex-col gap-1.5">
+									<span className="text-xs font-medium text-zinc-500">
+										Upload file
+									</span>
+									<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
+										Choose File
+										<input
+											type="file"
+											accept=".xml,.musicxml,.mxl"
+											className="hidden"
+											onChange={onFile}
+										/>
+									</label>
+								</div>
 
-						<Or />
+								<Or />
 
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="example"
-								className="text-xs font-medium text-zinc-500"
-							>
-								Select an Example
-							</label>
-							<select
-								id="example"
-								value={fixture}
-								onChange={onPickFixture}
-								className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-							>
-								<option value="">Load an example…</option>
-								{fixtureNames.map((name) => (
-									<option key={name} value={name}>
-										{name}
-									</option>
-								))}
-							</select>
-						</div>
+								<div className="flex flex-col gap-1.5">
+									<label
+										htmlFor="example"
+										className="text-xs font-medium text-zinc-500"
+									>
+										Select an Example
+									</label>
+									<select
+										id="example"
+										value={fixture}
+										onChange={onPickFixture}
+										className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+									>
+										<option value="">Load an example…</option>
+										{fixtureNames.map((name) => (
+											<option key={name} value={name}>
+												{name}
+											</option>
+										))}
+									</select>
+								</div>
 
-						<Or />
+								<Or />
 
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="musicxml"
-								className="text-xs font-medium text-zinc-500"
-							>
-								Edit MusicXML
-							</label>
-							<textarea
-								id="musicxml"
-								value={text}
-								onChange={onTextChange}
-								placeholder="Paste MusicXML here"
-								spellCheck={false}
-								className="h-48 resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
-							/>
-						</div>
+								<details className="flex flex-col gap-1.5">
+									<summary className="cursor-pointer text-xs font-medium text-zinc-500">
+										Edit MusicXML
+									</summary>
+									<textarea
+										id="musicxml"
+										value={text}
+										onChange={onTextChange}
+										placeholder="Paste MusicXML here"
+										spellCheck={false}
+										className="h-48 w-full resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
+									/>
+								</details>
 
-						<button
-							type="button"
-							onClick={clearStorage}
-							disabled={!stored || cleared || restored}
-							className="flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							{cleared ? (
-								<>
-									Cleared
-									<CheckIcon />
-								</>
-							) : restored ? (
-								<>
-									Retrieved from local storage
-									<CheckIcon />
-								</>
-							) : (
-								'Clear local storage'
-							)}
-						</button>
-
-						<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-							<div className="flex items-center justify-between">
-								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-									Config
-								</span>
 								<button
 									type="button"
-									onClick={resetAll}
-									disabled={!canReset}
-									className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+									onClick={clearStorage}
+									disabled={!stored || cleared || restored}
+									className="flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
 								>
-									Reset all
+									{cleared ? (
+										<>
+											Cleared
+											<CheckIcon />
+										</>
+									) : restored ? (
+										<>
+											Retrieved from local storage
+											<CheckIcon />
+										</>
+									) : (
+										'Clear local storage'
+									)}
 								</button>
-							</div>
-							<p className="text-xs text-zinc-400">
-								With only a single system, some controls (e.g. system spacing
-								and max system fill) won't have a visible effect.
-							</p>
-							<label
-								htmlFor="darkMode"
-								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-							>
-								<input
-									id="darkMode"
-									type="checkbox"
-									checked={dark}
-									onChange={(e) => setDark(e.target.checked)}
-								/>
-								Dark mode
-							</label>
-							<label
-								htmlFor="showInfo"
-								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-							>
-								<input
-									id="showInfo"
-									type="checkbox"
-									checked={showInfo}
-									onChange={(e) => {
-										setShowInfo(e.target.checked);
-										if (!e.target.checked) {
-											setTooltip(null);
-										}
-									}}
-								/>
-								Show note info on hover
-							</label>
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="notationFont"
-									className="text-xs font-medium text-zinc-500"
-								>
-									Notation font
-								</label>
-								<select
-									id="notationFont"
-									value={notationFont}
-									onChange={(e) =>
-										setConfig((c) =>
-											e.target.value === 'Bravura'
-												? (({ fonts: _, ...rest }) => rest)(c)
-												: {
-														...c,
-														fonts: {
-															...c.fonts,
-															notation: { family: e.target.value },
-														},
-													},
-										)
-									}
-									className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
-								>
-									<option value="Bravura">Bravura</option>
-									<option value="Petaluma">Petaluma</option>
-									<option value="Gonville">Gonville</option>
-								</select>
-								<p className="text-xs text-zinc-400">
-									The engraving font for noteheads, clefs, accidentals, and
-									rests. Bravura is the default.
-								</p>
-							</div>
 
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="noteSpacing"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Note spacing
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{noteSpacing}
+								<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+											Config
 										</span>
 										<button
 											type="button"
-											onClick={() => reset('noteSpacing')}
-											disabled={config.noteSpacing === undefined}
-											aria-label="Reset note spacing"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											onClick={resetAll}
+											disabled={!canReset}
+											className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 										>
-											<ResetIcon />
+											Reset all
 										</button>
-									</span>
-								</label>
-								<input
-									id="noteSpacing"
-									type="range"
-									min={12}
-									max={120}
-									step={1}
-									value={noteSpacing}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											noteSpacing: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How much horizontal space notes get: the px a quarter note is
-									allotted. Higher spreads every measure wider.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="softmaxFactor"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Softmax factor
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{softmaxFactor}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('softmaxFactor')}
-											disabled={config.softmaxFactor === undefined}
-											aria-label="Reset softmax factor"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+									</div>
+									<p className="text-xs text-zinc-400">
+										With only a single system, some controls (e.g. system
+										spacing and max system fill) won't have a visible effect.
+									</p>
+									<label
+										htmlFor="darkMode"
+										className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+									>
+										<input
+											id="darkMode"
+											type="checkbox"
+											checked={dark}
+											onChange={(e) => setDark(e.target.checked)}
+										/>
+										Dark mode
+									</label>
+									<label
+										htmlFor="showInfo"
+										className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+									>
+										<input
+											id="showInfo"
+											type="checkbox"
+											checked={showInfo}
+											onChange={(e) => {
+												setShowInfo(e.target.checked);
+												if (!e.target.checked) {
+													setTooltip(null);
+												}
+											}}
+										/>
+										Show note info on hover
+									</label>
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="notationFont"
+											className="text-xs font-medium text-zinc-500"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="softmaxFactor"
-									type="range"
-									min={1}
-									max={30}
-									step={1}
-									value={softmaxFactor}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											softmaxFactor: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How that space is divided among notes. Higher exaggerates the
-									width difference between long and short notes.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="systemSpacing"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									System spacing
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{systemSpacing}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('systemSpacing')}
-											disabled={config.systemSpacing === undefined}
-											aria-label="Reset system spacing"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
-										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="systemSpacing"
-									type="range"
-									min={10}
-									max={50}
-									step={1}
-									value={systemSpacing}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											systemSpacing: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									Vertical gap between stacked systems. Lower packs systems
-									closer together down the page.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="maxSystemFill"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Max system fill
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{maxSystemFill.toFixed(2)}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('maxSystemFill')}
-											disabled={config.maxSystemFill === undefined}
-											aria-label="Reset max system fill"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
-										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="maxSystemFill"
-									type="range"
-									min={0.1}
-									max={1}
-									step={0.05}
-									value={maxSystemFill}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											maxSystemFill: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How full a system gets before the next measure wraps to a new
-									line. Lower leaves more air; 1 packs each line to the edge.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="width"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Reference width
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">{width}</span>
-										<button
-											type="button"
-											onClick={() =>
-												setConfig(({ layout: _, ...rest }) => rest)
+											Notation font
+										</label>
+										<select
+											id="notationFont"
+											value={notationFont}
+											onChange={(e) =>
+												setConfig((c) =>
+													e.target.value === 'Bravura'
+														? (({ fonts: _, ...rest }) => rest)(c)
+														: {
+																...c,
+																fonts: {
+																	...c.fonts,
+																	notation: { family: e.target.value },
+																},
+															},
+												)
 											}
-											disabled={config.layout === undefined}
-											aria-label="Reset width"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="width"
-									type="range"
-									min={400}
-									max={2000}
-									step={50}
-									value={width}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											layout: {
-												type: 'standard',
-												width: e.target.valueAsNumber,
-											},
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									The width the score is engraved to; the rendering then scales
-									up or down to fit its container. Wider fits more measures per
-									system before wrapping.
-								</p>
+											<option value="Bravura">Bravura</option>
+											<option value="Petaluma">Petaluma</option>
+											<option value="Gonville">Gonville</option>
+										</select>
+										<p className="text-xs text-zinc-400">
+											The engraving font for noteheads, clefs, accidentals, and
+											rests. Bravura is the default.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="noteSpacing"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Note spacing
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{noteSpacing}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('noteSpacing')}
+													disabled={config.noteSpacing === undefined}
+													aria-label="Reset note spacing"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="noteSpacing"
+											type="range"
+											min={12}
+											max={120}
+											step={1}
+											value={noteSpacing}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													noteSpacing: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How much horizontal space notes get: the px a quarter note
+											is allotted. Higher spreads every measure wider.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="softmaxFactor"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Softmax factor
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{softmaxFactor}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('softmaxFactor')}
+													disabled={config.softmaxFactor === undefined}
+													aria-label="Reset softmax factor"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="softmaxFactor"
+											type="range"
+											min={1}
+											max={30}
+											step={1}
+											value={softmaxFactor}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													softmaxFactor: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How that space is divided among notes. Higher exaggerates
+											the width difference between long and short notes.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="systemSpacing"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											System spacing
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{systemSpacing}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('systemSpacing')}
+													disabled={config.systemSpacing === undefined}
+													aria-label="Reset system spacing"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="systemSpacing"
+											type="range"
+											min={10}
+											max={50}
+											step={1}
+											value={systemSpacing}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													systemSpacing: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											Vertical gap between stacked systems. Lower packs systems
+											closer together down the page.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="maxSystemFill"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Max system fill
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{maxSystemFill.toFixed(2)}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('maxSystemFill')}
+													disabled={config.maxSystemFill === undefined}
+													aria-label="Reset max system fill"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="maxSystemFill"
+											type="range"
+											min={0.1}
+											max={1}
+											step={0.05}
+											value={maxSystemFill}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													maxSystemFill: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How full a system gets before the next measure wraps to a
+											new line. Lower leaves more air; 1 packs each line to the
+											edge.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="width"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Reference width
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">{width}</span>
+												<button
+													type="button"
+													onClick={() =>
+														setConfig(({ layout: _, ...rest }) => rest)
+													}
+													disabled={config.layout === undefined}
+													aria-label="Reset width"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="width"
+											type="range"
+											min={400}
+											max={2000}
+											step={50}
+											value={width}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													layout: {
+														type: 'standard',
+														width: e.target.valueAsNumber,
+													},
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											The width the score is engraved to; the rendering then
+											scales up or down to fit its container. Wider fits more
+											measures per system before wrapping.
+										</p>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
