@@ -629,6 +629,15 @@ const TEST_CASES = [
 		layout: { type: 'standard', width: 500 },
 	}),
 
+	// Treble stave, 4/4, one measure at a narrow 500px width: a Bm7 fret box bound to the
+	// LAST quarter, whose note sits right against the system's right edge. Anchored at that
+	// note's x, the box's natural right edge overruns the canvas; it must nudge left so the
+	// whole board — including the far-right muted "X" — stays inside the drawable region
+	// instead of being clipped. Four B4 quarters so only the diagram's clamp is exercised.
+	testCase('chord_diagram_edge.musicxml', 'chord_diagram_edge.png', {
+		layout: { type: 'standard', width: 500 },
+	}),
+
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
 	// - M1: single notes on E5 — an open diamond for the half note, then filled diamonds for

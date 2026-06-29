@@ -41,6 +41,7 @@ import {
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_X,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
 	TEMPO_NOTE_CLEARANCE,
@@ -1473,11 +1474,19 @@ export function drawScore(
 						TEXT_CLEAR_KINDS,
 					);
 					// Recover the real (unpadded) box; the padding only extended the probe.
-					const placed = new Rect(
+					const unclamped = new Rect(
 						lifted.x,
 						lifted.y,
 						CHORD_DIAGRAM_WIDTH,
 						CHORD_DIAGRAM_HEIGHT,
+					);
+					// A box anchored at a note near the right edge would overrun the canvas and be
+					// clipped (page overflow has no crop-growth knob like the vertical edges do), so
+					// nudge it back inside the drawable region.
+					const placed = detector.nudgeInsideX(
+						unclamped,
+						scratchViewport,
+						PAGE_MARGIN_X,
 					);
 					detector.add({ rect: placed, kind: 'diagram' });
 					const diagram = new ChordDiagram(placed.x, placed.y, {
