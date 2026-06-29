@@ -1,11 +1,20 @@
 import { MDOMParser } from '@stringsync/mdom';
 import { VexFlow } from 'vexflow';
 import { type Config, DEFAULT_CONFIG } from './config';
+import { Decorations } from './decorations';
 import { drawScore } from './draw';
 import { loadFonts } from './fonts';
+import { Rect } from './geometry';
+import { buildTargets, type RawGeometry } from './hit';
 import { computeLayout } from './layout';
 import { Score } from './score';
 import { Stage } from './stage';
+
+const EMPTY_GEOMETRY: RawGeometry = {
+	bounds: new Rect(0, 0, 0, 0),
+	notes: [],
+	measures: [],
+};
 
 /*
  * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed
@@ -51,11 +60,15 @@ export async function render(
 	}
 
 	const parts = mdoc.score.parts;
-	if (parts.length > 0) {
-		// drawScore also returns the hit-index geometry; the index/events/decorations wire it to
-		// the Score in a later phase. ponytail: dropped here, but it's collected inside drawScore
-		// regardless, so ignoring the return costs nothing — wire it through when events land.
-		drawScore(stage.base, parts, computeLayout(parts, resolved), resolved);
-	}
-	return new Score(stage);
+	const geometry =
+		parts.length > 0
+			? drawScore(stage.base, parts, computeLayout(parts, resolved), resolved)
+			: EMPTY_GEOMETRY;
+
+	// The stage is the Viewport (score<->client transform) the targets map through, and the
+	// decorations are the Decorator their color/halo toggles delegate to. Both feed buildTargets,
+	// which links the targets and indexes them for hit-testing.
+	const decorations = new Decorations();
+	const index = buildTargets(geometry, stage, decorations);
+	return new Score(stage, index, decorations);
 }

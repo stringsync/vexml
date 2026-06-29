@@ -6,6 +6,13 @@ export {
 	type ChordSpec,
 } from './chord-diagram';
 export type { Config } from './config';
+export type {
+	EventListenable,
+	PointerTargetEvent,
+	ScoreEventMap,
+	ScoreResizeEvent,
+	ScoreScrollEvent,
+} from './events';
 export type { FontConfig, FontOverride } from './fonts';
 export { Rect } from './geometry';
 export type { Layout, MeasureNumbering } from './layout';

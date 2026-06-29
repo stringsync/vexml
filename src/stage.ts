@@ -2,6 +2,23 @@ import type { Rect } from './geometry';
 import type { Viewport } from './targets';
 
 /*
+ * What a Score needs from its host: the score<-client transform (toScoreSpace), a raw event
+ * source to bind pointer/scroll listeners on, the current scroll offset, a resize subscription,
+ * and teardown. Stage is the production implementer; a Score unit test injects a fake. Kept
+ * separate from Viewport (the targets' coordinate seam) so each consumer depends only on what it
+ * uses, even though Stage satisfies both.
+ */
+export interface Host {
+	toScoreSpace(clientX: number, clientY: number): { x: number; y: number };
+	readonly events: EventTarget;
+	readonly scroll: { left: number; top: number };
+	observeResize(
+		onResize: (size: { width: number; height: number }) => void,
+	): () => void;
+	dispose(): void;
+}
+
+/*
  * The host: the DOM vexml builds inside the caller's container, and the coordinate authority
  * between score space (where target rects live) and client/page space (where pointer events and
  * DOM popups live). The caller hands render() a <div>; the Stage owns the canvas it draws the
@@ -13,7 +30,7 @@ import type { Viewport } from './targets';
  * top-left. Reading the live rect each call means page scroll and any CSS scaling of the canvas
  * are handled for free.
  */
-export class Stage implements Viewport {
+export class Stage implements Viewport, Host {
 	readonly base: HTMLCanvasElement;
 	private readonly prevPosition: string;
 
@@ -41,6 +58,29 @@ export class Stage implements Viewport {
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		const { left, top, sx, sy } = this.frame();
 		return { x: (clientX - left) / sx, y: (clientY - top) / sy };
+	}
+
+	// Bind on the container, not the canvas: canvas pointer/scroll events bubble up to it, and
+	// it's where the overlay layers (later phases) live too, so one source covers the whole stage.
+	get events(): EventTarget {
+		return this.container;
+	}
+
+	get scroll(): { left: number; top: number } {
+		return { left: this.container.scrollLeft, top: this.container.scrollTop };
+	}
+
+	observeResize(
+		onResize: (size: { width: number; height: number }) => void,
+	): () => void {
+		const observer = new ResizeObserver((entries) => {
+			const box = entries[0]?.contentRect;
+			if (box) {
+				onResize({ width: box.width, height: box.height });
+			}
+		});
+		observer.observe(this.container);
+		return () => observer.disconnect();
 	}
 
 	dispose(): void {

@@ -1,4 +1,4 @@
-import { afterAll, expect } from 'bun:test';
+import { afterAll, beforeAll, expect } from 'bun:test';
 import {
 	existsSync,
 	mkdirSync,
@@ -11,7 +11,9 @@ import * as path from 'node:path';
 import { createCanvas, createImageData } from 'canvas';
 import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
+import { type Browser, chromium } from 'playwright';
 import { PNG } from 'pngjs';
+import { serve } from './serve';
 
 // Guard: tests must go through `vex test`, which renders in the pinned Docker
 // image. Bare `bun test` on the host compares against the committed Docker
@@ -25,6 +27,38 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	);
 	process.exit(1);
 }
+
+// One browser and one page server for the whole `bun test` run. Launching a second Chromium in
+// the same run is flaky in Docker — its teardown hangs past the hook timeout — so every browser
+// test (the screenshot harness and the events smoke test) reuses these. Preloaded, so the
+// lifecycle scopes to the run, not one file. Eager (beforeAll) to keep the launch out of the
+// first test's own timeout; lazy getters so a unit-only run still pays for them only if used.
+const TEST_PORT = 3100;
+export const TEST_URL = `http://localhost:${TEST_PORT}/`;
+let sharedServer: ReturnType<typeof serve> | null = null;
+let sharedBrowser: Promise<Browser> | null = null;
+
+export function testServer(): ReturnType<typeof serve> {
+	sharedServer ??= serve(TEST_PORT);
+	return sharedServer;
+}
+
+export function testBrowser(): Promise<Browser> {
+	testServer();
+	sharedBrowser ??= chromium.launch();
+	return sharedBrowser;
+}
+
+beforeAll(async () => {
+	await testBrowser();
+});
+
+afterAll(async () => {
+	if (sharedBrowser) {
+		await (await sharedBrowser).close();
+	}
+	sharedServer?.stop(true);
+});
 
 // [old][diff][new] stacked vertically, each captioned, returned as a PNG buffer.
 function composite(

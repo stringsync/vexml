@@ -37,7 +37,7 @@ toggles), and add their own drawing layers. Callers are coupled **only** to vexm
       (`Stage.frame()` is the only place the transform is read).
 - [x] Anything a caller uses is exported from `src/index.ts` (`render`, `Score`, `Rect`, `Bounded`,
       `Toggle`, `Note`, `Measure`, `TabPosition`, `PointerTarget`).
-- [x] `vex fix` and `vex test` pass (Phase 3: 131 pass / 0 fail, **no screenshot changes**).
+- [x] `vex fix` and `vex test` pass (Phase 4: 144 pass / 0 fail, **no screenshot changes**).
 
 ## Testing approach (per the Java-y DI request)
 
@@ -100,16 +100,30 @@ coordinate transform. Fakes live beside the tests that use them.
 >   byte-identical. Overlay layers (Phase 5/6) anchor via the `position: relative` Stage sets on
 >   the container.
 
-## Phase 4 — Events (`events.ts`, `score.ts`)
+## Phase 4 — Events (`events.ts`, `score.ts`, `decorations.ts`) ✅ DONE
 
-- [ ] wire the hit **index** into `Score` (deferred from Phase 3): thread `drawScore`'s
-      `RawGeometry` through `render` into `buildTargets(geometry, stage, decorator)`; this needs a
-      `Decorator`, so a minimal `Decorations` (state-only; layer/repaint lands in Phase 6) or a
-      no-op stand-in is built here first
-- [ ] `EventListenable<M>` interface + reusable `EventBus<M>` impl (dispatch)
-- [ ] `Score` pointer events (toScoreSpace -> hitTest -> `{target, native}`)
-- [ ] `scroll`, `resize` events; `score.scroll` getter
-- [ ] Unit tests: event bus, dispatch with a `FakeHitTester`; browser smoke test (real pointer lands)
+- [x] wired the hit **index** into `Score` (deferred from Phase 3): `render` threads `drawScore`'s
+      `RawGeometry` into `buildTargets(geometry, stage, decorations)`; a state-only `Decorations`
+      (the real `Decorator`; layer/repaint lands in Phase 6) is built here
+- [x] `EventListenable<M>` interface + reusable `EventBus<M>` impl (per-type Sets, `count`,
+      snapshot-iterating `emit`)
+- [x] `Score` pointer events (`pointermove`/`pointerdown`/`pointerup`/`click`):
+      toScoreSpace -> hitTest -> `{ target, point, native }`
+- [x] `scroll` + `resize` events; `score.scroll` getter (resize via `Stage.observeResize`/ResizeObserver)
+- [x] DOM listeners bound **lazily** — attached on the first subscriber, detached on the last, so an
+      unobserved score does no per-pointer hit-testing
+- [x] `Host` seam (what `Score` needs from the stage: `toScoreSpace`, `events`, `scroll`,
+      `observeResize`, `dispose`) so `Score` is unit-testable with a `FakeHost`
+- [x] Unit tests: `EventBus` (events.test.ts, 5); `Score` dispatch/lazy-bind/scroll/resize/dispose
+      with `FakeHost`+`FakeHitTester` (score.test.ts, 8); browser smoke test — real pointer maps to
+      score space and hit-tests the measure box (tests/integration/events.test.ts)
+- [x] `index.ts` exports `EventListenable`, `ScoreEventMap`, `PointerTargetEvent`,
+      `ScoreScrollEvent`, `ScoreResizeEvent`
+
+> **Test-infra change:** the browser test needed a second page, but a second Chromium in one
+> `bun test` run hangs on teardown in Docker. Fixed at the root: the browser + page server now live
+> in the preloaded `setup.ts` as a single shared instance (`testBrowser()` / `testServer()` /
+> `TEST_URL`), launched once and closed once. `harness.ts` and the events smoke test both reuse it.
 
 ## Phase 5 — Layers (public)
 
@@ -119,8 +133,12 @@ coordinate transform. Fakes live beside the tests that use them.
 
 ## Phase 6 — Decorations + toggles live (`decorations.ts`)
 
-- [ ] `Decorations implements Decorator`: internal `content` layer, retained active-set, repaint (halo under color)
-- [ ] wire `Note.color` / `Note.halo`
+`decorations.ts` already exists from Phase 4 as the state-only `Decorations implements Decorator`
+(color/halo Maps + `dispose`). Phase 6 adds the drawing:
+
+- [ ] give `Decorations` an internal `content` layer (needs Stage `createLayer` — deferred from
+      Phase 3) and repaint from the retained active-set (halo under color)
+- [ ] `Note.color` / `Note.halo` already delegate here (Phase 1) — verify they paint end to end
 - [ ] Unit tests with a recording 2D context (clear+redraw, `off()` removes)
 - [ ] integration screenshots: a colored note, a halo
 
