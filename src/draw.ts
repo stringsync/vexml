@@ -49,6 +49,7 @@ import {
 	WORDS_Y_OFFSET,
 } from './constants';
 import { Rect } from './geometry';
+import type { RawGeometry, RawMeasure, RawNote } from './hit';
 import type { MeasureNumbering, ScoreLayout } from './layout';
 import {
 	endBeatOf,
@@ -177,6 +178,10 @@ type PendingStave = {
 	// StaveNotes whose lead carries a tie — they get a tie-apex collision obstacle once their
 	// stem direction is final (stem-down ties bow up over the noteheads). See tieApexRect.
 	tiedNotes: Set<StaveNote>;
+	// Each real (non-grace) note paired with its mdom chord, so the hit index can map every
+	// notehead/fret back to its note after formatting. One of these is populated per stave kind.
+	noteChords: Array<{ note: StaveNote; chord: Chord }>;
+	tabChords: Array<{ note: TabNote; chord: Chord }>;
 };
 
 /*
@@ -199,9 +204,17 @@ function buildNotes(
 	const endBeat = Math.max(endBeatOf(voices), meterFloor);
 	const staveNotes: StaveNote[] = [];
 	const tiedNotes = new Set<StaveNote>();
+	const noteChords: Array<{ note: StaveNote; chord: Chord }> = [];
 	const vexVoices = voices.map((voice) => {
+		const chords = voice.chords;
+		// lead note -> its chord, so the record callback (which only gets the lead) can pair
+		// each StaveNote with the chord whose noteheads it draws (for the hit index).
+		const chordByLead = new Map<Note, Chord>();
+		for (const chord of chords) {
+			chordByLead.set(chord.lead, chord);
+		}
 		const tickables = vexflowVoiceTickables(
-			voice.chords,
+			chords,
 			clef,
 			endBeat,
 			(lead, note) => {
@@ -209,6 +222,10 @@ function buildNotes(
 				staveNotes.push(note);
 				if (lead.ties.length > 0) {
 					tiedNotes.add(note);
+				}
+				const chord = chordByLead.get(lead);
+				if (chord && !lead.isGrace) {
+					noteChords.push({ note, chord });
 				}
 			},
 		);
@@ -231,6 +248,8 @@ function buildNotes(
 		tuplets,
 		staveNotes,
 		tiedNotes,
+		noteChords,
+		tabChords: [],
 	};
 }
 
@@ -595,14 +614,24 @@ function buildTabNotes(
 	softmaxFactor: number,
 	byTabLead: Map<Note, TabNote>,
 ): PendingStave {
-	const vexVoices = voices.map((voice) =>
-		softVoice(
-			vexflowTabTickables(voice.chords, (lead, tabNote) =>
-				byTabLead.set(lead, tabNote),
-			),
+	const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
+	const vexVoices = voices.map((voice) => {
+		const chords = voice.chords;
+		const chordByLead = new Map<Note, Chord>();
+		for (const chord of chords) {
+			chordByLead.set(chord.lead, chord);
+		}
+		return softVoice(
+			vexflowTabTickables(chords, (lead, tabNote) => {
+				byTabLead.set(lead, tabNote);
+				const chord = chordByLead.get(lead);
+				if (chord && !lead.isGrace) {
+					tabChords.push({ note: tabNote, chord });
+				}
+			}),
 			softmaxFactor,
-		),
-	);
+		);
+	});
 	// Build (but discard) the tab tuplets: their construction rescales the notes'
 	// ticks (Tuplet.attach), which the part's shared formatter needs so a triplet's
 	// tab frets stay aligned under their notation notes. The bracket/number is drawn
@@ -618,6 +647,8 @@ function buildTabNotes(
 		tuplets: [],
 		staveNotes: [],
 		tiedNotes: new Set(),
+		noteChords: [],
+		tabChords,
 	};
 }
 
@@ -775,17 +806,25 @@ function showsMeasureNumber(
 	}
 }
 
+// Half-heights (CSS px) for the hit-index boxes. A notehead's x-span is measured exactly (from
+// getNoteHeadBeginX/EndX) so decorations land on the glyph; its height and the fret box are
+// approximated to ~one notehead — enough to pick a target and to draw a centered color/halo.
+const NOTEHEAD_HALF_H = 5;
+const FRET_HALF_W = 6;
+const FRET_HALF_H = 7;
+
 /*
  * Draw the whole score onto the element: one SVG stave per part-staff per measure,
  * placed at the boxes computed by computeLayout, with clefs/keys/time signatures,
- * notes, and the brace/barline connectors that group parts into systems.
+ * notes, and the brace/barline connectors that group parts into systems. Returns the
+ * hit-index geometry (notehead/fret/measure boxes) in final score space.
  */
 export function drawScore(
 	canvas: HTMLCanvasElement,
 	parts: Part[],
 	layout: ScoreLayout,
 	config: Config,
-): void {
+): RawGeometry {
 	const {
 		measureCount,
 		boxes,
@@ -835,6 +874,8 @@ export function drawScore(
 		pageTop: number;
 		pageBottom: number;
 		observedOverflow: Map<number, number>;
+		rawNotes: RawNote[];
+		rawMeasures: RawMeasure[];
 	} => {
 		// One note map for the whole score: ties and slurs can span a barline, so their
 		// two endpoints may live in different measures. Notes are drawn measure by
@@ -857,6 +898,10 @@ export function drawScore(
 		// top stave into that gap — is covered by topOverflow, measured on a prior pass.
 		let pageBottom = 0;
 		let pageTop = Infinity;
+		// Hit-index geometry collected this pass, in scratch space; the caller shifts it into
+		// final score space once cropTop is known. Only the final pass's arrays are kept.
+		const rawNotes: RawNote[] = [];
+		const rawMeasures: RawMeasure[] = [];
 		let systemTopY = layout.top + topSlack;
 		let systemContentBottom = systemTopY;
 		let currentSystem = -1;
@@ -1235,6 +1280,96 @@ export function drawScore(
 			pageBottom = Math.max(pageBottom, noteExtent.bottom);
 			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
 			pageTop = Math.min(pageTop, noteExtent.top);
+
+			// Collect hit-index boxes now that this measure's notes are formatted (positions
+			// final). Each notehead/fret maps back to its mdom note; measure boxes back each
+			// measure's staff column. Still scratch space — shifted to score space by the caller.
+			for (const p of systemPending) {
+				if (p.isTab) {
+					const tabStave = p.stave as TabStave;
+					for (const { note, chord } of p.tabChords) {
+						const x = note.getAbsoluteX();
+						for (const mnote of chord.notes) {
+							const string = mnote.string;
+							const fret = mnote.fret;
+							if (string === null || fret === null) {
+								continue;
+							}
+							const y = tabStave.getYForLine(string - 1);
+							rawNotes.push({
+								mnote,
+								rect: new Rect(
+									x - FRET_HALF_W,
+									y - FRET_HALF_H,
+									2 * FRET_HALF_W,
+									2 * FRET_HALF_H,
+								),
+								chord: chord.notes,
+								measureIndex: m,
+								tab: { string, fret },
+								glyph: null,
+							});
+						}
+					}
+				} else {
+					for (const { note, chord } of p.noteChords) {
+						// The notehead glyph's true x-span (getAbsoluteX is the tick anchor, left of
+						// the notehead — centering on it puts decorations off the note). y per
+						// notehead comes from getYs; noteHeads is indexed in the same (chord.notes)
+						// order, so heads[i] is this note's glyph.
+						const headX = note.getNoteHeadBeginX();
+						const headWidth = note.getNoteHeadEndX() - headX;
+						const ys = note.getYs();
+						const heads = note.noteHeads;
+						chord.notes.forEach((mnote, i) => {
+							const y = ys[i];
+							if (y === undefined) {
+								return;
+							}
+							// Capture the exact stamp vexflow drew (text + font + baseline) so a
+							// decoration can replay it in color — see Decorations. Scratch space; the
+							// caller shifts y by cropTop into score space alongside the rect. Read x
+							// from the bounding box (this.x + xShift), not getX(): a NoteHead borrows
+							// its StaveNote's tick context, so the inherited Tickable.getX() throws.
+							// The baseline y is the notehead's staff y (ys[i]); noteheads carry no yShift.
+							const head = heads[i];
+							const glyph = head
+								? {
+										text: head.getText(),
+										font: head.getFont(),
+										x: head.getBoundingBox().getX(),
+										y,
+									}
+								: null;
+							rawNotes.push({
+								mnote,
+								rect: new Rect(
+									headX,
+									y - NOTEHEAD_HALF_H,
+									headWidth,
+									2 * NOTEHEAD_HALF_H,
+								),
+								chord: chord.notes,
+								measureIndex: m,
+								tab: null,
+								glyph,
+							});
+						});
+					}
+				}
+			}
+			if (systemTop && systemBottom) {
+				rawMeasures.push({
+					rect: new Rect(
+						measureX,
+						systemY,
+						measureWidth,
+						Math.max(0, systemContentBottom - systemY),
+					),
+					index: m,
+				});
+			}
+
 			if (noteExtent.top < Infinity) {
 				systemHighestTop.set(
 					systemIndex,
@@ -1405,18 +1540,22 @@ export function drawScore(
 				observedOverflow.set(idx, Math.max(0, topY - highest));
 			}
 		}
-		return { pageTop, pageBottom, observedOverflow };
+		return { pageTop, pageBottom, observedOverflow, rawNotes, rawMeasures };
 	};
 
 	// Multi-system scores can clash where a system's notes rise above its top stave into
 	// the previous system's depth. Pass one measures that per-system overflow; if any is
 	// found, pass two redraws (onto the freshly cleared scratch) with the overflow reserved
 	// above each system. Single-system scores never stack, so one pass suffices.
-	let { pageTop, pageBottom, observedOverflow } = runPass(new Map());
-	if (systemCount > 1 && [...observedOverflow.values()].some((v) => v > 0)) {
+	let pass = runPass(new Map());
+	if (
+		systemCount > 1 &&
+		[...pass.observedOverflow.values()].some((v) => v > 0)
+	) {
 		renderer.resize(width, scratchHeight);
-		({ pageTop, pageBottom } = runPass(observedOverflow));
+		pass = runPass(pass.observedOverflow);
 	}
+	const { pageTop, pageBottom } = pass;
 
 	// Crop to the lowest thing actually drawn so deep ledger lines in the bottom
 	// system aren't clipped and there's no trailing whitespace. Sizing the real
@@ -1450,4 +1589,20 @@ export function drawScore(
 			scratch.width,
 			canvas.height,
 		);
+
+	// The geometry was collected in scratch space; the blit shifts content up by cropTop, so
+	// translate every box into final score space (the canvas's own coordinates). dpr stays out —
+	// these are CSS px, like getAbsoluteX/getYs.
+	const toScore = (r: Rect) => r.translate(0, -cropTop);
+	const toScoreGlyph = (g: RawNote['glyph']) =>
+		g ? { ...g, y: g.y - cropTop } : null;
+	return {
+		bounds: new Rect(0, 0, width, cssHeight),
+		notes: pass.rawNotes.map((n) => ({
+			...n,
+			rect: toScore(n.rect),
+			glyph: toScoreGlyph(n.glyph),
+		})),
+		measures: pass.rawMeasures.map((mm) => ({ ...mm, rect: toScore(mm.rect) })),
+	};
 }

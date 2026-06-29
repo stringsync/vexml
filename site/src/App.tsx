@@ -1,6 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Config } from '../../src';
-import { render } from '../../src';
+import type {
+	Config,
+	Note,
+	PointerTarget,
+	PointerTargetEvent,
+} from '../../src';
+import { render, type Score } from '../../src';
+
+// One-line summary of the hovered target for the tooltip.
+function describe(target: PointerTarget): string {
+	if (target.type === 'note') {
+		const beats = target.getBeats();
+		const parts = [
+			target.getPitch() ?? 'rest',
+			`${beats} beat${beats === 1 ? '' : 's'}`,
+		];
+		if (target.isGrace()) {
+			parts.push('grace');
+		}
+		if (target.isChordMember()) {
+			parts.push('chord');
+		}
+		return parts.join(' · ');
+	}
+	if (target.type === 'tab-position') {
+		return `string ${target.getString()} · fret ${target.getFret()} · ${target.getNote().getPitch() ?? 'rest'}`;
+	}
+	return '';
+}
 
 // Vite reads the test fixtures straight from ../tests at build time (fs.allow: ['..'] in
 // vite.config permits it) and hands us the file list — no symlink or hand-written manifest.
@@ -68,7 +95,8 @@ function Or() {
 }
 
 export default function App() {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const scoreRef = useRef<Score | null>(null);
 	const [text, setText] = useState('');
 	const [input, setInput] = useState<string | Blob | null>(null);
 	const [fixture, setFixture] = useState('');
@@ -83,6 +111,17 @@ export default function App() {
 	);
 	const [cleared, setCleared] = useState(false);
 	const [restored, setRestored] = useState(false);
+	const [showInfo, setShowInfo] = useState(true);
+	const [tooltip, setTooltip] = useState<{
+		x: number;
+		y: number;
+		text: string;
+	} | null>(null);
+	// Read live inside the pointer handler so toggling the checkbox doesn't re-subscribe.
+	const showInfoRef = useRef(showInfo);
+	showInfoRef.current = showInfo;
+	// The note whose halo is currently lit, so the next move can turn it back off.
+	const haloRef = useRef<Note | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
@@ -139,10 +178,14 @@ export default function App() {
 	}, [config, renderMs]);
 
 	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (!canvas || input == null) {
+		const container = containerRef.current;
+		if (!container || input == null) {
 			return;
 		}
+		// Replace the previous render before starting a new one: render() appends a fresh
+		// managed canvas, so the old Score must be disposed or canvases would stack.
+		scoreRef.current?.dispose();
+		scoreRef.current = null;
 		setError(null);
 		const start = performance.now();
 		// Engrave once at the configured reference width; CSS then scales the canvas to fit
@@ -152,19 +195,75 @@ export default function App() {
 			renderConfig.layout?.type === 'standard'
 				? renderConfig.layout.width
 				: undefined;
-		render(input, canvas, {
+		let cancelled = false;
+		// Turn off the lit halo and hide the tooltip; called on move-to-empty and on leave.
+		const clearHalo = () => {
+			haloRef.current?.halo.off();
+			haloRef.current?.color.off();
+			haloRef.current = null;
+			container.style.cursor = '';
+			setTooltip(null);
+		};
+		let detach: (() => void) | undefined;
+		render(input, container, {
 			...renderConfig,
 			layout: { type: 'standard', width: layoutWidth },
 		})
-			.then(() => {
-				canvas.style.width = '100%';
-				canvas.style.height = 'auto';
+			.then((score) => {
+				// The effect can re-run before this resolves; drop the late score so it
+				// doesn't leak a canvas into a container a newer render already owns.
+				if (cancelled) {
+					score.dispose();
+					return;
+				}
+				scoreRef.current = score;
 				setRenderMs(performance.now() - start);
+
+				const onPointer = (e: PointerTargetEvent) => {
+					const note =
+						e.target?.type === 'note'
+							? e.target
+							: e.target?.type === 'tab-position'
+								? e.target.getNote()
+								: null;
+					if (note !== haloRef.current) {
+						haloRef.current?.halo.off();
+						haloRef.current?.color.off();
+						note?.halo.on();
+						note?.color.on('#2962ff');
+						haloRef.current = note;
+						container.style.cursor = note ? 'pointer' : '';
+					}
+					if (note && e.target && showInfoRef.current) {
+						const r = e.target.getBoundingClientRect();
+						setTooltip({
+							x: r.left + r.width / 2,
+							y: r.top,
+							text: describe(e.target),
+						});
+					} else {
+						setTooltip(null);
+					}
+				};
+				score.addEventListener('pointermove', onPointer);
+				score.addEventListener('pointerdown', onPointer);
+				container.addEventListener('pointerleave', clearHalo);
+				detach = () => {
+					container.removeEventListener('pointerleave', clearHalo);
+					clearHalo();
+				};
 			})
 			.catch((e: unknown) => {
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
 			});
+		return () => {
+			cancelled = true;
+			// score.dispose() drops its own listeners; this only unbinds the DOM-level leave handler.
+			detach?.();
+			scoreRef.current?.dispose();
+			scoreRef.current = null;
+		};
 	}, [input, renderConfig]);
 
 	// Restore the last-edited MusicXML, or open with a random example.
@@ -425,6 +524,23 @@ export default function App() {
 									onChange={(e) => setDark(e.target.checked)}
 								/>
 								Dark mode
+							</label>
+							<label
+								htmlFor="showInfo"
+								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+							>
+								<input
+									id="showInfo"
+									type="checkbox"
+									checked={showInfo}
+									onChange={(e) => {
+										setShowInfo(e.target.checked);
+										if (!e.target.checked) {
+											setTooltip(null);
+										}
+									}}
+								/>
+								Show note info on hover
 							</label>
 							<div className="flex flex-col gap-1.5">
 								<label
@@ -694,16 +810,17 @@ export default function App() {
 							)
 						)}
 						{input != null && (
-							// The canvas is engraved at that width and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
+							// vexml appends its managed canvas here; React manages only this div's
+							// attributes, never its children. The canvas is engraved at the reference
+							// width and CSS-scaled to fit (down when narrow, never past 100%); the
+							// `.vexml-canvas` child-selector targets only the score canvas (not vexml's
+							// overlay layers) so the dark-mode invert and scaling react without
+							// re-rendering. ponytail: invert the black glyphs to light rather than
+							// re-engraving in a light color.
 							<div
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${dark ? 'bg-zinc-900 ring-zinc-700' : 'bg-white ring-zinc-200'}`}
-							>
-								{/* ponytail: invert the black glyphs to light for dark mode instead of re-engraving in a light color. */}
-								<canvas
-									ref={canvasRef}
-									className={`block ${dark ? 'invert' : ''}`}
-								/>
-							</div>
+								ref={containerRef}
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:!h-auto [&_.vexml-canvas]:!w-full ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
+							/>
 						)}
 						{debouncing && (
 							<div className="pointer-events-none absolute inset-0 bg-black/40">
@@ -721,6 +838,15 @@ export default function App() {
 					</div>
 				</section>
 			</main>
+
+			{tooltip && (
+				<div
+					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full rounded bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+					style={{ left: tooltip.x, top: tooltip.y - 8 }}
+				>
+					{tooltip.text}
+				</div>
+			)}
 		</div>
 	);
 }

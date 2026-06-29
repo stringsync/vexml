@@ -29,11 +29,11 @@ export async function render(opts: {
 		await page.goto('http://localhost:3101/');
 		await page.evaluate(
 			async ({ musicXML, config }) => {
-				const canvas = document.getElementById('vexml');
-				if (!(canvas instanceof HTMLCanvasElement)) {
-					throw new Error('canvas not found');
+				const container = document.getElementById('screenshot');
+				if (!(container instanceof HTMLDivElement)) {
+					throw new Error('container not found');
 				}
-				await window.render(musicXML, canvas, config);
+				await window.render(musicXML, container, config);
 			},
 			{ musicXML, config },
 		);
