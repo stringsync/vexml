@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Config } from '../../src';
-import { render } from '../../src';
+import { render, type Score } from '../../src';
 
 // Vite reads the test fixtures straight from ../tests at build time (fs.allow: ['..'] in
 // vite.config permits it) and hands us the file list — no symlink or hand-written manifest.
@@ -68,7 +68,8 @@ function Or() {
 }
 
 export default function App() {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const scoreRef = useRef<Score | null>(null);
 	const [text, setText] = useState('');
 	const [input, setInput] = useState<string | Blob | null>(null);
 	const [fixture, setFixture] = useState('');
@@ -139,10 +140,14 @@ export default function App() {
 	}, [config, renderMs]);
 
 	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (!canvas || input == null) {
+		const container = containerRef.current;
+		if (!container || input == null) {
 			return;
 		}
+		// Replace the previous render before starting a new one: render() appends a fresh
+		// managed canvas, so the old Score must be disposed or canvases would stack.
+		scoreRef.current?.dispose();
+		scoreRef.current = null;
 		setError(null);
 		const start = performance.now();
 		// Engrave once at the configured reference width; CSS then scales the canvas to fit
@@ -152,19 +157,30 @@ export default function App() {
 			renderConfig.layout?.type === 'standard'
 				? renderConfig.layout.width
 				: undefined;
-		render(input, canvas, {
+		let cancelled = false;
+		render(input, container, {
 			...renderConfig,
 			layout: { type: 'standard', width: layoutWidth },
 		})
-			.then(() => {
-				canvas.style.width = '100%';
-				canvas.style.height = 'auto';
+			.then((score) => {
+				// The effect can re-run before this resolves; drop the late score so it
+				// doesn't leak a canvas into a container a newer render already owns.
+				if (cancelled) {
+					score.dispose();
+					return;
+				}
+				scoreRef.current = score;
 				setRenderMs(performance.now() - start);
 			})
 			.catch((e: unknown) => {
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
 			});
+		return () => {
+			cancelled = true;
+			scoreRef.current?.dispose();
+			scoreRef.current = null;
+		};
 	}, [input, renderConfig]);
 
 	// Restore the last-edited MusicXML, or open with a random example.
@@ -694,16 +710,16 @@ export default function App() {
 							)
 						)}
 						{input != null && (
-							// The canvas is engraved at that width and CSS-scaled to fit, shrinking on narrow viewports, never past 100%.
+							// vexml appends its managed canvas here; React manages only this div's
+							// attributes, never its children. The canvas is engraved at the reference
+							// width and CSS-scaled to fit (down when narrow, never past 100%); the
+							// child-selector classes style the managed canvas declaratively, so the
+							// dark-mode invert reacts without re-rendering. ponytail: invert the black
+							// glyphs to light rather than re-engraving in a light color.
 							<div
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${dark ? 'bg-zinc-900 ring-zinc-700' : 'bg-white ring-zinc-200'}`}
-							>
-								{/* ponytail: invert the black glyphs to light for dark mode instead of re-engraving in a light color. */}
-								<canvas
-									ref={canvasRef}
-									className={`block ${dark ? 'invert' : ''}`}
-								/>
-							</div>
+								ref={containerRef}
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&>canvas]:block [&>canvas]:!h-auto [&>canvas]:!w-full ${dark ? 'bg-zinc-900 ring-zinc-700 [&>canvas]:invert' : 'bg-white ring-zinc-200'}`}
+							/>
 						)}
 						{debouncing && (
 							<div className="pointer-events-none absolute inset-0 bg-black/40">

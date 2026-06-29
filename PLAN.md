@@ -31,10 +31,13 @@ toggles), and add their own drawing layers. Callers are coupled **only** to vexm
 
 ## Invariants
 
-- [ ] No `@stringsync/mdom` type appears in the public surface.
-- [ ] Rects are stored in score space; crop/scroll/zoom applied only at the boundary.
-- [ ] Anything a caller uses is exported from `src/index.ts`.
-- [ ] `vex fix` and `vex test` pass at the end of every phase.
+- [x] No `@stringsync/mdom` type appears in the public surface (callers never need to name one;
+      `mnote` stays private behind the unexported `NoteDeps`).
+- [x] Rects are stored in score space; crop/scroll/zoom applied only at the boundary
+      (`Stage.frame()` is the only place the transform is read).
+- [x] Anything a caller uses is exported from `src/index.ts` (`render`, `Score`, `Rect`, `Bounded`,
+      `Toggle`, `Note`, `Measure`, `TabPosition`, `PointerTarget`).
+- [x] `vex fix` and `vex test` pass (Phase 3: 131 pass / 0 fail, **no screenshot changes**).
 
 ## Testing approach (per the Java-y DI request)
 
@@ -72,17 +75,37 @@ coordinate transform. Fakes live beside the tests that use them.
 - [ ] exact-geometry correctness (rect positions) verified at Phase 3/4 once hit-testing is wired live
 - [ ] **gate not yet run:** full Docker `vex test` (screenshot regression) — run at Phase 3 with the harness migration
 
-## Phase 3 — Host + render (`stage.ts`, `score.ts`, `render.ts`, migration)
+## Phase 3 — Host + render (`stage.ts`, `score.ts`, `render.ts`, migration) ✅ DONE
 
-- [ ] `stage.ts`: build DOM layers in the div + coordinate transform (`toScoreSpace`, `clientRectOf`)
-- [ ] `Layer` (ctx + dispose), `LayerKind`, dpr-scaled ctx
-- [ ] `score.ts`: `Score` shell (owns stage, index, decorations, event bus); `dispose`
-- [ ] `render.ts`: take a div, build stage, draw into managed canvas, return `Score`
-- [ ] migrate `tests/testing/index.html`, `entry.ts`, `harness.ts`, `cli/render.ts` (canvas -> div)
-- [ ] integration screenshots still match baselines (visual output unchanged)
+- [x] `stage.ts`: `Stage` builds the managed canvas in the div + coordinate transform
+      (`toScoreSpace`, `clientRectOf`), reading the live `getBoundingClientRect` so scroll and CSS
+      scaling fall out for free; `dispose` removes the canvas and restores the container
+- [x] `score.ts`: `Score` shell — owns the stage, `dispose`
+- [x] `render.ts`: takes a div, builds the stage, draws into the managed canvas, returns `Score`
+- [x] `index.ts` exports the public surface (render/Score/Rect/Bounded/Toggle/targets)
+- [x] migrate `tests/testing/index.html`, `harness.ts`, `cli/render.ts`, and `site/src/App.tsx`
+      (canvas -> div; the site disposes the prior `Score` between renders so canvases don't stack)
+- [x] integration screenshots still match baselines — **131 pass, no screenshot changes**
+
+> **Plan refinements made here (kept lazy):**
+> - `Layer` / `LayerKind` / `createLayer` and the dpr-scaled overlay ctx are **deferred to the
+>   phase that consumes them** (decorations' content layer in Phase 6; public layers in Phase 5)
+>   rather than built speculatively in Phase 3.
+> - The hit **index** and **decorations**/**event bus** wire to the `Score` in their own phases
+>   (4/6). `drawScore` still returns `RawGeometry`; `render` drops it for now (it's collected
+>   inside the draw pass regardless, so ignoring the return costs nothing). Phase 4 threads it
+>   through to build the index.
+> - No DOM wrapper: the managed canvas is a plain in-flow child of the caller's div, so the box
+>   model is identical to the old hand-placed `<canvas>` — that's what keeps screenshots
+>   byte-identical. Overlay layers (Phase 5/6) anchor via the `position: relative` Stage sets on
+>   the container.
 
 ## Phase 4 — Events (`events.ts`, `score.ts`)
 
+- [ ] wire the hit **index** into `Score` (deferred from Phase 3): thread `drawScore`'s
+      `RawGeometry` through `render` into `buildTargets(geometry, stage, decorator)`; this needs a
+      `Decorator`, so a minimal `Decorations` (state-only; layer/repaint lands in Phase 6) or a
+      no-op stand-in is built here first
 - [ ] `EventListenable<M>` interface + reusable `EventBus<M>` impl (dispatch)
 - [ ] `Score` pointer events (toScoreSpace -> hitTest -> `{target, native}`)
 - [ ] `scroll`, `resize` events; `score.scroll` getter

@@ -7,5 +7,15 @@ export {
 } from './chord-diagram';
 export type { Config } from './config';
 export type { FontConfig, FontOverride } from './fonts';
+export { Rect } from './geometry';
 export type { Layout, MeasureNumbering } from './layout';
 export * from './render';
+export { Score } from './score';
+export {
+	type Bounded,
+	Measure,
+	Note,
+	type PointerTarget,
+	TabPosition,
+	type Toggle,
+} from './targets';
