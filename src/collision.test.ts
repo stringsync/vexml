@@ -71,6 +71,17 @@ test('pushRightOf ignores diagrams in a different vertical band', () => {
 	expect(d.pushRightOf(new Rect(50, 500, 88, 84), 'diagram', 6).x).toBe(50);
 });
 
+test('nudgeInsideX pulls an over-right box back in, leaves an inside box put, and never overshoots left', () => {
+	const d = detector();
+	const bounds = new Rect(0, 0, 100, 100);
+	// Overruns the right edge -> pulled left so its right edge lands on the (margin-inset) edge.
+	expect(d.nudgeInsideX(new Rect(80, 0, 30, 10), bounds, 5).x).toBe(65);
+	// Already inside -> untouched.
+	expect(d.nudgeInsideX(new Rect(20, 0, 30, 10), bounds, 5).x).toBe(20);
+	// Wider than the span -> clamps to the left edge rather than overshooting it.
+	expect(d.nudgeInsideX(new Rect(80, 0, 200, 10), bounds, 5).x).toBe(5);
+});
+
 test('escaping flags rects that cross the viewport edges', () => {
 	const d = detector();
 	d.addRect(new Rect(10, 10, 5, 5), 'note'); // inside

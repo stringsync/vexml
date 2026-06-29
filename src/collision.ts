@@ -114,6 +114,25 @@ export class CollisionDetector {
 	}
 
 	/*
+	 * Shift `rect` horizontally so it sits within `bounds` (the canvas), pulling a box that
+	 * overruns the right edge back inside, or pushing one off the left edge back right. Only
+	 * moves along x — vertical clipping is handled by growing the crop, not nudging. The left
+	 * edge wins if the rect is wider than the available span. `margin` insets both edges.
+	 */
+	nudgeInsideX(rect: Rect, bounds: Rect, margin = 0): Rect {
+		const left = bounds.x + margin;
+		const right = bounds.right - margin;
+		let dx = 0;
+		if (rect.right > right) {
+			dx = right - rect.right; // pull left
+		}
+		if (rect.x + dx < left) {
+			dx = left - rect.x; // but never past the left edge
+		}
+		return rect.translate(dx, 0);
+	}
+
+	/*
 	 * Registered items that escape `viewport` (the rendered/crop rectangle), with which edges
 	 * they cross — the "no-man's land" where content gets clipped. The caller decides whether
 	 * to grow the crop or lift the element. Independent of element-vs-element overlap.

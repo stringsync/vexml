@@ -19,21 +19,24 @@ import {
  */
 
 /* A notehead or fret the draw pass laid out, in score space. `tab` is set when this is a tab
- * fret rendering (the note's string/fret); null for a notation notehead. `chord` lists every
- * mdom note sharing this note's onset so chordmates resolve. mnote stays internal. */
+ * fret rendering (the note's string/fret, plus the fret as drawn and its font so a decoration can
+ * recolor the digit); null for a notation notehead. `chord` lists every mdom note sharing this
+ * note's onset so chordmates resolve. mnote stays internal. */
 export interface RawNote {
 	mnote: MNote;
 	rect: Rect;
 	chord: MNote[];
 	measureIndex: number;
 	tab: { string: number; fret: number } | null;
-	/* The engraved notehead glyph (for recoloring); null for a tab fret or a rest. */
+	/* The engraved glyph for recoloring — a notehead, or a tab fret; null for a rest. */
 	glyph: NoteGlyph | null;
 }
 
 export interface RawMeasure {
 	rect: Rect;
 	index: number;
+	/* The MusicXML measure number (a string — handles pickups, "X1" etc.). */
+	number: string;
 }
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
@@ -94,7 +97,7 @@ export function buildTargets(
 ): HitTester {
 	const measures = new Map<number, Measure>();
 	for (const m of geometry.measures) {
-		measures.set(m.index, new Measure(m.rect, viewport));
+		measures.set(m.index, new Measure(m.rect, viewport, m.number));
 	}
 
 	const noteByMnote = new Map<MNote, Note>();
@@ -132,6 +135,8 @@ export function buildTargets(
 				string: rn.tab.string,
 				fret: rn.tab.fret,
 				note,
+				decorator,
+				glyph: rn.glyph,
 			}),
 		);
 	}

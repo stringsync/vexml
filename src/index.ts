@@ -8,6 +8,7 @@ export {
 export type { Config } from './config';
 export type {
 	EventListenable,
+	HoverEvent,
 	PointerTargetEvent,
 	ScoreEventMap,
 	ScoreResizeEvent,

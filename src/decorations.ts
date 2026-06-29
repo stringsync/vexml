@@ -2,27 +2,28 @@ import type { Rect } from './geometry';
 import type { Layer, LayerHost } from './stage';
 import type { Decoratable, Decorator } from './targets';
 
-// A soft round highlight drawn behind a note to denote activity. Fixed (the halo toggle takes no
-// argument); the color toggle is what carries a caller-chosen color. HALO_MARGIN is how far the
-// circle extends past the notehead's half-extent, so the note sits evenly inside it.
-const HALO_COLOR = 'rgba(41, 98, 255, 0.35)';
+// A soft round highlight drawn behind a note to denote activity, in the caller-chosen halo color.
+// HALO_MARGIN is how far the circle extends past the notehead's half-extent, so the note sits
+// evenly inside it.
 const HALO_MARGIN = 8;
 
 /*
  * The decoration store and painter — the production `Decorator`. A target's color/halo toggles
- * delegate here. Decorations are retained as an active set (which targets are colored/haloed) and
- * drawn on a single `content` overlay layer that sits in score space over the engraving.
+ * delegate here. Decorations are retained as active sets (which targets are colored/haloed) and
+ * drawn on two score-space overlay layers: colors on a `content` layer over the engraving (they
+ * recolor the notehead, so they sit on top), halos on a `background` layer behind the base canvas
+ * (so they glow through the score's transparent pixels, under the notes).
  *
- * Every change repaints the whole layer from the active set rather than erasing one rect. That's
- * the answer to "how does off() work without disturbing neighbors": clearing one decoration's box
- * could wipe part of an overlapping one, so instead the lot is cleared and redrawn — halos first
- * (under), colors on top. The layer is created lazily on the first decoration, so an undecorated
- * score never allocates an overlay.
+ * Every change repaints a whole layer from its active set rather than erasing one rect. That's the
+ * answer to "how does off() work without disturbing neighbors": clearing one decoration's box could
+ * wipe part of an overlapping one, so instead the lot is cleared and redrawn. Each layer is created
+ * lazily on its first decoration, so an undecorated score never allocates an overlay.
  */
 export class Decorations implements Decorator {
 	private readonly colors = new Map<Decoratable, string>();
-	private readonly halos = new Set<Decoratable>();
-	private layer: Layer | null = null;
+	private readonly halos = new Map<Decoratable, string>();
+	private colorLayer: Layer | null = null;
+	private haloLayer: Layer | null = null;
 
 	constructor(private readonly host: LayerHost) {}
 
@@ -32,16 +33,16 @@ export class Decorations implements Decorator {
 		} else {
 			this.colors.set(target, color);
 		}
-		this.repaint();
+		this.repaintColors();
 	}
 
-	setHalo(target: Decoratable, on: boolean): void {
-		if (on) {
-			this.halos.add(target);
-		} else {
+	setHalo(target: Decoratable, color: string | null): void {
+		if (color === null) {
 			this.halos.delete(target);
+		} else {
+			this.halos.set(target, color);
 		}
-		this.repaint();
+		this.repaintHalos();
 	}
 
 	isColored(target: Decoratable): boolean {
@@ -53,36 +54,44 @@ export class Decorations implements Decorator {
 	}
 
 	dispose(): void {
-		this.layer?.dispose();
-		this.layer = null;
+		this.colorLayer?.dispose();
+		this.haloLayer?.dispose();
+		this.colorLayer = null;
+		this.haloLayer = null;
 		this.colors.clear();
 		this.halos.clear();
 	}
 
-	// Repaint from the retained active set: clear, then halos (under) then colors (over).
-	private repaint(): void {
-		if (this.colors.size === 0 && this.halos.size === 0) {
-			// Nothing active: clear an existing layer, but don't allocate one just to clear it.
-			if (this.layer) {
-				this.clear(this.layer.ctx);
+	private repaintColors(): void {
+		if (this.colors.size === 0) {
+			if (this.colorLayer) {
+				this.clear(this.colorLayer.ctx);
 			}
 			return;
 		}
-		const ctx = this.ensureLayer().ctx;
+		this.colorLayer ??= this.host.createLayer('content');
+		const ctx = this.colorLayer.ctx;
 		this.clear(ctx);
-		for (const target of this.halos) {
-			this.drawHalo(ctx, target.rect);
-		}
 		for (const [target, color] of this.colors) {
-			this.drawColor(ctx, target, color);
+			// The target knows what to stamp (a notehead glyph, a fret number, a box); we just
+			// hand it the overlay and the color. See Decoratable.drawColor.
+			target.drawColor(ctx, color);
 		}
 	}
 
-	private ensureLayer(): Layer {
-		if (!this.layer) {
-			this.layer = this.host.createLayer('content');
+	private repaintHalos(): void {
+		if (this.halos.size === 0) {
+			if (this.haloLayer) {
+				this.clear(this.haloLayer.ctx);
+			}
+			return;
 		}
-		return this.layer;
+		this.haloLayer ??= this.host.createLayer('background');
+		const ctx = this.haloLayer.ctx;
+		this.clear(ctx);
+		for (const [target, color] of this.halos) {
+			this.drawHalo(ctx, target.rect, color);
+		}
 	}
 
 	// Clear the whole bitmap regardless of the dpr transform the layer applied.
@@ -93,45 +102,16 @@ export class Decorations implements Decorator {
 		ctx.restore();
 	}
 
-	// Recolor the note: replay vexflow's own notehead render (same glyph text, font, and baseline)
-	// in the chosen color, so the actual notehead is recolored and hollow heads stay hollow. A
-	// glyph-less target (a rest, or a non-note) falls back to a filled ellipse over its box.
-	private drawColor(
+	private drawHalo(
 		ctx: CanvasRenderingContext2D,
-		target: Decoratable,
+		rect: Rect,
 		color: string,
 	): void {
-		ctx.save();
-		ctx.fillStyle = color;
-		const glyph = target.glyph;
-		if (glyph) {
-			ctx.font = glyph.font;
-			ctx.textAlign = 'left';
-			ctx.textBaseline = 'alphabetic';
-			ctx.fillText(glyph.text, glyph.x, glyph.y);
-		} else {
-			const r = target.rect;
-			ctx.beginPath();
-			ctx.ellipse(
-				r.x + r.w / 2,
-				r.y + r.h / 2,
-				r.w / 2,
-				r.h / 2,
-				0,
-				0,
-				2 * Math.PI,
-			);
-			ctx.fill();
-		}
-		ctx.restore();
-	}
-
-	private drawHalo(ctx: CanvasRenderingContext2D, rect: Rect): void {
 		// A circle centered on the notehead box, a fixed margin larger than its half-extent, so it
 		// encircles the note evenly regardless of the notehead's width.
 		const radius = Math.max(rect.w, rect.h) / 2 + HALO_MARGIN;
 		ctx.save();
-		ctx.fillStyle = HALO_COLOR;
+		ctx.fillStyle = color;
 		ctx.beginPath();
 		ctx.arc(rect.x + rect.w / 2, rect.y + rect.h / 2, radius, 0, 2 * Math.PI);
 		ctx.fill();

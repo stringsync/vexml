@@ -2,9 +2,11 @@ import type { Rect } from './geometry';
 import type { Viewport } from './targets';
 
 /* Where a custom drawing layer sits. A `content` layer covers the whole engraved score (score
- * space, scrolls with the content) — what decorations draw on. A `viewport` layer covers only the
- * visible box (client space) and is resized as the container resizes. */
-export type LayerKind = 'content' | 'viewport';
+ * space, scrolls with the content) — what decorations draw on. A `background` layer is a content
+ * layer placed *behind* the base canvas (z-index -1), so it shows through the score's transparent
+ * pixels — e.g. a halo glowing behind the noteheads. A `viewport` layer covers only the visible box
+ * (client space) and is resized as the container resizes. */
+export type LayerKind = 'content' | 'background' | 'viewport';
 
 /* A caller-owned drawing surface stacked over the score. Only the 2D context is exposed — never
  * the canvas, its size, or a clear — so the layer's lifecycle stays vexml's. The caller draws via
@@ -18,7 +20,7 @@ export interface Layer {
  * on its own content layer but needs nothing else). Stage satisfies it; a unit test injects a
  * fake whose layer carries a recording context. */
 export interface LayerHost {
-	createLayer(kind: LayerKind): Layer;
+	createLayer(kind: LayerKind, zIndex?: number): Layer;
 }
 
 /*
@@ -35,6 +37,11 @@ export interface Host extends LayerHost {
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void;
+	/* Subscribe to any scroll that slides the score within the viewport — the container's own, or
+	 * any ancestor's (scroll doesn't bubble, so the real host listens on window in the capture
+	 * phase). Returns an unsubscribe. Drives hover: content can move under a stationary pointer with
+	 * no pointer event. */
+	observeScroll(onScroll: () => void): () => void;
 	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
 	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
 	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
@@ -106,6 +113,7 @@ class ManagedLayer implements Layer {
 export class Stage implements Viewport, Host {
 	readonly base: HTMLCanvasElement;
 	private readonly prevPosition: string;
+	private readonly prevIsolation: string;
 	private readonly layers = new Set<ManagedLayer>();
 
 	constructor(private readonly container: HTMLDivElement) {
@@ -114,6 +122,13 @@ export class Stage implements Viewport, Host {
 		this.prevPosition = container.style.position;
 		if (!container.style.position) {
 			container.style.position = 'relative';
+		}
+		// Isolate the container into its own stacking context so the background layer's z-index:-1
+		// stays trapped here — above the container's (possibly opaque) background but below the base
+		// canvas — rather than escaping behind an ancestor's background, where it'd be invisible.
+		this.prevIsolation = container.style.isolation;
+		if (!container.style.isolation) {
+			container.style.isolation = 'isolate';
 		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
@@ -164,7 +179,19 @@ export class Stage implements Viewport, Host {
 		return () => observer.disconnect();
 	}
 
-	createLayer(kind: LayerKind): Layer {
+	observeScroll(onScroll: () => void): () => void {
+		// Capture phase on window catches every scroll container (the score's own or any ancestor),
+		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
+		const handler = () => onScroll();
+		window.addEventListener('scroll', handler, {
+			capture: true,
+			passive: true,
+		});
+		return () =>
+			window.removeEventListener('scroll', handler, { capture: true });
+	}
+
+	createLayer(kind: LayerKind, zIndex?: number): Layer {
 		const canvas = document.createElement('canvas');
 		// Overlay absolutely positioned within the (positioned) container. Purely visual: pointer
 		// events pass through to the container, where the Score hit-tests them — layers never capture
@@ -172,6 +199,15 @@ export class Stage implements Viewport, Host {
 		canvas.className = 'vexml-layer';
 		canvas.style.position = 'absolute';
 		canvas.style.pointerEvents = 'none';
+		// The base canvas is in-flow at z-index 0. An explicit zIndex orders the layer against it
+		// (negative drops behind, where it shows through the score's transparent pixels); otherwise a
+		// background layer defaults behind and everything else stacks over it. Equal z-indexes fall
+		// back to DOM order, which is creation order since layers are appended as created.
+		if (zIndex !== undefined) {
+			canvas.style.zIndex = String(zIndex);
+		} else if (kind === 'background') {
+			canvas.style.zIndex = '-1';
+		}
 		const layer = new ManagedLayer(kind, canvas, this);
 		this.container.appendChild(canvas);
 		this.layers.add(layer);
@@ -203,13 +239,14 @@ export class Stage implements Viewport, Host {
 		}
 		this.base.remove();
 		this.container.style.position = this.prevPosition;
+		this.container.style.isolation = this.prevIsolation;
 	}
 
 	// Size a layer's drawing bitmap. A content layer's bitmap is fixed to the engraved score (the
 	// base canvas's intrinsic CSS box), so the caller always draws in score px — its element is then
 	// stretched over the base's rendered box by placeLayer. A viewport bitmap matches the visible box.
 	private sizeBitmap(layer: ManagedLayer): void {
-		if (layer.kind === 'content') {
+		if (layer.kind !== 'viewport') {
 			layer.resize(
 				parseFloat(this.base.style.width) || 0,
 				parseFloat(this.base.style.height) || 0,
@@ -226,7 +263,7 @@ export class Stage implements Viewport, Host {
 	private placeLayer(layer: ManagedLayer): void {
 		const left = this.base.offsetLeft;
 		const top = this.base.offsetTop;
-		if (layer.kind === 'content') {
+		if (layer.kind !== 'viewport') {
 			layer.place(left, top, this.base.offsetWidth, this.base.offsetHeight);
 		} else {
 			layer.place(

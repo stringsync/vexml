@@ -28,7 +28,10 @@ function noopContext(): CanvasRenderingContext2D {
 class FakeLayer implements Layer {
 	disposed = false;
 	readonly ctx = noopContext();
-	constructor(readonly kind: LayerKind) {}
+	constructor(
+		readonly kind: LayerKind,
+		readonly zIndex?: number,
+	) {}
 	dispose(): void {
 		this.disposed = true;
 	}
@@ -47,6 +50,7 @@ class FakeHost implements Host {
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		return { x: clientX, y: clientY };
 	}
+	scrollListener: (() => void) | null = null;
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void {
@@ -56,8 +60,14 @@ class FakeHost implements Host {
 			this.resizeListener = null;
 		};
 	}
-	createLayer(kind: LayerKind): Layer {
-		const layer = new FakeLayer(kind);
+	observeScroll(onScroll: () => void): () => void {
+		this.scrollListener = onScroll;
+		return () => {
+			this.scrollListener = null;
+		};
+	}
+	createLayer(kind: LayerKind, zIndex?: number): Layer {
+		const layer = new FakeLayer(kind, zIndex);
 		this.created.push(layer);
 		return layer;
 	}
@@ -104,7 +114,7 @@ function fixture(target: PointerTarget | null) {
 }
 
 test('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport);
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
 	const { host, index, score } = fixture(target);
 	const seen: Array<{ type: string; x: number; y: number; native: Event }> = [];
 	score.addEventListener('pointermove', (e) =>
@@ -167,6 +177,31 @@ test('scroll events carry the offset and the score.scroll getter reflects the ho
 	expect(score.scroll).toEqual({ left: 12, top: 34 });
 });
 
+test('hover fires only on target change and recomputes on scroll; unsubscribe detaches scroll', () => {
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
+	const host = new FakeHost();
+	// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
+	// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
+	let hit: PointerTarget | null = target;
+	const index: HitTester = { hitTest: () => hit };
+	const score = new Score(host, index, new Decorations(host));
+
+	const seen: Array<PointerTarget | null> = [];
+	const listener = (e: { target: PointerTarget | null }) => seen.push(e.target);
+	score.addEventListener('hover', listener);
+
+	host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5)); // enter target
+	host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
+	expect(seen).toEqual([target]);
+
+	hit = null; // scroll slid the target away
+	host.scrollListener?.();
+	expect(seen).toEqual([target, null]);
+
+	score.removeEventListener('hover', listener);
+	expect(host.scrollListener).toBeNull(); // window-scroll subscription released
+});
+
 test('resize is observed from construction and re-fits viewport layers before emitting', () => {
 	const { host, score } = fixture(null);
 	// Observed eagerly (it also drives viewport-layer sizing), not lazily on first subscriber.
@@ -194,8 +229,16 @@ test('addLayer delegates to the host; removeLayer disposes the layer', () => {
 	expect(host.created[0]?.disposed).toBe(true);
 });
 
+test('addLayer forwards zIndex to the host and rejects non-integers', () => {
+	const { host, score } = fixture(null);
+	score.addLayer('content', -2);
+	expect(host.created[0]?.zIndex).toBe(-2);
+	expect(() => score.addLayer('content', 1.5)).toThrow();
+	expect(() => score.addLayer('content', Number.NaN)).toThrow();
+});
+
 test('dispose detaches every listener and tears down decorations and host', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport);
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
 	const { host, index, decorations, score } = fixture(target);
 	score.addEventListener('pointermove', () => {});
 	score.addEventListener('resize', () => {});

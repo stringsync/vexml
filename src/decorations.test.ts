@@ -46,29 +46,58 @@ class FakeLayer implements Layer {
 	}
 }
 
+// Colors and halos draw on separate layers ('content' over the score, 'background' behind it), so
+// the host keeps a recorder per kind and the tests assert against the relevant one.
 class FakeLayerHost implements LayerHost {
-	readonly recorder = new RecordingContext();
+	readonly recorders = new Map<LayerKind, RecordingContext>();
+	readonly layers = new Map<LayerKind, FakeLayer>();
 	createLayerCalls = 0;
-	layer: FakeLayer | null = null;
-	createLayer(_kind: LayerKind): Layer {
+	createLayer(kind: LayerKind): Layer {
 		this.createLayerCalls++;
-		this.layer = new FakeLayer(
-			this.recorder as unknown as CanvasRenderingContext2D,
+		const recorder = new RecordingContext();
+		this.recorders.set(kind, recorder);
+		const layer = new FakeLayer(
+			recorder as unknown as CanvasRenderingContext2D,
 		);
-		return this.layer;
+		this.layers.set(kind, layer);
+		return layer;
+	}
+	ops(kind: LayerKind): string[] {
+		return this.recorders.get(kind)?.ops ?? [];
 	}
 }
 
 const HALO = 'fill:arc:rgba(41, 98, 255, 0.35)';
 const GLYPH: NoteGlyph = { text: 'q', font: '30px Bravura', x: 12, y: 20 };
 
+// A fake target standing in for a real Note/Measure: drawColor stamps the glyph (a notehead) in
+// the color, or falls back to a filled ellipse over the box when there's none — mirroring the
+// production targets, which now own their own color stamping (see Decoratable.drawColor).
 const decoratable = (
 	rect: Rect,
 	glyph: NoteGlyph | null = null,
 ): Decoratable => ({
 	rect,
-	glyph,
 	getBoundingClientRect: () => ({}) as DOMRect,
+	drawColor(ctx: CanvasRenderingContext2D, color: string): void {
+		ctx.fillStyle = color;
+		if (glyph) {
+			ctx.font = glyph.font;
+			ctx.fillText(glyph.text, glyph.x, glyph.y);
+		} else {
+			ctx.beginPath();
+			ctx.ellipse(
+				rect.x + rect.w / 2,
+				rect.y + rect.h / 2,
+				rect.w / 2,
+				rect.h / 2,
+				0,
+				0,
+				2 * Math.PI,
+			);
+			ctx.fill();
+		}
+	},
 });
 
 // The marks (fills/texts) recorded since the last clear — i.e., the result of the latest repaint.
@@ -91,7 +120,7 @@ test('setColor stamps the notehead glyph in the color and reports isColored', ()
 	decorations.setColor(target, '#2962ff');
 	expect(decorations.isColored(target)).toBe(true);
 	// The exact glyph (text + font) vexflow drew, replayed in the chosen color.
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([
+	expect(marksSinceLastClear(host.ops('content'))).toEqual([
 		'text:q:#2962ff:30px Bravura',
 	]);
 });
@@ -100,7 +129,7 @@ test('a glyph-less target (a rest) falls back to a filled ellipse', () => {
 	const host = new FakeLayerHost();
 	const decorations = new Decorations(host);
 	decorations.setColor(decoratable(new Rect(0, 0, 12, 10), null), '#2962ff');
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([
+	expect(marksSinceLastClear(host.ops('content'))).toEqual([
 		'fill:ellipse:#2962ff',
 	]);
 });
@@ -112,31 +141,33 @@ test('setColor(null) clears the decoration, drawing nothing', () => {
 	decorations.setColor(target, '#ff0000');
 	decorations.setColor(target, null);
 	expect(decorations.isColored(target)).toBe(false);
-	expect(host.recorder.ops.at(-1)).toBe('clear');
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([]);
+	expect(host.ops('content').at(-1)).toBe('clear');
+	expect(marksSinceLastClear(host.ops('content'))).toEqual([]);
 });
 
-test('halo draws under color', () => {
+test('the halo draws on a background layer in its color, behind the color layer', () => {
 	const host = new FakeLayerHost();
 	const decorations = new Decorations(host);
 	const target = decoratable(new Rect(0, 0, 12, 10), GLYPH);
 	decorations.setColor(target, '#2962ff');
-	decorations.setHalo(target, true);
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([
-		HALO,
+	decorations.setHalo(target, 'rgba(41, 98, 255, 0.35)');
+	// The color stamps the notehead on the content (over) layer; the halo fills its circle on the
+	// background (behind) layer in the chosen color.
+	expect(marksSinceLastClear(host.ops('content'))).toEqual([
 		'text:q:#2962ff:30px Bravura',
 	]);
+	expect(marksSinceLastClear(host.ops('background'))).toEqual([HALO]);
 });
 
-test('setHalo(false) removes the halo', () => {
+test('setHalo(null) removes the halo', () => {
 	const host = new FakeLayerHost();
 	const decorations = new Decorations(host);
 	const target = decoratable(new Rect(0, 0, 12, 10), GLYPH);
-	decorations.setHalo(target, true);
+	decorations.setHalo(target, 'rgba(41, 98, 255, 0.35)');
 	expect(decorations.isHaloed(target)).toBe(true);
-	decorations.setHalo(target, false);
+	decorations.setHalo(target, null);
 	expect(decorations.isHaloed(target)).toBe(false);
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([]);
+	expect(marksSinceLastClear(host.ops('background'))).toEqual([]);
 });
 
 test('every repaint clears first, then redraws the whole active set', () => {
@@ -144,19 +175,23 @@ test('every repaint clears first, then redraws the whole active set', () => {
 	const decorations = new Decorations(host);
 	decorations.setColor(decoratable(new Rect(0, 0, 12, 10), GLYPH), '#111111');
 	decorations.setColor(decoratable(new Rect(20, 0, 12, 10), GLYPH), '#222222');
-	expect(marksSinceLastClear(host.recorder.ops)).toEqual([
+	expect(marksSinceLastClear(host.ops('content'))).toEqual([
 		'text:q:#111111:30px Bravura',
 		'text:q:#222222:30px Bravura',
 	]);
 });
 
-test('dispose disposes the layer and clears state', () => {
+test('dispose disposes every layer and clears state', () => {
 	const host = new FakeLayerHost();
 	const decorations = new Decorations(host);
 	const target = decoratable(new Rect(0, 0, 12, 10), GLYPH);
 	decorations.setColor(target, '#2962ff');
-	const layer = host.layer;
+	decorations.setHalo(target, 'rgba(41, 98, 255, 0.35)');
+	const content = host.layers.get('content');
+	const background = host.layers.get('background');
 	decorations.dispose();
-	expect(layer?.disposed).toBe(true);
+	expect(content?.disposed).toBe(true);
+	expect(background?.disposed).toBe(true);
 	expect(decorations.isColored(target)).toBe(false);
+	expect(decorations.isHaloed(target)).toBe(false);
 });

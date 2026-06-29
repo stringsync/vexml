@@ -567,6 +567,11 @@ const TEST_CASES = [
 	//   quarters) + half rest, under a "B13" symbol. The chord's upper tie bows up over
 	//   the high top note (G♯5), so the symbol lifts to clear that arc, not just the
 	//   noteheads — like M9 but the tie sits on a chord member, not a lone note.
+	// - M12: a top-stave-space note under its symbol — four E5 quarters under an "Em7"
+	//   symbol. E5 sits in the top space, just under the symbol's baseline (not above the
+	//   staff like M4), so it falls in the symbol's padding band: the padded collision box
+	//   reaches down to the notehead and nudges the symbol up off it, instead of the
+	//   baseline sitting tight against the note.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
@@ -601,8 +606,14 @@ const TEST_CASES = [
 	//   string-5's dot one row down.
 	// - M9: G♯m7♭5, string 6 at fret 4, string 5 muted, strings 4/3/2 across frets 3-4 → box
 	//   from fret 3, "4" beside string-6's dot one row down.
-	// - M10: Bm7 fret box plus an italic "(as taught)" words direction in the same measure —
-	//   the diagram draws on top, staying fully legible where the text overlaps it.
+	// - M10: Bm7 fret box plus an italic "(as taught)" words direction — the word draws at its
+	//   normal above-stave spot and the box lifts to sit clear above it (boxes yield to text by
+	//   rising, not by overlapping).
+	// - M11: same Bm7 box but with a high D5/F♯5 chord on beat 1 that pushes the "(as taught)"
+	//   text up — the box lifts further so it still clears the raised word.
+	// - M12: same Bm7 box over four C6 quarters (two ledger lines above the staff) — the box
+	//   lifts until it clears the high noteheads/ledger lines, using the same padded
+	//   lift-clear treatment a chord symbol uses, instead of overlapping them.
 	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
 
 	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
@@ -615,6 +626,15 @@ const TEST_CASES = [
 	// The C box (anchored at M1's last beat) and the G box (anchored at M2's first beat)
 	// are nudged apart so they clear each other — no overlapping boards or titles.
 	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
+		layout: { type: 'standard', width: 500 },
+	}),
+
+	// Treble stave, 4/4, one measure at a narrow 500px width: a Bm7 fret box bound to the
+	// LAST quarter, whose note sits right against the system's right edge. Anchored at that
+	// note's x, the box's natural right edge overruns the canvas; it must nudge left so the
+	// whole board — including the far-right muted "X" — stays inside the drawable region
+	// instead of being clipped. Four B4 quarters so only the diagram's clamp is exercised.
+	testCase('chord_diagram_edge.musicxml', 'chord_diagram_edge.png', {
 		layout: { type: 'standard', width: 500 },
 	}),
 
@@ -702,6 +722,13 @@ const TEST_CASES = [
 	// default 'system' measure numbering prints a "1" above the top system's first measure
 	// and a "10" above the bottom system's first measure.
 	testCase('system_break.musicxml', 'system_break.png'),
+
+	// Four C5 whole-note measures, treble 4/4, that would all fit on one system — but
+	// M3 carries a <print new-system="yes"/>, forcing a system break before it. So the
+	// score wraps to two systems: M1-2 on top, M3-4 below (each re-stating the treble
+	// clef; the time signature prints only on M1). Proves an explicit break overrides
+	// width-based wrapping.
+	testCase('print_new_system.musicxml', 'print_new_system.png'),
 
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).

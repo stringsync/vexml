@@ -90,7 +90,7 @@ function build() {
 	const geometry: RawGeometry = {
 		bounds: new Rect(0, 0, 200, 100),
 		notes,
-		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0 }],
+		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1' }],
 	};
 	return buildTargets(geometry, new FakeViewport(), new FakeDecorator());
 }

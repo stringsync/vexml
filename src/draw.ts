@@ -30,15 +30,18 @@ import {
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
+	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
 	HARMONY_FONT_SIZE,
 	HARMONY_NOTE_CLEARANCE,
+	HARMONY_PADDING,
 	HARMONY_Y_OFFSET,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_X,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
 	TEMPO_NOTE_CLEARANCE,
@@ -526,18 +529,22 @@ function drawHarmony(
 	const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
 	context.save();
 	context.setFillStyle('#000000');
+	// Pad the box below the text baseline so liftClear's downward probe reaches a notehead
+	// sitting just under the baseline (a note in the top stave space) and nudges the symbol
+	// clear of it, leaving a little breathing room. The drawn baseline stays HARMONY_PADDING
+	// above the box bottom, so with nothing in the way the symbol keeps its default position.
 	const natural = new Rect(
 		staveNote.getAbsoluteX(),
 		baseY - HARMONY_FONT_SIZE,
 		harmonyWidth(context, text, font),
-		HARMONY_FONT_SIZE,
+		HARMONY_FONT_SIZE + HARMONY_PADDING,
 	);
 	const placed = detector.liftClear(
 		natural,
 		HARMONY_NOTE_CLEARANCE,
 		TEXT_CLEAR_KINDS,
 	);
-	const y = placed.bottom;
+	const y = placed.bottom - HARMONY_PADDING;
 	// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
 	// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
 	// so it sits tight against its root letter.
@@ -1289,6 +1296,20 @@ export function drawScore(
 					const tabStave = p.stave as TabStave;
 					for (const { note, chord } of p.tabChords) {
 						const x = note.getAbsoluteX();
+						// The drawn fret glyphs, parallel to getPositions() (one per struck string), so a
+						// decoration can replay the exact fret text vexflow drew — "<12>", "(2)", "✕" —
+						// in color. The tab analog of the notation path's note.noteHeads.
+						const positions = note.getPositions();
+						const fretEls = (
+							note as unknown as {
+								fretElement: {
+									getText(): string;
+									getFont(): string;
+									getWidth(): number;
+									getYShift(): number;
+								}[];
+							}
+						).fretElement;
 						for (const mnote of chord.notes) {
 							const string = mnote.string;
 							const fret = mnote.fret;
@@ -1296,6 +1317,9 @@ export function drawScore(
 								continue;
 							}
 							const y = tabStave.getYForLine(string - 1);
+							// Match this string's drawn fret glyph (positions carry one entry per string).
+							const el =
+								fretEls[positions.findIndex((pos) => pos.str === string)];
 							rawNotes.push({
 								mnote,
 								rect: new Rect(
@@ -1307,7 +1331,19 @@ export function drawScore(
 								chord: chord.notes,
 								measureIndex: m,
 								tab: { string, fret },
-								glyph: null,
+								// Replay vexflow's own fret glyph for recoloring, the tab analog of the
+								// notehead path: its left-anchored baseline x (drawPositions uses
+								// tabX = absoluteX - width/2) and baseline y (the string line plus the
+								// element's yShift, which is how TabNote vertically centers the digit).
+								// Drawn left/alphabetic, a colored fret overlays the engraved one exactly.
+								glyph: el
+									? {
+											text: el.getText(),
+											font: el.getFont(),
+											x: x - el.getWidth() / 2,
+											y: y + el.getYShift(),
+										}
+									: null,
 							});
 						}
 					}
@@ -1367,6 +1403,7 @@ export function drawScore(
 						Math.max(0, systemContentBottom - systemY),
 					),
 					index: m,
+					number: parts[0]?.measures[m]?.number ?? String(m + 1),
 				});
 			}
 
@@ -1393,7 +1430,10 @@ export function drawScore(
 			// Diagrams sit at their lead note's x; two on notes either side of a barline can be
 			// close enough to overlap (especially at a narrow width). The detector pushes each
 			// box clear of any already-placed diagram in its band (replacing the old running
-			// cursor) so crowded diagrams separate instead of stacking.
+			// cursor) so crowded diagrams separate instead of stacking. It also lifts each box
+			// above any notes, ties, or words in its column (the diagrams pass runs after the
+			// notes and words), so a high note or a word like "(as taught)" stays put and the
+			// box rises over it.
 			for (const h of harmonyTasks) {
 				// A <harmony> with a <frame> draws as a fret box (chord name as its title)
 				// above the stave; one without draws as the plain chord-symbol text.
@@ -1413,13 +1453,43 @@ export function drawScore(
 						CHORD_DIAGRAM_WIDTH,
 						CHORD_DIAGRAM_HEIGHT,
 					);
-					const placed = detector.pushRightOf(
+					const spaced = detector.pushRightOf(
 						natural,
 						'diagram',
 						CHORD_DIAGRAM_GAP,
 					);
+					// Pad the box below its bottom so the lift-clear probe reaches a high note
+					// (or its tie) poking up into the box's column — the same padding treatment
+					// a chord symbol uses. The box then rises off the note instead of overlapping
+					// it; with nothing in the way it keeps its default position.
+					const padded = new Rect(
+						spaced.x,
+						spaced.y,
+						spaced.w,
+						CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
+					);
+					const lifted = detector.liftClear(
+						padded,
+						CHORD_DIAGRAM_GAP,
+						TEXT_CLEAR_KINDS,
+					);
+					// Recover the real (unpadded) box; the padding only extended the probe.
+					const unclamped = new Rect(
+						lifted.x,
+						lifted.y,
+						CHORD_DIAGRAM_WIDTH,
+						CHORD_DIAGRAM_HEIGHT,
+					);
+					// A box anchored at a note near the right edge would overrun the canvas and be
+					// clipped (page overflow has no crop-growth knob like the vertical edges do), so
+					// nudge it back inside the drawable region.
+					const placed = detector.nudgeInsideX(
+						unclamped,
+						scratchViewport,
+						PAGE_MARGIN_X,
+					);
 					detector.add({ rect: placed, kind: 'diagram' });
-					const diagram = new ChordDiagram(placed.x, top, {
+					const diagram = new ChordDiagram(placed.x, placed.y, {
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
 						numStrings: h.frame.chord.length,
