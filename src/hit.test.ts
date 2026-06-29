@@ -83,14 +83,14 @@ function build() {
 			rect: new Rect(90, 40, 6, 6),
 			chord: [mBb],
 			measureIndex: 0,
-			tab: { string: 2, fret: 3 },
+			tab: { string: 2, fret: 3, text: '3', font: '10px monospace' },
 			glyph: null,
 		},
 	];
 	const geometry: RawGeometry = {
 		bounds: new Rect(0, 0, 200, 100),
 		notes,
-		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0 }],
+		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1' }],
 	};
 	return buildTargets(geometry, new FakeViewport(), new FakeDecorator());
 }

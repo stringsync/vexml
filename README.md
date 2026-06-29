@@ -38,7 +38,7 @@ score.addEventListener('pointermove', (e) => {
     : null;
   if (current !== previous) {
     previous?.halo.off();
-    current?.halo.on();
+    current?.halo.on('rgba(41, 98, 255, 0.35)');
     previous = current;
   }
 });

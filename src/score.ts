@@ -49,6 +49,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 		return this.host.createLayer(kind);
 	}
 
+	/* Remove a layer added with addLayer (a shorthand for layer.dispose()). */
 	removeLayer(layer: Layer): void {
 		layer.dispose();
 	}

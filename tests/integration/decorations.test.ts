@@ -48,7 +48,7 @@ async function decorate(mode: 'color' | 'halo'): Promise<Buffer> {
 				if (mode === 'color') {
 					note.color.on('#2962ff');
 				} else {
-					note.halo.on();
+					note.halo.on('rgba(41, 98, 255, 0.35)');
 				}
 			}
 			return notes.size;

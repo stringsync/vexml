@@ -104,7 +104,7 @@ function fixture(target: PointerTarget | null) {
 }
 
 test('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport);
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
 	const { host, index, score } = fixture(target);
 	const seen: Array<{ type: string; x: number; y: number; native: Event }> = [];
 	score.addEventListener('pointermove', (e) =>
@@ -195,7 +195,7 @@ test('addLayer delegates to the host; removeLayer disposes the layer', () => {
 });
 
 test('dispose detaches every listener and tears down decorations and host', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport);
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
 	const { host, index, decorations, score } = fixture(target);
 	score.addEventListener('pointermove', () => {});
 	score.addEventListener('resize', () => {});

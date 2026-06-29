@@ -34,7 +34,7 @@ class FakeViewport implements Viewport {
 
 class FakeDecorator implements Decorator {
 	readonly colors = new Map<Decoratable, string>();
-	readonly halos = new Set<Decoratable>();
+	readonly halos = new Map<Decoratable, string>();
 	setColor(target: Decoratable, color: string | null): void {
 		if (color === null) {
 			this.colors.delete(target);
@@ -42,11 +42,11 @@ class FakeDecorator implements Decorator {
 			this.colors.set(target, color);
 		}
 	}
-	setHalo(target: Decoratable, on: boolean): void {
-		if (on) {
-			this.halos.add(target);
-		} else {
+	setHalo(target: Decoratable, color: string | null): void {
+		if (color === null) {
 			this.halos.delete(target);
+		} else {
+			this.halos.set(target, color);
 		}
 	}
 	isColored(target: Decoratable): boolean {
@@ -89,7 +89,7 @@ function fixture() {
 
 	const viewport = new FakeViewport();
 	const decorator = new FakeDecorator();
-	const measure = new Measure(new Rect(0, 0, 100, 50), viewport);
+	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1');
 
 	// The shared registries the wrappers resolve their cross-links through (a Map fulfills the
 	// NoteLookup / TabLookup interfaces). Populated as each note is built.
@@ -159,12 +159,13 @@ test('color toggle delegates to the decorator and reflects active state', () => 
 	expect(noteC.color.active).toBe(false);
 });
 
-test('halo toggle delegates to the decorator', () => {
+test('halo toggle delegates to the decorator and carries its color', () => {
 	const { noteC, decorator } = fixture();
-	noteC.halo.on();
-	expect(decorator.halos.has(noteC)).toBe(true);
+	noteC.halo.on('#2962ff');
+	expect(decorator.halos.get(noteC)).toBe('#2962ff');
 	expect(noteC.halo.active).toBe(true);
 	noteC.halo.off();
+	expect(decorator.halos.has(noteC)).toBe(false);
 	expect(noteC.halo.active).toBe(false);
 });
 
@@ -175,11 +176,14 @@ test('getBoundingClientRect maps the score-space rect through the viewport', () 
 });
 
 test('TabPosition exposes string/fret and links back to its note', () => {
-	const { noteC, viewport } = fixture();
+	const { noteC, viewport, decorator } = fixture();
 	const tab = new TabPosition(new Rect(0, 0, 6, 6), viewport, {
 		string: 3,
 		fret: 5,
 		note: noteC,
+		decorator,
+		text: '5',
+		font: '10px monospace',
 	});
 	expect(tab.getString()).toBe(3);
 	expect(tab.getFret()).toBe(5);

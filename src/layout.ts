@@ -304,10 +304,16 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 		let rowWidth = 0;
 		for (let m = 0; m < measureCount; m++) {
 			const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
+			// A <print new-system="yes"/> forces a break before this measure regardless of
+			// width; otherwise wrap once the next measure's note area would overrun the line.
+			const forcedBreak = parts.some(
+				(part) => part.measures[m]?.print?.newSystem,
+			);
 			if (
 				row.length > 0 &&
-				rowWidth + LEAD_BARLINE + area >
-					usableOf(systems.length) * config.maxSystemFill
+				(forcedBreak ||
+					rowWidth + LEAD_BARLINE + area >
+						usableOf(systems.length) * config.maxSystemFill)
 			) {
 				systems.push(row);
 				row = [];

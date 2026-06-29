@@ -2,9 +2,11 @@ import type { Rect } from './geometry';
 import type { Viewport } from './targets';
 
 /* Where a custom drawing layer sits. A `content` layer covers the whole engraved score (score
- * space, scrolls with the content) — what decorations draw on. A `viewport` layer covers only the
- * visible box (client space) and is resized as the container resizes. */
-export type LayerKind = 'content' | 'viewport';
+ * space, scrolls with the content) — what decorations draw on. A `background` layer is a content
+ * layer placed *behind* the base canvas (z-index -1), so it shows through the score's transparent
+ * pixels — e.g. a halo glowing behind the noteheads. A `viewport` layer covers only the visible box
+ * (client space) and is resized as the container resizes. */
+export type LayerKind = 'content' | 'background' | 'viewport';
 
 /* A caller-owned drawing surface stacked over the score. Only the 2D context is exposed — never
  * the canvas, its size, or a clear — so the layer's lifecycle stays vexml's. The caller draws via
@@ -106,6 +108,7 @@ class ManagedLayer implements Layer {
 export class Stage implements Viewport, Host {
 	readonly base: HTMLCanvasElement;
 	private readonly prevPosition: string;
+	private readonly prevIsolation: string;
 	private readonly layers = new Set<ManagedLayer>();
 
 	constructor(private readonly container: HTMLDivElement) {
@@ -114,6 +117,13 @@ export class Stage implements Viewport, Host {
 		this.prevPosition = container.style.position;
 		if (!container.style.position) {
 			container.style.position = 'relative';
+		}
+		// Isolate the container into its own stacking context so the background layer's z-index:-1
+		// stays trapped here — above the container's (possibly opaque) background but below the base
+		// canvas — rather than escaping behind an ancestor's background, where it'd be invisible.
+		this.prevIsolation = container.style.isolation;
+		if (!container.style.isolation) {
+			container.style.isolation = 'isolate';
 		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
@@ -172,6 +182,10 @@ export class Stage implements Viewport, Host {
 		canvas.className = 'vexml-layer';
 		canvas.style.position = 'absolute';
 		canvas.style.pointerEvents = 'none';
+		// A background layer paints behind the (in-flow) base canvas; everything else stacks over it.
+		if (kind === 'background') {
+			canvas.style.zIndex = '-1';
+		}
 		const layer = new ManagedLayer(kind, canvas, this);
 		this.container.appendChild(canvas);
 		this.layers.add(layer);
@@ -203,13 +217,14 @@ export class Stage implements Viewport, Host {
 		}
 		this.base.remove();
 		this.container.style.position = this.prevPosition;
+		this.container.style.isolation = this.prevIsolation;
 	}
 
 	// Size a layer's drawing bitmap. A content layer's bitmap is fixed to the engraved score (the
 	// base canvas's intrinsic CSS box), so the caller always draws in score px — its element is then
 	// stretched over the base's rendered box by placeLayer. A viewport bitmap matches the visible box.
 	private sizeBitmap(layer: ManagedLayer): void {
-		if (layer.kind === 'content') {
+		if (layer.kind !== 'viewport') {
 			layer.resize(
 				parseFloat(this.base.style.width) || 0,
 				parseFloat(this.base.style.height) || 0,
@@ -226,7 +241,7 @@ export class Stage implements Viewport, Host {
 	private placeLayer(layer: ManagedLayer): void {
 		const left = this.base.offsetLeft;
 		const top = this.base.offsetTop;
-		if (layer.kind === 'content') {
+		if (layer.kind !== 'viewport') {
 			layer.place(left, top, this.base.offsetWidth, this.base.offsetHeight);
 		} else {
 			layer.place(

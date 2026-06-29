@@ -25,11 +25,12 @@ export interface NoteGlyph {
 	readonly y: number;
 }
 
-/* What a decoration paints: a target's box (for the halo) and its glyph (to recolor the notehead),
- * the glyph being null when there is none (a measure, a rest). The decoration seam operates on
- * this rather than bare Bounded so it can stamp the actual notehead glyph. */
+/* What a decoration paints. The Decorator draws the halo from the target's box, but the color is
+ * the target's own job: only it knows what it is — a notehead glyph (Note), a fret number
+ * (TabPosition), or a plain box (the filled-ellipse fallback). So the Decorator hands over the
+ * overlay ctx and the chosen color and the target stamps itself recolored. */
 export interface Decoratable extends Bounded {
-	readonly glyph: NoteGlyph | null;
+	drawColor(ctx: CanvasRenderingContext2D, color: string): void;
 }
 
 /* A reversible on/off effect carrying an optional value (color string, etc.). `off()` is the
@@ -59,7 +60,7 @@ export type DecorationKind = 'color' | 'halo';
  */
 export interface Decorator {
 	setColor(target: Decoratable, color: string | null): void;
-	setHalo(target: Decoratable, on: boolean): void;
+	setHalo(target: Decoratable, color: string | null): void;
 	isColored(target: Decoratable): boolean;
 	isHaloed(target: Decoratable): boolean;
 }
@@ -94,17 +95,17 @@ class ColorToggle implements Toggle<string> {
 	}
 }
 
-/* The halo decoration as an on/off toggle, delegating to the Decorator. */
-class HaloToggle implements Toggle {
+/* The halo decoration as an on/off toggle carrying its color, delegating to the Decorator. */
+class HaloToggle implements Toggle<string> {
 	constructor(
 		private readonly target: Decoratable,
 		private readonly decorator: Decorator,
 	) {}
-	on(): void {
-		this.decorator.setHalo(this.target, true);
+	on(color: string): void {
+		this.decorator.setHalo(this.target, color);
 	}
 	off(): void {
-		this.decorator.setHalo(this.target, false);
+		this.decorator.setHalo(this.target, null);
 	}
 	get active(): boolean {
 		return this.decorator.isHaloed(this.target);
@@ -112,14 +113,29 @@ class HaloToggle implements Toggle {
 }
 
 /* Shared base for every target: holds the score-space rect and maps it to the page on demand.
- * Decoratable with no glyph by default; Note overrides glyph with its notehead stamp. */
+ * The default color is a filled ellipse over the box — the fallback for a target with no glyph or
+ * text of its own (a rest, a measure). Note and TabPosition override it with their own stamp. */
 abstract class BoundedTarget implements Decoratable {
 	constructor(
 		readonly rect: Rect,
 		protected readonly viewport: Viewport,
 	) {}
-	get glyph(): NoteGlyph | null {
-		return null;
+	drawColor(ctx: CanvasRenderingContext2D, color: string): void {
+		const r = this.rect;
+		ctx.save();
+		ctx.fillStyle = color;
+		ctx.beginPath();
+		ctx.ellipse(
+			r.x + r.w / 2,
+			r.y + r.h / 2,
+			r.w / 2,
+			r.h / 2,
+			0,
+			0,
+			2 * Math.PI,
+		);
+		ctx.fill();
+		ctx.restore();
 	}
 	getBoundingClientRect(): DOMRect {
 		return this.viewport.clientRectOf(this.rect);
@@ -158,7 +174,7 @@ export interface NoteDeps {
 export class Note extends BoundedTarget {
 	readonly type = 'note';
 	readonly color: Toggle<string>;
-	readonly halo: Toggle;
+	readonly halo: Toggle<string>;
 
 	constructor(private readonly deps: NoteDeps) {
 		super(deps.rect, deps.viewport);
@@ -166,9 +182,22 @@ export class Note extends BoundedTarget {
 		this.halo = new HaloToggle(this, deps.decorator);
 	}
 
-	/* The engraved notehead glyph (for recoloring), or null for a rest. */
-	override get glyph(): NoteGlyph | null {
-		return this.deps.glyph;
+	/* The glyph case: replay vexflow's own notehead (same glyph text, font, baseline) in the
+	 * chosen color, so the actual head recolors and a hollow head stays hollow. A rest has no
+	 * glyph, so it falls back to the base ellipse. */
+	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
+		const glyph = this.deps.glyph;
+		if (!glyph) {
+			super.drawColor(ctx, color);
+			return;
+		}
+		ctx.save();
+		ctx.fillStyle = color;
+		ctx.font = glyph.font;
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+		ctx.fillText(glyph.text, glyph.x, glyph.y);
+		ctx.restore();
 	}
 
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
@@ -214,19 +243,59 @@ export class Note extends BoundedTarget {
 /* A measure's box — the background target, hit when a pointer lands on staff space (not a note). */
 export class Measure extends BoundedTarget {
 	readonly type = 'measure';
+
+	constructor(
+		rect: Rect,
+		viewport: Viewport,
+		private readonly number: string,
+	) {
+		super(rect, viewport);
+	}
+
+	/* The MusicXML measure number, e.g. "1" (or "0" for a pickup). */
+	getNumber(): string {
+		return this.number;
+	}
 }
 
 /* A fret number on a tab string. The same note can render as both a Note (notehead) and a
  * TabPosition (fret); they cross-reference via Note.getTabPosition() / TabPosition.getNote(). */
 export class TabPosition extends BoundedTarget {
 	readonly type = 'tab-position';
+	readonly color: Toggle<string>;
+	readonly halo: Toggle<string>;
 
 	constructor(
 		rect: Rect,
 		viewport: Viewport,
-		private readonly opts: { string: number; fret: number; note: Note },
+		private readonly opts: {
+			string: number;
+			fret: number;
+			note: Note;
+			decorator: Decorator;
+			/* The fret as vexflow drew it ("5", "<7>", "(2)", "✕") and the exact font, so a
+			 * decoration redraws the digit in color instead of hiding it under an ellipse. */
+			text: string;
+			font: string;
+		},
 	) {
 		super(rect, viewport);
+		this.color = new ColorToggle(this, opts.decorator);
+		this.halo = new HaloToggle(this, opts.decorator);
+	}
+
+	/* The text case: redraw the fret number centered in its box in the chosen color, so the digit
+	 * lights up rather than vanishing under a filled ellipse. The box is centered on the fret, so
+	 * centered text with vexflow's own fret font overlays the engraved digit exactly. */
+	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
+		const r = this.rect;
+		ctx.save();
+		ctx.fillStyle = color;
+		ctx.font = this.opts.font;
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText(this.opts.text, r.x + r.w / 2, r.y + r.h / 2);
+		ctx.restore();
 	}
 
 	getString(): number {

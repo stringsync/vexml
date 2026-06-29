@@ -121,6 +121,13 @@ export const HARMONY_Y_OFFSET = 14;
  * sits over, so the symbol lifts clear instead of colliding with the notehead. */
 export const HARMONY_NOTE_CLEARANCE = 8;
 
+/** Padding added below a chord symbol's collision box, reaching down to the top staff line
+ * (past its text baseline, which sits HARMONY_Y_OFFSET above that line). Lets the lift-clear
+ * probe reach a notehead sitting in the top stave space — just under the baseline — so the
+ * symbol nudges up off it instead of touching, leaving a little breathing room above the note.
+ * Set a hair past HARMONY_Y_OFFSET so a note on the top line/space is reliably caught. */
+export const HARMONY_PADDING = 15;
+
 /** How far a single note's tie ribbon peaks above the notehead center when it bows
  * upward (stem-down note). Vexflow draws the tie as a bezier whose outer edge clears
  * the notehead by its yShift (7) plus the deeper control-point excursion (cp2 12) —

@@ -21,7 +21,7 @@ function describe(target: PointerTarget): string {
 		if (target.isChordMember()) {
 			parts.push('chord');
 		}
-		return parts.join(' · ');
+		return `${parts.join(' · ')}\nmeasure ${target.getMeasure().getNumber()}`;
 	}
 	if (target.type === 'tab-position') {
 		return `string ${target.getString()} · fret ${target.getFret()} · ${target.getNote().getPitch() ?? 'rest'}`;
@@ -102,8 +102,13 @@ export default function App() {
 	const [fixture, setFixture] = useState('');
 	const [error, setError] = useState<string | null>(null);
 	const [renderMs, setRenderMs] = useState<number | null>(null);
+	// Mirror of renderMs the debounce effect reads without depending on it — otherwise a
+	// render-time report would re-fire the effect and flash a phantom debounce.
+	const renderMsRef = useRef<number | null>(null);
 	const [dragging, setDragging] = useState(false);
 	const [debouncing, setDebouncing] = useState(false);
+	// Loading overlay until the first render settles; the app always renders on mount.
+	const [initialized, setInitialized] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [dark, setDark] = useState(false);
 	const [stored, setStored] = useState(
@@ -155,7 +160,9 @@ export default function App() {
 	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
 	// behind it by the debounce so dragging a slider re-renders once it settles, not on
 	// every step. The loading overlay shows while waiting (shared `debouncing` flag).
-	const [renderConfig, setRenderConfig] = useState<Partial<Config>>({});
+	// Seed from `config` (same reference) so the first render uses the real config, not {}.
+	// Otherwise the first setRenderMs flips renderConfig {} -> config and double-renders on mount.
+	const [renderConfig, setRenderConfig] = useState<Partial<Config>>(config);
 	const skipConfigDebounce = useRef(true);
 	useEffect(() => {
 		if (skipConfigDebounce.current) {
@@ -164,7 +171,7 @@ export default function App() {
 		}
 		// If the last render was fast, apply config changes immediately; only debounce
 		// once renders get slow enough to lag the sliders.
-		if (renderMs != null && renderMs <= 50) {
+		if (renderMsRef.current != null && renderMsRef.current <= 50) {
 			setRenderConfig(config);
 			setDebouncing(false);
 			return;
@@ -175,7 +182,7 @@ export default function App() {
 			setDebouncing(false);
 		}, 500);
 		return () => clearTimeout(t);
-	}, [config, renderMs]);
+	}, [config]);
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -217,7 +224,9 @@ export default function App() {
 					return;
 				}
 				scoreRef.current = score;
-				setRenderMs(performance.now() - start);
+				renderMsRef.current = performance.now() - start;
+				setRenderMs(renderMsRef.current);
+				setInitialized(true);
 
 				const onPointer = (e: PointerTargetEvent) => {
 					const note =
@@ -229,7 +238,7 @@ export default function App() {
 					if (note !== haloRef.current) {
 						haloRef.current?.halo.off();
 						haloRef.current?.color.off();
-						note?.halo.on();
+						note?.halo.on('rgba(41, 98, 255, 0.35)');
 						note?.color.on('#2962ff');
 						haloRef.current = note;
 						container.style.cursor = note ? 'pointer' : '';
@@ -254,8 +263,10 @@ export default function App() {
 				};
 			})
 			.catch((e: unknown) => {
+				renderMsRef.current = null;
 				setRenderMs(null);
 				setError(e instanceof Error ? e.message : String(e));
+				setInitialized(true);
 			});
 		return () => {
 			cancelled = true;
@@ -819,10 +830,12 @@ export default function App() {
 							// re-engraving in a light color.
 							<div
 								ref={containerRef}
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:h-auto! [&_.vexml-canvas]:w-full! ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
+								// invisible (not hidden) until initialized so the container keeps its
+								// width — the canvas is CSS-scaled to w-full and would scale against 0.
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:h-auto! [&_.vexml-canvas]:w-full! ${initialized ? '' : 'invisible'} ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
 							/>
 						)}
-						{debouncing && (
+						{(!initialized || debouncing) && (
 							<div className="pointer-events-none absolute inset-0 bg-black/40">
 								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
 								<div className="sticky top-0 flex h-screen items-center justify-center">
@@ -841,8 +854,8 @@ export default function App() {
 
 			{tooltip && (
 				<div
-					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full rounded bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
-					style={{ left: tooltip.x, top: tooltip.y - 8 }}
+					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full whitespace-pre-line rounded text-center bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+					style={{ left: tooltip.x, top: tooltip.y - 16 }}
 				>
 					{tooltip.text}
 				</div>
