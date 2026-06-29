@@ -52,6 +52,27 @@ await render(musicXML, element, {
 });
 ```
 
+## Listening to events
+
+`render` resolves to a `Score`. Subscribe with `addEventListener` (and unsubscribe with
+`removeEventListener`). Pointer events carry the `target` under the pointer — a `Note`,
+`Measure`, or `TabPosition`, or `null` over empty space.
+
+```ts
+const score = await render(musicXML, element);
+
+score.addEventListener('pointermove', (e) => {
+  if (e.target?.type === 'note') {
+    console.log(e.target.getPitch()); // e.g. "C/5"
+    e.target.halo.on(); // highlight it on an overlay
+  }
+});
+```
+
+Available events: `pointermove`, `pointerdown`, `pointerup`, `click` (each with `target`,
+`point` in score space, and the raw `native` event), plus `scroll` and `resize`. Call
+`score.dispose()` when done to remove the render and its listeners.
+
 ## Development
 
 The `vex` CLI (`bin/vex`) wraps the dev tasks. It needs [bun](https://bun.sh).
