@@ -25,6 +25,23 @@ export interface NoteGlyph {
 	readonly y: number;
 }
 
+/* Replay a captured glyph (a notehead or a tab fret) recolored on the overlay: vexflow's own
+ * text, font, and left/alphabetic baseline, exactly as it engraved it, so the color stamp
+ * overlays the original precisely instead of being centered by a different rule. */
+function stampGlyph(
+	ctx: CanvasRenderingContext2D,
+	glyph: NoteGlyph,
+	color: string,
+): void {
+	ctx.save();
+	ctx.fillStyle = color;
+	ctx.font = glyph.font;
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'alphabetic';
+	ctx.fillText(glyph.text, glyph.x, glyph.y);
+	ctx.restore();
+}
+
 /* What a decoration paints. The Decorator draws the halo from the target's box, but the color is
  * the target's own job: only it knows what it is — a notehead glyph (Note), a fret number
  * (TabPosition), or a plain box (the filled-ellipse fallback). So the Decorator hands over the
@@ -186,18 +203,11 @@ export class Note extends BoundedTarget {
 	 * chosen color, so the actual head recolors and a hollow head stays hollow. A rest has no
 	 * glyph, so it falls back to the base ellipse. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
-		const glyph = this.deps.glyph;
-		if (!glyph) {
+		if (this.deps.glyph) {
+			stampGlyph(ctx, this.deps.glyph, color);
+		} else {
 			super.drawColor(ctx, color);
-			return;
 		}
-		ctx.save();
-		ctx.fillStyle = color;
-		ctx.font = glyph.font;
-		ctx.textAlign = 'left';
-		ctx.textBaseline = 'alphabetic';
-		ctx.fillText(glyph.text, glyph.x, glyph.y);
-		ctx.restore();
 	}
 
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
@@ -273,10 +283,9 @@ export class TabPosition extends BoundedTarget {
 			fret: number;
 			note: Note;
 			decorator: Decorator;
-			/* The fret as vexflow drew it ("5", "<7>", "(2)", "✕") and the exact font, so a
-			 * decoration redraws the digit in color instead of hiding it under an ellipse. */
-			text: string;
-			font: string;
+			/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
+			 * baseline, so a decoration replays the digit recolored; null falls back to an ellipse. */
+			glyph: NoteGlyph | null;
 		},
 	) {
 		super(rect, viewport);
@@ -284,18 +293,14 @@ export class TabPosition extends BoundedTarget {
 		this.halo = new HaloToggle(this, opts.decorator);
 	}
 
-	/* The text case: redraw the fret number centered in its box in the chosen color, so the digit
-	 * lights up rather than vanishing under a filled ellipse. The box is centered on the fret, so
-	 * centered text with vexflow's own fret font overlays the engraved digit exactly. */
+	/* Replay vexflow's own fret glyph recolored so the digit lights up exactly where it was
+	 * engraved, rather than vanishing under a filled ellipse. Same approach as a notehead. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
-		const r = this.rect;
-		ctx.save();
-		ctx.fillStyle = color;
-		ctx.font = this.opts.font;
-		ctx.textAlign = 'center';
-		ctx.textBaseline = 'middle';
-		ctx.fillText(this.opts.text, r.x + r.w / 2, r.y + r.h / 2);
-		ctx.restore();
+		if (this.opts.glyph) {
+			stampGlyph(ctx, this.opts.glyph, color);
+		} else {
+			super.drawColor(ctx, color);
+		}
 	}
 
 	getString(): number {

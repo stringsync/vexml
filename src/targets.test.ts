@@ -182,8 +182,7 @@ test('TabPosition exposes string/fret and links back to its note', () => {
 		fret: 5,
 		note: noteC,
 		decorator,
-		text: '5',
-		font: '10px monospace',
+		glyph: null,
 	});
 	expect(tab.getString()).toBe(3);
 	expect(tab.getFret()).toBe(5);

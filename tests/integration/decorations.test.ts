@@ -1,61 +1,69 @@
 import { expect, test } from 'bun:test';
-import type { Note } from '../../src';
+import type { Note, TabPosition } from '../../src';
 import { TEST_URL, testBrowser } from '../testing/setup';
 
 // Decorations end to end, the way a caller actually reaches them: render, hover to hit-test the
-// notes, toggle a decoration, and screenshot the composite (base engraving + the decoration
+// targets, toggle a decoration, and screenshot the composite (base engraving + the decoration
 // overlay). The drawing logic itself is unit-tested in src/decorations.test.ts; this proves it
 // lands on the score, aligned. Uses the run's shared browser/server (see setup.ts).
+//
+// Both noteheads (Note) and tab fret numbers (TabPosition) are decoratable, with their own
+// drawColor stamps, so we collect both: a notation-only document yields only notes, a tab
+// document lights up both the heads and the frets.
 
-async function decorate(mode: 'color' | 'halo'): Promise<Buffer> {
+async function decorate(mode: 'color' | 'halo', file: string): Promise<Buffer> {
 	const browser = await testBrowser();
 	const page = await browser.newPage({ viewport: { width: 900, height: 400 } });
 	try {
 		await page.goto(TEST_URL);
-		const count = await page.evaluate(async (mode) => {
-			const container = document.getElementById('screenshot');
-			if (!(container instanceof HTMLDivElement)) {
-				throw new Error('container not found');
-			}
-			const xml = await (await fetch('/data/note.musicxml')).text();
-			const score = await window.render(xml, container, {});
-			const canvas = container.querySelector('canvas');
-			if (!canvas) {
-				throw new Error('canvas not found');
-			}
+		const count = await page.evaluate(
+			async ({ mode, file }) => {
+				const container = document.getElementById('screenshot');
+				if (!(container instanceof HTMLDivElement)) {
+					throw new Error('container not found');
+				}
+				const xml = await (await fetch(`/data/${file}`)).text();
+				const score = await window.render(xml, container, {});
+				const canvas = container.querySelector('canvas');
+				if (!canvas) {
+					throw new Error('canvas not found');
+				}
 
-			// Hover the whole canvas to collect every note under the pointer (deduped by identity).
-			const notes = new Set<Note>();
-			score.addEventListener('pointermove', (e) => {
-				if (e.target?.type === 'note') {
-					notes.add(e.target);
+				// Hover the whole canvas to collect every decoratable target under the pointer
+				// (noteheads and tab frets), deduped by identity.
+				const targets = new Set<Note | TabPosition>();
+				score.addEventListener('pointermove', (e) => {
+					if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
+						targets.add(e.target);
+					}
+				});
+				const rect = canvas.getBoundingClientRect();
+				for (let dy = 2; dy < rect.height; dy += 4) {
+					for (let dx = 2; dx < rect.width; dx += 4) {
+						canvas.dispatchEvent(
+							new PointerEvent('pointermove', {
+								clientX: rect.left + dx,
+								clientY: rect.top + dy,
+								bubbles: true,
+							}),
+						);
+					}
 				}
-			});
-			const rect = canvas.getBoundingClientRect();
-			for (let dy = 2; dy < rect.height; dy += 4) {
-				for (let dx = 2; dx < rect.width; dx += 4) {
-					canvas.dispatchEvent(
-						new PointerEvent('pointermove', {
-							clientX: rect.left + dx,
-							clientY: rect.top + dy,
-							bubbles: true,
-						}),
-					);
-				}
-			}
 
-			for (const note of notes) {
-				if (mode === 'color') {
-					note.color.on('#2962ff');
-				} else {
-					note.halo.on('rgba(41, 98, 255, 0.35)');
+				for (const target of targets) {
+					if (mode === 'color') {
+						target.color.on('#2962ff');
+					} else {
+						target.halo.on('rgba(41, 98, 255, 0.35)');
+					}
 				}
-			}
-			return notes.size;
-		}, mode);
+				return targets.size;
+			},
+			{ mode, file },
+		);
 
 		if (count === 0) {
-			throw new Error('no notes found to decorate');
+			throw new Error('no targets found to decorate');
 		}
 		return await page.locator('#screenshot').screenshot();
 	} finally {
@@ -64,9 +72,28 @@ async function decorate(mode: 'color' | 'halo'): Promise<Buffer> {
 }
 
 test('a colored note', async () => {
-	expect(await decorate('color')).toMatchScreenshot('decoration_color.png');
+	expect(await decorate('color', 'note.musicxml')).toMatchScreenshot(
+		'decoration_color.png',
+	);
 }, 30_000);
 
 test('a haloed note', async () => {
-	expect(await decorate('halo')).toMatchScreenshot('decoration_halo.png');
+	expect(await decorate('halo', 'note.musicxml')).toMatchScreenshot(
+		'decoration_halo.png',
+	);
+}, 30_000);
+
+// A notation+tab document: the notation staff's noteheads and the tab staff's fret numbers both
+// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
+// blue circle behind every notehead and every fret.
+test('colored notes and frets', async () => {
+	expect(
+		await decorate('color', 'structure_notation_and_tab_parts.musicxml'),
+	).toMatchScreenshot('decoration_tab_color.png');
+}, 30_000);
+
+test('haloed notes and frets', async () => {
+	expect(
+		await decorate('halo', 'structure_notation_and_tab_parts.musicxml'),
+	).toMatchScreenshot('decoration_tab_halo.png');
 }, 30_000);

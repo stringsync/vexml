@@ -83,7 +83,7 @@ function build() {
 			rect: new Rect(90, 40, 6, 6),
 			chord: [mBb],
 			measureIndex: 0,
-			tab: { string: 2, fret: 3, text: '3', font: '10px monospace' },
+			tab: { string: 2, fret: 3 },
 			glyph: null,
 		},
 	];

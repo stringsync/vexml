@@ -1300,7 +1300,12 @@ export function drawScore(
 						const positions = note.getPositions();
 						const fretEls = (
 							note as unknown as {
-								fretElement: { getText(): string; getFont(): string }[];
+								fretElement: {
+									getText(): string;
+									getFont(): string;
+									getWidth(): number;
+									getYShift(): number;
+								}[];
 							}
 						).fretElement;
 						for (const mnote of chord.notes) {
@@ -1323,13 +1328,20 @@ export function drawScore(
 								),
 								chord: chord.notes,
 								measureIndex: m,
-								tab: {
-									string,
-									fret,
-									text: el ? el.getText() : String(fret),
-									font: el ? el.getFont() : '',
-								},
-								glyph: null,
+								tab: { string, fret },
+								// Replay vexflow's own fret glyph for recoloring, the tab analog of the
+								// notehead path: its left-anchored baseline x (drawPositions uses
+								// tabX = absoluteX - width/2) and baseline y (the string line plus the
+								// element's yShift, which is how TabNote vertically centers the digit).
+								// Drawn left/alphabetic, a colored fret overlays the engraved one exactly.
+								glyph: el
+									? {
+											text: el.getText(),
+											font: el.getFont(),
+											x: x - el.getWidth() / 2,
+											y: y + el.getYShift(),
+										}
+									: null,
 							});
 						}
 					}

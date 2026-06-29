@@ -238,8 +238,8 @@ export default function App() {
 					if (note !== haloRef.current) {
 						haloRef.current?.halo.off();
 						haloRef.current?.color.off();
-						note?.halo.on('rgba(41, 98, 255, 0.35)');
-						note?.color.on('#2962ff');
+						note?.halo.on('rgba(255, 0, 105, 0.9)');
+						note?.color.on('#f4f800');
 						haloRef.current = note;
 						container.style.cursor = note ? 'pointer' : '';
 					}

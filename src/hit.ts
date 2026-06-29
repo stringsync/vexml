@@ -27,8 +27,8 @@ export interface RawNote {
 	rect: Rect;
 	chord: MNote[];
 	measureIndex: number;
-	tab: { string: number; fret: number; text: string; font: string } | null;
-	/* The engraved notehead glyph (for recoloring); null for a tab fret or a rest. */
+	tab: { string: number; fret: number } | null;
+	/* The engraved glyph for recoloring — a notehead, or a tab fret; null for a rest. */
 	glyph: NoteGlyph | null;
 }
 
@@ -136,8 +136,7 @@ export function buildTargets(
 				fret: rn.tab.fret,
 				note,
 				decorator,
-				text: rn.tab.text,
-				font: rn.tab.font,
+				glyph: rn.glyph,
 			}),
 		);
 	}
