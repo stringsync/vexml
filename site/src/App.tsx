@@ -819,7 +819,7 @@ export default function App() {
 							// re-engraving in a light color.
 							<div
 								ref={containerRef}
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:!h-auto [&_.vexml-canvas]:!w-full ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:h-auto! [&_.vexml-canvas]:w-full! ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
 							/>
 						)}
 						{debouncing && (

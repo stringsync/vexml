@@ -19,26 +19,35 @@ import { render } from '@stringsync/vexml';
 Render MusicXML.
 
 ```ts
-const res = await fetch('song.musicxml');
-const musicXML = await res.text();
+const res = await fetch('song.musicxml'); // or .mxl
+const musicXML = await res.text();        // or .blob() for mxl
 await render(musicXML, element);
 ```
 
-Render MXL (compressed MusicXML).
+
+## Listening to events
 
 ```ts
-const res = await fetch('song.mxl');
-const mxl = await res.blob();
-await render(mxl, element);
+const score = await render(musicXML, element);
+
+let previous = null;
+
+score.addEventListener('pointermove', (e) => {
+  const current = e.target?.type === 'note'
+    ? e.target
+    : null;
+  if (current !== previous) {
+    previous?.halo.off();
+    current?.halo.on();
+    previous = current;
+  }
+});
 ```
 
-Use custom fonts (optional).
+## Using custom fonts
 
-> [!IMPORTANT]
-> Font `family` and `url` are interpolated into a `<style>` rule and CSS variables. vexml
-> strips quote/backslash/angle/newline characters as a backstop against CSS injection (it's
-> not script-executing XSS), but this is not full CSS escaping. Treat font config as
-> developer-controlled; don't pass raw untrusted user input.
+> [!NOTE]
+> Font `family` and `url` are interpolated into a `<style>` rule and CSS variables. Don't pass raw untrusted user input.
 
 ```ts
 await render(musicXML, element, {
@@ -52,42 +61,45 @@ await render(musicXML, element, {
 });
 ```
 
-## Listening to events
-
-`render` resolves to a `Score`. Subscribe with `addEventListener` (and unsubscribe with
-`removeEventListener`). Pointer events carry the `target` under the pointer — a `Note`,
-`Measure`, or `TabPosition`, or `null` over empty space.
+## Adding a canvas layer
 
 ```ts
 const score = await render(musicXML, element);
 
-score.addEventListener('pointermove', (e) => {
-  if (e.target?.type === 'note') {
-    console.log(e.target.getPitch()); // e.g. "C/5"
-    e.target.halo.on(); // highlight it on an overlay
-  }
-});
+const layer = score.createLayer('content');
+// ctx is a standard CanvasRenderingContext2D, you can draw anything you want here
+layer.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+layer.ctx.fillRect(50, 50, 100, 80);
 ```
 
-Available events: `pointermove`, `pointerdown`, `pointerup`, `click` (each with `target`,
-`point` in score space, and the raw `native` event), plus `scroll` and `resize`. Call
-`score.dispose()` when done to remove the render and its listeners.
+## Cleaning up
+
+When you're done with a layer or the entire rendered score, call `.dispose()` to clean up resources.
+
+```ts
+layer.dispose();
+score.dispose();
+```
 
 ## Development
 
-The `vex` CLI (`bin/vex`) wraps the dev tasks. It needs [bun](https://bun.sh).
-Add the repo's `bin/` to your `PATH` so `vex` works anywhere:
+Dependencies:
+
+- [bun](https://bun.sh)
+- [docker](https://docs.docker.com/desktop/)
+
+Add the repo's `bin/` to your `PATH` so the `vex` command works anywhere:
 
 ```sh
-export PATH="$PWD/bin:$PATH" # run from the repo root; add to your shell profile to persist
+profile=~/.${SHELL##*/}rc # ~/.zshrc, ~/.bashrc, etc.
+echo "export PATH=\"$PWD/bin:\$PATH\"" >> "$profile"
+source "$profile"
 ```
 
 Then:
 
 ```sh
-vex dev                     # run the playground site (localhost:5174)
-vex fix                     # format, lint, and typecheck (--check to verify only)
-vex test                    # run unit + visual-regression tests in Docker
+vex dev                     # run the playground site
 vex render -i song.musicxml # render a MusicXML file to a png
 ```
 
