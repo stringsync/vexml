@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type {
 	Config,
 	HoverEvent,
@@ -85,6 +85,28 @@ function CheckIcon() {
 	);
 }
 
+function Section({
+	title,
+	action,
+	children,
+}: {
+	title: string;
+	action?: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+			<div className="flex items-center justify-between">
+				<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+					{title}
+				</span>
+				{action}
+			</div>
+			{children}
+		</div>
+	);
+}
+
 function Or() {
 	return (
 		<div className="flex items-center gap-2 text-xs text-zinc-400">
@@ -117,15 +139,12 @@ export default function App() {
 	);
 	const [cleared, setCleared] = useState(false);
 	const [restored, setRestored] = useState(false);
-	const [showInfo, setShowInfo] = useState(true);
+	const [scrolled, setScrolled] = useState(false);
 	const [tooltip, setTooltip] = useState<{
 		x: number;
 		y: number;
 		text: string;
 	} | null>(null);
-	// Read live inside the pointer handler so toggling the checkbox doesn't re-subscribe.
-	const showInfoRef = useRef(showInfo);
-	showInfoRef.current = showInfo;
 	// The note whose halo is currently lit, so the next move can turn it back off.
 	const haloRef = useRef<Note | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -251,7 +270,7 @@ export default function App() {
 					}
 					container.style.cursor = note ? 'pointer' : '';
 					// Only note-bearing targets get a tooltip; describe() is empty for a measure.
-					if (note && target && showInfoRef.current) {
+					if (note && target) {
 						const r = target.getBoundingClientRect();
 						setTooltip({
 							x: r.left + r.width / 2,
@@ -448,7 +467,7 @@ export default function App() {
 						onClick={() => setMobileOpen((o) => !o)}
 						aria-expanded={mobileOpen}
 						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
-						className="flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 hover:bg-zinc-100 active:bg-zinc-200 md:hidden"
+						className={`flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 transition-shadow hover:bg-zinc-100 active:bg-zinc-200 md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -472,66 +491,65 @@ export default function App() {
 						className={`grid transition-[grid-template-rows] duration-300 md:grid-rows-[1fr] ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
 						<div className="min-h-0 overflow-hidden">
-							<div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-none md:overflow-visible">
-								<div className="flex flex-col gap-1.5">
-									<span className="text-xs font-medium text-zinc-500">
-										Upload file
-									</span>
-									<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
-										Choose File
-										<input
-											type="file"
-											accept=".xml,.musicxml,.mxl"
-											className="hidden"
-											onChange={onFile}
+							<div
+								onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
+								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-none md:overflow-visible"
+							>
+								<Section title="MusicXML">
+									<div className="flex flex-col gap-1.5">
+										<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
+											Choose File
+											<input
+												type="file"
+												accept=".xml,.musicxml,.mxl"
+												className="hidden"
+												onChange={onFile}
+											/>
+										</label>
+									</div>
+
+									<Or />
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="example"
+											className="text-xs font-medium text-zinc-500"
+										>
+											Select an Example
+										</label>
+										<select
+											id="example"
+											value={fixture}
+											onChange={onPickFixture}
+											className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
+										>
+											<option value="">Load an example…</option>
+											{fixtureNames.map((name) => (
+												<option key={name} value={name}>
+													{name}
+												</option>
+											))}
+										</select>
+									</div>
+
+									<Or />
+
+									<details className="flex flex-col gap-1.5">
+										<summary className="cursor-pointer text-xs font-medium text-zinc-500">
+											Edit MusicXML
+										</summary>
+										<textarea
+											id="musicxml"
+											value={text}
+											onChange={onTextChange}
+											placeholder="Paste MusicXML here"
+											spellCheck={false}
+											className="h-48 w-full resize-y rounded-md border border-zinc-300 bg-white p-2 font-mono text-xs text-zinc-700"
 										/>
-									</label>
-								</div>
+									</details>
+								</Section>
 
-								<Or />
-
-								<div className="flex flex-col gap-1.5">
-									<label
-										htmlFor="example"
-										className="text-xs font-medium text-zinc-500"
-									>
-										Select an Example
-									</label>
-									<select
-										id="example"
-										value={fixture}
-										onChange={onPickFixture}
-										className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-									>
-										<option value="">Load an example…</option>
-										{fixtureNames.map((name) => (
-											<option key={name} value={name}>
-												{name}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<Or />
-
-								<details className="flex flex-col gap-1.5">
-									<summary className="cursor-pointer text-xs font-medium text-zinc-500">
-										Edit MusicXML
-									</summary>
-									<textarea
-										id="musicxml"
-										value={text}
-										onChange={onTextChange}
-										placeholder="Paste MusicXML here"
-										spellCheck={false}
-										className="h-48 w-full resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
-									/>
-								</details>
-
-								<div className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-										Local storage
-									</span>
+								<Section title="Local storage">
 									<p className="flex items-center gap-1 text-xs text-zinc-400">
 										{cleared ? (
 											<>
@@ -560,13 +578,11 @@ export default function App() {
 									>
 										Clear local storage
 									</button>
-								</div>
+								</Section>
 
-								<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-									<div className="flex items-center justify-between">
-										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-											Config
-										</span>
+								<Section
+									title="Config"
+									action={
 										<button
 											type="button"
 											onClick={resetAll}
@@ -575,7 +591,8 @@ export default function App() {
 										>
 											Reset all
 										</button>
-									</div>
+									}
+								>
 									<p className="text-xs text-zinc-400">
 										With only a single system, some controls (e.g. system
 										spacing and max system fill) won't have a visible effect.
@@ -591,23 +608,6 @@ export default function App() {
 											onChange={(e) => setDark(e.target.checked)}
 										/>
 										Dark mode
-									</label>
-									<label
-										htmlFor="showInfo"
-										className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-									>
-										<input
-											id="showInfo"
-											type="checkbox"
-											checked={showInfo}
-											onChange={(e) => {
-												setShowInfo(e.target.checked);
-												if (!e.target.checked) {
-													setTooltip(null);
-												}
-											}}
-										/>
-										Show note info on hover
 									</label>
 									<div className="flex flex-col gap-1.5">
 										<label
@@ -853,7 +853,7 @@ export default function App() {
 											measures per system before wrapping.
 										</p>
 									</div>
-								</div>
+								</Section>
 							</div>
 						</div>
 					</div>
