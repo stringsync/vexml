@@ -3,6 +3,8 @@ import { VexFlow } from 'vexflow';
 import { type Config, DEFAULT_CONFIG } from './config';
 import { drawScore } from './draw';
 import { loadFonts } from './fonts';
+import { Rect } from './geometry';
+import type { RawGeometry } from './hit';
 import { computeLayout } from './layout';
 
 /*
@@ -43,26 +45,36 @@ function renderMusicXML(
 	musicXML: string,
 	canvas: HTMLCanvasElement,
 	config: Config,
-) {
+): RawGeometry {
 	const parser = new MDOMParser();
 	const mdoc = parser.parseFromString(musicXML);
 	return renderMDoc(mdoc, canvas, config);
 }
 
-async function renderMXL(mxl: Blob, canvas: HTMLCanvasElement, config: Config) {
+async function renderMXL(
+	mxl: Blob,
+	canvas: HTMLCanvasElement,
+	config: Config,
+): Promise<RawGeometry> {
 	const parser = new MDOMParser();
 	const mdoc = await parser.parseFromBlob(mxl);
 	return renderMDoc(mdoc, canvas, config);
 }
 
+const EMPTY_GEOMETRY: RawGeometry = {
+	bounds: new Rect(0, 0, 0, 0),
+	notes: [],
+	measures: [],
+};
+
 function renderMDoc(
 	mdoc: MDocument,
 	canvas: HTMLCanvasElement,
 	config: Config,
-) {
+): RawGeometry {
 	const parts = mdoc.score.parts;
 	if (parts.length === 0) {
-		return;
+		return EMPTY_GEOMETRY;
 	}
-	drawScore(canvas, parts, computeLayout(parts, config), config);
+	return drawScore(canvas, parts, computeLayout(parts, config), config);
 }
