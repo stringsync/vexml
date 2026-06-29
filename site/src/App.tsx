@@ -808,12 +808,13 @@ export default function App() {
 							// vexml appends its managed canvas here; React manages only this div's
 							// attributes, never its children. The canvas is engraved at the reference
 							// width and CSS-scaled to fit (down when narrow, never past 100%); the
-							// child-selector classes style the managed canvas declaratively, so the
-							// dark-mode invert reacts without re-rendering. ponytail: invert the black
-							// glyphs to light rather than re-engraving in a light color.
+							// `.vexml-canvas` child-selector targets only the score canvas (not vexml's
+							// overlay layers) so the dark-mode invert and scaling react without
+							// re-rendering. ponytail: invert the black glyphs to light rather than
+							// re-engraving in a light color.
 							<div
 								ref={containerRef}
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&>canvas]:block [&>canvas]:!h-auto [&>canvas]:!w-full ${dark ? 'bg-zinc-900 ring-zinc-700 [&>canvas]:invert' : 'bg-white ring-zinc-200'}`}
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:!h-auto [&_.vexml-canvas]:!w-full ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
 							/>
 						)}
 						{debouncing && (

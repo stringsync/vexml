@@ -27,10 +27,11 @@ export class Score implements EventListenable<ScoreEventMap> {
 		private readonly index: HitTester,
 		private readonly decorations: Decorations,
 	) {
-		// On resize: re-fit the viewport layers (clearing them) before telling the caller, so their
-		// redraw in the resize handler lands on correctly sized, cleared surfaces.
+		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
+		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
+		// resize handler lands on a correctly sized, cleared surface.
 		this.unobserveResize = host.observeResize((size) => {
-			host.resizeViewportLayers();
+			host.relayoutLayers();
 			this.bus.emit('resize', size);
 		});
 	}

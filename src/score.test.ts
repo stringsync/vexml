@@ -41,7 +41,7 @@ class FakeHost implements Host {
 		null;
 	resizeUnobserved = false;
 	disposed = false;
-	resizeViewportLayersCalls = 0;
+	relayoutLayersCalls = 0;
 	readonly created: FakeLayer[] = [];
 	// Identity transform: client coords are score coords, so tests assert on the input directly.
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
@@ -61,8 +61,8 @@ class FakeHost implements Host {
 		this.created.push(layer);
 		return layer;
 	}
-	resizeViewportLayers(): void {
-		this.resizeViewportLayersCalls++;
+	relayoutLayers(): void {
+		this.relayoutLayersCalls++;
 	}
 	dispose(): void {
 		this.disposed = true;
@@ -175,7 +175,7 @@ test('resize is observed from construction and re-fits viewport layers before em
 	const seen: Array<{ width: number; height: number }> = [];
 	let layersResizedAtEmit = -1;
 	score.addEventListener('resize', (e) => {
-		layersResizedAtEmit = host.resizeViewportLayersCalls;
+		layersResizedAtEmit = host.relayoutLayersCalls;
 		seen.push({ width: e.width, height: e.height });
 	});
 	host.resizeListener?.({ width: 100, height: 50 });

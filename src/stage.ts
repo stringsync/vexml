@@ -35,9 +35,11 @@ export interface Host extends LayerHost {
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void;
-	/* Resize every viewport-kind layer to the current visible box (clearing them). Content layers
-	 * are fixed to the engraved score, so they're left alone. Called on container resize. */
-	resizeViewportLayers(): void;
+	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
+	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
+	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
+	 * caller's CSS has scaled the score. */
+	relayoutLayers(): void;
 	dispose(): void;
 }
 
@@ -73,6 +75,16 @@ class ManagedLayer implements Layer {
 		this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 	}
 
+	// Position and stretch the element's on-screen box, independent of the bitmap resolution resize()
+	// set. For a content layer this lets a fixed score-resolution bitmap be displayed at the base
+	// canvas's (possibly CSS-scaled) rendered size, so the overlay tracks it without a clearing resize.
+	place(left: number, top: number, width: number, height: number): void {
+		this.canvas.style.left = `${left}px`;
+		this.canvas.style.top = `${top}px`;
+		this.canvas.style.width = `${width}px`;
+		this.canvas.style.height = `${height}px`;
+	}
+
 	dispose(): void {
 		this.canvas.remove();
 		this.stage.forget(this);
@@ -104,6 +116,11 @@ export class Stage implements Viewport, Host {
 			container.style.position = 'relative';
 		}
 		this.base = document.createElement('canvas');
+		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
+		// this class (or the container), never the bare element — that keeps the overlay canvases
+		// (`vexml-layer`) out of their selectors. vexml leaves `display` to the caller so the engraved
+		// output stays byte-identical to a hand-placed canvas.
+		this.base.className = 'vexml-canvas';
 		container.appendChild(this.base);
 	}
 
@@ -149,27 +166,29 @@ export class Stage implements Viewport, Host {
 
 	createLayer(kind: LayerKind): Layer {
 		const canvas = document.createElement('canvas');
-		// Overlay the base canvas at its offset within the (positioned) container, so a content
-		// layer's CSS pixels line up 1:1 with score space. Purely visual: pointer events pass
-		// through to the container, where the Score hit-tests them — layers never capture input.
+		// Overlay absolutely positioned within the (positioned) container. Purely visual: pointer
+		// events pass through to the container, where the Score hit-tests them — layers never capture
+		// input. `vexml-layer` marks it as vexml-owned so caller `vexml-canvas` styles skip it.
+		canvas.className = 'vexml-layer';
 		canvas.style.position = 'absolute';
-		canvas.style.left = `${this.base.offsetLeft}px`;
-		canvas.style.top = `${this.base.offsetTop}px`;
 		canvas.style.pointerEvents = 'none';
 		const layer = new ManagedLayer(kind, canvas, this);
-		const { width, height } = this.layerSize(kind);
-		layer.resize(width, height);
 		this.container.appendChild(canvas);
 		this.layers.add(layer);
+		this.sizeBitmap(layer);
+		this.placeLayer(layer);
 		return layer;
 	}
 
-	resizeViewportLayers(): void {
-		const { width, height } = this.layerSize('viewport');
+	relayoutLayers(): void {
 		for (const layer of this.layers) {
+			// Viewport layers are tied to the visible box, so refit the bitmap (which clears them —
+			// callers redraw in their resize handler). Content layers keep their fixed score-resolution
+			// bitmap; only their on-screen box is re-placed, so the drawing scales without clearing.
 			if (layer.kind === 'viewport') {
-				layer.resize(width, height);
+				this.sizeBitmap(layer);
 			}
+			this.placeLayer(layer);
 		}
 	}
 
@@ -186,19 +205,37 @@ export class Stage implements Viewport, Host {
 		this.container.style.position = this.prevPosition;
 	}
 
-	// A layer's CSS size by kind: content spans the engraved score (the base canvas's CSS box);
-	// viewport spans the container's visible box.
-	private layerSize(kind: LayerKind): { width: number; height: number } {
-		if (kind === 'content') {
-			return {
-				width: parseFloat(this.base.style.width) || 0,
-				height: parseFloat(this.base.style.height) || 0,
-			};
+	// Size a layer's drawing bitmap. A content layer's bitmap is fixed to the engraved score (the
+	// base canvas's intrinsic CSS box), so the caller always draws in score px — its element is then
+	// stretched over the base's rendered box by placeLayer. A viewport bitmap matches the visible box.
+	private sizeBitmap(layer: ManagedLayer): void {
+		if (layer.kind === 'content') {
+			layer.resize(
+				parseFloat(this.base.style.width) || 0,
+				parseFloat(this.base.style.height) || 0,
+			);
+		} else {
+			layer.resize(this.container.clientWidth, this.container.clientHeight);
 		}
-		return {
-			width: this.container.clientWidth,
-			height: this.container.clientHeight,
-		};
+	}
+
+	// Position and stretch a layer's on-screen box over the base canvas. A content layer covers the
+	// base's *rendered* box (base.offset*, which reflect whatever CSS scaling the caller applied), so
+	// a score-resolution bitmap lines up 1:1 with the engraving at any size. A viewport layer is
+	// anchored at the base's offset but spans the container's visible box.
+	private placeLayer(layer: ManagedLayer): void {
+		const left = this.base.offsetLeft;
+		const top = this.base.offsetTop;
+		if (layer.kind === 'content') {
+			layer.place(left, top, this.base.offsetWidth, this.base.offsetHeight);
+		} else {
+			layer.place(
+				left,
+				top,
+				this.container.clientWidth,
+				this.container.clientHeight,
+			);
+		}
 	}
 
 	/*
