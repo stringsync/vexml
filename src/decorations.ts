@@ -6,7 +6,7 @@ import type { Decoratable, Decorator } from './targets';
 // argument); the color toggle is what carries a caller-chosen color. HALO_MARGIN is how far the
 // circle extends past the notehead's half-extent, so the note sits evenly inside it.
 const HALO_COLOR = 'rgba(41, 98, 255, 0.35)';
-const HALO_MARGIN = 4;
+const HALO_MARGIN = 8;
 
 /*
  * The decoration store and painter — the production `Decorator`. A target's color/halo toggles

@@ -199,7 +199,9 @@ export default function App() {
 		// Turn off the lit halo and hide the tooltip; called on move-to-empty and on leave.
 		const clearHalo = () => {
 			haloRef.current?.halo.off();
+			haloRef.current?.color.off();
 			haloRef.current = null;
+			container.style.cursor = '';
 			setTooltip(null);
 		};
 		let detach: (() => void) | undefined;
@@ -226,8 +228,11 @@ export default function App() {
 								: null;
 					if (note !== haloRef.current) {
 						haloRef.current?.halo.off();
+						haloRef.current?.color.off();
 						note?.halo.on();
+						note?.color.on('#2962ff');
 						haloRef.current = note;
+						container.style.cursor = note ? 'pointer' : '';
 					}
 					if (note && e.target && showInfoRef.current) {
 						const r = e.target.getBoundingClientRect();
