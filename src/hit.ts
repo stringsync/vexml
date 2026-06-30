@@ -50,6 +50,13 @@ export interface HitTester {
 	hitTest(point: { x: number; y: number }): PointerTarget | null;
 }
 
+/* What buildTargets returns: the spatial index, plus the mdom-note -> Note map so the playback
+ * timeline can reference the very same Note identities the index hit-tests to. */
+export interface TargetIndex {
+	hitTester: HitTester;
+	notes: ReadonlyMap<MNote, Note>;
+}
+
 export class QuadTreeHitTester implements HitTester {
 	constructor(private readonly tree: QuadTree<PointerTarget>) {}
 
@@ -94,10 +101,10 @@ export function buildTargets(
 	geometry: RawGeometry,
 	viewport: Viewport,
 	decorator: Decorator,
-): HitTester {
+): TargetIndex {
 	const measures = new Map<number, Measure>();
 	for (const m of geometry.measures) {
-		measures.set(m.index, new Measure(m.rect, viewport, m.number));
+		measures.set(m.index, new Measure(m.rect, viewport, m.number, m.index));
 	}
 
 	const noteByMnote = new Map<MNote, Note>();
@@ -143,6 +150,11 @@ export function buildTargets(
 
 	const tree = new QuadTree<PointerTarget>(geometry.bounds);
 	for (const rn of geometry.notes) {
+		// Grace notes are reachable as Note targets (playback sounds/colors them) but stay out of
+		// the pointer tree, so a small grace head never steals hover/click from its main note.
+		if (rn.mnote.isGrace) {
+			continue;
+		}
 		const target = tabByMnote.get(rn.mnote) ?? noteByMnote.get(rn.mnote);
 		if (target) {
 			tree.insert(target);
@@ -151,5 +163,5 @@ export function buildTargets(
 	for (const measure of measures.values()) {
 		tree.insert(measure);
 	}
-	return new QuadTreeHitTester(tree);
+	return { hitTester: new QuadTreeHitTester(tree), notes: noteByMnote };
 }

@@ -42,7 +42,7 @@ export type Layout =
 			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
 			 * to this width once; the result is then scaled to whatever container it's placed
 			 * in, so resizing the container never re-flows or re-spaces it. */
-			width?: number;
+			referenceWidth?: number;
 	  }
 	| {
 			/** Lay every measure on one system (horizontal scroll); width is computed
@@ -187,7 +187,8 @@ export function computeLayout(parts: Part[], config: Config): ScoreLayout {
 	// Standard without an explicit width, and panoramic's starting floor, both default
 	// to DEFAULT_WIDTH (panoramic then grows the page to fit its single system).
 	const width =
-		(layout.type === 'standard' ? layout.width : undefined) ?? DEFAULT_WIDTH;
+		(layout.type === 'standard' ? layout.referenceWidth : undefined) ??
+		DEFAULT_WIDTH;
 	const noteSpacing = config.noteSpacing;
 	const softmaxFactor = config.softmaxFactor;
 

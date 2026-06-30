@@ -185,6 +185,11 @@ type PendingStave = {
 	// notehead/fret back to its note after formatting. One of these is populated per stave kind.
 	noteChords: Array<{ note: StaveNote; chord: Chord }>;
 	tabChords: Array<{ note: TabNote; chord: Chord }>;
+	// Grace noteheads, paired like noteChords. Captured into the hit index so playback can sound
+	// and light them, but kept out of the pointer tree (hit.ts) so they don't steal clicks.
+	graceChords: Array<{ note: StaveNote; chord: Chord }>;
+	// The tab analog of graceChords: grace fret glyphs, so a tab grace colors with its notation one.
+	graceTabChords: Array<{ note: TabNote; chord: Chord }>;
 };
 
 /*
@@ -208,6 +213,7 @@ function buildNotes(
 	const staveNotes: StaveNote[] = [];
 	const tiedNotes = new Set<StaveNote>();
 	const noteChords: Array<{ note: StaveNote; chord: Chord }> = [];
+	const graceChords: Array<{ note: StaveNote; chord: Chord }> = [];
 	const vexVoices = voices.map((voice) => {
 		const chords = voice.chords;
 		// lead note -> its chord, so the record callback (which only gets the lead) can pair
@@ -227,8 +233,8 @@ function buildNotes(
 					tiedNotes.add(note);
 				}
 				const chord = chordByLead.get(lead);
-				if (chord && !lead.isGrace) {
-					noteChords.push({ note, chord });
+				if (chord) {
+					(lead.isGrace ? graceChords : noteChords).push({ note, chord });
 				}
 			},
 		);
@@ -252,7 +258,9 @@ function buildNotes(
 		staveNotes,
 		tiedNotes,
 		noteChords,
+		graceChords,
 		tabChords: [],
+		graceTabChords: [],
 	};
 }
 
@@ -622,6 +630,7 @@ function buildTabNotes(
 	byTabLead: Map<Note, TabNote>,
 ): PendingStave {
 	const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
+	const graceTabChords: Array<{ note: TabNote; chord: Chord }> = [];
 	const vexVoices = voices.map((voice) => {
 		const chords = voice.chords;
 		const chordByLead = new Map<Note, Chord>();
@@ -632,8 +641,11 @@ function buildTabNotes(
 			vexflowTabTickables(chords, (lead, tabNote) => {
 				byTabLead.set(lead, tabNote);
 				const chord = chordByLead.get(lead);
-				if (chord && !lead.isGrace) {
-					tabChords.push({ note: tabNote, chord });
+				if (chord) {
+					(lead.isGrace ? graceTabChords : tabChords).push({
+						note: tabNote,
+						chord,
+					});
 				}
 			}),
 			softmaxFactor,
@@ -655,7 +667,9 @@ function buildTabNotes(
 		staveNotes: [],
 		tiedNotes: new Set(),
 		noteChords: [],
+		graceChords: [],
 		tabChords,
+		graceTabChords,
 	};
 }
 
@@ -909,6 +923,9 @@ export function drawScore(
 		// final score space once cropTop is known. Only the final pass's arrays are kept.
 		const rawNotes: RawNote[] = [];
 		const rawMeasures: RawMeasure[] = [];
+		// The system each rawMeasure belongs to, parallel to rawMeasures, so the post-pass below can
+		// grow every measure box up to its system's topmost above-stave decoration.
+		const rawMeasureSystem: number[] = [];
 		let systemTopY = layout.top + topSlack;
 		let systemContentBottom = systemTopY;
 		let currentSystem = -1;
@@ -939,6 +956,15 @@ export function drawScore(
 		// top stave — reserved above it on a redraw so it can't clash with the system above.
 		const systemTopByIndex = new Map<number, number>();
 		const systemHighestTop = new Map<number, number>();
+		// The topmost y reached by any above-stave decoration (chord diagram, chord symbol, words) in
+		// a system. Measure boxes grow up to this so the playback cursor/scroll cover those extras
+		// instead of clipping them; tracked per system so the cursor bar's height stays uniform.
+		const systemDecorationTop = new Map<number, number>();
+		const growDecorationTop = (system: number, top: number) =>
+			systemDecorationTop.set(
+				system,
+				Math.min(systemDecorationTop.get(system) ?? Infinity, top),
+			);
 		for (let m = 0; m < measureCount; m++) {
 			const box = boxes[m];
 			if (!box) {
@@ -1294,7 +1320,9 @@ export function drawScore(
 			for (const p of systemPending) {
 				if (p.isTab) {
 					const tabStave = p.stave as TabStave;
-					for (const { note, chord } of p.tabChords) {
+					// Graces ride along here too (same fret capture), so a tab grace colors in step
+					// with its notation grace; they stay out of the pointer tree (hit.ts skips them).
+					for (const { note, chord } of [...p.tabChords, ...p.graceTabChords]) {
 						const x = note.getAbsoluteX();
 						// The drawn fret glyphs, parallel to getPositions() (one per struck string), so a
 						// decoration can replay the exact fret text vexflow drew — "<12>", "(2)", "✕" —
@@ -1348,7 +1376,9 @@ export function drawScore(
 						}
 					}
 				} else {
-					for (const { note, chord } of p.noteChords) {
+					// Graces ride along: same notehead capture, so playback can sound and color
+					// them. They land in the hit index but not the pointer tree (hit.ts skips them).
+					for (const { note, chord } of [...p.noteChords, ...p.graceChords]) {
 						// The notehead glyph's true x-span (getAbsoluteX is the tick anchor, left of
 						// the notehead — centering on it puts decorations off the note). y per
 						// notehead comes from getYs; noteHeads is indexed in the same (chord.notes)
@@ -1405,6 +1435,7 @@ export function drawScore(
 					index: m,
 					number: parts[0]?.measures[m]?.number ?? String(m + 1),
 				});
+				rawMeasureSystem.push(systemIndex);
 			}
 
 			if (noteExtent.top < Infinity) {
@@ -1422,10 +1453,16 @@ export function drawScore(
 			// Words go before the diagrams so a chord diagram draws on top of any words it
 			// shares a measure with — the fret box stays fully legible, the text yields.
 			for (const w of wordsTasks) {
-				pageTop = Math.min(
-					pageTop,
-					drawWords(context, w.stave, w.text, w.firstNote, labelFont, detector),
+				const top = drawWords(
+					context,
+					w.stave,
+					w.text,
+					w.firstNote,
+					labelFont,
+					detector,
 				);
+				pageTop = Math.min(pageTop, top);
+				growDecorationTop(systemIndex, top);
 			}
 			// Diagrams sit at their lead note's x; two on notes either side of a barline can be
 			// close enough to overlap (especially at a narrow width). The detector pushes each
@@ -1499,6 +1536,7 @@ export function drawScore(
 					});
 					diagram.draw(context, { ...h.frame, title: h.text || undefined });
 					pageTop = Math.min(pageTop, diagram.top);
+					growDecorationTop(systemIndex, diagram.top);
 					// The diagram rises above the stave, so it also counts toward this system's
 					// upward overflow — otherwise no systemSpacing is reserved for it and a
 					// diagram on a stacked system collides with the system above.
@@ -1510,10 +1548,15 @@ export function drawScore(
 						),
 					);
 				} else {
-					pageTop = Math.min(
-						pageTop,
-						drawHarmony(context, h.staveNote, h.text, labelFont, detector),
+					const top = drawHarmony(
+						context,
+						h.staveNote,
+						h.text,
+						labelFont,
+						detector,
 					);
+					pageTop = Math.min(pageTop, top);
+					growDecorationTop(systemIndex, top);
 				}
 			}
 
@@ -1559,6 +1602,20 @@ export function drawScore(
 		// The last system's content is never followed by a system-change reset, so check it
 		// for clipped content here.
 		warnEscapes();
+
+		// Grow each measure box up to the topmost above-stave decoration (chord diagram, chord
+		// symbol, words) in its system, so the measure's bounding box — and the playback cursor and
+		// auto-scroll that ride on it — cover those extras instead of clipping them.
+		for (const [i, measure] of rawMeasures.entries()) {
+			const top = systemDecorationTop.get(rawMeasureSystem[i] ?? -1);
+			const { rect } = measure;
+			if (top !== undefined && top < rect.y) {
+				rawMeasures[i] = {
+					...measure,
+					rect: new Rect(rect.x, top, rect.w, rect.bottom - top),
+				};
+			}
+		}
 
 		// Ties and slurs are resolved over the whole score now that every note is
 		// placed, so a span can cross a barline (its endpoints sit in different

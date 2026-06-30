@@ -57,6 +57,20 @@ export type Config = {
 	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
 	 * whose measures already sit below this fill breaks at the same place either way. */
 	maxSystemFill: number;
+	/** Fixed container height in px, or null for none (default: null). When set, vexml puts the score
+	 * in a vertical scroll box at exactly this height — for system-stacked (standard) layouts taller
+	 * than the space you want them to take. Prefer maxHeight to cap only when the score overflows. */
+	height: number | null;
+	/** Max container height in px, or null for none (default: null). The score scrolls vertically once
+	 * it exceeds this; shorter scores keep their natural height. */
+	maxHeight: number | null;
+	/** Fixed container width in px, or null for none (default: null). When set, vexml puts the score in
+	 * a horizontal scroll box at this width — for panoramic (single-row) layouts wider than the space
+	 * available. Prefer maxWidth to cap only when the score overflows. */
+	width: number | null;
+	/** Max container width in px, or null for none (default: null). The score scrolls horizontally once
+	 * it exceeds this; narrower scores keep their natural width. */
+	maxWidth: number | null;
 };
 
 /** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only —
@@ -82,4 +96,8 @@ export const DEFAULT_CONFIG: Config = {
 	stretchSingleSystem: true,
 	minLastSystemFill: 0.75,
 	maxSystemFill: 0.9,
+	height: null,
+	maxHeight: null,
+	width: null,
+	maxWidth: null,
 };

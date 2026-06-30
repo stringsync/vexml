@@ -262,7 +262,7 @@ const TEST_CASES = [
 	// - M2 (system 2): the tied half chord + half rest; the three ties bow in from the left
 	//   edge of the stave into the chord ("tie from nothing").
 	testCase('tie_system_break.musicxml', 'tie_system_break.png', {
-		layout: { type: 'standard', width: 360 },
+		layout: { type: 'standard', referenceWidth: 360 },
 	}),
 
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
@@ -310,7 +310,7 @@ const TEST_CASES = [
 	// - M2 (system 2): four descending quarters G5-D5; the slur bows in from the left edge
 	//   of the stave into G5 ("slur from nothing").
 	testCase('slur_system_break.musicxml', 'slur_system_break.png', {
-		layout: { type: 'standard', width: 350 },
+		layout: { type: 'standard', referenceWidth: 350 },
 	}),
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
@@ -351,7 +351,7 @@ const TEST_CASES = [
 	// of M3's stave and in from the left edge of M4's — not draw one diagonal across the
 	// page gap.
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_wrap.png', {
-		layout: { type: 'standard', width: 491 },
+		layout: { type: 'standard', referenceWidth: 491 },
 	}),
 
 	// 6-line TAB stave, half notes: how ties vs slurs render in tab. A tie holds a string
@@ -626,7 +626,7 @@ const TEST_CASES = [
 	// The C box (anchored at M1's last beat) and the G box (anchored at M2's first beat)
 	// are nudged apart so they clear each other — no overlapping boards or titles.
 	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
-		layout: { type: 'standard', width: 500 },
+		layout: { type: 'standard', referenceWidth: 500 },
 	}),
 
 	// Treble stave, 4/4, one measure at a narrow 500px width: a Bm7 fret box bound to the
@@ -635,7 +635,7 @@ const TEST_CASES = [
 	// whole board — including the far-right muted "X" — stays inside the drawable region
 	// instead of being clipped. Four B4 quarters so only the diagram's clamp is exercised.
 	testCase('chord_diagram_edge.musicxml', 'chord_diagram_edge.png', {
-		layout: { type: 'standard', width: 500 },
+		layout: { type: 'standard', referenceWidth: 500 },
 	}),
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
@@ -798,7 +798,7 @@ const TEST_CASES = [
 	// - M4-6 (system 2): very high quarter notes (C7) with many ledger lines above the staff,
 	//   which must not collide with system 1's low notes.
 	testCase('system_spacing.musicxml', 'system_spacing.png', {
-		layout: { type: 'standard', width: 660 },
+		layout: { type: 'standard', referenceWidth: 660 },
 	}),
 
 	// Individual measures extracted from 'aloof' for focused testing.

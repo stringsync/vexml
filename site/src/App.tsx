@@ -1,12 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 import type {
 	Config,
+	Cursor,
 	HoverEvent,
 	Note,
 	PointerTarget,
 	PointerTargetEvent,
 } from '../../src';
 import { render, type Score } from '../../src';
+import { INSTRUMENTS, type Instrument, PianoInstrument } from './instrument';
 
 // One-line summary of the hovered target for the tooltip.
 function describe(target: PointerTarget): string {
@@ -47,6 +55,12 @@ const fixtureNames = Object.keys(fixtures).sort();
 
 const STORAGE_KEY = 'vexml:musicxml';
 
+// How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
+const GRACE_MS = 80;
+
+// The color a sounding note shows while the cursor is over it (and a grace note while it plays).
+const ACTIVE_COLOR = '#155dfc';
+
 function ResetIcon() {
 	return (
 		<svg
@@ -85,6 +99,74 @@ function CheckIcon() {
 	);
 }
 
+// Heroicons (outline). Each value is the icon's path list — circle play/pause have two paths.
+const ICON = {
+	play: [
+		'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
+	],
+	pause: ['M15.75 5.25v13.5m-7.5-13.5v13.5'],
+	prev: ['M15.75 19.5 8.25 12l7.5-7.5'],
+	next: ['m8.25 4.5 7.5 7.5-7.5 7.5'],
+	volume: [
+		'M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+	],
+	muted: [
+		'M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+	],
+} as const;
+
+function PlayerIcon({
+	d,
+	className = 'size-6',
+}: {
+	d: readonly string[];
+	className?: string;
+}) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			className={className}
+			aria-hidden="true"
+		>
+			{d.map((p) => (
+				<path key={p} strokeLinecap="round" strokeLinejoin="round" d={p} />
+			))}
+		</svg>
+	);
+}
+
+// ms → m:ss
+function fmtTime(ms: number): string {
+	const s = Math.floor(ms / 1000);
+	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function Section({
+	title,
+	action,
+	children,
+}: {
+	title: string;
+	action?: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+			<div className="flex items-center justify-between">
+				<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+					{title}
+				</span>
+				{action}
+			</div>
+			{children}
+		</div>
+	);
+}
+
 function Or() {
 	return (
 		<div className="flex items-center gap-2 text-xs text-zinc-400">
@@ -98,6 +180,7 @@ function Or() {
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const scoreRef = useRef<Score | null>(null);
+	const playerRef = useRef<HTMLDivElement>(null);
 	const [text, setText] = useState('');
 	const [input, setInput] = useState<string | Blob | null>(null);
 	const [fixture, setFixture] = useState('');
@@ -117,17 +200,56 @@ export default function App() {
 	);
 	const [cleared, setCleared] = useState(false);
 	const [restored, setRestored] = useState(false);
-	const [showInfo, setShowInfo] = useState(true);
+	const [scrolled, setScrolled] = useState(false);
 	const [tooltip, setTooltip] = useState<{
 		x: number;
 		y: number;
 		text: string;
 	} | null>(null);
-	// Read live inside the pointer handler so toggling the checkbox doesn't re-subscribe.
-	const showInfoRef = useRef(showInfo);
-	showInfoRef.current = showInfo;
+	// Scrub-bar tooltip: "measure i of N" at the pointer x (relative to the track), while
+	// hovering or dragging the seek slider. ponytail: pointer-only, add a value-driven tip if
+	// keyboard nav matters.
+	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
+		null,
+	);
 	// The note whose halo is currently lit, so the next move can turn it back off.
 	const haloRef = useRef<Note | null>(null);
+	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
+	// whether movement came from the play loop, next/previous, or seek.
+	const cursorRef = useRef<Cursor | null>(null);
+	// Attack the notes already under the cursor when play starts. The note at the cursor's position
+	// fired its `started` event while paused (during load/seek), so the play loop — which moves
+	// *within* that note's duration — never sees it start. Set by the score-load effect, called by
+	// the play loop on each start so the first (or resumed) note actually sounds.
+	const playStartRef = useRef<(() => void) | null>(null);
+	const [playing, setPlaying] = useState(false);
+	// Mirror of `playing` the cursor's visibility listener reads live (it's bound once per render).
+	const playingRef = useRef(false);
+	playingRef.current = playing;
+	// Synth voice for playback + note previews. Created once; the change/click handlers below drive it.
+	const instrumentRef = useRef<Instrument | null>(null);
+	const [instrumentName, setInstrumentName] = useState('marimba');
+	if (!instrumentRef.current) {
+		instrumentRef.current = new PianoInstrument(instrumentName);
+	}
+	const [muted, setMuted] = useState(false);
+	// Read by the rebuild effect so it can seed a freshly-built synth without depending on `muted`
+	// (which would rebuild — and re-download samples — on every mute toggle).
+	const mutedRef = useRef(muted);
+	mutedRef.current = muted;
+	useEffect(() => {
+		instrumentRef.current?.setMuted(muted);
+	}, [muted]);
+	// Rebuild the synth when the picker changes, then warm its samples. Runs on mount too (default
+	// instrument), so the first play doesn't drop onsets while loading.
+	useEffect(() => {
+		instrumentRef.current?.stopAll();
+		instrumentRef.current = new PianoInstrument(instrumentName);
+		instrumentRef.current.setMuted(mutedRef.current);
+		instrumentRef.current.preload();
+	}, [instrumentName]);
+	const [timeMs, setTimeMs] = useState(0);
+	const [durationMs, setDurationMs] = useState(0);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
@@ -138,7 +260,9 @@ export default function App() {
 	const systemSpacing = config.systemSpacing ?? 30;
 	const maxSystemFill = config.maxSystemFill ?? 0.9;
 	const width =
-		config.layout?.type === 'standard' ? (config.layout.width ?? 900) : 900;
+		config.layout?.type === 'standard'
+			? (config.layout.referenceWidth ?? 900)
+			: 900;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const resetKeys = [
 		'noteSpacing',
@@ -201,7 +325,7 @@ export default function App() {
 		// window re-scales instantly without re-rendering.
 		const layoutWidth =
 			renderConfig.layout?.type === 'standard'
-				? renderConfig.layout.width
+				? renderConfig.layout.referenceWidth
 				: undefined;
 		let cancelled = false;
 		// Turn off the lit halo and hide the tooltip; used to reset on teardown/re-render.
@@ -215,7 +339,7 @@ export default function App() {
 		let detach: (() => void) | undefined;
 		render(input, container, {
 			...renderConfig,
-			layout: { type: 'standard', width: layoutWidth },
+			layout: { type: 'standard', referenceWidth: layoutWidth },
 		})
 			.then((score) => {
 				// The effect can re-run before this resolves; drop the late score so it
@@ -228,6 +352,117 @@ export default function App() {
 				renderMsRef.current = performance.now() - start;
 				setRenderMs(renderMsRef.current);
 				setInitialized(true);
+
+				// Headless cursor + the built-in bar view. Page-turn scrolling: when the bar crosses
+				// out of the scroll box (by moving, or the user scrolling it away), bring it back.
+				const cursor = score.addCursor();
+				cursor.attach(score.createCursorView());
+				cursor.addEventListener('visibility', (e) => {
+					if (!e.fullyVisible && playingRef.current) {
+						cursor.scrollIntoView();
+					}
+				});
+				// The notes (and their tab frets) currently under the cursor. Cursor coloring and the
+				// hover halo share one color channel, so recolor() resolves both: hover wins while a
+				// note is hovered, otherwise the active color shows, otherwise it clears. Rests never
+				// enter `lit` (no pitch), so only sounding notes get the active color.
+				const lit = new Set<Note>();
+				const recolor = (n: Note) => {
+					if (n === haloRef.current) {
+						n.color.on('#f4f800');
+					} else if (lit.has(n)) {
+						n.color.on(ACTIVE_COLOR);
+					} else {
+						n.color.off();
+					}
+				};
+				const paint = (active: readonly Note[]) => {
+					const sounding = active.filter((n) => n.getPitch() !== null);
+					for (const n of [...lit]) {
+						if (!sounding.includes(n)) {
+							lit.delete(n);
+							recolor(n);
+						}
+					}
+					for (const n of sounding) {
+						if (!lit.has(n)) {
+							lit.add(n);
+							recolor(n);
+						}
+					}
+				};
+				// The synth voice each sounding note owns, so it can be released when the note stops.
+				// Keyed by Note (not pitch) so a re-struck pitch — which the transition reports in
+				// both `stopped` and `started` — releases the old voice and attacks a fresh one.
+				const voices = new Map<Note, () => void>();
+				// Attack one sounding note, registering its releaser in `voices`. No-op if already
+				// voiced (so a re-attack of a still-sounding note is skipped).
+				const attack = (n: Note) => {
+					const instrument = instrumentRef.current;
+					const pitch = n.getPitch();
+					if (!instrument || !pitch || voices.has(n)) {
+						return;
+					}
+					const graces = n.getGraceNotes();
+					if (graces.length === 0) {
+						voices.set(n, instrument.play(pitch));
+						return;
+					}
+					// Grace notes steal no timeline time, so sound them as quick plucks staggered
+					// just before the main note, then attack the main note after the run. The
+					// voice releaser cancels a still-pending main attack (clearTimeout) or
+					// releases the live voice; pause/teardown stopAll() is the backstop.
+					let offset = 0;
+					for (const g of graces) {
+						const gp = g.getPitch();
+						if (gp) {
+							const at = offset;
+							// Light the grace while it sounds, then clear it as the next one (or
+							// the main note) takes over.
+							setTimeout(() => {
+								instrument.pluck(gp, GRACE_MS);
+								g.color.on(ACTIVE_COLOR);
+							}, at);
+							setTimeout(() => g.color.off(), at + GRACE_MS);
+							offset += GRACE_MS;
+						}
+					}
+					let release = () => {};
+					const id = setTimeout(() => {
+						release = instrument.play(pitch);
+					}, offset);
+					voices.set(n, () => {
+						clearTimeout(id);
+						release();
+					});
+				};
+				cursor.addEventListener('change', (e) => {
+					setTimeMs(e.timeMs);
+					paint(e.active);
+					// Release stopped notes; attack started ones (only while playing, so seeking/
+					// scrubbing stays silent). Stop before start so a re-strike re-attacks cleanly.
+					for (const n of e.stopped) {
+						voices.get(n)?.();
+						voices.delete(n);
+					}
+					if (playingRef.current) {
+						for (const n of e.started) {
+							attack(n);
+						}
+					}
+				});
+				// On play start, sound the notes already under the cursor — they started while paused,
+				// so the play loop (moving within their duration) never re-fires `started` for them.
+				playStartRef.current = () => {
+					for (const n of cursor.getActiveNotes()) {
+						attack(n);
+					}
+				};
+				paint(cursor.getActiveNotes());
+				cursorRef.current = cursor;
+				setDurationMs(score.getDurationMs());
+				setTimeMs(0);
+				setPlaying(false);
 
 				// A click/tap pins a target (toggle); hover is transient. The pinned one wins, so
 				// hovering elsewhere — or scrolling it out from under the pointer — never clears the
@@ -243,15 +478,22 @@ export default function App() {
 								? target.getNote()
 								: null;
 					if (note !== haloRef.current) {
-						haloRef.current?.halo.off();
-						haloRef.current?.color.off();
-						note?.halo.on('rgba(255, 0, 105, 0.9)');
-						note?.color.on('#f4f800');
+						const prev = haloRef.current;
 						haloRef.current = note;
+						prev?.halo.off();
+						// recolor reads haloRef.current, so update it first: prev falls back to its
+						// active color (or clears), note picks up the hover color.
+						if (prev) {
+							recolor(prev);
+						}
+						note?.halo.on('rgba(255, 0, 105, 0.9)');
+						if (note) {
+							recolor(note);
+						}
 					}
 					container.style.cursor = note ? 'pointer' : '';
 					// Only note-bearing targets get a tooltip; describe() is empty for a measure.
-					if (note && target && showInfoRef.current) {
+					if (note && target) {
 						const r = target.getBoundingClientRect();
 						setTooltip({
 							x: r.left + r.width / 2,
@@ -277,8 +519,37 @@ export default function App() {
 					pinned = pinned === t ? null : t;
 					apply();
 				};
+				// Click or drag anywhere on the score scrubs the cursor to that position's time.
+				const seekTo = (point: { x: number; y: number }) => {
+					const t = score.getTimeAt(point);
+					if (t) {
+						setPlaying(false);
+						cursor.seekMs(t.ms);
+					}
+				};
+				const onPointerDown = (e: PointerTargetEvent) => seekTo(e.point);
+				// buttons === 1 means the primary button is held, so this continues the scrub
+				// during a drag and ignores a plain hover (no manual drag-state flag needed).
+				const onPointerMove = (e: PointerTargetEvent) => {
+					if (e.native.buttons === 1) {
+						seekTo(e.point);
+						if (!cursor.isFullyVisible()) {
+							cursor.scrollIntoView({ behavior: 'smooth' });
+						}
+					}
+				};
+				// Finishing a scrub-drag: if the cursor landed off-screen, bring it into view (the
+				// playing-gated visibility listener above stays quiet while paused).
+				const onPointerUp = () => {
+					if (!cursor.isFullyVisible()) {
+						cursor.scrollIntoView({ behavior: 'smooth' });
+					}
+				};
 				score.addEventListener('hover', onHover);
 				score.addEventListener('click', onClick);
+				score.addEventListener('pointerdown', onPointerDown);
+				score.addEventListener('pointermove', onPointerMove);
+				score.addEventListener('pointerup', onPointerUp);
 				detach = clearHalo;
 			})
 			.catch((e: unknown) => {
@@ -289,12 +560,130 @@ export default function App() {
 			});
 		return () => {
 			cancelled = true;
-			// score.dispose() drops its own listeners; this only unbinds the DOM-level leave handler.
+			// score.dispose() drops its own listeners (and disposes the cursor); this only unbinds
+			// the DOM-level leave handler and stops the play loop.
 			detach?.();
 			scoreRef.current?.dispose();
 			scoreRef.current = null;
+			cursorRef.current = null;
+			setPlaying(false);
 		};
 	}, [input, renderConfig]);
+
+	// Advance the cursor in real time while playing. seekMs drives the bar and the synth (the change
+	// handler attacks/releases voices). ponytail: wall-clock RAF, not an audio clock.
+	useEffect(() => {
+		const cursor = cursorRef.current;
+		if (!playing || !cursor) {
+			return;
+		}
+		playStartRef.current?.();
+		let raf = 0;
+		let last = performance.now();
+		const tick = (now: number) => {
+			const next = cursor.getTimeMs() + (now - last);
+			last = now;
+			if (next >= durationMs) {
+				cursor.seekMs(durationMs);
+				setPlaying(false);
+				return;
+			}
+			cursor.seekMs(next);
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		// Cut the sounding voices when playback stops (pause, end, or teardown).
+		return () => {
+			cancelAnimationFrame(raf);
+			instrumentRef.current?.stopAll();
+		};
+	}, [playing, durationMs]);
+
+	// Fit the score's scroll box to the gap between the canvas top and the player controls so the
+	// music fills the space above them and scrolls (page-turns) within it. config.height flows
+	// through the config -> renderConfig effect, which conditionally debounces the re-render
+	// (immediate when the last render was fast) — so a viewport-height resize is debounced there.
+	useEffect(() => {
+		if (!initialized) {
+			return;
+		}
+		let lastHeight = -1;
+		const measure = () => {
+			const c = containerRef.current?.getBoundingClientRect();
+			const p = playerRef.current?.getBoundingClientRect();
+			if (!c || !p) {
+				return;
+			}
+			// -16 leaves a little air above the floating controls.
+			const height = Math.max(0, Math.round(p.top - c.top - 16));
+			// Break the feedback loop: applying height resizes the container, re-firing the
+			// observer — but the gap (top of card to top of player) is unchanged, so bail.
+			// This also no-ops width-only resizes, which leave the gap alone.
+			if (height === lastHeight) {
+				return;
+			}
+			lastHeight = height;
+			setConfig((cfg) => ({ ...cfg, height }));
+		};
+		measure();
+		// Refit on any container dimension change (width resize, editor toggle, our own height
+		// update); the window 'resize' covers viewport-height changes that move the player
+		// without resizing the container.
+		const container = containerRef.current;
+		const ro = new ResizeObserver(measure);
+		if (container) {
+			ro.observe(container);
+		}
+		window.addEventListener('resize', measure);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', measure);
+		};
+	}, [initialized]);
+
+	const togglePlay = useCallback(() => {
+		const cursor = cursorRef.current;
+		if (!cursor) {
+			return;
+		}
+		// Restart from the top if we're parked at the end.
+		if (!playingRef.current && cursor.isDone()) {
+			cursor.seekMs(0);
+		}
+		// Bring the cursor into view when starting playback (e.g. after scrolling away while paused).
+		if (!playingRef.current && !cursor.isFullyVisible()) {
+			cursor.scrollIntoView({ behavior: 'smooth' });
+		}
+		setPlaying((p) => !p);
+	}, []);
+	// Spacebar toggles playback, except while typing in the editor.
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.code !== 'Space') {
+				return;
+			}
+			const el = e.target as HTMLElement;
+			if (
+				el.tagName === 'INPUT' ||
+				el.tagName === 'TEXTAREA' ||
+				el.isContentEditable
+			) {
+				return;
+			}
+			e.preventDefault();
+			togglePlay();
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [togglePlay]);
+	const stepPrev = () => {
+		setPlaying(false);
+		cursorRef.current?.previous();
+	};
+	const stepNext = () => {
+		setPlaying(false);
+		cursorRef.current?.next();
+	};
 
 	// Restore the last-edited MusicXML, or open with a random example.
 	useEffect(() => {
@@ -307,7 +696,7 @@ export default function App() {
 			setTimeout(() => setRestored(false), 1500);
 			return;
 		}
-		const name = fixtureNames[Math.floor(Math.random() * fixtureNames.length)];
+		const name = 'voices_grand_staff';
 		if (!name) {
 			return;
 		}
@@ -434,386 +823,524 @@ export default function App() {
 			</header>
 
 			<main className="flex min-h-0 flex-1">
-				<aside className="fixed inset-x-0 bottom-0 z-20 flex max-h-[75vh] flex-col overflow-y-auto rounded-t-xl border-t border-zinc-200 bg-white p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+				{/* underlay: tap-to-close backdrop behind the panel (mobile only) */}
+				<div
+					onClick={() => setMobileOpen(false)}
+					aria-hidden="true"
+					className={`fixed inset-0 z-10 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+				/>
+
+				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:overflow-y-auto md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+					{/* Player: on mobile, anchored to the top edge of this bottom sheet (bottom-full) so it
+					    rides up as the sheet expands; on desktop it floats fixed, centered in the content
+					    pane (viewport center shifted right by half the 20rem sidebar). */}
+					{input != null && initialized && (
+						<div
+							ref={playerRef}
+							// Matches the sheet-music card's slot (max-w-237.5, centered): same sm:px-6
+							// gutter so the two align edge-to-edge (left-86 = 20rem sidebar + 1.5rem gutter,
+							// right-6 = 1.5rem gutter). Below sm the sheet goes full-width but the player
+							// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
+							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+						>
+							{/* Spotify layout: controls centered on top, progress bar flanked by times below. */}
+							<div className="relative flex items-center justify-center gap-5">
+								<select
+									value={instrumentName}
+									onChange={(e) => setInstrumentName(e.target.value)}
+									aria-label="Instrument"
+									className={`absolute left-0 max-w-32 rounded-md border px-2 py-1 text-xs ${dark ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-zinc-200 bg-white text-zinc-600'}`}
+								>
+									{INSTRUMENTS.map((i) => (
+										<option key={i.value} value={i.value}>
+											{i.label}
+										</option>
+									))}
+								</select>
+								<button
+									type="button"
+									onClick={stepPrev}
+									aria-label="Previous note"
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={ICON.prev} />
+								</button>
+								<button
+									type="button"
+									onClick={togglePlay}
+									aria-label={playing ? 'Pause' : 'Play'}
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon
+										d={playing ? ICON.pause : ICON.play}
+										className="size-7"
+									/>
+								</button>
+								<button
+									type="button"
+									onClick={stepNext}
+									aria-label="Next note"
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={ICON.next} />
+								</button>
+								<button
+									type="button"
+									onClick={() => setMuted((m) => !m)}
+									aria-label={muted ? 'Unmute' : 'Mute'}
+									aria-pressed={muted}
+									className={`absolute right-0 flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={muted ? ICON.muted : ICON.volume} />
+								</button>
+							</div>
+							<div className="flex items-center gap-2">
+								<span
+									className={`font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
+								>
+									{fmtTime(timeMs)}
+								</span>
+								<div className="relative flex-1">
+									{scrubTip && (
+										<div
+											className="pointer-events-none absolute bottom-full mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+											style={{ left: scrubTip.x }}
+										>
+											{scrubTip.text}
+										</div>
+									)}
+									<input
+										type="range"
+										min={0}
+										max={durationMs}
+										step={10}
+										value={timeMs}
+										onChange={(e) => {
+											setPlaying(false);
+											cursorRef.current?.seekMs(Number(e.target.value));
+										}}
+										onPointerMove={(e) => {
+											const rect = e.currentTarget.getBoundingClientRect();
+											const frac = Math.min(
+												1,
+												Math.max(0, (e.clientX - rect.left) / rect.width),
+											);
+											const ms = frac * durationMs;
+											const i =
+												(scoreRef.current?.getMeasureIndexAtMs(ms) ?? 0) + 1;
+											const n = scoreRef.current?.getMeasureCount() ?? 0;
+											setScrubTip({
+												x: e.clientX - rect.left,
+												text: `measure ${i} of ${n}`,
+											});
+										}}
+										onPointerLeave={() => setScrubTip(null)}
+										onPointerUp={() => setScrubTip(null)}
+										aria-label="Seek"
+										className="w-full accent-blue-600"
+									/>
+								</div>
+								<span
+									className={`font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
+								>
+									{fmtTime(durationMs)}
+								</span>
+							</div>
+						</div>
+					)}
+					{/* top part: always visible, taps toggle the panel */}
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="mb-2 py-2 flex w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 active:bg-zinc-200 active:text-zinc-900 md:hidden"
+						aria-expanded={mobileOpen}
+						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
+						className={`flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 transition-shadow hover:bg-zinc-100 active:bg-zinc-200 md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
 					>
-						{mobileOpen ? 'Hide' : 'Show'}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth={1.5}
+							stroke="currentColor"
+							aria-hidden="true"
+							className={`size-6 transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="m4.5 15.75 7.5-7.5 7.5 7.5"
+							/>
+						</svg>
 					</button>
 
+					{/* grid-rows 0fr↔1fr animates the height open/closed */}
 					<div
-						className={`flex-col gap-4 ${mobileOpen ? 'flex' : 'hidden'} md:flex`}
+						className={`grid transition-[grid-template-rows] duration-300 md:grid-rows-[1fr] ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
-						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-medium text-zinc-500">
-								Upload file
-							</span>
-							<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
-								Choose File
-								<input
-									type="file"
-									accept=".xml,.musicxml,.mxl"
-									className="hidden"
-									onChange={onFile}
-								/>
-							</label>
-						</div>
-
-						<Or />
-
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="example"
-								className="text-xs font-medium text-zinc-500"
+						<div className="min-h-0 overflow-hidden">
+							<div
+								onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
+								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-none md:overflow-visible"
 							>
-								Select an Example
-							</label>
-							<select
-								id="example"
-								value={fixture}
-								onChange={onPickFixture}
-								className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-							>
-								<option value="">Load an example…</option>
-								{fixtureNames.map((name) => (
-									<option key={name} value={name}>
-										{name}
-									</option>
-								))}
-							</select>
-						</div>
+								<Section title="MusicXML">
+									<div className="flex flex-col gap-1.5">
+										<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
+											Choose File
+											<input
+												type="file"
+												accept=".xml,.musicxml,.mxl"
+												className="hidden"
+												onChange={onFile}
+											/>
+										</label>
+									</div>
 
-						<Or />
+									<Or />
 
-						<div className="flex flex-col gap-1.5">
-							<label
-								htmlFor="musicxml"
-								className="text-xs font-medium text-zinc-500"
-							>
-								Edit MusicXML
-							</label>
-							<textarea
-								id="musicxml"
-								value={text}
-								onChange={onTextChange}
-								placeholder="Paste MusicXML here"
-								spellCheck={false}
-								className="h-48 resize-y rounded-md border border-zinc-200 p-2 font-mono text-xs"
-							/>
-						</div>
-
-						<button
-							type="button"
-							onClick={clearStorage}
-							disabled={!stored || cleared || restored}
-							className="flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							{cleared ? (
-								<>
-									Cleared
-									<CheckIcon />
-								</>
-							) : restored ? (
-								<>
-									Retrieved from local storage
-									<CheckIcon />
-								</>
-							) : (
-								'Clear local storage'
-							)}
-						</button>
-
-						<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-							<div className="flex items-center justify-between">
-								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-									Config
-								</span>
-								<button
-									type="button"
-									onClick={resetAll}
-									disabled={!canReset}
-									className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
-								>
-									Reset all
-								</button>
-							</div>
-							<p className="text-xs text-zinc-400">
-								With only a single system, some controls (e.g. system spacing
-								and max system fill) won't have a visible effect.
-							</p>
-							<label
-								htmlFor="darkMode"
-								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-							>
-								<input
-									id="darkMode"
-									type="checkbox"
-									checked={dark}
-									onChange={(e) => setDark(e.target.checked)}
-								/>
-								Dark mode
-							</label>
-							<label
-								htmlFor="showInfo"
-								className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-							>
-								<input
-									id="showInfo"
-									type="checkbox"
-									checked={showInfo}
-									onChange={(e) => {
-										setShowInfo(e.target.checked);
-										if (!e.target.checked) {
-											setTooltip(null);
-										}
-									}}
-								/>
-								Show note info on hover
-							</label>
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="notationFont"
-									className="text-xs font-medium text-zinc-500"
-								>
-									Notation font
-								</label>
-								<select
-									id="notationFont"
-									value={notationFont}
-									onChange={(e) =>
-										setConfig((c) =>
-											e.target.value === 'Bravura'
-												? (({ fonts: _, ...rest }) => rest)(c)
-												: {
-														...c,
-														fonts: {
-															...c.fonts,
-															notation: { family: e.target.value },
-														},
-													},
-										)
-									}
-									className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
-								>
-									<option value="Bravura">Bravura</option>
-									<option value="Petaluma">Petaluma</option>
-									<option value="Gonville">Gonville</option>
-								</select>
-								<p className="text-xs text-zinc-400">
-									The engraving font for noteheads, clefs, accidentals, and
-									rests. Bravura is the default.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="noteSpacing"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Note spacing
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{noteSpacing}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('noteSpacing')}
-											disabled={config.noteSpacing === undefined}
-											aria-label="Reset note spacing"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="example"
+											className="text-xs font-medium text-zinc-500"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="noteSpacing"
-									type="range"
-									min={12}
-									max={120}
-									step={1}
-									value={noteSpacing}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											noteSpacing: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How much horizontal space notes get: the px a quarter note is
-									allotted. Higher spreads every measure wider.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="softmaxFactor"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Softmax factor
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{softmaxFactor}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('softmaxFactor')}
-											disabled={config.softmaxFactor === undefined}
-											aria-label="Reset softmax factor"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											Select an Example
+										</label>
+										<select
+											id="example"
+											value={fixture}
+											onChange={onPickFixture}
+											className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="softmaxFactor"
-									type="range"
-									min={1}
-									max={30}
-									step={1}
-									value={softmaxFactor}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											softmaxFactor: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How that space is divided among notes. Higher exaggerates the
-									width difference between long and short notes.
-								</p>
-							</div>
+											<option value="">Load an example…</option>
+											{fixtureNames.map((name) => (
+												<option key={name} value={name}>
+													{name}
+												</option>
+											))}
+										</select>
+									</div>
 
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="systemSpacing"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									System spacing
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{systemSpacing}
-										</span>
+									<Or />
+
+									<details className="flex flex-col gap-1.5">
+										<summary className="cursor-pointer text-xs font-medium text-zinc-500">
+											Edit MusicXML
+										</summary>
+										<textarea
+											id="musicxml"
+											value={text}
+											onChange={onTextChange}
+											placeholder="Paste MusicXML here"
+											spellCheck={false}
+											className="h-48 w-full resize-y rounded-md border border-zinc-300 bg-white p-2 font-mono text-xs text-zinc-700"
+										/>
+									</details>
+								</Section>
+
+								<Section title="Local storage">
+									<p className="flex items-center gap-1 text-xs text-zinc-400">
+										{cleared ? (
+											<>
+												Cleared
+												<CheckIcon />
+											</>
+										) : restored ? (
+											<>
+												Retrieved from local storage
+												<CheckIcon />
+											</>
+										) : stored ? (
+											<>
+												Score saved
+												<CheckIcon />
+											</>
+										) : (
+											'Nothing saved'
+										)}
+									</p>
+									<button
+										type="button"
+										onClick={clearStorage}
+										disabled={!stored || cleared || restored}
+										className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										Clear local storage
+									</button>
+								</Section>
+
+								<Section
+									title="Config"
+									action={
 										<button
 											type="button"
-											onClick={() => reset('systemSpacing')}
-											disabled={config.systemSpacing === undefined}
-											aria-label="Reset system spacing"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											onClick={resetAll}
+											disabled={!canReset}
+											className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 										>
-											<ResetIcon />
+											Reset all
 										</button>
-									</span>
-								</label>
-								<input
-									id="systemSpacing"
-									type="range"
-									min={10}
-									max={50}
-									step={1}
-									value={systemSpacing}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											systemSpacing: e.target.valueAsNumber,
-										}))
 									}
-								/>
-								<p className="text-xs text-zinc-400">
-									Vertical gap between stacked systems. Lower packs systems
-									closer together down the page.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="maxSystemFill"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
 								>
-									Max system fill
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">
-											{maxSystemFill.toFixed(2)}
-										</span>
-										<button
-											type="button"
-											onClick={() => reset('maxSystemFill')}
-											disabled={config.maxSystemFill === undefined}
-											aria-label="Reset max system fill"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+									<p className="text-xs text-zinc-400">
+										With only a single system, some controls (e.g. system
+										spacing and max system fill) won't have a visible effect.
+									</p>
+									<label
+										htmlFor="darkMode"
+										className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+									>
+										<input
+											id="darkMode"
+											type="checkbox"
+											checked={dark}
+											onChange={(e) => setDark(e.target.checked)}
+										/>
+										Dark mode
+									</label>
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="notationFont"
+											className="text-xs font-medium text-zinc-500"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="maxSystemFill"
-									type="range"
-									min={0.1}
-									max={1}
-									step={0.05}
-									value={maxSystemFill}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											maxSystemFill: e.target.valueAsNumber,
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									How full a system gets before the next measure wraps to a new
-									line. Lower leaves more air; 1 packs each line to the edge.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="width"
-									className="flex items-center justify-between text-xs font-medium text-zinc-500"
-								>
-									Reference width
-									<span className="flex items-center gap-1.5">
-										<span className="font-mono text-zinc-400">{width}</span>
-										<button
-											type="button"
-											onClick={() =>
-												setConfig(({ layout: _, ...rest }) => rest)
+											Notation font
+										</label>
+										<select
+											id="notationFont"
+											value={notationFont}
+											onChange={(e) =>
+												setConfig((c) =>
+													e.target.value === 'Bravura'
+														? (({ fonts: _, ...rest }) => rest)(c)
+														: {
+																...c,
+																fonts: {
+																	...c.fonts,
+																	notation: { family: e.target.value },
+																},
+															},
+												)
 											}
-											disabled={config.layout === undefined}
-											aria-label="Reset width"
-											className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
-											<ResetIcon />
-										</button>
-									</span>
-								</label>
-								<input
-									id="width"
-									type="range"
-									min={400}
-									max={2000}
-									step={50}
-									value={width}
-									onChange={(e) =>
-										setConfig((c) => ({
-											...c,
-											layout: {
-												type: 'standard',
-												width: e.target.valueAsNumber,
-											},
-										}))
-									}
-								/>
-								<p className="text-xs text-zinc-400">
-									The width the score is engraved to; the rendering then scales
-									up or down to fit its container. Wider fits more measures per
-									system before wrapping.
-								</p>
+											<option value="Bravura">Bravura</option>
+											<option value="Petaluma">Petaluma</option>
+											<option value="Gonville">Gonville</option>
+										</select>
+										<p className="text-xs text-zinc-400">
+											The engraving font for noteheads, clefs, accidentals, and
+											rests. Bravura is the default.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="noteSpacing"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Note spacing
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{noteSpacing}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('noteSpacing')}
+													disabled={config.noteSpacing === undefined}
+													aria-label="Reset note spacing"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="noteSpacing"
+											type="range"
+											min={12}
+											max={120}
+											step={1}
+											value={noteSpacing}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													noteSpacing: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How much horizontal space notes get: the px a quarter note
+											is allotted. Higher spreads every measure wider.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="softmaxFactor"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Softmax factor
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{softmaxFactor}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('softmaxFactor')}
+													disabled={config.softmaxFactor === undefined}
+													aria-label="Reset softmax factor"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="softmaxFactor"
+											type="range"
+											min={1}
+											max={30}
+											step={1}
+											value={softmaxFactor}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													softmaxFactor: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How that space is divided among notes. Higher exaggerates
+											the width difference between long and short notes.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="systemSpacing"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											System spacing
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{systemSpacing}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('systemSpacing')}
+													disabled={config.systemSpacing === undefined}
+													aria-label="Reset system spacing"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="systemSpacing"
+											type="range"
+											min={10}
+											max={50}
+											step={1}
+											value={systemSpacing}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													systemSpacing: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											Vertical gap between stacked systems. Lower packs systems
+											closer together down the page.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="maxSystemFill"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Max system fill
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">
+													{maxSystemFill.toFixed(2)}
+												</span>
+												<button
+													type="button"
+													onClick={() => reset('maxSystemFill')}
+													disabled={config.maxSystemFill === undefined}
+													aria-label="Reset max system fill"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="maxSystemFill"
+											type="range"
+											min={0.1}
+											max={1}
+											step={0.05}
+											value={maxSystemFill}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													maxSystemFill: e.target.valueAsNumber,
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											How full a system gets before the next measure wraps to a
+											new line. Lower leaves more air; 1 packs each line to the
+											edge.
+										</p>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="width"
+											className="flex items-center justify-between text-xs font-medium text-zinc-500"
+										>
+											Reference width
+											<span className="flex items-center gap-1.5">
+												<span className="font-mono text-zinc-400">{width}</span>
+												<button
+													type="button"
+													onClick={() =>
+														setConfig(({ layout: _, ...rest }) => rest)
+													}
+													disabled={config.layout === undefined}
+													aria-label="Reset width"
+													className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+												>
+													<ResetIcon />
+												</button>
+											</span>
+										</label>
+										<input
+											id="width"
+											type="range"
+											min={400}
+											max={2000}
+											step={50}
+											value={width}
+											onChange={(e) =>
+												setConfig((c) => ({
+													...c,
+													layout: {
+														type: 'standard',
+														referenceWidth: e.target.valueAsNumber,
+													},
+												}))
+											}
+										/>
+										<p className="text-xs text-zinc-400">
+											The width the score is engraved to; the rendering then
+											scales up or down to fit its container. Wider fits more
+											measures per system before wrapping.
+										</p>
+									</div>
+								</Section>
 							</div>
 						</div>
 					</div>

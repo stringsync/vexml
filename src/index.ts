@@ -6,6 +6,14 @@ export {
 	type ChordSpec,
 } from './chord-diagram';
 export type { Config } from './config';
+export {
+	Cursor,
+	type CursorChangeEvent,
+	type CursorEventMap,
+	type CursorView,
+	type Scroller,
+} from './cursor';
+export type { BarCursorViewOptions } from './cursor-view';
 export type {
 	EventListenable,
 	HoverEvent,

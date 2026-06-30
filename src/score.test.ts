@@ -1,10 +1,20 @@
 import { expect, test } from 'bun:test';
+import type { Scroller } from './cursor';
 import { Decorations } from './decorations';
 import { Rect } from './geometry';
 import type { HitTester } from './hit';
 import { Score } from './score';
+import { buildSequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
-import { Measure, type PointerTarget, type Viewport } from './targets';
+import {
+	Measure,
+	type Note,
+	type PointerTarget,
+	type Viewport,
+} from './targets';
+
+// An empty timeline — these tests exercise events/layers/hover, not playback.
+const EMPTY_SEQUENCE = buildSequence({ measures: [], notes: [] });
 
 // Separate fake classes fulfilling the injected seams (preferred over mocks).
 
@@ -71,6 +81,13 @@ class FakeHost implements Host {
 		this.created.push(layer);
 		return layer;
 	}
+	clientRectOf(rect: Rect): DOMRect {
+		return { x: rect.x, y: rect.y, width: rect.w, height: rect.h } as DOMRect;
+	}
+	viewportRect(): DOMRect {
+		return { x: 0, y: 0, width: 0, height: 0 } as DOMRect;
+	}
+	readonly scroller: Scroller = { scrollIntoView() {} };
 	relayoutLayers(): void {
 		this.relayoutLayersCalls++;
 	}
@@ -109,12 +126,12 @@ function fixture(target: PointerTarget | null) {
 	const host = new FakeHost();
 	const index = new FakeHitTester(target);
 	const decorations = new Decorations(host);
-	const score = new Score(host, index, decorations);
+	const score = new Score(host, index, decorations, EMPTY_SEQUENCE);
 	return { host, index, decorations, score };
 }
 
 test('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0);
 	const { host, index, score } = fixture(target);
 	const seen: Array<{ type: string; x: number; y: number; native: Event }> = [];
 	score.addEventListener('pointermove', (e) =>
@@ -178,13 +195,13 @@ test('scroll events carry the offset and the score.scroll getter reflects the ho
 });
 
 test('hover fires only on target change and recomputes on scroll; unsubscribe detaches scroll', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0);
 	const host = new FakeHost();
 	// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
 	// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
 	let hit: PointerTarget | null = target;
 	const index: HitTester = { hitTest: () => hit };
-	const score = new Score(host, index, new Decorations(host));
+	const score = new Score(host, index, new Decorations(host), EMPTY_SEQUENCE);
 
 	const seen: Array<PointerTarget | null> = [];
 	const listener = (e: { target: PointerTarget | null }) => seen.push(e.target);
@@ -237,8 +254,74 @@ test('addLayer forwards zIndex to the host and rejects non-integers', () => {
 	expect(() => score.addLayer('content', Number.NaN)).toThrow();
 });
 
+test('getTimeAt interpolates the time under a point and reports the closest step', () => {
+	const host = new FakeHost();
+	// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
+	const sequence = buildSequence({
+		measures: [
+			{
+				index: 0,
+				beats: 2,
+				tempoBpm: 120,
+				jumps: [],
+				systemRect: new Rect(0, 0, 1000, 100),
+			},
+		],
+		notes: [
+			{
+				note: {} as Note,
+				measureIndex: 0,
+				measureBeat: 0,
+				beats: 1,
+				x: 10,
+				tiedFrom: null,
+			},
+			{
+				note: {} as Note,
+				measureIndex: 0,
+				measureBeat: 1,
+				beats: 1,
+				x: 20,
+				tiedFrom: null,
+			},
+		],
+	});
+	const target = new Measure(new Rect(0, 0, 1000, 100), viewport, '1', 0);
+	const score = new Score(
+		host,
+		new FakeHitTester(target),
+		new Decorations(host),
+		sequence,
+	);
+
+	// x 15 is halfway through step 0's glide (10 -> 20), so beat 0.5 = 250ms; closest step is 0.
+	expect(score.getTimeAt({ x: 15, y: 50 })).toEqual({
+		ms: 250,
+		beat: 0.5,
+		stepMs: 0,
+		stepBeat: 0,
+		stepIndex: 0,
+	});
+	// Far right lands in step 1 (snapped to beat 1 / 500ms) and clamps to the measure end.
+	expect(score.getTimeAt({ x: 9999, y: 50 })).toEqual({
+		ms: 1000,
+		beat: 2,
+		stepMs: 500,
+		stepBeat: 1,
+		stepIndex: 1,
+	});
+
+	const offScore = new Score(
+		host,
+		new FakeHitTester(null),
+		new Decorations(host),
+		sequence,
+	);
+	expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
+});
+
 test('dispose detaches every listener and tears down decorations and host', () => {
-	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1');
+	const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0);
 	const { host, index, decorations, score } = fixture(target);
 	score.addEventListener('pointermove', () => {});
 	score.addEventListener('resize', () => {});

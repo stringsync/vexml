@@ -1,3 +1,4 @@
+import type { Scroller } from './cursor';
 import type { Rect } from './geometry';
 import type { Viewport } from './targets';
 
@@ -30,10 +31,13 @@ export interface LayerHost {
  * test injects a fake. Kept separate from Viewport (the targets' coordinate seam) so each consumer
  * depends only on what it uses, even though Stage satisfies both.
  */
-export interface Host extends LayerHost {
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number };
+export interface Host extends LayerHost, Viewport {
 	readonly events: EventTarget;
 	readonly scroll: { left: number; top: number };
+	/* The visible scrollport box in client coords — what a cursor's visibility check compares against. */
+	viewportRect(): DOMRect;
+	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
+	readonly scroller: Scroller;
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void;
@@ -98,6 +102,15 @@ class ManagedLayer implements Layer {
 	}
 }
 
+/* The caller's height/width caps from config. A set cap turns the container into a scroll box on that
+ * axis; null leaves the axis to size to its content. */
+export interface ScrollBox {
+	height?: number | null;
+	maxHeight?: number | null;
+	width?: number | null;
+	maxWidth?: number | null;
+}
+
 /*
  * The host: the DOM vexml builds inside the caller's container, and the coordinate authority
  * between score space (where target rects live) and client/page space (where pointer events and
@@ -114,9 +127,21 @@ export class Stage implements Viewport, Host {
 	readonly base: HTMLCanvasElement;
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
+	// Inline styles this stage set on the container, with their prior values, restored on dispose.
+	private readonly restoreStyles: Array<[string, string]> = [];
 	private readonly layers = new Set<ManagedLayer>();
+	// While a smooth/auto scroll is animating, conflate further requests: hold the timer and remember
+	// only the latest target, then flush it once the animation has had time to settle.
+	private smoothScrollTimer: ReturnType<typeof setTimeout> | null = null;
+	private pendingSmoothScroll: {
+		offset: { left: number; top: number };
+		behavior: ScrollBehavior;
+	} | null = null;
 
-	constructor(private readonly container: HTMLDivElement) {
+	constructor(
+		private readonly container: HTMLDivElement,
+		scroll: ScrollBox = {},
+	) {
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
 		this.prevPosition = container.style.position;
@@ -129,6 +154,29 @@ export class Stage implements Viewport, Host {
 		this.prevIsolation = container.style.isolation;
 		if (!container.style.isolation) {
 			container.style.isolation = 'isolate';
+		}
+		// Turn the container into a scroll box on whichever axes have a cap: set the size/cap and
+		// overflow:auto so the content (the in-flow base canvas) scrolls within it. A cursor's
+		// follow()/scrollIntoView() then scroll this same box. overflow per axis is set once.
+		const overflowY = scroll.height != null || scroll.maxHeight != null;
+		const overflowX = scroll.width != null || scroll.maxWidth != null;
+		if (scroll.height != null) {
+			this.setStyle('height', `${scroll.height}px`);
+		}
+		if (scroll.maxHeight != null) {
+			this.setStyle('max-height', `${scroll.maxHeight}px`);
+		}
+		if (scroll.width != null) {
+			this.setStyle('width', `${scroll.width}px`);
+		}
+		if (scroll.maxWidth != null) {
+			this.setStyle('max-width', `${scroll.maxWidth}px`);
+		}
+		if (overflowY) {
+			this.setStyle('overflow-y', 'auto');
+		}
+		if (overflowX) {
+			this.setStyle('overflow-x', 'auto');
 		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
@@ -162,6 +210,65 @@ export class Stage implements Viewport, Host {
 
 	get scroll(): { left: number; top: number } {
 		return { left: this.container.scrollLeft, top: this.container.scrollTop };
+	}
+
+	// The visible scrollport box: the container's own client box (the same box overflow scrolls within).
+	viewportRect(): DOMRect {
+		return this.container.getBoundingClientRect();
+	}
+
+	// The Stage is its own scroller — it owns the container that scrolls.
+	get scroller(): Scroller {
+		return this;
+	}
+
+	// Scroll the container so a score-space rect is visible, moving only the axis that's off-screen.
+	// The rect maps to the container's scroll content through the base canvas's offset and CSS scale.
+	scrollIntoView(rect: Rect, opts?: { behavior?: ScrollBehavior }): void {
+		const { sx, sy } = this.frame();
+		const left = this.base.offsetLeft + rect.x * sx;
+		const top = this.base.offsetTop + rect.y * sy;
+		const target = {
+			left,
+			top,
+			right: left + rect.w * sx,
+			bottom: top + rect.h * sy,
+		};
+		const view = {
+			left: this.container.scrollLeft,
+			top: this.container.scrollTop,
+			right: this.container.scrollLeft + this.container.clientWidth,
+			bottom: this.container.scrollTop + this.container.clientHeight,
+		};
+		const offset = scrollOffsetFor(target, view);
+		const behavior = opts?.behavior;
+		if (behavior === 'smooth' || behavior === 'auto') {
+			this.smoothScrollTo(offset, behavior);
+		} else {
+			this.container.scrollTo({ ...offset, behavior });
+		}
+	}
+
+	// Issue a smooth/auto scroll, conflating any calls that arrive while one is animating: keep only
+	// the latest target and apply it once the settle window elapses, so a stream of follow() calls
+	// doesn't restart the animation on every step.
+	private smoothScrollTo(
+		offset: { left: number; top: number },
+		behavior: ScrollBehavior,
+	): void {
+		if (this.smoothScrollTimer) {
+			this.pendingSmoothScroll = { offset, behavior };
+			return;
+		}
+		this.container.scrollTo({ ...offset, behavior });
+		this.smoothScrollTimer = setTimeout(() => {
+			this.smoothScrollTimer = null;
+			const pending = this.pendingSmoothScroll;
+			this.pendingSmoothScroll = null;
+			if (pending) {
+				this.smoothScrollTo(pending.offset, pending.behavior);
+			}
+		}, SMOOTH_SCROLL_SETTLE_MS);
 	}
 
 	observeResize(
@@ -234,12 +341,28 @@ export class Stage implements Viewport, Host {
 	}
 
 	dispose(): void {
+		if (this.smoothScrollTimer) {
+			clearTimeout(this.smoothScrollTimer);
+			this.smoothScrollTimer = null;
+		}
 		for (const layer of [...this.layers]) {
 			layer.dispose();
 		}
 		this.base.remove();
 		this.container.style.position = this.prevPosition;
 		this.container.style.isolation = this.prevIsolation;
+		for (const [prop, value] of this.restoreStyles) {
+			this.container.style.setProperty(prop, value);
+		}
+	}
+
+	// Set a container style, remembering its prior value so dispose restores it (each prop set once).
+	private setStyle(prop: string, value: string): void {
+		this.restoreStyles.push([
+			prop,
+			this.container.style.getPropertyValue(prop),
+		]);
+		this.container.style.setProperty(prop, value);
 	}
 
 	// Size a layer's drawing bitmap. A content layer's bitmap is fixed to the engraved score (the
@@ -287,4 +410,38 @@ export class Stage implements Viewport, Host {
 		const h = parseFloat(this.base.style.height) || r.height || 1;
 		return { left: r.left, top: r.top, sx: r.width / w, sy: r.height / h };
 	}
+}
+
+// How long a smooth scroll is assumed to take; requests within this window are conflated. Browsers
+// don't expose the animation's end, so this is a fixed estimate. ponytail: fixed window, swap for a
+// scrollend listener if the guess proves wrong.
+const SMOOTH_SCROLL_SETTLE_MS = 500;
+
+type Box = { left: number; top: number; right: number; bottom: number };
+
+/*
+ * The scroll offset that brings `target` into `view`, both in the container's scroll-content
+ * coordinates. Horizontal is minimal: if the target's near edge is off the near side, align to it; if
+ * its far edge is off the far side, scroll just enough to show it; otherwise leave it. So scrolling a
+ * horizontally-off-screen bar in a panoramic score never disturbs the vertical position. Vertical
+ * pins the target's top to the viewport top (scrollTo clamps to the max scroll height near the end of
+ * the content). Pure — the DOM application lives in Stage.scrollIntoView.
+ */
+export function scrollOffsetFor(
+	target: Box,
+	view: Box,
+): { left: number; top: number } {
+	const axis = (tLo: number, tHi: number, vLo: number, vHi: number): number => {
+		if (tLo < vLo) {
+			return tLo;
+		}
+		if (tHi > vHi) {
+			return vLo + (tHi - vHi);
+		}
+		return vLo;
+	};
+	return {
+		left: axis(target.left, target.right, view.left, view.right),
+		top: target.top,
+	};
 }

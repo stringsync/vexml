@@ -1,8 +1,68 @@
+import {
+	Cursor,
+	type CursorHost,
+	type CursorHostEventMap,
+	type CursorView,
+	type Scroller,
+} from './cursor';
+import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
 import type { Decorations } from './decorations';
 import { EventBus, type EventListenable, type ScoreEventMap } from './events';
+import type { Rect } from './geometry';
 import type { HitTester } from './hit';
+import type { Sequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
 import type { PointerTarget } from './targets';
+
+/* Adapts the Stage host into a Cursor's CursorHost: passes through the rect/scroller methods and
+ * turns the host's window-scroll + resize observers into a single `viewportchange` event. One per
+ * cursor; the observers are bound only while the cursor is listening and torn down when it disposes
+ * (its removeEventListener drops the last listener). */
+class CursorHostAdapter implements CursorHost {
+	private readonly bus = new EventBus<CursorHostEventMap>();
+	private unbind: (() => void) | null = null;
+
+	constructor(private readonly host: Host) {}
+
+	clientRectOf(rect: Rect): DOMRect {
+		return this.host.clientRectOf(rect);
+	}
+
+	viewportRect(): DOMRect {
+		return this.host.viewportRect();
+	}
+
+	get scroller(): Scroller {
+		return this.host.scroller;
+	}
+
+	addEventListener<K extends keyof CursorHostEventMap>(
+		type: K,
+		listener: (event: CursorHostEventMap[K]) => void,
+	): void {
+		this.bus.addEventListener(type, listener);
+		if (!this.unbind) {
+			const fire = () => this.bus.emit('viewportchange', undefined);
+			const offScroll = this.host.observeScroll(fire);
+			const offResize = this.host.observeResize(fire);
+			this.unbind = () => {
+				offScroll();
+				offResize();
+			};
+		}
+	}
+
+	removeEventListener<K extends keyof CursorHostEventMap>(
+		type: K,
+		listener: (event: CursorHostEventMap[K]) => void,
+	): void {
+		this.bus.removeEventListener(type, listener);
+		if (this.bus.count('viewportchange') === 0) {
+			this.unbind?.();
+			this.unbind = null;
+		}
+	}
+}
 
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
@@ -31,11 +91,14 @@ export class Score implements EventListenable<ScoreEventMap> {
 	private hovered: PointerTarget | null = null;
 	private lastClient: { x: number; y: number } | null = null;
 	private unobserveScroll: (() => void) | null = null;
+	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
+	private readonly cursors = new Set<Cursor>();
 
 	constructor(
 		private readonly host: Host,
 		private readonly index: HitTester,
 		private readonly decorations: Decorations,
+		private readonly sequence: Sequence,
 	) {
 		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
 		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
@@ -72,6 +135,100 @@ export class Score implements EventListenable<ScoreEventMap> {
 		layer.dispose();
 	}
 
+	/* Add a playback cursor over this score's timeline. Headless by default — attach a view
+	 * (createCursorView) and/or follow the scroller for visuals. Disposed when the score is. */
+	addCursor(): Cursor {
+		const cursor = new Cursor(
+			this.sequence,
+			new CursorHostAdapter(this.host),
+			() => this.cursors.delete(cursor),
+		);
+		this.cursors.add(cursor);
+		return cursor;
+	}
+
+	/* vexml's default cursor visual — a vertical bar on its own content layer. Hand it to a cursor
+	 * with cursor.attach(view). Style it with `color`/`widthPx`, or implement CursorView for your own. */
+	createCursorView(options?: BarCursorViewOptions): CursorView {
+		return new BarCursorView(this.host.createLayer('content'), options);
+	}
+
+	/* The score's scroller, to give a cursor (cursor.follow) or scroll a rect into view directly. */
+	get scroller(): Scroller {
+		return this.host.scroller;
+	}
+
+	/* Total playback time of the score, repeats and voltas expanded. */
+	getDurationMs(): number {
+		return this.sequence.getDurationMs();
+	}
+
+	/* Total playback length in quarter-note beats, repeats and voltas expanded. */
+	getDurationBeats(): number {
+		return this.sequence.getDurationBeats();
+	}
+
+	/* The total number of measures in document order (not repeat-expanded). */
+	getMeasureCount(): number {
+		return this.sequence.getMeasureCount();
+	}
+
+	/* The document measure index playing at `ms` (before the first onset clamps to 0). */
+	getMeasureIndexAtMs(ms: number): number {
+		return this.sequence.getMeasureIndexAtMs(ms);
+	}
+
+	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
+	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it —
+	 * a note/fret within its onset step, a measure across its full width (see Sequence.resolveX). The
+	 * `step*` fields are the closest onset (the step the point lands in), for snap-to-note callers. */
+	getTimeAt(point: { x: number; y: number }): {
+		ms: number;
+		beat: number;
+		stepMs: number;
+		stepBeat: number;
+		stepIndex: number;
+	} | null {
+		const range = this.stepRangeAt(point);
+		if (!range) {
+			return null;
+		}
+		const resolved = this.sequence.resolveX(point.x, range.start, range.end);
+		const step = resolved && this.sequence.getStep(resolved.stepIndex);
+		if (!resolved || !step) {
+			return null;
+		}
+		return {
+			ms: this.sequence.beatsToMs(resolved.beat),
+			beat: resolved.beat,
+			stepMs: step.startMs,
+			stepBeat: step.startBeat,
+			stepIndex: resolved.stepIndex,
+		};
+	}
+
+	// The step range a target spans: a note/fret is its single onset step; a measure is its first
+	// occurrence's contiguous run, so a point maps across the whole bar.
+	private stepRangeAt(point: {
+		x: number;
+		y: number;
+	}): { start: number; end: number } | null {
+		const target = this.index.hitTest(point);
+		if (!target) {
+			return null;
+		}
+		switch (target.type) {
+			case 'note':
+			case 'tab-position': {
+				const note = target.type === 'note' ? target : target.getNote();
+				const index = this.sequence.getFirstStepOfNote(note);
+				return index === null ? null : { start: index, end: index };
+			}
+			case 'measure':
+				return this.sequence.getStepRangeOfMeasure(target.getIndex());
+		}
+	}
+
 	addEventListener<K extends keyof ScoreEventMap>(
 		type: K,
 		listener: (event: ScoreEventMap[K]) => void,
@@ -94,6 +251,10 @@ export class Score implements EventListenable<ScoreEventMap> {
 	}
 
 	dispose(): void {
+		for (const cursor of [...this.cursors]) {
+			cursor.dispose();
+		}
+		this.cursors.clear();
 		for (const handlers of this.bound.values()) {
 			for (const [domType, handler] of handlers) {
 				this.host.events.removeEventListener(domType, handler);

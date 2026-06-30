@@ -1,4 +1,4 @@
-import type { Note as MNote } from '@stringsync/mdom';
+import { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from './geometry';
 
 /*
@@ -225,6 +225,27 @@ export class Note extends BoundedTarget {
 		return this.deps.mnote.isGrace;
 	}
 
+	/* The grace notes ornamenting this note, in play order: the run of grace notes immediately
+	 * preceding it in the measure (grace notes steal no timeline time, so they never surface as a
+	 * cursor onset on their own). Empty for most notes; a caller can sound them just before this
+	 * one. ponytail: a grace chord comes back as a fast run, not a simultaneity. */
+	getGraceNotes(): Note[] {
+		const siblings = this.deps.mnote.parent?.childrenOfType(MNote) ?? [];
+		const i = siblings.indexOf(this.deps.mnote);
+		const graces: Note[] = [];
+		for (let j = i - 1; j >= 0; j--) {
+			const sibling = siblings[j];
+			if (!sibling?.isGrace) {
+				break;
+			}
+			const note = this.deps.notes.get(sibling);
+			if (note) {
+				graces.unshift(note);
+			}
+		}
+		return graces;
+	}
+
 	/* True when this note is part of a chord of two or more notes (the lead counts too). */
 	isChordMember(): boolean {
 		return this.deps.chord.length > 1;
@@ -258,6 +279,7 @@ export class Measure extends BoundedTarget {
 		rect: Rect,
 		viewport: Viewport,
 		private readonly number: string,
+		private readonly index: number,
 	) {
 		super(rect, viewport);
 	}
@@ -265,6 +287,11 @@ export class Measure extends BoundedTarget {
 	/* The MusicXML measure number, e.g. "1" (or "0" for a pickup). */
 	getNumber(): string {
 		return this.number;
+	}
+
+	/* The 0-based position among the part's measures (stable; distinct from the printed number). */
+	getIndex(): number {
+		return this.index;
 	}
 }
 
