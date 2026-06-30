@@ -210,7 +210,9 @@ export default function App() {
 	const systemSpacing = config.systemSpacing ?? 30;
 	const maxSystemFill = config.maxSystemFill ?? 0.9;
 	const width =
-		config.layout?.type === 'standard' ? (config.layout.width ?? 900) : 900;
+		config.layout?.type === 'standard'
+			? (config.layout.referenceWidth ?? 900)
+			: 900;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const resetKeys = [
 		'noteSpacing',
@@ -273,7 +275,7 @@ export default function App() {
 		// window re-scales instantly without re-rendering.
 		const layoutWidth =
 			renderConfig.layout?.type === 'standard'
-				? renderConfig.layout.width
+				? renderConfig.layout.referenceWidth
 				: undefined;
 		let cancelled = false;
 		// Turn off the lit halo and hide the tooltip; used to reset on teardown/re-render.
@@ -287,7 +289,7 @@ export default function App() {
 		let detach: (() => void) | undefined;
 		render(input, container, {
 			...renderConfig,
-			layout: { type: 'standard', width: layoutWidth },
+			layout: { type: 'standard', referenceWidth: layoutWidth },
 		})
 			.then((score) => {
 				// The effect can re-run before this resolves; drop the late score so it
@@ -1104,7 +1106,7 @@ export default function App() {
 													...c,
 													layout: {
 														type: 'standard',
-														width: e.target.valueAsNumber,
+														referenceWidth: e.target.valueAsNumber,
 													},
 												}))
 											}

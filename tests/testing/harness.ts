@@ -13,8 +13,9 @@ export async function render(
 	config: Partial<Config>,
 ): Promise<Buffer> {
 	const width =
-		(config.layout?.type === 'standard' ? config.layout.width : undefined) ??
-		DEFAULT_WIDTH;
+		(config.layout?.type === 'standard'
+			? config.layout.referenceWidth
+			: undefined) ?? DEFAULT_WIDTH;
 	const browser = await testBrowser();
 	const page = await browser.newPage({
 		viewport: { width: width + 64, height: 600 },
