@@ -86,15 +86,23 @@ function CheckIcon() {
 	);
 }
 
-// Heroicons (outline) — single-path each, so one component covers play/pause/prev/next.
+// Heroicons (outline). Each value is the icon's path list — circle play/pause have two paths.
 const ICON = {
-	play: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
-	pause: 'M15.75 5.25v13.5m-7.5-13.5v13.5',
-	prev: 'M15.75 19.5 8.25 12l7.5-7.5',
-	next: 'm8.25 4.5 7.5 7.5-7.5 7.5',
+	play: [
+		'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
+	],
+	pause: ['M15.75 5.25v13.5m-7.5-13.5v13.5'],
+	prev: ['M15.75 19.5 8.25 12l7.5-7.5'],
+	next: ['m8.25 4.5 7.5 7.5-7.5 7.5'],
 } as const;
 
-function PlayerIcon({ d }: { d: string }) {
+function PlayerIcon({
+	d,
+	className = 'size-6',
+}: {
+	d: readonly string[];
+	className?: string;
+}) {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -102,10 +110,12 @@ function PlayerIcon({ d }: { d: string }) {
 			viewBox="0 0 24 24"
 			strokeWidth={1.5}
 			stroke="currentColor"
-			className="size-6"
+			className={className}
 			aria-hidden="true"
 		>
-			<path strokeLinecap="round" strokeLinejoin="round" d={d} />
+			{d.map((p) => (
+				<path key={p} strokeLinecap="round" strokeLinejoin="round" d={p} />
+			))}
 		</svg>
 	);
 }
@@ -289,7 +299,29 @@ export default function App() {
 				const cursor = score.addCursor();
 				cursor.attach(score.createCursorView());
 				cursor.follow();
-				cursor.addEventListener('change', (e) => setTimeMs(e.timeMs));
+				// Light the notes (and their tab frets) under the cursor; clear ones that drop out.
+				// Rests (no pitch) are skipped — only sounding notes get colored.
+				const lit = new Set<Note>();
+				const paint = (active: readonly Note[]) => {
+					const sounding = active.filter((n) => n.getPitch() !== null);
+					for (const n of lit) {
+						if (!sounding.includes(n)) {
+							n.color.off();
+							lit.delete(n);
+						}
+					}
+					for (const n of sounding) {
+						if (!lit.has(n)) {
+							n.color.on('#155dfc');
+							lit.add(n);
+						}
+					}
+				};
+				cursor.addEventListener('change', (e) => {
+					setTimeMs(e.timeMs);
+					paint(e.active);
+				});
+				paint(cursor.getActiveNotes());
 				cursorRef.current = cursor;
 				setDurationMs(score.getDurationMs());
 				setTimeMs(0);
@@ -560,37 +592,66 @@ export default function App() {
 					    pane (viewport center shifted right by half the 20rem sidebar). */}
 					{input != null && initialized && (
 						<div
-							className={`absolute bottom-full left-1/2 z-30 mb-4 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur md:fixed md:bottom-4 md:left-[calc(50%+10rem)] md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+							// Width tracks the sheet-music card (max-w-237.5, centered): full content-pane span
+							// on desktop (left-80 clears the 20rem sidebar), full width minus inset-x-4 padding
+							// on mobile. Rides up with the bottom sheet (bottom-full) on mobile, fixed on desktop.
+							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur md:fixed md:inset-x-auto md:bottom-4 md:left-80 md:right-0 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
 						>
-							<span
-								className={`w-24 text-right font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
-							>
-								{fmtTime(timeMs)} / {fmtTime(durationMs)}
-							</span>
-							<button
-								type="button"
-								onClick={stepPrev}
-								aria-label="Previous note"
-								className={`rounded-full p-1 ${dark ? 'text-zinc-300 hover:bg-zinc-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
-							>
-								<PlayerIcon d={ICON.prev} />
-							</button>
-							<button
-								type="button"
-								onClick={togglePlay}
-								aria-label={playing ? 'Pause' : 'Play'}
-								className="rounded-full bg-blue-600 p-2 text-white hover:bg-blue-500"
-							>
-								<PlayerIcon d={playing ? ICON.pause : ICON.play} />
-							</button>
-							<button
-								type="button"
-								onClick={stepNext}
-								aria-label="Next note"
-								className={`rounded-full p-1 ${dark ? 'text-zinc-300 hover:bg-zinc-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
-							>
-								<PlayerIcon d={ICON.next} />
-							</button>
+							{/* Spotify layout: controls centered on top, progress bar flanked by times below. */}
+							<div className="flex items-center justify-center gap-5">
+								<button
+									type="button"
+									onClick={stepPrev}
+									aria-label="Previous note"
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={ICON.prev} />
+								</button>
+								<button
+									type="button"
+									onClick={togglePlay}
+									aria-label={playing ? 'Pause' : 'Play'}
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon
+										d={playing ? ICON.pause : ICON.play}
+										className="size-7"
+									/>
+								</button>
+								<button
+									type="button"
+									onClick={stepNext}
+									aria-label="Next note"
+									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={ICON.next} />
+								</button>
+							</div>
+							<div className="flex items-center gap-2">
+								<span
+									className={`font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
+								>
+									{fmtTime(timeMs)}
+								</span>
+								<input
+									type="range"
+									min={0}
+									max={durationMs}
+									step={10}
+									value={timeMs}
+									onChange={(e) => {
+										setPlaying(false);
+										cursorRef.current?.seekMs(Number(e.target.value));
+									}}
+									aria-label="Seek"
+									className="flex-1 accent-blue-600"
+								/>
+								<span
+									className={`font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
+								>
+									{fmtTime(durationMs)}
+								</span>
+							</div>
 						</div>
 					)}
 					{/* top part: always visible, taps toggle the panel */}
