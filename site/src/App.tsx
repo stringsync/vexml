@@ -186,6 +186,12 @@ export default function App() {
 		y: number;
 		text: string;
 	} | null>(null);
+	// Scrub-bar tooltip: "measure i of N" at the pointer x (relative to the track), while
+	// hovering or dragging the seek slider. ponytail: pointer-only, add a value-driven tip if
+	// keyboard nav matters.
+	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
+		null,
+	);
 	// The note whose halo is currently lit, so the next move can turn it back off.
 	const haloRef = useRef<Note | null>(null);
 	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
@@ -669,19 +675,46 @@ export default function App() {
 								>
 									{fmtTime(timeMs)}
 								</span>
-								<input
-									type="range"
-									min={0}
-									max={durationMs}
-									step={10}
-									value={timeMs}
-									onChange={(e) => {
-										setPlaying(false);
-										cursorRef.current?.seekMs(Number(e.target.value));
-									}}
-									aria-label="Seek"
-									className="flex-1 accent-blue-600"
-								/>
+								<div className="relative flex-1">
+									{scrubTip && (
+										<div
+											className="pointer-events-none absolute bottom-full mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+											style={{ left: scrubTip.x }}
+										>
+											{scrubTip.text}
+										</div>
+									)}
+									<input
+										type="range"
+										min={0}
+										max={durationMs}
+										step={10}
+										value={timeMs}
+										onChange={(e) => {
+											setPlaying(false);
+											cursorRef.current?.seekMs(Number(e.target.value));
+										}}
+										onPointerMove={(e) => {
+											const rect = e.currentTarget.getBoundingClientRect();
+											const frac = Math.min(
+												1,
+												Math.max(0, (e.clientX - rect.left) / rect.width),
+											);
+											const ms = frac * durationMs;
+											const i =
+												(scoreRef.current?.getMeasureIndexAtMs(ms) ?? 0) + 1;
+											const n = scoreRef.current?.getMeasureCount() ?? 0;
+											setScrubTip({
+												x: e.clientX - rect.left,
+												text: `measure ${i} of ${n}`,
+											});
+										}}
+										onPointerLeave={() => setScrubTip(null)}
+										onPointerUp={() => setScrubTip(null)}
+										aria-label="Seek"
+										className="w-full accent-blue-600"
+									/>
+								</div>
 								<span
 									className={`font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
 								>

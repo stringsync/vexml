@@ -297,6 +297,11 @@ test('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms',
 	expect(seq.getStep(0)?.startMs).toBeCloseTo(0);
 	expect(seq.getStep(4)?.startBeat).toBe(4); // first onset of measure 1
 	expect(seq.getStep(4)?.startMs).toBeCloseTo(2000);
+
+	// Measure count is document order (2 measures); ms maps to the measure playing then.
+	expect(seq.getMeasureCount()).toBe(2);
+	expect(seq.getMeasureIndexAtMs(0)).toBe(0);
+	expect(seq.getMeasureIndexAtMs(2500)).toBe(1); // 2.5s in → measure 1
 });
 
 test('assembly: a repeated measure replays its steps at later times, earliest-first lookup', () => {

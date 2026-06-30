@@ -3,9 +3,11 @@ import {
 	Cursor,
 	type CursorChangeEvent,
 	type CursorHost,
+	type CursorHostEventMap,
 	type CursorView,
 	type Scroller,
 } from './cursor';
+import { EventBus } from './events';
 import { Rect } from './geometry';
 import { buildSequence, type SequenceNote } from './sequence';
 import type { Note } from './targets';
@@ -47,6 +49,7 @@ class FakeScroller implements Scroller {
 
 class FakeHost implements CursorHost {
 	readonly scroller = new FakeScroller();
+	private readonly bus = new EventBus<CursorHostEventMap>();
 	// The visible box, in the same identity coords clientRectOf maps to. Defaults to covering SYS.
 	vp = new Rect(0, 0, 1000, 1000);
 	clientRectOf(rect: Rect): DOMRect {
@@ -63,6 +66,23 @@ class FakeHost implements CursorHost {
 	}
 	viewportRect(): DOMRect {
 		return this.clientRectOf(this.vp);
+	}
+	addEventListener<K extends keyof CursorHostEventMap>(
+		type: K,
+		listener: (event: CursorHostEventMap[K]) => void,
+	): void {
+		this.bus.addEventListener(type, listener);
+	}
+	removeEventListener<K extends keyof CursorHostEventMap>(
+		type: K,
+		listener: (event: CursorHostEventMap[K]) => void,
+	): void {
+		this.bus.removeEventListener(type, listener);
+	}
+	// Test helper: move the viewport and notify, as a real scroll/resize would.
+	moveViewport(rect: Rect): void {
+		this.vp = rect;
+		this.bus.emit('viewportchange', undefined);
 	}
 }
 
@@ -202,6 +222,28 @@ test('isFullyVisible reflects the viewport box', () => {
 	expect(cursor.isFullyVisible()).toBe(true);
 	host.vp = new Rect(500, 0, 1000, 1000);
 	expect(cursor.isFullyVisible()).toBe(false);
+});
+
+test('visibility fires on transitions from both cursor moves and viewport changes', () => {
+	const host = new FakeHost(); // vp covers every bar (x 10..40, width 1)
+	const cursor = new Cursor(fourQuarters(), host);
+	const seen: boolean[] = [];
+	cursor.addEventListener('visibility', (e) => seen.push(e.fullyVisible));
+
+	// Narrow the viewport to x [0, 25]: bars at x 10 and 20 fit, 30 and 40 don't. The cursor sits at
+	// x 10, so this isn't a transition.
+	host.moveViewport(new Rect(0, 0, 25, 1000));
+	expect(seen).toEqual([]);
+
+	cursor.next(); // -> x 20, still inside; no event
+	expect(seen).toEqual([]);
+	cursor.next(); // -> x 30, scrolls off the right edge
+	expect(seen).toEqual([false]);
+	cursor.next(); // -> x 40, still off; no repeat
+	expect(seen).toEqual([false]);
+
+	host.moveViewport(new Rect(0, 0, 1000, 1000)); // widen: the bar is fully visible again
+	expect(seen).toEqual([false, true]);
 });
 
 test('dispose is idempotent and stops movement/emits; onDispose fires once', () => {

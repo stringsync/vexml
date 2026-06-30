@@ -518,6 +518,7 @@ export function buildSequence(input: SequenceInput): Sequence {
 		steps,
 		segments,
 		totalBeats,
+		input.measures.length,
 		tiedFrom,
 		firstStepOfNote,
 		firstStepOfMeasure,
@@ -533,6 +534,7 @@ export class Sequence {
 		private readonly steps: Step[],
 		private readonly segments: readonly TempoSegment[],
 		private readonly durationBeats: number,
+		private readonly measureCount: number,
 		private readonly tiedFrom: ReadonlyMap<Note, Note>,
 		private readonly firstStepOfNote: ReadonlyMap<Note, number>,
 		private readonly firstStepOfMeasure: ReadonlyMap<number, number>,
@@ -585,6 +587,17 @@ export class Sequence {
 
 	getStepIndexAtMs(ms: number): number | null {
 		return this.getStepIndexAtBeats(this.msToBeats(ms));
+	}
+
+	/* The total number of measures in document order (not repeat-expanded). */
+	getMeasureCount(): number {
+		return this.measureCount;
+	}
+
+	/* The document measure index playing at `ms` (before the first onset clamps to 0). */
+	getMeasureIndexAtMs(ms: number): number {
+		const index = this.getStepIndexAtMs(ms);
+		return index === null ? 0 : (this.steps[index]?.measureIndex ?? 0);
 	}
 
 	/* The bar rect at an exact time: the step's onset x interpolated toward its glide target by the

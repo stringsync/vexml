@@ -28,8 +28,17 @@ export interface CursorChangeEvent {
 	readonly done: boolean;
 }
 
+/* The cursor's bar crossed the viewport edge: `fullyVisible` is true when the whole bar sits inside
+ * the viewport, false when any part is off-screen. Fires on a transition only — driven by the
+ * cursor's own moves and by viewport scroll/resize (see CursorHost.viewportchange), so it also fires
+ * while paused if the user scrolls the bar away. */
+export interface CursorVisibilityEvent {
+	readonly fullyVisible: boolean;
+}
+
 export interface CursorEventMap {
 	change: CursorChangeEvent;
+	visibility: CursorVisibilityEvent;
 }
 
 /* A visual for the cursor, driven by the cursor on every change. vexml ships a vertical-bar default
@@ -46,10 +55,16 @@ export interface Scroller {
 	scrollIntoView(rect: Rect, opts?: { behavior?: ScrollBehavior }): void;
 }
 
+/* The host fires this whenever the viewport moves or resizes, so the cursor can re-test visibility
+ * even though it hasn't moved. Payload-free — the cursor reads viewportRect()/clientRectOf() itself. */
+export interface CursorHostEventMap {
+	viewportchange: undefined;
+}
+
 /* What a Cursor needs from the rendered score's stage: score<->client mapping (to expose the bar's
- * page rect and test visibility), the visible scrollport box, and the default scroller. Stage
- * implements it; a unit test injects a fake. */
-export interface CursorHost {
+ * page rect and test visibility), the visible scrollport box, the default scroller, and a
+ * viewport-change subscription. Stage's adapter implements it; a unit test injects a fake. */
+export interface CursorHost extends EventListenable<CursorHostEventMap> {
 	clientRectOf(rect: Rect): DOMRect;
 	viewportRect(): DOMRect;
 	readonly scroller: Scroller;
@@ -77,13 +92,23 @@ export class Cursor implements EventListenable<CursorEventMap> {
 	private index = 0;
 	private ms = 0;
 	private disposed = false;
+	// Last reported full-visibility, to fire `visibility` on transitions only. Seeded from the
+	// current state so the first move/scroll doesn't emit a spurious "unchanged" event.
+	private lastVisible: boolean;
 
 	constructor(
 		private readonly sequence: Sequence,
 		private readonly host: CursorHost,
 		// Called from dispose so the Score can forget this cursor (avoids a leak / double dispose).
 		private readonly onDispose?: () => void,
-	) {}
+	) {
+		this.lastVisible = this.isFullyVisible();
+		const onViewport = () => this.checkVisibility();
+		this.host.addEventListener('viewportchange', onViewport);
+		this.cleanups.add(() =>
+			this.host.removeEventListener('viewportchange', onViewport),
+		);
+	}
 
 	/* Snap to the next tickable in playback order; a no-op on the last one. */
 	next(): void {
@@ -264,5 +289,20 @@ export class Cursor implements EventListenable<CursorEventMap> {
 
 	private emit(from: number): void {
 		this.bus.emit('change', this.snapshot(from));
+		this.checkVisibility();
+	}
+
+	// Fire `visibility` if the bar crossed the viewport edge since the last check. Called after every
+	// move and on every viewport change, so it catches both the cursor moving off-screen and the user
+	// scrolling it away.
+	private checkVisibility(): void {
+		if (this.disposed) {
+			return;
+		}
+		const fullyVisible = this.isFullyVisible();
+		if (fullyVisible !== this.lastVisible) {
+			this.lastVisible = fullyVisible;
+			this.bus.emit('visibility', { fullyVisible });
+		}
 	}
 }
