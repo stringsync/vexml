@@ -909,6 +909,9 @@ export function drawScore(
 		// final score space once cropTop is known. Only the final pass's arrays are kept.
 		const rawNotes: RawNote[] = [];
 		const rawMeasures: RawMeasure[] = [];
+		// The system each rawMeasure belongs to, parallel to rawMeasures, so the post-pass below can
+		// grow every measure box up to its system's topmost above-stave decoration.
+		const rawMeasureSystem: number[] = [];
 		let systemTopY = layout.top + topSlack;
 		let systemContentBottom = systemTopY;
 		let currentSystem = -1;
@@ -939,6 +942,15 @@ export function drawScore(
 		// top stave — reserved above it on a redraw so it can't clash with the system above.
 		const systemTopByIndex = new Map<number, number>();
 		const systemHighestTop = new Map<number, number>();
+		// The topmost y reached by any above-stave decoration (chord diagram, chord symbol, words) in
+		// a system. Measure boxes grow up to this so the playback cursor/scroll cover those extras
+		// instead of clipping them; tracked per system so the cursor bar's height stays uniform.
+		const systemDecorationTop = new Map<number, number>();
+		const growDecorationTop = (system: number, top: number) =>
+			systemDecorationTop.set(
+				system,
+				Math.min(systemDecorationTop.get(system) ?? Infinity, top),
+			);
 		for (let m = 0; m < measureCount; m++) {
 			const box = boxes[m];
 			if (!box) {
@@ -1405,6 +1417,7 @@ export function drawScore(
 					index: m,
 					number: parts[0]?.measures[m]?.number ?? String(m + 1),
 				});
+				rawMeasureSystem.push(systemIndex);
 			}
 
 			if (noteExtent.top < Infinity) {
@@ -1422,10 +1435,16 @@ export function drawScore(
 			// Words go before the diagrams so a chord diagram draws on top of any words it
 			// shares a measure with — the fret box stays fully legible, the text yields.
 			for (const w of wordsTasks) {
-				pageTop = Math.min(
-					pageTop,
-					drawWords(context, w.stave, w.text, w.firstNote, labelFont, detector),
+				const top = drawWords(
+					context,
+					w.stave,
+					w.text,
+					w.firstNote,
+					labelFont,
+					detector,
 				);
+				pageTop = Math.min(pageTop, top);
+				growDecorationTop(systemIndex, top);
 			}
 			// Diagrams sit at their lead note's x; two on notes either side of a barline can be
 			// close enough to overlap (especially at a narrow width). The detector pushes each
@@ -1499,6 +1518,7 @@ export function drawScore(
 					});
 					diagram.draw(context, { ...h.frame, title: h.text || undefined });
 					pageTop = Math.min(pageTop, diagram.top);
+					growDecorationTop(systemIndex, diagram.top);
 					// The diagram rises above the stave, so it also counts toward this system's
 					// upward overflow — otherwise no systemSpacing is reserved for it and a
 					// diagram on a stacked system collides with the system above.
@@ -1510,10 +1530,15 @@ export function drawScore(
 						),
 					);
 				} else {
-					pageTop = Math.min(
-						pageTop,
-						drawHarmony(context, h.staveNote, h.text, labelFont, detector),
+					const top = drawHarmony(
+						context,
+						h.staveNote,
+						h.text,
+						labelFont,
+						detector,
 					);
+					pageTop = Math.min(pageTop, top);
+					growDecorationTop(systemIndex, top);
 				}
 			}
 
@@ -1559,6 +1584,20 @@ export function drawScore(
 		// The last system's content is never followed by a system-change reset, so check it
 		// for clipped content here.
 		warnEscapes();
+
+		// Grow each measure box up to the topmost above-stave decoration (chord diagram, chord
+		// symbol, words) in its system, so the measure's bounding box — and the playback cursor and
+		// auto-scroll that ride on it — cover those extras instead of clipping them.
+		for (const [i, measure] of rawMeasures.entries()) {
+			const top = systemDecorationTop.get(rawMeasureSystem[i] ?? -1);
+			const { rect } = measure;
+			if (top !== undefined && top < rect.y) {
+				rawMeasures[i] = {
+					...measure,
+					rect: new Rect(rect.x, top, rect.w, rect.bottom - top),
+				};
+			}
+		}
 
 		// Ties and slurs are resolved over the whole score now that every note is
 		// placed, so a span can cross a barline (its endpoints sit in different

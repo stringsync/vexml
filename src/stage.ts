@@ -130,6 +130,13 @@ export class Stage implements Viewport, Host {
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
 	private readonly restoreStyles: Array<[string, string]> = [];
 	private readonly layers = new Set<ManagedLayer>();
+	// While a smooth/auto scroll is animating, conflate further requests: hold the timer and remember
+	// only the latest target, then flush it once the animation has had time to settle.
+	private smoothScrollTimer: ReturnType<typeof setTimeout> | null = null;
+	private pendingSmoothScroll: {
+		offset: { left: number; top: number };
+		behavior: ScrollBehavior;
+	} | null = null;
 
 	constructor(
 		private readonly container: HTMLDivElement,
@@ -234,7 +241,34 @@ export class Stage implements Viewport, Host {
 			bottom: this.container.scrollTop + this.container.clientHeight,
 		};
 		const offset = scrollOffsetFor(target, view);
-		this.container.scrollTo({ ...offset, behavior: opts?.behavior });
+		const behavior = opts?.behavior;
+		if (behavior === 'smooth' || behavior === 'auto') {
+			this.smoothScrollTo(offset, behavior);
+		} else {
+			this.container.scrollTo({ ...offset, behavior });
+		}
+	}
+
+	// Issue a smooth/auto scroll, conflating any calls that arrive while one is animating: keep only
+	// the latest target and apply it once the settle window elapses, so a stream of follow() calls
+	// doesn't restart the animation on every step.
+	private smoothScrollTo(
+		offset: { left: number; top: number },
+		behavior: ScrollBehavior,
+	): void {
+		if (this.smoothScrollTimer) {
+			this.pendingSmoothScroll = { offset, behavior };
+			return;
+		}
+		this.container.scrollTo({ ...offset, behavior });
+		this.smoothScrollTimer = setTimeout(() => {
+			this.smoothScrollTimer = null;
+			const pending = this.pendingSmoothScroll;
+			this.pendingSmoothScroll = null;
+			if (pending) {
+				this.smoothScrollTo(pending.offset, pending.behavior);
+			}
+		}, SMOOTH_SCROLL_SETTLE_MS);
 	}
 
 	observeResize(
@@ -307,6 +341,10 @@ export class Stage implements Viewport, Host {
 	}
 
 	dispose(): void {
+		if (this.smoothScrollTimer) {
+			clearTimeout(this.smoothScrollTimer);
+			this.smoothScrollTimer = null;
+		}
 		for (const layer of [...this.layers]) {
 			layer.dispose();
 		}
@@ -374,14 +412,20 @@ export class Stage implements Viewport, Host {
 	}
 }
 
+// How long a smooth scroll is assumed to take; requests within this window are conflated. Browsers
+// don't expose the animation's end, so this is a fixed estimate. ponytail: fixed window, swap for a
+// scrollend listener if the guess proves wrong.
+const SMOOTH_SCROLL_SETTLE_MS = 500;
+
 type Box = { left: number; top: number; right: number; bottom: number };
 
 /*
  * The scroll offset that brings `target` into `view`, both in the container's scroll-content
- * coordinates. Each axis independently: if the target's near edge is off the near side, align to it;
- * if its far edge is off the far side, scroll just enough to show it; otherwise leave that axis where
- * it is. So scrolling a horizontally-off-screen bar in a panoramic score never disturbs the vertical
- * position, and vice versa. Pure — the DOM application lives in Stage.scrollIntoView.
+ * coordinates. Horizontal is minimal: if the target's near edge is off the near side, align to it; if
+ * its far edge is off the far side, scroll just enough to show it; otherwise leave it. So scrolling a
+ * horizontally-off-screen bar in a panoramic score never disturbs the vertical position. Vertical
+ * pins the target's top to the viewport top (scrollTo clamps to the max scroll height near the end of
+ * the content). Pure — the DOM application lives in Stage.scrollIntoView.
  */
 export function scrollOffsetFor(
 	target: Box,
@@ -398,6 +442,6 @@ export function scrollOffsetFor(
 	};
 	return {
 		left: axis(target.left, target.right, view.left, view.right),
-		top: axis(target.top, target.bottom, view.top, view.bottom),
+		top: target.top,
 	};
 }

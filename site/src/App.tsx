@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 import type {
 	Config,
 	Cursor,
@@ -8,6 +14,7 @@ import type {
 	PointerTargetEvent,
 } from '../../src';
 import { render, type Score } from '../../src';
+import { type Instrument, PianoInstrument } from './instrument';
 
 // One-line summary of the hovered target for the tooltip.
 function describe(target: PointerTarget): string {
@@ -94,6 +101,12 @@ const ICON = {
 	pause: ['M15.75 5.25v13.5m-7.5-13.5v13.5'],
 	prev: ['M15.75 19.5 8.25 12l7.5-7.5'],
 	next: ['m8.25 4.5 7.5 7.5-7.5 7.5'],
+	volume: [
+		'M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+	],
+	muted: [
+		'M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+	],
 } as const;
 
 function PlayerIcon({
@@ -161,6 +174,7 @@ function Or() {
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const scoreRef = useRef<Score | null>(null);
+	const playerRef = useRef<HTMLDivElement>(null);
 	const [text, setText] = useState('');
 	const [input, setInput] = useState<string | Blob | null>(null);
 	const [fixture, setFixture] = useState('');
@@ -198,6 +212,22 @@ export default function App() {
 	// whether movement came from the play loop, next/previous, or seek.
 	const cursorRef = useRef<Cursor | null>(null);
 	const [playing, setPlaying] = useState(false);
+	// Mirror of `playing` the cursor's visibility listener reads live (it's bound once per render).
+	const playingRef = useRef(false);
+	playingRef.current = playing;
+	// Synth voice for playback + note previews. Created once; the change/click handlers below drive it.
+	const instrumentRef = useRef<Instrument | null>(null);
+	if (!instrumentRef.current) {
+		instrumentRef.current = new PianoInstrument();
+	}
+	const [muted, setMuted] = useState(false);
+	useEffect(() => {
+		instrumentRef.current?.setMuted(muted);
+	}, [muted]);
+	// Warm the samples on mount so the first play doesn't drop onsets while loading.
+	useEffect(() => {
+		instrumentRef.current?.preload();
+	}, []);
 	const [timeMs, setTimeMs] = useState(0);
 	const [durationMs, setDurationMs] = useState(0);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -303,10 +333,15 @@ export default function App() {
 				setRenderMs(renderMsRef.current);
 				setInitialized(true);
 
-				// Headless cursor + the built-in bar view; follow() scrolls it into view as it moves.
+				// Headless cursor + the built-in bar view. Page-turn scrolling: when the bar crosses
+				// out of the scroll box (by moving, or the user scrolling it away), bring it back.
 				const cursor = score.addCursor();
 				cursor.attach(score.createCursorView());
-				cursor.follow();
+				cursor.addEventListener('visibility', (e) => {
+					if (!e.fullyVisible && playingRef.current) {
+						cursor.scrollIntoView();
+					}
+				});
 				// The notes (and their tab frets) currently under the cursor. Cursor coloring and the
 				// hover halo share one color channel, so recolor() resolves both: hover wins while a
 				// note is hovered, otherwise the active color shows, otherwise it clears. Rests never
@@ -336,9 +371,28 @@ export default function App() {
 						}
 					}
 				};
+				// The synth voice each sounding note owns, so it can be released when the note stops.
+				// Keyed by Note (not pitch) so a re-struck pitch — which the transition reports in
+				// both `stopped` and `started` — releases the old voice and attacks a fresh one.
+				const voices = new Map<Note, () => void>();
 				cursor.addEventListener('change', (e) => {
 					setTimeMs(e.timeMs);
 					paint(e.active);
+					// Release stopped notes; attack started ones (only while playing, so seeking/
+					// scrubbing stays silent). Stop before start so a re-strike re-attacks cleanly.
+					for (const n of e.stopped) {
+						voices.get(n)?.();
+						voices.delete(n);
+					}
+					const instrument = instrumentRef.current;
+					if (instrument && playingRef.current) {
+						for (const n of e.started) {
+							const pitch = n.getPitch();
+							if (pitch) {
+								voices.set(n, instrument.play(pitch));
+							}
+						}
+					}
 				});
 				paint(cursor.getActiveNotes());
 				cursorRef.current = cursor;
@@ -415,12 +469,23 @@ export default function App() {
 				const onPointerMove = (e: PointerTargetEvent) => {
 					if (e.native.buttons === 1) {
 						seekTo(e.point);
+						if (!cursor.isFullyVisible()) {
+							cursor.scrollIntoView({ behavior: 'smooth' });
+						}
+					}
+				};
+				// Finishing a scrub-drag: if the cursor landed off-screen, bring it into view (the
+				// playing-gated visibility listener above stays quiet while paused).
+				const onPointerUp = () => {
+					if (!cursor.isFullyVisible()) {
+						cursor.scrollIntoView({ behavior: 'smooth' });
 					}
 				};
 				score.addEventListener('hover', onHover);
 				score.addEventListener('click', onClick);
 				score.addEventListener('pointerdown', onPointerDown);
 				score.addEventListener('pointermove', onPointerMove);
+				score.addEventListener('pointerup', onPointerUp);
 				detach = clearHalo;
 			})
 			.catch((e: unknown) => {
@@ -441,8 +506,8 @@ export default function App() {
 		};
 	}, [input, renderConfig]);
 
-	// Advance the cursor in real time while playing. seekMs drives the bar (and any future audio);
-	// stops itself at the end. ponytail: wall-clock RAF, no audio yet — swap in an audio clock when sound lands.
+	// Advance the cursor in real time while playing. seekMs drives the bar and the synth (the change
+	// handler attacks/releases voices). ponytail: wall-clock RAF, not an audio clock.
 	useEffect(() => {
 		const cursor = cursorRef.current;
 		if (!playing || !cursor) {
@@ -462,20 +527,80 @@ export default function App() {
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
-		return () => cancelAnimationFrame(raf);
+		// Cut the sounding voices when playback stops (pause, end, or teardown).
+		return () => {
+			cancelAnimationFrame(raf);
+			instrumentRef.current?.stopAll();
+		};
 	}, [playing, durationMs]);
 
-	const togglePlay = () => {
+	// Fit the score's scroll box to the gap between the canvas top and the player controls so the
+	// music fills the space above them and scrolls (page-turns) within it. config.height flows
+	// through the config -> renderConfig effect, which conditionally debounces the re-render
+	// (immediate when the last render was fast) — so a viewport-height resize is debounced there.
+	useEffect(() => {
+		if (!initialized) {
+			return;
+		}
+		const measure = () => {
+			const c = containerRef.current?.getBoundingClientRect();
+			const p = playerRef.current?.getBoundingClientRect();
+			if (!c || !p) {
+				return;
+			}
+			// -16 leaves a little air above the floating controls.
+			const height = Math.max(0, Math.round(p.top - c.top - 16));
+			setConfig((cfg) => ({ ...cfg, height }));
+		};
+		measure();
+		let lastHeight = window.innerHeight;
+		const onResize = () => {
+			// Only the viewport height moves the player controls; ignore width-only resizes.
+			if (window.innerHeight === lastHeight) {
+				return;
+			}
+			lastHeight = window.innerHeight;
+			measure();
+		};
+		window.addEventListener('resize', onResize);
+		return () => window.removeEventListener('resize', onResize);
+	}, [initialized]);
+
+	const togglePlay = useCallback(() => {
 		const cursor = cursorRef.current;
 		if (!cursor) {
 			return;
 		}
 		// Restart from the top if we're parked at the end.
-		if (!playing && cursor.isDone()) {
+		if (!playingRef.current && cursor.isDone()) {
 			cursor.seekMs(0);
 		}
+		// Bring the cursor into view when starting playback (e.g. after scrolling away while paused).
+		if (!playingRef.current && !cursor.isFullyVisible()) {
+			cursor.scrollIntoView({ behavior: 'smooth' });
+		}
 		setPlaying((p) => !p);
-	};
+	}, []);
+	// Spacebar toggles playback, except while typing in the editor.
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.code !== 'Space') {
+				return;
+			}
+			const el = e.target as HTMLElement;
+			if (
+				el.tagName === 'INPUT' ||
+				el.tagName === 'TEXTAREA' ||
+				el.isContentEditable
+			) {
+				return;
+			}
+			e.preventDefault();
+			togglePlay();
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [togglePlay]);
 	const stepPrev = () => {
 		setPlaying(false);
 		cursorRef.current?.previous();
@@ -636,13 +761,14 @@ export default function App() {
 					    pane (viewport center shifted right by half the 20rem sidebar). */}
 					{input != null && initialized && (
 						<div
+							ref={playerRef}
 							// Width tracks the sheet-music card (max-w-237.5, centered): full content-pane span
 							// on desktop (left-80 clears the 20rem sidebar), full width minus inset-x-4 padding
 							// on mobile. Rides up with the bottom sheet (bottom-full) on mobile, fixed on desktop.
-							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur md:fixed md:inset-x-auto md:bottom-4 md:left-80 md:right-0 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-80 md:right-0 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
 						>
 							{/* Spotify layout: controls centered on top, progress bar flanked by times below. */}
-							<div className="flex items-center justify-center gap-5">
+							<div className="relative flex items-center justify-center gap-5">
 								<button
 									type="button"
 									onClick={stepPrev}
@@ -669,6 +795,15 @@ export default function App() {
 									className={`flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
 								>
 									<PlayerIcon d={ICON.next} />
+								</button>
+								<button
+									type="button"
+									onClick={() => setMuted((m) => !m)}
+									aria-label={muted ? 'Unmute' : 'Mute'}
+									aria-pressed={muted}
+									className={`absolute right-0 flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`}
+								>
+									<PlayerIcon d={muted ? ICON.muted : ICON.volume} />
 								</button>
 							</div>
 							<div className="flex items-center gap-2">

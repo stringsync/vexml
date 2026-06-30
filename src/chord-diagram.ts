@@ -151,7 +151,12 @@ export class ChordDiagram {
 				spec.title,
 				size,
 			);
-			this.drawnTop = Math.min(topY, originY - topOverhang);
+			// titleText draws the baseline at topY + size*0.73, but a font's real ascent is closer to
+			// a full em, so the cap tops land ~size above the baseline — about 0.27*size ABOVE topY.
+			// Bound the title at that true top so callers reserving space above it (the page crop, the
+			// playback cursor/scroll box) cover those pixels instead of clipping them.
+			const titleTop = topY + size * 0.73 - size;
+			this.drawnTop = Math.min(titleTop, originY - topOverhang);
 		} else {
 			this.drawnTop = originY - topOverhang;
 		}
