@@ -1,6 +1,9 @@
+import { Cursor, type CursorView, type Scroller } from './cursor';
+import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
 import type { Decorations } from './decorations';
 import { EventBus, type EventListenable, type ScoreEventMap } from './events';
 import type { HitTester } from './hit';
+import type { Sequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
 import type { PointerTarget } from './targets';
 
@@ -31,11 +34,14 @@ export class Score implements EventListenable<ScoreEventMap> {
 	private hovered: PointerTarget | null = null;
 	private lastClient: { x: number; y: number } | null = null;
 	private unobserveScroll: (() => void) | null = null;
+	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
+	private readonly cursors = new Set<Cursor>();
 
 	constructor(
 		private readonly host: Host,
 		private readonly index: HitTester,
 		private readonly decorations: Decorations,
+		private readonly sequence: Sequence,
 	) {
 		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
 		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
@@ -72,6 +78,70 @@ export class Score implements EventListenable<ScoreEventMap> {
 		layer.dispose();
 	}
 
+	/* Add a playback cursor over this score's timeline. Headless by default — attach a view
+	 * (createCursorView) and/or follow the scroller for visuals. Disposed when the score is. */
+	addCursor(): Cursor {
+		const cursor = new Cursor(this.sequence, this.host, () =>
+			this.cursors.delete(cursor),
+		);
+		this.cursors.add(cursor);
+		return cursor;
+	}
+
+	/* vexml's default cursor visual — a vertical bar on its own content layer. Hand it to a cursor
+	 * with cursor.attach(view). Style it with `color`/`widthPx`, or implement CursorView for your own. */
+	createCursorView(options?: BarCursorViewOptions): CursorView {
+		return new BarCursorView(this.host.createLayer('content'), options);
+	}
+
+	/* The score's scroller, to give a cursor (cursor.follow) or scroll a rect into view directly. */
+	get scroller(): Scroller {
+		return this.host.scroller;
+	}
+
+	/* Total playback time of the score, repeats and voltas expanded. */
+	getDurationMs(): number {
+		return this.sequence.getDurationMs();
+	}
+
+	/* Total playback length in quarter-note beats, repeats and voltas expanded. */
+	getDurationBeats(): number {
+		return this.sequence.getDurationBeats();
+	}
+
+	/* The earliest playback time at a score-space point (jump-aware: a repeated spot maps to its
+	 * first pass), or null on empty space. Hit-tests the point, then maps the target to its first
+	 * step — a note/fret to its onset, a measure to its first onset. */
+	getTimeMsAt(point: { x: number; y: number }): number | null {
+		const index = this.stepIndexAt(point);
+		return index === null
+			? null
+			: (this.sequence.getStep(index)?.startMs ?? null);
+	}
+
+	/* The earliest playback time at a point, in quarter-note beats. See getTimeMsAt. */
+	getTimeBeatsAt(point: { x: number; y: number }): number | null {
+		const index = this.stepIndexAt(point);
+		return index === null
+			? null
+			: (this.sequence.getStep(index)?.startBeat ?? null);
+	}
+
+	private stepIndexAt(point: { x: number; y: number }): number | null {
+		const target = this.index.hitTest(point);
+		if (!target) {
+			return null;
+		}
+		switch (target.type) {
+			case 'note':
+				return this.sequence.getFirstStepOfNote(target);
+			case 'tab-position':
+				return this.sequence.getFirstStepOfNote(target.getNote());
+			case 'measure':
+				return this.sequence.getFirstStepOfMeasure(target.getIndex());
+		}
+	}
+
 	addEventListener<K extends keyof ScoreEventMap>(
 		type: K,
 		listener: (event: ScoreEventMap[K]) => void,
@@ -94,6 +164,10 @@ export class Score implements EventListenable<ScoreEventMap> {
 	}
 
 	dispose(): void {
+		for (const cursor of [...this.cursors]) {
+			cursor.dispose();
+		}
+		this.cursors.clear();
 		for (const handlers of this.bound.values()) {
 			for (const [domType, handler] of handlers) {
 				this.host.events.removeEventListener(domType, handler);

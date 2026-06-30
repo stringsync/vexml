@@ -92,7 +92,8 @@ function build() {
 		notes,
 		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1' }],
 	};
-	return buildTargets(geometry, new FakeViewport(), new FakeDecorator());
+	return buildTargets(geometry, new FakeViewport(), new FakeDecorator())
+		.hitTester;
 }
 
 test('a notehead beats the measure background under it', () => {

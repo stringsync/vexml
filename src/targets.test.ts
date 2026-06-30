@@ -89,7 +89,7 @@ function fixture() {
 
 	const viewport = new FakeViewport();
 	const decorator = new FakeDecorator();
-	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1');
+	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0);
 
 	// The shared registries the wrappers resolve their cross-links through (a Map fulfills the
 	// NoteLookup / TabLookup interfaces). Populated as each note is built.

@@ -258,6 +258,7 @@ export class Measure extends BoundedTarget {
 		rect: Rect,
 		viewport: Viewport,
 		private readonly number: string,
+		private readonly index: number,
 	) {
 		super(rect, viewport);
 	}
@@ -265,6 +266,11 @@ export class Measure extends BoundedTarget {
 	/* The MusicXML measure number, e.g. "1" (or "0" for a pickup). */
 	getNumber(): string {
 		return this.number;
+	}
+
+	/* The 0-based position among the part's measures (stable; distinct from the printed number). */
+	getIndex(): number {
+		return this.index;
 	}
 }
 

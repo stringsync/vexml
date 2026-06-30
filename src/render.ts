@@ -8,6 +8,8 @@ import { Rect } from './geometry';
 import { buildTargets, type RawGeometry } from './hit';
 import { computeLayout } from './layout';
 import { Score } from './score';
+import { buildSequence } from './sequence';
+import { buildSequenceInput } from './sequence-input';
 import { Stage } from './stage';
 
 const EMPTY_GEOMETRY: RawGeometry = {
@@ -33,7 +35,12 @@ export async function render(
 		throw new RangeError('render: minLastSystemFill must be between 0 and 1');
 	}
 
-	const stage = new Stage(container);
+	const stage = new Stage(container, {
+		height: resolved.height,
+		maxHeight: resolved.maxHeight,
+		width: resolved.width,
+		maxWidth: resolved.maxWidth,
+	});
 	// Fonts and CSS vars go on the container; the managed canvas inherits them, so drawScore's
 	// getComputedStyle(canvas) read of --vexml-font-text still resolves.
 	const { notation, text } = loadFonts(container, resolved.fonts);
@@ -69,6 +76,12 @@ export async function render(
 	// decorations are the Decorator their color/halo toggles delegate to (drawing on a content
 	// layer the stage hands them). Both feed buildTargets, which links the targets and indexes them.
 	const decorations = new Decorations(stage);
-	const index = buildTargets(geometry, stage, decorations);
-	return new Score(stage, index, decorations);
+	const targets = buildTargets(geometry, stage, decorations);
+	// The playback timeline: the parsed parts give onsets/meter/tempo/repeats/ties, the geometry gives
+	// note x and system boxes, and the target map ties active notes to the same identities hit-testing
+	// returns. Built for every score (empty when there are no parts).
+	const sequence = buildSequence(
+		buildSequenceInput(parts, geometry, targets.notes),
+	);
+	return new Score(stage, targets.hitTester, decorations, sequence);
 }
