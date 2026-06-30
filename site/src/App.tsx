@@ -14,7 +14,7 @@ import type {
 	PointerTargetEvent,
 } from '../../src';
 import { render, type Score } from '../../src';
-import { type Instrument, PianoInstrument } from './instrument';
+import { INSTRUMENTS, type Instrument, PianoInstrument } from './instrument';
 
 // One-line summary of the hovered target for the tooltip.
 function describe(target: PointerTarget): string {
@@ -54,6 +54,12 @@ for (const [path, load] of Object.entries(
 const fixtureNames = Object.keys(fixtures).sort();
 
 const STORAGE_KEY = 'vexml:musicxml';
+
+// How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
+const GRACE_MS = 80;
+
+// The color a sounding note shows while the cursor is over it (and a grace note while it plays).
+const ACTIVE_COLOR = '#155dfc';
 
 function ResetIcon() {
 	return (
@@ -211,23 +217,37 @@ export default function App() {
 	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
 	// whether movement came from the play loop, next/previous, or seek.
 	const cursorRef = useRef<Cursor | null>(null);
+	// Attack the notes already under the cursor when play starts. The note at the cursor's position
+	// fired its `started` event while paused (during load/seek), so the play loop — which moves
+	// *within* that note's duration — never sees it start. Set by the score-load effect, called by
+	// the play loop on each start so the first (or resumed) note actually sounds.
+	const playStartRef = useRef<(() => void) | null>(null);
 	const [playing, setPlaying] = useState(false);
 	// Mirror of `playing` the cursor's visibility listener reads live (it's bound once per render).
 	const playingRef = useRef(false);
 	playingRef.current = playing;
 	// Synth voice for playback + note previews. Created once; the change/click handlers below drive it.
 	const instrumentRef = useRef<Instrument | null>(null);
+	const [instrumentName, setInstrumentName] = useState('marimba');
 	if (!instrumentRef.current) {
-		instrumentRef.current = new PianoInstrument();
+		instrumentRef.current = new PianoInstrument(instrumentName);
 	}
 	const [muted, setMuted] = useState(false);
+	// Read by the rebuild effect so it can seed a freshly-built synth without depending on `muted`
+	// (which would rebuild — and re-download samples — on every mute toggle).
+	const mutedRef = useRef(muted);
+	mutedRef.current = muted;
 	useEffect(() => {
 		instrumentRef.current?.setMuted(muted);
 	}, [muted]);
-	// Warm the samples on mount so the first play doesn't drop onsets while loading.
+	// Rebuild the synth when the picker changes, then warm its samples. Runs on mount too (default
+	// instrument), so the first play doesn't drop onsets while loading.
 	useEffect(() => {
-		instrumentRef.current?.preload();
-	}, []);
+		instrumentRef.current?.stopAll();
+		instrumentRef.current = new PianoInstrument(instrumentName);
+		instrumentRef.current.setMuted(mutedRef.current);
+		instrumentRef.current.preload();
+	}, [instrumentName]);
 	const [timeMs, setTimeMs] = useState(0);
 	const [durationMs, setDurationMs] = useState(0);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -351,7 +371,7 @@ export default function App() {
 					if (n === haloRef.current) {
 						n.color.on('#f4f800');
 					} else if (lit.has(n)) {
-						n.color.on('#155dfc');
+						n.color.on(ACTIVE_COLOR);
 					} else {
 						n.color.off();
 					}
@@ -375,6 +395,47 @@ export default function App() {
 				// Keyed by Note (not pitch) so a re-struck pitch — which the transition reports in
 				// both `stopped` and `started` — releases the old voice and attacks a fresh one.
 				const voices = new Map<Note, () => void>();
+				// Attack one sounding note, registering its releaser in `voices`. No-op if already
+				// voiced (so a re-attack of a still-sounding note is skipped).
+				const attack = (n: Note) => {
+					const instrument = instrumentRef.current;
+					const pitch = n.getPitch();
+					if (!instrument || !pitch || voices.has(n)) {
+						return;
+					}
+					const graces = n.getGraceNotes();
+					if (graces.length === 0) {
+						voices.set(n, instrument.play(pitch));
+						return;
+					}
+					// Grace notes steal no timeline time, so sound them as quick plucks staggered
+					// just before the main note, then attack the main note after the run. The
+					// voice releaser cancels a still-pending main attack (clearTimeout) or
+					// releases the live voice; pause/teardown stopAll() is the backstop.
+					let offset = 0;
+					for (const g of graces) {
+						const gp = g.getPitch();
+						if (gp) {
+							const at = offset;
+							// Light the grace while it sounds, then clear it as the next one (or
+							// the main note) takes over.
+							setTimeout(() => {
+								instrument.pluck(gp, GRACE_MS);
+								g.color.on(ACTIVE_COLOR);
+							}, at);
+							setTimeout(() => g.color.off(), at + GRACE_MS);
+							offset += GRACE_MS;
+						}
+					}
+					let release = () => {};
+					const id = setTimeout(() => {
+						release = instrument.play(pitch);
+					}, offset);
+					voices.set(n, () => {
+						clearTimeout(id);
+						release();
+					});
+				};
 				cursor.addEventListener('change', (e) => {
 					setTimeMs(e.timeMs);
 					paint(e.active);
@@ -384,16 +445,19 @@ export default function App() {
 						voices.get(n)?.();
 						voices.delete(n);
 					}
-					const instrument = instrumentRef.current;
-					if (instrument && playingRef.current) {
+					if (playingRef.current) {
 						for (const n of e.started) {
-							const pitch = n.getPitch();
-							if (pitch) {
-								voices.set(n, instrument.play(pitch));
-							}
+							attack(n);
 						}
 					}
 				});
+				// On play start, sound the notes already under the cursor — they started while paused,
+				// so the play loop (moving within their duration) never re-fires `started` for them.
+				playStartRef.current = () => {
+					for (const n of cursor.getActiveNotes()) {
+						attack(n);
+					}
+				};
 				paint(cursor.getActiveNotes());
 				cursorRef.current = cursor;
 				setDurationMs(score.getDurationMs());
@@ -513,6 +577,7 @@ export default function App() {
 		if (!playing || !cursor) {
 			return;
 		}
+		playStartRef.current?.();
 		let raf = 0;
 		let last = performance.now();
 		const tick = (now: number) => {
@@ -542,6 +607,7 @@ export default function App() {
 		if (!initialized) {
 			return;
 		}
+		let lastHeight = -1;
 		const measure = () => {
 			const c = containerRef.current?.getBoundingClientRect();
 			const p = playerRef.current?.getBoundingClientRect();
@@ -550,20 +616,29 @@ export default function App() {
 			}
 			// -16 leaves a little air above the floating controls.
 			const height = Math.max(0, Math.round(p.top - c.top - 16));
+			// Break the feedback loop: applying height resizes the container, re-firing the
+			// observer — but the gap (top of card to top of player) is unchanged, so bail.
+			// This also no-ops width-only resizes, which leave the gap alone.
+			if (height === lastHeight) {
+				return;
+			}
+			lastHeight = height;
 			setConfig((cfg) => ({ ...cfg, height }));
 		};
 		measure();
-		let lastHeight = window.innerHeight;
-		const onResize = () => {
-			// Only the viewport height moves the player controls; ignore width-only resizes.
-			if (window.innerHeight === lastHeight) {
-				return;
-			}
-			lastHeight = window.innerHeight;
-			measure();
+		// Refit on any container dimension change (width resize, editor toggle, our own height
+		// update); the window 'resize' covers viewport-height changes that move the player
+		// without resizing the container.
+		const container = containerRef.current;
+		const ro = new ResizeObserver(measure);
+		if (container) {
+			ro.observe(container);
+		}
+		window.addEventListener('resize', measure);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', measure);
 		};
-		window.addEventListener('resize', onResize);
-		return () => window.removeEventListener('resize', onResize);
 	}, [initialized]);
 
 	const togglePlay = useCallback(() => {
@@ -621,7 +696,7 @@ export default function App() {
 			setTimeout(() => setRestored(false), 1500);
 			return;
 		}
-		const name = fixtureNames[Math.floor(Math.random() * fixtureNames.length)];
+		const name = 'voices_grand_staff';
 		if (!name) {
 			return;
 		}
@@ -762,13 +837,26 @@ export default function App() {
 					{input != null && initialized && (
 						<div
 							ref={playerRef}
-							// Width tracks the sheet-music card (max-w-237.5, centered): full content-pane span
-							// on desktop (left-80 clears the 20rem sidebar), full width minus inset-x-4 padding
-							// on mobile. Rides up with the bottom sheet (bottom-full) on mobile, fixed on desktop.
-							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-80 md:right-0 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+							// Matches the sheet-music card's slot (max-w-237.5, centered): same sm:px-6
+							// gutter so the two align edge-to-edge (left-86 = 20rem sidebar + 1.5rem gutter,
+							// right-6 = 1.5rem gutter). Below sm the sheet goes full-width but the player
+							// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
+							className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
 						>
 							{/* Spotify layout: controls centered on top, progress bar flanked by times below. */}
 							<div className="relative flex items-center justify-center gap-5">
+								<select
+									value={instrumentName}
+									onChange={(e) => setInstrumentName(e.target.value)}
+									aria-label="Instrument"
+									className={`absolute left-0 max-w-32 rounded-md border px-2 py-1 text-xs ${dark ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-zinc-200 bg-white text-zinc-600'}`}
+								>
+									{INSTRUMENTS.map((i) => (
+										<option key={i.value} value={i.value}>
+											{i.label}
+										</option>
+									))}
+								</select>
 								<button
 									type="button"
 									onClick={stepPrev}

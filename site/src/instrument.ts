@@ -1,4 +1,20 @@
-import { SplendidGrandPiano } from 'smplr';
+import { type Smplr, Soundfont, SplendidGrandPiano } from 'smplr';
+
+// Popular options for the instrument picker. '' uses smplr's high-quality SplendidGrandPiano;
+// every other value is a General MIDI name loaded via smplr's Soundfont. Order is the menu order.
+export const INSTRUMENTS: ReadonlyArray<{ label: string; value: string }> = [
+	{ label: 'Grand Piano', value: '' },
+	{ label: 'Electric Piano', value: 'electric_piano_1' },
+	{ label: 'Harpsichord', value: 'harpsichord' },
+	{ label: 'Acoustic Guitar', value: 'acoustic_guitar_nylon' },
+	{ label: 'Vibraphone', value: 'vibraphone' },
+	{ label: 'Marimba', value: 'marimba' },
+	{ label: 'Church Organ', value: 'church_organ' },
+	{ label: 'Violin', value: 'violin' },
+	{ label: 'Cello', value: 'cello' },
+	{ label: 'Flute', value: 'flute' },
+	{ label: 'Trumpet', value: 'trumpet' },
+];
 
 // A pitched instrument the player drives. Pitches are vexflow keys ("C#/4", "Bb/3").
 // Swap PianoInstrument for another implementation by satisfying this interface.
@@ -22,42 +38,47 @@ const VOLUME = 100;
 // vexflow key ("C#/4") → smplr note name ("C#4"). smplr handles enharmonics (Db4) itself.
 const toNote = (pitch: string) => pitch.replace('/', '');
 
-// Sampled grand piano via smplr. Samples stream from smplr's CDN; preload() warms them so notes
-// aren't dropped on the first play. smplr tracks live voices itself — play() returns its stopper
-// and stopAll() releases them all.
+// Sampled instrument via smplr. An empty name loads the high-quality SplendidGrandPiano; any other
+// name loads that General MIDI instrument via Soundfont. Both share smplr's player surface (start /
+// stop / ready / output), so the rest is identical. Samples stream from smplr's CDN; preload() warms
+// them so notes aren't dropped on the first play.
 export class PianoInstrument implements Instrument {
 	private ctx: AudioContext | null = null;
-	private piano: ReturnType<typeof SplendidGrandPiano> | null = null;
+	private synth: Smplr | null = null;
 	private ready = false;
 	private muted = false;
 
+	constructor(private readonly instrument = '') {}
+
 	// Lazily created on first use so the AudioContext starts inside a user gesture (or on preload).
-	private ensure(): ReturnType<typeof SplendidGrandPiano> | null {
-		if (!this.piano) {
+	private ensure(): Smplr | null {
+		if (!this.synth) {
 			const Ctor = window.AudioContext;
 			if (!Ctor) {
 				return null;
 			}
 			this.ctx = new Ctor();
-			this.piano = SplendidGrandPiano(this.ctx);
-			this.piano.output.volume = this.muted ? 0 : VOLUME;
-			this.piano.ready.then(() => {
+			this.synth = this.instrument
+				? Soundfont(this.ctx, { instrument: this.instrument })
+				: SplendidGrandPiano(this.ctx);
+			this.synth.output.volume = this.muted ? 0 : VOLUME;
+			this.synth.ready.then(() => {
 				this.ready = true;
 			});
 		}
 		if (this.ctx?.state === 'suspended') {
 			void this.ctx.resume();
 		}
-		return this.piano;
+		return this.synth;
 	}
 
 	play(pitch: string): () => void {
-		const piano = this.ensure();
+		const synth = this.ensure();
 		// Before samples load, an onset can't be recovered — drop it (preload() makes this rare).
-		if (!piano || !this.ready) {
+		if (!synth || !this.ready) {
 			return () => {};
 		}
-		return piano.start({ note: toNote(pitch) });
+		return synth.start({ note: toNote(pitch) });
 	}
 
 	pluck(pitch: string, durationMs: number): void {
@@ -65,7 +86,7 @@ export class PianoInstrument implements Instrument {
 	}
 
 	stopAll(): void {
-		this.piano?.stop();
+		this.synth?.stop();
 	}
 
 	preload(): void {
@@ -74,8 +95,8 @@ export class PianoInstrument implements Instrument {
 
 	setMuted(muted: boolean): void {
 		this.muted = muted;
-		if (this.piano) {
-			this.piano.output.volume = muted ? 0 : VOLUME;
+		if (this.synth) {
+			this.synth.output.volume = muted ? 0 : VOLUME;
 		}
 	}
 }

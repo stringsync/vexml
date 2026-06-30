@@ -175,6 +175,53 @@ test('getBoundingClientRect maps the score-space rect through the viewport', () 
 	expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
 });
 
+test('getGraceNotes returns the grace run immediately preceding a note', () => {
+	const xml = `<?xml version="1.0"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions></attributes>
+      <note><grace/><pitch><step>F</step><octave>4</octave></pitch><type>eighth</type></note>
+      <note><grace/><pitch><step>G</step><octave>4</octave></pitch><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+	const mdoc = new MDOMParser().parseFromString(xml);
+	const mnotes = must(mdoc.score.parts[0]?.measures[0], 'measure').notes;
+	const [mF, mG, mA, mB] = mnotes;
+
+	const viewport = new FakeViewport();
+	const decorator = new FakeDecorator();
+	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0);
+	const notesByMnote = new Map<MNote, Note>();
+	const build = (mnote: MNote) => {
+		const note = new Note({
+			mnote,
+			rect: new Rect(0, 0, 8, 8),
+			viewport,
+			decorator,
+			measure,
+			chord: [mnote],
+			notes: notesByMnote,
+			tabs: new Map(),
+			glyph: null,
+		});
+		notesByMnote.set(mnote, note);
+		return note;
+	};
+	const graceF = build(must(mF, 'F'));
+	const graceG = build(must(mG, 'G'));
+	const noteA = build(must(mA, 'A'));
+	const noteB = build(must(mB, 'B'));
+
+	// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
+	expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
+	expect(noteB.getGraceNotes()).toEqual([]);
+});
+
 test('TabPosition exposes string/fret and links back to its note', () => {
 	const { noteC, viewport, decorator } = fixture();
 	const tab = new TabPosition(new Rect(0, 0, 6, 6), viewport, {

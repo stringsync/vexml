@@ -150,6 +150,11 @@ export function buildTargets(
 
 	const tree = new QuadTree<PointerTarget>(geometry.bounds);
 	for (const rn of geometry.notes) {
+		// Grace notes are reachable as Note targets (playback sounds/colors them) but stay out of
+		// the pointer tree, so a small grace head never steals hover/click from its main note.
+		if (rn.mnote.isGrace) {
+			continue;
+		}
 		const target = tabByMnote.get(rn.mnote) ?? noteByMnote.get(rn.mnote);
 		if (target) {
 			tree.insert(target);
