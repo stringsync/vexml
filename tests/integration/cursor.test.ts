@@ -29,6 +29,34 @@ test('a playback cursor draws its bar on the score at the sought time', async ()
 	}
 }, 30_000);
 
+// A chord diagram (a <harmony> <frame>) floats well above the stave, but the playback bar must not
+// reach up to it: the bar should span only the stave region — here a treble + 6-line TAB grand staff
+// — as if the diagram weren't there. Seek 40% in (mid first measure) so the bar lands between notes.
+test('the playback bar spans the stave, not up to a chord diagram', async () => {
+	const browser = await testBrowser();
+	const page = await browser.newPage({ viewport: { width: 500, height: 400 } });
+	try {
+		await page.goto(TEST_URL);
+		await page.evaluate(async () => {
+			const container = document.getElementById('screenshot');
+			if (!(container instanceof HTMLDivElement)) {
+				throw new Error('container not found');
+			}
+			const xml = await (
+				await fetch('/data/chord_diagram_tab.musicxml')
+			).text();
+			const score = await window.render(xml, container, {});
+			const cursor = score.addCursor();
+			cursor.attach(score.createCursorView({ color: '#2962ff', widthPx: 3 }));
+			cursor.seekMs(score.getDurationMs() * 0.4);
+		});
+		const buf = await page.locator('#screenshot').screenshot();
+		expect(buf).toMatchScreenshot('cursor_chord_diagram.png');
+	} finally {
+		await page.close();
+	}
+}, 30_000);
+
 // Grace notes aren't tickables, so they never enter the timeline — but they must still be reachable
 // as Note targets (with real engraved geometry) so the player can sound and light them. Walk the
 // cursor over every onset and collect the grace notes attached to each started note.

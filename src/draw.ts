@@ -956,9 +956,10 @@ export function drawScore(
 		// top stave — reserved above it on a redraw so it can't clash with the system above.
 		const systemTopByIndex = new Map<number, number>();
 		const systemHighestTop = new Map<number, number>();
-		// The topmost y reached by any above-stave decoration (chord diagram, chord symbol, words) in
-		// a system. Measure boxes grow up to this so the playback cursor/scroll cover those extras
-		// instead of clipping them; tracked per system so the cursor bar's height stays uniform.
+		// The topmost y reached by above-stave text decorations (chord symbols, words) in a system.
+		// Measure boxes grow up to this so the playback cursor/scroll cover those extras instead of
+		// clipping them; tracked per system so the cursor bar's height stays uniform. Chord diagrams
+		// are deliberately excluded — see the harmony draw block for why the cursor stops at the stave.
 		const systemDecorationTop = new Map<number, number>();
 		const growDecorationTop = (system: number, top: number) =>
 			systemDecorationTop.set(
@@ -1536,7 +1537,12 @@ export function drawScore(
 					});
 					diagram.draw(context, { ...h.frame, title: h.text || undefined });
 					pageTop = Math.min(pageTop, diagram.top);
-					growDecorationTop(systemIndex, diagram.top);
+					// Unlike words/chord symbols, a chord diagram is NOT folded into the measure
+					// box (no growDecorationTop): the diagram is a tall floating fret box, and a
+					// playback cursor bar stretching all the way up to it reads as disconnected.
+					// The bar should span only the stave region — as if the diagram weren't there.
+					// The diagram is still kept on-canvas (pageTop) and reserved against the system
+					// above (systemHighestTop); it just doesn't lift the cursor/measure box.
 					// The diagram rises above the stave, so it also counts toward this system's
 					// upward overflow — otherwise no systemSpacing is reserved for it and a
 					// diagram on a stacked system collides with the system above.
@@ -1603,9 +1609,10 @@ export function drawScore(
 		// for clipped content here.
 		warnEscapes();
 
-		// Grow each measure box up to the topmost above-stave decoration (chord diagram, chord
-		// symbol, words) in its system, so the measure's bounding box — and the playback cursor and
-		// auto-scroll that ride on it — cover those extras instead of clipping them.
+		// Grow each measure box up to the topmost above-stave text decoration (chord symbol, words)
+		// in its system, so the measure's bounding box — and the playback cursor and auto-scroll that
+		// ride on it — cover those extras instead of clipping them. Chord diagrams are excluded (they
+		// don't feed systemDecorationTop), so the cursor bar stops at the stave, not the fret box.
 		for (const [i, measure] of rawMeasures.entries()) {
 			const top = systemDecorationTop.get(rawMeasureSystem[i] ?? -1);
 			const { rect } = measure;
