@@ -393,6 +393,42 @@ test('positionAt: interpolates the bar x within a step toward the next onset', (
 	expect(rect?.h).toBe(100);
 });
 
+test('resolveX: interpolates the beat from x within a step, clamping to the range ends', () => {
+	const seq = buildSequence({
+		measures: [
+			{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
+		],
+		notes: [quarter(fakeNote('a'), 0, 0, 10), quarter(fakeNote('b'), 0, 1, 20)],
+	});
+	// Step 0 spans beat [0,1) gliding x 10 -> 20; step 1 spans [1,2) gliding x 20 -> 1000 (system right).
+	expect(seq.resolveX(10, 0, 1)).toEqual({ stepIndex: 0, beat: 0 });
+	expect(seq.resolveX(15, 0, 1)).toEqual({ stepIndex: 0, beat: 0.5 });
+	expect(seq.resolveX(20, 0, 1)).toEqual({ stepIndex: 1, beat: 1 });
+	// Left of the first step clamps to its start; right of the last clamps to its end.
+	expect(seq.resolveX(-5, 0, 1)).toEqual({ stepIndex: 0, beat: 0 });
+	expect(seq.resolveX(9999, 0, 1)).toEqual({ stepIndex: 1, beat: 2 });
+	// A single-step range stays within that step.
+	expect(seq.resolveX(20, 0, 0)).toEqual({ stepIndex: 0, beat: 1 });
+	expect(seq.resolveX(0, 1, 0)).toBeNull();
+});
+
+test('getStepRangeOfMeasure: the first occurrence contiguous run, null when empty', () => {
+	const seq = buildSequence({
+		measures: [
+			{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
+			{ index: 1, beats: 2, tempoBpm: null, jumps: [], systemRect: SYS },
+		],
+		notes: [
+			quarter(fakeNote('a'), 0, 0, 10),
+			quarter(fakeNote('b'), 0, 1, 20),
+			quarter(fakeNote('c'), 1, 0, 30),
+		],
+	});
+	expect(seq.getStepRangeOfMeasure(0)).toEqual({ start: 0, end: 1 });
+	expect(seq.getStepRangeOfMeasure(1)).toEqual({ start: 2, end: 2 });
+	expect(seq.getStepRangeOfMeasure(99)).toBeNull();
+});
+
 test('getStepIndexAtBeats: binary search, null before the first onset', () => {
 	const seq = buildSequence({
 		measures: [

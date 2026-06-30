@@ -6,7 +6,12 @@ import type { HitTester } from './hit';
 import { Score } from './score';
 import { buildSequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
-import { Measure, type PointerTarget, type Viewport } from './targets';
+import {
+	Measure,
+	type Note,
+	type PointerTarget,
+	type Viewport,
+} from './targets';
 
 // An empty timeline — these tests exercise events/layers/hover, not playback.
 const EMPTY_SEQUENCE = buildSequence({ measures: [], notes: [] });
@@ -247,6 +252,72 @@ test('addLayer forwards zIndex to the host and rejects non-integers', () => {
 	expect(host.created[0]?.zIndex).toBe(-2);
 	expect(() => score.addLayer('content', 1.5)).toThrow();
 	expect(() => score.addLayer('content', Number.NaN)).toThrow();
+});
+
+test('getTimeAt interpolates the time under a point and reports the closest step', () => {
+	const host = new FakeHost();
+	// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
+	const sequence = buildSequence({
+		measures: [
+			{
+				index: 0,
+				beats: 2,
+				tempoBpm: 120,
+				jumps: [],
+				systemRect: new Rect(0, 0, 1000, 100),
+			},
+		],
+		notes: [
+			{
+				note: {} as Note,
+				measureIndex: 0,
+				measureBeat: 0,
+				beats: 1,
+				x: 10,
+				tiedFrom: null,
+			},
+			{
+				note: {} as Note,
+				measureIndex: 0,
+				measureBeat: 1,
+				beats: 1,
+				x: 20,
+				tiedFrom: null,
+			},
+		],
+	});
+	const target = new Measure(new Rect(0, 0, 1000, 100), viewport, '1', 0);
+	const score = new Score(
+		host,
+		new FakeHitTester(target),
+		new Decorations(host),
+		sequence,
+	);
+
+	// x 15 is halfway through step 0's glide (10 -> 20), so beat 0.5 = 250ms; closest step is 0.
+	expect(score.getTimeAt({ x: 15, y: 50 })).toEqual({
+		ms: 250,
+		beat: 0.5,
+		stepMs: 0,
+		stepBeat: 0,
+		stepIndex: 0,
+	});
+	// Far right lands in step 1 (snapped to beat 1 / 500ms) and clamps to the measure end.
+	expect(score.getTimeAt({ x: 9999, y: 50 })).toEqual({
+		ms: 1000,
+		beat: 2,
+		stepMs: 500,
+		stepBeat: 1,
+		stepIndex: 1,
+	});
+
+	const offScore = new Score(
+		host,
+		new FakeHitTester(null),
+		new Decorations(host),
+		sequence,
+	);
+	expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
 });
 
 test('dispose detaches every listener and tears down decorations and host', () => {

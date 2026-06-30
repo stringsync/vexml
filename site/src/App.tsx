@@ -299,21 +299,32 @@ export default function App() {
 				const cursor = score.addCursor();
 				cursor.attach(score.createCursorView());
 				cursor.follow();
-				// Light the notes (and their tab frets) under the cursor; clear ones that drop out.
-				// Rests (no pitch) are skipped — only sounding notes get colored.
+				// The notes (and their tab frets) currently under the cursor. Cursor coloring and the
+				// hover halo share one color channel, so recolor() resolves both: hover wins while a
+				// note is hovered, otherwise the active color shows, otherwise it clears. Rests never
+				// enter `lit` (no pitch), so only sounding notes get the active color.
 				const lit = new Set<Note>();
+				const recolor = (n: Note) => {
+					if (n === haloRef.current) {
+						n.color.on('#f4f800');
+					} else if (lit.has(n)) {
+						n.color.on('#155dfc');
+					} else {
+						n.color.off();
+					}
+				};
 				const paint = (active: readonly Note[]) => {
 					const sounding = active.filter((n) => n.getPitch() !== null);
-					for (const n of lit) {
+					for (const n of [...lit]) {
 						if (!sounding.includes(n)) {
-							n.color.off();
 							lit.delete(n);
+							recolor(n);
 						}
 					}
 					for (const n of sounding) {
 						if (!lit.has(n)) {
-							n.color.on('#155dfc');
 							lit.add(n);
+							recolor(n);
 						}
 					}
 				};
@@ -341,11 +352,18 @@ export default function App() {
 								? target.getNote()
 								: null;
 					if (note !== haloRef.current) {
-						haloRef.current?.halo.off();
-						haloRef.current?.color.off();
-						note?.halo.on('rgba(255, 0, 105, 0.9)');
-						note?.color.on('#f4f800');
+						const prev = haloRef.current;
 						haloRef.current = note;
+						prev?.halo.off();
+						// recolor reads haloRef.current, so update it first: prev falls back to its
+						// active color (or clears), note picks up the hover color.
+						if (prev) {
+							recolor(prev);
+						}
+						note?.halo.on('rgba(255, 0, 105, 0.9)');
+						if (note) {
+							recolor(note);
+						}
 					}
 					container.style.cursor = note ? 'pointer' : '';
 					// Only note-bearing targets get a tooltip; describe() is empty for a measure.
@@ -375,8 +393,26 @@ export default function App() {
 					pinned = pinned === t ? null : t;
 					apply();
 				};
+				// Click or drag anywhere on the score scrubs the cursor to that position's time.
+				const seekTo = (point: { x: number; y: number }) => {
+					const t = score.getTimeAt(point);
+					if (t) {
+						setPlaying(false);
+						cursor.seekMs(t.ms);
+					}
+				};
+				const onPointerDown = (e: PointerTargetEvent) => seekTo(e.point);
+				// buttons === 1 means the primary button is held, so this continues the scrub
+				// during a drag and ignores a plain hover (no manual drag-state flag needed).
+				const onPointerMove = (e: PointerTargetEvent) => {
+					if (e.native.buttons === 1) {
+						seekTo(e.point);
+					}
+				};
 				score.addEventListener('hover', onHover);
 				score.addEventListener('click', onClick);
+				score.addEventListener('pointerdown', onPointerDown);
+				score.addEventListener('pointermove', onPointerMove);
 				detach = clearHalo;
 			})
 			.catch((e: unknown) => {

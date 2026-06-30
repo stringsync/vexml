@@ -603,6 +603,39 @@ export class Sequence {
 		return new Rect(x, step.systemRect.y, BAR_WIDTH, step.systemRect.h);
 	}
 
+	/* Inverse of positionAt over a step range: the step whose `[x, glideToX]` segment contains the
+	 * score-space `x`, and the exact beat interpolated within it. Steps in a range are left-to-right
+	 * contiguous (`step[i].glideToX === step[i+1].x` on the same system), so `x` left of the first
+	 * clamps to frac 0 and right of the last to frac 1. Null if the range is empty/invalid. */
+	resolveX(
+		x: number,
+		startStep: number,
+		endStep: number,
+	): { stepIndex: number; beat: number } | null {
+		if (startStep > endStep) {
+			return null;
+		}
+		let stepIndex = startStep;
+		for (let i = startStep; i <= endStep; i++) {
+			const step = this.steps[i];
+			if (!step) {
+				return null;
+			}
+			stepIndex = i;
+			if (x < step.glideToX) {
+				break;
+			}
+		}
+		const step = this.steps[stepIndex];
+		if (!step) {
+			return null;
+		}
+		const span = step.glideToX - step.x;
+		const frac = span > 0 ? Math.min(1, Math.max(0, (x - step.x) / span)) : 0;
+		const beat = step.startBeat + (step.endBeat - step.startBeat) * frac;
+		return { stepIndex, beat };
+	}
+
 	/* Started/sustained/stopped moving from one step to another (or from nothing, `from = null`). */
 	classify(from: number | null, to: number): CursorTransition {
 		const prev = from === null ? null : (this.steps[from]?.active ?? null);
@@ -618,5 +651,21 @@ export class Sequence {
 	/* The earliest step in a measure (its first occurrence under repeats), or null if it has none. */
 	getFirstStepOfMeasure(measureIndex: number): number | null {
 		return this.firstStepOfMeasure.get(measureIndex) ?? null;
+	}
+
+	/* The first occurrence's contiguous run of steps for a measure, or null if it has none. The run
+	 * is contiguous because a measure's onsets are emitted together, in playback order. */
+	getStepRangeOfMeasure(
+		measureIndex: number,
+	): { start: number; end: number } | null {
+		const start = this.firstStepOfMeasure.get(measureIndex);
+		if (start === undefined) {
+			return null;
+		}
+		let end = start;
+		while (this.steps[end + 1]?.measureIndex === measureIndex) {
+			end++;
+		}
+		return { start, end };
 	}
 }

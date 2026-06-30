@@ -109,36 +109,54 @@ export class Score implements EventListenable<ScoreEventMap> {
 		return this.sequence.getDurationBeats();
 	}
 
-	/* The earliest playback time at a score-space point (jump-aware: a repeated spot maps to its
-	 * first pass), or null on empty space. Hit-tests the point, then maps the target to its first
-	 * step — a note/fret to its onset, a measure to its first onset. */
-	getTimeMsAt(point: { x: number; y: number }): number | null {
-		const index = this.stepIndexAt(point);
-		return index === null
-			? null
-			: (this.sequence.getStep(index)?.startMs ?? null);
+	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
+	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it —
+	 * a note/fret within its onset step, a measure across its full width (see Sequence.resolveX). The
+	 * `step*` fields are the closest onset (the step the point lands in), for snap-to-note callers. */
+	getTimeAt(point: { x: number; y: number }): {
+		ms: number;
+		beat: number;
+		stepMs: number;
+		stepBeat: number;
+		stepIndex: number;
+	} | null {
+		const range = this.stepRangeAt(point);
+		if (!range) {
+			return null;
+		}
+		const resolved = this.sequence.resolveX(point.x, range.start, range.end);
+		const step = resolved && this.sequence.getStep(resolved.stepIndex);
+		if (!resolved || !step) {
+			return null;
+		}
+		return {
+			ms: this.sequence.beatsToMs(resolved.beat),
+			beat: resolved.beat,
+			stepMs: step.startMs,
+			stepBeat: step.startBeat,
+			stepIndex: resolved.stepIndex,
+		};
 	}
 
-	/* The earliest playback time at a point, in quarter-note beats. See getTimeMsAt. */
-	getTimeBeatsAt(point: { x: number; y: number }): number | null {
-		const index = this.stepIndexAt(point);
-		return index === null
-			? null
-			: (this.sequence.getStep(index)?.startBeat ?? null);
-	}
-
-	private stepIndexAt(point: { x: number; y: number }): number | null {
+	// The step range a target spans: a note/fret is its single onset step; a measure is its first
+	// occurrence's contiguous run, so a point maps across the whole bar.
+	private stepRangeAt(point: {
+		x: number;
+		y: number;
+	}): { start: number; end: number } | null {
 		const target = this.index.hitTest(point);
 		if (!target) {
 			return null;
 		}
 		switch (target.type) {
 			case 'note':
-				return this.sequence.getFirstStepOfNote(target);
-			case 'tab-position':
-				return this.sequence.getFirstStepOfNote(target.getNote());
+			case 'tab-position': {
+				const note = target.type === 'note' ? target : target.getNote();
+				const index = this.sequence.getFirstStepOfNote(note);
+				return index === null ? null : { start: index, end: index };
+			}
 			case 'measure':
-				return this.sequence.getFirstStepOfMeasure(target.getIndex());
+				return this.sequence.getStepRangeOfMeasure(target.getIndex());
 		}
 	}
 
