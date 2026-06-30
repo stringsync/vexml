@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type {
 	Config,
+	Cursor,
 	HoverEvent,
 	Note,
 	PointerTarget,
@@ -85,6 +86,36 @@ function CheckIcon() {
 	);
 }
 
+// Heroicons (outline) — single-path each, so one component covers play/pause/prev/next.
+const ICON = {
+	play: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
+	pause: 'M15.75 5.25v13.5m-7.5-13.5v13.5',
+	prev: 'M15.75 19.5 8.25 12l7.5-7.5',
+	next: 'm8.25 4.5 7.5 7.5-7.5 7.5',
+} as const;
+
+function PlayerIcon({ d }: { d: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			className="size-6"
+			aria-hidden="true"
+		>
+			<path strokeLinecap="round" strokeLinejoin="round" d={d} />
+		</svg>
+	);
+}
+
+// ms → m:ss
+function fmtTime(ms: number): string {
+	const s = Math.floor(ms / 1000);
+	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 function Section({
 	title,
 	action,
@@ -147,6 +178,12 @@ export default function App() {
 	} | null>(null);
 	// The note whose halo is currently lit, so the next move can turn it back off.
 	const haloRef = useRef<Note | null>(null);
+	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
+	// whether movement came from the play loop, next/previous, or seek.
+	const cursorRef = useRef<Cursor | null>(null);
+	const [playing, setPlaying] = useState(false);
+	const [timeMs, setTimeMs] = useState(0);
+	const [durationMs, setDurationMs] = useState(0);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
@@ -248,6 +285,16 @@ export default function App() {
 				setRenderMs(renderMsRef.current);
 				setInitialized(true);
 
+				// Headless cursor + the built-in bar view; follow() scrolls it into view as it moves.
+				const cursor = score.addCursor();
+				cursor.attach(score.createCursorView());
+				cursor.follow();
+				cursor.addEventListener('change', (e) => setTimeMs(e.timeMs));
+				cursorRef.current = cursor;
+				setDurationMs(score.getDurationMs());
+				setTimeMs(0);
+				setPlaying(false);
+
 				// A click/tap pins a target (toggle); hover is transient. The pinned one wins, so
 				// hovering elsewhere — or scrolling it out from under the pointer — never clears the
 				// pin. Clicking it again, or clicking empty space, unpins.
@@ -308,12 +355,59 @@ export default function App() {
 			});
 		return () => {
 			cancelled = true;
-			// score.dispose() drops its own listeners; this only unbinds the DOM-level leave handler.
+			// score.dispose() drops its own listeners (and disposes the cursor); this only unbinds
+			// the DOM-level leave handler and stops the play loop.
 			detach?.();
 			scoreRef.current?.dispose();
 			scoreRef.current = null;
+			cursorRef.current = null;
+			setPlaying(false);
 		};
 	}, [input, renderConfig]);
+
+	// Advance the cursor in real time while playing. seekMs drives the bar (and any future audio);
+	// stops itself at the end. ponytail: wall-clock RAF, no audio yet — swap in an audio clock when sound lands.
+	useEffect(() => {
+		const cursor = cursorRef.current;
+		if (!playing || !cursor) {
+			return;
+		}
+		let raf = 0;
+		let last = performance.now();
+		const tick = (now: number) => {
+			const next = cursor.getTimeMs() + (now - last);
+			last = now;
+			if (next >= durationMs) {
+				cursor.seekMs(durationMs);
+				setPlaying(false);
+				return;
+			}
+			cursor.seekMs(next);
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(raf);
+	}, [playing, durationMs]);
+
+	const togglePlay = () => {
+		const cursor = cursorRef.current;
+		if (!cursor) {
+			return;
+		}
+		// Restart from the top if we're parked at the end.
+		if (!playing && cursor.isDone()) {
+			cursor.seekMs(0);
+		}
+		setPlaying((p) => !p);
+	};
+	const stepPrev = () => {
+		setPlaying(false);
+		cursorRef.current?.previous();
+	};
+	const stepNext = () => {
+		setPlaying(false);
+		cursorRef.current?.next();
+	};
 
 	// Restore the last-edited MusicXML, or open with a random example.
 	useEffect(() => {
@@ -461,6 +555,44 @@ export default function App() {
 				/>
 
 				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:overflow-y-auto md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+					{/* Player: on mobile, anchored to the top edge of this bottom sheet (bottom-full) so it
+					    rides up as the sheet expands; on desktop it floats fixed, centered in the content
+					    pane (viewport center shifted right by half the 20rem sidebar). */}
+					{input != null && initialized && (
+						<div
+							className={`absolute bottom-full left-1/2 z-30 mb-4 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur md:fixed md:bottom-4 md:left-[calc(50%+10rem)] md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+						>
+							<span
+								className={`w-24 text-right font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`}
+							>
+								{fmtTime(timeMs)} / {fmtTime(durationMs)}
+							</span>
+							<button
+								type="button"
+								onClick={stepPrev}
+								aria-label="Previous note"
+								className={`rounded-full p-1 ${dark ? 'text-zinc-300 hover:bg-zinc-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
+							>
+								<PlayerIcon d={ICON.prev} />
+							</button>
+							<button
+								type="button"
+								onClick={togglePlay}
+								aria-label={playing ? 'Pause' : 'Play'}
+								className="rounded-full bg-blue-600 p-2 text-white hover:bg-blue-500"
+							>
+								<PlayerIcon d={playing ? ICON.pause : ICON.play} />
+							</button>
+							<button
+								type="button"
+								onClick={stepNext}
+								aria-label="Next note"
+								className={`rounded-full p-1 ${dark ? 'text-zinc-300 hover:bg-zinc-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
+							>
+								<PlayerIcon d={ICON.next} />
+							</button>
+						</div>
+					)}
 					{/* top part: always visible, taps toggle the panel */}
 					<button
 						type="button"
