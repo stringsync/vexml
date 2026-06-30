@@ -24,7 +24,7 @@ import {
 	type Voice,
 } from 'vexflow';
 import { ChordDiagram, type ChordSpec } from './chord-diagram';
-import { CollisionDetector, type CollisionKind } from './collision';
+import { type CollisionKind, CollisionResolver } from './collision';
 import type { Config } from './config';
 import {
 	BRACKET_X_SHIFT,
@@ -294,7 +294,7 @@ function noteTop(note: StaveNote): number {
 
 // Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
 // chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
-// nudge logic funnels through the CollisionDetector; see docs/collision-audit.md.
+// nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
 /*
@@ -340,7 +340,7 @@ function formatAndDrawSystem(
 	context: RenderContext,
 	pending: PendingStave[],
 	softmaxFactor: number,
-	detector: CollisionDetector,
+	collisionResolver: CollisionResolver,
 ): { top: number; bottom: number } {
 	if (pending.length === 0) {
 		return { top: Infinity, bottom: 0 };
@@ -426,9 +426,9 @@ function formatAndDrawSystem(
 			top = Math.min(top, noteTop(note));
 			// Register each note as a collision obstacle now that its position is final, so the
 			// above-stave annotations drawn next can be nudged clear of it (and of high ties).
-			detector.add({ rect: noteRect(note), kind: 'note' });
+			collisionResolver.add({ rect: noteRect(note), kind: 'note' });
 			if (p.tiedNotes.has(note) && note.getStemDirection() === Stem.DOWN) {
-				detector.add({ rect: tieApexRect(note), kind: 'tie' });
+				collisionResolver.add({ rect: tieApexRect(note), kind: 'tie' });
 			}
 		}
 	}
@@ -517,7 +517,7 @@ function harmonyWidth(
 
 /*
  * Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at the note's
- * x — the laid-out position of the note the harmony applies to. The collision detector lifts
+ * x — the laid-out position of the note the harmony applies to. The collision resolver lifts
  * it clear of any notehead, high tie, or already-placed annotation it would land on (all
  * registered as obstacles); it sits at a fixed gap above the top staff line when nothing is in
  * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
@@ -528,7 +528,7 @@ function drawHarmony(
 	staveNote: StaveNote,
 	text: string,
 	font: string,
-	detector: CollisionDetector,
+	collisionResolver: CollisionResolver,
 ): number {
 	const stave = staveNote.getStave();
 	if (!stave) {
@@ -547,7 +547,7 @@ function drawHarmony(
 		harmonyWidth(context, text, font),
 		HARMONY_FONT_SIZE + HARMONY_PADDING,
 	);
-	const placed = detector.liftClear(
+	const placed = collisionResolver.liftClear(
 		natural,
 		HARMONY_NOTE_CLEARANCE,
 		TEXT_CLEAR_KINDS,
@@ -573,13 +573,13 @@ function drawHarmony(
 	}
 	context.restore();
 	// Register the placed symbol so a later annotation in this system stacks above it.
-	detector.add({ rect: placed, kind: 'annotation' });
+	collisionResolver.add({ rect: placed, kind: 'annotation' });
 	return placed.y;
 }
 
 /*
  * Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
- * the first note's x — where the directive applies. The collision detector lifts it clear of
+ * the first note's x — where the directive applies. The collision resolver lifts it clear of
  * any notehead/tie/annotation it would land on; it sits at a fixed gap above the top staff
  * line otherwise. Returns the y the text reaches up to so the caller can grow the page crop
  * above it (like drawHarmony). Drawn after the notes are formatted so getAbsoluteX is real.
@@ -590,7 +590,7 @@ function drawWords(
 	text: string,
 	firstNote: StaveNote | undefined,
 	font: string,
-	detector: CollisionDetector,
+	collisionResolver: CollisionResolver,
 ): number {
 	const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
 	const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();
@@ -603,14 +603,14 @@ function drawWords(
 		context.measureText(text).width,
 		WORDS_FONT_SIZE,
 	);
-	const placed = detector.liftClear(
+	const placed = collisionResolver.liftClear(
 		natural,
 		WORDS_NOTE_CLEARANCE,
 		TEXT_CLEAR_KINDS,
 	);
 	context.fillText(text, placed.x, placed.bottom);
 	context.restore();
-	detector.add({ rect: placed, kind: 'annotation' });
+	collisionResolver.add({ rect: placed, kind: 'annotation' });
 	return placed.y;
 }
 
@@ -934,7 +934,7 @@ export function drawScore(
 		// obstacles, and chord diagrams use it to space apart across a barline (replacing an old
 		// running-cursor). Reset at each system start (x/y restart) — see the system-change
 		// block. ALL nudge logic funnels through here; see docs/collision-audit.md.
-		const detector = new CollisionDetector(
+		const collisionResolver = new CollisionResolver(
 			new Rect(0, 0, width, scratchHeight),
 		);
 		// The drawable region of the scratch canvas. Anything escaping it is in "no-man's land"
@@ -942,7 +942,9 @@ export function drawScore(
 		// is then the knob to grow. Vertical edges only; horizontal page overflow is separate.
 		const scratchViewport = new Rect(0, 0, width, scratchHeight);
 		const warnEscapes = () => {
-			for (const { item, edges } of detector.escaping(scratchViewport)) {
+			for (const { item, edges } of collisionResolver.escaping(
+				scratchViewport,
+			)) {
 				if (edges.includes('top') || edges.includes('bottom')) {
 					console.warn(
 						`vexml: ${item.kind} clipped past the ${edges.join('/')} of the canvas ` +
@@ -1003,7 +1005,7 @@ export function drawScore(
 				// Leaving the previous system: flag anything that escaped the canvas, then reset
 				// the collision index so the new system (coordinates restart) starts clean.
 				warnEscapes();
-				detector.clear();
+				collisionResolver.clear();
 			}
 			const systemY = systemTopY;
 			let staveRow = 0;
@@ -1309,7 +1311,7 @@ export function drawScore(
 				context,
 				systemPending,
 				softmaxFactor,
-				detector,
+				collisionResolver,
 			);
 			pageBottom = Math.max(pageBottom, noteExtent.bottom);
 			systemContentBottom = Math.max(systemContentBottom, noteExtent.bottom);
@@ -1460,13 +1462,13 @@ export function drawScore(
 					w.text,
 					w.firstNote,
 					labelFont,
-					detector,
+					collisionResolver,
 				);
 				pageTop = Math.min(pageTop, top);
 				growDecorationTop(systemIndex, top);
 			}
 			// Diagrams sit at their lead note's x; two on notes either side of a barline can be
-			// close enough to overlap (especially at a narrow width). The detector pushes each
+			// close enough to overlap (especially at a narrow width). The resolver pushes each
 			// box clear of any already-placed diagram in its band (replacing the old running
 			// cursor) so crowded diagrams separate instead of stacking. It also lifts each box
 			// above any notes, ties, or words in its column (the diagrams pass runs after the
@@ -1491,7 +1493,7 @@ export function drawScore(
 						CHORD_DIAGRAM_WIDTH,
 						CHORD_DIAGRAM_HEIGHT,
 					);
-					const spaced = detector.pushRightOf(
+					const spaced = collisionResolver.pushRightOf(
 						natural,
 						'diagram',
 						CHORD_DIAGRAM_GAP,
@@ -1506,7 +1508,7 @@ export function drawScore(
 						spaced.w,
 						CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
 					);
-					const lifted = detector.liftClear(
+					const lifted = collisionResolver.liftClear(
 						padded,
 						CHORD_DIAGRAM_GAP,
 						TEXT_CLEAR_KINDS,
@@ -1521,12 +1523,12 @@ export function drawScore(
 					// A box anchored at a note near the right edge would overrun the canvas and be
 					// clipped (page overflow has no crop-growth knob like the vertical edges do), so
 					// nudge it back inside the drawable region.
-					const placed = detector.nudgeInsideX(
+					const placed = collisionResolver.nudgeInsideX(
 						unclamped,
 						scratchViewport,
 						PAGE_MARGIN_X,
 					);
-					detector.add({ rect: placed, kind: 'diagram' });
+					collisionResolver.add({ rect: placed, kind: 'diagram' });
 					const diagram = new ChordDiagram(placed.x, placed.y, {
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
@@ -1559,7 +1561,7 @@ export function drawScore(
 						h.staveNote,
 						h.text,
 						labelFont,
-						detector,
+						collisionResolver,
 					);
 					pageTop = Math.min(pageTop, top);
 					growDecorationTop(systemIndex, top);

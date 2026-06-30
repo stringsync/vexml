@@ -37,7 +37,7 @@ export type Collision = {
 // Finite sentinel for half-open probe rects (avoids Infinity arithmetic producing NaN).
 const FAR = 1e6;
 
-export class CollisionDetector {
+export class CollisionResolver {
 	private readonly tree: QuadTree<Collidable>;
 
 	constructor(bounds: Rect, maxItems = 8, maxDepth = 8) {

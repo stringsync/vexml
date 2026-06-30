@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test';
-import { CollisionDetector } from './collision';
+import { CollisionResolver } from './collision';
 import { Rect } from './geometry';
 
-function detector(): CollisionDetector {
-	return new CollisionDetector(new Rect(-1000, -1000, 4000, 4000));
+function detector(): CollisionResolver {
+	return new CollisionResolver(new Rect(-1000, -1000, 4000, 4000));
 }
 
 test('query reports the kind and minimum-translation of each hit', () => {

@@ -1,7 +1,7 @@
 import { Rect } from './geometry';
 
 /*
- * A region quadtree of rect-bearing items, used by CollisionDetector as the broad-phase
+ * A region quadtree of rect-bearing items, used by CollisionResolver as the broad-phase
  * spatial index. Items live at the deepest node whose bounds fully contain them; a node
  * splits into four quadrants once it holds more than `maxItems` (until `maxDepth`). An item
  * straddling a split line stays at the parent.
@@ -9,7 +9,7 @@ import { Rect } from './geometry';
  * "No-man's land": a standard quadtree clamps to its root and silently drops anything
  * outside. This one instead keeps such items in a separate `outside` bucket (only at the
  * root) that `query` always consults — so content escaping the page bounds is still found,
- * which is what powers the clip detection (CollisionDetector.escaping).
+ * which is what powers the clip detection (CollisionResolver.escaping).
  *
  * Items are inserted only after their final position is resolved (notes are placed once;
  * an annotation is nudged, then inserted), so a rect already in the tree is never moved —
@@ -114,7 +114,7 @@ export class QuadTree<T extends { rect: Rect }> {
 	}
 
 	/* Every item in the tree, including the outside bucket. For whole-set scans like the
-	 * clip check (CollisionDetector.escaping), which must see items the query area misses. */
+	 * clip check (CollisionResolver.escaping), which must see items the query area misses. */
 	all(): T[] {
 		const out: T[] = [];
 		this.collect(out);
