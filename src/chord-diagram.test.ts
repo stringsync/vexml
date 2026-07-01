@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test';
 import type { RenderContext } from 'vexflow';
-import { ChordDiagram, type ChordSpec } from './chord-diagram';
+import { ChordDiagram } from './chord-diagram';
 
-// Smoke tests only: these exercise the options/spec branches and assert draw() doesn't
+// Smoke tests only: these exercise the options branches and assert draw() doesn't
 // throw. Tests of the actual visual output live in tests/integration/.
 
 // A no-op RenderContext; measureText returns a plausible width so the centering math runs.
@@ -19,7 +19,7 @@ const context = new Proxy(
 ) as unknown as RenderContext;
 
 test('draws an open-position chord with markers', () => {
-	const spec: ChordSpec = {
+	const diagram = new ChordDiagram(0, 0, {
 		chord: [
 			[6, 'x'],
 			[5, 3],
@@ -29,12 +29,12 @@ test('draws an open-position chord with markers', () => {
 			[1, 0],
 		],
 		title: 'C',
-	};
-	expect(() => new ChordDiagram(0, 0, {}).draw(context, spec)).not.toThrow();
+	});
+	expect(() => diagram.draw(context)).not.toThrow();
 });
 
 test('draws a barred chord at a fret position', () => {
-	const spec: ChordSpec = {
+	const diagram = new ChordDiagram(10, 20, {
 		chord: [
 			[5, 1],
 			[4, 3],
@@ -46,12 +46,19 @@ test('draws a barred chord at a fret position', () => {
 		positionText: 1,
 		barres: [{ fromString: 5, toString: 1, fret: 1 }],
 		title: 'G♯m7♭5',
-	};
-	expect(() => new ChordDiagram(10, 20, {}).draw(context, spec)).not.toThrow();
+	});
+	expect(() => diagram.draw(context)).not.toThrow();
 });
 
 test('honors every option and a custom tuning', () => {
 	const diagram = new ChordDiagram(0, 0, {
+		chord: [
+			[4, 0],
+			[3, 2],
+			[2, 2],
+			[1, 'x'],
+		],
+		tuning: ['G', 'C', 'E', 'A'],
 		width: 200,
 		height: 240,
 		circleRadius: 5,
@@ -64,34 +71,24 @@ test('honors every option and a custom tuning', () => {
 		fontFamily: 'Times, serif',
 		fontSize: 14,
 	});
-	const spec: ChordSpec = {
-		chord: [
-			[4, 0],
-			[3, 2],
-			[2, 2],
-			[1, 'x'],
-		],
-		tuning: ['G', 'C', 'E', 'A'],
-	};
-	expect(() => diagram.draw(context, spec)).not.toThrow();
+	expect(() => diagram.draw(context)).not.toThrow();
 });
 
 test('draws with tuning hidden and no title', () => {
-	const diagram = new ChordDiagram(0, 0, { showTuning: false });
-	expect(() =>
-		diagram.draw(context, {
-			chord: [
-				[1, 5],
-				[2, 5],
-			],
-		}),
-	).not.toThrow();
+	const diagram = new ChordDiagram(0, 0, {
+		chord: [
+			[1, 5],
+			[2, 5],
+		],
+		showTuning: false,
+	});
+	expect(() => diagram.draw(context)).not.toThrow();
 });
 
 test('top falls back before draw, then reflects the drawn extent', () => {
-	const diagram = new ChordDiagram(0, 100, {});
+	const diagram = new ChordDiagram(0, 100, { chord: [[1, 3]], title: 'A' });
 	const before = diagram.top;
-	diagram.draw(context, { chord: [[1, 3]], title: 'A' });
+	diagram.draw(context);
 	// draw() sets drawnTop; the fallback getter no longer applies.
 	expect(diagram.top).not.toBe(before);
 });

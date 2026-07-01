@@ -26,7 +26,7 @@ import {
 	Vibrato,
 	Voice,
 } from 'vexflow';
-import type { ChordSpec } from './chord-diagram';
+import type { ChordFrame } from './chord-diagram';
 import {
 	DEFAULT_TEMPO_BPM,
 	EPSILON,
@@ -836,7 +836,7 @@ function harmonyText(harmony: MElement): string {
  * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagram's
  * left-to-right (string 1 rightmost) convention.
  */
-function frameOf(harmony: MElement): ChordSpec | null {
+function frameOf(harmony: MElement): ChordFrame | null {
 	const frame = harmony.child('frame');
 	if (!frame) {
 		return null;
@@ -867,7 +867,7 @@ function frameOf(harmony: MElement): ChordSpec | null {
 
 	const played = new Map<number, number>(); // string -> relative fret
 	const barreStart = new Map<number, number>(); // relative fret -> from string
-	const barres: ChordSpec['barres'] = [];
+	const barres: ChordFrame['barres'] = [];
 	for (const fn of frameNotes) {
 		const string = Number(fn.child('string')?.text);
 		if (!Number.isFinite(string)) {
@@ -902,7 +902,7 @@ function frameOf(harmony: MElement): ChordSpec | null {
 		positionText = lowFret - firstFret;
 	}
 
-	const chord: ChordSpec['chord'] = [];
+	const chord: ChordFrame['chord'] = [];
 	for (let s = 1; s <= numStrings; s += 1) {
 		chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
 	}
@@ -918,8 +918,9 @@ function frameOf(harmony: MElement): ChordSpec | null {
  */
 export function harmoniesOf(
 	measure: Measure,
-): { lead: Note; text: string; frame: ChordSpec | null }[] {
-	const harmonies: { lead: Note; text: string; frame: ChordSpec | null }[] = [];
+): { lead: Note; text: string; frame: ChordFrame | null }[] {
+	const harmonies: { lead: Note; text: string; frame: ChordFrame | null }[] =
+		[];
 	let pending: MElement | null = null;
 	for (const child of measure.children) {
 		if (child instanceof MElement && child.tag === 'harmony') {

@@ -23,7 +23,7 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow';
-import { ChordDiagram, type ChordSpec } from './chord-diagram';
+import { ChordDiagram, type ChordFrame } from './chord-diagram';
 import { type CollisionKind, CollisionResolver } from './collisions';
 import type { Config } from './config';
 import {
@@ -1018,7 +1018,7 @@ export function drawScore(
 			const harmonyTasks: Array<{
 				staveNote: StaveNote;
 				text: string;
-				frame: ChordSpec | null;
+				frame: ChordFrame | null;
 			}> = [];
 			// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
 			// the first note's laid-out x.
@@ -1521,6 +1521,8 @@ export function drawScore(
 					);
 					collisionResolver.add({ rect: placed, kind: 'diagram' });
 					const diagram = new ChordDiagram(placed.x, placed.y, {
+						...h.frame,
+						title: h.text || undefined,
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
 						stringCount: h.frame.chord.length,
@@ -1528,7 +1530,7 @@ export function drawScore(
 						showTuning: false,
 						fontFamily: labelFont,
 					});
-					diagram.draw(context, { ...h.frame, title: h.text || undefined });
+					diagram.draw(context);
 					pageTop = Math.min(pageTop, diagram.top);
 					// Unlike words/chord symbols, a chord diagram is NOT folded into the measure
 					// box (no growDecorationTop): the diagram is a tall floating fret box, and a

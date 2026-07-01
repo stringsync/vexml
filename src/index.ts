@@ -1,10 +1,3 @@
-export {
-	type Barre,
-	ChordDiagram,
-	type ChordDiagramOptions,
-	type ChordNote,
-	type ChordSpec,
-} from './chord-diagram';
 export type { Config } from './config';
 export {
 	Cursor,

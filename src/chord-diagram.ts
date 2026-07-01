@@ -1,14 +1,27 @@
 import type { RenderContext } from 'vexflow';
 import { DEFAULT_TUNING, HARMONY_ACCIDENTALS } from './constants';
 
-/** Appearance and geometry knobs for a {@link ChordDiagram}; every field is optional and defaulted. */
+/** A `[string, fret]` pair: fret `0` = open, `'x'` = muted, else a (relative) fret number. */
+export type ChordNote = [number, number | 'x'];
+
+/** A finger barring `fromString`..`toString` at `fret` (a single bar drawn across those strings). */
+export type Barre = { fromString: number; toString: number; fret: number };
+
+/** Everything a {@link ChordDiagram} needs: the chord data plus optional styling. */
 export type ChordDiagramOptions = {
+	/** The fretted notes: one `[string, fret]` pair per played/muted string. */
+	chord: ChordNote[];
+	/** Absolute fret of the top displayed fret line; drawn as a label when > 1. */
+	position?: number;
+	positionText?: number;
+	barres?: Barre[];
+	tuning?: string[];
+	/** Chord name drawn centered above the board (e.g. "G♯m7♭5"). */
+	title?: string;
 	/** Overall widget width in px (board is 75% of this, centered). */
 	width?: number;
 	/** Overall widget height in px. */
 	height?: number;
-	/** Finger-dot radius; defaults to board-width / 18. */
-	circleRadius?: number;
 	stringCount?: number;
 	fretCount?: number;
 	/** Draw the tuning letters under the board. */
@@ -20,33 +33,43 @@ export type ChordDiagramOptions = {
 	/** Background (open-string circle fill, page). */
 	bgColor?: string;
 	fontFamily?: string;
+	/** Finger-dot radius; defaults to board-width / 18. */
+	circleRadius?: number;
 	/** Base font size; defaults to board-width / 7. */
 	fontSize?: number;
 };
 
-/** A `[string, fret]` pair: fret `0` = open, `'x'` = muted, else a (relative) fret number. */
-export type ChordNote = [number, number | 'x'];
+/**
+ * The chord-data subset: what a source (e.g. MusicXML) describes before render-time
+ * geometry is known. Merged with styling to build a diagram.
+ */
+export type ChordFrame = Pick<
+	ChordDiagramOptions,
+	'chord' | 'position' | 'positionText' | 'barres'
+>;
 
-/** A finger barring `fromString`..`toString` at `fret` (a single bar drawn across those strings). */
-export type Barre = { fromString: number; toString: number; fret: number };
-
-/** One chord to draw on the board: the fretted notes plus optional position, barres, tuning, and title. */
-export type ChordSpec = {
-	chord: ChordNote[];
-	/** Absolute fret of the top displayed fret line; drawn as a label when > 1. */
-	position?: number;
-	positionText?: number;
-	barres?: Barre[];
-	tuning?: string[];
-	/** Chord name drawn centered above the board (e.g. "G♯m7♭5"). */
-	title?: string;
-};
+/** The defaultable styling subset — every field gets a fallback in the constructor. */
+type ChordStyle = Pick<
+	ChordDiagramOptions,
+	| 'width'
+	| 'height'
+	| 'stringCount'
+	| 'fretCount'
+	| 'showTuning'
+	| 'strokeWidth'
+	| 'color'
+	| 'bgColor'
+	| 'fontFamily'
+>;
 
 export class ChordDiagram {
-	private readonly opts: Required<
-		Omit<ChordDiagramOptions, 'circleRadius' | 'fontSize'>
-	> &
-		Pick<ChordDiagramOptions, 'circleRadius' | 'fontSize'>;
+	private readonly opts: Required<ChordStyle>;
+	private readonly chord: ChordNote[];
+	private readonly position: number;
+	private readonly positionText: number;
+	private readonly barres: Barre[];
+	private readonly tuning: string[];
+	private readonly title?: string;
 	private readonly stringCount: number;
 	private readonly fretCount: number;
 	private readonly width: number; // board width
@@ -62,7 +85,7 @@ export class ChordDiagram {
 	constructor(
 		private readonly x: number,
 		private readonly y: number,
-		options: ChordDiagramOptions = {},
+		options: ChordDiagramOptions,
 	) {
 		this.opts = {
 			width: 100,
@@ -76,6 +99,12 @@ export class ChordDiagram {
 			fontFamily: 'Arial, sans-serif',
 			...options,
 		};
+		this.chord = options.chord;
+		this.position = options.position ?? 0;
+		this.positionText = options.positionText ?? 0;
+		this.barres = options.barres ?? [];
+		this.tuning = options.tuning ?? DEFAULT_TUNING;
+		this.title = options.title;
 
 		this.stringCount = this.opts.stringCount;
 		this.fretCount = this.opts.fretCount;
@@ -108,12 +137,8 @@ export class ChordDiagram {
 
 	private drawnTop: number | null = null;
 
-	draw(context: RenderContext, spec: ChordSpec): void {
-		const chord = spec.chord;
-		const position = spec.position ?? 0;
-		const positionText = spec.positionText ?? 0;
-		const barres = spec.barres ?? [];
-		const tuning = spec.tuning ?? DEFAULT_TUNING;
+	draw(context: RenderContext): void {
+		const { chord, position, positionText, barres, tuning } = this;
 		const { spacing, fretSpacing, originX, originY } = this;
 
 		// The strings overhang past the last fret line at the bottom — and, when a position
@@ -126,7 +151,7 @@ export class ChordDiagram {
 		// floating it above an empty row.
 		const hasMarkers = chord.some(([, fret]) => fret === 'x' || fret === 0);
 
-		if (spec.title) {
+		if (this.title) {
 			const size = this.titleSize;
 			const topY = hasMarkers
 				? this.y - size * 1.4 // above the box, clearing the marker row
@@ -135,7 +160,7 @@ export class ChordDiagram {
 				context,
 				this.x + this.opts.width / 2,
 				topY,
-				spec.title,
+				this.title,
 				size,
 			);
 			// titleText draws the baseline at topY + size*0.73, but a font's real ascent is closer to
@@ -353,5 +378,3 @@ export class ChordDiagram {
 		context.restore();
 	}
 }
-
-// Accidental glyphs in a chord title; pulled tight against their root letter.
