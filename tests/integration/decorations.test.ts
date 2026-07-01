@@ -76,13 +76,13 @@ describe('decorations', () => {
 		expect(await decorate('color', 'note.musicxml')).toMatchScreenshot(
 			'decoration_color.png',
 		);
-	}, 30_000);
+	});
 
 	it('a haloed note', async () => {
 		expect(await decorate('halo', 'note.musicxml')).toMatchScreenshot(
 			'decoration_halo.png',
 		);
-	}, 30_000);
+	});
 
 	// A notation+tab document: the notation staff's noteheads and the tab staff's fret numbers both
 	// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
@@ -91,11 +91,11 @@ describe('decorations', () => {
 		expect(
 			await decorate('color', 'structure_notation_and_tab_parts.musicxml'),
 		).toMatchScreenshot('decoration_tab_color.png');
-	}, 30_000);
+	});
 
 	it('haloed notes and frets', async () => {
 		expect(
 			await decorate('halo', 'structure_notation_and_tab_parts.musicxml'),
 		).toMatchScreenshot('decoration_tab_halo.png');
-	}, 30_000);
+	});
 });
