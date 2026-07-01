@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { CollisionResolver } from './collisions';
+import { CollisionResolver } from './collision-resolver';
 import { Rect } from './geometry';
 
 function detector(): CollisionResolver {
@@ -9,7 +9,7 @@ function detector(): CollisionResolver {
 describe('CollisionResolver', () => {
 	it('query reports the kind and minimum-translation of each hit', () => {
 		const d = detector();
-		d.addRect(new Rect(5, 0, 10, 10), 'note');
+		d.add({ rect: new Rect(5, 0, 10, 10), kind: 'note' });
 		const hits = d.query(new Rect(0, 0, 10, 10));
 		expect(hits).toHaveLength(1);
 		expect(hits[0]?.other.kind).toBe('note');
@@ -20,8 +20,8 @@ describe('CollisionResolver', () => {
 
 	it('liftClear raises a rect to sit `gap` above the highest obstacle in its column', () => {
 		const d = detector();
-		d.addRect(new Rect(5, 90, 10, 30), 'note'); // top at y=90
-		d.addRect(new Rect(5, 70, 10, 5), 'tie'); // higher: top at y=70 (kind-agnostic)
+		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // top at y=90
+		d.add({ rect: new Rect(5, 70, 10, 5), kind: 'tie' }); // higher: top at y=70 (kind-agnostic)
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100, overlaps both
 		const placed = d.liftClear(natural, 8);
 		expect(placed.bottom).toBe(62); // 70 (highest top) - 8 gap
@@ -30,14 +30,14 @@ describe('CollisionResolver', () => {
 
 	it('liftClear never lowers a rect that is already clear', () => {
 		const d = detector();
-		d.addRect(new Rect(5, 200, 10, 30), 'note'); // well below the annotation
+		d.add({ rect: new Rect(5, 200, 10, 30), kind: 'note' }); // well below the annotation
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100
 		expect(d.liftClear(natural, 8)).toBe(natural); // returned unchanged
 	});
 
 	it('liftClear stacks successive annotations above one another', () => {
 		const d = detector();
-		d.addRect(new Rect(5, 90, 10, 30), 'note');
+		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' });
 		const a = d.liftClear(new Rect(0, 85, 20, 15), 8); // bottom 82
 		d.add({ rect: a, kind: 'annotation' });
 		const b = d.liftClear(new Rect(0, 85, 20, 15), 8); // must clear `a`, not the note
@@ -46,8 +46,8 @@ describe('CollisionResolver', () => {
 
 	it('liftClear with a kind filter ignores other kinds (text clears notes, not diagrams)', () => {
 		const d = detector();
-		d.addRect(new Rect(5, 90, 10, 30), 'note'); // top at y=90
-		d.addRect(new Rect(0, 70, 20, 5), 'diagram'); // higher, but a diagram
+		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // top at y=90
+		d.add({ rect: new Rect(0, 70, 20, 5), kind: 'diagram' }); // higher, but a diagram
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100
 		// Clearing only note/tie/annotation: lifts to clear the note (90), not the diagram (70).
 		const placed = d.liftClear(natural, 8, ['note', 'tie', 'annotation']);
@@ -56,7 +56,7 @@ describe('CollisionResolver', () => {
 
 	it('pushRightOf reproduces the chord-diagram running-cursor (gap enforced even when close)', () => {
 		const d = detector();
-		d.addRect(new Rect(0, 0, 88, 84), 'diagram'); // right edge at x=88
+		d.add({ rect: new Rect(0, 0, 88, 84), kind: 'diagram' }); // right edge at x=88
 		// Overlapping neighbour → pushed to 88 + 6.
 		expect(d.pushRightOf(new Rect(50, 0, 88, 84), 'diagram', 6).x).toBe(94);
 		// Close but not overlapping (90 > 88) → gap still enforced to 94.
@@ -67,7 +67,7 @@ describe('CollisionResolver', () => {
 
 	it('pushRightOf ignores diagrams in a different vertical band', () => {
 		const d = detector();
-		d.addRect(new Rect(0, 0, 88, 84), 'diagram');
+		d.add({ rect: new Rect(0, 0, 88, 84), kind: 'diagram' });
 		// Same x-range but a different stave (y far below) → no horizontal push.
 		expect(d.pushRightOf(new Rect(50, 500, 88, 84), 'diagram', 6).x).toBe(50);
 	});
@@ -85,9 +85,9 @@ describe('CollisionResolver', () => {
 
 	it('escaping flags rects that cross the viewport edges', () => {
 		const d = detector();
-		d.addRect(new Rect(10, 10, 5, 5), 'note'); // inside
-		d.addRect(new Rect(10, -20, 5, 5), 'annotation'); // off the top
-		d.addRect(new Rect(95, 10, 20, 5), 'diagram'); // off the right
+		d.add({ rect: new Rect(10, 10, 5, 5), kind: 'note' }); // inside
+		d.add({ rect: new Rect(10, -20, 5, 5), kind: 'annotation' }); // off the top
+		d.add({ rect: new Rect(95, 10, 20, 5), kind: 'diagram' }); // off the right
 		const escaped = d.escaping(new Rect(0, 0, 100, 100));
 		const byKind = new Map(escaped.map((e) => [e.item.kind, e.edges]));
 		expect(byKind.size).toBe(2);

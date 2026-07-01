@@ -23,12 +23,12 @@ import { QuadTree } from './quadtree';
  */
 
 export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
-export type Collidable = { rect: Rect; kind: CollisionKind };
-export type Axis = 'x' | 'y';
-export type Edge = 'top' | 'bottom' | 'left' | 'right';
+type Collidable = { rect: Rect; kind: CollisionKind };
+type Axis = 'x' | 'y';
+type Edge = 'top' | 'bottom' | 'left' | 'right';
 
 /* One detected collision. `other.kind` + `mtv.axis` are "the type of collision". */
-export type Collision = {
+type Collision = {
 	other: Collidable;
 	overlap: Rect;
 	/* Signed minimum translation (along the smaller-overlap axis) to separate FROM `other`. */
@@ -44,10 +44,6 @@ export class CollisionResolver {
 
 	add(c: Collidable): void {
 		this.tree.insert(c);
-	}
-
-	addRect(rect: Rect, kind: CollisionKind): void {
-		this.tree.insert({ rect, kind });
 	}
 
 	clear(): void {
