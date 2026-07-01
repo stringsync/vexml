@@ -7,7 +7,9 @@ import {
 } from './cursor';
 import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
 import type { Decorations } from './decorations';
-import { EventBus, type EventListenable, type ScoreEventMap } from './events';
+import { EventTarget } from './events/event-target';
+import type { ScoreEventMap } from './events/events';
+import type { Listenable } from './events/listenable';
 import type { Rect } from './geometry';
 import type { TargetIndex } from './hit';
 import type { Sequence } from './sequence';
@@ -19,7 +21,7 @@ import type { Measure, Note, PointerTarget } from './targets';
  * cursor; the observers are bound only while the cursor is listening and torn down when it disposes
  * (its removeEventListener drops the last listener). */
 class CursorHostAdapter implements CursorHost {
-	private readonly bus = new EventBus<CursorHostEventMap>();
+	private readonly target = new EventTarget<CursorHostEventMap>();
 	private unbind: (() => void) | null = null;
 
 	constructor(private readonly host: Host) {}
@@ -40,9 +42,9 @@ class CursorHostAdapter implements CursorHost {
 		type: K,
 		listener: (event: CursorHostEventMap[K]) => void,
 	): void {
-		this.bus.addEventListener(type, listener);
+		this.target.addEventListener(type, listener);
 		if (!this.unbind) {
-			const fire = () => this.bus.emit('viewportchange', undefined);
+			const fire = () => this.target.dispatchEvent('viewportchange', undefined);
 			const offScroll = this.host.observeScroll(fire);
 			const offResize = this.host.observeResize(fire);
 			this.unbind = () => {
@@ -56,8 +58,8 @@ class CursorHostAdapter implements CursorHost {
 		type: K,
 		listener: (event: CursorHostEventMap[K]) => void,
 	): void {
-		this.bus.removeEventListener(type, listener);
-		if (this.bus.count('viewportchange') === 0) {
+		this.target.removeEventListener(type, listener);
+		if (this.target.count('viewportchange') === 0) {
 			this.unbind?.();
 			this.unbind = null;
 		}
@@ -66,7 +68,7 @@ class CursorHostAdapter implements CursorHost {
 
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
- * lets callers subscribe to pointer/scroll/resize events through the EventListenable interface,
+ * lets callers subscribe to pointer/scroll/resize events through the Listenable interface,
  * and stack their own drawing layers over the score. Pointer events are hit-tested against the
  * index to the target under the pointer. dispose() tears the whole thing down so a caller can
  * re-render or unmount cleanly.
@@ -76,8 +78,8 @@ class CursorHostAdapter implements CursorHost {
  * is observed from construction instead — it also resizes viewport layers, which must happen even
  * with no resize subscriber.
  */
-export class Score implements EventListenable<ScoreEventMap> {
-	private readonly bus = new EventBus<ScoreEventMap>();
+export class Score implements Listenable<ScoreEventMap> {
+	private readonly target = new EventTarget<ScoreEventMap>();
 	// The live DOM listeners backing each Score event, so unbind can remove the exact references.
 	// Most events map to one DOM listener; hover maps to several (move/down/leave). Resize isn't
 	// here — it's a ResizeObserver, set up once below.
@@ -105,7 +107,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 		// resize handler lands on a correctly sized, cleared surface.
 		this.unobserveResize = host.observeResize((size) => {
 			host.relayoutLayers();
-			this.bus.emit('resize', size);
+			this.target.dispatchEvent('resize', size);
 		});
 	}
 
@@ -258,8 +260,8 @@ export class Score implements EventListenable<ScoreEventMap> {
 		type: K,
 		listener: (event: ScoreEventMap[K]) => void,
 	): void {
-		const first = this.bus.count(type) === 0;
-		this.bus.addEventListener(type, listener);
+		const first = this.target.count(type) === 0;
+		this.target.addEventListener(type, listener);
 		if (first) {
 			this.bind(type);
 		}
@@ -269,8 +271,8 @@ export class Score implements EventListenable<ScoreEventMap> {
 		type: K,
 		listener: (event: ScoreEventMap[K]) => void,
 	): void {
-		this.bus.removeEventListener(type, listener);
-		if (this.bus.count(type) === 0) {
+		this.target.removeEventListener(type, listener);
+		if (this.target.count(type) === 0) {
 			this.unbind(type);
 		}
 	}
@@ -303,7 +305,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 				return;
 			case 'scroll': {
 				this.listen(type, 'scroll', (native) => {
-					this.bus.emit('scroll', { ...this.host.scroll, native });
+					this.target.dispatchEvent('scroll', { ...this.host.scroll, native });
 				});
 				return;
 			}
@@ -336,7 +338,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 						pointer.clientX,
 						pointer.clientY,
 					);
-					this.bus.emit(type, {
+					this.target.dispatchEvent(type, {
 						target: this.index.hitTester.hitTest(point),
 						point,
 						native: pointer,
@@ -388,7 +390,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 		const target = point ? this.index.hitTester.hitTest(point) : null;
 		if (target !== this.hovered) {
 			this.hovered = target;
-			this.bus.emit('hover', { target, point });
+			this.target.dispatchEvent('hover', { target, point });
 		}
 	}
 }

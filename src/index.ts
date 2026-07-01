@@ -15,13 +15,13 @@ export {
 } from './cursor';
 export type { BarCursorViewOptions } from './cursor-view';
 export type {
-	EventListenable,
 	HoverEvent,
 	PointerTargetEvent,
 	ScoreEventMap,
 	ScoreResizeEvent,
 	ScoreScrollEvent,
-} from './events';
+} from './events/events';
+export type { Listenable } from './events/listenable';
 export type { FontConfig, FontOverride } from './fonts';
 export { Rect } from './geometry';
 export type { Layout, MeasureNumbering } from './layout';

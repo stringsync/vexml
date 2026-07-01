@@ -7,7 +7,7 @@ import {
 	type CursorView,
 	type Scroller,
 } from './cursor';
-import { EventBus } from './events';
+import { EventTarget } from './events/event-target';
 import { Rect } from './geometry';
 import { buildSequence, type SequenceNote } from './sequence';
 import type { Note } from './targets';
@@ -49,7 +49,7 @@ class FakeScroller implements Scroller {
 
 class FakeHost implements CursorHost {
 	readonly scroller = new FakeScroller();
-	private readonly bus = new EventBus<CursorHostEventMap>();
+	private readonly target = new EventTarget<CursorHostEventMap>();
 	// The visible box, in the same identity coords clientRectOf maps to. Defaults to covering SYS.
 	vp = new Rect(0, 0, 1000, 1000);
 	clientRectOf(rect: Rect): DOMRect {
@@ -71,18 +71,18 @@ class FakeHost implements CursorHost {
 		type: K,
 		listener: (event: CursorHostEventMap[K]) => void,
 	): void {
-		this.bus.addEventListener(type, listener);
+		this.target.addEventListener(type, listener);
 	}
 	removeEventListener<K extends keyof CursorHostEventMap>(
 		type: K,
 		listener: (event: CursorHostEventMap[K]) => void,
 	): void {
-		this.bus.removeEventListener(type, listener);
+		this.target.removeEventListener(type, listener);
 	}
 	// Test helper: move the viewport and notify, as a real scroll/resize would.
 	moveViewport(rect: Rect): void {
 		this.vp = rect;
-		this.bus.emit('viewportchange', undefined);
+		this.target.dispatchEvent('viewportchange', undefined);
 	}
 }
 

@@ -1,4 +1,5 @@
-import { EventBus, type EventListenable } from './events';
+import { EventTarget } from './events/event-target';
+import type { Listenable } from './events/listenable';
 import { Rect } from './geometry';
 import type { Sequence } from './sequence';
 import type { Bounded, Note } from './targets';
@@ -64,7 +65,7 @@ export interface CursorHostEventMap {
 /* What a Cursor needs from the rendered score's stage: score<->client mapping (to expose the bar's
  * page rect and test visibility), the visible scrollport box, the default scroller, and a
  * viewport-change subscription. Stage's adapter implements it; a unit test injects a fake. */
-export interface CursorHost extends EventListenable<CursorHostEventMap> {
+export interface CursorHost extends Listenable<CursorHostEventMap> {
 	clientRectOf(rect: Rect): DOMRect;
 	viewportRect(): DOMRect;
 	readonly scroller: Scroller;
@@ -83,8 +84,8 @@ class CursorPosition implements Bounded {
 	}
 }
 
-export class Cursor implements EventListenable<CursorEventMap> {
-	private readonly bus = new EventBus<CursorEventMap>();
+export class Cursor implements Listenable<CursorEventMap> {
+	private readonly target = new EventTarget<CursorEventMap>();
 	// Unhook fns for attach/follow subscriptions, run on dispose; the views still attached at dispose,
 	// disposed with the cursor (a detached one is the caller's again).
 	private readonly cleanups = new Set<() => void>();
@@ -194,10 +195,10 @@ export class Cursor implements EventListenable<CursorEventMap> {
 	 * still attached. */
 	attach(view: CursorView): () => void {
 		const listener = (e: CursorChangeEvent) => view.render(e);
-		this.bus.addEventListener('change', listener);
+		this.target.addEventListener('change', listener);
 		this.views.add(view);
 		const detach = () => {
-			this.bus.removeEventListener('change', listener);
+			this.target.removeEventListener('change', listener);
 			this.views.delete(view);
 			this.cleanups.delete(detach);
 		};
@@ -215,9 +216,9 @@ export class Cursor implements EventListenable<CursorEventMap> {
 				target.scrollIntoView(this.barRect());
 			}
 		};
-		this.bus.addEventListener('change', listener);
+		this.target.addEventListener('change', listener);
 		const unfollow = () => {
-			this.bus.removeEventListener('change', listener);
+			this.target.removeEventListener('change', listener);
 			this.cleanups.delete(unfollow);
 		};
 		this.cleanups.add(unfollow);
@@ -234,14 +235,14 @@ export class Cursor implements EventListenable<CursorEventMap> {
 		type: K,
 		listener: (event: CursorEventMap[K]) => void,
 	): void {
-		this.bus.addEventListener(type, listener);
+		this.target.addEventListener(type, listener);
 	}
 
 	removeEventListener<K extends keyof CursorEventMap>(
 		type: K,
 		listener: (event: CursorEventMap[K]) => void,
 	): void {
-		this.bus.removeEventListener(type, listener);
+		this.target.removeEventListener(type, listener);
 	}
 
 	dispose(): void {
@@ -288,7 +289,7 @@ export class Cursor implements EventListenable<CursorEventMap> {
 	}
 
 	private emit(from: number): void {
-		this.bus.emit('change', this.snapshot(from));
+		this.target.dispatchEvent('change', this.snapshot(from));
 		this.checkVisibility();
 	}
 
@@ -302,7 +303,7 @@ export class Cursor implements EventListenable<CursorEventMap> {
 		const fullyVisible = this.isFullyVisible();
 		if (fullyVisible !== this.lastVisible) {
 			this.lastVisible = fullyVisible;
-			this.bus.emit('visibility', { fullyVisible });
+			this.target.dispatchEvent('visibility', { fullyVisible });
 		}
 	}
 }
