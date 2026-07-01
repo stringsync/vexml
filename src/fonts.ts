@@ -39,7 +39,7 @@ export function loadFonts(
 		return { notation, text }; // SSR guard
 	}
 
-	injectNotationFont(notation, config?.notation);
+	injectNotationFont(config?.notation);
 	injectTextFont(config?.text);
 	applyFontVariables(container, notation, text);
 	applyColorVariable(
@@ -51,21 +51,18 @@ export function loadFonts(
 	return { notation, text };
 }
 
-function injectNotationFont(family: string, override?: FontOverride): void {
-	// No notation config: load the bundled default (Bravura) via @font-face.
+function injectNotationFont(override?: FontOverride): void {
+	// No notation config: VexFlow's main entry already Font.load()s Bravura (its embedded
+	// base64 woff2) under this exact family name with display:block, so we inject nothing
+	// and reuse that face — no second copy needed.
 	if (!override) {
-		injectFontFace(
-			family,
-			new URL('../assets/fonts/Bravura.woff2', import.meta.url).href,
-			'block', // block: music font must never flash
-		);
 		return;
 	}
 	// A URL: inject the caller's own @font-face. A family alone: assume it's already
 	// available (a system font or the caller's own @font-face), per FontOverride.url —
 	// inject nothing, so the family resolves synchronously with no fetch.
 	if (override.url) {
-		injectFontFace(family, override.url, 'block');
+		injectFontFace(override.family, override.url, 'block');
 	}
 }
 

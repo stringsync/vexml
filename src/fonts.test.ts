@@ -45,12 +45,12 @@ function fakeDom() {
 	return { head, vars, container };
 }
 
-test('default render injects bravura + google fonts, scopes vars to container', () => {
+test('default render injects google fonts only, scopes vars to container', () => {
 	const { head, vars, container } = fakeDom();
 	loadFonts(container);
-	// 1 google <link> + 1 bravura <style>
+	// 1 google <link> for Source Sans 3; Bravura comes from VexFlow, so no <style>.
 	expect(head.filter((n) => n.tag === 'link').length).toBe(1);
-	expect(head.filter((n) => n.tag === 'style').length).toBe(1);
+	expect(head.filter((n) => n.tag === 'style').length).toBe(0);
 	expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
 	expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
 });
