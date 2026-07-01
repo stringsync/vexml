@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { render } from '../testing/harness';
 import { testCase } from '../testing/test-case';
 
@@ -814,11 +814,13 @@ const TEST_CASES = [
 	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
 ];
 
-for (const t of TEST_CASES) {
-	// Concurrent: each render borrows its own page from the pool (see setup.ts), so
-	// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
-	test.concurrent(t.screenshotFilename, async () => {
-		const png = await render(t.musicXMLFilename, t.config);
-		expect(png).toMatchScreenshot(t.screenshotFilename);
-	});
-}
+describe('render', () => {
+	for (const t of TEST_CASES) {
+		// Concurrent: each render borrows its own page from the pool (see setup.ts), so
+		// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
+		it.concurrent(t.screenshotFilename, async () => {
+			const png = await render(t.musicXMLFilename, t.config);
+			expect(png).toMatchScreenshot(t.screenshotFilename);
+		});
+	}
+});

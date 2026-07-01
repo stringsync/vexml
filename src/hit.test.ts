@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from './geometry';
 import { buildTargets, type RawGeometry, type RawNote } from './hit';
@@ -96,56 +96,58 @@ function build() {
 		.hitTester;
 }
 
-test('a notehead beats the measure background under it', () => {
-	const hit = build().hitTest({ x: 54, y: 44 });
-	expect(hit?.type).toBe('note');
-	expect((hit as Note).getPitch()).toBe('C/4');
-});
+describe(buildTargets, () => {
+	it('a notehead beats the measure background under it', () => {
+		const hit = build().hitTest({ x: 54, y: 44 });
+		expect(hit?.type).toBe('note');
+		expect((hit as Note).getPitch()).toBe('C/4');
+	});
 
-test('empty staff space hits the measure', () => {
-	const hit = build().hitTest({ x: 150, y: 80 });
-	expect(hit?.type).toBe('measure');
-});
+	it('empty staff space hits the measure', () => {
+		const hit = build().hitTest({ x: 150, y: 80 });
+		expect(hit?.type).toBe('measure');
+	});
 
-test('hitTestAll returns every overlapping target, and [0] is the hitTest winner', () => {
-	const tester = build();
-	const all = tester.hitTestAll({ x: 54, y: 44 });
-	expect(all.map((t) => t.type)).toEqual(['note', 'measure']); // notehead before its measure
-	expect(all[0]).toBe(tester.hitTest({ x: 54, y: 44 }) ?? undefined);
-});
+	it('hitTestAll returns every overlapping target, and [0] is the hitTest winner', () => {
+		const tester = build();
+		const all = tester.hitTestAll({ x: 54, y: 44 });
+		expect(all.map((t) => t.type)).toEqual(['note', 'measure']); // notehead before its measure
+		expect(all[0]).toBe(tester.hitTest({ x: 54, y: 44 }) ?? undefined);
+	});
 
-test('hitTestWithin returns only targets fully inside the rect', () => {
-	// Encloses the C+E chord but not the tab fret (x 90) or the full-page measure.
-	const within = build().hitTestWithin(new Rect(45, 35, 20, 30));
-	expect(within.map((t) => (t as Note).getPitch())).toEqual(['C/4', 'E/4']);
-});
+	it('hitTestWithin returns only targets fully inside the rect', () => {
+		// Encloses the C+E chord but not the tab fret (x 90) or the full-page measure.
+		const within = build().hitTestWithin(new Rect(45, 35, 20, 30));
+		expect(within.map((t) => (t as Note).getPitch())).toEqual(['C/4', 'E/4']);
+	});
 
-test('a chord stack resolves to the notehead under the point', () => {
-	const tester = build();
-	expect((tester.hitTest({ x: 54, y: 44 }) as Note).getPitch()).toBe('C/4');
-	expect((tester.hitTest({ x: 54, y: 54 }) as Note).getPitch()).toBe('E/4');
-});
+	it('a chord stack resolves to the notehead under the point', () => {
+		const tester = build();
+		expect((tester.hitTest({ x: 54, y: 44 }) as Note).getPitch()).toBe('C/4');
+		expect((tester.hitTest({ x: 54, y: 54 }) as Note).getPitch()).toBe('E/4');
+	});
 
-test('a tab fret hits a TabPosition, not the note; both cross-link', () => {
-	const hit = build().hitTest({ x: 92, y: 42 });
-	expect(hit?.type).toBe('tab-position');
-	const tab = hit as TabPosition;
-	expect(tab.getString()).toBe(2);
-	expect(tab.getFret()).toBe(3);
-	const note = tab.getNote();
-	expect(note.getPitch()).toBe('Bb/3');
-	expect(note.getTabPosition()).toBe(tab);
-});
+	it('a tab fret hits a TabPosition, not the note; both cross-link', () => {
+		const hit = build().hitTest({ x: 92, y: 42 });
+		expect(hit?.type).toBe('tab-position');
+		const tab = hit as TabPosition;
+		expect(tab.getString()).toBe(2);
+		expect(tab.getFret()).toBe(3);
+		const note = tab.getNote();
+		expect(note.getPitch()).toBe('Bb/3');
+		expect(note.getTabPosition()).toBe(tab);
+	});
 
-test('a notation notehead has no tab position', () => {
-	const note = build().hitTest({ x: 54, y: 44 }) as Note;
-	expect(note.getTabPosition()).toBeNull();
-});
+	it('a notation notehead has no tab position', () => {
+		const note = build().hitTest({ x: 54, y: 44 }) as Note;
+		expect(note.getTabPosition()).toBeNull();
+	});
 
-test('chordmates are wired from the raw chord grouping', () => {
-	const tester = build();
-	const c = tester.hitTest({ x: 54, y: 44 }) as Note;
-	const e = tester.hitTest({ x: 54, y: 54 }) as Note;
-	expect(c.getChordSiblings({ includeSelf: false })).toEqual([e]);
-	expect(c.isChordMember()).toBe(true);
+	it('chordmates are wired from the raw chord grouping', () => {
+		const tester = build();
+		const c = tester.hitTest({ x: 54, y: 44 }) as Note;
+		const e = tester.hitTest({ x: 54, y: 54 }) as Note;
+		expect(c.getChordSiblings({ includeSelf: false })).toEqual([e]);
+		expect(c.isChordMember()).toBe(true);
+	});
 });
