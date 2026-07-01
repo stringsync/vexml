@@ -97,7 +97,7 @@ class FakeView implements CursorView {
 	}
 }
 
-describe(Cursor, () => {
+describe('Cursor', () => {
 	it('next/previous step through tickables and clamp at the ends', () => {
 		const cursor = new Cursor(fourQuarters(), new FakeHost());
 		expect(cursor.getIndex()).toBe(0);

@@ -105,7 +105,7 @@ function marksSinceLastClear(ops: string[]): string[] {
 	return ops.slice(ops.lastIndexOf('clear') + 1).filter((o) => o !== 'clear');
 }
 
-describe(Decorations, () => {
+describe('Decorations', () => {
 	it('the overlay layer is created lazily, on the first decoration', () => {
 		const host = new FakeLayerHost();
 		const decorations = new Decorations(host);

@@ -6,7 +6,7 @@ function detector(): CollisionResolver {
 	return new CollisionResolver(new Rect(-1000, -1000, 4000, 4000));
 }
 
-describe(CollisionResolver, () => {
+describe('CollisionResolver', () => {
 	it('query reports the kind and minimum-translation of each hit', () => {
 		const d = detector();
 		d.addRect(new Rect(5, 0, 10, 10), 'note');

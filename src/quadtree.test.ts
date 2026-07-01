@@ -12,7 +12,7 @@ function randomRect(): Rect {
 	return new Rect(x, y, w, h);
 }
 
-describe(QuadTree, () => {
+describe('QuadTree', () => {
 	it('query matches a brute-force oracle, including out-of-bounds items', () => {
 		const bounds = new Rect(0, 0, 1000, 1000);
 		for (let trial = 0; trial < 25; trial++) {

@@ -7,7 +7,7 @@ interface TestMap {
 	pong: string;
 }
 
-describe(EventTarget, () => {
+describe('EventTarget', () => {
 	it('emit delivers to every listener for the type, not others', () => {
 		const target = new EventTarget<TestMap>();
 		const pings: number[] = [];

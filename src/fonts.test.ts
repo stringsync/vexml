@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'bun:test';
 import { loadFonts, sanitizeFontValue } from './fonts';
 
-describe(sanitizeFontValue, () => {
+describe('sanitizeFontValue', () => {
 	it('leaves legitimate family names and urls untouched', () => {
 		expect(sanitizeFontValue('Source Sans 3')).toBe('Source Sans 3');
 		expect(sanitizeFontValue('Times New Roman')).toBe('Times New Roman');
@@ -38,7 +38,7 @@ function fakeDom() {
 	return { head, vars, container };
 }
 
-describe(loadFonts, () => {
+describe('loadFonts', () => {
 	// SSR safety: no document → must not throw, no container mutation needed.
 	it('SSR guard: no throw without document', () => {
 		const orig = globalThis.document;

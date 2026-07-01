@@ -17,7 +17,7 @@ function order(measures: Array<{ index: number; jumps: Jump[] }>): number[] {
 	return [...new MeasureSequenceIterator(measures)];
 }
 
-describe(MeasureSequenceIterator, () => {
+describe('MeasureSequenceIterator', () => {
 	it('iterator: empty when there are no measures', () => {
 		expect(order([])).toEqual([]);
 	});
@@ -209,7 +209,7 @@ describe(MeasureSequenceIterator, () => {
 
 // ── beats <-> ms ──
 
-describe(beatsToMs, () => {
+describe('beatsToMs', () => {
 	it('beatsToMs/msToBeats: default 120 bpm when no segments', () => {
 		expect(beatsToMs(4, [])).toBeCloseTo(2000);
 		expect(msToBeats(2000, [])).toBeCloseTo(4);
@@ -230,7 +230,7 @@ describe(beatsToMs, () => {
 
 // ── classifyTransition (generic, identity-only) ──
 
-describe(classifyTransition, () => {
+describe('classifyTransition', () => {
 	it('classify: disjoint sets are all started/stopped', () => {
 		const r = classifyTransition(['a', 'b'], ['c', 'd'], new Map());
 		expect(r.started).toEqual(['c', 'd']);
@@ -282,7 +282,7 @@ function quarter(
 	return { note, measureIndex, measureBeat, beats: 1, x, tiedFrom: null };
 }
 
-describe(buildSequence, () => {
+describe('buildSequence', () => {
 	it('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms', () => {
 		const notes: SequenceNote[] = [];
 		for (let b = 0; b < 4; b++) {

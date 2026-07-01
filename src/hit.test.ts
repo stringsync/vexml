@@ -96,7 +96,7 @@ function build() {
 		.hitTester;
 }
 
-describe(buildTargets, () => {
+describe('buildTargets', () => {
 	it('a notehead beats the measure background under it', () => {
 		const hit = build().hitTest({ x: 54, y: 44 });
 		expect(hit?.type).toBe('note');

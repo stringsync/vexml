@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Rect } from './geometry';
 
-describe(Rect, () => {
+describe('Rect', () => {
 	it('right/bottom derive from x/y/w/h', () => {
 		const r = new Rect(10, 20, 30, 40);
 		expect(r.right).toBe(40);

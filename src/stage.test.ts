@@ -4,7 +4,7 @@ import { Stage, scrollOffsetFor } from './stage';
 // Both boxes are in the container's scroll-content coordinates; view = the current scroll window.
 const VIEW = { left: 0, top: 0, right: 100, bottom: 100 };
 
-describe(scrollOffsetFor, () => {
+describe('scrollOffsetFor', () => {
 	it('x stays put when visible, y pins the target top to the viewport top', () => {
 		const offset = scrollOffsetFor(
 			{ left: 50, top: 50, right: 60, bottom: 60 },
@@ -55,7 +55,7 @@ const stubStage = () => {
 	return { calls, scroll };
 };
 
-describe(Stage, () => {
+describe('Stage', () => {
 	it('smooth scroll: the first request fires immediately, concurrent ones are conflated', () => {
 		const { calls, scroll } = stubStage();
 		scroll(10);

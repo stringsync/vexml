@@ -5,7 +5,7 @@ import { ChordDiagram } from './chord-diagram';
 // Smoke tests only: these exercise the options branches and assert draw() doesn't
 // throw. Tests of the actual visual output live in tests/integration/.
 
-describe(ChordDiagram, () => {
+describe('ChordDiagram', () => {
 	// A no-op RenderContext; measureText returns a plausible width so the centering math runs.
 	const context = new Proxy(
 		{},

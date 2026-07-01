@@ -120,7 +120,7 @@ function fixture() {
 	return { viewport, decorator, measure, noteC, noteE, noteRest, noteBb };
 }
 
-describe(Note, () => {
+describe('Note', () => {
 	it('getPitch formats vexflow keys and returns null for rests', () => {
 		const { noteC, noteE, noteRest, noteBb } = fixture();
 		expect(noteC.getPitch()).toBe('C/4');
@@ -227,7 +227,7 @@ describe(Note, () => {
 	});
 });
 
-describe(TabPosition, () => {
+describe('TabPosition', () => {
 	it('exposes string/fret and links back to its note', () => {
 		const { noteC, viewport, decorator } = fixture();
 		const tab = new TabPosition(new Rect(0, 0, 6, 6), viewport, {

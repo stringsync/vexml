@@ -45,7 +45,7 @@ function changeAt(rect: Rect): CursorChangeEvent {
 	};
 }
 
-describe(BarCursorView, () => {
+describe('BarCursorView', () => {
 	it('draws a vertical bar straddling the onset x, spanning the system, after clearing', () => {
 		const layer = new FakeLayer();
 		const view = new BarCursorView(layer); // default width 2

@@ -150,7 +150,7 @@ function fixture(target: PointerTarget | null) {
 	return { host, index, decorations, score };
 }
 
-describe(Score, () => {
+describe('Score', () => {
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
 		const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0);
 		const { host, index, score } = fixture(target);
