@@ -5,20 +5,20 @@ import { ChordDiagram } from './chord-diagram';
 // Smoke tests only: these exercise the options branches and assert draw() doesn't
 // throw. Tests of the actual visual output live in tests/integration/.
 
-// A no-op RenderContext; measureText returns a plausible width so the centering math runs.
-const context = new Proxy(
-	{},
-	{
-		get(_target, prop) {
-			if (prop === 'measureText') {
-				return (msg: string) => ({ width: msg.length * 6 });
-			}
-			return () => context;
-		},
-	},
-) as unknown as RenderContext;
-
 describe(ChordDiagram, () => {
+	// A no-op RenderContext; measureText returns a plausible width so the centering math runs.
+	const context = new Proxy(
+		{},
+		{
+			get(_target, prop) {
+				if (prop === 'measureText') {
+					return (msg: string) => ({ width: msg.length * 6 });
+				}
+				return () => context;
+			},
+		},
+	) as unknown as RenderContext;
+
 	it('draws an open-position chord with markers', () => {
 		const diagram = new ChordDiagram(0, 0, {
 			chord: [
