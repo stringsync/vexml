@@ -7,11 +7,11 @@ import {
 } from './cursor';
 import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
 import type { Decorations } from './decorations';
-import { EventTarget } from './events/event-target';
-import type { ScoreEventMap } from './events/events';
-import type { Listenable } from './events/listenable';
+import { EventTarget } from './event-target';
+import type { ScoreEventMap } from './events';
 import type { Rect } from './geometry';
 import type { TargetIndex } from './hit';
+import type { Listenable } from './listenable';
 import type { Sequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
 import type { Measure, Note, PointerTarget } from './targets';

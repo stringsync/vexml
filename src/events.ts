@@ -1,4 +1,4 @@
-import type { PointerTarget } from '../targets';
+import type { PointerTarget } from './targets';
 
 /* A pointer interaction over the score: the target under the pointer (null on empty space), the
  * pointer position in score space, and the raw DOM event for everything else (buttons, modifier

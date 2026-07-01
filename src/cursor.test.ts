@@ -7,7 +7,7 @@ import {
 	type CursorView,
 	type Scroller,
 } from './cursor';
-import { EventTarget } from './events/event-target';
+import { EventTarget } from './event-target';
 import { Rect } from './geometry';
 import { buildSequence, type SequenceNote } from './sequence';
 import type { Note } from './targets';

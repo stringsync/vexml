@@ -20,11 +20,11 @@ export type {
 	ScoreEventMap,
 	ScoreResizeEvent,
 	ScoreScrollEvent,
-} from './events/events';
-export type { Listenable } from './events/listenable';
+} from './events';
 export type { FontConfig, FontOverride } from './fonts';
 export { Rect } from './geometry';
 export type { Layout, MeasureNumbering } from './layout';
+export type { Listenable } from './listenable';
 export * from './render';
 export { Score } from './score';
 export type { Layer, LayerKind } from './stage';

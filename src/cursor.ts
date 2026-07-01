@@ -1,6 +1,6 @@
-import { EventTarget } from './events/event-target';
-import type { Listenable } from './events/listenable';
+import { EventTarget } from './event-target';
 import { Rect } from './geometry';
+import type { Listenable } from './listenable';
 import type { Sequence } from './sequence';
 import type { Bounded, Note } from './targets';
 
