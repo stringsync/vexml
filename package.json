@@ -1,5 +1,5 @@
 {
-	"name": "vexml",
+	"name": "@stringsync/vexml",
 	"version": "0.2.3",
 	"type": "module",
 	"license": "MIT",

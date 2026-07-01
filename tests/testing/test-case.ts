@@ -1,4 +1,4 @@
-import type { Config } from '../../src';
+import type { Config } from '@stringsync/vexml';
 
 export function testCase(
 	musicXMLFilename: string,

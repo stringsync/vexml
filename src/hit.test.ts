@@ -107,6 +107,19 @@ test('empty staff space hits the measure', () => {
 	expect(hit?.type).toBe('measure');
 });
 
+test('hitTestAll returns every overlapping target, and [0] is the hitTest winner', () => {
+	const tester = build();
+	const all = tester.hitTestAll({ x: 54, y: 44 });
+	expect(all.map((t) => t.type)).toEqual(['note', 'measure']); // notehead before its measure
+	expect(all[0]).toBe(tester.hitTest({ x: 54, y: 44 }) ?? undefined);
+});
+
+test('hitTestWithin returns only targets fully inside the rect', () => {
+	// Encloses the C+E chord but not the tab fret (x 90) or the full-page measure.
+	const within = build().hitTestWithin(new Rect(45, 35, 20, 30));
+	expect(within.map((t) => (t as Note).getPitch())).toEqual(['C/4', 'E/4']);
+});
+
 test('a chord stack resolves to the notehead under the point', () => {
 	const tester = build();
 	expect((tester.hitTest({ x: 54, y: 44 }) as Note).getPitch()).toBe('C/4');

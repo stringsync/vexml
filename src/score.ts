@@ -9,10 +9,10 @@ import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
 import type { Decorations } from './decorations';
 import { EventBus, type EventListenable, type ScoreEventMap } from './events';
 import type { Rect } from './geometry';
-import type { HitTester } from './hit';
+import type { TargetIndex } from './hit';
 import type { Sequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
-import type { PointerTarget } from './targets';
+import type { Measure, Note, PointerTarget } from './targets';
 
 /* Adapts the Stage host into a Cursor's CursorHost: passes through the rect/scroller methods and
  * turns the host's window-scroll + resize observers into a single `viewportchange` event. One per
@@ -96,7 +96,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 
 	constructor(
 		private readonly host: Host,
-		private readonly index: HitTester,
+		private readonly index: TargetIndex,
 		private readonly decorations: Decorations,
 		private readonly sequence: Sequence,
 	) {
@@ -178,6 +178,31 @@ export class Score implements EventListenable<ScoreEventMap> {
 		return this.sequence.getMeasureIndexAtMs(ms);
 	}
 
+	/* Every note in the score, in document order — including grace notes (reachable here though they
+	 * stay out of hit-testing) and every chord member. The same Note identities hit-testing and the
+	 * playback timeline return, so a caller can color/inspect them or build an editing selection. */
+	getNotes(): Note[] {
+		return [...this.index.notes.values()];
+	}
+
+	/* Every measure, in document order (one per index, not repeat-expanded). */
+	getMeasures(): Measure[] {
+		return [...this.index.measures.values()];
+	}
+
+	/* Every target whose box covers a score-space point, topmost first — a note/fret before the
+	 * measure it sits on, tighter boxes before looser. Overlapping rects (chord neighbors, a note
+	 * over its measure) all come back; getTargetsAt(point)[0] is the one a click/hover reports. */
+	getTargetsAt(point: { x: number; y: number }): PointerTarget[] {
+		return this.index.hitTester.hitTestAll(point);
+	}
+
+	/* Every target whose box lies fully within a score-space rect — a marquee/lasso selection.
+	 * Same topmost-first order as getTargetsAt. Partially-covered targets are excluded. */
+	getTargetsWithin(rect: Rect): PointerTarget[] {
+		return this.index.hitTester.hitTestWithin(rect);
+	}
+
 	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
 	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it —
 	 * a note/fret within its onset step, a measure across its full width (see Sequence.resolveX). The
@@ -213,7 +238,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 		x: number;
 		y: number;
 	}): { start: number; end: number } | null {
-		const target = this.index.hitTest(point);
+		const target = this.index.hitTester.hitTest(point);
 		if (!target) {
 			return null;
 		}
@@ -312,7 +337,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 						pointer.clientY,
 					);
 					this.bus.emit(type, {
-						target: this.index.hitTest(point),
+						target: this.index.hitTester.hitTest(point),
 						point,
 						native: pointer,
 					});
@@ -360,7 +385,7 @@ export class Score implements EventListenable<ScoreEventMap> {
 		const point = this.lastClient
 			? this.host.toScoreSpace(this.lastClient.x, this.lastClient.y)
 			: null;
-		const target = point ? this.index.hitTest(point) : null;
+		const target = point ? this.index.hitTester.hitTest(point) : null;
 		if (target !== this.hovered) {
 			this.hovered = target;
 			this.bus.emit('hover', { target, point });

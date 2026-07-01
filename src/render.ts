@@ -83,5 +83,5 @@ export async function render(
 	const sequence = buildSequence(
 		buildSequenceInput(parts, geometry, targets.notes),
 	);
-	return new Score(stage, targets.hitTester, decorations, sequence);
+	return new Score(stage, targets, decorations, sequence);
 }

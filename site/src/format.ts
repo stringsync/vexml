@@ -1,4 +1,4 @@
-import type { PointerTarget } from '../../src';
+import type { PointerTarget } from '@stringsync/vexml';
 
 // One-line summary of the hovered target for the tooltip.
 export function describe(target: PointerTarget): string {

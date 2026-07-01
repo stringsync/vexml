@@ -1,6 +1,9 @@
-import type { Config } from '../../src';
-import { DEFAULT_WIDTH } from '../../src/constants';
+import type { Config } from '@stringsync/vexml';
 import { TEST_URL, testBrowser } from './setup';
+
+// ponytail: mirrors src DEFAULT_WIDTH — the public API doesn't expose it, so tests
+// don't get privileged access. Bump if src's default reference width ever exceeds this.
+const DEFAULT_WIDTH = 900;
 
 // A fixture is laid out to its reference width (8.5in unless the test overrides it);
 // the result scales to any container at runtime, so a static viewport exercises the

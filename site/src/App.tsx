@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
 	Config,
 	Cursor,
@@ -6,8 +5,9 @@ import type {
 	Note,
 	PointerTarget,
 	PointerTargetEvent,
-} from '../../src';
-import { render, type Score } from '../../src';
+} from '@stringsync/vexml';
+import { render, type Score } from '@stringsync/vexml';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from './config-slider';
 import {
 	ACTIVE_COLOR,

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import type { Scroller } from './cursor';
 import { Decorations } from './decorations';
 import { Rect } from './geometry';
-import type { HitTester } from './hit';
+import type { HitTester, TargetIndex } from './hit';
 import { Score } from './score';
 import { buildSequence } from './sequence';
 import type { Host, Layer, LayerKind } from './stage';
@@ -103,6 +103,21 @@ class FakeHitTester implements HitTester {
 		this.probes.push(point);
 		return this.result;
 	}
+	hitTestAll(point: { x: number; y: number }): PointerTarget[] {
+		this.probes.push(point);
+		return this.result ? [this.result] : [];
+	}
+	hitTestWithin(): PointerTarget[] {
+		return this.result ? [this.result] : [];
+	}
+}
+
+// Wrap a HitTester into the TargetIndex Score takes; tests that don't enumerate pass empty maps.
+function targetIndex(
+	hitTester: HitTester,
+	overrides: Partial<Omit<TargetIndex, 'hitTester'>> = {},
+): TargetIndex {
+	return { hitTester, notes: new Map(), measures: new Map(), ...overrides };
 }
 
 // A bare EventTarget has no DOM tree, so a synthetic Event with the coords the handler reads is
@@ -126,7 +141,12 @@ function fixture(target: PointerTarget | null) {
 	const host = new FakeHost();
 	const index = new FakeHitTester(target);
 	const decorations = new Decorations(host);
-	const score = new Score(host, index, decorations, EMPTY_SEQUENCE);
+	const score = new Score(
+		host,
+		targetIndex(index),
+		decorations,
+		EMPTY_SEQUENCE,
+	);
 	return { host, index, decorations, score };
 }
 
@@ -200,8 +220,17 @@ test('hover fires only on target change and recomputes on scroll; unsubscribe de
 	// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
 	// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
 	let hit: PointerTarget | null = target;
-	const index: HitTester = { hitTest: () => hit };
-	const score = new Score(host, index, new Decorations(host), EMPTY_SEQUENCE);
+	const index: HitTester = {
+		hitTest: () => hit,
+		hitTestAll: () => (hit ? [hit] : []),
+		hitTestWithin: () => (hit ? [hit] : []),
+	};
+	const score = new Score(
+		host,
+		targetIndex(index),
+		new Decorations(host),
+		EMPTY_SEQUENCE,
+	);
 
 	const seen: Array<PointerTarget | null> = [];
 	const listener = (e: { target: PointerTarget | null }) => seen.push(e.target);
@@ -289,7 +318,7 @@ test('getTimeAt interpolates the time under a point and reports the closest step
 	const target = new Measure(new Rect(0, 0, 1000, 100), viewport, '1', 0);
 	const score = new Score(
 		host,
-		new FakeHitTester(target),
+		targetIndex(new FakeHitTester(target)),
 		new Decorations(host),
 		sequence,
 	);
@@ -313,7 +342,7 @@ test('getTimeAt interpolates the time under a point and reports the closest step
 
 	const offScore = new Score(
 		host,
-		new FakeHitTester(null),
+		targetIndex(new FakeHitTester(null)),
 		new Decorations(host),
 		sequence,
 	);
@@ -334,4 +363,31 @@ test('dispose detaches every listener and tears down decorations and host', () =
 	expect(decorations.isColored(target)).toBe(false); // decorations.dispose() ran
 	host.events.dispatchEvent(new FakePointerEvent('pointermove', 9, 9));
 	expect(index.probes).toHaveLength(0); // pointer handler detached
+});
+
+test('getNotes and getMeasures enumerate the index maps in insertion order', () => {
+	const host = new FakeHost();
+	const m0 = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0);
+	const m1 = new Measure(new Rect(10, 0, 10, 10), viewport, '2', 1);
+	const n0 = { type: 'note' } as unknown as Note;
+	const n1 = { type: 'note' } as unknown as Note;
+	const score = new Score(
+		host,
+		targetIndex(new FakeHitTester(null), {
+			// keyed by MNote / index in production; identity is all enumeration needs.
+			notes: new Map([
+				[{} as never, n0],
+				[{} as never, n1],
+			]),
+			measures: new Map([
+				[0, m0],
+				[1, m1],
+			]),
+		}),
+		new Decorations(host),
+		EMPTY_SEQUENCE,
+	);
+
+	expect(score.getNotes()).toEqual([n0, n1]);
+	expect(score.getMeasures()).toEqual([m0, m1]);
 });

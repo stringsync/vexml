@@ -1,5 +1,5 @@
+import type { Cursor, Score } from '@stringsync/vexml';
 import { type RefObject, useState } from 'react';
-import type { Cursor, Score } from '../../src';
 import { fmtTime } from './format';
 import { ICON, PlayerIcon } from './icons';
 

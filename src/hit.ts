@@ -48,13 +48,31 @@ export interface RawGeometry {
 
 export interface HitTester {
 	hitTest(point: { x: number; y: number }): PointerTarget | null;
+	/* Every target whose box covers the point, same priority order as hitTest (so [0] === hitTest). */
+	hitTestAll(point: { x: number; y: number }): PointerTarget[];
+	/* Every target whose box lies fully within the rect (marquee selection), same priority order. */
+	hitTestWithin(rect: Rect): PointerTarget[];
 }
 
-/* What buildTargets returns: the spatial index, plus the mdom-note -> Note map so the playback
- * timeline can reference the very same Note identities the index hit-tests to. */
+// Topmost-first: a foreground glyph (note/fret) before the measure it sits on, and within a tier
+// the tighter (smaller-area) box first — the ordering hitTest picks its single winner from.
+function byPriority(a: PointerTarget, b: PointerTarget): number {
+	const fa = a.type !== 'measure';
+	const fb = b.type !== 'measure';
+	if (fa !== fb) {
+		return fa ? -1 : 1;
+	}
+	return a.rect.w * a.rect.h - b.rect.w * b.rect.h;
+}
+
+/* What buildTargets returns: the spatial index, plus the target maps. The mdom-note -> Note map
+ * lets the playback timeline reference the very same Note identities the index hit-tests to; both
+ * maps also back Score's enumeration (getNotes/getMeasures), the entry point a future editing layer
+ * will navigate. Keyed by MNote / measure index for internal cross-ref; Score hands out arrays. */
 export interface TargetIndex {
 	hitTester: HitTester;
 	notes: ReadonlyMap<MNote, Note>;
+	measures: ReadonlyMap<number, Measure>;
 }
 
 export class QuadTreeHitTester implements HitTester {
@@ -84,6 +102,19 @@ export class QuadTreeHitTester implements HitTester {
 			}
 		}
 		return best;
+	}
+
+	hitTestAll(point: { x: number; y: number }): PointerTarget[] {
+		const probe = new Rect(point.x, point.y, 1, 1);
+		return this.tree.query(probe).sort(byPriority);
+	}
+
+	hitTestWithin(rect: Rect): PointerTarget[] {
+		// query is a broad phase (intersects); keep only targets fully inside the rect.
+		return this.tree
+			.query(rect)
+			.filter((t) => rect.contains(t.rect))
+			.sort(byPriority);
 	}
 }
 
@@ -163,5 +194,9 @@ export function buildTargets(
 	for (const measure of measures.values()) {
 		tree.insert(measure);
 	}
-	return { hitTester: new QuadTreeHitTester(tree), notes: noteByMnote };
+	return {
+		hitTester: new QuadTreeHitTester(tree),
+		notes: noteByMnote,
+		measures,
+	};
 }

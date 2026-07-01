@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import type { Note, TabPosition } from '../../src';
+import type { Note, TabPosition } from '@stringsync/vexml';
 import { TEST_URL, testBrowser } from '../testing/setup';
 
 // Decorations end to end, the way a caller actually reaches them: render, hover to hit-test the
