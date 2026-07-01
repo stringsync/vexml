@@ -667,7 +667,10 @@ export default function App() {
 					className={`fixed inset-0 z-10 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
 				/>
 
-				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:overflow-y-auto md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+				{/* No overflow on the aside: Safari clips position:fixed descendants (the Player)
+				    to an overflow ancestor's box. Desktop scrolling lives on the inner config
+				    div below instead, which the fixed Player is not a descendant of. */}
+				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
 					{input != null && initialized && (
 						<Player
 							playerRef={playerRef}
@@ -717,7 +720,7 @@ export default function App() {
 						<div className="min-h-0 overflow-hidden">
 							<div
 								onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
-								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-none md:overflow-visible"
+								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-[calc(100vh-8rem)]"
 							>
 								<Section title="MusicXML">
 									<div className="flex flex-col gap-1.5">
