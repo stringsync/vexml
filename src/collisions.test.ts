@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { CollisionResolver } from './collision';
+import { CollisionResolver } from './collisions';
 import { Rect } from './geometry';
 
 function detector(): CollisionResolver {

@@ -24,7 +24,7 @@ import {
 	type Voice,
 } from 'vexflow';
 import { ChordDiagram, type ChordSpec } from './chord-diagram';
-import { type CollisionKind, CollisionResolver } from './collision';
+import { type CollisionKind, CollisionResolver } from './collisions';
 import type { Config } from './config';
 import {
 	BRACKET_X_SHIFT,
