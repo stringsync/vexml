@@ -1,3 +1,4 @@
+import { FAR } from './constants';
 import { Rect } from './geometry';
 import { QuadTree } from './quadtree';
 
@@ -33,9 +34,6 @@ export type Collision = {
 	/* Signed minimum translation (along the smaller-overlap axis) to separate FROM `other`. */
 	mtv: { axis: Axis; dx: number; dy: number };
 };
-
-// Finite sentinel for half-open probe rects (avoids Infinity arithmetic producing NaN).
-const FAR = 1e6;
 
 export class CollisionResolver {
 	private readonly tree: QuadTree<Collidable>;

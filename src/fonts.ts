@@ -39,7 +39,7 @@ export function loadFonts(
 		return { notation, text }; // SSR guard
 	}
 
-	injectNotationFont(notation, config?.notation?.url);
+	injectNotationFont(notation, config?.notation);
 	injectTextFont(config?.text);
 	applyFontVariables(container, notation, text);
 	applyColorVariable(
@@ -51,20 +51,34 @@ export function loadFonts(
 	return { notation, text };
 }
 
-function injectNotationFont(family: string, url?: string): void {
-	injectFontFace(
-		family,
-		url ?? new URL('../assets/fonts/Bravura.woff2', import.meta.url).href,
-		'block', // block: music font must never flash
-	);
+function injectNotationFont(family: string, override?: FontOverride): void {
+	// No notation config: load the bundled default (Bravura) via @font-face.
+	if (!override) {
+		injectFontFace(
+			family,
+			new URL('../assets/fonts/Bravura.woff2', import.meta.url).href,
+			'block', // block: music font must never flash
+		);
+		return;
+	}
+	// A URL: inject the caller's own @font-face. A family alone: assume it's already
+	// available (a system font or the caller's own @font-face), per FontOverride.url —
+	// inject nothing, so the family resolves synchronously with no fetch.
+	if (override.url) {
+		injectFontFace(family, override.url, 'block');
+	}
 }
 
 function injectTextFont(override?: FontOverride): void {
-	// Load the bundled text font (Source Sans 3) unless the user supplied their own URL.
-	if (!override?.url) {
+	// No text config: load the default (Source Sans 3) from Google Fonts.
+	if (!override) {
 		injectGoogleFonts();
+		return;
 	}
-	if (override?.url) {
+	// A URL: inject the caller's own @font-face. A family alone: assume it's already
+	// available (a system font or the caller's own @font-face), per FontOverride.url —
+	// inject nothing, so the family resolves synchronously with no network fetch.
+	if (override.url) {
 		injectFontFace(override.family, override.url, 'swap');
 	}
 }

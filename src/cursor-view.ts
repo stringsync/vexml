@@ -1,3 +1,4 @@
+import { CURSOR_COLOR, CURSOR_WIDTH_PX } from './constants';
 import type { CursorChangeEvent, CursorView } from './cursor';
 import type { Layer } from './stage';
 
@@ -7,9 +8,6 @@ import type { Layer } from './stage';
  * tiny, so each change just clears and repaints the bar at the interpolated position. Callers who
  * want something else implement CursorView themselves; this is what Score.createCursorView returns.
  */
-
-const DEFAULT_COLOR = '#2563eb';
-const DEFAULT_WIDTH_PX = 2;
 
 export interface BarCursorViewOptions {
 	color?: string;
@@ -24,8 +22,8 @@ export class BarCursorView implements CursorView {
 		private readonly layer: Layer,
 		options?: BarCursorViewOptions,
 	) {
-		this.color = options?.color ?? DEFAULT_COLOR;
-		this.widthPx = options?.widthPx ?? DEFAULT_WIDTH_PX;
+		this.color = options?.color ?? CURSOR_COLOR;
+		this.widthPx = options?.widthPx ?? CURSOR_WIDTH_PX;
 	}
 
 	render(event: CursorChangeEvent): void {

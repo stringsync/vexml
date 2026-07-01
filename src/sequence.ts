@@ -1,3 +1,4 @@
+import { BAR_WIDTH, DEFAULT_TEMPO_BPM } from './constants';
 import { Rect } from './geometry';
 import type { Note } from './targets';
 
@@ -78,10 +79,6 @@ export interface CursorTransition {
 
 /* A quarter-note-beats <-> ms segment: `[startBeat, endBeat)` plays at `bpm` quarter notes/min. */
 type TempoSegment = { startBeat: number; endBeat: number; bpm: number };
-
-const DEFAULT_BPM = 120;
-/* The bar is a thin line; the view thickens it. A nonzero width keeps it a valid, hit-testable box. */
-const BAR_WIDTH = 1;
 
 /**
  * Iterates measure indices in playback order, expanding repeats and voltas. Two phases: pre-scan to
@@ -330,7 +327,7 @@ export function beatsToMs(
 ): number {
 	const last = segments.at(-1);
 	if (!last) {
-		return (beats / DEFAULT_BPM) * 60000;
+		return (beats / DEFAULT_TEMPO_BPM) * 60000;
 	}
 	let ms = 0;
 	for (const seg of segments) {
@@ -353,7 +350,7 @@ export function msToBeats(
 ): number {
 	const last = segments.at(-1);
 	if (!last) {
-		return (ms / 60000) * DEFAULT_BPM;
+		return (ms / 60000) * DEFAULT_TEMPO_BPM;
 	}
 	let elapsed = 0;
 	for (const seg of segments) {
@@ -429,7 +426,7 @@ export function buildSequence(input: SequenceInput): Sequence {
 	let totalBeats = 0;
 	// Start at 120; a measure's mark sets the rate from there on, null carries the previous. Measures
 	// before the first mark stay at the default, and a back-jump re-applies marks as written.
-	let bpm = DEFAULT_BPM;
+	let bpm = DEFAULT_TEMPO_BPM;
 	for (const measureIndex of order) {
 		const measure = input.measures[measureIndex];
 		if (!measure) {

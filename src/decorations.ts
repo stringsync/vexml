@@ -1,11 +1,7 @@
+import { HALO_MARGIN } from './constants';
 import type { Rect } from './geometry';
 import type { Layer, LayerHost } from './stage';
 import type { Decoratable, Decorator } from './targets';
-
-// A soft round highlight drawn behind a note to denote activity, in the caller-chosen halo color.
-// HALO_MARGIN is how far the circle extends past the notehead's half-extent, so the note sits
-// evenly inside it.
-const HALO_MARGIN = 8;
 
 /*
  * The decoration store and painter — the production `Decorator`. A target's color/halo toggles

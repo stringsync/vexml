@@ -1,3 +1,4 @@
+import { SMOOTH_SCROLL_SETTLE_MS } from './constants';
 import type { Scroller } from './cursor';
 import type { Rect } from './geometry';
 import type { Viewport } from './targets';
@@ -411,11 +412,6 @@ export class Stage implements Viewport, Host {
 		return { left: r.left, top: r.top, sx: r.width / w, sy: r.height / h };
 	}
 }
-
-// How long a smooth scroll is assumed to take; requests within this window are conflated. Browsers
-// don't expose the animation's end, so this is a fixed estimate. ponytail: fixed window, swap for a
-// scrollend listener if the guess proves wrong.
-const SMOOTH_SCROLL_SETTLE_MS = 500;
 
 type Box = { left: number; top: number; right: number; bottom: number };
 

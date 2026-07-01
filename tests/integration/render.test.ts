@@ -815,7 +815,9 @@ const TEST_CASES = [
 ];
 
 for (const t of TEST_CASES) {
-	test(t.screenshotFilename, async () => {
+	// Concurrent: each render borrows its own page from the pool (see setup.ts), so
+	// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
+	test.concurrent(t.screenshotFilename, async () => {
 		const png = await render(t.musicXMLFilename, t.config);
 		expect(png).toMatchScreenshot(t.screenshotFilename);
 	});

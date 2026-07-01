@@ -32,6 +32,12 @@ import {
 	CHORD_DIAGRAM_HEIGHT,
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
+	FRET_HALF_H,
+	FRET_HALF_W,
+	GRACE_GROUP_SPACING_STAVE,
+	HARMONY_ACCIDENTAL_FONT_SIZE,
+	HARMONY_ACCIDENTAL_KERN,
+	HARMONY_ACCIDENTALS,
 	HARMONY_FONT_SIZE,
 	HARMONY_NOTE_CLEARANCE,
 	HARMONY_PADDING,
@@ -39,6 +45,7 @@ import {
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LEDGER_HEADROOM,
+	NOTEHEAD_HALF_H,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
 	PAGE_MARGIN_X,
@@ -486,11 +493,6 @@ function drawTempo(
 	context.restore();
 }
 
-// Accidental glyphs in a chord symbol; pulled tight against their root letter.
-const HARMONY_ACCIDENTALS = new Set(['♯', '♭', '♮']);
-const HARMONY_ACCIDENTAL_KERN = 2.5;
-const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
-
 /*
  * The total kerned advance of a chord symbol as drawHarmony draws it: accidentals render a
  * touch smaller and pull in by HARMONY_ACCIDENTAL_KERN on each side. Measured so the symbol's
@@ -746,10 +748,6 @@ function graceGroupOf(note: {
 	return findModifier<GraceNoteGroup>(note, GraceNoteGroup.CATEGORY);
 }
 
-// vexflow's GraceNoteGroup.format spaces a stave grace group GRACE_GROUP_SPACING_STAVE px
-// off its note; tab groups get 0. The value is private to vexflow, mirrored here.
-const GRACE_GROUP_SPACING_STAVE = 4;
-
 /*
  * A tab grace group reserves no accidental space, so its frets would land left of the
  * notation grace noteheads, which a flat/sharp pushes right within their own group. Shift
@@ -826,13 +824,6 @@ function showsMeasureNumber(
 			return isSystemStart || index % 3 === 0;
 	}
 }
-
-// Half-heights (CSS px) for the hit-index boxes. A notehead's x-span is measured exactly (from
-// getNoteHeadBeginX/EndX) so decorations land on the glyph; its height and the fret box are
-// approximated to ~one notehead — enough to pick a target and to draw a centered color/halo.
-const NOTEHEAD_HALF_H = 5;
-const FRET_HALF_W = 6;
-const FRET_HALF_H = 7;
 
 /*
  * Draw the whole score onto the element: one SVG stave per part-staff per measure,
@@ -1532,8 +1523,8 @@ export function drawScore(
 					const diagram = new ChordDiagram(placed.x, placed.y, {
 						width: CHORD_DIAGRAM_WIDTH,
 						height: CHORD_DIAGRAM_HEIGHT,
-						numStrings: h.frame.chord.length,
-						numFrets: Math.max(4, ...frets),
+						stringCount: h.frame.chord.length,
+						fretCount: Math.max(4, ...frets),
 						showTuning: false,
 						fontFamily: labelFont,
 					});
