@@ -296,14 +296,14 @@ function jumpsOf(measure: Part['measures'][number]): Jump[] {
 	let endingPassCount = 0;
 	let endTimes = -1;
 	for (const barline of measure.barlines) {
-		const ending = barline.child('ending');
-		if (ending && ending.getAttribute('type') === 'start') {
-			endingPassCount = endingPasses(ending.getAttribute('number'));
+		const ending = barline.ending;
+		if (ending && ending.type === 'start') {
+			endingPassCount = endingPasses(ending.number);
 		}
 		if (barline.repeat === 'forward') {
 			start = true;
 		} else if (barline.repeat === 'backward') {
-			const times = Number(barline.child('repeat')?.getAttribute('times') ?? 2);
+			const times = barline.repeatTimes ?? 2;
 			endTimes = Math.max(0, times - 1);
 		}
 	}

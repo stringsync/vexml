@@ -1,10 +1,12 @@
 import type {
 	Chord,
+	Harmony,
+	MElement,
 	Measure,
+	Note,
 	Voice as ScoreVoice,
 	Time,
 } from '@stringsync/mdom';
-import { MElement, Note } from '@stringsync/mdom';
 import { DEFAULT_TEMPO_BPM } from '../constants';
 import type { ChordFrame } from './chord-diagram-glyph';
 
@@ -47,20 +49,16 @@ function harmonyExtensionSigns(kind: string): string {
  * ponytail: a <kind> without a text attribute prints just the root — no
  * kind-name->suffix table (major-seventh -> "maj7", …); add one if a fixture needs it.
  */
-function harmonyText(harmony: MElement): string {
-	const root = harmony.child('root');
-	const step = root?.child('root-step')?.text ?? '';
-	const alter = root?.child('root-alter')?.text ?? '';
-	const kind = harmonyExtensionSigns(
-		harmony.child('kind')?.getAttribute('text') ?? '',
-	);
-	const bass = harmony.child('bass');
-	const bassStep = bass?.child('bass-step')?.text ?? '';
-	const bassAlter = bass?.child('bass-alter')?.text ?? '';
-	const bassText = bassStep
-		? `/${bassStep}${HARMONY_ALTER[bassAlter] ?? ''}`
+function harmonyText(harmony: Harmony): string {
+	const root = harmony.root;
+	const step = root?.step ?? '';
+	const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
+	const kind = harmonyExtensionSigns(harmony.kind?.text ?? '');
+	const bass = harmony.bass;
+	const bassText = bass?.step
+		? `/${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`
 		: '';
-	return step + (HARMONY_ALTER[alter] ?? '') + kind + bassText;
+	return step + alter + kind + bassText;
 }
 
 /*
@@ -73,21 +71,18 @@ function harmonyText(harmony: MElement): string {
  * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagramGlyph's
  * left-to-right (string 1 rightmost) convention.
  */
-function frameOf(harmony: MElement): ChordFrame | null {
-	const frame = harmony.child('frame');
+function frameOf(harmony: Harmony): ChordFrame | null {
+	const frame = harmony.frame;
 	if (!frame) {
 		return null;
 	}
-	const numStrings = Number(frame.child('frame-strings')?.text) || 6;
-	const frameNotes = frame.childrenNamed('frame-note');
+	const numStrings = frame.strings;
+	const frameNotes = frame.frameNotes;
 
-	// string -> absolute fret (0 = open); skip notes with a non-numeric string.
+	// string -> absolute fret (0 = open).
 	const absFret = new Map<number, number>();
 	for (const fn of frameNotes) {
-		const string = Number(fn.child('string')?.text);
-		if (Number.isFinite(string)) {
-			absFret.set(string, Number(fn.child('fret')?.text) || 0);
-		}
+		absFret.set(fn.string, fn.fret);
 	}
 	const fretted = [...absFret.values()].filter((f) => f > 0);
 
@@ -95,10 +90,9 @@ function frameOf(harmony: MElement): ChordFrame | null {
 	// derive it: a chord with no open strings whose lowest fretted note is past the nut
 	// starts the box at that fret instead of drawing a tall, mostly-empty box down from the
 	// nut. Open strings pin the box to the nut (firstFret 1).
-	const explicitFirstFret = Number(frame.child('first-fret')?.text);
 	const hasOpen = [...absFret.values()].includes(0);
 	const firstFret =
-		explicitFirstFret ||
+		frame.firstFret ??
 		(fretted.length > 0 && !hasOpen ? Math.min(...fretted) : 1);
 	const toRelative = (abs: number) => (abs === 0 ? 0 : abs - firstFret + 1);
 
@@ -106,19 +100,14 @@ function frameOf(harmony: MElement): ChordFrame | null {
 	const barreStart = new Map<number, number>(); // relative fret -> from string
 	const barres: ChordFrame['barres'] = [];
 	for (const fn of frameNotes) {
-		const string = Number(fn.child('string')?.text);
-		if (!Number.isFinite(string)) {
-			continue;
-		}
-		const relFret = toRelative(Number(fn.child('fret')?.text) || 0);
-		played.set(string, relFret);
-		const barre = fn.child('barre')?.getAttribute('type');
-		if (barre === 'start') {
-			barreStart.set(relFret, string);
-		} else if (barre === 'stop') {
+		const relFret = toRelative(fn.fret);
+		played.set(fn.string, relFret);
+		if (fn.barre === 'start') {
+			barreStart.set(relFret, fn.string);
+		} else if (fn.barre === 'stop') {
 			const from = barreStart.get(relFret);
 			if (from !== undefined) {
-				barres?.push({ fromString: from, toString: string, fret: relFret });
+				barres?.push({ fromString: from, toString: fn.string, fret: relFret });
 			}
 		}
 	}
@@ -191,14 +180,16 @@ export class ScoreReader {
 	 */
 	tempoOf(measure: Measure): TempoMark | null {
 		for (const direction of measure.directions) {
-			const metronome = direction.child('direction-type')?.child('metronome');
+			const metronome = direction.metronome;
 			if (!metronome) {
 				continue;
 			}
-			const duration = metronome.child('beat-unit')?.text ?? 'quarter';
-			const perMinute = metronome.child('per-minute')?.text;
-			const sound = direction.child('sound')?.getAttribute('tempo');
-			return { duration, bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM };
+			const perMinute = metronome.perMinute;
+			const sound = direction.soundTempo;
+			return {
+				duration: metronome.beatUnit,
+				bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM,
+			};
 		}
 		return null;
 	}
@@ -211,14 +202,7 @@ export class ScoreReader {
 	 * upright words.
 	 */
 	wordsOf(measure: Measure): string[] {
-		const out: string[] = [];
-		for (const direction of measure.directions) {
-			const words = direction.child('direction-type')?.child('words')?.text;
-			if (words) {
-				out.push(words);
-			}
-		}
-		return out;
+		return measure.directions.flatMap((d) => d.words).filter(Boolean);
 	}
 
 	/*
@@ -231,39 +215,27 @@ export class ScoreReader {
 	 */
 	pedalsOf(measure: Measure): PedalMark[] {
 		const out: PedalMark[] = [];
-		const pendingStarts: { number: string; line: boolean }[] = [];
-		let lastLead: Note | null = null;
-		for (const child of measure.children) {
-			if (child instanceof MElement && child.tag === 'direction') {
-				const pedal = child.child('direction-type')?.child('pedal');
-				const type = pedal?.getAttribute('type');
-				if (type === 'start' || type === 'stop') {
-					const number = pedal?.getAttribute('number') ?? '1';
-					const line = pedal?.getAttribute('line') === 'yes';
-					if (type === 'start') {
-						pendingStarts.push({ number, line });
-					} else if (lastLead) {
-						out.push({ lead: lastLead, type, number, line });
-					}
+		for (const direction of measure.directions) {
+			for (const pedal of direction.pedals) {
+				const type = pedal.pedalType;
+				if (type !== 'start' && type !== 'stop') {
+					continue;
 				}
-			} else if (child instanceof Note && !child.isChordMember) {
-				for (const start of pendingStarts) {
-					out.push({ lead: child, type: 'start', ...start });
+				const lead =
+					type === 'start' ? direction.nextNote : direction.previousNote;
+				if (lead) {
+					out.push({ lead, type, number: pedal.number, line: pedal.line });
 				}
-				pendingStarts.length = 0;
-				lastLead = child;
 			}
 		}
 		return out;
 	}
 
 	/*
-	 * Each <harmony> in a measure paired with the lead note it sits above. <harmony>
-	 * elements are interleaved with <note>s in document order and apply to the note
-	 * that follows, so walk the measure's children tracking the pending harmony and
-	 * bind it to the next chord lead (the next non-<chord/> note). `frame` is the
-	 * chord-diagram spec when the harmony carries a <frame>, else null. `source` is
-	 * the raw <harmony> MElement itself — element provenance (mdom doesn't type harmony).
+	 * Each <harmony> in a measure paired with the lead note it sits above. A <harmony>
+	 * applies to the note that follows it, resolved by Harmony.nextNote (the next
+	 * non-<chord/> note). `frame` is the chord-diagram spec when the harmony carries a
+	 * <frame>, else null. `source` is the Harmony element itself, kept for provenance.
 	 */
 	harmoniesOf(measure: Measure): {
 		lead: Note;
@@ -277,17 +249,15 @@ export class ScoreReader {
 			frame: ChordFrame | null;
 			source: MElement;
 		}[] = [];
-		let pending: MElement | null = null;
-		for (const child of measure.children) {
-			if (child instanceof MElement && child.tag === 'harmony') {
-				pending = child;
-			} else if (pending && child instanceof Note && !child.isChordMember) {
-				const text = harmonyText(pending);
-				const frame = frameOf(pending);
-				if (text || frame) {
-					harmonies.push({ lead: child, text, frame, source: pending });
-				}
-				pending = null;
+		for (const harmony of measure.harmonies) {
+			const lead = harmony.nextNote;
+			if (!lead) {
+				continue;
+			}
+			const text = harmonyText(harmony);
+			const frame = frameOf(harmony);
+			if (text || frame) {
+				harmonies.push({ lead, text, frame, source: harmony });
 			}
 		}
 		return harmonies;

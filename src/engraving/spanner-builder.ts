@@ -332,20 +332,25 @@ export class SpannerBuilder {
 		const open = new Map<string, { note: TabNote; fret: number }>();
 		for (const chord of chords) {
 			const tabNote = byTabLead.get(chord.lead);
-			const notations = chord.lead.child('notations');
-			if (!tabNote || !notations) {
+			if (!tabNote) {
 				continue;
 			}
 			const markers = [
-				...notations.childrenNamed('slide'),
-				...notations.childrenNamed('glissando'),
+				...chord.lead.slides.map((s) => ({
+					number: s.number,
+					type: s.slideType,
+				})),
+				...chord.lead.glissandos.map((g) => ({
+					number: g.number,
+					type: g.glissandoType,
+				})),
 			];
 			for (const marker of markers) {
-				const number = marker.getAttribute('number') ?? '1';
+				const number = marker.number;
 				const fret = chord.lead.fret ?? 0;
-				if (marker.getAttribute('type') === 'start') {
+				if (marker.type === 'start') {
 					open.set(number, { note: tabNote, fret });
-				} else if (marker.getAttribute('type') === 'stop') {
+				} else if (marker.type === 'stop') {
 					const from = open.get(number);
 					open.delete(number);
 					if (!from) {
@@ -683,11 +688,10 @@ function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
  * neither is present (the common case — most tab is notated with only a slur).
  */
 function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
-	const technical = note.child('notations')?.child('technical');
-	if (technical?.child('hammer-on')) {
+	if (note.hammerOns.length > 0) {
 		return 'hammer';
 	}
-	if (technical?.child('pull-off')) {
+	if (note.pullOffs.length > 0) {
 		return 'pull';
 	}
 	return null;

@@ -62,7 +62,7 @@ const ACCIDENTAL_CODES: Record<string, string> = {
  * notation stave (see vexflowKey) and as an angle-bracketed fret on tab (see tabPositions).
  */
 function isHarmonic(note: Note): boolean {
-	return !!note.child('notations')?.child('technical')?.child('harmonic');
+	return note.isHarmonic;
 }
 
 /*
@@ -70,7 +70,7 @@ function isHarmonic(note: Note): boolean {
  * notation stave (see vexflowKey) and as an "X" in place of the fret on tab (see tabPositions).
  */
 function isXNotehead(note: Note): boolean {
-	return note.child('notehead')?.text === 'x';
+	return note.notehead?.value === 'x';
 }
 
 /*
@@ -79,7 +79,7 @@ function isXNotehead(note: Note): boolean {
  * tabPositions).
  */
 function isParenthesized(note: Note): boolean {
-	return note.child('notehead')?.getAttribute('parentheses') === 'yes';
+	return note.notehead?.parentheses ?? false;
 }
 
 /*
@@ -150,11 +150,11 @@ function addArticulations(staveNote: StaveNote, note: Note): void {
  * the side is the fermata's type, not the stem direction.
  */
 function addFermata(staveNote: StaveNote, note: Note): void {
-	const fermata = note.child('notations')?.child('fermata');
+	const fermata = note.fermata;
 	if (!fermata) {
 		return;
 	}
-	const inverted = fermata.getAttribute('type') === 'inverted';
+	const inverted = fermata === 'inverted';
 	const articulation = new Articulation(inverted ? 'a@u' : 'a@a');
 	// Vexflow defaults every Articulation to ABOVE; the below-shaped glyph also needs the
 	// BELOW position so it sits under the note instead of floating over it.
@@ -173,11 +173,11 @@ function addFermata(staveNote: StaveNote, note: Note): void {
  * undirected arpeggiate is a plain wiggle with no arrow (ARPEGGIO_DIRECTIONLESS).
  */
 function addArpeggio(staveNote: StaveNote, note: Note): void {
-	const arpeggiate = note.child('notations')?.child('arpeggiate');
+	const arpeggiate = note.arpeggiate;
 	if (!arpeggiate) {
 		return;
 	}
-	const direction = arpeggiate.getAttribute('direction');
+	const direction = arpeggiate.direction;
 	const type =
 		direction === 'up'
 			? Stroke.Type.ROLL_DOWN
@@ -272,19 +272,17 @@ function tabAnnotation(text: string, noteWidth: number): Annotation {
  * angle-bracketed fret in tabPositions, not a modifier.)
  */
 function addTabModifiers(tabNote: TabNote, lead: Note): void {
-	const technical = lead.child('notations')?.child('technical');
-	const bend = technical?.child('bend');
+	const bend = lead.bend;
 	if (bend) {
-		const semitones = Number(bend.child('bend-alter')?.text ?? '0');
-		const phrase = [{ type: Bend.UP, text: bendLabel(semitones) }];
+		const phrase = [{ type: Bend.UP, text: bendLabel(bend.semitones) }];
 		// ponytail: a <release/> child draws a bend-then-release (up-down arrow); a
 		// release to a non-zero target would need its own label — add when a fixture wants it.
-		if (bend.child('release')) {
+		if (bend.release) {
 			phrase.push({ type: Bend.DOWN, text: '' });
 		}
 		tabNote.addModifier(new Bend(phrase), 0);
 	}
-	const other = technical?.child('other-technical')?.text;
+	const other = lead.otherTechnical[0];
 	if (other) {
 		const noteWidth = (tabNote as unknown as { width: number }).width;
 		tabNote.addModifier(tabAnnotation(other, noteWidth), 0);
@@ -523,7 +521,7 @@ export class NoteTranslator {
 				duration,
 				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
 				// through the stem/flag); its absence is a plain appoggiatura.
-				slash: lead.child('grace')?.getAttribute('slash') === 'yes',
+				slash: lead.graceSlash,
 			});
 			addAccidentals(grace, chord);
 			return grace;

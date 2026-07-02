@@ -137,16 +137,14 @@ function partsPairTabWithNotation(parts: Part[]): boolean {
  * staves, …) braces.
  */
 function partSymbol(part: Part): 'brace' | 'bracket' | null {
-	for (const measure of part.measures) {
-		const symbol = measure.child('attributes')?.child('part-symbol')?.text;
-		if (symbol) {
-			if (symbol === 'none') {
-				return null;
-			}
-			return symbol === 'bracket' ? 'bracket' : 'brace';
-		}
+	const symbol = part.partSymbol;
+	if (symbol === null) {
+		return pairsTabWithNotation(part) ? 'bracket' : 'brace';
 	}
-	return pairsTabWithNotation(part) ? 'bracket' : 'brace';
+	if (symbol === 'none') {
+		return null;
+	}
+	return symbol === 'bracket' ? 'bracket' : 'brace';
 }
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
