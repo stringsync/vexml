@@ -16,6 +16,39 @@ export interface FontConfig {
 	text?: FontOverride;
 }
 
+/** How a gap's overlay is drawn over its measure. */
+export type GapStyle = {
+	/** CSS font family for the label (default: the text font). */
+	fontFamily?: string;
+	/** Label font size in px (default: 16). */
+	fontSize?: number;
+	/** CSS color for the label (default: black). */
+	fontColor?: string;
+	/** CSS color painted over the gap's note area, e.g. to dim the staff lines
+	 * (`'rgba(255, 255, 255, 0.8)'`). Omit for none. */
+	fill?: string;
+};
+
+/** A non-musical measure inserted into the score: it occupies horizontal space and a
+ * fixed playback duration (independent of tempo), for syncing notation to media where
+ * nothing is being played. See `Config.gaps`. */
+export type Gap = {
+	/** Source-document measure index to insert before (0 inserts before the first
+	 * measure; the measure count appends after the last). Indexes refer to the
+	 * MusicXML as written — gaps never shift each other. */
+	beforeMeasureIndex: number;
+	/** Playback time the gap occupies, in ms. Fixed — tempo marks don't affect it. */
+	durationMs: number;
+	/** Text printed centered in the gap (e.g. "What are pitches?"). Omit for a silent
+	 * spacer. */
+	label?: string;
+	/** Minimum width in px of the gap's empty note area. The gap can stretch wider
+	 * when its system justifies, like any measure (default: a typical empty-measure
+	 * width, grown to fit the label). */
+	minWidth?: number;
+	style?: GapStyle;
+};
+
 /** How measures are placed across systems. */
 export type Layout =
 	| {
@@ -48,6 +81,12 @@ export type Config = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
 	 * use this for self-hosted or offline fonts. */
 	fonts: FontConfig;
+	/** Non-musical measures to insert into the score (default: none). Each occupies
+	 * space on the page and a fixed ms of playback time — for syncing notation to media
+	 * where the music pauses (e.g. an instructor talking). `beforeMeasureIndex` is a
+	 * source-document index; the rendered score's measure indexes include the inserted
+	 * gaps (measure *numbers* skip them). Retrieve their timing with `Score.getGaps()`. */
+	gaps: Gap[];
 	/** How measures are placed across systems (default: standard at 8.5in / 816px). */
 	layout: Layout;
 	/** *How much space the notes get* (not how it's divided): the px a quarter note gets,
@@ -123,6 +162,7 @@ export const DEFAULT_FONT_CONFIG = {
 /** The defaults `render` merges a caller's `Partial<Config>` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
+	gaps: [],
 	layout: { type: 'standard' },
 	noteSpacing: 36,
 	softmaxFactor: 10,

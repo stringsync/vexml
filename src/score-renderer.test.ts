@@ -89,7 +89,7 @@ function renderer(overrides?: { minLastSystemFill?: number }) {
 		new LayoutPlanner(translator, reader),
 		new ScoreDrawer(config, translator, reader, new SpannerBuilder()),
 		new ElementFactory(),
-		new SequenceFactory(reader),
+		new SequenceFactory(reader, []),
 	);
 	return { scoreRenderer, stage, fontLoader, parser };
 }

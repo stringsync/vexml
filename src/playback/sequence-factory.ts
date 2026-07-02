@@ -1,8 +1,10 @@
 import type { Note as MNote, Part } from '@stringsync/mdom';
+import type { Gap } from '../config';
 import { DEFAULT_TEMPO_BPM } from '../constants';
 import type { Note } from '../elements/note';
 import type { RawGeometry } from '../engraving/score-drawer';
 import type { ScoreReader } from '../engraving/score-reader';
+import { gapsByMeasureIndex } from '../gaps';
 import { Rect } from '../geometry';
 import {
 	beatsToMs,
@@ -335,7 +337,10 @@ function tiedFromOf(
 }
 
 export class SequenceFactory {
-	constructor(private readonly reader: ScoreReader) {}
+	constructor(
+		private readonly reader: ScoreReader,
+		private readonly gaps: readonly Gap[],
+	) {}
 
 	/* Build the timeline for a rendered score: the parsed parts give onsets/meter/tempo/repeats/
 	 * ties, the geometry gives note x and system boxes, and `notesByMnote` ties active notes to the
@@ -381,6 +386,25 @@ export class SequenceFactory {
 			}
 			if (measure.tempoBpm !== null) {
 				bpm = measure.tempoBpm;
+			}
+			// A gap plays for exactly gapMs: its segment gets the bpm that maps its nominal
+			// beats to that time, without touching the carried tempo (the next measure
+			// resumes at the rate in effect before the gap). Its step is synthesized here —
+			// a gap has no notes to seed one — spanning the measure with nothing active, so
+			// the cursor glides across it and everything sounding before it stops.
+			if (measure.gapMs !== undefined) {
+				segments.push({
+					startBeat: totalBeats,
+					endBeat: totalBeats + measure.beats,
+					bpm: (measure.beats * 60000) / measure.gapMs,
+				});
+				onsets.set(totalBeats, {
+					x: measure.systemRect.x,
+					systemRect: measure.systemRect,
+					measureIndex: measure.index,
+				});
+				totalBeats += measure.beats;
+				continue;
 			}
 			segments.push({
 				startBeat: totalBeats,
@@ -480,16 +504,22 @@ export class SequenceFactory {
 			systemRectByIndex.set(measure.index, measure.rect);
 		}
 
+		const gaps = gapsByMeasureIndex(this.gaps);
 		const measureCount = parts[0]?.measures.length ?? 0;
 		const measures: MeasureInfo[] = [];
 		for (let i = 0; i < measureCount; i++) {
 			const m0 = parts[0]?.measures[i];
+			const gap = gaps.get(i);
+			// A gap's beats are nominal (1): createFromInput maps them to gapMs through the
+			// gap's own tempo segment, so its musical length never depends on the meter the
+			// empty measure inherits.
 			measures.push({
 				index: i,
-				beats: this.measureBeats(parts, i),
-				tempoBpm: m0 ? this.quarterBpm(m0) : null,
+				beats: gap ? 1 : this.measureBeats(parts, i),
+				tempoBpm: gap || !m0 ? null : this.quarterBpm(m0),
 				jumps: m0 ? jumpsOf(m0) : [],
 				systemRect: systemRectByIndex.get(i) ?? new Rect(0, 0, 0, 0),
+				...(gap ? { gapMs: gap.durationMs } : {}),
 			});
 		}
 

@@ -4,10 +4,12 @@ import type { Config } from '../config';
 import {
 	BASE_VOICE_WIDTH,
 	DEFAULT_WIDTH,
+	GAP_LABEL_FONT_SIZE,
 	GRACE_SPACING,
 	INTER_PART_SPACING,
 	INTRA_PART_SPACING,
 	LABEL_CHAR_WIDTH,
+	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LEAD_BARLINE,
 	LEAD_CLEF,
@@ -22,6 +24,7 @@ import {
 	QUARTER_NOTE_TICKS,
 	TAB_MIN_NOTE_SPACING,
 } from '../constants';
+import { gapsByMeasureIndex } from '../gaps';
 import { findModifier, type NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
 
@@ -176,9 +179,13 @@ export class LayoutPlanner {
 		// A metronome mark on the first measure sits above the top staff, so give the
 		// first system extra headroom when one is present (and room to lift the mark
 		// clear of a high first note). Without a tempo the top margin is unchanged.
-		const hasTopTempo = parts.some(
-			(part) => part.measures[0] && this.reader.tempoOf(part.measures[0]),
-		);
+		// Gap measures carry no directions, so a leading gap defers to the first real
+		// measure (whose mark still prints on the first system).
+		const gaps = gapsByMeasureIndex(config.gaps);
+		const hasTopTempo = parts.some((part) => {
+			const measure = part.measures.find((_, m) => !gaps.has(m));
+			return measure && this.reader.tempoOf(measure);
+		});
 		const y = hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP;
 		const measureCount = Math.max(
 			1,
@@ -224,6 +231,20 @@ export class LayoutPlanner {
 		// collision-free minimum and BASE_VOICE_WIDTH. More notes mean a wider measure; a long
 		// note adds only a little — so identical content is identically wide everywhere.
 		const noteAreas = Array.from({ length: measureCount }, (_, m) => {
+			// A gap has no notes to size it: floor its (empty) note area at the caller's
+			// minWidth and at the label's estimated width so the text fits. It stretches
+			// with its system like any measure — minWidth is a floor, not an exact width.
+			const gap = gaps.get(m);
+			if (gap) {
+				// ponytail: label width estimated from the part-label ~7.5px/char@13px ratio,
+				// scaled to the gap's font size — measure exactly if a font change drifts.
+				const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
+				const labelWidth = gap.label
+					? gap.label.length * LABEL_CHAR_WIDTH * (fontSize / LABEL_FONT_SIZE) +
+						2 * LABEL_GAP
+					: 0;
+				return Math.max(BASE_VOICE_WIDTH, gap.minWidth ?? 0, labelWidth);
+			}
 			const staves: StaveSpec[] = [];
 			for (const part of parts) {
 				const measure = part.measures[m];

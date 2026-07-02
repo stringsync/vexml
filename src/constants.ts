@@ -78,6 +78,10 @@ export const LABEL_CHAR_WIDTH = 7.5;
 /** Part label font size. */
 export const LABEL_FONT_SIZE = 13;
 
+/** Default gap-measure label font size (overridable per gap via GapStyle.fontSize).
+ * Shared by layout (width estimate) and draw (drawn size) so they agree. */
+export const GAP_LABEL_FONT_SIZE = 16;
+
 /** Minimum width per tab note. Floors each note's share so dense tab measures still
  * breathe past vexflow's cramped fret-digit packing. */
 export const TAB_MIN_NOTE_SPACING = 32;

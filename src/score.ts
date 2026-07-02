@@ -16,6 +16,17 @@ import {
 import { Playhead, type PlayheadOptions } from './playback/playhead';
 import type { Sequence } from './playback/sequence';
 
+/** A rendered gap measure's sync metadata — see `Config.gaps` and `Score.getGaps`. */
+export interface GapInfo {
+	/** The document measure index the gap landed on (gaps shift the indexes of the
+	 * measures after them, but not the printed measure numbers). */
+	measureIndex: number;
+	label: string | null;
+	/** When the gap plays, in absolute playback ms (first occurrence under repeats). */
+	startMs: number;
+	endMs: number;
+}
+
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
  * lets callers subscribe to pointer/scroll/resize events through the Listenable interface,
@@ -52,6 +63,7 @@ export class Score implements Listenable<ScoreEventMap> {
 		private readonly decorations: readonly { dispose(): void }[],
 		private readonly sequence: Sequence,
 		private readonly scroller: Scroller & { cancel(): void },
+		private readonly gaps: readonly GapInfo[] = [],
 	) {
 		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
 		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
@@ -125,6 +137,12 @@ export class Score implements Listenable<ScoreEventMap> {
 	/* The playback timeline, for callers that schedule audio themselves. */
 	getSequence(): Sequence {
 		return this.sequence;
+	}
+
+	/* The rendered gap measures (see Config.gaps), in the same order they were passed —
+	 * gaps[i] in is getGaps()[i] out, so callers join by position to sync media. */
+	getGaps(): readonly GapInfo[] {
+		return this.gaps;
 	}
 
 	/* Every element built for this score: enumeration by kind plus spatial queries (at/within).

@@ -179,6 +179,32 @@ const TEST_CASES = [
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
+	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
+	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
+	// M2. Measure numbering is 'every' to prove gaps are skipped: "1" over the second
+	// column and "2" over the last, nothing over either gap.
+	// - Gap 1 (leading): inherits the treble clef and 4/4 time from its right neighbor
+	//   (drawn at the line start, left of the gap), then a wide empty stave (minWidth
+	//   250) whose staff lines are dimmed by a translucent white fill, with
+	//   "What are pitches?" centered on the stave.
+	// - M1 ("1"): the original first measure — whole note C5.
+	// - Gap 2: a narrower plain empty measure — no label, no fill, staff lines at full
+	//   strength, no clef/key/time restated.
+	// - M2 ("2"): the original second measure — whole note C5, thin-thick end barline.
+	testCase('measures_two.musicxml', 'measures_gap.png', {
+		measureNumbering: 'every',
+		gaps: [
+			{
+				beforeMeasureIndex: 0,
+				durationMs: 5000,
+				label: 'What are pitches?',
+				minWidth: 250,
+				style: { fill: 'rgba(255, 255, 255, 0.65)' },
+			},
+			{ beforeMeasureIndex: 1, durationMs: 2000 },
+		],
+	}),
+
 	// Beam variations across seven 4/4 measures. Wraps across systems.
 	// - M1: simple beamed eighths in a small range.
 	// - M2: beamed eighths leaping a wide range (steep beams, ledger lines above on

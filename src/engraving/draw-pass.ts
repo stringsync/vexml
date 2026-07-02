@@ -24,7 +24,7 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow';
-import type { Config, MeasureNumbering } from '../config';
+import type { Config, Gap, MeasureNumbering } from '../config';
 import {
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
@@ -33,6 +33,7 @@ import {
 	CHORD_DIAGRAM_WIDTH,
 	FRET_HALF_H,
 	FRET_HALF_W,
+	GAP_LABEL_FONT_SIZE,
 	GRACE_GROUP_SPACING_STAVE,
 	HARMONY_ACCIDENTAL_FONT_SIZE,
 	HARMONY_ACCIDENTAL_KERN,
@@ -54,6 +55,7 @@ import {
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from '../constants';
+import { gapsByMeasureIndex } from '../gaps';
 import { Rect } from '../geometry';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
@@ -229,6 +231,8 @@ export class DrawPass {
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly showTabHammerPullText: boolean;
 	private readonly showTabSlideText: boolean;
+	// Document measure index -> the gap spec rendered there (empty when config has none).
+	private readonly gaps: ReadonlyMap<number, Gap>;
 
 	// One note map for the whole score: ties and slurs can span a barline, so their
 	// two endpoints may live in different measures. Notes are drawn measure by
@@ -361,6 +365,7 @@ export class DrawPass {
 		this.measureNumbering = measureNumbering;
 		this.showTabHammerPullText = showTabHammerPullText;
 		this.showTabSlideText = showTabSlideText;
+		this.gaps = gapsByMeasureIndex(config.gaps);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
 		this.collisionResolver = new CollisionResolver(
@@ -404,11 +409,11 @@ export class DrawPass {
 		this.isLightLight =
 			this.parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
 				?.barStyle === 'light-light';
-		this.showMeasureNumber = showsMeasureNumber(
-			this.measureNumbering,
-			m,
-			this.isSystemStart,
-		);
+		// A gap is non-musical, so it never shows a measure number (its neighbors keep
+		// their own printed numbers — insertion shifts indexes, not labels).
+		this.showMeasureNumber =
+			!this.gaps.has(m) &&
+			showsMeasureNumber(this.measureNumbering, m, this.isSystemStart);
 		this.measureNumbered = false;
 		this.beginSystem();
 		this.systemY = this.systemTopY;
@@ -555,6 +560,7 @@ export class DrawPass {
 		this.pageTop = Math.min(this.pageTop, noteExtent.top);
 
 		this.collectGeometry(m);
+		this.drawGapOverlay(m);
 
 		if (noteExtent.top < Infinity) {
 			this.systemHighestTop.set(
@@ -1572,6 +1578,48 @@ export class DrawPass {
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation' });
 		return placed.y;
+	}
+
+	/*
+	 * Draw a gap measure's overlay: the optional fill painted over its (empty) note area
+	 * — after the staves, so it dims the staff lines under it — and the optional label
+	 * centered in that area, vertically centered on the system's staves. The area starts
+	 * at the stave's note-start x so the fill never covers a clef/key/time the gap's
+	 * stave prints at a system start.
+	 */
+	private drawGapOverlay(m: number): void {
+		const gap = this.gaps.get(m);
+		if (!gap || !this.systemTop || !this.systemBottom) {
+			return;
+		}
+		const startX = this.systemTop.getNoteStartX();
+		const endX = this.measureX + this.measureWidth;
+		const top = this.systemTop.getYForLine(0);
+		const bottom = this.systemBottom.getBottomLineY();
+		this.context.save();
+		if (gap.style?.fill) {
+			this.context.setFillStyle(gap.style.fill);
+			this.context.fillRect(
+				startX,
+				top,
+				Math.max(0, endX - startX),
+				bottom - top,
+			);
+		}
+		if (gap.label) {
+			const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
+			this.context.setFont(gap.style?.fontFamily ?? this.labelFont, fontSize);
+			this.context.setFillStyle(gap.style?.fontColor ?? '#000000');
+			const tw = this.context.measureText(gap.label).width;
+			// Baseline sits ~0.35em below the vertical center, landing the cap-height
+			// visual center on the midline (the part-label +1.5px trick, size-relative).
+			this.context.fillText(
+				gap.label,
+				(startX + endX) / 2 - tw / 2,
+				(top + bottom) / 2 + fontSize * 0.35,
+			);
+		}
+		this.context.restore();
 	}
 
 	/*

@@ -14,7 +14,10 @@ import { Score } from './score';
 import { FakeScroller } from './testing/fake-scroller';
 
 // An empty timeline — these tests exercise events/layers/hover, not playback.
-const EMPTY_SEQUENCE = new SequenceFactory(new ScoreReader()).createFromInput({
+const EMPTY_SEQUENCE = new SequenceFactory(
+	new ScoreReader(),
+	[],
+).createFromInput({
 	measures: [],
 	notes: [],
 });
@@ -324,35 +327,37 @@ describe('Score', () => {
 	it('getTimeAt interpolates the time under a point and reports the closest step', () => {
 		const host = new FakeHost();
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
-		const sequence = new SequenceFactory(new ScoreReader()).createFromInput({
-			measures: [
-				{
-					index: 0,
-					beats: 2,
-					tempoBpm: 120,
-					jumps: [],
-					systemRect: new Rect(0, 0, 1000, 100),
-				},
-			],
-			notes: [
-				{
-					note: {} as Note,
-					measureIndex: 0,
-					measureBeat: 0,
-					beats: 1,
-					x: 10,
-					tiedFrom: null,
-				},
-				{
-					note: {} as Note,
-					measureIndex: 0,
-					measureBeat: 1,
-					beats: 1,
-					x: 20,
-					tiedFrom: null,
-				},
-			],
-		});
+		const sequence = new SequenceFactory(new ScoreReader(), []).createFromInput(
+			{
+				measures: [
+					{
+						index: 0,
+						beats: 2,
+						tempoBpm: 120,
+						jumps: [],
+						systemRect: new Rect(0, 0, 1000, 100),
+					},
+				],
+				notes: [
+					{
+						note: {} as Note,
+						measureIndex: 0,
+						measureBeat: 0,
+						beats: 1,
+						x: 10,
+						tiedFrom: null,
+					},
+					{
+						note: {} as Note,
+						measureIndex: 0,
+						measureBeat: 1,
+						beats: 1,
+						x: 20,
+						tiedFrom: null,
+					},
+				],
+			},
+		);
 		const target = measureBox(new Rect(0, 0, 1000, 100));
 		const score = new Score(
 			host,

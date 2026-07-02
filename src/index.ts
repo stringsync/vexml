@@ -2,6 +2,8 @@ export type {
 	Config,
 	FontConfig,
 	FontOverride,
+	Gap,
+	GapStyle,
 	Layout,
 	MeasureNumbering,
 } from './config';
@@ -45,4 +47,4 @@ export {
 export { Playhead, type PlayheadOptions } from './playback/playhead';
 export { Sequence, type Step } from './playback/sequence';
 export { render } from './render';
-export { Score } from './score';
+export { type GapInfo, Score } from './score';

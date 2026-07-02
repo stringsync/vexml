@@ -34,7 +34,7 @@ function fourQuarters() {
 		x: 10 + i * 10,
 		tiedFrom: null,
 	}));
-	return new SequenceFactory(new ScoreReader()).createFromInput({
+	return new SequenceFactory(new ScoreReader(), []).createFromInput({
 		measures: [
 			{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
 		],

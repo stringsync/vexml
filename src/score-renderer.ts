@@ -8,11 +8,12 @@ import type { ElementFactory } from './elements/element-factory';
 import type { FontLoader } from './engraving/fonts';
 import type { LayoutPlanner } from './engraving/layout-planner';
 import type { RawGeometry, ScoreDrawer } from './engraving/score-drawer';
+import { gapDocumentIndexes, insertGapMeasures } from './gaps';
 import { Rect } from './geometry';
 import type { Scroller } from './host/scroll-controller';
 import type { Host } from './host/stage';
 import type { SequenceFactory } from './playback/sequence-factory';
-import { Score } from './score';
+import { type GapInfo, Score } from './score';
 import type { ScoreParser } from './score-parser';
 
 const EMPTY_GEOMETRY: RawGeometry = {
@@ -64,6 +65,11 @@ export class ScoreRenderer {
 		const mdoc = await this.parser.parse(input);
 
 		const parts = mdoc.score.parts;
+		// Gap measures go into the parsed document itself, so everything downstream
+		// (layout, draw, elements, sequence) sees them as ordinary empty measures.
+		if (this.config.gaps.length > 0 && parts.length > 0) {
+			insertGapMeasures(parts, this.config.gaps);
+		}
 		const geometry =
 			parts.length > 0
 				? this.scoreDrawer.draw(
@@ -94,12 +100,28 @@ export class ScoreRenderer {
 			geometry,
 			elements.noteLookup,
 		);
+		// Each gap's sync metadata, in config order (Score.getGaps' contract). A gap
+		// renders exactly one step; under repeats that's its first occurrence.
+		const gaps: GapInfo[] =
+			parts.length > 0
+				? gapDocumentIndexes(this.config.gaps).map(({ gap, measureIndex }) => {
+						const range = sequence.getStepRangeOfMeasure(measureIndex);
+						const step = range ? sequence.getStep(range.start) : null;
+						return {
+							measureIndex,
+							label: gap.label ?? null,
+							startMs: step?.startMs ?? 0,
+							endMs: step?.endMs ?? 0,
+						};
+					})
+				: [];
 		return new Score(
 			this.stage,
 			elements,
 			[decorations.color, decorations.halo],
 			sequence,
 			this.stage.scroller,
+			gaps,
 		);
 	}
 }

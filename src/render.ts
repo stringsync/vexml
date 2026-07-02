@@ -45,6 +45,6 @@ export function render(
 		new LayoutPlanner(translator, reader),
 		new ScoreDrawer(resolved, translator, reader, new SpannerBuilder()),
 		new ElementFactory(),
-		new SequenceFactory(reader),
+		new SequenceFactory(reader, resolved.gaps),
 	).render(input);
 }

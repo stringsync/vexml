@@ -220,7 +220,7 @@ function quarter(
 
 // createFromInput never touches the reader (only create() does), so a real stateless one is fine.
 function build(input: SequenceInput) {
-	return new SequenceFactory(new ScoreReader()).createFromInput(input);
+	return new SequenceFactory(new ScoreReader(), []).createFromInput(input);
 }
 
 describe('SequenceFactory', () => {
@@ -251,6 +251,58 @@ describe('SequenceFactory', () => {
 		expect(seq.getMeasureIndexAtMs(0)).toBe(0);
 		expect(seq.getMeasureIndexAtMs(2500)).toBe(1); // 2.5s in → measure 1
 		expect(seq.getMeasureIndexAtBeats(5)).toBe(1);
+	});
+
+	it('assembly: a gap measure plays for exactly gapMs, silent, and the next measure resumes the carried tempo', () => {
+		const a = fakeNote('a');
+		const b = fakeNote('b');
+		const seq = build({
+			measures: [
+				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
+				{
+					index: 1,
+					beats: 1,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: SYS,
+					gapMs: 5000,
+				},
+				{ index: 2, beats: 4, tempoBpm: null, jumps: [], systemRect: SYS },
+			],
+			notes: [
+				{
+					note: a,
+					measureIndex: 0,
+					measureBeat: 0,
+					beats: 4,
+					x: 10,
+					tiedFrom: null,
+				},
+				{
+					note: b,
+					measureIndex: 2,
+					measureBeat: 0,
+					beats: 4,
+					x: 210,
+					tiedFrom: null,
+				},
+			],
+		});
+
+		// Three steps: a's onset, the synthesized silent gap step, b's onset.
+		expect(seq.length).toBe(3);
+		const gap = seq.getStep(1);
+		expect(gap?.measureIndex).toBe(1);
+		expect(gap?.active).toEqual([]);
+		expect(gap?.startMs).toBeCloseTo(2000); // M0: 4 beats at 120bpm
+		expect(gap?.endMs).toBeCloseTo(7000); // + exactly gapMs, tempo-independent
+		// M2 resumes the carried 120bpm (the gap's segment never touches it).
+		expect(seq.getDurationMs()).toBeCloseTo(9000);
+		// Mid-gap time resolves to the gap measure; its step range is the single step.
+		expect(seq.getMeasureIndexAtMs(4000)).toBe(1);
+		expect(seq.getStepRangeOfMeasure(1)).toEqual({ start: 1, end: 1 });
+		// Everything sounding before the gap is released on entering it.
+		expect(seq.classify(0, 1).stopped).toEqual([a]);
 	});
 
 	it('assembly: a repeated measure replays its steps at later times, earliest-first lookup', () => {

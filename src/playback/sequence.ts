@@ -29,6 +29,10 @@ export interface MeasureInfo {
 	tempoBpm: number | null;
 	jumps: Jump[];
 	systemRect: Rect;
+	/** Set on a gap measure: it plays for exactly this many ms regardless of tempo
+	 * (its `beats` are nominal — the factory maps them to gapMs via a dedicated tempo
+	 * segment) and gets a synthesized silent step spanning it. */
+	gapMs?: number;
 }
 
 /* A rendered, time-bearing note (a notation notehead or rest — grace notes and tab ghosts are not
