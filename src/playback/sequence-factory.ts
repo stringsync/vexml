@@ -319,18 +319,41 @@ function jumpsOf(measure: Part['measures'][number]): Jump[] {
 	return jumps;
 }
 
-/* The note a tied note continues from (the start side of a tie ending here), or null. */
+/* Two notes at the same pitch (a tie's two ends always match). */
+function samePitch(a: MNote, b: MNote): boolean {
+	return (
+		!!a.pitch &&
+		!!b.pitch &&
+		a.pitch.step === b.pitch.step &&
+		a.pitch.octave === b.pitch.octave &&
+		a.pitch.alter === b.pitch.alter
+	);
+}
+
+/* The note a tied note continues from (the start side of a tie ending here), or null. mdom pairs a
+ * chord's ties by their shared <tied> number, so tie.partner lands on some member of the right chord
+ * but not necessarily the matching pitch; re-resolve to the same-pitch member (as the renderer does),
+ * so a tied chord links member-to-member instead of collapsing onto one note. */
 function tiedFromOf(
 	mnote: MNote,
 	notesByMnote: ReadonlyMap<MNote, Note>,
+	chordSiblings: ReadonlyMap<MNote, readonly MNote[]>,
 ): Note | null {
 	for (const tie of mnote.ties) {
-		if (tie.tieType === 'stop') {
-			const from = tie.partner?.note;
-			const target = from ? notesByMnote.get(from) : undefined;
-			if (target) {
-				return target;
-			}
+		if (tie.tieType !== 'stop') {
+			continue;
+		}
+		const partner = tie.partner?.note;
+		if (!partner) {
+			continue;
+		}
+		const member =
+			(chordSiblings.get(partner) ?? [partner]).find((n) =>
+				samePitch(n, mnote),
+			) ?? partner;
+		const target = notesByMnote.get(member);
+		if (target) {
+			return target;
 		}
 	}
 	return null;
@@ -523,6 +546,24 @@ export class SequenceFactory {
 			});
 		}
 
+		// Each note -> its chord's members, so a chord tie can re-resolve to the matching pitch. A
+		// non-<chord/> note starts a group; each following <chord/> member joins it (the array grows
+		// in place, so every member ends up referencing the whole chord).
+		const chordSiblings = new Map<MNote, readonly MNote[]>();
+		for (const part of parts) {
+			for (const measure of part.measures) {
+				let chord: MNote[] = [];
+				for (const n of measure.notes) {
+					if (n.isChordMember && chord.length > 0) {
+						chord.push(n);
+					} else {
+						chord = [n];
+					}
+					chordSiblings.set(n, chord);
+				}
+			}
+		}
+
 		const notes: SequenceNote[] = [];
 		for (const rn of geometry.notes) {
 			const note = notesByMnote.get(rn.mnote);
@@ -537,7 +578,7 @@ export class SequenceFactory {
 				measureBeat,
 				beats,
 				x: rn.rect.x,
-				tiedFrom: tiedFromOf(rn.mnote, notesByMnote),
+				tiedFrom: tiedFromOf(rn.mnote, notesByMnote, chordSiblings),
 			});
 		}
 

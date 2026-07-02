@@ -289,7 +289,7 @@ export default function App() {
 				};
 				cursor.addEventListener('change', (e) => {
 					setTimeMs(e.timeMs);
-					paint(e.active);
+					paint(e.highlighted);
 					// Release stopped notes; attack started ones (only while playing, so seeking/
 					// scrubbing stays silent). Stop before start so a re-strike re-attacks cleanly.
 					for (const n of e.stopped) {
@@ -309,7 +309,7 @@ export default function App() {
 						attack(n);
 					}
 				};
-				paint(cursor.getActiveElements());
+				paint(cursor.getHighlightedElements());
 				cursorRef.current = cursor;
 				setDurationMs(score.getDurationMs());
 				setTimeMs(0);

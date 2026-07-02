@@ -47,13 +47,16 @@ export interface ScoreEventMap {
 /* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch
  * shows in both `started` and `stopped`); `sustained` are notes held or tied through (do not
  * re-press); `stopped` are releases (a note tied into this step is excluded — it keeps ringing).
- * `active` is the full sounding set. `position` is the bar in score space, mappable to the page. */
+ * `active` is the full sounding set (onset-based — use for audio). `highlighted` is `active` plus any
+ * notes tied into them, so a tie chain stays lit until it releases — use for visual highlighting.
+ * `position` is the bar in score space, mappable to the page. */
 export interface CursorChangeEvent {
 	readonly timeMs: number;
 	readonly timeBeats: number;
 	readonly index: number;
 	readonly position: Bounded;
 	readonly active: readonly Note[];
+	readonly highlighted: readonly Note[];
 	readonly started: readonly Note[];
 	readonly sustained: readonly Note[];
 	readonly stopped: readonly Note[];

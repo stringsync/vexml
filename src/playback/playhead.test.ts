@@ -38,6 +38,7 @@ function changeAt(rect: Rect): CursorChangeEvent {
 		index: 0,
 		position: { rect, getBoundingClientRect: () => ({}) as DOMRect },
 		active: [],
+		highlighted: [],
 		started: [],
 		sustained: [],
 		stopped: [],

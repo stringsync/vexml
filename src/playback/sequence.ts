@@ -176,6 +176,10 @@ function classifyTransition<T>(
  * position->time).
  */
 export class Sequence {
+	// Undirected tie graph (built in the constructor from tiedFrom), so getHighlighted can light a
+	// whole tie chain in both directions while any of it is sounding.
+	private readonly tieAdjacency = new Map<Note, Note[]>();
+
 	constructor(
 		private readonly steps: Step[],
 		private readonly segments: readonly TempoSegment[],
@@ -184,7 +188,17 @@ export class Sequence {
 		private readonly tiedFrom: ReadonlyMap<Note, Note>,
 		private readonly firstStepOfNote: ReadonlyMap<Note, number>,
 		private readonly firstStepOfMeasure: ReadonlyMap<number, number>,
-	) {}
+	) {
+		const link = (a: Note, b: Note) => {
+			const edges = this.tieAdjacency.get(a) ?? [];
+			edges.push(b);
+			this.tieAdjacency.set(a, edges);
+		};
+		for (const [note, from] of tiedFrom) {
+			link(note, from);
+			link(from, note);
+		}
+	}
 
 	get length(): number {
 		return this.steps.length;
@@ -306,6 +320,29 @@ export class Sequence {
 		const prev = from === null ? null : (this.steps[from]?.active ?? null);
 		const next = this.steps[to]?.active ?? [];
 		return classifyTransition(prev, next, this.tiedFrom);
+	}
+
+	/* Notes to visually highlight at a step: its active set expanded across ties in both directions,
+	 * so a whole tie chain lights together while any note in it is sounding (an origin stays lit while
+	 * its continuation plays, and vice versa). Distinct from `active`/`classify`, which stay
+	 * onset-based so audio doesn't re-attack a tied-over voice. The caller blanks this once playback
+	 * is done. */
+	getHighlighted(index: number): readonly Note[] {
+		const active = this.steps[index]?.active;
+		if (!active) {
+			return [];
+		}
+		const lit = new Set<Note>(active);
+		const queue = [...active];
+		for (let note = queue.pop(); note; note = queue.pop()) {
+			for (const neighbor of this.tieAdjacency.get(note) ?? []) {
+				if (!lit.has(neighbor)) {
+					lit.add(neighbor);
+					queue.push(neighbor);
+				}
+			}
+		}
+		return [...lit];
 	}
 
 	/* The earliest step a note sounds in (its first occurrence under repeats), or null if unrendered. */

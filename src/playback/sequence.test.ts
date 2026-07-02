@@ -96,6 +96,29 @@ describe('Sequence', () => {
 		expect(r.stopped).toEqual([]);
 	});
 
+	it('getHighlighted: lights a whole tie chain from any member (both directions)', () => {
+		const seq = withActive([[A], [B]], new Map([[B, A]]));
+		expect(new Set(seq.getHighlighted(0))).toEqual(new Set([A, B]));
+		expect(new Set(seq.getHighlighted(1))).toEqual(new Set([A, B]));
+	});
+
+	it('getHighlighted: walks a whole tie chain from any member', () => {
+		const seq = withActive(
+			[[A], [B], [C]],
+			new Map([
+				[B, A],
+				[C, B],
+			]),
+		);
+		expect(new Set(seq.getHighlighted(0))).toEqual(new Set([A, B, C]));
+		expect(new Set(seq.getHighlighted(2))).toEqual(new Set([A, B, C]));
+	});
+
+	it('getHighlighted: leaves untied notes alone', () => {
+		const seq = withActive([[A, B]], new Map([[C, D]]));
+		expect(new Set(seq.getHighlighted(0))).toEqual(new Set([A, B]));
+	});
+
 	it('classify: same pitch without a tie is a retrigger (stop + start)', () => {
 		const seq = withActive([[A], [B]]);
 		const r = seq.classify(0, 1);

@@ -187,6 +187,13 @@ export class CursorController implements Listenable<CursorEventMap> {
 		return this.sequence.getStep(this.index)?.active ?? [];
 	}
 
+	/* Notes to highlight: the active set expanded across ties (a whole tie chain stays lit while any
+	 * of it sounds), blanked once playback is done so nothing stays lit past the end. Use this for
+	 * visuals; `getActiveElements` for audio. */
+	getHighlightedElements(): readonly Note[] {
+		return this.isDone() ? [] : this.sequence.getHighlighted(this.index);
+	}
+
 	isDone(): boolean {
 		return this.ms >= this.sequence.getDurationMs();
 	}
@@ -305,6 +312,7 @@ export class CursorController implements Listenable<CursorEventMap> {
 			index: this.index,
 			position: new CursorPosition(this.barRect(), this.host),
 			active: this.getActiveElements(),
+			highlighted: this.getHighlightedElements(),
 			started,
 			sustained,
 			stopped,

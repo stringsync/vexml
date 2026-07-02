@@ -153,4 +153,39 @@ describe('cursor', () => {
 			await page.close();
 		}
 	}, 30_000);
+
+	// A tied chord must light every member of the whole tie group while any of it sounds — mdom pairs
+	// a chord's ties by shared number, so the timeline re-resolves each to its same-pitch member. Seek
+	// into the 2nd (tied-to) chord; all four noteheads (both chords, C5 + E5 each) must be highlighted,
+	// and nothing once playback is done.
+	it('a tied chord highlights every member of the tie group', async () => {
+		const browser = await testBrowser();
+		const page = await browser.newPage({
+			viewport: { width: 900, height: 400 },
+		});
+		try {
+			await page.goto(TEST_URL);
+			const result = await page.evaluate(async () => {
+				const container = document.getElementById('screenshot');
+				if (!(container instanceof HTMLDivElement)) {
+					throw new Error('container not found');
+				}
+				const xml = await (await fetch('/data/tie_chord_dyad.musicxml')).text();
+				const score = await window.render(xml, container, {});
+				const cursor = score.createCursor();
+				const dur = score.getDurationMs();
+				cursor.seekMs(dur * 0.75); // within the 2nd chord's step
+				const sounding = cursor
+					.getHighlightedElements()
+					.map((n) => n.getPitch())
+					.sort();
+				cursor.seekMs(dur); // done
+				return { sounding, whenDone: cursor.getHighlightedElements().length };
+			});
+			expect(result.sounding).toEqual(['C/5', 'C/5', 'E/5', 'E/5']);
+			expect(result.whenDone).toBe(0);
+		} finally {
+			await page.close();
+		}
+	}, 30_000);
 });
