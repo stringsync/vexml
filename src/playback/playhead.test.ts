@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
+import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
 import type { Layer } from '../host/stage';
-import type { CursorChangeEvent } from './cursor-controller';
 import { Playhead } from './playhead';
 
 // A recording 2D context: captures fillRect calls and whether the bitmap was cleared.

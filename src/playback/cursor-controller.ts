@@ -1,6 +1,7 @@
 import type { Bounded } from '../elements/element';
 import type { Note } from '../elements/note';
 import { EventTarget, type Listenable } from '../event-target';
+import type { CursorChangeEvent, CursorEventMap } from '../events';
 import { Rect } from '../geometry';
 import type { Scroller } from '../host/scroll-controller';
 import type { Host } from '../host/stage';
@@ -15,35 +16,6 @@ import type { Sequence } from './sequence';
  * never draws (that's the CursorView, e.g. Playhead). Distinct from mdom's editing Cursor — this
  * never edits.
  */
-
-/* What changed entering the current position. `started` are (re)attacks (a re-struck pitch shows in
- * both `started` and `stopped`); `sustained` are notes held or tied through (do not re-press);
- * `stopped` are releases (a note tied into this step is excluded — it keeps ringing). `active` is the
- * full sounding set. `position` is the bar in score space, mappable to the page. */
-export interface CursorChangeEvent {
-	readonly timeMs: number;
-	readonly timeBeats: number;
-	readonly index: number;
-	readonly position: Bounded;
-	readonly active: readonly Note[];
-	readonly started: readonly Note[];
-	readonly sustained: readonly Note[];
-	readonly stopped: readonly Note[];
-	readonly done: boolean;
-}
-
-/* The cursor's bar crossed the viewport edge: `fullyVisible` is true when the whole bar sits inside
- * the viewport, false when any part is off-screen. Fires on a transition only — driven by the
- * cursor's own moves and by viewport scroll/resize (see CursorHost.viewportchange), so it also fires
- * while paused if the user scrolls the bar away. */
-export interface CursorVisibilityEvent {
-	readonly fullyVisible: boolean;
-}
-
-export interface CursorEventMap {
-	change: CursorChangeEvent;
-	visibility: CursorVisibilityEvent;
-}
 
 /* A visual for the cursor, driven by the cursor on every change. vexml ships a vertical-bar default
  * (Score.createPlayhead); a caller can implement this to move a DOM element, draw on a layer, etc.

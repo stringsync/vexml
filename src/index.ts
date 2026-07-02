@@ -26,6 +26,9 @@ export { Voice } from './elements/voice';
 export type { NoteGlyph } from './engraving/score-drawer';
 export type { Listenable } from './event-target';
 export type {
+	CursorChangeEvent,
+	CursorEventMap,
+	CursorVisibilityEvent,
 	HoverEvent,
 	PointerTargetEvent,
 	ScoreEventMap,
@@ -36,11 +39,8 @@ export { Rect } from './geometry';
 export type { Scroller } from './host/scroll-controller';
 export type { Layer, LayerKind } from './host/stage';
 export {
-	type CursorChangeEvent,
 	CursorController,
-	type CursorEventMap,
 	type CursorView,
-	type CursorVisibilityEvent,
 } from './playback/cursor-controller';
 export { Playhead, type PlayheadOptions } from './playback/playhead';
 export { Sequence, type Step } from './playback/sequence';

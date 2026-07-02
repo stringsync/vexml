@@ -1,4 +1,5 @@
-import type { Element } from './elements/element';
+import type { Bounded, Element } from './elements/element';
+import type { Note } from './elements/note';
 
 /* A pointer interaction over the score: the element under the pointer (null on empty space), the
  * pointer position in score space, and the raw DOM event for everything else (buttons, modifier
@@ -41,4 +42,34 @@ export interface ScoreEventMap {
 	hover: HoverEvent;
 	scroll: ScoreScrollEvent;
 	resize: ScoreResizeEvent;
+}
+
+/* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch
+ * shows in both `started` and `stopped`); `sustained` are notes held or tied through (do not
+ * re-press); `stopped` are releases (a note tied into this step is excluded — it keeps ringing).
+ * `active` is the full sounding set. `position` is the bar in score space, mappable to the page. */
+export interface CursorChangeEvent {
+	readonly timeMs: number;
+	readonly timeBeats: number;
+	readonly index: number;
+	readonly position: Bounded;
+	readonly active: readonly Note[];
+	readonly started: readonly Note[];
+	readonly sustained: readonly Note[];
+	readonly stopped: readonly Note[];
+	readonly done: boolean;
+}
+
+/* The cursor's bar crossed the viewport edge: `fullyVisible` is true when the whole bar sits inside
+ * the viewport, false when any part is off-screen. Fires on a transition only — driven by the
+ * cursor's own moves and by viewport scroll/resize, so it also fires while paused if the user
+ * scrolls the bar away. */
+export interface CursorVisibilityEvent {
+	readonly fullyVisible: boolean;
+}
+
+/* The events a CursorController dispatches, keyed by name. */
+export interface CursorEventMap {
+	change: CursorChangeEvent;
+	visibility: CursorVisibilityEvent;
 }

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import type { Note } from '../elements/note';
 import { ScoreReader } from '../engraving/score-reader';
 import { EventTarget } from '../event-target';
+import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
 import { FakeScroller } from '../testing/fake-scroller';
 import {
-	type CursorChangeEvent,
 	CursorController,
 	type CursorHost,
 	type CursorHostEventMap,

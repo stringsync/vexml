@@ -1,6 +1,7 @@
 import { CURSOR_COLOR, CURSOR_WIDTH_PX } from '../constants';
+import type { CursorChangeEvent } from '../events';
 import type { Layer } from '../host/stage';
-import type { CursorChangeEvent, CursorView } from './cursor-controller';
+import type { CursorView } from './cursor-controller';
 
 /*
  * vexml's built-in CursorView: a thin vertical bar spanning the system at the cursor's position,
