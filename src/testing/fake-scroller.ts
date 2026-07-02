@@ -8,10 +8,14 @@ import type { Scroller } from '../host/scroll-controller';
 export class FakeScroller implements Scroller {
 	readonly calls: Rect[] = [];
 	cancels = 0;
+	resizeSuspends = 0;
 	scrollIntoView(rect: Rect): void {
 		this.calls.push(rect);
 	}
 	cancel(): void {
 		this.cancels++;
+	}
+	suspendForResize(): void {
+		this.resizeSuspends++;
 	}
 }

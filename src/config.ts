@@ -65,6 +65,9 @@ export type Layout =
 			type: 'panoramic';
 	  };
 
+/** Whether and where to draw stems on tablature notes. */
+export type TabStemPlacement = 'none' | 'above' | 'below';
+
 /** When to print measure numbers above the staff. */
 export type MeasureNumbering =
 	| 'none'
@@ -116,6 +119,19 @@ export type Config = {
 	/** Print the "sl." label on tablature slides (default: false). The slide line always
 	 * draws; this only toggles the label above it. */
 	showTabSlideText: boolean;
+	/** Draw stems (and flags) on tablature notes (default: 'none'). 'none' gives the usual
+	 * bare fret numbers; 'above' draws a rhythm stem above each fret, 'below' below it — useful
+	 * for a lone tab stave with no paired notation. Beams are not drawn — short notes get
+	 * individual flags. */
+	tabStemPlacement: TabStemPlacement;
+	/** Render tablature staves (default: true). When false, every TAB stave is dropped: a
+	 * notation+tab guitar part collapses to its notation staff alone (no bracket), and a
+	 * tab-only part disappears entirely. Notation staves are unaffected. */
+	showTabs: boolean;
+	/** Render standard notation staves (default: true). When false, every notation stave is
+	 * dropped: a notation+tab guitar part collapses to its TAB stave alone (no bracket), and a
+	 * notation-only part disappears entirely. Tablature staves are unaffected. */
+	showNotation: boolean;
 	/** Fraction (0–1) of the reference width the last system's measures must already fill
 	 * before it is justified to the page edge (default: 0.75). Below it the trailing line
 	 * stays ragged at its natural width; at or above it the line stretches to fill, so a
@@ -171,6 +187,9 @@ export const DEFAULT_CONFIG: Config = {
 	measureNumbering: 'system',
 	showTabHammerPullText: false,
 	showTabSlideText: false,
+	tabStemPlacement: 'none',
+	showTabs: true,
+	showNotation: true,
 	stretchSingleSystem: true,
 	minLastSystemFill: 0.75,
 	maxSystemFill: 0.9,

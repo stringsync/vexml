@@ -114,6 +114,19 @@ export const TAB_TIE_CP2 = 12;
  * the system's left line with a small gap. */
 export const BRACKET_X_SHIFT = 3;
 
+/** How far a bracket's bar and curl glyphs reach left of the (already shifted) stave x —
+ * vexflow insets them ~5px more, plus a hair of glyph overhang. Reserved so a system-start
+ * measure box grows to contain the bracket instead of clipping it. */
+export const BRACKET_GLYPH_OVERHANG = 8;
+
+/** How far a bracket's curls overhang past the top/bottom staff lines (vexflow raises the
+ * top and drops the bottom ~6px, plus glyph height). Reserved for the measure box. */
+export const CONNECTOR_VERTICAL_OVERHANG = 10;
+
+/** How far a brace (grand staff connector) reaches left of the stave x — vexflow draws it
+ * ~14px out. Reserved so a braced part's system-start measure box contains it. */
+export const BRACE_LEFT_OVERHANG = 14;
+
 /** Chord-symbol (from `<harmony>`) text size — a touch smaller than the part label so it
  * reads as an annotation above the notes. */
 export const HARMONY_FONT_SIZE = 13;
@@ -220,6 +233,11 @@ export const SMOOTH_SCROLL_SETTLE_MS = 500;
 
 /** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
 export const SCROLL_TOP_PADDING_PX = 16;
+
+/** How long the scroll box must go without a resize before the ScrollController resumes scrolling.
+ * A resize arrives as a burst of ResizeObserver callbacks; scrolling mid-burst targets stale
+ * geometry, so we suspend and only resume once the size holds still this long. */
+export const RESIZE_SETTLE_MS = 150;
 
 /** How far a note's activity halo extends past the notehead's half-extent, so the note sits evenly
  * inside the circle. */

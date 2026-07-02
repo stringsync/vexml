@@ -1,4 +1,8 @@
-import { SCROLL_TOP_PADDING_PX, SMOOTH_SCROLL_SETTLE_MS } from '../constants';
+import {
+	RESIZE_SETTLE_MS,
+	SCROLL_TOP_PADDING_PX,
+	SMOOTH_SCROLL_SETTLE_MS,
+} from '../constants';
 import type { Rect } from '../geometry';
 
 /* Scrolls a score-space rect into the viewport. vexml's Stage provides one (Score.scroller); a caller
@@ -40,11 +44,33 @@ export class ScrollController implements Scroller {
 		behavior: ScrollBehavior;
 	} | null = null;
 
+	// While a resize burst is in flight, scrolling targets stale geometry, so scrollIntoView is a
+	// no-op until the size holds still for RESIZE_SETTLE_MS. This timer is the debounce.
+	private resizeSettleTimer: ReturnType<typeof setTimeout> | null = null;
+
 	constructor(private readonly host: ScrollHost) {}
+
+	/* Suspend scrolling for a resize: cancel any in-flight scroll and drop new scrollIntoView calls
+	 * until the container size stops changing. Call once per ResizeObserver callback — each call
+	 * restarts the debounce, so scrolling only resumes RESIZE_SETTLE_MS after the last resize. */
+	suspendForResize(): void {
+		if (!this.resizeSettleTimer) {
+			this.cancel();
+		}
+		if (this.resizeSettleTimer) {
+			clearTimeout(this.resizeSettleTimer);
+		}
+		this.resizeSettleTimer = setTimeout(() => {
+			this.resizeSettleTimer = null;
+		}, RESIZE_SETTLE_MS);
+	}
 
 	// Scroll the container so a score-space rect is visible, moving only the axis that's off-screen.
 	// The rect maps to the container's scroll content through the base canvas's offset and CSS scale.
 	scrollIntoView(rect: Rect, opts?: { behavior?: ScrollBehavior }): void {
+		if (this.resizeSettleTimer) {
+			return;
+		}
 		const { sx, sy } = this.host.frame();
 		const base = this.host.baseOffset();
 		const left = base.left + rect.x * sx;
@@ -123,11 +149,15 @@ export class ScrollController implements Scroller {
 		this.host.scrollTo({ left, top, behavior: 'instant' });
 	}
 
-	// Clears the settle timer without touching the scroll position (Stage.dispose calls it).
+	// Clears the settle timers without touching the scroll position (Stage.dispose calls it).
 	dispose(): void {
 		if (this.smoothScrollTimer) {
 			clearTimeout(this.smoothScrollTimer);
 			this.smoothScrollTimer = null;
+		}
+		if (this.resizeSettleTimer) {
+			clearTimeout(this.resizeSettleTimer);
+			this.resizeSettleTimer = null;
 		}
 	}
 }

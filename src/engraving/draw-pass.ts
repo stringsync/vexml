@@ -28,11 +28,14 @@ import {
 } from 'vexflow';
 import type { Config, Gap, MeasureNumbering } from '../config';
 import {
+	BRACE_LEFT_OVERHANG,
+	BRACKET_GLYPH_OVERHANG,
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
+	CONNECTOR_VERTICAL_OVERHANG,
 	FRET_HALF_H,
 	FRET_HALF_W,
 	GAP_LABEL_FONT_SIZE,
@@ -66,6 +69,7 @@ import { findModifier, type NoteTranslator } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
+import { visibleStaffNumbers } from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -89,7 +93,15 @@ function timeSignatureSpec(time: Time | null): string | null {
  * True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
  * the guitar notation+tab pairing, which is bracketed rather than braced by convention.
  */
-function pairsTabWithNotation(part: Part): boolean {
+function pairsTabWithNotation(
+	part: Part,
+	showTabs: boolean,
+	showNotation: boolean,
+): boolean {
+	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
+	if (!showTabs || !showNotation) {
+		return false;
+	}
 	const measure = part.measures[0];
 	if (!measure) {
 		return false;
@@ -111,8 +123,13 @@ function pairsTabWithNotation(part: Part): boolean {
  * of pairsTabWithNotation. Only meaningful for multi-part systems — a single
  * notation+tab part already brackets itself via partSymbol.
  */
-function partsPairTabWithNotation(parts: Part[]): boolean {
-	if (parts.length < 2) {
+function partsPairTabWithNotation(
+	parts: Part[],
+	showTabs: boolean,
+	showNotation: boolean,
+): boolean {
+	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
+	if (!showTabs || !showNotation || parts.length < 2) {
 		return false;
 	}
 	const signs: string[] = [];
@@ -138,10 +155,16 @@ function partsPairTabWithNotation(parts: Part[]): boolean {
  * guitar notation+tab pair brackets by convention and everything else (piano grand
  * staves, …) braces.
  */
-function partSymbol(part: Part): 'brace' | 'bracket' | null {
+function partSymbol(
+	part: Part,
+	showTabs: boolean,
+	showNotation: boolean,
+): 'brace' | 'bracket' | null {
 	const symbol = part.partSymbol;
 	if (symbol === null) {
-		return pairsTabWithNotation(part) ? 'bracket' : 'brace';
+		return pairsTabWithNotation(part, showTabs, showNotation)
+			? 'bracket'
+			: 'brace';
 	}
 	if (symbol === 'none') {
 		return null;
@@ -231,6 +254,10 @@ export class DrawPass {
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly showTabHammerPullText: boolean;
 	private readonly showTabSlideText: boolean;
+	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
+	private readonly showTabs: boolean;
+	// When false, notation staves are dropped the same way tab staves are.
+	private readonly showNotation: boolean;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
 
@@ -365,6 +392,8 @@ export class DrawPass {
 		this.measureNumbering = measureNumbering;
 		this.showTabHammerPullText = showTabHammerPullText;
 		this.showTabSlideText = showTabSlideText;
+		this.showTabs = config.showTabs;
+		this.showNotation = config.showNotation;
 		this.gaps = gapsByMeasureIndex(config.gaps);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
@@ -426,10 +455,17 @@ export class DrawPass {
 		this.wordsTasks = [];
 
 		for (const part of this.parts) {
-			const staveCount = Math.max(part.staveCount, 1);
+			// The staves this part actually renders: with showTabs/showNotation off, its
+			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
+			// layout planner built from this same visible set, so the two stay aligned.
+			const staves = visibleStaffNumbers(
+				part,
+				this.showTabs,
+				this.showNotation,
+			);
 			const measure = part.measures[m];
 			if (!measure) {
-				this.staveRow += staveCount;
+				this.staveRow += staves.length;
 				continue;
 			}
 
@@ -437,8 +473,14 @@ export class DrawPass {
 			let partBottom: Stave | undefined;
 			this.pendingStaves = [];
 
-			for (let s = 0; s < staveCount; s++) {
-				const stave = this.buildStave(part, measure, m, s, staveCount);
+			for (const staffNumber of staves) {
+				const stave = this.buildStave(
+					part,
+					measure,
+					m,
+					staffNumber,
+					staves.length,
+				);
 				partTop ??= stave;
 				partBottom = stave;
 			}
@@ -497,11 +539,11 @@ export class DrawPass {
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
-			const symbol = partSymbol(part);
+			const symbol = partSymbol(part, this.showTabs, this.showNotation);
 			if (
 				partTop &&
 				partBottom &&
-				staveCount > 1 &&
+				staves.length > 1 &&
 				this.isSystemStart &&
 				symbol
 			) {
@@ -559,7 +601,7 @@ export class DrawPass {
 		);
 		this.pageTop = Math.min(this.pageTop, noteExtent.top);
 
-		this.collectGeometry(m);
+		this.collectGeometry(m, noteExtent.top);
 		this.drawGapOverlay(m);
 
 		if (noteExtent.top < Infinity) {
@@ -596,17 +638,17 @@ export class DrawPass {
 	}
 
 	/*
-	 * One iteration of the stave loop: build measure `m`'s stave for part-staff `s`
+	 * One iteration of the stave loop: build measure `m`'s stave for the given part-staff
 	 * (clef/key/time/barlines), draw it, and queue its notes for the system format.
+	 * `visibleCount` is how many staves the part renders (tab/notation staves may be hidden).
 	 */
 	private buildStave(
 		part: Part,
 		measure: Measure,
 		m: number,
-		s: number,
-		staveCount: number,
+		staffNumber: string,
+		visibleCount: number,
 	): Stave {
-		const staffNumber = String(s + 1);
 		const clef = measure.getClef(staffNumber);
 		const staveY = this.systemY + (this.staveOffsets[this.staveRow] ?? 0);
 
@@ -692,8 +734,9 @@ export class DrawPass {
 		// placement. The number prints once (measureNumbered), on the top stave.
 		const numberOccluded =
 			this.isSystemStart &&
-			((staveCount > 1 && partSymbol(part) === 'bracket') ||
-				partsPairTabWithNotation(this.parts));
+			((visibleCount > 1 &&
+				partSymbol(part, this.showTabs, this.showNotation) === 'bracket') ||
+				partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation));
 		if (this.showMeasureNumber && !this.measureNumbered && !numberOccluded) {
 			stave.setMeasure(Number(measure.number));
 			this.measureNumbered = true;
@@ -1179,7 +1222,7 @@ export class DrawPass {
 	 * final). Each notehead/fret maps back to its mdom note; measure boxes back each
 	 * measure's staff column. Still scratch space — shifted to score space by the caller.
 	 */
-	private collectGeometry(m: number): void {
+	private collectGeometry(m: number, contentTop: number): void {
 		for (const p of this.systemPending) {
 			if (p.isTab) {
 				const tabStave = p.stave as TabStave;
@@ -1288,18 +1331,79 @@ export class DrawPass {
 			}
 		}
 		if (this.systemTop && this.systemBottom) {
+			// The box spans the staff column, then grows to enclose whatever escapes it: notes
+			// that rise above the top staff line (contentTop) and, at a system start, the stave
+			// connector, which draws left of the staves and (for a bracket) overhangs them top
+			// and bottom. Otherwise a high note or the bracket clips out of the measure's box —
+			// and the playback cursor that rides it. contentTop is Infinity when the measure has
+			// no notes, so it never shrinks the box.
+			const connector = this.connectorExtent();
+			const left = Math.min(this.measureX, connector?.left ?? Infinity);
+			const right = this.measureX + this.measureWidth;
+			const top = Math.min(
+				this.systemY,
+				contentTop,
+				connector?.top ?? Infinity,
+			);
+			const bottom = Math.max(
+				this.systemContentBottom,
+				connector?.bottom ?? -Infinity,
+			);
 			this.rawMeasures.push({
-				rect: new Rect(
-					this.measureX,
-					this.systemY,
-					this.measureWidth,
-					Math.max(0, this.systemContentBottom - this.systemY),
-				),
+				rect: new Rect(left, top, right - left, Math.max(0, bottom - top)),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
 				systemIndex: this.systemIndex,
 			});
 		}
+	}
+
+	/*
+	 * The extent of the stave connector drawn at a system start (a bracket or brace joining a
+	 * part's staves, or a notation+tab pair across parts), so the system-start measure box can
+	 * grow to contain it. vexflow draws a bracket just left of the stave (BRACKET_X_SHIFT),
+	 * insetting its bar/curl glyphs a little further and overhanging the curls past the top and
+	 * bottom staff lines; a brace reaches further left but stays within the staff lines
+	 * vertically. Returns null away from a system start, or when the only connector is the plain
+	 * left line (which sits on measureX — already the box's left edge).
+	 */
+	private connectorExtent(): {
+		left: number;
+		top: number;
+		bottom: number;
+	} | null {
+		if (!this.isSystemStart || !this.systemTop || !this.systemBottom) {
+			return null;
+		}
+		let bracket = partsPairTabWithNotation(
+			this.parts,
+			this.showTabs,
+			this.showNotation,
+		);
+		let brace = false;
+		for (const part of this.parts) {
+			if (
+				visibleStaffNumbers(part, this.showTabs, this.showNotation).length <= 1
+			) {
+				continue;
+			}
+			const symbol = partSymbol(part, this.showTabs, this.showNotation);
+			bracket ||= symbol === 'bracket';
+			brace ||= symbol === 'brace';
+		}
+		const top = this.systemTop.getYForLine(0);
+		const bottom = this.systemBottom.getBottomLineY();
+		if (bracket) {
+			return {
+				left: this.measureX - BRACKET_X_SHIFT - BRACKET_GLYPH_OVERHANG,
+				top: top - CONNECTOR_VERTICAL_OVERHANG,
+				bottom: bottom + CONNECTOR_VERTICAL_OVERHANG,
+			};
+		}
+		if (brace) {
+			return { left: this.measureX - BRACE_LEFT_OVERHANG, top, bottom };
+		}
+		return null;
 	}
 
 	/*
@@ -1646,7 +1750,9 @@ export class DrawPass {
 					.setType('singleLeft')
 					.setContext(this.context)
 					.draw();
-				if (partsPairTabWithNotation(this.parts)) {
+				if (
+					partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation)
+				) {
 					// The bracket's x comes entirely from its top stave; nudge that 4px left
 					// so the bracket sits just outside the system line with a small gap, then
 					// restore.

@@ -9,13 +9,17 @@ renders in the pinned Docker image — that image is the source of pixel determi
 - **setup.ts** — one shared browser + server for the whole run, a `toMatchScreenshot`
   matcher (pixel-diffs a PNG against `__screenshots__/`, writes diffs to `__diffs__/`,
   regenerates baselines under `UPDATE_SCREENSHOTS=1`), and a **page pool**.
-- **harness.ts** — `render(file, config)`: borrows a pooled page, renders a corpus file, and
-  returns the screenshot PNG. Defaults both fonts to the system families (see below).
+- **harness.ts** — `renderTest(file, config, fn?, arg?)`: borrows a pooled page, renders a
+  corpus file, runs `fn(score, container, arg)` in the browser, and returns
+  `{ result, png }`. `fn` crosses into the page via `toString()`, so it must be
+  self-contained — no closing over test-scope variables; thread values through `arg`.
+  `render(file, config)` is the screenshot-only shorthand. Both default the fonts to the
+  system families (see below).
 
 ## Page pool
 
 Each pooled page is navigated once and reused, so a test skips the per-test
-`newPage()` + `goto()` cost. This lets `test.concurrent` renders run in parallel on separate
+`newPage()` + `goto()` cost. This lets `it.concurrent` renders run in parallel on separate
 pages; `POOL_SIZE` caps how many. Borrow with `withPage`.
 
 ## Determinism

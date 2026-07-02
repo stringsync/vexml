@@ -62,13 +62,18 @@ export class Score implements Listenable<ScoreEventMap> {
 		private readonly elements: ElementIndex,
 		private readonly decorations: readonly { dispose(): void }[],
 		private readonly sequence: Sequence,
-		private readonly scroller: Scroller & { cancel(): void },
+		private readonly scroller: Scroller & {
+			cancel(): void;
+			suspendForResize(): void;
+		},
 		private readonly gaps: readonly GapInfo[] = [],
 	) {
 		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
 		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
 		// resize handler lands on a correctly sized, cleared surface.
 		this.unobserveResize = host.observeResize((size) => {
+			// Suspend scrolling for the duration of the resize burst; it resumes once the size settles.
+			this.scroller.suspendForResize();
 			host.relayoutLayers();
 			this.target.dispatchEvent('resize', size);
 		});

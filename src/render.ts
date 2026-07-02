@@ -35,7 +35,7 @@ export function render(
 	});
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
-	const translator = new NoteTranslator();
+	const translator = new NoteTranslator(resolved.tabStemPlacement);
 	const reader = new ScoreReader();
 	return new ScoreRenderer(
 		resolved,

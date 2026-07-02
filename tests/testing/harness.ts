@@ -1,4 +1,4 @@
-import type { Config } from '@stringsync/vexml';
+import type { Config, Score } from '@stringsync/vexml';
 import { withPage } from './setup';
 
 // ponytail: mirrors src DEFAULT_WIDTH — the public API doesn't expose it, so tests
@@ -10,11 +10,28 @@ const DEFAULT_WIDTH = 900;
 // layout deterministically. The browser and page server are shared across the whole run
 // (see setup.ts) — launching a second Chromium per file is flaky in Docker.
 
-/** Render a corpus file in the browser and return its screenshot PNG. */
-export async function render(
+/**
+ * A test's browser-side function. It is serialized into the page via toString(), so it
+ * must be self-contained: no closing over test-scope variables — thread values through
+ * `arg` (which must be structured-cloneable) instead.
+ */
+type BrowserFn<A, T> = (
+	score: Score,
+	container: HTMLDivElement,
+	arg: A,
+) => T | Promise<T>;
+
+/**
+ * Render a corpus file on a pooled page, run `fn` against the live Score in the browser,
+ * and screenshot the container. Tests that only want pixels ignore `result`; tests that
+ * only want data ignore `png`.
+ */
+export async function renderTest<T = undefined, A = undefined>(
 	file: string,
 	config: Partial<Config>,
-): Promise<Buffer> {
+	fn?: BrowserFn<A, T>,
+	arg?: A,
+): Promise<{ result: T; png: Buffer }> {
 	const width =
 		(config.layout?.type === 'standard'
 			? config.layout.referenceWidth
@@ -34,8 +51,8 @@ export async function render(
 	};
 	return withPage(async (page) => {
 		await page.setViewportSize({ width: width + 64, height: 600 });
-		await page.evaluate(
-			async ({ file, config }) => {
+		const result = (await page.evaluate(
+			async ({ file, config, fnSrc, arg }) => {
 				const res = await fetch(`/data/${file}`);
 				const input = file.endsWith('.mxl')
 					? await res.blob()
@@ -45,10 +62,26 @@ export async function render(
 					throw new Error('container not found');
 				}
 				container.replaceChildren(); // clear the previous test's render
-				await window.render(input, container, config);
+				container.removeAttribute('style'); // and any styles it set (pages are pooled)
+				const score = await window.render(input, container, config);
+				if (!fnSrc) {
+					return undefined;
+				}
+				// Rehydrate the test's function; it crossed the boundary as source text.
+				const fn = new Function(`return (${fnSrc})`)();
+				return await fn(score, container, arg);
 			},
-			{ file, config: resolved },
-		);
-		return page.locator('#screenshot').screenshot();
+			{ file, config: resolved, fnSrc: fn?.toString(), arg },
+		)) as T;
+		const png = await page.locator('#screenshot').screenshot();
+		return { result, png };
 	});
+}
+
+/** Render a corpus file in the browser and return its screenshot PNG. */
+export async function render(
+	file: string,
+	config: Partial<Config>,
+): Promise<Buffer> {
+	return (await renderTest(file, config)).png;
 }
