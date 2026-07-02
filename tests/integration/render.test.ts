@@ -532,6 +532,15 @@ const TEST_CASES = [
 	//   augmentation dot each.
 	// - M2: double dots — double-dotted-quarter + sixteenth pairs; the two long notes carry
 	//   two augmentation dots each.
+	// - M3: a triplet — a beamed eighth-note triplet ("3") then a dotted half. The three
+	//   triplet frets sit under their three triplet noteheads, proving the tuplet's
+	//   time-modification compresses the TAB stave the same as the notation stave.
+	// - M4: a triplet opening on a held (tied-into) note — measure 25 of the jazz corpus.
+	//   Beat 1 is an eighth + tied eighth (F4/frets 0,1); the tie carries into the triplet's
+	//   first note, so the TAB omits that fret (no re-strike). The omitted note still owns the
+	//   triplet's opening slot, so the two struck frets after it (G4/fret 3, A4/fret 5) stay
+	//   compressed under their triplet noteheads instead of drifting right under the following
+	//   quarter and rest.
 	testCase('tab_notation_durations.musicxml', 'tab_notation_durations.png'),
 
 	// Tuplets on C5.

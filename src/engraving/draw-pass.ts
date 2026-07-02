@@ -11,6 +11,7 @@ import {
 	Barline,
 	Bend,
 	Formatter,
+	GhostNote,
 	GraceNoteGroup,
 	Modifier,
 	type RenderContext,
@@ -19,6 +20,7 @@ import {
 	type StaveNote,
 	StaveTempo,
 	Stem,
+	type StemmableNote,
 	type TabNote,
 	TabStave,
 	Vibrato,
@@ -832,6 +834,11 @@ export class DrawPass {
 	private buildTabNotes(stave: TabStave, voices: ScoreVoice[]): PendingStave {
 		const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
 		const graceTabChords: Array<{ note: TabNote; chord: Chord }> = [];
+		// lead -> its tab tickable, held-note ghosts included — unlike byTabLead, which holds
+		// only struck TabNotes (buildHammerPulls reads their getPositions()). buildTuplets
+		// rescales over this map, so a tuplet that opens on a held (fretless) note still
+		// compresses the frets after it instead of letting them drift out from under the beam.
+		const byTabTickable = new Map<Note, StemmableNote>();
 		const vexVoices = voices.map((voice) => {
 			const chords = voice.chords;
 			const chordByLead = new Map<Note, Chord>();
@@ -839,7 +846,12 @@ export class DrawPass {
 				chordByLead.set(chord.lead, chord);
 			}
 			return this.translator.softVoice(
-				this.translator.vexflowTabTickables(chords, (lead, tabNote) => {
+				this.translator.vexflowTabTickables(chords, (lead, tickable) => {
+					byTabTickable.set(lead, tickable);
+					if (tickable instanceof GhostNote) {
+						return;
+					}
+					const tabNote = tickable as TabNote;
 					this.byTabLead.set(lead, tabNote);
 					const chord = chordByLead.get(lead);
 					if (chord) {
@@ -857,7 +869,7 @@ export class DrawPass {
 		// tab frets stay aligned under their notation notes. The bracket/number is drawn
 		// on the notation staff, so these aren't kept for drawing.
 		for (const voice of voices) {
-			this.spanners.buildTuplets(voice.chords, this.byTabLead);
+			this.spanners.buildTuplets(voice.chords, byTabTickable);
 		}
 		return {
 			stave,

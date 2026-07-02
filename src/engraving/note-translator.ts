@@ -600,7 +600,7 @@ export class NoteTranslator {
 	 */
 	vexflowTabTickables(
 		chords: Chord[],
-		record?: (lead: Note, tabNote: TabNote) => void,
+		record?: (lead: Note, tickable: StemmableNote) => void,
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];
 		let pendingGrace: { note: GraceTabNote; lead: Note }[] = [];
@@ -614,11 +614,28 @@ export class NoteTranslator {
 				continue;
 			}
 			// A wholly tied-into (held) chord re-strikes no string, so guitar tab convention
-			// omits every fret. Reserve its time with invisible ghosts (keeping the tab aligned
-			// with the notation stave, which still draws the tied noteheads) rather than printing
-			// the held frets.
+			// omits every fret. Reserve its time with invisible ghosts (keeping the tab
+			// aligned with the notation stave, which still draws the tied noteheads) rather
+			// than printing the held frets.
 			if (chord.notes.every(isTieStop)) {
-				tickables.push(...ghostNotes(chord.lead.beats ?? 0));
+				if (chord.lead.timeModification) {
+					// A held note inside a tuplet: reserve it as ONE duration-coded ghost and
+					// `record` it, so buildTuplets rescales this lone tickable with the tuplet —
+					// a triplet that opens on a tied note (measure 25 of the jazz corpus) must
+					// compress the frets after it or they drift right. ghostNotes can't stand in:
+					// a tuplet-sized hole isn't dyadic, so it would drop a sub-128th remainder.
+					const ghost = new GhostNote({
+						duration: durationCode(chord.lead),
+						dots: chord.lead.dots,
+					});
+					tickables.push(ghost);
+					record?.(chord.lead, ghost);
+				} else {
+					// Outside a tuplet, keep the dyadic gap-fill: collapsing a compound duration
+					// (e.g. a dotted held note) into one ghost would shift the softmax spacing of
+					// neighboring notes (see grace_spacing).
+					tickables.push(...ghostNotes(chord.lead.beats ?? 0));
+				}
 				continue;
 			}
 			const tabNote = this.vexflowTabChord(chord);

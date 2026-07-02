@@ -8,6 +8,7 @@ import {
 	type StaveNote,
 	StaveTie,
 	Stem,
+	type StemmableNote,
 	type TabNote,
 	TabSlide,
 	TabTie,
@@ -150,7 +151,7 @@ export class SpannerBuilder {
 	 * (the inner notes carry no marker), so slice the chord run by index. The ratio
 	 * comes from the start note's <time-modification> (e.g. 3:2 -> "3").
 	 */
-	buildTuplets<T extends StaveNote | TabNote>(
+	buildTuplets<T extends StemmableNote>(
 		chords: Chord[],
 		byLead: Map<Note, T>,
 	): Tuplet[] {
