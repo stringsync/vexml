@@ -104,7 +104,14 @@ export function Player({
 						value={timeMs}
 						onChange={(e) => {
 							setPlaying(false);
-							cursorRef.current?.seekMs(Number(e.target.value));
+							const cursor = cursorRef.current;
+							if (!cursor) {
+								return;
+							}
+							cursor.seekMs(Number(e.target.value));
+							if (!cursor.isFullyVisible()) {
+								cursor.scrollIntoView({ behavior: 'smooth' });
+							}
 						}}
 						onPointerMove={(e) => {
 							const rect = e.currentTarget.getBoundingClientRect();
