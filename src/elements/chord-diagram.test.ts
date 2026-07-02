@@ -2,37 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { MDOMParser, MElement } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import { FakeDecoration } from '../testing/fake-decoration';
+import { FakeViewport } from '../testing/fake-viewport';
 import { ChordDiagram } from './chord-diagram';
-import {
-	type Decoratable,
-	type Decoration,
-	isHighlightable,
-	isPlayable,
-} from './element';
-
-class FakeViewport implements Viewport {
-	clientRectOf(rect: Rect): DOMRect {
-		return { x: rect.x, y: rect.y, width: rect.w, height: rect.h } as DOMRect;
-	}
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
-		return { x: clientX, y: clientY };
-	}
-}
-
-class FakeDecoration implements Decoration {
-	readonly active = new Map<Decoratable, string>();
-	set(target: Decoratable, color: string | null): void {
-		if (color === null) {
-			this.active.delete(target);
-		} else {
-			this.active.set(target, color);
-		}
-	}
-	has(target: Decoratable): boolean {
-		return this.active.has(target);
-	}
-}
+import { isHighlightable, isPlayable } from './element';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

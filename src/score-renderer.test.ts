@@ -10,18 +10,13 @@ import { ScoreDrawer } from './engraving/score-drawer';
 import { ScoreReader } from './engraving/score-reader';
 import { SpannerBuilder } from './engraving/spanner-builder';
 import type { Rect } from './geometry';
-import type { Scroller } from './host/scroll-controller';
 import type { Layer, LayerKind } from './host/stage';
 import { SequenceFactory } from './playback/sequence-factory';
 import type { ScoreParser } from './score-parser';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
+import { FakeScroller } from './testing/fake-scroller';
 
 // Separate fake classes fulfilling the injected seams (preferred over mocks).
-
-class FakeScroller implements Scroller {
-	scrollIntoView(): void {}
-	cancel(): void {}
-}
 
 // A headless stage: no DOM. The empty-parts path never touches container/base, so inert
 // placeholders are enough; the Host surface mirrors score.test.ts's fake.

@@ -8,7 +8,7 @@ export type ChordNote = [number, number | 'x'];
 export type Barre = { fromString: number; toString: number; fret: number };
 
 /** Everything a {@link ChordDiagramGlyph} needs: the chord data plus optional styling. */
-export type ChordDiagramOptions = {
+export type ChordDiagramGlyphOptions = {
 	/** The fretted notes: one `[string, fret]` pair per played/muted string. */
 	chord: ChordNote[];
 	/** Absolute fret of the top displayed fret line; drawn as a label when > 1. */
@@ -44,13 +44,13 @@ export type ChordDiagramOptions = {
  * geometry is known. Merged with styling to build a diagram.
  */
 export type ChordFrame = Pick<
-	ChordDiagramOptions,
+	ChordDiagramGlyphOptions,
 	'chord' | 'position' | 'positionText' | 'barres'
 >;
 
 /** The defaultable styling subset — every field gets a fallback in the constructor. */
 type ChordStyle = Pick<
-	ChordDiagramOptions,
+	ChordDiagramGlyphOptions,
 	| 'width'
 	| 'height'
 	| 'stringCount'
@@ -85,7 +85,7 @@ export class ChordDiagramGlyph {
 	constructor(
 		private readonly x: number,
 		private readonly y: number,
-		options: ChordDiagramOptions,
+		options: ChordDiagramGlyphOptions,
 	) {
 		this.opts = {
 			width: 100,

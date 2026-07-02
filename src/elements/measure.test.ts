@@ -1,18 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import { FakeViewport } from '../testing/fake-viewport';
 import { isHighlightable, isPlayable } from './element';
 import { Measure } from './measure';
-
-class FakeViewport implements Viewport {
-	clientRectOf(rect: Rect): DOMRect {
-		return { x: rect.x, y: rect.y, width: rect.w, height: rect.h } as DOMRect;
-	}
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
-		return { x: clientX, y: clientY };
-	}
-}
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

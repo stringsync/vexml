@@ -3,7 +3,7 @@ import type { Note } from '../elements/note';
 import { ScoreReader } from '../engraving/score-reader';
 import { EventTarget } from '../event-target';
 import { Rect } from '../geometry';
-import type { Scroller } from '../host/scroll-controller';
+import { FakeScroller } from '../testing/fake-scroller';
 import {
 	type CursorChangeEvent,
 	CursorController,
@@ -40,17 +40,6 @@ function fourQuarters() {
 		],
 		notes,
 	});
-}
-
-class FakeScroller implements Scroller {
-	calls: Rect[] = [];
-	cancels = 0;
-	scrollIntoView(rect: Rect): void {
-		this.calls.push(rect);
-	}
-	cancel(): void {
-		this.cancels++;
-	}
 }
 
 class FakeHost implements CursorHost {

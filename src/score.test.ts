@@ -7,10 +7,10 @@ import { Measure } from './elements/measure';
 import type { Note } from './elements/note';
 import { ScoreReader } from './engraving/score-reader';
 import { Rect } from './geometry';
-import type { Scroller } from './host/scroll-controller';
 import type { Host, Layer, LayerKind, Viewport } from './host/stage';
 import { SequenceFactory } from './playback/sequence-factory';
 import { Score } from './score';
+import { FakeScroller } from './testing/fake-scroller';
 
 // An empty timeline — these tests exercise events/layers/hover, not playback.
 const EMPTY_SEQUENCE = new SequenceFactory(new ScoreReader()).createFromInput({
@@ -47,11 +47,6 @@ class FakeLayer implements Layer {
 	dispose(): void {
 		this.disposed = true;
 	}
-}
-
-class FakeScroller implements Scroller {
-	scrollIntoView(): void {}
-	cancel(): void {}
 }
 
 class FakeHost implements Host {

@@ -18,7 +18,8 @@
 		"src",
 		"assets",
 		"css",
-		"!src/**/*.test.ts"
+		"!src/**/*.test.ts",
+		"!src/testing"
 	],
 	"dependencies": {
 		"@stringsync/mdom": "0.1.3",

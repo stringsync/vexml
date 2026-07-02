@@ -1,52 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
-import {
-	type Decoratable,
-	type Decoration,
-	isHighlightable,
-	isPlayable,
-} from './element';
+import { FakeDecoration } from '../testing/fake-decoration';
+import { FakeViewport } from '../testing/fake-viewport';
+import { isHighlightable, isPlayable } from './element';
 import { Measure } from './measure';
 import { Note } from './note';
 import type { TabPosition } from './tab-position';
-
-// Separate fake classes that fulfill the injected interfaces (preferred over mocks).
-
-class FakeViewport implements Viewport {
-	clientRectOf(rect: Rect): DOMRect {
-		// bun's runtime has no DOMRect; a structural literal is enough for unit reads.
-		return {
-			x: rect.x,
-			y: rect.y,
-			width: rect.w,
-			height: rect.h,
-			top: rect.y,
-			left: rect.x,
-			right: rect.right,
-			bottom: rect.bottom,
-			toJSON: () => ({}),
-		} as DOMRect;
-	}
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
-		return { x: clientX, y: clientY };
-	}
-}
-
-class FakeDecoration implements Decoration {
-	readonly active = new Map<Decoratable, string>();
-	set(target: Decoratable, color: string | null): void {
-		if (color === null) {
-			this.active.delete(target);
-		} else {
-			this.active.set(target, color);
-		}
-	}
-	has(target: Decoratable): boolean {
-		return this.active.has(target);
-	}
-}
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">
