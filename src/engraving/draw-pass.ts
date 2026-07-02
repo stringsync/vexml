@@ -66,6 +66,7 @@ import { findModifier, type NoteTranslator } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
+import { visibleStaffNumbers } from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -89,7 +90,15 @@ function timeSignatureSpec(time: Time | null): string | null {
  * True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
  * the guitar notation+tab pairing, which is bracketed rather than braced by convention.
  */
-function pairsTabWithNotation(part: Part): boolean {
+function pairsTabWithNotation(
+	part: Part,
+	showTabs: boolean,
+	showNotation: boolean,
+): boolean {
+	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
+	if (!showTabs || !showNotation) {
+		return false;
+	}
 	const measure = part.measures[0];
 	if (!measure) {
 		return false;
@@ -111,8 +120,13 @@ function pairsTabWithNotation(part: Part): boolean {
  * of pairsTabWithNotation. Only meaningful for multi-part systems — a single
  * notation+tab part already brackets itself via partSymbol.
  */
-function partsPairTabWithNotation(parts: Part[]): boolean {
-	if (parts.length < 2) {
+function partsPairTabWithNotation(
+	parts: Part[],
+	showTabs: boolean,
+	showNotation: boolean,
+): boolean {
+	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
+	if (!showTabs || !showNotation || parts.length < 2) {
 		return false;
 	}
 	const signs: string[] = [];
@@ -138,10 +152,16 @@ function partsPairTabWithNotation(parts: Part[]): boolean {
  * guitar notation+tab pair brackets by convention and everything else (piano grand
  * staves, …) braces.
  */
-function partSymbol(part: Part): 'brace' | 'bracket' | null {
+function partSymbol(
+	part: Part,
+	showTabs: boolean,
+	showNotation: boolean,
+): 'brace' | 'bracket' | null {
 	const symbol = part.partSymbol;
 	if (symbol === null) {
-		return pairsTabWithNotation(part) ? 'bracket' : 'brace';
+		return pairsTabWithNotation(part, showTabs, showNotation)
+			? 'bracket'
+			: 'brace';
 	}
 	if (symbol === 'none') {
 		return null;
@@ -231,6 +251,10 @@ export class DrawPass {
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly showTabHammerPullText: boolean;
 	private readonly showTabSlideText: boolean;
+	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
+	private readonly showTabs: boolean;
+	// When false, notation staves are dropped the same way tab staves are.
+	private readonly showNotation: boolean;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
 
@@ -365,6 +389,8 @@ export class DrawPass {
 		this.measureNumbering = measureNumbering;
 		this.showTabHammerPullText = showTabHammerPullText;
 		this.showTabSlideText = showTabSlideText;
+		this.showTabs = config.showTabs;
+		this.showNotation = config.showNotation;
 		this.gaps = gapsByMeasureIndex(config.gaps);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
@@ -426,10 +452,17 @@ export class DrawPass {
 		this.wordsTasks = [];
 
 		for (const part of this.parts) {
-			const staveCount = Math.max(part.staveCount, 1);
+			// The staves this part actually renders: with showTabs/showNotation off, its
+			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
+			// layout planner built from this same visible set, so the two stay aligned.
+			const staves = visibleStaffNumbers(
+				part,
+				this.showTabs,
+				this.showNotation,
+			);
 			const measure = part.measures[m];
 			if (!measure) {
-				this.staveRow += staveCount;
+				this.staveRow += staves.length;
 				continue;
 			}
 
@@ -437,8 +470,14 @@ export class DrawPass {
 			let partBottom: Stave | undefined;
 			this.pendingStaves = [];
 
-			for (let s = 0; s < staveCount; s++) {
-				const stave = this.buildStave(part, measure, m, s, staveCount);
+			for (const staffNumber of staves) {
+				const stave = this.buildStave(
+					part,
+					measure,
+					m,
+					staffNumber,
+					staves.length,
+				);
 				partTop ??= stave;
 				partBottom = stave;
 			}
@@ -497,11 +536,11 @@ export class DrawPass {
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
-			const symbol = partSymbol(part);
+			const symbol = partSymbol(part, this.showTabs, this.showNotation);
 			if (
 				partTop &&
 				partBottom &&
-				staveCount > 1 &&
+				staves.length > 1 &&
 				this.isSystemStart &&
 				symbol
 			) {
@@ -596,17 +635,17 @@ export class DrawPass {
 	}
 
 	/*
-	 * One iteration of the stave loop: build measure `m`'s stave for part-staff `s`
+	 * One iteration of the stave loop: build measure `m`'s stave for the given part-staff
 	 * (clef/key/time/barlines), draw it, and queue its notes for the system format.
+	 * `visibleCount` is how many staves the part renders (tab/notation staves may be hidden).
 	 */
 	private buildStave(
 		part: Part,
 		measure: Measure,
 		m: number,
-		s: number,
-		staveCount: number,
+		staffNumber: string,
+		visibleCount: number,
 	): Stave {
-		const staffNumber = String(s + 1);
 		const clef = measure.getClef(staffNumber);
 		const staveY = this.systemY + (this.staveOffsets[this.staveRow] ?? 0);
 
@@ -692,8 +731,9 @@ export class DrawPass {
 		// placement. The number prints once (measureNumbered), on the top stave.
 		const numberOccluded =
 			this.isSystemStart &&
-			((staveCount > 1 && partSymbol(part) === 'bracket') ||
-				partsPairTabWithNotation(this.parts));
+			((visibleCount > 1 &&
+				partSymbol(part, this.showTabs, this.showNotation) === 'bracket') ||
+				partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation));
 		if (this.showMeasureNumber && !this.measureNumbered && !numberOccluded) {
 			stave.setMeasure(Number(measure.number));
 			this.measureNumbered = true;
@@ -1646,7 +1686,9 @@ export class DrawPass {
 					.setType('singleLeft')
 					.setContext(this.context)
 					.draw();
-				if (partsPairTabWithNotation(this.parts)) {
+				if (
+					partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation)
+				) {
 					// The bracket's x comes entirely from its top stave; nudge that 4px left
 					// so the bracket sits just outside the system line with a small gap, then
 					// restore.

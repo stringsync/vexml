@@ -20,6 +20,7 @@ import {
 	Vibrato,
 	Voice,
 } from 'vexflow';
+import type { TabStemPlacement } from '../config';
 import {
 	EPSILON,
 	GRACE_SPACING,
@@ -467,6 +468,9 @@ function ghostNotes(beats: number): GhostNote[] {
  * font metrics — identically.
  */
 export class NoteTranslator {
+	// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
+	constructor(private readonly tabStemPlacement: TabStemPlacement = 'none') {}
+
 	/*
 	 * MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
 	 * unknown combinations fall back to treble.
@@ -553,14 +557,18 @@ export class NoteTranslator {
 	private vexflowTabChord(chord: Chord): TabNote {
 		const lead = chord.lead;
 		const duration = durationCode(lead);
-		const tabNote = new TabNote({
-			positions: tabPositions(chord),
-			duration,
-			// Count the dot(s) in the note's ticks (as the notation path does) so a dotted
-			// tab note isn't a tick-position short and drift out of alignment with the
-			// notation stave it's formatted against. Tab omits the drawn dot glyph.
-			dots: lead.dots,
-		});
+		const tabNote = new TabNote(
+			{
+				positions: tabPositions(chord),
+				duration,
+				// Count the dot(s) in the note's ticks (as the notation path does) so a dotted
+				// tab note isn't a tick-position short and drift out of alignment with the
+				// notation stave it's formatted against. Tab omits the drawn dot glyph.
+				dots: lead.dots,
+				stemDirection: this.tabStemPlacement === 'above' ? Stem.UP : Stem.DOWN,
+			},
+			this.tabStemPlacement !== 'none',
+		);
 		styleFrets(tabNote);
 		addTabModifiers(tabNote, lead);
 		return tabNote;

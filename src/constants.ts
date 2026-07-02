@@ -221,6 +221,11 @@ export const SMOOTH_SCROLL_SETTLE_MS = 500;
 /** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
 export const SCROLL_TOP_PADDING_PX = 16;
 
+/** How long the scroll box must go without a resize before the ScrollController resumes scrolling.
+ * A resize arrives as a burst of ResizeObserver callbacks; scrolling mid-burst targets stale
+ * geometry, so we suspend and only resume once the size holds still this long. */
+export const RESIZE_SETTLE_MS = 150;
+
 /** How far a note's activity halo extends past the notehead's half-extent, so the note sits evenly
  * inside the circle. */
 export const HALO_MARGIN = 8;

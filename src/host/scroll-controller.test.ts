@@ -156,4 +156,30 @@ describe('ScrollController', () => {
 			{ left: 0, top: 20, behavior: 'smooth' },
 		]);
 	});
+
+	it('suspendForResize: cancels the in-flight scroll, drops scrolls, then resumes once settled', async () => {
+		const { host, scroller, scroll } = controller();
+		scroll(10); // in flight
+		scroller.suspendForResize(); // cancels it to the current offset, blocks new scrolls
+		scroll(20); // dropped while suspended
+		expect(host.calls).toEqual([
+			{ left: 0, top: 10, behavior: 'smooth' },
+			{ left: 0, top: 0, behavior: 'instant' },
+		]);
+		await settle();
+		scroll(30); // suspension lifted after the settle window
+		expect(host.calls).toEqual([
+			{ left: 0, top: 10, behavior: 'smooth' },
+			{ left: 0, top: 0, behavior: 'instant' },
+			{ left: 0, top: 30, behavior: 'smooth' },
+		]);
+	});
+
+	it('suspendForResize: a repeated call during the burst only cancels once', () => {
+		const { host, scroller } = controller();
+		scroller.suspendForResize();
+		scroller.suspendForResize();
+		scroller.suspendForResize();
+		expect(host.calls).toEqual([{ left: 0, top: 0, behavior: 'instant' }]);
+	});
 });

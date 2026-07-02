@@ -137,6 +137,12 @@ export interface ScrollBox {
  * scroll and any CSS scaling of the canvas are handled for free.
  */
 export class Stage implements Viewport, Host, ScrollHost {
+	// At most one Stage owns a container's styles at a time. A re-render can mount the new Stage
+	// before disposing the old (to avoid a blank flash), leaving two bound to one container; the
+	// constructor uses this to tear the prior one down first, so each Stage captures the truly
+	// restored styles and disposes unwind LIFO instead of stomping the newer Stage's setup.
+	private static readonly byContainer = new WeakMap<HTMLDivElement, Stage>();
+
 	readonly base: HTMLCanvasElement;
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
@@ -145,11 +151,17 @@ export class Stage implements Viewport, Host, ScrollHost {
 	private readonly layers = new Set<ManagedLayer>();
 	// Owns the smooth-scroll conflation state; created on first use of `scroller`.
 	private scrollController: ScrollController | null = null;
+	private disposed = false;
 
 	constructor(
 		readonly container: HTMLDivElement,
 		scroll: ScrollBox = {},
 	) {
+		// Tear down any Stage still bound to this container before capturing prior styles, so this
+		// Stage sees the container's true restored state (not the outgoing Stage's applied styles) and
+		// re-owns the properties it needs.
+		Stage.byContainer.get(container)?.dispose();
+		Stage.byContainer.set(container, this);
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
 		this.prevPosition = container.style.position;
@@ -319,6 +331,12 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 
 	dispose(): void {
+		// Idempotent: a re-render disposes this Stage from the new Stage's constructor, so the caller's
+		// own later dispose() must be a no-op rather than re-restoring stale styles over the new Stage.
+		if (this.disposed) {
+			return;
+		}
+		this.disposed = true;
 		this.scrollController?.dispose();
 		for (const layer of [...this.layers]) {
 			layer.dispose();
@@ -328,6 +346,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.container.style.isolation = this.prevIsolation;
 		for (const [prop, value] of this.restoreStyles) {
 			this.container.style.setProperty(prop, value);
+		}
+		// Only deregister if still the owner: a newer Stage may have already claimed this container.
+		if (Stage.byContainer.get(this.container) === this) {
+			Stage.byContainer.delete(this.container);
 		}
 	}
 

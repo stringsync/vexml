@@ -27,6 +27,7 @@ import {
 import { gapsByMeasureIndex } from '../gaps';
 import { findModifier, type NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
+import { visibleStaffNumbers } from './staves';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -191,8 +192,13 @@ export class LayoutPlanner {
 			1,
 			...parts.map((part) => part.measures.length),
 		);
+		// With showTabs/showNotation off, staves of the hidden kind are dropped everywhere —
+		// layout must iterate the same visible staves the draw pass does so offsets and
+		// totalStaves stay aligned.
+		const { showTabs, showNotation } = config;
 		const totalStaves = parts.reduce(
-			(sum, part) => sum + Math.max(part.staveCount, 1),
+			(sum, part) =>
+				sum + visibleStaffNumbers(part, showTabs, showNotation).length,
 			0,
 		);
 		// Precompute each stave's y-offset within a system: a within-part gap after
@@ -200,12 +206,12 @@ export class LayoutPlanner {
 		const staveOffsets: number[] = [];
 		let offset = 0;
 		for (const part of parts) {
-			const staveCount = Math.max(part.staveCount, 1);
-			for (let s = 0; s < staveCount; s++) {
+			const staves = visibleStaffNumbers(part, showTabs, showNotation);
+			staves.forEach((_, s) => {
 				staveOffsets.push(offset);
 				offset +=
-					s === staveCount - 1 ? INTER_PART_SPACING : INTRA_PART_SPACING;
-			}
+					s === staves.length - 1 ? INTER_PART_SPACING : INTRA_PART_SPACING;
+			});
 		}
 
 		const usable = width - 2 * x;
@@ -251,9 +257,11 @@ export class LayoutPlanner {
 				if (!measure) {
 					continue;
 				}
-				const staveCount = Math.max(part.staveCount, 1);
-				for (let s = 0; s < staveCount; s++) {
-					const staffNumber = String(s + 1);
+				for (const staffNumber of visibleStaffNumbers(
+					part,
+					showTabs,
+					showNotation,
+				)) {
 					const clef = measure.getClef(staffNumber);
 					const voices = this.reader.staffVoices(measure.voices, staffNumber);
 					if (voices.length > 0) {

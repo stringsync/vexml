@@ -543,6 +543,46 @@ const TEST_CASES = [
 	//   quarter and rest.
 	testCase('tab_notation_durations.musicxml', 'tab_notation_durations.png'),
 
+	// Same fixture with tabStemPlacement: 'below' — the TAB stave now draws a rhythm stem (and a
+	// flag on the eighths/sixteenths) hanging below each fret instead of bare numbers, mirroring
+	// the notation stave's rhythm. Beams are still not drawn, so the triplet eighths in M3/M4
+	// show individual flags rather than a beam.
+	testCase(
+		'tab_notation_durations.musicxml',
+		'tab_notation_durations_stems_below.png',
+		{ tabStemPlacement: 'below' },
+	),
+
+	// Same fixture with tabStemPlacement: 'above' — the stems and flags rise above each fret
+	// instead of hanging below, the mirror image of the 'below' case.
+	testCase(
+		'tab_notation_durations.musicxml',
+		'tab_notation_durations_stems_above.png',
+		{ tabStemPlacement: 'above' },
+	),
+
+	// Same notation+tab fixture with showNotation: false — the treble notation stave (staff 1)
+	// is dropped and only the 6-line TAB stave renders: the ascending frets 0/1/3/5 in each
+	// measure's dotted/tuplet rhythm, with no notation stave above and no bracket (the pairing
+	// is gone). As a now-lone stave it gets its own begin barline at each system start.
+	testCase(
+		'tab_notation_durations.musicxml',
+		'tab_notation_durations_no_notation.png',
+		{ showNotation: false },
+	),
+
+	// Same notation+tab fixture with showTabs: false — the mirror of the showNotation case:
+	// the 6-line TAB stave (staff 2) is dropped and only the treble notation stave renders,
+	// with the full dotted/tuplet rhythm across M1-M4, its clef/key/time, and no bracket (the
+	// pairing is gone). As a now-lone notation stave it keeps standard barlines (no explicit
+	// begin barline — that is a TAB-only quirk). Verified: the notation matches the top stave
+	// of tab_notation_durations.png exactly.
+	testCase(
+		'tab_notation_durations.musicxml',
+		'tab_notation_durations_no_tab.png',
+		{ showTabs: false },
+	),
+
 	// Tuplets on C5.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.

@@ -29,7 +29,7 @@ const EMPTY_GEOMETRY: RawGeometry = {
 export interface RenderStage extends Host {
 	readonly container: HTMLDivElement;
 	readonly base: HTMLCanvasElement;
-	readonly scroller: Scroller & { cancel(): void };
+	readonly scroller: Scroller & { cancel(): void; suspendForResize(): void };
 }
 
 /*
