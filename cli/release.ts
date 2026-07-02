@@ -73,7 +73,9 @@ export async function release(type: string) {
 	const current: string = pkg.version ?? '0.0.0';
 	const next = bump(current, type);
 
-	const answer = prompt(chalk.yellow(`release ${current} -> ${next} (${type})? (y/n)`));
+	const answer = prompt(
+		chalk.yellow(`release ${current} -> ${next} (${type})? (y/n)`),
+	);
 	if (answer?.trim().toLowerCase() !== 'y') {
 		console.log(chalk.red('aborted'));
 		return;
