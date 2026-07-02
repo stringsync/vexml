@@ -28,11 +28,14 @@ import {
 } from 'vexflow';
 import type { Config, Gap, MeasureNumbering } from '../config';
 import {
+	BRACE_LEFT_OVERHANG,
+	BRACKET_GLYPH_OVERHANG,
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
+	CONNECTOR_VERTICAL_OVERHANG,
 	FRET_HALF_H,
 	FRET_HALF_W,
 	GAP_LABEL_FONT_SIZE,
@@ -598,7 +601,7 @@ export class DrawPass {
 		);
 		this.pageTop = Math.min(this.pageTop, noteExtent.top);
 
-		this.collectGeometry(m);
+		this.collectGeometry(m, noteExtent.top);
 		this.drawGapOverlay(m);
 
 		if (noteExtent.top < Infinity) {
@@ -1219,7 +1222,7 @@ export class DrawPass {
 	 * final). Each notehead/fret maps back to its mdom note; measure boxes back each
 	 * measure's staff column. Still scratch space — shifted to score space by the caller.
 	 */
-	private collectGeometry(m: number): void {
+	private collectGeometry(m: number, contentTop: number): void {
 		for (const p of this.systemPending) {
 			if (p.isTab) {
 				const tabStave = p.stave as TabStave;
@@ -1328,18 +1331,79 @@ export class DrawPass {
 			}
 		}
 		if (this.systemTop && this.systemBottom) {
+			// The box spans the staff column, then grows to enclose whatever escapes it: notes
+			// that rise above the top staff line (contentTop) and, at a system start, the stave
+			// connector, which draws left of the staves and (for a bracket) overhangs them top
+			// and bottom. Otherwise a high note or the bracket clips out of the measure's box —
+			// and the playback cursor that rides it. contentTop is Infinity when the measure has
+			// no notes, so it never shrinks the box.
+			const connector = this.connectorExtent();
+			const left = Math.min(this.measureX, connector?.left ?? Infinity);
+			const right = this.measureX + this.measureWidth;
+			const top = Math.min(
+				this.systemY,
+				contentTop,
+				connector?.top ?? Infinity,
+			);
+			const bottom = Math.max(
+				this.systemContentBottom,
+				connector?.bottom ?? -Infinity,
+			);
 			this.rawMeasures.push({
-				rect: new Rect(
-					this.measureX,
-					this.systemY,
-					this.measureWidth,
-					Math.max(0, this.systemContentBottom - this.systemY),
-				),
+				rect: new Rect(left, top, right - left, Math.max(0, bottom - top)),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
 				systemIndex: this.systemIndex,
 			});
 		}
+	}
+
+	/*
+	 * The extent of the stave connector drawn at a system start (a bracket or brace joining a
+	 * part's staves, or a notation+tab pair across parts), so the system-start measure box can
+	 * grow to contain it. vexflow draws a bracket just left of the stave (BRACKET_X_SHIFT),
+	 * insetting its bar/curl glyphs a little further and overhanging the curls past the top and
+	 * bottom staff lines; a brace reaches further left but stays within the staff lines
+	 * vertically. Returns null away from a system start, or when the only connector is the plain
+	 * left line (which sits on measureX — already the box's left edge).
+	 */
+	private connectorExtent(): {
+		left: number;
+		top: number;
+		bottom: number;
+	} | null {
+		if (!this.isSystemStart || !this.systemTop || !this.systemBottom) {
+			return null;
+		}
+		let bracket = partsPairTabWithNotation(
+			this.parts,
+			this.showTabs,
+			this.showNotation,
+		);
+		let brace = false;
+		for (const part of this.parts) {
+			if (
+				visibleStaffNumbers(part, this.showTabs, this.showNotation).length <= 1
+			) {
+				continue;
+			}
+			const symbol = partSymbol(part, this.showTabs, this.showNotation);
+			bracket ||= symbol === 'bracket';
+			brace ||= symbol === 'brace';
+		}
+		const top = this.systemTop.getYForLine(0);
+		const bottom = this.systemBottom.getBottomLineY();
+		if (bracket) {
+			return {
+				left: this.measureX - BRACKET_X_SHIFT - BRACKET_GLYPH_OVERHANG,
+				top: top - CONNECTOR_VERTICAL_OVERHANG,
+				bottom: bottom + CONNECTOR_VERTICAL_OVERHANG,
+			};
+		}
+		if (brace) {
+			return { left: this.measureX - BRACE_LEFT_OVERHANG, top, bottom };
+		}
+		return null;
 	}
 
 	/*
