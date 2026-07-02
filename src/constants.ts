@@ -218,6 +218,9 @@ export const FRET_HALF_H = 7;
  * scrollend listener if the guess proves wrong. */
 export const SMOOTH_SCROLL_SETTLE_MS = 500;
 
+/** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
+export const SCROLL_TOP_PADDING_PX = 16;
+
 /** How far a note's activity halo extends past the notehead's half-extent, so the note sits evenly
  * inside the circle. */
 export const HALO_MARGIN = 8;

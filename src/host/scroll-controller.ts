@@ -1,4 +1,4 @@
-import { SMOOTH_SCROLL_SETTLE_MS } from '../constants';
+import { SCROLL_TOP_PADDING_PX, SMOOTH_SCROLL_SETTLE_MS } from '../constants';
 import type { Rect } from '../geometry';
 
 /* Scrolls a score-space rect into the viewport. vexml's Stage provides one (Score.scroller); a caller
@@ -157,6 +157,8 @@ export function scrollOffsetFor(
 	};
 	return {
 		left: axis(target.left, target.right, view.left, view.right),
-		top: target.top,
+		// Leave breathing room above the target instead of pinning it flush to the top. scrollTo
+		// clamps negatives to 0.
+		top: target.top - SCROLL_TOP_PADDING_PX,
 	};
 }
