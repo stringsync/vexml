@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { TEST_URL, testBrowser } from '../testing/setup';
+import { renderTest } from '../testing/harness';
 
 // Measure box bounds, end to end: render a bracketed notation+tab guitar part with a run of
 // high ledger-line notes and a chord diagram, draw a debug rect around every measure box, and
@@ -8,23 +8,11 @@ import { TEST_URL, testBrowser } from '../testing/setup';
 // are deliberately NOT required to fit: they float above the stave so the playback cursor (which
 // rides the box) stops at the staff, not the fret box (see draw-pass growMeasureTops).
 describe('measure box bounds', () => {
-	it('encloses the bracket connector and high notes', async () => {
-		const browser = await testBrowser();
-		const page = await browser.newPage({
-			viewport: { width: 900, height: 600 },
-		});
-		try {
-			await page.goto(TEST_URL);
-			const violations = await page.evaluate(async () => {
-				const container = document.getElementById('screenshot');
-				if (!(container instanceof HTMLDivElement)) {
-					throw new Error('container not found');
-				}
-				const xml = await (
-					await fetch('/data/measure_box_bounds.musicxml')
-				).text();
-				const score = await window.render(xml, container, {});
-
+	it.concurrent('encloses the bracket connector and high notes', async () => {
+		const { result: violations, png } = await renderTest(
+			'measure_box_bounds.musicxml',
+			{},
+			(score) => {
 				// Outline every measure box on a content layer (score space) for visual review.
 				const layer = score.addLayer('content');
 				layer.ctx.strokeStyle = '#e53935';
@@ -54,13 +42,9 @@ describe('measure box bounds', () => {
 					}
 				}
 				return bad;
-			});
-			expect(violations).toEqual([]);
-			expect(await page.locator('#screenshot').screenshot()).toMatchScreenshot(
-				'measure_box_bounds.png',
-			);
-		} finally {
-			await page.close();
-		}
-	}, 30_000);
+			},
+		);
+		expect(violations).toEqual([]);
+		expect(png).toMatchScreenshot('measure_box_bounds.png');
+	});
 });
