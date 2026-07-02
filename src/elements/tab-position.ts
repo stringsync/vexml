@@ -4,11 +4,10 @@ import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
 	type Decorations,
-	DecorationToggle,
 	Element,
 	type Highlightable,
 	stampGlyph,
-	type Toggle,
+	Toggle,
 } from './element';
 import type { Note } from './note';
 
@@ -16,8 +15,8 @@ import type { Note } from './note';
  * TabPosition (fret); they cross-reference via Note.getTabPosition() / TabPosition.getNote(). */
 export class TabPosition extends Element implements Highlightable {
 	readonly type = 'tab-position';
-	readonly color: Toggle<string>;
-	readonly halo: Toggle<string>;
+	readonly color: Toggle;
+	readonly halo: Toggle;
 
 	constructor(
 		rect: Rect,
@@ -33,8 +32,8 @@ export class TabPosition extends Element implements Highlightable {
 		},
 	) {
 		super(rect, viewport);
-		this.color = new DecorationToggle(this, opts.decorations.color);
-		this.halo = new DecorationToggle(this, opts.decorations.halo);
+		this.color = new Toggle(this, opts.decorations.color);
+		this.halo = new Toggle(this, opts.decorations.halo);
 	}
 
 	/* The same mdom note its Note wraps — one source of truth for both renderings. */

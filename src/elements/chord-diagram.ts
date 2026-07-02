@@ -4,10 +4,9 @@ import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
 	type Decorations,
-	DecorationToggle,
 	Element,
 	type Highlightable,
-	type Toggle,
+	Toggle,
 } from './element';
 
 /* A rendered chord diagram (the fret box a <harmony> with a <frame> draws above the stave).
@@ -15,8 +14,8 @@ import {
  * pointer tree in v1: reachable via ElementIndex.chordDiagrams(), not by hit-testing. */
 export class ChordDiagram extends Element implements Highlightable {
 	readonly type = 'chord-diagram';
-	readonly color: Toggle<string>;
-	readonly halo: Toggle<string>;
+	readonly color: Toggle;
+	readonly halo: Toggle;
 
 	constructor(
 		rect: Rect,
@@ -30,8 +29,8 @@ export class ChordDiagram extends Element implements Highlightable {
 		},
 	) {
 		super(rect, viewport);
-		this.color = new DecorationToggle(this, opts.decorations.color);
-		this.halo = new DecorationToggle(this, opts.decorations.halo);
+		this.color = new Toggle(this, opts.decorations.color);
+		this.halo = new Toggle(this, opts.decorations.halo);
 	}
 
 	getSources(): readonly MElement[] {

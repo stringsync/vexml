@@ -4,12 +4,11 @@ import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
 	type Decorations,
-	DecorationToggle,
 	Element,
 	type Highlightable,
 	type Playable,
 	stampGlyph,
-	type Toggle,
+	Toggle,
 } from './element';
 import type { Measure } from './measure';
 import type { TabPosition } from './tab-position';
@@ -58,13 +57,13 @@ export interface NoteDeps {
 /* A single musical note (one notehead). The unit of selection, playback, and editing. */
 export class Note extends Element implements Highlightable, Playable {
 	readonly type = 'note';
-	readonly color: Toggle<string>;
-	readonly halo: Toggle<string>;
+	readonly color: Toggle;
+	readonly halo: Toggle;
 
 	constructor(private readonly deps: NoteDeps) {
 		super(deps.rect, deps.viewport);
-		this.color = new DecorationToggle(this, deps.decorations.color);
-		this.halo = new DecorationToggle(this, deps.decorations.halo);
+		this.color = new Toggle(this, deps.decorations.color);
+		this.halo = new Toggle(this, deps.decorations.halo);
 	}
 
 	getSources(): readonly MElement[] {

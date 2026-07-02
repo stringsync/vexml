@@ -25,14 +25,6 @@ export interface Decoratable extends Bounded {
 	drawColor(ctx: CanvasRenderingContext2D, color: string): void;
 }
 
-/* A reversible on/off effect carrying an optional value (color string, etc.). `off()` is the
- * whole undo — these are view state, not document edits, so there is no history. */
-export interface Toggle<T = void> {
-	on(value: T): void;
-	off(): void;
-	readonly active: boolean;
-}
-
 /*
  * One decoration kind's store — the seam an element's toggle delegates to, so the drawing surface
  * stays out of the model. Production: DefaultDecoration (paints its overlay layer from the active
@@ -51,8 +43,8 @@ export interface Decorations {
 
 /* An element that can be visually marked: color recolors its own glyph/box, halo glows behind it. */
 export interface Highlightable {
-	readonly color: Toggle<string>;
-	readonly halo: Toggle<string>;
+	readonly color: Toggle;
+	readonly halo: Toggle;
 }
 
 /* An element that sounds: what playback needs to voice it. */
@@ -74,8 +66,9 @@ export function isPlayable(el: Element): el is Element & Playable {
 	return 'getPitch' in el;
 }
 
-/* A decoration as an on/off toggle carrying its color, delegating to the Decoration's store. */
-export class DecorationToggle implements Toggle<string> {
+/* A reversible on/off effect carrying its color, delegating to the Decoration's store. `off()`
+ * is the whole undo — this is view state, not a document edit, so there is no history. */
+export class Toggle {
 	constructor(
 		private readonly target: Decoratable,
 		private readonly decoration: Decoration,
