@@ -114,7 +114,7 @@ export abstract class Element implements Decoratable {
 		protected readonly viewport: Viewport,
 	) {}
 
-	/* The mutable mdom nodes this element was built from (a Note's MNote, a Measure's one mdom
+	/* The mutable mdom nodes this element was built from (a Note's MNote, a MeasureBox's one mdom
 	 * Measure per part, a ChordDiagram's raw <harmony> element). */
 	abstract getSources(): readonly MElement[];
 

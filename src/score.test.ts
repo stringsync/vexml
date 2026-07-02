@@ -3,8 +3,9 @@ import { ColorStyle, DefaultDecoration } from './elements/decorations';
 import type { Element } from './elements/element';
 import { ElementIndex } from './elements/element-index';
 import type { HitTester } from './elements/hit-tester';
-import { Measure } from './elements/measure';
+import { MeasureBox } from './elements/measure-box';
 import type { Note } from './elements/note';
+import { System } from './elements/system';
 import { ScoreReader } from './engraving/score-reader';
 import { Rect } from './geometry';
 import type { Host, Layer, LayerKind, Viewport } from './host/stage';
@@ -116,7 +117,28 @@ class FakeHitTester implements HitTester {
 
 // Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
 function elementIndex(hitTester: HitTester): ElementIndex {
-	return new ElementIndex(hitTester, new Map(), new Map(), new Map(), []);
+	return new ElementIndex(
+		hitTester,
+		new Map(),
+		new Map(),
+		new Map(),
+		[],
+		[],
+		[],
+	);
+}
+
+// A bare hit-target measure box: an empty system, no per-part measures.
+function measureBox(rect: Rect): MeasureBox {
+	return new MeasureBox(
+		rect,
+		viewport,
+		'1',
+		0,
+		[],
+		new System(rect, viewport, 0, []),
+		[],
+	);
 }
 
 // A bare EventTarget has no DOM tree, so a synthetic Event with the coords the handler reads is
@@ -152,7 +174,7 @@ function fixture(target: Element | null) {
 
 describe('Score', () => {
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
-		const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0, []);
+		const target = measureBox(new Rect(0, 0, 10, 10));
 		const { host, index, score } = fixture(target);
 		const seen: Array<{ type: string; x: number; y: number; native: Event }> =
 			[];
@@ -216,7 +238,7 @@ describe('Score', () => {
 	});
 
 	it('hover fires only on target change and recomputes on scroll; unsubscribe detaches scroll', () => {
-		const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0, []);
+		const target = measureBox(new Rect(0, 0, 10, 10));
 		const host = new FakeHost();
 		// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
 		// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
@@ -331,7 +353,7 @@ describe('Score', () => {
 				},
 			],
 		});
-		const target = new Measure(new Rect(0, 0, 1000, 100), viewport, '1', 0, []);
+		const target = measureBox(new Rect(0, 0, 1000, 100));
 		const score = new Score(
 			host,
 			elementIndex(new FakeHitTester(target)),
@@ -368,7 +390,7 @@ describe('Score', () => {
 	});
 
 	it('dispose detaches every listener and tears down the decorations and host', () => {
-		const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0, []);
+		const target = measureBox(new Rect(0, 0, 10, 10));
 		const { host, index, decoration, score } = fixture(target);
 		score.addEventListener('pointermove', () => {});
 		score.addEventListener('resize', () => {});

@@ -44,6 +44,7 @@ export interface NoteDeps {
 	rect: Rect;
 	viewport: Viewport;
 	decorations: Decorations;
+	/* This note's own part's measure (the musical node, not the cross-part column). */
 	measure: Measure;
 	/* Every mdom note in this note's chord, including itself (a solo note is a 1-member chord). */
 	chord: MNote[];
@@ -137,6 +138,7 @@ export class Note extends Element implements Highlightable, Playable {
 		return opts.includeSelf ? all : all.filter((n) => n !== this);
 	}
 
+	/* This note's own part's measure; the column/system are one hop away via getBox(). */
 	getMeasure(): Measure {
 		return this.deps.measure;
 	}

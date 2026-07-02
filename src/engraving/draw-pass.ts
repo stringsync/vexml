@@ -256,9 +256,6 @@ export class DrawPass {
 	private readonly rawNotes: RawNote[] = [];
 	private readonly rawMeasures: RawMeasure[] = [];
 	private readonly rawChordDiagrams: RawChordDiagram[] = [];
-	// The system each rawMeasure belongs to, parallel to rawMeasures, so the post-pass below can
-	// grow every measure box up to its system's topmost above-stave decoration.
-	private readonly rawMeasureSystem: number[] = [];
 	private systemTopY: number;
 	private systemContentBottom: number;
 	private currentSystem = -1;
@@ -1284,8 +1281,8 @@ export class DrawPass {
 				),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
+				systemIndex: this.systemIndex,
 			});
-			this.rawMeasureSystem.push(this.systemIndex);
 		}
 	}
 
@@ -1641,7 +1638,7 @@ export class DrawPass {
 		// ride on it — cover those extras instead of clipping them. Chord diagrams are excluded (they
 		// don't feed systemDecorationTop), so the cursor bar stops at the stave, not the fret box.
 		for (const [i, measure] of this.rawMeasures.entries()) {
-			const top = this.systemDecorationTop.get(this.rawMeasureSystem[i] ?? -1);
+			const top = this.systemDecorationTop.get(measure.systemIndex);
 			const { rect } = measure;
 			if (top !== undefined && top < rect.y) {
 				this.rawMeasures[i] = {

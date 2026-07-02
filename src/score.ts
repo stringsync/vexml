@@ -1,7 +1,9 @@
 import type { Element } from './elements/element';
 import type { ElementIndex } from './elements/element-index';
-import { Measure } from './elements/measure';
+import { MeasureBox } from './elements/measure-box';
 import { Note } from './elements/note';
+import type { Part } from './elements/part';
+import type { System } from './elements/system';
 import { TabPosition } from './elements/tab-position';
 import { EventTarget, type Listenable } from './event-target';
 import type { ScoreEventMap } from './events';
@@ -131,6 +133,16 @@ export class Score implements Listenable<ScoreEventMap> {
 		return this.elements;
 	}
 
+	/* The musical axis: document-scoped parts, each Part -> Measure -> Voice -> Note. */
+	getParts(): Part[] {
+		return this.elements.parts();
+	}
+
+	/* The layout axis: one System per engraved line, each System -> MeasureBox, top to bottom. */
+	getSystems(): System[] {
+		return this.elements.systems();
+	}
+
 	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
 	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it —
 	 * a note/fret within its onset step, a measure across its full width (see Sequence.resolveX). The
@@ -172,7 +184,7 @@ export class Score implements Listenable<ScoreEventMap> {
 			const index = this.sequence.getFirstStepOfNote(note);
 			return index === null ? null : { start: index, end: index };
 		}
-		if (target instanceof Measure) {
+		if (target instanceof MeasureBox) {
 			return this.sequence.getStepRangeOfMeasure(target.getIndex());
 		}
 		return null;

@@ -3,8 +3,8 @@ import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from '../geometry';
 import { FakeDecoration } from '../testing/fake-decoration';
 import { FakeViewport } from '../testing/fake-viewport';
+import { measureFixture } from '../testing/measure-fixture';
 import { isHighlightable, isPlayable } from './element';
-import { Measure } from './measure';
 import { Note } from './note';
 import { TabPosition } from './tab-position';
 
@@ -21,9 +21,10 @@ const XML = `<?xml version="1.0"?>
 
 function fixture() {
 	const mdoc = new MDOMParser().parseFromString(XML);
-	const mmeasure = mdoc.score.parts[0]?.measures[0];
+	const mpart = mdoc.score.parts[0];
+	const mmeasure = mpart?.measures[0];
 	const mnote = mmeasure?.notes[0];
-	if (!mmeasure || !mnote) {
+	if (!mpart || !mmeasure || !mnote) {
 		throw new Error('fixture: missing note');
 	}
 	const viewport = new FakeViewport();
@@ -31,9 +32,7 @@ function fixture() {
 		color: new FakeDecoration(),
 		halo: new FakeDecoration(),
 	};
-	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
-		mmeasure,
-	]);
+	const measure = measureFixture(mpart, mmeasure, viewport);
 	const notesByMnote = new Map<MNote, Note>();
 	const note = new Note({
 		mnote,

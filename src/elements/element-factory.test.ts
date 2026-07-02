@@ -77,7 +77,9 @@ function build() {
 	const geometry: RawGeometry = {
 		bounds: new Rect(0, 0, 200, 100),
 		notes,
-		measures: [{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1' }],
+		measures: [
+			{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1', systemIndex: 0 },
+		],
 		chordDiagrams: [
 			{
 				rect: new Rect(40, 5, 75, 30),
@@ -161,10 +163,47 @@ describe('ElementFactory', () => {
 		expect(index.notes()).toContain(noteC);
 	});
 
-	it('measures carry mdom provenance, one source per part', () => {
+	it('measure boxes carry mdom provenance, one source per part', () => {
 		const { index, mmeasure } = build();
-		const measure = must(index.measures()[0], 'measure');
+		const box = must(index.measureBoxes()[0], 'box');
+		expect(box.getSources()).toEqual([mmeasure]);
+	});
+
+	it('the musical axis reaches the same Note identities hit-testing returns', () => {
+		const { index } = build();
+		const part = must(index.parts()[0], 'part');
+		expect(part.getId()).toBe('P1');
+		expect(part.getLabel()).toBe('M');
+		const measure = must(part.getMeasures()[0], 'measure');
+		const voice = must(measure.getVoices()[0], 'voice');
+		expect(voice.getStave()).toBe(1);
+		// C, E, Bb in document order — the very objects the pointer tree returns.
+		expect(voice.getNotes().map((n) => n.getPitch())).toEqual([
+			'C/4',
+			'E/4',
+			'Bb/3',
+		]);
+		expect(voice.getNotes()[0]).toBe(index.at({ x: 54, y: 44 }) as Note);
+	});
+
+	it('the axes join at the measure: box <-> measure <-> system all cross-link', () => {
+		const { index, mmeasure } = build();
+		const box = must(index.measureBoxes()[0], 'box');
+		const system = must(index.systems()[0], 'system');
+		const measure = must(index.parts()[0]?.getMeasures()[0], 'measure');
+
+		expect(measure.getBox()).toBe(box);
 		expect(measure.getSources()).toEqual([mmeasure]);
+		expect(box.getMeasures()).toEqual([measure]);
+		expect(box.getSystem()).toBe(system);
+		expect(system.getIndex()).toBe(0);
+		expect(system.getMeasureBoxes()).toEqual([box]);
+		// One system, one column: the system rect is that column's rect.
+		expect(system.rect).toEqual(box.rect);
+
+		const note = index.at({ x: 54, y: 44 }) as Note;
+		expect(note.getMeasure()).toBe(measure);
+		expect(note.getMeasure().getPart()).toBe(must(index.parts()[0], 'part'));
 	});
 
 	it('chord diagrams are indexed but not hit-testable in v1', () => {

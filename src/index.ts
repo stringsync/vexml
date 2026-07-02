@@ -17,8 +17,12 @@ export {
 } from './elements/element';
 export type { ElementIndex } from './elements/element-index';
 export { Measure } from './elements/measure';
+export { MeasureBox } from './elements/measure-box';
 export { Note } from './elements/note';
+export { Part } from './elements/part';
+export { System } from './elements/system';
 export { TabPosition } from './elements/tab-position';
+export { Voice } from './elements/voice';
 export type { NoteGlyph } from './engraving/score-drawer';
 export type { Listenable } from './event-target';
 export type {

@@ -43,6 +43,8 @@ export interface RawMeasure {
 	index: number;
 	/* The MusicXML measure number (a string — handles pickups, "X1" etc.). */
 	number: string;
+	/* The system (line) this measure column was laid out on. */
+	systemIndex: number;
 }
 
 /* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole

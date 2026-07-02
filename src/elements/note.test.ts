@@ -3,8 +3,8 @@ import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from '../geometry';
 import { FakeDecoration } from '../testing/fake-decoration';
 import { FakeViewport } from '../testing/fake-viewport';
+import { measureFixture } from '../testing/measure-fixture';
 import { isHighlightable, isPlayable } from './element';
-import { Measure } from './measure';
 import { Note } from './note';
 import type { TabPosition } from './tab-position';
 
@@ -34,7 +34,8 @@ function must<T>(value: T | undefined, what: string): T {
 
 function fixture() {
 	const mdoc = new MDOMParser().parseFromString(XML);
-	const mmeasure = must(mdoc.score.parts[0]?.measures[0], 'measure');
+	const mpart = must(mdoc.score.parts[0], 'part');
+	const mmeasure = must(mpart.measures[0], 'measure');
 	const voice = must(mmeasure.voices[0], 'voice');
 	const chords = voice.chords;
 	const mC = must(chords[0]?.notes[0], 'C');
@@ -47,9 +48,7 @@ function fixture() {
 		color: new FakeDecoration(),
 		halo: new FakeDecoration(),
 	};
-	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
-		mmeasure,
-	]);
+	const measure = measureFixture(mpart, mmeasure, viewport);
 
 	// The shared registries the wrappers resolve their cross-links through (a Map fulfills the
 	// NoteLookup / TabLookup interfaces). Populated as each note is built.
@@ -171,7 +170,8 @@ describe('Note', () => {
   </part>
 </score-partwise>`;
 		const mdoc = new MDOMParser().parseFromString(xml);
-		const mmeasure = must(mdoc.score.parts[0]?.measures[0], 'measure');
+		const mpart = must(mdoc.score.parts[0], 'part');
+		const mmeasure = must(mpart.measures[0], 'measure');
 		const [mF, mG, mA, mB] = mmeasure.notes;
 
 		const viewport = new FakeViewport();
@@ -179,9 +179,7 @@ describe('Note', () => {
 			color: new FakeDecoration(),
 			halo: new FakeDecoration(),
 		};
-		const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
-			mmeasure,
-		]);
+		const measure = measureFixture(mpart, mmeasure, viewport);
 		const notesByMnote = new Map<MNote, Note>();
 		const build = (mnote: MNote) => {
 			const note = new Note({
