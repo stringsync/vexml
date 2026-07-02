@@ -11,7 +11,7 @@ import * as path from 'node:path';
 import { createCanvas, createImageData } from 'canvas';
 import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
-import { type Browser, chromium } from 'playwright';
+import { type Browser, chromium, type Page } from 'playwright';
 import { PNG } from 'pngjs';
 import { serve } from './serve';
 
@@ -49,11 +49,88 @@ export function testBrowser(): Promise<Browser> {
 	return sharedBrowser;
 }
 
+// A pool of pages, each navigated (bundle loaded/parsed) exactly once and reused across
+// tests. Screenshot tests are stateless — they clear the container and re-render — so a
+// test borrows an idle page instead of paying newPage() (new context) + goto() (bundle
+// reload) itself. Pooling (vs. one shared page) lets `test.concurrent` renders run on
+// separate pages/renderer processes in parallel; the pool caps how many Chromiums churn
+// at once. ponytail: fixed size, ~= perf-core count; bump POOL_SIZE if renders starve.
+const POOL_SIZE = 8;
+const pool: Page[] = []; // every page created, for teardown
+const idle: Page[] = [];
+const waiters: Array<(page: Page) => void> = [];
+let created = 0;
+
+async function acquirePage(): Promise<Page> {
+	const free = idle.pop();
+	if (free) {
+		return free;
+	}
+	if (created < POOL_SIZE) {
+		created++; // reserve the slot synchronously, before the awaits below yield
+		const browser = await testBrowser();
+		const page = await browser.newPage({
+			viewport: { width: 964, height: 600 },
+		});
+		await page.goto(TEST_URL);
+		await warmFonts(page);
+		pool.push(page);
+		return page;
+	}
+	return new Promise((resolve) => waiters.push(resolve));
+}
+
+// Make the render fonts resident in the context's font cache before any real render.
+// Chromium loads even a system font lazily on first use, and VexFlow positions tab fret
+// digits by measuring them — so the first render on a cold page measures glyphs before the
+// font is resident and places them bistably. A reused single page self-warms after its first
+// test; a pool starts every page cold, so under parallel load many renders measure cold and
+// flake. Rendering the warm-up fixture once paints every font/weight a real render uses (see
+// font_warmup.musicxml), forcing the load up front. Same system families the tests use.
+async function warmFonts(page: Page): Promise<void> {
+	await page.evaluate(async () => {
+		const container = document.getElementById('screenshot');
+		if (!(container instanceof HTMLDivElement)) {
+			throw new Error('container not found');
+		}
+		const res = await fetch('/data/font_warmup.musicxml');
+		await window.render(await res.text(), container, {
+			showPartLabels: true, // paints the part names in Source Sans 3 regular
+			fonts: {
+				notation: { family: 'Bravura' },
+				text: { family: 'Source Sans 3' },
+			},
+		});
+		await document.fonts.ready;
+		container.replaceChildren();
+	});
+}
+
+function releasePage(page: Page): void {
+	const waiter = waiters.shift();
+	if (waiter) {
+		waiter(page);
+	} else {
+		idle.push(page);
+	}
+}
+
+/** Borrow a pooled page for one render, returning it to the pool afterwards. */
+export async function withPage<T>(fn: (page: Page) => Promise<T>): Promise<T> {
+	const page = await acquirePage();
+	try {
+		return await fn(page);
+	} finally {
+		releasePage(page);
+	}
+}
+
 beforeAll(async () => {
 	await testBrowser();
 });
 
 afterAll(async () => {
+	await Promise.all(pool.map((page) => page.close()));
 	if (sharedBrowser) {
 		await (await sharedBrowser).close();
 	}

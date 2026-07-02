@@ -2,7 +2,7 @@
    via render(), so importing this file is only for users who prefer static CSS. */
 @font-face {
 	font-family: "Bravura";
-	src: url("../assets/fonts/Bravura.woff2") format("woff2");
+	src: url("../assets/fonts/Bravura.otf") format("otf");
 	font-weight: normal;
 	font-style: normal;
 	font-display: block; /* Music font must not flash — use block */

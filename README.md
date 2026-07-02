@@ -61,6 +61,28 @@ await render(musicXML, element, {
 });
 ```
 
+## Gap measures
+
+A gap is a non-musical measure inserted into the score: an empty stretch of stave with an optional label and fill, occupying a fixed amount of playback time regardless of tempo. Use gaps to sync notation to media where the music pauses — e.g. an instructor talking before the piece starts.
+
+```ts
+const score = await render(musicXML, element, {
+  gaps: [
+    {
+      beforeMeasureIndex: 0,      // a source-document measure index
+      durationMs: 8000,           // plays for exactly 8s
+      label: 'What are pitches?', // optional centered text
+      minWidth: 250,              // optional width floor in px
+      style: { fill: 'rgba(255, 255, 255, 0.65)' }, // optional overlay
+    },
+  ],
+});
+```
+
+`beforeMeasureIndex` refers to the MusicXML as written, so gaps never shift each other; the measure count appends after the last measure. In the rendered score, each gap occupies a measure **index** of its own and shifts the measures after it right by one — but measure **numbers** (the printed labels) are untouched, and the gap itself shows none.
+
+Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex, label, startMs, endMs }` per gap in the same order they were passed — `gaps[i]` in is `getGaps()[i]` out, so join by position to line the score up with your media. Playback treats a gap like any other measure: the cursor glides across it and `getMeasureIndexAtMs` resolves into it.
+
 ## Adding a canvas layer
 
 A layer is a `<canvas>` that you can draw arbitrary content on without affecting the sheet music. vexml controls its size and position.

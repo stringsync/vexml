@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Font warm-up fixture — NOT a rendered test case (no testCase() references it).
+
+  tests/testing/setup.ts renders this once per pooled browser page (see warmFonts) to force
+  the fonts a real render measures to become resident before any screenshot is taken. Chromium
+  loads a font when it first paints text in it; VexFlow positions tab fret digits by measuring
+  them, so the first render on a cold page measures glyphs before the font is resident and
+  places them bistably — which flakes under parallel load.
+
+  It deliberately paints all three font/weight combinations vexml renders text in:
+    - Bravura notation glyphs (the treble clef + notehead on the standard staff),
+    - Source Sans 3 regular (the part names printed in the margin, via showPartLabels),
+    - Source Sans 3 bold (the tablature fret digit, which VexFlow bolds and re-centers by
+      measuring — the cold measurement that otherwise flakes).
+
+  Keep it minimal; its only job is to exercise those glyphs, not to look like music.
+-->
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Warm</part-name>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Warm</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <type>whole</type>
+      </note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <notations>
+          <technical>
+            <string>1</string>
+            <fret>12</fret>
+          </technical>
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

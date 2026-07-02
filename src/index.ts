@@ -1,39 +1,50 @@
-export {
-	type Barre,
-	ChordDiagram,
-	type ChordDiagramOptions,
-	type ChordNote,
-	type ChordSpec,
-} from './chord-diagram';
-export type { Config } from './config';
-export {
-	Cursor,
-	type CursorChangeEvent,
-	type CursorEventMap,
-	type CursorView,
-	type Scroller,
-} from './cursor';
-export type { BarCursorViewOptions } from './cursor-view';
 export type {
-	EventListenable,
+	Config,
+	FontConfig,
+	FontOverride,
+	Gap,
+	GapStyle,
+	Layout,
+	MeasureNumbering,
+} from './config';
+export { ChordDiagram } from './elements/chord-diagram';
+export {
+	type Bounded,
+	Element,
+	type Highlightable,
+	isHighlightable,
+	isPlayable,
+	type Playable,
+	type Toggle,
+} from './elements/element';
+export type { ElementIndex } from './elements/element-index';
+export { Measure } from './elements/measure';
+export { MeasureBox } from './elements/measure-box';
+export { Note } from './elements/note';
+export { Part } from './elements/part';
+export { System } from './elements/system';
+export { TabPosition } from './elements/tab-position';
+export { Voice } from './elements/voice';
+export type { NoteGlyph } from './engraving/score-drawer';
+export type { Listenable } from './event-target';
+export type {
+	CursorChangeEvent,
+	CursorEventMap,
+	CursorVisibilityEvent,
 	HoverEvent,
 	PointerTargetEvent,
 	ScoreEventMap,
 	ScoreResizeEvent,
 	ScoreScrollEvent,
 } from './events';
-export type { FontConfig, FontOverride } from './fonts';
 export { Rect } from './geometry';
-export type { Layout, MeasureNumbering } from './layout';
-export * from './render';
-export { Score } from './score';
-export type { Layer, LayerKind } from './stage';
+export type { Scroller } from './host/scroll-controller';
+export type { Layer, LayerKind } from './host/stage';
 export {
-	type Bounded,
-	Measure,
-	Note,
-	type NoteGlyph,
-	type PointerTarget,
-	TabPosition,
-	type Toggle,
-} from './targets';
+	CursorController,
+	type CursorView,
+} from './playback/cursor-controller';
+export { Playhead, type PlayheadOptions } from './playback/playhead';
+export { Sequence, type Step } from './playback/sequence';
+export { render } from './render';
+export { type GapInfo, Score } from './score';

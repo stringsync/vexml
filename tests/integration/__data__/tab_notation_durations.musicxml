@@ -98,5 +98,136 @@
         <notations><technical><string>1</string><fret>5</fret></technical></notations>
       </note>
     </measure>
+    <measure number="3">
+      <!-- Triplet: an eighth-note triplet (3:2) then a dotted half. The tuplet's
+           time-modification must scale the TAB frets the same way as the noteheads so the
+           three frets stay aligned under the three triplet noteheads. divisions=12. -->
+      <attributes><divisions>12</divisions></attributes>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>1</staff><beam number="1">begin</beam>
+        <notations><tuplet number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>1</staff><beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>1</staff><beam number="1">end</beam>
+        <notations><tuplet number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>36</duration><voice>1</voice><type>half</type><dot /><staff>1</staff>
+      </note>
+      <backup><duration>48</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>2</staff><beam number="1">begin</beam>
+        <notations><tuplet number="1" type="start" /><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>2</staff><beam number="1">continue</beam>
+        <notations><technical><string>1</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>2</staff><beam number="1">end</beam>
+        <notations><tuplet number="1" type="stop" /><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>36</duration><voice>2</voice><type>half</type><dot /><staff>2</staff>
+        <notations><technical><string>2</string><fret>5</fret></technical></notations>
+      </note>
+    </measure>
+    <measure number="4">
+      <!-- Triplet that opens on a held (tied-into) note — measure 25 of the jazz corpus.
+           Beat 1 is an eighth + tied eighth (F4); the tie carries into the triplet's first
+           note, so guitar-tab convention omits that fret (no re-strike). The omitted note
+           still owns the triplet's opening slot, so the two struck frets after it (G4, A4)
+           must compress under their triplet noteheads instead of drifting right. divisions=12. -->
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type><staff>1</staff>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>6</duration><tie type="start" /><voice>1</voice><type>eighth</type>
+        <staff>1</staff><beam number="1">end</beam>
+        <notations><tied type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration><tie type="stop" /><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>1</staff>
+        <notations><tied type="stop" /><tuplet number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>1</staff>
+        <notations><tuplet number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <note>
+        <rest /><duration>12</duration><voice>1</voice><type>quarter</type><staff>1</staff>
+      </note>
+      <backup><duration>48</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>2</voice><type>eighth</type><staff>2</staff>
+        <beam number="1">begin</beam>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>6</duration><tie type="start" /><voice>2</voice><type>eighth</type>
+        <staff>2</staff><beam number="1">end</beam>
+        <notations><tied type="start" /><technical><string>1</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration><tie type="stop" /><voice>2</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>2</staff>
+        <notations><tied type="stop" /><tuplet number="1" type="start" /><technical><string>1</string><fret>1</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>8</duration><voice>2</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <staff>2</staff>
+        <notations><tuplet number="1" type="stop" /><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+      <note>
+        <rest /><duration>12</duration><voice>2</voice><type>quarter</type><staff>2</staff>
+      </note>
+    </measure>
   </part>
 </score-partwise>

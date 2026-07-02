@@ -2,6 +2,7 @@
 import { program } from 'commander';
 import { dev } from './dev';
 import { fix } from './fix';
+import { release } from './release';
 import { render } from './render';
 import { test } from './test';
 import { validate } from './validate';
@@ -73,6 +74,13 @@ program
 	.requiredOption('-i, --input <path>', 'input musicxml file')
 	.action(async (opts) => {
 		await validate({ input: opts.input, cwd: invocationDir });
+	});
+
+program
+	.command('release <type>')
+	.description('bump version (patch|minor|major), commit, tag, and publish')
+	.action(async (type) => {
+		await release(type);
 	});
 
 program.parse();

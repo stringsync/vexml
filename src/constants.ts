@@ -78,6 +78,10 @@ export const LABEL_CHAR_WIDTH = 7.5;
 /** Part label font size. */
 export const LABEL_FONT_SIZE = 13;
 
+/** Default gap-measure label font size (overridable per gap via GapStyle.fontSize).
+ * Shared by layout (width estimate) and draw (drawn size) so they agree. */
+export const GAP_LABEL_FONT_SIZE = 16;
+
 /** Minimum width per tab note. Floors each note's share so dense tab measures still
  * breathe past vexflow's cramped fret-digit packing. */
 export const TAB_MIN_NOTE_SPACING = 32;
@@ -188,3 +192,51 @@ export const SLUR_WIDTH_FACTOR = 0.12;
 
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;
+
+/** Accidental glyphs in a chord symbol; pulled tight against their root letter. */
+export const HARMONY_ACCIDENTALS = new Set(['♯', '♭', '♮']);
+
+/** How far a chord-symbol accidental is kerned in toward its root letter on each side. */
+export const HARMONY_ACCIDENTAL_KERN = 2.5;
+
+/** Chord-symbol accidental font size — a touch smaller than the root letter. */
+export const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
+
+/** vexflow's GraceNoteGroup.format spaces a stave grace group this many px off its note; tab
+ * groups get 0. The value is private to vexflow, mirrored here. */
+export const GRACE_GROUP_SPACING_STAVE = 4;
+
+/** Half-heights/half-widths (CSS px) for the note/fret hit-index boxes. A notehead's x-span is
+ * measured exactly (getNoteHeadBeginX/EndX); its height and the fret box are approximated to ~one
+ * notehead — enough to pick a target and draw a centered color/halo. */
+export const NOTEHEAD_HALF_H = 5;
+export const FRET_HALF_W = 6;
+export const FRET_HALF_H = 7;
+
+/** How long a smooth scroll is assumed to take; requests within this window are conflated. Browsers
+ * don't expose the animation's end, so this is a fixed estimate. ponytail: fixed window, swap for a
+ * scrollend listener if the guess proves wrong. */
+export const SMOOTH_SCROLL_SETTLE_MS = 500;
+
+/** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
+export const SCROLL_TOP_PADDING_PX = 16;
+
+/** How far a note's activity halo extends past the notehead's half-extent, so the note sits evenly
+ * inside the circle. */
+export const HALO_MARGIN = 8;
+
+/** Default color of the built-in cursor bar. */
+export const CURSOR_COLOR = '#2563eb';
+
+/** Default width (px) of the built-in cursor bar. */
+export const CURSOR_WIDTH_PX = 2;
+
+/** Finite sentinel for half-open collision probe rects (avoids Infinity arithmetic producing NaN). */
+export const FAR = 1e6;
+
+/** Playback bar width: the bar is a thin line the view thickens; a nonzero width keeps it a valid,
+ * hit-testable box. */
+export const BAR_WIDTH = 1;
+
+/** Default guitar string tuning (low to high) for a chord diagram with no explicit tuning. */
+export const DEFAULT_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];

@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { render } from '../testing/harness';
 import { testCase } from '../testing/test-case';
 
@@ -178,6 +178,32 @@ const TEST_CASES = [
 	// and M2 renders as a thin double line instead of the default single line; M2 closes
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
+
+	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
+	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
+	// M2. Measure numbering is 'every' to prove gaps are skipped: "1" over the second
+	// column and "2" over the last, nothing over either gap.
+	// - Gap 1 (leading): inherits the treble clef and 4/4 time from its right neighbor
+	//   (drawn at the line start, left of the gap), then a wide empty stave (minWidth
+	//   250) whose staff lines are dimmed by a translucent white fill, with
+	//   "What are pitches?" centered on the stave.
+	// - M1 ("1"): the original first measure — whole note C5.
+	// - Gap 2: a narrower plain empty measure — no label, no fill, staff lines at full
+	//   strength, no clef/key/time restated.
+	// - M2 ("2"): the original second measure — whole note C5, thin-thick end barline.
+	testCase('measures_two.musicxml', 'measures_gap.png', {
+		measureNumbering: 'every',
+		gaps: [
+			{
+				beforeMeasureIndex: 0,
+				durationMs: 5000,
+				label: 'What are pitches?',
+				minWidth: 250,
+				style: { fill: 'rgba(255, 255, 255, 0.65)' },
+			},
+			{ beforeMeasureIndex: 1, durationMs: 2000 },
+		],
+	}),
 
 	// Beam variations across seven 4/4 measures. Wraps across systems.
 	// - M1: simple beamed eighths in a small range.
@@ -506,6 +532,15 @@ const TEST_CASES = [
 	//   augmentation dot each.
 	// - M2: double dots — double-dotted-quarter + sixteenth pairs; the two long notes carry
 	//   two augmentation dots each.
+	// - M3: a triplet — a beamed eighth-note triplet ("3") then a dotted half. The three
+	//   triplet frets sit under their three triplet noteheads, proving the tuplet's
+	//   time-modification compresses the TAB stave the same as the notation stave.
+	// - M4: a triplet opening on a held (tied-into) note — measure 25 of the jazz corpus.
+	//   Beat 1 is an eighth + tied eighth (F4/frets 0,1); the tie carries into the triplet's
+	//   first note, so the TAB omits that fret (no re-strike). The omitted note still owns the
+	//   triplet's opening slot, so the two struck frets after it (G4/fret 3, A4/fret 5) stay
+	//   compressed under their triplet noteheads instead of drifting right under the following
+	//   quarter and rest.
 	testCase('tab_notation_durations.musicxml', 'tab_notation_durations.png'),
 
 	// Tuplets on C5.
@@ -814,9 +849,13 @@ const TEST_CASES = [
 	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
 ];
 
-for (const t of TEST_CASES) {
-	test(t.screenshotFilename, async () => {
-		const png = await render(t.musicXMLFilename, t.config);
-		expect(png).toMatchScreenshot(t.screenshotFilename);
-	});
-}
+describe('render', () => {
+	for (const t of TEST_CASES) {
+		// Concurrent: each render borrows its own page from the pool (see setup.ts), so
+		// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
+		it.concurrent(t.screenshotFilename, async () => {
+			const png = await render(t.musicXMLFilename, t.config);
+			expect(png).toMatchScreenshot(t.screenshotFilename);
+		});
+	}
+});

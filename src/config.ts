@@ -1,6 +1,77 @@
 import { SYSTEM_GAP } from './constants';
-import type { FontConfig } from './fonts';
-import type { Layout, MeasureNumbering } from './layout';
+
+export interface FontOverride {
+	family: string;
+	/** woff2 URL; if omitted, assumed already loaded (system font or user's own @font-face). */
+	url?: string;
+	/** CSS color for glyphs drawn in this font; if omitted, the renderer's default is used. */
+	color?: string;
+}
+
+export interface FontConfig {
+	/** Engraving glyphs: noteheads, clefs, rests, accidentals. */
+	notation?: FontOverride;
+	/** Typeset words: part/instrument names, lyrics, titles, directions that vexml draws
+	 * itself, plus the tablature text VexFlow types (fret numbers, "H"/"P", bend labels). */
+	text?: FontOverride;
+}
+
+/** How a gap's overlay is drawn over its measure. */
+export type GapStyle = {
+	/** CSS font family for the label (default: the text font). */
+	fontFamily?: string;
+	/** Label font size in px (default: 16). */
+	fontSize?: number;
+	/** CSS color for the label (default: black). */
+	fontColor?: string;
+	/** CSS color painted over the gap's note area, e.g. to dim the staff lines
+	 * (`'rgba(255, 255, 255, 0.8)'`). Omit for none. */
+	fill?: string;
+};
+
+/** A non-musical measure inserted into the score: it occupies horizontal space and a
+ * fixed playback duration (independent of tempo), for syncing notation to media where
+ * nothing is being played. See `Config.gaps`. */
+export type Gap = {
+	/** Source-document measure index to insert before (0 inserts before the first
+	 * measure; the measure count appends after the last). Indexes refer to the
+	 * MusicXML as written — gaps never shift each other. */
+	beforeMeasureIndex: number;
+	/** Playback time the gap occupies, in ms. Fixed — tempo marks don't affect it. */
+	durationMs: number;
+	/** Text printed centered in the gap (e.g. "What are pitches?"). Omit for a silent
+	 * spacer. */
+	label?: string;
+	/** Minimum width in px of the gap's empty note area. The gap can stretch wider
+	 * when its system justifies, like any measure (default: a typical empty-measure
+	 * width, grown to fit the label). */
+	minWidth?: number;
+	style?: GapStyle;
+};
+
+/** How measures are placed across systems. */
+export type Layout =
+	| {
+			/** Wrap measures onto stacked systems (print-like). */
+			type: 'standard';
+			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
+			 * to this width once; the result is then scaled to whatever container it's placed
+			 * in, so resizing the container never re-flows or re-spaces it. */
+			referenceWidth?: number;
+	  }
+	| {
+			/** Lay every measure on one system (horizontal scroll); width is computed
+			 * from the content. */
+			type: 'panoramic';
+	  };
+
+/** When to print measure numbers above the staff. */
+export type MeasureNumbering =
+	| 'none'
+	| 'system'
+	| 'every'
+	| 'every-2'
+	| 'every-3';
 
 /** Fully-resolved render configuration. Every property is required: `render` fills
  * any the caller omits from `DEFAULT_CONFIG`, so internal code passes a complete
@@ -10,6 +81,12 @@ export type Config = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
 	 * use this for self-hosted or offline fonts. */
 	fonts: FontConfig;
+	/** Non-musical measures to insert into the score (default: none). Each occupies
+	 * space on the page and a fixed ms of playback time — for syncing notation to media
+	 * where the music pauses (e.g. an instructor talking). `beforeMeasureIndex` is a
+	 * source-document index; the rendered score's measure indexes include the inserted
+	 * gaps (measure *numbers* skip them). Retrieve their timing with `Score.getGaps()`. */
+	gaps: Gap[];
 	/** How measures are placed across systems (default: standard at 8.5in / 816px). */
 	layout: Layout;
 	/** *How much space the notes get* (not how it's divided): the px a quarter note gets,
@@ -85,6 +162,7 @@ export const DEFAULT_FONT_CONFIG = {
 /** The defaults `render` merges a caller's `Partial<Config>` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
+	gaps: [],
 	layout: { type: 'standard' },
 	noteSpacing: 36,
 	softmaxFactor: 10,

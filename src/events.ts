@@ -1,79 +1,22 @@
-import type { PointerTarget } from './targets';
+import type { Bounded, Element } from './elements/element';
+import type { Note } from './elements/note';
 
-/*
- * The event seam. `EventListenable<M>` is the abstraction over add/removeEventListener that the
- * public Score implements (M maps an event name to its payload type); `EventBus<M>` is the
- * reusable production implementer the Score delegates to. Callers are coupled to the interface,
- * never the bus. Tests drive the bus directly.
- */
-export interface EventListenable<M> {
-	addEventListener<K extends keyof M>(
-		type: K,
-		listener: (event: M[K]) => void,
-	): void;
-	removeEventListener<K extends keyof M>(
-		type: K,
-		listener: (event: M[K]) => void,
-	): void;
-}
-
-type Listener<M, K extends keyof M> = (event: M[K]) => void;
-
-/* A typed multi-listener dispatcher. A per-type Set keeps registration idempotent (adding the
- * same listener twice is one entry) and `count` lets an owner bind/unbind an underlying source
- * lazily — see Score, which only attaches a DOM listener while someone is subscribed. */
-export class EventBus<M> implements EventListenable<M> {
-	private readonly listeners: { [K in keyof M]?: Set<Listener<M, K>> } = {};
-
-	addEventListener<K extends keyof M>(type: K, listener: Listener<M, K>): void {
-		let set = this.listeners[type];
-		if (!set) {
-			set = new Set();
-			this.listeners[type] = set;
-		}
-		set.add(listener);
-	}
-
-	removeEventListener<K extends keyof M>(
-		type: K,
-		listener: Listener<M, K>,
-	): void {
-		this.listeners[type]?.delete(listener);
-	}
-
-	/* Dispatch to every listener for `type`. Iterates a copy so a listener that unsubscribes
-	 * (or subscribes) mid-dispatch doesn't perturb the in-progress fan-out. */
-	emit<K extends keyof M>(type: K, event: M[K]): void {
-		const set = this.listeners[type];
-		if (!set) {
-			return;
-		}
-		for (const listener of [...set]) {
-			listener(event);
-		}
-	}
-
-	count<K extends keyof M>(type: K): number {
-		return this.listeners[type]?.size ?? 0;
-	}
-}
-
-/* A pointer interaction over the score: the target under the pointer (null on empty space), the
+/* A pointer interaction over the score: the element under the pointer (null on empty space), the
  * pointer position in score space, and the raw DOM event for everything else (buttons, modifier
  * keys, preventDefault). */
 export interface PointerTargetEvent {
-	readonly target: PointerTarget | null;
+	readonly target: Element | null;
 	readonly point: { x: number; y: number };
 	readonly native: PointerEvent;
 }
 
-/* The target under the pointer changed: entered, left, or moved between targets. `target` is null
+/* The element under the pointer changed: entered, left, or moved between elements. `target` is null
  * when nothing is under the pointer (empty space, or the pointer left the score); `point` is the
  * pointer in score space, or null once the pointer is off the score. Unlike pointermove, this also
- * fires when scrolling slides a different target under a stationary pointer — so it fires at most
+ * fires when scrolling slides a different element under a stationary pointer — so it fires at most
  * once per change, not once per pixel. */
 export interface HoverEvent {
-	readonly target: PointerTarget | null;
+	readonly target: Element | null;
 	readonly point: { x: number; y: number } | null;
 }
 
@@ -99,4 +42,37 @@ export interface ScoreEventMap {
 	hover: HoverEvent;
 	scroll: ScoreScrollEvent;
 	resize: ScoreResizeEvent;
+}
+
+/* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch
+ * shows in both `started` and `stopped`); `sustained` are notes held or tied through (do not
+ * re-press); `stopped` are releases (a note tied into this step is excluded — it keeps ringing).
+ * `active` is the full sounding set (onset-based — use for audio). `highlighted` is `active` plus any
+ * notes tied into them, so a tie chain stays lit until it releases — use for visual highlighting.
+ * `position` is the bar in score space, mappable to the page. */
+export interface CursorChangeEvent {
+	readonly timeMs: number;
+	readonly timeBeats: number;
+	readonly index: number;
+	readonly position: Bounded;
+	readonly active: readonly Note[];
+	readonly highlighted: readonly Note[];
+	readonly started: readonly Note[];
+	readonly sustained: readonly Note[];
+	readonly stopped: readonly Note[];
+	readonly done: boolean;
+}
+
+/* The cursor's bar crossed the viewport edge: `fullyVisible` is true when the whole bar sits inside
+ * the viewport, false when any part is off-screen. Fires on a transition only — driven by the
+ * cursor's own moves and by viewport scroll/resize, so it also fires while paused if the user
+ * scrolls the bar away. */
+export interface CursorVisibilityEvent {
+	readonly fullyVisible: boolean;
+}
+
+/* The events a CursorController dispatches, keyed by name. */
+export interface CursorEventMap {
+	change: CursorChangeEvent;
+	visibility: CursorVisibilityEvent;
 }
