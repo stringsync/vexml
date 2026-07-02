@@ -1,9 +1,9 @@
-import type { PointerTarget } from '@stringsync/vexml';
+import { type Element, Note, TabPosition } from '@stringsync/vexml';
 
-// One-line summary of the hovered target for the tooltip.
-export function describe(target: PointerTarget): string {
-	if (target.type === 'note') {
-		const beats = target.getBeats();
+// One-line summary of the hovered element for the tooltip.
+export function describe(target: Element): string {
+	if (target instanceof Note) {
+		const beats = target.getDurationBeats();
 		const parts = [
 			target.getPitch() ?? 'rest',
 			`${beats} beat${beats === 1 ? '' : 's'}`,
@@ -16,7 +16,7 @@ export function describe(target: PointerTarget): string {
 		}
 		return `${parts.join(' · ')}\nmeasure ${target.getMeasure().getNumber()}`;
 	}
-	if (target.type === 'tab-position') {
+	if (target instanceof TabPosition) {
 		return `string ${target.getString()} · fret ${target.getFret()} · ${target.getNote().getPitch() ?? 'rest'}`;
 	}
 	return '';

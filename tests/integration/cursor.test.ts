@@ -20,8 +20,8 @@ describe('cursor', () => {
 				}
 				const xml = await (await fetch('/data/arpeggio.musicxml')).text();
 				const score = await window.render(xml, container, {});
-				const cursor = score.addCursor();
-				cursor.attach(score.createCursorView({ color: '#2962ff', widthPx: 3 }));
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
 				// Seek 40% through the piece — a deterministic spot independent of the note count.
 				cursor.seekMs(score.getDurationMs() * 0.4);
 			});
@@ -51,8 +51,8 @@ describe('cursor', () => {
 					await fetch('/data/chord_diagram_tab.musicxml')
 				).text();
 				const score = await window.render(xml, container, {});
-				const cursor = score.addCursor();
-				cursor.attach(score.createCursorView({ color: '#2962ff', widthPx: 3 }));
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
 				cursor.seekMs(score.getDurationMs() * 0.4);
 			});
 			const buf = await page.locator('#screenshot').screenshot();
@@ -79,7 +79,7 @@ describe('cursor', () => {
 				}
 				const xml = await (await fetch('/data/grace_notes.musicxml')).text();
 				const score = await window.render(xml, container, {});
-				const cursor = score.addCursor();
+				const cursor = score.createCursor();
 				const found: Array<{ pitch: string | null; x: number; w: number }> = [];
 				cursor.addEventListener('change', (e) => {
 					for (const n of e.started) {
@@ -123,7 +123,7 @@ describe('cursor', () => {
 				}
 				const xml = await (await fetch('/data/tab_grace.musicxml')).text();
 				const score = await window.render(xml, container, {});
-				const cursor = score.addCursor();
+				const cursor = score.createCursor();
 				const found: Array<{ hasFret: boolean; x: number; w: number }> = [];
 				cursor.addEventListener('change', (e) => {
 					for (const n of e.started) {

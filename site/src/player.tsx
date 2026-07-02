@@ -1,4 +1,4 @@
-import type { Cursor, Score } from '@stringsync/vexml';
+import type { CursorController, Score } from '@stringsync/vexml';
 import { type RefObject, useState } from 'react';
 import { fmtTime } from './format';
 import { ICON, PlayerIcon } from './icons';
@@ -32,7 +32,7 @@ export function Player({
 	onPrev: () => void;
 	onNext: () => void;
 	onToggle: () => void;
-	cursorRef: RefObject<Cursor | null>;
+	cursorRef: RefObject<CursorController | null>;
 	scoreRef: RefObject<Score | null>;
 }) {
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(

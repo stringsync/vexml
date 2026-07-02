@@ -34,7 +34,7 @@ async function decorate(mode: 'color' | 'halo', file: string): Promise<Buffer> {
 				const targets = new Set<Note | TabPosition>();
 				score.addEventListener('pointermove', (e) => {
 					if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
-						targets.add(e.target);
+						targets.add(e.target as Note | TabPosition);
 					}
 				});
 				const rect = canvas.getBoundingClientRect();

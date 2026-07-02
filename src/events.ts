@@ -1,21 +1,21 @@
-import type { PointerTarget } from './targets';
+import type { Element } from './elements/element';
 
-/* A pointer interaction over the score: the target under the pointer (null on empty space), the
+/* A pointer interaction over the score: the element under the pointer (null on empty space), the
  * pointer position in score space, and the raw DOM event for everything else (buttons, modifier
  * keys, preventDefault). */
 export interface PointerTargetEvent {
-	readonly target: PointerTarget | null;
+	readonly target: Element | null;
 	readonly point: { x: number; y: number };
 	readonly native: PointerEvent;
 }
 
-/* The target under the pointer changed: entered, left, or moved between targets. `target` is null
+/* The element under the pointer changed: entered, left, or moved between elements. `target` is null
  * when nothing is under the pointer (empty space, or the pointer left the score); `point` is the
  * pointer in score space, or null once the pointer is off the score. Unlike pointermove, this also
- * fires when scrolling slides a different target under a stationary pointer — so it fires at most
+ * fires when scrolling slides a different element under a stationary pointer — so it fires at most
  * once per change, not once per pixel. */
 export interface HoverEvent {
-	readonly target: PointerTarget | null;
+	readonly target: Element | null;
 	readonly point: { x: number; y: number } | null;
 }
 

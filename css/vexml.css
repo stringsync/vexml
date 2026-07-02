@@ -1,14 +1,14 @@
 /* Optional explicit-import stylesheet. The library also injects these programmatically
    via render(), so importing this file is only for users who prefer static CSS. */
 @font-face {
-    font-family: "Bravura";
-    src: url("../assets/fonts/Bravura.otf") format("otf");
-    font-weight: normal;
-    font-style: normal;
-    font-display: block; /* Music font must not flash — use block */
+	font-family: "Bravura";
+	src: url("../assets/fonts/Bravura.otf") format("otf");
+	font-weight: normal;
+	font-style: normal;
+	font-display: block; /* Music font must not flash — use block */
 }
 
 :root {
-    --vexml-font-notation: "Bravura", serif;
-    --vexml-font-text: "Source Sans 3", sans-serif;
+	--vexml-font-notation: "Bravura", serif;
+	--vexml-font-text: "Source Sans 3", sans-serif;
 }

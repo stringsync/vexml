@@ -1,77 +1,25 @@
-import {
-	Cursor,
-	type CursorHost,
-	type CursorHostEventMap,
-	type CursorView,
-	type Scroller,
-} from './cursor';
-import { BarCursorView, type BarCursorViewOptions } from './cursor-view';
-import type { Decorations } from './decorations';
-import { EventTarget } from './event-target';
+import type { Decorator, Element } from './elements/element';
+import type { ElementIndex } from './elements/element-index';
+import { Measure } from './elements/measure';
+import { Note } from './elements/note';
+import { TabPosition } from './elements/tab-position';
+import { EventTarget, type Listenable } from './event-target';
 import type { ScoreEventMap } from './events';
-import type { Rect } from './geometry';
-import type { TargetIndex } from './hit';
-import type { Listenable } from './listenable';
-import type { Sequence } from './sequence';
-import type { Host, Layer, LayerKind } from './stage';
-import type { Measure, Note, PointerTarget } from './targets';
-
-/* Adapts the Stage host into a Cursor's CursorHost: passes through the rect/scroller methods and
- * turns the host's window-scroll + resize observers into a single `viewportchange` event. One per
- * cursor; the observers are bound only while the cursor is listening and torn down when it disposes
- * (its removeEventListener drops the last listener). */
-class CursorHostAdapter implements CursorHost {
-	private readonly target = new EventTarget<CursorHostEventMap>();
-	private unbind: (() => void) | null = null;
-
-	constructor(private readonly host: Host) {}
-
-	clientRectOf(rect: Rect): DOMRect {
-		return this.host.clientRectOf(rect);
-	}
-
-	viewportRect(): DOMRect {
-		return this.host.viewportRect();
-	}
-
-	get scroller(): Scroller {
-		return this.host.scroller;
-	}
-
-	addEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.addEventListener(type, listener);
-		if (!this.unbind) {
-			const fire = () => this.target.dispatchEvent('viewportchange', undefined);
-			const offScroll = this.host.observeScroll(fire);
-			const offResize = this.host.observeResize(fire);
-			this.unbind = () => {
-				offScroll();
-				offResize();
-			};
-		}
-	}
-
-	removeEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.removeEventListener(type, listener);
-		if (this.target.count('viewportchange') === 0) {
-			this.unbind?.();
-			this.unbind = null;
-		}
-	}
-}
+import type { Scroller } from './host/scroll-controller';
+import type { Host, Layer, LayerKind } from './host/stage';
+import {
+	CursorController,
+	CursorHostAdapter,
+} from './playback/cursor-controller';
+import { Playhead, type PlayheadOptions } from './playback/playhead';
+import type { Sequence } from './playback/sequence';
 
 /*
  * A rendered score: the handle render() returns. Owns the DOM vexml built (the Stage/Host) and
  * lets callers subscribe to pointer/scroll/resize events through the Listenable interface,
  * and stack their own drawing layers over the score. Pointer events are hit-tested against the
- * index to the target under the pointer. dispose() tears the whole thing down so a caller can
- * re-render or unmount cleanly.
+ * element index to the element under the pointer. dispose() tears the whole thing down so a caller
+ * can re-render or unmount cleanly.
  *
  * Pointer/scroll DOM listeners are bound lazily: the underlying source is attached only while at
  * least one caller is subscribed, so an unobserved score does no per-pointer hit-testing. Resize
@@ -88,19 +36,20 @@ export class Score implements Listenable<ScoreEventMap> {
 		Array<[string, EventListener]>
 	>();
 	private readonly unobserveResize: () => void;
-	// Hover state: the target last reported and the last pointer position (client coords) to
+	// Hover state: the element last reported and the last pointer position (client coords) to
 	// re-hit-test on scroll. unobserveScroll is hover's window-scroll subscription.
-	private hovered: PointerTarget | null = null;
+	private hovered: Element | null = null;
 	private lastClient: { x: number; y: number } | null = null;
 	private unobserveScroll: (() => void) | null = null;
 	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
-	private readonly cursors = new Set<Cursor>();
+	private readonly cursors = new Set<CursorController>();
 
 	constructor(
 		private readonly host: Host,
-		private readonly index: TargetIndex,
-		private readonly decorations: Decorations,
+		private readonly elements: ElementIndex,
+		private readonly decorator: Decorator & { dispose(): void },
 		private readonly sequence: Sequence,
+		private readonly scroller: Scroller & { cancel(): void },
 	) {
 		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
 		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
@@ -111,15 +60,9 @@ export class Score implements Listenable<ScoreEventMap> {
 		});
 	}
 
-	/* The container's current scroll offset (score space and client space differ only by it and
-	 * any zoom — getBoundingClientRect already folds scroll into hit-testing). */
-	get scroll(): { left: number; top: number } {
-		return this.host.scroll;
-	}
-
 	/* Add a caller-owned drawing layer over the score; returns it for drawing (via ctx) and removal
-	 * (via dispose, or removeLayer). A content layer spans the engraved score; a viewport layer
-	 * spans the visible box and is re-fit on resize.
+	 * (via dispose). A content layer spans the engraved score; a viewport layer spans the visible
+	 * box and is re-fit on resize.
 	 *
 	 * zIndex (an integer, may be negative) orders the layer relative to the canvas the score is drawn
 	 * on, which sits at zIndex 0: positive draws in front, negative behind (showing through the
@@ -132,17 +75,13 @@ export class Score implements Listenable<ScoreEventMap> {
 		return this.host.createLayer(kind, zIndex);
 	}
 
-	/* Remove a layer added with addLayer (a shorthand for layer.dispose()). */
-	removeLayer(layer: Layer): void {
-		layer.dispose();
-	}
-
-	/* Add a playback cursor over this score's timeline. Headless by default — attach a view
-	 * (createCursorView) and/or follow the scroller for visuals. Disposed when the score is. */
-	addCursor(): Cursor {
-		const cursor = new Cursor(
+	/* Add a playback cursor over this score's timeline. Headless by default — sync a view
+	 * (createPlayhead) and/or follow the scroller for visuals. Disposed when the score is. */
+	createCursor(): CursorController {
+		const cursor = new CursorController(
 			this.sequence,
 			new CursorHostAdapter(this.host),
+			this.scroller,
 			() => this.cursors.delete(cursor),
 		);
 		this.cursors.add(cursor);
@@ -150,14 +89,10 @@ export class Score implements Listenable<ScoreEventMap> {
 	}
 
 	/* vexml's default cursor visual — a vertical bar on its own content layer. Hand it to a cursor
-	 * with cursor.attach(view). Style it with `color`/`widthPx`, or implement CursorView for your own. */
-	createCursorView(options?: BarCursorViewOptions): CursorView {
-		return new BarCursorView(this.host.createLayer('content'), options);
-	}
-
-	/* The score's scroller, to give a cursor (cursor.follow) or scroll a rect into view directly. */
-	get scroller(): Scroller {
-		return this.host.scroller;
+	 * with cursor.sync(playhead). Style it with `color`/`widthPx`, or implement CursorView for your
+	 * own. */
+	createPlayhead(options?: PlayheadOptions): Playhead {
+		return new Playhead(this.host.createLayer('content'), options);
 	}
 
 	/* Total playback time of the score, repeats and voltas expanded. */
@@ -180,29 +115,20 @@ export class Score implements Listenable<ScoreEventMap> {
 		return this.sequence.getMeasureIndexAtMs(ms);
 	}
 
-	/* Every note in the score, in document order — including grace notes (reachable here though they
-	 * stay out of hit-testing) and every chord member. The same Note identities hit-testing and the
-	 * playback timeline return, so a caller can color/inspect them or build an editing selection. */
-	getNotes(): Note[] {
-		return [...this.index.notes.values()];
+	/* The document measure index playing at `beats` (before the first onset clamps to 0). */
+	getMeasureIndexAtBeats(beats: number): number {
+		return this.sequence.getMeasureIndexAtBeats(beats);
 	}
 
-	/* Every measure, in document order (one per index, not repeat-expanded). */
-	getMeasures(): Measure[] {
-		return [...this.index.measures.values()];
+	/* The playback timeline, for callers that schedule audio themselves. */
+	getSequence(): Sequence {
+		return this.sequence;
 	}
 
-	/* Every target whose box covers a score-space point, topmost first — a note/fret before the
-	 * measure it sits on, tighter boxes before looser. Overlapping rects (chord neighbors, a note
-	 * over its measure) all come back; getTargetsAt(point)[0] is the one a click/hover reports. */
-	getTargetsAt(point: { x: number; y: number }): PointerTarget[] {
-		return this.index.hitTester.hitTestAll(point);
-	}
-
-	/* Every target whose box lies fully within a score-space rect — a marquee/lasso selection.
-	 * Same topmost-first order as getTargetsAt. Partially-covered targets are excluded. */
-	getTargetsWithin(rect: Rect): PointerTarget[] {
-		return this.index.hitTester.hitTestWithin(rect);
+	/* Every element built for this score: enumeration by kind plus spatial queries (at/within).
+	 * The same identities pointer events and the playback timeline report. */
+	getElements(): ElementIndex {
+		return this.elements;
 	}
 
 	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
@@ -234,26 +160,22 @@ export class Score implements Listenable<ScoreEventMap> {
 		};
 	}
 
-	// The step range a target spans: a note/fret is its single onset step; a measure is its first
+	// The step range an element spans: a note/fret is its single onset step; a measure is its first
 	// occurrence's contiguous run, so a point maps across the whole bar.
 	private stepRangeAt(point: {
 		x: number;
 		y: number;
 	}): { start: number; end: number } | null {
-		const target = this.index.hitTester.hitTest(point);
-		if (!target) {
-			return null;
+		const target = this.elements.at(point);
+		if (target instanceof Note || target instanceof TabPosition) {
+			const note = target instanceof Note ? target : target.getNote();
+			const index = this.sequence.getFirstStepOfNote(note);
+			return index === null ? null : { start: index, end: index };
 		}
-		switch (target.type) {
-			case 'note':
-			case 'tab-position': {
-				const note = target.type === 'note' ? target : target.getNote();
-				const index = this.sequence.getFirstStepOfNote(note);
-				return index === null ? null : { start: index, end: index };
-			}
-			case 'measure':
-				return this.sequence.getStepRangeOfMeasure(target.getIndex());
+		if (target instanceof Measure) {
+			return this.sequence.getStepRangeOfMeasure(target.getIndex());
 		}
+		return null;
 	}
 
 	addEventListener<K extends keyof ScoreEventMap>(
@@ -291,12 +213,12 @@ export class Score implements Listenable<ScoreEventMap> {
 		this.unobserveScroll?.();
 		this.unobserveScroll = null;
 		this.unobserveResize();
-		this.decorations.dispose();
+		this.decorator.dispose();
 		this.host.dispose();
 	}
 
 	// Attach the underlying source for a Score event on its first subscriber. Pointer events
-	// hit-test the point under them; scroll carries the new offset; hover tracks the target under
+	// hit-test the point under them; scroll carries the new offset; hover tracks the element under
 	// the pointer (recomputed on move/down/leave and scroll); resize is already observed from
 	// construction (for the layers), so there's nothing to bind here.
 	private bind(type: keyof ScoreEventMap): void {
@@ -339,7 +261,7 @@ export class Score implements Listenable<ScoreEventMap> {
 						pointer.clientY,
 					);
 					this.target.dispatchEvent(type, {
-						target: this.index.hitTester.hitTest(point),
+						target: this.elements.at(point),
 						point,
 						native: pointer,
 					});
@@ -381,13 +303,13 @@ export class Score implements Listenable<ScoreEventMap> {
 		this.bound.set(type, handlers);
 	}
 
-	// Re-hit-test the last pointer position and emit hover only when the target changes — so a
-	// scroll or a move within the same target stays quiet, but sliding onto/off a target fires.
+	// Re-hit-test the last pointer position and emit hover only when the element changes — so a
+	// scroll or a move within the same element stays quiet, but sliding onto/off an element fires.
 	private recomputeHover(): void {
 		const point = this.lastClient
 			? this.host.toScoreSpace(this.lastClient.x, this.lastClient.y)
 			: null;
-		const target = point ? this.index.hitTester.hitTest(point) : null;
+		const target = point ? this.elements.at(point) : null;
 		if (target !== this.hovered) {
 			this.hovered = target;
 			this.target.dispatchEvent('hover', { target, point });

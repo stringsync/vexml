@@ -1,6 +1,44 @@
 import { SYSTEM_GAP } from './constants';
-import type { FontConfig } from './fonts';
-import type { Layout, MeasureNumbering } from './layout';
+
+export interface FontOverride {
+	family: string;
+	/** woff2 URL; if omitted, assumed already loaded (system font or user's own @font-face). */
+	url?: string;
+	/** CSS color for glyphs drawn in this font; if omitted, the renderer's default is used. */
+	color?: string;
+}
+
+export interface FontConfig {
+	/** Engraving glyphs: noteheads, clefs, rests, accidentals. */
+	notation?: FontOverride;
+	/** Typeset words: part/instrument names, lyrics, titles, directions that vexml draws
+	 * itself, plus the tablature text VexFlow types (fret numbers, "H"/"P", bend labels). */
+	text?: FontOverride;
+}
+
+/** How measures are placed across systems. */
+export type Layout =
+	| {
+			/** Wrap measures onto stacked systems (print-like). */
+			type: 'standard';
+			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
+			 * to this width once; the result is then scaled to whatever container it's placed
+			 * in, so resizing the container never re-flows or re-spaces it. */
+			referenceWidth?: number;
+	  }
+	| {
+			/** Lay every measure on one system (horizontal scroll); width is computed
+			 * from the content. */
+			type: 'panoramic';
+	  };
+
+/** When to print measure numbers above the staff. */
+export type MeasureNumbering =
+	| 'none'
+	| 'system'
+	| 'every'
+	| 'every-2'
+	| 'every-3';
 
 /** Fully-resolved render configuration. Every property is required: `render` fills
  * any the caller omits from `DEFAULT_CONFIG`, so internal code passes a complete

@@ -1,12 +1,11 @@
 import type {
 	Config,
-	Cursor,
+	CursorController,
+	Element,
 	HoverEvent,
-	Note,
-	PointerTarget,
 	PointerTargetEvent,
 } from '@stringsync/vexml';
-import { render, type Score } from '@stringsync/vexml';
+import { Note, render, type Score, TabPosition } from '@stringsync/vexml';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from './config-slider';
 import {
@@ -82,7 +81,7 @@ export default function App() {
 	const haloRef = useRef<Note | null>(null);
 	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
 	// whether movement came from the play loop, next/previous, or seek.
-	const cursorRef = useRef<Cursor | null>(null);
+	const cursorRef = useRef<CursorController | null>(null);
 	// Attack the notes already under the cursor when play starts. The note at the cursor's position
 	// fired its `started` event while paused (during load/seek), so the play loop — which moves
 	// *within* that note's duration — never sees it start. Set by the score-load effect, called by
@@ -207,8 +206,8 @@ export default function App() {
 
 				// Headless cursor + the built-in bar view. Page-turn scrolling: when the bar crosses
 				// out of the scroll box (by moving, or the user scrolling it away), bring it back.
-				const cursor = score.addCursor();
-				cursor.attach(score.createCursorView());
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead());
 				cursor.addEventListener('visibility', (e) => {
 					if (!e.fullyVisible && playingRef.current) {
 						cursor.scrollIntoView();
@@ -306,11 +305,11 @@ export default function App() {
 				// On play start, sound the notes already under the cursor — they started while paused,
 				// so the play loop (moving within their duration) never re-fires `started` for them.
 				playStartRef.current = () => {
-					for (const n of cursor.getActiveNotes()) {
+					for (const n of cursor.getActiveElements()) {
 						attack(n);
 					}
 				};
-				paint(cursor.getActiveNotes());
+				paint(cursor.getActiveElements());
 				cursorRef.current = cursor;
 				setDurationMs(score.getDurationMs());
 				setTimeMs(0);
@@ -319,14 +318,14 @@ export default function App() {
 				// A click/tap pins a target (toggle); hover is transient. The pinned one wins, so
 				// hovering elsewhere — or scrolling it out from under the pointer — never clears the
 				// pin. Clicking it again, or clicking empty space, unpins.
-				let pinned: PointerTarget | null = null;
-				let hovered: PointerTarget | null = null;
+				let pinned: Element | null = null;
+				let hovered: Element | null = null;
 				const apply = () => {
 					const target = pinned ?? hovered;
 					const note =
-						target?.type === 'note'
+						target instanceof Note
 							? target
-							: target?.type === 'tab-position'
+							: target instanceof TabPosition
 								? target.getNote()
 								: null;
 					if (note !== haloRef.current) {
@@ -365,7 +364,7 @@ export default function App() {
 				const onClick = (e: PointerTargetEvent) => {
 					// Only notes/frets are pinnable; clicking a measure or empty space unpins.
 					const t =
-						e.target?.type === 'note' || e.target?.type === 'tab-position'
+						e.target instanceof Note || e.target instanceof TabPosition
 							? e.target
 							: null;
 					pinned = pinned === t ? null : t;
