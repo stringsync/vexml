@@ -3,7 +3,7 @@ import { MDOMParser, MElement } from '@stringsync/mdom';
 import type { RawGeometry, RawNote } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
-import type { Decoratable, Decorator } from './element';
+import type { Decoratable, Decoration } from './element';
 import { ElementFactory } from './element-factory';
 import type { Note } from './note';
 import type { TabPosition } from './tab-position';
@@ -17,13 +17,9 @@ class FakeViewport implements Viewport {
 	}
 }
 
-class FakeDecorator implements Decorator {
-	setColor(): void {}
-	setHalo(): void {}
-	isColored(_target: Decoratable): boolean {
-		return false;
-	}
-	isHaloed(_target: Decoratable): boolean {
+class FakeDecoration implements Decoration {
+	set(): void {}
+	has(_target: Decoratable): boolean {
 		return false;
 	}
 }
@@ -109,12 +105,10 @@ function build() {
 		],
 	};
 	return {
-		index: new ElementFactory().build(
-			geometry,
-			parts,
-			new FakeViewport(),
-			new FakeDecorator(),
-		),
+		index: new ElementFactory().build(geometry, parts, new FakeViewport(), {
+			color: new FakeDecoration(),
+			halo: new FakeDecoration(),
+		}),
 		mmeasure,
 		mC,
 		harmony,

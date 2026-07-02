@@ -3,10 +3,9 @@ import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
-	ColorToggle,
-	type Decorator,
+	type Decorations,
+	DecorationToggle,
 	Element,
-	HaloToggle,
 	type Highlightable,
 	type Playable,
 	stampGlyph,
@@ -45,7 +44,7 @@ export interface NoteDeps {
 	mnote: MNote;
 	rect: Rect;
 	viewport: Viewport;
-	decorator: Decorator;
+	decorations: Decorations;
 	measure: Measure;
 	/* Every mdom note in this note's chord, including itself (a solo note is a 1-member chord). */
 	chord: MNote[];
@@ -64,8 +63,8 @@ export class Note extends Element implements Highlightable, Playable {
 
 	constructor(private readonly deps: NoteDeps) {
 		super(deps.rect, deps.viewport);
-		this.color = new ColorToggle(this, deps.decorator);
-		this.halo = new HaloToggle(this, deps.decorator);
+		this.color = new DecorationToggle(this, deps.decorations.color);
+		this.halo = new DecorationToggle(this, deps.decorations.halo);
 	}
 
 	getSources(): readonly MElement[] {

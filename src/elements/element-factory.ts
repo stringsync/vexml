@@ -2,7 +2,7 @@ import type { Note as MNote, Part } from '@stringsync/mdom';
 import type { RawGeometry } from '../engraving/score-drawer';
 import type { Viewport } from '../host/stage';
 import { ChordDiagram } from './chord-diagram';
-import type { Decorator, Element } from './element';
+import type { Decorations, Element } from './element';
 import { ElementIndex } from './element-index';
 import { DefaultHitTester } from './hit-tester';
 import { Measure } from './measure';
@@ -25,7 +25,7 @@ export class ElementFactory {
 		geometry: RawGeometry,
 		parts: Part[],
 		viewport: Viewport,
-		decorator: Decorator,
+		decorations: Decorations,
 	): ElementIndex {
 		const measures = new Map<number, Measure>();
 		for (const m of geometry.measures) {
@@ -52,7 +52,7 @@ export class ElementFactory {
 					mnote: rn.mnote,
 					rect: rn.rect,
 					viewport,
-					decorator,
+					decorations,
 					measure,
 					chord: rn.chord,
 					notes: noteByMnote,
@@ -73,7 +73,7 @@ export class ElementFactory {
 					string: rn.tab.string,
 					fret: rn.tab.fret,
 					note,
-					decorator,
+					decorations,
 					glyph: rn.glyph,
 				}),
 			);
@@ -85,7 +85,7 @@ export class ElementFactory {
 					source: d.harmonySource,
 					frame: d.frame,
 					title: d.title,
-					decorator,
+					decorations,
 				}),
 		);
 

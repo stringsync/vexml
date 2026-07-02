@@ -4,7 +4,7 @@ import { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
 	type Decoratable,
-	type Decorator,
+	type Decoration,
 	isHighlightable,
 	isPlayable,
 } from './element';
@@ -21,13 +21,9 @@ class FakeViewport implements Viewport {
 	}
 }
 
-class FakeDecorator implements Decorator {
-	setColor(): void {}
-	setHalo(): void {}
-	isColored(_target: Decoratable): boolean {
-		return false;
-	}
-	isHaloed(_target: Decoratable): boolean {
+class FakeDecoration implements Decoration {
+	set(): void {}
+	has(_target: Decoratable): boolean {
 		return false;
 	}
 }
@@ -51,7 +47,10 @@ function fixture() {
 		throw new Error('fixture: missing note');
 	}
 	const viewport = new FakeViewport();
-	const decorator = new FakeDecorator();
+	const decorations = {
+		color: new FakeDecoration(),
+		halo: new FakeDecoration(),
+	};
 	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
 		mmeasure,
 	]);
@@ -60,7 +59,7 @@ function fixture() {
 		mnote,
 		rect: new Rect(10, 10, 8, 8),
 		viewport,
-		decorator,
+		decorations,
 		measure,
 		chord: [mnote],
 		notes: notesByMnote,
@@ -72,7 +71,7 @@ function fixture() {
 		string: 3,
 		fret: 5,
 		note,
-		decorator,
+		decorations,
 		glyph: null,
 	});
 	return { note, tab, mnote };

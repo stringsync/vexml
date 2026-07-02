@@ -17,9 +17,9 @@ export interface Bounded {
 	getBoundingClientRect(): DOMRect;
 }
 
-/* What a decoration paints. The Decorator draws the halo from the element's box, but the color is
- * the element's own job: only it knows what it is — a notehead glyph (Note), a fret number
- * (TabPosition), or a plain box (the filled-ellipse fallback). So the Decorator hands over the
+/* What a decoration paints. HaloStyle draws from the element's box alone, but the color is the
+ * element's own job: only it knows what it is — a notehead glyph (Note), a fret number
+ * (TabPosition), or a plain box (the filled-ellipse fallback). So ColorStyle hands over the
  * overlay ctx and the chosen color and the element stamps itself recolored. */
 export interface Decoratable extends Bounded {
 	drawColor(ctx: CanvasRenderingContext2D, color: string): void;
@@ -33,18 +33,20 @@ export interface Toggle<T = void> {
 	readonly active: boolean;
 }
 
-export type DecorationKind = 'color' | 'halo';
-
 /*
- * The decoration seam. An element's color/halo toggles delegate here rather than drawing
- * themselves, so the drawing surface stays out of the model. Production: DefaultDecorator (owns
- * the overlay layers, repaints from the active sets). Tests: a FakeDecorator that records state.
+ * One decoration kind's store — the seam an element's toggle delegates to, so the drawing surface
+ * stays out of the model. Production: DefaultDecoration (paints its overlay layer from the active
+ * set). Tests: a FakeDecoration that records state.
  */
-export interface Decorator {
-	setColor(target: Decoratable, color: string | null): void;
-	setHalo(target: Decoratable, color: string | null): void;
-	isColored(target: Decoratable): boolean;
-	isHaloed(target: Decoratable): boolean;
+export interface Decoration {
+	set(target: Decoratable, color: string | null): void;
+	has(target: Decoratable): boolean;
+}
+
+/* The decoration stores an element wires its toggles to, one per kind. */
+export interface Decorations {
+	readonly color: Decoration;
+	readonly halo: Decoration;
 }
 
 /* An element that can be visually marked: color recolors its own glyph/box, halo glows behind it. */
@@ -72,37 +74,20 @@ export function isPlayable(el: Element): el is Element & Playable {
 	return 'getPitch' in el;
 }
 
-/* The color decoration as an on/off toggle, delegating to the Decorator. */
-export class ColorToggle implements Toggle<string> {
+/* A decoration as an on/off toggle carrying its color, delegating to the Decoration's store. */
+export class DecorationToggle implements Toggle<string> {
 	constructor(
 		private readonly target: Decoratable,
-		private readonly decorator: Decorator,
+		private readonly decoration: Decoration,
 	) {}
 	on(color: string): void {
-		this.decorator.setColor(this.target, color);
+		this.decoration.set(this.target, color);
 	}
 	off(): void {
-		this.decorator.setColor(this.target, null);
+		this.decoration.set(this.target, null);
 	}
 	get active(): boolean {
-		return this.decorator.isColored(this.target);
-	}
-}
-
-/* The halo decoration as an on/off toggle carrying its color, delegating to the Decorator. */
-export class HaloToggle implements Toggle<string> {
-	constructor(
-		private readonly target: Decoratable,
-		private readonly decorator: Decorator,
-	) {}
-	on(color: string): void {
-		this.decorator.setHalo(this.target, color);
-	}
-	off(): void {
-		this.decorator.setHalo(this.target, null);
-	}
-	get active(): boolean {
-		return this.decorator.isHaloed(this.target);
+		return this.decoration.has(this.target);
 	}
 }
 

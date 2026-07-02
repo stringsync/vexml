@@ -42,7 +42,7 @@ export class Playhead implements CursorView {
 	}
 }
 
-// Clear the whole bitmap regardless of the dpr transform the layer applied (mirrors DefaultDecorator).
+// Clear the whole bitmap regardless of the dpr transform the layer applied (mirrors DefaultDecoration).
 function clear(ctx: CanvasRenderingContext2D): void {
 	ctx.save();
 	ctx.setTransform(1, 0, 0, 1, 0, 0);

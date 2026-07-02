@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { DefaultDecorator } from './elements/decorations';
+import { ColorStyle, DefaultDecoration } from './elements/decorations';
 import type { Element } from './elements/element';
 import { ElementIndex } from './elements/element-index';
 import type { HitTester } from './elements/hit-tester';
@@ -20,7 +20,7 @@ const EMPTY_SEQUENCE = new SequenceFactory(new ScoreReader()).createFromInput({
 
 // Separate fake classes fulfilling the injected seams (preferred over mocks).
 
-// A no-op 2D context: the real DefaultDecorator draws on the layer it gets from the host, so the
+// A no-op 2D context: the real DefaultDecoration draws on the layer it gets from the host, so the
 // fake layer's context must absorb those calls. (What's painted is asserted in decorations.test.ts.)
 function noopContext(): CanvasRenderingContext2D {
 	return {
@@ -144,15 +144,15 @@ const viewport: Viewport = {
 function fixture(target: Element | null) {
 	const host = new FakeHost();
 	const index = new FakeHitTester(target);
-	const decorator = new DefaultDecorator(host);
+	const decoration = new DefaultDecoration(host, new ColorStyle());
 	const score = new Score(
 		host,
 		elementIndex(index),
-		decorator,
+		[decoration],
 		EMPTY_SEQUENCE,
 		host.scroller,
 	);
-	return { host, index, decorator, score };
+	return { host, index, decoration, score };
 }
 
 describe('Score', () => {
@@ -234,7 +234,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			elementIndex(index),
-			new DefaultDecorator(host),
+			[new DefaultDecoration(host, new ColorStyle())],
 			EMPTY_SEQUENCE,
 			host.scroller,
 		);
@@ -297,7 +297,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			index,
-			new DefaultDecorator(host),
+			[new DefaultDecoration(host, new ColorStyle())],
 			EMPTY_SEQUENCE,
 			host.scroller,
 		);
@@ -340,7 +340,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			elementIndex(new FakeHitTester(target)),
-			new DefaultDecorator(host),
+			[new DefaultDecoration(host, new ColorStyle())],
 			sequence,
 			host.scroller,
 		);
@@ -365,25 +365,25 @@ describe('Score', () => {
 		const offScore = new Score(
 			host,
 			elementIndex(new FakeHitTester(null)),
-			new DefaultDecorator(host),
+			[new DefaultDecoration(host, new ColorStyle())],
 			sequence,
 			host.scroller,
 		);
 		expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
 	});
 
-	it('dispose detaches every listener and tears down the decorator and host', () => {
+	it('dispose detaches every listener and tears down the decorations and host', () => {
 		const target = new Measure(new Rect(0, 0, 10, 10), viewport, '1', 0, []);
-		const { host, index, decorator, score } = fixture(target);
+		const { host, index, decoration, score } = fixture(target);
 		score.addEventListener('pointermove', () => {});
 		score.addEventListener('resize', () => {});
-		decorator.setColor(target, '#ff0000');
+		decoration.set(target, '#ff0000');
 
 		score.dispose();
 
 		expect(host.disposed).toBe(true);
 		expect(host.resizeUnobserved).toBe(true);
-		expect(decorator.isColored(target)).toBe(false); // decorator.dispose() ran
+		expect(decoration.has(target)).toBe(false); // decoration.dispose() ran
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 9, 9));
 		expect(index.probes).toHaveLength(0); // pointer handler detached
 	});

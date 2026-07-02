@@ -1,4 +1,4 @@
-import type { Decorator, Element } from './elements/element';
+import type { Element } from './elements/element';
 import type { ElementIndex } from './elements/element-index';
 import { Measure } from './elements/measure';
 import { Note } from './elements/note';
@@ -47,7 +47,7 @@ export class Score implements Listenable<ScoreEventMap> {
 	constructor(
 		private readonly host: Host,
 		private readonly elements: ElementIndex,
-		private readonly decorator: Decorator & { dispose(): void },
+		private readonly decorations: readonly { dispose(): void }[],
 		private readonly sequence: Sequence,
 		private readonly scroller: Scroller & { cancel(): void },
 	) {
@@ -213,7 +213,9 @@ export class Score implements Listenable<ScoreEventMap> {
 		this.unobserveScroll?.();
 		this.unobserveScroll = null;
 		this.unobserveResize();
-		this.decorator.dispose();
+		for (const decoration of this.decorations) {
+			decoration.dispose();
+		}
 		this.host.dispose();
 	}
 

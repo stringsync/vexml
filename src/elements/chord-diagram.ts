@@ -3,10 +3,9 @@ import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
-	ColorToggle,
-	type Decorator,
+	type Decorations,
+	DecorationToggle,
 	Element,
-	HaloToggle,
 	type Highlightable,
 	type Toggle,
 } from './element';
@@ -27,12 +26,12 @@ export class ChordDiagram extends Element implements Highlightable {
 			source: MElement;
 			frame: ChordFrame;
 			title: string | null;
-			decorator: Decorator;
+			decorations: Decorations;
 		},
 	) {
 		super(rect, viewport);
-		this.color = new ColorToggle(this, opts.decorator);
-		this.halo = new HaloToggle(this, opts.decorator);
+		this.color = new DecorationToggle(this, opts.decorations.color);
+		this.halo = new DecorationToggle(this, opts.decorations.halo);
 	}
 
 	getSources(): readonly MElement[] {

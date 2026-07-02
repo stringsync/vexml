@@ -4,7 +4,7 @@ import { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
 	type Decoratable,
-	type Decorator,
+	type Decoration,
 	isHighlightable,
 	isPlayable,
 } from './element';
@@ -34,28 +34,17 @@ class FakeViewport implements Viewport {
 	}
 }
 
-class FakeDecorator implements Decorator {
-	readonly colors = new Map<Decoratable, string>();
-	readonly halos = new Map<Decoratable, string>();
-	setColor(target: Decoratable, color: string | null): void {
+class FakeDecoration implements Decoration {
+	readonly active = new Map<Decoratable, string>();
+	set(target: Decoratable, color: string | null): void {
 		if (color === null) {
-			this.colors.delete(target);
+			this.active.delete(target);
 		} else {
-			this.colors.set(target, color);
+			this.active.set(target, color);
 		}
 	}
-	setHalo(target: Decoratable, color: string | null): void {
-		if (color === null) {
-			this.halos.delete(target);
-		} else {
-			this.halos.set(target, color);
-		}
-	}
-	isColored(target: Decoratable): boolean {
-		return this.colors.has(target);
-	}
-	isHaloed(target: Decoratable): boolean {
-		return this.halos.has(target);
+	has(target: Decoratable): boolean {
+		return this.active.has(target);
 	}
 }
 
@@ -94,7 +83,10 @@ function fixture() {
 	const mBb = must(chords[2]?.notes[0], 'Bb');
 
 	const viewport = new FakeViewport();
-	const decorator = new FakeDecorator();
+	const decorations = {
+		color: new FakeDecoration(),
+		halo: new FakeDecoration(),
+	};
 	const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
 		mmeasure,
 	]);
@@ -108,7 +100,7 @@ function fixture() {
 			mnote,
 			rect,
 			viewport,
-			decorator,
+			decorations,
 			measure,
 			chord,
 			notes: notesByMnote,
@@ -125,7 +117,7 @@ function fixture() {
 	const noteRest = base(mRest, new Rect(20, 10, 8, 8), [mRest]);
 	const noteBb = base(mBb, new Rect(30, 10, 8, 8), [mBb]);
 
-	return { viewport, decorator, measure, mC, noteC, noteE, noteRest, noteBb };
+	return { viewport, decorations, measure, mC, noteC, noteE, noteRest, noteBb };
 }
 
 describe('Note', () => {
@@ -177,24 +169,24 @@ describe('Note', () => {
 		expect(noteC.getTabPosition()).toBeNull();
 	});
 
-	it('color toggle delegates to the decorator and reflects active state', () => {
-		const { noteC, decorator } = fixture();
+	it('color toggle delegates to its decoration and reflects active state', () => {
+		const { noteC, decorations } = fixture();
 		expect(noteC.color.active).toBe(false);
 		noteC.color.on('#2962ff');
-		expect(decorator.colors.get(noteC)).toBe('#2962ff');
+		expect(decorations.color.active.get(noteC)).toBe('#2962ff');
 		expect(noteC.color.active).toBe(true);
 		noteC.color.off();
-		expect(decorator.colors.has(noteC)).toBe(false);
+		expect(decorations.color.active.has(noteC)).toBe(false);
 		expect(noteC.color.active).toBe(false);
 	});
 
-	it('halo toggle delegates to the decorator and carries its color', () => {
-		const { noteC, decorator } = fixture();
+	it('halo toggle delegates to its decoration and carries its color', () => {
+		const { noteC, decorations } = fixture();
 		noteC.halo.on('#2962ff');
-		expect(decorator.halos.get(noteC)).toBe('#2962ff');
+		expect(decorations.halo.active.get(noteC)).toBe('#2962ff');
 		expect(noteC.halo.active).toBe(true);
 		noteC.halo.off();
-		expect(decorator.halos.has(noteC)).toBe(false);
+		expect(decorations.halo.active.has(noteC)).toBe(false);
 		expect(noteC.halo.active).toBe(false);
 	});
 
@@ -223,7 +215,10 @@ describe('Note', () => {
 		const [mF, mG, mA, mB] = mmeasure.notes;
 
 		const viewport = new FakeViewport();
-		const decorator = new FakeDecorator();
+		const decorations = {
+			color: new FakeDecoration(),
+			halo: new FakeDecoration(),
+		};
 		const measure = new Measure(new Rect(0, 0, 100, 50), viewport, '1', 0, [
 			mmeasure,
 		]);
@@ -233,7 +228,7 @@ describe('Note', () => {
 				mnote,
 				rect: new Rect(0, 0, 8, 8),
 				viewport,
-				decorator,
+				decorations,
 				measure,
 				chord: [mnote],
 				notes: notesByMnote,

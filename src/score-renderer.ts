@@ -1,5 +1,9 @@
 import type { Config } from './config';
-import { DefaultDecorator } from './elements/decorations';
+import {
+	ColorStyle,
+	DefaultDecoration,
+	HaloStyle,
+} from './elements/decorations';
 import type { ElementFactory } from './elements/element-factory';
 import type { FontLoader } from './engraving/fonts';
 import type { LayoutPlanner } from './engraving/layout-planner';
@@ -29,7 +33,7 @@ export interface RenderStage extends Host {
 
 /*
  * Runs the render pipeline over injected collaborators: fonts, parse, plan, draw, then the
- * interaction model (elements/decorator/sequence) wrapped into the returned Score. Constructed by
+ * interaction model (elements/decorations/sequence) wrapped into the returned Score. Constructed by
  * render() (the composition root) with the production classes; unit tests swap in NoopFontLoader /
  * FakeScoreParser and a fake stage.
  */
@@ -70,14 +74,17 @@ export class ScoreRenderer {
 				: EMPTY_GEOMETRY;
 
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
-		// decorator is what their color/halo toggles delegate to (drawing on a content layer the
-		// stage hands it). Both feed the factory, which links the elements and indexes them.
-		const decorator = new DefaultDecorator(this.stage);
+		// decorations are what their color/halo toggles delegate to (drawing on overlay layers the
+		// stage hands them). Both feed the factory, which links the elements and indexes them.
+		const decorations = {
+			color: new DefaultDecoration(this.stage, new ColorStyle()),
+			halo: new DefaultDecoration(this.stage, new HaloStyle()),
+		};
 		const elements = this.elementFactory.build(
 			geometry,
 			parts,
 			this.stage,
-			decorator,
+			decorations,
 		);
 		// The playback timeline: the parsed parts give onsets/meter/tempo/repeats/ties, the
 		// geometry gives note x and system boxes, and noteLookup ties active notes to the same
@@ -90,7 +97,7 @@ export class ScoreRenderer {
 		return new Score(
 			this.stage,
 			elements,
-			decorator,
+			[decorations.color, decorations.halo],
 			sequence,
 			this.stage.scroller,
 		);

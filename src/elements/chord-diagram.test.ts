@@ -6,7 +6,7 @@ import type { Viewport } from '../host/stage';
 import { ChordDiagram } from './chord-diagram';
 import {
 	type Decoratable,
-	type Decorator,
+	type Decoration,
 	isHighlightable,
 	isPlayable,
 } from './element';
@@ -20,21 +20,17 @@ class FakeViewport implements Viewport {
 	}
 }
 
-class FakeDecorator implements Decorator {
-	readonly colors = new Map<Decoratable, string>();
-	setColor(target: Decoratable, color: string | null): void {
+class FakeDecoration implements Decoration {
+	readonly active = new Map<Decoratable, string>();
+	set(target: Decoratable, color: string | null): void {
 		if (color === null) {
-			this.colors.delete(target);
+			this.active.delete(target);
 		} else {
-			this.colors.set(target, color);
+			this.active.set(target, color);
 		}
 	}
-	setHalo(): void {}
-	isColored(target: Decoratable): boolean {
-		return this.colors.has(target);
-	}
-	isHaloed(_target: Decoratable): boolean {
-		return false;
+	has(target: Decoratable): boolean {
+		return this.active.has(target);
 	}
 }
 
@@ -65,7 +61,10 @@ function fixture() {
 			[3, 0],
 		],
 	};
-	const decorator = new FakeDecorator();
+	const decorations = {
+		color: new FakeDecoration(),
+		halo: new FakeDecoration(),
+	};
 	const diagram = new ChordDiagram(
 		new Rect(40, 5, 75, 90),
 		new FakeViewport(),
@@ -73,10 +72,10 @@ function fixture() {
 			source,
 			frame,
 			title: 'C',
-			decorator,
+			decorations,
 		},
 	);
-	return { diagram, source, frame, decorator };
+	return { diagram, source, frame, decorations };
 }
 
 describe('ChordDiagram', () => {
@@ -94,10 +93,10 @@ describe('ChordDiagram', () => {
 		expect(isPlayable(diagram)).toBe(false);
 	});
 
-	it('color toggle delegates to the decorator', () => {
-		const { diagram, decorator } = fixture();
+	it('color toggle delegates to its decoration', () => {
+		const { diagram, decorations } = fixture();
 		diagram.color.on('#2962ff');
-		expect(decorator.colors.get(diagram)).toBe('#2962ff');
+		expect(decorations.color.active.get(diagram)).toBe('#2962ff');
 		expect(diagram.color.active).toBe(true);
 	});
 });

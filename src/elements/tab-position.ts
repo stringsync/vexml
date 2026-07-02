@@ -3,10 +3,9 @@ import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import {
-	ColorToggle,
-	type Decorator,
+	type Decorations,
+	DecorationToggle,
 	Element,
-	HaloToggle,
 	type Highlightable,
 	stampGlyph,
 	type Toggle,
@@ -27,15 +26,15 @@ export class TabPosition extends Element implements Highlightable {
 			string: number;
 			fret: number;
 			note: Note;
-			decorator: Decorator;
+			decorations: Decorations;
 			/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
 			 * baseline, so a decoration replays the digit recolored; null falls back to an ellipse. */
 			glyph: NoteGlyph | null;
 		},
 	) {
 		super(rect, viewport);
-		this.color = new ColorToggle(this, opts.decorator);
-		this.halo = new HaloToggle(this, opts.decorator);
+		this.color = new DecorationToggle(this, opts.decorations.color);
+		this.halo = new DecorationToggle(this, opts.decorations.halo);
 	}
 
 	/* The same mdom note its Note wraps — one source of truth for both renderings. */
