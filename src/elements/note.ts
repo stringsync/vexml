@@ -71,14 +71,13 @@ export class Note extends Element implements Highlightable, Playable {
 		return [this.deps.mnote];
 	}
 
-	/* The glyph case: replay vexflow's own notehead (same glyph text, font, baseline) in the
-	 * chosen color, so the actual head recolors and a hollow head stays hollow. A rest has no
-	 * glyph, so it falls back to the base ellipse. */
+	/* Replay vexflow's own notehead (same glyph text, font, baseline) in the chosen color, so the
+	 * actual head recolors and a hollow head stays hollow. No glyph means nothing was engraved —
+	 * a rest, or a tie-stop tab string whose fret is omitted — so draw nothing rather than stamping
+	 * a phantom ellipse blip where there's no notehead. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.deps.glyph) {
 			stampGlyph(ctx, this.deps.glyph, color);
-		} else {
-			super.drawColor(ctx, color);
 		}
 	}
 

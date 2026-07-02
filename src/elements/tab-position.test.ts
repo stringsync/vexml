@@ -76,4 +76,22 @@ describe('TabPosition', () => {
 		expect(isHighlightable(tab)).toBe(true);
 		expect(isPlayable(tab)).toBe(false);
 	});
+
+	// A tie-stop/held string omits its fret number (glyph null); coloring it must not stamp a
+	// phantom ellipse blip on the empty string.
+	it('draws nothing when no fret glyph was engraved', () => {
+		const { tab } = fixture();
+		let draws = 0;
+		const ctx = new Proxy(
+			{},
+			{
+				get: () => () => {
+					draws++;
+				},
+				set: () => true,
+			},
+		) as unknown as CanvasRenderingContext2D;
+		tab.drawColor(ctx, 'red');
+		expect(draws).toBe(0);
+	});
 });

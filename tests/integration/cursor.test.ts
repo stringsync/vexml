@@ -32,6 +32,43 @@ describe('cursor', () => {
 		}
 	}, 30_000);
 
+	// Coloring the highlighted notes of a tied tab chord must not stamp phantom blips on the tab
+	// staff. A tie-stop string re-uses the struck note's fret, so guitar convention omits its
+	// number — its tab Note carries no glyph. Seek 30% in, into the eighth-note re-articulation of
+	// the tied chord (strings 1 & 2), then color everything the cursor highlights: the drawn frets
+	// recolor, and the two number-less tied strings draw nothing (no filled-ellipse blip).
+	it('a tied tab chord colors its drawn frets but not the number-less tied strings', async () => {
+		const browser = await testBrowser();
+		const page = await browser.newPage({
+			viewport: { width: 900, height: 500 },
+		});
+		try {
+			await page.goto(TEST_URL);
+			await page.evaluate(async () => {
+				const container = document.getElementById('screenshot');
+				if (!(container instanceof HTMLDivElement)) {
+					throw new Error('container not found');
+				}
+				const xml = await (
+					await fetch('/data/aloof_measure_2.musicxml')
+				).text();
+				const score = await window.render(xml, container, {});
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+				cursor.addEventListener('change', (e) => {
+					for (const n of e.highlighted) {
+						n.color.on('#155dfc');
+					}
+				});
+				cursor.seekMs(score.getDurationMs() * 0.3);
+			});
+			const buf = await page.locator('#screenshot').screenshot();
+			expect(buf).toMatchScreenshot('cursor_tab_tie.png');
+		} finally {
+			await page.close();
+		}
+	}, 30_000);
+
 	// A chord diagram (a <harmony> <frame>) floats well above the stave, but the playback bar must not
 	// reach up to it: the bar should span only the stave region — here a treble + 6-line TAB grand staff
 	// — as if the diagram weren't there. Seek 40% in (mid first measure) so the bar lands between notes.

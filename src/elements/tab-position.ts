@@ -27,7 +27,8 @@ export class TabPosition extends Element implements Highlightable {
 			note: Note;
 			decorations: Decorations;
 			/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
-			 * baseline, so a decoration replays the digit recolored; null falls back to an ellipse. */
+			 * baseline, so a decoration replays the digit recolored. Null when no fret was drawn
+			 * (a tie-stop/held string omits its number) — nothing on the tab to recolor. */
 			glyph: NoteGlyph | null;
 		},
 	) {
@@ -42,12 +43,11 @@ export class TabPosition extends Element implements Highlightable {
 	}
 
 	/* Replay vexflow's own fret glyph recolored so the digit lights up exactly where it was
-	 * engraved, rather than vanishing under a filled ellipse. Same approach as a notehead. */
+	 * engraved. No glyph means the fret was omitted (a tie-stop/held string), so there's nothing
+	 * to recolor — draw nothing rather than stamping a phantom ellipse blip on an empty string. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.opts.glyph) {
 			stampGlyph(ctx, this.opts.glyph, color);
-		} else {
-			super.drawColor(ctx, color);
 		}
 	}
 
