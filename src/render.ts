@@ -27,12 +27,21 @@ export function render(
 	config?: Partial<Config>,
 ): Promise<Score> {
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config };
+	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
+	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container
+	// (never blown up past that width) and centered. A panoramic layout, or one the caller capped into
+	// a horizontal scroll box, wants its intrinsic width and to scroll — so it opts out.
+	const fit =
+		resolved.layout.type === 'standard' &&
+		resolved.width == null &&
+		resolved.maxWidth == null;
 	const stage = new Stage(container, {
 		height: resolved.height,
 		maxHeight: resolved.maxHeight,
 		width: resolved.width,
 		maxWidth: resolved.maxWidth,
 		backgroundColor: resolved.backgroundColor,
+		fit,
 	});
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.

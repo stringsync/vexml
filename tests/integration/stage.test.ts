@@ -82,4 +82,60 @@ describe('stage', () => {
 		expect(result.scaledWidth).toBeCloseTo(result.contentWidth, 0);
 		expect(result.scaledWidth).toBeLessThan(result.intrinsic);
 	});
+
+	// The library scales the score to fit its container for free (no caller CSS): a standard layout
+	// shrinks to a narrow container preserving aspect, never grows past its engraved width, and is
+	// centered. This is the default; a caller who capped the width into a scroll box opts out.
+	it.concurrent('fits and centers the score in its container by default', async () => {
+		const { result } = await renderTest(
+			'structure_single_stave.musicxml',
+			{},
+			async (_score, container) => {
+				const canvas = container.querySelector(
+					'.vexml-canvas',
+				) as HTMLCanvasElement;
+				const intrinsicW = parseFloat(
+					canvas.style.getPropertyValue('--vexml-width'),
+				);
+				const intrinsicH = parseFloat(
+					canvas.style.getPropertyValue('--vexml-height'),
+				);
+
+				// Narrower than the score: it shrinks to fill, keeping its aspect ratio.
+				container.style.width = `${Math.round(intrinsicW / 2)}px`;
+				const narrow = canvas.getBoundingClientRect();
+				const narrowContent = parseFloat(getComputedStyle(container).width);
+
+				// Wider than the score: it stays at its engraved width (no upscaling) and centers —
+				// equal gaps to the container's content edges.
+				container.style.width = `${Math.round(intrinsicW * 2)}px`;
+				const padLeft = parseFloat(getComputedStyle(container).paddingLeft);
+				const padRight = parseFloat(getComputedStyle(container).paddingRight);
+				const wide = canvas.getBoundingClientRect();
+				const box = container.getBoundingClientRect();
+				const gapLeft = wide.left - (box.left + padLeft);
+				const gapRight = box.right - padRight - wide.right;
+
+				return {
+					intrinsicW,
+					aspect: intrinsicW / intrinsicH,
+					narrowW: narrow.width,
+					narrowAspect: narrow.width / narrow.height,
+					narrowContent,
+					wideW: wide.width,
+					gapLeft,
+					gapRight,
+				};
+			},
+		);
+
+		// Shrank to fill the narrow container, below intrinsic, aspect preserved.
+		expect(result.narrowW).toBeCloseTo(result.narrowContent, 0);
+		expect(result.narrowW).toBeLessThan(result.intrinsicW);
+		expect(result.narrowAspect).toBeCloseTo(result.aspect, 1);
+		// Held at intrinsic width in the wide container (never upscaled) and centered.
+		expect(result.wideW).toBeCloseTo(result.intrinsicW, 0);
+		expect(result.gapLeft).toBeGreaterThan(0);
+		expect(result.gapLeft).toBeCloseTo(result.gapRight, 0);
+	});
 });

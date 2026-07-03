@@ -180,8 +180,15 @@ export class ScoreDrawer {
 		// size, but at zero specificity — so a caller's own `.vexml-canvas { width: 100% }` overrides it
 		// without `!important`, letting the score scale to its container. frame()/sizeBitmap read these
 		// same properties for the intrinsic dimensions the score<->client transform needs.
+		//
+		// --vexml-aspect is the exact score-space width/height ratio (unitless, from the pre-round CSS
+		// dims — NOT the integer-rounded bitmap ratio). The fit rule uses it as `aspect-ratio` so a
+		// height:auto canvas keeps a byte-identical box at full size (height resolves back to cssHeight,
+		// so the score<->client scale stays exactly 1) yet still scales proportionally when narrowed.
+		const cssWidth = parseFloat(scratch.style.width);
 		canvas.style.setProperty('--vexml-width', scratch.style.width);
 		canvas.style.setProperty('--vexml-height', `${cssHeight}px`);
+		canvas.style.setProperty('--vexml-aspect', `${cssWidth / cssHeight}`);
 		canvas
 			.getContext('2d')
 			?.drawImage(

@@ -5,12 +5,18 @@ import {
 	type ScrollHost,
 } from './scroll-controller';
 
-/* The managed canvas's default on-screen size, injected once per document. Wrapped in `:where()`
- * so it carries zero specificity: a caller's own `.vexml-canvas { width: 100% }` (or `max-width` +
- * a centered container) overrides it with no `!important`, and the score then scales to fit. The
- * per-score intrinsic dimensions ride on the --vexml-width/height custom properties the drawer sets.
- * Only width/height are set (not display), so the canvas keeps its default `inline` box and the
- * engraved output stays byte-identical to a hand-placed canvas. */
+/* The managed canvas's default on-screen size, injected once per document. Both rules are wrapped
+ * in `:where()` so they carry zero specificity: a caller's own `.vexml-canvas { … }` overrides them
+ * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
+ * properties the drawer sets.
+ *
+ * Base rule: render the score at its intrinsic size — what a hand-placed canvas would show, so
+ * output stays byte-identical. `.vexml-fit` (added when the layout should scale to fit its
+ * container — see Stage) then caps the canvas at the container width and lets its height follow via
+ * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
+ * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
+ * stays exactly 1) and never blows it up past its engraved resolution. The canvas stays `inline`
+ * throughout (no `display` set), so `text-align: center` on the container centers it. */
 function ensureCanvasStyles(): void {
 	if (document.head.querySelector('style[data-vexml-canvas-style]')) {
 		return;
@@ -18,7 +24,8 @@ function ensureCanvasStyles(): void {
 	const style = document.createElement('style');
 	style.setAttribute('data-vexml-canvas-style', '');
 	style.textContent =
-		':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}';
+		':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}' +
+		':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 	document.head.appendChild(style);
 }
 
@@ -134,13 +141,16 @@ class ManagedLayer implements Layer {
 
 /* The caller's container options from config. A set height/width cap turns the container into a
  * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
- * container behind the score. */
+ * container behind the score. `fit` scales the score down to fit the container width (never up past
+ * its engraved size) and centers it — the default for a system-stacked layout that isn't a
+ * horizontal scroll box (render() derives it). */
 export interface ScrollBox {
 	height?: number | null;
 	maxHeight?: number | null;
 	width?: number | null;
 	maxWidth?: number | null;
 	backgroundColor?: string | null;
+	fit?: boolean;
 }
 
 /*
@@ -221,13 +231,21 @@ export class Stage implements Viewport, Host, ScrollHost {
 		if (scroll.backgroundColor) {
 			this.setStyle('background-color', scroll.backgroundColor);
 		}
+		// Center the inline canvas in the container when fitting (text-align steers inline boxes; the
+		// canvas stays inline so its intrinsic box is untouched). Absolutely-positioned overlay layers
+		// ignore text-align, so only the score is centered.
+		if (scroll.fit) {
+			this.setStyle('text-align', 'center');
+		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
 		// this class (or the container), never the bare element — that keeps the overlay canvases
 		// (`vexml-layer`) out of their selectors. The default on-screen size comes from the injected
-		// zero-specificity `:where(.vexml-canvas)` rule (below), so a caller's own `.vexml-canvas` rule
-		// overrides it without `!important` — e.g. `width: 100%; height: auto` to scale to the container.
-		this.base.className = 'vexml-canvas';
+		// zero-specificity `:where(.vexml-canvas)` rule, so a caller's own `.vexml-canvas` rule overrides
+		// it without `!important`. `vexml-fit` adds the scale-to-container behavior (see ensureCanvasStyles).
+		this.base.className = scroll.fit
+			? 'vexml-canvas vexml-fit'
+			: 'vexml-canvas';
 		ensureCanvasStyles();
 		container.appendChild(this.base);
 	}

@@ -24,6 +24,25 @@ const musicXML = await res.text();        // or .blob() for mxl
 await render(musicXML, element);
 ```
 
+## Sizing and centering
+
+The score is engraved once at a reference width, then **scaled to fit its container and centered**
+automatically — no CSS needed. A container narrower than the reference width shrinks the score to
+fit; a wider one leaves it at its engraved width (never upscaled) and centers it. Resizing the
+container re-scales instantly without re-rendering. Set the reference width with
+`layout.referenceWidth` (default 8.5in / 816px).
+
+To override, style the `.vexml-canvas` class — vexml's own rules use `:where()` (zero specificity),
+so a plain rule wins with no `!important`:
+
+```css
+.vexml-canvas { width: 600px; height: auto; } /* fixed on-screen width, say */
+```
+
+Capping the container turns it into a scroll box instead of fitting: `width`/`maxWidth` for a
+horizontal scroll (pair with `layout: { type: 'panoramic' }` for a single row), `height`/`maxHeight`
+for a vertical one.
+
 
 ## Listening to events
 

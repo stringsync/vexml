@@ -1018,17 +1018,16 @@ export default function App() {
 						)}
 						{input != null && (
 							// vexml appends its managed canvas here; React manages only this div's
-							// attributes, never its children. The canvas is engraved at the reference
-							// width and CSS-scaled to fit (down when narrow, never past 100%); the
-							// `.vexml-canvas` child-selector targets only the score canvas (not vexml's
-							// overlay layers) so the dark-mode invert and scaling react without
-							// re-rendering. ponytail: invert the black glyphs to light rather than
-							// re-engraving in a light color.
+							// attributes, never its children. vexml sizes the score to fit this container
+							// (scaling down when narrow, never past its engraved width) and centers it — no
+							// CSS needed here. The `.vexml-canvas` child-selector only tints the score canvas
+							// (not vexml's overlay layers) for dark mode. ponytail: invert the black glyphs
+							// to light rather than re-engraving in a light color.
 							<div
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
-								// width — the canvas is CSS-scaled to w-full and would scale against 0.
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 [&_.vexml-canvas]:block [&_.vexml-canvas]:h-auto! [&_.vexml-canvas]:w-full! ${initialized ? '' : 'invisible'} ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
+								// width — the canvas fits against it and would fit against 0 if removed.
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${initialized ? '' : 'invisible'} ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (
