@@ -42,6 +42,19 @@ const TEST_CASES = [
 		fonts: { text: { family: 'Times New Roman' } },
 	}),
 
+	// Dark theme: a light-blue notation color recolors the engraved glyphs (noteheads,
+	// stems, staves, clefs), a light-gray text color recolors the part labels vexml draws,
+	// and backgroundColor paints the container behind them — proving fonts.*.color and
+	// backgroundColor flow through to the render.
+	testCase('structure_part_labels.musicxml', 'colors.png', {
+		showPartLabels: true,
+		backgroundColor: '#1e1e2e',
+		fonts: {
+			notation: { family: 'Bravura', color: '#89b4fa' },
+			text: { family: 'Source Sans 3', color: '#f9e2af' },
+		},
+	}),
+
 	// Treble stave, 4/4, one measure (two quarters, two flagged eighths, a quarter
 	// rest, all on C5), engraved with VexFlow's Petaluma font instead of the default
 	// Bravura (fonts.notation). The notehead, stem flags, treble clef, and rest glyph

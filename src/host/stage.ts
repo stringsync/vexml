@@ -115,13 +115,15 @@ class ManagedLayer implements Layer {
 	}
 }
 
-/* The caller's height/width caps from config. A set cap turns the container into a scroll box on that
- * axis; null leaves the axis to size to its content. */
+/* The caller's container options from config. A set height/width cap turns the container into a
+ * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
+ * container behind the score. */
 export interface ScrollBox {
 	height?: number | null;
 	maxHeight?: number | null;
 	width?: number | null;
 	maxWidth?: number | null;
+	backgroundColor?: string | null;
 }
 
 /*
@@ -197,6 +199,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 		}
 		if (overflowX) {
 			this.setStyle('overflow-x', 'auto');
+		}
+		// setProperty ignores an invalid color, so an untrusted value can't break out of the style.
+		if (scroll.backgroundColor) {
+			this.setStyle('background-color', scroll.backgroundColor);
 		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style

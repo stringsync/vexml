@@ -32,6 +32,7 @@ export function render(
 		maxHeight: resolved.maxHeight,
 		width: resolved.width,
 		maxWidth: resolved.maxWidth,
+		backgroundColor: resolved.backgroundColor,
 	});
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.

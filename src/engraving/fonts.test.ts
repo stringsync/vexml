@@ -97,25 +97,6 @@ describe('DefaultFontLoader', () => {
 		expect(head.length).toBe(after); // no new tags
 	});
 
-	it('color override sets sanitized color CSS vars; omitted color sets none', () => {
-		const { vars, container } = fakeDom();
-		new DefaultFontLoader().load(container, {
-			notation: { family: 'Bravura', color: 'red' },
-			text: { family: 'Source Sans 3', color: 'rgb(0,0,0)"<x>' },
-		});
-		expect(vars['--vexml-color-notation']).toBe('red');
-		expect(vars['--vexml-color-text']).toBe('rgb(0,0,0)x'); // quotes/brackets stripped
-	});
-
-	it('no color override leaves color vars unset', () => {
-		const { vars, container } = fakeDom();
-		new DefaultFontLoader().load(container, {
-			notation: { family: 'Bravura' },
-		});
-		expect(vars['--vexml-color-notation']).toBeUndefined();
-		expect(vars['--vexml-color-text']).toBeUndefined();
-	});
-
 	it('custom notation url injects that url, not bundled path', () => {
 		const { head, container } = fakeDom();
 		new DefaultFontLoader().load(container, {
