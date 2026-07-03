@@ -1,7 +1,9 @@
 import {
+	MAX_SCROLL_SPEED_PX_PER_MS,
 	RESIZE_SETTLE_MS,
+	SCROLL_DURATION_MS,
+	SCROLL_FRAME_MS,
 	SCROLL_TOP_PADDING_PX,
-	SMOOTH_SCROLL_SETTLE_MS,
 } from '../constants';
 import type { Rect } from '../geometry';
 
@@ -24,25 +26,23 @@ export interface ScrollHost {
 }
 
 /*
- * Scrolls the host's scroll box so score-space rects come into view (axis-aware: only an
- * off-screen axis moves). Owns the smooth-scroll conflation: while a smooth/auto scroll is
- * animating, further requests are held and only the latest target flushes once the settle window
- * elapses, so a stream of follow() calls doesn't restart the animation on every step.
+ * Scrolls the host's scroll box so score-space rects come into view (axis-aware: only an off-screen
+ * axis moves). Smooth scrolls are self-driven: we tween the scroll box over a constant
+ * SCROLL_DURATION_MS regardless of distance (native smooth scroll's duration is UA-defined and
+ * varies), retargeting to the latest destination when a stream of follow() calls arrives mid-tween.
+ * A destination far enough that the tween would fling past MAX_SCROLL_SPEED_PX_PER_MS snaps instantly
+ * instead.
  */
 export class ScrollController implements Scroller {
-	// While a smooth/auto scroll is animating, conflate further requests: hold the timer and remember
-	// only the latest target, then flush it once the animation has had time to settle.
-	private smoothScrollTimer: ReturnType<typeof setTimeout> | null = null;
-	private pendingSmoothScroll: {
-		offset: { left: number; top: number };
-		behavior: ScrollBehavior;
+	// The in-flight smooth tween: interpolate from -> to over SCROLL_DURATION_MS starting at `start`
+	// (performance.now()). Null when nothing is animating. A new smooth request retargets it (re-reads
+	// the live position as `from`, restarts the clock) so following stays a constant-time chase.
+	private tween: {
+		from: { left: number; top: number };
+		to: { left: number; top: number };
+		start: number;
 	} | null = null;
-	// The target the current animation was issued toward — what dedupe compares against while
-	// nothing newer is pending.
-	private inFlightSmoothScroll: {
-		offset: { left: number; top: number };
-		behavior: ScrollBehavior;
-	} | null = null;
+	private frameTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// While a resize burst is in flight, scrolling targets stale geometry, so scrollIntoView is a
 	// no-op until the size holds still for RESIZE_SETTLE_MS. This timer is the debounce.
@@ -92,69 +92,75 @@ export class ScrollController implements Scroller {
 		const offset = scrollOffsetFor(target, view);
 		const behavior = opts?.behavior;
 		if (behavior === 'smooth' || behavior === 'auto') {
-			this.smoothScrollTo(offset, behavior);
+			this.smoothScrollTo(offset);
 		} else {
+			this.stopTween();
 			this.host.scrollTo({ ...offset, behavior });
 		}
 	}
 
-	// Issue a smooth/auto scroll, conflating any calls that arrive while one is animating: keep only
-	// the latest target and apply it once the settle window elapses, so a stream of follow() calls
-	// doesn't restart the animation on every step.
-	private smoothScrollTo(
-		offset: { left: number; top: number },
-		behavior: ScrollBehavior,
-	): void {
-		if (this.smoothScrollTimer) {
-			// Dedupe: re-requesting the target already pending (or in flight, when nothing newer is
-			// pending) would only re-issue the same scroll, so drop it. A genuinely different target
-			// still retargets exactly as before.
-			const current = this.pendingSmoothScroll ?? this.inFlightSmoothScroll;
-			if (
-				current &&
-				current.offset.left === offset.left &&
-				current.offset.top === offset.top &&
-				current.behavior === behavior
-			) {
-				return;
-			}
-			this.pendingSmoothScroll = { offset, behavior };
+	// Start (or retarget) the constant-time tween toward `offset`. `from` is the live scroll position
+	// so retargeting mid-tween redirects smoothly from wherever the box currently is. If the resulting
+	// travel would exceed MAX_SCROLL_SPEED_PX_PER_MS over SCROLL_DURATION_MS, snap instantly instead.
+	private smoothScrollTo(offset: { left: number; top: number }): void {
+		const from = { ...this.host.scroll };
+		const distance = Math.max(
+			Math.abs(offset.left - from.left),
+			Math.abs(offset.top - from.top),
+		);
+		if (distance > MAX_SCROLL_SPEED_PX_PER_MS * SCROLL_DURATION_MS) {
+			this.stopTween();
+			this.host.scrollTo({ ...offset, behavior: 'instant' });
 			return;
 		}
-		this.host.scrollTo({ ...offset, behavior });
-		this.inFlightSmoothScroll = { offset, behavior };
-		this.smoothScrollTimer = setTimeout(() => {
-			this.smoothScrollTimer = null;
-			this.inFlightSmoothScroll = null;
-			const pending = this.pendingSmoothScroll;
-			this.pendingSmoothScroll = null;
-			if (pending) {
-				this.smoothScrollTo(pending.offset, pending.behavior);
-			}
-		}, SMOOTH_SCROLL_SETTLE_MS);
+		this.tween = { from, to: offset, start: performance.now() };
+		if (!this.frameTimer) {
+			this.step();
+		}
 	}
 
-	/* Halts smooth scrolling: clears the settle timer and any pending target, then stops an
-	 * in-flight smooth animation by issuing an instant scroll to wherever the scroll box currently
-	 * is. A native smooth scroll has no handle to stop it; scrolling to the current offsets halts
-	 * it in place, and is a no-op scroll when nothing is animating. */
-	cancel(): void {
-		if (this.smoothScrollTimer) {
-			clearTimeout(this.smoothScrollTimer);
-			this.smoothScrollTimer = null;
+	// One tween frame: linearly interpolate from -> to by elapsed/duration, apply it instantly, then
+	// schedule the next frame until the duration elapses (landing exactly on `to`).
+	private step(): void {
+		if (!this.tween) {
+			this.frameTimer = null;
+			return;
 		}
-		this.pendingSmoothScroll = null;
-		this.inFlightSmoothScroll = null;
+		const { from, to, start } = this.tween;
+		const t = Math.min(1, (performance.now() - start) / SCROLL_DURATION_MS);
+		this.host.scrollTo({
+			left: from.left + (to.left - from.left) * t,
+			top: from.top + (to.top - from.top) * t,
+			behavior: 'instant',
+		});
+		if (t >= 1) {
+			this.tween = null;
+			this.frameTimer = null;
+			return;
+		}
+		this.frameTimer = setTimeout(() => this.step(), SCROLL_FRAME_MS);
+	}
+
+	// Stop the tween where it is, without moving the scroll box.
+	private stopTween(): void {
+		if (this.frameTimer) {
+			clearTimeout(this.frameTimer);
+			this.frameTimer = null;
+		}
+		this.tween = null;
+	}
+
+	/* Halts smooth scrolling: stops the tween and pins the scroll box to wherever it currently is
+	 * (a no-op scroll when nothing is animating). */
+	cancel(): void {
+		this.stopTween();
 		const { left, top } = this.host.scroll;
 		this.host.scrollTo({ left, top, behavior: 'instant' });
 	}
 
-	// Clears the settle timers without touching the scroll position (Stage.dispose calls it).
+	// Clears the timers without touching the scroll position (Stage.dispose calls it).
 	dispose(): void {
-		if (this.smoothScrollTimer) {
-			clearTimeout(this.smoothScrollTimer);
-			this.smoothScrollTimer = null;
-		}
+		this.stopTween();
 		if (this.resizeSettleTimer) {
 			clearTimeout(this.resizeSettleTimer);
 			this.resizeSettleTimer = null;

@@ -226,10 +226,20 @@ export const NOTEHEAD_HALF_H = 5;
 export const FRET_HALF_W = 6;
 export const FRET_HALF_H = 7;
 
-/** How long a smooth scroll is assumed to take; requests within this window are conflated. Browsers
- * don't expose the animation's end, so this is a fixed estimate. ponytail: fixed window, swap for a
- * scrollend listener if the guess proves wrong. */
-export const SMOOTH_SCROLL_SETTLE_MS = 500;
+/** Constant duration of a self-driven smooth scroll, regardless of distance. We tween the scroll
+ * box ourselves (native smooth scroll's duration is UA-defined and varies with distance) so every
+ * scroll takes the same time. ponytail: tune to taste. */
+export const SCROLL_DURATION_MS = 200;
+
+/** Above this scroll speed (px of travel per ms, i.e. distance / SCROLL_DURATION_MS), the tween
+ * would fling too fast to read, so we snap instantly instead. At 350ms this snaps travels beyond
+ * ~1050px. ponytail: tune to taste. */
+export const MAX_SCROLL_SPEED_PX_PER_MS = 3;
+
+/** Tween step interval (~60fps). setTimeout, not requestAnimationFrame — rAF isn't available in the
+ * bun unit-test runtime, and performance.now() keeps the tween's timing accurate despite setTimeout
+ * jitter. */
+export const SCROLL_FRAME_MS = 16;
 
 /** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
 export const SCROLL_TOP_PADDING_PX = 16;

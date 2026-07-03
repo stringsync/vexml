@@ -81,7 +81,9 @@ const controller = () => {
 	return { host, scroller, scroll };
 };
 
-const settle = () => new Promise((r) => setTimeout(r, 600));
+// Longer than SCROLL_DURATION_MS (350) so an in-flight tween has fully landed.
+const settle = () => new Promise((r) => setTimeout(r, 500));
+const last = (calls: ScrollToOptions[]) => calls[calls.length - 1];
 
 describe('ScrollController', () => {
 	it('instant scroll passes the axis-resolved offset straight through', () => {
@@ -90,89 +92,66 @@ describe('ScrollController', () => {
 		expect(host.calls).toEqual([{ left: 60, top: -6, behavior: undefined }]); // y: 10 - 16 padding
 	});
 
-	it('smooth scroll: the first request fires immediately, concurrent ones are conflated', () => {
+	it('smooth scroll: tweens over several instant frames and lands exactly on the target', async () => {
 		const { host, scroll } = controller();
-		scroll(10);
-		scroll(20);
-		scroll(30);
-		expect(host.calls).toEqual([{ left: 0, top: 10, behavior: 'smooth' }]);
-	});
-
-	it('smooth scroll: the latest conflated request flushes once the settle window elapses', async () => {
-		const { host, scroll } = controller();
-		scroll(10);
-		scroll(20);
-		scroll(30);
+		scroll(100);
 		await settle();
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 30, behavior: 'smooth' },
-		]);
+		expect(host.calls.length).toBeGreaterThan(2); // it animated rather than snapping
+		expect(host.calls.every((c) => c.behavior === 'instant')).toBe(true);
+		expect(last(host.calls)).toEqual({
+			left: 0,
+			top: 100,
+			behavior: 'instant',
+		});
 	});
 
-	it('dedupes a repeat of the in-flight target: nothing re-issues on settle', async () => {
+	it('smooth scroll: a stream of requests retargets the same tween to the latest destination', async () => {
 		const { host, scroll } = controller();
-		scroll(10);
-		scroll(10);
+		scroll(100);
+		scroll(200);
+		scroll(300); // latest wins; the tween redirects here
 		await settle();
-		expect(host.calls).toEqual([{ left: 0, top: 10, behavior: 'smooth' }]);
+		expect(last(host.calls)).toEqual({
+			left: 0,
+			top: 300,
+			behavior: 'instant',
+		});
 	});
 
-	it('dedupes a repeat of the pending target, but a different target still retargets', async () => {
+	it('snaps instantly when the travel would exceed the max scroll speed', async () => {
 		const { host, scroll } = controller();
-		scroll(10);
-		scroll(20);
-		scroll(20); // dropped: already the pending target
-		scroll(30); // genuinely different: retargets
+		scroll(5000); // 5000px / 350ms far exceeds the speed cap
+		expect(host.calls).toEqual([{ left: 0, top: 5000, behavior: 'instant' }]);
 		await settle();
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 30, behavior: 'smooth' },
-		]);
+		expect(host.calls).toHaveLength(1); // one snap, no tween frames
 	});
 
-	it('cancel halts the animation at the current offset and drops the pending target', async () => {
+	it('cancel halts the tween at the current offset and issues no further frames', async () => {
 		const { host, scroller, scroll } = controller();
-		scroll(10);
-		scroll(20);
-		host.scroll = { left: 0, top: 5 }; // wherever the animation happens to be mid-flight
+		scroll(100);
+		host.scroll = { left: 0, top: 40 }; // wherever the tween happens to be mid-flight
 		scroller.cancel();
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 5, behavior: 'instant' },
-		]);
+		expect(last(host.calls)).toEqual({ left: 0, top: 40, behavior: 'instant' });
+		const count = host.calls.length;
 		await settle();
-		expect(host.calls).toHaveLength(2); // the pending target never flushes
+		expect(host.calls).toHaveLength(count); // no more frames after cancel
 	});
 
-	it('cancel resets the conflation window: the next smooth scroll fires immediately', () => {
+	it('suspendForResize: cancels the in-flight tween, drops scrolls, then resumes once settled', async () => {
 		const { host, scroller, scroll } = controller();
-		scroll(10);
-		scroller.cancel();
-		scroll(20);
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 0, behavior: 'instant' },
-			{ left: 0, top: 20, behavior: 'smooth' },
-		]);
-	});
-
-	it('suspendForResize: cancels the in-flight scroll, drops scrolls, then resumes once settled', async () => {
-		const { host, scroller, scroll } = controller();
-		scroll(10); // in flight
+		scroll(100); // in flight
 		scroller.suspendForResize(); // cancels it to the current offset, blocks new scrolls
-		scroll(20); // dropped while suspended
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 0, behavior: 'instant' },
-		]);
+		scroll(200); // dropped while suspended
+		const count = host.calls.length;
 		await settle();
-		scroll(30); // suspension lifted after the settle window
-		expect(host.calls).toEqual([
-			{ left: 0, top: 10, behavior: 'smooth' },
-			{ left: 0, top: 0, behavior: 'instant' },
-			{ left: 0, top: 30, behavior: 'smooth' },
-		]);
+		expect(host.calls).toHaveLength(count); // nothing scrolled while suspended
+		scroll(300); // suspension lifted after the settle window
+		await settle();
+		expect(last(host.calls)).toEqual({
+			left: 0,
+			top: 300,
+			behavior: 'instant',
+		});
 	});
 
 	it('suspendForResize: a repeated call during the burst only cancels once', () => {
@@ -181,5 +160,14 @@ describe('ScrollController', () => {
 		scroller.suspendForResize();
 		scroller.suspendForResize();
 		expect(host.calls).toEqual([{ left: 0, top: 0, behavior: 'instant' }]);
+	});
+
+	it('dispose stops the tween without issuing more frames', async () => {
+		const { host, scroller, scroll } = controller();
+		scroll(100);
+		scroller.dispose();
+		const count = host.calls.length;
+		await settle();
+		expect(host.calls).toHaveLength(count);
 	});
 });
