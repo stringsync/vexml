@@ -15,6 +15,11 @@ export const HOVER_COLOR = '#f4f800';
 // The halo outline drawn around the hovered/pinned note.
 export const HALO_COLOR = 'rgba(255, 0, 105, 0.9)';
 
+// Dark-mode theme: the page behind the score, and the ink vexml engraves (glyphs, labels). The
+// score re-renders in these colors rather than CSS-inverting a black engraving.
+export const DARK_BG = 'rgb(35, 36, 41)';
+export const DARK_INK = 'rgb(235, 235, 235)';
+
 // Debounce window for slider/typing-driven re-renders, and the render-time threshold below which we
 // skip the debounce entirely (renders fast enough to keep up with input).
 export const DEBOUNCE_MS = 500;

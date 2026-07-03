@@ -10,6 +10,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from './config-slider';
 import {
 	ACTIVE_COLOR,
+	DARK_BG,
+	DARK_INK,
 	DARK_KEY,
 	DEBOUNCE_MS,
 	DEFAULT_FIXTURE,
@@ -188,9 +190,24 @@ export default function App() {
 			setTooltip(null);
 		};
 		let detach: (() => void) | undefined;
+		// Dark mode re-engraves the score in light ink (rather than CSS-inverting a black engraving),
+		// preserving the chosen font families and just tinting them. The dark page color is painted on
+		// the container itself (below), so it shows through the score's transparent pixels with no flash.
 		render(input, container, {
 			...renderConfig,
 			layout: { type: 'standard', referenceWidth: layoutWidth },
+			...(dark && {
+				fonts: {
+					notation: {
+						family: renderConfig.fonts?.notation?.family ?? 'Bravura',
+						color: DARK_INK,
+					},
+					text: {
+						family: renderConfig.fonts?.text?.family ?? 'Source Sans 3',
+						color: DARK_INK,
+					},
+				},
+			}),
 		})
 			.then((score) => {
 				// The effect can re-run before this resolves; drop the late score so it
@@ -419,7 +436,7 @@ export default function App() {
 			cursorRef.current = null;
 			setPlaying(false);
 		};
-	}, [input, renderConfig, instrumentRef.current]);
+	}, [input, renderConfig, dark, instrumentRef.current]);
 
 	// Advance the cursor in real time while playing. seekMs drives the bar and the synth (the change
 	// handler attacks/releases voices). ponytail: wall-clock RAF, not an audio clock.
@@ -1020,14 +1037,14 @@ export default function App() {
 							// vexml appends its managed canvas here; React manages only this div's
 							// attributes, never its children. vexml sizes the score to fit this container
 							// (scaling down when narrow, never past its engraved width) and centers it — no
-							// CSS needed here. The `.vexml-canvas` child-selector only tints the score canvas
-							// (not vexml's overlay layers) for dark mode. ponytail: invert the black glyphs
-							// to light rather than re-engraving in a light color.
+							// CSS needed here. In dark mode the page color is painted here (the score is
+							// re-engraved in light ink and shows through its transparent pixels).
 							<div
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
 								// width — the canvas fits against it and would fit against 0 if removed.
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${initialized ? '' : 'invisible'} ${dark ? 'bg-zinc-900 ring-zinc-700 [&_.vexml-canvas]:invert' : 'bg-white ring-zinc-200'}`}
+								style={dark ? { backgroundColor: DARK_BG } : undefined}
+								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${initialized ? '' : 'invisible'} ${dark ? 'ring-zinc-700' : 'bg-white ring-zinc-200'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (
