@@ -13,6 +13,8 @@ import {
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
+	Metrics,
+	MetricsDefaults,
 	Modifier,
 	type RenderContext,
 	Stave,
@@ -424,6 +426,12 @@ export class DrawPass {
 		// score is the only thing this changes. Text vexml types itself overrides to textColor inline.
 		this.context.setFillStyle(this.notationColor);
 		this.context.setStrokeStyle(this.notationColor);
+		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
+		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too —
+		// global VexFlow state like setFonts, reset to the default black when no color is set so an
+		// uncolored render stays byte-identical and no color leaks into the next render.
+		MetricsDefaults.Stem.strokeStyle = this.notationColor;
+		Metrics.clear('Stem');
 		for (let m = 0; m < this.measureCount; m++) {
 			this.drawMeasureColumn(m);
 		}
@@ -1026,6 +1034,15 @@ export class DrawPass {
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
 			for (const vexVoice of p.vexVoices) {
+				for (const note of vexVoice.getTickables()) {
+					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
+					// drawWithStyle lays over the context ink — so stems ignore notation.color while
+					// the noteheads/staves/clefs it colors don't. Restyle each note's stem to match.
+					// Covers beamed stems too: the beam renders this same Stem object.
+					(note as StemmableNote).getStem()?.setStyle({
+						strokeStyle: this.notationColor,
+					});
+				}
 				vexVoice.draw(this.context, p.stave);
 			}
 			for (const beam of p.beams) {

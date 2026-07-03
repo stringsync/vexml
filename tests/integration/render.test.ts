@@ -42,16 +42,18 @@ const TEST_CASES = [
 		fonts: { text: { family: 'Times New Roman' } },
 	}),
 
-	// Dark theme: a light-blue notation color recolors the engraved glyphs (noteheads,
-	// stems, staves, clefs), a light-gray text color recolors the part labels vexml draws,
-	// and backgroundColor paints the container behind them — proving fonts.*.color and
-	// backgroundColor flow through to the render.
-	testCase('structure_part_labels.musicxml', 'colors.png', {
+	// Custom colors over a "Melody" part: four beamed eighths (C5 D5 E5 F5) plus a G5 half note,
+	// on a light pink background. A deep-blue notation color recolors the engraved glyphs
+	// (noteheads, stems, the beam, staff, treble clef, measure number), a burnt-orange text color
+	// recolors the "Melody" part label vexml draws, and backgroundColor paints the container behind
+	// them — all three contrasting the light background, proving fonts.*.color and backgroundColor
+	// flow through to the render.
+	testCase('colors.musicxml', 'colors.png', {
 		showPartLabels: true,
-		backgroundColor: '#1e1e2e',
+		backgroundColor: '#fce4ec',
 		fonts: {
-			notation: { family: 'Bravura', color: '#89b4fa' },
-			text: { family: 'Source Sans 3', color: '#f9e2af' },
+			notation: { family: 'Bravura', color: '#1d4ed8' },
+			text: { family: 'Source Sans 3', color: '#c2410c' },
 		},
 	}),
 
@@ -528,6 +530,14 @@ const TEST_CASES = [
 	//   then a parenthesized G4/B4/D5 half-note chord — each notehead bracketed on the notation
 	//   stave and each fret "(0)"/"(0)"/"(2)" bracketed on tab strings 3/2/1.
 	testCase('notehead_parentheses.musicxml', 'notehead_parentheses.png'),
+
+	// Treble stave, 4/4: slash noteheads (<notehead>slash</notehead>) — rhythm slashes with the
+	// oval head replaced by an oblique bar. Filled for quarter and shorter, open (outlined) for
+	// half and whole. All on B4 (middle line) so only the head glyph and its fill vary.
+	// - M1: four quarter slashes — filled bars with stems.
+	// - M2: two half slashes — open bars with stems.
+	// - M3: one whole slash — open bar, no stem.
+	testCase('notehead_slash.musicxml', 'notehead_slash.png'),
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab

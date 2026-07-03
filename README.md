@@ -70,10 +70,10 @@ the score — together, a dark theme:
 
 ```ts
 await render(musicXML, element, {
-  backgroundColor: '#1e1e2e',
+  backgroundColor: '#fce4ec',
   fonts: {
-    notation: { color: '#89b4fa' }, // engraved glyphs
-    text: { color: '#f9e2af' },     // labels, numbers, chord symbols
+    notation: { color: '#1d4ed8' }, // engraved glyphs
+    text: { color: '#c2410c' },     // labels, numbers, chord symbols
   },
 });
 ```
