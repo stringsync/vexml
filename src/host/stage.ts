@@ -5,6 +5,23 @@ import {
 	type ScrollHost,
 } from './scroll-controller';
 
+/* The managed canvas's default on-screen size, injected once per document. Wrapped in `:where()`
+ * so it carries zero specificity: a caller's own `.vexml-canvas { width: 100% }` (or `max-width` +
+ * a centered container) overrides it with no `!important`, and the score then scales to fit. The
+ * per-score intrinsic dimensions ride on the --vexml-width/height custom properties the drawer sets.
+ * Only width/height are set (not display), so the canvas keeps its default `inline` box and the
+ * engraved output stays byte-identical to a hand-placed canvas. */
+function ensureCanvasStyles(): void {
+	if (document.head.querySelector('style[data-vexml-canvas-style]')) {
+		return;
+	}
+	const style = document.createElement('style');
+	style.setAttribute('data-vexml-canvas-style', '');
+	style.textContent =
+		':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}';
+	document.head.appendChild(style);
+}
+
 /* Where a custom drawing layer sits. A `content` layer covers the whole engraved score (score
  * space, scrolls with the content) — what decorations draw on. A `background` layer is a content
  * layer placed *behind* the base canvas (z-index -1), so it shows through the score's transparent
@@ -115,13 +132,15 @@ class ManagedLayer implements Layer {
 	}
 }
 
-/* The caller's height/width caps from config. A set cap turns the container into a scroll box on that
- * axis; null leaves the axis to size to its content. */
+/* The caller's container options from config. A set height/width cap turns the container into a
+ * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
+ * container behind the score. */
 export interface ScrollBox {
 	height?: number | null;
 	maxHeight?: number | null;
 	width?: number | null;
 	maxWidth?: number | null;
+	backgroundColor?: string | null;
 }
 
 /*
@@ -198,12 +217,18 @@ export class Stage implements Viewport, Host, ScrollHost {
 		if (overflowX) {
 			this.setStyle('overflow-x', 'auto');
 		}
+		// setProperty ignores an invalid color, so an untrusted value can't break out of the style.
+		if (scroll.backgroundColor) {
+			this.setStyle('background-color', scroll.backgroundColor);
+		}
 		this.base = document.createElement('canvas');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
 		// this class (or the container), never the bare element — that keeps the overlay canvases
-		// (`vexml-layer`) out of their selectors. vexml leaves `display` to the caller so the engraved
-		// output stays byte-identical to a hand-placed canvas.
+		// (`vexml-layer`) out of their selectors. The default on-screen size comes from the injected
+		// zero-specificity `:where(.vexml-canvas)` rule (below), so a caller's own `.vexml-canvas` rule
+		// overrides it without `!important` — e.g. `width: 100%; height: auto` to scale to the container.
 		this.base.className = 'vexml-canvas';
+		ensureCanvasStyles();
 		container.appendChild(this.base);
 	}
 
@@ -367,13 +392,22 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// stretched over the base's rendered box by placeLayer. A viewport bitmap matches the visible box.
 	private sizeBitmap(layer: ManagedLayer): void {
 		if (layer.kind !== 'viewport') {
-			layer.resize(
-				parseFloat(this.base.style.width) || 0,
-				parseFloat(this.base.style.height) || 0,
-			);
+			const { width, height } = this.intrinsicSize();
+			layer.resize(width, height);
 		} else {
 			layer.resize(this.container.clientWidth, this.container.clientHeight);
 		}
+	}
+
+	// The score-space (intrinsic) CSS size of the engraving, read from the --vexml-width/height custom
+	// properties the drawer publishes. This is the fixed layout size the score was drawn at, distinct
+	// from the base canvas's on-screen box (which the caller's CSS may have scaled). 0 before a draw.
+	private intrinsicSize(): { width: number; height: number } {
+		const style = this.base.style;
+		return {
+			width: parseFloat(style.getPropertyValue('--vexml-width')) || 0,
+			height: parseFloat(style.getPropertyValue('--vexml-height')) || 0,
+		};
 	}
 
 	// Position and stretch a layer's on-screen box over the base canvas. A content layer covers the
@@ -403,8 +437,9 @@ export class Stage implements Viewport, Host, ScrollHost {
 	 */
 	frame(): { left: number; top: number; sx: number; sy: number } {
 		const r = this.base.getBoundingClientRect();
-		const w = parseFloat(this.base.style.width) || r.width || 1;
-		const h = parseFloat(this.base.style.height) || r.height || 1;
+		const intrinsic = this.intrinsicSize();
+		const w = intrinsic.width || r.width || 1;
+		const h = intrinsic.height || r.height || 1;
 		return { left: r.left, top: r.top, sx: r.width / w, sy: r.height / h };
 	}
 }

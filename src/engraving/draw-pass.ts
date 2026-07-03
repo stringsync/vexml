@@ -13,6 +13,8 @@ import {
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
+	Metrics,
+	MetricsDefaults,
 	Modifier,
 	type RenderContext,
 	Stave,
@@ -260,6 +262,11 @@ export class DrawPass {
 	private readonly showNotation: boolean;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
+	// Ink colors from config.fonts. notationColor is the context's default fill/stroke, so every
+	// vexflow-engraved glyph (noteheads, stems, staves, clefs) inherits it; textColor recolors the
+	// words vexml types itself. Both default to black, keeping an uncolored score byte-identical.
+	private readonly notationColor: string;
+	private readonly textColor: string;
 
 	// One note map for the whole score: ties and slurs can span a barline, so their
 	// two endpoints may live in different measures. Notes are drawn measure by
@@ -394,6 +401,8 @@ export class DrawPass {
 		this.showTabSlideText = showTabSlideText;
 		this.showTabs = config.showTabs;
 		this.showNotation = config.showNotation;
+		this.notationColor = config.fonts.notation?.color ?? '#000000';
+		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.gaps = gapsByMeasureIndex(config.gaps);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
@@ -411,6 +420,18 @@ export class DrawPass {
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
 	} {
+		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
+		// survives the save()/restore() pairs below since it's set before any of them. A fresh canvas
+		// (or a resize between passes) resets to black, so setting black here is a no-op — a colored
+		// score is the only thing this changes. Text vexml types itself overrides to textColor inline.
+		this.context.setFillStyle(this.notationColor);
+		this.context.setStrokeStyle(this.notationColor);
+		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
+		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too —
+		// global VexFlow state like setFonts, reset to the default black when no color is set so an
+		// uncolored render stays byte-identical and no color leaks into the next render.
+		MetricsDefaults.Stem.strokeStyle = this.notationColor;
+		Metrics.clear('Stem');
 		for (let m = 0; m < this.measureCount; m++) {
 			this.drawMeasureColumn(m);
 		}
@@ -573,6 +594,7 @@ export class DrawPass {
 			) {
 				this.context.save();
 				this.context.setFont(this.labelFont, LABEL_FONT_SIZE);
+				this.context.setFillStyle(this.textColor);
 				const tw = this.context.measureText(part.label).width;
 				// Center on the staff lines themselves: top line of the part's first stave
 				// to bottom line of its last, so a single stave centers on its middle line
@@ -747,7 +769,7 @@ export class DrawPass {
 		if (this.showMeasureNumber && !this.measureNumbered && numberOccluded) {
 			this.context.save();
 			this.context.setFont(stave.getFont());
-			this.context.setFillStyle('#000000');
+			this.context.setFillStyle(this.textColor);
 			this.context.fillText(
 				measure.number,
 				stave.getX() + 4,
@@ -1012,6 +1034,15 @@ export class DrawPass {
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
 			for (const vexVoice of p.vexVoices) {
+				for (const note of vexVoice.getTickables()) {
+					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
+					// drawWithStyle lays over the context ink — so stems ignore notation.color while
+					// the noteheads/staves/clefs it colors don't. Restyle each note's stem to match.
+					// Covers beamed stems too: the beam renders this same Stem object.
+					(note as StemmableNote).getStem()?.setStyle({
+						strokeStyle: this.notationColor,
+					});
+				}
 				vexVoice.draw(this.context, p.stave);
 			}
 			for (const beam of p.beams) {
@@ -1493,6 +1524,9 @@ export class DrawPass {
 					fretCount: Math.max(4, ...frets),
 					showTuning: false,
 					fontFamily: this.labelFont,
+					// ponytail: only the ink follows the engraving color; the open-string bgColor
+					// stays white. Thread backgroundColor through if a dark theme needs it too.
+					color: this.notationColor,
 				});
 				diagram.draw(this.context);
 				this.pageTop = Math.min(this.pageTop, diagram.top);
@@ -1619,7 +1653,7 @@ export class DrawPass {
 		}
 		const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
 		this.context.save();
-		this.context.setFillStyle('#000000');
+		this.context.setFillStyle(this.textColor);
 		// Pad the box below the text baseline so liftClear's downward probe reaches a notehead
 		// sitting just under the baseline (a note in the top stave space) and nudges the symbol
 		// clear of it, leaving a little breathing room. The drawn baseline stays HARMONY_PADDING
@@ -1676,7 +1710,7 @@ export class DrawPass {
 		const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();
 		this.context.save();
 		this.context.setFont(this.labelFont, WORDS_FONT_SIZE, 'normal', 'italic');
-		this.context.setFillStyle('#000000');
+		this.context.setFillStyle(this.textColor);
 		const natural = new Rect(
 			x,
 			baseY - WORDS_FONT_SIZE,
@@ -1723,7 +1757,7 @@ export class DrawPass {
 		if (gap.label) {
 			const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
 			this.context.setFont(gap.style?.fontFamily ?? this.labelFont, fontSize);
-			this.context.setFillStyle(gap.style?.fontColor ?? '#000000');
+			this.context.setFillStyle(gap.style?.fontColor ?? this.textColor);
 			const tw = this.context.measureText(gap.label).width;
 			// Baseline sits ~0.35em below the vertical center, landing the cap-height
 			// visual center on the midline (the part-label +1.5px trick, size-relative).

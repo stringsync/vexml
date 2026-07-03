@@ -22,7 +22,8 @@ export type GapStyle = {
 	fontFamily?: string;
 	/** Label font size in px (default: 16). */
 	fontSize?: number;
-	/** CSS color for the label (default: black). */
+	/** CSS color for the label (default: the text font color, i.e. black unless
+	 * `fonts.text.color` is set). */
 	fontColor?: string;
 	/** CSS color painted over the gap's note area, e.g. to dim the staff lines
 	 * (`'rgba(255, 255, 255, 0.8)'`). Omit for none. */
@@ -82,8 +83,14 @@ export type MeasureNumbering =
  * `Partial<Config>`. */
 export type Config = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
-	 * use this for self-hosted or offline fonts. */
+	 * use this for self-hosted or offline fonts. Each font's optional `color` recolors the ink
+	 * drawn in it: `notation.color` the engraved glyphs (noteheads, stems, staves, clefs),
+	 * `text.color` the words vexml types (part labels, measure numbers, chord symbols). */
 	fonts: FontConfig;
+	/** CSS color painted on the container behind the score, or null for transparent
+	 * (default: null). Pair with `fonts.notation.color`/`fonts.text.color` for a dark theme.
+	 * Canvas layers added at negative z-index still draw over it. */
+	backgroundColor: string | null;
 	/** Non-musical measures to insert into the score (default: none). Each occupies
 	 * space on the page and a fixed ms of playback time — for syncing notation to media
 	 * where the music pauses (e.g. an instructor talking). `beforeMeasureIndex` is a
@@ -178,6 +185,7 @@ export const DEFAULT_FONT_CONFIG = {
 /** The defaults `render` merges a caller's `Partial<Config>` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
+	backgroundColor: null,
 	gaps: [],
 	layout: { type: 'standard' },
 	noteSpacing: 36,

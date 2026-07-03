@@ -84,9 +84,57 @@ function isParenthesized(note: Note): boolean {
 }
 
 /*
- * A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' notehead code so
- * vexflow draws a diamond (open for half+/whole, filled for quarter); an X notehead appends
- * '/X2' for a cross. Rests have no pitch; callers handle them.
+ * A <notehead>slash</notehead>: a rhythm-slash head, drawn as an oblique bar in place of the
+ * oval. vexflow has no key-suffix for it (unlike '/X2' for the X head), so addSlashNoteheads
+ * overrides the glyph after the StaveNote is built. SMuFL: open bar for whole/half, filled for
+ * quarter and shorter — matching vexflow's own duration split for X/diamond heads.
+ */
+function isSlashNotehead(note: Note): boolean {
+	return note.notehead?.value === 'slash';
+}
+
+// SMuFL slash-notehead glyphs by duration code (see isSlashNotehead).
+const SLASH_GLYPHS: Record<string, string> = {
+	w: '\uE102', // noteheadSlashWhiteWhole
+	h: '\uE103', // noteheadSlashWhiteHalf
+};
+const SLASH_GLYPH_FILLED = '\uE100'; // noteheadSlashVerticalEnds
+
+/*
+ * Replace each slash-head chord member's glyph with the SMuFL slash bar. Must run AFTER
+ * applyStem: setStemDirection rebuilds the noteheads from scratch and would wipe the override.
+ * ponytail: beamed slash notes lose this (the Beam resets stem direction, hence the heads,
+ * after construction) — add a post-beam re-apply in spanner-builder if that case shows up.
+ */
+function addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
+	const glyph = SLASH_GLYPHS[durationCode(chord.lead)] ?? SLASH_GLYPH_FILLED;
+	const noteHeads = staveNote.noteHeads;
+	chord.notes.forEach((note, i) => {
+		if (isSlashNotehead(note)) {
+			noteHeads[i]?.setText(glyph);
+		}
+	});
+}
+
+/*
+ * MusicXML <notehead> value -> vexflow key-suffix glyph code, appended to the key so vexflow
+ * draws the alternate head (see vexflowKey). These codes go through vexflow's codeNoteHead, which
+ * picks the duration-appropriate variant (open for half/whole, filled for quarter and shorter) —
+ * except 'x' (dead notes), pinned to the always-black X2 by convention. Values vexflow can't draw
+ * (cross, none) are absent and keep the default oval; slash has no code and is redrawn post-build
+ * by addSlashNoteheads.
+ */
+const NOTEHEAD_SUFFIX: Record<string, string> = {
+	x: 'X2', // cross
+	diamond: 'DI',
+	triangle: 'TU', // point-up triangle
+	'circle-x': 'CX',
+};
+
+/*
+ * A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' diamond code; a
+ * <notehead> with a supported alternate glyph appends its code (see NOTEHEAD_SUFFIX). Rests
+ * have no pitch; callers handle them.
  */
 function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
@@ -97,8 +145,9 @@ function vexflowKey(note: Note): string {
 	if (isHarmonic(note)) {
 		return `${key}/H`;
 	}
-	if (isXNotehead(note)) {
-		return `${key}/X2`;
+	const suffix = note.notehead && NOTEHEAD_SUFFIX[note.notehead.value];
+	if (suffix) {
+		return `${key}/${suffix}`;
 	}
 	return key;
 }
@@ -542,6 +591,7 @@ export class NoteTranslator {
 		addParentheses(staveNote, chord);
 		addDots(staveNote, lead);
 		applyStem(staveNote, lead);
+		addSlashNoteheads(staveNote, chord);
 		addArticulations(staveNote, lead);
 		addFermata(staveNote, lead);
 		addArpeggio(staveNote, lead);

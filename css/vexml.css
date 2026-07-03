@@ -12,3 +12,12 @@
 	--vexml-font-notation: "Bravura", serif;
 	--vexml-font-text: "Source Sans 3", sans-serif;
 }
+
+/* Default on-screen size of the rendered score. The --vexml-width/height custom properties are set
+   per-render on the canvas; this rule turns them into its displayed size. Wrapped in :where() so it
+   has zero specificity — override it with your own `.vexml-canvas { width: 100%; height: auto }`
+   (no !important needed) to scale the score to its container. */
+:where(.vexml-canvas) {
+	width: var(--vexml-width);
+	height: var(--vexml-height);
+}

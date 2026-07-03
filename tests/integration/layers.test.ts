@@ -20,7 +20,7 @@ describe('layers', () => {
 				const viewport = score.addLayer('viewport');
 				const before = {
 					contentW: parseFloat(content.ctx.canvas.style.width),
-					baseW: parseFloat(base.style.width),
+					baseW: parseFloat(base.style.getPropertyValue('--vexml-width')),
 					viewportW: parseFloat(viewport.ctx.canvas.style.width),
 					clientW: container.clientWidth,
 				};

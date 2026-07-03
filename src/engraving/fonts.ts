@@ -36,16 +36,6 @@ export class DefaultFontLoader implements FontLoader {
 		this.injectNotationFont(config?.notation);
 		this.injectTextFont(config?.text);
 		this.applyFontVariables(container, notation, text);
-		this.applyColorVariable(
-			container,
-			'--vexml-color-notation',
-			config?.notation?.color,
-		);
-		this.applyColorVariable(
-			container,
-			'--vexml-color-text',
-			config?.text?.color,
-		);
 		// VexFlow engraves glyphs from its own bundled font modules via global state, not the
 		// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
 		// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
@@ -145,18 +135,6 @@ export class DefaultFontLoader implements FontLoader {
 			'--vexml-font-text',
 			`'${textFamily}', sans-serif`,
 		);
-	}
-
-	// ponytail: just exposes the color as a CSS var; the renderer doesn't read it yet.
-	// Wire it into draw.ts (alongside the --vexml-font-text reader) when color is needed.
-	private applyColorVariable(
-		container: HTMLElement,
-		name: string,
-		color?: string,
-	): void {
-		if (color) {
-			container.style.setProperty(name, sanitizeFontValue(color));
-		}
 	}
 }
 

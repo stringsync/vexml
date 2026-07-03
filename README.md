@@ -61,6 +61,26 @@ await render(musicXML, element, {
 });
 ```
 
+## Custom colors
+
+Recolor the engraving and the page behind it. `fonts.notation.color` tints the engraved
+glyphs (noteheads, stems, staves, clefs), `fonts.text.color` the words vexml types (part
+labels, measure numbers, chord symbols), and `backgroundColor` paints the container behind
+the score — together, a dark theme:
+
+```ts
+await render(musicXML, element, {
+  backgroundColor: '#fce4ec',
+  fonts: {
+    notation: { color: '#1d4ed8' }, // engraved glyphs
+    text: { color: '#c2410c' },     // labels, numbers, chord symbols
+  },
+});
+```
+
+Each color is any CSS color string. `backgroundColor` defaults to transparent; a canvas
+layer added at a negative z-index still draws over it.
+
 ## Gap measures
 
 A gap is a non-musical measure inserted into the score: an empty stretch of stave with an optional label and fill, occupying a fixed amount of playback time regardless of tempo. Use gaps to sync notation to media where the music pauses — e.g. an instructor talking before the piece starts.
