@@ -175,8 +175,13 @@ export class ScoreDrawer {
 		const dpr = scratch.width / parseFloat(scratch.style.width);
 		canvas.width = scratch.width;
 		canvas.height = Math.round(cssHeight * dpr);
-		canvas.style.width = scratch.style.width;
-		canvas.style.height = `${cssHeight}px`;
+		// Publish the score-space (intrinsic) CSS size as custom properties rather than as inline
+		// width/height. The stage's default `:where(.vexml-canvas)` rule consumes them for the on-screen
+		// size, but at zero specificity — so a caller's own `.vexml-canvas { width: 100% }` overrides it
+		// without `!important`, letting the score scale to its container. frame()/sizeBitmap read these
+		// same properties for the intrinsic dimensions the score<->client transform needs.
+		canvas.style.setProperty('--vexml-width', scratch.style.width);
+		canvas.style.setProperty('--vexml-height', `${cssHeight}px`);
 		canvas
 			.getContext('2d')
 			?.drawImage(
