@@ -42,12 +42,14 @@ const TEST_CASES = [
 		fonts: { text: { family: 'Times New Roman' } },
 	}),
 
-	// Custom colors over a "Melody" part: four beamed eighths (C5 D5 E5 F5) plus a G5 half note,
-	// on a light pink background. A deep-blue notation color recolors the engraved glyphs
-	// (noteheads, stems, the beam, staff, treble clef, measure number), a burnt-orange text color
-	// recolors the "Melody" part label vexml draws, and backgroundColor paints the container behind
-	// them — all three contrasting the light background, proving fonts.*.color and backgroundColor
-	// flow through to the render.
+	// Custom colors over a "Melody" part on a light pink background. A deep-blue notation color
+	// recolors the engraved glyphs, a burnt-orange text color recolors the "Melody" part label
+	// vexml draws, and backgroundColor paints the container behind them — all three contrasting
+	// the light background, proving fonts.*.color and backgroundColor flow through to the render.
+	// - M1: four beamed eighths (C5 D5 E5 F5) plus a G5 half note — noteheads, stems, the beam,
+	//   staff, treble clef, and measure number all take the notation color.
+	// - M2: quarter notes above (A5, C6) and below (C4, A3) the staff, so their ledger lines also
+	//   take the notation color, not VexFlow's hardcoded gray.
 	testCase('colors.musicxml', 'colors.png', {
 		showPartLabels: true,
 		backgroundColor: '#fce4ec',

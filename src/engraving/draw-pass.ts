@@ -19,7 +19,7 @@ import {
 	type RenderContext,
 	Stave,
 	StaveConnector,
-	type StaveNote,
+	StaveNote,
 	StaveTempo,
 	Stem,
 	type StemmableNote,
@@ -1042,6 +1042,13 @@ export class DrawPass {
 					(note as StemmableNote).getStem()?.setStyle({
 						strokeStyle: this.notationColor,
 					});
+					// Ledger lines use the stave's hardcoded defaultLedgerLineStyle (gray #444),
+					// overriding the context ink the same way. Only restyle when a notation color
+					// is set so an uncolored render stays byte-identical; lineWidth is left to the
+					// stave default.
+					if (this.notationColor !== '#000000' && note instanceof StaveNote) {
+						note.setLedgerLineStyle({ strokeStyle: this.notationColor });
+					}
 				}
 				vexVoice.draw(this.context, p.stave);
 			}
