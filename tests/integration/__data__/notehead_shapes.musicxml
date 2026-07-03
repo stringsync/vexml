@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <!-- Alternate notehead glyphs (<notehead>...): the oval head is swapped for a shape via vexflow's
+       key-suffix codes, which pick the duration-appropriate variant (filled quarter, open half).
+       All on B4 (middle line) so only the head glyph varies; each measure holds two quarters then a
+       half to show the filled-vs-open forms of one shape.
+       - M1: diamond heads (<notehead>diamond</notehead>).
+       - M2: point-up triangle heads (<notehead>triangle</notehead>).
+       - M3: circle-x heads (<notehead>circle-x</notehead>). -->
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>diamond</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>diamond</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notehead>diamond</notehead>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>triangle</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>triangle</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notehead>triangle</notehead>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>circle-x</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notehead>circle-x</notehead>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notehead>circle-x</notehead>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

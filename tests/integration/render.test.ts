@@ -539,6 +539,14 @@ const TEST_CASES = [
 	// - M3: one whole slash — open bar, no stem.
 	testCase('notehead_slash.musicxml', 'notehead_slash.png'),
 
+	// Treble stave, 4/4: alternate notehead shapes drawn via vexflow's duration-aware key-suffix
+	// codes. All on B4 (middle line); each measure holds two quarters (filled) then a half (open)
+	// of one shape, so the filled-vs-open forms both show.
+	// - M1: diamond heads.
+	// - M2: point-up triangle heads.
+	// - M3: circle-x heads.
+	testCase('notehead_shapes.musicxml', 'notehead_shapes.png'),
+
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
 	// voice reserves the same beat as blank space (tab omits rest glyphs).

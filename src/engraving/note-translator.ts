@@ -117,9 +117,24 @@ function addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
 }
 
 /*
- * A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' notehead code so
- * vexflow draws a diamond (open for half+/whole, filled for quarter); an X notehead appends
- * '/X2' for a cross. Rests have no pitch; callers handle them.
+ * MusicXML <notehead> value -> vexflow key-suffix glyph code, appended to the key so vexflow
+ * draws the alternate head (see vexflowKey). These codes go through vexflow's codeNoteHead, which
+ * picks the duration-appropriate variant (open for half/whole, filled for quarter and shorter) —
+ * except 'x' (dead notes), pinned to the always-black X2 by convention. Values vexflow can't draw
+ * (cross, none) are absent and keep the default oval; slash has no code and is redrawn post-build
+ * by addSlashNoteheads.
+ */
+const NOTEHEAD_SUFFIX: Record<string, string> = {
+	x: 'X2', // cross
+	diamond: 'DI',
+	triangle: 'TU', // point-up triangle
+	'circle-x': 'CX',
+};
+
+/*
+ * A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' diamond code; a
+ * <notehead> with a supported alternate glyph appends its code (see NOTEHEAD_SUFFIX). Rests
+ * have no pitch; callers handle them.
  */
 function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
@@ -130,8 +145,9 @@ function vexflowKey(note: Note): string {
 	if (isHarmonic(note)) {
 		return `${key}/H`;
 	}
-	if (isXNotehead(note)) {
-		return `${key}/X2`;
+	const suffix = note.notehead && NOTEHEAD_SUFFIX[note.notehead.value];
+	if (suffix) {
+		return `${key}/${suffix}`;
 	}
 	return key;
 }
