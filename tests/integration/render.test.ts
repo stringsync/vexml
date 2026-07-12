@@ -455,6 +455,21 @@ const TEST_CASES = [
 		showTabSlideText: true,
 	}),
 
+	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired
+	// <slide type="stop">, indeterminate origin). A half rest then a half note B4 (beat 3),
+	// so the note sits mid-stave with room on both sides.
+	// - M1: the note has no partner to slide from, so instead of a line it draws a short
+	//   "/" tick rising up into the head on both staves — left of the notehead on the
+	//   notation stave, and left of the fret as "/8" on the TAB stave (string 2, fret 8).
+	testCase('slide_in.musicxml', 'slide_in.png'),
+
+	// Notation stave over a 6-line TAB stave, 4/4: a slide OUT of a note (an unpaired
+	// <slide type="start">, indeterminate target). Same layout as slide_in — a half rest
+	// then a half note B4 (beat 3).
+	// - M1: the "/" tick sits on the RIGHT of the note instead, rising up out of it — right
+	//   of the notehead on the notation stave and right of the fret as "8/" on the TAB stave.
+	testCase('slide_out.musicxml', 'slide_out.png'),
+
 	// 6-line TAB stave: bends, each drawn as an upward arrow + label. No <time>, so no
 	// time signature is drawn.
 	// - M1: a whole-step bend labelled "1" on string 3 fret 7, then a half-step bend
@@ -766,10 +781,18 @@ const TEST_CASES = [
 	//   running head-to-head down to the C5 quarter (stem down); a dotted-half rest fills the bar.
 	// - M4: the same, but the main note's stem faces the other way — an 8th D5 grace slurred
 	//   under to an E4 quarter (stem up); the slur still hugs the noteheads, clearing the up-stem.
-	// - M5: a placement override — an 8th D5 grace forced above (placement="above"), so the slur
-	//   arcs over the top to the C5 quarter instead of hugging under.
+	// - M5: a placement override a grace slur ignores — an 8th D5 grace with placement="above",
+	//   yet the slur still hugs under to the C5 quarter (grace slurs always bow underneath).
 	// - M6: a multi-grace slur — a beamed grace pair (E5, D5) with one arc spanning from the first
 	//   grace under to the C5 quarter.
+	// - M7: a hammer-on grace — an 8th C5 grace with a <hammer-on> to the D5 quarter, drawn as a
+	//   slur curve hugging under from the grace to the main note (no "H" text — that's tab-only).
+	// - M8: a pull-off grace — an 8th D5 grace with a <pull-off> to the C5 quarter, the mirror of
+	//   M7, likewise drawn as a slur curve from the grace under to the main note.
+	// - M9: a slide grace — an 8th E5 grace with a <slide> to the C5 quarter, drawn as a straight
+	//   diagonal line slanting down from the grace notehead to the main notehead (no arrowhead, no label).
+	// - M10: the mirror of M9 — an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
+	//   slants up from the lower grace notehead to the main notehead.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note

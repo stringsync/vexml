@@ -110,6 +110,28 @@ export const TAB_GRACE_SPACING = 14;
 export const TAB_TIE_CP1 = 8;
 export const TAB_TIE_CP2 = 12;
 
+/** A notation slide/glissando line (see NotationSlide) runs between the two notehead centers,
+ * tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical rise/fall it is
+ * allowed (so a near-unison slide still reads instead of going flat, and a chord's near-equal
+ * slides stay ~parallel); the tilt is also capped to the horizontal run so a wide interval over
+ * a short grace-to-main gap doesn't spike near-vertical. SLIDE_PADDING insets each end: the
+ * line starts just past the start notehead's outer edge and ends just into the target head. */
+export const SLIDE_MIN_SLANT = 6;
+export const SLIDE_PADDING = 3;
+
+/** A single-note slide (a slide into or out of a note whose other end is indeterminate — an
+ * unpaired <slide> start/stop) has no partner notehead to run to, so instead of a full line it
+ * draws a short "/" tick beside the note: SINGLE_SLIDE_LEN long horizontally, rising
+ * SINGLE_SLIDE_RISE from the far end up to the notehead. A slide-in sits just left of the head
+ * (rising into it); a slide-out just right (rising out of it). */
+export const SINGLE_SLIDE_LEN = 10;
+export const SINGLE_SLIDE_RISE = 7;
+
+/** Extra gap (past SLIDE_PADDING) between a note glyph and the head-touching end of a
+ * single-note slide tick. A bare tab fret digit needs more air than a notehead, so the tab
+ * ticks and the notation slide-out (which reads cramped against the head) widen the gap by this. */
+export const SINGLE_SLIDE_GAP = 5;
+
 /** Pixels a notation+tab bracket is shifted left of the stave, so it sits just outside
  * the system's left line with a small gap. */
 export const BRACKET_X_SHIFT = 3;
@@ -202,6 +224,13 @@ export const SLUR_MIN_CP_Y = 16;
 
 /** Arc height grows with slur width so long slurs get a rounder bow. */
 export const SLUR_WIDTH_FACTOR = 0.12;
+
+/** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
+ * small tight bow hugging directly under the two noteheads, not the fuller slur arc —
+ * a subtler endpoint lift and a shallow fixed control-point rise (no notehead-clearance
+ * inflation). */
+export const SLUR_GRACE_Y_SHIFT = 4;
+export const SLUR_GRACE_CP_Y = 6;
 
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;

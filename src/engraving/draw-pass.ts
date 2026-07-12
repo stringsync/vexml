@@ -1877,6 +1877,14 @@ export class DrawPass {
 		)) {
 			slide.setContext(this.context).draw();
 		}
+		// Standard-notation glissandos/slides (the StaveLine counterpart of the tab
+		// slides above), e.g. a grace note that slides into the note it precedes.
+		for (const line of this.spanners.buildGlissandos(
+			this.allChords,
+			this.byLead,
+		)) {
+			line.setContext(this.context).draw();
+		}
 		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
 		// ponytail: only the final crop is grown — a pedal on a non-last system isn't

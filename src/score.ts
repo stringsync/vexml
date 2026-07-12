@@ -49,6 +49,9 @@ export class Score implements Listenable<ScoreEventMap> {
 		Array<[string, EventListener]>
 	>();
 	private readonly unobserveResize: () => void;
+	// Last container size we emitted a 'resize' for, so a base-only reflow (same container size)
+	// relayouts without re-emitting. null until the first notification.
+	private lastResize: { width: number; height: number } | null = null;
 	// Hover state: the element last reported and the last pointer position (client coords) to
 	// re-hit-test on scroll. unobserveScroll is hover's window-scroll subscription.
 	private hovered: Element | null = null;
@@ -68,13 +71,26 @@ export class Score implements Listenable<ScoreEventMap> {
 		},
 		private readonly gaps: readonly GapInfo[] = [],
 	) {
-		// On resize: re-sync the layers (viewport layers are refit and cleared; content layers just
-		// re-track the base canvas) before telling the caller, so a viewport-layer redraw in the
-		// resize handler lands on a correctly sized, cleared surface.
+		// Fires on any change to the container OR the base canvas's rendered box (e.g. a web-font
+		// reflow growing the engraving without the container resizing). Re-sync the layers to the
+		// base's live box every time — that stale placement is exactly what drifts when the base grows
+		// without a container resize. Viewport layers are refit and cleared; content layers just
+		// re-track the base canvas, so a viewport-layer redraw in the resize handler lands on a
+		// correctly sized, cleared surface.
 		this.unobserveResize = host.observeResize((size) => {
+			host.relayoutLayers();
+			// Only an actual container-size change is a 'resize' for the caller. A base-only reflow
+			// reports the unchanged container size, so dedupe: relayout above, but don't suspend
+			// scrolling or emit a spurious 'resize' carrying a size that didn't change.
+			if (
+				size.width === this.lastResize?.width &&
+				size.height === this.lastResize?.height
+			) {
+				return;
+			}
+			this.lastResize = size;
 			// Suspend scrolling for the duration of the resize burst; it resumes once the size settles.
 			this.scroller.suspendForResize();
-			host.relayoutLayers();
 			this.target.dispatchEvent('resize', size);
 		});
 	}

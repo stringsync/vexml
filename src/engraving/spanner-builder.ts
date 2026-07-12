@@ -5,6 +5,7 @@ import {
 	Curve,
 	Modifier,
 	PedalMarking,
+	type RenderContext,
 	type StaveNote,
 	StaveTie,
 	Stem,
@@ -16,6 +17,13 @@ import {
 	Tuplet,
 } from 'vexflow';
 import {
+	SINGLE_SLIDE_GAP,
+	SINGLE_SLIDE_LEN,
+	SINGLE_SLIDE_RISE,
+	SLIDE_MIN_SLANT,
+	SLIDE_PADDING,
+	SLUR_GRACE_CP_Y,
+	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
 	SLUR_MIN_CP_Y,
 	SLUR_WIDTH_FACTOR,
@@ -24,6 +32,128 @@ import {
 	TAB_TIE_CP2,
 } from '../constants';
 import type { PedalMark } from './score-reader';
+
+/*
+ * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
+ * clear of the start notehead into the target notehead, rising for an up-slide and falling for
+ * a down-slide. The tilt is
+ * floored at SLIDE_MIN_SLANT so a near-unison slide still reads instead of going flat (and a
+ * chord's near-equal slides stay ~parallel like the tab), and capped to the horizontal run so
+ * a wide interval over a short grace-to-main gap doesn't spike near-vertical. (vexflow's
+ * StaveLine can't do either — it just connects the heads flatly.) Drawn like the other
+ * spanners via setContext().draw().
+ */
+class NotationSlide {
+	private context?: RenderContext;
+	constructor(
+		private readonly from: StaveNote,
+		private readonly fromIndex: number,
+		private readonly to: StaveNote,
+		private readonly toIndex: number,
+	) {}
+	setContext(context: RenderContext): this {
+		this.context = context;
+		return this;
+	}
+	draw(): void {
+		const ctx = this.context;
+		if (!ctx) {
+			return;
+		}
+		// getModifierStartXY(...).y is each note's notehead Y (ys[index]). Start the line clear
+		// of the start notehead's outer edge plus a gap (its center plus half its glyph width
+		// plus 2*SLIDE_PADDING — the extra clears its stem so the line doesn't look like it grows
+		// out of the note), and end it just into the target notehead (its center minus
+		// SLIDE_PADDING) so the slide reads as running into the note. The start note is always
+		// left of the target, so x1 < x2 holds.
+		const startY = this.from.getModifierStartXY(
+			Modifier.Position.RIGHT,
+			this.fromIndex,
+		).y;
+		const endY = this.to.getModifierStartXY(
+			Modifier.Position.LEFT,
+			this.toIndex,
+		).y;
+		const x1 =
+			this.from.getAbsoluteX() +
+			this.from.getGlyphWidth() / 2 +
+			2 * SLIDE_PADDING;
+		const x2 = this.to.getAbsoluteX() - SLIDE_PADDING;
+		const width = Math.max(x2 - x1, 1);
+		// Rise from the start head to the target head; the target lower (larger y) is a
+		// down-slide. Floor the tilt so a near-unison slide still reads, but cap it to the
+		// horizontal width so a wide interval over a short grace-to-main run doesn't spike
+		// near-vertical. A true unison defaults to a down tilt.
+		const rise = endY - startY;
+		const sign = rise < 0 ? -1 : 1;
+		const dy =
+			sign * Math.min(Math.max(Math.abs(rise), SLIDE_MIN_SLANT), width);
+		ctx.beginPath();
+		ctx.moveTo(x1, startY);
+		ctx.lineTo(x2, startY + dy);
+		ctx.stroke();
+	}
+}
+
+/*
+ * A slide into or out of a single note, where the other end is indeterminate (an unpaired
+ * <slide>/<glissando> — a stop with no start, or a start with no stop). There's no partner
+ * notehead, so it draws a short "/" tick beside the head instead of a line between two: a
+ * slide-in ('in') sits just left of the head and rises up into it; a slide-out ('out') sits
+ * just right and rises up out of it. Works for both a StaveNote (notation) and a TabNote (tab)
+ * — both expose getAbsoluteX/getGlyphWidth/getModifierStartXY. Drawn via setContext().draw()
+ * like the other spanners. (vexflow's TabSlide/StaveTie render a partial only by running the
+ * line to the stave edge, which is right for a system-break wrap but not a mid-measure gesture.)
+ */
+class SingleSlide {
+	private context?: RenderContext;
+	constructor(
+		private readonly note: StaveNote | TabNote,
+		private readonly index: number,
+		private readonly kind: 'in' | 'out',
+		// Extra gap between the note glyph and the near (head-touching) end of the tick, on top
+		// of SLIDE_PADDING. The default padding hugs a notehead well, but a bare tab fret digit
+		// wants more air, so callers widen it per case.
+		private readonly extraPad = 0,
+	) {}
+	setContext(context: RenderContext): this {
+		this.context = context;
+		return this;
+	}
+	draw(): void {
+		const ctx = this.context;
+		if (!ctx) {
+			return;
+		}
+		const side =
+			this.kind === 'in' ? Modifier.Position.LEFT : Modifier.Position.RIGHT;
+		const y = this.note.getModifierStartXY(side, this.index).y;
+		const half = this.note.getGlyphWidth() / 2;
+		const pad = SLIDE_PADDING + this.extraPad;
+		// The end touching the notehead sits at its Y; the far end drops SINGLE_SLIDE_RISE so the
+		// tick always leans up-right ("/"), like the tab "/8" slide-in in the reference image. A
+		// slide-in tucks just left of the head (running up into it); a slide-out just right.
+		const near = this.note.getAbsoluteX();
+		const [x1, y1, x2, y2] =
+			this.kind === 'in'
+				? [
+						near - half - pad - SINGLE_SLIDE_LEN,
+						y + SINGLE_SLIDE_RISE,
+						near - half - pad,
+						y,
+					]
+				: [
+						near + half + pad,
+						y,
+						near + half + pad + SINGLE_SLIDE_LEN,
+						y - SINGLE_SLIDE_RISE,
+					];
+		ctx.beginPath();
+		ctx.moveTo(x1, y1);
+		ctx.lineTo(x2, y2);
+		ctx.stroke();
+	}
+}
 
 // Note types with 2+ beams (16th and shorter). Used to decide when to flatten beams.
 const MULTI_BEAM_TYPES = new Set(['16th', '32nd', '64th', '128th']);
@@ -328,8 +458,8 @@ export class SpannerBuilder {
 		chords: Chord[],
 		byTabLead: Map<Note, TabNote>,
 		showText: boolean,
-	): TabSlide[] {
-		const slides: TabSlide[] = [];
+	): Array<TabSlide | SingleSlide> {
+		const slides: Array<TabSlide | SingleSlide> = [];
 		const open = new Map<string, { note: TabNote; fret: number }>();
 		for (const chord of chords) {
 			const tabNote = byTabLead.get(chord.lead);
@@ -355,6 +485,9 @@ export class SpannerBuilder {
 					const from = open.get(number);
 					open.delete(number);
 					if (!from) {
+						// A stop with no matching start is a slide *into* this note from an
+						// indeterminate origin — a "/8" tick left of the fret, not a line.
+						slides.push(new SingleSlide(tabNote, 0, 'in', SINGLE_SLIDE_GAP));
 						continue;
 					}
 					const notes: TieNotes = {
@@ -375,7 +508,85 @@ export class SpannerBuilder {
 				}
 			}
 		}
+		// A start left unclosed is a slide *out* of that note to an indeterminate target — a
+		// tick right of the fret. (showText only labels paired "sl." lines, not these ticks.)
+		for (const { note } of open.values()) {
+			slides.push(new SingleSlide(note, 0, 'out', SINGLE_SLIDE_GAP));
+		}
 		return slides;
+	}
+
+	/*
+	 * Glissandos/slides on a standard-notation stave: a <slide> (or <glissando>)
+	 * start..stop pair drawn as a StaveLine — a straight line between the two
+	 * noteheads (the tab counterpart is buildSlides, a tilted TabSlide). Paired by
+	 * `number` and resolved over the whole score so a slide can cross a barline. The
+	 * grace lead is in byLead too, so this covers a grace note that slides into the
+	 * main note it precedes.
+	 */
+	buildGlissandos(
+		chords: Chord[],
+		byLead: Map<Note, StaveNote>,
+	): Array<NotationSlide | SingleSlide> {
+		// A slide can sit on any chord member (a two-note chord may slide both notes,
+		// each with its own <slide number>), so map every note — not just the lead —
+		// to its StaveNote and notehead index. Otherwise only the lead's line draws.
+		const placement = new Map<Note, { staveNote: StaveNote; index: number }>();
+		for (const chord of chords) {
+			const staveNote = byLead.get(chord.lead);
+			if (staveNote) {
+				chord.notes.forEach((note, index) => {
+					placement.set(note, { staveNote, index });
+				});
+			}
+		}
+
+		const lines: Array<NotationSlide | SingleSlide> = [];
+		const open = new Map<string, { staveNote: StaveNote; index: number }>();
+		for (const chord of chords) {
+			for (const note of chord.notes) {
+				const at = placement.get(note);
+				if (!at) {
+					continue;
+				}
+				const markers = [
+					...note.slides.map((s) => ({ number: s.number, type: s.slideType })),
+					...note.glissandos.map((g) => ({
+						number: g.number,
+						type: g.glissandoType,
+					})),
+				];
+				for (const marker of markers) {
+					if (marker.type === 'start') {
+						open.set(marker.number, at);
+					} else if (marker.type === 'stop') {
+						const from = open.get(marker.number);
+						open.delete(marker.number);
+						if (!from) {
+							// Stop with no start: a slide *into* this note (a "/" tick left of
+							// the head) — the notation counterpart of the tab slide-in.
+							lines.push(new SingleSlide(at.staveNote, at.index, 'in'));
+							continue;
+						}
+						lines.push(
+							new NotationSlide(
+								from.staveNote,
+								from.index,
+								at.staveNote,
+								at.index,
+							),
+						);
+					}
+				}
+			}
+		}
+		// A start left unclosed is a slide *out* of that note — a "/" tick right of the head.
+		for (const at of open.values()) {
+			lines.push(
+				new SingleSlide(at.staveNote, at.index, 'out', SINGLE_SLIDE_GAP),
+			);
+		}
+		return lines;
 	}
 
 	/*
@@ -428,7 +639,7 @@ export class SpannerBuilder {
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
-			for (const slur of chord.lead.slurs) {
+			for (const slur of slurConnectors(chord.lead)) {
 				if (slur.slurType !== 'start' || !slur.partner || !from) {
 					continue;
 				}
@@ -447,17 +658,17 @@ export class SpannerBuilder {
 						: [from, to];
 
 				// Bulge up for placement="above", down for "below", otherwise opposite the
-				// stems (slurs sit on the notehead side). Grace-to-main slurs default below
-				// (under the grace, down to the main notehead) when unspecified. The opening
-				// direction forces the arc's sign even when the two endpoints' stems disagree.
-				const bulgeUp =
-					slur.placement === 'above'
+				// stems (slurs sit on the notehead side). The opening direction forces the
+				// arc's sign even when the two endpoints' stems disagree. A grace-to-main
+				// slur always hugs under (under the grace, down to the main notehead),
+				// ignoring placement — grace slurs read as a consistent underneath bow.
+				const bulgeUp = isGrace
+					? false
+					: slur.placement === 'above'
 						? true
 						: slur.placement === 'below'
 							? false
-							: isGrace
-								? false
-								: from.getStemDirection() !== 1;
+							: from.getStemDirection() !== 1;
 
 				// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
 				// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
@@ -489,7 +700,9 @@ export class SpannerBuilder {
 					}
 					return noteExtents(n);
 				};
-				const yShift = SLUR_Y_SHIFT;
+				// A grace-to-main curve hugs directly under the two noteheads with a small
+				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
+				const yShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
 
 				// The control-point lift needed for a curve whose endpoints both sit at
 				// `midEnd` (the bulge-side Y) and that must clear the extreme note among
@@ -499,6 +712,9 @@ export class SpannerBuilder {
 					spanNotes: StaveNote[],
 					width: number,
 				) => {
+					if (isGrace) {
+						return SLUR_GRACE_CP_Y;
+					}
 					const extreme = bulgeUp
 						? Math.min(...spanNotes.map((n) => extentsOf(n).top))
 						: Math.max(...spanNotes.map((n) => extentsOf(n).bottom));
@@ -682,6 +898,35 @@ function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
 				n.pitch?.alter === p.alter,
 		) ?? null
 	);
+}
+
+/*
+ * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
+ * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
+ * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
+ * them the same way — including grace-to-main graces. A technique whose target a real
+ * <slur> already reaches is dropped, so an exporter that emits both doesn't double the arc.
+ */
+type SlurConnector = {
+	slurType: string;
+	partner: { note: Note } | null;
+	placement: string | null;
+};
+function slurConnectors(note: Note): SlurConnector[] {
+	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note));
+	const techniques: SlurConnector[] = [
+		...note.hammerOns.map((h) => ({
+			slurType: h.hammerOnType,
+			partner: h.partner,
+			placement: null,
+		})),
+		...note.pullOffs.map((p) => ({
+			slurType: p.pullOffType,
+			partner: p.partner,
+			placement: null,
+		})),
+	].filter((t) => !slurTargets.has(t.partner?.note));
+	return [...note.slurs, ...techniques];
 }
 
 /*

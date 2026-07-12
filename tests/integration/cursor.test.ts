@@ -129,6 +129,45 @@ describe('cursor', () => {
 	// a chord's ties by shared number, so the timeline re-resolves each to its same-pitch member. Seek
 	// into the 2nd (tied-to) chord; all four noteheads (both chords, C5 + E5 each) must be highlighted,
 	// and nothing once playback is done.
+	// A tie must not re-attack the note: the tied-to onset sustains the sounding pitch rather than
+	// re-striking it. Walk every step transition of a score that ties two half notes within a bar
+	// (M1), a whole note across the barline (M2->M3), and two half notes with a redundant accidental
+	// (M4). At each tied continuation the pitch is `sustained` with nothing `started`; the one place
+	// the same pitch repeats WITHOUT a tie (M1's C5 into M2's fresh C5) is the control that DOES
+	// re-attack. Exercises the real parse -> tiedFrom resolution -> classify path end to end.
+	it.concurrent('a tie sustains the note instead of re-attacking it', async () => {
+		const { result } = await renderTest('tie.musicxml', {}, (score) => {
+			const seq = score.getSequence();
+			const pitches = (notes: ReadonlyArray<{ getPitch(): string | null }>) =>
+				notes.map((n) => n.getPitch()).sort();
+			const transitions = [];
+			for (let i = 1; i < seq.length; i++) {
+				const t = seq.classify(i - 1, i);
+				transitions.push({
+					started: pitches(t.started),
+					sustained: pitches(t.sustained),
+					stopped: pitches(t.stopped),
+				});
+			}
+			return { length: seq.length, transitions };
+		});
+
+		// Onsets: M1 C5, M1 C5 (tie stop), M2 C5, M3 C5 (tie stop), M4 F#5, M4 F#5 (tie stop).
+		expect(result.length).toBe(6);
+		expect(result.transitions).toEqual([
+			// M1: tied C5 -> C5, sustained, not re-attacked.
+			{ started: [], sustained: ['C/5'], stopped: [] },
+			// M1 -> M2: same pitch but NOT tied, so it genuinely re-attacks (control).
+			{ started: ['C/5'], sustained: [], stopped: ['C/5'] },
+			// M2 -> M3: tie across the barline, sustained.
+			{ started: [], sustained: ['C/5'], stopped: [] },
+			// M3 -> M4: different pitch, C5 releases and F#5 attacks.
+			{ started: ['F#/5'], sustained: [], stopped: ['C/5'] },
+			// M4: tied F#5 -> F#5, sustained.
+			{ started: [], sustained: ['F#/5'], stopped: [] },
+		]);
+	});
+
 	it.concurrent('a tied chord highlights every member of the tie group', async () => {
 		const { result } = await renderTest(
 			'tie_chord_dyad.musicxml',

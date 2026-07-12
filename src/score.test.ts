@@ -293,6 +293,25 @@ describe('Score', () => {
 		expect(layersResizedAtEmit).toBe(1);
 	});
 
+	it('a base-only change (same container size) relayouts without re-emitting resize', () => {
+		const { host, score } = fixture(null);
+		const seen: Array<{ width: number; height: number }> = [];
+		score.addEventListener('resize', (e) =>
+			seen.push({ width: e.width, height: e.height }),
+		);
+
+		// First notification: real container size → relayout + emit.
+		host.resizeListener?.({ width: 100, height: 50 });
+		// Base-canvas reflow with the container size held constant (e.g. the music font settling
+		// taller): observeResize still fires, reporting the unchanged container size.
+		host.resizeListener?.({ width: 100, height: 50 });
+
+		// Layers were re-synced to the base's live box on both notifications (the drift fix)...
+		expect(host.relayoutLayersCalls).toBe(2);
+		// ...but the caller only saw one 'resize', since the container size never changed.
+		expect(seen).toEqual([{ width: 100, height: 50 }]);
+	});
+
 	it('addLayer delegates to the host and forwards zIndex; rejects non-integers', () => {
 		const { host, score } = fixture(null);
 		const layer = score.addLayer('content');

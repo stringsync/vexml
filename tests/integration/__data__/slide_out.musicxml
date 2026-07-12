@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Notation stave over a 6-line TAB stave, 4/4: a slide OUT of a note. The note carries a
+         <slide type="start"> with no matching stop, so its target is indeterminate — a slide out
+         of the note. With no partner notehead to run a line to, it draws a short "/" tick just
+         right of the head (notation) and right of the fret ("8/" on tab), rising up out of it. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>TAB</sign><line>5</line></clef>
+        <staff-details number="2"><staff-lines>6</staff-lines></staff-details>
+      </attributes>
+      <note>
+        <rest /><duration>2</duration><voice>1</voice><type>half</type><staff>1</staff>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>half</type><staff>1</staff>
+        <notations><slide number="1" type="start" /></notations>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <rest /><duration>2</duration><voice>2</voice><type>half</type><staff>2</staff>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>2</voice><type>half</type><staff>2</staff>
+        <notations>
+          <technical><string>2</string><fret>8</fret></technical>
+          <slide number="1" type="start" />
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
