@@ -17,6 +17,9 @@ import {
 	Tuplet,
 } from 'vexflow';
 import {
+	SINGLE_SLIDE_GAP,
+	SINGLE_SLIDE_LEN,
+	SINGLE_SLIDE_RISE,
 	SLIDE_MIN_SLANT,
 	SLIDE_PADDING,
 	SLUR_GRACE_CP_Y,
@@ -88,6 +91,66 @@ class NotationSlide {
 		ctx.beginPath();
 		ctx.moveTo(x1, startY);
 		ctx.lineTo(x2, startY + dy);
+		ctx.stroke();
+	}
+}
+
+/*
+ * A slide into or out of a single note, where the other end is indeterminate (an unpaired
+ * <slide>/<glissando> — a stop with no start, or a start with no stop). There's no partner
+ * notehead, so it draws a short "/" tick beside the head instead of a line between two: a
+ * slide-in ('in') sits just left of the head and rises up into it; a slide-out ('out') sits
+ * just right and rises up out of it. Works for both a StaveNote (notation) and a TabNote (tab)
+ * — both expose getAbsoluteX/getGlyphWidth/getModifierStartXY. Drawn via setContext().draw()
+ * like the other spanners. (vexflow's TabSlide/StaveTie render a partial only by running the
+ * line to the stave edge, which is right for a system-break wrap but not a mid-measure gesture.)
+ */
+class SingleSlide {
+	private context?: RenderContext;
+	constructor(
+		private readonly note: StaveNote | TabNote,
+		private readonly index: number,
+		private readonly kind: 'in' | 'out',
+		// Extra gap between the note glyph and the near (head-touching) end of the tick, on top
+		// of SLIDE_PADDING. The default padding hugs a notehead well, but a bare tab fret digit
+		// wants more air, so callers widen it per case.
+		private readonly extraPad = 0,
+	) {}
+	setContext(context: RenderContext): this {
+		this.context = context;
+		return this;
+	}
+	draw(): void {
+		const ctx = this.context;
+		if (!ctx) {
+			return;
+		}
+		const side =
+			this.kind === 'in' ? Modifier.Position.LEFT : Modifier.Position.RIGHT;
+		const y = this.note.getModifierStartXY(side, this.index).y;
+		const half = this.note.getGlyphWidth() / 2;
+		const pad = SLIDE_PADDING + this.extraPad;
+		// The end touching the notehead sits at its Y; the far end drops SINGLE_SLIDE_RISE so the
+		// tick always leans up-right ("/"), like the tab "/8" slide-in in the reference image. A
+		// slide-in tucks just left of the head (running up into it); a slide-out just right.
+		const near = this.note.getAbsoluteX();
+		const [x1, y1, x2, y2] =
+			this.kind === 'in'
+				? [
+						near - half - pad - SINGLE_SLIDE_LEN,
+						y + SINGLE_SLIDE_RISE,
+						near - half - pad,
+						y,
+					]
+				: [
+						near + half + pad,
+						y,
+						near + half + pad + SINGLE_SLIDE_LEN,
+						y - SINGLE_SLIDE_RISE,
+					];
+		ctx.beginPath();
+		ctx.moveTo(x1, y1);
+		ctx.lineTo(x2, y2);
 		ctx.stroke();
 	}
 }
@@ -395,8 +458,8 @@ export class SpannerBuilder {
 		chords: Chord[],
 		byTabLead: Map<Note, TabNote>,
 		showText: boolean,
-	): TabSlide[] {
-		const slides: TabSlide[] = [];
+	): Array<TabSlide | SingleSlide> {
+		const slides: Array<TabSlide | SingleSlide> = [];
 		const open = new Map<string, { note: TabNote; fret: number }>();
 		for (const chord of chords) {
 			const tabNote = byTabLead.get(chord.lead);
@@ -422,6 +485,9 @@ export class SpannerBuilder {
 					const from = open.get(number);
 					open.delete(number);
 					if (!from) {
+						// A stop with no matching start is a slide *into* this note from an
+						// indeterminate origin — a "/8" tick left of the fret, not a line.
+						slides.push(new SingleSlide(tabNote, 0, 'in', SINGLE_SLIDE_GAP));
 						continue;
 					}
 					const notes: TieNotes = {
@@ -442,6 +508,11 @@ export class SpannerBuilder {
 				}
 			}
 		}
+		// A start left unclosed is a slide *out* of that note to an indeterminate target — a
+		// tick right of the fret. (showText only labels paired "sl." lines, not these ticks.)
+		for (const { note } of open.values()) {
+			slides.push(new SingleSlide(note, 0, 'out', SINGLE_SLIDE_GAP));
+		}
 		return slides;
 	}
 
@@ -456,7 +527,7 @@ export class SpannerBuilder {
 	buildGlissandos(
 		chords: Chord[],
 		byLead: Map<Note, StaveNote>,
-	): NotationSlide[] {
+	): Array<NotationSlide | SingleSlide> {
 		// A slide can sit on any chord member (a two-note chord may slide both notes,
 		// each with its own <slide number>), so map every note — not just the lead —
 		// to its StaveNote and notehead index. Otherwise only the lead's line draws.
@@ -470,7 +541,7 @@ export class SpannerBuilder {
 			}
 		}
 
-		const lines: NotationSlide[] = [];
+		const lines: Array<NotationSlide | SingleSlide> = [];
 		const open = new Map<string, { staveNote: StaveNote; index: number }>();
 		for (const chord of chords) {
 			for (const note of chord.notes) {
@@ -492,6 +563,9 @@ export class SpannerBuilder {
 						const from = open.get(marker.number);
 						open.delete(marker.number);
 						if (!from) {
+							// Stop with no start: a slide *into* this note (a "/" tick left of
+							// the head) — the notation counterpart of the tab slide-in.
+							lines.push(new SingleSlide(at.staveNote, at.index, 'in'));
 							continue;
 						}
 						lines.push(
@@ -505,6 +579,12 @@ export class SpannerBuilder {
 					}
 				}
 			}
+		}
+		// A start left unclosed is a slide *out* of that note — a "/" tick right of the head.
+		for (const at of open.values()) {
+			lines.push(
+				new SingleSlide(at.staveNote, at.index, 'out', SINGLE_SLIDE_GAP),
+			);
 		}
 		return lines;
 	}

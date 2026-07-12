@@ -455,6 +455,21 @@ const TEST_CASES = [
 		showTabSlideText: true,
 	}),
 
+	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired
+	// <slide type="stop">, indeterminate origin). A half rest then a half note B4 (beat 3),
+	// so the note sits mid-stave with room on both sides.
+	// - M1: the note has no partner to slide from, so instead of a line it draws a short
+	//   "/" tick rising up into the head on both staves — left of the notehead on the
+	//   notation stave, and left of the fret as "/8" on the TAB stave (string 2, fret 8).
+	testCase('slide_in.musicxml', 'slide_in.png'),
+
+	// Notation stave over a 6-line TAB stave, 4/4: a slide OUT of a note (an unpaired
+	// <slide type="start">, indeterminate target). Same layout as slide_in — a half rest
+	// then a half note B4 (beat 3).
+	// - M1: the "/" tick sits on the RIGHT of the note instead, rising up out of it — right
+	//   of the notehead on the notation stave and right of the fret as "8/" on the TAB stave.
+	testCase('slide_out.musicxml', 'slide_out.png'),
+
 	// 6-line TAB stave: bends, each drawn as an upward arrow + label. No <time>, so no
 	// time signature is drawn.
 	// - M1: a whole-step bend labelled "1" on string 3 fret 7, then a half-step bend

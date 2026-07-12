@@ -307,8 +307,18 @@ export class Stage implements Viewport, Host, ScrollHost {
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
 	): () => void {
-		// Report the visible (client) box — the size a viewport layer is given and the most useful
-		// "rendered area" for a caller — rather than the ResizeObserver's content-box entry.
+		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
+		// frame) is derived from the base canvas's rendered box, which can change *without* the
+		// container's box changing — e.g. the Bravura web font finishing load and reflowing the
+		// engraving taller, or content-height settling inside a fixed-size scroll box. Observing only
+		// the container misses those, leaving overlays and the cursor placed against a stale base box.
+		// Observing the base can't self-trigger: consumers only move absolutely-positioned overlay
+		// canvases (relayoutLayers) or reposition the cursor, none of which affect the base or
+		// container layout, so there's no feedback loop.
+		//
+		// Report the container's visible (client) box regardless of which target fired — that's the
+		// size a viewport layer is given and the "rendered area" a caller cares about. A base-only
+		// change reports the (unchanged) container size; the consumer dedupes its public 'resize' on it.
 		const observer = new ResizeObserver(() => {
 			onResize({
 				width: this.container.clientWidth,
@@ -316,6 +326,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 			});
 		});
 		observer.observe(this.container);
+		observer.observe(this.base);
 		return () => observer.disconnect();
 	}
 
