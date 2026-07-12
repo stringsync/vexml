@@ -766,10 +766,14 @@ const TEST_CASES = [
 	//   running head-to-head down to the C5 quarter (stem down); a dotted-half rest fills the bar.
 	// - M4: the same, but the main note's stem faces the other way — an 8th D5 grace slurred
 	//   under to an E4 quarter (stem up); the slur still hugs the noteheads, clearing the up-stem.
-	// - M5: a placement override — an 8th D5 grace forced above (placement="above"), so the slur
-	//   arcs over the top to the C5 quarter instead of hugging under.
+	// - M5: a placement override a grace slur ignores — an 8th D5 grace with placement="above",
+	//   yet the slur still hugs under to the C5 quarter (grace slurs always bow underneath).
 	// - M6: a multi-grace slur — a beamed grace pair (E5, D5) with one arc spanning from the first
 	//   grace under to the C5 quarter.
+	// - M7: a hammer-on grace — an 8th C5 grace with a <hammer-on> to the D5 quarter, drawn as a
+	//   slur curve hugging under from the grace to the main note (no "H" text — that's tab-only).
+	// - M8: a pull-off grace — an 8th D5 grace with a <pull-off> to the C5 quarter, the mirror of
+	//   M7, likewise drawn as a slur curve from the grace under to the main note.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note

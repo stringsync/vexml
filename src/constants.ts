@@ -203,6 +203,13 @@ export const SLUR_MIN_CP_Y = 16;
 /** Arc height grows with slur width so long slurs get a rounder bow. */
 export const SLUR_WIDTH_FACTOR = 0.12;
 
+/** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
+ * small tight bow hugging directly under the two noteheads, not the fuller slur arc —
+ * a subtler endpoint lift and a shallow fixed control-point rise (no notehead-clearance
+ * inflation). */
+export const SLUR_GRACE_Y_SHIFT = 4;
+export const SLUR_GRACE_CP_Y = 6;
+
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;
 

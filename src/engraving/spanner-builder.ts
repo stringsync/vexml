@@ -16,6 +16,8 @@ import {
 	Tuplet,
 } from 'vexflow';
 import {
+	SLUR_GRACE_CP_Y,
+	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
 	SLUR_MIN_CP_Y,
 	SLUR_WIDTH_FACTOR,
@@ -428,7 +430,7 @@ export class SpannerBuilder {
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
-			for (const slur of chord.lead.slurs) {
+			for (const slur of slurConnectors(chord.lead)) {
 				if (slur.slurType !== 'start' || !slur.partner || !from) {
 					continue;
 				}
@@ -447,17 +449,17 @@ export class SpannerBuilder {
 						: [from, to];
 
 				// Bulge up for placement="above", down for "below", otherwise opposite the
-				// stems (slurs sit on the notehead side). Grace-to-main slurs default below
-				// (under the grace, down to the main notehead) when unspecified. The opening
-				// direction forces the arc's sign even when the two endpoints' stems disagree.
-				const bulgeUp =
-					slur.placement === 'above'
+				// stems (slurs sit on the notehead side). The opening direction forces the
+				// arc's sign even when the two endpoints' stems disagree. A grace-to-main
+				// slur always hugs under (under the grace, down to the main notehead),
+				// ignoring placement — grace slurs read as a consistent underneath bow.
+				const bulgeUp = isGrace
+					? false
+					: slur.placement === 'above'
 						? true
 						: slur.placement === 'below'
 							? false
-							: isGrace
-								? false
-								: from.getStemDirection() !== 1;
+							: from.getStemDirection() !== 1;
 
 				// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
 				// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
@@ -489,7 +491,9 @@ export class SpannerBuilder {
 					}
 					return noteExtents(n);
 				};
-				const yShift = SLUR_Y_SHIFT;
+				// A grace-to-main curve hugs directly under the two noteheads with a small
+				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
+				const yShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
 
 				// The control-point lift needed for a curve whose endpoints both sit at
 				// `midEnd` (the bulge-side Y) and that must clear the extreme note among
@@ -499,6 +503,9 @@ export class SpannerBuilder {
 					spanNotes: StaveNote[],
 					width: number,
 				) => {
+					if (isGrace) {
+						return SLUR_GRACE_CP_Y;
+					}
 					const extreme = bulgeUp
 						? Math.min(...spanNotes.map((n) => extentsOf(n).top))
 						: Math.max(...spanNotes.map((n) => extentsOf(n).bottom));
@@ -682,6 +689,35 @@ function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
 				n.pitch?.alter === p.alter,
 		) ?? null
 	);
+}
+
+/*
+ * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
+ * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
+ * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
+ * them the same way — including grace-to-main graces. A technique whose target a real
+ * <slur> already reaches is dropped, so an exporter that emits both doesn't double the arc.
+ */
+type SlurConnector = {
+	slurType: string;
+	partner: { note: Note } | null;
+	placement: string | null;
+};
+function slurConnectors(note: Note): SlurConnector[] {
+	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note));
+	const techniques: SlurConnector[] = [
+		...note.hammerOns.map((h) => ({
+			slurType: h.hammerOnType,
+			partner: h.partner,
+			placement: null,
+		})),
+		...note.pullOffs.map((p) => ({
+			slurType: p.pullOffType,
+			partner: p.partner,
+			placement: null,
+		})),
+	].filter((t) => !slurTargets.has(t.partner?.note));
+	return [...note.slurs, ...techniques];
 }
 
 /*

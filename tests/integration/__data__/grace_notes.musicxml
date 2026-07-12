@@ -147,9 +147,9 @@
         <dot />
       </note>
     </measure>
-    <!-- M5: a placement override — an 8th D5 grace forced above (placement="above")
-         so the slur arcs over the top to the C5 quarter instead of hugging under; a
-         dotted-half rest fills the bar. -->
+    <!-- M5: a placement override that a grace slur ignores — an 8th D5 grace with
+         placement="above", yet the slur still hugs under to the C5 quarter (grace slurs
+         always bow underneath); a dotted-half rest fills the bar. -->
     <measure number="5">
       <note>
         <grace />
@@ -192,6 +192,61 @@
         <duration>2</duration>
         <type>quarter</type>
         <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M7: a hammer-on grace — an 8th C5 grace with a <hammer-on> up to the D5 quarter.
+         In standard notation the hammer-on draws as a slur curve hugging under from the
+         grace to the main note (no "H" text, which is a tab-only convention); a
+         dotted-half rest fills the bar. -->
+    <measure number="7">
+      <note>
+        <grace />
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations>
+          <technical><hammer-on number="1" type="start">H</hammer-on></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><hammer-on number="1" type="stop" /></technical>
+        </notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M8: a pull-off grace — an 8th D5 grace with a <pull-off> down to the C5 quarter,
+         the mirror of M7. It likewise draws as a slur curve from the grace under to the
+         main note; a dotted-half rest fills the bar. -->
+    <measure number="8">
+      <note>
+        <grace />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations>
+          <technical><pull-off number="1" type="start">P</pull-off></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><pull-off number="1" type="stop" /></technical>
+        </notations>
       </note>
       <note>
         <rest />
