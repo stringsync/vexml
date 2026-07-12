@@ -110,6 +110,15 @@ export const TAB_GRACE_SPACING = 14;
 export const TAB_TIE_CP1 = 8;
 export const TAB_TIE_CP2 = 12;
 
+/** A notation slide/glissando line (see NotationSlide) runs between the two notehead centers,
+ * tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical rise/fall it is
+ * allowed (so a near-unison slide still reads instead of going flat, and a chord's near-equal
+ * slides stay ~parallel); the tilt is also capped to the horizontal run so a wide interval over
+ * a short grace-to-main gap doesn't spike near-vertical. SLIDE_PADDING insets each end: the
+ * line starts just past the start notehead's outer edge and ends just into the target head. */
+export const SLIDE_MIN_SLANT = 6;
+export const SLIDE_PADDING = 3;
+
 /** Pixels a notation+tab bracket is shifted left of the stave, so it sits just outside
  * the system's left line with a small gap. */
 export const BRACKET_X_SHIFT = 3;

@@ -774,6 +774,10 @@ const TEST_CASES = [
 	//   slur curve hugging under from the grace to the main note (no "H" text — that's tab-only).
 	// - M8: a pull-off grace — an 8th D5 grace with a <pull-off> to the C5 quarter, the mirror of
 	//   M7, likewise drawn as a slur curve from the grace under to the main note.
+	// - M9: a slide grace — an 8th E5 grace with a <slide> to the C5 quarter, drawn as a straight
+	//   diagonal line slanting down from the grace notehead to the main notehead (no arrowhead, no label).
+	// - M10: the mirror of M9 — an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
+	//   slants up from the lower grace notehead to the main notehead.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note

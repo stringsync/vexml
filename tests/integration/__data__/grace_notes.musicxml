@@ -255,5 +255,52 @@
         <dot />
       </note>
     </measure>
+    <!-- M9: a grace note that slides into its main note — an 8th E5 grace with a
+         <slide> down to the C5 quarter, drawn as a straight diagonal line from the
+         small grace notehead down to the main notehead (no arrowhead, no label); a
+         dotted-half rest fills the bar. -->
+    <measure number="9">
+      <note>
+        <grace />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slide number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slide number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M10: the mirror of M9 — an 8th A4 grace with a <slide> UP to the C5 quarter,
+         so the diagonal line slants up from the lower grace notehead to the main
+         notehead; a dotted-half rest fills the bar. -->
+    <measure number="10">
+      <note>
+        <grace />
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <type>eighth</type>
+        <notations><slide number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slide number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
   </part>
 </score-partwise>
