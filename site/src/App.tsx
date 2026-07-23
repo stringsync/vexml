@@ -67,6 +67,12 @@ export default function App() {
 	// Loading overlay until the first render settles; the app always renders on mount.
 	const [initialized, setInitialized] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	// The sheet opens collapsed with no animation: the grid-rows transition is only enabled once
+	// the user first taps it, so the initial (and any HMR/remount) render can't slide it down.
+	const [sheetToggled, setSheetToggled] = useState(false);
+	// The fit effect's measure(), re-run when the mobile sheet finishes opening/closing — the
+	// player riding the sheet moves without firing any resize/ResizeObserver event.
+	const measureRef = useRef<(() => void) | null>(null);
 	const [dark, setDark] = useLocalStorage(DARK_KEY, false);
 	const [stored, setStored] = useState(
 		() => localStorage.getItem(STORAGE_KEY) !== null,
@@ -475,24 +481,27 @@ export default function App() {
 		if (!initialized) {
 			return;
 		}
-		let lastHeight = -1;
 		const measure = () => {
 			const c = containerRef.current?.getBoundingClientRect();
 			const p = playerRef.current?.getBoundingClientRect();
 			if (!c || !p) {
 				return;
 			}
-			// -16 leaves a little air above the floating controls.
-			const height = Math.max(0, Math.round(p.top - c.top - 16));
-			// Break the feedback loop: applying height resizes the container, re-firing the
-			// observer — but the gap (top of card to top of player) is unchanged, so bail.
-			// This also no-ops width-only resizes, which leave the gap alone.
-			if (height === lastHeight) {
+			// On mobile the player rides up with the open bottom sheet, so a gap measured
+			// against it would collapse the scroll box to ~0 — and stick, since closing the
+			// sheet fires no event here. Skip those readings; the sheet's transition end
+			// calls measureRef, which re-measures once the player is back at rest.
+			if (p.top < c.top) {
 				return;
 			}
-			lastHeight = height;
-			setConfig((cfg) => ({ ...cfg, height }));
+			// -16 leaves a little air above the floating controls.
+			const height = Math.max(0, Math.round(p.top - c.top - 16));
+			// Returning the same object bails the update, breaking the feedback loop: applying
+			// height resizes the container, re-firing the observer — but the gap (top of card
+			// to top of player) is unchanged. Also no-ops width-only resizes.
+			setConfig((cfg) => (cfg.height === height ? cfg : { ...cfg, height }));
 		};
+		measureRef.current = measure;
 		measure();
 		// Refit on any container dimension change (width resize, editor toggle, our own height
 		// update); the window 'resize' covers viewport-height changes that move the player
@@ -504,6 +513,7 @@ export default function App() {
 		}
 		window.addEventListener('resize', measure);
 		return () => {
+			measureRef.current = null;
 			ro.disconnect();
 			window.removeEventListener('resize', measure);
 		};
@@ -707,7 +717,10 @@ export default function App() {
 					{/* top part: always visible, taps toggle the panel */}
 					<button
 						type="button"
-						onClick={() => setMobileOpen((o) => !o)}
+						onClick={() => {
+							setSheetToggled(true);
+							setMobileOpen((o) => !o);
+						}}
 						aria-expanded={mobileOpen}
 						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
 						className={`flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 transition-shadow hover:bg-zinc-100 active:bg-zinc-200 md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
@@ -729,9 +742,11 @@ export default function App() {
 						</svg>
 					</button>
 
-					{/* grid-rows 0fr↔1fr animates the height open/closed */}
+					{/* grid-rows 0fr↔1fr animates the height open/closed (only once tapped, so the
+					    default collapsed state never slides in); its end re-fits the score box */}
 					<div
-						className={`grid transition-[grid-template-rows] duration-300 md:grid-rows-[1fr] ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+						onTransitionEnd={() => measureRef.current?.()}
+						className={`grid md:grid-rows-[1fr] ${sheetToggled ? 'transition-[grid-template-rows] duration-300' : ''} ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
 						<div className="min-h-0 overflow-hidden">
 							<div
