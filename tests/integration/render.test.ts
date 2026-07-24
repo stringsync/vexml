@@ -71,6 +71,13 @@ const TEST_CASES = [
 	// A single empty stave with a treble (G) clef.
 	testCase('clef_treble.musicxml', 'clef_treble.png'),
 
+	// A treble (G) clef carrying a <clef-octave-change> of -1 (treble-8vb, the guitar/tenor
+	// clef): a small "8" numeral hangs below the clef glyph, and the octave shift moves every
+	// notehead up an octave. The E2/E3/E4 whole-note chord sits an octave higher than it would
+	// on a plain treble clef — E4 near the top of the staff, E3 on the bottom line, E2 two
+	// ledger lines below — instead of E4 on the bottom line with E2 far beneath it.
+	testCase('clef_treble_octave.musicxml', 'clef_treble_octave.png'),
+
 	// Grand staff: treble clef on the upper stave, bass clef on the lower, joined by a
 	// brace.
 	testCase('clef_treble_bass.musicxml', 'clef_treble_bass.png'),

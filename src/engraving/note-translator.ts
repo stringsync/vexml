@@ -538,6 +538,22 @@ export class NoteTranslator {
 	}
 
 	/*
+	 * MusicXML <clef-octave-change> -> vexflow clef annotation ('8va'/'8vb'), drawn as
+	 * the small octave numeral above/below the clef glyph. vexflow only carries an octave
+	 * annotation on G/F clefs, so ±2 (15ma/mb) and other clefs fall back to no annotation.
+	 * ponytail: octave only; add 15ma/mb if a fixture ever needs it.
+	 */
+	vexflowClefAnnotation(octaveChange: number | null): string | undefined {
+		if (octaveChange === 1) {
+			return '8va';
+		}
+		if (octaveChange === -1) {
+			return '8vb';
+		}
+		return undefined;
+	}
+
+	/*
 	 * Build a vexflow StaveNote for one chord (a lead note plus any <chord/> members;
 	 * a single note is a one-member chord). Rests render as a centered rest glyph;
 	 * grace notes (no <duration>) become small GraceNotes — slashed for an
@@ -549,6 +565,10 @@ export class NoteTranslator {
 		chord: Chord,
 		clef: string,
 		alignCenter = false,
+		// <clef-octave-change>: shifts every notehead's staff position by that many octaves
+		// (e.g. -1 for a treble-8vb guitar clef draws sounding pitches an octave higher).
+		// vexflow's own StaveNote option; keys stay at their sounding octave.
+		octaveShift = 0,
 	): StaveNote {
 		const lead = chord.lead;
 		const duration = durationCode(lead);
@@ -572,6 +592,7 @@ export class NoteTranslator {
 			const grace = new GraceNote({
 				keys: chord.notes.map(vexflowKey),
 				duration,
+				octaveShift,
 				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
 				// through the stem/flag); its absence is a plain appoggiatura.
 				slash: lead.graceSlash,
@@ -584,6 +605,7 @@ export class NoteTranslator {
 			duration,
 			dots: lead.dots,
 			clef,
+			octaveShift,
 			// No explicit <stem>: let vexflow choose the direction from staff position.
 			autoStem: !lead.stem,
 		});
@@ -734,6 +756,7 @@ export class NoteTranslator {
 		clef: string,
 		endBeat = 0,
 		record?: (lead: Note, staveNote: StaveNote) => void,
+		octaveShift = 0,
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];
 		// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
@@ -749,7 +772,7 @@ export class NoteTranslator {
 		for (const chord of chords) {
 			if (chord.lead.isGrace) {
 				pendingGrace.push({
-					note: this.vexflowChord(chord, clef) as GraceNote,
+					note: this.vexflowChord(chord, clef, false, octaveShift) as GraceNote,
 					lead: chord.lead,
 				});
 				continue;
@@ -758,7 +781,12 @@ export class NoteTranslator {
 			if (onset > cursor + EPSILON) {
 				tickables.push(...ghostNotes(onset - cursor));
 			}
-			const staveNote = this.vexflowChord(chord, clef, centerWholeRest);
+			const staveNote = this.vexflowChord(
+				chord,
+				clef,
+				centerWholeRest,
+				octaveShift,
+			);
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 				// Beam the group when its grace notes carry <beam> markers (the main beam

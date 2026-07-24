@@ -733,7 +733,11 @@ export class DrawPass {
 				tabStave.addTabGlyph();
 				this.resizeTabClef(tabStave, tabLines);
 			} else if (clef) {
-				stave.addClef(this.translator.vexflowClef(clef.sign, clef.line));
+				stave.addClef(
+					this.translator.vexflowClef(clef.sign, clef.line),
+					undefined,
+					this.translator.vexflowClefAnnotation(clef.octaveChange),
+				);
 			}
 			// Tab staves carry no key signature.
 			if (key?.rootNote && !isTab) {
@@ -809,6 +813,7 @@ export class DrawPass {
 					voices,
 					clefName,
 					this.reader.meterBeats(measure.getTime(staffNumber)),
+					clef?.octaveChange ?? 0,
 				),
 			);
 			for (const voice of voices) {
@@ -834,6 +839,7 @@ export class DrawPass {
 		voices: ScoreVoice[],
 		clef: string,
 		meterFloor: number,
+		octaveShift: number,
 	): PendingStave {
 		// Floor the run-out beat at the meter so an underfull measure pads trailing
 		// ghosts instead of jamming its last note against the end barline.
@@ -865,6 +871,7 @@ export class DrawPass {
 						(lead.isGrace ? graceChords : noteChords).push({ note, chord });
 					}
 				},
+				octaveShift,
 			);
 			return this.translator.softVoice(tickables, this.softmaxFactor);
 		});
