@@ -1,5 +1,6 @@
 import type {
 	Chord,
+	Key,
 	MElement,
 	Measure,
 	Note,
@@ -78,6 +79,12 @@ import { visibleStaffNumbers } from './staves';
  * "beats/beat-type". null when there's nothing drawable. Doubles as the equality
  * key for detecting a mid-piece meter change.
  */
+// VexFlow keys the tonic note for major but wants an 'm' suffix for minor
+// ('Am', 'G#m'); the bare minor tonic ('G#') is rejected as a bad key spec.
+function vexflowKeySpec(key: Key): string {
+	return key.mode === 'minor' ? `${key.rootNote}m` : `${key.rootNote}`;
+}
+
 function timeSignatureSpec(time: Time | null): string | null {
 	if (time?.symbol === 'common') {
 		return 'C';
@@ -730,10 +737,10 @@ export class DrawPass {
 			}
 			// Tab staves carry no key signature.
 			if (key?.rootNote && !isTab) {
-				stave.addKeySignature(key.rootNote);
+				stave.addKeySignature(vexflowKeySpec(key));
 			}
 		} else if (key?.rootNote && keyChanged && !isTab) {
-			stave.addKeySignature(key.rootNote);
+			stave.addKeySignature(vexflowKeySpec(key));
 		}
 
 		// Unlike clef and key, the time signature is not re-stated at every

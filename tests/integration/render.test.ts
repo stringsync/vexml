@@ -106,6 +106,8 @@ const TEST_CASES = [
 	// - M2: changes the key to 2 flats (Bb, Eb) — only the new key signature is redrawn
 	//   at the change (the clef and time signature are NOT repeated).
 	// - M3: continues in 2 flats with no key signature redrawn.
+	// - M4: changes to G# minor (5 sharps) — a minor key whose bare tonic 'G#' is not a
+	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
 	testCase('key.musicxml', 'key.png'),
 
 	// One system, treble: time signatures and mid-system meter changes.
