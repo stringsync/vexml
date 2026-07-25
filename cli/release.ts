@@ -61,7 +61,16 @@ export async function release(type: string) {
 		Bun.spawnSync(['npm', 'whoami'], { stdout: 'ignore', stderr: 'ignore' })
 			.exitCode !== 0
 	) {
-		throw new Error('not logged in to npm — run `npm login` before releasing');
+		await run('npm', ['login']);
+	}
+	// gh release create runs last; check auth up front so we don't fail after publishing
+	if (
+		Bun.spawnSync(['gh', 'auth', 'status'], {
+			stdout: 'ignore',
+			stderr: 'ignore',
+		}).exitCode !== 0
+	) {
+		await run('gh', ['auth', 'login']);
 	}
 
 	// This package publishes src directly (no build step), so a typecheck is the
@@ -89,6 +98,8 @@ export async function release(type: string) {
 	await run('git', ['push', 'origin', `v${next}`]);
 	await run('bun', ['publish', '--access', 'public']);
 	await run('git', ['push', 'origin', 'master']);
+	// --generate-notes derives notes from merged PRs/commits since the previous tag
+	await run('gh', ['release', 'create', `v${next}`, '--generate-notes']);
 
 	console.log(chalk.green(`published ${next}`));
 }
