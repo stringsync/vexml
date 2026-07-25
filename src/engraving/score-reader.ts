@@ -195,6 +195,33 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A measure's PLAYBACK tempo, in quarter notes per minute (as a TempoMark). The
+	 * visible <metronome> mark wins (via {@link tempoOf}); otherwise a <sound tempo>
+	 * drives timing — co-located in a <direction> or standalone as a direct measure
+	 * child (MusicXML's tempo is already quarter-note BPM). null means no mark here,
+	 * so the previous tempo carries forward.
+	 *
+	 * <sound tempo> is playback-only: it engraves no metronome mark, so the visual
+	 * path (draw-pass / layout-planner) stays on {@link tempoOf} and never sees it.
+	 */
+	playbackTempoOf(measure: Measure): TempoMark | null {
+		const metronome = this.tempoOf(measure);
+		if (metronome) {
+			return metronome;
+		}
+		for (const direction of measure.directions) {
+			if (direction.soundTempo !== null) {
+				return { duration: 'quarter', bpm: direction.soundTempo };
+			}
+		}
+		const bpm = Number(measure.child('sound')?.getAttribute('tempo'));
+		if (bpm) {
+			return { duration: 'quarter', bpm };
+		}
+		return null;
+	}
+
+	/*
 	 * A measure's <direction><direction-type><words> text directives (e.g. "ritardando",
 	 * "dolce"), in document order. These are free-text expressions printed above the stave.
 	 * ponytail: placement and font-style attributes ignored — every words direction prints

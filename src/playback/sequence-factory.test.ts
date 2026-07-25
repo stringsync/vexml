@@ -2,7 +2,13 @@ import { describe, expect, it } from 'bun:test';
 import type { Note } from '../elements/note';
 import { ScoreReader } from '../engraving/score-reader';
 import { Rect } from '../geometry';
-import type { Jump, SequenceInput, SequenceNote } from './sequence';
+import { DefaultScoreParser } from '../score-parser';
+import type {
+	Jump,
+	MeasureInfo,
+	SequenceInput,
+	SequenceNote,
+} from './sequence';
 import { MeasureSequenceIterator, SequenceFactory } from './sequence-factory';
 
 // ── MeasureSequenceIterator (ported from legacy vexml) ──
@@ -457,5 +463,96 @@ describe('SequenceFactory', () => {
 		expect(seq.getStepIndexAtBeats(1.5)).toBe(1);
 		expect(seq.getStepIndexAtBeats(99)).toBe(2);
 		expect(seq.getStepIndexAtMs(500)).toBe(1);
+	});
+});
+
+// ── Playback tempo resolution: <sound tempo> drives timing, <metronome> the visuals ──
+
+const FOUR_QUARTERS =
+	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(
+		4,
+	);
+
+function metronomeDir(bpm: number, sound?: number): string {
+	const soundTempo = sound === undefined ? '' : `<sound tempo="${sound}"/>`;
+	return `<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type>${soundTempo}</direction>`;
+}
+
+function measureXml(number: number, prefix: string): string {
+	const attrs =
+		number === 1
+			? '<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>'
+			: '';
+	return `<measure number="${number}">${attrs}${prefix}${FOUR_QUARTERS}</measure>`;
+}
+
+async function parseMeasures(...prefixes: string[]) {
+	const body = prefixes.map((p, i) => measureXml(i + 1, p)).join('');
+	const mdoc = await new DefaultScoreParser().parse(
+		`<?xml version="1.0"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
+  <part id="P1">${body}</part>
+</score-partwise>`,
+	);
+	return mdoc.score.parts[0]?.measures ?? [];
+}
+
+function nth<T>(arr: readonly T[], i: number): T {
+	const value = arr[i];
+	if (value === undefined) {
+		throw new Error(`no element at index ${i}`);
+	}
+	return value;
+}
+
+describe('SequenceFactory playback tempo', () => {
+	const reader = new ScoreReader();
+
+	it('metronome wins over a co-located <sound tempo>', async () => {
+		const m = nth(await parseMeasures(metronomeDir(60, 120)), 0);
+		expect(reader.playbackTempoOf(m)?.bpm).toBe(60);
+	});
+
+	it('<sound tempo> alone drives playback and engraves no metronome', async () => {
+		const m = nth(await parseMeasures('<sound tempo="60"/>'), 0);
+		expect(reader.playbackTempoOf(m)?.bpm).toBe(60);
+		expect(reader.tempoOf(m)).toBeNull(); // the visual path draws nothing
+	});
+
+	it('a mid-piece metronome change retempos from that measure on', async () => {
+		const parsed = await parseMeasures(metronomeDir(60), metronomeDir(120));
+		expect(reader.playbackTempoOf(nth(parsed, 0))?.bpm).toBe(60);
+		expect(reader.playbackTempoOf(nth(parsed, 1))?.bpm).toBe(120);
+	});
+
+	it('a mid-piece <sound tempo> change retempos and engraves no marks', async () => {
+		const parsed = await parseMeasures(
+			'<sound tempo="60"/>',
+			'<sound tempo="120"/>',
+		);
+		expect(reader.tempoOf(nth(parsed, 0))).toBeNull();
+		expect(reader.tempoOf(nth(parsed, 1))).toBeNull();
+
+		const measures: MeasureInfo[] = parsed.map((m, index) => ({
+			index,
+			beats: 4,
+			tempoBpm: reader.playbackTempoOf(m)?.bpm ?? null,
+			jumps: [],
+			systemRect: SYS,
+		}));
+		const seq = new SequenceFactory(reader, []).createFromInput({
+			measures,
+			notes: [
+				quarter(fakeNote('m0'), 0, 0, 0),
+				quarter(fakeNote('m1'), 1, 0, 0),
+			],
+		});
+
+		// m1 at 60 bpm: 4 beats = 4000ms. m2 at 120 bpm: 4 beats = 2000ms (would be
+		// 4000 without the retempo), so it ends at 6000, not 8000.
+		expect(seq.getStep(0)?.endMs).toBeCloseTo(4000);
+		expect(seq.getStep(1)?.startMs).toBeCloseTo(4000);
+		expect(seq.getStep(1)?.endMs).toBeCloseTo(6000);
 	});
 });

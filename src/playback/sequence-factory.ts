@@ -586,7 +586,7 @@ export class SequenceFactory {
 	}
 
 	private quarterBpm(measure: Part['measures'][number]): number | null {
-		const tempo = this.reader.tempoOf(measure);
+		const tempo = this.reader.playbackTempoOf(measure);
 		if (!tempo) {
 			return null;
 		}
