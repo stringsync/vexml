@@ -238,8 +238,9 @@ function addArpeggio(staveNote: StaveNote, note: Note): void {
 }
 
 /*
- * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave).
- * Absent, auto-pick from staff position (see vexflowChord's auto_stem).
+ * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave), or
+ * <stem>none (bare noteheads, as in a rhythm/chord chart). Absent, auto-pick from
+ * staff position (see vexflowChord's auto_stem).
  */
 function applyStem(staveNote: StaveNote, note: Note): void {
 	switch (note.stem) {
@@ -248,6 +249,17 @@ function applyStem(staveNote: StaveNote, note: Note): void {
 			break;
 		case 'down':
 			staveNote.setStemDirection(Stem.DOWN);
+			break;
+		case 'none':
+			// vexflow gates the stem on glyphProps.stem and the flag on glyphProps.codeFlagUp,
+			// so clearing both drops each. Replace the object rather than mutating it: it can
+			// be the shared entry from vexflow's duration table (see Note.getGlyphProps).
+			// ponytail: <stem>double is left alone — no double stems in vexflow.
+			staveNote.glyphProps = {
+				...staveNote.glyphProps,
+				stem: false,
+				codeFlagUp: undefined,
+			};
 			break;
 	}
 }

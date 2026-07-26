@@ -134,6 +134,10 @@ const TEST_CASES = [
 	//   so E4 and G4 stem up while B4 and D5 stem down.
 	// - M4: the same four pitches with an explicit <stem> overriding each position default
 	//   — E4 down, G4 down, B4 up, D5 up.
+	// - M5: the same four pitches with <stem>none</stem> — four bare filled noteheads
+	//   ascending E4 (bottom line) to D5, with no stems at all.
+	// - M6: eight C5 eighths with <stem>none</stem> — bare noteheads, no stems and no flags,
+	//   evenly spaced across the measure.
 	testCase('note.musicxml', 'note.png'),
 
 	// Treble stave, 4/4, all on C5: note density per measure (beat counts deliberately
