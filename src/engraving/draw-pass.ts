@@ -28,6 +28,7 @@ import {
 	TabStave,
 	Vibrato,
 	type Voice,
+	Volta,
 } from 'vexflow';
 import type { Config, Gap, MeasureNumbering } from '../config';
 import {
@@ -59,12 +60,15 @@ import {
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
 	TIE_APEX_RISE,
+	VOLTA_LABEL_DROP,
+	VOLTA_STAVE_GAP,
 	WORDS_FONT_SIZE,
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from '../constants';
 import { gapsByMeasureIndex } from '../gaps';
 import { Rect } from '../geometry';
+import { type MeasureEnding, measureRepeats } from '../repeats';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
@@ -212,6 +216,53 @@ type PendingStave = {
 // nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
+// What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
+// Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
+type BarlineDecoration = {
+	repeatBegin: boolean;
+	repeatEnd: boolean;
+	volta: { type: number; label: string } | null;
+};
+
+/*
+ * Every measure's barline decorations, mapped from the shared repeat structure (src/repeats.ts,
+ * which playback reads too). An ending run's bracket opens with a left hook (BEGIN), continues
+ * hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one measure.
+ * A `discontinue` close leaves the bracket open on the right, so it keeps the hookless form.
+ */
+function barlineDecorations(measures: readonly Measure[]): BarlineDecoration[] {
+	return measureRepeats(measures).map(({ repeatBegin, repeatEnd, ending }) => ({
+		repeatBegin,
+		repeatEnd,
+		volta: ending && {
+			type: voltaType(ending),
+			label: voltaLabel(ending.number),
+		},
+	}));
+}
+
+function voltaType(ending: MeasureEnding): number {
+	const hooked = ending.last && !ending.open;
+	if (ending.first) {
+		return hooked ? Volta.type.BEGIN_END : Volta.type.BEGIN;
+	}
+	return hooked ? Volta.type.END : Volta.type.MID;
+}
+
+const NO_DECORATION: BarlineDecoration = {
+	repeatBegin: false,
+	repeatEnd: false,
+	volta: null,
+};
+
+/* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
+function voltaLabel(number: string): string {
+	return number
+		.split(',')
+		.map((part) => `${part.trim()}.`)
+		.join(' ');
+}
+
 /*
  * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
  */
@@ -324,6 +375,9 @@ export class DrawPass {
 	// clipping them; tracked per system so the cursor bar's height stays uniform. Chord diagrams
 	// are deliberately excluded — see the harmony draw block for why the cursor stops at the stave.
 	private readonly systemDecorationTop = new Map<number, number>();
+	// Every measure's repeat/volta barline decorations, resolved once for the whole document
+	// (a volta's inner measures are only knowable from the measures around them).
+	private readonly decorations: BarlineDecoration[];
 
 	// Per-measure-column state: the measure loop's locals, shared by the methods cut
 	// out of it below. Reset at the top of drawMeasureColumn (per-part fields in its
@@ -334,6 +388,12 @@ export class DrawPass {
 	private isSystemStart = false;
 	private isLastMeasure = false;
 	private isLightLight = false;
+	// This measure's repeat dots and volta bracket, plus the neighbors' repeat state — a
+	// backward repeat butted against the next measure's forward repeat prints as one
+	// back-to-back sign rather than two, so each edge needs to see the other side.
+	private decoration: BarlineDecoration = NO_DECORATION;
+	private repeatBoth = false;
+	private suppressBegRepeat = false;
 	private showMeasureNumber = false;
 	// Number is printed once per measure, above the system's top stave only.
 	private measureNumbered = false;
@@ -411,6 +471,8 @@ export class DrawPass {
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
 		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.gaps = gapsByMeasureIndex(config.gaps);
+		// Read from the first part — a repeat or volta boundary applies across the system.
+		this.decorations = barlineDecorations(this.parts[0]?.measures ?? []);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
 		this.collisionResolver = new CollisionResolver(
@@ -466,6 +528,17 @@ export class DrawPass {
 		this.isLightLight =
 			this.parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
 				?.barStyle === 'light-light';
+		// A backward repeat butted against the next measure's forward repeat is one boundary,
+		// so it prints as a single back-to-back sign (dots, thin-thick-thin, dots) and the next
+		// measure skips its own opening dots. Across a system break the two edges are on
+		// different lines and each draws in full, as engraving convention wants.
+		this.decoration = this.decorations[m] ?? NO_DECORATION;
+		const nextBegins = this.decorations[m + 1]?.repeatBegin === true;
+		const nextIsSystemStart = this.boxes[m + 1]?.isSystemStart === true;
+		this.repeatBoth =
+			this.decoration.repeatEnd && nextBegins && !nextIsSystemStart;
+		this.suppressBegRepeat =
+			!this.isSystemStart && this.decorations[m - 1]?.repeatEnd === true;
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep
 		// their own printed numbers — insertion shifts indexes, not labels).
 		this.showMeasureNumber =
@@ -699,20 +772,51 @@ export class DrawPass {
 		// is suppressed to avoid doubling it.
 		// Exception: a lone TAB stave has no system connector to close its left
 		// edge, so its system-start measure draws an explicit begin barline.
+		// Repeat signs are the exception to the multi-stave suppression: no StaveConnector type
+		// draws repeat dots, so a repeat boundary is drawn per stave and its connector skipped
+		// (see drawConnectors).
+		// ponytail: on a multi-stave system the repeat line therefore stops at each stave
+		// instead of spanning them; a custom connector would be needed to join them.
+		const repeatBegin = this.decoration.repeatBegin && !this.suppressBegRepeat;
 		stave.setBegBarType(
-			isTab && this.totalStaves === 1 && this.isSystemStart
-				? Barline.type.SINGLE
-				: Barline.type.NONE,
+			repeatBegin
+				? Barline.type.REPEAT_BEGIN
+				: isTab && this.totalStaves === 1 && this.isSystemStart
+					? Barline.type.SINGLE
+					: Barline.type.NONE,
 		);
 		stave.setEndBarType(
-			this.totalStaves > 1
-				? Barline.type.NONE
-				: this.isLightLight
-					? Barline.type.DOUBLE
-					: this.isLastMeasure
-						? Barline.type.END
-						: Barline.type.SINGLE,
+			this.repeatBoth
+				? Barline.type.REPEAT_BOTH
+				: this.decoration.repeatEnd
+					? Barline.type.REPEAT_END
+					: this.totalStaves > 1
+						? Barline.type.NONE
+						: this.isLightLight
+							? Barline.type.DOUBLE
+							: this.isLastMeasure
+								? Barline.type.END
+								: Barline.type.SINGLE,
 		);
+		// The volta (ending) bracket rides above the top stave of the system only — it labels
+		// the passage, not each instrument. Registered as an obstacle after the draw below so
+		// chord symbols and words in the same measure lift clear of it.
+		// vexflow anchors a volta at getYForTopText(numLines) — five text lines up, far above
+		// everything else vexml draws — so shift it back down to a fixed gap over the top staff
+		// line, in the same band as the other above-stave decorations.
+		// ponytail: a fixed gap, sized to clear notes a couple of ledger lines up. The bracket
+		// is drawn with the stave, before the notes are formatted, so the collision resolver
+		// can't see them yet; draw it as a standalone Volta after the format pass if a very
+		// high note ever needs to push it.
+		const volta = this.decoration.volta;
+		const voltaTop = stave.getYForLine(0) - VOLTA_STAVE_GAP;
+		if (volta && this.staveRow === 0) {
+			stave.setVoltaType(
+				volta.type,
+				volta.label,
+				voltaTop - stave.getYForTopText(stave.getNumLines()),
+			);
+		}
 
 		// The previous measure's effective signatures (carried forward), used to
 		// spot a mid-system change. getKey/getTime return what's in effect at the
@@ -776,6 +880,29 @@ export class DrawPass {
 		}
 
 		stave.setContext(this.context).draw();
+
+		// The volta bracket is drawn by the stave above, so register the band it occupies as an
+		// obstacle now: chord symbols and words placed later in this measure lift clear of it
+		// instead of overprinting the bracket and its "1." label. The label hangs below the
+		// bracket line, so the box runs from the line down past the text.
+		if (volta && this.staveRow === 0) {
+			const rect = new Rect(
+				stave.getX(),
+				voltaTop,
+				stave.getWidth(),
+				VOLTA_LABEL_DROP,
+			);
+			this.collisionResolver.add({ rect, kind: 'annotation' });
+			this.growDecorationTop(this.systemIndex, rect.y);
+			this.pageTop = Math.min(this.pageTop, rect.y);
+			this.systemHighestTop.set(
+				this.systemIndex,
+				Math.min(
+					this.systemHighestTop.get(this.systemIndex) ?? Infinity,
+					rect.y,
+				),
+			);
+		}
 
 		if (this.showMeasureNumber && !this.measureNumbered && numberOccluded) {
 			this.context.save();
@@ -1823,6 +1950,11 @@ export class DrawPass {
 			// internal barlines are tied across staves and not just drawn per-stave.
 			// The piece's final measure gets a bold thin-thick connector to match its
 			// end barline; all other measure ends get a plain single line.
+			// A repeat end is the exception: no connector type draws repeat dots, so each
+			// stave drew the sign itself and a connector here would strike through it.
+			if (this.decoration.repeatEnd) {
+				return;
+			}
 			new StaveConnector(this.systemTop, this.systemBottom)
 				.setType(
 					this.isLightLight

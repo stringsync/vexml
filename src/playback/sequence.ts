@@ -13,11 +13,13 @@ import { Rect } from '../geometry';
 
 /* A measure's repeat structure, as the iterator consumes it. `times` is the number of *back-jumps*
  * (a plain repeat that plays twice is `times: 1`); a volta `repeatending`'s `times` is how many
- * passes that ending covers. Derived from MusicXML barlines/endings by SequenceFactory. */
+ * passes that ending covers. An ending can span measures, so every measure it covers carries a
+ * `repeatending` and only the run's final one sets `last` — the measure playback jumps from.
+ * Derived from MusicXML barlines/endings by SequenceFactory. */
 export type Jump =
 	| { type: 'repeatstart' }
 	| { type: 'repeatend'; times: number }
-	| { type: 'repeatending'; times: number };
+	| { type: 'repeatending'; times: number; last: boolean };
 
 /* One measure in document (visual) order. `beats` is its played length in quarter-note beats (the
  * max note end, or the meter); `tempoBpm` is the quarter-note BPM in effect at its start, or null to

@@ -297,3 +297,12 @@ export const BAR_WIDTH = 1;
 
 /** Default guitar string tuning (low to high) for a chord diagram with no explicit tuning. */
 export const DEFAULT_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
+
+/** How far a volta (ending) bracket's horizontal line sits above the top staff line —
+ * roughly three staff spaces, enough to clear a note a couple of ledger lines up. */
+export const VOLTA_STAVE_GAP = 34;
+
+/** How tall a volta bracket's obstacle box is: vexflow draws the "1." label hanging below
+ * the bracket line, so the box has to reach past the text for above-stave annotations to
+ * lift clear of the whole thing rather than just the line. */
+export const VOLTA_LABEL_DROP = 20;

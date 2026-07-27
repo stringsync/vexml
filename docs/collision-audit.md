@@ -33,6 +33,7 @@ goes through `CollisionDetector`. Do not add new bespoke magic-offset clearance 
 | `draw.ts` chord-diagram block | fret box pushes right | adjacent diagram across a barline | **migrated** → `pushRightOf` |
 | `draw.ts::drawTempo` | metronome mark lifts (`shiftY`) | high first note | **deferred** (scaled mark + reserved headroom; Phase 2) |
 | chord diagram vertical | fixed `CHORD_DIAGRAM_GAP`, does **not** clear notes | (latent clip bug) | **deferred** (Phase 3) |
+| `draw-pass.ts::buildStave` volta | (obstacle only) volta bracket + its "1." label | — | registers as `annotation`; text lifts over it |
 
 The migration was behavior-preserving: the full screenshot suite was byte-identical except a
 1–2px improvement on `harmony_grace` (the symbol now also clears the grace note's stem tip).
@@ -68,3 +69,7 @@ them by mistake:
   `chord-diagram.ts`).
 - Tab fret / harmonic-bracket centering (`notes.ts` `boldFret`/harmonic layout).
 - Analytic slur control-point lift (`spanners.ts` `cpYFor`), wrapped tie/slur split.
+- Volta bracket height (`VOLTA_STAVE_GAP`) — the bracket is a stave modifier drawn with the
+  stave, before the notes are formatted, so the detector can't see them yet. It's registered as
+  an obstacle so above-stave text clears it; a very high note under it would need the bracket
+  drawn as a standalone `Volta` after the format pass.

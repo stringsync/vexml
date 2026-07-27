@@ -187,4 +187,32 @@ describe('cursor', () => {
 		expect(result.sounding).toEqual(['C/5', 'C/5', 'E/5', 'E/5']);
 		expect(result.whenDone).toBe(0);
 	});
+
+	// Repeats and voltas expand the timeline: the score's seven measures play as ten steps in
+	// jump order, not straight through. Proves the barlines the renderer draws (repeat dots and
+	// "1."/"2." brackets) and the order playback takes are read from the same <barline>s — in
+	// particular that the two-measure first ending plays through before the back-jump, rather
+	// than jumping from its first measure. One whole note per measure, so one step per measure.
+	it.concurrent('repeats and endings expand the playback order', async () => {
+		const { result } = await renderTest('repeats.musicxml', {}, (score) => {
+			const seq = score.getSequence();
+			const order = [];
+			for (let i = 0; i < seq.length; i++) {
+				order.push(seq.getStep(i)?.measureIndex);
+			}
+			return {
+				order,
+				measureCount: seq.getMeasureCount(),
+				// A repeated measure's cursor lands on its first pass, not its last.
+				firstStepOfM2: seq.getFirstStepOfMeasure(1),
+			};
+		});
+
+		// |: M1 M2 :| twice, then M3 into the two-measure 1st ending (M4 M5) and back to M3,
+		// skipping the whole exhausted ending into the 2nd (M6), then out to M7.
+		expect(result.order).toEqual([0, 1, 0, 1, 2, 3, 4, 2, 5, 6]);
+		// Document order is unchanged — only playback expands.
+		expect(result.measureCount).toBe(7);
+		expect(result.firstStepOfM2).toBe(1);
+	});
 });

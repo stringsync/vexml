@@ -209,6 +209,22 @@ const TEST_CASES = [
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
+	// Treble stave, 4/4, one ascending whole note per measure (C5 through B5): repeat
+	// barlines and volta brackets on one system. The playback order the same barlines
+	// produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7) is asserted in cursor.test.ts.
+	// - M1: opens with a forward-repeat barline — thick-thin plus two dots, printed after
+	//   the clef and time signature.
+	// - M2: closes the first repeat block with a backward repeat (dots plus thin-thick).
+	// - M3: opens the second repeat block with a forward repeat. It shares a boundary with
+	//   M2's backward repeat, so the two print as one back-to-back sign (dots, thin-thick-
+	//   thin, dots) rather than two separate barlines, and M3 draws no opening line of its own.
+	// - M4-5: one volta bracket labelled "1." spanning both measures — a down-turned hook at
+	//   M4's left edge, a plain line across the M4/M5 divider, and a hook at M5's right edge.
+	//   M5 also closes the block with a backward repeat under the bracket's right hook.
+	// - M6: a one-measure volta labelled "2.", so its bracket carries hooks at both ends.
+	// - M7: past the endings — a plain measure closing with the piece's thin-thick end barline.
+	testCase('repeats.musicxml', 'repeats.png'),
+
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
 	// M2. Measure numbering is 'every' to prove gaps are skipped: "1" over the second

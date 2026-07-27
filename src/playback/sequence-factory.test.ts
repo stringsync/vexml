@@ -86,7 +86,7 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1 }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2]);
@@ -96,7 +96,7 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 2 }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: true }] },
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 1, 0, 2]);
@@ -125,7 +125,7 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1 }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2]);
@@ -178,8 +178,8 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 2 }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 1 }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: true }] },
+				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
 				{ index: 3, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 1, 0, 2, 3]);
@@ -189,12 +189,41 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1 }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 1 }] },
-				{ index: 3, jumps: [{ type: 'repeatending', times: 1 }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: true }] },
 				{ index: 4, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2, 0, 3, 4]);
+	});
+
+	it('iterator: plays a multi-measure ending through before jumping back', () => {
+		// M2-M3 are one first ending, M4-M5 one second ending: the back-jump happens at the
+		// run's last measure, not at every measure it covers.
+		expect(
+			order([
+				{ index: 0, jumps: [{ type: 'repeatstart' }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: false }] },
+				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: false }] },
+				{ index: 4, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{ index: 5, jumps: [] },
+			]),
+		).toEqual([0, 1, 2, 0, 3, 4, 5]);
+	});
+
+	it('iterator: skips every measure of an exhausted multi-measure ending', () => {
+		// On the second pass the whole first ending (M2-M3) is skipped, not just its last
+		// measure — otherwise the second pass would replay part of the first ending.
+		expect(
+			order([
+				{ index: 0, jumps: [{ type: 'repeatstart' }] },
+				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: false }] },
+				{ index: 2, jumps: [{ type: 'repeatending', times: 2, last: true }] },
+				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{ index: 4, jumps: [] },
+			]),
+		).toEqual([0, 1, 2, 0, 1, 2, 0, 3, 4]);
 	});
 
 	it('iterator: treats a repeatend with times: 0 as a no-op', () => {

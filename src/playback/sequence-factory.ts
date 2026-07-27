@@ -1,4 +1,4 @@
-import type { Note as MNote, Part } from '@stringsync/mdom';
+import type { Measure, Note as MNote, Part } from '@stringsync/mdom';
 import type { Gap } from '../config';
 import { DEFAULT_TEMPO_BPM } from '../constants';
 import type { Note } from '../elements/note';
@@ -6,6 +6,7 @@ import type { RawGeometry } from '../engraving/score-drawer';
 import type { ScoreReader } from '../engraving/score-reader';
 import { gapsByMeasureIndex } from '../gaps';
 import { Rect } from '../geometry';
+import { endingPasses, measureRepeats } from '../repeats';
 import {
 	beatsToMs,
 	type Jump,
@@ -41,7 +42,9 @@ export class MeasureSequenceIterator implements Iterable<number> {
 
 type RepeatEnd = { measureIndex: number; startIndex: number; times: number };
 type VoltaEnding = {
-	measureIndex: number;
+	/* The measure range the ending covers; playback jumps from `endIndex`, not from every one. */
+	startIndex: number;
+	endIndex: number;
 	times: number;
 	startPass: number;
 	endPass: number;
@@ -84,6 +87,8 @@ function analyzeStructure(
 
 	const startStack: number[] = [];
 	let currentVolta: Volta | null = null;
+	// The ending still being extended, i.e. one whose `last` measure hasn't been reached.
+	let currentEnding: VoltaEnding | null = null;
 
 	for (const [i, measure] of measures.entries()) {
 		for (const jump of measure.jumps) {
@@ -102,19 +107,27 @@ function analyzeStructure(
 				};
 				voltas.push(currentVolta);
 			}
-			const ending: VoltaEnding = {
-				measureIndex: i,
-				times: endingJump.times,
-				startPass: 0,
-				endPass: 0,
-			};
-			currentVolta.endings.push(ending);
+			let ending: VoltaEnding | null = currentEnding;
+			if (ending === null) {
+				ending = {
+					startIndex: i,
+					endIndex: i,
+					times: endingJump.times,
+					startPass: 0,
+					endPass: 0,
+				};
+				currentVolta.endings.push(ending);
+			} else {
+				ending.endIndex = i;
+			}
+			currentEnding = endingJump.last ? null : ending;
 			endingByMeasure.set(i, { volta: currentVolta, ending });
 			// A `repeatend` co-located with a `repeatending` is intentionally dropped.
 			continue;
 		}
 
 		if (currentVolta !== null) {
+			currentEnding = null;
 			if (startStack.at(-1) === currentVolta.startIndex) {
 				startStack.pop();
 			}
@@ -190,7 +203,12 @@ function walk(
 		result.push(measure.index);
 
 		if (endingHit) {
-			const { volta } = endingHit;
+			const { volta, ending } = endingHit;
+			// Mid-run: the ending spans more measures, so keep playing before deciding.
+			if (i < ending.endIndex) {
+				i++;
+				continue;
+			}
 			const nextPass = (voltaPass.get(volta) ?? 1) + 1;
 			if (nextPass > volta.totalPasses) {
 				voltaPass.delete(volta);
@@ -272,51 +290,31 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 	'128th': 0.03125,
 };
 
-/* How many passes a volta ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */
-function endingPasses(numberAttr: string | null): number {
-	if (!numberAttr) {
-		return 1;
-	}
-	let total = 0;
-	for (const part of numberAttr.split(',')) {
-		const range = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
-		if (range) {
-			total += Math.max(1, Number(range[2]) - Number(range[1]) + 1);
-		} else if (part.trim()) {
-			total += 1;
-		}
-	}
-	return Math.max(1, total);
-}
-
-/* The repeat/volta jumps on a measure, read from its barlines. A volta start (`<ending type=start>`)
- * supersedes a co-located backward repeat (the iterator handles the back-jump). */
-function jumpsOf(measure: Part['measures'][number]): Jump[] {
-	let start = false;
-	let endingPassCount = 0;
-	let endTimes = -1;
-	for (const barline of measure.barlines) {
-		const ending = barline.ending;
-		if (ending && ending.type === 'start') {
-			endingPassCount = endingPasses(ending.number);
-		}
-		if (barline.repeat === 'forward') {
-			start = true;
-		} else if (barline.repeat === 'backward') {
-			const times = barline.repeatTimes ?? 2;
-			endTimes = Math.max(0, times - 1);
-		}
-	}
-	const jumps: Jump[] = [];
-	if (start) {
-		jumps.push({ type: 'repeatstart' });
-	}
-	if (endingPassCount > 0) {
-		jumps.push({ type: 'repeatending', times: endingPassCount });
-	} else if (endTimes >= 0) {
-		jumps.push({ type: 'repeatend', times: endTimes });
-	}
-	return jumps;
+/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
+ * (src/repeats.ts, which the renderer reads too). An ending supersedes a co-located backward
+ * repeat — the iterator drives the back-jump off the ending instead. */
+function jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
+	return measureRepeats(measures).map(
+		({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
+			const jumps: Jump[] = [];
+			if (repeatBegin) {
+				jumps.push({ type: 'repeatstart' });
+			}
+			if (ending) {
+				jumps.push({
+					type: 'repeatending',
+					times: endingPasses(ending.number),
+					last: ending.last,
+				});
+			} else if (repeatEnd) {
+				jumps.push({
+					type: 'repeatend',
+					times: Math.max(0, (repeatTimes ?? 2) - 1),
+				});
+			}
+			return jumps;
+		},
+	);
 }
 
 /* Two notes at the same pitch (a tie's two ends always match). */
@@ -529,6 +527,8 @@ export class SequenceFactory {
 
 		const gaps = gapsByMeasureIndex(this.gaps);
 		const measureCount = parts[0]?.measures.length ?? 0;
+		// Repeats and endings apply across the system, so they're read from the first part.
+		const jumps = jumpsByMeasure(parts[0]?.measures ?? []);
 		const measures: MeasureInfo[] = [];
 		for (let i = 0; i < measureCount; i++) {
 			const m0 = parts[0]?.measures[i];
@@ -540,7 +540,7 @@ export class SequenceFactory {
 				index: i,
 				beats: gap ? 1 : this.measureBeats(parts, i),
 				tempoBpm: gap || !m0 ? null : this.quarterBpm(m0),
-				jumps: m0 ? jumpsOf(m0) : [],
+				jumps: jumps[i] ?? [],
 				systemRect: systemRectByIndex.get(i) ?? new Rect(0, 0, 0, 0),
 				...(gap ? { gapMs: gap.durationMs } : {}),
 			});
