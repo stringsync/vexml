@@ -234,6 +234,21 @@ const TEST_CASES = [
 	//   into. The measure closes with the piece's thin-thick end barline.
 	testCase('repeats.musicxml', 'repeats.png'),
 
+	// A treble stave over a 6-line TAB stave (bracketed, one part), 4/4, one whole note per
+	// measure on string 1: repeat barlines belong to the measure, not to a stave, so every
+	// repeat sign lines up on both staves and its bars run unbroken from the top of the
+	// notation stave to the bottom of the TAB stave. The dots stay per stave, sitting in that
+	// stave's two middle spaces — two staff spaces apart on the notation stave, wider on the
+	// six-line TAB. Note the opening repeat is NOT at the staves' left edge: it prints after
+	// the widest opening, the notation stave's clef and time signature, and the TAB stave
+	// leaves that span blank rather than placing its own sign right after the "TAB" glyph.
+	// - M1: opens with a forward repeat (thick-thin plus dots), fret 0 / E4.
+	// - M2: closes the block with a backward repeat, fret 3 / G4.
+	// - M3: reopens immediately, so the M2/M3 boundary prints one back-to-back sign — dots,
+	//   thin-thick-thin, dots — spanning both staves. Fret 5 / A4.
+	// - M4: fret 7 / B4, closing with a backward repeat instead of the usual end barline.
+	testCase('repeats_notation_and_tab.musicxml', 'repeats_notation_and_tab.png'),
+
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
 	// M2. Measure numbering is 'every' to prove gaps are skipped: "1" over the second

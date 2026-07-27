@@ -20,6 +20,7 @@ import {
 	type RenderContext,
 	Stave,
 	StaveConnector,
+	StaveModifierPosition,
 	StaveNote,
 	StaveTempo,
 	Stem,
@@ -264,6 +265,37 @@ function voltaLabel(number: string): string {
 }
 
 /*
+ * Line up the opening repeat sign across a measure's staves. A repeat belongs to the measure,
+ * not to one stave, but vexflow lays each stave's begin modifiers out on its own — a treble
+ * clef plus a time signature is wider than a bare "TAB" glyph — so the dots would land at a
+ * different x on every stave. The widest stave wins and the rest are pushed out to match.
+ *
+ * This is the repeat half of vexflow's own Stave.formatBegModifiers, deliberately without its
+ * clef/key/time alignment: those already sit where vexml wants them, and equalizing them would
+ * pad every multi-stave system's opening.
+ */
+function alignBegRepeats(staves: readonly Stave[]): number | null {
+	const repeats = staves.flatMap((stave) => {
+		stave.format(); // modifier x isn't assigned until the stave lays itself out
+		return stave
+			.getModifiers(StaveModifierPosition.BEGIN)
+			.filter(
+				(modifier): modifier is Barline =>
+					modifier instanceof Barline &&
+					modifier.getType() === Barline.type.REPEAT_BEGIN,
+			);
+	});
+	if (repeats.length === 0) {
+		return null;
+	}
+	const x = Math.max(...repeats.map((repeat) => repeat.getX()));
+	for (const repeat of repeats) {
+		repeat.setX(x);
+	}
+	return x;
+}
+
+/*
  * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
  */
 function graceGroupOf(note: {
@@ -407,6 +439,12 @@ export class DrawPass {
 	// split into separate MusicXML parts must align the same as a single two-stave
 	// part. Built per part below, then formatted and drawn once after the part loop.
 	private systemPending: PendingStave[] = [];
+	// Every stave of the measure column being built, drawn once the whole column exists so a
+	// repeat sign can be lined up across staves that reserve different opening widths.
+	private columnStaves: Stave[] = [];
+	// Where this column's opening repeat sign ended up once aligned, so the connector that
+	// carries it across the staves can be placed there too. Null when there is no such sign.
+	private begRepeatX: number | null = null;
 	private tempoTasks: Array<{
 		stave: Stave;
 		tempo: TempoMark;
@@ -551,6 +589,7 @@ export class DrawPass {
 		this.systemTop = undefined;
 		this.systemBottom = undefined;
 		this.systemPending = [];
+		this.columnStaves = [];
 		this.tempoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
@@ -692,6 +731,13 @@ export class DrawPass {
 			}
 		}
 
+		// The whole column exists now, so a repeat sign can be squared up across its staves
+		// before any of them is committed to the canvas.
+		this.begRepeatX = alignBegRepeats(this.columnStaves);
+		for (const stave of this.columnStaves) {
+			stave.setContext(this.context).draw();
+		}
+
 		// Format and draw every part's staves together so same-tick notes line up
 		// vertically across the whole system (notation over its own tab, and across
 		// separate parts that share a beat).
@@ -773,10 +819,8 @@ export class DrawPass {
 		// Exception: a lone TAB stave has no system connector to close its left
 		// edge, so its system-start measure draws an explicit begin barline.
 		// Repeat signs are the exception to the multi-stave suppression: no StaveConnector type
-		// draws repeat dots, so a repeat boundary is drawn per stave and its connector skipped
-		// (see drawConnectors).
-		// ponytail: on a multi-stave system the repeat line therefore stops at each stave
-		// instead of spanning them; a custom connector would be needed to join them.
+		// draws repeat dots, so every stave draws the whole sign itself and drawConnectors
+		// retraces just the bars across the system.
 		const repeatBegin = this.decoration.repeatBegin && !this.suppressBegRepeat;
 		stave.setBegBarType(
 			repeatBegin
@@ -879,9 +923,11 @@ export class DrawPass {
 			this.measureNumbered = true;
 		}
 
-		stave.setContext(this.context).draw();
+		// Queued, not drawn: the column's staves are drawn together once they all exist, so a
+		// repeat sign can be aligned across them first (see alignBegRepeats).
+		this.columnStaves.push(stave);
 
-		// The volta bracket is drawn by the stave above, so register the band it occupies as an
+		// The volta bracket is drawn with the stave, so register the band it occupies as an
 		// obstacle now: chord symbols and words placed later in this measure lift clear of it
 		// instead of overprinting the bracket and its "1." label. The label hangs below the
 		// bracket line, so the box runs from the line down past the text.
@@ -1946,13 +1992,28 @@ export class DrawPass {
 					this.systemTop.setX(this.measureX);
 				}
 			}
+			// A repeat's bars run the full height of the system like any other barline, but its
+			// dots belong to each stave — and no connector type draws dots. So each stave draws
+			// the whole sign itself and a bold-double connector retraces just the bars: vexflow
+			// gives it the same geometry it gives a repeat barline, so it lands exactly over the
+			// per-stave bars and fills the gaps between staves.
+			if (this.begRepeatX !== null) {
+				this.drawRepeatConnector(
+					'boldDoubleLeft',
+					this.begRepeatX - this.systemTop.getX(),
+				);
+			}
 			// Every measure's end line gets a connector joining the part's staves, so
 			// internal barlines are tied across staves and not just drawn per-stave.
 			// The piece's final measure gets a bold thin-thick connector to match its
 			// end barline; all other measure ends get a plain single line.
-			// A repeat end is the exception: no connector type draws repeat dots, so each
-			// stave drew the sign itself and a connector here would strike through it.
 			if (this.decoration.repeatEnd) {
+				this.drawRepeatConnector('boldDoubleRight');
+				// A back-to-back sign closes and reopens on the same line: the reopening half
+				// sits at the same x, so its connector shifts out to the measure's right edge.
+				if (this.repeatBoth) {
+					this.drawRepeatConnector('boldDoubleLeft', this.systemTop.getWidth());
+				}
 				return;
 			}
 			new StaveConnector(this.systemTop, this.systemBottom)
@@ -1966,6 +2027,23 @@ export class DrawPass {
 				.setContext(this.context)
 				.draw();
 		}
+	}
+
+	/* One half of a repeat sign carried down the system. `xShift` moves a left-sided connector
+	 * off the stave's left edge — an opening repeat prints after the clef and signatures, and a
+	 * back-to-back one prints at the measure's right edge. */
+	private drawRepeatConnector(
+		type: 'boldDoubleLeft' | 'boldDoubleRight',
+		xShift = 0,
+	): void {
+		if (!this.systemTop || !this.systemBottom) {
+			return;
+		}
+		new StaveConnector(this.systemTop, this.systemBottom)
+			.setType(type)
+			.setXShift(xShift)
+			.setContext(this.context)
+			.draw();
 	}
 
 	/*

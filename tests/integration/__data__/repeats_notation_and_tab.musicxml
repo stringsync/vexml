@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Notation stave over a 6-line TAB stave, with repeat barlines. A <barline> belongs to
+         the measure, not to one stave, so every repeat sign has to appear on both staves at
+         the same x — otherwise the two staves disagree about where the block starts and ends. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>TAB</sign><line>5</line></clef>
+        <staff-details number="2"><staff-lines>6</staff-lines></staff-details>
+      </attributes>
+      <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+        <repeat direction="backward"/>
+      </barline>
+    </measure>
+    <measure number="3">
+      <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>5</fret></technical></notations>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff>
+        <notations><technical><string>1</string><fret>7</fret></technical></notations>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+        <repeat direction="backward"/>
+      </barline>
+    </measure>
+  </part>
+</score-partwise>
