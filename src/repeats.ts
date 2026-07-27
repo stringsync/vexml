@@ -33,7 +33,7 @@ export type MeasureEnding = {
 	first: boolean;
 	/** Whether the run ends here (its bracket's right hook, and where playback jumps). */
 	last: boolean;
-	/** A `discontinue` close: the bracket stays open on the right, with no down hook. */
+	/** The bracket stays open on the right, with no down hook. */
 	open: boolean;
 };
 
@@ -64,7 +64,20 @@ export function measureRepeats(measures: readonly Measure[]): MeasureRepeat[] {
 			ending:
 				number === null
 					? null
-					: { number, first, last, open: last && r.closed === 'discontinue' },
+					: {
+							number,
+							first,
+							last,
+							// An ending closes with a down hook only when something jumps back from it, or
+							// when the piece stops there. `discontinue` asks for an open bracket outright;
+							// otherwise the backward repeat is the signal — a final ending runs on into
+							// the music, so its bracket stays open even though exporters routinely still
+							// write `type="stop"` on it. At the last measure there's nothing to run into.
+							open:
+								last &&
+								(r.closed === 'discontinue' ||
+									(!r.repeatEnd && i < read.length - 1)),
+						},
 		});
 	}
 	return out;

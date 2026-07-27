@@ -58,7 +58,9 @@ describe('measureRepeats', () => {
 	});
 
 	it('marks a one-measure ending as both first and last', async () => {
-		const result = await repeatsOf(scoreOf(start('1') + stop('1'), ''));
+		const result = await repeatsOf(
+			scoreOf(start('1') + stop('1') + BACKWARD, ''),
+		);
 		expect(result[0]?.ending).toEqual({
 			number: '1',
 			first: true,
@@ -70,7 +72,9 @@ describe('measureRepeats', () => {
 
 	it('spans a multi-measure ending marked only at its edges', async () => {
 		// The standard encoding: `start` on the run's first measure, `stop` on its last.
-		const result = await repeatsOf(scoreOf(start('1'), '', stop('1'), ''));
+		const result = await repeatsOf(
+			scoreOf(start('1'), '', stop('1') + BACKWARD, ''),
+		);
 		expect(result.map((r) => r.ending)).toEqual([
 			{ number: '1', first: true, last: false, open: false },
 			{ number: '1', first: false, last: false, open: false },
@@ -83,13 +87,30 @@ describe('measureRepeats', () => {
 		// Some exporters repeat `start`/`stop` on every measure of the run; a `stop` the next
 		// measure reopens with the same number is that restatement, not a second ending.
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1'), start('1') + stop('1'), ''),
+			scoreOf(start('1') + stop('1'), start('1') + stop('1') + BACKWARD, ''),
 		);
 		expect(result.map((r) => r.ending)).toEqual([
 			{ number: '1', first: true, last: false, open: false },
 			{ number: '1', first: false, last: true, open: false },
 			null,
 		]);
+	});
+
+	it('leaves an ending with no backward repeat open on the right', async () => {
+		// A final ending has nothing jumping back from it, so its bracket runs on into the
+		// music with no down hook — even though exporters still write `type="stop"` on it.
+		const result = await repeatsOf(
+			scoreOf(start('1') + stop('1') + BACKWARD, start('2') + stop('2'), ''),
+		);
+		expect(result.map((r) => r.ending?.open)).toEqual([false, true, undefined]);
+	});
+
+	it('closes an ending that runs to the end of the score', async () => {
+		// Nothing follows it, so there is no music for the bracket to run on into.
+		const result = await repeatsOf(
+			scoreOf(start('1') + stop('1') + BACKWARD, start('2') + stop('2')),
+		);
+		expect(result.map((r) => r.ending?.open)).toEqual([false, false]);
 	});
 
 	it('starts a new ending when the next run has a different number', async () => {

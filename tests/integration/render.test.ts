@@ -209,9 +209,10 @@ const TEST_CASES = [
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
-	// Treble stave, 4/4, one ascending whole note per measure (C5 through B5): repeat
-	// barlines and volta brackets on one system. The playback order the same barlines
-	// produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7) is asserted in cursor.test.ts.
+	// Treble stave, 4/4, one whole note per measure: repeat barlines and volta brackets.
+	// M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
+	// the same barlines produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7, then M8 M9 M8 M10 M8 M11)
+	// is asserted in cursor.test.ts.
 	// - M1: opens with a forward-repeat barline — thick-thin plus two dots, printed after
 	//   the clef and time signature.
 	// - M2: closes the first repeat block with a backward repeat (dots plus thin-thick).
@@ -221,8 +222,16 @@ const TEST_CASES = [
 	// - M4-5: one volta bracket labelled "1." spanning both measures — a down-turned hook at
 	//   M4's left edge, a plain line across the M4/M5 divider, and a hook at M5's right edge.
 	//   M5 also closes the block with a backward repeat under the bracket's right hook.
-	// - M6: a one-measure volta labelled "2.", so its bracket carries hooks at both ends.
-	// - M7: past the endings — a plain measure closing with the piece's thin-thick end barline.
+	// - M6: a one-measure volta labelled "2." — a hook at its left edge, but the right end runs
+	//   flat with no hook, because nothing jumps back from a final ending.
+	// - M7: past the endings — a plain measure, no bracket and no repeat dots.
+	// - M8: opens a third repeat block (forward repeat) that carries three endings.
+	// - M9: a one-measure volta labelled "1." (hooks at both ends) closing with a backward
+	//   repeat under its right hook.
+	// - M10: the same shape labelled "2." — bracket with both hooks, backward repeat beneath.
+	// - M11: the final ending, labelled "3.", with no backward repeat. Unlike M6 its bracket
+	//   still hooks at both ends: the score stops here, so there is no music for it to run on
+	//   into. The measure closes with the piece's thin-thick end barline.
 	testCase('repeats.musicxml', 'repeats.png'),
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure

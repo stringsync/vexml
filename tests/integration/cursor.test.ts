@@ -188,11 +188,12 @@ describe('cursor', () => {
 		expect(result.whenDone).toBe(0);
 	});
 
-	// Repeats and voltas expand the timeline: the score's seven measures play as ten steps in
-	// jump order, not straight through. Proves the barlines the renderer draws (repeat dots and
-	// "1."/"2." brackets) and the order playback takes are read from the same <barline>s — in
-	// particular that the two-measure first ending plays through before the back-jump, rather
-	// than jumping from its first measure. One whole note per measure, so one step per measure.
+	// Repeats and voltas expand the timeline: the score's eleven measures play as sixteen steps
+	// in jump order, not straight through. Proves the barlines the renderer draws (repeat dots
+	// and "1."/"2."/"3." brackets) and the order playback takes are read from the same
+	// <barline>s — in particular that the two-measure first ending plays through before the
+	// back-jump rather than jumping from its first measure, and that a three-ending block takes
+	// each ending once across three passes. One whole note per measure, so one step per measure.
 	it.concurrent('repeats and endings expand the playback order', async () => {
 		const { result } = await renderTest('repeats.musicxml', {}, (score) => {
 			const seq = score.getSequence();
@@ -209,10 +210,14 @@ describe('cursor', () => {
 		});
 
 		// |: M1 M2 :| twice, then M3 into the two-measure 1st ending (M4 M5) and back to M3,
-		// skipping the whole exhausted ending into the 2nd (M6), then out to M7.
-		expect(result.order).toEqual([0, 1, 0, 1, 2, 3, 4, 2, 5, 6]);
+		// skipping the whole exhausted ending into the 2nd (M6), then out to M7. M8 then opens a
+		// three-ending block: each pass replays M8 and takes the next ending (M9, M10, M11), and
+		// the last one has no back-jump so playback ends there.
+		expect(result.order).toEqual([
+			0, 1, 0, 1, 2, 3, 4, 2, 5, 6, 7, 8, 7, 9, 7, 10,
+		]);
 		// Document order is unchanged — only playback expands.
-		expect(result.measureCount).toBe(7);
+		expect(result.measureCount).toBe(11);
 		expect(result.firstStepOfM2).toBe(1);
 	});
 });
