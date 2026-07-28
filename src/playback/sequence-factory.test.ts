@@ -302,15 +302,63 @@ describe('SequenceFactory', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
-				{ index: 1, beats: 4, tempoBpm: null, jumps: [], systemRect: SYS },
+				{ index: 1, beats: 1, tempoBpm: null, jumps: [], systemRect: SYS },
 			],
-			notes: [quarter(fakeNote('m0'), 0, 0, 10), ...notes],
+			notes: [
+				...[0, 1, 2, 3].map((b) =>
+					quarter(fakeNote(`m0b${b}`), 0, b, 10 + b * 10),
+				),
+				...notes,
+			],
 		});
 
-		expect(seq.length).toBe(7);
+		expect(seq.length).toBe(10);
 		for (const [i, sn] of notes.entries()) {
-			expect(seq.getStep(i + 1)?.active).toEqual([sn.note]);
+			expect(seq.getStep(i + 4)?.active).toEqual([sn.note]);
 		}
+	});
+
+	it('assembly: a voice that ends before its measure does stops sounding at the note end', () => {
+		// Voice 1 fills only beat 1 of a 4-beat measure and has no trailing rest, so nothing onsets at
+		// beat 1 — without a step seeded there the quarter rings until the next measure.
+		const short = fakeNote('short');
+		const held = fakeNote('held');
+		const next = fakeNote('next');
+		const seq = build({
+			measures: [
+				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
+				{ index: 1, beats: 4, tempoBpm: null, jumps: [], systemRect: SYS },
+			],
+			notes: [
+				quarter(short, 0, 0, 10),
+				{
+					note: held,
+					measureIndex: 0,
+					measureBeat: 0,
+					beats: 4,
+					x: 10,
+					tiedFrom: null,
+				},
+				{
+					note: next,
+					measureIndex: 1,
+					measureBeat: 0,
+					beats: 4,
+					x: 110,
+					tiedFrom: null,
+				},
+			],
+		});
+
+		expect(seq.length).toBe(3);
+		expect(seq.getStep(0)?.active).toEqual([short, held]);
+		expect(seq.getStep(1)?.startBeat).toBe(1);
+		expect(seq.getStep(1)?.active).toEqual([held]);
+		expect(seq.getStep(2)?.active).toEqual([next]);
+		// The seeded step sits on the glide the cursor was already making, so its path is unchanged.
+		expect(seq.getStep(1)?.x).toBeCloseTo(35);
+		expect(seq.getStep(1)?.glideToX).toBe(110);
+		expect(seq.getStep(1)?.measureIndex).toBe(0);
 	});
 
 	it('assembly: a gap measure plays for exactly gapMs, silent, and the next measure resumes the carried tempo', () => {
@@ -488,7 +536,7 @@ describe('SequenceFactory', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
-				{ index: 1, beats: 2, tempoBpm: null, jumps: [], systemRect: SYS },
+				{ index: 1, beats: 1, tempoBpm: null, jumps: [], systemRect: SYS },
 			],
 			notes: [
 				quarter(fakeNote('a'), 0, 0, 10),
@@ -504,7 +552,7 @@ describe('SequenceFactory', () => {
 	it('getStepIndexAtBeats: binary search, null before the first onset', () => {
 		const seq = build({
 			measures: [
-				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
+				{ index: 0, beats: 3, tempoBpm: 120, jumps: [], systemRect: SYS },
 			],
 			notes: [
 				quarter(fakeNote('a'), 0, 0, 10),
@@ -597,10 +645,15 @@ describe('SequenceFactory playback tempo', () => {
 		}));
 		const seq = new SequenceFactory(reader, []).createFromInput({
 			measures,
-			notes: [
-				quarter(fakeNote('m0'), 0, 0, 0),
-				quarter(fakeNote('m1'), 1, 0, 0),
-			],
+			// Whole notes, so each measure is filled and its single onset is its only step.
+			notes: [0, 1].map((index) => ({
+				note: fakeNote(`m${index}`),
+				measureIndex: index,
+				measureBeat: 0,
+				beats: 4,
+				x: 0,
+				tiedFrom: null,
+			})),
 		});
 
 		// m1 at 60 bpm: 4 beats = 4000ms. m2 at 120 bpm: 4 beats = 2000ms (would be

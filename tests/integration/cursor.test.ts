@@ -220,4 +220,29 @@ describe('cursor', () => {
 		expect(result.measureCount).toBe(11);
 		expect(result.firstStepOfM2).toBe(1);
 	});
+
+	// A voice that stops before its measure ends (legal, and common in real exports: M1's voice 1 is
+	// one quarter with no trailing rest) has no onset at the note's end, so nothing seeds a step
+	// boundary there and the quarter used to ring until the next measure's onset. The end itself
+	// seeds a step: C5 releases at beat 1 while the whole note under it keeps sounding.
+	it.concurrent('a voice that ends before its measure does stops sounding there', async () => {
+		const { result } = await renderTest('voice_short.musicxml', {}, (score) => {
+			const seq = score.getSequence();
+			const steps = [];
+			for (let i = 0; i < seq.length; i++) {
+				const step = seq.getStep(i);
+				steps.push({
+					startBeat: step?.startBeat,
+					active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
+				});
+			}
+			return steps;
+		});
+
+		expect(result).toEqual([
+			{ startBeat: 0, active: ['C/5', 'E/3'] },
+			{ startBeat: 1, active: ['E/3'] },
+			{ startBeat: 4, active: ['G/4'] },
+		]);
+	});
 });

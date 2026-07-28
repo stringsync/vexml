@@ -397,9 +397,15 @@ export class SequenceFactory {
 		// Walk playback order: accumulate the measure start beat, build tempo segments, and collect
 		// each note occurrence's absolute [startBeat, endBeat) interval plus the onsets that seed steps.
 		type Interval = { note: Note; startBeat: number; endBeat: number };
-		type Onset = { x: number; systemRect: Rect; measureIndex: number };
+		// `x: null` marks an onset seeded by a note *end* rather than a notehead; it's filled in below.
+		type Onset = { x: number | null; systemRect: Rect; measureIndex: number };
 		const intervals: Interval[] = [];
 		const onsets = new Map<number, Onset>();
+		const ends: Array<{
+			beat: number;
+			systemRect: Rect;
+			measureIndex: number;
+		}> = [];
 		const segments: TempoSegment[] = [];
 		let totalBeats = 0;
 		// Start at 120; a measure's mark sets the rate from there on, null carries the previous.
@@ -445,9 +451,15 @@ export class SequenceFactory {
 					startBeat,
 					endBeat: startBeat + sn.beats,
 				});
+				ends.push({
+					beat: startBeat + sn.beats,
+					systemRect: measure.systemRect,
+					measureIndex: measure.index,
+				});
 				const existing = onsets.get(startBeat);
 				if (existing) {
-					existing.x = Math.min(existing.x, sn.x); // the onset's leftmost notehead anchors the bar
+					// the onset's leftmost notehead anchors the bar
+					existing.x = Math.min(existing.x ?? sn.x, sn.x);
 				} else {
 					onsets.set(startBeat, {
 						x: sn.x,
@@ -466,7 +478,66 @@ export class SequenceFactory {
 			}
 		}
 
+		// A voice can end before its measure does (no trailing rest — legal, and common in real
+		// exports), leaving no onset at the note's end: without a step boundary there the note keeps
+		// sounding until the next onset anywhere in the score. Seed a step at every note end that isn't
+		// already an onset. Matching is epsilon-tolerant (see BEAT_EPSILON) via a quantized key —
+		// an exact-equality test would seed a duplicate micro-step one ULP off a real onset.
+		const quantize = (beat: number) => Math.round(beat / BEAT_EPSILON);
+		const onsetKeys = new Set([...onsets.keys()].map(quantize));
+		for (const end of ends) {
+			const key = quantize(end.beat);
+			if (
+				end.beat >= totalBeats - BEAT_EPSILON ||
+				onsetKeys.has(key - 1) ||
+				onsetKeys.has(key) ||
+				onsetKeys.has(key + 1)
+			) {
+				continue;
+			}
+			onsetKeys.add(key);
+			onsets.set(end.beat, {
+				x: null,
+				systemRect: end.systemRect,
+				measureIndex: end.measureIndex,
+			});
+		}
+
 		const startBeats = [...onsets.keys()].sort((a, b) => a - b);
+		// Place each seeded end along the glide the cursor was already making between the surrounding
+		// noteheads, so splitting a step leaves the cursor's path unchanged — only the active set
+		// differs. Ascending order means the previous onset is always resolved already; the next one
+		// may be another seed, so scan forward to the next real notehead.
+		for (const [i, startBeat] of startBeats.entries()) {
+			const onset = onsets.get(startBeat);
+			if (!onset || onset.x !== null) {
+				continue;
+			}
+			const prevBeat = startBeats[i - 1] ?? startBeat;
+			const prev = onsets.get(prevBeat);
+			let j = i + 1;
+			while (onsets.get(startBeats[j] ?? -1)?.x === null) {
+				j++;
+			}
+			const nextBeat = startBeats[j];
+			const next = nextBeat === undefined ? undefined : onsets.get(nextBeat);
+			const fromX =
+				prev?.x != null && prev.systemRect.y === onset.systemRect.y
+					? prev.x
+					: onset.systemRect.x;
+			const toX =
+				next?.x != null &&
+				next.systemRect.y === onset.systemRect.y &&
+				next.x > fromX
+					? next.x
+					: onset.systemRect.right;
+			const span = (nextBeat ?? totalBeats) - prevBeat;
+			onset.x =
+				span > 0
+					? fromX + ((toX - fromX) * (startBeat - prevBeat)) / span
+					: fromX;
+		}
+
 		const steps: Step[] = [];
 		const firstStepOfNote = new Map<Note, number>();
 		const firstStepOfMeasure = new Map<number, number>();
@@ -486,11 +557,14 @@ export class SequenceFactory {
 			// Glide toward the next onset on the same system; at a line break, to the system's right
 			// edge.
 			const next = nextBeat === undefined ? undefined : onsets.get(nextBeat);
+			// Every x is resolved by now (seeds were filled in above); the fallbacks only satisfy types.
+			const x = onset.x ?? onset.systemRect.x;
 			const sameSystem =
-				next !== undefined &&
+				next?.x != null &&
 				next.systemRect.y === onset.systemRect.y &&
-				next.x > onset.x;
-			const glideToX = sameSystem && next ? next.x : onset.systemRect.right;
+				next.x > x;
+			const glideToX =
+				sameSystem && next?.x != null ? next.x : onset.systemRect.right;
 			steps.push({
 				index: i,
 				measureIndex: onset.measureIndex,
@@ -498,7 +572,7 @@ export class SequenceFactory {
 				endBeat,
 				startMs: beatsToMs(startBeat, segments),
 				endMs: beatsToMs(endBeat, segments),
-				x: onset.x,
+				x,
 				glideToX,
 				systemRect: onset.systemRect,
 				active,
