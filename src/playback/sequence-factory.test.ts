@@ -288,6 +288,31 @@ describe('SequenceFactory', () => {
 		expect(seq.getMeasureIndexAtBeats(5)).toBe(1);
 	});
 
+	it('assembly: 3:2 sixteenth triplets in a measure starting at beat 4 keep one note active per step', () => {
+		// 1/6-beat onsets: (4 + 1/6) + 1/6 and 4 + 2/6 are the same instant but differ by 1 ULP, so a
+		// strict `startBeat < endBeat` test leaks the previous note into the next step.
+		const notes: SequenceNote[] = Array.from({ length: 6 }, (_, i) => ({
+			note: fakeNote(`t${i}`),
+			measureIndex: 1,
+			measureBeat: i / 6,
+			beats: 1 / 6,
+			x: 110 + i * 10,
+			tiedFrom: null,
+		}));
+		const seq = build({
+			measures: [
+				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
+				{ index: 1, beats: 4, tempoBpm: null, jumps: [], systemRect: SYS },
+			],
+			notes: [quarter(fakeNote('m0'), 0, 0, 10), ...notes],
+		});
+
+		expect(seq.length).toBe(7);
+		for (const [i, sn] of notes.entries()) {
+			expect(seq.getStep(i + 1)?.active).toEqual([sn.note]);
+		}
+	});
+
 	it('assembly: a gap measure plays for exactly gapMs, silent, and the next measure resumes the carried tempo', () => {
 		const a = fakeNote('a');
 		const b = fakeNote('b');

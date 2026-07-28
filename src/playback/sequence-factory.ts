@@ -357,6 +357,12 @@ function tiedFromOf(
 	return null;
 }
 
+/* A note's endBeat (measure start + onset + duration) and the next onset's startBeat (measure start
+ * + onset) are two float paths to the same instant, and they disagree by ~1 ULP for non-dyadic
+ * durations like triplets — enough to keep a note active one step too long. 1e-6 beats is ~1µs at
+ * ♩=60, far below any real duration. */
+const BEAT_EPSILON = 1e-6;
+
 export class SequenceFactory {
 	constructor(
 		private readonly reader: ScoreReader,
@@ -472,7 +478,10 @@ export class SequenceFactory {
 			const nextBeat = startBeats[i + 1];
 			const endBeat = nextBeat ?? totalBeats;
 			const active = intervals
-				.filter((iv) => iv.startBeat <= startBeat && startBeat < iv.endBeat)
+				.filter(
+					(iv) =>
+						iv.startBeat <= startBeat && startBeat < iv.endBeat - BEAT_EPSILON,
+				)
 				.map((iv) => iv.note);
 			// Glide toward the next onset on the same system; at a line break, to the system's right
 			// edge.
