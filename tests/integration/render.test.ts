@@ -275,19 +275,28 @@ const TEST_CASES = [
 		],
 	}),
 
-	// Beam variations across seven 4/4 measures. Wraps across systems.
-	// - M1: simple beamed eighths in a small range.
+	// Beam variations across ten 4/4 measures. Wraps across systems. A beam slants only
+	// when its run moves consistently one way (chords count both their outer voices) and
+	// is horizontal otherwise — M3, M5, M6, M9 are the flat cases.
+	// - M1: simple beamed eighths in a small range — ascending, so both beams slant up.
 	// - M2: beamed eighths leaping a wide range (steep beams, ledger lines above on
 	//   D6/E6 and below on C4/D4).
-	// - M3: two double-beamed sixteenth groups then a half rest.
+	// - M3: two double-beamed sixteenth groups then a half rest. Each group is
+	//   B4-C5-D5-C5, whose peak (D5) is interior, so both beams are FLAT.
 	// - M4: one beat of triple-beamed 32nds then half + quarter rests.
-	// - M5: mixed eighth+sixteenth beats with partial secondary beams.
+	// - M5: mixed eighth+sixteenth beats with partial secondary beams. Both groups
+	//   open and close on the same pitch (C5..C5, D5..D5), so both are FLAT.
 	// - M6: a beamed eighth group spanning an internal eighth rest (rest carries a
-	//   beam marker).
+	//   beam marker). The rest is ignored for slope, leaving C5-D5-C5 — FLAT.
 	// - M7: beamed eighths in a low range (below the middle line) so the auto stem
 	//   direction flips up.
 	// - M8: a beam run spanning an eighth rest that carries NO beam markers; the rest
 	//   sits under one continuous beam (C5-D5-rest-E5) rather than breaking it.
+	// - M9: beam slope over chords, flat case — [C4+G4+C5] G4 C5 returns to a pitch the
+	//   opening chord already sounded. Its bottom voice rises but its top voice dips and
+	//   comes back, so the beam is FLAT despite the rising stem-side notes.
+	// - M10: the same shape, slanted — two dyads (B4+E5 -> C5+F5) that overlap in pitch
+	//   but whose voices BOTH step up, so this beam does slant.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
@@ -830,16 +839,20 @@ const TEST_CASES = [
 	//   sharing one grace beam; then an unslashed 8th D5 (single flag).
 	// - M2: grace notes carrying printed accidentals — a sharp D#5 grace, then a flat Db5
 	//   grace, each before a C5 quarter; a half rest fills the rest of the bar.
-	// - M3: a grace note slurred to its main note — an 8th D5 grace whose slur hugs underneath,
-	//   running head-to-head down to the C5 quarter (stem down); a dotted-half rest fills the bar.
+	// Each grace curve bows underneath and lands on the BASE OF THE MAIN NOTE'S STEM
+	// (SLUR_GRACE_ANCHOR), so a stem-down main note takes a deep bow reaching below the
+	// stave while a stem-up one stops at its own notehead.
+	// - M3: a grace note slurred to its main note — an 8th D5 grace bowing down to the C5
+	//   quarter (stem down), so the arc drops past the stave to the stem's bottom tip.
 	// - M4: the same, but the main note's stem faces the other way — an 8th D5 grace slurred
-	//   under to an E4 quarter (stem up); the slur still hugs the noteheads, clearing the up-stem.
+	//   under to an E4 quarter (stem up), whose stem base IS its notehead, so the arc stays
+	//   shallow and tucks under the head instead of diving.
 	// - M5: a placement override a grace slur ignores — an 8th D5 grace with placement="above",
-	//   yet the slur still hugs under to the C5 quarter (grace slurs always bow underneath).
+	//   yet the slur still bows under to the C5 quarter (grace slurs always bow underneath).
 	// - M6: a multi-grace slur — a beamed grace pair (E5, D5) with one arc spanning from the first
 	//   grace under to the C5 quarter.
 	// - M7: a hammer-on grace — an 8th C5 grace with a <hammer-on> to the D5 quarter, drawn as a
-	//   slur curve hugging under from the grace to the main note (no "H" text — that's tab-only).
+	//   slur curve bowing under from the grace to the main note (no "H" text — that's tab-only).
 	// - M8: a pull-off grace — an 8th D5 grace with a <pull-off> to the C5 quarter, the mirror of
 	//   M7, likewise drawn as a slur curve from the grace under to the main note.
 	// - M9: a slide grace — an 8th E5 grace with a <slide> to the C5 quarter, drawn as a straight
@@ -847,6 +860,18 @@ const TEST_CASES = [
 	// - M10: the mirror of M9 — an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
 	//   slants up from the lower grace notehead to the main notehead.
 	testCase('grace_notes.musicxml', 'grace_notes.png'),
+
+	// Bass stave, 4/4: a grace note is placed against its own stave's clef, and its slur
+	// bows under to the notehead rather than to whatever vexflow's stem metrics point at.
+	// - M1: an 8th G3 grace slurred down into a B2 quarter. G3 sits on the TOP space, above
+	//   its own main note on the 4th line; the curve leaves the grace notehead, dips below
+	//   the stave and rises to the base of B2's stem. Against the default treble clef the
+	//   grace would instead land on ledger lines below the stave, under the note it ornaments.
+	// - M2: the same grace into a stem-down CHORD (B2+G#3+D#4, the top note on a ledger line).
+	//   The bow sweeps under all three noteheads to the base of the chord's stem, staying
+	//   concave and passing well clear of both sharps — not up to the chord's TOP note, which
+	//   is what vexflow's own NEAR_HEAD metric would give (a straight diagonal across them).
+	testCase('grace_bass_clef.musicxml', 'grace_bass_clef.png'),
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
 	// measure-width allocation in a dense real-world excerpt (measures 6-8 of a lead sheet).

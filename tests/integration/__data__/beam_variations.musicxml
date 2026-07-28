@@ -426,5 +426,86 @@
         <type>half</type>
       </note>
     </measure>
+    <!-- M9: beam slope, flat case. A chord-led run that returns to a pitch its opening
+         chord already sounded: [C4+G4+C5] G4 C5. The bottom voice rises C4-G4-C5 but the
+         top voice dips C5-G4 and comes back, so there is no consistent direction and the
+         beam must be horizontal. -->
+    <measure number="9">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest />
+        <duration>4</duration>
+        <type>eighth</type>
+      </note>
+      <note>
+        <rest />
+        <duration>16</duration>
+        <type>half</type>
+      </note>
+    </measure>
+    <!-- M10: beam slope, slanted case, same chord shape. Two stacked dyads whose voices
+         BOTH step up (B4+E5 -> C5+F5). The chords overlap in pitch but every voice moves
+         the same way, so this one still slants. -->
+    <measure number="10">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+      </note>
+      <note>
+        <rest />
+        <duration>24</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
   </part>
 </score-partwise>

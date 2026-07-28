@@ -3,6 +3,7 @@ import {
 	Articulation,
 	Beam,
 	Curve,
+	type CurveOptions,
 	Modifier,
 	PedalMarking,
 	type RenderContext,
@@ -22,7 +23,9 @@ import {
 	SINGLE_SLIDE_RISE,
 	SLIDE_MIN_SLANT,
 	SLIDE_PADDING,
+	SLUR_GRACE_ANCHOR,
 	SLUR_GRACE_CP_Y,
+	SLUR_GRACE_MARGIN,
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
 	SLUR_MIN_CP_Y,
@@ -155,8 +158,46 @@ class SingleSlide {
 	}
 }
 
-// Note types with 2+ beams (16th and shorter). Used to decide when to flatten beams.
-const MULTI_BEAM_TYPES = new Set(['16th', '32nd', '64th', '128th']);
+/*
+ * A slur whose endpoints are pinned to explicit Ys. vexflow's Curve can only anchor an
+ * end at getStemExtents(): NEAR_TOP is the stem tip, NEAR_HEAD the notehead *opposite*
+ * the stem. On a stem-down chord neither names the notehead a bow should touch —
+ * NEAR_HEAD lands on the chord's topmost note (so a grace slur shoots up over the
+ * chord's accidentals as a near-straight diagonal instead of bowing under it) and
+ * NEAR_TOP lands below the beam. Take the endpoint Ys as given; the X, the bezier and
+ * the fill still come from vexflow.
+ */
+class HeadCurve extends Curve {
+	constructor(
+		from: StaveNote | undefined,
+		to: StaveNote | undefined,
+		options: CurveOptions,
+		private readonly fromY: number,
+		private readonly toY: number,
+	) {
+		super(from, to, options);
+	}
+
+	override draw(): boolean {
+		this.checkContext();
+		this.setRendered();
+		const { from, to } = this;
+		// One of the two is always set (Curve's constructor rejects neither), so this
+		// picks the stave of whichever end exists on a system-break half-curve.
+		const stave = (from ?? to)?.checkStave();
+		if (!stave) {
+			return false;
+		}
+		this.renderCurve({
+			firstX: from ? from.getTieRightX() : stave.getTieStartX(),
+			lastX: to ? to.getTieLeftX() : stave.getTieEndX(),
+			firstY: this.fromY,
+			lastY: this.toY,
+			direction: this.renderOptions.openingDirection === 'down' ? -1 : 1,
+		});
+		return true;
+	}
+}
 
 // A beam run: the notes joined by their primary (8th-level) beam, plus the indexes
 // within the run where the secondary (16th+) beam breaks into sub-beams.
@@ -242,14 +283,7 @@ export class SpannerBuilder {
 						this.reorientArticulations(note);
 					});
 				}
-				// Flatten dense runs: 4+ notes with at least one 16th (or shorter). Shorter or
-				// coarser runs keep vexflow's default slant.
-				const hasMultiBeams = group.notes.some(
-					(note) => note.type && MULTI_BEAM_TYPES.has(note.type),
-				);
-				const hasMixedDurations =
-					new Set(group.notes.map((note) => note.type)).size > 1;
-				if (notes.length >= 4 && hasMultiBeams && hasMixedDurations) {
+				if (this.isFlatBeam(group, byLead)) {
 					beam.renderOptions.flatBeams = true;
 				}
 				if (group.secondaryBreaks.length > 0) {
@@ -259,6 +293,55 @@ export class SpannerBuilder {
 			}
 		}
 		return beams;
+	}
+
+	/*
+	 * Beam slope follows the group's contour (Gould, Behind Bars): a beam slants only
+	 * when the run moves consistently one way, and is horizontal otherwise — equal outer
+	 * pitches, a contour that reverses direction, or a peak/trough sitting in the middle
+	 * (the classic "the highest note isn't an outer note, so the beam is flat").
+	 *
+	 * A chord contributes its top and bottom notes as two parallel voices, and the run
+	 * counts as slanting only if *both* move the same way. So two stacked dyads that each
+	 * step up (B4/D#5 -> C#5/E5) still slant, while a run that returns to a pitch its
+	 * opening chord already sounded ([B2+G#3+D#4] G#3 D#4) goes flat: its bottom voice
+	 * rises but its top voice dips and comes back, so there is no direction to slant to.
+	 *
+	 * Rests and grace notes are excluded: a rest under a beam sits at a fixed staff
+	 * position that has nothing to do with the melodic contour, and graces beam on their
+	 * own. vexflow's own slope search (capped at ±0.25) still shapes the slanted case.
+	 */
+	private isFlatBeam(group: BeamGroup, byLead: Map<Note, StaveNote>): boolean {
+		// vexflow's `line` counts upward from the bottom stave line, so a higher pitch is
+		// a larger number.
+		const lines = group.notes
+			.filter((note) => !note.isGrace && !note.isRest)
+			.map((note) => byLead.get(note))
+			.filter((note): note is StaveNote => note !== undefined)
+			.map((note) => note.getKeyProps().map((key) => key.line));
+		const lo = lines.map((event) => Math.min(...event));
+		const hi = lines.map((event) => Math.max(...event));
+		if (lines.length < 2) {
+			return false;
+		}
+		// sign is +1 to test a rising run, -1 for a falling one.
+		const sorted = (voice: number[], sign: number) =>
+			voice.every((line, i, all) => {
+				const prev = all.at(i - 1);
+				return i === 0 || prev === undefined || sign * (line - prev) >= 0;
+			});
+		const moved = (voice: number[], sign: number) => {
+			const first = voice.at(0);
+			const last = voice.at(-1);
+			return (
+				first !== undefined && last !== undefined && sign * (last - first) > 0
+			);
+		};
+		const monotonic = (sign: number) =>
+			sorted(lo, sign) &&
+			sorted(hi, sign) &&
+			(moved(lo, sign) || moved(hi, sign));
+		return !monotonic(1) && !monotonic(-1);
 	}
 
 	/*
@@ -673,16 +756,31 @@ export class SpannerBuilder {
 				// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
 				// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
 				// (outer notehead). This keeps an "above" slur on stem-down notes pinned to
-				// the noteheads instead of the stem tips below them. A grace-to-main slur
-				// always hugs the noteheads so it runs head-to-head regardless of stems.
+				// the noteheads instead of the stem tips below them.
 				const metric = (note: StaveNote) => {
-					if (isGrace) {
-						return Curve.Position.NEAR_HEAD;
-					}
 					const stemUp = note.getStemDirection() === 1;
 					return stemUp === bulgeUp
 						? Curve.Position.NEAR_TOP
 						: Curve.Position.NEAR_HEAD;
+				};
+
+				// Where a grace curve's ends land, per SLUR_GRACE_ANCHOR. Neither vexflow
+				// position metric works here: on a stem-down chord NEAR_HEAD is the *top*
+				// note (the wrong end of the chord entirely), so resolve the Y explicitly
+				// and hand it to HeadCurve. Always the bulge side, so an above-bulging
+				// curve mirrors the same rule upward.
+				const anchorY = (note: StaveNote) => {
+					const bulgeSide = (top: number, bottom: number) =>
+						bulgeUp ? Math.min(top, bottom) : Math.max(top, bottom);
+					const { yTop, yBottom } = note.getNoteHeadBounds();
+					if (SLUR_GRACE_ANCHOR === 'notehead' || !note.hasStem()) {
+						return bulgeSide(yTop, yBottom);
+					}
+					// vexflow names these backwards from how they read: baseY is the notehead
+					// the stem grows out of, topY its free tip. The bulge-side extreme of the
+					// two is the end of the stem the curve should meet.
+					const { topY, baseY } = note.getStemExtents();
+					return bulgeSide(topY, baseY);
 				};
 
 				// Lift the control points so the arc midpoint clears the most extreme note
@@ -690,13 +788,12 @@ export class SpannerBuilder {
 				// off the notes; 0.75*cps.y is the extra rise the cubic bezier gains at its
 				// midpoint. The arc height also grows with the slur's width so long slurs get
 				// a rounder, taller bow instead of a flat line skimming the noteheads. A grace
-				// slur clears the grace cluster's full extent (its flag/beam may hang past the
-				// noteheads) but only the main note's notehead, so it tucks under the heads
-				// instead of chasing the main note's full stem.
+				// curve measures against its own anchors instead, so the bow it draws is the
+				// one its endpoints ask for — change SLUR_GRACE_ANCHOR and the depth follows.
 				const extentsOf = (n: StaveNote) => {
-					if (isGrace && n === to) {
-						const { yTop, yBottom } = n.getNoteHeadBounds();
-						return { top: yTop, bottom: yBottom };
+					if (isGrace) {
+						const y = anchorY(n);
+						return { top: y, bottom: y };
 					}
 					return noteExtents(n);
 				};
@@ -712,19 +809,29 @@ export class SpannerBuilder {
 					spanNotes: StaveNote[],
 					width: number,
 				) => {
-					if (isGrace) {
-						return SLUR_GRACE_CP_Y;
-					}
 					const extreme = bulgeUp
 						? Math.min(...spanNotes.map((n) => extentsOf(n).top))
 						: Math.max(...spanNotes.map((n) => extentsOf(n).bottom));
-					const need = Math.abs(midEnd - extreme) + SLUR_MARGIN;
-					return Math.max(
-						SLUR_MIN_CP_Y,
-						width * SLUR_WIDTH_FACTOR,
-						(need - yShift) / 0.75,
-					);
+					const need =
+						Math.abs(midEnd - extreme) +
+						(isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN);
+					// A grace bow stays tight — it takes the clearance it needs and no more,
+					// where a full slur also widens with its span.
+					const floor = isGrace
+						? SLUR_GRACE_CP_Y
+						: Math.max(SLUR_MIN_CP_Y, width * SLUR_WIDTH_FACTOR);
+					return Math.max(floor, (need - yShift) / 0.75);
 				};
+				// The exact Y each end of the curve will be drawn at: what HeadCurve was handed
+				// for a grace, and what vexflow reads off getStemExtents() for everything else.
+				const endpointY = (note: StaveNote) => {
+					if (isGrace) {
+						return anchorY(note);
+					}
+					const { topY, baseY } = note.getStemExtents();
+					return metric(note) === Curve.Position.NEAR_TOP ? topY : baseY;
+				};
+
 				const pushCurve = (
 					curveFrom: StaveNote | undefined,
 					curveTo: StaveNote | undefined,
@@ -732,18 +839,34 @@ export class SpannerBuilder {
 					positionEnd: number,
 					cpY: number,
 				) => {
-					slurs.push(
-						new Curve(curveFrom, curveTo, {
-							position,
-							positionEnd,
-							openingDirection: bulgeUp ? 'down' : 'up',
-							yShift,
-							cps: [
-								{ x: 0, y: cpY },
-								{ x: 0, y: cpY },
-							],
-						}),
-					);
+					// vexflow offsets each control point from its OWN endpoint, so when the two
+					// ends sit at very different heights the far control point lands well past
+					// the near end and the curve whips into it — a sharp hook right where the
+					// bow should be settling onto the note. Put both control points at a single
+					// absolute depth instead. The midpoint is unchanged (the algebra works out
+					// to depth = midpoint + cpY, so clearance still holds) but each end is now
+					// approached on a gentle tangent. Endpoints at equal heights reduce to the
+					// old symmetric cps exactly, so only lopsided curves move.
+					const dir = bulgeUp ? -1 : 1;
+					const only = (curveFrom ?? curveTo) as StaveNote;
+					const y0 = endpointY(curveFrom ?? only);
+					const y1 = endpointY(curveTo ?? only);
+					const depth = (y0 + y1) / 2 + dir * cpY;
+					const options: CurveOptions = {
+						position,
+						positionEnd,
+						openingDirection: bulgeUp ? 'down' : 'up',
+						yShift,
+						cps: [
+							{ x: 0, y: dir * (depth - y0) },
+							{ x: 0, y: dir * (depth - y1) },
+						],
+					};
+					if (isGrace) {
+						slurs.push(new HeadCurve(curveFrom, curveTo, options, y0, y1));
+					} else {
+						slurs.push(new Curve(curveFrom, curveTo, options));
+					}
 				};
 
 				// When the stop note wraps onto a later system its stave sits lower on the

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: a grace note must be placed against the stave's own clef. On this bass stave a
+         G3 grace belongs on the TOP space, right above the B2 quarter it slurs down into.
+         Placed against vexflow's default treble clef it drops to ledger lines well below
+         the stave, ending up under its own main note. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>F</sign>
+          <line>4</line>
+        </clef>
+      </attributes>
+      <note>
+        <grace slash="yes" />
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <type>eighth</type>
+        <notations><slur placement="below" type="start" number="1" /></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>2</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur placement="below" type="stop" number="1" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+    <!-- M2: the same grace slurred into a stem-DOWN CHORD (B2+G#3+D#4). The bow must land
+         on the chord's BOTTOM notehead (B2) and stay concave, curving under the two sharps.
+         Anchored to the chord's top note instead it degenerates into a near-straight
+         diagonal running up across them. -->
+    <measure number="2">
+      <note>
+        <grace slash="yes" />
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <type>eighth</type>
+        <notations><slur placement="below" type="start" number="1" /></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>2</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur placement="below" type="stop" number="1" /></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><alter>1</alter><octave>3</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>D</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note>
+        <rest />
+        <duration>6</duration>
+        <type>half</type>
+        <dot />
+      </note>
+    </measure>
+  </part>
+</score-partwise>

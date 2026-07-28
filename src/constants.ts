@@ -233,10 +233,26 @@ export const SLUR_WIDTH_FACTOR = 0.12;
 
 /** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
  * small tight bow hugging directly under the two noteheads, not the fuller slur arc —
- * a subtler endpoint lift and a shallow fixed control-point rise (no notehead-clearance
- * inflation). */
+ * a subtler endpoint lift, a shallow control-point rise, and a tighter clearance
+ * margin. CP_Y is a floor, not a fixed rise: when the two noteheads sit far apart
+ * (a grace into a wide chord) the arc still inflates enough to stay concave and clear
+ * of what it spans, instead of flattening into a straight diagonal across them. */
 export const SLUR_GRACE_Y_SHIFT = 4;
 export const SLUR_GRACE_CP_Y = 6;
+export const SLUR_GRACE_MARGIN = 5;
+
+/** Which point on a note a grace curve starts and stops at. vexflow's own Curve can
+ * only name two spots per note and neither is reliably the right one on a chord, so
+ * vexml resolves the Y itself (see HeadCurve) and this picks which one. Change this
+ * one value to re-aim every grace curve in the score:
+ *
+ * - 'stem-base': the far end of the stem — below a stem-down note, above a stem-up one.
+ *   On a stem-down chord this is the stem's bottom tip, past every notehead.
+ * - 'notehead': the bulge-side notehead itself, ignoring the stem. Tighter, but on a
+ *   stem-down chord it stops well short of where the stem ends.
+ *
+ * Both read the bulge side, so an above-bulging curve mirrors each rule upward. */
+export const SLUR_GRACE_ANCHOR: 'stem-base' | 'notehead' = 'stem-base';
 
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;

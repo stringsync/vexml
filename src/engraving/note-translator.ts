@@ -604,6 +604,10 @@ export class NoteTranslator {
 			const grace = new GraceNote({
 				keys: chord.notes.map(vexflowKey),
 				duration,
+				// Without this vexflow falls back to 'treble' and a grace on any other stave
+				// lands at the wrong staff position — a bass-clef G3 grace drops below the
+				// stave on ledger lines instead of sitting on the top space.
+				clef,
 				octaveShift,
 				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
 				// through the stem/flag); its absence is a plain appoggiatura.
