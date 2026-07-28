@@ -34,6 +34,12 @@ export const INTRA_PART_SPACING = 120;
 /** Vertical gap between adjacent parts. */
 export const INTER_PART_SPACING = 80;
 
+/** Clearance kept between what one stave's music reaches down to and what the next stave's
+ * reaches up to. Both gaps above are the *planned* spacing, sized for ordinary music; when
+ * the drawn notes spill past their staff lines far enough to close that gap, the draw pass
+ * widens it so this much air survives between the two (see ScoreDrawer.spacedOffsets). */
+export const STAVE_CLEARANCE = 12;
+
 /** Absolute floor for a measure's note area. */
 export const BASE_VOICE_WIDTH = 80;
 

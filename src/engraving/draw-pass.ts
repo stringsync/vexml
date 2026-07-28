@@ -190,8 +190,28 @@ function partSymbol(
 // formatted together (see formatAndDrawSystem) so notes at the same tick line up
 // vertically across staves, so the build (voice/spanner construction) is split from
 // the format+draw step.
+/**
+ * How far one stave row's drawn content spilled past its staff lines, plus where those
+ * lines sit relative to the stave's y (what a stave offset positions). Measured on a
+ * first draw pass so a second can re-space the staves around the actual music instead of
+ * a fixed gap — the vertical analog of the per-system topOverflow feedback.
+ */
+export type StaveSpill = {
+	/** Px the highest content rose above the top staff line. */
+	rise: number;
+	/** Px the lowest content dropped below the bottom staff line. */
+	drop: number;
+	/** Top staff line, relative to the stave's y. */
+	lineTop: number;
+	/** Bottom staff line, relative to the stave's y. */
+	lineBottom: number;
+};
+
 type PendingStave = {
 	stave: Stave;
+	// Which global stave row this is, so the pass can attribute the content drawn on it
+	// to that row and report how far it spilled (see observedStaveSpill).
+	row: number;
 	isTab: boolean;
 	vexVoices: Voice[];
 	beams: ReturnType<SpannerBuilder['buildBeams']>;
@@ -431,6 +451,10 @@ export class DrawPass {
 	private measureNumbered = false;
 	private systemY = 0;
 	private staveRow = 0;
+	// Per stave row, how far the content drawn on it spilled past its own staff lines.
+	// Maxed across every measure and system, so one global set of stave offsets (which
+	// every system shares) can be sized from them. See ScoreDrawer.spacedOffsets.
+	private readonly staveSpill = new Map<number, StaveSpill>();
 	private systemTop: Stave | undefined;
 	private systemBottom: Stave | undefined;
 	// Every part's staves are formatted together as one column so notes at the same
@@ -523,6 +547,7 @@ export class DrawPass {
 		pageTop: number;
 		pageBottom: number;
 		observedOverflow: Map<number, number>;
+		observedStaveSpill: Map<number, StaveSpill>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -962,6 +987,10 @@ export class DrawPass {
 			this.context.restore();
 			this.measureNumbered = true;
 		}
+		// Seed this row's spill record even when nothing is drawn on it, so the re-spacing
+		// pass still knows where its staff lines sit (a tab stave is taller than a
+		// notation one, and an empty stave still occupies its height).
+		this.spillOf(this.staveRow, stave);
 		const staveBottom = stave.getBottomY();
 		this.pageBottom = Math.max(this.pageBottom, staveBottom);
 		this.systemContentBottom = Math.max(this.systemContentBottom, staveBottom);
@@ -972,7 +1001,9 @@ export class DrawPass {
 		// crash the formatter, so it's filtered.
 		const voices = this.reader.staffVoices(measure.voices, staffNumber);
 		if (isTab && voices.length > 0) {
-			this.pendingStaves.push(this.buildTabNotes(stave as TabStave, voices));
+			this.pendingStaves.push(
+				this.buildTabNotes(stave as TabStave, this.staveRow, voices),
+			);
 			for (const voice of voices) {
 				this.allTabChords.push(...voice.chords);
 			}
@@ -983,6 +1014,7 @@ export class DrawPass {
 			this.pendingStaves.push(
 				this.buildNotes(
 					stave,
+					this.staveRow,
 					voices,
 					clefName,
 					this.reader.meterBeats(measure.getTime(staffNumber)),
@@ -1009,6 +1041,7 @@ export class DrawPass {
 	 */
 	private buildNotes(
 		stave: Stave,
+		row: number,
 		voices: ScoreVoice[],
 		clef: string,
 		meterFloor: number,
@@ -1061,6 +1094,7 @@ export class DrawPass {
 
 		return {
 			stave,
+			row,
 			isTab: false,
 			vexVoices,
 			beams,
@@ -1083,7 +1117,11 @@ export class DrawPass {
 	 * pull-offs span measures, so the caller resolves them once over the whole score
 	 * (this only records each chord's TabNote in the shared `byTabLead` map).
 	 */
-	private buildTabNotes(stave: TabStave, voices: ScoreVoice[]): PendingStave {
+	private buildTabNotes(
+		stave: TabStave,
+		row: number,
+		voices: ScoreVoice[],
+	): PendingStave {
 		const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
 		const graceTabChords: Array<{ note: TabNote; chord: Chord }> = [];
 		// lead -> its tab tickable, held-note ghosts included — unlike byTabLead, which holds
@@ -1125,6 +1163,7 @@ export class DrawPass {
 		}
 		return {
 			stave,
+			row,
 			isTab: true,
 			vexVoices,
 			beams: [],
@@ -1249,6 +1288,7 @@ export class DrawPass {
 				const box = note.getBoundingBox();
 				bottom = Math.max(bottom, box.getY() + box.getH());
 				top = Math.min(top, this.noteTop(note));
+				this.recordStaveSpill(p, this.noteTop(note), box.getY() + box.getH());
 				// Register each note as a collision obstacle now that its position is final, so the
 				// above-stave annotations drawn next can be nudged clear of it (and of high ties).
 				this.collisionResolver.add({ rect: this.noteRect(note), kind: 'note' });
@@ -2054,6 +2094,7 @@ export class DrawPass {
 		pageTop: number;
 		pageBottom: number;
 		observedOverflow: Map<number, number>;
+		observedStaveSpill: Map<number, StaveSpill>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -2142,10 +2183,46 @@ export class DrawPass {
 			pageTop: this.pageTop,
 			pageBottom: this.pageBottom,
 			observedOverflow,
+			observedStaveSpill: this.staveSpill,
 			rawNotes: this.rawNotes,
 			rawMeasures: this.rawMeasures,
 			rawChordDiagrams: this.rawChordDiagrams,
 		};
+	}
+
+	/*
+	 * Note how far content on a stave row reached past its staff lines. `top`/`bottom` are
+	 * absolute canvas y; they're stored relative to the stave so rows from different
+	 * measures and systems (drawn at different y) accumulate into one per-row worst case.
+	 *
+	 * ponytail: only notation notes are measured — a tab row reports its staff lines alone,
+	 * since its frets sit on them. Feed the tab bend/annotation extents in here too if one
+	 * ever reaches the stave above.
+	 */
+	private recordStaveSpill(
+		p: { stave: Stave; row: number },
+		top: number,
+		bottom: number,
+	): void {
+		const spill = this.spillOf(p.row, p.stave);
+		spill.rise = Math.max(spill.rise, p.stave.getYForLine(0) - top);
+		spill.drop = Math.max(spill.drop, bottom - p.stave.getBottomLineY());
+	}
+
+	/* This row's spill record, seeded on first sight with where the staff lines sit
+	 * relative to the stave's y (which is what a stave offset positions). */
+	private spillOf(row: number, stave: Stave): StaveSpill {
+		let spill = this.staveSpill.get(row);
+		if (!spill) {
+			spill = {
+				rise: 0,
+				drop: 0,
+				lineTop: stave.getYForLine(0) - stave.getY(),
+				lineBottom: stave.getBottomLineY() - stave.getY(),
+			};
+			this.staveSpill.set(row, spill);
+		}
+		return spill;
 	}
 
 	private warnEscapes(): void {

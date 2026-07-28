@@ -985,6 +985,25 @@ const TEST_CASES = [
 		layout: { type: 'standard', referenceWidth: 660 },
 	}),
 
+	// One two-stave (braced) treble part, 4/4, one measure. Tests the vertical gap
+	// *within* a part: staff 1 plays four C3 quarters (many ledger lines hanging below
+	// its staff) while staff 2 plays four C7 quarters (many ledger lines rising above
+	// its staff), so the two staves spill toward each other at the same beats — far
+	// enough that the planned within-part gap can't hold them and has to widen. The
+	// lower ledger lines/noteheads of staff 1 must stay clear of the upper ledger
+	// lines/noteheads of staff 2 — nothing from either staff may touch the other.
+	testCase('stave_spacing.musicxml', 'stave_spacing.png'),
+
+	// Two two-stave (braced) treble parts, 4/4, one measure. Tests the vertical gap
+	// *between* parts: the pair of staves that meet in the middle are the extreme ones —
+	// P1's staff 2 plays four C3 quarters (many ledger lines below) and P2's staff 1
+	// plays four C7 quarters (many ledger lines above), far enough that the planned
+	// between-part gap can't hold them and has to widen. The outer staves hold a tame B4
+	// whole note each, so only the inter-part boundary is stressed. P1's low ledger
+	// lines must stay clear of P2's high ones, and each part's own two staves must
+	// stay clear too.
+	testCase('part_spacing.musicxml', 'part_spacing.png'),
+
 	// Individual measures extracted from 'aloof' for focused testing.
 	testCase('aloof_measure_1.musicxml', 'aloof_measure_1.png'),
 	// Treble + 6-line TAB, A major, 4/4. Beat 1 strikes a chord that ties into beat 2;

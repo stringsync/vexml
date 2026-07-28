@@ -5,10 +5,11 @@ import {
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
+	STAVE_CLEARANCE,
 } from '../constants';
 import { Rect } from '../geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
-import { DrawPass } from './draw-pass';
+import { DrawPass, type StaveSpill } from './draw-pass';
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
@@ -67,6 +68,42 @@ export interface RawGeometry {
 }
 
 /*
+ * Re-space a system's staves around the music actually drawn on them. The layout planner
+ * gaps staves by fixed constants, which is right until a part's notes spill far enough
+ * past its staff lines to reach the next stave (deep ledger lines, tall chords). Given
+ * pass one's measured spill, widen any gap that has to grow so the lower stave's highest
+ * content clears the upper stave's lowest by STAVE_CLEARANCE. Gaps that already fit are
+ * left exactly as planned, so ordinary scores keep their planned spacing.
+ *
+ * ponytail: one worst case for the whole score — every system shares one set of stave
+ * offsets, so a single extreme measure spreads its system's staves everywhere. Make the
+ * offsets per-system if that ever costs too much page.
+ */
+export function spacedOffsets(
+	planned: number[],
+	spill: ReadonlyMap<number, StaveSpill>,
+): number[] {
+	const offsets = [planned[0] ?? 0];
+	for (let i = 1; i < planned.length; i++) {
+		const above = spill.get(i - 1);
+		const below = spill.get(i);
+		const plannedGap = (planned[i] ?? 0) - (planned[i - 1] ?? 0);
+		// Content bottom of the upper stave, and content top of the lower one, both
+		// relative to their own stave y — so their difference is the gap they need.
+		const needed =
+			above && below
+				? above.lineBottom +
+					above.drop +
+					STAVE_CLEARANCE +
+					below.rise -
+					below.lineTop
+				: plannedGap;
+		offsets.push((offsets[i - 1] ?? 0) + Math.max(plannedGap, needed));
+	}
+	return offsets;
+}
+
+/*
  * Draws the laid-out score onto the caller's canvas: the scratch-canvas setup, the
  * two-pass driver (each pass is a fresh DrawPass), and the crop/blit into final
  * score space.
@@ -105,7 +142,9 @@ export class ScoreDrawer {
 		// staff have room instead of being clipped off the canvas top. The unused slack is
 		// cropped back out in the blit (mirrors how LEDGER_HEADROOM gives the bottom slack).
 		const topSlack = LEDGER_HEADROOM;
-		const scratchHeight = layout.top + topSlack + systemCount * perSystem;
+		let scratchHeight = layout.top + topSlack + systemCount * perSystem;
+		// Grows if pass two re-spaces the staves (see below); the crop below reads it.
+		let activeFloorHeight = floorHeight;
 
 		const scratch = document.createElement('canvas');
 		const renderer = new Renderer(scratch, Renderer.Backends.CANVAS);
@@ -119,41 +158,51 @@ export class ScoreDrawer {
 			getComputedStyle(canvas).getPropertyValue('--vexml-font-text').trim() ||
 			'Arial';
 
-		// Multi-system scores can clash where a system's notes rise above its top stave into
-		// the previous system's depth. Pass one measures that per-system overflow; if any is
-		// found, pass two redraws (onto the freshly cleared scratch) with the overflow reserved
-		// above each system. Single-system scores never stack, so one pass suffices.
-		let pass = new DrawPass(
-			this.translator,
-			this.reader,
-			this.spanners,
-			this.config,
-			context,
-			parts,
-			layout,
-			labelFont,
-			topSlack,
-			scratchHeight,
-			new Map(),
-		).run();
-		if (
-			systemCount > 1 &&
-			[...pass.observedOverflow.values()].some((v) => v > 0)
-		) {
-			renderer.resize(width, scratchHeight);
-			pass = new DrawPass(
+		// Two clashes only show up once the music is drawn: a system's notes rising above its
+		// top stave into the system before it, and a stave's notes spilling into the stave
+		// below it (the layout planner's stave gaps are fixed, so dense/extreme parts collide).
+		// Pass one measures both; if either needs more room, pass two redraws (onto the
+		// freshly cleared scratch) with the space reserved.
+		const runPass = (
+			activeLayout: ScoreLayout,
+			topOverflow: Map<number, number>,
+			height: number,
+		) =>
+			new DrawPass(
 				this.translator,
 				this.reader,
 				this.spanners,
 				this.config,
 				context,
 				parts,
-				layout,
+				activeLayout,
 				labelFont,
 				topSlack,
-				scratchHeight,
-				pass.observedOverflow,
+				height,
+				topOverflow,
 			).run();
+
+		let pass = runPass(layout, new Map(), scratchHeight);
+		const staveOffsets = spacedOffsets(
+			layout.staveOffsets,
+			pass.observedStaveSpill,
+		);
+		const respace = staveOffsets.some((o, i) => o !== layout.staveOffsets[i]);
+		const needsOverflow =
+			systemCount > 1 && [...pass.observedOverflow.values()].some((v) => v > 0);
+		if (respace || needsOverflow) {
+			// Re-spacing makes every system taller, so the page floor and the scratch canvas
+			// both have to grow with it before the redraw.
+			const grew =
+				(staveOffsets.at(-1) ?? 0) - (layout.staveOffsets.at(-1) ?? 0);
+			activeFloorHeight = floorHeight + grew;
+			scratchHeight = layout.top + topSlack + systemCount * (perSystem + grew);
+			renderer.resize(width, scratchHeight);
+			pass = runPass(
+				{ ...layout, staveOffsets, floorHeight: activeFloorHeight },
+				pass.observedOverflow,
+				scratchHeight,
+			);
 		}
 		const { pageTop, pageBottom } = pass;
 
@@ -170,7 +219,7 @@ export class ScoreDrawer {
 				? topSlack
 				: Math.max(0, Math.min(topSlack, pageTop - PAGE_MARGIN_TOP));
 		const cssHeight =
-			Math.max(floorHeight + topSlack, pageBottom + PAGE_MARGIN_BOTTOM) -
+			Math.max(activeFloorHeight + topSlack, pageBottom + PAGE_MARGIN_BOTTOM) -
 			cropTop;
 		const dpr = scratch.width / parseFloat(scratch.style.width);
 		canvas.width = scratch.width;
