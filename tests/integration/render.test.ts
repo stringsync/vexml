@@ -209,6 +209,9 @@ const TEST_CASES = [
 	//   the mark sits one text line above the staff.
 	// - M2: quarter = 120 over a high first note (C6, two ledger lines above) that reaches
 	//   up into the mark's default band, so the mark is lifted clear of the notehead.
+	// - M3: quarter = 110 sharing a measure with an "Em" chord symbol, both anchored at the
+	//   same first note. The mark stacks above the symbol (chord symbol nearest the staff,
+	//   tempo on top) instead of the two printing on top of each other.
 	testCase('tempo.musicxml', 'tempo.png'),
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn

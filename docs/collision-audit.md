@@ -31,7 +31,7 @@ goes through `CollisionDetector`. Do not add new bespoke magic-offset clearance 
 | `draw.ts::drawHarmony` | chord symbol lifts | notehead, stem-down tie apex, other text | **migrated** → `liftClear` |
 | `draw.ts::drawWords` | words text lifts | notehead, tie, other text | **migrated** → `liftClear` |
 | `draw.ts` chord-diagram block | fret box pushes right | adjacent diagram across a barline | **migrated** → `pushRightOf` |
-| `draw.ts::drawTempo` | metronome mark lifts (`shiftY`) | high first note | **deferred** (scaled mark + reserved headroom; Phase 2) |
+| `draw.ts::drawTempo` | metronome mark lifts (`shiftY`) | high note, chord symbol, words | **migrated** → `liftClear` (drawn last, so it stacks on top of the other above-stave text) |
 | chord diagram vertical | fixed `CHORD_DIAGRAM_GAP`, does **not** clear notes | (latent clip bug) | **deferred** (Phase 3) |
 | `draw-pass.ts::buildStave` volta | (obstacle only) volta bracket + its "1." label | — | registers as `annotation`; text lifts over it |
 

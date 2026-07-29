@@ -11,6 +11,7 @@ import type {
 import {
 	Barline,
 	Bend,
+	Element,
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
@@ -419,7 +420,6 @@ export class DrawPass {
 	private tempoTasks: Array<{
 		stave: Stave;
 		tempo: TempoMark;
-		firstNote: StaveNote | undefined;
 	}> = [];
 	// Chord symbols, drawn after the system is formatted so each sits at its
 	// note's laid-out x.
@@ -626,11 +626,7 @@ export class DrawPass {
 			const tempo = this.reader.tempoOf(measure);
 			const topStave = this.pendingStaves[0];
 			if (tempo && topStave) {
-				this.tempoTasks.push({
-					stave: topStave.stave,
-					tempo,
-					firstNote: topStave.staveNotes[0],
-				});
+				this.tempoTasks.push({ stave: topStave.stave, tempo });
 			}
 
 			// Words directions (e.g. "ritardando") print over the staff their <staff> names,
@@ -1655,13 +1651,10 @@ export class DrawPass {
 
 	/*
 	 * Draw the above-stave annotations queued for this measure, after the system is
-	 * formatted so every anchor x is real: tempo marks, then words, then chord
-	 * symbols/diagrams.
+	 * formatted so every anchor x is real: words, then chord symbols/diagrams, then
+	 * tempo marks.
 	 */
 	private drawAnnotations(m: number): void {
-		for (const t of this.tempoTasks) {
-			this.drawTempo(t.stave, t.tempo, t.firstNote);
-		}
 		// Words go before the diagrams so a chord diagram draws on top of any words it
 		// shares a measure with — the fret box stays fully legible, the text yields.
 		for (const w of this.wordsTasks) {
@@ -1782,30 +1775,49 @@ export class DrawPass {
 				this.growDecorationTop(this.systemIndex, top);
 			}
 		}
+		// The tempo mark goes last so it stacks on top of anything else above the stave. A
+		// chord symbol and a metronome mark in the same measure both anchor at the first
+		// note, so they land in the same spot; engraving convention (and MuseScore) puts the
+		// symbol nearest the staff and the tempo above it, which is what drawing last gives.
+		for (const t of this.tempoTasks) {
+			const top = this.drawTempo(t.stave, t.tempo);
+			this.pageTop = Math.min(this.pageTop, top);
+			this.growDecorationTop(this.systemIndex, top);
+		}
+	}
+
+	/*
+	 * The collision box of a metronome mark drawn at (`x`, `baseline`): StaveTempo lays the
+	 * beat-unit glyph, "=", and the bpm out on one baseline with 3px gaps, all shrunk by
+	 * TEMPO_SCALE. Measured with the same vexflow Elements (and Metrics font info) StaveTempo
+	 * draws with, so the box matches the drawn glyphs — ink ascent AND descent, because the
+	 * beat-unit glyph's origin is its notehead center, so half of it hangs below the baseline.
+	 * ponytail: measured with the quarter-note glyph whatever the beat unit — the note glyphs
+	 * are within a couple of pixels of each other at this size, except a stemless whole note,
+	 * which just reserves a little more air than it needs.
+	 */
+	private tempoRect(tempo: TempoMark, x: number, baseline: number): Rect {
+		//  is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
+		const glyph = new Element('StaveTempo.glyph').setText('');
+		const text = new Element('StaveTempo').setText(`= ${tempo.bpm}`);
+		const w = (glyph.getWidth() + text.getWidth() + 6) * TEMPO_SCALE;
+		const ink = glyph.getTextMetrics();
+		const ascent = ink.actualBoundingBoxAscent * TEMPO_SCALE;
+		const descent = ink.actualBoundingBoxDescent * TEMPO_SCALE;
+		return new Rect(x, baseline - ascent, w, ascent + descent);
 	}
 
 	/*
 	 * Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
-	 * clef/key/time (StaveTempo's own placement, over the first note). It normally sits
-	 * one text line above the staff; if the first note reaches up into that band (a high
-	 * note with ledger lines), lift the mark with a negative y-shift so its bottom clears
-	 * the notehead — the layout reserves the matching top headroom. Drawn after the notes
-	 * are formatted so firstNote's extents are real. Uses noteTop, not the bounding box: an
-	 * attached grace-note group makes the box report a bogus near-origin y.
+	 * clef/key/time (StaveTempo's own placement, over the first note). It normally sits one
+	 * text line above the staff; the collision resolver lifts it clear of anything already in
+	 * its column — a high note reaching up into that band, or a chord symbol/word placed
+	 * earlier in this pass — and the layout reserves the matching top headroom. Returns the y
+	 * the mark reaches up to so the caller can grow the page crop above it. Drawn after the
+	 * notes are formatted so the anchor x and the note extents are real.
 	 */
-	private drawTempo(
-		stave: Stave,
-		tempo: TempoMark,
-		firstNote: StaveNote | undefined,
-	): void {
+	private drawTempo(stave: Stave, tempo: TempoMark): number {
 		const baseY = stave.getYForTopText(1);
-		let shiftY = 0;
-		if (firstNote) {
-			const clearY = this.noteTop(firstNote) - TEMPO_NOTE_CLEARANCE;
-			if (clearY < baseY) {
-				shiftY = clearY - baseY;
-			}
-		}
 		// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
 		// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
 		// indexes modifiers[3], which is undefined — and throws — on a system-start stave that
@@ -1820,6 +1832,17 @@ export class DrawPass {
 		// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
 		// baseY + this.yShift); solving s·(passed) = target gives the compensated inputs below.
 		const targetX = stave.getX() + shiftX + 10;
+		const band = this.rowOf(stave);
+		const natural = this.tempoRect(tempo, targetX, baseY);
+		const placed = this.collisionResolver.liftClear(
+			natural,
+			TEMPO_NOTE_CLEARANCE,
+			TEXT_CLEAR_KINDS,
+			band,
+		);
+		// liftClear only translates, so the box's rise is the mark's y-shift.
+		const shiftY = placed.y - natural.y;
+		this.recordAnnotationSpill(stave, placed.y);
 		this.context.save();
 		this.context.scale(TEMPO_SCALE, TEMPO_SCALE);
 		new StaveTempo(
@@ -1832,6 +1855,8 @@ export class DrawPass {
 			.setContext(this.context)
 			.draw();
 		this.context.restore();
+		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+		return placed.y;
 	}
 
 	/*

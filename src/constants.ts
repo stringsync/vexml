@@ -207,8 +207,10 @@ export const WORDS_Y_OFFSET = 14;
  * uncollided one keeps over the top staff line — at 8 the text grazed the noteheads. */
 export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
 
-/** Clearance between the bottom of a metronome mark and the top of the first note. */
-export const TEMPO_NOTE_CLEARANCE = 6;
+/** Clearance kept between the bottom of a metronome mark's ink and whatever it lifts clear
+ * of. A note obstacle is a thin box at the notehead's center (vexflow reports notehead
+ * positions, not glyph extents), so this has to cover half a notehead plus the air. */
+export const TEMPO_NOTE_CLEARANCE = 10;
 
 /** Uniform scale applied to the metronome mark — vexflow's StaveTempo defaults
  * (14pt text, 25pt note glyph) render oversized, so shrink it. */
