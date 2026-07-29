@@ -1,4 +1,5 @@
 import { HALO_MARGIN } from '../constants';
+import { Rect } from '../geometry';
 import type { Layer, LayerHost, LayerKind } from '../host/stage';
 import type { Decoratable, Decoration } from './element';
 
@@ -10,7 +11,14 @@ import type { Decoratable, Decoration } from './element';
 export interface DecorationStyle {
 	readonly placement: LayerKind;
 	draw(ctx: CanvasRenderingContext2D, target: Decoratable, color: string): void;
+	/* The score-space region draw() can touch for this target, padding included — the region a
+	 * repaint clears and clips to when this target changes. */
+	bounds(target: Decoratable): Rect;
 }
+
+/* How far a color stamp may reach past its target's rect: the glyph is replayed to overlay the
+ * engraved head/fret, whose box tracks it within a couple px, plus antialiasing. */
+const COLOR_PAD = 4;
 
 /* Recolors the element itself, on a `content` layer over the engraving (it recolors the notehead,
  * so it sits on top). Only the element knows what it is — a notehead glyph, a fret number, a
@@ -25,6 +33,16 @@ export class ColorStyle implements DecorationStyle {
 	): void {
 		target.drawColor(ctx, color);
 	}
+
+	bounds(target: Decoratable): Rect {
+		const r = target.rect;
+		return new Rect(
+			r.x - COLOR_PAD,
+			r.y - COLOR_PAD,
+			r.w + 2 * COLOR_PAD,
+			r.h + 2 * COLOR_PAD,
+		);
+	}
 }
 
 /* A circle centered on the element's box, a fixed margin larger than its half-extent, so it
@@ -38,14 +56,26 @@ export class HaloStyle implements DecorationStyle {
 		target: Decoratable,
 		color: string,
 	): void {
-		const rect = target.rect;
-		const radius = Math.max(rect.w, rect.h) / 2 + HALO_MARGIN;
+		// The circle inscribed in bounds() — one source of truth for where the halo lands.
+		const b = this.bounds(target);
+		const radius = b.w / 2;
 		ctx.save();
 		ctx.fillStyle = color;
 		ctx.beginPath();
-		ctx.arc(rect.x + rect.w / 2, rect.y + rect.h / 2, radius, 0, 2 * Math.PI);
+		ctx.arc(b.x + radius, b.y + radius, radius, 0, 2 * Math.PI);
 		ctx.fill();
 		ctx.restore();
+	}
+
+	bounds(target: Decoratable): Rect {
+		const r = target.rect;
+		const radius = Math.max(r.w, r.h) / 2 + HALO_MARGIN;
+		return new Rect(
+			r.x + r.w / 2 - radius,
+			r.y + r.h / 2 - radius,
+			2 * radius,
+			2 * radius,
+		);
 	}
 }
 
@@ -53,10 +83,12 @@ export class HaloStyle implements DecorationStyle {
  * The production Decoration: an active set (which elements are decorated, in what color) painted
  * onto one score-space overlay layer in the style's placement.
  *
- * Every change repaints the whole layer from the active set rather than erasing one rect. That's
- * the answer to "how does off() work without disturbing neighbors": clearing one decoration's box
- * could wipe part of an overlapping one, so instead the lot is cleared and redrawn. The layer is
- * created lazily on the first decoration, so an undecorated score never allocates an overlay.
+ * A change repaints only the changed target's bounds, not the whole layer. The layer spans the
+ * entire engraved score, so a full-bitmap clear per toggle is O(score area) — ~100ms on a long
+ * multi-part score, which made hover halos visibly lag. Overlapping neighbors still survive an
+ * off(): every active decoration intersecting the cleared region is redrawn into it, clipped to
+ * the region so nothing outside it is double-painted. The layer is created lazily on the first
+ * decoration, so an undecorated score never allocates an overlay.
  */
 export class DefaultDecoration implements Decoration {
 	private readonly active = new Map<Decoratable, string>();
@@ -68,12 +100,16 @@ export class DefaultDecoration implements Decoration {
 	) {}
 
 	set(target: Decoratable, color: string | null): void {
+		// No-op sets (same color again, or off() while already off) skip the repaint.
+		if ((this.active.get(target) ?? null) === color) {
+			return;
+		}
 		if (color === null) {
 			this.active.delete(target);
 		} else {
 			this.active.set(target, color);
 		}
-		this.repaint();
+		this.repaint(this.style.bounds(target));
 	}
 
 	has(target: Decoratable): boolean {
@@ -86,26 +122,27 @@ export class DefaultDecoration implements Decoration {
 		this.active.clear();
 	}
 
-	private repaint(): void {
-		if (this.active.size === 0) {
-			if (this.layer) {
-				this.clear(this.layer.ctx);
-			}
-			return;
-		}
+	// Clear the dirty region and redraw the active decorations that intersect it, clipped to it.
+	// The region is snapped outward to whole CSS px so the clear and the clip cut on full pixels
+	// (a fractional edge would leave antialiasing seams where a neighbor crosses the boundary).
+	private repaint(dirty: Rect): void {
 		this.layer ??= this.host.createLayer(this.style.placement);
 		const ctx = this.layer.ctx;
-		this.clear(ctx);
-		for (const [target, color] of this.active) {
-			this.style.draw(ctx, target, color);
-		}
-	}
-
-	// Clear the whole bitmap regardless of the dpr transform the layer applied.
-	private clear(ctx: CanvasRenderingContext2D): void {
+		const x = Math.floor(dirty.x) - 1;
+		const y = Math.floor(dirty.y) - 1;
+		const w = Math.ceil(dirty.right) + 1 - x;
+		const h = Math.ceil(dirty.bottom) + 1 - y;
+		const region = new Rect(x, y, w, h);
 		ctx.save();
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		ctx.beginPath();
+		ctx.rect(x, y, w, h);
+		ctx.clip();
+		ctx.clearRect(x, y, w, h);
+		for (const [target, color] of this.active) {
+			if (this.style.bounds(target).intersects(region)) {
+				this.style.draw(ctx, target, color);
+			}
+		}
 		ctx.restore();
 	}
 }

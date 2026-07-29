@@ -4,18 +4,18 @@ import { Rect } from '../geometry';
 import type { Layer } from '../host/stage';
 import { Playhead } from './playhead';
 
-// A recording 2D context: captures fillRect calls and whether the bitmap was cleared.
+// A recording 2D context: captures fillRect and clearRect calls.
 class RecordingCtx {
 	fills: Array<{ x: number; y: number; w: number; h: number; style: string }> =
 		[];
-	cleared = false;
+	clears: Array<{ x: number; y: number; w: number; h: number }> = [];
 	fillStyle = '';
 	readonly canvas = { width: 1000, height: 100 };
 	save(): void {}
 	restore(): void {}
 	setTransform(): void {}
-	clearRect(): void {
-		this.cleared = true;
+	clearRect(x: number, y: number, w: number, h: number): void {
+		this.clears.push({ x, y, w, h });
 	}
 	fillRect(x: number, y: number, w: number, h: number): void {
 		this.fills.push({ x, y, w, h, style: this.fillStyle });
@@ -47,11 +47,12 @@ function changeAt(rect: Rect): CursorChangeEvent {
 }
 
 describe('Playhead', () => {
-	it('draws a vertical bar straddling the onset x, spanning the system, after clearing', () => {
+	it('draws a vertical bar straddling the onset x, spanning the system', () => {
 		const layer = new FakeLayer();
 		const view = new Playhead(layer); // default width 2
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
-		expect(layer.recording.cleared).toBe(true);
+		// Nothing was drawn before, so there's nothing to clear on the first render.
+		expect(layer.recording.clears).toEqual([]);
 		expect(layer.recording.fills).toEqual([
 			{ x: 9, y: 0, w: 2, h: 100, style: '#2563eb' },
 		]);
@@ -66,12 +67,13 @@ describe('Playhead', () => {
 		]);
 	});
 
-	it('repaints (clears) on each render and disposes its layer', () => {
+	it('erases exactly the previous bar (1px pad) on each render and disposes its layer', () => {
 		const layer = new FakeLayer();
 		const view = new Playhead(layer);
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
 		view.render(changeAt(new Rect(20, 0, 1, 100)));
-		// Only the latest bar remains (cleared between).
+		// Only the previous bar's region is cleared — never the whole (score-sized) bitmap.
+		expect(layer.recording.clears).toEqual([{ x: 8, y: -1, w: 4, h: 102 }]);
 		expect(layer.recording.fills).toHaveLength(2);
 		expect(layer.recording.fills.at(-1)?.x).toBe(19);
 		view.dispose();

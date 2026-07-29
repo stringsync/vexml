@@ -34,6 +34,8 @@ function noopContext(): CanvasRenderingContext2D {
 		restore() {},
 		setTransform() {},
 		clearRect() {},
+		rect() {},
+		clip() {},
 		beginPath() {},
 		ellipse() {},
 		arc() {},

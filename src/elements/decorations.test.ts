@@ -24,6 +24,8 @@ class RecordingContext {
 	clearRect(): void {
 		this.ops.push('clear');
 	}
+	rect(): void {}
+	clip(): void {}
 	beginPath(): void {}
 	ellipse(): void {
 		this.shape = 'ellipse';
@@ -173,15 +175,35 @@ describe('DefaultDecoration', () => {
 		expect(marksSinceLastClear(host.ops('background'))).toEqual([]);
 	});
 
-	it('every repaint clears first, then redraws the whole active set', () => {
+	it('a repaint redraws neighbors whose bounds overlap the changed region', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		colors.set(decoratable(new Rect(0, 0, 12, 10), GLYPH), '#111111');
 		colors.set(decoratable(new Rect(20, 0, 12, 10), GLYPH), '#222222');
+		// The rects nearly touch, so clearing the second's padded region requires restamping the
+		// first — otherwise its edge pixels would be wiped.
 		expect(marksSinceLastClear(host.ops('content'))).toEqual([
 			'text:q:#111111:30px Bravura',
 			'text:q:#222222:30px Bravura',
 		]);
+	});
+
+	it('a repaint leaves decorations outside the changed region untouched', () => {
+		const host = new FakeLayerHost();
+		const colors = new DefaultDecoration(host, new ColorStyle());
+		colors.set(decoratable(new Rect(0, 0, 12, 10), GLYPH), '#111111');
+		colors.set(decoratable(new Rect(500, 0, 12, 10), GLYPH), '#222222');
+		// The distant first decoration's pixels aren't in the cleared region, so it isn't redrawn.
+		expect(marksSinceLastClear(host.ops('content'))).toEqual([
+			'text:q:#222222:30px Bravura',
+		]);
+	});
+
+	it('an off() while already off is a no-op — no layer, no paint', () => {
+		const host = new FakeLayerHost();
+		const colors = new DefaultDecoration(host, new ColorStyle());
+		colors.set(decoratable(new Rect(0, 0, 12, 10), GLYPH), null);
+		expect(host.createLayerCalls).toBe(0);
 	});
 
 	it('dispose disposes the layer and clears state', () => {
