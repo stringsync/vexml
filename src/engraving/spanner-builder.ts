@@ -260,7 +260,11 @@ export class SpannerBuilder {
 	 * Beams: map each beam group's notes to their StaveNotes. Built before formatting
 	 * so the beamed notes drop their flags.
 	 */
-	buildBeams(groups: BeamGroup[], byLead: Map<Note, StaveNote>): Beam[] {
+	buildBeams(
+		groups: BeamGroup[],
+		byLead: Map<Note, StaveNote>,
+		defaultStem?: 'up' | 'down',
+	): Beam[] {
 		const beams: Beam[] = [];
 		for (const group of groups) {
 			const notes = group.notes
@@ -273,8 +277,10 @@ export class SpannerBuilder {
 			if (notes.length > 1) {
 				// auto_stem=true picks one direction for the whole group (notes' own
 				// autoStem would conflict). But explicit <stem>s (e.g. voice separation)
-				// must stand, so only auto-stem when no note in the group has one.
-				const autoStem = group.notes.every((note) => !note.stem);
+				// and a multi-voice default direction must stand, so only auto-stem when
+				// neither applies.
+				const autoStem =
+					!defaultStem && group.notes.every((note) => !note.stem);
 				const beam = new Beam(notes, autoStem);
 				// The beam just settled stem directions; re-pin articulations placed
 				// against each note's pre-beam direction onto the notehead side.

@@ -34,5 +34,111 @@
         <type>whole</type>
       </note>
     </measure>
+    <measure number="2">
+      <attributes>
+        <divisions>16</divisions>
+      </attributes>
+      <!-- Voice 1 (melody, no <stem> elements): defaults to stems up. -->
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest/>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest/>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <beam number="1">end</beam>
+      </note>
+      <backup>
+        <duration>48</duration>
+      </backup>
+      <!-- Voice 2 (bass, no <stem> elements): defaults to stems down. -->
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>16</duration>
+        <voice>2</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>2</octave></pitch>
+        <duration>4</duration>
+        <voice>2</voice>
+        <type>16th</type>
+        <notehead>x</notehead>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>12</duration>
+        <voice>2</voice>
+        <type>eighth</type>
+        <dot/>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest/>
+        <duration>32</duration>
+        <voice>2</voice>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

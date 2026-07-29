@@ -239,11 +239,17 @@ function addArpeggio(staveNote: StaveNote, note: Note): void {
 
 /*
  * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave), or
- * <stem>none (bare noteheads, as in a rhythm/chord chart). Absent, auto-pick from
- * staff position (see vexflowChord's auto_stem).
+ * <stem>none (bare noteheads, as in a rhythm/chord chart). Absent, fall back to the
+ * voice's default direction (multi-voice staves stem apart even when the exporter
+ * omits <stem>, e.g. Soundslice), else auto-pick from staff position (see
+ * vexflowChord's auto_stem).
  */
-function applyStem(staveNote: StaveNote, note: Note): void {
-	switch (note.stem) {
+function applyStem(
+	staveNote: StaveNote,
+	note: Note,
+	defaultStem?: 'up' | 'down',
+): void {
+	switch (note.stem ?? defaultStem) {
 		case 'up':
 			staveNote.setStemDirection(Stem.UP);
 			break;
@@ -581,6 +587,9 @@ export class NoteTranslator {
 		// (e.g. -1 for a treble-8vb guitar clef draws sounding pitches an octave higher).
 		// vexflow's own StaveNote option; keys stay at their sounding octave.
 		octaveShift = 0,
+		// Stem direction for notes without an explicit <stem>, set when multiple voices
+		// share the stave (voice 1 up, the rest down) so the voices stem apart.
+		defaultStem?: 'up' | 'down',
 	): StaveNote {
 		const lead = chord.lead;
 		const duration = durationCode(lead);
@@ -622,13 +631,14 @@ export class NoteTranslator {
 			dots: lead.dots,
 			clef,
 			octaveShift,
-			// No explicit <stem>: let vexflow choose the direction from staff position.
-			autoStem: !lead.stem,
+			// No explicit <stem> and no voice default: let vexflow choose the direction
+			// from staff position.
+			autoStem: !lead.stem && !defaultStem,
 		});
 		addAccidentals(staveNote, chord);
 		addParentheses(staveNote, chord);
 		addDots(staveNote, lead);
-		applyStem(staveNote, lead);
+		applyStem(staveNote, lead, defaultStem);
 		addSlashNoteheads(staveNote, chord);
 		addArticulations(staveNote, lead);
 		addFermata(staveNote, lead);
@@ -773,6 +783,7 @@ export class NoteTranslator {
 		endBeat = 0,
 		record?: (lead: Note, staveNote: StaveNote) => void,
 		octaveShift = 0,
+		defaultStem?: 'up' | 'down',
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];
 		// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
@@ -802,6 +813,7 @@ export class NoteTranslator {
 				clef,
 				centerWholeRest,
 				octaveShift,
+				defaultStem,
 			);
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));

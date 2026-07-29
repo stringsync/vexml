@@ -90,9 +90,16 @@ const TEST_CASES = [
 
 	// A treble (G) clef carrying a <clef-octave-change> of -1 (treble-8vb, the guitar/tenor
 	// clef): a small "8" numeral hangs below the clef glyph, and the octave shift moves every
-	// notehead up an octave. The E2/E3/E4 whole-note chord sits an octave higher than it would
-	// on a plain treble clef — E4 near the top of the staff, E3 on the bottom line, E2 two
-	// ledger lines below — instead of E4 on the bottom line with E2 far beneath it.
+	// notehead up an octave.
+	// - M1: an E2/E3/E4 whole-note chord sits an octave higher than it would on a plain
+	//   treble clef — E4 near the top of the staff, E3 on the bottom line, E2 two ledger
+	//   lines below — instead of E4 on the bottom line with E2 far beneath it.
+	// - M2: two voices with no <stem> elements (a guitar transcription figure): V1's beamed
+	//   16th pairs sit above the staff on ledger lines (written G5/B5) with stems up and
+	//   beams above; V2 stems down — a quarter on the bottom line (written E4), then an
+	//   x-notehead 16th two ledger lines below (written E3) beamed to a dotted eighth back
+	//   on the bottom line, beam below the staff, then a half rest. The voices stay clear
+	//   of each other; auto-stemming both voices down would slash V1's beams through V2.
 	testCase('clef_treble_octave.musicxml', 'clef_treble_octave.png'),
 
 	// Grand staff: treble clef on the upper stave, bass clef on the lower, joined by a
@@ -932,6 +939,11 @@ const TEST_CASES = [
 	//   (src/notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
 	//   vertically aligned with V2's beat-3 note rather than drifting half a beat / a beat
 	//   early.
+	// - M4: same texture as M2 but with NO <stem> elements (e.g. a Soundslice export):
+	//   the voices still stem apart by default — V1 (dotted-half D5 + quarter C5) stems up
+	//   even though auto-stemming would point those down, V2 (quarters G4, B4, A4 and a
+	//   beamed A4/G4 eighth pair, beam below) stems down even though auto-stemming would
+	//   point G4/A4 up.
 	testCase('two_voices.musicxml', 'two_voices.png'),
 
 	// Grand staff (treble over bass, braced), 4/4, three measures of a four-voice SATB

@@ -1007,7 +1007,14 @@ export class DrawPass {
 		const tiedNotes = new Set<StaveNote>();
 		const noteChords: Array<{ note: StaveNote; chord: Chord }> = [];
 		const graceChords: Array<{ note: StaveNote; chord: Chord }> = [];
-		const vexVoices = voices.map((voice) => {
+		// Voices sharing a stave stem apart even without explicit <stem>s: the first
+		// voice up, the rest down (engraving convention; matches how exporters that do
+		// write <stem>s separate voices). A lone voice keeps position-based auto-stems.
+		// ponytail: 3+ voices all stem down after the first; alternate up/down if a
+		// real 3-voice-per-stave score ever shows up.
+		const stemFor = (index: number): 'up' | 'down' | undefined =>
+			voices.length > 1 ? (index === 0 ? 'up' : 'down') : undefined;
+		const vexVoices = voices.map((voice, voiceIndex) => {
 			const chords = voice.chords;
 			// lead note -> its chord, so the record callback (which only gets the lead) can pair
 			// each StaveNote with the chord whose noteheads it draws (for the hit index).
@@ -1031,15 +1038,20 @@ export class DrawPass {
 					}
 				},
 				octaveShift,
+				stemFor(voiceIndex),
 			);
 			return this.translator.softVoice(tickables, this.softmaxFactor);
 		});
 
 		// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
-		// built before formatting.
-		const beams = this.spanners.buildBeams(
-			voices.flatMap((v) => this.spanners.groupBeams(v.chords)),
-			this.byLead,
+		// built before formatting. Beams are built per voice so each group keeps its
+		// voice's default stem direction.
+		const beams = voices.flatMap((v, voiceIndex) =>
+			this.spanners.buildBeams(
+				this.spanners.groupBeams(v.chords),
+				this.byLead,
+				stemFor(voiceIndex),
+			),
 		);
 		const tuplets = voices.flatMap((v) =>
 			this.spanners.buildTuplets(v.chords, this.byLead),
