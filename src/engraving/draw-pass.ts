@@ -77,7 +77,7 @@ import { findModifier, type NoteTranslator } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
-import { partSymbol, visibleStaffNumbers } from './staves';
+import { isTabStaff, partSymbol, visibleStaffNumbers } from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -119,20 +119,13 @@ function partsPairTabWithNotation(
 	if (!showTabs || !showNotation || parts.length < 2) {
 		return false;
 	}
-	const signs: string[] = [];
+	const kinds: boolean[] = [];
 	for (const part of parts) {
-		const measure = part.measures[0];
-		if (!measure) {
-			continue;
-		}
 		for (let staff = 1; staff <= Math.max(part.staveCount, 1); staff++) {
-			const sign = measure.getClef(String(staff))?.sign;
-			if (sign) {
-				signs.push(sign);
-			}
+			kinds.push(isTabStaff(part, String(staff)));
 		}
 	}
-	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
+	return kinds.includes(true) && kinds.includes(false);
 }
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
@@ -433,12 +426,12 @@ export class DrawPass {
 		frame: ChordFrame | null;
 		source: MElement;
 	}> = [];
-	// Words directions (e.g. "ritardando"), each drawn above its part's top stave at
-	// the first note's laid-out x.
+	// Words directions (e.g. "ritardando"), each drawn above its stave at the laid-out x
+	// of the note it applies to.
 	private wordsTasks: Array<{
 		stave: Stave;
 		text: string;
-		firstNote: StaveNote | undefined;
+		anchor: StaveNote | TabNote | undefined;
 	}> = [];
 	// A part's staves are built here, then formatted and drawn together below so
 	// notes at the same tick align vertically across staves (notation over tab).
@@ -636,16 +629,20 @@ export class DrawPass {
 			}
 
 			// Words directions (e.g. "ritardando") print over the staff their <staff> names,
-			// falling back to this part's top staff when that staff isn't rendered. Drawn
-			// after the system is formatted so the first note's x is real.
-			for (const { text, staffNumber } of this.reader.wordsOf(measure)) {
+			// falling back to this part's top staff when that staff isn't rendered, and
+			// anchored at the note the direction precedes (its first note when it names
+			// none). Drawn after the system is formatted so that note's x is real.
+			for (const { text, staffNumber, lead } of this.reader.wordsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
 				if (target) {
+					const anchor = lead
+						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
+						: undefined;
 					this.wordsTasks.push({
 						stave: target.stave,
 						text,
-						firstNote: target.staveNotes[0],
+						anchor: anchor ?? target.staveNotes[0],
 					});
 				}
 			}
@@ -780,7 +777,7 @@ export class DrawPass {
 
 		// A TAB clef draws on a TabStave whose line count matches the
 		// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
-		const isTab = clef?.sign === 'TAB';
+		const isTab = isTabStaff(part, staffNumber);
 		const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
 		const stave = isTab
 			? new TabStave(this.measureX, staveY, this.measureWidth, {
@@ -1653,7 +1650,7 @@ export class DrawPass {
 		// Words go before the diagrams so a chord diagram draws on top of any words it
 		// shares a measure with — the fret box stays fully legible, the text yields.
 		for (const w of this.wordsTasks) {
-			const top = this.drawWords(w.stave, w.text, w.firstNote);
+			const top = this.drawWords(w.stave, w.text, w.anchor);
 			this.pageTop = Math.min(this.pageTop, top);
 			this.growDecorationTop(this.systemIndex, top);
 		}
@@ -1903,7 +1900,7 @@ export class DrawPass {
 
 	/*
 	 * Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
-	 * the first note's x — where the directive applies. The collision resolver lifts it clear of
+	 * the x of the note it applies to. The collision resolver lifts it clear of
 	 * any notehead/tie/annotation it would land on; it sits at a fixed gap above the top staff
 	 * line otherwise. Returns the y the text reaches up to so the caller can grow the page crop
 	 * above it (like drawHarmony). Drawn after the notes are formatted so getAbsoluteX is real.
@@ -1911,10 +1908,10 @@ export class DrawPass {
 	private drawWords(
 		stave: Stave,
 		text: string,
-		firstNote: StaveNote | undefined,
+		anchor: StaveNote | TabNote | undefined,
 	): number {
 		const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
-		const x = firstNote ? firstNote.getAbsoluteX() : stave.getNoteStartX();
+		const x = anchor ? anchor.getAbsoluteX() : stave.getNoteStartX();
 		this.context.save();
 		this.context.setFont(this.labelFont, WORDS_FONT_SIZE, 'normal', 'italic');
 		this.context.setFillStyle(this.textColor);

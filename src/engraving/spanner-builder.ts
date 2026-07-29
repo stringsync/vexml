@@ -505,7 +505,6 @@ export class SpannerBuilder {
 			if (!firstNote) {
 				continue;
 			}
-			const firstIndexes = firstNote.getPositions().map((_, i) => i);
 			for (const slur of chord.lead.slurs) {
 				if (slur.slurType !== 'start') {
 					continue;
@@ -522,7 +521,7 @@ export class SpannerBuilder {
 						((partner.fret ?? 0) > (chord.lead.fret ?? 0)
 							? 'hammer'
 							: 'pull')) === 'hammer';
-				const lastIndexes = lastNote.getPositions().map((_, i) => i);
+				const { firstIndexes, lastIndexes } = pairByString(firstNote, lastNote);
 				const specs = tieSpecs(firstNote, lastNote, firstIndexes, lastIndexes);
 				for (const notes of specs) {
 					const tie = hammer
@@ -976,6 +975,34 @@ function articulationPosition(staveNote: StaveNote): number {
  * a single-stave pitch continuation or a fretted line); a cross-staff tie on one system would
  * misfire as a wrap.
  */
+/*
+ * The position indexes a hammer-on/pull-off arc connects: each string played by both
+ * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
+ * into another draws one arc per shared string. Positions with no counterpart drop out —
+ * that's how an arpeggiated chord hammering into a single note stays drawable, since
+ * TabTie rejects mismatched index counts. Falls back to the lead position on both sides
+ * when the two share no string at all (a slur across strings isn't really a hammer-on,
+ * but it still has to draw something).
+ */
+function pairByString(
+	firstNote: TabNote,
+	lastNote: TabNote,
+): { firstIndexes: number[]; lastIndexes: number[] } {
+	const lastPositions = lastNote.getPositions();
+	const firstIndexes: number[] = [];
+	const lastIndexes: number[] = [];
+	firstNote.getPositions().forEach((position, i) => {
+		const j = lastPositions.findIndex((other) => other.str === position.str);
+		if (j >= 0) {
+			firstIndexes.push(i);
+			lastIndexes.push(j);
+		}
+	});
+	return firstIndexes.length > 0
+		? { firstIndexes, lastIndexes }
+		: { firstIndexes: [0], lastIndexes: [0] };
+}
+
 function tieSpecs(
 	firstNote: StaveNote | TabNote,
 	lastNote: StaveNote | TabNote,

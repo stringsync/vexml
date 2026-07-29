@@ -658,6 +658,11 @@
           </frame-note>
         </frame>
       </harmony>
+      <direction placement="above">
+        <direction-type>
+          <words font-style="italic">(as taught)</words>
+        </direction-type>
+      </direction>
       <note>
         <pitch>
           <step>D</step>
@@ -686,11 +691,6 @@
         <duration>1</duration>
         <type>quarter</type>
       </note>
-      <direction placement="above">
-        <direction-type>
-          <words font-style="italic">(as taught)</words>
-        </direction-type>
-      </direction>
       <note>
         <pitch>
           <step>B</step>

@@ -21,7 +21,6 @@ import {
 	DEFAULT_SYSTEM_SPACING,
 	DEFAULT_WIDTH,
 	FAST_RENDER_MS,
-	FEEDBACK_MS,
 	GRACE_MS,
 	HALO_COLOR,
 	HOVER_COLOR,
@@ -30,7 +29,6 @@ import {
 import { describe } from './format';
 import { Header } from './header';
 import { useInstrument, useLocalStorage } from './hooks';
-import { CheckIcon } from './icons';
 import { INSTRUMENTS } from './instrument';
 import { Player } from './player';
 import { Or, Section } from './section';
@@ -74,11 +72,6 @@ export default function App() {
 	// player riding the sheet moves without firing any resize/ResizeObserver event.
 	const measureRef = useRef<(() => void) | null>(null);
 	const [dark, setDark] = useLocalStorage(DARK_KEY, false);
-	const [stored, setStored] = useState(
-		() => localStorage.getItem(STORAGE_KEY) !== null,
-	);
-	const [cleared, setCleared] = useState(false);
-	const [restored, setRestored] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const [tooltip, setTooltip] = useState<{
 		x: number;
@@ -563,35 +556,36 @@ export default function App() {
 		cursorRef.current?.next();
 	};
 
-	// Restore the last-edited MusicXML, or open with a random example.
-	useEffect(() => {
-		const saved = localStorage.getItem(STORAGE_KEY);
-		// ponytail: .mxl saves a `[mxl] name` placeholder, not the file — can't restore it, so fall through to a random example.
-		if (saved != null && !saved.startsWith('[mxl] ')) {
-			setText(saved);
-			setInput(saved);
-			setRestored(true);
-			setTimeout(() => setRestored(false), FEEDBACK_MS);
-			return;
-		}
-		const name = DEFAULT_FIXTURE;
-		setFixture(name);
-		fixtures[name]?.().then((xml) => {
+	// Load the default example into the editor and the score.
+	const loadDefault = useCallback(() => {
+		setFixture(DEFAULT_FIXTURE);
+		fixtures[DEFAULT_FIXTURE]?.().then((xml) => {
 			setText(xml);
 			setInput(xml);
 		});
 	}, []);
 
+	// Restore the last-edited MusicXML, or open with the default example.
+	useEffect(() => {
+		const saved = localStorage.getItem(STORAGE_KEY);
+		// ponytail: .mxl saves a `[mxl] name` placeholder, not the file — can't restore it, so fall through to the default example.
+		if (saved != null && !saved.startsWith('[mxl] ')) {
+			setText(saved);
+			setInput(saved);
+			return;
+		}
+		loadDefault();
+	}, [loadDefault]);
+
 	function save(value: string) {
 		localStorage.setItem(STORAGE_KEY, value);
-		setStored(true);
 	}
 
 	function clearStorage() {
 		localStorage.removeItem(STORAGE_KEY);
-		setStored(false);
-		setCleared(true);
-		setTimeout(() => setCleared(false), FEEDBACK_MS);
+		clearTimeout(debounceRef.current);
+		setDebouncing(false);
+		loadDefault();
 	}
 
 	function loadFile(file: File) {
@@ -807,37 +801,6 @@ export default function App() {
 									</details>
 								</Section>
 
-								<Section title="Local storage">
-									<p className="flex items-center gap-1 text-xs text-zinc-400">
-										{cleared ? (
-											<>
-												Cleared
-												<CheckIcon />
-											</>
-										) : restored ? (
-											<>
-												Retrieved from local storage
-												<CheckIcon />
-											</>
-										) : stored ? (
-											<>
-												Score saved
-												<CheckIcon />
-											</>
-										) : (
-											'Nothing saved'
-										)}
-									</p>
-									<button
-										type="button"
-										onClick={clearStorage}
-										disabled={!stored || cleared || restored}
-										className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										Clear local storage
-									</button>
-								</Section>
-
 								<Section
 									title="Config"
 									action={
@@ -1037,17 +1000,30 @@ export default function App() {
 				>
 					{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. Padding lives here (not on section) so inset-0 covers it too. */}
 					<div className="relative min-h-full py-6 pb-20 sm:px-6 md:pb-6">
-						{error ? (
-							<pre className="mx-auto mb-4 w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-								{error}
-							</pre>
-						) : (
-							renderMs != null && (
-								<p className="mx-auto mb-6 w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
-									Rendered in {renderMs.toFixed(1)} ms
-								</p>
-							)
-						)}
+						<div className="mx-auto mb-6 flex w-fit items-center gap-2">
+							{error ? (
+								<pre className="w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+									{error}
+								</pre>
+							) : (
+								renderMs != null && (
+									<p className="w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+										Rendered in {renderMs.toFixed(1)} ms
+									</p>
+								)
+							)}
+							{/* Nothing to clear once the default example is what's showing. */}
+							{fixture !== DEFAULT_FIXTURE && (
+								<button
+									type="button"
+									onClick={clearStorage}
+									title="Clear the saved score and reload the default example"
+									className="flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+								>
+									Clear ✕
+								</button>
+							)}
+						</div>
 						{input != null && (
 							// vexml appends its managed canvas here; React manages only this div's
 							// attributes, never its children. vexml sizes the score to fit this container

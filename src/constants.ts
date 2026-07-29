@@ -202,8 +202,10 @@ export const WORDS_FONT_SIZE = 13;
 export const WORDS_Y_OFFSET = 14;
 
 /** Clearance kept between a words-direction baseline and the top of a high note it sits
- * over, so the directive lifts clear instead of colliding with the notehead. */
-export const WORDS_NOTE_CLEARANCE = 8;
+ * over, so the directive lifts clear instead of colliding with the notehead. Matched to
+ * WORDS_Y_OFFSET so a lifted directive keeps the same air over a notehead that an
+ * uncollided one keeps over the top staff line — at 8 the text grazed the noteheads. */
+export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
 
 /** Clearance between the bottom of a metronome mark and the top of the first note. */
 export const TEMPO_NOTE_CLEARANCE = 6;

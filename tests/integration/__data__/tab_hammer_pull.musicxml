@@ -273,5 +273,45 @@
         </notations>
       </note>
     </measure>
+    <!-- A three-string chord hammering into a single note: the two sides carry different
+         numbers of strings, so only the string they share (2) can be tied. -->
+    <measure number="7">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>3</string><fret>2</fret></technical>
+        </notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>4</string><fret>2</fret></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

@@ -16,26 +16,6 @@ export function ResetIcon() {
 	);
 }
 
-export function CheckIcon() {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth={1.5}
-			stroke="currentColor"
-			className="size-4 text-green-600"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="m4.5 12.75 6 6 9-13.5"
-			/>
-		</svg>
-	);
-}
-
 // Heroicons (outline). Each value is the icon's path list — circle play/pause have two paths.
 export const ICON = {
 	play: [

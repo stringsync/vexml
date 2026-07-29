@@ -25,9 +25,6 @@ export const DARK_INK = 'rgb(235, 235, 235)';
 export const DEBOUNCE_MS = 500;
 export const FAST_RENDER_MS = 50;
 
-// How long a "Saved / Cleared / Retrieved" confirmation stays up.
-export const FEEDBACK_MS = 1500;
-
 // Config defaults, used both as the slider's displayed value and the render fallback.
 export const DEFAULT_NOTE_SPACING = 36;
 export const DEFAULT_SOFTMAX_FACTOR = 10;

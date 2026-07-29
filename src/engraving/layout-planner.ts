@@ -27,7 +27,7 @@ import {
 import { gapsByMeasureIndex } from '../gaps';
 import { findModifier, type NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
-import { partSymbol, visibleStaffNumbers } from './staves';
+import { isTabStaff, partSymbol, visibleStaffNumbers } from './staves';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -277,7 +277,7 @@ export class LayoutPlanner {
 								? this.translator.vexflowClef(clef.sign, clef.line)
 								: 'treble',
 							meterFloor: this.reader.meterBeats(measure.getTime(staffNumber)),
-							isTab: clef?.sign === 'TAB',
+							isTab: isTabStaff(part, staffNumber),
 						});
 					}
 				}

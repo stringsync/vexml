@@ -270,14 +270,23 @@ export class ScoreReader {
 	 * `staffNumber` is the direction's <staff> ('1' when absent), so a multi-staff part
 	 * prints each directive over the staff it was written for instead of piling every one
 	 * of them onto the part's top staff.
+	 * `lead` is the note the directive applies to — the next non-chord note after it, the
+	 * same binding a pedal start uses — so per-note directives (guitar p-i-m-a fingering,
+	 * picking marks) print over their own note instead of stacking on the measure's first.
+	 * null when the direction trails the measure's last note.
 	 * ponytail: placement and font-style attributes ignored — every words direction prints
 	 * above the staff in italics; add a placement/style field if a fixture needs below or
 	 * upright words.
 	 */
-	wordsOf(measure: Measure): { text: string; staffNumber: string }[] {
+	wordsOf(
+		measure: Measure,
+	): { text: string; staffNumber: string; lead: Note | null }[] {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.child('staff')?.text ?? '1';
-			return d.words.filter(Boolean).map((text) => ({ text, staffNumber }));
+			const lead = d.nextNote;
+			return d.words
+				.filter(Boolean)
+				.map((text) => ({ text, staffNumber, lead }));
 		});
 	}
 

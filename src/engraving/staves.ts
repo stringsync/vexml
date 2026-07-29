@@ -1,9 +1,31 @@
-import type { Part } from '@stringsync/mdom';
+import type { Measure, Part } from '@stringsync/mdom';
 
-/** A staff is tablature when its clef sign is TAB. A staff's clef is stable across a
- * part, so the first measure that declares one settles it. */
-function isTabStaff(part: Part, staffNumber: string): boolean {
+/** True when `<staff-details>` gives this staff string tunings — the MusicXML signal for
+ * tablature that doesn't depend on the clef. */
+function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
+	for (const attributes of measure.childrenNamed('attributes')) {
+		for (const details of attributes.childrenNamed('staff-details')) {
+			const number = details.getAttribute('number') ?? '1';
+			if (
+				number === staffNumber &&
+				details.childrenNamed('staff-tuning').length > 0
+			) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+/** A staff is tablature when its clef sign is TAB, or when `<staff-details>` gives it
+ * string tunings — some exporters (Guitar Pro, Soundslice) notate a tab staff with an
+ * octave-down treble clef, so the clef sign alone doesn't settle it. A staff's clef is
+ * stable across a part, so the first measure that declares either settles it. */
+export function isTabStaff(part: Part, staffNumber: string): boolean {
 	for (const measure of part.measures) {
+		if (measure && hasStaffTuning(measure, staffNumber)) {
+			return true;
+		}
 		const clef = measure?.getClef(staffNumber);
 		if (clef) {
 			return clef.sign === 'TAB';

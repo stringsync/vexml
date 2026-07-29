@@ -114,6 +114,13 @@ const TEST_CASES = [
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	testCase('clef_tab_4_string.musicxml', 'clef_tab_4_string.png'),
 
+	// A 6-line tablature stave whose <clef> is an octave-down treble, not TAB — the stave
+	// is marked as tablature only by the six <staff-tuning>s in <staff-details>, which is
+	// how some exporters write guitar tab. It must still render as TAB: stacked "TAB"
+	// label, six lines, its own begin barline, and frets 0/1/3/5 on string 1 (an ascending
+	// E4/F4/G4/A4) drawn as numbers on the top line rather than noteheads on a treble staff.
+	testCase('clef_tab_staff_tuning.musicxml', 'clef_tab_staff_tuning.png'),
+
 	// A treble notation stave above a 6-line TAB stave, joined by a bracket (the
 	// notation+tab convention, applied automatically with no <part-symbol> declared).
 	// 3-sharp key and 4/4 time: both print on the notation stave only — the TAB stave
@@ -205,12 +212,15 @@ const TEST_CASES = [
 	testCase('tempo.musicxml', 'tempo.png'),
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
-	// in italics above the staff at the first note's x. Four boring quarters per measure so
-	// only the directive and the first note's height vary.
+	// in italics above the staff at the x of the note it precedes. Four boring quarters per
+	// measure so only the directive and the first note's height vary.
 	// - M1: "*ritardando..." over B4 quarters (mid-staff, no collision) — the text sits one
 	//   fixed gap above the staff.
 	// - M2: "*ritardando..." over a high first note (C6, two ledger lines above) that reaches
 	//   up into the text's default band, so the text is lifted clear of the notehead.
+	// - M3: four directions, one before each B4 quarter ("p", "i", "m", "a" — guitar
+	//   fingering). Each letter prints over its own note, spread across the measure on one
+	//   row; anchoring them all at the measure's first note would stack them in a column.
 	testCase('words.musicxml', 'words.png'),
 
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
@@ -468,6 +478,9 @@ const TEST_CASES = [
 	//   then two pull-off pairs (7 -> 5) — to show the technique at a tighter rhythm.
 	// - M6: sixteenth notes (string 2) — a hammer-on pair (5 -> 7) then a pull-off pair
 	//   (7 -> 5), closing on a pull-off to the open string (fret 5 -> 0).
+	// - M7: a three-string chord (strings 4/3/2) hammering into a single note on string 2
+	//   (5 -> 7). Only string 2 is played by both, so exactly one arc draws — from the "5"
+	//   to the "7" — and the 2/2 frets on strings 4 and 3 are left untied.
 	// Default render: the tie arcs draw but the "H"/"P" labels are off
 	// (showTabHammerPullText defaults to false).
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
