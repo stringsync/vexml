@@ -77,7 +77,12 @@ import { findModifier, type NoteTranslator } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
-import { isTabStaff, partSymbol, visibleStaffNumbers } from './staves';
+import {
+	isTabStaff,
+	partSymbol,
+	stringTuning,
+	visibleStaffNumbers,
+} from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -952,7 +957,12 @@ export class DrawPass {
 		const voices = this.reader.staffVoices(measure.voices, staffNumber);
 		if (isTab && voices.length > 0) {
 			this.pendingStaves.push(
-				this.buildTabNotes(stave as TabStave, this.staveRow, voices),
+				this.buildTabNotes(
+					stave as TabStave,
+					this.staveRow,
+					voices,
+					stringTuning(part, staffNumber),
+				),
 			);
 			for (const voice of voices) {
 				this.allTabChords.push(...voice.chords);
@@ -1083,6 +1093,7 @@ export class DrawPass {
 		stave: TabStave,
 		row: number,
 		voices: ScoreVoice[],
+		tuning: number[] | null,
 	): PendingStave {
 		const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
 		const graceTabChords: Array<{ note: TabNote; chord: Chord }> = [];
@@ -1098,21 +1109,25 @@ export class DrawPass {
 				chordByLead.set(chord.lead, chord);
 			}
 			return this.translator.softVoice(
-				this.translator.vexflowTabTickables(chords, (lead, tickable) => {
-					byTabTickable.set(lead, tickable);
-					if (tickable instanceof GhostNote) {
-						return;
-					}
-					const tabNote = tickable as TabNote;
-					this.byTabLead.set(lead, tabNote);
-					const chord = chordByLead.get(lead);
-					if (chord) {
-						(lead.isGrace ? graceTabChords : tabChords).push({
-							note: tabNote,
-							chord,
-						});
-					}
-				}),
+				this.translator.vexflowTabTickables(
+					chords,
+					tuning,
+					(lead, tickable) => {
+						byTabTickable.set(lead, tickable);
+						if (tickable instanceof GhostNote) {
+							return;
+						}
+						const tabNote = tickable as TabNote;
+						this.byTabLead.set(lead, tabNote);
+						const chord = chordByLead.get(lead);
+						if (chord) {
+							(lead.isGrace ? graceTabChords : tabChords).push({
+								note: tabNote,
+								chord,
+							});
+						}
+					},
+				),
 				this.softmaxFactor,
 			);
 		});

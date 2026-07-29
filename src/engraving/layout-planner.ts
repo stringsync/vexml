@@ -27,7 +27,12 @@ import {
 import { gapsByMeasureIndex } from '../gaps';
 import { findModifier, type NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
-import { isTabStaff, partSymbol, visibleStaffNumbers } from './staves';
+import {
+	isTabStaff,
+	partSymbol,
+	stringTuning,
+	visibleStaffNumbers,
+} from './staves';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -69,6 +74,8 @@ type StaveSpec = {
 	clef: string;
 	meterFloor: number;
 	isTab: boolean;
+	/** Open-string pitches of a tab staff; null for a notation staff (see stringTuning). */
+	tuning: number[] | null;
 };
 
 export class LayoutPlanner {
@@ -112,14 +119,14 @@ export class LayoutPlanner {
 	): number {
 		let minNotes = 0;
 		let logWidth = 0;
-		for (const { voices, clef, meterFloor, isTab } of staves) {
+		for (const { voices, clef, meterFloor, isTab, tuning } of staves) {
 			// Match drawNotes: pad underfull measures to the meter so the measured width
 			// reserves the same trailing space the draw pass will leave.
 			const endBeat = Math.max(this.reader.endBeatOf(voices), meterFloor);
 			// Tab voices build TabNotes (no ghost padding), matching drawTabNotes.
 			const perVoice = voices.map((voice) =>
 				isTab
-					? this.translator.vexflowTabTickables(voice.chords)
+					? this.translator.vexflowTabTickables(voice.chords, tuning)
 					: this.translator.vexflowVoiceTickables(voice.chords, clef, endBeat),
 			);
 			const vexVoices = perVoice.map((tickables) =>
@@ -278,6 +285,7 @@ export class LayoutPlanner {
 								: 'treble',
 							meterFloor: this.reader.meterBeats(measure.getTime(staffNumber)),
 							isTab: isTabStaff(part, staffNumber),
+							tuning: stringTuning(part, staffNumber),
 						});
 					}
 				}

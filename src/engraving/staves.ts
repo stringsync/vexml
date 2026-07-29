@@ -17,6 +17,59 @@ function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
 	return false;
 }
 
+const STEP_SEMITONES: Record<string, number> = {
+	C: 0,
+	D: 2,
+	E: 4,
+	F: 5,
+	G: 7,
+	A: 9,
+	B: 11,
+};
+
+/** MIDI number of a step/octave/alter, the common scale tuning and pitches compare on. */
+export function midiOf(step: string, octave: number, alter = 0): number {
+	return (octave + 1) * 12 + (STEP_SEMITONES[step.toUpperCase()] ?? 0) + alter;
+}
+
+/**
+ * The open-string MIDI pitches of a tab staff's `<staff-tuning>`, indexed by string
+ * number - 1 (so index 0 = string 1 = the highest-sounding string). MusicXML numbers
+ * tuning *lines* from the bottom up and strings from the top down, so they invert:
+ * string = lineCount - line + 1.
+ *
+ * Null when the staff declares no tunings — there is nothing to derive a fret from, so
+ * callers keep their explicit-fret-only behavior rather than guessing a tuning.
+ */
+export function stringTuning(part: Part, staffNumber: string): number[] | null {
+	for (const measure of part.measures) {
+		for (const attributes of measure?.childrenNamed('attributes') ?? []) {
+			for (const details of attributes.childrenNamed('staff-details')) {
+				if ((details.getAttribute('number') ?? '1') !== staffNumber) {
+					continue;
+				}
+				const tunings = details.childrenNamed('staff-tuning');
+				if (tunings.length === 0) {
+					continue;
+				}
+				const lineCount = Math.max(
+					...tunings.map((t) => Number(t.getAttribute('line') ?? 1)),
+				);
+				const midis: number[] = [];
+				for (const tuning of tunings) {
+					const line = Number(tuning.getAttribute('line') ?? 1);
+					const step = tuning.child('tuning-step')?.text ?? 'C';
+					const octave = Number(tuning.child('tuning-octave')?.text ?? 4);
+					const alter = Number(tuning.child('tuning-alter')?.text ?? 0);
+					midis[lineCount - line] = midiOf(step, octave, alter);
+				}
+				return midis;
+			}
+		}
+	}
+	return null;
+}
+
 /** A staff is tablature when its clef sign is TAB, or when `<staff-details>` gives it
  * string tunings — some exporters (Guitar Pro, Soundslice) notate a tab staff with an
  * octave-down treble clef, so the clef sign alone doesn't settle it. A staff's clef is

@@ -28,6 +28,7 @@ import {
 	TAB_GRACE_SCALE,
 	TAB_GRACE_SPACING,
 } from '../constants';
+import { midiOf } from './staves';
 
 // MusicXML <type> -> vexflow duration code; rests append 'r'.
 const DURATION_CODES: Record<string, string> = {
@@ -361,9 +362,51 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
 }
 
 /*
+ * Where a note sits on the fretboard when `<technical>` doesn't say. Some exporters give a
+ * tab note only its pitch, leaving the string/fret to be derived from the staff tuning —
+ * without this it would print fret 0 on string 1 no matter what it sounds.
+ *
+ * Pick the highest string the note is reachable on, i.e. the smallest non-negative fret:
+ * that is the ordinary first-position fingering and matches what MuseScore derives. A note
+ * below every open string is unplayable as written; put it on the lowest string at fret 0
+ * rather than dropping it, so the tab still shows something at that tick.
+ *
+ * `tuning` is indexed by string - 1 (see stringTuning). An explicit `<string>` wins — only
+ * its fret is derived — so a hand-fingered voicing keeps the string the editor chose.
+ */
+function derivePosition(
+	note: Chord['notes'][number],
+	tuning: number[],
+): { str: number; fret: number } | null {
+	const pitch = note.pitch;
+	if (!pitch) {
+		return null;
+	}
+	const midi = midiOf(pitch.step, pitch.octave, pitch.alter ?? 0);
+	if (note.string != null) {
+		const open = tuning[note.string - 1];
+		return open == null
+			? null
+			: { str: note.string, fret: Math.max(0, midi - open) };
+	}
+	let best: { str: number; fret: number } | null = null;
+	for (const [index, open] of tuning.entries()) {
+		const fret = midi - open;
+		if (fret >= 0 && (best === null || fret < best.fret)) {
+			best = { str: index + 1, fret };
+		}
+	}
+	return best ?? { str: tuning.length, fret: 0 };
+}
+
+/*
  * Each chord member's <string>/<fret> as a vexflow tab position (string 1 =
  * highest-pitched, an open string is fret 0). A natural harmonic is notated as the fret
  * in angle brackets, e.g. <12> — vexflow renders the fret string verbatim.
+ *
+ * A member with no <technical> carries only a pitch; `tuning` (the staff's
+ * <staff-tuning>, null when it declares none) derives its string/fret — see
+ * derivePosition.
  *
  * A tie-stop fret is the held tail of a tie: the string isn't re-struck, so guitar tab
  * convention omits its number (unlike a slur/hammer-on/pull-off, which changes fret and
@@ -371,9 +414,11 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
  * replaces it with a ghost note — but keep an all-members fallback so the grace path (which
  * also calls this) can never hand vexflow an empty position list.
  */
-function tabPositions(chord: Chord) {
+function tabPositions(chord: Chord, tuning: number[] | null) {
 	const toPosition = (note: Chord['notes'][number]) => {
-		const fret = note.fret ?? 0;
+		const derived =
+			tuning && note.fret == null ? derivePosition(note, tuning) : null;
+		const fret = note.fret ?? derived?.fret ?? 0;
 		// A dead note (<notehead>x</notehead>) prints "X" on its string instead of a fret;
 		// a harmonic angle-brackets its fret. vexflow renders the fret string verbatim.
 		let fretText: string | number = fret;
@@ -389,7 +434,7 @@ function tabPositions(chord: Chord) {
 			fretText = `(${fret})`;
 		}
 		return {
-			str: note.string ?? 1,
+			str: note.string ?? derived?.str ?? 1,
 			fret: fretText,
 		};
 	};
@@ -487,10 +532,10 @@ function styleFrets(
  * note it precedes by vexflowTabTickables. Frets are scaled to TAB_GRACE_SCALE of the
  * (already enlarged) main-note size so graces stay proportionally smaller.
  */
-function vexflowTabGrace(chord: Chord): GraceTabNote {
+function vexflowTabGrace(chord: Chord, tuning: number[] | null): GraceTabNote {
 	const duration = durationCode(chord.lead);
 	const grace = new GraceTabNote({
-		positions: tabPositions(chord),
+		positions: tabPositions(chord, tuning),
 		duration,
 	});
 	styleFrets(grace, TAB_FRET_SCALE * TAB_GRACE_SCALE);
@@ -652,12 +697,12 @@ export class NoteTranslator {
 	 * no clef, accidentals, or stems — just the fret numbers stacked on their strings,
 	 * plus any bend/vibrato/annotation modifiers from <notations>.
 	 */
-	private vexflowTabChord(chord: Chord): TabNote {
+	private vexflowTabChord(chord: Chord, tuning: number[] | null): TabNote {
 		const lead = chord.lead;
 		const duration = durationCode(lead);
 		const tabNote = new TabNote(
 			{
-				positions: tabPositions(chord),
+				positions: tabPositions(chord, tuning),
 				duration,
 				// Count the dot(s) in the note's ticks (as the notation path does) so a dotted
 				// tab note isn't a tick-position short and drift out of alignment with the
@@ -702,10 +747,12 @@ export class NoteTranslator {
 	 * after a rest slides left and falls out of vertical alignment with the notation
 	 * stave it's formatted against. `record` captures each chord's lead -> TabNote for
 	 * later hammer-on/pull-off resolution; the layout pass reuses this to size tab
-	 * measures and passes none.
+	 * measures and passes none. `tuning` is the staff's open-string pitches, used to
+	 * derive the string/fret of a note whose `<technical>` omits them (see tabPositions).
 	 */
 	vexflowTabTickables(
 		chords: Chord[],
+		tuning: number[] | null,
 		record?: (lead: Note, tickable: StemmableNote) => void,
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];
@@ -716,7 +763,10 @@ export class NoteTranslator {
 				continue;
 			}
 			if (chord.lead.isGrace) {
-				pendingGrace.push({ note: vexflowTabGrace(chord), lead: chord.lead });
+				pendingGrace.push({
+					note: vexflowTabGrace(chord, tuning),
+					lead: chord.lead,
+				});
 				continue;
 			}
 			// A wholly tied-into (held) chord re-strikes no string, so guitar tab convention
@@ -744,7 +794,7 @@ export class NoteTranslator {
 				}
 				continue;
 			}
-			const tabNote = this.vexflowTabChord(chord);
+			const tabNote = this.vexflowTabChord(chord, tuning);
 			if (pendingGrace.length > 0) {
 				// No beamNotes() unlike the standard-notation path: tab grace notes have no
 				// stem to anchor a beam, so beaming floats it off the staff — they render as

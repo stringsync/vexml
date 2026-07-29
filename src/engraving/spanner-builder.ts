@@ -376,6 +376,10 @@ export class SpannerBuilder {
 	 * Tuplets: a <tuplet>start..stop span covers every note between the two markers
 	 * (the inner notes carry no marker), so slice the chord run by index. The ratio
 	 * comes from the start note's <time-modification> (e.g. 3:2 -> "3").
+	 *
+	 * The bracket goes where the start marker's `placement` says, and otherwise on
+	 * the stem side of the group — the engraving default, and what MuseScore does.
+	 * Beams are built before tuplets, so the stem directions are already settled.
 	 */
 	buildTuplets<T extends StemmableNote>(
 		chords: Chord[],
@@ -383,10 +387,12 @@ export class SpannerBuilder {
 	): Tuplet[] {
 		const tuplets: Tuplet[] = [];
 		let start = -1;
+		let placement: string | null = null;
 		chords.forEach((chord, i) => {
 			for (const tuplet of chord.lead.tuplets) {
 				if (tuplet.tupletType === 'start') {
 					start = i;
+					placement = tuplet.getAttribute('placement');
 				} else if (tuplet.tupletType === 'stop' && start >= 0) {
 					const group = chords
 						.slice(start, i + 1)
@@ -394,16 +400,27 @@ export class SpannerBuilder {
 						.filter((n): n is T => n !== undefined);
 					if (group.length > 1) {
 						const ratio = chords[start]?.lead.timeModification;
+						// ponytail: the first non-rest speaks for the group — a mixed-stem
+						// tuplet would need a majority vote.
+						const stemmed = group.find((n) => !n.isRest()) ?? group[0];
+						const isBelow =
+							placement === 'below' ||
+							(placement !== 'above' &&
+								stemmed?.getStemDirection() === Stem.DOWN);
 						tuplets.push(
-							new Tuplet(
-								group,
-								ratio
-									? { numNotes: ratio.actual, notesOccupied: ratio.normal }
-									: undefined,
-							),
+							new Tuplet(group, {
+								location: isBelow
+									? Tuplet.LOCATION_BOTTOM
+									: Tuplet.LOCATION_TOP,
+								...(ratio && {
+									numNotes: ratio.actual,
+									notesOccupied: ratio.normal,
+								}),
+							}),
 						);
 					}
 					start = -1;
+					placement = null;
 				}
 			}
 		});

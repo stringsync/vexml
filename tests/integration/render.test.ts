@@ -602,17 +602,12 @@ const TEST_CASES = [
 	//   at fret 12, two-digit numbers); an adjacent low dyad (strings 5/4, frets 2/2); a
 	//   mixed open/fretted chord on the lower 4 strings (6/5/4/3, frets 0/0/2/2) with
 	//   "0"s beside "2"s.
-	// - M3: notes with no <technical> — only a pitch. An open dyad (strings 4/3, frets 0/0)
-	//   whose third member (E3) carries no string/fret, then a lone bare E3. vexml has no
-	//   tuning-based fret inference (tabPositions in src/engraving/note-translator.ts:
-	//   `note.fret ?? 0`, `note.string ?? 1`), so both bare notes draw "0" on the top line
-	//   (string 1) instead of "2" on string 4.
-	// TODO: False positive: M3's baseline was created from the current render, so it accepts
-	// a rendering that is musically wrong — a bare E3 prints as "0" on string 1. MuseScore
-	// derives "2" on string 4 from the pitch and the staff tuning. Fixing this means
-	// threading <staff-tuning> into tabPositions and picking the string whose open pitch is
-	// nearest below the note. Review the render, then run `vex test tab_chord --update` only
-	// after the image is confirmed correct.
+	// - M3: notes with no <technical> — only a pitch, so the string/fret is derived from the
+	//   <staff-tuning> this fixture declares (standard guitar). An open dyad (strings 3/2,
+	//   frets 0/0) whose third member is a bare E3, then a lone bare E3. Each bare note lands
+	//   on the highest string that reaches it — "2" on string 4, not "0" on string 1 (see
+	//   derivePosition in src/engraving/note-translator.ts). The chord's derived "2" stacks
+	//   directly under the two explicit "0"s on the next line down.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 
 	// 6-line TAB stave: natural harmonics drawn as the fret in angle brackets. A <harmonic>
@@ -749,6 +744,12 @@ const TEST_CASES = [
 	//   then a plain quarter.
 	// - M2: a beamed sixteenth-note sextuplet ("6"), a beamed eighth-note triplet ("3"),
 	//   then a half note.
+	// TODO: True negative (long-standing, not a new regression): every C5 here is stem-down
+	// with its beam below the noteheads, but the numbers and brackets all draw ABOVE the
+	// stave. Engraving convention — and MuseScore — put the tuplet on the beam/stem side, so
+	// these belong below. buildTuplets (src/engraving/spanner-builder.ts) passes vexflow no
+	// `location`, so it always defaults to Tuplet.LOCATION_TOP. Fixing it moves the marks in
+	// this baseline and in harmony.png M14 (where the wrong side also causes a collision).
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
@@ -811,6 +812,19 @@ const TEST_CASES = [
 	// - M13: two symbols in one measure — an "Em" over a B4 half note, then a "G" over a
 	//   second B4 half note. The second <harmony> sits between the two notes, so its symbol
 	//   prints above the beat-3 note rather than being dropped or stacked on the first.
+	// - M14: a symbol over a bracketed tuplet — a C5 triplet (two beamed eighths + an eighth
+	//   rest, so the group brackets rather than riding a beam) + dotted-half rest, under a
+	//   "B♭7" symbol. The tuplet bracket is drawn above the stave, in the same band the
+	//   symbol occupies.
+	// TODO: False positive: M14's baseline was created from the current render, so it accepts
+	// a collision — "B♭7" is drawn inside the tuplet bracket's left hook, text over bracket
+	// line. buildTuplets (src/engraving/spanner-builder.ts) never passes vexflow a `location`,
+	// so every tuplet lands above the stave even when (as here) the stems and beam point down
+	// and it belongs below; and drawTuplets never registers the bracket as a collision
+	// obstacle, so drawHarmony's liftClear can't see it. Reproduced from
+	// LP-21-Jazz-I-G6-Day-1-04-Exercise-3 M3, where MuseScore draws the bracket below the
+	// beam and the symbol sits clear. Review the render, then run
+	// `vex test harmony --update` only after the image is confirmed correct.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
