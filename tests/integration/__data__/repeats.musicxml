@@ -100,8 +100,18 @@
       </barline>
       <note>
         <pitch><step>C</step><octave>5</octave></pitch>
-        <duration>4</duration>
-        <type>whole</type>
+        <duration>3</duration>
+        <type>half</type>
+        <dot/>
+      </note>
+      <harmony>
+        <root><root-step>G</root-step><root-alter>1</root-alter></root>
+        <kind text="m11">minor-11th</kind>
+      </harmony>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
     </measure>
     <measure number="9">

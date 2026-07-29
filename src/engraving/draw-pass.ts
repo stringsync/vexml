@@ -926,6 +926,25 @@ export class DrawPass {
 			);
 		}
 
+		// The NEXT measure's bracket, registered a column early. A chord symbol is anchored at
+		// its note's x and runs right from there, so one on this measure's last beat overruns
+		// the barline into the next measure — where a volta may start, putting "G♯m11" right
+		// under a "1.2.3." label. That bracket is otherwise only registered when its own column
+		// is drawn, which is after this measure's annotations are placed, so the symbol would
+		// never see it. Same system means the same top staff line, so the y above still holds;
+		// the next column re-adds the identical rect, which changes nothing.
+		const nextBox = this.boxes[m + 1];
+		if (
+			this.staveRow === 0 &&
+			this.decorations[m + 1]?.volta &&
+			nextBox?.systemIndex === this.systemIndex
+		) {
+			this.collisionResolver.add({
+				rect: new Rect(nextBox.x, voltaTop, nextBox.width, VOLTA_LABEL_DROP),
+				kind: 'annotation',
+			});
+		}
+
 		if (this.showMeasureNumber && !this.measureNumbered && numberOccluded) {
 			this.context.save();
 			this.context.setFont(stave.getFont());

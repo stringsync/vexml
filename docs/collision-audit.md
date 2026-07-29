@@ -33,7 +33,7 @@ goes through `CollisionDetector`. Do not add new bespoke magic-offset clearance 
 | `draw.ts` chord-diagram block | fret box pushes right | adjacent diagram across a barline | **migrated** → `pushRightOf` |
 | `draw.ts::drawTempo` | metronome mark lifts (`shiftY`) | high note, chord symbol, words | **migrated** → `liftClear` (drawn last, so it stacks on top of the other above-stave text) |
 | chord diagram vertical | fixed `CHORD_DIAGRAM_GAP`, does **not** clear notes | (latent clip bug) | **deferred** (Phase 3) |
-| `draw-pass.ts::buildStave` volta | (obstacle only) volta bracket + its "1." label | — | registers as `annotation`; text lifts over it |
+| `draw-pass.ts::buildStave` volta | (obstacle only) volta bracket + its "1." label | — | registers as `annotation`; text lifts over it. Registered for its own measure and (one column early) for the next one, so a chord symbol whose text overruns the barline into a volta still sees it |
 
 The migration was behavior-preserving: the full screenshot suite was byte-identical except a
 1–2px improvement on `harmony_grace` (the symbol now also clears the grace note's stem tip).

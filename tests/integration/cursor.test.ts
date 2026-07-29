@@ -212,9 +212,10 @@ describe('cursor', () => {
 		// |: M1 M2 :| twice, then M3 into the two-measure 1st ending (M4 M5) and back to M3,
 		// skipping the whole exhausted ending into the 2nd (M6), then out to M7. M8 then opens a
 		// three-ending block: each pass replays M8 and takes the next ending (M9, M10, M11), and
-		// the last one has no back-jump so playback ends there.
+		// the last one has no back-jump so playback ends there. M8 is the one measure holding two
+		// notes rather than a whole note, so each of its passes contributes two steps.
 		expect(result.order).toEqual([
-			0, 1, 0, 1, 2, 3, 4, 2, 5, 6, 7, 8, 7, 9, 7, 10,
+			0, 1, 0, 1, 2, 3, 4, 2, 5, 6, 7, 7, 8, 7, 7, 9, 7, 7, 10,
 		]);
 		// Document order is unchanged — only playback expands.
 		expect(result.measureCount).toBe(11);

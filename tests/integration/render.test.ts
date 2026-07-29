@@ -246,8 +246,8 @@ const TEST_CASES = [
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
-	// Treble stave, 4/4, one whole note per measure: repeat barlines and volta brackets.
-	// M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
+	// Treble stave, 4/4, one whole note per measure (M8 excepted): repeat barlines and volta
+	// brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
 	// the same barlines produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7, then M8 M9 M8 M10 M8 M11)
 	// is asserted in cursor.test.ts.
 	// - M1: opens with a forward-repeat barline — thick-thin plus two dots, printed after
@@ -262,7 +262,11 @@ const TEST_CASES = [
 	// - M6: a one-measure volta labelled "2." — a hook at its left edge, but the right end runs
 	//   flat with no hook, because nothing jumps back from a final ending.
 	// - M7: past the endings — a plain measure, no bracket and no repeat dots.
-	// - M8: opens a third repeat block (forward repeat) that carries three endings.
+	// - M8: opens a third repeat block (forward repeat) that carries three endings. Its notes
+	//   are a dotted half plus a quarter, and a "G♯m11" chord symbol sits over that last
+	//   quarter — wide enough that the text overruns the barline into M9, where the "1."
+	//   bracket starts. The symbol is lifted above the bracket line rather than printing
+	//   across it and its label, the same way a chord symbol clears a volta in its own measure.
 	// - M9: a one-measure volta labelled "1." (hooks at both ends) closing with a backward
 	//   repeat under its right hook.
 	// - M10: the same shape labelled "2." — bracket with both hooks, backward repeat beneath.
