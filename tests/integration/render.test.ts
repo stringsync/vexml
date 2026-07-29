@@ -275,7 +275,7 @@ const TEST_CASES = [
 		],
 	}),
 
-	// Beam variations across ten 4/4 measures. Wraps across systems. A beam slants only
+	// Beam variations across eleven 4/4 measures. Wraps across systems. A beam slants only
 	// when its run moves consistently one way (chords count both their outer voices) and
 	// is horizontal otherwise — M3, M5, M6, M9 are the flat cases.
 	// - M1: simple beamed eighths in a small range — ascending, so both beams slant up.
@@ -297,6 +297,9 @@ const TEST_CASES = [
 	//   comes back, so the beam is FLAT despite the rising stem-side notes.
 	// - M10: the same shape, slanted — two dyads (B4+E5 -> C5+F5) that overlap in pitch
 	//   but whose voices BOTH step up, so this beam does slant.
+	// - M11: a FLAT beam over an octave-alternating run (A4 A5 G4 G5) then a half rest.
+	//   Stems point down to a beam below the stave; the low A4/G4 stems reach it at full
+	//   standard length rather than being pulled short by the group's average stem tip.
 	testCase('beam_variations.musicxml', 'beam_variations.png'),
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second

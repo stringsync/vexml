@@ -507,5 +507,40 @@
         <dot />
       </note>
     </measure>
+    <!-- M11: a FLAT beam over an octave-alternating run (A4 A5 G4 G5), then a half rest.
+         The wide range pulls the average stem tip toward the middle, so the low notes'
+         stems must not shrink: the shortest stem in the group stays a full standard
+         stem length. -->
+    <measure number="11">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest />
+        <duration>16</duration>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>
