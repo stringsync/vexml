@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from '../tests/testing/serve';
+import { run } from './run';
 
 // Same browser-render path as the test harness, but fed an arbitrary file
 // instead of a corpus fixture. VexFlow needs the DOM, so there's no headless
@@ -10,10 +11,20 @@ export async function render(opts: {
 	input: string;
 	output?: string;
 	config?: string;
+	musescore?: boolean;
 	cwd: string;
 }) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
 	const at = (p: string) => (isAbsolute(p) ? p : resolve(opts.cwd, p));
+
+	// A reference render, for checking vexml against when the correct engraving
+	// is unclear. Shares nothing with the browser path but "MusicXML in, PNG out".
+	if (opts.musescore) {
+		const output = at(opts.output ?? `musescore ${timestamp()}.png`);
+		await run('./musescore/render.sh', [at(opts.input), output]);
+		return;
+	}
+
 	const musicXML = readFileSync(at(opts.input), 'utf8');
 	const output = at(opts.output ?? `vexml ${timestamp()}.png`);
 	// Passed straight to window.render as a Partial<Config>; render fills the rest

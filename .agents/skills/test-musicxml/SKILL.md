@@ -17,6 +17,21 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 2. If the use case is not already covered, add it to `tests/integration/__data__/` — preferably as a new measure inside the existing fixture for that category rather than as a brand-new file.
 
+   **Starting from a real-world score? Slice it down first.** When the case comes from a bug report against a large file rather than from scratch, do not hand-extract the measure and do not paste in the whole score. Use `vex slice` to cut the reproducing measures out:
+
+   ```sh
+   vex slice -i big-score.musicxml -m 47 -o tests/integration/__data__/scratch.musicxml
+   vex validate -i tests/integration/__data__/scratch.musicxml
+   vex render -i tests/integration/__data__/scratch.musicxml
+   ```
+
+   `-m` takes a print-page style list (`1,3-5,8`), matched against the printed `<measure number>` label. The slice carries forward the signatures in effect where it starts — divisions, key, time, clef, staves, staff-details, part-symbol, transpose — so the opening measure renders correctly standalone. Notes:
+
+   - Confirm the slice still reproduces the bug before building a fixture on it. If it doesn't, widen the range (`-m 46-48`) until it does, then narrow back down. A slice that no longer reproduces means the cause lives in what you cut.
+   - A tie, slur, wedge, or repeat barline crossing a cut is left half-open by design. Trim the dangling markup by hand, or widen the slice to include the other end, depending on whether the spanner is part of what you're testing.
+   - Slice into the repo, not `/tmp` — `vex validate` mounts the repo and rejects paths outside it.
+   - The slice is a starting point, not the fixture. Strip it down to the minimum that still shows the behavior, and fold it into the category fixture per the bundling rules below. Delete the scratch file when you're done.
+
    **Bundle by category; treat each measure as a pseudo unit test.** A category fixture (e.g. `key.musicxml`, `time.musicxml`, `note.musicxml`, `slur.musicxml`) is one MusicXML document whose measures each isolate one variant of that category's behavior — the way a unit-test file holds many small cases. The measure is the unit of isolation, not the file. For example, `key.musicxml` proves a sharp key, a flat key, a mid-system key change, and a no-redraw continuation across M1-M3; `slur.musicxml` walks nine slur scenarios across nine measures. When adding a new variant of an already-covered category, append a measure to that category's fixture (and a `M<n>:` bullet to its comment) instead of creating a near-duplicate file. When you find existing same-category fixtures that each test one variant (e.g. `key_sharps` + `key_flats` + `key_change`), consolidate them into one.
 
    - **When bundling does NOT apply:** some things are fixed for a whole document and can't vary per measure — the `<part-list>` and each part's stave configuration (stave count, tab string count, braces). Those stay as separate `category_variant.musicxml` files. This is why `structure_*` (different part-lists) and `clef_*` (single stave vs grand staff vs 4-/6-line tab) are not bundled: each needs a different part/stave structure, not just a different measure. Rule of thumb: bundle what varies per measure (keys, meters, note/rest/accidental/articulation/beam/slur/tie/tuplet variants, voices); keep separate what needs a different part or stave layout.
@@ -48,7 +63,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` If the user provides a golden-standard image for the case, compare it against vexml's render before accepting. Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
    - **True negative:** an existing screenshot test failed because a previously accepted baseline is no longer reproducible. Inspect the diff artifact and leave a `TODO` comment above the `testCase(...)` that describes the visual difference in plain language and links to the diff. Do not prescribe a fix unless the root cause is already clear. Prefer wording like: `// TODO: True negative: the accepted baseline shows <expected visual>, but the new render shows <actual visual>. Diff: <path-or-link>.`
    - In both cases, describe what a human should look for in the screenshot. Make the TODO specific enough that another agent can continue from it without opening unrelated files.
-   - If the correct rendering is ambiguous, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
+   - If the correct rendering is ambiguous, get a MuseScore reference render (see below) before escalating. If it is still ambiguous after that, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
 
 5. Update the implementation in `src/` to fill the rendering gap.
    - Prefer a minimal, root-cause fix.
@@ -92,6 +107,27 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 - Are stems, beams, flags, dots, accidentals, and rests positioned in musically plausible places relative to the staff and notes?
 - If this is a diff, can you explain the visual change in plain language from the diff artifact before updating the baseline?
 - If any answer is uncertain, do not update the baseline yet. Add or keep a `TODO` that names the uncertainty and links to the screenshot or diff artifact.
+
+## Checking Against MuseScore
+
+When the checklist leaves you genuinely unsure what the *correct* engraving is — not whether vexml matches its own baseline, but what a competent engraver would draw — get a second opinion:
+
+```sh
+vex slice -i tests/integration/__data__/slur.musicxml -m 4 -o /tmp/one.musicxml
+vex render --musescore -i /tmp/one.musicxml -o /tmp/musescore.png
+vex render -i /tmp/one.musicxml -o /tmp/vexml.png
+```
+
+Then read both PNGs and compare the one detail in question. Rules, in order of how easy they are to violate:
+
+- **MuseScore is a reference, not ground truth.** It has its own bugs and its own house style. When it and vexml disagree, that is evidence worth investigating — not a proven vexml bug.
+- **Slice to one measure. Three is the hard maximum.** Whole-page comparisons drown the real question in spacing noise and reliably produce the wrong conclusion that everything is broken.
+- **Compare notation, not layout.** Stem directions, beam grouping and slant, accidental order and placement, slur/tie curvature and which side they sit on, rest positions, articulation placement — those are comparable. Spacing, margins, staff size, font, page breaks, and system layout are *always* different and are never evidence of anything.
+- **Ignore glyph shapes entirely.** MuseScore draws in Emmentaler and vexml draws in Bravura, so every notehead, clef, accidental, rest, and time-signature numeral is a different shape by design. This is not configurable — Debian's MuseScore package ships no font data, so the music font cannot be changed. A clef that "looks wrong" next to vexml's is the font, not a bug.
+- **MuseScore agreement never justifies a baseline update.** It informs the wording of a `TODO` and the direction of a fix. A human still accepts the screenshot per the checklist above.
+- Don't chase parity. The goal is answering one specific question, then getting back to the fix.
+
+First run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored.
 
 8. If the target render passes the screenshot review checklist, update only that baseline:
 
