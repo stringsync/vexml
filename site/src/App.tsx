@@ -121,6 +121,7 @@ export default function App() {
 		'softmaxFactor',
 		'systemSpacing',
 		'maxSystemFill',
+		'honorSystemBreaks',
 	] as const;
 	const reset = (key: (typeof resetKeys)[number]) =>
 		setConfig(({ [key]: _, ...rest }) => rest);
@@ -963,6 +964,31 @@ export default function App() {
 										canReset={config.maxSystemFill !== undefined}
 										description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
 									/>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="honorSystemBreaks"
+											className="flex items-center gap-2 text-xs font-medium text-zinc-500"
+										>
+											<input
+												id="honorSystemBreaks"
+												type="checkbox"
+												checked={config.honorSystemBreaks ?? true}
+												onChange={(e) =>
+													setConfig((c) => ({
+														...c,
+														honorSystemBreaks: e.target.checked,
+													}))
+												}
+											/>
+											Honor system breaks
+										</label>
+										<p className="text-xs text-zinc-400">
+											Whether a <code>&lt;print new-system="yes"&gt;</code> in
+											the document forces a line break. Off wraps purely on
+											width.
+										</p>
+									</div>
 
 									<ConfigSlider
 										id="width"

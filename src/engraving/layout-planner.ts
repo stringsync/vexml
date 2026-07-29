@@ -328,10 +328,11 @@ export class LayoutPlanner {
 			for (let m = 0; m < measureCount; m++) {
 				const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
 				// A <print new-system="yes"/> forces a break before this measure regardless of
-				// width; otherwise wrap once the next measure's note area would overrun the line.
-				const forcedBreak = parts.some(
-					(part) => part.measures[m]?.print?.newSystem,
-				);
+				// width, unless honorSystemBreaks is off; otherwise wrap once the next measure's
+				// note area would overrun the line.
+				const forcedBreak =
+					config.honorSystemBreaks &&
+					parts.some((part) => part.measures[m]?.print?.newSystem);
 				if (
 					row.length > 0 &&
 					(forcedBreak ||

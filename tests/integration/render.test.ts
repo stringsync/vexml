@@ -1015,6 +1015,12 @@ const TEST_CASES = [
 	// width-based wrapping.
 	testCase('print_new_system.musicxml', 'print_new_system.png'),
 
+	// The same four measures with honorSystemBreaks off: the <print new-system="yes"/> on M3
+	// is ignored and all four measures fit on one system.
+	testCase('print_new_system.musicxml', 'ignore_new_system.png', {
+		honorSystemBreaks: false,
+	}),
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	testCase('system_break.musicxml', 'layout_panoramic.png', {

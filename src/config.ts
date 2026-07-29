@@ -157,6 +157,12 @@ export type Config = {
 	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
 	 * whose measures already sit below this fill breaks at the same place either way. */
 	maxSystemFill: number;
+	/** Whether a `<print new-system="yes">` forces a system break before its measure
+	 * (default: true). When false the breaker ignores the document's breaks entirely and
+	 * wraps purely on width — useful when the source's engraved line breaks were made for a
+	 * different page size than the one being rendered. `new-system="no"` is never honored:
+	 * vexml still wraps a line that overruns. No effect on panoramic layouts. */
+	honorSystemBreaks: boolean;
 	/** Fixed container height in px, or null for none (default: null). When set, vexml puts the score
 	 * in a vertical scroll box at exactly this height — for system-stacked (standard) layouts taller
 	 * than the space you want them to take. Prefer maxHeight to cap only when the score overflows. */
@@ -201,6 +207,7 @@ export const DEFAULT_CONFIG: Config = {
 	stretchSingleSystem: true,
 	minLastSystemFill: 0.75,
 	maxSystemFill: 0.9,
+	honorSystemBreaks: true,
 	height: null,
 	maxHeight: null,
 	width: null,
