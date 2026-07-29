@@ -43,4 +43,26 @@ describe('spacedOffsets', () => {
 	it('keeps the planned gap for a row it has no measurement for', () => {
 		expect(spacedOffsets([0, 120], new Map())).toEqual([0, 120]);
 	});
+
+	it('widens every gap planned the same size, not just the one that outgrew it', () => {
+		const spills = new Map([
+			[0, spill(0, 0)],
+			[1, spill(60, 0)], // only the middle stave carries content above its lines
+			[2, spill(0, 0)],
+		]);
+		// Gap 1 needs 80 + 0 + 12 + 60 - 40 = 112; gap 2 needs only 52. Both were planned
+		// at 80, so both end up 112 and the three staves stay evenly spaced.
+		expect(spacedOffsets([0, 80, 160], spills)).toEqual([0, 112, 224]);
+	});
+
+	it('leaves a differently sized planned gap out of it', () => {
+		const spills = new Map([
+			[0, spill(0, 0)],
+			[1, spill(60, 0)],
+			[2, spill(0, 0)],
+		]);
+		// Gap 1 (planned 120, a part's inner gap) grows to 112 -> stays 120; gap 2
+		// (planned 80, between parts) needs only 52, and nothing of its size grew.
+		expect(spacedOffsets([0, 120, 200], spills)).toEqual([0, 120, 200]);
+	});
 });

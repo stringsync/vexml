@@ -27,7 +27,7 @@ import {
 import { gapsByMeasureIndex } from '../gaps';
 import { findModifier, type NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
-import { visibleStaffNumbers } from './staves';
+import { partSymbol, visibleStaffNumbers } from './staves';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -207,10 +207,16 @@ export class LayoutPlanner {
 		let offset = 0;
 		for (const part of parts) {
 			const staves = visibleStaffNumbers(part, showTabs, showNotation);
+			// The wider within-part gap exists so a connector-joined group reads as one
+			// instrument. A part whose staves carry no connector (two tab staves, an
+			// explicit <part-symbol>none) isn't such a group, so its staves sit at the
+			// same even pitch as the parts around them.
+			const intra = partSymbol(part, showTabs, showNotation)
+				? INTRA_PART_SPACING
+				: INTER_PART_SPACING;
 			staves.forEach((_, s) => {
 				staveOffsets.push(offset);
-				offset +=
-					s === staves.length - 1 ? INTER_PART_SPACING : INTRA_PART_SPACING;
+				offset += s === staves.length - 1 ? INTER_PART_SPACING : intra;
 			});
 		}
 

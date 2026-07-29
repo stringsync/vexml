@@ -41,19 +41,62 @@ function harmonyExtensionSigns(kind: string): string {
 	return kind.replace(/b(?=\d)/g, '♭').replace(/#(?=\d)/g, '♯');
 }
 
+// Fallback suffix per <kind> value, for the exporters that omit the text attribute —
+// without it a D power chord prints as a bare "D", which reads as a major triad.
+// An empty string is the right answer for 'major' and 'none' (the bare root).
+const HARMONY_KIND_SUFFIX: Record<string, string> = {
+	major: '',
+	minor: 'm',
+	augmented: '+',
+	diminished: 'dim',
+	dominant: '7',
+	'major-seventh': 'maj7',
+	'minor-seventh': 'm7',
+	'diminished-seventh': 'dim7',
+	'augmented-seventh': '+7',
+	'half-diminished': 'm7♭5',
+	'major-minor': 'mMaj7',
+	'major-sixth': '6',
+	'minor-sixth': 'm6',
+	'dominant-ninth': '9',
+	'major-ninth': 'maj9',
+	'minor-ninth': 'm9',
+	'dominant-11th': '11',
+	'major-11th': 'maj11',
+	'minor-11th': 'm11',
+	'dominant-13th': '13',
+	'major-13th': 'maj13',
+	'minor-13th': 'm13',
+	'suspended-second': 'sus2',
+	'suspended-fourth': 'sus4',
+	Neapolitan: 'N',
+	Italian: 'It',
+	French: 'Fr',
+	German: 'Ger',
+	pedal: 'ped',
+	power: '5',
+	Tristan: 'Tr',
+	other: '',
+	none: '',
+};
+
 /*
  * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
  * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
- * exactly this (a major triad's text is empty, so it prints the bare root). A
+ * exactly this (a major triad's text is empty, so it prints the bare root), falling
+ * back to the kind's conventional suffix when the exporter omits the attribute. A
  * <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
- * ponytail: a <kind> without a text attribute prints just the root — no
- * kind-name->suffix table (major-seventh -> "maj7", …); add one if a fixture needs it.
+ * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored — they only
+ * refine a suffix the kind already names. Fold them in if a fixture needs "C5(add9)".
  */
 function harmonyText(harmony: Harmony): string {
 	const root = harmony.root;
 	const step = root?.step ?? '';
 	const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
-	const kind = harmonyExtensionSigns(harmony.kind?.text ?? '');
+	const kindEl = harmony.kind;
+	const kind = harmonyExtensionSigns(
+		kindEl?.text ?? (kindEl ? (HARMONY_KIND_SUFFIX[kindEl.value] ?? '') : ''),
+	);
 	const bass = harmony.bass;
 	const bassText = bass?.step
 		? `/${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`
@@ -224,12 +267,18 @@ export class ScoreReader {
 	/*
 	 * A measure's <direction><direction-type><words> text directives (e.g. "ritardando",
 	 * "dolce"), in document order. These are free-text expressions printed above the stave.
+	 * `staffNumber` is the direction's <staff> ('1' when absent), so a multi-staff part
+	 * prints each directive over the staff it was written for instead of piling every one
+	 * of them onto the part's top staff.
 	 * ponytail: placement and font-style attributes ignored — every words direction prints
 	 * above the staff in italics; add a placement/style field if a fixture needs below or
 	 * upright words.
 	 */
-	wordsOf(measure: Measure): string[] {
-		return measure.directions.flatMap((d) => d.words).filter(Boolean);
+	wordsOf(measure: Measure): { text: string; staffNumber: string }[] {
+		return measure.directions.flatMap((d) => {
+			const staffNumber = d.child('staff')?.text ?? '1';
+			return d.words.filter(Boolean).map((text) => ({ text, staffNumber }));
+		});
 	}
 
 	/*

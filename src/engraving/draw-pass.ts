@@ -77,7 +77,7 @@ import { findModifier, type NoteTranslator } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
-import { visibleStaffNumbers } from './staves';
+import { partSymbol, visibleStaffNumbers } from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -101,33 +101,6 @@ function timeSignatureSpec(time: Time | null): string | null {
 		return `${time.beats}/${time.beatType}`;
 	}
 	return null;
-}
-
-/*
- * True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
- * the guitar notation+tab pairing, which is bracketed rather than braced by convention.
- */
-function pairsTabWithNotation(
-	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
-): boolean {
-	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
-	if (!showTabs || !showNotation) {
-		return false;
-	}
-	const measure = part.measures[0];
-	if (!measure) {
-		return false;
-	}
-	const signs: string[] = [];
-	for (let staff = 1; staff <= part.staveCount; staff++) {
-		const sign = measure.getClef(String(staff))?.sign;
-		if (sign) {
-			signs.push(sign);
-		}
-	}
-	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
 }
 
 /*
@@ -160,30 +133,6 @@ function partsPairTabWithNotation(
 		}
 	}
 	return signs.includes('TAB') && signs.some((sign) => sign !== 'TAB');
-}
-
-/*
- * The stave connector that joins a multi-staff part's own staves. An explicit
- * <part-symbol> in any measure's attributes wins: bracket, none (no connector), or
- * brace (the MusicXML default; line/square fall back to it). With none declared, a
- * guitar notation+tab pair brackets by convention and everything else (piano grand
- * staves, …) braces.
- */
-function partSymbol(
-	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
-): 'brace' | 'bracket' | null {
-	const symbol = part.partSymbol;
-	if (symbol === null) {
-		return pairsTabWithNotation(part, showTabs, showNotation)
-			? 'bracket'
-			: 'brace';
-	}
-	if (symbol === 'none') {
-		return null;
-	}
-	return symbol === 'bracket' ? 'bracket' : 'brace';
 }
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
@@ -477,7 +426,9 @@ export class DrawPass {
 	// Chord symbols, drawn after the system is formatted so each sits at its
 	// note's laid-out x.
 	private harmonyTasks: Array<{
-		staveNote: StaveNote;
+		// A notation note when the part has a notation stave, else the tab note — a
+		// tab-only part still prints its chord symbols.
+		staveNote: StaveNote | TabNote;
 		text: string;
 		frame: ChordFrame | null;
 		source: MElement;
@@ -655,12 +606,12 @@ export class DrawPass {
 			this.systemPending.push(...this.pendingStaves);
 
 			// Chord symbols from this measure's <harmony> elements, each bound to the
-			// lead note it sits above. Resolved via byLead (the notation staff's notes);
-			// a harmony over a tab-only note isn't drawn.
+			// lead note it sits above. Resolved via byLead (the notation staff's notes),
+			// falling back to the tab note so a tab-only part keeps its chord symbols.
 			for (const { lead, text, frame, source } of this.reader.harmoniesOf(
 				measure,
 			)) {
-				const staveNote = this.byLead.get(lead);
+				const staveNote = this.byLead.get(lead) ?? this.byTabLead.get(lead);
 				if (staveNote) {
 					this.harmonyTasks.push({
 						staveNote,
@@ -684,15 +635,17 @@ export class DrawPass {
 				});
 			}
 
-			// Words directions (e.g. "ritardando") print on this part's top staff, like
-			// the metronome mark. Drawn after the system is formatted so the first note's
-			// x is real.
-			if (topStave) {
-				for (const text of this.reader.wordsOf(measure)) {
+			// Words directions (e.g. "ritardando") print over the staff their <staff> names,
+			// falling back to this part's top staff when that staff isn't rendered. Drawn
+			// after the system is formatted so the first note's x is real.
+			for (const { text, staffNumber } of this.reader.wordsOf(measure)) {
+				const target =
+					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
+				if (target) {
 					this.wordsTasks.push({
-						stave: topStave.stave,
+						stave: target.stave,
 						text,
-						firstNote: topStave.staveNotes[0],
+						firstNote: target.staveNotes[0],
 					});
 				}
 			}
@@ -1291,11 +1244,16 @@ export class DrawPass {
 				this.recordStaveSpill(p, this.noteTop(note), box.getY() + box.getH());
 				// Register each note as a collision obstacle now that its position is final, so the
 				// above-stave annotations drawn next can be nudged clear of it (and of high ties).
-				this.collisionResolver.add({ rect: this.noteRect(note), kind: 'note' });
+				this.collisionResolver.add({
+					rect: this.noteRect(note),
+					kind: 'note',
+					band: p.row,
+				});
 				if (p.tiedNotes.has(note) && note.getStemDirection() === Stem.DOWN) {
 					this.collisionResolver.add({
 						rect: this.tieApexRect(note),
 						kind: 'tie',
+						band: p.row,
 					});
 				}
 			}
@@ -1880,7 +1838,7 @@ export class DrawPass {
 	 * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
 	 * Drawn after the notes are formatted so getAbsoluteX is real.
 	 */
-	private drawHarmony(staveNote: StaveNote, text: string): number {
+	private drawHarmony(staveNote: StaveNote | TabNote, text: string): number {
 		const stave = staveNote.getStave();
 		if (!stave) {
 			return Infinity;
@@ -1898,11 +1856,14 @@ export class DrawPass {
 			this.harmonyWidth(text),
 			HARMONY_FONT_SIZE + HARMONY_PADDING,
 		);
+		const band = this.rowOf(stave);
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			HARMONY_NOTE_CLEARANCE,
 			TEXT_CLEAR_KINDS,
+			band,
 		);
+		this.recordAnnotationSpill(stave, placed.y);
 		const y = placed.bottom - HARMONY_PADDING;
 		// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
 		// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
@@ -1924,7 +1885,7 @@ export class DrawPass {
 		}
 		this.context.restore();
 		// Register the placed symbol so a later annotation in this system stacks above it.
-		this.collisionResolver.add({ rect: placed, kind: 'annotation' });
+		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;
 	}
 
@@ -1951,14 +1912,17 @@ export class DrawPass {
 			this.context.measureText(text).width,
 			WORDS_FONT_SIZE,
 		);
+		const band = this.rowOf(stave);
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			WORDS_NOTE_CLEARANCE,
 			TEXT_CLEAR_KINDS,
+			band,
 		);
+		this.recordAnnotationSpill(stave, placed.y);
 		this.context.fillText(text, placed.x, placed.bottom);
 		this.context.restore();
-		this.collisionResolver.add({ rect: placed, kind: 'annotation' });
+		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;
 	}
 
@@ -2207,6 +2171,29 @@ export class DrawPass {
 		const spill = this.spillOf(p.row, p.stave);
 		spill.rise = Math.max(spill.rise, p.stave.getYForLine(0) - top);
 		spill.drop = Math.max(spill.drop, bottom - p.stave.getBottomLineY());
+	}
+
+	/* Which stave row (of this measure's column) a stave sits on — the collision band its
+	 * notes and annotations are registered under. */
+	private rowOf(stave: Stave): number | undefined {
+		return this.systemPending.find((p) => p.stave === stave)?.row;
+	}
+
+	/*
+	 * Report how far an above-stave annotation reached over its stave, so pass two opens the
+	 * gap to the stave above wide enough to hold it (see spacedOffsets). Banding the lift
+	 * makes this converge: the reported rise is the stack height over this stave's own
+	 * music, which doesn't depend on how far apart the staves currently sit.
+	 * ponytail: words and chord symbols only — a chord diagram over a lower stave can still
+	 * overlap the part above it. Feed its box in here too if a fixture needs it.
+	 */
+	private recordAnnotationSpill(stave: Stave, top: number): void {
+		const row = this.rowOf(stave);
+		if (row === undefined) {
+			return;
+		}
+		const spill = this.spillOf(row, stave);
+		spill.rise = Math.max(spill.rise, stave.getYForLine(0) - top);
 	}
 
 	/* This row's spill record, seeded on first sight with where the staff lines sit

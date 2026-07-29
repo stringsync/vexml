@@ -23,7 +23,14 @@ import { Rect } from '../geometry';
  */
 
 export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
-type Collidable = { rect: Rect; kind: CollisionKind };
+/*
+ * `band` groups obstacles that belong together — the renderer uses one per stave row. A
+ * constrained resolve can then ignore the other bands, so an above-stave annotation stacks
+ * over its own stave's music instead of climbing over the part above it (which, since every
+ * part's annotations share the lead note's x, would otherwise cascade the whole system's
+ * text into one pile above the top stave). Obstacles with no band are visible to everyone.
+ */
+type Collidable = { rect: Rect; kind: CollisionKind; band?: number };
 type Axis = 'x' | 'y';
 type Edge = 'top' | 'bottom' | 'left' | 'right';
 
@@ -71,14 +78,29 @@ export class CollisionResolver {
 	 *
 	 * `kinds`, when given, restricts which obstacle kinds count — e.g. above-stave text
 	 * clears notes/ties/other text but deliberately ignores diagrams (which draw on top).
+	 *
+	 * `band`, when given, restricts the lift to obstacles in that band (plus bandless ones) —
+	 * see {@link Collidable}.
 	 */
-	liftClear(rect: Rect, gap: number, kinds?: CollisionKind[]): Rect {
+	liftClear(
+		rect: Rect,
+		gap: number,
+		kinds?: CollisionKind[],
+		band?: number,
+	): Rect {
 		// A tall, thin probe down the rect's x-column, ending at the rect's bottom: catches
 		// every obstacle in the column whose top is at/above where the rect currently sits.
 		const probe = new Rect(rect.x, -FAR, rect.w, FAR + rect.bottom);
 		let topMost = Infinity;
 		for (const c of this.query(probe)) {
 			if (kinds && !kinds.includes(c.other.kind)) {
+				continue;
+			}
+			if (
+				band !== undefined &&
+				c.other.band !== undefined &&
+				c.other.band !== band
+			) {
 				continue;
 			}
 			topMost = Math.min(topMost, c.other.rect.y);

@@ -21,6 +21,23 @@ const TEST_CASES = [
 	// live in separate parts rather than one two-stave part. An ascending E4/F4/G4/A4
 	// line on string 1 (frets 0/1/3/5) appears as notation on top and matching frets
 	// below.
+	// An all-tab score: a two-stave TAB part (P1) above a single-stave TAB part (P2),
+	// three 6-line staves in all, each with its own stacked "TAB" label. No connector
+	// joins P1's two staves — a tab+tab stack isn't a grand staff, so no brace — and all
+	// three staves sit at the same vertical pitch. Every measure holds one whole note per
+	// stave (frets 0/3/5 on string 1, top to bottom).
+	// - M1: the bare stack — connector and spacing only.
+	// - M2: a words direction whose <staff> is 2, so "lower staff" prints over P1's
+	//   *lower* stave (the middle of the three), not over the part's top stave. The gap
+	//   above that stave widens to hold the text — and so does the gap below it, which
+	//   carries no text, so the three staves stay evenly spaced instead of the middle one
+	//   drifting down toward the bottom one.
+	// - M3: a <harmony> of root D + <kind>power</kind> with no text attribute over P1's
+	//   top stave, printing "D5" — a chord symbol resolves against a tab note when the
+	//   part has no notation stave, and the kind's conventional suffix fills in for the
+	//   missing text.
+	testCase('structure_tab_parts.musicxml', 'structure_tab_parts.png'),
+
 	testCase(
 		'structure_notation_and_tab_parts.musicxml',
 		'structure_notation_and_tab_parts.png',

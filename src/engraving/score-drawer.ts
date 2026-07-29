@@ -69,11 +69,18 @@ export interface RawGeometry {
 
 /*
  * Re-space a system's staves around the music actually drawn on them. The layout planner
- * gaps staves by fixed constants, which is right until a part's notes spill far enough
- * past its staff lines to reach the next stave (deep ledger lines, tall chords). Given
- * pass one's measured spill, widen any gap that has to grow so the lower stave's highest
- * content clears the upper stave's lowest by STAVE_CLEARANCE. Gaps that already fit are
- * left exactly as planned, so ordinary scores keep their planned spacing.
+ * gaps staves by fixed constants, which is right until a part's content spills far enough
+ * past its staff lines to reach the next stave (deep ledger lines, tall chords, a words
+ * direction or chord symbol riding above it). Given pass one's measured spill, widen any
+ * gap that has to grow so the lower stave's highest content clears the upper stave's
+ * lowest by STAVE_CLEARANCE. Gaps that already fit are left exactly as planned, so
+ * ordinary scores keep their planned spacing.
+ *
+ * Gaps planned at the same size stay the same size: the planned size is what says whether
+ * a gap is within a part or between two of them, so widening one for a single stave's
+ * chord symbol — and leaving its siblings alone — would read as uneven part spacing rather
+ * than as room made for the symbol. Different planned sizes stay independent, so a grand
+ * staff's inner gap doesn't drag the gaps around it open with it.
  *
  * ponytail: one worst case for the whole score — every system shares one set of stave
  * offsets, so a single extreme measure spreads its system's staves everywhere. Make the
@@ -83,7 +90,9 @@ export function spacedOffsets(
 	planned: number[],
 	spill: ReadonlyMap<number, StaveSpill>,
 ): number[] {
-	const offsets = [planned[0] ?? 0];
+	// planned gap size -> the widest any gap of that size turned out to need.
+	const resolved = new Map<number, number>();
+	const plannedGaps: number[] = [];
 	for (let i = 1; i < planned.length; i++) {
 		const above = spill.get(i - 1);
 		const below = spill.get(i);
@@ -98,7 +107,18 @@ export function spacedOffsets(
 					below.rise -
 					below.lineTop
 				: plannedGap;
-		offsets.push((offsets[i - 1] ?? 0) + Math.max(plannedGap, needed));
+		plannedGaps.push(plannedGap);
+		resolved.set(
+			plannedGap,
+			Math.max(resolved.get(plannedGap) ?? plannedGap, needed),
+		);
+	}
+
+	const offsets = [planned[0] ?? 0];
+	for (const plannedGap of plannedGaps) {
+		offsets.push(
+			(offsets.at(-1) ?? 0) + (resolved.get(plannedGap) ?? plannedGap),
+		);
 	}
 	return offsets;
 }
