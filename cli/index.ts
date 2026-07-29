@@ -4,6 +4,7 @@ import { dev } from './dev';
 import { fix } from './fix';
 import { release } from './release';
 import { render } from './render';
+import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
 
@@ -64,6 +65,24 @@ program
 			input: opts.input,
 			output: opts.output,
 			config: opts.config,
+			cwd: invocationDir,
+		});
+	});
+
+program
+	.command('slice')
+	.description('extract measures from a musicxml file into a smaller one')
+	.requiredOption('-i, --input <path>', 'input musicxml file')
+	.requiredOption('-m, --measures <list>', "measures to keep, e.g. '1,3-5,8'")
+	.option(
+		'-o, --output <path>',
+		'output musicxml path (default: ./<input>.slice.musicxml)',
+	)
+	.action(async (opts) => {
+		await slice({
+			input: opts.input,
+			measures: opts.measures,
+			output: opts.output,
 			cwd: invocationDir,
 		});
 	});
