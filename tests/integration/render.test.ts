@@ -602,6 +602,17 @@ const TEST_CASES = [
 	//   at fret 12, two-digit numbers); an adjacent low dyad (strings 5/4, frets 2/2); a
 	//   mixed open/fretted chord on the lower 4 strings (6/5/4/3, frets 0/0/2/2) with
 	//   "0"s beside "2"s.
+	// - M3: notes with no <technical> — only a pitch. An open dyad (strings 4/3, frets 0/0)
+	//   whose third member (E3) carries no string/fret, then a lone bare E3. vexml has no
+	//   tuning-based fret inference (tabPositions in src/engraving/note-translator.ts:
+	//   `note.fret ?? 0`, `note.string ?? 1`), so both bare notes draw "0" on the top line
+	//   (string 1) instead of "2" on string 4.
+	// TODO: False positive: M3's baseline was created from the current render, so it accepts
+	// a rendering that is musically wrong — a bare E3 prints as "0" on string 1. MuseScore
+	// derives "2" on string 4 from the pitch and the staff tuning. Fixing this means
+	// threading <staff-tuning> into tabPositions and picking the string whose open pitch is
+	// nearest below the note. Review the render, then run `vex test tab_chord --update` only
+	// after the image is confirmed correct.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 
 	// 6-line TAB stave: natural harmonics drawn as the fret in angle brackets. A <harmonic>
@@ -797,6 +808,9 @@ const TEST_CASES = [
 	//   staff like M4), so it falls in the symbol's padding band: the padded collision box
 	//   reaches down to the notehead and nudges the symbol up off it, instead of the
 	//   baseline sitting tight against the note.
+	// - M13: two symbols in one measure — an "Em" over a B4 half note, then a "G" over a
+	//   second B4 half note. The second <harmony> sits between the two notes, so its symbol
+	//   prints above the beat-3 note rather than being dropped or stacked on the first.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace

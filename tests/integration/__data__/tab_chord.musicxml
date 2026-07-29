@@ -215,5 +215,36 @@
         <notations><technical><string>3</string><fret>2</fret></technical></notations>
       </note>
     </measure>
+    <!-- M3: chord members with no <technical> at all. The MusicXML gives only a pitch, so
+         there is no string/fret to draw; vexml has no tuning-based fret inference and falls
+         back to string 1, fret 0. See the M3 TODO in render.test.ts. -->
+    <measure number="3">
+      <!-- A fully-fretted dyad (strings 4/3) plus a third member that carries only a pitch. -->
+      <note>
+        <pitch><step>D</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>4</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <!-- A lone note with only a pitch — E3 is fret 2 on string 4 in standard tuning. -->
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>
