@@ -255,6 +255,34 @@ export const LYRIC_NOTE_CLEARANCE = 26;
  * the stave. Roomy enough that a descender ("g", "y") clears the row under it. */
 export const LYRIC_LINE_HEIGHT = LYRIC_FONT_SIZE + 5;
 
+/** <technical><fingering>/<pluck> label size. Smaller than the other annotations: a
+ * fingering is a performance hint read off the notehead it labels, not a heading, and a
+ * chord's worth of them stacks into a column that has to stay compact. */
+export const FINGERING_FONT_SIZE = 11;
+
+/** <technical><string> indicator: the digit's size, the radius of the ring drawn around it,
+ * and that ring's stroke width. */
+export const STRING_NUMBER_FONT_SIZE = 11;
+export const STRING_NUMBER_RADIUS = 7;
+export const STRING_NUMBER_RING_WIDTH = 1;
+
+/** How far the digit's baseline sits below its ring's center — half the cap height of a
+ * STRING_NUMBER_FONT_SIZE digit, which has no descender to allow for. */
+export const STRING_NUMBER_DIGIT_RISE = 4;
+
+/** Air between two stacked <technical> marks in one note's column. */
+export const TECHNICAL_ROW_GAP = 4;
+
+/** Air between the column's first mark and whatever it clears — the stave's near line, or a
+ * note reaching past it. Wider than the gap between rows: a digit sitting that close to a
+ * notehead reads as part of the note, whereas the rows above it read as one column. */
+export const TECHNICAL_EDGE_GAP = 9;
+
+/** Extra room between the brackets of NESTED tuplets, on top of vexflow's own 15px
+ * Tuplet.NESTING_OFFSET. Its step is shorter than the numeral it centers on each bracket
+ * line, so without this an outer "3" and an inner "5" print through each other. */
+export const TUPLET_NESTING_EXTRA_GAP = 10;
+
 /** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size — bigger and bolder than
  * the other above-stave annotations, since it's the label a player navigates the chart by. */
 export const REHEARSAL_FONT_SIZE = 14;

@@ -35,6 +35,7 @@ import {
 	SLUR_Y_SHIFT,
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
+	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
 import { NoteheadArticulation } from './note-translator';
 import type { PedalMark, WedgeMark } from './score-reader';
@@ -464,58 +465,91 @@ export class SpannerBuilder {
 	 * The bracket goes where the start marker's `placement` says, and otherwise on
 	 * the stem side of the group — the engraving default, and what MuseScore does.
 	 * Beams are built before tuplets, so the stem directions are already settled.
+	 *
+	 * Spans can NEST (a triplet inside a quintuplet), so the open starts are kept by the
+	 * marker's `number` rather than as one slot — an inner start arriving before the outer
+	 * stop would otherwise overwrite it and lose the outer bracket entirely. MusicXML
+	 * defaults an omitted number to "1", which is also what a flat run of unnumbered
+	 * tuplets uses, so they share the slot and pair in order either way.
+	 *
+	 * vexflow staggers nested brackets itself (Tuplet.getNestedTupletCount), but by a step
+	 * shorter than the numeral it centers on each bracket line, so the two numbers print
+	 * through each other — hence the extra yOffset, sized by how deep the nesting under this
+	 * span goes (the same max-minus-min depth vexflow measures).
 	 */
 	buildTuplets<T extends StemmableNote>(
 		chords: Chord[],
 		byLead: Map<Note, T>,
 	): Tuplet[] {
 		const tuplets: Tuplet[] = [];
-		let start = -1;
-		let placement: string | null = null;
-		let display: TupletDisplay | null = null;
+		const open = new Map<
+			string,
+			{
+				start: number;
+				depth: number;
+				maxDepth: number;
+				placement: string | null;
+				display: TupletDisplay | null;
+			}
+		>();
 		chords.forEach((chord, i) => {
 			for (const tuplet of chord.lead.tuplets) {
+				const number = tuplet.getAttribute('number') ?? '1';
 				if (tuplet.tupletType === 'start') {
-					start = i;
-					placement = tuplet.getAttribute('placement');
-					display = tupletDisplay(tuplet);
-				} else if (tuplet.tupletType === 'stop' && start >= 0) {
-					const group = chords
-						.slice(start, i + 1)
-						.map((c) => byLead.get(c.lead))
-						.filter((n): n is T => n !== undefined);
-					if (group.length > 1) {
-						const ratio = chords[start]?.lead.timeModification;
-						const shown: TupletDisplay | null = display;
-						const numNotes = shown?.numNotes ?? ratio?.actual;
-						const notesOccupied = shown?.notesOccupied ?? ratio?.normal;
-						// ponytail: the first non-rest speaks for the group — a mixed-stem
-						// tuplet would need a majority vote.
-						const stemmed = group.find((n) => !n.isRest()) ?? group[0];
-						const isBelow =
-							placement === 'below' ||
-							(placement !== 'above' &&
-								stemmed?.getStemDirection() === Stem.DOWN);
-						tuplets.push(
-							new Tuplet(group, {
-								location: isBelow
-									? Tuplet.LOCATION_BOTTOM
-									: Tuplet.LOCATION_TOP,
-								// MusicXML's default is show-number="actual" — just the count.
-								// vexflow's own default prints the ratio whenever the two numbers
-								// differ by more than one, which turns a plain sextuplet into "6:4".
-								ratioed: shown?.ratioed ?? false,
-								...(shown?.bracketed != null && {
-									bracketed: shown.bracketed,
-								}),
-								...(numNotes != null &&
-									notesOccupied != null && { numNotes, notesOccupied }),
-							}),
-						);
+					const depth = open.size;
+					for (const enclosing of open.values()) {
+						enclosing.maxDepth = Math.max(enclosing.maxDepth, depth);
 					}
-					start = -1;
-					placement = null;
-					display = null;
+					open.set(number, {
+						start: i,
+						depth,
+						maxDepth: depth,
+						placement: tuplet.getAttribute('placement'),
+						display: tupletDisplay(tuplet),
+					});
+					continue;
+				}
+				const opened = tuplet.tupletType === 'stop' && open.get(number);
+				if (!opened) {
+					continue;
+				}
+				open.delete(number);
+				const { start, depth, maxDepth, placement, display } = opened;
+				const group = chords
+					.slice(start, i + 1)
+					.map((c) => byLead.get(c.lead))
+					.filter((n): n is T => n !== undefined);
+				if (group.length > 1) {
+					const ratio = chords[start]?.lead.timeModification;
+					const numNotes = display?.numNotes ?? ratio?.actual;
+					const notesOccupied = display?.notesOccupied ?? ratio?.normal;
+					// ponytail: the first non-rest speaks for the group — a mixed-stem
+					// tuplet would need a majority vote.
+					const stemmed = group.find((n) => !n.isRest()) ?? group[0];
+					const isBelow =
+						placement === 'below' ||
+						(placement !== 'above' &&
+							stemmed?.getStemDirection() === Stem.DOWN);
+					const location = isBelow
+						? Tuplet.LOCATION_BOTTOM
+						: Tuplet.LOCATION_TOP;
+					tuplets.push(
+						new Tuplet(group, {
+							location,
+							// Signed the way vexflow's own nesting offset is: away from the stave.
+							yOffset:
+								(maxDepth - depth) * TUPLET_NESTING_EXTRA_GAP * -location,
+							// MusicXML's default is show-number="actual" — just the count.
+							// vexflow's own default prints the ratio whenever the two numbers
+							// differ by more than one, which turns a plain sextuplet into "6:4".
+							ratioed: display?.ratioed ?? false,
+							...(display?.bracketed != null && {
+								bracketed: display.bracketed,
+							}),
+							...(numNotes != null &&
+								notesOccupied != null && { numNotes, notesOccupied }),
+						}),
+					);
 				}
 			}
 		});

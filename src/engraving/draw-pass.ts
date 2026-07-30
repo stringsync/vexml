@@ -22,6 +22,7 @@ import {
 	type RenderContext,
 	Stave,
 	StaveConnector,
+	type StaveModifier,
 	StaveModifierPosition,
 	StaveNote,
 	StaveTempo,
@@ -30,6 +31,7 @@ import {
 	type TabNote,
 	TabStave,
 	TextBracket,
+	TimeSignature,
 	Vibrato,
 	type Voice,
 	Volta,
@@ -72,6 +74,7 @@ import {
 	REHEARSAL_NOTE_CLEARANCE,
 	REHEARSAL_PADDING,
 	REHEARSAL_Y_OFFSET,
+	TECHNICAL_EDGE_GAP,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
 	TIE_APEX_RISE,
@@ -92,6 +95,7 @@ import {
 	findModifier,
 	LyricAnnotation,
 	type NoteTranslator,
+	TechnicalAnnotation,
 } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type {
@@ -328,35 +332,56 @@ function voltaLabel(number: string): string {
 		.join(' ');
 }
 
-/*
- * Line up the opening repeat sign across a measure's staves. A repeat belongs to the measure,
- * not to one stave, but vexflow lays each stave's begin modifiers out on its own — a treble
- * clef plus a time signature is wider than a bare "TAB" glyph — so the dots would land at a
- * different x on every stave. The widest stave wins and the rest are pushed out to match.
- *
- * This is the repeat half of vexflow's own Stave.formatBegModifiers, deliberately without its
- * clef/key/time alignment: those already sit where vexml wants them, and equalizing them would
- * pad every multi-stave system's opening.
- */
-function alignBegRepeats(staves: readonly Stave[]): number | null {
-	const repeats = staves.flatMap((stave) => {
-		stave.format(); // modifier x isn't assigned until the stave lays itself out
-		return stave
-			.getModifiers(StaveModifierPosition.BEGIN)
-			.filter(
-				(modifier): modifier is Barline =>
-					modifier instanceof Barline &&
-					modifier.getType() === Barline.type.REPEAT_BEGIN,
-			);
-	});
-	if (repeats.length === 0) {
-		return null;
+/* Push every modifier in `group` out to the rightmost x any of them reached. */
+function squareUp(group: StaveModifier[]): number | null {
+	if (group.length < 2) {
+		return group[0]?.getX() ?? null;
 	}
-	const x = Math.max(...repeats.map((repeat) => repeat.getX()));
-	for (const repeat of repeats) {
-		repeat.setX(x);
+	const x = Math.max(...group.map((modifier) => modifier.getX()));
+	for (const modifier of group) {
+		modifier.setX(x);
 	}
 	return x;
+}
+
+/*
+ * Square up the opening repeat sign and the time signature across a measure's staves, and
+ * return the repeat's x (null when the measure opens with none).
+ *
+ * Both belong to the MEASURE rather than to one stave, so they should read as one vertical
+ * column — but vexflow lays each stave's begin modifiers out on its own, so they shear apart
+ * whenever the glyphs ahead of them differ in width: a treble clef plus a time signature is
+ * wider than a bare "TAB" glyph, and a grand staff can carry a different key per stave
+ * (staves_different_keys), or a key on one stave and none on another (transpose). The widest
+ * stave wins and the rest are pushed out to match.
+ *
+ * The clef and key are deliberately NOT squared up, which is where this parts company with
+ * vexflow's own Stave.formatBegModifiers: a key signature is engraved flush after its own
+ * clef, so those already sit where they belong, and equalizing them would pad every
+ * multi-stave system's opening for nothing. The note start is unified separately, in
+ * formatAndDrawSystem.
+ *
+ * One pass for both, because Stave.format() reassigns every modifier's x — running two
+ * alignments in sequence would have the second one's format() undo the first.
+ */
+function alignBegModifiers(staves: readonly Stave[]): number | null {
+	const repeats: StaveModifier[] = [];
+	const timeSignatures: StaveModifier[] = [];
+	for (const stave of staves) {
+		stave.format(); // modifier x isn't assigned until the stave lays itself out
+		for (const modifier of stave.getModifiers(StaveModifierPosition.BEGIN)) {
+			if (
+				modifier instanceof Barline &&
+				modifier.getType() === Barline.type.REPEAT_BEGIN
+			) {
+				repeats.push(modifier);
+			} else if (modifier.getCategory() === TimeSignature.CATEGORY) {
+				timeSignatures.push(modifier);
+			}
+		}
+	}
+	squareUp(timeSignatures);
+	return repeats.length > 0 ? squareUp(repeats) : null;
 }
 
 /*
@@ -876,9 +901,10 @@ export class DrawPass {
 			}
 		}
 
-		// The whole column exists now, so a repeat sign can be squared up across its staves
-		// before any of them is committed to the canvas.
-		this.begRepeatX = alignBegRepeats(this.columnStaves);
+		// The whole column exists now, so the modifiers that belong to the measure rather
+		// than to one stave — the opening repeat, the time signature — can be squared up
+		// across its staves before any of them is committed to the canvas.
+		this.begRepeatX = alignBegModifiers(this.columnStaves);
 		for (const stave of this.columnStaves) {
 			stave.setContext(this.context).draw();
 			this.drawCustomBarline(stave);
@@ -1480,6 +1506,7 @@ export class DrawPass {
 				this.stretchBends(tabStave, p.vexVoices);
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
+			this.pinTechnicals(p);
 			this.pinLyrics(p);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
@@ -1544,23 +1571,39 @@ export class DrawPass {
 	 * extents aren't available (e.g. a stemless whole note).
 	 */
 	private noteTop(note: StaveNote): number {
-		let top = note.getNoteHeadBounds().yTop;
-		if (note.getStem()) {
-			const { topY, baseY } = note.getStemExtents();
-			top = Math.min(top, topY, baseY);
-		}
+		let top = this.noteGlyphTop(note);
 		// Clear articulations sitting above the notehead too (e.g. a staccato dot on a
-		// stem-down note). They're drawn before the harmony/words/tempo pass, so their
-		// bounding box is final; the notehead and stem alone miss them, which would let a
-		// chord symbol land on the dot. Only above-side marks raise the top — below-side
-		// ones (stem-up notes) don't.
+		// stem-down note), and the stacked <technical> marks — a chord's fingering column
+		// reaches much further than any single glyph does. They're drawn before the
+		// harmony/words/tempo pass, so their bounding box is final; the notehead and stem
+		// alone miss them, which would let a chord symbol land on the dot and would crop the
+		// page through the top of the column. Only above-side marks raise the top —
+		// below-side ones ride the note's own bounding box instead.
 		for (const mod of note.getModifiers()) {
-			if (
+			if (mod instanceof TechnicalAnnotation) {
+				if (!mod.below) {
+					top = Math.min(top, mod.getBoundingBox().getY());
+				}
+			} else if (
 				mod.getCategory() === 'Articulation' &&
 				mod.getPosition() === Modifier.Position.ABOVE
 			) {
 				top = Math.min(top, mod.getBoundingBox().getY());
 			}
+		}
+		return top;
+	}
+
+	/*
+	 * The top of a note's own glyphs — its top notehead, and the stem tip when it has one.
+	 * Modifier-free, so it is readable BEFORE the note draws (which {@link noteTop} is not,
+	 * since a modifier's bounding box is only final once it's drawn).
+	 */
+	private noteGlyphTop(note: StaveNote): number {
+		let top = note.getNoteHeadBounds().yTop;
+		if (note.getStem()) {
+			const { topY, baseY } = note.getStemExtents();
+			top = Math.min(top, topY, baseY);
 		}
 		return top;
 	}
@@ -1578,6 +1621,74 @@ export class DrawPass {
 			bottom = Math.max(bottom, topY, baseY);
 		}
 		return bottom;
+	}
+
+	/*
+	 * Stack each note's <technical> marks (fingering/pluck labels, string-number rings) into
+	 * a column running away from the stave, and register each one as a collision obstacle so
+	 * the above-stave text placed later lifts clear of it.
+	 *
+	 * The column starts past whichever is further out — the stave's near line or the note's
+	 * own glyphs — so a chord on ledger lines pushes its digits out with it instead of
+	 * printing them over its own noteheads. Each mark then steps one of its own row heights
+	 * further out, which is the part vexflow's Annotation stacking gets wrong (see
+	 * TechnicalAnnotation): it hands every mark on a note low in the stave the same row.
+	 *
+	 * Called after format and before draw, like pinLyrics — the notes' x/y are final by then
+	 * but nothing has rendered, so the marks' own bounding boxes aren't readable yet and the
+	 * column is measured off the note's glyphs alone (noteGlyphTop/noteBottom).
+	 */
+	private pinTechnicals(p: PendingStave): void {
+		for (const note of p.staveNotes) {
+			const marks = note
+				.getModifiers()
+				.filter(
+					(m): m is TechnicalAnnotation => m instanceof TechnicalAnnotation,
+				);
+			if (marks.length === 0) {
+				continue;
+			}
+			// The stave reaches the notes via Voice.draw, which hasn't run yet.
+			note.setStave(p.stave);
+			const sides = [
+				{
+					below: false,
+					edge:
+						Math.min(p.stave.getYForLine(0), this.noteGlyphTop(note)) -
+						TECHNICAL_EDGE_GAP,
+				},
+				{
+					below: true,
+					edge:
+						Math.max(p.stave.getBottomLineY(), this.noteBottom(note)) +
+						TECHNICAL_EDGE_GAP,
+				},
+			];
+			for (const { below, edge } of sides) {
+				let y = edge;
+				for (const mark of marks.filter((m) => m.below === below)) {
+					const height = mark.rowHeight();
+					// A row's baseline is its bottom edge, so a column growing DOWN steps
+					// before placing the mark and one growing UP steps after.
+					if (below) {
+						y += height;
+					}
+					mark.setBaselineY(y);
+					// Pin the ink the same way pinLyrics does — a mark drawn inside a colored
+					// notehead's style would otherwise take that notehead's color.
+					mark.setStyle({ fillStyle: this.notationColor });
+					const w = mark.getWidth();
+					this.collisionResolver.add({
+						rect: new Rect(note.getAbsoluteX() - w / 2, y - height, w, height),
+						kind: 'annotation',
+						band: p.row,
+					});
+					if (!below) {
+						y -= height;
+					}
+				}
+			}
+		}
 	}
 
 	/*

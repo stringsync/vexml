@@ -25,12 +25,18 @@ import {
 import type { TabStemPlacement } from '../config';
 import {
 	EPSILON,
+	FINGERING_FONT_SIZE,
 	GRACE_SPACING,
 	LYRIC_FONT_SIZE,
 	LYRIC_PADDING,
+	STRING_NUMBER_DIGIT_RISE,
+	STRING_NUMBER_FONT_SIZE,
+	STRING_NUMBER_RADIUS,
+	STRING_NUMBER_RING_WIDTH,
 	TAB_FRET_SCALE,
 	TAB_GRACE_SCALE,
 	TAB_GRACE_SPACING,
+	TECHNICAL_ROW_GAP,
 } from '../constants';
 import { midiOf } from './staves';
 
@@ -558,6 +564,243 @@ function addOrnaments(staveNote: StaveNote, note: Note): void {
 			last.setDelayed(true);
 		}
 		staveNote.addModifier(last);
+	}
+}
+
+/*
+ * MusicXML <notations><technical> mark -> the glyph it draws on a NOTATION stave: a vexflow
+ * articulation code where one exists, else the raw SMuFL glyph (Articulation passes an
+ * unrecognized code straight through, the same escape hatch accidentals and ornaments use).
+ *
+ * <harmonic> is deliberately absent: vexml already engraves it as a diamond notehead (see
+ * isHarmonic, pinned by harmonic.musicxml), so drawing the "o" as well would mark it twice.
+ * The tab-only members of <technical> — <bend>, <other-technical>, <string>/<fret> — belong
+ * to addTabModifiers and tabPositions; the two that carry text (<fingering>, <pluck>) and
+ * <string> on a notation stave are handled by {@link addTechnicals} instead.
+ */
+const TECHNICAL_CODES: Record<string, string> = {
+	'up-bow': 'a|',
+	'down-bow': 'am',
+	'open-string': 'ah', // stringsHarmonic — the small open circle
+	'snap-pizzicato': 'ao',
+	stopped: 'a+', // pluckedLeftHandPizzicato — the "+" of a stopped horn / left-hand pizz
+	'thumb-position': '\uE624', // stringsThumbPosition
+	'double-tongue': '\uE5F0', // doubleTongueAbove
+	'triple-tongue': '\uE5F2', // tripleTongueAbove
+};
+
+/*
+ * A note's <notations><technical> children, in document order. mdom reads <technical> only
+ * for the tab accessors (string/fret/bend/harmonic), so these come off the generic axes.
+ */
+function technicalElements(note: Note): MElement[] {
+	return note
+		.childrenNamed('notations')
+		.flatMap((notations) => notations.childrenNamed('technical'))
+		.flatMap((technical) =>
+			technical.children.filter((c): c is MElement => c instanceof MElement),
+		);
+}
+
+/*
+ * The digits/letters one note's <fingering> and <pluck> elements print, joined into a single
+ * label. A note usually carries one, but an editor offering a choice of hand positions writes
+ * several: MusicXML marks a substitution (change fingers while the key is held) with
+ * substitution="yes" and a second option with alternate="yes", which engrave as "5-3" and
+ * "(2)" respectively. Empty elements — an exporter's placeholder — contribute nothing.
+ */
+function fingeringLabel(elements: MElement[]): string {
+	let label = '';
+	for (const element of elements) {
+		const text = element.text?.trim();
+		if (!text) {
+			continue;
+		}
+		if (element.getAttribute('alternate') === 'yes') {
+			label += `(${text})`;
+		} else if (label && element.getAttribute('substitution') === 'yes') {
+			label += `-${text}`;
+		} else {
+			label += label ? ` ${text}` : text;
+		}
+	}
+	return label;
+}
+
+/*
+ * A <technical> mark that engraves as stacked text off the note — the fingering/pluck label
+ * and the string-number ring. A chord's marks read as one COLUMN clear of the stave, in chord
+ * order, which is how both MuseScore and OSMD engrave them.
+ *
+ * The column is positioned by the draw pass (DrawPass.pinTechnicals), the same arrangement
+ * lyrics use: an Annotation for the text drawing and the width it reserves, but its own
+ * baseline. vexflow's own stacking can't do it — Annotation.format hands every mark on a note
+ * LOW in the stave the same text line, so they print through each other, and its
+ * FretHandFinger/StringNumber each keep separate text-line accounting measured from their own
+ * anchor, so two of them on one note collide too.
+ */
+export abstract class TechnicalAnnotation extends Annotation {
+	protected baselineY = 0;
+
+	constructor(
+		text: string,
+		/** Which side of the stave this mark stacks on (<technical placement>). */
+		readonly below: boolean,
+	) {
+		super(text);
+		this.setVerticalJustification(
+			below
+				? Annotation.VerticalJustify.BOTTOM
+				: Annotation.VerticalJustify.TOP,
+		);
+	}
+
+	/** How much vertical room this mark claims in its column, ink plus air. */
+	abstract rowHeight(): number;
+
+	setBaselineY(y: number): void {
+		this.baselineY = y;
+	}
+
+	/** Where the text's own baseline goes — the row's bottom edge, unless a subclass draws
+	 * something around the text that it has to sit inside. */
+	protected textBaselineY(): number {
+		return this.baselineY;
+	}
+
+	override draw(): void {
+		const ctx = this.checkContext();
+		const note = this.checkAttachedNote();
+		this.setRendered();
+		// Center on the notehead, the same horizontal treatment a CENTER-justified
+		// Annotation gets; only the vertical placement is ours.
+		const start = note.getModifierStartXY(Modifier.Position.ABOVE, this.index);
+		this.x = start.x - this.getWidth() / 2;
+		this.y = this.textBaselineY();
+		this.renderText(ctx, 0, 0);
+	}
+}
+
+/* A <fingering>/<pluck> label. */
+class FingeringAnnotation extends TechnicalAnnotation {
+	constructor(text: string, below: boolean) {
+		super(text, below);
+		this.setFontSize(FINGERING_FONT_SIZE);
+	}
+
+	override rowHeight(): number {
+		return FINGERING_FONT_SIZE + TECHNICAL_ROW_GAP;
+	}
+}
+
+/* A <string> indicator: the string's number in a ring. */
+class StringNumberAnnotation extends TechnicalAnnotation {
+	constructor(number: string, below: boolean) {
+		super(number, below);
+		this.setFontSize(STRING_NUMBER_FONT_SIZE);
+	}
+
+	override rowHeight(): number {
+		return 2 * STRING_NUMBER_RADIUS + TECHNICAL_ROW_GAP;
+	}
+
+	/* The ring fills its whole row, so its center is one radius up from the row's bottom. */
+	private ringCenterY(): number {
+		return this.baselineY - STRING_NUMBER_RADIUS;
+	}
+
+	/* The digit sits inside the ring, not on the row's baseline. */
+	protected override textBaselineY(): number {
+		return this.ringCenterY() + STRING_NUMBER_DIGIT_RISE;
+	}
+
+	override draw(): void {
+		super.draw();
+		const ctx = this.checkContext();
+		ctx.beginPath();
+		ctx.arc(
+			this.getX() + this.getWidth() / 2,
+			this.ringCenterY(),
+			STRING_NUMBER_RADIUS,
+			0,
+			2 * Math.PI,
+			false,
+		);
+		ctx.setLineWidth(STRING_NUMBER_RING_WIDTH);
+		ctx.stroke();
+	}
+}
+
+/*
+ * A note's <notations><technical> marks on a NOTATION stave (the tab side lives in
+ * addTabModifiers): the bowing/tonguing/pizzicato glyphs, the <fingering>/<pluck> labels,
+ * and the <string> indicator.
+ *
+ * Fingerings are per chord MEMBER, so they read off the chord rather than its lead, and they
+ * stack outward from the notes: the digit nearest the stave belongs to the chord member
+ * nearest it. vexflow stacks a note's annotations in the order they're added, so an ABOVE
+ * column is added bottom-member first and a BELOW column top-member first.
+ *
+ * String numbers are added after the fingerings so the circled number sits OUTSIDE the digit
+ * it shares a note with, whichever order the two came in the file.
+ * ponytail: <string> draws as vexflow's circled Arabic numeral (the guitar convention).
+ * Bowed-string parts conventionally take Roman numerals instead — OSMD picks those — which
+ * needs its own glyph and a way to know the instrument family. Add it if a fixture asks.
+ */
+function addTechnicals(staveNote: StaveNote, chord: Chord): void {
+	const strings: { index: number; number: string; below: boolean }[] = [];
+	const fingerings: { index: number; text: string; below: boolean }[] = [];
+	chord.notes.forEach((note, index) => {
+		const labels: MElement[] = [];
+		let below = false;
+		for (const element of technicalElements(note)) {
+			if (element.getAttribute('placement') === 'below') {
+				below = true;
+			}
+			if (element.tag === 'fingering' || element.tag === 'pluck') {
+				labels.push(element);
+				continue;
+			}
+			if (element.tag === 'string') {
+				const number = element.text?.trim();
+				if (number) {
+					strings.push({
+						index,
+						number,
+						below: element.getAttribute('placement') === 'below',
+					});
+				}
+				continue;
+			}
+			const code = TECHNICAL_CODES[element.tag];
+			if (code) {
+				staveNote.addModifier(
+					new Articulation(code).setPosition(
+						element.getAttribute('placement') === 'below'
+							? Modifier.Position.BELOW
+							: Modifier.Position.ABOVE,
+					),
+					index,
+				);
+			}
+		}
+		const text = fingeringLabel(labels);
+		if (text) {
+			fingerings.push({ index, text, below });
+		}
+	});
+	// Bottom-member first going up, top-member first going down — see the note above.
+	for (const side of [false, true]) {
+		const column = fingerings.filter((f) => f.below === side);
+		if (side) {
+			column.reverse();
+		}
+		for (const { index, text } of column) {
+			staveNote.addModifier(new FingeringAnnotation(text, side), index);
+		}
+	}
+	for (const { index, number, below } of strings) {
+		staveNote.addModifier(new StringNumberAnnotation(number, below), index);
 	}
 }
 
@@ -1262,6 +1505,7 @@ export class NoteTranslator {
 		applyStem(staveNote, lead, defaultStem);
 		addSlashNoteheads(staveNote, chord);
 		addArticulations(staveNote, lead);
+		addTechnicals(staveNote, chord);
 		addOrnaments(staveNote, lead);
 		addFermata(staveNote, lead);
 		addArpeggio(staveNote, lead);

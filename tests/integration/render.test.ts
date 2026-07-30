@@ -1340,16 +1340,19 @@ const TEST_CASES = [
 	//   eighth-note triplet ("3"), then a half note.
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
-	// TODO(coverage): nested tuplets — a tuplet inside another tuplet.
-	// Fixture: tuplet_nested.musicxml (lilypond_23d-Tuplets-Nested M1-2).
-	// Expected: both brackets drawn, the inner one closer to the notes and the outer one
-	// stacked beyond it, with each number beside its own bracket; the durations of the inner
-	// group compress by BOTH <time-modification> ratios.
-	// Current: unverified. buildTuplets pairs markers by walking the chord run and keeping a
-	// single open start, so an inner start arriving before the outer stop overwrites it —
-	// expect only one of the two brackets to survive. The side and the printed number are
-	// settled (see tuplet_triplet and tuplet_display above); the pairing is not.
-	// testCase('tuplet_nested.musicxml', 'tuplet_nested.png'),
+	// A tuplet inside another tuplet. Treble, 2/4, nine stem-down B4 eighths beamed 2+5+2, so
+	// both brackets draw BELOW and only the nesting varies.
+	// - M1: an outer <tuplet number="1"> spanning all nine notes prints "3" on a bracket
+	//   running the width of the measure, and an inner <tuplet number="2"> over the middle
+	//   five prints "5" on a shorter bracket nested between it and the notes. Neither number
+	//   touches the other — vexflow's own nesting step is shorter than the numeral it centers
+	//   on the bracket line, so the outer bracket takes an extra offset
+	//   (TUPLET_NESTING_EXTRA_GAP). The inner group's <time-modification> is 15:4, the two
+	//   ratios already multiplied out by the exporter, so the durations need no extra work.
+	// OSMD engraves the same two nested spans. MuseScore instead flattens the file into three
+	// side-by-side brackets ("3", "15", "3") off the <time-modification> alone, ignoring the
+	// <tuplet> spans — its own reading, not a second opinion on this one.
+	testCase('tuplet_nested.musicxml', 'tuplet_nested.png'),
 
 	// Treble stave, common time: what a <tuplet> marker asks to be PRINTED, held apart from
 	// the <time-modification> that governs the durations — every measure here compresses 3:2
@@ -1438,40 +1441,53 @@ const TEST_CASES = [
 	// fixture reaches it; see tmp/tremelo_two_bars.xml when one does.
 	testCase('tremolo.musicxml', 'tremolo.png'),
 
-	// TODO(coverage): <technical> marks on a NOTATION stave. The tab side of <technical> is
-	// covered thoroughly (tab_bend, tab_hammer_pull, tab_harmonic, tab_annotation), but the
-	// notation side draws nothing: grep 'fingering' in src/ finds only comments and the
-	// unrelated chord-diagram code, and 'stringNumber' finds nothing.
-	// Fixture: technical_marks.musicxml (lilypond_32a-Notations M11-16) — up-bow, down-bow,
-	// harmonic, open-string, thumb-position, fingering, pluck, double-tongue, triple-tongue,
-	// snap-pizzicato, stopped. Each note is lyric-labelled with the mark it should show.
-	// Expected: the bowing glyphs above the staff, the fingering/pluck digits beside or above
-	// the notehead, and the string/pizzicato symbols in their conventional positions.
-	// Current: unverified — expect nothing drawn.
-	// testCase('technical_marks.musicxml', 'technical_marks.png'),
+	// <notations><technical> on a NOTATION stave (the tab side of <technical> is covered by
+	// tab_bend, tab_hammer_pull, tab_harmonic and tab_annotation). Treble, 4/4, one C5-ish
+	// quarter per mark, each lyric-labelled with the mark it should show, wrapping one
+	// measure to a system by the width the labels claim.
+	// - M11: up-bow (the open "V") and down-bow (the filled bracket) above the stave, then
+	//   two <harmonic> notes, which draw as DIAMOND noteheads rather than a mark — vexml
+	//   engraves every harmonic that way (see harmonic.musicxml), so the "o" a natural
+	//   harmonic could take instead is deliberately not drawn on top of it.
+	// - M12: the remaining <harmonic> forms — artificial, and the base/touching/sounding
+	//   pitch variants — all four likewise diamond noteheads, no extra mark.
+	// - M13: the open-string ring and the thumb-position hook above the stave, then an EMPTY
+	//   <fingering/>, which prints nothing at all, then "1".
+	// - M14: fingerings "2", "3", "4", "5" — digits centered over their noteheads.
+	// - M15: a <fingering> whose text is the word "something" (printed verbatim, and wide
+	//   enough that the measure widens for it); a note carrying three fingerings — 5, a
+	//   substitution 3 and an alternate 2 — joined into the one label "5-3(2)"; an empty
+	//   <pluck/>, which prints nothing; and <pluck>a</pluck>, the right-hand finger letter,
+	//   drawn like a fingering.
+	// - M16: double-tongue (two dots), triple-tongue (three dots), the "+" of a stopped
+	//   note, and the snap-pizzicato ring-and-stem, all above the stave.
+	testCase('technical_marks.musicxml', 'technical_marks.png'),
 
-	// TODO(coverage): the realistic fingering case — <technical><fingering> on CHORDS across a
-	// grand staff, where the digits must stack in chord order and stay clear of the noteheads,
-	// the stem and each other. 19 files in tmp/ carry a <fingering>.
-	// Fixture: fingering.musicxml (tmp/fingering_simple_chords_treble_bass.xml M1-2).
-	// Expected: one digit per chord member, ordered bottom-to-top matching the noteheads,
-	// placed on the side away from the stem, resolved through CollisionDetector rather than a
-	// fixed offset.
-	// Current: unverified — expect no digits. See also
-	// tmp/fingering_articulation_collision.xml (fingering vs. an articulation in the same band,
-	// the collision case), tmp/grace_note_fingerings.xml and
-	// tmp/grace_note_fingerings_and_strings.xml.
-	// testCase('fingering.musicxml', 'fingering.png'),
+	// The realistic fingering case: <technical><fingering> on CHORDS across a grand staff,
+	// where the digits stack in chord order and stay clear of the noteheads and each other.
+	// One braced two-stave part, 4/4, one whole-note chord per stave.
+	// - M1: the treble chord E5/G5/C6 carries fingerings 1/3/5 with no placement, so they
+	//   stack ABOVE it reading 5-3-1 downward — the digit nearest the stave (1) belongs to
+	//   the chord member nearest it (E5). The bass chord C2/E2/G2 carries 4/2/1, each
+	//   placement="below", so the column mirrors under the stave reading 1-2-4 downward,
+	//   nearest-first again (1 on G2). Both columns clear the stave rather than sitting
+	//   beside the noteheads — the engraving MuseScore and OSMD both give this file.
+	testCase('fingering.musicxml', 'fingering.png'),
 
-	// TODO(coverage): <technical><string> numbers on a notation stave — the circled Roman/Arabic
-	// string indicators, which for guitar and strings sit above the staff and collide readily
-	// with slurs, fingerings and each other. 20 files in tmp/ carry a <string>.
-	// Fixture: string_numbers.musicxml (tmp/string_number_collisions.xml M1-3), chosen because
-	// collision is the whole point of it.
-	// Expected: each indicator drawn once, stacked clear of neighbouring indicators and of
-	// anything else in the above-staff band, via CollisionDetector.
-	// Current: unverified — expect nothing drawn.
-	// testCase('string_numbers.musicxml', 'string_numbers.png'),
+	// <technical><string> on a notation stave: the string's number drawn in a ring, stacked
+	// in the same column as any fingering on that note and always OUTSIDE it. Treble 4/4,
+	// boring G4 quarters, so only the marks vary.
+	// - M1: one <string> per note, 4 through 1 — a single ring above each notehead and
+	//   nothing else.
+	// - M2: <string> plus <fingering> on every note (④/1, ③/2, ②/3, ①/4), the bare digit
+	//   nearest the stave and the ring beyond it. The last two notes write the two elements
+	//   in the opposite document order, which must not change the stacking.
+	// - M3: two half-note chords whose every member carries both marks, so each column runs
+	//   three digits then three rings: C5/E5/G5 (fingerings 1/2/3, strings 3/2/1) and the
+	//   same on E4/G4/B4. The low chord is the case vexflow's own annotation stacking
+	//   collapses — every mark on a note low in the stave lands on one row — so it pins that
+	//   the column is built by the draw pass instead (DrawPass.pinTechnicals).
+	testCase('string_numbers.musicxml', 'string_numbers.png'),
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
 	// arc-over-dot above (or below) the note. Unlike articulations, a fermata's side is
@@ -1786,15 +1802,19 @@ const TEST_CASES = [
 	// tmp/cross_stave_16ths_ghost_notes_simple.xml.
 	// testCase('cross_stave.musicxml', 'cross_stave.png'),
 
-	// TODO(coverage): a different key signature on each staff of one part — normal for
-	// transposing scores and for some contemporary piano writing.
-	// Fixture: staves_different_keys.musicxml (lilypond_43b-MultiStaff-DifferentKeys M1).
-	// Expected: each staff prints its OWN <key>, so the treble and bass staves of the same
-	// brace show different accidental counts.
-	// Current: unverified — expect both staves to take the first key read. See also
-	// tmp/lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second staff's key
-	// arrives after a <backup> and so is easy to miss.
-	// testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
+	// A different key signature on each staff of one part — normal for transposing scores
+	// and for some contemporary piano writing. One braced two-stave part, 4/4, one whole
+	// note per stave, each staff declaring its own <key number> and <clef number>.
+	// - M1: the treble staff opens in C major, so it prints NO accidentals and its F4 whole
+	//   note sits in the bottom space; the bass staff opens in D major and prints two sharps
+	//   (F#, C#) between its clef and its time signature, over a B2 whole note on the second
+	//   line from the bottom. Each key signature sits flush after its OWN clef, but the two
+	//   4/4s line up in one vertical column and both whole notes start at the same x — the
+	//   meter belongs to the measure, not to a stave, so the narrower opening is padded out
+	//   to the wider one (alignBegModifiers).
+	// See also tmp/lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second
+	// staff's key arrives after a <backup> and so is easy to miss.
+	testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
 
 	// TODO(coverage): a <direction> carrying a <staff>, on a multi-staff part. ScoreReader.wordsOf
 	// already routes words by <staff> (structure_tab_parts M2 covers that), but nothing covers
@@ -1810,7 +1830,9 @@ const TEST_CASES = [
 	// scale, so each is WRITTEN in its own key: three treble staves in common time, the top
 	// at 2 sharps, the middle at 3 sharps, the bottom with no key signature. Each stave runs
 	// eight ascending quarter notes across two measures, starting a step higher on each stave
-	// down (D4, E4, C4), with no connector joining the parts.
+	// down (D4, E4, C4), with no connector joining the parts. The three key signatures are
+	// three different widths but all three common-time "C" symbols line up in one vertical
+	// column, the narrower openings padded out to the widest (alignBegModifiers).
 	// This case exists to LOCK IN that <transpose> does not move anything: MusicXML stores
 	// written pitch, so the engraved page is already correct without reading the element, and
 	// a future change must not start "helpfully" transposing. Where <transpose> does matter is

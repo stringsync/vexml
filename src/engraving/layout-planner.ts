@@ -307,7 +307,14 @@ export class LayoutPlanner {
 		// ponytail: fixed, deliberately generous estimates so notes never collide with
 		// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
 		const leadFull = (m: number) => {
-			const hasKey = parts.some((part) => part.measures[m]?.getKey()?.rootNote);
+			// Per STAVE, not per part: the staves of one part can carry different keys
+			// (staves_different_keys), so a part whose first stave is in C still needs the
+			// key's width budgeted when its second stave is not.
+			const hasKey = parts.some((part) =>
+				visibleStaffNumbers(part, showTabs, showNotation).some(
+					(staffNumber) => part.measures[m]?.getKey(staffNumber)?.rootNote,
+				),
+			);
 			return (
 				LEAD_BARLINE +
 				LEAD_CLEF +

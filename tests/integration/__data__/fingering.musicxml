@@ -2,78 +2,13 @@
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
   "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
-  <work>
-    <work-title>Fingerings_Simple_Chords_Treble_Bass</work-title>
-  </work>
-  <identification>
-    <encoding>
-      <software>MuseScore 3.6.2</software>
-      <encoding-date>2021-11-10</encoding-date>
-      <supports element="accidental" type="yes"/>
-      <supports element="beam" type="yes"/>
-      <supports element="print" attribute="new-page" type="yes" value="yes"/>
-      <supports element="print" attribute="new-system" type="yes" value="yes"/>
-      <supports element="stem" type="yes"/>
-    </encoding>
-  </identification>
-  <defaults>
-    <scaling>
-      <millimeters>7</millimeters>
-      <tenths>40</tenths>
-    </scaling>
-    <page-layout>
-      <page-height>1697.14</page-height>
-      <page-width>1200</page-width>
-      <page-margins type="even">
-        <left-margin>85.7143</left-margin>
-        <right-margin>85.7143</right-margin>
-        <top-margin>85.7143</top-margin>
-        <bottom-margin>85.7143</bottom-margin>
-      </page-margins>
-      <page-margins type="odd">
-        <left-margin>85.7143</left-margin>
-        <right-margin>85.7143</right-margin>
-        <top-margin>85.7143</top-margin>
-        <bottom-margin>85.7143</bottom-margin>
-      </page-margins>
-    </page-layout>
-    <word-font font-family="Edwin" font-size="10"/>
-    <lyric-font font-family="Edwin" font-size="10"/>
-  </defaults>
-  <credit page="1">
-    <credit-type>title</credit-type>
-    <credit-words default-x="600" default-y="1611.43" justify="center" valign="top" font-size="22">Fingerings_Simple_Chords_Treble_Bass</credit-words>
-  </credit>
   <part-list>
     <score-part id="P1">
       <part-name>Piano</part-name>
-      <part-abbreviation>Pno.</part-abbreviation>
-      <score-instrument id="P1-I1">
-        <instrument-name>Piano</instrument-name>
-      </score-instrument>
-      <midi-device id="P1-I1" port="1"/>
-      <midi-instrument id="P1-I1">
-        <midi-channel>1</midi-channel>
-        <midi-program>1</midi-program>
-        <volume>78.7402</volume>
-        <pan>0</pan>
-      </midi-instrument>
     </score-part>
   </part-list>
   <part id="P1">
-    <measure number="1" width="334.9">
-      <print>
-        <system-layout>
-          <system-margins>
-            <left-margin>65.9</left-margin>
-            <right-margin>627.77</right-margin>
-          </system-margins>
-          <top-system-distance>172.37</top-system-distance>
-        </system-layout>
-        <staff-layout number="2">
-          <staff-distance>65</staff-distance>
-        </staff-layout>
-      </print>
+    <measure number="1">
       <attributes>
         <divisions>1</divisions>
         <key>
@@ -93,7 +28,7 @@
           <line>4</line>
         </clef>
       </attributes>
-      <note default-x="86.99" default-y="-5">
+      <note>
         <pitch>
           <step>E</step>
           <octave>5</octave>
@@ -108,7 +43,7 @@
           </technical>
         </notations>
       </note>
-      <note default-x="86.99" default-y="5">
+      <note>
         <chord/>
         <pitch>
           <step>G</step>
@@ -124,7 +59,7 @@
           </technical>
         </notations>
       </note>
-      <note default-x="86.99" default-y="20">
+      <note>
         <chord/>
         <pitch>
           <step>C</step>
@@ -143,7 +78,7 @@
       <backup>
         <duration>4</duration>
       </backup>
-      <note default-x="86.99" default-y="-165">
+      <note>
         <pitch>
           <step>C</step>
           <octave>2</octave>
@@ -158,7 +93,7 @@
           </technical>
         </notations>
       </note>
-      <note default-x="86.99" default-y="-155">
+      <note>
         <chord/>
         <pitch>
           <step>E</step>
@@ -174,7 +109,7 @@
           </technical>
         </notations>
       </note>
-      <note default-x="86.99" default-y="-145">
+      <note>
         <chord/>
         <pitch>
           <step>G</step>
