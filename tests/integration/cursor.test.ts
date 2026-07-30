@@ -222,6 +222,29 @@ describe('cursor', () => {
 		expect(result.firstStepOfM2).toBe(1);
 	});
 
+	// <repeat times="5"> plays a block five times, not the two a bare repeat sign means. The render
+	// prints "Play 5 times" over the closing barline (repeats_multiple_times.png); this is the other
+	// half of the same attribute — the block must actually expand to five passes, or the label
+	// promises something playback doesn't do. Five measures, one whole rest each, so one step per
+	// measure.
+	it.concurrent('a repeat with times="5" plays its block five times', async () => {
+		const { result } = await renderTest(
+			'repeats_multiple_times.musicxml',
+			{},
+			(score) => {
+				const seq = score.getSequence();
+				const order = [];
+				for (let i = 0; i < seq.length; i++) {
+					order.push(seq.getStep(i)?.measureIndex);
+				}
+				return order;
+			},
+		);
+
+		// M1, then |: M2 M3 :| five times over, then out to M4 M5.
+		expect(result).toEqual([0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 4]);
+	});
+
 	// A voice that stops before its measure ends (legal, and common in real exports: M1's voice 1 is
 	// one quarter with no trailing rest) has no onset at the note's end, so nothing seeds a step
 	// boundary there and the quarter used to ring until the next measure's onset. The end itself

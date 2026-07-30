@@ -10,11 +10,13 @@ import type {
 } from '@stringsync/mdom';
 import {
 	Barline,
+	BarNote,
 	Bend,
 	Element,
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
+	KeySignature,
 	Metrics,
 	MetricsDefaults,
 	Modifier,
@@ -64,6 +66,7 @@ import {
 	LYRIC_LINE_HEIGHT,
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
+	NAVIGATION_FONT_SIZE,
 	NOTEHEAD_HALF_H,
 	PAGE_MARGIN_X,
 	PART_GROUP_STEP,
@@ -91,7 +94,9 @@ import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import {
+	ACCIDENTAL_CODES,
 	applyNoteColors,
+	BAR_STYLE_TYPES,
 	findModifier,
 	LyricAnnotation,
 	type NoteTranslator,
@@ -126,6 +131,139 @@ import {
 // ('Am', 'G#m'); the bare minor tonic ('G#') is rejected as a bad key spec.
 function vexflowKeySpec(key: Key): string {
 	return key.mode === 'minor' ? `${key.rootNote}m` : `${key.rootNote}`;
+}
+
+/*
+ * A key signature spelled out accidental by accidental, for a <key> written with
+ * <key-step>/<key-alter> instead of <fifths> — microtonal and modal-jazz signatures, which
+ * are not circle-of-fifths shaped and so have no key spec to name them.
+ *
+ * vexflow's own KeySignature always rebuilds its accidentals from a key spec (format() calls
+ * Tables.keySignature), so there is no way to hand it a list; this overrides that one step
+ * and reuses everything else — the glyph laying, the spacing and the stave-modifier plumbing
+ * — so a custom signature places, measures and draws exactly like a normal one.
+ */
+class CustomKeySignature extends KeySignature {
+	constructor(
+		private readonly accidentals: ReadonlyArray<{ type: string; line: number }>,
+	) {
+		// Any valid spec: format() below never reads it.
+		super('C');
+	}
+
+	override format(): void {
+		let stave = this.getStave();
+		if (!stave) {
+			stave = new Stave(0, 0, 100);
+			this.setStave(stave);
+		}
+		this.width = 0;
+		this.children = [];
+		// Copied, not shared: convertToGlyph reads acc.line and the parent's cancel/alter paths
+		// mutate the entries in place.
+		this.accList = this.accidentals.map((a) => ({ ...a }));
+		for (const [i, acc] of this.accList.entries()) {
+			// nextAcc only widens the gap around a natural; the parent passes an
+			// out-of-range read for the last one the same way.
+			this.convertToGlyph(
+				acc,
+				this.accList[i + 1] as { type: string; line: number },
+				stave,
+			);
+		}
+		this.calculateDimensions();
+		this.formatted = true;
+	}
+}
+
+// MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
+// without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
+// customKeyAccidentals); this is the fallback every exporter can be counted on to imply.
+const KEY_ALTER_CODES: Record<string, string> = {
+	'-2': 'bb',
+	'-1': 'b',
+	'0': 'n',
+	'1': '#',
+	'2': '##',
+};
+
+/*
+ * The staff line a key-signature accidental on `step` sits at, in the coordinates
+ * KeySignature draws in (0 = top line, +1 per line downward). `octave` pins it outright —
+ * MusicXML's <key-octave>. Without one, the accidental takes the highest position that still
+ * lands on the stave, which is where the traditional signatures put every flat and most
+ * sharps, so an unpinned custom signature reads like an ordinary one.
+ *
+ * The position comes from a throwaway StaveNote rather than a hand-rolled clef table: vexflow
+ * already resolves step/octave against every clef it knows. Its key props count lines
+ * bottom-up from below the stave, which is why the flip is `5 -` and not `4 -`: a note drawn
+ * at key-prop line L lands on Stave.getYForNote(L), and that is getYForLine(5 - L).
+ * ponytail: the flip assumes a 5-line stave. A non-traditional signature on a reduced stave
+ * would sit as if the missing lines were there; no fixture has one.
+ */
+function keySignatureLine(
+	step: string,
+	octave: number | null,
+	clef: string,
+): number {
+	const lineOf = (o: number) =>
+		5 -
+		(new StaveNote({
+			keys: [`${step.toLowerCase()}/${o}`],
+			duration: 'w',
+			clef,
+		}).getKeyProps()[0]?.line ?? 2);
+	if (octave !== null) {
+		return lineOf(octave);
+	}
+	const onStave = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+		.map(lineOf)
+		.filter((line) => line >= 0 && line <= 4);
+	// Highest on the stave = the smallest line number. Every step has one in every clef, so
+	// the middle-line fallback is unreachable in practice.
+	return onStave.length > 0 ? Math.min(...onStave) : 2;
+}
+
+/*
+ * A <key>'s non-traditional accidentals — the <key-step>/<key-alter>(/<key-accidental>)
+ * triples MusicXML writes instead of <fifths> — as the glyph list a CustomKeySignature draws,
+ * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
+ * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
+ *
+ * The children are read positionally: MusicXML interleaves the three element kinds rather
+ * than nesting each alteration, so the nth <key-step> pairs with the nth <key-alter>. The
+ * <key-octave number="n"> elements index the same nth alteration.
+ */
+function customKeyAccidentals(
+	key: Key,
+	clef: string,
+): Array<{ type: string; line: number }> {
+	const steps = key.childrenNamed('key-step');
+	if (steps.length === 0) {
+		return [];
+	}
+	const alters = key.childrenNamed('key-alter');
+	const accidentals = key.childrenNamed('key-accidental');
+	const octaves = new Map(
+		key
+			.childrenNamed('key-octave')
+			.map((o) => [Number(o.getAttribute('number')), Number(o.text)]),
+	);
+	const out: Array<{ type: string; line: number }> = [];
+	steps.forEach((step, index) => {
+		const named = accidentals[index]?.text;
+		const type =
+			(named ? ACCIDENTAL_CODES[named] : undefined) ??
+			KEY_ALTER_CODES[alters[index]?.text ?? '0'];
+		if (!type || !step.text) {
+			return;
+		}
+		out.push({
+			type,
+			line: keySignatureLine(step.text, octaves.get(index + 1) ?? null, clef),
+		});
+	});
+	return out;
 }
 
 function timeSignatureSpec(time: Time | null): string | null {
@@ -215,12 +353,22 @@ type PendingStave = {
 	graceChords: Array<{ note: StaveNote; chord: Chord }>;
 	// The tab analog of graceChords: grace fret glyphs, so a tab grace colors with its notation one.
 	graceTabChords: Array<{ note: TabNote; chord: Chord }>;
+	// Mid-measure dividers whose <bar-style> vexflow can't draw: the invisible BarNote holding
+	// the divider's place, painted at its formatted x once the voice is drawn.
+	midBars: Array<{ note: BarNote; style: string }>;
 };
 
 // Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
 // chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
 // nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
+
+// The SMuFL glyphs of the two navigation signs. They engrave as music, not as text — a
+// segno is a symbol a player recognizes by shape, so spelling it "Segno" would not do.
+const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
+	segno: '\uE047', // segno
+	coda: '\uE048', // coda
+};
 
 // The face drawWords types a beside-stave string in. A words directive gets the text font
 // in italics; a dynamics marking gets the notation font (SMuFL glyphs are not text) at its
@@ -230,8 +378,10 @@ type SideTextStyle = {
 	size: number;
 	italic: boolean;
 	color?: string;
-	/** Center the string on its note instead of left-anchoring at it. */
-	centered?: boolean;
+	/** Where the string sits relative to its anchor x. Default 'left' — a directive is a
+	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
+	 * repeat-times label ends at the barline it labels. */
+	align?: 'left' | 'center' | 'right';
 };
 
 // What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
@@ -239,6 +389,9 @@ type SideTextStyle = {
 type BarlineDecoration = {
 	repeatBegin: boolean;
 	repeatEnd: boolean;
+	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
+	 * repeat means two passes and is drawn by its dots alone. */
+	repeatTimesLabel: string | null;
 	volta: { type: number; label: string } | null;
 };
 
@@ -249,14 +402,20 @@ type BarlineDecoration = {
  * A `discontinue` close leaves the bracket open on the right, so it keeps the hookless form.
  */
 function barlineDecorations(measures: readonly Measure[]): BarlineDecoration[] {
-	return measureRepeats(measures).map(({ repeatBegin, repeatEnd, ending }) => ({
-		repeatBegin,
-		repeatEnd,
-		volta: ending && {
-			type: voltaType(ending),
-			label: voltaLabel(ending.number),
-		},
-	}));
+	return measureRepeats(measures).map(
+		({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
+			repeatBegin,
+			repeatEnd,
+			// <repeat times> counts the total passes, and two is what a repeat sign already
+			// says, so only three or more is worth printing.
+			repeatTimesLabel:
+				repeatEnd && repeatTimes && repeatTimes > 2 ? `${repeatTimes}x` : null,
+			volta: ending && {
+				type: voltaType(ending),
+				label: voltaLabel(ending.number),
+			},
+		}),
+	);
 }
 
 function voltaType(ending: MeasureEnding): number {
@@ -270,21 +429,8 @@ function voltaType(ending: MeasureEnding): number {
 const NO_DECORATION: BarlineDecoration = {
 	repeatBegin: false,
 	repeatEnd: false,
+	repeatTimesLabel: null,
 	volta: null,
-};
-
-/*
- * The MusicXML <bar-style> values vexflow draws itself. Its Barline knows four non-repeat
- * shapes — one thin line, two thin lines, thin-then-thick, and nothing — which cover half
- * the vocabulary; the rest (dotted, dashed, heavy, heavy-light, heavy-heavy, tick, short)
- * have no vexflow type and are painted by DrawPass.drawCustomBarline. 'regular' is the plain
- * divider an unstyled measure already gets, so it maps to the same SINGLE.
- */
-const BAR_STYLE_TYPES: Record<string, number> = {
-	regular: Barline.type.SINGLE,
-	'light-light': Barline.type.DOUBLE,
-	'light-heavy': Barline.type.END,
-	none: Barline.type.NONE,
 };
 
 /*
@@ -1048,8 +1194,27 @@ export class DrawPass {
 		const prevMeasure = part.measures[m - 1];
 		const key = measure.getKey(staffNumber);
 		const keyChanged =
-			(key?.rootNote ?? null) !==
-			(prevMeasure?.getKey(staffNumber)?.rootNote ?? null);
+			this.reader.keyIdentity(key) !==
+			this.reader.keyIdentity(prevMeasure?.getKey(staffNumber) ?? null);
+		const clefName = clef
+			? this.translator.vexflowClef(clef.sign, clef.line)
+			: 'treble';
+		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
+		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key. The
+		// positions depend on the clef, so this is read per stave.
+		const customKey = key && !isTab ? customKeyAccidentals(key, clefName) : [];
+		const addKeySignature = () => {
+			if (customKey.length > 0) {
+				stave.addModifier(
+					new CustomKeySignature(customKey).setPosition(
+						StaveModifierPosition.BEGIN,
+					),
+					StaveModifierPosition.BEGIN,
+				);
+			} else if (key?.rootNote) {
+				stave.addKeySignature(vexflowKeySpec(key));
+			}
+		};
 		const clefChanged =
 			m > 0 &&
 			this.translator.vexflowClefSpec(clef) !==
@@ -1073,14 +1238,14 @@ export class DrawPass {
 				// OSMD draw. Without it the stave opened with an empty gap where the glyph
 				// belongs (the lead width reserves the room either way).
 				stave.addClef(
-					clef ? this.translator.vexflowClef(clef.sign, clef.line) : 'treble',
+					clefName,
 					undefined,
 					this.translator.vexflowClefAnnotation(clef?.octaveChange ?? null),
 				);
 			}
 			// Tab staves carry no key signature.
-			if (key?.rootNote && !isTab) {
-				stave.addKeySignature(vexflowKeySpec(key));
+			if (!isTab) {
+				addKeySignature();
 			}
 		} else {
 			if (clef && clefChanged && !isTab) {
@@ -1090,8 +1255,8 @@ export class DrawPass {
 					this.translator.vexflowClefAnnotation(clef.octaveChange),
 				);
 			}
-			if (key?.rootNote && keyChanged && !isTab) {
-				stave.addKeySignature(vexflowKeySpec(key));
+			if (keyChanged && !isTab) {
+				addKeySignature();
 			}
 		}
 
@@ -1245,6 +1410,7 @@ export class DrawPass {
 					clefName,
 					this.reader.meterFloor(measure, staffNumber),
 					clef?.octaveChange ?? 0,
+					this.reader.midBarlinesOf(measure),
 				),
 			);
 			for (const voice of voices) {
@@ -1272,6 +1438,7 @@ export class DrawPass {
 		clef: string,
 		meterFloor: number,
 		clefOctaveShift: number,
+		barlines: { beat: number; style: string }[],
 	): PendingStave {
 		// How far off its sounding pitch each note is drawn: the clef's own octave change,
 		// plus any <octave-shift> (8va/8vb) covering that note.
@@ -1291,6 +1458,10 @@ export class DrawPass {
 		// real 3-voice-per-stave score ever shows up.
 		const stemFor = (index: number): 'up' | 'down' | undefined =>
 			voices.length > 1 ? (index === 0 ? 'up' : 'down') : undefined;
+		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
+		// first voice only — a second copy in each of the others would draw the same line
+		// again at the same x.
+		const midBars: Array<{ note: BarNote; style: string }> = [];
 		const vexVoices = voices.map((voice, voiceIndex) => {
 			const chords = voice.chords;
 			// lead note -> its chord, so the record callback (which only gets the lead) can pair
@@ -1316,7 +1487,19 @@ export class DrawPass {
 				},
 				octaveShiftOf,
 				stemFor(voiceIndex),
+				voiceIndex === 0 ? barlines : [],
 			);
+			if (voiceIndex === 0) {
+				// Built in the same order as `barlines`, so they pair by index.
+				const barNotes = tickables.filter((t) => t instanceof BarNote);
+				barlines.forEach((barline, index) => {
+					const note = barNotes[index];
+					// A style vexflow has a type for is drawn by the BarNote itself.
+					if (note && BAR_STYLE_TYPES[barline.style] === undefined) {
+						midBars.push({ note, style: barline.style });
+					}
+				});
+			}
 			return this.translator.softVoice(tickables, this.softmaxFactor);
 		});
 
@@ -1347,6 +1530,7 @@ export class DrawPass {
 			graceChords,
 			tabChords: [],
 			graceTabChords: [],
+			midBars,
 		};
 	}
 
@@ -1421,6 +1605,7 @@ export class DrawPass {
 			graceChords: [],
 			tabChords,
 			graceTabChords,
+			midBars: [],
 		};
 	}
 
@@ -1461,6 +1646,7 @@ export class DrawPass {
 		const allVoices = pending.flatMap((p) => p.vexVoices);
 		const justifyWidth = noteEndX - startX - Stave.defaultPadding;
 		formatter.format(allVoices, justifyWidth, { context: this.context });
+		this.closeGraceGaps(allVoices);
 
 		let bottom = 0;
 		// Track how high content rises above the staves from each note's noteheads and its
@@ -1510,6 +1696,11 @@ export class DrawPass {
 			this.pinLyrics(p);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
+					// A mid-measure BarNote has no stem and no ledger lines to restyle; it draws
+					// in the context ink like the stave does.
+					if (note instanceof BarNote) {
+						continue;
+					}
 					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
 					// drawWithStyle lays over the context ink — so stems ignore notation.color while
 					// the noteheads/staves/clefs it colors don't. Restyle each note's stem to match.
@@ -1533,6 +1724,11 @@ export class DrawPass {
 			}
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.draw(this.context, p.stave);
+			}
+			// The mid-measure dividers vexflow drew nothing for: their BarNote reserved the
+			// width and now has a formatted x, so paint the real stroke over it.
+			for (const { note, style } of p.midBars) {
+				this.paintBarStyle(p.stave, note.getAbsoluteX(), style);
 			}
 			for (const beam of p.beams) {
 				beam.setContext(this.context).draw();
@@ -1562,6 +1758,42 @@ export class DrawPass {
 			}
 		}
 		return { top, bottom };
+	}
+
+	/*
+	 * Pull a note's LEADING grace cluster back onto the note when the same note also carries an
+	 * after-grace cluster.
+	 *
+	 * vexflow sizes both clusters together: GraceNoteGroup.format takes the wider one's width
+	 * and adds it to the tick context's left shift AND its right shift, so a note with a group
+	 * on each side reserves that width twice. Placing a left-side modifier then subtracts the
+	 * whole reserved block — left plus right — which slides the leading graces a cluster's width
+	 * off the note they lead, leaving them stranded between the two notes. Handing that width
+	 * back through the group's own spacing (the one term the left-side placement adds) lands
+	 * them against their note again; the after-graces are placed from the note's x and don't
+	 * move. Run after the format pass, which is what sets the spacing in the first place.
+	 */
+	private closeGraceGaps(voices: Voice[]): void {
+		for (const voice of voices) {
+			for (const note of voice.getTickables()) {
+				const groups = note
+					.getModifiers()
+					.filter(
+						(m): m is GraceNoteGroup =>
+							m.getCategory() === GraceNoteGroup.CATEGORY,
+					);
+				if (groups.length < 2) {
+					continue;
+				}
+				const leading = groups.find(
+					(g) => g.getPosition() !== Modifier.Position.RIGHT,
+				);
+				leading?.setSpacingFromNextModifier(
+					leading.getSpacingFromNextModifier() +
+						note.checkTickContext().getMetrics().modRightPx,
+				);
+			}
+		}
 	}
 
 	/*
@@ -2180,13 +2412,13 @@ export class DrawPass {
 							size: DYNAMICS_FONT_SIZE,
 							italic: false,
 							color: this.notationColor,
-							centered: true,
+							align: 'center',
 						}
 					: {
 							font: this.labelFont,
 							size: WORDS_FONT_SIZE,
 							italic: true,
-							centered: true,
+							align: 'center',
 						},
 			);
 			if (d.placement !== 'below') {
@@ -2322,6 +2554,48 @@ export class DrawPass {
 		// section header at the very top of the above-stave stack, clear of tempo and chords.
 		const topStave = this.systemTop;
 		const measure = this.parts[0]?.measures[m];
+		// Segno/coda: measure-level landmarks like a rehearsal mark, so they're read from the
+		// first part and printed once over the column's top stave, at its left edge — where a
+		// player scanning for "the sign" looks. Drawn before the rehearsal marks so a mark in
+		// the same measure stacks above rather than over them.
+		if (topStave && measure) {
+			for (const kind of this.reader.navigationsOf(measure)) {
+				const placed = this.drawWords(
+					topStave,
+					NAVIGATION_GLYPHS[kind],
+					topStave.getX(),
+					'above',
+					{
+						font: this.notationFont,
+						size: NAVIGATION_FONT_SIZE,
+						italic: false,
+						color: this.notationColor,
+					},
+				);
+				this.pageTop = Math.min(this.pageTop, placed.y);
+				this.growDecorationTop(this.systemIndex, placed.y);
+			}
+		}
+		// "Nx" over a repeat played more than twice: like the rehearsal mark it belongs to the
+		// measure rather than to a part, so it prints once over the column's top stave.
+		// Right-aligned on the closing barline, which is the sign it qualifies.
+		const timesLabel = this.decorations[m]?.repeatTimesLabel;
+		if (topStave && timesLabel) {
+			const placed = this.drawWords(
+				topStave,
+				timesLabel,
+				topStave.getX() + topStave.getWidth(),
+				'above',
+				{
+					font: this.labelFont,
+					size: WORDS_FONT_SIZE,
+					italic: false,
+					align: 'right',
+				},
+			);
+			this.pageTop = Math.min(this.pageTop, placed.y);
+			this.growDecorationTop(this.systemIndex, placed.y);
+		}
 		if (topStave && measure) {
 			for (const text of this.reader.rehearsalsOf(measure)) {
 				const top = this.drawRehearsal(topStave, text);
@@ -2564,7 +2838,7 @@ export class DrawPass {
 	private drawWords(
 		stave: Stave,
 		text: string,
-		anchor: StaveNote | TabNote | undefined,
+		anchor: StaveNote | TabNote | number | undefined,
 		placement: Placement = 'above',
 		style: SideTextStyle = {
 			font: this.labelFont,
@@ -2576,7 +2850,10 @@ export class DrawPass {
 		const baseY = below
 			? stave.getBottomLineY() + WORDS_Y_OFFSET
 			: stave.getYForLine(0) - WORDS_Y_OFFSET;
-		const anchorX = anchor ? anchor.getAbsoluteX() : stave.getNoteStartX();
+		const anchorX =
+			typeof anchor === 'number'
+				? anchor
+				: (anchor?.getAbsoluteX() ?? stave.getNoteStartX());
 		this.context.save();
 		this.context.setFont(
 			style.font,
@@ -2587,9 +2864,8 @@ export class DrawPass {
 		this.context.setFillStyle(style.color ?? this.textColor);
 		const w = this.context.measureText(text).width;
 		const natural = new Rect(
-			// A directive is a phrase reading rightward from its note, so it left-anchors; a
-			// dynamic is a single mark belonging to one note, so it centers on the notehead.
-			style.centered ? anchorX - w / 2 : anchorX,
+			anchorX -
+				(style.align === 'center' ? w / 2 : style.align === 'right' ? w : 0),
 			below ? baseY : baseY - style.size,
 			w,
 			style.size,
@@ -2780,11 +3056,20 @@ export class DrawPass {
 	 * so it suppresses this.
 	 */
 	private drawCustomBarline(stave: Stave): void {
-		const style = this.barStyle ? CUSTOM_BAR_STYLES[this.barStyle] : undefined;
-		if (!style || this.decoration.repeatEnd || this.repeatBoth) {
+		if (this.decoration.repeatEnd || this.repeatBoth || !this.barStyle) {
 			return;
 		}
-		const x = stave.getX() + stave.getWidth();
+		this.paintBarStyle(stave, stave.getX() + stave.getWidth(), this.barStyle);
+	}
+
+	/* Paint one <bar-style> vexflow has no Barline type for, as a vertical stroke at `x` on
+	 * `stave` (see CUSTOM_BAR_STYLES). A style vexflow does draw is a no-op here — it was
+	 * already drawn with the stave, or with the mid-measure BarNote standing in its place. */
+	private paintBarStyle(stave: Stave, x: number, barStyle: string): void {
+		const style = CUSTOM_BAR_STYLES[barStyle];
+		if (!style) {
+			return;
+		}
 		const spacing = stave.getSpacingBetweenLines();
 		const topY = stave.getTopLineTopY();
 		// A `span` is measured in staff spaces down from the top line; without one the bar

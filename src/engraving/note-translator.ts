@@ -9,6 +9,8 @@ import {
 	Accidental,
 	Annotation,
 	Articulation,
+	Barline,
+	BarNote,
 	Bend,
 	Dot,
 	Element,
@@ -95,7 +97,7 @@ function durationCode(lead: Note): string {
  * straight through — Tables.accidentalCodes returns an unrecognized code verbatim, and
  * the accidental is drawn in the music font either way.
  */
-const ACCIDENTAL_CODES: Record<string, string> = {
+export const ACCIDENTAL_CODES: Record<string, string> = {
 	sharp: '#',
 	flat: 'b',
 	natural: 'n',
@@ -327,6 +329,58 @@ class InvisibleStaveNote extends StaveNote {
  */
 function isInvisible(note: Note): boolean {
 	return note.getAttribute('print-object') === 'no';
+}
+
+/*
+ * The MusicXML <bar-style> values vexflow's own Barline draws. Its Barline knows four
+ * non-repeat types and MusicXML names nine, so the rest (dotted, dashed, heavy, tick, …)
+ * have no type here and are painted by DrawPass.paintBarStyle. 'regular' is the plain
+ * single line, the style an absent <bar-style> means.
+ */
+export const BAR_STYLE_TYPES: Record<string, number> = {
+	regular: Barline.type.SINGLE,
+	'light-light': Barline.type.DOUBLE,
+	'light-heavy': Barline.type.END,
+	none: Barline.type.NONE,
+};
+
+/** The width a mid-measure divider with no vexflow type of its own reserves, matching the
+ * SINGLE barline it is painted in place of. */
+const CUSTOM_MID_BAR_WIDTH = 8;
+
+/** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes a
+ * mid-measure `<barline>` puts between them. */
+export type VoiceTickable = StemmableNote | BarNote;
+
+/**
+ * A vexflow BarNote for a mid-measure `<barline>`: a zero-duration tickable the formatter
+ * places between the notes it divides, so the measure widens to hold it instead of the line
+ * landing on a notehead. A style vexflow can't draw becomes an invisible bar of the same
+ * width, painted over by the draw pass (see DrawPass.paintBarStyle).
+ */
+export function midBarNote(style: string): BarNote {
+	const type = BAR_STYLE_TYPES[style];
+	if (type === undefined) {
+		return new BarNote(Barline.type.NONE).setWidth(CUSTOM_MID_BAR_WIDTH);
+	}
+	return new BarNote(type);
+}
+
+/* The duration codes that draw a flag, and so can carry a beam instead. */
+const FLAGGED_DURATIONS = new Set(['8', '16', '32', '64', '128']);
+
+/*
+ * Whether a cluster of grace notes beams: two or more of them, all of flagged value. A run of
+ * small notes is beamed together whether or not the exporter wrote <beam> markers — both
+ * MuseScore and LilyPond engrave lilypond_24d's unmarked 16th cluster with a beam — so the
+ * markers only matter for telling a beamed run from a genuinely flagged one, which no
+ * fixture writes.
+ */
+function beamsGraceGroup(graces: ReadonlyArray<{ lead: Note }>): boolean {
+	return (
+		graces.length > 1 &&
+		graces.every((g) => FLAGGED_DURATIONS.has(durationCode(g.lead)))
+	);
 }
 
 /*
@@ -1678,6 +1732,8 @@ export class NoteTranslator {
 	 * `octaveShiftOf` is how many octaves to move each chord's noteheads by when drawing them:
 	 * the staff's <clef-octave-change> plus any <octave-shift> (8va/8vb) covering that note, so
 	 * it varies note by note rather than being one value for the stave.
+	 * `barlines` are the measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each
+	 * inserted as a zero-duration BarNote just before the first note at or past its beat.
 	 */
 	vexflowVoiceTickables(
 		chords: Chord[],
@@ -1686,8 +1742,21 @@ export class NoteTranslator {
 		record?: (lead: Note, staveNote: StaveNote) => void,
 		octaveShiftOf: (lead: Note) => number = () => 0,
 		defaultStem?: 'up' | 'down',
-	): StemmableNote[] {
-		const tickables: StemmableNote[] = [];
+		barlines: readonly { beat: number; style: string }[] = [],
+	): VoiceTickable[] {
+		const tickables: VoiceTickable[] = [];
+		// Mid-measure dividers, consumed in order as the cursor reaches each one's beat.
+		let nextBarline = 0;
+		const flushBarlines = (upTo: number) => {
+			for (
+				let bar = barlines[nextBarline];
+				bar && bar.beat <= upTo + EPSILON;
+				bar = barlines[nextBarline]
+			) {
+				tickables.push(midBarNote(bar.style));
+				nextBarline++;
+			}
+		};
 		// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
 		const soleLead = chords.filter((c) => !c.lead.isGrace).map((c) => c.lead);
 		const lone = soleLead.length === 1 ? soleLead[0] : undefined;
@@ -1696,6 +1765,27 @@ export class NoteTranslator {
 		// Grace notes steal no time, so they aren't tickables: they accumulate here and
 		// attach to the next real note as a GraceNoteGroup modifier, drawn just left of it.
 		let pendingGrace: { note: GraceNote; lead: Note }[] = [];
+		// After-graces: a trailing cluster with no note left to lead decorates the note it
+		// FOLLOWS instead, attaching to the previous tickable as a RIGHT-positioned group so it
+		// draws past that notehead.
+		const flushAfterGraces = (
+			pendingAfter: { note: GraceNote; lead: Note }[],
+		) => {
+			const host = tickables.at(-1);
+			if (!host || pendingAfter.length === 0) {
+				return;
+			}
+			const group = new GraceNoteGroup(pendingAfter.map((g) => g.note));
+			if (beamsGraceGroup(pendingAfter)) {
+				group.beamNotes();
+			}
+			group.setPosition(Modifier.Position.RIGHT);
+			group.preFormat();
+			host.addModifier(group, 0);
+			for (const g of pendingAfter) {
+				record?.(g.lead, g.note);
+			}
+		};
 		for (const chord of chords) {
 			if (chord.lead.isGrace) {
 				pendingGrace.push({
@@ -1710,6 +1800,9 @@ export class NoteTranslator {
 				continue;
 			}
 			const onset = chord.measureBeat ?? cursor;
+			// Before any ghost padding, so a divider on an empty stretch sits at the moment it
+			// falls on rather than being pushed to the next note's edge.
+			flushBarlines(onset);
 			if (onset > cursor + EPSILON) {
 				tickables.push(...ghostNotes(onset - cursor));
 			}
@@ -1722,9 +1815,9 @@ export class NoteTranslator {
 			);
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
-				// Beam the group when its grace notes carry <beam> markers (the main beam
-				// pass skips them — grace notes never enter `byLead`).
-				if (pendingGrace.some((g) => g.lead.beams.length > 0)) {
+				// The main beam pass skips grace notes (they never enter `byLead`), so a grace
+				// cluster beams itself.
+				if (beamsGraceGroup(pendingGrace)) {
 					group.beamNotes();
 				}
 				// preFormat now so the group's width is available to the layout pass (which reads
@@ -1758,8 +1851,12 @@ export class NoteTranslator {
 			tickables.push(staveNote);
 			cursor = onset + (chord.lead.beats ?? 0);
 		}
-		// ponytail: trailing grace notes with no following host note are dropped — vexflow
-		// anchors a GraceNoteGroup to the note it precedes. Add an anchor if a fixture needs it.
+		// Graces still pending at the end have no note left to lead, so they're after-graces of
+		// the last one. Flushed before the trailing ghosts so they anchor to a real note rather
+		// than to padding.
+		flushAfterGraces(pendingGrace);
+		pendingGrace = [];
+		flushBarlines(Number.POSITIVE_INFINITY);
 		if (endBeat > cursor + EPSILON) {
 			tickables.push(...ghostNotes(endBeat - cursor));
 		}
@@ -1772,7 +1869,7 @@ export class NoteTranslator {
 	 * must build their voices identically, or the measured width and the drawn width disagree
 	 * and notes shear; sharing this builder keeps the two passes in lockstep by construction.
 	 */
-	softVoice(tickables: StemmableNote[], softmaxFactor: number): Voice {
+	softVoice(tickables: VoiceTickable[], softmaxFactor: number): Voice {
 		return new Voice()
 			.setMode(Voice.Mode.SOFT)
 			.setSoftmaxFactor(softmaxFactor)

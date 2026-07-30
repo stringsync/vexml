@@ -25,9 +25,11 @@ import { testCase } from '../testing/test-case';
  *
  * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
  * increasing rendering complexity, not by priority. By impact, the ones worth doing first are:
- * cross-staff notes, <multiple-rest>, percussion <unpitched>/<display-step>, and the rest of
- * the <bar-style> vocabulary. (print-object="no", <octave-shift> and the per-element color
- * attribute were the earlier picks off this list and now have cases of their own.)
+ * cross-staff notes, <multiple-rest>, and the mid-measure clef change. (print-object="no",
+ * <octave-shift>, the per-element color attribute, percussion <unpitched>/<display-step>,
+ * after-graces, the mid-measure <barline>, <repeat times>, the segno/coda glyphs and
+ * non-traditional key signatures were the earlier picks off this list and now have cases of
+ * their own.)
  */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
@@ -316,15 +318,27 @@ const TEST_CASES = [
 	// - M3: locrian; wraps to a second system, which reprints the same two sharps.
 	testCase('key_modes.musicxml', 'key_modes.png'),
 
-	// TODO(coverage): non-traditional key signatures — <key-step>/<key-alter>/<key-accidental>
-	// instead of <fifths>, which is how microtonal and modal-jazz scores notate a signature.
-	// Fixture: key_non_traditional.musicxml (lilypond_13c-KeySignatures-NonTraditional M1-2).
-	// Expected: the accidentals listed by the <key-step>/<key-alter> pairs, drawn in the order
-	// given and at the staff position each named step occupies — NOT the circle-of-fifths
-	// order a <fifths> signature uses.
-	// Current: unverified; there is no <fifths> here, so the likely current render is no key
-	// signature at all. See also tmp/lilypond_13d-KeySignatures-Microtones.xml.
-	// testCase('key_non_traditional.musicxml', 'key_non_traditional.png'),
+	// Treble stave, 2/4: non-traditional key signatures — <key-step>/<key-alter> pairs instead
+	// of <fifths>, which is how microtonal and modal-jazz scores notate one. The accidentals
+	// print in the order the <key> lists them, not in circle-of-fifths order, and each sits at
+	// the staff position its named step occupies. One C4 half note per measure (on its ledger
+	// line under the stave), so only the signature varies.
+	// - M1: F♯, A♭, B♭ with no <key-octave>, so each takes the highest position that still
+	//   lands on the stave — F♯ on the top line, A♭ in the second space from the bottom, B♭ on
+	//   the middle line. Those are exactly the rows the traditional signatures use, so an
+	//   unpinned custom signature reads like an ordinary one.
+	// - M2: a mid-system change to C♭♭, G♯♯, D♭, B♯, F♮, each pinned by a <key-octave> (2, 3,
+	//   4, 5, 6). The signature therefore climbs the page rather than sitting in a band: the
+	//   double-flat hangs well below the stave, the double-sharp ("x") just under it, the flat
+	//   inside it, and the sharp and natural above it. The five glyphs still march left to
+	//   right in list order and the measure's note follows clear of the last one.
+	// ponytail: the placement rule is "highest position on the stave", which matches every
+	// traditional FLAT and most sharps but not G♯ — a <fifths> signature draws that one above
+	// the top line, and an unpinned custom G♯ lands on the G inside the stave instead. Nothing
+	// grows the page crop for a signature that reaches far off the stave either; M2's spread is
+	// held by the ordinary page margins.
+	// See also tmp/lilypond_13d-KeySignatures-Microtones.xml.
+	testCase('key_non_traditional.musicxml', 'key_non_traditional.png'),
 
 	// One system, treble: time signatures and mid-system meter changes.
 	// - M1: opens the system with a treble clef and common time (the "C" symbol = 4/4);
@@ -609,19 +623,26 @@ const TEST_CASES = [
 	// Current: unverified — expect nothing drawn.
 	// testCase('direction_lines.musicxml', 'direction_lines.png'),
 
-	// TODO(coverage): navigation marks — <segno>, <coda>, and the D.C./D.S./Fine/To Coda words
-	// that drive them. 4 files in tmp/ carry a <segno> and 3 a <coda>.
-	// Fixture: navigation.musicxml (tmp/stave_repetitions_coda_etc.xml M1-5) — a real score with
-	// a segno, a coda, and the matching text directions.
-	// Expected: the segno and coda GLYPHS (not text) above the staff at their measures' left
-	// edges, in the same band rehearsal marks occupy and stacked clear of them; "D.S. al Coda" /
-	// "Fine" as right-aligned text at their measures' end.
-	// Current: unverified — expect the words to print (wordsOf handles them) but no glyphs.
+	// Navigation marks — <segno> and <coda> — on a real (braced) piano score in 4/4, five
+	// measures wrapping onto two systems: four quarters per measure on the treble staff over a
+	// whole rest on the bass staff, so only the marks above the top staff vary. Both signs draw
+	// as SMuFL GLYPHS in the notation font, at their measure's left edge, above everything else
+	// in that column and clear of it.
+	// - M1: the segno (the crossed S) at the system's left edge, above the "♩=120" metronome
+	//   mark and the measure number. The bass staff opens in treble and changes to bass at M2,
+	//   which is the source score's own doing.
+	// - M2: "to coda" as ordinary italic words over its first note — a words direction, not a
+	//   glyph, and unchanged by this case.
+	// - M3: "D.S. al Coda" the same way, over the note the direction precedes.
+	// - M4: the coda (the crossed circle) at that measure's left edge, level with the segno.
+	// - M5: an empty measure that wraps to a second system on its own.
 	// SCOPE NOTE: the playback side is deliberately out of scope. Per the playback-cursor
-	// design, jumps are repeats+voltas only and D.C./D.S. are deferred — so this test case is
-	// about ENGRAVING the marks, and cursor.test.ts should not grow a case for them here.
+	// design, jumps are repeats+voltas only and D.C./D.S. are deferred — so this case is about
+	// ENGRAVING the marks, and cursor.test.ts has no case for them.
+	// ponytail: a sign's own placement/offset attributes are ignored — it always prints at its
+	// measure's left edge, where a player scanning for "the sign" looks.
 	// See also tmp/stave_repetitions_coda_etc_positioning.xml for the placement stress version.
-	// testCase('navigation.musicxml', 'navigation.png'),
+	testCase('navigation.musicxml', 'navigation.png'),
 
 	// Treble stave, 4/4: <lyric> verses printed as text under the stave, centered on their
 	// note. Boring B4 quarters throughout except M5, so only the syllables vary.
@@ -730,13 +751,20 @@ const TEST_CASES = [
 	// See also tmp/bar_lines.xml.
 	testCase('barline_styles.musicxml', 'barline_styles.png'),
 
-	// TODO(coverage): a barline in the MIDDLE of a measure (a <barline> with a <location>
-	// other than left/right), used for a repeat or double bar that falls off the beat.
-	// Fixture: barline_mid_measure.musicxml (lilypond_46b-MidmeasureBarline M1-2).
-	// Expected: the line drawn between the two notes it sits between, with the measure widened
-	// to hold it and the measure NOT split in two for numbering purposes.
-	// Current: unverified — expect it dropped.
-	// testCase('barline_mid_measure.musicxml', 'barline_mid_measure.png'),
+	// Treble stave, 4/4: a barline in the MIDDLE of a measure — <barline location="middle">,
+	// how a divider that falls off the measure edge is written. One measure of four quarters
+	// (C5, A4, F4, C5), so only the divider is remarkable.
+	// - M1: a <bar-style>dotted</bar-style> divider between beats 2 and 3, drawn as the same
+	//   dotted stroke barline_styles.musicxml documents, running the full stave height. It sits
+	//   between the A4 and the F4 with room of its own — the measure is measured with the
+	//   divider in it, so it never lands on a notehead. The measure is NOT split for numbering:
+	//   there is one "1" over the system and one end barline.
+	// The divider is a zero-duration vexflow BarNote in the measure's first voice, so the
+	// formatter places it by tick like a note.
+	// ponytail: it rides on the FIRST voice only — a second copy per voice would redraw the
+	// same line — and ScoreReader.midBarlinesOf binds it to the last note in document order
+	// rather than rewinding a <backup>, so a multi-voice measure could place it early.
+	testCase('barline_mid_measure.musicxml', 'barline_mid_measure.png'),
 
 	// Pickup (anacrusis) and incomplete measures — <measure implicit="yes">, which is short by
 	// declaration rather than underfull by accident, so it is sized to the music it holds
@@ -807,14 +835,18 @@ const TEST_CASES = [
 	// - M4: fret 7 / B4, closing with a backward repeat instead of the usual end barline.
 	testCase('repeats_notation_and_tab.musicxml', 'repeats_notation_and_tab.png'),
 
-	// TODO(coverage): a repeat played more than twice — <repeat direction="backward"
-	// times="3"/>, usually printed as "Play 3 times" or "x3" over the closing barline.
-	// Fixture: repeats_multiple_times.musicxml (lilypond_45c-RepeatMultipleTimes M1-5).
-	// Expected: the ordinary backward-repeat sign plus a times label above it. This one has a
-	// PLAYBACK half too, unlike most entries here: src/repeats.ts must expand the block three
-	// times, so cursor.test.ts should assert the longer measure order alongside this render.
-	// Current: unverified — expect the repeat drawn but the times count silently treated as 2.
-	// testCase('repeats_multiple_times.musicxml', 'repeats_multiple_times.png'),
+	// Treble stave, common time: a repeat played more than twice — <repeat direction="backward"
+	// times="5"/>. Five measures of one whole rest each, so only the barlines and the label vary.
+	// - M1: a plain opening measure, clef and common-time signature, no repeat sign.
+	// - M2: opens the block with a forward repeat (thick-thin plus dots).
+	// - M3: closes it with a backward repeat, and "5x" prints above the stave in the words face,
+	//   RIGHT-aligned so the label ends on that closing barline rather than starting at it.
+	//   Without it the same two dots would read as the usual two passes.
+	// - M4-5: past the block, two plain measures, the last closing with the end barline.
+	// A bare backward repeat (no `times`, or times="2") prints no label — the dots already say
+	// twice. The playback half of the same attribute is asserted in cursor.test.ts: the block
+	// expands to five passes, not two.
+	testCase('repeats_multiple_times.musicxml', 'repeats_multiple_times.png'),
 
 	// TODO(coverage): nested repeats and alternative endings — a repeat block inside another
 	// repeat block, with voltas at both levels. repeats.musicxml covers back-to-back blocks and
@@ -1731,18 +1763,26 @@ const TEST_CASES = [
 	// leave the chord's lowest member) is still unexercised.
 	testCase('grace_chord.musicxml', 'grace_chord.png'),
 
-	// TODO(coverage): after-grace notes — graces that follow their main note rather than
-	// preceding it (MusicXML spells this as a grace placed after the note it decorates).
-	// grace_notes.musicxml is entirely about the leading form.
-	// Fixture: grace_after.musicxml (lilypond_24d-AfterGrace, measure 25).
-	// Expected: the small notes sit to the RIGHT of their main note, before the next beat, and
-	// the measure is widened to hold them the way grace_spacing.musicxml documents for the
-	// leading case; the slur runs from the main note out to them.
-	// Current: unverified — expect them drawn on the wrong side, i.e. attached to the FOLLOWING
-	// note as if they were ordinary leading graces.
+	// Treble stave, 4/4: AFTER-graces — a grace cluster with no note left to lead, which
+	// decorates the note it FOLLOWS and so prints to that note's RIGHT. grace_notes.musicxml is
+	// entirely about the leading form. Two E5 half notes, so only the small notes around them
+	// vary; every grace is a 16th at G5 or A5 (A5 on its own ledger line above the stave).
+	// - M25: a plain E5 half note. Then three 16th graces — G5, A5, A5 — BEAMED into one
+	//   cluster snug against the second E5 half note, which they lead. Then that half note.
+	//   Then a G5/A5 pair, also beamed, drawn to the RIGHT of it: the measure ends there, so
+	//   they have nothing to lead and belong to the note before them. Before this they were
+	//   dropped entirely.
+	// Matches MuseScore's engraving of the same file measure for measure (checked against
+	// `vex render --muse`), including the three-note cluster: MusicXML marks the first of those
+	// graces <grace steal-time-previous>, but an after-grace that still has a note in front of
+	// it is engraved as a leading grace of that note, not split off onto the note behind it.
+	// The clusters beam themselves — the middle one carries no <beam> markers at all — because
+	// a run of small notes is beamed by convention, whatever the exporter wrote.
+	// ponytail: no slur is drawn from a note out to its after-graces. The fixture carries no
+	// <slur>, and vexflow's own grace slur runs the other way (host to LEADING grace).
 	// See also tmp/lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
 	// measure, which has nothing to attach to) and tmp/lilypond_24e-GraceNote-StaffChange.xml.
-	// testCase('grace_after.musicxml', 'grace_after.png'),
+	testCase('grace_after.musicxml', 'grace_after.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems

@@ -77,6 +77,9 @@ type StaveSpec = {
 	isTab: boolean;
 	/** Open-string pitches of a tab staff; null for a notation staff (see stringTuning). */
 	tuning: number[] | null;
+	/** Mid-measure dividers (see ScoreReader.midBarlinesOf) — they take horizontal room, so
+	 * the measured width has to include the same BarNotes the draw pass inserts. */
+	barlines: { beat: number; style: string }[];
 };
 
 export class LayoutPlanner {
@@ -120,15 +123,31 @@ export class LayoutPlanner {
 	): number {
 		let minNotes = 0;
 		let logWidth = 0;
-		for (const { voices, clef, meterFloor, isTab, tuning } of staves) {
+		for (const {
+			voices,
+			clef,
+			meterFloor,
+			isTab,
+			tuning,
+			barlines,
+		} of staves) {
 			// Match drawNotes: pad underfull measures to the meter so the measured width
 			// reserves the same trailing space the draw pass will leave.
 			const endBeat = Math.max(this.reader.endBeatOf(voices), meterFloor);
 			// Tab voices build TabNotes (no ghost padding), matching drawTabNotes.
-			const perVoice = voices.map((voice) =>
+			const perVoice = voices.map((voice, voiceIndex) =>
 				isTab
 					? this.translator.vexflowTabTickables(voice.chords, tuning)
-					: this.translator.vexflowVoiceTickables(voice.chords, clef, endBeat),
+					: this.translator.vexflowVoiceTickables(
+							voice.chords,
+							clef,
+							endBeat,
+							undefined,
+							undefined,
+							undefined,
+							// Matches buildNotes: the dividers ride on the first voice only.
+							voiceIndex === 0 ? barlines : [],
+						),
 			);
 			const vexVoices = perVoice.map((tickables) =>
 				this.translator.softVoice(tickables, softmaxFactor),
@@ -287,6 +306,7 @@ export class LayoutPlanner {
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
 							isTab: isTabStaff(part, staffNumber),
 							tuning: stringTuning(part, staffNumber),
+							barlines: this.reader.midBarlinesOf(measure),
 						});
 					}
 				}
@@ -312,7 +332,10 @@ export class LayoutPlanner {
 			// key's width budgeted when its second stave is not.
 			const hasKey = parts.some((part) =>
 				visibleStaffNumbers(part, showTabs, showNotation).some(
-					(staffNumber) => part.measures[m]?.getKey(staffNumber)?.rootNote,
+					(staffNumber) =>
+						this.reader.keyIdentity(
+							part.measures[m]?.getKey(staffNumber) ?? null,
+						) !== null,
 				),
 			);
 			return (

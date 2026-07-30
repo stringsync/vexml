@@ -1,9 +1,11 @@
 import {
+	Barline,
 	type Chord,
 	type Harmony,
+	type Key,
 	MElement,
 	type Measure,
-	type Note,
+	Note,
 	type Part,
 	type Voice as ScoreVoice,
 	type Time,
@@ -318,6 +320,29 @@ export class ScoreReader {
 	}
 
 	/*
+	 * What a `<key>` prints, as an equality key — the string to compare against the previous
+	 * measure's to spot a mid-piece key change, and the test for "does this staff draw a
+	 * signature at all" (null when it draws nothing).
+	 *
+	 * A traditional key is identified by its tonic. A non-traditional one (<key-step>/
+	 * <key-alter> instead of <fifths>) has no tonic, so it's identified by the alterations it
+	 * lists, read positionally the way the drawing side reads them.
+	 */
+	keyIdentity(key: Key | null): string | null {
+		if (key?.rootNote) {
+			return key.rootNote;
+		}
+		const steps = key?.childrenNamed('key-step') ?? [];
+		if (steps.length === 0) {
+			return null;
+		}
+		const alters = key?.childrenNamed('key-alter') ?? [];
+		return steps
+			.map((step, index) => `${step.text}${alters[index]?.text ?? '0'}`)
+			.join(' ');
+	}
+
+	/*
 	 * The beat length a measure's width is floored at (see meterBeats), except for a
 	 * <measure implicit="yes"> — a pickup bar, or the back half of a measure split across a
 	 * system break — which floors at 0 so it is sized to the music it actually holds. An
@@ -358,6 +383,33 @@ export class ScoreReader {
 			}
 		}
 		return total;
+	}
+
+	/*
+	 * A measure's <barline location="middle"> dividers: the beat each one falls on and its
+	 * <bar-style>. These are the barlines that land off the measure edge — a double bar or a
+	 * dotted divider mid-bar — which MusicXML writes between two notes rather than at an
+	 * edge, so the beat comes from the running position of the notes before it in document
+	 * order. Left/right barlines are the measure's own edges and are read elsewhere.
+	 * ponytail: a <backup> is not rewound here, so on a multi-voice measure the divider binds
+	 * to the last note in DOCUMENT order rather than to the beat the second voice reached.
+	 * Every mid-measure barline in tmp/ is single-voice; add the rewind if one isn't.
+	 */
+	midBarlinesOf(measure: Measure): { beat: number; style: string }[] {
+		const out: { beat: number; style: string }[] = [];
+		let beat = 0;
+		for (const child of measure.children) {
+			if (child instanceof Note) {
+				// A chord member shares its lead's onset and a grace steals no time, so
+				// neither advances the position.
+				if (!child.isChordMember && !child.isGrace) {
+					beat = (child.measureBeat ?? beat) + (child.beats ?? 0);
+				}
+			} else if (child instanceof Barline && child.location === 'middle') {
+				out.push({ beat, style: child.barStyle ?? 'regular' });
+			}
+		}
+		return out;
 	}
 
 	/*
@@ -516,6 +568,27 @@ export class ScoreReader {
 				.flatMap((type) => type.childrenNamed('rehearsal'))
 				.map((rehearsal) => rehearsal.text ?? '')
 				.filter(Boolean),
+		);
+	}
+
+	/*
+	 * A measure's navigation signs — <direction><direction-type><segno/> and <coda/> — in
+	 * document order. These are the landmarks a D.S./D.C. jumps to. The words that drive them
+	 * ("D.S. al Coda", "Fine") are ordinary <words> and already print via {@link wordsOf}; only
+	 * the two GLYPHS are here.
+	 * ponytail: the sign's own placement/x attributes are ignored — MusicXML lets a segno be
+	 * offset anywhere, but every one in tmp/ sits at its measure's start, which is where a
+	 * player looks for it.
+	 */
+	navigationsOf(measure: Measure): Array<'segno' | 'coda'> {
+		return measure.directions.flatMap((d) =>
+			d
+				.childrenNamed('direction-type')
+				.flatMap((type) =>
+					type.children.filter((c): c is MElement => c instanceof MElement),
+				)
+				.filter((mark) => mark.tag === 'segno' || mark.tag === 'coda')
+				.map((mark) => mark.tag as 'segno' | 'coda'),
 		);
 	}
 

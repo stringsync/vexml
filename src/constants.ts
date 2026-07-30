@@ -226,6 +226,11 @@ export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
  * footnote next to the noteheads. */
 export const DYNAMICS_FONT_SIZE = 24;
 
+/** Segno/coda glyph size. Sized like a dynamics marking rather than like text: both are
+ * SMuFL glyphs, and a navigation sign is a landmark a player finds while sight-reading, so
+ * it wants to be at least as visible as an "mf". */
+export const NAVIGATION_FONT_SIZE = 24;
+
 /** How tall a crescendo/diminuendo hairpin's open mouth is. */
 export const HAIRPIN_HEIGHT = 10;
 
