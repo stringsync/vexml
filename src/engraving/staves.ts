@@ -1,4 +1,4 @@
-import type { Measure, Part } from '@stringsync/mdom';
+import { MElement, type Measure, type Part } from '@stringsync/mdom';
 
 /** True when `<staff-details>` gives this staff string tunings — the MusicXML signal for
  * tablature that doesn't depend on the clef. */
@@ -131,6 +131,103 @@ export function pairsTabWithNotation(
 		staves.some((n) => isTabStaff(part, n)) &&
 		staves.some((n) => !isTabStaff(part, n))
 	);
+}
+
+/** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
+export type PartGroup = {
+	/** Index into the rendered `parts` array of the group's first and last part. */
+	fromPart: number;
+	toPart: number;
+	symbol: 'brace' | 'bracket' | 'line';
+	/** Nesting depth — 0 is outermost, and each level draws further left of the system. */
+	depth: number;
+};
+
+/*
+ * The `<part-group>` spans declared in the `<part-list>`, outermost first.
+ *
+ * MusicXML declares groups as flat start/stop markers interleaved with the `<score-part>`
+ * entries, paired by `number`, so a group's extent is "the parts between its start and its
+ * stop" — read here by walking the list in document order and closing each start when its
+ * numbered stop arrives. Nesting depth is how many other groups were open when this one
+ * started, which is what decides how far outside the system its symbol is drawn.
+ *
+ * Groups whose `<group-symbol>` is absent or 'none' are dropped — they exist only to carry
+ * a name or a barline rule. 'square' falls back to 'bracket' (vexflow draws no squared
+ * bracket). A group is also dropped when its parts aren't contiguous in the rendered set,
+ * or when it spans only one part with nothing to connect.
+ *
+ * ponytail: `<group-barline>` and `<group-name>`/`<group-abbreviation>` are ignored. vexml
+ * already runs every measure's barline across the whole system, which is what
+ * `<group-barline>yes</group-barline>` asks for; honoring a 'no' means suppressing that
+ * per group, and a group name needs its own reserved left indent. Add either if a fixture
+ * needs it.
+ */
+export function partGroups(parts: Part[]): PartGroup[] {
+	const partList = parts[0]?.parent?.child('part-list');
+	if (!partList) {
+		return [];
+	}
+	const groups: PartGroup[] = [];
+	// number -> the still-open start marker it belongs to.
+	const open = new Map<
+		string,
+		{ symbol: PartGroup['symbol'] | null; fromPart: number; depth: number }
+	>();
+	let seen = 0; // parts passed so far, so a start knows where its span begins
+	for (const entry of partList.children) {
+		if (!(entry instanceof MElement)) {
+			continue;
+		}
+		if (entry.tag === 'score-part') {
+			seen += 1;
+			continue;
+		}
+		if (entry.tag !== 'part-group') {
+			continue;
+		}
+		const number = entry.getAttribute('number') ?? '1';
+		if (entry.getAttribute('type') === 'stop') {
+			const start = open.get(number);
+			open.delete(number);
+			// `seen` counts parts BEFORE this marker, so the last member is seen - 1.
+			if (start?.symbol && seen - 1 > start.fromPart) {
+				groups.push({
+					fromPart: start.fromPart,
+					toPart: seen - 1,
+					symbol: start.symbol,
+					depth: start.depth,
+				});
+			}
+			continue;
+		}
+		open.set(number, {
+			symbol: groupSymbol(entry.child('group-symbol')?.text ?? null),
+			fromPart: seen,
+			depth: open.size,
+		});
+	}
+	// The <score-part> entries are in the same order as the <part> elements, so the counted
+	// positions index `parts` directly; a malformed list that runs past the end is dropped.
+	return groups
+		.filter((g) => g.fromPart >= 0 && g.toPart < parts.length)
+		.sort((a, b) => a.depth - b.depth);
+}
+
+/** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */
+function groupSymbol(symbol: string | null): PartGroup['symbol'] | null {
+	switch (symbol) {
+		case 'brace':
+			return 'brace';
+		case 'bracket':
+		// vexflow has no squared-bracket connector; a bracket is the nearest reading.
+		case 'square':
+			return 'bracket';
+		case 'line':
+			return 'line';
+		default:
+			return null;
+	}
 }
 
 /*

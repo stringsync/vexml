@@ -18,6 +18,8 @@ import {
 	Tuplet,
 } from 'vexflow';
 import {
+	HAIRPIN_HEIGHT,
+	HAIRPIN_STAVE_GAP,
 	SINGLE_SLIDE_GAP,
 	SINGLE_SLIDE_LEN,
 	SINGLE_SLIDE_RISE,
@@ -34,7 +36,7 @@ import {
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
 } from '../constants';
-import type { PedalMark } from './score-reader';
+import type { PedalMark, WedgeMark } from './score-reader';
 
 /*
  * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
@@ -154,6 +156,55 @@ class SingleSlide {
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
+		ctx.stroke();
+	}
+}
+
+/*
+ * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
+ * the side its <wedge> placement names. vexflow's own StaveHairpin derives its y from the
+ * stave box and a pair of hardcoded 20/30px constants that, for an ABOVE hairpin, land the
+ * wedge inside the staff — the offset needed to correct it is more code (and more coupling
+ * to those constants) than the three lines the shape actually is. Drawn via
+ * setContext().draw() like the other spanners.
+ */
+class Hairpin {
+	private context?: RenderContext;
+	constructor(
+		private readonly from: StaveNote,
+		private readonly to: StaveNote,
+		private readonly crescendo: boolean,
+		private readonly placement: 'above' | 'below',
+	) {}
+	setContext(context: RenderContext): this {
+		this.context = context;
+		return this;
+	}
+	/** The band the wedge occupies, for the caller's page crop. */
+	get bounds(): { top: number; bottom: number } {
+		const stave = this.from.checkStave();
+		const top =
+			this.placement === 'above'
+				? stave.getYForLine(0) - HAIRPIN_STAVE_GAP - HAIRPIN_HEIGHT
+				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP;
+		return { top, bottom: top + HAIRPIN_HEIGHT };
+	}
+	draw(): void {
+		const ctx = this.context;
+		if (!ctx) {
+			return;
+		}
+		const { top, bottom } = this.bounds;
+		const mid = (top + bottom) / 2;
+		// The wedge spans notehead to notehead. A crescendo opens rightward (its point sits
+		// at the first note), a diminuendo closes rightward (its point sits at the last).
+		const x1 = this.from.getAbsoluteX();
+		const x2 = this.to.getAbsoluteX();
+		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
+		ctx.beginPath();
+		ctx.moveTo(mouthX, top);
+		ctx.lineTo(pointX, mid);
+		ctx.lineTo(mouthX, bottom);
 		ctx.stroke();
 	}
 }
@@ -699,6 +750,40 @@ export class SpannerBuilder {
 			);
 		}
 		return lines;
+	}
+
+	/*
+	 * Hairpins (<direction><wedge>): a start..stop pair drawn as a vexflow StaveHairpin —
+	 * an opening wedge for a crescendo, a closing one for a diminuendo — on the side of the
+	 * staff the direction's placement names (below by default). Paired by `number` and
+	 * resolved over the whole score (a hairpin can span barlines) like the other spanners;
+	 * the markers arrive in document order, so each stop closes the matching open start.
+	 * ponytail: a hairpin whose stop wraps onto a later system isn't split into two partial
+	 * hairpins the way buildTies splits a wrapped tie; it would draw right-to-left across
+	 * the page. Add the split if a fixture needs one.
+	 */
+	buildWedges(markers: WedgeMark[], byLead: Map<Note, StaveNote>): Hairpin[] {
+		const wedges: Hairpin[] = [];
+		const open = new Map<string, WedgeMark>();
+		for (const marker of markers) {
+			if (marker.type === 'start') {
+				open.set(marker.number, marker);
+				continue;
+			}
+			const from = open.get(marker.number);
+			open.delete(marker.number);
+			const firstNote = from && byLead.get(from.lead);
+			const lastNote = byLead.get(marker.lead);
+			// A stop with no open start, or either endpoint off a hidden staff, has nothing
+			// to span. Same for a zero-width span (both ends on one note).
+			if (!from || !firstNote || !lastNote || firstNote === lastNote) {
+				continue;
+			}
+			wedges.push(
+				new Hairpin(firstNote, lastNote, from.crescendo, from.placement),
+			);
+		}
+		return wedges;
 	}
 
 	/*

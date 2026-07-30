@@ -178,6 +178,14 @@ export class ScoreDrawer {
 			getComputedStyle(canvas).getPropertyValue('--vexml-font-text').trim() ||
 			'Arial';
 
+		// The music font, for the few glyphs vexml types itself out of SMuFL codepoints
+		// rather than getting from a vexflow element — dynamics markings today. Same
+		// container-scoped CSS var loadFonts() sets, read off the real canvas like labelFont.
+		const notationFont =
+			getComputedStyle(canvas)
+				.getPropertyValue('--vexml-font-notation')
+				.trim() || 'Bravura';
+
 		// Two clashes only show up once the music is drawn: a system's notes rising above its
 		// top stave into the system before it, and a stave's notes spilling into the stave
 		// below it (the layout planner's stave gaps are fixed, so dense/extreme parts collide).
@@ -197,6 +205,7 @@ export class ScoreDrawer {
 				parts,
 				activeLayout,
 				labelFont,
+				notationFont,
 				topSlack,
 				height,
 				topOverflow,

@@ -1,17 +1,62 @@
-import type {
-	Chord,
-	Harmony,
+import {
+	type Chord,
+	type Harmony,
 	MElement,
-	Measure,
-	Note,
-	Voice as ScoreVoice,
-	Time,
+	type Measure,
+	type Note,
+	type Voice as ScoreVoice,
+	type Time,
 } from '@stringsync/mdom';
 import { DEFAULT_TEMPO_BPM } from '../constants';
 import type { ChordFrame } from './chord-diagram-glyph';
 
 /** A metronome mark: the beat-unit's vexflow duration code plus its bpm. */
 export type TempoMark = { duration: string; bpm: number };
+
+/** Which side of the staff a `<direction>` prints on. */
+export type Placement = 'above' | 'below';
+
+/**
+ * A `<direction>`'s placement attribute. MusicXML leaves it optional and the default is
+ * renderer's choice; vexml keeps 'above' as the default so an unmarked directive draws
+ * where it always has. Callers that engrave BELOW by convention (dynamics, wedges) pass
+ * their own default rather than reading it from here.
+ */
+function placementOf(
+	direction: MElement,
+	fallback: Placement = 'above',
+): Placement {
+	const placement = direction.getAttribute('placement');
+	return placement === 'below' || placement === 'above' ? placement : fallback;
+}
+
+/*
+ * SMuFL gives each dynamic LETTER its own glyph (dynamicPiano U+E520 … dynamicNiente
+ * U+E526), and every standard marking is spelled out of those seven: "sfz" is s+f+z,
+ * "mp" is m+p. Composing from the singles covers the whole MusicXML vocabulary without a
+ * 24-entry table of ligature codepoints, and Bravura's sidebearings already space them.
+ */
+const DYNAMIC_GLYPHS: Record<string, string> = {
+	p: '\uE520', // dynamicPiano
+	m: '\uE521', // dynamicMezzo
+	f: '\uE522', // dynamicForte
+	r: '\uE523', // dynamicRinforzando
+	s: '\uE524', // dynamicSforzando
+	z: '\uE525', // dynamicZ
+	n: '\uE526', // dynamicNiente
+};
+
+/** True when every letter of a marking has a SMuFL glyph, so it can engrave as music
+ * rather than as text — false for an <other-dynamics> like "abc-ffz". */
+function isDynamicSpelling(text: string): boolean {
+	return [...text].every((ch) => ch in DYNAMIC_GLYPHS);
+}
+
+/** A marking respelled in SMuFL dynamic glyphs. Callers check {@link isDynamicSpelling}
+ * (via the `glyph` flag) first; an unmapped character passes through unchanged. */
+export function dynamicGlyphs(text: string): string {
+	return [...text].map((ch) => DYNAMIC_GLYPHS[ch] ?? ch).join('');
+}
 
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
 // anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
@@ -21,6 +66,18 @@ export type PedalMark = {
 	type: 'start' | 'stop';
 	number: string;
 	line: boolean;
+};
+
+// A <direction><direction-type><wedge> (hairpin) marker, bound to the lead note it anchors
+// the same way a PedalMark is. `crescendo` is carried on every marker of the pair so the
+// stop knows which way its hairpin opens; `placement` likewise, so both ends agree on the
+// side of the staff.
+export type WedgeMark = {
+	lead: Note;
+	type: 'start' | 'stop';
+	number: string;
+	crescendo: boolean;
+	placement: Placement;
 };
 
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
@@ -274,19 +331,68 @@ export class ScoreReader {
 	 * same binding a pedal start uses — so per-note directives (guitar p-i-m-a fingering,
 	 * picking marks) print over their own note instead of stacking on the measure's first.
 	 * null when the direction trails the measure's last note.
-	 * ponytail: placement and font-style attributes ignored — every words direction prints
-	 * above the staff in italics; add a placement/style field if a fixture needs below or
-	 * upright words.
+	 * `placement` is the direction's placement attribute: 'below' prints under the staff (the
+	 * convention for piano expression marks), anything else — including an absent attribute —
+	 * keeps the above-staff default.
+	 * ponytail: font-style attributes still ignored — every words direction prints in italics;
+	 * add a style field if a fixture needs upright words.
 	 */
-	wordsOf(
-		measure: Measure,
-	): { text: string; staffNumber: string; lead: Note | null }[] {
+	wordsOf(measure: Measure): {
+		text: string;
+		staffNumber: string;
+		lead: Note | null;
+		placement: Placement;
+	}[] {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.child('staff')?.text ?? '1';
 			const lead = d.nextNote;
+			const placement = placementOf(d);
 			return d.words
 				.filter(Boolean)
-				.map((text) => ({ text, staffNumber, lead }));
+				.map((text) => ({ text, staffNumber, lead, placement }));
+		});
+	}
+
+	/*
+	 * A measure's <direction><direction-type><dynamics> markings (p, mf, sfz, …), in
+	 * document order. MusicXML names the marking by the TAG — <dynamics><sfz/> — with
+	 * <other-dynamics> carrying free text for anything outside the vocabulary, so the tag
+	 * name is the text to print.
+	 * `glyph` says the marking is spelled entirely out of the SMuFL dynamic letters and so
+	 * draws in the notation font; an <other-dynamics> (or any tag with a stray letter)
+	 * falls back to plain italic text.
+	 * `staffNumber` and `lead` bind it the same way {@link wordsOf} binds a directive.
+	 * Dynamics engrave BELOW the staff by convention, so that's the placement default here
+	 * — an explicit placement="above" still wins.
+	 */
+	dynamicsOf(measure: Measure): {
+		text: string;
+		glyph: boolean;
+		staffNumber: string;
+		lead: Note | null;
+		placement: Placement;
+	}[] {
+		return measure.directions.flatMap((d) => {
+			const staffNumber = d.child('staff')?.text ?? '1';
+			const lead = d.nextNote;
+			const placement = placementOf(d, 'below');
+			return d
+				.childrenNamed('direction-type')
+				.flatMap((type) => type.childrenNamed('dynamics'))
+				.flatMap((dynamics) =>
+					dynamics.children.filter((c): c is MElement => c instanceof MElement),
+				)
+				.map((mark) =>
+					mark.tag === 'other-dynamics' ? (mark.text ?? '') : mark.tag,
+				)
+				.filter(Boolean)
+				.map((text) => ({
+					text,
+					glyph: isDynamicSpelling(text),
+					staffNumber,
+					lead,
+					placement,
+				}));
 		});
 	}
 
@@ -331,6 +437,53 @@ export class ScoreReader {
 				if (lead) {
 					out.push({ lead, type, number: pedal.number, line: pedal.line });
 				}
+			}
+		}
+		return out;
+	}
+
+	/*
+	 * A measure's wedge (hairpin) markers, in document order. A "crescendo"/"diminuendo"
+	 * opens on the note that follows it. A "stop" sits at the moment the wedge finishes, so
+	 * it closes on the note that FOLLOWS it too — unlike a pedal stop, which releases on the
+	 * last note still held. An exporter that trails the stop after a measure's last note
+	 * leaves no next note, so that case falls back to the previous one.
+	 * The opening marker's type decides the direction, so a stop inherits it from its
+	 * partner; a stop whose partner is missing (a malformed or sliced span) is dropped by
+	 * the builder, not here.
+	 * Hairpins engrave BELOW the staff by convention, so that's the placement default — an
+	 * explicit placement="above" still wins.
+	 * ponytail: a "continue" marker is ignored — it only re-states an open wedge mid-span.
+	 */
+	wedgesOf(measure: Measure): WedgeMark[] {
+		const out: WedgeMark[] = [];
+		for (const direction of measure.directions) {
+			for (const wedge of direction.wedges) {
+				const wedgeType = wedge.wedgeType;
+				if (wedgeType === 'continue') {
+					continue;
+				}
+				const type = wedgeType === 'stop' ? 'stop' : 'start';
+				const lead =
+					direction.nextNote ??
+					(type === 'stop' ? direction.previousNote : null);
+				if (!lead) {
+					continue;
+				}
+				// A stop carries no direction of its own; read it off the marker that opened
+				// the pair. Falling back to crescendo keeps a half-open span drawable.
+				const opener =
+					type === 'start'
+						? wedgeType
+						: (wedge.members.find((m) => m.wedgeType !== 'stop')?.wedgeType ??
+							'crescendo');
+				out.push({
+					lead,
+					type,
+					number: wedge.number,
+					crescendo: opener === 'crescendo',
+					placement: placementOf(direction, 'below'),
+				});
 			}
 		}
 		return out;

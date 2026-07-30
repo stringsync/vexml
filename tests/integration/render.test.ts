@@ -32,19 +32,19 @@ const TEST_CASES = [
 	// A single-stave part above a two-stave (braced) part — mixed stave counts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
 
-	// TODO(coverage): <part-group> is not covered anywhere and src/ never reads it (grep
-	// 'part-group' in src/ -> nothing). vexml infers connectors from stave counts alone —
-	// a two-stave part gets a brace, notation+tab gets a bracket — so a score that groups
-	// SEPARATE parts into a section is drawn as unrelated staves.
-	// Fixture: structure_part_groups.musicxml (lilypond_41d-StaffGroups-Nested M1) — five
-	// single-stave parts nested three deep: an outer <part-group type="start"
-	// number="1"><group-symbol>bracket</group-symbol> around all five, an inner brace group
-	// around parts 2-3, and another inner bracket around parts 4-5.
-	// Expected: an outer bracket spanning all five staves plus the system's left line, with
-	// the two inner groups drawn as their own symbols nested to the right of it.
-	// Current: five bare, unconnected 5-line staves — no bracket, no brace, no left line
-	// (verified render).
-	// testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
+	// Five single-stave parts (one empty-ish measure each, a whole note in common time)
+	// joined by nested <part-group> spans read off the <part-list>. The system's own left
+	// line closes all five staves; each group's <group-symbol> draws outside it, the
+	// innermost group hugging the system and each level out stepping further left.
+	// - The outer group (number 1, <group-symbol>line</group-symbol>) spans parts 2-4 and
+	//   draws as a plain vertical line, furthest from the staves.
+	// - The inner group (number 2, <group-symbol>bracket</group-symbol>) spans parts 3-4 and
+	//   draws as a square bracket with top and bottom curls, nested to its right.
+	// - Parts 1 and 5 belong to no group, so nothing but the system line touches them.
+	// ponytail: <group-barline> and <group-name> are ignored — vexml already runs every
+	// barline across the whole system (what group-barline "yes" asks for), and a group name
+	// needs its own reserved left indent.
+	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
 
 	// TODO(coverage): the flat (non-nested) <part-group> symbols, so each symbol type can be
 	// checked on its own before the nested case above.
@@ -54,7 +54,11 @@ const TEST_CASES = [
 	// <group-barline>yes</group-barline> runs the group's barlines through the staves between
 	// its members while a 'no' leaves each member's barlines separate. <group-name> prints to
 	// the left of the group (needs showPartLabels).
-	// Current: unverified beyond the nested case — expect the same "no connectors at all".
+	// Current: the group SYMBOLS now draw (structure_part_groups above covers line + bracket
+	// nesting); what this 28-part fixture would add is the 'brace' and 'square' symbols, the
+	// group-barline rule, and <group-name>. The last two are still unimplemented — see the
+	// ponytail note on partGroups() in src/engraving/staves.ts — so enabling this case would
+	// pin a render that is knowingly missing them. Unverified.
 	// testCase('structure_staff_group_brackets.musicxml', 'structure_staff_group_brackets.png', {
 	// 	showPartLabels: true,
 	// }),
@@ -196,20 +200,19 @@ const TEST_CASES = [
 		'clef_notation_and_tab_bracket.png',
 	),
 
-	// TODO(coverage): C clefs have a mapping in src (vexflowClef returns 'tenor' for line 4,
-	// 'alto' otherwise) but no test case pins it, and mid-score clef CHANGES are not drawn
-	// at all.
-	// Fixture: clef_c.musicxml (lilypond_12a-Clefs M1-6) — one whole note per measure, the
-	// clef changing every measure: G/2 treble, C/3 alto, C/4 tenor, F/4 bass, then further
-	// signs.
-	// Expected: each measure redraws its new clef glyph at its left edge, the same way
-	// key.musicxml M2 redraws a changed key signature; the whole note moves to the staff
-	// position that clef gives it.
-	// Current: only M1's treble clef is drawn. The noteheads DO move measure to measure, so
-	// the clef is being applied to pitch placement — it just never redraws the glyph, leaving
-	// a reader no way to tell why the note jumped (verified render). Fix is in the same place
-	// key/time changes are emitted (src/engraving/staves.ts + layout-planner width budget).
-	// testCase('clef_c.musicxml', 'clef_c.png'),
+	// One system, 4/4: a clef change in every measure, each redrawn at the measure's left
+	// edge at the smaller "change clef" size (the way key.musicxml M2 redraws a changed
+	// key). Every measure holds one C4 whole note, so only the clef varies and the notehead
+	// moves to the staff position each clef gives that one pitch.
+	// - M1: opens the system with a full-size treble clef (G/2), common time, no key
+	//   signature; C4 sits one ledger line below the stave.
+	// - M2: alto clef (C/3) — C4 hangs one position below the middle line.
+	// - M3: tenor clef (C/4) — C4 drops to the second space from the bottom.
+	// - M4: bass clef (F/4) — C4 rides the second space from the top.
+	// - M5: percussion clef (the two vertical bars); the note takes its default position.
+	// - M6: treble clef with <clef-octave-change>-1 — the same G/2 glyph with a small "8"
+	//   under it, so the note draws where M1's did.
+	testCase('clef_c.musicxml', 'clef_c.png'),
 
 	// TODO(coverage): a clef change in the MIDDLE of a measure, and one attached to the END of
 	// a measure (the courtesy clef before a change on the next system).
@@ -505,46 +508,41 @@ const TEST_CASES = [
 	// - M3: four directions, one before each B4 quarter ("p", "i", "m", "a" — guitar
 	//   fingering). Each letter prints over its own note, spread across the measure on one
 	//   row; anchoring them all at the measure's first note would stack them in a column.
+	// - M4: placement="below" ("dolce") over B4 quarters — the text prints UNDER the staff,
+	//   at the mirror of M1's fixed gap, clear of the down-stems hanging off the notes.
+	// - M5: placement="below" over a low first note (E3, two ledger lines below) that hangs
+	//   into the text's default band, so the text is pushed down clear of the noteheads —
+	//   the below-stave mirror of M2's lift. Wraps to its own system.
 	testCase('words.musicxml', 'words.png'),
 
-	// TODO(coverage): placement="below" on a <direction>. ScoreReader.wordsOf carries a
-	// `ponytail:` note saying placement is ignored and everything prints above the staff in
-	// italics. 49 files in tmp/ set placement="below" somewhere — for a piano part the whole
-	// convention is that expression marks live BELOW the treble staff.
-	// Expected: a words direction with placement="below" draws under the staff, lifted clear of
-	// the notes hanging beneath it (and of the lyrics, if any) via the same CollisionDetector
-	// path the above-staff case uses; placement="above" and no placement both keep today's
-	// behavior. Add this as new measures on words.musicxml, not a new file.
-	// Current: every direction prints above the staff.
+	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
+	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
+	// staff — the engraving default these directions carry no explicit placement for. Every
+	// note also carries a LYRIC naming the dynamic it should show, so each glyph can be read
+	// against the plain-text syllable directly above it; the glyph row drops clear of the
+	// lyric row rather than printing through it, and each marking centers on its own note.
+	// - M3: p, pp, ppp, pppp — the piano ladder.
+	// - M4: ppppp, pppppp, f, ff — the tail of the piano ladder into the forte one. The two
+	//   six-letter markings are wide enough to reach their neighbor's column, so they stack
+	//   onto their own rows below rather than overprinting.
+	// - M5: fff, ffff, fffff, ffffff — the rest of the forte ladder, stacking the same way;
+	//   the widest is pulled back inside the page edge instead of being clipped.
+	// - M6: mp, mf, sf, sfp — the mezzo and sforzando forms.
+	// - M7: sfpp, fp, rf, rfz — the compound sforzando/rinforzando forms.
+	// - M8: sfz, sffz, fz, then an <other-dynamics> ("abc-ffz") — outside the SMuFL letter
+	//   vocabulary, so it falls back to its literal text in the italic words face.
+	testCase('dynamics.musicxml', 'dynamics.png'),
 
-	// TODO(coverage): <dynamics> — p/f/mf/sfz and friends. THE single biggest gap in the suite:
-	// 32 of the files in tmp/ carry a <dynamics>, and grep 'dynamics' in src/ finds nothing, so
-	// every dynamic marking in every real score is silently dropped.
-	// Fixture: dynamics.musicxml (lilypond_31a-Directions M3-8) — one dynamic per note across
-	// the full vocabulary: p pp ppp pppp ppppp pppppp, f ff fff ffff fffff ffffff, mp mf sf sfp
-	// sfpp fp rf rfz sfz sffz fz, and an <other-dynamics> ("abc-ffz").
-	// Reading the fixture: each note also carries a LYRIC naming the dynamic it should show, so
-	// the expected render is legible straight off the screenshot — the syllable under each note
-	// is exactly the glyph that belongs above (or below) it.
-	// Expected: the SMuFL dynamic glyphs (bold italic p/m/f forms, not ordinary text), drawn
-	// below the staff by default per convention, honoring placement, lifted clear of notes and
-	// of each other through CollisionDetector. <other-dynamics> falls back to its literal text.
-	// Current: the staff, notes and lyrics draw; not one dynamic glyph appears (verified
-	// render). See also tmp/expressions.xml, tmp/expression_test.xml, tmp/expressions_overlap.xml.
-	// testCase('dynamics.musicxml', 'dynamics.png'),
-
-	// TODO(coverage): <wedge> — crescendo and diminuendo hairpins. 20 files in tmp/ use them;
-	// no support in src/.
-	// Fixture: wedges.musicxml (lilypond_33a-Spanners M4-5) — a crescendo wedge and a
-	// diminuendo wedge, each spanning several notes.
-	// Expected: an opening hairpin (crescendo) and a closing one (diminuendo) drawn under the
-	// staff between the start and stop directions' notes, at a consistent height with any
-	// dynamics on the same span, and split into two partial hairpins across a system break the
-	// same way slur_system_break/tie_system_break already split their curves.
-	// Current: unverified — expect nothing drawn. Follow-ups once the basic case lands:
-	// tmp/cresc_dim_simultaneous_quartet.xml (four parts hairpinning at once) and
-	// tmp/wedges_layered.xml (overlapping wedges that must stack rather than overprint).
-	// testCase('wedges.musicxml', 'wedges.png'),
+	// Treble stave, 3/4: <wedge> hairpins, one per measure, each spanning the measure's three
+	// B4 quarters. Both directions carry placement="above", so both draw ABOVE the staff
+	// (hairpins default below; the explicit placement wins) at a fixed gap over the top staff
+	// line, running notehead to notehead from the start direction's note to the stop's.
+	// - M4: a crescendo — an opening wedge, point at the first note, mouth at the third.
+	// - M5: a diminuendo — the mirror, mouth at the first note closing to a point at the
+	//   third.
+	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
+	// way a tie or slur is; no fixture reaches that yet.
+	testCase('wedges.musicxml', 'wedges.png'),
 
 	// TODO(coverage): <octave-shift> — the 8va/8vb/15ma dashed brackets. 8 files in tmp/ use
 	// one. Note this is a DIFFERENT feature from <clef-octave-change>, which clef_treble_octave

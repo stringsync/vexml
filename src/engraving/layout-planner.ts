@@ -13,6 +13,7 @@ import {
 	LABEL_GAP,
 	LEAD_BARLINE,
 	LEAD_CLEF,
+	LEAD_CLEF_CHANGE,
 	LEAD_KEY,
 	LEAD_TIME,
 	LOG_SPACING_RATIO,
@@ -300,7 +301,9 @@ export class LayoutPlanner {
 
 		// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
 		// repeats at every system start; the time signature prints once at the piece
-		// start; mid-system measures carry only a barline.
+		// start; mid-system measures carry only a barline, plus a smaller clef when the
+		// clef changes there (draw's buildStave redraws it — budget the room or the
+		// change clef eats into the note area).
 		// ponytail: fixed, deliberately generous estimates so notes never collide with
 		// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
 		const leadFull = (m: number) => {
@@ -312,8 +315,24 @@ export class LayoutPlanner {
 				(m === 0 ? LEAD_TIME : 0)
 			);
 		};
+		const clefChangesAt = (m: number) =>
+			m > 0 &&
+			parts.some((part) =>
+				visibleStaffNumbers(part, showTabs, showNotation).some(
+					(staffNumber) =>
+						!isTabStaff(part, staffNumber) &&
+						this.translator.vexflowClefSpec(
+							part.measures[m]?.getClef(staffNumber) ?? null,
+						) !==
+							this.translator.vexflowClefSpec(
+								part.measures[m - 1]?.getClef(staffNumber) ?? null,
+							),
+				),
+			);
 		const leadOf = (m: number, systemStart: boolean) =>
-			systemStart ? leadFull(m) : LEAD_BARLINE;
+			systemStart
+				? leadFull(m)
+				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0);
 
 		// --- Breaks -------------------------------------------------------------------
 		// Standard: wrap to a new system once the next measure's note area would overrun

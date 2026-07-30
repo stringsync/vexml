@@ -54,6 +54,25 @@ describe('CollisionResolver', () => {
 		expect(placed.bottom).toBe(82); // 90 - 8, the diagram was ignored
 	});
 
+	it('dropClear lowers a rect to sit `gap` below the lowest obstacle in its column', () => {
+		const d = detector();
+		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // bottom at y=120
+		d.add({ rect: new Rect(5, 130, 10, 5), kind: 'tie' }); // lower: bottom at y=135
+		const natural = new Rect(0, 100, 20, 15);
+		expect(d.dropClear(natural, 8).y).toBe(143); // 135 (lowest bottom) + 8 gap
+	});
+
+	it('dropClear never raises a rect that is already clear, and stacks downward', () => {
+		const d = detector();
+		d.add({ rect: new Rect(5, 0, 10, 30), kind: 'note' }); // well above
+		const natural = new Rect(0, 100, 20, 15);
+		expect(d.dropClear(natural, 8)).toBe(natural); // returned unchanged
+		d.add({ rect: new Rect(5, 100, 10, 30), kind: 'note' }); // bottom at 130
+		const a = d.dropClear(natural, 8);
+		d.add({ rect: a, kind: 'annotation' });
+		expect(d.dropClear(natural, 8).y).toBe(a.bottom + 8); // stacks under `a`
+	});
+
 	it('pushRightOf reproduces the chord-diagram running-cursor (gap enforced even when close)', () => {
 		const d = detector();
 		d.add({ rect: new Rect(0, 0, 88, 84), kind: 'diagram' }); // right edge at x=88

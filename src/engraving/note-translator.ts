@@ -1,4 +1,4 @@
-import type { Chord, Note } from '@stringsync/mdom';
+import type { Chord, Clef, Note } from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -675,6 +675,18 @@ export class NoteTranslator {
 			default:
 				return 'treble';
 		}
+	}
+
+	/*
+	 * A clef's DRAWN identity: the vexflow clef name plus any octave annotation, or null
+	 * when there is no clef. Two clefs that engrave to the same glyph share a signature
+	 * (C/3 and C/5 are both 'alto'), so comparing signatures across measures spots a clef
+	 * change that is actually visible instead of redrawing an identical glyph.
+	 */
+	vexflowClefSpec(clef: Clef | null): string | null {
+		return clef
+			? `${this.vexflowClef(clef.sign, clef.line)}|${this.vexflowClefAnnotation(clef.octaveChange) ?? ''}`
+			: null;
 	}
 
 	/*

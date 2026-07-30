@@ -113,6 +113,42 @@ export class CollisionResolver {
 	}
 
 	/*
+	 * The mirror of {@link liftClear}: move `rect` straight DOWN until its top sits `gap`
+	 * below the lowest obstacle sharing its x-column; never moves it up. Below-stave text
+	 * (dynamics, a placement="below" direction) stacks downward the same way above-stave
+	 * text stacks upward, so the two share one policy with the sign flipped.
+	 */
+	dropClear(
+		rect: Rect,
+		gap: number,
+		kinds?: CollisionKind[],
+		band?: number,
+	): Rect {
+		// A tall, thin probe down the rect's x-column, starting at the rect's top: catches
+		// every obstacle in the column whose bottom is at/below where the rect currently sits.
+		const probe = new Rect(rect.x, rect.y, rect.w, FAR);
+		let bottomMost = -Infinity;
+		for (const c of this.query(probe)) {
+			if (kinds && !kinds.includes(c.other.kind)) {
+				continue;
+			}
+			if (
+				band !== undefined &&
+				c.other.band !== undefined &&
+				c.other.band !== band
+			) {
+				continue;
+			}
+			bottomMost = Math.max(bottomMost, c.other.rect.bottom);
+		}
+		if (bottomMost === -Infinity) {
+			return rect;
+		}
+		const targetTop = Math.max(rect.y, bottomMost + gap);
+		return rect.translate(0, targetTop - rect.y);
+	}
+
+	/*
 	 * Push `rect` right until it sits `gap` past every already-placed obstacle of `kind` in
 	 * its y-band. Enforces the gap against a neighbor that's merely close (not yet
 	 * overlapping), reproducing the running-cursor spacing chord diagrams used.

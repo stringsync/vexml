@@ -42,6 +42,7 @@ import {
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
 	CONNECTOR_VERTICAL_OVERHANG,
+	DYNAMICS_FONT_SIZE,
 	FRET_HALF_H,
 	FRET_HALF_W,
 	GAP_LABEL_FONT_SIZE,
@@ -55,11 +56,13 @@ import {
 	HARMONY_Y_OFFSET,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
+	LYRIC_FONT_SIZE,
 	LYRIC_LINE_HEIGHT,
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
 	NOTEHEAD_HALF_H,
 	PAGE_MARGIN_X,
+	PART_GROUP_STEP,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
 	REHEARSAL_FONT_SIZE,
@@ -87,10 +90,19 @@ import {
 	type NoteTranslator,
 } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
-import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
+import type {
+	PedalMark,
+	Placement,
+	ScoreReader,
+	TempoMark,
+	WedgeMark,
+} from './score-reader';
+import { dynamicGlyphs } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import {
 	isTabStaff,
+	type PartGroup,
+	partGroups,
 	partSymbol,
 	stringTuning,
 	visibleStaffNumbers,
@@ -195,6 +207,18 @@ type PendingStave = {
 // chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
 // nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
+
+// The face drawWords types a beside-stave string in. A words directive gets the text font
+// in italics; a dynamics marking gets the notation font (SMuFL glyphs are not text) at its
+// own larger size, so it engraves as music.
+type SideTextStyle = {
+	font: string;
+	size: number;
+	italic: boolean;
+	color?: string;
+	/** Center the string on its note instead of left-anchoring at it. */
+	centered?: boolean;
+};
 
 // What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
 // Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
@@ -345,6 +369,9 @@ export class DrawPass {
 	// Pedal directions are spanners too (a start..stop pair), collected per measure
 	// and resolved over the whole score alongside ties and slurs.
 	private readonly allPedals: PedalMark[] = [];
+	// Wedge (hairpin) markers, resolved into StaveHairpins over the whole score alongside
+	// the pedals — a hairpin can span barlines, so it can't be built per measure.
+	private readonly allWedges: WedgeMark[] = [];
 
 	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
 	// barlines, so TAB notes record into their own map and resolve at the end.
@@ -442,16 +469,32 @@ export class DrawPass {
 		frame: ChordFrame | null;
 		source: MElement;
 	}> = [];
-	// Words directions (e.g. "ritardando"), each drawn above its stave at the laid-out x
-	// of the note it applies to.
+	// Words directions (e.g. "ritardando"), each drawn on its stave's `placement` side at
+	// the laid-out x of the note it applies to.
 	private wordsTasks: Array<{
 		stave: Stave;
 		text: string;
 		anchor: StaveNote | TabNote | undefined;
+		placement: Placement;
+	}> = [];
+	// Dynamics markings (p, mf, sfz, …), queued like wordsTasks but drawn in the notation
+	// font when `glyph` says the marking spells out of SMuFL's dynamic letters.
+	private dynamicsTasks: Array<{
+		stave: Stave;
+		text: string;
+		glyph: boolean;
+		anchor: StaveNote | TabNote | undefined;
+		placement: Placement;
 	}> = [];
 	// A part's staves are built here, then formatted and drawn together below so
 	// notes at the same tick align vertically across staves (notation over tab).
 	private pendingStaves: PendingStave[] = [];
+	// This measure column's top/bottom stave per part index, so a <part-group> connector
+	// can span from one part's top stave to another's bottom. Sparse: a part with no
+	// measure here has no entry.
+	private partStaves: Array<{ top: Stave; bottom: Stave } | undefined> = [];
+	// The <part-group> spans from the <part-list>, outermost first. Fixed for the score.
+	private readonly partGroups: PartGroup[];
 
 	constructor(
 		private readonly translator: NoteTranslator,
@@ -462,6 +505,7 @@ export class DrawPass {
 		private readonly parts: Part[],
 		layout: ScoreLayout,
 		private readonly labelFont: string,
+		private readonly notationFont: string,
 		topSlack: number,
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
@@ -493,6 +537,7 @@ export class DrawPass {
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
 		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.gaps = gapsByMeasureIndex(config.gaps);
+		this.partGroups = partGroups(this.parts);
 		// Read from the first part — a repeat or volta boundary applies across the system.
 		this.decorations = barlineDecorations(this.parts[0]?.measures ?? []);
 		this.systemTopY = layout.top + topSlack;
@@ -578,8 +623,10 @@ export class DrawPass {
 		this.tempoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
+		this.dynamicsTasks = [];
+		this.partStaves = [];
 
-		for (const part of this.parts) {
+		for (const [partIndex, part] of this.parts.entries()) {
 			// The staves this part actually renders: with showTabs/showNotation off, its
 			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
 			// layout planner built from this same visible set, so the two stay aligned.
@@ -608,6 +655,11 @@ export class DrawPass {
 				);
 				partTop ??= stave;
 				partBottom = stave;
+			}
+			if (partTop && partBottom) {
+				// Remembered per part so a <part-group> connector spanning several parts can
+				// reach from the first member's top stave to the last member's bottom one.
+				this.partStaves[partIndex] = { top: partTop, bottom: partBottom };
 			}
 
 			// Defer formatting to one pass over the whole system (below) so notes align
@@ -640,11 +692,13 @@ export class DrawPass {
 				this.tempoTasks.push({ stave: topStave.stave, tempo });
 			}
 
-			// Words directions (e.g. "ritardando") print over the staff their <staff> names,
+			// Words directions (e.g. "ritardando") print on the staff their <staff> names,
 			// falling back to this part's top staff when that staff isn't rendered, and
 			// anchored at the note the direction precedes (its first note when it names
 			// none). Drawn after the system is formatted so that note's x is real.
-			for (const { text, staffNumber, lead } of this.reader.wordsOf(measure)) {
+			for (const { text, staffNumber, lead, placement } of this.reader.wordsOf(
+				measure,
+			)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
 				if (target) {
@@ -655,6 +709,32 @@ export class DrawPass {
 						stave: target.stave,
 						text,
 						anchor: anchor ?? target.staveNotes[0],
+						placement,
+					});
+				}
+			}
+
+			// Dynamics markings, bound to their staff and lead note exactly like words —
+			// they differ only in the face they're typed in and in defaulting below the staff.
+			for (const {
+				text,
+				glyph,
+				staffNumber,
+				lead,
+				placement,
+			} of this.reader.dynamicsOf(measure)) {
+				const target =
+					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
+				if (target) {
+					const anchor = lead
+						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
+						: undefined;
+					this.dynamicsTasks.push({
+						stave: target.stave,
+						text,
+						glyph,
+						anchor: anchor ?? target.staveNotes[0],
+						placement,
 					});
 				}
 			}
@@ -662,6 +742,7 @@ export class DrawPass {
 			// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
 			// can span barlines) after every note is placed — see below the measure loop.
 			this.allPedals.push(...this.reader.pedalsOf(measure));
+			this.allWedges.push(...this.reader.wedgesOf(measure));
 
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
@@ -850,18 +931,26 @@ export class DrawPass {
 		}
 
 		// The previous measure's effective signatures (carried forward), used to
-		// spot a mid-system change. getKey/getTime return what's in effect at the
-		// measure start, so M3 of a piece that changed key at M2 reads the same
+		// spot a mid-system change. getClef/getKey/getTime return what's in effect at
+		// the measure start, so M3 of a piece that changed key at M2 reads the same
 		// key as M2 — no spurious redraw.
 		const prevMeasure = part.measures[m - 1];
 		const key = measure.getKey(staffNumber);
 		const keyChanged =
 			(key?.rootNote ?? null) !==
 			(prevMeasure?.getKey(staffNumber)?.rootNote ?? null);
+		const clefChanged =
+			m > 0 &&
+			this.translator.vexflowClefSpec(clef) !==
+				this.translator.vexflowClefSpec(
+					prevMeasure?.getClef(staffNumber) ?? null,
+				);
 
 		// Clef and key print at every system start (re-stated on each new line).
-		// A mid-system key change is also redrawn where it happens (clef and time
-		// are not repeated for it).
+		// A mid-system clef or key change is also redrawn where it happens (the time
+		// signature is not repeated for either). The changed clef is drawn at the
+		// small "change clef" size, which is how a mid-piece clef change is engraved —
+		// it reads as a correction to the stave, not a fresh system opening.
 		if (this.isSystemStart) {
 			if (isTab) {
 				const tabStave = stave as TabStave;
@@ -878,8 +967,17 @@ export class DrawPass {
 			if (key?.rootNote && !isTab) {
 				stave.addKeySignature(vexflowKeySpec(key));
 			}
-		} else if (key?.rootNote && keyChanged && !isTab) {
-			stave.addKeySignature(vexflowKeySpec(key));
+		} else {
+			if (clef && clefChanged && !isTab) {
+				stave.addClef(
+					this.translator.vexflowClef(clef.sign, clef.line),
+					'small',
+					this.translator.vexflowClefAnnotation(clef.octaveChange),
+				);
+			}
+			if (key?.rootNote && keyChanged && !isTab) {
+				stave.addKeySignature(vexflowKeySpec(key));
+			}
 		}
 
 		// Unlike clef and key, the time signature is not re-stated at every
@@ -1380,14 +1478,22 @@ export class DrawPass {
 	 * drawn on the stave, so a ledger-line note below the stave pushes the whole row down
 	 * with it rather than printing through its own syllable. Called after format and before
 	 * draw, so the syllables land under where the notes actually ended up.
+	 *
+	 * Each pinned syllable is also registered as a collision obstacle, so anything the draw
+	 * pass places under the stave later (a placement="below" directive, a dynamics marking)
+	 * drops clear of the verse instead of printing through it. vexflow draws lyrics itself,
+	 * so this is the only point where their boxes are known.
 	 */
 	private pinLyrics(p: PendingStave): void {
-		const lyrics = p.staveNotes.flatMap((note) =>
-			note
-				.getModifiers()
-				.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation),
-		);
-		if (lyrics.length === 0) {
+		const lyricNotes = p.staveNotes
+			.map((note) => ({
+				note,
+				lyrics: note
+					.getModifiers()
+					.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation),
+			}))
+			.filter(({ lyrics }) => lyrics.length > 0);
+		if (lyricNotes.length === 0) {
 			return;
 		}
 		let baseline = p.stave.getBottomLineY() + LYRIC_Y_OFFSET;
@@ -1400,8 +1506,24 @@ export class DrawPass {
 				this.noteBottom(note) + LYRIC_NOTE_CLEARANCE,
 			);
 		}
-		for (const lyric of lyrics) {
-			lyric.setBaselineY(baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT);
+		for (const { note, lyrics } of lyricNotes) {
+			for (const lyric of lyrics) {
+				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
+				lyric.setBaselineY(y);
+				// LyricAnnotation.draw centers the syllable on the notehead and draws up from
+				// the baseline, so its box is one text height tall ending at that baseline.
+				const w = lyric.getWidth();
+				this.collisionResolver.add({
+					rect: new Rect(
+						note.getAbsoluteX() - w / 2,
+						y - LYRIC_FONT_SIZE,
+						w,
+						LYRIC_FONT_SIZE,
+					),
+					kind: 'annotation',
+					band: p.row,
+				});
+			}
 		}
 	}
 
@@ -1754,9 +1876,42 @@ export class DrawPass {
 		// Words go before the diagrams so a chord diagram draws on top of any words it
 		// shares a measure with — the fret box stays fully legible, the text yields.
 		for (const w of this.wordsTasks) {
-			const top = this.drawWords(w.stave, w.text, w.anchor);
-			this.pageTop = Math.min(this.pageTop, top);
-			this.growDecorationTop(this.systemIndex, top);
+			const placed = this.drawWords(w.stave, w.text, w.anchor, w.placement);
+			// A below-stave directive grows the crop downward instead (drawWords already
+			// reported the drop); only above-stave text lifts the measure box's top.
+			if (w.placement !== 'below') {
+				this.pageTop = Math.min(this.pageTop, placed.y);
+				this.growDecorationTop(this.systemIndex, placed.y);
+			}
+		}
+		// Dynamics ride the same path as words — they're just typed in the music font. A
+		// marking spelled out of SMuFL's dynamic letters engraves as glyphs; an
+		// <other-dynamics> keeps its literal text in the words face.
+		for (const d of this.dynamicsTasks) {
+			const placed = this.drawWords(
+				d.stave,
+				d.glyph ? dynamicGlyphs(d.text) : d.text,
+				d.anchor,
+				d.placement,
+				d.glyph
+					? {
+							font: this.notationFont,
+							size: DYNAMICS_FONT_SIZE,
+							italic: false,
+							color: this.notationColor,
+							centered: true,
+						}
+					: {
+							font: this.labelFont,
+							size: WORDS_FONT_SIZE,
+							italic: true,
+							centered: true,
+						},
+			);
+			if (d.placement !== 'below') {
+				this.pageTop = Math.min(this.pageTop, placed.y);
+				this.growDecorationTop(this.systemIndex, placed.y);
+			}
 		}
 		// Diagrams sit at their lead note's x; two on notes either side of a barline can be
 		// close enough to overlap (especially at a narrow width). The resolver pushes each
@@ -2089,40 +2244,82 @@ export class DrawPass {
 	}
 
 	/*
-	 * Draw a words direction (e.g. "ritardando") above the stave in italics, left-anchored at
-	 * the x of the note it applies to. The collision resolver lifts it clear of
-	 * any notehead/tie/annotation it would land on; it sits at a fixed gap above the top staff
-	 * line otherwise. Returns the y the text reaches up to so the caller can grow the page crop
-	 * above it (like drawHarmony). Drawn after the notes are formatted so getAbsoluteX is real.
+	 * Draw a words direction (e.g. "ritardando") beside the stave in italics, left-anchored at
+	 * the x of the note it applies to. `placement` picks the side: 'above' is the default and
+	 * lifts clear of any notehead/tie/annotation in its column, 'below' is the mirror image —
+	 * it drops clear of everything hanging under the stave (low notes, stems, lyrics, an
+	 * earlier below-stave mark) via the same resolver with the sign flipped. With nothing in
+	 * the way either sits at a fixed gap from the near staff line. Returns the placed box so
+	 * the caller can grow the page crop on the side the text reached. Drawn after the notes
+	 * are formatted so getAbsoluteX is real.
+	 *
+	 * `style` picks the face: italic text-font by default (a words directive), or the
+	 * notation font at the dynamics size for a marking spelled in SMuFL glyphs.
 	 */
 	private drawWords(
 		stave: Stave,
 		text: string,
 		anchor: StaveNote | TabNote | undefined,
-	): number {
-		const baseY = stave.getYForLine(0) - WORDS_Y_OFFSET;
-		const x = anchor ? anchor.getAbsoluteX() : stave.getNoteStartX();
+		placement: Placement = 'above',
+		style: SideTextStyle = {
+			font: this.labelFont,
+			size: WORDS_FONT_SIZE,
+			italic: true,
+		},
+	): Rect {
+		const below = placement === 'below';
+		const baseY = below
+			? stave.getBottomLineY() + WORDS_Y_OFFSET
+			: stave.getYForLine(0) - WORDS_Y_OFFSET;
+		const anchorX = anchor ? anchor.getAbsoluteX() : stave.getNoteStartX();
 		this.context.save();
-		this.context.setFont(this.labelFont, WORDS_FONT_SIZE, 'normal', 'italic');
-		this.context.setFillStyle(this.textColor);
+		this.context.setFont(
+			style.font,
+			style.size,
+			'normal',
+			style.italic ? 'italic' : 'normal',
+		);
+		this.context.setFillStyle(style.color ?? this.textColor);
+		const w = this.context.measureText(text).width;
 		const natural = new Rect(
-			x,
-			baseY - WORDS_FONT_SIZE,
-			this.context.measureText(text).width,
-			WORDS_FONT_SIZE,
+			// A directive is a phrase reading rightward from its note, so it left-anchors; a
+			// dynamic is a single mark belonging to one note, so it centers on the notehead.
+			style.centered ? anchorX - w / 2 : anchorX,
+			below ? baseY : baseY - style.size,
+			w,
+			style.size,
 		);
 		const band = this.rowOf(stave);
-		const placed = this.collisionResolver.liftClear(
-			natural,
-			WORDS_NOTE_CLEARANCE,
-			TEXT_CLEAR_KINDS,
-			band,
+		const cleared = below
+			? this.collisionResolver.dropClear(
+					natural,
+					WORDS_NOTE_CLEARANCE,
+					TEXT_CLEAR_KINDS,
+					band,
+				)
+			: this.collisionResolver.liftClear(
+					natural,
+					WORDS_NOTE_CLEARANCE,
+					TEXT_CLEAR_KINDS,
+					band,
+				);
+		// A mark anchored near the right edge would run off the canvas and be clipped (there's
+		// no horizontal crop-growth knob), so pull it back inside — the same treatment a chord
+		// diagram at the edge gets.
+		const placed = this.collisionResolver.nudgeInsideX(
+			cleared,
+			this.scratchViewport,
+			PAGE_MARGIN_X,
 		);
-		this.recordAnnotationSpill(stave, placed.y);
+		if (below) {
+			this.recordAnnotationDrop(stave, placed.bottom);
+		} else {
+			this.recordAnnotationSpill(stave, placed.y);
+		}
 		this.context.fillText(text, placed.x, placed.bottom);
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
-		return placed.y;
+		return placed;
 	}
 
 	/*
@@ -2168,6 +2365,38 @@ export class DrawPass {
 	}
 
 	/*
+	 * Draw the `<part-group>` symbols at a system start: one connector per group, from its
+	 * first member part's top stave down to its last member's bottom stave. Nested groups
+	 * step further left of the system so an inner symbol doesn't print over its outer one —
+	 * the same "the connector's x comes from its top stave" nudge the notation+tab bracket
+	 * uses, just repeated per depth.
+	 *
+	 * The nudge is restored right after each draw, so nothing downstream sees a moved stave.
+	 */
+	private drawPartGroupConnectors(): void {
+		const maxDepth = Math.max(0, ...this.partGroups.map((g) => g.depth));
+		for (const group of this.partGroups) {
+			const top = this.partStaves[group.fromPart]?.top;
+			const bottom = this.partStaves[group.toPart]?.bottom;
+			if (!top || !bottom) {
+				continue;
+			}
+			// The innermost group hugs the system; each level out steps further left. Depth
+			// counts inward, so invert it.
+			top.setX(
+				this.measureX -
+					BRACKET_X_SHIFT -
+					PART_GROUP_STEP * (maxDepth - group.depth),
+			);
+			new StaveConnector(top, bottom)
+				.setType(group.symbol === 'line' ? 'singleLeft' : group.symbol)
+				.setContext(this.context)
+				.draw();
+			top.setX(this.measureX);
+		}
+	}
+
+	/*
 	 * Join the whole system across all parts with a shared left line at the
 	 * system start, and a closing line at the system end.
 	 */
@@ -2194,6 +2423,7 @@ export class DrawPass {
 						.draw();
 					this.systemTop.setX(this.measureX);
 				}
+				this.drawPartGroupConnectors();
 			}
 			// A repeat's bars run the full height of the system like any other barline, but its
 			// dots belong to each stave — and no connector type draws dots. So each stave draws
@@ -2313,6 +2543,17 @@ export class DrawPass {
 		)) {
 			line.setContext(this.context).draw();
 		}
+		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
+		// can open in one measure and close in another. A below-stave one reaches under the
+		// staff, so grow the bottom crop to its drawn extent.
+		for (const wedge of this.spanners.buildWedges(
+			this.allWedges,
+			this.byLead,
+		)) {
+			wedge.setContext(this.context).draw();
+			this.pageTop = Math.min(this.pageTop, wedge.bounds.top);
+			this.pageBottom = Math.max(this.pageBottom, wedge.bounds.bottom);
+		}
 		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
 		// ponytail: only the final crop is grown — a pedal on a non-last system isn't
@@ -2418,6 +2659,24 @@ export class DrawPass {
 		}
 		const spill = this.spillOf(row, stave);
 		spill.rise = Math.max(spill.rise, stave.getYForLine(0) - top);
+	}
+
+	/*
+	 * The below-stave mirror of {@link recordAnnotationSpill}: how far a below-stave
+	 * annotation (a placement="below" direction, a dynamic) reached under its stave, so
+	 * pass two opens the gap to the stave BELOW wide enough to hold it. Also grows the
+	 * page/system bottom so a mark under the last stave isn't cropped off and the next
+	 * system starts clear of it.
+	 */
+	private recordAnnotationDrop(stave: Stave, bottom: number): void {
+		this.pageBottom = Math.max(this.pageBottom, bottom);
+		this.systemContentBottom = Math.max(this.systemContentBottom, bottom);
+		const row = this.rowOf(stave);
+		if (row === undefined) {
+			return;
+		}
+		const spill = this.spillOf(row, stave);
+		spill.drop = Math.max(spill.drop, bottom - stave.getBottomLineY());
 	}
 
 	/* This row's spill record, seeded on first sight with where the staff lines sit

@@ -66,6 +66,10 @@ export const LEAD_BARLINE = 12;
 /** Lead glyph width for a clef, re-stated at every system start. */
 export const LEAD_CLEF = 32;
 
+/** Lead glyph width for a mid-system clef CHANGE, which draws at vexflow's smaller
+ * "change clef" size rather than the full system-start size. */
+export const LEAD_CLEF_CHANGE = 24;
+
 /** Lead glyph width for a key signature, when present. */
 export const LEAD_KEY = 40;
 
@@ -142,6 +146,11 @@ export const SINGLE_SLIDE_GAP = 5;
  * the system's left line with a small gap. */
 export const BRACKET_X_SHIFT = 3;
 
+/** Horizontal step between nested <part-group> connectors, so an outer group's symbol
+ * clears the inner one's glyph rather than printing over it. Wider than BRACKET_X_SHIFT
+ * (a mere gap) because a bracket's curls have real width. */
+export const PART_GROUP_STEP = 10;
+
 /** How far a bracket's bar and curl glyphs reach left of the (already shifted) stave x —
  * vexflow insets them ~5px more, plus a hair of glyph overhang. Reserved so a system-start
  * measure box grows to contain the bracket instead of clipping it. */
@@ -206,6 +215,18 @@ export const WORDS_Y_OFFSET = 14;
  * WORDS_Y_OFFSET so a lifted directive keeps the same air over a notehead that an
  * uncollided one keeps over the top staff line — at 8 the text grazed the noteheads. */
 export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
+
+/** Dynamics-marking glyph size. Larger than the text annotations because SMuFL's dynamic
+ * letters are drawn small within their em box — at WORDS_FONT_SIZE a "p" reads as a
+ * footnote next to the noteheads. */
+export const DYNAMICS_FONT_SIZE = 24;
+
+/** How tall a crescendo/diminuendo hairpin's open mouth is. */
+export const HAIRPIN_HEIGHT = 10;
+
+/** Gap between a hairpin's near edge and the staff line it sits off — matched to the air a
+ * words directive keeps, so a wedge and a directive on the same side read as one band. */
+export const HAIRPIN_STAVE_GAP = 14;
 
 /** Lyric-syllable text size — matches the other typeset annotations, so a verse under the
  * stave reads at the same weight as a chord symbol or words directive above it. */
