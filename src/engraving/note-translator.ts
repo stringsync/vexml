@@ -24,6 +24,8 @@ import type { TabStemPlacement } from '../config';
 import {
 	EPSILON,
 	GRACE_SPACING,
+	LYRIC_FONT_SIZE,
+	LYRIC_PADDING,
 	TAB_FRET_SCALE,
 	TAB_GRACE_SCALE,
 	TAB_GRACE_SPACING,
@@ -301,6 +303,81 @@ function addParentheses(staveNote: StaveNote, chord: Chord): void {
 		if (isParenthesized(note)) {
 			staveNote.addModifier(new Parenthesis(Modifier.Position.LEFT), i);
 			staveNote.addModifier(new Parenthesis(Modifier.Position.RIGHT), i);
+		}
+	});
+}
+
+/*
+ * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
+ * text off the note's lowest notehead, so a verse would rise and fall with the melody —
+ * a ledger-line note drags its syllable well below the row and a high note tucks its
+ * syllable up against the stave. Lyrics read as a line of text, so the draw pass pins one
+ * baseline per stave (see DrawPass.pinLyrics) and this draws there instead.
+ *
+ * Subclassing keeps everything else an Annotation gives: the static Annotation.format()
+ * still runs (the subclass inherits the 'Annotation' modifier category), so a wide
+ * syllable reserves its width in the layout pass, and the drawn text still lands in the
+ * note's bounding box so the page grows to fit it.
+ */
+export class LyricAnnotation extends Annotation {
+	private baselineY = 0;
+
+	constructor(
+		text: string,
+		/** 0-based verse index — which row under the stave this syllable sits on. */
+		readonly verseIndex: number,
+	) {
+		super(text);
+		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
+		this.setFontSize(LYRIC_FONT_SIZE);
+	}
+
+	setBaselineY(y: number): void {
+		this.baselineY = y;
+	}
+
+	/*
+	 * The text width plus a word gap either side. Annotation.format reserves exactly the
+	 * text's own width, which leaves neighboring syllables touching once a measure is
+	 * squeezed to its minimum. The padding is symmetric, so it costs the centering nothing.
+	 */
+	override getWidth(): number {
+		return super.getWidth() + 2 * LYRIC_PADDING;
+	}
+
+	override draw(): void {
+		const ctx = this.checkContext();
+		const note = this.checkAttachedNote();
+		this.setRendered();
+		// Center the syllable on the notehead, the same horizontal treatment a CENTER-
+		// justified Annotation gets; only the vertical placement is ours.
+		const start = note.getModifierStartXY(Modifier.Position.ABOVE, this.index);
+		this.x = start.x - this.getWidth() / 2;
+		this.y = this.baselineY;
+		this.renderText(ctx, 0, 0);
+	}
+}
+
+/*
+ * Attach a note's <lyric> verses as text under the stave, one annotation per verse in
+ * verse order (verse 1 nearest the stave).
+ *
+ * A syllable that opens or continues a word ('begin'/'middle') carries a trailing hyphen
+ * joining it to the next one: "Al-" "le-" "lu-" "ia".
+ * ponytail: the hyphen rides on the syllable instead of being drawn centered in the gap
+ * between the two, and a melisma <extend/> draws no extension line — both need a spanner
+ * across notes (and systems). Add one if a fixture needs a true melisma line.
+ */
+function addLyrics(staveNote: StaveNote, lead: Note): void {
+	const verses = [...lead.lyrics].sort(
+		(a, b) => Number(a.verse) - Number(b.verse),
+	);
+	verses.forEach((verse, index) => {
+		const syllabic = verse.syllabic;
+		const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
+		const text = verse.syllable + hyphen;
+		if (text) {
+			staveNote.addModifier(new LyricAnnotation(text, index));
 		}
 	});
 }
@@ -688,6 +765,7 @@ export class NoteTranslator {
 		addArticulations(staveNote, lead);
 		addFermata(staveNote, lead);
 		addArpeggio(staveNote, lead);
+		addLyrics(staveNote, lead);
 		return staveNote;
 	}
 

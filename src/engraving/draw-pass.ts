@@ -55,6 +55,9 @@ import {
 	HARMONY_Y_OFFSET,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
+	LYRIC_LINE_HEIGHT,
+	LYRIC_NOTE_CLEARANCE,
+	LYRIC_Y_OFFSET,
 	NOTEHEAD_HALF_H,
 	PAGE_MARGIN_X,
 	PEDAL_BOTTOM_MARGIN,
@@ -78,7 +81,11 @@ import { type MeasureEnding, measureRepeats } from '../repeats';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
-import { findModifier, type NoteTranslator } from './note-translator';
+import {
+	findModifier,
+	LyricAnnotation,
+	type NoteTranslator,
+} from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type { PedalMark, ScoreReader, TempoMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
@@ -1272,6 +1279,7 @@ export class DrawPass {
 				this.stretchBends(tabStave, p.vexVoices);
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
+			this.pinLyrics(p);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
 					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
@@ -1347,6 +1355,54 @@ export class DrawPass {
 			}
 		}
 		return top;
+	}
+
+	/*
+	 * The lowest y a single note reaches — the mirror of {@link noteTop}: its bottom
+	 * notehead, and the stem tip when it stems down. Modifiers are excluded on purpose,
+	 * lyrics included: a lyric's own baseline is what this feeds, so reading it back would
+	 * ratchet the row down a little further on every render pass.
+	 */
+	private noteBottom(note: StaveNote): number {
+		let bottom = note.getNoteHeadBounds().yBottom;
+		if (note.getStem()) {
+			const { topY, baseY } = note.getStemExtents();
+			bottom = Math.max(bottom, topY, baseY);
+		}
+		return bottom;
+	}
+
+	/*
+	 * Put every lyric syllable on one stave onto a shared baseline beneath it, one row per
+	 * verse. Left to vexflow each syllable would hang off its own note (see
+	 * LyricAnnotation), so the verse would rise and fall with the melody instead of reading
+	 * as a line of text. The baseline clears both the bottom staff line and the lowest note
+	 * drawn on the stave, so a ledger-line note below the stave pushes the whole row down
+	 * with it rather than printing through its own syllable. Called after format and before
+	 * draw, so the syllables land under where the notes actually ended up.
+	 */
+	private pinLyrics(p: PendingStave): void {
+		const lyrics = p.staveNotes.flatMap((note) =>
+			note
+				.getModifiers()
+				.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation),
+		);
+		if (lyrics.length === 0) {
+			return;
+		}
+		let baseline = p.stave.getBottomLineY() + LYRIC_Y_OFFSET;
+		for (const note of p.staveNotes) {
+			// The stave reaches the notes via Voice.draw, which hasn't run yet; the note
+			// bounds need it now. Setting it early is what draw would do anyway.
+			note.setStave(p.stave);
+			baseline = Math.max(
+				baseline,
+				this.noteBottom(note) + LYRIC_NOTE_CLEARANCE,
+			);
+		}
+		for (const lyric of lyrics) {
+			lyric.setBaselineY(baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT);
+		}
 	}
 
 	/*

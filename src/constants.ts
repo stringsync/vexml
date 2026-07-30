@@ -207,6 +207,28 @@ export const WORDS_Y_OFFSET = 14;
  * uncollided one keeps over the top staff line — at 8 the text grazed the noteheads. */
 export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
 
+/** Lyric-syllable text size — matches the other typeset annotations, so a verse under the
+ * stave reads at the same weight as a chord symbol or words directive above it. */
+export const LYRIC_FONT_SIZE = 13;
+
+/** Air a lyric syllable claims either side of its text, so adjacent syllables read as
+ * separate words instead of running together ("lowhighledg") when a measure is formatted
+ * at its minimum width. */
+export const LYRIC_PADDING = 8;
+
+/** How far a lyric row's baseline sits below the bottom staff line. */
+export const LYRIC_Y_OFFSET = 18;
+
+/** Clearance kept between a lyric row's baseline and the bottom of a note hanging below
+ * the stave on ledger lines. Bigger than LYRIC_Y_OFFSET: the offset is measured from a
+ * staff line with the empty bottom space already between it and the text, while this is
+ * measured from ink, so it has to cover the syllable's own ascent plus that same air. */
+export const LYRIC_NOTE_CLEARANCE = 26;
+
+/** Vertical pitch between stacked verses — each extra verse drops one row further below
+ * the stave. Roomy enough that a descender ("g", "y") clears the row under it. */
+export const LYRIC_LINE_HEIGHT = LYRIC_FONT_SIZE + 5;
+
 /** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size — bigger and bolder than
  * the other above-stave annotations, since it's the label a player navigates the chart by. */
 export const REHEARSAL_FONT_SIZE = 14;

@@ -146,12 +146,32 @@ Then read the PNGs and compare the one detail in question. Rules, in order of ho
    - If you deleted any integration test cases, run `vex test --clean` globally to remove orphaned screenshot baselines. Do not target a single test when cleaning deleted cases.
    - If regressions appear, eagerly add or list `TODO` comments for each regression using the false-positive or true-negative language from step 4. Include the plain-language visual difference and the relevant diff path or artifact link.
    - Do not update the whole suite by default. Create a plan for each regression and explain whether it is expected or unexpected.
+   - Show the user the render in your final report — see below. Prose about a screenshot is no substitute for the screenshot.
 
 ## Describing Screenshot Diffs
 
 Whenever you need to verbalize a screenshot difference — a regression diff artifact in `tests/integration/__diffs__`, or a comparison of vexml's current render against a golden-standard image the user provided (common for new test cases) — inspect the original image path(s) directly and describe the difference in plain language.
 
 Do **not** create transformed derivatives for diff work unless there is no other practical way to understand the artifact. Prefer the original screenshot or diff artifact. For a `__diffs__` artifact, remember that the image has old / diff / new vertical sections. For a golden-standard comparison, keep clear which image is the vexml render and which is the golden image.
+
+## Showing the User the Render
+
+This work is visual, and the user is reviewing an engraving decision they cannot check from prose. Whenever a response reports on a render — a new fixture, a rendering fix, an accepted baseline, a question about what the correct engraving is — embed the image in your reply as markdown, which the terminal displays inline:
+
+```md
+![](/tmp/lyrics.png)
+```
+
+- **Use an absolute path.** Renders you made with `vex render -o` are the natural thing to show; a baseline under `tests/integration/__screenshots__/` can be embedded directly.
+- **Render to `/tmp`, not the repo.** A `vex render` with no `-o` drops a timestamped PNG in the working directory that then shows up in `git status`. Passing `-o /tmp/<name>.png` keeps the repo clean and means there is nothing to delete afterwards (the project rule about deleting screenshots exists for exactly this).
+- **Show the whole page for the overall result, a crop for a detail.** If the point is a few pixels of spacing or one glyph's placement, a full-page PNG at render scale is too small to see it — crop to the region and upscale, e.g.
+
+  ```sh
+  python3 -c "from PIL import Image; Image.open('/tmp/lyrics.png').crop((40,240,290,400)).resize((1000,640), Image.LANCZOS).save('/tmp/detail.png')"
+  ```
+
+  This is a display aid for the user and is fine. It does **not** contradict the rule in *Describing Screenshot Diffs* — that rule is about your own analysis: read the original artifact rather than reasoning about a derivative you made. Analyze the original, then show whatever renders the point legibly.
+- **One or two images, not a gallery.** Pick the image that answers the question the user asked. When a change moved something, the after image plus a sentence naming what moved beats posting before and after.
 
 ## Baseline Update Guidance
 

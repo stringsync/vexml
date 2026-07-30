@@ -226,6 +226,20 @@ const TEST_CASES = [
 	//   row; anchoring them all at the measure's first note would stack them in a column.
 	testCase('words.musicxml', 'words.png'),
 
+	// Treble stave, 4/4: <lyric> verses printed as text under the stave, centered on their
+	// note. Boring B4 quarters throughout except M5, so only the syllables vary.
+	// - M1: one verse of whole-word syllables ("Sing we now this"), one per quarter.
+	// - M2: one word split across four notes ("Al- le- lu- ia") — the three opening/middle
+	//   syllables carry a trailing hyphen, the closing one doesn't.
+	// - M3: only the first and last quarter carry a syllable ("day", "end"); the two middle
+	//   notes print nothing under them and keep their normal spacing.
+	// - M4: three verses on each of two half notes, stacked under the stave in verse order
+	//   (1 nearest the stave): "one/two/thir-" then "more/less/teen".
+	// - M5: one verse over notes at wildly different pitches (C4, A5, E3 on ledger lines,
+	//   C6 on ledger lines) — the syllables stay on a readable row under the stave instead
+	//   of following each notehead's height.
+	testCase('lyrics.musicxml', 'lyrics.png'),
+
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
 	// as boxed bold text at each measure's left edge, above everything else over the staff.
 	// Four boring quarters per measure so only the label and the first note's height vary.
