@@ -18,6 +18,7 @@ import {
 	LEAD_TIME,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
+	MULTI_REST_MIN_WIDTH,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
 	PAGE_MARGIN_TOP_WITH_TEMPO,
@@ -26,7 +27,11 @@ import {
 	TAB_MIN_NOTE_SPACING,
 } from '../constants';
 import { gapsByMeasureIndex } from '../gaps';
-import { findModifier, type NoteTranslator } from './note-translator';
+import {
+	findModifier,
+	type MidClefSpec,
+	type NoteTranslator,
+} from './note-translator';
 import type { ScoreReader } from './score-reader';
 import {
 	isTabStaff,
@@ -80,6 +85,9 @@ type StaveSpec = {
 	/** Mid-measure dividers (see ScoreReader.midBarlinesOf) — they take horizontal room, so
 	 * the measured width has to include the same BarNotes the draw pass inserts. */
 	barlines: { beat: number; style: string }[];
+	/** Mid-measure clef changes (see ScoreReader.midClefsOf) — the small ClefNotes they insert
+	 * take horizontal room too, and they re-aim the notes after them. */
+	midClefs: MidClefSpec[];
 };
 
 export class LayoutPlanner {
@@ -130,6 +138,7 @@ export class LayoutPlanner {
 			isTab,
 			tuning,
 			barlines,
+			midClefs,
 		} of staves) {
 			// Match drawNotes: pad underfull measures to the meter so the measured width
 			// reserves the same trailing space the draw pass will leave.
@@ -145,8 +154,11 @@ export class LayoutPlanner {
 							undefined,
 							undefined,
 							undefined,
-							// Matches buildNotes: the dividers ride on the first voice only.
+							// Matches buildNotes: the dividers and clef glyphs ride on the first
+							// voice only, but the clef changes re-aim every voice's notes.
 							voiceIndex === 0 ? barlines : [],
+							midClefs,
+							voiceIndex === 0,
 						),
 			);
 			const vexVoices = perVoice.map((tickables) =>
@@ -269,6 +281,11 @@ export class LayoutPlanner {
 		// logarithmic widths (noteSpacing per quarter, sub-linear in duration), floored at the
 		// collision-free minimum and BASE_VOICE_WIDTH. More notes mean a wider measure; a long
 		// note adds only a little — so identical content is identically wide everywhere.
+		// The measures a <multiple-rest> swallows get no box at all, so they take no width, force
+		// no break, and are skipped by the draw pass — the run's lead measure stands for all of
+		// them (see ScoreReader.multiRestsOf).
+		const { leads: multiRestLeads, hidden: multiRestHidden } =
+			this.reader.multiRestsOf(parts);
 		const noteAreas = Array.from({ length: measureCount }, (_, m) => {
 			// A gap has no notes to size it: floor its (empty) note area at the caller's
 			// minWidth and at the label's estimated width so the text fits. It stretches
@@ -307,13 +324,18 @@ export class LayoutPlanner {
 							isTab: isTabStaff(part, staffNumber),
 							tuning: stringTuning(part, staffNumber),
 							barlines: this.reader.midBarlinesOf(measure),
+							midClefs: this.translator.midClefSpecs(
+								this.reader.midClefsOf(measure, staffNumber),
+							),
 						});
 					}
 				}
 			}
+			// A multirest lead holds one whole rest, which would size it like any empty bar —
+			// floor it so the consolidated bar and its count have room to read as a multirest.
 			return this.measureNoteArea(
 				staves,
-				BASE_VOICE_WIDTH,
+				multiRestLeads.has(m) ? MULTI_REST_MIN_WIDTH : BASE_VOICE_WIDTH,
 				noteSpacing,
 				softmaxFactor,
 			);
@@ -355,7 +377,9 @@ export class LayoutPlanner {
 							part.measures[m]?.getClef(staffNumber) ?? null,
 						) !==
 							this.translator.vexflowClefSpec(
-								part.measures[m - 1]?.getClef(staffNumber) ?? null,
+								// End of the previous measure, matching buildStave: a change
+								// stated inside it is not restated at this barline.
+								this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),
 							),
 				),
 			);
@@ -370,11 +394,18 @@ export class LayoutPlanner {
 		// breaks depend only on the music and width, never on the live container.
 		const systems: number[][] = [];
 		if (layoutMode === 'panoramic') {
-			systems.push(Array.from({ length: measureCount }, (_, m) => m));
+			systems.push(
+				Array.from({ length: measureCount }, (_, m) => m).filter(
+					(m) => !multiRestHidden.has(m),
+				),
+			);
 		} else {
 			let row: number[] = [];
 			let rowWidth = 0;
 			for (let m = 0; m < measureCount; m++) {
+				if (multiRestHidden.has(m)) {
+					continue;
+				}
 				const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
 				// A <print new-system="yes"/> forces a break before this measure regardless of
 				// width, unless honorSystemBreaks is off; otherwise wrap once the next measure's

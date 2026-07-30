@@ -24,12 +24,13 @@ import { testCase } from '../testing/test-case';
  * still sized by its own content (see ScoreReader.meterBeats).
  *
  * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
- * increasing rendering complexity, not by priority. By impact, the ones worth doing first are:
- * cross-staff notes, <multiple-rest>, and the mid-measure clef change. (print-object="no",
- * <octave-shift>, the per-element color attribute, percussion <unpitched>/<display-step>,
- * after-graces, the mid-measure <barline>, <repeat times>, the segno/coda glyphs and
- * non-traditional key signatures were the earlier picks off this list and now have cases of
- * their own.)
+ * increasing rendering complexity, not by priority. By impact, the one worth doing first is
+ * cross-staff notes. (print-object="no", <octave-shift>, the per-element color attribute,
+ * percussion <unpitched>/<display-step>, after-graces, the mid-measure <barline>,
+ * <repeat times>, the segno/coda glyphs, non-traditional key signatures, the mid-measure and
+ * end-of-measure clef change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice
+ * lyric rows and nested repeat blocks were the earlier picks off this list and now have cases
+ * of their own.)
  */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
@@ -232,16 +233,25 @@ const TEST_CASES = [
 	//   under it, so the note draws where M1's did.
 	testCase('clef_c.musicxml', 'clef_c.png'),
 
-	// TODO(coverage): a clef change in the MIDDLE of a measure, and one attached to the END of
-	// a measure (the courtesy clef before a change on the next system).
-	// Fixture: clef_mid_measure.musicxml (lilypond_46c-Midmeasure-Clef M1-3). See also
-	// tmp/in_measure_clefs.xml, tmp/clef_end_measure.xml, tmp/end_measure_clefs_staffentry_bbox.xml
-	// and tmp/lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the multi-voice variant.
-	// Expected: a small clef glyph drawn inline, between the two notes it sits between, with
-	// the measure widened to hold it; an end-of-measure clef prints after the last note and
-	// before the barline.
-	// Current: not drawn (same root cause as clef_c above).
-	// testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
+	// Treble stave, 4/4: a clef change written INSIDE a measure rather than at its head, drawn
+	// as a small clef glyph inline between the notes it falls between. Every note in the
+	// fixture is a C4 quarter, so the clef is the only thing that can move the row — one
+	// ledger line BELOW the stave in treble, one ledger line ABOVE it in bass.
+	// - M1: opens treble (full-size clef, 4/4); after the second quarter a small bass clef
+	//   prints between the notes, and the last two quarters jump from below the stave to
+	//   above it. The measure widens to hold the glyph instead of it landing on a notehead.
+	// - M2: still bass, and NO clef is reprinted at the barline — the change was already
+	//   stated inside M1.
+	// - M3: four quarters in bass, then a small treble clef after the last one and before the
+	//   end barline — the courtesy clef announcing the next measure.
+	// - M4: treble, again with no clef reprinted; its quarters sit back below the stave.
+	// ponytail: the glyph rides on the FIRST voice only (a second copy per voice would redraw
+	// the same clef at the same x), while the change re-aims every voice's notes. A <backup>
+	// is not rewound when timing the change, the same limit midBarlinesOf documents — see
+	// tmp/lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the case that would need it.
+	// See also tmp/in_measure_clefs.xml, tmp/clef_end_measure.xml,
+	// tmp/end_measure_clefs_staffentry_bbox.xml.
+	testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
 
 	// A percussion stave, 4/4: <unpitched> notes, which carry no <pitch> at all. Their
 	// <display-step>/<display-octave> pair is a staff POSITION rather than a sounding note,
@@ -432,18 +442,28 @@ const TEST_CASES = [
 	// voices, C clef, 8th/16th rests), which deserves its own case.
 	testCase('rest_pitched.musicxml', 'rest_pitched.png'),
 
-	// TODO(coverage): <measure-style><multiple-rest> — the consolidated multi-bar rest. 9 files
-	// in tmp/ use it; grep 'measure-style' in src/ finds nothing.
-	// Fixture: rest_multi_measure.musicxml (lilypond_02c-Rests-MultiMeasureRests M1-6) — a
-	// 3-measure multirest, then a second one.
-	// Expected: the N measures collapse into ONE wide measure holding the thick horizontal
-	// multi-rest bar with "3" centered above it, and measure numbering skips the collapsed
-	// bars the way config.gaps already does.
-	// Current: six ordinary measures drawn side by side, each with a rest — the multiple-rest
-	// element is ignored entirely (verified render). See also tmp/multiple_rest_measures.xml,
-	// tmp/auto_multirest.xml, and tmp/measure_numbers_xml_starting_at_3_with_multirest.xml for
-	// the numbering interaction.
-	// testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png'),
+	// Treble stave, 4/4: <measure-style><multiple-rest>, the consolidated multi-bar rest. A run
+	// of N resting bars collapses into ONE wide measure holding a thick horizontal bar with
+	// serifed ends, its bar count centered above the stave. measureNumbering is 'every' so the
+	// collapsed bars can be seen to be skipped rather than merely unlabelled.
+	// - M1-3: a 3-measure multirest, numbered "1" — one measure column, not three, opening the
+	//   system with the treble clef and 4/4.
+	// - M4: four ordinary B4 quarters, numbered "4" — the run ends and normal engraving
+	//   resumes, so the next printed number jumps from 1 to 4.
+	// - M5-16: a 12-measure multirest, numbered "5", with a two-digit count above its bar. It
+	//   closes the score, so the thin-thick end barline lands on the COLLAPSED measure rather
+	//   than on the boxless M16 the run swallowed.
+	// The document keeps every swallowed measure, so playback still counts the full rest; only
+	// the layout drops them (see ScoreReader.multiRestsOf).
+	// ponytail: a <multiple-rest>1 is left as an ordinary whole-rest bar — a one-bar multirest
+	// draws the same glyph a plain whole rest does. A run only collapses when EVERY part and
+	// staff declares it identically; a mixed score keeps its measures separate rather than
+	// shearing the parts' columns apart.
+	// See also tmp/multiple_rest_measures.xml, tmp/auto_multirest.xml, and
+	// tmp/measure_numbers_xml_starting_at_3_with_multirest.xml.
+	testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png', {
+		measureNumbering: 'every',
+	}),
 
 	// Treble stave, 4/4: every measure is four quarter notes stacked on one staff position
 	// (C5, third space) so nothing but the accidental glyph left of the notehead varies.
@@ -504,6 +524,9 @@ const TEST_CASES = [
 	//   gold and green heads in the RH chord, gray rests from <note color> on both staves.
 	//   The LH's "Ped." sits below the low Eb2's ledger lines rather than through them (the
 	//   pedal drops clear of the notes it spans — see pedal.png M3).
+	// The LH staff also carries the source's own mid-measure clef changes — to treble after
+	// M1's Eb2/Eb3 pair and back to bass after M2's first note — each printed as a small inline
+	// clef, which is why its notes sit on the stave instead of hanging off it (clef_mid_measure).
 	// ponytail: <beam color> and <lyric color> are ignored (each draws from its own element,
 	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
 	// See also tmp/auto_custom_coloring_entchen.xml.
@@ -614,14 +637,26 @@ const TEST_CASES = [
 	// See also tmp/octave_shift_simple_piano.xml.
 	testCase('octave_shift.musicxml', 'octave_shift.png'),
 
-	// TODO(coverage): the remaining direction-type LINE spanners — <dashes> (the dashed line
-	// trailing a "cresc." or "rit.") and <bracket> (analysis/phrase brackets, with line-end
-	// hooks up/down/arrow/none and line-type solid/dashed/dotted/wavy).
-	// Fixture: direction_lines.musicxml (lilypond_33a-Spanners M10-15).
-	// Expected: each bracket drawn with the hook style and line type its attributes name, and
-	// the dashes drawn as a dashed horizontal line from its start note to its stop.
-	// Current: unverified — expect nothing drawn.
-	// testCase('direction_lines.musicxml', 'direction_lines.png'),
+	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners —
+	// <bracket>, the analysis/phrase bracket, and <dashes>, the line that trails a "cresc.".
+	// Every measure is three identical B4 quarters spanned end to end, so only the line above
+	// the stave varies. All six spans sit on the same horizontal band, above the notes.
+	// - M10: solid bracket, line-end="down" at both ends — a plain rule with a vertical hook
+	//   dropping toward the stave at each end, the form that reads as enclosing the passage.
+	// - M11: the same bracket with line-type="dashed" — dashed rule, both hooks still drawn
+	//   (the hooks take the line's dash pattern too).
+	// - M12: solid, start line-end="none" and stop "down" — no opening hook, closing hook only.
+	// - M13: dashed, start "none" and stop "up" — the closing hook rises AWAY from the stave
+	//   instead of dropping toward it, so it mirrors M12's.
+	// - M14: solid, "none" at both ends — a bare horizontal rule with no hooks at all.
+	// - M15: <dashes> on its own — a dashed line, never hooked.
+	// - M16: the realistic <dashes>: a "cresc." words direction over the first note with the
+	//   dashed line running past it to the last. The words print on their own row and the line
+	//   on the band above, so the two do not overprint.
+	// ponytail: line-end="arrow" draws the same tick "down" does (an arrowhead needs its own
+	// path), line-type="wavy" falls back to solid, and a span wrapping onto a later system is
+	// dropped rather than split. None has a fixture.
+	testCase('direction_lines.musicxml', 'direction_lines.png'),
 
 	// Navigation marks — <segno> and <coda> — on a real (braced) piano score in 4/4, five
 	// measures wrapping onto two systems: four quarters per measure on the treble staff over a
@@ -682,15 +717,23 @@ const TEST_CASES = [
 	//   space, so the two spellings of the same lyric render identically.
 	testCase('lyrics_elision.musicxml', 'lyrics_elision.png'),
 
-	// TODO(coverage): lyrics under a stave that carries TWO voices — each voice keeps its own
-	// verse rows, so the upper voice's words sit above the lower voice's rather than the two
-	// interleaving on one row.
-	// Fixture: lyrics_two_voices.musicxml (lilypond_42a-MultiVoice-TwoVoicesOnStaff-Lyrics M1-2).
-	// Expected: two independent lyric rows under the staff, each aligned to its own voice's
-	// noteheads; where both voices strike together the two syllables stack, not overlap.
-	// Current: unverified. See also tmp/lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the
-	// two staves of a grand staff) and tmp/lilypond_61e-Lyrics-Chords.xml.
-	// testCase('lyrics_two_voices.musicxml', 'lyrics_two_voices.png'),
+	// Treble stave, 4/4: lyrics under a stave carrying TWO voices. Both voices number their
+	// verses from 1, so the row a syllable lands on is its verse index offset by the rows the
+	// voices before it already used — otherwise every voice's first verse claims row 0 and the
+	// words print through each other. Voice 1 is B4 (stems up), voice 2 D4 (stems down), so
+	// only the rhythm and the words vary. Every row sits under the lowest note on the stave.
+	// - M1: both voices in four quarters, striking together. Where the two share a beat their
+	//   syllables stack in one column — "one" over "un", "two" over "deux", and so on — rather
+	//   than overprinting.
+	// - M2: V1 in two halves ("slow- ly"), V2 in four quarters ("much more in haste"), so each
+	//   row follows its OWN voice's noteheads: V2's "more" and "haste" sit alone on the lower
+	//   row where V1 has no note under them.
+	// - M3: V1 carries TWO verses ("first/second", "verse/verse") and V2 one ("low", "voice"),
+	//   so V2's row starts below BOTH of V1's — three rows, proving the offset counts rows
+	//   used, not voices.
+	// See also tmp/lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the two staves of a grand
+	// staff) and tmp/lilypond_61e-Lyrics-Chords.xml.
+	testCase('lyrics_two_voices.musicxml', 'lyrics_two_voices.png'),
 
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
 	// as boxed bold text at each measure's left edge, above everything else over the staff.
@@ -848,15 +891,36 @@ const TEST_CASES = [
 	// expands to five passes, not two.
 	testCase('repeats_multiple_times.musicxml', 'repeats_multiple_times.png'),
 
-	// TODO(coverage): nested repeats and alternative endings — a repeat block inside another
-	// repeat block, with voltas at both levels. repeats.musicxml covers back-to-back blocks and
-	// up to three endings, but never nesting.
-	// Fixture: repeats_nested.musicxml (lilypond_45d-Repeats-Nested-Alternatives M1-8).
-	// Expected: both levels' brackets drawn, the inner ones stacked below the outer so they do
-	// not overprint, and back-to-back signs merged the way repeats.musicxml M2/M3 documents.
-	// As with repeats.musicxml, the playback order belongs in cursor.test.ts.
-	// Current: unverified. See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml.
-	// testCase('repeats_nested.musicxml', 'repeats_nested.png'),
+	// Treble stave, common time: a repeat block NESTED inside another, each with its own pair
+	// of alternative endings. repeats.musicxml covers back-to-back blocks and up to three
+	// endings but never nesting. One whole note per measure, ascending C5 to A5, so only the
+	// barlines and brackets vary.
+	// - M1: the OUTER block opens — forward repeat dots at the system's left edge.
+	// - M2: the INNER block opens inside it — a second set of forward dots one barline later,
+	//   so two opening signs stand back to back with a measure between them.
+	// - M3: the inner block's first ending — a "1." bracket with a hook at each end, closing on
+	//   backward repeat dots.
+	// - M4: the inner block's second ending — a "2." bracket, no repeat sign; the inner block
+	//   is done and the music runs on.
+	// - M5: the OUTER block's first ending — a "1." bracket over the outer level, closing on
+	//   its own backward repeat dots. The numbering restarting at 1 is what marks it as a new
+	//   volta group rather than a third ending of M3's.
+	// - M6: the outer block's second ending — a "2." bracket, closing the score.
+	// The two levels' brackets never overlap in x, so nothing has to stack: MusicXML allows one
+	// <ending> per barline, so an inner volta INSIDE an outer one is not expressible and vexml's
+	// MeasureEnding is likewise one per measure. Nesting shows up as blocks, not as stacked
+	// brackets.
+	// TODO(playback): the playback expansion of a nested block is wrong. The pre-scan in
+	// src/playback/sequence-factory.ts closes a volta group only at a measure carrying NO
+	// ending, so M3-M6's four consecutive ending measures merge into one four-ending volta
+	// whose back-jump target is the inner block's start. This fixture plays as
+	// [0,1,2,1,3,1,4,1,5] where a player takes [0,1,2, 1,3,4, 0,1,2, 1,3,5] — the outer repeat
+	// never jumps back to M1, and the inner block never re-arms for the outer's second pass.
+	// Fixing it needs (a) a new volta group when an ending's number restarts, and (b) per-pass
+	// re-arming of an inner block's endings. The RENDER above is unaffected and correct; add
+	// the case to cursor.test.ts with the rest of the playback-order assertions.
+	// See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml.
+	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then

@@ -22,7 +22,7 @@
 		"!src/testing"
 	],
 	"dependencies": {
-		"@stringsync/mdom": "0.1.4",
+		"@stringsync/mdom": "0.1.5",
 		"vexflow": "5.0.0"
 	},
 	"devDependencies": {

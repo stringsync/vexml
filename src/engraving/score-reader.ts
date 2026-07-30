@@ -1,6 +1,7 @@
 import {
 	Barline,
 	type Chord,
+	Clef,
 	type Harmony,
 	type Key,
 	MElement,
@@ -10,7 +11,7 @@ import {
 	type Voice as ScoreVoice,
 	type Time,
 } from '@stringsync/mdom';
-import { DEFAULT_TEMPO_BPM } from '../constants';
+import { DEFAULT_TEMPO_BPM, EPSILON } from '../constants';
 import type { ChordFrame } from './chord-diagram-glyph';
 
 /**
@@ -148,6 +149,41 @@ export type OctaveShiftSpan = {
 	suffix: string;
 	above: boolean;
 };
+
+/** How a <bracket> terminates at one of its ends. */
+export type LineEnd = 'up' | 'down' | 'arrow' | 'none';
+
+/*
+ * One <direction-type><bracket> or <dashes> span: the notes it runs between, the side of the
+ * staff it prints on, its stroke pattern (null = solid, else a canvas dash array) and the hook
+ * each end terminates in. A <dashes> is the degenerate bracket — dashed, hookless — which is
+ * why the two share a span type. See ScoreReader.directionLinesOf.
+ */
+export type DirectionLineSpan = {
+	from: Note;
+	to: Note;
+	above: boolean;
+	dash: number[] | null;
+	startEnd: LineEnd;
+	stopEnd: LineEnd;
+};
+
+/* <bracket line-type> -> the canvas dash array to stroke it with; null is a solid line.
+ * ponytail: 'wavy' falls back to solid — a wavy bracket needs the SMuFL squiggle run that
+ * VibratoBracket draws for trills, not a dash pattern. No fixture asks for one. */
+const LINE_TYPE_DASH: Record<string, number[] | null> = {
+	solid: null,
+	dashed: [5, 5],
+	dotted: [1, 3],
+	wavy: null,
+};
+
+function lineEndOf(element: MElement): LineEnd {
+	const value = element.getAttribute('line-end');
+	return value === 'up' || value === 'down' || value === 'arrow'
+		? value
+		: 'none';
+}
 
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
 // real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural — rare in a root, but
@@ -305,6 +341,29 @@ function frameOf(harmony: Harmony): ChordFrame | null {
 }
 
 /*
+ * The <multiple-rest> count every staff of a measure agrees on, or null when they disagree (or
+ * when there is none). Collapsing removes the whole measure COLUMN, so a run declared on only
+ * some of a part's staves must not collapse — the others' music would be swallowed with it.
+ *
+ * A <measure-style> with no `number` applies to every staff, so an ordinary multirest agrees
+ * trivially; only an explicit per-staff disagreement trips this.
+ * ponytail: no fixture covers that case — no score in tmp/ writes one, and both hands of a
+ * piano rest together. It's here because the failure it prevents is deleting played music.
+ */
+function multiRestCountOf(measure: Measure | undefined): number | null {
+	if (!measure) {
+		return null;
+	}
+	const count = measure.getMultiRestCount('1');
+	for (let staff = 2; staff <= measure.staveCount; staff++) {
+		if (measure.getMultiRestCount(String(staff)) !== count) {
+			return null;
+		}
+	}
+	return count;
+}
+
+/*
  * Reads score semantics straight off the mdom: staff voice selection, meter lengths,
  * and the direction/harmony markers a measure carries. Stateless — the layout
  * (measuring) and draw passes must read identically, so the predicates live here.
@@ -410,6 +469,123 @@ export class ScoreReader {
 			}
 		}
 		return out;
+	}
+
+	/*
+	 * A measure's mid-measure <clef> changes for one staff: the beat each one lands on and
+	 * the <clef> itself. MusicXML writes these as an <attributes> block sitting between two
+	 * notes rather than at the measure's head.
+	 *
+	 * Only blocks AFTER the measure's first note count: the leading <attributes> is the
+	 * measure's own signature block, already drawn with the stave (Measure.getClef reads
+	 * exactly that one). A block trailing the LAST note lands at the measure's end beat and
+	 * engraves as the courtesy clef before the barline.
+	 *
+	 * The beat comes from the NEXT note's own measureBeat rather than from a running sum of
+	 * the durations before it, because measureBeat already rewinds a <backup> — which is how
+	 * a grand staff writes its lower staff's clef (upper notes, backup, <attributes>
+	 * <clef number="2">, lower notes), and that block belongs at beat 0, not at the end.
+	 * ponytail: a change landing at beat 0 is dropped rather than drawn inline — it is the
+	 * staff's OPENING clef. Measure.getClef doesn't look past the measure's first note, so
+	 * such a staff still opens in the previous clef and switches at the next barline
+	 * (navigation.musicxml's bass staff documents exactly that). Closing that gap means
+	 * teaching the STAVE clef to see past the first note, not drawing a second glyph here.
+	 */
+	midClefsOf(
+		measure: Measure,
+		staffNumber = '1',
+	): { beat: number; clef: Clef }[] {
+		const children = measure.children;
+		const endBeat = this.endBeatOf([{ chords: measure.chords }]);
+		const out: { beat: number; clef: Clef }[] = [];
+		let seenNote = false;
+		for (let index = 0; index < children.length; index++) {
+			const child = children[index];
+			if (child instanceof Note) {
+				seenNote = true;
+				continue;
+			}
+			if (!seenNote || !(child instanceof MElement)) {
+				continue;
+			}
+			const clefs = child
+				.childrenOfType(Clef)
+				.filter((clef) => clef.staff === staffNumber);
+			if (clefs.length === 0) {
+				continue;
+			}
+			// No note after it means it trails the measure: the courtesy clef, at the end beat.
+			let beat = endBeat;
+			for (let ahead = index + 1; ahead < children.length; ahead++) {
+				const next = children[ahead];
+				if (next instanceof Note) {
+					beat = next.measureBeat ?? endBeat;
+					break;
+				}
+			}
+			if (beat > EPSILON) {
+				out.push(...clefs.map((clef) => ({ beat, clef })));
+			}
+		}
+		return out;
+	}
+
+	/*
+	 * The score's <measure-style><multiple-rest> runs: each lead measure's index mapped to how
+	 * many measures it consolidates, plus the indexes those runs swallow. A multirest is drawn
+	 * as ONE wide measure holding the thick horizontal bar, so the swallowed measures are given
+	 * no box by the layout planner and the draw pass skips them (the document keeps them, so
+	 * playback still counts the full rest).
+	 *
+	 * A run only collapses when EVERY part (and every staff within it — see multiRestCountOf)
+	 * declares the same count at the same measure. Parts are laid out in one grid of measure
+	 * columns, so collapsing three bars of a resting flute against three played bars of a violin
+	 * would shear the two apart.
+	 */
+	multiRestsOf(parts: Part[]): {
+		leads: Map<number, number>;
+		hidden: Set<number>;
+	} {
+		const leads = new Map<number, number>();
+		const hidden = new Set<number>();
+		const measureCount = Math.max(
+			0,
+			...parts.map((part) => part.measures.length),
+		);
+		for (let m = 0; m < measureCount; m++) {
+			if (hidden.has(m)) {
+				continue;
+			}
+			const count = multiRestCountOf(parts[0]?.measures[m]);
+			if (
+				!count ||
+				count < 2 ||
+				!parts.every((part) => multiRestCountOf(part.measures[m]) === count)
+			) {
+				continue;
+			}
+			leads.set(m, count);
+			for (let swallowed = m + 1; swallowed < m + count; swallowed++) {
+				hidden.add(swallowed);
+			}
+		}
+		return { leads, hidden };
+	}
+
+	/*
+	 * The <clef> in effect at the END of a measure for one staff: its last mid-measure change
+	 * if it has one, else the clef it opened with. This is what the NEXT measure compares
+	 * against to decide whether to reprint a clef — a change already stated inside a measure
+	 * (or as its courtesy clef) must not be stated again at the next barline.
+	 */
+	clefAtEndOf(measure: Measure | undefined, staffNumber = '1'): Clef | null {
+		if (!measure) {
+			return null;
+		}
+		return (
+			this.midClefsOf(measure, staffNumber).at(-1)?.clef ??
+			measure.getClef(staffNumber)
+		);
 	}
 
 	/*
@@ -731,6 +907,76 @@ export class ScoreReader {
 									? 'ma'
 									: 'mb',
 						above: opened.down,
+					});
+				}
+			}
+		}
+		return spans;
+	}
+
+	/*
+	 * A part's <direction-type><bracket> and <dashes> spans — the phrase/analysis brackets and
+	 * the dashed line that trails a "cresc." or "rit.".
+	 *
+	 * Paired by type and `number` across the whole part, so a span can cross barlines. Both ends
+	 * bind to the note that FOLLOWS the direction (the wedge convention, not the pedal one: a
+	 * bracket's stop marks the moment the passage ends, and MusicXML writes it before the last
+	 * note it covers). A stop trailing the measure's last note has no next note, so it falls
+	 * back to the previous one.
+	 *
+	 * `line-end` belongs to the end it is written on: the start element's names the opening
+	 * hook, the stop element's the closing hook. A <dashes> carries neither and is a plain
+	 * dashed line.
+	 * ponytail: a span whose start has no note after it, or that never stops, is dropped. One
+	 * wrapping onto a later system is dropped by the drawing side rather than split the way
+	 * buildTies splits a tie — neither needs handling until a fixture has one.
+	 */
+	directionLinesOf(part: Part): DirectionLineSpan[] {
+		const spans: DirectionLineSpan[] = [];
+		const open = new Map<
+			string,
+			{ from: Note; above: boolean; dash: number[] | null; startEnd: LineEnd }
+		>();
+		for (const measure of part.measures) {
+			for (const direction of measure.directions) {
+				const marks = direction
+					.childrenNamed('direction-type')
+					.flatMap((type) => [
+						...type.childrenNamed('bracket'),
+						...type.childrenNamed('dashes'),
+					]);
+				for (const mark of marks) {
+					const key = `${mark.tag}:${mark.getAttribute('number') ?? '1'}`;
+					if (mark.getAttribute('type') === 'stop') {
+						const opened = open.get(key);
+						open.delete(key);
+						const to = direction.nextNote ?? direction.previousNote;
+						if (opened && to && opened.from !== to) {
+							spans.push({
+								...opened,
+								to,
+								stopEnd: mark.tag === 'dashes' ? 'none' : lineEndOf(mark),
+							});
+						}
+						continue;
+					}
+					// 'continue' only re-states an open span, so only a 'start' opens one.
+					if (mark.getAttribute('type') !== 'start') {
+						continue;
+					}
+					const from = direction.nextNote;
+					if (!from) {
+						continue;
+					}
+					open.set(key, {
+						from,
+						above: placementOf(direction) === 'above',
+						dash:
+							mark.tag === 'dashes'
+								? [5, 5]
+								: (LINE_TYPE_DASH[mark.getAttribute('line-type') ?? 'solid'] ??
+									null),
+						startEnd: mark.tag === 'dashes' ? 'none' : lineEndOf(mark),
 					});
 				}
 			}

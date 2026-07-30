@@ -12,6 +12,7 @@ import {
 	Barline,
 	BarNote,
 	Bend,
+	ClefNote,
 	Dot,
 	Element,
 	GhostNote,
@@ -348,9 +349,17 @@ export const BAR_STYLE_TYPES: Record<string, number> = {
  * SINGLE barline it is painted in place of. */
 const CUSTOM_MID_BAR_WIDTH = 8;
 
-/** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes a
- * mid-measure `<barline>` puts between them. */
-export type VoiceTickable = StemmableNote | BarNote;
+/** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes and
+ * ClefNotes a mid-measure `<barline>` or `<clef>` puts between them. */
+export type VoiceTickable = StemmableNote | BarNote | ClefNote;
+
+/** One mid-measure `<clef>` change, resolved to what vexflow draws and positions notes
+ * against. See ScoreReader.midClefsOf. */
+export type MidClefSpec = {
+	beat: number;
+	clef: string;
+	annotation: string | undefined;
+};
 
 /**
  * A vexflow BarNote for a mid-measure `<barline>`: a zero-duration tickable the formatter
@@ -1105,8 +1114,10 @@ export class LyricAnnotation extends Annotation {
 
 	constructor(
 		text: string,
-		/** 0-based verse index — which row under the stave this syllable sits on. */
-		readonly verseIndex: number,
+		/** 0-based verse index — which row under the stave this syllable sits on. Not readonly:
+		 * a stave carrying several voices offsets each voice's rows past the ones the voices
+		 * before it used (see {@link shiftVerses}). */
+		public verseIndex: number,
 		/** Whether a melisma `<extend/>` line trails this syllable (drawn by pinLyrics). */
 		readonly extend = false,
 	) {
@@ -1117,6 +1128,13 @@ export class LyricAnnotation extends Annotation {
 
 	setBaselineY(y: number): void {
 		this.baselineY = y;
+	}
+
+	/** Push this syllable `rows` rows further from the stave. Voices sharing a stave each
+	 * number their verses from 1, so without an offset per voice every voice's first verse
+	 * would land on the same row and overprint. */
+	shiftVerses(rows: number): void {
+		this.verseIndex += rows;
 	}
 
 	/*
@@ -1491,6 +1509,20 @@ export class NoteTranslator {
 	}
 
 	/*
+	 * ScoreReader.midClefsOf output resolved to what vexflow draws, so the layout and draw
+	 * passes hand the tickable builder the same specs.
+	 */
+	midClefSpecs(
+		changes: readonly { beat: number; clef: Clef }[],
+	): MidClefSpec[] {
+		return changes.map(({ beat, clef }) => ({
+			beat,
+			clef: this.vexflowClef(clef.sign, clef.line),
+			annotation: this.vexflowClefAnnotation(clef.octaveChange),
+		}));
+	}
+
+	/*
 	 * MusicXML <clef-octave-change> -> vexflow clef annotation ('8va'/'8vb'), drawn as
 	 * the small octave numeral above/below the clef glyph. vexflow only carries an octave
 	 * annotation on G/F clefs, so ±2 (15ma/mb) and other clefs fall back to no annotation.
@@ -1734,6 +1766,10 @@ export class NoteTranslator {
 	 * it varies note by note rather than being one value for the stave.
 	 * `barlines` are the measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each
 	 * inserted as a zero-duration BarNote just before the first note at or past its beat.
+	 * `midClefs` are the measure's mid-measure clef changes (see ScoreReader.midClefsOf). Each
+	 * one re-aims every LATER note's staff position, which is a property of the stave and so
+	 * applies to every voice on it; `drawMidClefs` says to also emit the small ClefNote glyph,
+	 * which — like a divider — belongs to the measure and so rides on the first voice only.
 	 */
 	vexflowVoiceTickables(
 		chords: Chord[],
@@ -1743,8 +1779,27 @@ export class NoteTranslator {
 		octaveShiftOf: (lead: Note) => number = () => 0,
 		defaultStem?: 'up' | 'down',
 		barlines: readonly { beat: number; style: string }[] = [],
+		midClefs: readonly MidClefSpec[] = [],
+		drawMidClefs = true,
 	): VoiceTickable[] {
 		const tickables: VoiceTickable[] = [];
+		// Mid-measure clef changes, consumed the same way the dividers below are. `activeClef`
+		// is what the notes after each one are positioned against.
+		let activeClef = clef;
+		let nextClef = 0;
+		const flushClefs = (upTo: number) => {
+			for (
+				let change = midClefs[nextClef];
+				change && change.beat <= upTo + EPSILON;
+				change = midClefs[nextClef]
+			) {
+				activeClef = change.clef;
+				if (drawMidClefs) {
+					tickables.push(new ClefNote(change.clef, 'small', change.annotation));
+				}
+				nextClef++;
+			}
+		};
 		// Mid-measure dividers, consumed in order as the cursor reaches each one's beat.
 		let nextBarline = 0;
 		const flushBarlines = (upTo: number) => {
@@ -1791,7 +1846,7 @@ export class NoteTranslator {
 				pendingGrace.push({
 					note: this.vexflowChord(
 						chord,
-						clef,
+						activeClef,
 						false,
 						octaveShiftOf(chord.lead),
 					) as GraceNote,
@@ -1803,12 +1858,13 @@ export class NoteTranslator {
 			// Before any ghost padding, so a divider on an empty stretch sits at the moment it
 			// falls on rather than being pushed to the next note's edge.
 			flushBarlines(onset);
+			flushClefs(onset);
 			if (onset > cursor + EPSILON) {
 				tickables.push(...ghostNotes(onset - cursor));
 			}
 			const staveNote = this.vexflowChord(
 				chord,
-				clef,
+				activeClef,
 				centerWholeRest,
 				octaveShiftOf(chord.lead),
 				defaultStem,
@@ -1857,6 +1913,9 @@ export class NoteTranslator {
 		flushAfterGraces(pendingGrace);
 		pendingGrace = [];
 		flushBarlines(Number.POSITIVE_INFINITY);
+		// A clef trailing the last note is the courtesy clef: it draws after that note and
+		// before the trailing ghosts, so it sits inside the measure rather than past its fill.
+		flushClefs(Number.POSITIVE_INFINITY);
 		if (endBeat > cursor + EPSILON) {
 			tickables.push(...ghostNotes(endBeat - cursor));
 		}

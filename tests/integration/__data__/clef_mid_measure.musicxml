@@ -1,28 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 1.0 Partwise//EN"
-  "http://www.musicxml.org/dtds/partwise.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <score-partwise version="4.0">
-  <identification>
-    <miscellaneous>
-      <miscellaneous-field name="description">A clef change in the middle of a 
-            measure, using either an implicit measure or simply placing 
-            the attributes in the middle of the measure.</miscellaneous-field>
-    </miscellaneous>
-  </identification>
   <part-list>
     <score-part id="P1">
-      <part-name>MusicXML Part</part-name>
+      <part-name>Music</part-name>
     </score-part>
   </part-list>
   <part id="P1">
+    <!-- M1: treble, then a clef change to bass BETWEEN beats 2 and 3. Every note is a C4,
+         so the change is the only reason the row moves: one ledger line below the stave
+         in treble, one ledger line above it in bass. -->
     <measure number="1">
       <attributes>
         <divisions>1</divisions>
-        <key>
-          <fifths>0</fifths>
-          <mode>major</mode>
-        </key>
-        <time symbol="common">
+        <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
         </time>
@@ -32,51 +22,77 @@
         </clef>
       </attributes>
       <note>
-        <rest/>
-        <duration>4</duration>
-        <voice>1</voice>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <attributes>
+        <clef>
+          <sign>F</sign>
+          <line>4</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
       </note>
     </measure>
+    <!-- M2: the bass clef carries forward and is NOT reprinted — the change was already
+         stated inside M1. -->
     <measure number="2">
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
         <type>quarter</type>
       </note>
-      <barline location="right">
-        <bar-style>none</bar-style>
-      </barline>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
     </measure>
+    <!-- M3: a clef at the END of the measure, after its last note — the courtesy clef that
+         announces the next measure's clef before the barline. -->
     <measure number="3">
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
         <type>quarter</type>
       </note>
       <attributes>
@@ -85,27 +101,29 @@
           <line>2</line>
         </clef>
       </attributes>
+    </measure>
+    <!-- M4: the announced treble clef is in effect and is NOT reprinted here. -->
+    <measure number="4">
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
         <type>quarter</type>
       </note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
+        <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
-        <voice>1</voice>
         <type>quarter</type>
       </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-      </barline>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
     </measure>
   </part>
 </score-partwise>

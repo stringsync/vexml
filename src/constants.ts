@@ -424,6 +424,22 @@ export const DEFAULT_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
  * roughly three staff spaces, enough to clear a note a couple of ledger lines up. */
 export const VOLTA_STAVE_GAP = 34;
 
+/** Which of vexflow's above/below-stave text lines a <bracket>/<dashes> span rides on. Line 1
+ * is where the ottava brackets sit, so these take the next one out and stay clear of them. */
+export const DIRECTION_LINE_TEXT_LINE = 2;
+
+/** Length (px) of the vertical hook a <bracket>'s `line-end` terminates in. */
+export const DIRECTION_LINE_HOOK = 8;
+
+/** Inset (px) of a consolidated multi-bar rest's thick horizontal bar from each edge of its
+ * measure, so the bar reads as sitting inside the measure rather than touching its barlines. */
+export const MULTI_REST_PADDING = 12;
+
+/** Width (px) floor for a measure holding a consolidated multi-bar rest. Its one whole rest
+ * would otherwise size it like any empty bar, and the bar plus its count needs room to read as
+ * a multirest rather than as a stray thick line. */
+export const MULTI_REST_MIN_WIDTH = 110;
+
 /** How tall a volta bracket's obstacle box is: vexflow draws the "1." label hanging below
  * the bracket line, so the box has to reach past the text for above-stave annotations to
  * lift clear of the whole thing rather than just the line. */

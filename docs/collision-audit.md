@@ -69,6 +69,10 @@ them by mistake:
   `chord-diagram.ts`).
 - Tab fret / harmonic-bracket centering (`notes.ts` `boldFret`/harmonic layout).
 - Analytic slur control-point lift (`spanners.ts` `cpYFor`), wrapped tie/slur split.
+- `<bracket>`/`<dashes>` span placement (`DIRECTION_LINE_TEXT_LINE`, `draw-pass.ts`
+  `drawDirectionLines`) — drawn in the finish pass, after the per-system collision index has
+  been cleared, so it takes vexflow's own above/below-stave text line. Same anchor the ottava
+  brackets (`TextBracket`) already use.
 - Volta bracket height (`VOLTA_STAVE_GAP`) — the bracket is a stave modifier drawn with the
   stave, before the notes are formatted, so the detector can't see them yet. It's registered as
   an obstacle so above-stave text clears it; a very high note under it would need the bracket

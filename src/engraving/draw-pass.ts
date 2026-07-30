@@ -12,6 +12,7 @@ import {
 	Barline,
 	BarNote,
 	Bend,
+	ClefNote,
 	Element,
 	Formatter,
 	GhostNote,
@@ -20,6 +21,7 @@ import {
 	Metrics,
 	MetricsDefaults,
 	Modifier,
+	MultiMeasureRest,
 	type PedalMarking,
 	type RenderContext,
 	Stave,
@@ -48,6 +50,8 @@ import {
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
 	CONNECTOR_VERTICAL_OVERHANG,
+	DIRECTION_LINE_HOOK,
+	DIRECTION_LINE_TEXT_LINE,
 	DYNAMICS_FONT_SIZE,
 	FRET_HALF_H,
 	FRET_HALF_W,
@@ -66,6 +70,7 @@ import {
 	LYRIC_LINE_HEIGHT,
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
+	MULTI_REST_PADDING,
 	NAVIGATION_FONT_SIZE,
 	NOTEHEAD_HALF_H,
 	PAGE_MARGIN_X,
@@ -99,11 +104,14 @@ import {
 	BAR_STYLE_TYPES,
 	findModifier,
 	LyricAnnotation,
+	type MidClefSpec,
 	type NoteTranslator,
 	TechnicalAnnotation,
 } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type {
+	DirectionLineSpan,
+	LineEnd,
 	OctaveShiftSpan,
 	PedalMark,
 	Placement,
@@ -587,6 +595,10 @@ export class DrawPass {
 	private readonly showNotation: boolean;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
+	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
+	private readonly multiRests: ReadonlyMap<number, number>;
+	// The multirest bars to draw over this column's staves, once those staves are on the canvas.
+	private columnMultiRests: Array<{ stave: Stave; count: number }> = [];
 	// Ink colors from config.fonts. notationColor is the context's default fill/stroke, so every
 	// vexflow-engraved glyph (noteheads, stems, staves, clefs) inherits it; textColor recolors the
 	// words vexml types itself. Both default to black, keeping an uncolored score byte-identical.
@@ -733,6 +745,8 @@ export class DrawPass {
 	// the score; both are filled in the constructor.
 	private readonly octaveShiftSpans: OctaveShiftSpan[] = [];
 	private readonly octaveShiftByNote = new Map<Note, number>();
+	// The score's <bracket>/<dashes> spans, drawn once at the end alongside the other spanners.
+	private readonly directionLineSpans: DirectionLineSpan[] = [];
 
 	constructor(
 		private readonly translator: NoteTranslator,
@@ -775,6 +789,10 @@ export class DrawPass {
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
 		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.gaps = gapsByMeasureIndex(config.gaps);
+		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
+		// notes, and the measures it swallows have no box (the layout planner dropped them), so
+		// drawMeasureColumn returns early for them without any extra guard here.
+		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
 		this.partGroups = partGroups(this.parts);
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
@@ -786,6 +804,7 @@ export class DrawPass {
 					this.octaveShiftByNote.set(note, span.octaves);
 				}
 			}
+			this.directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
 		this.decorations = barlineDecorations(this.parts[0]?.measures ?? []);
@@ -837,7 +856,12 @@ export class DrawPass {
 		this.measureWidth = box.width;
 		this.systemIndex = box.systemIndex;
 		this.isSystemStart = box.isSystemStart;
-		this.isLastMeasure = m === this.measureCount - 1;
+		// The last measure DRAWN, not the last in the document: a <multiple-rest> run reaching
+		// the end of the score leaves the measures after its lead boxless, and the thin-thick
+		// end barline belongs on the lead.
+		this.isLastMeasure = !this.boxes.some(
+			(later, index) => index > m && later !== undefined,
+		);
 		// An explicit right <barline> with a <bar-style> replaces this measure's end divider
 		// (normally a plain single line, or the thin-thick end on the final measure). Read
 		// from the first part — a barline is a boundary of the whole system, not of one staff.
@@ -868,6 +892,7 @@ export class DrawPass {
 		this.systemBottom = undefined;
 		this.systemPending = [];
 		this.columnStaves = [];
+		this.columnMultiRests = [];
 		this.tempoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
@@ -1055,6 +1080,23 @@ export class DrawPass {
 			stave.setContext(this.context).draw();
 			this.drawCustomBarline(stave);
 		}
+		// The consolidated multi-bar rests, over the staves that just landed: the thick
+		// horizontal bar with its measure count centered above. Drawn straight onto the stave
+		// rather than as a tickable — it stands for the whole measure, so there is nothing for
+		// the formatter to space it against.
+		for (const { stave, count } of this.columnMultiRests) {
+			// vexflow measures its padding from the stave's x, so the left inset has to clear
+			// the clef/key/time first — otherwise the bar starts under the time signature and
+			// ends well short of the barline instead of centering in the note area.
+			new MultiMeasureRest(count, {
+				numberOfMeasures: count,
+				paddingLeft: stave.getNoteStartX() - stave.getX() + MULTI_REST_PADDING,
+				paddingRight: MULTI_REST_PADDING,
+			})
+				.setStave(stave)
+				.setContext(this.context)
+				.draw();
+		}
 
 		// Format and draw every part's staves together so same-tick notes line up
 		// vertically across the whole system (notation over its own tab, and across
@@ -1215,11 +1257,14 @@ export class DrawPass {
 				stave.addKeySignature(vexflowKeySpec(key));
 			}
 		};
+		// Against the clef in effect at the END of the previous measure, not at its start: a
+		// change stated INSIDE that measure (or as its trailing courtesy clef) has already
+		// been announced, so restating it here would draw the same glyph twice.
 		const clefChanged =
 			m > 0 &&
 			this.translator.vexflowClefSpec(clef) !==
 				this.translator.vexflowClefSpec(
-					prevMeasure?.getClef(staffNumber) ?? null,
+					this.reader.clefAtEndOf(prevMeasure, staffNumber),
 				);
 
 		// Clef and key print at every system start (re-stated on each new line).
@@ -1385,6 +1430,17 @@ export class DrawPass {
 		// rest of the part's staves below. A TAB stave builds fretted TabNotes;
 		// everything else uses the notation path. An empty voice (no chords) would
 		// crash the formatter, so it's filtered.
+		// A <multiple-rest> lead draws the consolidated bar in place of its own contents — the
+		// whole rest it holds stands for the run and would otherwise print on top of the bar.
+		const multiRestCount = this.multiRests.get(m);
+		if (multiRestCount) {
+			this.columnMultiRests.push({ stave, count: multiRestCount });
+			this.systemTop ??= stave;
+			this.systemBottom = stave;
+			this.staveRow++;
+			return stave;
+		}
+
 		const voices = this.reader.staffVoices(measure.voices, staffNumber);
 		if (isTab && voices.length > 0) {
 			this.pendingStaves.push(
@@ -1411,6 +1467,9 @@ export class DrawPass {
 					this.reader.meterFloor(measure, staffNumber),
 					clef?.octaveChange ?? 0,
 					this.reader.midBarlinesOf(measure),
+					this.translator.midClefSpecs(
+						this.reader.midClefsOf(measure, staffNumber),
+					),
 				),
 			);
 			for (const voice of voices) {
@@ -1439,6 +1498,7 @@ export class DrawPass {
 		meterFloor: number,
 		clefOctaveShift: number,
 		barlines: { beat: number; style: string }[],
+		midClefs: MidClefSpec[],
 	): PendingStave {
 		// How far off its sounding pitch each note is drawn: the clef's own octave change,
 		// plus any <octave-shift> (8va/8vb) covering that note.
@@ -1462,6 +1522,11 @@ export class DrawPass {
 		// first voice only — a second copy in each of the others would draw the same line
 		// again at the same x.
 		const midBars: Array<{ note: BarNote; style: string }> = [];
+		// How many lyric rows the voices before this one have used. Each voice numbers its own
+		// <lyric verse>s from 1, so two voices sharing a stave both claim row 0 and would print
+		// their words on top of each other; offsetting by the rows already taken stacks the
+		// lower voice's verses beneath the upper voice's instead (see LyricAnnotation).
+		let verseOffset = 0;
 		const vexVoices = voices.map((voice, voiceIndex) => {
 			const chords = voice.chords;
 			// lead note -> its chord, so the record callback (which only gets the lead) can pair
@@ -1488,6 +1553,8 @@ export class DrawPass {
 				octaveShiftOf,
 				stemFor(voiceIndex),
 				voiceIndex === 0 ? barlines : [],
+				midClefs,
+				voiceIndex === 0,
 			);
 			if (voiceIndex === 0) {
 				// Built in the same order as `barlines`, so they pair by index.
@@ -1499,6 +1566,18 @@ export class DrawPass {
 						midBars.push({ note, style: barline.style });
 					}
 				});
+			}
+			if (verseOffset > 0 || voiceIndex < voices.length - 1) {
+				let rowsUsed = 0;
+				for (const tickable of tickables) {
+					for (const modifier of tickable.getModifiers()) {
+						if (modifier instanceof LyricAnnotation) {
+							rowsUsed = Math.max(rowsUsed, modifier.verseIndex + 1);
+							modifier.shiftVerses(verseOffset);
+						}
+					}
+				}
+				verseOffset += rowsUsed;
 			}
 			return this.translator.softVoice(tickables, this.softmaxFactor);
 		});
@@ -1696,9 +1775,9 @@ export class DrawPass {
 			this.pinLyrics(p);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
-					// A mid-measure BarNote has no stem and no ledger lines to restyle; it draws
-					// in the context ink like the stave does.
-					if (note instanceof BarNote) {
+					// A mid-measure BarNote or ClefNote has no stem and no ledger lines to
+					// restyle; both draw in the context ink like the stave does.
+					if (note instanceof BarNote || note instanceof ClefNote) {
 						continue;
 					}
 					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
@@ -2904,6 +2983,73 @@ export class DrawPass {
 	}
 
 	/*
+	 * Draw the <bracket> and <dashes> spans: a horizontal line over (or under) the notes each
+	 * one covers, stroked solid, dashed or dotted as its line-type says, terminating in the
+	 * hook its `line-end` names. A hook points toward the staff by default ('down' above the
+	 * staff), which is what makes a bracket read as enclosing the passage rather than as a
+	 * stray rule.
+	 *
+	 * Drawn straight on the context rather than as a vexflow element: TextBracket, the nearest
+	 * thing vexflow has, hooks only its stop end and only downward, so it can draw none of the
+	 * five bracket forms MusicXML spells out. Placement is vexflow's own above/below-stave text
+	 * line, the same fixed anchor the ottava brackets above use (see docs/collision-audit.md).
+	 * ponytail: 'arrow' draws the same tick 'down' does — an arrowhead needs its own path and no
+	 * fixture asks for one.
+	 */
+	private drawDirectionLines(): void {
+		for (const span of this.directionLineSpans) {
+			const start = this.byLead.get(span.from);
+			const stop = this.byLead.get(span.to);
+			// Either endpoint off a hidden staff leaves nothing to draw.
+			if (!start || !stop) {
+				continue;
+			}
+			const left = start.getAbsoluteX();
+			const right = stop.getAbsoluteX() + stop.getGlyphWidth();
+			// A span that wraps onto a later system runs right-to-left here; dropped rather than
+			// drawn backwards (the same limit octaveShiftsOf documents).
+			if (right <= left) {
+				continue;
+			}
+			const stave = start.checkStave();
+			const y = span.above
+				? stave.getYForTopText(DIRECTION_LINE_TEXT_LINE)
+				: stave.getYForBottomText(DIRECTION_LINE_TEXT_LINE);
+			// A hook drops toward the staff from an above-stave line and rises toward it from a
+			// below-stave one, so the whole bracket flips with its placement.
+			const toward = span.above ? 1 : -1;
+			const hookOf = (end: LineEnd) =>
+				end === 'none'
+					? 0
+					: (end === 'up' ? -1 : 1) * toward * DIRECTION_LINE_HOOK;
+			this.context.save();
+			this.context.setStrokeStyle(this.notationColor);
+			this.context.setLineWidth(1);
+			if (span.dash) {
+				this.context.setLineDash(span.dash);
+			}
+			this.context.beginPath();
+			const startHook = hookOf(span.startEnd);
+			if (startHook) {
+				this.context.moveTo(left, y + startHook);
+				this.context.lineTo(left, y);
+			} else {
+				this.context.moveTo(left, y);
+			}
+			this.context.lineTo(right, y);
+			const stopHook = hookOf(span.stopEnd);
+			if (stopHook) {
+				this.context.lineTo(right, y + stopHook);
+			}
+			this.context.stroke();
+			this.context.closePath();
+			this.context.restore();
+			this.pageTop = Math.min(this.pageTop, y - DIRECTION_LINE_HOOK);
+			this.pageBottom = Math.max(this.pageBottom, y + DIRECTION_LINE_HOOK);
+		}
+	}
+
+	/*
 	 * Draw a gap measure's overlay: the optional fill painted over its (empty) note area
 	 * — after the staves, so it dims the staff lines under it — and the optional label
 	 * centered in that area, vertically centered on the system's staves. The area starts
@@ -3206,6 +3352,7 @@ export class DrawPass {
 				.setContext(this.context)
 				.draw();
 		}
+		this.drawDirectionLines();
 		// Trill extension lines, resolved over the whole score like the other spanners so a
 		// trill can be held across a barline.
 		for (const bracket of this.spanners.buildWavyLines(

@@ -1,27 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 1.0 Partwise//EN"
-  "http://www.musicxml.org/dtds/partwise.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <score-partwise version="4.0">
-  <identification>
-    <miscellaneous>
-      <miscellaneous-field name="description">Nested repeats, each with 
-          alternative endings.</miscellaneous-field>
-    </miscellaneous>
-  </identification>
   <part-list>
     <score-part id="P1">
-      <part-name>MusicXML Part</part-name>
+      <part-name>Music</part-name>
     </score-part>
   </part-list>
   <part id="P1">
     <measure number="1">
       <attributes>
         <divisions>1</divisions>
-        <key>
-          <fifths>0</fifths>
-          <mode>major</mode>
-        </key>
-        <time symbol="common">
+        <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
         </time>
@@ -30,20 +18,35 @@
           <line>2</line>
         </clef>
       </attributes>
+      <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
       <note>
-        <rest/>
+        <pitch><step>C</step><octave>5</octave></pitch>
         <duration>4</duration>
-        <voice>1</voice>
+        <type>whole</type>
       </note>
     </measure>
     <measure number="2">
       <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+      </note>
+    </measure>
+    <measure number="3">
+      <barline location="left">
         <ending number="1" type="start"/>
       </barline>
       <note>
-        <rest/>
+        <pitch><step>E</step><octave>5</octave></pitch>
         <duration>4</duration>
-        <voice>1</voice>
+        <type>whole</type>
       </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>
@@ -51,59 +54,47 @@
         <repeat direction="backward"/>
       </barline>
     </measure>
-    <measure number="3">
+    <measure number="4">
       <barline location="left">
         <ending number="2" type="start"/>
       </barline>
       <note>
-        <rest/>
+        <pitch><step>F</step><octave>5</octave></pitch>
         <duration>4</duration>
-        <voice>1</voice>
-      </note>
-    </measure>
-    <measure number="4">
-      <note>
-        <rest/>
-        <duration>4</duration>
-        <voice>1</voice>
-      </note>
-    </measure>
-    <measure number="5">
-      <note>
-        <rest/>
-        <duration>4</duration>
-        <voice>1</voice>
+        <type>whole</type>
       </note>
       <barline location="right">
         <ending number="2" type="stop"/>
       </barline>
     </measure>
-    <measure number="6">
+    <measure number="5">
       <barline location="left">
-        <ending number="3" type="start"/>
+        <ending number="1" type="start"/>
       </barline>
       <note>
-        <rest/>
+        <pitch><step>G</step><octave>5</octave></pitch>
         <duration>4</duration>
-        <voice>1</voice>
+        <type>whole</type>
       </note>
       <barline location="right">
-        <ending number="3" type="discontinue"/>
+        <bar-style>light-heavy</bar-style>
+        <ending number="1" type="stop"/>
+        <repeat direction="backward"/>
       </barline>
     </measure>
-    <measure number="7">
+    <measure number="6">
+      <barline location="left">
+        <ending number="2" type="start"/>
+      </barline>
       <note>
-        <rest/>
+        <pitch><step>A</step><octave>5</octave></pitch>
         <duration>4</duration>
-        <voice>1</voice>
+        <type>whole</type>
       </note>
-    </measure>
-    <measure number="8">
-      <note>
-        <rest/>
-        <duration>4</duration>
-        <voice>1</voice>
-      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+        <ending number="2" type="stop"/>
+      </barline>
     </measure>
   </part>
 </score-partwise>
