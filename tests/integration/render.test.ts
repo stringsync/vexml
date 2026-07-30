@@ -241,21 +241,36 @@ const TEST_CASES = [
 	// Current: not drawn (same root cause as clef_c above).
 	// testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
 
-	// TODO(coverage): percussion staves. The percussion CLEF is mapped (vexflowClef case
-	// 'percussion') but <unpitched> notes are not — grep 'unpitched' in src/ finds nothing —
-	// so every unpitched note lands on one default staff line.
+	// A percussion stave, 4/4: <unpitched> notes, which carry no <pitch> at all. Their
+	// <display-step>/<display-octave> pair is a staff POSITION rather than a sounding note,
+	// and their <notehead> names the drum — the two are independent, so each measure varies
+	// exactly one of them. Positions resolve against the percussion clef, which shares
+	// treble's line mapping (E4 = bottom line, F5 = top), so the stave opens with the two
+	// vertical bars and no key signature.
+	// - M1: four quarters at four display positions and the DEFAULT notehead — E4, G4, B4,
+	//   D5 — a staircase up alternate lines (bottom, second, middle, fourth). Without
+	//   <display-step> all four would stack on one line.
+	// - M2: four quarters all at F5 (the top line) with four different <notehead> values —
+	//   x, circle-x, diamond, triangle — so only the glyph changes, not the row.
+	// - M3: the two combined into a realistic drumset chord, struck twice: kick (E4, default
+	//   head), snare (C5, default head) and hi-hat (G5, x head) on one stem, each member
+	//   keeping its own row and its own glyph.
+	testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
+
+	// TODO(coverage): percussion on a REDUCED stave. <unpitched>/<display-step> now resolves
+	// (percussion_display_step above), but a percussion part is often written on a 1-line
+	// stave, and there the position mapping and the stave's own geometry disagree.
 	// Fixture: clef_percussion.musicxml (lilypond_73a-Percussion M1-2) — a bass-clef part over
-	// two percussion-clef parts whose notes are <unpitched> with <display-step>/<display-octave>.
-	// Expected: each unpitched note sits on the line/space its <display-step>+<display-octave>
-	// names (that pair is a staff POSITION, not a pitch), and its <notehead> (x, triangle,
-	// diamond, circle-x) picks the drum's glyph — so a kick, a snare and a hi-hat read as three
-	// different rows with three different heads.
-	// Current: the percussion clef draws correctly, but both percussion staves render an
-	// identical line of noteheads on the middle line — <display-step> is ignored (verified
-	// render). See also tmp/drumset.xml, tmp/percussion_display_step.xml (sliced to
-	// percussion_display_step.musicxml), tmp/tutorial_percussion.xml.
+	// a 5-line percussion part and a <staff-lines>1</staff-lines> percussion part.
+	// Current: the bass part and the 5-line percussion part are both correct; the 1-line part
+	// draws its single line where a 5-line stave's TOP line would be, so its F4/E4 notes hang
+	// two ledger-lines' worth below it on long stems (verified render). That is vexflow's
+	// stave model, the same one staff_details_lines.musicxml documents and accepts — see the
+	// ponytail note there. Fixing it means centering a reduced stave AND re-anchoring its
+	// positions, which changes that accepted baseline too, so the two must move together.
+	// OSMD centers; decide whether vexml follows before enabling this case.
+	// See also tmp/drumset.xml, tmp/tutorial_percussion.xml.
 	// testCase('clef_percussion.musicxml', 'clef_percussion.png'),
-	// testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
 
 	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
 	// bracket, neither declaring a clef or time signature — so each opens with the default
@@ -272,8 +287,8 @@ const TEST_CASES = [
 	// and clef give it on a full stave, so the notes do not move when the count changes.
 	// ponytail: that is vexflow's stave model (line 0 is the top line). MuseScore instead
 	// centers a reduced stave and re-anchors its pitches, which matters for a 1-line
-	// percussion stave — revisit together with <unpitched>/<display-step>, which vexml
-	// doesn't read yet either (see the clef_percussion TODO above).
+	// percussion stave — the same decision the clef_percussion TODO below is blocked on, so
+	// this baseline and that one have to move together.
 	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
 	// measure start (the same limit as the mid-measure clef TODO above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
@@ -491,17 +506,22 @@ const TEST_CASES = [
 	//   tempo on top) instead of the two printing on top of each other.
 	testCase('tempo.musicxml', 'tempo.png'),
 
-	// TODO(coverage): metronome-mark variants tempo.musicxml does not reach. ScoreReader.tempoOf
-	// already carries a `ponytail:` note saying <beat-unit-dot> is dropped; 3 files in tmp/ use
-	// one, and a dotted-quarter mark is the norm in compound meter.
-	// Fixture: tempo_beat_unit_dot.musicxml (lilypond_31c-MetronomeMarks M1-3).
-	// Expected, one measure each: a dotted beat unit ("dotted quarter = 120"); a note-equals-note
-	// mark (<beat-unit> twice, no <per-minute> — "quarter = dotted quarter", the metric-modulation
-	// form); and a parenthesized mark. tempoOf returns a {duration, bpm} pair today, so a dotted
-	// unit needs a `dots` field and the note-equals-note form needs a second unit.
-	// Current: unverified — expect the dot dropped, so a dotted-quarter mark prints as a plain
-	// quarter and states the wrong tempo.
-	// testCase('tempo_beat_unit_dot.musicxml', 'tempo_beat_unit_dot.png'),
+	// Treble stave, common time: the metronome-mark variants tempo.musicxml does not reach.
+	// Every measure is four plain C5 quarters carrying one <metronome> over its first note,
+	// so only the mark above the stave varies.
+	// - M1: a dotted beat unit — "dotted quarter = 100". The <beat-unit-dot/> follows its
+	//   <beat-unit> as a sibling rather than nesting inside it, and prints as an augmentation
+	//   dot right of the note glyph. A dotted unit is the norm in compound meter, and dropping
+	//   the dot would state a tempo half again too slow.
+	// - M2: the metric-modulation form — "dotted quarter = dotted half". Two <beat-unit>s
+	//   under one <metronome> and no <per-minute>, so the mark states a RELATION and prints
+	//   no number at all; each unit keeps its own dot.
+	// - M3: <metronome parentheses="yes"> — "(dotted quarter = 77)", the whole mark wrapped
+	//   in round parens, which is how a suggested (rather than authoritative) tempo reads.
+	// ponytail: playback still reads the mark's bpm as quarter-note bpm, so M1 sounds at 100
+	// quarters rather than 150. That predates the dot (a plain "half = 100" was already read
+	// this way) and belongs with the playback tempo path, not here.
+	testCase('tempo_beat_unit_dot.musicxml', 'tempo_beat_unit_dot.png'),
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
 	// in italics above the staff at the x of the note it precedes. Four boring quarters per
@@ -680,19 +700,33 @@ const TEST_CASES = [
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
 
-	// TODO(coverage): the rest of the <bar-style> vocabulary. measures_light_light covers
-	// light-light and measures_end_barline covers the default light-heavy; everything else
-	// falls through to a plain single line.
-	// Fixture: barline_styles.musicxml (lilypond_46a-Barlines M1-8) — regular, dotted, dashed,
-	// heavy, light-light, light-heavy, heavy-light, heavy-heavy, tick, short, none.
-	// Expected: each divider drawn in its own style — dotted and dashed as broken lines, heavy
-	// as a single thick line, heavy-heavy as two thick lines, tick as a short stroke through
-	// the top line only, short as a stroke spanning the middle two spaces, none as no line at
-	// all (the measures simply abut).
-	// Current: almost every divider is a plain thin line; only one double line appears, so
-	// dotted/dashed/heavy/tick/short/none are all collapsing to the default (verified render).
+	// The whole non-repeat <bar-style> vocabulary, one value per measure. Treble stave in
+	// common time, twelve measures each holding a single whole rest, so the ONLY thing that
+	// differs between them is the divider at their right edge. Twelve tiny measures wrap, so
+	// M1-M7 sit on the first system and M8-M12 on the second — which also shows a styled
+	// divider (M7's light-light) surviving a system break.
+	// - M1: no <barline> at all — the default plain thin line.
+	// - M2: regular — the same plain thin line, named explicitly.
+	// - M3: dotted — a broken vertical line, 1px on and 3px off.
+	// - M4: dashed — a broken line with longer strokes, 4px on and 4px off.
+	// - M5: heavy — one thick (3px) line.
+	// - M6: heavy-heavy — two thick lines side by side.
+	// - M7: light-light — two thin lines (the thin double measures_light_light covers alone).
+	// - M8: light-heavy — thin then thick, the ordinary end barline read left to right.
+	// - M9: heavy-light — thick then thin, its mirror.
+	// - M10: tick — a SHORT stroke straddling the top staff line only, half a space above it
+	//   and half below, with nothing drawn across the rest of the stave.
+	// - M11: short — a stroke covering the middle two spaces (second line to fourth), again
+	//   leaving the top and bottom of the stave clear.
+	// - M12: none — no line whatsoever, so the measure simply abuts what follows. Here it is
+	//   also the last measure, so the stave ends open rather than on the usual thin-thick.
+	// The thin/thick weights and offsets match the ones vexflow's own Barline draws with, so
+	// a custom style sits flush with the plain dividers around it.
+	// ponytail: on a MULTI-stave system only light-light and light-heavy change the connector
+	// that ties the barline across staves — StaveConnector has no dotted/dashed/heavy member.
+	// These styles are a single-stave idiom, so that gap is unexercised; see drawConnectors.
 	// See also tmp/bar_lines.xml.
-	// testCase('barline_styles.musicxml', 'barline_styles.png'),
+	testCase('barline_styles.musicxml', 'barline_styles.png'),
 
 	// TODO(coverage): a barline in the MIDDLE of a measure (a <barline> with a <location>
 	// other than left/right), used for a repeat or double bar that falls off the beat.
@@ -714,7 +748,10 @@ const TEST_CASES = [
 	//   the implicit exemption it reserved the missing 2.5 beats as blank space and both
 	//   notes huddled against its left edge.
 	// - M1: F4 + G4 quarters — the front half of a measure split in two, and NOT implicit, so
-	//   it keeps the meter floor: 2 beats of music with the other 2 held as blank space.
+	//   it keeps the meter floor: 2 beats of music with the other 2 held as blank space. It
+	//   closes on <bar-style>none</bar-style>, so NO divider is drawn between it and MX1 —
+	//   the two halves are one measure notationally and abut with only their spacing between
+	//   them (see barline_styles.musicxml for the rest of the vocabulary).
 	// - MX1: <measure implicit="yes" number="X1">, the continuation of that split measure —
 	//   A4 + B4 quarters filling their measure, again unnumbered.
 	// - M2: C5 + D5 quarters and a quarter rest, 3 beats of 4 — the ordinary underfull
@@ -1387,14 +1424,19 @@ const TEST_CASES = [
 	// See also tmp/ornaments.xml and tmp/lilypond_33f-Trill-EndingOnGraceNote.xml.
 	testCase('ornaments.musicxml', 'ornaments.png'),
 
-	// TODO(coverage): <tremolo> — the slashes through a stem (single-note tremolo) and between
-	// two notes (bowed/fingered tremolo). 6 files in tmp/ use it.
-	// Fixture: tremolo.musicxml (lilypond_23e-Tuplets-Tremolo M1-2).
-	// Expected: <tremolo type="single">N</tremolo> draws N slashes across the stem;
-	// type="start"/"stop" pairs draw the slashes BETWEEN the two noteheads and the pair is not
-	// beamed normally. A tremolo on a whole note (no stem) draws its slashes above the head.
-	// Current: unverified. See also tmp/tremelo_two_bars.xml.
-	// testCase('tremolo.musicxml', 'tremolo.png'),
+	// Treble stave, 3/4: <ornaments><tremolo> — the slashes through a stem — and the tuplets
+	// that carry them. Every note is an A4 or G4, so only the rhythm and the slashes vary.
+	// - M1: three beamed 3:2 eighth-note triplets, each note staccato, each group bracketless
+	//   with a "3" over its beam. No tremolo here — the control for M2's spacing.
+	// - M2: three tremolo tuplets — a dotted-quarter G4 whose <tremolo>1</tremolo> draws one
+	//   slash across its stem. Each is its own degenerate 3:2 tuplet (a <tuplet> start AND
+	//   stop on the same note), which prints no bracket and no number: a single-note tuplet
+	//   has nothing to span, and the slash is what tells a reader the note is subdivided.
+	//   OSMD engraves this identically.
+	// ponytail: only the single-note form draws. The type="start"/"stop" bowed-tremolo pair
+	// (slashes BETWEEN two noteheads) needs a spanner — see the note in addOrnaments — and no
+	// fixture reaches it; see tmp/tremelo_two_bars.xml when one does.
+	testCase('tremolo.musicxml', 'tremolo.png'),
 
 	// TODO(coverage): <technical> marks on a NOTATION stave. The tab side of <technical> is
 	// covered thoroughly (tab_bend, tab_hammer_pull, tab_harmonic, tab_annotation), but the
@@ -1446,16 +1488,18 @@ const TEST_CASES = [
 	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
 	testCase('arpeggio.musicxml', 'arpeggio.png'),
 
-	// TODO(coverage): <non-arpeggiate> — the square bracket that marks a chord to be played
-	// together, the explicit opposite of the arpeggio wiggle arpeggio.musicxml covers.
-	// Fixture: non_arpeggiate.musicxml (lilypond_32d-Arpeggio M1), which holds both the
-	// arpeggiate and non-arpeggiate forms side by side.
-	// Expected: a vertical bracket with horizontal end hooks down the left of the chord,
-	// spanning from its type="bottom" member to its type="top" member — so a non-arpeggiate
-	// covering only part of a chord brackets only that part.
-	// Current: unverified — expect nothing drawn for the non-arpeggiate chords while the
-	// arpeggiated ones draw their wiggle.
-	// testCase('non_arpeggiate.musicxml', 'non_arpeggiate.png'),
+	// Treble stave, 4/4: <notations><non-arpeggiate> — the square bracket marking a chord to
+	// be struck together, the explicit opposite of the wiggle arpeggio.musicxml covers. One
+	// measure of seven identical C4/E5/G5 quarter chords, each labelled by a lyric with the
+	// mark it carries, so only the stroke left of the noteheads varies. The arpeggiated
+	// chords are the control: "normal" draws the plain wiggle, "up" and "down" the wiggle
+	// with an arrowhead at that end.
+	// - The 6th chord ("non-arp.") is the case under test — <non-arpeggiate type="bottom"> on
+	//   its C4 and type="top" on its G5, with the middle E5 carrying no marker at all (which
+	//   is how MusicXML spells the span). It draws as a vertical spine with a right-pointing
+	//   hook at each end, overhanging the outer two noteheads by half a staff space the way
+	//   the wiggle does.
+	testCase('non_arpeggiate.musicxml', 'non_arpeggiate.png'),
 
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
 	// note of its measure (four boring B4 quarters per measure so only the symbol

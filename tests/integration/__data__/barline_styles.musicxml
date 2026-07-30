@@ -4,15 +4,15 @@
 <score-partwise version="4.0">
   <identification>
     <miscellaneous>
-      <miscellaneous-field name="description">Different types of (non-repeat) 
-          barlines: default (no setting), regular, dotted, dashed, heavy,
-          light-light, light-heavy, heavy-light, heavy-heavy, tick, short, 
+      <miscellaneous-field name="description">The non-repeat bar-style
+          vocabulary: default (no setting), regular, dotted, dashed, heavy,
+          heavy-heavy, light-light, light-heavy, heavy-light, tick, short,
           none.</miscellaneous-field>
     </miscellaneous>
   </identification>
   <part-list>
     <score-part id="P1">
-      <part-name>MusicXML Part</part-name>
+      <part-name print-object="no">MusicXML Part</part-name>
     </score-part>
   </part-list>
   <part id="P1">
@@ -85,7 +85,7 @@
         <voice>1</voice>
       </note>
       <barline location="right">
-        <bar-style>light-light</bar-style>
+        <bar-style>heavy-heavy</bar-style>
       </barline>
     </measure>
     <measure number="7">
@@ -95,7 +95,7 @@
         <voice>1</voice>
       </note>
       <barline location="right">
-        <bar-style>light-heavy</bar-style>
+        <bar-style>light-light</bar-style>
       </barline>
     </measure>
     <measure number="8">
@@ -105,7 +105,47 @@
         <voice>1</voice>
       </note>
       <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+    <measure number="9">
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+      </note>
+      <barline location="right">
         <bar-style>heavy-light</bar-style>
+      </barline>
+    </measure>
+    <measure number="10">
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+      </note>
+      <barline location="right">
+        <bar-style>tick</bar-style>
+      </barline>
+    </measure>
+    <measure number="11">
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+      </note>
+      <barline location="right">
+        <bar-style>short</bar-style>
+      </barline>
+    </measure>
+    <measure number="12">
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+      </note>
+      <barline location="right">
+        <bar-style>none</bar-style>
       </barline>
     </measure>
   </part>

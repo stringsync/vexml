@@ -224,16 +224,33 @@ const NOTEHEAD_FILL_SUFFIX: Record<string, { open: string; filled: string }> = {
 };
 
 /*
- * A note's vexflow key, e.g. C#5 -> 'c/5'. A harmonic appends the '/H' diamond code; a
- * <notehead> with a supported alternate glyph appends its code (see NOTEHEAD_SUFFIX). Rests
- * have no pitch; callers handle them.
+ * The vexflow key a <display-step>/<display-octave> pair names, e.g. 'e/4'. Both <rest> and
+ * <unpitched> carry the pair, and in both it is a staff POSITION rather than a pitch — it
+ * says which line or space to draw the glyph on, not what sounds. null when the element is
+ * absent or carries no pair. mdom has no accessor for these, so read the raw children.
+ */
+function displayKey(element: MElement | null): string | null {
+	const step = element?.child('display-step')?.text;
+	const octave = element?.child('display-octave')?.text;
+	return step && octave ? `${step.toLowerCase()}/${octave}` : null;
+}
+
+/*
+ * A note's vexflow key, e.g. C#5 -> 'c/5'. An <unpitched> percussion note has no pitch at
+ * all — its <display-step>/<display-octave> pair names the staff position instead, which is
+ * how a kick, a snare and a hi-hat read as three different rows under one percussion clef.
+ * A harmonic appends the '/H' diamond code; a <notehead> with a supported alternate glyph
+ * appends its code (see NOTEHEAD_SUFFIX), which is how those three rows also get their own
+ * head shapes. Rests have neither; callers handle them.
  */
 function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
-	if (!pitch) {
+	const key = pitch
+		? `${pitch.step.toLowerCase()}/${pitch.octave}`
+		: displayKey(note.child('unpitched'));
+	if (!key) {
 		return 'b/4';
 	}
-	const key = `${pitch.step.toLowerCase()}/${pitch.octave}`;
 	if (isHarmonic(note)) {
 		return `${key}/H`;
 	}
@@ -251,16 +268,12 @@ function vexflowKey(note: Note): string {
 
 /*
  * A pitched rest's vexflow key, e.g. <display-step>E</display-step><display-octave>4 ->
- * 'e/4'. The pair names a staff POSITION, not a pitch — it pins the glyph to a chosen line
- * instead of the default centered one (standard in multi-voice writing, where the voices'
- * rests are pushed apart). null when the rest carries no display position. mdom has no
- * accessor for these, so read the raw children.
+ * 'e/4'. Pinning a rest to a chosen line instead of the default centered one is standard in
+ * multi-voice writing, where the voices' rests are pushed apart. null when the rest carries
+ * no display position.
  */
 function pitchedRestKey(note: Note): string | null {
-	const rest = note.child('rest');
-	const step = rest?.child('display-step')?.text;
-	const octave = rest?.child('display-octave')?.text;
-	return step && octave ? `${step.toLowerCase()}/${octave}` : null;
+	return displayKey(note.child('rest'));
 }
 
 /*
@@ -589,6 +602,96 @@ function addArpeggio(staveNote: StaveNote, note: Note): void {
 				? Stroke.Type.ROLL_UP
 				: Stroke.Type.ARPEGGIO_DIRECTIONLESS;
 	staveNote.addModifier(new Stroke(type), 0);
+}
+
+/* Stroke width of the non-arpeggiate bracket's spine and hooks, in pixels. */
+const NON_ARPEGGIATE_THICKNESS = 1.5;
+
+/*
+ * The square bracket of a <notations><non-arpeggiate>, drawn to the left of a chord: a
+ * vertical spine with a hook at each end, both pointing right at the noteheads. vexflow's
+ * Stroke has no bracket type, so this subclasses it purely to inherit the placement —
+ * Stroke.format reserves the width and shifts the whole stack clear of accidentals, and it
+ * dispatches on CATEGORY, which a subclass keeps — and replaces the wiggle in draw().
+ */
+class NonArpeggioBracket extends Stroke {
+	constructor(
+		private readonly lowIndex: number,
+		private readonly highIndex: number,
+	) {
+		// The type is never read (draw is overridden), but Stroke's constructor needs one.
+		super(Stroke.Type.ARPEGGIO_DIRECTIONLESS);
+	}
+
+	override draw(): void {
+		const ctx = this.checkContext();
+		const note = this.checkAttachedNote();
+		this.setRendered();
+		// Only the noteheads the mark actually spans: a non-arpeggiate whose type="bottom"
+		// and type="top" name inner members brackets that part of the chord alone.
+		const ys = note
+			.getYs()
+			.slice(this.lowIndex, this.highIndex + 1)
+			.filter((y) => Number.isFinite(y));
+		if (ys.length === 0) {
+			return;
+		}
+		const lineSpace = note.checkStave().getSpacingBetweenLines();
+		// Overhang the outer noteheads by half a staff space, the way the arpeggio wiggle
+		// does, so the bracket reads as enclosing them rather than touching them.
+		const top = Math.min(...ys) - lineSpace / 2;
+		const bottom = Math.max(...ys) + lineSpace / 2;
+		const x =
+			note.getModifierStartXY(this.position, this.index).x - 5 + this.xShift;
+		const hook = lineSpace * 0.6;
+		ctx.fillRect(x, top, NON_ARPEGGIATE_THICKNESS, bottom - top);
+		ctx.fillRect(x, top, hook, NON_ARPEGGIATE_THICKNESS);
+		ctx.fillRect(
+			x,
+			bottom - NON_ARPEGGIATE_THICKNESS,
+			hook,
+			NON_ARPEGGIATE_THICKNESS,
+		);
+	}
+}
+
+/*
+ * The `type` of a note's <notations><non-arpeggiate> ('bottom' or 'top'), or null when it
+ * carries none. mdom has an accessor for <arpeggiate> but not its opposite, so read the
+ * raw children.
+ */
+function nonArpeggiateType(note: Note): string | null {
+	for (const notations of note.childrenNamed('notations')) {
+		const mark = notations.child('non-arpeggiate');
+		if (mark) {
+			return mark.getAttribute('type');
+		}
+	}
+	return null;
+}
+
+/*
+ * A <notations><non-arpeggiate>: the bracket marking a chord to be struck together, the
+ * explicit opposite of the arpeggio wiggle. MusicXML puts type="bottom" on the lowest
+ * member it covers and type="top" on the highest, and the members between carry nothing —
+ * so the range comes from the whole chord, not just the lead. A half-marked chord (only one
+ * end present, which lilypond_32d's malformed neighbors produce) brackets from the end it
+ * does name out to the edge of the chord rather than dropping the mark.
+ */
+function addNonArpeggiate(staveNote: StaveNote, chord: Chord): void {
+	const types = chord.notes.map(nonArpeggiateType);
+	const bottom = types.indexOf('bottom');
+	const top = types.lastIndexOf('top');
+	if (bottom < 0 && top < 0) {
+		return;
+	}
+	staveNote.addModifier(
+		new NonArpeggioBracket(
+			bottom < 0 ? 0 : bottom,
+			top < 0 ? chord.notes.length - 1 : top,
+		),
+		0,
+	);
 }
 
 /*
@@ -1162,6 +1265,7 @@ export class NoteTranslator {
 		addOrnaments(staveNote, lead);
 		addFermata(staveNote, lead);
 		addArpeggio(staveNote, lead);
+		addNonArpeggiate(staveNote, chord);
 		addLyrics(staveNote, lead);
 		return staveNote;
 	}

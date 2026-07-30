@@ -663,3 +663,60 @@ describe('SequenceFactory playback tempo', () => {
 		expect(seq.getStep(1)?.endMs).toBeCloseTo(6000);
 	});
 });
+
+/*
+ * A <metronome>'s printed shape, which the barline_styles/tempo_beat_unit_dot screenshots
+ * pin visually but cannot pull apart: an augmentation dot is a SIBLING of the <beat-unit>
+ * it modifies, not a child, so "dotted quarter = half" and "quarter = dotted half" differ
+ * only in where the <beat-unit-dot/> sits in document order.
+ */
+describe('ScoreReader.tempoOf', () => {
+	const reader = new ScoreReader();
+	const metronome = (inner: string, attrs = '') =>
+		`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`;
+	const markOf = async (inner: string, attrs = '') =>
+		reader.tempoOf(nth(await parseMeasures(metronome(inner, attrs)), 0));
+
+	it('counts the <beat-unit-dot/> markers trailing a beat unit', async () => {
+		const mark = await markOf(
+			'<beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>100</per-minute>',
+		);
+		expect(mark).toMatchObject({ duration: 'quarter', dots: 1, bpm: 100 });
+	});
+
+	it('binds each dot to the unit it follows, not to the mark', async () => {
+		const mark = await markOf(
+			'<beat-unit>quarter</beat-unit><beat-unit-dot/><beat-unit>half</beat-unit>',
+		);
+		expect(mark).toMatchObject({
+			duration: 'quarter',
+			dots: 1,
+			duration2: 'half',
+			dots2: 0,
+		});
+	});
+
+	it('reads a second <beat-unit> as the metric-modulation right-hand side', async () => {
+		const mark = await markOf(
+			'<beat-unit>quarter</beat-unit><beat-unit>half</beat-unit><beat-unit-dot/>',
+		);
+		expect(mark).toMatchObject({ duration2: 'half', dots2: 1 });
+	});
+
+	it('leaves duration2 null for the ordinary unit-equals-bpm form', async () => {
+		const mark = await markOf(
+			'<beat-unit>half</beat-unit><per-minute>60</per-minute>',
+		);
+		expect(mark).toMatchObject({ duration2: null, dots: 0, bpm: 60 });
+	});
+
+	it('reads the parentheses attribute', async () => {
+		const plain = await markOf('<beat-unit>quarter</beat-unit>');
+		const wrapped = await markOf(
+			'<beat-unit>quarter</beat-unit>',
+			'parentheses="yes"',
+		);
+		expect(plain?.parenthesis).toBe(false);
+		expect(wrapped?.parenthesis).toBe(true);
+	});
+});

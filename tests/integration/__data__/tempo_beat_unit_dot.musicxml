@@ -4,8 +4,9 @@
 <score-partwise version="4.0">
   <identification>
     <miscellaneous>
-      <miscellaneous-field name="description">Tempo Markings: note=bpm, 
-          text (note=bpm), note=note, (note=note), (note=bpm)</miscellaneous-field>
+      <miscellaneous-field name="description">Metronome marks a plain
+          note=bpm does not reach: a dotted beat unit, the note=note metric
+          modulation, and a parenthesized mark.</miscellaneous-field>
     </miscellaneous>
   </identification>
   <part-list>
@@ -57,17 +58,6 @@
         <voice>1</voice>
         <type>quarter</type>
       </note>
-      <direction>
-        <direction-type>
-          <words>Adagio</words>
-        </direction-type>
-        <direction-type>
-          <metronome>
-            <beat-unit>long</beat-unit>
-            <per-minute>100</per-minute>
-          </metronome>
-        </direction-type>
-      </direction>
       <note>
         <pitch>
           <step>C</step>
@@ -116,15 +106,6 @@
         <voice>1</voice>
         <type>quarter</type>
       </note>
-      <direction>
-        <direction-type>
-          <metronome>
-            <beat-unit>long</beat-unit>
-            <beat-unit>32nd</beat-unit>
-            <beat-unit-dot/>
-          </metronome>
-        </direction-type>
-      </direction>
       <note>
         <pitch>
           <step>C</step>
@@ -150,38 +131,28 @@
           <metronome parentheses="yes">
             <beat-unit>quarter</beat-unit>
             <beat-unit-dot/>
-            <beat-unit>half</beat-unit>
-            <beat-unit-dot/>
-          </metronome>
-        </direction-type>
-      </direction>
-      <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>1</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-      </note>
-      <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>1</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-      </note>
-      <direction>
-        <direction-type>
-          <metronome parentheses="yes">
-            <beat-unit>quarter</beat-unit>
-            <beat-unit-dot/>
             <per-minute>77</per-minute>
           </metronome>
         </direction-type>
       </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
       <note>
         <pitch>
           <step>C</step>

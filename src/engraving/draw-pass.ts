@@ -269,6 +269,57 @@ const NO_DECORATION: BarlineDecoration = {
 	volta: null,
 };
 
+/*
+ * The MusicXML <bar-style> values vexflow draws itself. Its Barline knows four non-repeat
+ * shapes — one thin line, two thin lines, thin-then-thick, and nothing — which cover half
+ * the vocabulary; the rest (dotted, dashed, heavy, heavy-light, heavy-heavy, tick, short)
+ * have no vexflow type and are painted by DrawPass.drawCustomBarline. 'regular' is the plain
+ * divider an unstyled measure already gets, so it maps to the same SINGLE.
+ */
+const BAR_STYLE_TYPES: Record<string, number> = {
+	regular: Barline.type.SINGLE,
+	'light-light': Barline.type.DOUBLE,
+	'light-heavy': Barline.type.END,
+	none: Barline.type.NONE,
+};
+
+/*
+ * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
+ * measured from the barline's x — the same geometry vexflow's own Barline uses, where a thin
+ * bar is 1px at x and a thick one is 3px at x-2, so a custom style sits flush with the plain
+ * dividers around it. `dash` turns the stroke into a broken line ([on, off] lengths).
+ *
+ * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
+ * only part of the stave height, so they carry a `span` in staff-space units measured down
+ * from the top line — a tick straddles the top line, a short one fills the middle two spaces.
+ */
+const CUSTOM_BAR_STYLES: Record<
+	string,
+	{
+		bars: Array<[offset: number, width: number]>;
+		dash?: [number, number];
+		span?: [from: number, to: number];
+	}
+> = {
+	dotted: { bars: [[0, 1]], dash: [1, 3] },
+	dashed: { bars: [[0, 1]], dash: [4, 4] },
+	heavy: { bars: [[-2, 3]] },
+	'heavy-light': {
+		bars: [
+			[-5, 3],
+			[0, 1],
+		],
+	},
+	'heavy-heavy': {
+		bars: [
+			[-6, 3],
+			[-2, 3],
+		],
+	},
+	tick: { bars: [[0, 1]], span: [-0.5, 0.5] },
+	short: { bars: [[0, 1]], span: [1, 3] },
+};
+
 /* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
 function voltaLabel(number: string): string {
 	return number
@@ -435,7 +486,9 @@ export class DrawPass {
 	private systemIndex = 0;
 	private isSystemStart = false;
 	private isLastMeasure = false;
-	private isLightLight = false;
+	// This measure's right <bar-style>, or null when it declares none. See BAR_STYLE_TYPES
+	// for which values vexflow draws itself and drawCustomBarline for the rest.
+	private barStyle: string | null = null;
 	// This measure's repeat dots and volta bracket, plus the neighbors' repeat state — a
 	// backward repeat butted against the next measure's forward repeat prints as one
 	// back-to-back sign rather than two, so each edge needs to see the other side.
@@ -614,13 +667,12 @@ export class DrawPass {
 		this.systemIndex = box.systemIndex;
 		this.isSystemStart = box.isSystemStart;
 		this.isLastMeasure = m === this.measureCount - 1;
-		// An explicit right <barline> with <bar-style>light-light</bar-style> draws a thin
-		// double line at this measure's end instead of the default single divider (or, on
-		// the final measure, the thin-thick end). Read from the first part — a light-light
-		// boundary applies across the system.
-		this.isLightLight =
+		// An explicit right <barline> with a <bar-style> replaces this measure's end divider
+		// (normally a plain single line, or the thin-thick end on the final measure). Read
+		// from the first part — a barline is a boundary of the whole system, not of one staff.
+		this.barStyle =
 			this.parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
-				?.barStyle === 'light-light';
+				?.barStyle ?? null;
 		// A backward repeat butted against the next measure's forward repeat is one boundary,
 		// so it prints as a single back-to-back sign (dots, thin-thick-thin, dots) and the next
 		// measure skips its own opening dots. Across a system break the two edges are on
@@ -829,6 +881,7 @@ export class DrawPass {
 		this.begRepeatX = alignBegRepeats(this.columnStaves);
 		for (const stave of this.columnStaves) {
 			stave.setContext(this.context).draw();
+			this.drawCustomBarline(stave);
 		}
 
 		// Format and draw every part's staves together so same-tick notes line up
@@ -924,6 +977,11 @@ export class DrawPass {
 					? Barline.type.SINGLE
 					: Barline.type.NONE,
 		);
+		// A <bar-style> vexflow has no type for is set to NONE here and painted by
+		// drawCustomBarline once the stave is on the canvas; 'none' is genuinely no line, so
+		// it takes NONE and no repaint. A repeat sign outranks any bar style — MusicXML puts
+		// the two in the same <barline>, and the repeat is the one that changes what's played.
+		const styled = this.barStyle ? BAR_STYLE_TYPES[this.barStyle] : undefined;
 		stave.setEndBarType(
 			this.repeatBoth
 				? Barline.type.REPEAT_BOTH
@@ -931,8 +989,8 @@ export class DrawPass {
 					? Barline.type.REPEAT_END
 					: this.totalStaves > 1
 						? Barline.type.NONE
-						: this.isLightLight
-							? Barline.type.DOUBLE
+						: this.barStyle
+							? (styled ?? Barline.type.NONE)
 							: this.isLastMeasure
 								? Barline.type.END
 								: Barline.type.SINGLE,
@@ -2160,8 +2218,23 @@ export class DrawPass {
 	private tempoRect(tempo: TempoMark, x: number, baseline: number): Rect {
 		//  is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
 		const glyph = new Element('StaveTempo.glyph').setText('');
-		const text = new Element('StaveTempo').setText(`= ${tempo.bpm}`);
-		const w = (glyph.getWidth() + text.getWidth() + 6) * TEMPO_SCALE;
+		//  is metAugmentationDot, the dot StaveTempo trails a dotted beat unit with.
+		const dot = new Element('StaveTempo.glyph').setText('');
+		const text = new Element('StaveTempo');
+		// Walk the same pieces StaveTempo.draw lays down, each advancing by its own width
+		// plus a 3px gap: an opening paren, the beat unit and its dots, "=", then either a
+		// second dotted unit (the metric-modulation form) or the bpm, then a closing paren.
+		const advance = (el: Element) => el.getWidth() + 3;
+		let w = tempo.parenthesis ? advance(text.setText('(')) : 0;
+		w += advance(glyph) + (tempo.dots ?? 0) * advance(dot);
+		w += advance(text.setText('='));
+		w += tempo.duration2
+			? advance(glyph) + (tempo.dots2 ?? 0) * advance(dot)
+			: advance(text.setText(String(tempo.bpm)));
+		if (tempo.parenthesis) {
+			w += text.setText(')').getWidth();
+		}
+		w *= TEMPO_SCALE;
 		const ink = glyph.getTextMetrics();
 		const ascent = ink.actualBoundingBoxAscent * TEMPO_SCALE;
 		const descent = ink.actualBoundingBoxDescent * TEMPO_SCALE;
@@ -2207,7 +2280,16 @@ export class DrawPass {
 		this.context.save();
 		this.context.scale(TEMPO_SCALE, TEMPO_SCALE);
 		new StaveTempo(
-			{ duration: tempo.duration, bpm: tempo.bpm },
+			{
+				duration: tempo.duration,
+				dots: tempo.dots,
+				bpm: tempo.bpm,
+				// StaveTempo prints the bpm only when there is no second unit, so the
+				// metric-modulation form drops the number on its own.
+				duration2: tempo.duration2 ?? undefined,
+				dots2: tempo.dots2,
+				parenthesis: tempo.parenthesis,
+			},
 			targetX / TEMPO_SCALE - shiftX - 10,
 			(baseY + shiftY) / TEMPO_SCALE - baseY,
 		)
@@ -2505,17 +2587,66 @@ export class DrawPass {
 				}
 				return;
 			}
+			// ponytail: on a MULTI-stave system only light-light and light-heavy change the
+			// connector — StaveConnector's own vocabulary is thin / thinDouble / boldDoubleRight,
+			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
+			// line there. Single-stave scores (where these styles actually show up) get the full
+			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
 			new StaveConnector(this.systemTop, this.systemBottom)
 				.setType(
-					this.isLightLight
+					this.barStyle === 'light-light'
 						? 'thinDouble'
-						: this.isLastMeasure
+						: this.barStyle === 'light-heavy' || this.isLastMeasure
 							? 'boldDoubleRight'
 							: 'singleRight',
 				)
 				.setContext(this.context)
 				.draw();
 		}
+	}
+
+	/*
+	 * Paint this measure's end barline for the <bar-style> values vexflow has no Barline type
+	 * for (see CUSTOM_BAR_STYLES). buildStave left the stave's end bar as NONE for these, so
+	 * this is the only line drawn there, laid down right after the stave so it sits under the
+	 * notes like any other barline. A repeat sign at the same edge wins and is already drawn,
+	 * so it suppresses this.
+	 */
+	private drawCustomBarline(stave: Stave): void {
+		const style = this.barStyle ? CUSTOM_BAR_STYLES[this.barStyle] : undefined;
+		if (!style || this.decoration.repeatEnd || this.repeatBoth) {
+			return;
+		}
+		const x = stave.getX() + stave.getWidth();
+		const spacing = stave.getSpacingBetweenLines();
+		const topY = stave.getTopLineTopY();
+		// A `span` is measured in staff spaces down from the top line; without one the bar
+		// runs the full stave height, the way every vexflow barline does.
+		const [from, to] = style.span ?? [0, 0];
+		const y = style.span ? topY + from * spacing : topY;
+		const height = style.span
+			? (to - from) * spacing
+			: stave.getBottomLineBottomY() - topY;
+		this.context.save();
+		this.context.setFillStyle(this.notationColor);
+		for (const [offset, width] of style.bars) {
+			if (style.dash) {
+				// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
+				// clipped to the bar's height rather than overshooting past the bottom line.
+				const [on, off] = style.dash;
+				for (let dy = 0; dy < height; dy += on + off) {
+					this.context.fillRect(
+						x + offset,
+						y + dy,
+						width,
+						Math.min(on, height - dy),
+					);
+				}
+			} else {
+				this.context.fillRect(x + offset, y, width, height);
+			}
+		}
+		this.context.restore();
 	}
 
 	/* One half of a repeat sign carried down the system. `xShift` moves a left-sided connector

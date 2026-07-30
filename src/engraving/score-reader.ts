@@ -11,8 +11,61 @@ import {
 import { DEFAULT_TEMPO_BPM } from '../constants';
 import type { ChordFrame } from './chord-diagram-glyph';
 
-/** A metronome mark: the beat-unit's vexflow duration code plus its bpm. */
-export type TempoMark = { duration: string; bpm: number };
+/**
+ * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
+ * fields are the printed variants — augmentation dots on either unit, a second unit for
+ * the note-equals-note metric modulation, and the parenthesized form. Only the drawing
+ * path reads them; playback needs `bpm` alone.
+ */
+export type TempoMark = {
+	duration: string;
+	bpm: number;
+	dots?: number;
+	duration2?: string | null;
+	dots2?: number;
+	parenthesis?: boolean;
+};
+
+/**
+ * The `<direction-type><metronome>` element of a `<direction>`, or null when it carries
+ * none. mdom's own `metronome` accessor flattens the element to its FIRST beat unit, which
+ * loses the metric-modulation form and the `parentheses` attribute, so read the raw child.
+ */
+function metronomeOf(direction: MElement): MElement | null {
+	for (const type of direction.childrenNamed('direction-type')) {
+		const metronome = type.child('metronome');
+		if (metronome) {
+			return metronome;
+		}
+	}
+	return null;
+}
+
+/**
+ * A `<metronome>`'s beat units in document order: each `<beat-unit>` paired with the count
+ * of `<beat-unit-dot/>` markers that trail it. MusicXML puts the dots AFTER the unit they
+ * modify rather than inside it, so a positional walk is the only way to tell "dotted
+ * quarter = half" from "quarter = dotted half".
+ */
+function beatUnitsOf(
+	metronome: MElement,
+): Array<{ unit: string; dots: number }> {
+	const units: Array<{ unit: string; dots: number }> = [];
+	for (const child of metronome.children) {
+		if (!(child instanceof MElement)) {
+			continue;
+		}
+		if (child.tag === 'beat-unit') {
+			units.push({ unit: child.text ?? 'quarter', dots: 0 });
+		} else if (child.tag === 'beat-unit-dot') {
+			const last = units.at(-1);
+			if (last) {
+				last.dots++;
+			}
+		}
+	}
+	return units;
+}
 
 /** Which side of the staff a `<direction>` prints on. */
 export type Placement = 'above' | 'below';
@@ -313,20 +366,32 @@ export class ScoreReader {
 	 * 'eighth', 'half', ...) already match StaveTempo's duration codes. bpm comes from
 	 * <per-minute>, falling back to the <sound tempo>, then to 120 — so a metronome
 	 * directive without a number still prints "= 120".
-	 * ponytail: dotted beat-units (<beat-unit-dot/>) ignored; add a `dots` field if a
-	 * fixture needs a dotted metronome note.
+	 *
+	 * A SECOND <beat-unit> is the metric-modulation form ("dotted quarter = dotted half"),
+	 * which states a relation rather than a rate and so carries no <per-minute>; bpm keeps
+	 * its fallback for the playback path, which has no way to read a relation.
+	 * ponytail: only the first <metronome> in a measure engraves, as before — vexml draws
+	 * one mark per measure, anchored over its first note, and no fixture asks for two.
 	 */
 	tempoOf(measure: Measure): TempoMark | null {
 		for (const direction of measure.directions) {
-			const metronome = direction.metronome;
+			const metronome = metronomeOf(direction);
 			if (!metronome) {
 				continue;
 			}
-			const perMinute = metronome.perMinute;
+			const [first, second] = beatUnitsOf(metronome);
+			if (!first) {
+				continue;
+			}
+			const perMinute = metronome.child('per-minute')?.text;
 			const sound = direction.soundTempo;
 			return {
-				duration: metronome.beatUnit,
+				duration: first.unit,
+				dots: first.dots,
 				bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM,
+				duration2: second?.unit ?? null,
+				dots2: second?.dots ?? 0,
+				parenthesis: metronome.getAttribute('parentheses') === 'yes',
 			};
 		}
 		return null;
