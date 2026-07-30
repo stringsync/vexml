@@ -114,7 +114,7 @@ When the checklist leaves you genuinely unsure what the *correct* engraving is â
 
 ```sh
 vex slice -i tests/integration/__data__/slur.musicxml -m 4 -o /tmp/one.musicxml
-vex render --musescore -i /tmp/one.musicxml -o /tmp/musescore.png
+vex render --muse -i /tmp/one.musicxml -o /tmp/musescore.png
 vex render --osmd -i /tmp/one.musicxml -o /tmp/osmd.png
 vex render -i /tmp/one.musicxml -o /tmp/vexml.png
 ```
@@ -130,7 +130,7 @@ Then read the PNGs and compare the one detail in question. Rules, in order of ho
 - **Reference agreement never justifies a baseline update.** It informs the wording of a `TODO` and the direction of a fix. A human still accepts the screenshot per the checklist above.
 - Don't chase parity. The goal is answering one specific question, then getting back to the fix.
 
-`--musescore`'s first run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored. `--osmd` needs no image and takes a couple of seconds; it always draws a title and part label above the first system, which is OSMD's default and not part of the comparison.
+`--muse`'s first run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored. `--osmd` needs no image and takes a couple of seconds; it always draws a title and part label above the first system, which is OSMD's default and not part of the comparison.
 
 8. If the target render passes the screenshot review checklist, update only that baseline:
 

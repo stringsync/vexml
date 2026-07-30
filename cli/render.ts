@@ -11,7 +11,7 @@ export async function render(opts: {
 	input: string;
 	output?: string;
 	config?: string;
-	musescore?: boolean;
+	muse?: boolean;
 	osmd?: boolean;
 	cwd: string;
 }) {
@@ -20,7 +20,7 @@ export async function render(opts: {
 
 	// A reference render, for checking vexml against when the correct engraving
 	// is unclear. Shares nothing with the browser path but "MusicXML in, PNG out".
-	if (opts.musescore) {
+	if (opts.muse) {
 		const output = at(opts.output ?? `musescore ${timestamp()}.png`);
 		await run('./musescore/render.sh', [at(opts.input), output]);
 		return;
