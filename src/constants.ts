@@ -23,6 +23,11 @@ export const PAGE_MARGIN_BOTTOM = 40;
 export const PEDAL_BOTTOM_TEXT_LINE = 3;
 export const PEDAL_BOTTOM_MARGIN = 12;
 
+/** How far the pedal's ink rises above that baseline — the "Ped."/"*" glyphs measure ~23px
+ * tall and the bracket only 10, so this is the taller of the two. The band it defines is
+ * what gets dropped clear of notes hanging below the staff. */
+export const PEDAL_INK_RISE = 24;
+
 /** Vertical gap between stacked systems, plus room for the next system's notes that
  * rise above its top staff. The default for `Config.systemSpacing`. */
 export const SYSTEM_GAP = 30;

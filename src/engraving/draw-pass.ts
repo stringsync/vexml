@@ -18,6 +18,7 @@ import {
 	Metrics,
 	MetricsDefaults,
 	Modifier,
+	type PedalMarking,
 	type RenderContext,
 	Stave,
 	StaveConnector,
@@ -66,6 +67,7 @@ import {
 	PART_GROUP_STEP,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
+	PEDAL_INK_RISE,
 	REHEARSAL_FONT_SIZE,
 	REHEARSAL_NOTE_CLEARANCE,
 	REHEARSAL_PADDING,
@@ -2628,11 +2630,13 @@ export class DrawPass {
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
 		// ponytail: only the final crop is grown — a pedal on a non-last system isn't
 		// reserved against the system below it; add that if a fixture stacks one there.
-		for (const pedal of this.spanners.buildPedals(
+		for (const { marking, notes } of this.spanners.buildPedals(
 			this.allPedals,
 			this.byLead,
+			this.allChords,
 		)) {
-			pedal.setContext(this.context).draw();
+			this.dropPedalClear(marking, notes);
+			marking.setContext(this.context).draw();
 		}
 		for (const marker of this.allPedals) {
 			const stave = this.byLead.get(marker.lead)?.getStave();
@@ -2662,6 +2666,43 @@ export class DrawPass {
 			rawMeasures: this.rawMeasures,
 			rawChordDiagrams: this.rawChordDiagrams,
 		};
+	}
+
+	/*
+	 * Drop a pedal's band below anything of its own that hangs under the staff — a low
+	 * notehead and its ledger lines — instead of drawing the "Ped." glyph through it.
+	 * vexflow positions the whole marking off one `line` offset, so the band moves as a
+	 * unit and the drop converts to line units.
+	 *
+	 * The shared collision index is per-system (cleared at each system boundary) and pedals
+	 * resolve after the last system, so this scopes a resolver to the pedal's own notes
+	 * rather than reading a stale obstacle from an unrelated system at the same x.
+	 */
+	private dropPedalClear(marking: PedalMarking, notes: StaveNote[]): void {
+		const stave = notes[0]?.getStave();
+		if (!stave) {
+			return;
+		}
+		const hw = this.translator.noteheadHalfWidth();
+		const xs = notes.map((note) => note.getAbsoluteX());
+		const left = Math.min(...xs) - hw;
+		const baseline = stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE);
+		const natural = new Rect(
+			left,
+			baseline - PEDAL_INK_RISE,
+			Math.max(...xs) + hw - left,
+			PEDAL_INK_RISE,
+		);
+		const scoped = new CollisionResolver(this.scratchViewport);
+		for (const note of notes) {
+			scoped.add({ rect: this.noteRect(note), kind: 'note' });
+		}
+		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+		marking.setLine((placed.y - natural.y) / stave.getSpacingBetweenLines());
+		this.pageBottom = Math.max(
+			this.pageBottom,
+			placed.bottom + PEDAL_BOTTOM_MARGIN,
+		);
 	}
 
 	/*

@@ -106,5 +106,49 @@
         </direction-type>
       </direction>
     </measure>
+    <measure number="3">
+      <direction>
+        <direction-type>
+          <pedal type="start" line="no"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>3</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <direction>
+        <direction-type>
+          <pedal type="stop" line="no"/>
+        </direction-type>
+      </direction>
+    </measure>
   </part>
 </score-partwise>

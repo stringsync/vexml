@@ -431,13 +431,6 @@ const TEST_CASES = [
 	// ignored. No fixture reaches either yet.
 	testCase('invisible_notes.musicxml', 'invisible_notes.png'),
 
-	// TODO: True negative (long-standing, not a new regression): on the bass stave of M2 the
-	// "Ped." glyph is drawn straight through the notehead and ledger lines of the low Eb2
-	// below it. The pedal is not routed through CollisionDetector (see docs/collision-audit.md)
-	// — pedal.png only ever exercises mid-staff B4 quarters, which never reach down into the
-	// pedal's band. The baseline below was accepted with the clash in it, since this case is
-	// about color; fix it under pedal.png and re-accept both.
-	//
 	// A colored Beethoven lied (tmp/color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
 	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG — here the
@@ -454,6 +447,8 @@ const TEST_CASES = [
 	//   a magenta head under a black beam. The lyrics stay black throughout: no <lyric color>
 	//   is given, so a syllable does not inherit the ink of the note it hangs from. Piano —
 	//   gold and green heads in the RH chord, gray rests from <note color> on both staves.
+	//   The LH's "Ped." sits below the low Eb2's ledger lines rather than through them (the
+	//   pedal drops clear of the notes it spans — see pedal.png M3).
 	// ponytail: <beam color> and <lyric color> are ignored (each draws from its own element,
 	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
 	// See also tmp/auto_custom_coloring_entchen.xml.
@@ -969,6 +964,10 @@ const TEST_CASES = [
 	//   release glyph near the end barline.
 	// - M2: a bracket pedal (line="yes") — an L-shaped bracket line under the staff from
 	//   the first note to the last instead of the text glyphs.
+	// - M3: a text pedal over four E3 quarters, an octave below the staff, whose noteheads
+	//   and ledger lines hang down into the pedal's default band. The "Ped."/"*" glyphs are
+	//   dropped clear below them instead of printing through the notes; M1's pedal, over
+	//   mid-staff notes, stays at the default height as the control.
 	testCase('pedal.musicxml', 'pedal.png'),
 
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain

@@ -834,12 +834,16 @@ export class SpannerBuilder {
 	 * ponytail: a pedal whose stop wraps onto a later system isn't split — vexflow
 	 * throws on descending x, so a wrapping pedal would need the partial-span handling
 	 * buildTies uses; add it if a fixture needs one.
+	 *
+	 * Each marking comes back with the notes it covers so the caller can drop it clear
+	 * of any that reach down into its band (see DrawPass.finishPass).
 	 */
 	buildPedals(
 		markers: PedalMark[],
 		byLead: Map<Note, StaveNote>,
-	): PedalMarking[] {
-		const pedals: PedalMarking[] = [];
+		chords: Chord[],
+	): { marking: PedalMarking; notes: StaveNote[] }[] {
+		const pedals: { marking: PedalMarking; notes: StaveNote[] }[] = [];
 		const open = new Map<string, { note: StaveNote; line: boolean }>();
 		for (const marker of markers) {
 			const staveNote = byLead.get(marker.lead);
@@ -854,11 +858,14 @@ export class SpannerBuilder {
 				if (!from) {
 					continue;
 				}
-				const pedal = PedalMarking.createSustain([from.note, staveNote]);
+				const marking = PedalMarking.createSustain([from.note, staveNote]);
 				if (from.line) {
-					pedal.setType(PedalMarking.type.BRACKET);
+					marking.setType(PedalMarking.type.BRACKET);
 				}
-				pedals.push(pedal);
+				pedals.push({
+					marking,
+					notes: pedalSpan(chords, byLead, from.note, staveNote),
+				});
 			}
 		}
 		return pedals;
@@ -1130,6 +1137,30 @@ export class SpannerBuilder {
  * a single-stave pitch continuation or a fretted line); a cross-staff tie on one system would
  * misfire as a wrap.
  */
+/*
+ * Every note a pedal covers: its two endpoints plus everything drawn between them, kept
+ * to the endpoints' own stave row. vexflow anchors the pedal's y to each note's stave, so
+ * a note on another row (a grand staff's other hand) sits in somebody else's band and
+ * can't clash with this one. Same-row measures share a y, which is what identifies the row.
+ */
+function pedalSpan(
+	chords: Chord[],
+	byLead: Map<Note, StaveNote>,
+	from: StaveNote,
+	to: StaveNote,
+): StaveNote[] {
+	const i = chords.findIndex((c) => byLead.get(c.lead) === from);
+	const j = chords.findIndex((c) => byLead.get(c.lead) === to);
+	if (i < 0 || j < i) {
+		return [from, to];
+	}
+	const y = from.getStave()?.getY();
+	return chords
+		.slice(i, j + 1)
+		.map((c) => byLead.get(c.lead))
+		.filter((n): n is StaveNote => !!n && n.getStave()?.getY() === y);
+}
+
 /*
  * The position indexes a hammer-on/pull-off arc connects: each string played by both
  * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
