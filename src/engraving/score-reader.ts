@@ -291,6 +291,26 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
+	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
+	 * by, printed at the measure's left edge above the system's top staff.
+	 * Read off the generic element axes: mdom's Direction defers rehearsal, so there's no
+	 * typed accessor for it yet.
+	 * ponytail: the <rehearsal> enclosure/font attributes are ignored — every mark prints
+	 * boxed in the default style; add an enclosure field if a fixture needs a circle or a
+	 * bare letter.
+	 */
+	rehearsalsOf(measure: Measure): string[] {
+		return measure.directions.flatMap((d) =>
+			d
+				.childrenNamed('direction-type')
+				.flatMap((type) => type.childrenNamed('rehearsal'))
+				.map((rehearsal) => rehearsal.text ?? '')
+				.filter(Boolean),
+		);
+	}
+
+	/*
 	 * A measure's pedal markers, in document order: a "start" binds to the next note
 	 * (the pedal goes down there), a "stop" to the previous note (the last note still
 	 * held). Directions sit between notes, so walk the children tracking the last lead

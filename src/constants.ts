@@ -207,6 +207,21 @@ export const WORDS_Y_OFFSET = 14;
  * uncollided one keeps over the top staff line — at 8 the text grazed the noteheads. */
 export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
 
+/** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size — bigger and bolder than
+ * the other above-stave annotations, since it's the label a player navigates the chart by. */
+export const REHEARSAL_FONT_SIZE = 14;
+
+/** Air between a rehearsal mark's text and its enclosing box. */
+export const REHEARSAL_PADDING = 4;
+
+/** How far the bottom of a rehearsal mark's box sits above the top staff line. */
+export const REHEARSAL_Y_OFFSET = 8;
+
+/** Clearance kept between a rehearsal mark's box and anything it lifts clear of. Matched to
+ * REHEARSAL_Y_OFFSET so a lifted mark keeps the same air over a notehead that an uncollided
+ * one keeps over the top staff line. */
+export const REHEARSAL_NOTE_CLEARANCE = REHEARSAL_Y_OFFSET;
+
 /** Clearance kept between the bottom of a metronome mark's ink and whatever it lifts clear
  * of. A note obstacle is a thin box at the notehead's center (vexflow reports notehead
  * positions, not glyph extents), so this has to cover half a notehead plus the air. */

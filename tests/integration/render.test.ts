@@ -226,6 +226,17 @@ const TEST_CASES = [
 	//   row; anchoring them all at the measure's first note would stack them in a column.
 	testCase('words.musicxml', 'words.png'),
 
+	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
+	// as boxed bold text at each measure's left edge, above everything else over the staff.
+	// Four boring quarters per measure so only the label and the first note's height vary.
+	// - M1: "A" at the system start — the box sits above the printed measure number "1"
+	//   (which it would otherwise print on top of), left-aligned with the clef.
+	// - M2: "B" over high C6 quarters (one ledger line above) whose noteheads reach into
+	//   the box's default band, so the box is lifted clear of them.
+	// - M3: "Chorus" — a multi-character label, so the box widens to fit the text instead
+	//   of staying letter-sized.
+	testCase('rehearsal.musicxml', 'rehearsal.png'),
+
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
 	// (C5, same pitch in both).
 	testCase('measures_two.musicxml', 'measures_two.png'),

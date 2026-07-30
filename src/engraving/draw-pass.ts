@@ -59,6 +59,10 @@ import {
 	PAGE_MARGIN_X,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
+	REHEARSAL_FONT_SIZE,
+	REHEARSAL_NOTE_CLEARANCE,
+	REHEARSAL_PADDING,
+	REHEARSAL_Y_OFFSET,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
 	TIE_APEX_RISE,
@@ -896,6 +900,17 @@ export class DrawPass {
 				partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation));
 		if (this.showMeasureNumber && !this.measureNumbered && !numberOccluded) {
 			stave.setMeasure(Number(measure.number));
+			// vexflow centers the number on the stave's x, baselined 3px under its top-text
+			// line (Stave.draw).
+			this.context.save();
+			this.context.setFont(stave.getFont());
+			this.addMeasureNumberObstacle(
+				String(Number(measure.number)),
+				stave.getX(),
+				stave.getYForTopText(0) + 3,
+				true,
+			);
+			this.context.restore();
 			this.measureNumbered = true;
 		}
 
@@ -953,6 +968,12 @@ export class DrawPass {
 				measure.number,
 				stave.getX() + 4,
 				stave.getYForTopText(0) - 14,
+			);
+			this.addMeasureNumberObstacle(
+				measure.number,
+				stave.getX() + 4,
+				stave.getYForTopText(0) - 14,
+				false,
 			);
 			this.context.restore();
 			this.measureNumbered = true;
@@ -1803,6 +1824,60 @@ export class DrawPass {
 			this.pageTop = Math.min(this.pageTop, top);
 			this.growDecorationTop(this.systemIndex, top);
 		}
+		// A rehearsal mark belongs to the measure, not to one part — every part carries the
+		// same one — so it's read from the first part (like the barline decorations) and
+		// printed once, over the column's top stave. It goes last of all: engraving puts the
+		// section header at the very top of the above-stave stack, clear of tempo and chords.
+		const topStave = this.systemTop;
+		const measure = this.parts[0]?.measures[m];
+		if (topStave && measure) {
+			for (const text of this.reader.rehearsalsOf(measure)) {
+				const top = this.drawRehearsal(topStave, text);
+				this.pageTop = Math.min(this.pageTop, top);
+				this.growDecorationTop(this.systemIndex, top);
+			}
+		}
+	}
+
+	/*
+	 * Draw a rehearsal mark (a section header like "A" or "Chorus") as boxed bold text above
+	 * the stave, anchored at the measure's left edge — a player reading "from B" looks for
+	 * the barline, not a note. The collision resolver lifts it clear of anything already in
+	 * its column. Returns the y the box reaches up to so the caller can grow the page crop.
+	 */
+	private drawRehearsal(stave: Stave, text: string): number {
+		this.context.save();
+		this.context.setFont(this.labelFont, REHEARSAL_FONT_SIZE, 'bold');
+		this.context.setFillStyle(this.textColor);
+		this.context.setStrokeStyle(this.textColor);
+		const w = this.context.measureText(text).width + 2 * REHEARSAL_PADDING;
+		const h = REHEARSAL_FONT_SIZE + 2 * REHEARSAL_PADDING;
+		const bottom = stave.getYForLine(0) - REHEARSAL_Y_OFFSET;
+		const natural = new Rect(stave.getX(), bottom - h, w, h);
+		const band = this.rowOf(stave);
+		const placed = this.collisionResolver.liftClear(
+			natural,
+			REHEARSAL_NOTE_CLEARANCE,
+			TEXT_CLEAR_KINDS,
+			band,
+		);
+		this.recordAnnotationSpill(stave, placed.y);
+		this.context.setLineWidth(1);
+		this.context.beginPath();
+		this.context.moveTo(placed.x, placed.y);
+		this.context.lineTo(placed.right, placed.y);
+		this.context.lineTo(placed.right, placed.bottom);
+		this.context.lineTo(placed.x, placed.bottom);
+		this.context.closePath();
+		this.context.stroke();
+		this.context.fillText(
+			text,
+			placed.x + REHEARSAL_PADDING,
+			placed.bottom - REHEARSAL_PADDING,
+		);
+		this.context.restore();
+		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+		return placed.y;
 	}
 
 	/*
@@ -2239,6 +2314,31 @@ export class DrawPass {
 		const spill = this.spillOf(p.row, p.stave);
 		spill.rise = Math.max(spill.rise, p.stave.getYForLine(0) - top);
 		spill.drop = Math.max(spill.drop, bottom - p.stave.getBottomLineY());
+	}
+
+	/*
+	 * Register a printed measure number as a collision obstacle, measured with whatever font
+	 * the caller has set on the context. It sits at the stave's left edge, which is exactly
+	 * where a rehearsal mark anchors — without this the section header prints on top of it.
+	 * `centered` matches vexflow's own placement (the number straddles the stave x); the
+	 * bracket-occluded path draws it left-aligned instead.
+	 */
+	private addMeasureNumberObstacle(
+		label: string,
+		x: number,
+		baseline: number,
+		centered: boolean,
+	): void {
+		const ink = this.context.measureText(label);
+		this.collisionResolver.add({
+			rect: new Rect(
+				centered ? x - ink.width / 2 : x,
+				baseline + ink.y,
+				ink.width,
+				ink.height,
+			),
+			kind: 'annotation',
+		});
 	}
 
 	/* Which stave row (of this measure's column) a stave sits on — the collision band its
