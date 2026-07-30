@@ -64,10 +64,20 @@ program
 		'--musescore',
 		'render with a dockerized MuseScore instead — a reference, not ground truth',
 	)
+	.option(
+		'--osmd',
+		'render with OpenSheetMusicDisplay instead — a reference, not ground truth',
+	)
 	.action(async (opts) => {
-		// The MuseScore path is a different renderer entirely; it has no Config.
-		if (opts.musescore && opts.config) {
-			console.error('vex render: --config and --musescore are incompatible');
+		if (opts.musescore && opts.osmd) {
+			console.error('vex render: --musescore and --osmd are incompatible');
+			process.exit(1);
+		}
+		// The reference renderers are different renderers entirely; no Config.
+		if ((opts.musescore || opts.osmd) && opts.config) {
+			console.error(
+				'vex render: --config and --musescore/--osmd are incompatible',
+			);
 			process.exit(1);
 		}
 		await render({
@@ -75,6 +85,7 @@ program
 			output: opts.output,
 			config: opts.config,
 			musescore: opts.musescore ?? false,
+			osmd: opts.osmd ?? false,
 			cwd: invocationDir,
 		});
 	});

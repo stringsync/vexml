@@ -12,6 +12,7 @@ export async function render(opts: {
 	output?: string;
 	config?: string;
 	musescore?: boolean;
+	osmd?: boolean;
 	cwd: string;
 }) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
@@ -22,6 +23,14 @@ export async function render(opts: {
 	if (opts.musescore) {
 		const output = at(opts.output ?? `musescore ${timestamp()}.png`);
 		await run('./musescore/render.sh', [at(opts.input), output]);
+		return;
+	}
+
+	// The other reference renderer. Also VexFlow-based, so it agrees with vexml
+	// on glyphs and disagrees on layout — the complement to MuseScore's opinion.
+	if (opts.osmd) {
+		const output = at(opts.output ?? `osmd ${timestamp()}.png`);
+		await renderWithOsmd(readFileSync(at(opts.input), 'utf8'), output);
 		return;
 	}
 
@@ -54,6 +63,43 @@ export async function render(opts: {
 	} finally {
 		await browser.close();
 		server.stop(true);
+	}
+}
+
+// OSMD is a browser library, so this needs a page but no server: the UMD build
+// goes straight in from node_modules and draws SVG into a fixed-width div.
+async function renderWithOsmd(musicXML: string, output: string) {
+	type OsmdWindow = {
+		opensheetmusicdisplay: {
+			OpenSheetMusicDisplay: new (
+				id: string,
+				opts: object,
+			) => { load(xml: string): Promise<void>; render(): void };
+		};
+	};
+
+	const browser = await chromium.launch();
+	try {
+		const page = await browser.newPage({
+			viewport: { width: 1064, height: 600 },
+		});
+		await page.setContent(
+			'<body style="margin:0;background:#fff"><div id="osmd" style="width:1064px"></div></body>',
+		);
+		await page.addScriptTag({
+			path: './node_modules/opensheetmusicdisplay/build/opensheetmusicdisplay.min.js',
+		});
+		await page.evaluate(async (musicXML) => {
+			const { OpenSheetMusicDisplay } = (window as unknown as OsmdWindow)
+				.opensheetmusicdisplay;
+			const osmd = new OpenSheetMusicDisplay('osmd', { autoResize: false });
+			await osmd.load(musicXML);
+			osmd.render();
+		}, musicXML);
+		writeFileSync(output, await page.locator('#osmd').screenshot());
+		console.log(`wrote ${output}`);
+	} finally {
+		await browser.close();
 	}
 }
 

@@ -63,7 +63,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    - **False positive:** a newly added test may pass only because its first generated screenshot was automatically accepted as the baseline. In this state the test accepts any current rendering as correct, even if the rendering is visibly wrong. Leave a `TODO` comment above the `testCase(...)` explicitly calling out this failure mode, for example: `// TODO: False positive: this baseline was probably created from the current render, so it may be accepting an incorrect screenshot. Review the render, then run vex test <name> --update only after the image is confirmed correct.` If the user provides a golden-standard image for the case, compare it against vexml's render before accepting. Eventually, the agent must run `vex test <name> --update` to intentionally accept the reviewed screenshot.
    - **True negative:** an existing screenshot test failed because a previously accepted baseline is no longer reproducible. Inspect the diff artifact and leave a `TODO` comment above the `testCase(...)` that describes the visual difference in plain language and links to the diff. Do not prescribe a fix unless the root cause is already clear. Prefer wording like: `// TODO: True negative: the accepted baseline shows <expected visual>, but the new render shows <actual visual>. Diff: <path-or-link>.`
    - In both cases, describe what a human should look for in the screenshot. Make the TODO specific enough that another agent can continue from it without opening unrelated files.
-   - If the correct rendering is ambiguous, get a MuseScore reference render (see below) before escalating. If it is still ambiguous after that, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
+   - If the correct rendering is ambiguous, get a MuseScore or OSMD reference render (see below) before escalating. If it is still ambiguous after that, ask the user for feedback and include file links to the relevant screenshot diff or artifact.
 
 5. Update the implementation in `src/` to fill the rendering gap.
    - Prefer a minimal, root-cause fix.
@@ -108,26 +108,29 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 - If this is a diff, can you explain the visual change in plain language from the diff artifact before updating the baseline?
 - If any answer is uncertain, do not update the baseline yet. Add or keep a `TODO` that names the uncertainty and links to the screenshot or diff artifact.
 
-## Checking Against MuseScore
+## Checking Against MuseScore or OSMD
 
 When the checklist leaves you genuinely unsure what the *correct* engraving is — not whether vexml matches its own baseline, but what a competent engraver would draw — get a second opinion:
 
 ```sh
 vex slice -i tests/integration/__data__/slur.musicxml -m 4 -o /tmp/one.musicxml
 vex render --musescore -i /tmp/one.musicxml -o /tmp/musescore.png
+vex render --osmd -i /tmp/one.musicxml -o /tmp/osmd.png
 vex render -i /tmp/one.musicxml -o /tmp/vexml.png
 ```
 
-Then read both PNGs and compare the one detail in question. Rules, in order of how easy they are to violate:
+Two references, and they disagree with each other as often as with vexml. MuseScore is a full notation editor with the strongest engraving of the three. OSMD (OpenSheetMusicDisplay) is the closer cousin — another MusicXML-in, VexFlow-out renderer — so it is the better read on "did we parse this right", and it needs no Docker, so it is also the faster one to reach for. Either one alone is enough for most questions; when they agree with each other and not with vexml, that is a stronger signal.
 
-- **MuseScore is a reference, not ground truth.** It has its own bugs and its own house style. When it and vexml disagree, that is evidence worth investigating — not a proven vexml bug.
+Then read the PNGs and compare the one detail in question. Rules, in order of how easy they are to violate:
+
+- **MuseScore and OSMD are references, not ground truth.** They have their own bugs and their own house styles. When one disagrees with vexml, that is evidence worth investigating — not a proven vexml bug.
 - **Slice to one measure. Three is the hard maximum.** Whole-page comparisons drown the real question in spacing noise and reliably produce the wrong conclusion that everything is broken.
 - **Compare notation, not layout.** Stem directions, beam grouping and slant, accidental order and placement, slur/tie curvature and which side they sit on, rest positions, articulation placement — those are comparable. Spacing, margins, staff size, font, page breaks, and system layout are *always* different and are never evidence of anything.
-- **Ignore glyph shapes entirely.** MuseScore draws in Emmentaler and vexml draws in Bravura, so every notehead, clef, accidental, rest, and time-signature numeral is a different shape by design. This is not configurable — Debian's MuseScore package ships no font data, so the music font cannot be changed. A clef that "looks wrong" next to vexml's is the font, not a bug.
-- **MuseScore agreement never justifies a baseline update.** It informs the wording of a `TODO` and the direction of a fix. A human still accepts the screenshot per the checklist above.
+- **Ignore glyph shapes entirely.** MuseScore draws in Emmentaler, OSMD in Gonville, and vexml in Bravura, so every notehead, clef, accidental, rest, and time-signature numeral is a different shape by design. Neither reference's font is configurable — Debian's MuseScore package ships no font data, and OSMD's bundled VexFlow embeds Gonville outlines. A clef that "looks wrong" next to vexml's is the font, not a bug.
+- **Reference agreement never justifies a baseline update.** It informs the wording of a `TODO` and the direction of a fix. A human still accepts the screenshot per the checklist above.
 - Don't chase parity. The goal is answering one specific question, then getting back to the fix.
 
-First run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored.
+`--musescore`'s first run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored. `--osmd` needs no image and takes a couple of seconds; it always draws a title and part label above the first system, which is OSMD's default and not part of the comparison.
 
 8. If the target render passes the screenshot review checklist, update only that baseline:
 
