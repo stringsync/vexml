@@ -597,8 +597,7 @@ const TEST_CASES = [
 	// ponytail: a shift whose start has no note after it in its own measure (or whose stop has
 	// none before it) is dropped, and a span that wraps onto a later system would draw one
 	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
-	// See also tmp/octave_shift_simple_piano.xml and the malformed-size case
-	// tmp/lilypond_33e-Spanners-OctaveShifts-InvalidSize.xml.
+	// See also tmp/octave_shift_simple_piano.xml.
 	testCase('octave_shift.musicxml', 'octave_shift.png'),
 
 	// TODO(coverage): the remaining direction-type LINE spanners — <dashes> (the dashed line
@@ -638,26 +637,29 @@ const TEST_CASES = [
 	//   of following each notehead's height.
 	testCase('lyrics.musicxml', 'lyrics.png'),
 
-	// TODO(coverage): melismas — a <lyric> carrying an <extend>, which draws a horizontal line
-	// from the syllable across every note it is held over. 14 files in tmp/ have one.
-	// lyrics.musicxml M2 covers hyphenation but never the extender.
-	// Fixture: lyrics_melisma.musicxml (lilypond_61d-Lyrics-Melisma M1-4).
-	// Expected: the syllable prints under its first note and an extender line runs from just
-	// past it to the last note of the melisma, on the lyric row (so it does not collide with a
-	// second verse below). A melisma that crosses a system break splits into two lines, the way
-	// wrapped ties/slurs do.
-	// Current: unverified — expect the syllable with no line. See also
-	// tmp/lilypond_61k-Lyrics-SpannersExtenders.xml and
-	// tmp/lilypond_61h-Lyrics-BeamsMelismata.xml.
-	// testCase('lyrics_melisma.musicxml', 'lyrics_melisma.png'),
+	// Treble stave, common time: melismas — a syllable held over notes that carry no lyric of
+	// their own, with a <lyric><extend/> drawing the extender line. Every note is a quarter and
+	// the only slurs present are the ones the source uses to mark the held groups.
+	// - M1: "Me-" under the first quarter, then three unsung notes (the third an A4/E5 chord)
+	//   under one slur — the syllable has no <extend/>, so nothing trails it and the row holds
+	//   just the one word.
+	// - M2: "lis-" under a tied C5 pair (only the first note is sung), then "ma." with an
+	//   <extend/> over the last two notes — a horizontal line runs on the lyric row from just
+	//   past "ma." to the final E5, ending under that notehead rather than at the barline.
+	// The extender sits on the verse's own baseline, so it stays clear of the noteheads above
+	// it and of any lower verse.
+	// ponytail: an extender stops at the end of its stave — a melisma crossing a barline or a
+	// system break draws only its first segment. See drawMelismas.
+	testCase('lyrics_melisma.musicxml', 'lyrics_melisma.png'),
 
-	// TODO(coverage): <elision> — two syllables sung on one note, joined by an undertie or a
-	// space (standard in Italian and French vocal writing).
-	// Fixture: lyrics_elision.musicxml (lilypond_61j-Lyrics-Elisions M1-2).
-	// Expected: both <text> runs printed under the one note with the elision character between
-	// them, centered on the notehead as a single unit.
-	// Current: unverified — expect only one of the two texts to survive.
-	// testCase('lyrics_elision.musicxml', 'lyrics_elision.png'),
+	// Treble stave, common time: <elision> — several syllables sung on one note, which is how
+	// Italian and French vocal writing sets a vowel run. Four C5 quarters, so only the text
+	// under each notehead varies, and all four sit centered on their note as one unit.
+	// - M1: "a" (one plain <text>); "b c" (two syllables written as one <text> with a space);
+	//   "d e" (two <text> runs joined by an empty <elision/>); "f g h" (three runs, two
+	//   elisions). The second and third must look the same — an empty <elision/> prints as a
+	//   space, so the two spellings of the same lyric render identically.
+	testCase('lyrics_elision.musicxml', 'lyrics_elision.png'),
 
 	// TODO(coverage): lyrics under a stave that carries TWO voices — each voice keeps its own
 	// verse rows, so the upper voice's words sit above the lower voice's rather than the two
@@ -821,10 +823,7 @@ const TEST_CASES = [
 	// Expected: both levels' brackets drawn, the inner ones stacked below the outer so they do
 	// not overprint, and back-to-back signs merged the way repeats.musicxml M2/M3 documents.
 	// As with repeats.musicxml, the playback order belongs in cursor.test.ts.
-	// Current: unverified. See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml, and the
-	// two malformed-input guards tmp/lilypond_45f-Repeats-InvalidEndings.xml and
-	// tmp/lilypond_45g-Repeats-NotEnded.xml — those two must not throw, which is worth pinning
-	// even if the render is imperfect.
+	// Current: unverified. See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml.
 	// testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
@@ -950,18 +949,6 @@ const TEST_CASES = [
 	testCase('tie_system_break.musicxml', 'tie_system_break.png', {
 		layout: { type: 'standard', referenceWidth: 360 },
 	}),
-
-	// TODO(coverage): malformed ties — a <tied type="start"> with no matching stop, and a stop
-	// with no start, INSIDE a single system (tie.musicxml M2-3 only covers the legitimate
-	// version of this, where a system break splits a real tie).
-	// Fixture: tie_not_ended.musicxml (lilypond_33i-Ties-NotEnded M1-2).
-	// Expected: whatever the chosen behavior is, it must be deliberate and must not throw —
-	// either drop the unpaired tie, or draw the same half-arc the system-break case draws.
-	// Decide which, then encode it here; today nothing pins it, so a refactor could flip it
-	// silently. buildTies (src/engraving/spanner-builder.ts) is where the pairing happens, and
-	// tie_chain.musicxml already documents one mis-pairing bug it had.
-	// Current: unverified (renders without throwing).
-	// testCase('tie_not_ended.musicxml', 'tie_not_ended.png'),
 
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
@@ -1576,19 +1563,22 @@ const TEST_CASES = [
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
 
-	// TODO(coverage): the full <kind> vocabulary. HARMONY_KIND_SUFFIX in
-	// src/engraving/score-reader.ts has an entry per kind, but harmony.musicxml only ever
-	// exercises major, dominant, minor, power and a couple of text overrides — so most of that
-	// table is unpinned, and a typo in it would ship silently.
-	// Fixture: harmony_kinds.musicxml (lilypond_71f-AllChordTypes M1-4).
-	// Expected: one symbol per measure spelling the kind's conventional suffix, exercising every
-	// HARMONY_KIND_SUFFIX row (maj7, m7, dim7, +7, m7♭5, mMaj7, 6, m6, 9, 11, 13, sus2, sus4,
-	// N, It, Fr, Ger, ped, 5, Tr).
-	// Also missing and worth its own measure: <degree> alterations (add9, ♭5), which
-	// harmonyText carries a `ponytail:` note saying it ignores — a "C(add9)" currently prints
-	// as a bare "C", which is a WRONG symbol rather than a missing one.
-	// Current: unverified.
-	// testCase('harmony_kinds.musicxml', 'harmony_kinds.png'),
+	// The <kind> vocabulary, one kind per note: four measures of four C4 quarters, each with a
+	// <harmony> above spelling the kind's conventional suffix (HARMONY_KIND_SUFFIX in
+	// src/engraving/score-reader.ts) and a lyric below naming the kind, so the two can be read
+	// against each other without opening the fixture. harmony.musicxml only exercises major,
+	// dominant, minor and power, so this is what pins the rest of that table against a typo.
+	// - M1: C, Cm, C+, Cdim (major, minor, augmented, diminished).
+	// - M2: C7, Cmaj7, Cm7, Cdim7 (the sevenths).
+	// - M3: C+7, Cm7♭5, CmMaj7, C6 — the half-diminished suffix carries a real flat sign, not
+	//   a lowercase b.
+	// - M4: Cm6, C9, Cmaj9, Cm9; the system ends after four measures, so the row is short.
+	// ponytail: the 11ths/13ths, the sus/added rows and the function kinds (N, It, Fr, Ger,
+	// ped, Tr) have HARMONY_KIND_SUFFIX entries but no measure here — lilypond_71f stops at the
+	// ninths. So does <degree> (add9, ♭5), which harmonyText carries its own `ponytail:` note
+	// about ignoring: a "C(add9)" prints as a bare "C", a WRONG symbol rather than a missing
+	// one. Extend the fixture when a score needs them.
+	testCase('harmony_kinds.musicxml', 'harmony_kinds.png'),
 
 	// TODO(coverage): <figured-bass> — the stacked figures under a continuo bass line. Only 2
 	// files in tmp/ use it and grep finds no support in src/, so this is the lowest-priority
@@ -1728,15 +1718,18 @@ const TEST_CASES = [
 	//   tied, so the tab omits all three of its frets (the held beat is blank).
 	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
 
-	// TODO(coverage): a CHORD as a grace note on a notation stave. tab_grace_chord_align covers
-	// grace chords on a notation+tab pair, but only as an alignment test; nothing pins the
-	// notation-only rendering of a multi-note grace.
-	// Fixture: grace_chord.musicxml (lilypond_24b-ChordAsGraceNote M1-2).
-	// Expected: the grace's members stacked as one small chord sharing a stem, with seconds
-	// offset across the stem the way chord.musicxml does at full size, and the grace slur
-	// leaving the chord's lowest member.
-	// Current: unverified.
-	// testCase('grace_chord.musicxml', 'grace_chord.png'),
+	// Treble stave, common time: a CHORD as a grace note on a notation stave — the grace's
+	// members stack as one small chord sharing a stem, each with its own slash. Both graces are
+	// slashed eighths, and every main note is a quarter, so only the grace's and the main
+	// note's shape vary. tab_grace_chord_align covers grace chords on a notation+tab pair, but
+	// only as an alignment test; this is what pins the notation-only rendering.
+	// - M1: a bare C5 quarter, then a D5/F5 grace chord ahead of a C5 quarter (grace chord to
+	//   single note), then a B4/D5 grace chord ahead of an A4/C5 quarter chord (grace chord to
+	//   chord). Every grace member is a third apart, so none of them needs the across-the-stem
+	//   offset chord.musicxml documents for seconds — they stack straight up one side.
+	// ponytail: lilypond_24b carries no <slur> on its graces, so the grace slur (which would
+	// leave the chord's lowest member) is still unexercised.
+	testCase('grace_chord.musicxml', 'grace_chord.png'),
 
 	// TODO(coverage): after-grace notes — graces that follow their main note rather than
 	// preceding it (MusicXML spells this as a grace placed after the note it decorates).
@@ -1983,12 +1976,6 @@ const TEST_CASES = [
 	// The cheap version, worth doing much sooner: a smoke test that renders every tmp/ score
 	// and asserts only that it does not throw. That catches crashes on real input without any
 	// screenshot churn, and belongs in its own test file rather than in TEST_CASES.
-
-	// TODO(coverage): malformed input. tmp/invalid_root.xml, tmp/mostly_invalid.xml and
-	// tmp/partially_invalid.xml are deliberately broken documents, and nothing pins what vexml
-	// does with them. Decide the contract — throw a typed error, or render what parses and skip
-	// the rest — then assert it. This belongs in a unit test around src/score-parser.ts, not in
-	// this screenshot suite, since the point is the error path rather than an image.
 ];
 
 describe('render', () => {

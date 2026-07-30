@@ -1706,13 +1706,12 @@ export class DrawPass {
 	 * so this is the only point where their boxes are known.
 	 */
 	private pinLyrics(p: PendingStave): void {
+		const lyricsOf = (note: StaveNote) =>
+			note
+				.getModifiers()
+				.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation);
 		const lyricNotes = p.staveNotes
-			.map((note) => ({
-				note,
-				lyrics: note
-					.getModifiers()
-					.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation),
-			}))
+			.map((note) => ({ note, lyrics: lyricsOf(note) }))
 			.filter(({ lyrics }) => lyrics.length > 0);
 		if (lyricNotes.length === 0) {
 			return;
@@ -1745,6 +1744,63 @@ export class DrawPass {
 						w,
 						LYRIC_FONT_SIZE,
 					),
+					kind: 'annotation',
+					band: p.row,
+				});
+			}
+		}
+		this.drawMelismas(p, baseline, lyricsOf);
+	}
+
+	/*
+	 * Melisma extenders: a `<lyric><extend/>` draws a horizontal line on the verse's own row
+	 * from just past its syllable to the last note the syllable is held over — the note before
+	 * the next syllable in that same verse, or the stave's last note when none follows. Drawn
+	 * here rather than as a modifier because the line spans notes, and pinLyrics is the point
+	 * where every syllable's row and every note's x are final.
+	 *
+	 * ponytail: the line stops at the end of the stave, so a melisma that runs past a barline
+	 * or a system break draws only its first segment. Make it a real spanner (buildTies'
+	 * pairing in spanner-builder.ts is the model) if a fixture needs the continuation.
+	 */
+	private drawMelismas(
+		p: PendingStave,
+		baseline: number,
+		lyricsOf: (note: StaveNote) => LyricAnnotation[],
+	): void {
+		const notes = p.staveNotes;
+		for (const [i, note] of notes.entries()) {
+			for (const lyric of lyricsOf(note)) {
+				if (!lyric.extend) {
+					continue;
+				}
+				const next = notes.findIndex(
+					(n, j) =>
+						j > i && lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
+				);
+				const last = notes[(next === -1 ? notes.length : next) - 1];
+				if (!last || last === note) {
+					continue;
+				}
+				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
+				const x1 = note.getAbsoluteX() + lyric.getWidth() / 2;
+				const x2 = last.getAbsoluteX() + this.translator.noteheadHalfWidth();
+				if (x2 <= x1) {
+					continue;
+				}
+				this.context.save();
+				this.context.setStrokeStyle(this.notationColor);
+				this.context.setLineWidth(1);
+				// Half-pixel offset so a 1px line lands on one device row instead of straddling
+				// two and coming out gray next to the black staff lines.
+				const crisp = Math.round(y) + 0.5;
+				this.context.beginPath();
+				this.context.moveTo(x1, crisp);
+				this.context.lineTo(x2, crisp);
+				this.context.stroke();
+				this.context.restore();
+				this.collisionResolver.add({
+					rect: new Rect(x1, y - 1, x2 - x1, 2),
 					kind: 'annotation',
 					band: p.row,
 				});

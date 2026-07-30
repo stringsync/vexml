@@ -1,4 +1,10 @@
-import { type Chord, type Clef, MElement, type Note } from '@stringsync/mdom';
+import {
+	type Chord,
+	type Clef,
+	type Lyric,
+	MElement,
+	type Note,
+} from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -1047,6 +1053,8 @@ export class LyricAnnotation extends Annotation {
 		text: string,
 		/** 0-based verse index — which row under the stave this syllable sits on. */
 		readonly verseIndex: number,
+		/** Whether a melisma `<extend/>` line trails this syllable (drawn by pinLyrics). */
+		readonly extend = false,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
@@ -1086,8 +1094,8 @@ export class LyricAnnotation extends Annotation {
  * A syllable that opens or continues a word ('begin'/'middle') carries a trailing hyphen
  * joining it to the next one: "Al-" "le-" "lu-" "ia".
  * ponytail: the hyphen rides on the syllable instead of being drawn centered in the gap
- * between the two, and a melisma <extend/> draws no extension line — both need a spanner
- * across notes (and systems). Add one if a fixture needs a true melisma line.
+ * between the two — a centered hyphen needs a spanner across notes (and systems). The
+ * melisma <extend/> flag is passed through for DrawPass.pinLyrics to draw.
  */
 function addLyrics(staveNote: StaveNote, lead: Note): void {
 	const verses = [...lead.lyrics].sort(
@@ -1096,11 +1104,29 @@ function addLyrics(staveNote: StaveNote, lead: Note): void {
 	verses.forEach((verse, index) => {
 		const syllabic = verse.syllabic;
 		const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
-		const text = verse.syllable + hyphen;
+		const text = syllableOf(verse) + hyphen;
 		if (text) {
-			staveNote.addModifier(new LyricAnnotation(text, index));
+			staveNote.addModifier(new LyricAnnotation(text, index, verse.extend));
 		}
 	});
+}
+
+/*
+ * A lyric's text with its <elision> separators kept. Lyric.syllable joins the <text> runs
+ * with nothing between them, so an elided two-syllable lyric comes out "de" rather than
+ * "d e". An empty <elision/> leaves the symbol to the renderer; a space is the conventional
+ * pick and makes it read the same as the equivalent "d e" single-<text> spelling. An elision
+ * carrying its own text (an undertie, an underscore) uses that instead.
+ */
+function syllableOf(verse: Lyric): string {
+	const runs = verse.children.filter(
+		(child): child is MElement =>
+			child instanceof MElement &&
+			(child.tag === 'text' || child.tag === 'elision'),
+	);
+	return runs
+		.map((run) => run.text ?? (run.tag === 'elision' ? ' ' : ''))
+		.join('');
 }
 
 /*
