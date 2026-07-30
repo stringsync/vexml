@@ -59,5 +59,12 @@
         <type>32nd</type>
       </note>
     </measure>
+    <!-- M3: a typeless rest whose <duration> fills the bar (Finale's voice-holder rest). -->
+    <measure number="3">
+      <note>
+        <rest />
+        <duration>32</duration>
+      </note>
+    </measure>
   </part>
 </score-partwise>

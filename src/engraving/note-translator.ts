@@ -44,22 +44,61 @@ const DURATION_CODES: Record<string, string> = {
 	'128th': '128',
 };
 
+// Quarter-note beats -> vexflow duration code, for a note that omits <type> (see durationCode).
+const BEAT_CODES: [beats: number, code: string][] = [
+	[4, 'w'],
+	[2, 'h'],
+	[1, 'q'],
+	[0.5, '8'],
+	[0.25, '16'],
+	[0.125, '32'],
+	[0.0625, '64'],
+	[0.03125, '128'],
+];
+
 /*
- * A note's vexflow duration code. An absent <type> defaults to a quarter; an
- * unrecognized type also falls back to 'q'.
+ * A note's vexflow duration code. <type> is optional in MusicXML — Finale omits it on the
+ * rests it inserts to hold a voice open — so fall back to the note's own <duration>, which
+ * is what makes a typeless bar-filling rest a whole rest instead of a quarter. An
+ * unrecognized type, or a duration matching no plain note value, falls back to 'q'.
+ * ponytail: only exact powers of two match, so a bar-filling rest in 3/4 (3 beats) still
+ * comes out a quarter. Map the measure's own beat count to 'w' if that case turns up.
  */
 function durationCode(lead: Note): string {
-	return DURATION_CODES[lead.type ?? 'quarter'] ?? 'q';
+	if (lead.type) {
+		return DURATION_CODES[lead.type] ?? 'q';
+	}
+	const beats = lead.beats;
+	if (beats === null) {
+		return 'q';
+	}
+	return BEAT_CODES.find(([b]) => Math.abs(b - beats) < EPSILON)?.[1] ?? 'q';
 }
 
-// MusicXML <accidental> glyph name -> vexflow accidental code.
+/*
+ * MusicXML <accidental> glyph name -> vexflow accidental code. The natural-sharp and
+ * natural-flat courtesy forms have no vexflow code, so they pass their SMuFL glyph
+ * straight through — Tables.accidentalCodes returns an unrecognized code verbatim, and
+ * the accidental is drawn in the music font either way.
+ */
 const ACCIDENTAL_CODES: Record<string, string> = {
 	sharp: '#',
 	flat: 'b',
 	natural: 'n',
 	'double-sharp': '##',
+	'sharp-sharp': '##',
 	'flat-flat': 'bb',
+	'natural-sharp': '\uE268', // accidentalNaturalSharp
+	'natural-flat': '\uE267', // accidentalNaturalFlat
+	'quarter-sharp': '+',
+	'quarter-flat': 'd',
+	'three-quarters-sharp': '++',
+	'three-quarters-flat': 'db',
 };
+
+// SMuFL brackets around an editorial accidental (see addAccidentals).
+const ACCIDENTAL_BRACKET_LEFT = '\uE26C'; // accidentalBracketLeft
+const ACCIDENTAL_BRACKET_RIGHT = '\uE26D'; // accidentalBracketRight
 
 /*
  * A <harmonic> in this note's <notations><technical>: drawn as a diamond notehead on a
@@ -281,16 +320,40 @@ function applyStem(
  *
  * A tie-stop note is the same sounding pitch as its tie-start: the accidental was already
  * declared there and carries over, so skip it even when the MusicXML redundantly repeats it.
+ *
+ * A cautionary (reminder) accidental is wrapped in round parentheses and an editorial one in
+ * square brackets — the two conventional "this is not from the composer" marks. Both flags
+ * on one accidental take the brackets only, rather than nesting one wrapper inside the other.
  */
 function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 	chord.notes.forEach((note, i) => {
 		if (isXNotehead(note) || isTieStop(note)) {
 			return;
 		}
-		const code = note.accidental && ACCIDENTAL_CODES[note.accidental.value];
-		if (code) {
-			staveNote.addModifier(new Accidental(code), i);
+		const printed = note.accidental;
+		const code = printed && ACCIDENTAL_CODES[printed.value];
+		if (!printed || !code) {
+			return;
 		}
+		// <accidental editorial="yes"> has no mdom accessor — it is one raw attribute, and
+		// prints the same as an explicit bracket="yes".
+		const bracket =
+			printed.bracket || printed.getAttribute('editorial') === 'yes';
+		// vexflow only knows the parenthesized (cautionary) form, so brackets are drawn by
+		// handing it a composed glyph string as the code: it passes through an unrecognized
+		// code verbatim, which measures and renders the same way the real ones do. Wrapping
+		// a throwaway Accidental's resolved text avoids a second name -> glyph map here.
+		const accidental = new Accidental(
+			bracket
+				? ACCIDENTAL_BRACKET_LEFT +
+						new Accidental(code).getText() +
+						ACCIDENTAL_BRACKET_RIGHT
+				: code,
+		);
+		if (!bracket && (printed.cautionary || printed.parentheses)) {
+			accidental.setAsCautionary();
+		}
+		staveNote.addModifier(accidental, i);
 	});
 }
 
@@ -928,10 +991,8 @@ export class NoteTranslator {
 		const tickables: StemmableNote[] = [];
 		// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
 		const soleLead = chords.filter((c) => !c.lead.isGrace).map((c) => c.lead);
-		const centerWholeRest =
-			soleLead.length === 1 &&
-			soleLead[0]?.isRest &&
-			soleLead[0]?.type === 'whole';
+		const lone = soleLead.length === 1 ? soleLead[0] : undefined;
+		const centerWholeRest = !!lone && lone.isRest && durationCode(lone) === 'w';
 		let cursor = 0;
 		// Grace notes steal no time, so they aren't tickables: they accumulate here and
 		// attach to the next real note as a GraceNoteGroup modifier, drawn just left of it.

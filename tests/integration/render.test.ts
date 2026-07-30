@@ -362,21 +362,13 @@ const TEST_CASES = [
 	// - M3: four beamed dotted-eighth + sixteenth pairs (dots inside beams).
 	testCase('dotted_notes.musicxml', 'dotted_notes.png'),
 
-	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations (M1-M2).
+	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations.
 	// - M1: a whole rest, centered horizontally in the measure (full-measure-rest convention).
 	// - M2: half, quarter, eighth, sixteenth, then two thirty-second rests.
+	// - M3: a rest carrying only a <duration> and no <type> — the spacer rest Finale writes to
+	//   hold a voice open. Its duration fills the bar, so it draws as a whole rest centered in
+	//   the measure, identical to M1, rather than falling back to a left-aligned quarter.
 	testCase('rest.musicxml', 'rest.png'),
-
-	// TODO(coverage): a <rest> with NO <type> element. MusicXML lets a rest carry only a
-	// <duration>, and a rest whose duration fills the measure is a whole-measure rest — the
-	// same thing <rest measure="yes"/> spells explicitly (9 files in tmp/ use that form).
-	// Fixture: rest_no_type.musicxml (lilypond_02e-Rests-NoType M1-2).
-	// Expected: a full-measure rest glyph centered in the bar, exactly like rest.musicxml M1.
-	// Current: drawn as a QUARTER rest hard against the left of the measure, because the
-	// missing <type> falls back to the shortest duration instead of being derived from
-	// <duration>/<divisions>. Verified incidentally in the rest_multi_measure render below,
-	// where all six bars show a left-aligned quarter rest in 4/4.
-	// testCase('rest_no_type.musicxml', 'rest_no_type.png'),
 
 	// TODO(coverage): pitched rests — a <rest> with <display-step>/<display-octave>, which
 	// pins the rest glyph to a chosen staff line instead of its default one. 26 files in tmp/
@@ -397,57 +389,33 @@ const TEST_CASES = [
 	// Expected: the N measures collapse into ONE wide measure holding the thick horizontal
 	// multi-rest bar with "3" centered above it, and measure numbering skips the collapsed
 	// bars the way config.gaps already does.
-	// Current: six ordinary measures drawn side by side, each with a (mis-sized, see
-	// rest_no_type above) rest — the multiple-rest element is ignored entirely (verified
-	// render). See also tmp/multiple_rest_measures.xml, tmp/auto_multirest.xml, and
-	// tmp/measure_numbers_xml_starting_at_3_with_multirest.xml for the numbering interaction.
+	// Current: six ordinary measures drawn side by side, each with a rest — the multiple-rest
+	// element is ignored entirely (verified render). See also tmp/multiple_rest_measures.xml,
+	// tmp/auto_multirest.xml, and tmp/measure_numbers_xml_starting_at_3_with_multirest.xml for
+	// the numbering interaction.
 	// testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png'),
 
-	// Treble stave, 4/4: four C5 quarter notes at one staff position — sharp, flat,
-	// natural, then no accidental — so only the accidental glyph varies.
+	// Treble stave, 4/4: every measure is four quarter notes stacked on one staff position
+	// (C5, third space) so nothing but the accidental glyph left of the notehead varies.
+	// - M1: sharp, flat, natural, then no accidental at all.
+	// - M2: double-sharp (the "x"), double-flat (two flats), then the natural-sharp and
+	//   natural-flat courtesy forms — a natural printed immediately left of the new sign.
+	// - M3: the quarter-tone glyphs — quarter-sharp, three-quarters-sharp, quarter-flat,
+	//   three-quarters-flat — from a fractional <alter> plus a microtonal <accidental> name.
+	// - M4: the same flat four times, printed plain, then cautionary (round parentheses),
+	//   then editorial (square brackets), then both flags at once — which brackets only, and
+	//   does not nest parentheses inside brackets. In every case only the accidental is
+	//   wrapped; the notehead is untouched (unlike notehead_parentheses.musicxml, which
+	//   brackets the head).
 	testCase('accidentals.musicxml', 'accidentals.png'),
 
-	// TODO(coverage): accidentals.musicxml stops at sharp/flat/natural. Missing entirely:
-	// double-sharp (<alter>2</alter>, the "x" glyph) and double-flat (<alter>-2</alter>), plus
-	// the natural-sharp / natural-flat courtesy forms.
-	// Add these as new measures on accidentals.musicxml (same treble/4/4/one-pitch shape as
-	// M1) rather than a new file — this is the category fixture for accidentals.
-	// Expected: M2 four C5 quarters reading double-sharp, double-flat, natural-sharp,
-	// natural-flat.
-	// Current: unverified.
-
-	// TODO(coverage): microtonal accidentals — a fractional <alter> (0.5, 1.5, -0.5, -1.5) with
-	// a quarter-tone <accidental> name.
-	// Fixture: accidentals_microtones.musicxml (lilypond_01d-Pitches-Microtones M1-2).
-	// Expected: the SMuFL quarter-tone glyphs — quarter-sharp, three-quarters-sharp,
-	// quarter-flat, three-quarters-flat — one per note.
-	// Current: unverified. vexflow has these glyphs ('+', '++', 'd', 'db' accidental codes), so
-	// this is likely just a missing entry in the accidental name map. See also
-	// tmp/quarter_accidentals.xml.
-	// testCase('accidentals_microtones.musicxml', 'accidentals_microtones.png'),
-
-	// TODO(coverage): editorial and cautionary accidentals —
-	// <accidental editorial="yes"> (drawn in square brackets) and
-	// <accidental cautionary="yes"> (drawn in round parentheses).
-	// Note this is a different axis from notehead_parentheses.musicxml, which brackets the
-	// NOTEHEAD; here it is the accidental glyph that gets wrapped.
-	// Fixture: accidentals_editorial.musicxml (lilypond_01e-Pitches-ParenthesizedAccidentals M1)
-	// — four notes at one pitch: plain flat, editorial flat, cautionary flat, then both.
-	// Expected: only the accidental is enclosed; the notehead is untouched. Both flags set
-	// should not double-wrap.
-	// Current: unverified — expect all four drawn as a plain flat. See also
-	// tmp/lilypond_01f-Pitches-ParenthesizedMicrotoneAccidentals.xml, which crosses this with
-	// the microtone case above.
-	// testCase('accidentals_editorial.musicxml', 'accidentals_editorial.png'),
-
-	// TODO(coverage): <divisions> changing mid-score. Every existing fixture declares divisions
-	// once in M1. A change resets the duration->beat scale from that point on, and getting it
-	// wrong silently misplaces every following note.
-	// Fixture: divisions_change.musicxml (lilypond_03c-Rhythm-DivisionChange M1-2) — the same
-	// rhythm written twice, at two different <divisions> values.
-	// Expected: the two measures render IDENTICALLY. That equality is the whole assertion.
-	// Current: unverified.
-	// testCase('divisions_change.musicxml', 'divisions_change.png'),
+	// Treble stave, common time: <divisions> changing partway through, which rescales
+	// <duration> from that point on. Each measure writes the same rhythm twice, once at each
+	// divisions value, so a misread scale would visibly bunch or stretch the second half.
+	// - M1: four quarter notes, evenly spaced — the first two at divisions 1, the last two at
+	//   divisions 8.
+	// - M2: two half notes, evenly spaced — the first at divisions 8, the second at 38.
+	testCase('divisions_change.musicxml', 'divisions_change.png'),
 
 	// TODO(coverage): print-object="no" — notes, rests and whole staves marked invisible. 39
 	// files in tmp/ use it; grep 'print-object' in src/ finds nothing. Exporters lean on it
