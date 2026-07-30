@@ -15,15 +15,29 @@ import { testCase } from '../testing/test-case';
  * "Current: unverified" means the fixture renders without throwing (all of them do) but nobody
  * has looked at the image yet. "Current: <description> (verified render)" means someone has.
  *
+ * A stave whose part declares no <clef> is engraved as treble, and a part that declares no
+ * <time> anywhere opens in 4/4 — the defaults a reader assumes when nothing is printed. Many of
+ * the minimal fixtures here state neither, so they still open with a treble clef and a 4/4
+ * signature; the individual comments call that out only where it would otherwise read as a
+ * contradiction. An explicit <senza-misura> is the one way to get a blank meter
+ * (time_senza_misura), and neither default changes measure WIDTHS — an unmetered measure is
+ * still sized by its own content (see ScoreReader.meterBeats).
+ *
  * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
  * increasing rendering complexity, not by priority. By impact, the ones worth doing first are:
- * cross-staff notes, print-object="no", <octave-shift>, and the per-element color attribute.
+ * cross-staff notes, <multiple-rest>, percussion <unpitched>/<display-step>, and the rest of
+ * the <bar-style> vocabulary. (print-object="no", <octave-shift> and the per-element color
+ * attribute were the earlier picks off this list and now have cases of their own.)
  */
 const TEST_CASES = [
-	// A single empty 5-line stave: staff lines with start and end barlines, nothing else.
+	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
+	// 4/4 signature, nothing else. None of the structure_* fixtures declares a <clef> or a
+	// <time>, so every stave in this group opens with those two defaults (see the note above).
 	testCase('structure_single_stave.musicxml', 'structure_single_stave.png'),
 
-	// One part with two empty staves joined by a curly brace (grand staff).
+	// One part with two empty staves joined by a curly brace (grand staff), each opening with
+	// its own treble clef and 4/4 — both defaults apply per stave, as a real grand staff's
+	// printed clef and meter do.
 	testCase('structure_grand_staff.musicxml', 'structure_grand_staff.png'),
 
 	// Two separate single-stave parts stacked vertically, with no connecting brace.
@@ -108,7 +122,8 @@ const TEST_CASES = [
 
 	// A single-stave part above a two-stave (braced) part, each with its instrument
 	// name printed to the left of the first system (showPartLabels): "Violin"
-	// centered on the single top stave, "Piano" centered on the braced pair.
+	// centered on the single top stave, "Piano" centered on the braced pair. All three
+	// staves open with a treble clef (the fixture declares none).
 	testCase('structure_part_labels.musicxml', 'structure_part_labels.png', {
 		showPartLabels: true,
 	}),
@@ -148,7 +163,8 @@ const TEST_CASES = [
 		fonts: { notation: { family: 'Petaluma' } },
 	}),
 
-	// A single empty stave with a treble (G) clef.
+	// A single empty stave with a treble (G) clef and the default 4/4 signature (the
+	// fixture declares neither).
 	testCase('clef_treble.musicxml', 'clef_treble.png'),
 
 	// A treble (G) clef carrying a <clef-octave-change> of -1 (treble-8vb, the guitar/tenor
@@ -166,7 +182,7 @@ const TEST_CASES = [
 	testCase('clef_treble_octave.musicxml', 'clef_treble_octave.png'),
 
 	// Grand staff: treble clef on the upper stave, bass clef on the lower, joined by a
-	// brace.
+	// brace, each stave taking the default 4/4 (the fixture states no <time>).
 	testCase('clef_treble_bass.musicxml', 'clef_treble_bass.png'),
 
 	// A 6-line tablature stave with a stacked "TAB" label at the left. With no
@@ -241,18 +257,27 @@ const TEST_CASES = [
 	// testCase('clef_percussion.musicxml', 'clef_percussion.png'),
 	// testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
 
-	// TODO(coverage): <staff-details><staff-lines> — a stave with other than 5 lines on a
-	// NON-tab stave (a 1-line percussion stave, a 3-line stave), including a line count that
-	// changes mid-score. 33 files in tmp/ carry <staff-details>; src/ only reads it to detect
-	// tab tuning (see clef_tab_staff_tuning).
-	// Fixture: staff_details_lines.musicxml (lilypond_14a-StaffDetails-LineChanges M1-3).
-	// Expected: the stave draws exactly <staff-lines> lines, and notes stay on the positions
-	// that line count implies; a mid-score change redraws the stave with the new count from
-	// that measure on.
-	// Current: every stave draws 5 lines regardless (verified render). See also
-	// tmp/percussion_on_one_line.xml and tmp/drums_one_line_snare_plus_piano.xml, the realistic
-	// 1-line-snare cases.
-	// testCase('staff_details_lines.musicxml', 'staff_details_lines.png'),
+	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
+	// bracket, neither declaring a clef or time signature — so each opens with the default
+	// treble clef and 4/4 — over three measures. The top part is a 1-line stave
+	// throughout, holding one D5 whole note per measure sitting in the space just under its
+	// lone line, with the clef hanging below that line where the missing four would be. The
+	// bottom part changes line count at every measure, so the three measures show three
+	// different staves under one unbroken row of notes.
+	// - M1: bottom part at <staff-lines>5</staff-lines> — an ordinary 5-line stave, one G4
+	//   whole note.
+	// - M2: 4 lines — the bottom line disappears; two G4 half notes, stems up.
+	// - M3: 2 lines — only the top two lines remain; two G4 half notes hanging below them.
+	// Lines are dropped from the BOTTOM and every note keeps the vertical position its pitch
+	// and clef give it on a full stave, so the notes do not move when the count changes.
+	// ponytail: that is vexflow's stave model (line 0 is the top line). MuseScore instead
+	// centers a reduced stave and re-anchors its pitches, which matters for a 1-line
+	// percussion stave — revisit together with <unpitched>/<display-step>, which vexml
+	// doesn't read yet either (see the clef_percussion TODO above).
+	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
+	// measure start (the same limit as the mid-measure clef TODO above), so this fixture puts
+	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
+	testCase('staff_details_lines.musicxml', 'staff_details_lines.png'),
 
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
@@ -317,9 +342,10 @@ const TEST_CASES = [
 
 	// Treble stave, <senza-misura> (unmetered): three beamed eighths with NO time signature
 	// glyph at all, the clef running straight into the first note. The measure is sized from
-	// its own content, since there is no meter to pad it out to. A score carrying no <time>
-	// element whatsoever renders the same way — several of the tab fixtures already rely on
-	// that incidentally.
+	// its own content, since there is no meter to pad it out to. This is the one way to get a
+	// blank meter: a score that simply OMITS <time> prints an assumed 4/4 instead (see
+	// clef_treble and the structure_* cases), so declaring "unmetered" and saying nothing are
+	// deliberately different renders.
 	testCase('time_senza_misura.musicxml', 'time_senza_misura.png'),
 
 	// Treble stave, 4/4: single-note rendering — durations then stem direction.
@@ -676,21 +702,27 @@ const TEST_CASES = [
 	// Current: unverified — expect it dropped.
 	// testCase('barline_mid_measure.musicxml', 'barline_mid_measure.png'),
 
-	// TODO(coverage): pickup (anacrusis) and incomplete measures — <measure implicit="yes">.
-	// 13 files in tmp/ mark a measure implicit.
-	// Fixture: pickup_measure.musicxml (lilypond_46d-PickupMeasure-ImplicitMeasures, measures
-	// 0/1/X1/2) — a leading pickup, plus a measure split into an incomplete half and an
-	// implicit continuation.
-	// Expected: the pickup measure is sized to the music it actually holds, so it renders
-	// visibly NARROWER than the full bars after it; it takes no measure number, and numbering
-	// starts at 1 on the first full bar.
-	// Current: renders, but the pickup gets the same width as every full measure — it is being
-	// padded out to the meter (verified render). meterBeats' trailing-ghost fill is the likely
-	// culprit: an implicit measure should be exempt from it. See tmp/implicit_pickup_measure_width.xml
-	// (this exact bug, from OSMD), tmp/pickup_measure_double_rhythm.xml,
-	// tmp/lilypond_46f-IncompleteMeasures.xml and
+	// Pickup (anacrusis) and incomplete measures — <measure implicit="yes">, which is short by
+	// declaration rather than underfull by accident, so it is sized to the music it holds
+	// instead of being padded out to the meter the way an ordinary short measure is (see
+	// ScoreReader.meterFloor). One treble system in common time, four measures, a rising
+	// E4-to-D5 line, no beams: every note is a quarter but the pickup's second.
+	// - M0: the pickup, <measure implicit="yes" number="0"> — an E4 quarter and an E4 eighth,
+	//   1.5 beats of a 4/4 bar. It carries the clef and time signature, prints no measure
+	//   number (a pickup takes none), and spreads its two notes across its width in
+	//   proportion to their durations, the quarter taking twice the eighth's room. Without
+	//   the implicit exemption it reserved the missing 2.5 beats as blank space and both
+	//   notes huddled against its left edge.
+	// - M1: F4 + G4 quarters — the front half of a measure split in two, and NOT implicit, so
+	//   it keeps the meter floor: 2 beats of music with the other 2 held as blank space.
+	// - MX1: <measure implicit="yes" number="X1">, the continuation of that split measure —
+	//   A4 + B4 quarters filling their measure, again unnumbered.
+	// - M2: C5 + D5 quarters and a quarter rest, 3 beats of 4 — the ordinary underfull
+	//   measure the floor exists for, closing on a light-heavy barline.
+	// See tmp/implicit_pickup_measure_width.xml (the OSMD bug report this fixes),
+	// tmp/pickup_measure_double_rhythm.xml, tmp/lilypond_46f-IncompleteMeasures.xml and
 	// tmp/lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
-	// testCase('pickup_measure.musicxml', 'pickup_measure.png'),
+	testCase('pickup_measure.musicxml', 'pickup_measure.png'),
 
 	// Treble stave, 4/4, one whole note per measure (M8 excepted): repeat barlines and volta
 	// brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
@@ -1178,17 +1210,22 @@ const TEST_CASES = [
 	// - M3: circle-x heads.
 	testCase('notehead_shapes.musicxml', 'notehead_shapes.png'),
 
-	// TODO(coverage): the rest of the <notehead> vocabulary. NOTEHEAD_SUFFIX in
-	// src/engraving/note-translator.ts maps a handful of shapes; MusicXML defines ~30.
-	// Fixture: notehead_shapes_extended.musicxml (lilypond_22a-Noteheads M1-4).
-	// Expected: each named shape draws its own glyph — square, inverted triangle, arrow-down,
-	// arrow-up, slashed, back-slashed, cross, cluster, the do/re/mi/fa/so/la/ti shape-note
-	// heads — and, importantly, <notehead>none</notehead> draws NO head while keeping the
-	// stem, flag and tick. An unmapped value must fall back to a normal head rather than
-	// producing an invalid vexflow key spec.
-	// Current: unverified. See also tmp/notehead_shapes.xml and
+	// Treble stave, common time: four <notehead> shapes and the `filled` attribute that
+	// overrides each one's default fill. Every measure holds four quarter notes on rising
+	// pitches — two taking the fill the duration implies (black, for a quarter), then two
+	// marked filled="no" — so each measure shows the same shape solid and hollow side by
+	// side, under a lyric naming it. Wraps to two systems, M1-3 above and M4 alone below.
+	// - M1: slash heads — two solid oblique bars, then two hollow ones.
+	// - M2: point-up triangles, solid then hollow.
+	// - M3: diamonds, solid then hollow.
+	// - M4: squares, solid then hollow.
+	// NOTEHEAD_SUFFIX also maps inverted triangle, rectangle, slashed/back-slashed and the
+	// do/re/mi/fa/so/la/ti shape-note heads, which no fixture pins yet.
+	// ponytail: 'cross' (the plus-shaped head) and 'none' (no head, stem kept) still draw an
+	// ordinary oval — vexflow codes neither, so each needs a post-build glyph override like
+	// addSlashNoteheads. See also tmp/notehead_shapes.xml and
 	// tmp/lilypond_22b-Staff-Notestyles.xml.
-	// testCase('notehead_shapes_extended.musicxml', 'notehead_shapes_extended.png'),
+	testCase('notehead_shapes_extended.musicxml', 'notehead_shapes_extended.png'),
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
@@ -1257,17 +1294,13 @@ const TEST_CASES = [
 		{ showTabs: false },
 	),
 
-	// Tuplets on C5.
+	// Tuplets on C5. Every note here is stem-down with its beam under the noteheads, so each
+	// tuplet mark sits BELOW the stave on the beam/stem side, the engraving default.
 	// - M1: a beamed eighth-note triplet ("3"), a bracketed quarter-note triplet ("3"),
 	//   then a plain quarter.
-	// - M2: a beamed sixteenth-note sextuplet ("6"), a beamed eighth-note triplet ("3"),
-	//   then a half note.
-	// TODO: True negative (long-standing, not a new regression): every C5 here is stem-down
-	// with its beam below the noteheads, but the numbers and brackets all draw ABOVE the
-	// stave. Engraving convention — and MuseScore — put the tuplet on the beam/stem side, so
-	// these belong below. buildTuplets (src/engraving/spanner-builder.ts) passes vexflow no
-	// `location`, so it always defaults to Tuplet.LOCATION_TOP. Fixing it moves the marks in
-	// this baseline and in harmony.png M14 (where the wrong side also causes a collision).
+	// - M2: a beamed sixteenth-note sextuplet ("6" — the count alone, not the "6:4" ratio
+	//   vexflow prints by default; MusicXML's default is show-number="actual"), a beamed
+	//   eighth-note triplet ("3"), then a half note.
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
 	// TODO(coverage): nested tuplets — a tuplet inside another tuplet.
@@ -1275,23 +1308,30 @@ const TEST_CASES = [
 	// Expected: both brackets drawn, the inner one closer to the notes and the outer one
 	// stacked beyond it, with each number beside its own bracket; the durations of the inner
 	// group compress by BOTH <time-modification> ratios.
-	// Current: unverified.
-	// NOTE: fix the tuplet-side bug documented on tuplet_triplet above (buildTuplets never
-	// passes vexflow a `location`, so every tuplet lands above the stave) BEFORE accepting a
-	// baseline here — nesting will just stack two marks on the wrong side.
+	// Current: unverified. buildTuplets pairs markers by walking the chord run and keeping a
+	// single open start, so an inner start arriving before the outer stop overwrites it —
+	// expect only one of the two brackets to survive. The side and the printed number are
+	// settled (see tuplet_triplet and tuplet_display above); the pairing is not.
 	// testCase('tuplet_nested.musicxml', 'tuplet_nested.png'),
 
-	// TODO(coverage): tuplet display attributes — <tuplet show-number="none"|"both">,
-	// <tuplet-actual>/<tuplet-normal> overriding the printed ratio (e.g. "3:2" instead of "3"),
-	// bracket="no", and placement above/below.
-	// Fixture: tuplet_display.musicxml (lilypond_23c-Tuplet-Display-NonStandard M1-4).
-	// Expected: show-number="none" draws a bare bracket with no numeral; show-number="both"
-	// draws "3:2"; bracket="no" draws the numeral alone (the form a beamed triplet normally
-	// takes); placement puts the mark on the named side, overriding the stem-side default.
-	// Current: unverified — expect a plain "3" bracket everywhere. See also
+	// Treble stave, common time: what a <tuplet> marker asks to be PRINTED, held apart from
+	// the <time-modification> that governs the durations — every measure here compresses 3:2
+	// and holds two unbeamed (flagged) triplets, three eighths then three dotted quarters, so
+	// only the label changes measure to measure. Every note is a stem-down C5, so all six
+	// tuplets draw below the stave, each with the bracket its bracket="yes" asks for.
+	// Wraps to two systems, M1-3 above and M4 alone below.
+	// - M1: no display attributes — the <time-modification> count alone, "3".
+	// - M2: the same "3"; its <normal-type>breve</normal-type> changes what the ratio is
+	//   measured in, not what is printed.
+	// - M3: show-number="both" plus <tuplet-actual>/<tuplet-normal> numbers of 7 and 5, which
+	//   override the 3:2 compression for display only — "7:5" over notes still spaced 3:2.
+	// - M4: show-number="both" with tuplet-actual/normal that carry a <tuplet-type> but no
+	//   <tuplet-number>, so the printed pair falls back to the time-modification: "3:2".
+	// ponytail: show-type (the note-value glyph some publishers print beside the number, which
+	// M3-M4 also ask for) is ignored — vexflow's Tuplet text is numerals only. See also
 	// tmp/lilypond_23b-Tuplets-Styles.xml, tmp/lilypond_23f-Tuplets-DurationButNoBracket.xml,
 	// and tmp/tuplet_placement.xml.
-	// testCase('tuplet_display.musicxml', 'tuplet_display.png'),
+	testCase('tuplet_display.musicxml', 'tuplet_display.png'),
 
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
 	// (wedge) — only the articulation varies within a measure; the measure sets the
@@ -1722,19 +1762,17 @@ const TEST_CASES = [
 	// Current: blocked on the <dynamics> gap above — implement that first, then this.
 	// testCase('staff_dynamics.musicxml', 'staff_dynamics.png'),
 
-	// TODO(coverage): <transpose>. 17 files in tmp/ carry one and grep finds no support in
-	// src/. Lower stakes than it looks: MusicXML notes are stored at WRITTEN pitch, so the
-	// engraved page is already correct without reading <transpose> at all.
-	// Fixture: transpose.musicxml (lilypond_72a-TransposingInstruments M1-2) — three parts, one
-	// untransposed and two transposing, each with its own written key.
-	// Expected: exactly what it renders today. This case exists to LOCK that in, so a future
-	// change cannot start "helpfully" transposing written pitches.
-	// Current: renders correctly — three staves at 2 sharps, 3 sharps and none, each part's
-	// line written in its own key (verified render). Worth adding as a passing regression guard
-	// after a screenshot review, not as a bug to fix.
-	// Where <transpose> DOES matter: (a) playback pitch, which is not a render concern, and
-	// (b) a transposition that CHANGES mid-score — see transpose_change.musicxml below.
-	// testCase('transpose.musicxml', 'transpose.png'),
+	// Three transposing parts (Bb trumpet, Eb horn, piano) each playing the same concert C
+	// scale, so each is WRITTEN in its own key: three treble staves in common time, the top
+	// at 2 sharps, the middle at 3 sharps, the bottom with no key signature. Each stave runs
+	// eight ascending quarter notes across two measures, starting a step higher on each stave
+	// down (D4, E4, C4), with no connector joining the parts.
+	// This case exists to LOCK IN that <transpose> does not move anything: MusicXML stores
+	// written pitch, so the engraved page is already correct without reading the element, and
+	// a future change must not start "helpfully" transposing. Where <transpose> does matter is
+	// playback pitch (not a render concern) and a mid-score transposition change — see
+	// transpose_change.musicxml below.
+	testCase('transpose.musicxml', 'transpose.png'),
 
 	// TODO(coverage): a <transpose> that changes mid-score (an instrument doubling change).
 	// Fixture: transpose_change.musicxml (lilypond_72c-TransposingInstruments-Change M1-2).

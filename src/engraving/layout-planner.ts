@@ -284,7 +284,7 @@ export class LayoutPlanner {
 							clef: clef
 								? this.translator.vexflowClef(clef.sign, clef.line)
 								: 'treble',
-							meterFloor: this.reader.meterBeats(measure.getTime(staffNumber)),
+							meterFloor: this.reader.meterFloor(measure, staffNumber),
 							isTab: isTabStaff(part, staffNumber),
 							tuning: stringTuning(part, staffNumber),
 						});

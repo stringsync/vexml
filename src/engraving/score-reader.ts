@@ -265,6 +265,19 @@ export class ScoreReader {
 	}
 
 	/*
+	 * The beat length a measure's width is floored at (see meterBeats), except for a
+	 * <measure implicit="yes"> — a pickup bar, or the back half of a measure split across a
+	 * system break — which floors at 0 so it is sized to the music it actually holds. An
+	 * implicit measure is short BY DECLARATION, not underfull by accident, so padding it out
+	 * to the meter would draw a pickup as wide as a full bar.
+	 */
+	meterFloor(measure: Measure, staffNumber?: string): number {
+		return measure.getAttribute('implicit') === 'yes'
+			? 0
+			: this.meterBeats(measure.getTime(staffNumber));
+	}
+
+	/*
 	 * A meter's length in quarter-note beats (4/4 -> 4, 6/8 -> 3, 2/2 -> 4). 0 when
 	 * unmetered or absent, so callers fall back to the content's own end. Flooring a
 	 * measure's endBeat at this pads an underfull measure (e.g. a final fragment) with

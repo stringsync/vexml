@@ -1,4 +1,4 @@
-import type { Chord, Note } from '@stringsync/mdom';
+import type { Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
 import {
 	Beam,
 	Curve,
@@ -255,6 +255,38 @@ class HeadCurve extends Curve {
 // within the run where the secondary (16th+) beam breaks into sub-beams.
 type BeamGroup = { notes: Note[]; secondaryBreaks: number[] };
 
+/*
+ * How a <tuplet> start marker asks to be PRINTED, which MusicXML keeps separate from the
+ * <time-modification> that compresses the durations: <tuplet-actual>/<tuplet-normal> give the
+ * printed pair their own numbers (a "7:5" label over a 3:2 compression), show-number="both"
+ * prints the second half of that pair, and `bracket` settles the bracket instead of leaving
+ * vexflow to infer it from whether the group is beamed. Nulls mean "not stated" — the caller
+ * falls back to the <time-modification> ratio and vexflow's own bracket rule.
+ *
+ * ponytail: show-number="none" (a bracket with no numeral) and show-type (the note-value
+ * glyphs some publishers print beside the number) are ignored. vexflow's Tuplet always draws
+ * its text and splits the bracket around it, so either would need a draw() override; no
+ * fixture asks for them yet.
+ */
+type TupletDisplay = {
+	numNotes: number | null;
+	notesOccupied: number | null;
+	ratioed: boolean;
+	bracketed: boolean | null;
+};
+
+function tupletDisplay(marker: MTuplet): TupletDisplay {
+	const printedNumber = (tag: string) =>
+		Number(marker.child(tag)?.child('tuplet-number')?.text) || null;
+	const bracket = marker.getAttribute('bracket');
+	return {
+		numNotes: printedNumber('tuplet-actual'),
+		notesOccupied: printedNumber('tuplet-normal'),
+		ratioed: marker.getAttribute('show-number') === 'both',
+		bracketed: bracket === null ? null : bracket === 'yes',
+	};
+}
+
 export class SpannerBuilder {
 	/*
 	 * Group a voice's chord run into beam runs off the primary <beam number="1">
@@ -426,7 +458,8 @@ export class SpannerBuilder {
 	/*
 	 * Tuplets: a <tuplet>start..stop span covers every note between the two markers
 	 * (the inner notes carry no marker), so slice the chord run by index. The ratio
-	 * comes from the start note's <time-modification> (e.g. 3:2 -> "3").
+	 * comes from the start note's <time-modification> (e.g. 3:2 -> "3"), unless the
+	 * marker prints its own (see tupletDisplay).
 	 *
 	 * The bracket goes where the start marker's `placement` says, and otherwise on
 	 * the stem side of the group — the engraving default, and what MuseScore does.
@@ -439,11 +472,13 @@ export class SpannerBuilder {
 		const tuplets: Tuplet[] = [];
 		let start = -1;
 		let placement: string | null = null;
+		let display: TupletDisplay | null = null;
 		chords.forEach((chord, i) => {
 			for (const tuplet of chord.lead.tuplets) {
 				if (tuplet.tupletType === 'start') {
 					start = i;
 					placement = tuplet.getAttribute('placement');
+					display = tupletDisplay(tuplet);
 				} else if (tuplet.tupletType === 'stop' && start >= 0) {
 					const group = chords
 						.slice(start, i + 1)
@@ -451,6 +486,9 @@ export class SpannerBuilder {
 						.filter((n): n is T => n !== undefined);
 					if (group.length > 1) {
 						const ratio = chords[start]?.lead.timeModification;
+						const shown: TupletDisplay | null = display;
+						const numNotes = shown?.numNotes ?? ratio?.actual;
+						const notesOccupied = shown?.notesOccupied ?? ratio?.normal;
 						// ponytail: the first non-rest speaks for the group — a mixed-stem
 						// tuplet would need a majority vote.
 						const stemmed = group.find((n) => !n.isRest()) ?? group[0];
@@ -463,15 +501,21 @@ export class SpannerBuilder {
 								location: isBelow
 									? Tuplet.LOCATION_BOTTOM
 									: Tuplet.LOCATION_TOP,
-								...(ratio && {
-									numNotes: ratio.actual,
-									notesOccupied: ratio.normal,
+								// MusicXML's default is show-number="actual" — just the count.
+								// vexflow's own default prints the ratio whenever the two numbers
+								// differ by more than one, which turns a plain sextuplet into "6:4".
+								ratioed: shown?.ratioed ?? false,
+								...(shown?.bracketed != null && {
+									bracketed: shown.bracketed,
 								}),
+								...(numNotes != null &&
+									notesOccupied != null && { numNotes, notesOccupied }),
 							}),
 						);
 					}
 					start = -1;
 					placement = null;
+					display = null;
 				}
 			}
 		});

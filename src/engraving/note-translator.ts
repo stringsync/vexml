@@ -143,6 +143,7 @@ const SLASH_GLYPHS: Record<string, string> = {
 	h: '\uE103', // noteheadSlashWhiteHalf
 };
 const SLASH_GLYPH_FILLED = '\uE100'; // noteheadSlashVerticalEnds
+const SLASH_GLYPH_OPEN = '\uE103'; // noteheadSlashWhiteHalf, for filled="no"
 
 /*
  * Replace each slash-head chord member's glyph with the SMuFL slash bar. Must run AFTER
@@ -151,12 +152,21 @@ const SLASH_GLYPH_FILLED = '\uE100'; // noteheadSlashVerticalEnds
  * after construction) — add a post-beam re-apply in spanner-builder if that case shows up.
  */
 function addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
-	const glyph = SLASH_GLYPHS[durationCode(chord.lead)] ?? SLASH_GLYPH_FILLED;
+	const byDuration =
+		SLASH_GLYPHS[durationCode(chord.lead)] ?? SLASH_GLYPH_FILLED;
 	const noteHeads = staveNote.noteHeads;
 	chord.notes.forEach((note, i) => {
-		if (isSlashNotehead(note)) {
-			noteHeads[i]?.setText(glyph);
+		if (!isSlashNotehead(note)) {
+			return;
 		}
+		const filled = noteheadFilled(note);
+		noteHeads[i]?.setText(
+			filled === null
+				? byDuration
+				: filled
+					? SLASH_GLYPH_FILLED
+					: SLASH_GLYPH_OPEN,
+		);
 	});
 }
 
@@ -164,15 +174,53 @@ function addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
  * MusicXML <notehead> value -> vexflow key-suffix glyph code, appended to the key so vexflow
  * draws the alternate head (see vexflowKey). These codes go through vexflow's codeNoteHead, which
  * picks the duration-appropriate variant (open for half/whole, filled for quarter and shorter) —
- * except 'x' (dead notes), pinned to the always-black X2 by convention. Values vexflow can't draw
- * (cross, none) are absent and keep the default oval; slash has no code and is redrawn post-build
- * by addSlashNoteheads.
+ * except 'x' (dead notes), pinned to the always-black X2 by convention. Values vexflow has no
+ * glyph for (cross, the plus-shaped head, and none) are absent and keep the default oval; slash
+ * has no code and is redrawn post-build by addSlashNoteheads.
  */
 const NOTEHEAD_SUFFIX: Record<string, string> = {
 	x: 'X2', // cross
 	diamond: 'DI',
 	triangle: 'TU', // point-up triangle
+	'inverted triangle': 'TD',
+	square: 'SQ',
+	rectangle: 'SQ', // vexflow draws no separate rectangle; a square is the nearest reading
 	'circle-x': 'CX',
+	slashed: 'SF',
+	'back slashed': 'SB',
+	// The shape-note heads, one glyph each (vexflow gives these no duration variants).
+	do: 'DO',
+	re: 'RE',
+	mi: 'MI',
+	fa: 'FA',
+	'fa up': 'FAUP',
+	so: 'SO',
+	la: 'LA',
+	ti: 'TI',
+};
+
+/*
+ * The `filled` override, when a <notehead> carries one: true forces the black head, false the
+ * open one, null leaves the choice to the duration. MusicXML uses it to draw an open quarter
+ * (a ghost/ringing note) or a filled half. mdom's notehead accessor drops the attribute, so
+ * read the raw child.
+ */
+function noteheadFilled(note: Note): boolean | null {
+	const filled = note.child('notehead')?.getAttribute('filled');
+	return filled == null ? null : filled === 'yes';
+}
+
+/*
+ * The heads whose open and filled glyphs vexflow codes separately, so a `filled` attribute can
+ * override the duration's default (see noteheadFilled). Values not listed here have only the
+ * duration-driven code in NOTEHEAD_SUFFIX and ignore the attribute.
+ */
+const NOTEHEAD_FILL_SUFFIX: Record<string, { open: string; filled: string }> = {
+	x: { open: 'X1', filled: 'X2' },
+	diamond: { open: 'D1', filled: 'D2' },
+	triangle: { open: 'T1', filled: 'T2' },
+	square: { open: 'S1', filled: 'S2' },
+	rectangle: { open: 'S1', filled: 'S2' },
 };
 
 /*
@@ -189,11 +237,16 @@ function vexflowKey(note: Note): string {
 	if (isHarmonic(note)) {
 		return `${key}/H`;
 	}
-	const suffix = note.notehead && NOTEHEAD_SUFFIX[note.notehead.value];
-	if (suffix) {
-		return `${key}/${suffix}`;
+	const notehead = note.notehead;
+	if (!notehead) {
+		return key;
 	}
-	return key;
+	const filled = noteheadFilled(note);
+	const fill = filled === null ? null : NOTEHEAD_FILL_SUFFIX[notehead.value];
+	const suffix =
+		(fill && (filled ? fill.filled : fill.open)) ??
+		NOTEHEAD_SUFFIX[notehead.value];
+	return suffix ? `${key}/${suffix}` : key;
 }
 
 /*

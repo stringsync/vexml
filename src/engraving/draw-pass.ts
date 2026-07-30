@@ -901,7 +901,9 @@ export class DrawPass {
 			? new TabStave(this.measureX, staveY, this.measureWidth, {
 					numLines: tabLines,
 				})
-			: new Stave(this.measureX, staveY, this.measureWidth);
+			: new Stave(this.measureX, staveY, this.measureWidth, {
+					numLines: measure.getStaveLines(staffNumber),
+				});
 		// Only draw the end barline. Each measure's end barline is the same line
 		// as the next measure's left edge, so internal measures still get a divider;
 		// only the first measure of a system loses its left barline (intended). The
@@ -981,11 +983,15 @@ export class DrawPass {
 				const tabStave = stave as TabStave;
 				tabStave.addTabGlyph();
 				this.resizeTabClef(tabStave, tabLines);
-			} else if (clef) {
+			} else {
+				// A part that declares no <clef> at all is engraved as treble — the same
+				// fallback buildNotes already positions its notes with, and what MuseScore and
+				// OSMD draw. Without it the stave opened with an empty gap where the glyph
+				// belongs (the lead width reserves the room either way).
 				stave.addClef(
-					this.translator.vexflowClef(clef.sign, clef.line),
+					clef ? this.translator.vexflowClef(clef.sign, clef.line) : 'treble',
 					undefined,
-					this.translator.vexflowClefAnnotation(clef.octaveChange),
+					this.translator.vexflowClefAnnotation(clef?.octaveChange ?? null),
 				);
 			}
 			// Tab staves carry no key signature.
@@ -1008,7 +1014,17 @@ export class DrawPass {
 		// Unlike clef and key, the time signature is not re-stated at every
 		// system start — only at the piece start and wherever the meter changes
 		// (a change that lands on a system break still redraws here).
-		const timeSpec = timeSignatureSpec(measure.getTime(staffNumber));
+		//
+		// A part that states no <time> anywhere opens in 4/4, the meter a reader assumes when
+		// none is printed — the counterpart of the treble-clef fallback above. An explicit
+		// <senza-misura> is a different thing and still prints nothing.
+		// ponytail: the DEFAULT is display-only — meterBeats still reports 0 for an absent
+		// <time>, so an unmetered measure is sized by its own content rather than padded out
+		// to four beats. Printing an assumed meter is a convention; spacing to one would be
+		// guessing at the music.
+		const time = measure.getTime(staffNumber);
+		const timeSpec =
+			timeSignatureSpec(time) ?? (m === 0 && !time ? '4/4' : null);
 		const prevTimeSpec = timeSignatureSpec(
 			prevMeasure?.getTime(staffNumber) ?? null,
 		);
@@ -1143,7 +1159,7 @@ export class DrawPass {
 					this.staveRow,
 					voices,
 					clefName,
-					this.reader.meterBeats(measure.getTime(staffNumber)),
+					this.reader.meterFloor(measure, staffNumber),
 					clef?.octaveChange ?? 0,
 				),
 			);
