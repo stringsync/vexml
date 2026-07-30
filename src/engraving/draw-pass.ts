@@ -126,6 +126,11 @@ function timeSignatureSpec(time: Time | null): string | null {
 	if (time?.symbol === 'cut') {
 		return 'C|';
 	}
+	// symbol="single-number" prints the beat count alone. vexflow reads a spec with no '/'
+	// as a lone numerator and centers it vertically between the two signature lines.
+	if (time?.symbol === 'single-number' && time.beats) {
+		return time.beats;
+	}
 	if (time?.beats && time?.beatType) {
 		return `${time.beats}/${time.beatType}`;
 	}

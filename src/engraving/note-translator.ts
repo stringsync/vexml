@@ -195,6 +195,20 @@ function vexflowKey(note: Note): string {
 }
 
 /*
+ * A pitched rest's vexflow key, e.g. <display-step>E</display-step><display-octave>4 ->
+ * 'e/4'. The pair names a staff POSITION, not a pitch — it pins the glyph to a chosen line
+ * instead of the default centered one (standard in multi-voice writing, where the voices'
+ * rests are pushed apart). null when the rest carries no display position. mdom has no
+ * accessor for these, so read the raw children.
+ */
+function pitchedRestKey(note: Note): string | null {
+	const rest = note.child('rest');
+	const step = rest?.child('display-step')?.text;
+	const octave = rest?.child('display-octave')?.text;
+	return step && octave ? `${step.toLowerCase()}/${octave}` : null;
+}
+
+/*
  * Augmentation dots.
  */
 function addDots(staveNote: StaveNote, note: Note): void {
@@ -795,10 +809,15 @@ export class NoteTranslator {
 		// a dotted note is one tick-position short and its voice falls out of alignment
 		// with the others sharing the stave.
 		if (lead.isRest) {
+			const restKey = pitchedRestKey(lead);
 			const rest = new StaveNote({
-				keys: ['b/4'],
+				keys: [restKey ?? 'b/4'],
 				duration: `${duration}r`,
 				dots: lead.dots,
+				// Only a display position resolves against the clef. The 'b/4' default is
+				// vexflow's centered line and must stay clef-independent, or every bass-stave
+				// rest would jump to where B4 sits in that clef.
+				clef: restKey ? clef : undefined,
 				// A whole rest alone in a measure is a full-measure rest: engraving convention
 				// centers it horizontally (the formatter does the centering, see vexflowVoiceTickables).
 				alignCenter,

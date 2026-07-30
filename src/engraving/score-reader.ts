@@ -261,12 +261,23 @@ export class ScoreReader {
 		if (!time || time.isSenzaMisura) {
 			return 0;
 		}
-		const beats = Number(time.beats);
-		const beatType = Number(time.beatType);
-		if (!beats || !beatType) {
-			return 0;
+		let total = 0;
+		// A composite meter lists several beats/beat-type pairs (2/4 + 3/8); an additive one
+		// writes a summed numerator in a single pair ("3+2" over 8). Both add up to the bar.
+		for (const component of time.components) {
+			const beatType = Number(component.beatType);
+			if (!beatType) {
+				return 0;
+			}
+			for (const term of component.beats.split('+')) {
+				const beats = Number(term);
+				if (!beats) {
+					return 0;
+				}
+				total += (beats / beatType) * 4;
+			}
 		}
-		return (beats / beatType) * 4;
+		return total;
 	}
 
 	/*

@@ -116,15 +116,6 @@
         <type>half</type>
         <dot/>
       </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>2</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-      </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>
       </barline>

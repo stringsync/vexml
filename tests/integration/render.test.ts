@@ -17,7 +17,7 @@ import { testCase } from '../testing/test-case';
  *
  * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
  * increasing rendering complexity, not by priority. By impact, the ones worth doing first are:
- * <dynamics>, <wedge>, cross-staff notes, mid-score clef changes, and <part-group>.
+ * cross-staff notes, print-object="no", <octave-shift>, and the per-element color attribute.
  */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines with start and end barlines, nothing else.
@@ -265,16 +265,16 @@ const TEST_CASES = [
 	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
 	testCase('key.musicxml', 'key.png'),
 
-	// TODO(coverage): <key><mode> beyond major/minor — the church modes (dorian, phrygian,
-	// lydian, mixolydian, aeolian, ionian, locrian). <mode> appears in 144 of the files in
-	// tmp/, and key.musicxml only ever exercises major and (via M4) minor.
-	// Fixture: key_modes.musicxml (lilypond_13b-KeySignatures-ChurchModes M1-4).
-	// Expected: the mode does not change the printed signature at all — <fifths> alone decides
-	// the accidentals — so all four measures should print exactly the signature their <fifths>
-	// names. This is a regression guard against a mode string leaking into the vexflow key
-	// spec, which is the failure key.musicxml M4 already documents for 'G#' vs 'G#m'.
-	// Current: unverified.
-	// testCase('key_modes.musicxml', 'key_modes.png'),
+	// Treble stave, common time: the church modes. Every <key> carries the same
+	// <fifths>2</fifths> under a different <mode>, and each quarter is a G4 whose lyric names
+	// the mode it sits under — so the signature must print two sharps (F#, C#) throughout and
+	// never change. The mode is a label, not an accidental count: <fifths> alone decides the
+	// signature. This guards against a mode string leaking into the vexflow key spec, the
+	// failure key.musicxml M4 documents for 'G#' vs 'G#m'.
+	// - M1: major, minor, ionian, dorian — the two sharps drawn once at the system start.
+	// - M2: phrygian, lydian, mixolydian, aeolian — no signature redrawn, the key is unchanged.
+	// - M3: locrian; wraps to a second system, which reprints the same two sharps.
+	testCase('key_modes.musicxml', 'key_modes.png'),
 
 	// TODO(coverage): non-traditional key signatures — <key-step>/<key-alter>/<key-accidental>
 	// instead of <fifths>, which is how microtonal and modal-jazz scores notate a signature.
@@ -295,35 +295,32 @@ const TEST_CASES = [
 	// - M4: continues in 3/4 with no time signature redrawn; three C5 quarters.
 	testCase('time.musicxml', 'time.png'),
 
-	// TODO(coverage): compound / additive time signatures — a <time> carrying more than one
-	// <beats>/<beat-type> pair (3+2/8), or several pairs printed side by side (2/4 + 3/8).
-	// ScoreReader.meterBeats reads Number(time.beats), which yields NaN for "3+2", so the
-	// meter length silently falls back to 0 and the measure loses its trailing-ghost padding.
-	// Fixture: time_compound.musicxml (lilypond_11c-TimeSignatures-CompoundSimple M1-2).
-	// Expected: the signature prints as "3+2" over "8", and meterBeats returns 5/8 * 4 = 2.5
-	// quarter beats so an underfull measure still pads correctly.
-	// Current: unverified. See also tmp/lilypond_11d-TimeSignatures-CompoundMultiple.xml and
-	// tmp/lilypond_11e-TimeSignatures-CompoundMixed.xml.
-	// testCase('time_compound.musicxml', 'time_compound.png'),
+	// Treble stave: additive (compound) meters, whose numerator sums the groups the bar beats
+	// in. The terms are summed, not read as one number — "3+2" through Number() is NaN, which
+	// would silently drop the meter length to 0 and with it the measure's trailing padding.
+	// - M1: 3+2/8 — the numerator prints as "3+2" over a single "8"; five eighths beamed 3
+	//   then 2, matching the grouping the signature names.
+	// - M2: 5+3+1/4 — a three-term numerator over "4". The measure holds 8 of its 9 beats (a
+	//   whole, a quarter, a dotted half), so the missing beat is reserved as blank space
+	//   before the end barline rather than the last note being justified flush against it.
+	// - <time symbol="single-number"> is covered below; several pairs printed side by side
+	//   (2/4 + 3/8) is not — vexflow's TimeSignature reads only the first two '/'-separated
+	//   groups, so that form needs its own glyph work before a fixture is worth adding.
+	testCase('time_compound.musicxml', 'time_compound.png'),
 
-	// TODO(coverage): a single-number time signature (<time symbol="single-number">), which
-	// prints just the beat count with no denominator.
-	// Fixture: time_single_number.musicxml (lilypond_11g-TimeSignatures-SingleNumber M1-2).
-	// Expected: one large numeral ("3"), not a stacked 3/4. Related: <time symbol="note"> and
-	// <time symbol="dotted-note">, and the symbol="cut"/"common" pair time.musicxml already
-	// covers.
-	// Current: unverified — likely renders the full stacked fraction.
-	// testCase('time_single_number.musicxml', 'time_single_number.png'),
+	// Treble stave, <time symbol="single-number">: three beamed eighths under a signature that
+	// prints the beat count alone — one large "3" centered between the lines the stacked
+	// numerals would occupy, with no "8" beneath it.
+	// ponytail: <time symbol="note"> and symbol="dotted-note" (the beat drawn as a note glyph)
+	// still fall through to the stacked fraction; no fixture reaches them.
+	testCase('time_single_number.musicxml', 'time_single_number.png'),
 
-	// TODO(coverage): <senza-misura> (unmetered music). ScoreReader.meterBeats already returns
-	// 0 for it, so the timing half works, but nothing pins what gets DRAWN.
-	// Fixture: time_senza_misura.musicxml (lilypond_11h-TimeSignatures-SenzaMisura M1-2).
-	// Expected: no time signature glyph at all, and the measure sized from its own content
-	// rather than padded out to a meter. Also worth a case for a score with no <time> element
-	// whatsoever (tmp/lilypond_11b-TimeSignatures-NoTime.xml) — several of the tab fixtures
-	// already rely on that behavior incidentally, but nothing asserts it.
-	// Current: unverified.
-	// testCase('time_senza_misura.musicxml', 'time_senza_misura.png'),
+	// Treble stave, <senza-misura> (unmetered): three beamed eighths with NO time signature
+	// glyph at all, the clef running straight into the first note. The measure is sized from
+	// its own content, since there is no meter to pad it out to. A score carrying no <time>
+	// element whatsoever renders the same way — several of the tab fixtures already rely on
+	// that incidentally.
+	testCase('time_senza_misura.musicxml', 'time_senza_misura.png'),
 
 	// Treble stave, 4/4: single-note rendering — durations then stem direction.
 	// - M1: a whole note (C5).
@@ -370,17 +367,15 @@ const TEST_CASES = [
 	//   the measure, identical to M1, rather than falling back to a left-aligned quarter.
 	testCase('rest.musicxml', 'rest.png'),
 
-	// TODO(coverage): pitched rests — a <rest> with <display-step>/<display-octave>, which
-	// pins the rest glyph to a chosen staff line instead of its default one. 26 files in tmp/
-	// carry a <display-step>. Common in multi-voice writing, where the two voices' rests are
-	// pushed apart vertically.
-	// Fixture: rest_pitched.musicxml (lilypond_02b-Rests-PitchedRests M1-2).
-	// Expected: each rest sits at the line/space its display-step+display-octave names, so a
-	// row of identical rests appears at visibly different heights.
-	// Current: unverified — expect every rest at the default centered position. See also the
-	// rest-placement corpus in tmp/rest_positioning_*.xml, which is the realistic version of
-	// this (two voices, C clef, 8th/16th rests) and deserves its own case once this lands.
-	// testCase('rest_pitched.musicxml', 'rest_pitched.png'),
+	// Treble stave, 5/4: five quarter rests, identical but for where they are displayed. The
+	// first carries a bare <rest/> and takes the default centered position; the other four add
+	// <display-step>/<display-octave>, which name a staff POSITION rather than a pitch, so the
+	// row steps to visibly different heights — E4 (bottom line), F5 (top line), A3 (below the
+	// stave) and C6 (above it). Rests take no ledger lines, so the outer two float free.
+	// Pinning a rest this way is how multi-voice writing pushes two voices' rests apart; see
+	// the rest-placement corpus in tmp/rest_positioning_*.xml for the realistic version (two
+	// voices, C clef, 8th/16th rests), which deserves its own case.
+	testCase('rest_pitched.musicxml', 'rest_pitched.png'),
 
 	// TODO(coverage): <measure-style><multiple-rest> — the consolidated multi-bar rest. 9 files
 	// in tmp/ use it; grep 'measure-style' in src/ finds nothing.
