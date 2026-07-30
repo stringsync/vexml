@@ -4,6 +4,7 @@ import {
 	MElement,
 	type Measure,
 	type Note,
+	type Part,
 	type Voice as ScoreVoice,
 	type Time,
 } from '@stringsync/mdom';
@@ -78,6 +79,19 @@ export type WedgeMark = {
 	number: string;
 	crescendo: boolean;
 	placement: Placement;
+};
+
+/*
+ * One <octave-shift> span: the notes it covers, how far to shift them when drawing (signed
+ * the way vexflow's octaveShift option reads it — positive draws lower), and the bracket
+ * label that goes over or under them ("8" + "va", "15" + "mb", …). See ScoreReader.octaveShiftsOf.
+ */
+export type OctaveShiftSpan = {
+	notes: Note[];
+	octaves: number;
+	label: string;
+	suffix: string;
+	above: boolean;
 };
 
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
@@ -498,6 +512,79 @@ export class ScoreReader {
 			}
 		}
 		return out;
+	}
+
+	/*
+	 * A part's <direction><octave-shift> spans (the 8va/8vb/15ma/15mb ottava brackets).
+	 *
+	 * MusicXML carries SOUNDING pitch, so an octave shift is a printing instruction: type="down"
+	 * means print the notes an octave (or two, or three) LOWER than they sound and label the
+	 * passage 8va, and type="up" is the mirror. `octaves` is signed the way vexflow's own
+	 * octaveShift option reads it — positive draws lower — so it can be handed straight to the
+	 * note builder.
+	 *
+	 * A start binds to the note that follows it and a stop to the note before it, and everything
+	 * between them in document order is shifted. Paired by `number` across the part, so a span
+	 * can cross barlines.
+	 * ponytail: a start with no note after it in its own measure (or a stop with none before it)
+	 * is dropped rather than reaching into the neighbouring measure, and a span that wraps onto a
+	 * later system draws one bracket running right-to-left. Both need a fixture first.
+	 */
+	octaveShiftsOf(part: Part): OctaveShiftSpan[] {
+		const notes = part.measures.flatMap((measure) => measure.notes);
+		const indexOf = new Map(notes.map((note, index) => [note, index]));
+		const spans: OctaveShiftSpan[] = [];
+		const open = new Map<string, { from: Note; size: number; down: boolean }>();
+		for (const measure of part.measures) {
+			for (const direction of measure.directions) {
+				for (const marker of direction.octaveShifts) {
+					const type = marker.octaveShiftType;
+					if (type === 'up' || type === 'down') {
+						const from = direction.nextNote;
+						if (from) {
+							open.set(marker.number, {
+								from,
+								size: marker.size,
+								down: type === 'down',
+							});
+						}
+						continue;
+					}
+					if (type !== 'stop') {
+						continue;
+					}
+					const opened = open.get(marker.number);
+					open.delete(marker.number);
+					const to = direction.previousNote;
+					if (!opened || !to) {
+						continue;
+					}
+					const first = indexOf.get(opened.from);
+					const last = indexOf.get(to);
+					if (first === undefined || last === undefined) {
+						continue;
+					}
+					// <octave-shift size> is an interval (8, 15, 22), i.e. 1, 2 or 3 octaves.
+					const octaves = Math.max(1, Math.round((opened.size - 1) / 7));
+					spans.push({
+						notes: notes.slice(first, last + 1),
+						octaves: opened.down ? octaves : -octaves,
+						// "8va"/"8vb" for one octave; two or three take the -ma/-mb suffixes.
+						label: String(opened.size),
+						suffix:
+							octaves === 1
+								? opened.down
+									? 'va'
+									: 'vb'
+								: opened.down
+									? 'ma'
+									: 'mb',
+						above: opened.down,
+					});
+				}
+			}
+		}
+		return spans;
 	}
 
 	/*

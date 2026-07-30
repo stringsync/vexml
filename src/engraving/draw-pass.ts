@@ -28,6 +28,7 @@ import {
 	type StemmableNote,
 	type TabNote,
 	TabStave,
+	TextBracket,
 	Vibrato,
 	type Voice,
 	Volta,
@@ -85,12 +86,14 @@ import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import {
+	applyNoteColors,
 	findModifier,
 	LyricAnnotation,
 	type NoteTranslator,
 } from './note-translator';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type {
+	OctaveShiftSpan,
 	PedalMark,
 	Placement,
 	ScoreReader,
@@ -500,6 +503,10 @@ export class DrawPass {
 	private partStaves: Array<{ top: Stave; bottom: Stave } | undefined> = [];
 	// The <part-group> spans from the <part-list>, outermost first. Fixed for the score.
 	private readonly partGroups: PartGroup[];
+	// The score's <octave-shift> spans, and the per-note octave offset they imply. Fixed for
+	// the score; both are filled in the constructor.
+	private readonly octaveShiftSpans: OctaveShiftSpan[] = [];
+	private readonly octaveShiftByNote = new Map<Note, number>();
 
 	constructor(
 		private readonly translator: NoteTranslator,
@@ -543,6 +550,17 @@ export class DrawPass {
 		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.gaps = gapsByMeasureIndex(config.gaps);
 		this.partGroups = partGroups(this.parts);
+		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
+		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
+		// before it builds anything, and the finish pass draws the brackets over them.
+		for (const part of this.parts) {
+			for (const span of this.reader.octaveShiftsOf(part)) {
+				this.octaveShiftSpans.push(span);
+				for (const note of span.notes) {
+					this.octaveShiftByNote.set(note, span.octaves);
+				}
+			}
+		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
 		this.decorations = barlineDecorations(this.parts[0]?.measures ?? []);
 		this.systemTopY = layout.top + topSlack;
@@ -1151,8 +1169,12 @@ export class DrawPass {
 		voices: ScoreVoice[],
 		clef: string,
 		meterFloor: number,
-		octaveShift: number,
+		clefOctaveShift: number,
 	): PendingStave {
+		// How far off its sounding pitch each note is drawn: the clef's own octave change,
+		// plus any <octave-shift> (8va/8vb) covering that note.
+		const octaveShiftOf = (lead: Note) =>
+			clefOctaveShift + (this.octaveShiftByNote.get(lead) ?? 0);
 		// Floor the run-out beat at the meter so an underfull measure pads trailing
 		// ghosts instead of jamming its last note against the end barline.
 		const endBeat = Math.max(this.reader.endBeatOf(voices), meterFloor);
@@ -1190,7 +1212,7 @@ export class DrawPass {
 						(lead.isGrace ? graceChords : noteChords).push({ note, chord });
 					}
 				},
-				octaveShift,
+				octaveShiftOf,
 				stemFor(voiceIndex),
 			);
 			return this.translator.softVoice(tickables, this.softmaxFactor);
@@ -1400,6 +1422,13 @@ export class DrawPass {
 						note.setLedgerLineStyle({ strokeStyle: this.notationColor });
 					}
 				}
+			}
+			// The score's own per-element colors (<note color>, <notehead color>, <stem color>)
+			// go on last so they win over the configured notation ink above.
+			for (const { note, chord } of [...p.noteChords, ...p.graceChords]) {
+				applyNoteColors(note, chord);
+			}
+			for (const vexVoice of p.vexVoices) {
 				vexVoice.draw(this.context, p.stave);
 			}
 			for (const beam of p.beams) {
@@ -1515,6 +1544,10 @@ export class DrawPass {
 			for (const lyric of lyrics) {
 				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
 				lyric.setBaselineY(y);
+				// Pin the ink a syllable already draws in. vexflow runs a note's modifiers
+				// inside its notehead's own style, so an uncolored lyric under a note the
+				// score colored would otherwise come out in the notehead's color.
+				lyric.setStyle({ fillStyle: this.notationColor });
 				// LyricAnnotation.draw centers the syllable on the notehead and draws up from
 				// the baseline, so its box is one text height tall ending at that baseline.
 				const w = lyric.getWidth();
@@ -2547,6 +2580,38 @@ export class DrawPass {
 			this.byLead,
 		)) {
 			line.setContext(this.context).draw();
+		}
+		// Ottava brackets (<octave-shift>): the "8va"/"15mb" label and its dashed line over
+		// (or under) the notes it covers. The notes were already drawn at the shifted
+		// position by buildNotes; this is the label that says so.
+		for (const span of this.octaveShiftSpans) {
+			const first = span.notes[0];
+			const last = span.notes.at(-1);
+			const start = first && this.byLead.get(first);
+			const stop = last && this.byLead.get(last);
+			// Either endpoint off a hidden staff leaves nothing to bracket.
+			if (!start || !stop) {
+				continue;
+			}
+			new TextBracket({
+				start,
+				stop,
+				text: span.label,
+				superscript: span.suffix,
+				position: span.above
+					? TextBracket.Position.TOP
+					: TextBracket.Position.BOTTOM,
+			})
+				.setContext(this.context)
+				.draw();
+		}
+		// Trill extension lines, resolved over the whole score like the other spanners so a
+		// trill can be held across a barline.
+		for (const bracket of this.spanners.buildWavyLines(
+			this.allChords,
+			this.byLead,
+		)) {
+			bracket.setContext(this.context).draw();
 		}
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the

@@ -1,4 +1,4 @@
-import type { Chord, Clef, Note } from '@stringsync/mdom';
+import { type Chord, type Clef, MElement, type Note } from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -11,12 +11,14 @@ import {
 	GraceNoteGroup,
 	GraceTabNote,
 	Modifier,
+	Ornament,
 	Parenthesis,
 	StaveNote,
 	Stem,
 	type StemmableNote,
 	Stroke,
 	TabNote,
+	Tremolo,
 	Vibrato,
 	Voice,
 } from 'vexflow';
@@ -209,6 +211,96 @@ function pitchedRestKey(note: Note): string | null {
 }
 
 /*
+ * A note (or rest) marked print-object="no": it holds its tick so the other voices stay
+ * aligned, but draws nothing. Exporters lean on this to hide the spacer notes that keep a
+ * voice open, so drawing them puts noteheads on the page that shouldn't be there.
+ *
+ * It stays a real StaveNote — it formats, reserves width, and pins its lyrics like any
+ * other note — so only draw() changes. Lyrics still print: <lyric> carries its own
+ * print-object, and the label an exporter hangs off a hidden note is the one thing about
+ * it that IS meant to be seen (OSMD keeps them too). Annotation-only drawing mirrors
+ * vexflow's own GhostNote.
+ */
+class InvisibleStaveNote extends StaveNote {
+	constructor(...args: ConstructorParameters<typeof StaveNote>) {
+		super(...args);
+		// vexflow's own "this note isn't on the page" flag. Setting it matters beyond its
+		// early return in StaveNote.draw (which this class overrides anyway): StaveNote.format
+		// reads it when it pairs the voices sharing a tick, and two voices holding the same
+		// rest there make it suppress ONE of them. Without the flag the survivor can be the
+		// hidden note, blanking a rest that should print.
+		this.renderOptions.draw = false;
+	}
+
+	override draw(): void {
+		this.setRendered();
+		const ctx = this.checkContext();
+		for (const modifier of this.getModifiers()) {
+			if (modifier instanceof Annotation) {
+				modifier.setContext(ctx).drawWithStyle();
+			}
+		}
+	}
+}
+
+/*
+ * Whether a note is hidden (<note print-object="no">). mdom has no accessor for it — it is
+ * one raw attribute.
+ */
+function isInvisible(note: Note): boolean {
+	return note.getAttribute('print-object') === 'no';
+}
+
+/*
+ * An element's MusicXML color attribute as a canvas fill/stroke, or null when it carries
+ * none. MusicXML writes "#RRGGBB" or "#AARRGGBB" — alpha FIRST, which canvas doesn't
+ * understand — so the eight-digit form drops its alpha rather than drawing the wrong color.
+ */
+function colorOf(element: MElement | null): string | null {
+	const color = element?.getAttribute('color');
+	if (!color) {
+		return null;
+	}
+	return color.length === 9 ? `#${color.slice(3)}` : color;
+}
+
+/*
+ * The MusicXML color attributes a note carries, laid over the configured notation ink:
+ * <note color> covers everything the note draws, while <notehead color> and <stem color>
+ * each name one piece and win over it.
+ *
+ * Called from the draw pass rather than at build time because it has to run after the
+ * beams: joining a note into a Beam resets its stem direction, and vexflow rebuilds that
+ * note's noteheads from scratch when it does, dropping any style set before.
+ * ponytail: <beam color> and <lyric color> are ignored — a beam and a syllable each draw
+ * from their own element, so they'd need their own pass. No fixture asks for them yet.
+ */
+export function applyNoteColors(staveNote: StaveNote, chord: Chord): void {
+	const lead = chord.lead;
+	const noteColor = colorOf(lead);
+	if (noteColor) {
+		staveNote.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
+		staveNote.setLedgerLineStyle({ strokeStyle: noteColor });
+	}
+	chord.notes.forEach((note, index) => {
+		const color = colorOf(note.child('notehead')) ?? colorOf(note);
+		if (color) {
+			staveNote.noteHeads[index]?.setStyle({
+				fillStyle: color,
+				strokeStyle: color,
+			});
+		}
+	});
+	// The stem takes its color directly: vexflow's Metrics hand every Stem a hardcoded
+	// strokeStyle, so it never inherits the note's ink (see the draw pass, which restyles
+	// stems for the same reason).
+	const stemColor = colorOf(lead.child('stem')) ?? noteColor;
+	if (stemColor) {
+		staveNote.getStem()?.setStyle({ strokeStyle: stemColor });
+	}
+}
+
+/*
  * Augmentation dots.
  */
 function addDots(staveNote: StaveNote, note: Note): void {
@@ -217,36 +309,189 @@ function addDots(staveNote: StaveNote, note: Note): void {
 	}
 }
 
-// MusicXML <articulations> name -> vexflow articulation code.
-const ARTICULATION_CODES: Record<string, string> = {
+/*
+ * MusicXML <articulations> name -> the notehead-side mark it draws: a vexflow articulation
+ * code, or an [above, below] pair of raw SMuFL glyphs for the marks vexflow has no code for
+ * (Articulation passes an unrecognized code through as the glyph, the same way Accidental
+ * does). vexflow's own codes carry both faces already, so they need no pair.
+ */
+const ARTICULATION_CODES: Record<
+	string,
+	string | [above: string, below: string]
+> = {
 	staccato: 'a.',
 	accent: 'a>',
 	tenuto: 'a-',
 	staccatissimo: 'av',
 	'strong-accent': 'a^',
+	'detached-legato': ['\uE4B2', '\uE4B3'], // articTenutoStaccatoAbove/Below
+	spiccato: ['\uE4A8', '\uE4A9'], // articStaccatissimoWedgeAbove/Below
+	stress: ['\uE4B6', '\uE4B7'], // articStressAbove/Below
+	unstress: ['\uE4B8', '\uE4B9'], // articUnstressAbove/Below
 };
 
 /*
- * Notehead-side articulations sit opposite the stem: BELOW for stem-up notes,
- * ABOVE otherwise.
+ * Marks that name a moment in the bar rather than a way of playing the note. They sit
+ * above the staff whichever way the stem points, so they're outside the notehead-side rule.
  */
-function articulationPosition(staveNote: StaveNote): number {
-	return staveNote.getStemDirection() === Stem.UP
-		? Modifier.Position.BELOW
-		: Modifier.Position.ABOVE;
+const MEASURE_MARK_GLYPHS: Record<string, string> = {
+	'breath-mark': '\uE4CE', // breathMarkComma
+	caesura: '\uE4D1', // caesura
+};
+
+/*
+ * The jazz brush strokes: a stroke off the side of the notehead rather than a mark above or
+ * below it. vexflow models these as Ornaments and takes the side from the ornament's name —
+ * scoop and plop lead INTO the note (drawn left), doit and falloff off it (drawn right) — so
+ * plop borrows scoop's name for the placement and swaps in its own SMuFL glyph.
+ */
+const BRUSH_ORNAMENTS: Record<string, { type: string; glyph?: string }> = {
+	scoop: { type: 'scoop' },
+	plop: { type: 'scoop', glyph: '\uE5E0' }, // brassPlop
+	doit: { type: 'doit' },
+	falloff: { type: 'fall' },
+};
+
+/*
+ * An articulation that sits opposite the stem — BELOW for a stem-up note, ABOVE otherwise.
+ *
+ * The side isn't final when the mark is built: a beamed note's stem direction is only
+ * settled once its Beam is, so the beam pass re-runs {@link setSide} (see
+ * SpannerBuilder.reorientArticulations). vexflow's own codes flip their glyph on reset();
+ * the raw SMuFL ones have to have the mirrored glyph swapped in, which is what the pair is
+ * for. Fermatas take their side from their type instead, so they stay plain Articulations
+ * and this pass leaves them alone.
+ */
+export class NoteheadArticulation extends Articulation {
+	private readonly codes: [above: string, below: string];
+
+	constructor(code: string | [above: string, below: string]) {
+		const codes: [string, string] =
+			typeof code === 'string' ? [code, code] : code;
+		super(codes[0]);
+		this.codes = codes;
+	}
+
+	setSide(staveNote: StaveNote): this {
+		const above = staveNote.getStemDirection() !== Stem.UP;
+		this.setPosition(above ? Modifier.Position.ABOVE : Modifier.Position.BELOW);
+		// setPosition resets the glyph off vexflow's own table, which mirrors the codes it
+		// names. A raw SMuFL code has no mirror there, so swap in the other face by hand.
+		const [aboveGlyph, belowGlyph] = this.codes;
+		if (aboveGlyph !== belowGlyph) {
+			this.setText(above ? aboveGlyph : belowGlyph);
+		}
+		return this;
+	}
 }
 
 function addArticulations(staveNote: StaveNote, note: Note): void {
-	// Vexflow's Articulation always defaults to ABOVE, so flip it for stem-up notes.
-	// The stem direction is resolved by here (explicit via applyStem, or auto in the
-	// StaveNote constructor) — except for beamed notes, whose direction the Beam only
-	// settles later; reorientArticulations fixes those up after buildBeams runs.
-	const position = articulationPosition(staveNote);
 	for (const name of note.articulations) {
+		const brush = BRUSH_ORNAMENTS[name];
+		if (brush) {
+			const ornament = new Ornament(brush.type);
+			if (brush.glyph) {
+				ornament.setText(brush.glyph);
+			}
+			staveNote.addModifier(ornament);
+			continue;
+		}
+		const measureMark = MEASURE_MARK_GLYPHS[name];
+		if (measureMark) {
+			staveNote.addModifier(
+				new Articulation(measureMark).setPosition(Modifier.Position.ABOVE),
+			);
+			continue;
+		}
 		const code = ARTICULATION_CODES[name];
 		if (code) {
-			staveNote.addModifier(new Articulation(code).setPosition(position));
+			staveNote.addModifier(new NoteheadArticulation(code).setSide(staveNote));
 		}
+	}
+}
+
+/*
+ * MusicXML <ornaments> child tag -> the vexflow Ornament type that draws it. Names vexflow
+ * knows are used as-is; the rest hand it their SMuFL glyph, which Tables.ornamentCodes
+ * passes through verbatim (the same escape hatch accidentals and articulations use).
+ *
+ * The two mordents read backwards on purpose. MusicXML's <mordent> is the sign WITH the
+ * vertical stroke and <inverted-mordent> the one without it; vexflow names the stroked one
+ * 'mordentInverted' and the plain one 'mordent'.
+ *
+ * A delayed turn draws the same glyph as its plain form, moved to sit between its note and
+ * the next one — vexflow's own setDelayed does that, so the pair shares an entry here.
+ */
+const ORNAMENT_TYPES: Record<string, string> = {
+	'trill-mark': 'tr',
+	turn: 'turn',
+	'delayed-turn': 'turn',
+	'inverted-turn': '\uE568', // ornamentTurnInverted (vexflow's 'turnInverted' is the slashed one)
+	'delayed-inverted-turn': '\uE568',
+	shake: 'prallprall', // ornamentTremblement — the long trill wiggle
+	mordent: 'mordentInverted',
+	'inverted-mordent': 'mordent',
+	schleifer: '\uE587', // ornamentSchleifer
+};
+
+/*
+ * A note's <notations><ornaments> children, in document order. mdom reads <ornaments> only
+ * for the <wavy-line> that becomes a tab vibrato, so these come off the generic axes.
+ */
+function ornamentElements(note: Note): MElement[] {
+	return note
+		.childrenNamed('notations')
+		.flatMap((notations) => notations.childrenNamed('ornaments'))
+		.flatMap((ornaments) =>
+			ornaments.children.filter((c): c is MElement => c instanceof MElement),
+		);
+}
+
+/*
+ * The ornament glyphs above a notehead: trills, turns, mordents, the schleifer, and the
+ * slashes of a single-note <tremolo>.
+ *
+ * An <accidental-mark> is not an ornament of its own — it is the small sharp/flat drawn with
+ * the ornament it follows (an F# turn), so it attaches to the last one built. MusicXML gives
+ * each a placement, but the pair on a turn conventionally reads one above and one below, so
+ * the first goes over the glyph and the second under it.
+ * ponytail: <wavy-line> is left to the tab path (it becomes a Vibrato there). On a notation
+ * stave a trill's extension line needs a start..stop spanner like buildWedges — add one when
+ * a fixture needs the line rather than the "tr" alone.
+ */
+function addOrnaments(staveNote: StaveNote, note: Note): void {
+	let last: Ornament | undefined;
+	let accidentalMarks = 0;
+	for (const element of ornamentElements(note)) {
+		if (element.tag === 'accidental-mark') {
+			const code = ACCIDENTAL_CODES[element.text ?? ''];
+			if (last && code) {
+				if (accidentalMarks === 0) {
+					last.setUpperAccidental(code);
+				} else {
+					last.setLowerAccidental(code);
+				}
+				accidentalMarks++;
+			}
+			continue;
+		}
+		if (element.tag === 'tremolo') {
+			// <tremolo type="single">N</tremolo>: N slashes through the stem.
+			// ponytail: the type="start"/"stop" bowed-tremolo pair (slashes BETWEEN two notes)
+			// is not handled — it needs a spanner, and no fixture reaches it yet.
+			staveNote.addModifier(new Tremolo(Number(element.text) || 1));
+			continue;
+		}
+		const type = ORNAMENT_TYPES[element.tag];
+		if (!type) {
+			continue;
+		}
+		last = new Ornament(type);
+		accidentalMarks = 0;
+		if (element.tag.startsWith('delayed-')) {
+			last.setDelayed(true);
+		}
+		staveNote.addModifier(last);
 	}
 }
 
@@ -804,13 +1049,17 @@ export class NoteTranslator {
 	): StaveNote {
 		const lead = chord.lead;
 		const duration = durationCode(lead);
+		// A hidden note builds as an InvisibleStaveNote: same formatting, no glyphs drawn.
+		// ponytail: hiding is read off the lead only, so a chord with a mix of hidden and
+		// visible members draws all of them; add per-notehead hiding if a fixture needs it.
+		const NoteClass = isInvisible(lead) ? InvisibleStaveNote : StaveNote;
 		// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
 		// (Dot.buildAndAttach only draws the glyph, it never changes duration). Without it
 		// a dotted note is one tick-position short and its voice falls out of alignment
 		// with the others sharing the stave.
 		if (lead.isRest) {
 			const restKey = pitchedRestKey(lead);
-			const rest = new StaveNote({
+			const rest = new NoteClass({
 				keys: [restKey ?? 'b/4'],
 				duration: `${duration}r`,
 				dots: lead.dots,
@@ -841,7 +1090,7 @@ export class NoteTranslator {
 			addAccidentals(grace, chord);
 			return grace;
 		}
-		const staveNote = new StaveNote({
+		const staveNote = new NoteClass({
 			keys: chord.notes.map(vexflowKey),
 			duration,
 			dots: lead.dots,
@@ -857,6 +1106,7 @@ export class NoteTranslator {
 		applyStem(staveNote, lead, defaultStem);
 		addSlashNoteheads(staveNote, chord);
 		addArticulations(staveNote, lead);
+		addOrnaments(staveNote, lead);
 		addFermata(staveNote, lead);
 		addArpeggio(staveNote, lead);
 		addLyrics(staveNote, lead);
@@ -998,13 +1248,16 @@ export class NoteTranslator {
 	 * other voices on the stave. Without the trailing fill, a voice that stops early
 	 * lets the formatter cram the other voices' later notes against its last note.
 	 * `record` captures each chord's lead -> StaveNote for later spanner resolution.
+	 * `octaveShiftOf` is how many octaves to move each chord's noteheads by when drawing them:
+	 * the staff's <clef-octave-change> plus any <octave-shift> (8va/8vb) covering that note, so
+	 * it varies note by note rather than being one value for the stave.
 	 */
 	vexflowVoiceTickables(
 		chords: Chord[],
 		clef: string,
 		endBeat = 0,
 		record?: (lead: Note, staveNote: StaveNote) => void,
-		octaveShift = 0,
+		octaveShiftOf: (lead: Note) => number = () => 0,
 		defaultStem?: 'up' | 'down',
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];
@@ -1019,7 +1272,12 @@ export class NoteTranslator {
 		for (const chord of chords) {
 			if (chord.lead.isGrace) {
 				pendingGrace.push({
-					note: this.vexflowChord(chord, clef, false, octaveShift) as GraceNote,
+					note: this.vexflowChord(
+						chord,
+						clef,
+						false,
+						octaveShiftOf(chord.lead),
+					) as GraceNote,
 					lead: chord.lead,
 				});
 				continue;
@@ -1032,7 +1290,7 @@ export class NoteTranslator {
 				chord,
 				clef,
 				centerWholeRest,
-				octaveShift,
+				octaveShiftOf(chord.lead),
 				defaultStem,
 			);
 			if (pendingGrace.length > 0) {

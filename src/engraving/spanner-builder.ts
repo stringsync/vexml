@@ -1,6 +1,5 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import {
-	Articulation,
 	Beam,
 	Curve,
 	type CurveOptions,
@@ -16,6 +15,7 @@ import {
 	TabTie,
 	type TieNotes,
 	Tuplet,
+	VibratoBracket,
 } from 'vexflow';
 import {
 	HAIRPIN_HEIGHT,
@@ -36,6 +36,7 @@ import {
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
 } from '../constants';
+import { NoteheadArticulation } from './note-translator';
 import type { PedalMark, WedgeMark } from './score-reader';
 
 /*
@@ -415,10 +416,9 @@ export class SpannerBuilder {
 	 * keep their fixed side, so leave them alone.
 	 */
 	private reorientArticulations(staveNote: StaveNote): void {
-		const position = articulationPosition(staveNote);
 		for (const mod of staveNote.getModifiers()) {
-			if (mod instanceof Articulation && ARTICULATION_CODE_SET.has(mod.type)) {
-				mod.setPosition(position);
+			if (mod instanceof NoteheadArticulation) {
+				mod.setSide(staveNote);
 			}
 		}
 	}
@@ -787,6 +787,45 @@ export class SpannerBuilder {
 	}
 
 	/*
+	 * Trill extension lines (<notations><ornaments><wavy-line>): a start..stop pair drawn as a
+	 * vexflow VibratoBracket — the wavy line running from a trill across the notes it is held
+	 * over. Paired by `number` over the whole score like the other spanners, so a run of
+	 * trilled notes (each carrying a stop and then a start) comes out as a chain of brackets
+	 * that meet end to end.
+	 * ponytail: the marker's placement is ignored — vexflow's bracket only draws above the
+	 * stave, which is where a trill line belongs anyway.
+	 */
+	buildWavyLines(
+		chords: Chord[],
+		byLead: Map<Note, StaveNote>,
+	): VibratoBracket[] {
+		const brackets: VibratoBracket[] = [];
+		const open = new Map<string, StaveNote>();
+		for (const chord of chords) {
+			const staveNote = byLead.get(chord.lead);
+			if (!staveNote) {
+				continue;
+			}
+			for (const wavy of chord.lead.wavyLines) {
+				if (wavy.wavyLineType === 'start') {
+					open.set(wavy.number, staveNote);
+					continue;
+				}
+				if (wavy.wavyLineType !== 'stop') {
+					continue;
+				}
+				const from = open.get(wavy.number);
+				open.delete(wavy.number);
+				// A stop with no open start, or a zero-width span, has no line to draw.
+				if (from && from !== staveNote) {
+					brackets.push(new VibratoBracket({ start: from, stop: staveNote }));
+				}
+			}
+		}
+		return brackets;
+	}
+
+	/*
 	 * Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
 	 * PedalMarking under the stave — the "Ped…*" text by default, or a bracket line
 	 * when the MusicXML carries line="yes". Paired by `number` and resolved over the
@@ -1075,27 +1114,6 @@ export class SpannerBuilder {
 		});
 		return slurs;
 	}
-}
-
-// MusicXML <articulations> name -> vexflow articulation code.
-const ARTICULATION_CODES: Record<string, string> = {
-	staccato: 'a.',
-	accent: 'a>',
-	tenuto: 'a-',
-	staccatissimo: 'av',
-	'strong-accent': 'a^',
-};
-
-const ARTICULATION_CODE_SET = new Set(Object.values(ARTICULATION_CODES));
-
-/*
- * Notehead-side articulations sit opposite the stem: BELOW for stem-up notes,
- * ABOVE otherwise.
- */
-function articulationPosition(staveNote: StaveNote): number {
-	return staveNote.getStemDirection() === Stem.UP
-		? Modifier.Position.BELOW
-		: Modifier.Position.ABOVE;
 }
 
 /*

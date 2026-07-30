@@ -412,31 +412,52 @@ const TEST_CASES = [
 	// - M2: two half notes, evenly spaced — the first at divisions 8, the second at 38.
 	testCase('divisions_change.musicxml', 'divisions_change.png'),
 
-	// TODO(coverage): print-object="no" — notes, rests and whole staves marked invisible. 39
-	// files in tmp/ use it; grep 'print-object' in src/ finds nothing. Exporters lean on it
-	// heavily to hide the spacer notes that hold a voice open, so ignoring it draws notes that
-	// should not be on the page at all.
-	// Fixture: invisible_notes.musicxml (tmp/invisible_notes.xml M1-4).
-	// Expected: an invisible note occupies its tick (keeping the other voices aligned, the same
-	// job the ghost tickables in src/notes.ts already do for <forward>) but draws no notehead,
-	// stem, flag, beam, accidental or dot.
-	// Current: unverified — expect every hidden note drawn in full.
-	// testCase('invisible_notes.musicxml', 'invisible_notes.png'),
+	// Grand staff, 4/4: <note print-object="no">, the hidden spacer notes exporters use to
+	// hold a voice open. A hidden note keeps its tick (so the other voices stay aligned) but
+	// draws no notehead, stem, flag or rest glyph. Its <lyric> still prints — that label is
+	// the one part of a hidden note meant to be seen. The bass stave runs the same four
+	// quarters (G3 A3 B3 C4) under every measure as a visible control; the treble carries two
+	// voices, V1 a G4 quarter then a quarter+half rest, V2 an E4 quarter then the same rests.
+	// - M1: nothing hidden — the reference measure. V1's four quarters G4/A4/B4/C5 with the
+	//   lyric "VisibleSample" under the first.
+	// - M2: every treble note and rest hidden in both voices, so the whole treble measure is
+	//   blank except the lyric "InvisibleNotesAndRests" hanging off V2's hidden E4.
+	// - M3: V1's G4 prints and its rests are hidden; V2's E4 is hidden and its rests print.
+	//   So the measure reads G4, quarter rest, half rest — proving the visible rest survives
+	//   even though the hidden voice holds an identical rest at the same tick.
+	// - M4: the mirror of M3 with the rests hidden in both voices — only V2's E4 prints.
+	// ponytail: hiding is read off the chord's lead note, so a chord with a mix of hidden and
+	// visible members draws all of them, and print-object on a whole <staff>/<measure> is
+	// ignored. No fixture reaches either yet.
+	testCase('invisible_notes.musicxml', 'invisible_notes.png'),
 
-	// TODO(coverage): the MusicXML color attribute on individual elements (color="#RRGGBB" on
-	// a <note>, <notehead>, <stem>, <beam>, <words>, ...). This is NOT the same thing as
-	// colors.png, which tests the vexml-wide fonts.notation.color CONFIG — here the score
-	// itself asks for per-element colors, which must override the config default.
-	// Fixture: note_color.musicxml (tmp/color.xml M1-2, a colored Beethoven lied).
-	// Expected: each element takes the color its own attribute names, and elements without one
-	// stay at the configured default.
-	// Current: everything renders black — the attribute is ignored (verified render). See also
-	// tmp/auto_custom_coloring_entchen.xml.
-	// SEPARATE BUG spotted in the same render, worth its own case: on the bass stave the "Ped."
-	// glyph is drawn straight through the notehead and ledger lines of the note below it. The
-	// pedal is not routed through CollisionDetector (see docs/collision-audit.md) — pedal.png
-	// only ever exercises mid-staff B4 quarters, which never reach down into the pedal's band.
-	// testCase('note_color.musicxml', 'note_color.png'),
+	// TODO: True negative (long-standing, not a new regression): on the bass stave of M2 the
+	// "Ped." glyph is drawn straight through the notehead and ledger lines of the low Eb2
+	// below it. The pedal is not routed through CollisionDetector (see docs/collision-audit.md)
+	// — pedal.png only ever exercises mid-staff B4 quarters, which never reach down into the
+	// pedal's band. The baseline below was accepted with the clash in it, since this case is
+	// about color; fix it under pedal.png and re-accept both.
+	//
+	// A colored Beethoven lied (tmp/color.xml M1-2): a vocal treble stave over a piano grand
+	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
+	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG — here the
+	// score names the colors, and each element takes the one its own attribute gives it while
+	// everything unnamed stays black.
+	// - M1: vocal — a blue quarter rest (<note color>, which colors the whole glyph), then a
+	//   Bb4 with a blue notehead on a magenta stem (<notehead color> and <stem color> naming
+	//   different colors on one note), then a Bb4 with a dark-red notehead on a black stem.
+	//   Piano RH — a four-note chord, spring-green and violet heads among two black ones, on
+	//   one red stem, its ledger line left at the default gray because no <note color> asks
+	//   otherwise. Piano LH — an Eb2/Eb3 pair, orange stem, salmon head on the upper note.
+	// - M2: vocal — a dotted Bb4 (blue head, and the augmentation dot follows the head's
+	//   color), then brown and dark-green eighths that each color head and stem together, then
+	//   a magenta head under a black beam. The lyrics stay black throughout: no <lyric color>
+	//   is given, so a syllable does not inherit the ink of the note it hangs from. Piano —
+	//   gold and green heads in the RH chord, gray rests from <note color> on both staves.
+	// ponytail: <beam color> and <lyric color> are ignored (each draws from its own element,
+	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
+	// See also tmp/auto_custom_coloring_entchen.xml.
+	testCase('note_color.musicxml', 'note_color.png'),
 
 	// Treble stave, 4/4: metronome marks from <direction><metronome>, drawn above the
 	// staff just right of the time signature ("<quarter note> = bpm").
@@ -507,19 +528,37 @@ const TEST_CASES = [
 	// way a tie or slur is; no fixture reaches that yet.
 	testCase('wedges.musicxml', 'wedges.png'),
 
-	// TODO(coverage): <octave-shift> — the 8va/8vb/15ma dashed brackets. 8 files in tmp/ use
-	// one. Note this is a DIFFERENT feature from <clef-octave-change>, which clef_treble_octave
-	// already covers; src's `octaveShift` symbol refers to that clef case, not this one.
-	// Fixture: octave_shift.musicxml (lilypond_33d-Spanners-OctaveShifts M1-4) — up/down shifts
-	// of 8 and 15.
-	// Expected: an "8va"/"8vb"/"15ma" label with a dashed line and an end hook spanning the
-	// shifted notes, AND the notes inside it drawn at the shifted (written) position, which is
-	// the whole point — an 8va passage is written an octave lower than it sounds.
-	// Current: no bracket at all, and the notes draw at raw written pitch, so the passage runs
-	// off on four and five ledger lines (verified render). See also
-	// tmp/octave_shift_simple_piano.xml and the malformed-size case
+	// TODO: True negative, accepted with the flaw in the baseline: the "8vb" label in M1 grazes
+	// the underside of the beam over the two notes it covers — the top of its "8" touches the
+	// beam's lower edge. vexflow parks a below-stave TextBracket one text line under the staff,
+	// which is right until a stem-down beam reaches into that band. It can't go through
+	// CollisionDetector as things stand: noteRect's bottom edge is the lowest notehead, so a
+	// below-stave beam isn't an obstacle yet and dropClear has nothing to clear. Widen the note
+	// obstacle downward to the beam-extended stem tip first, then resolve the bracket through
+	// it. The "15mb" bracket in the same measure shows the clean case (its beam ends just
+	// before the label starts).
+	//
+	// Treble stave, common time (lilypond_33d-Spanners-OctaveShifts M1): <octave-shift>, the
+	// 8va/8vb/15ma/15mb ottava brackets. This is a DIFFERENT feature from <clef-octave-change>,
+	// which clef_treble_octave covers. MusicXML carries SOUNDING pitch, so the point of the
+	// case is that both halves happen: the label prints AND the notes it covers are drawn an
+	// octave (or two) off where their <pitch> says, which is what puts them back on the staff.
+	// Nine eighth notes, in four spans plus two unshifted notes at the front:
+	// - A4 then C5, no shift — the reference pair, on the 2nd space and 3rd space.
+	// - A6 under a size-15 type="down" shift: "15ma" above it, and the note drawn two octaves
+	//   lower, back on the 2nd space beside the opening A4 instead of five ledger lines up.
+	// - C3 and B2 under a size-15 type="up" shift: "15mb" below them, both drawn two octaves
+	//   higher (3rd space and middle line).
+	// - two A5s under a size-8 type="down" shift: "8va" above them, both drawn an octave lower
+	//   onto the 2nd space.
+	// - B3 and C4 under a size-8 type="up" shift: "8vb" below them, drawn an octave higher onto
+	//   the middle line and 3rd space.
+	// ponytail: a shift whose start has no note after it in its own measure (or whose stop has
+	// none before it) is dropped, and a span that wraps onto a later system would draw one
+	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
+	// See also tmp/octave_shift_simple_piano.xml and the malformed-size case
 	// tmp/lilypond_33e-Spanners-OctaveShifts-InvalidSize.xml.
-	// testCase('octave_shift.musicxml', 'octave_shift.png'),
+	testCase('octave_shift.musicxml', 'octave_shift.png'),
 
 	// TODO(coverage): the remaining direction-type LINE spanners — <dashes> (the dashed line
 	// trailing a "cresc." or "rit.") and <bracket> (analysis/phrase brackets, with line-end
@@ -1264,42 +1303,50 @@ const TEST_CASES = [
 	//   G4), so the C5's staccato sits below its notehead, not above the beam.
 	testCase('articulations.musicxml', 'articulations.png'),
 
-	// TODO(coverage): the articulations ARTICULATION_CODES in
-	// src/engraving/note-translator.ts does not map. It has five entries (staccato, accent,
-	// tenuto, staccatissimo, strong-accent) and articulations.musicxml exercises four of them
-	// — strong-accent is mapped but untested, and the rest of the MusicXML vocabulary is
-	// dropped on the floor by the `if (code)` guard.
-	// Fixture: articulations_extended.musicxml (lilypond_32a-Notations M3-6) — strong-accent,
-	// detached-legato, spiccato, scoop, plop, doit, falloff, breath-mark, caesura, stress,
-	// unstress.
-	// Reading the fixture: as with dynamics.musicxml, each note carries a LYRIC naming the mark
-	// it should show, so the screenshot states its own expectations.
-	// Expected: the marcato wedge for strong-accent; a tenuto-with-dot for detached-legato; the
-	// spiccato dot; the curved scoop/plop/doit/falloff brush strokes off the notehead; a comma
-	// breath-mark and a double-slash caesura ABOVE the staff at the barline (these two are
-	// measure-position marks, not notehead-side ones, so they must not follow the stem-side
-	// rule articulationPosition applies); and the stress/unstress marks.
-	// Current: unverified — expect nothing but the notes and their labels.
-	// See also tmp/articulation_staccato_placement_above.xml and
-	// tmp/articulation_staccato_placement_below.xml: an explicit placement= on an articulation,
-	// which today's stem-derived articulationPosition ignores. Worth its own measure.
-	// testCase('articulations_extended.musicxml', 'articulations_extended.png'),
+	// Treble stave, 4/4 (lilypond_32a-Notations M3-6): the rest of the <articulations>
+	// vocabulary, beyond the five articulations.musicxml covers. Every note is the same C5
+	// quarter with a stem down, so the mark is the only thing that varies, and every note
+	// carries a LYRIC naming the mark it should show — the screenshot states its own
+	// expectations. Stems down puts every notehead-side mark above the notehead.
+	// - M3: the four already-supported marks as a control — accent (">"), strong-accent (the
+	//   marcato "^"), staccato (a dot), tenuto (a dash).
+	// - M4: detached-legato (a dash with a dot under it), staccatissimo (a filled wedge on
+	//   the notehead), spiccato (the same wedge shape, drawn clear above the staff), and
+	//   scoop — the first of the jazz brush strokes, a curve rising into the LEFT of the
+	//   notehead.
+	// - M5: the other three brush strokes — plop curving down into the left of the notehead,
+	//   doit curving up off its right, falloff curving down off its right — then a breath-mark
+	//   comma above the staff.
+	// - M6: a double-slash caesura above the staff, then stress and unstress above their
+	//   noteheads, and a trailing quarter rest. The caesura and the breath-mark are the two
+	//   marks that name a moment in the bar rather than a way of playing the note, so they sit
+	//   above the staff whichever way the stem points instead of following the notehead-side
+	//   rule the others do.
+	// ponytail: an explicit placement="above|below" on an articulation is still ignored — the
+	// side always comes from the stem. See tmp/articulation_staccato_placement_above.xml and
+	// tmp/articulation_staccato_placement_below.xml; worth its own measure when it matters.
+	testCase('articulations_extended.musicxml', 'articulations_extended.png'),
 
-	// TODO(coverage): <ornaments> on a notation stave. src/ reads <ornaments> only to find the
-	// <wavy-line> that becomes a TAB vibrato; nothing draws an ornament on a notation stave.
-	// 7 files in tmp/ carry a <trill-mark>, 4 a <turn>, 3 a <mordent>.
-	// Fixture: ornaments.musicxml (lilypond_32a-Notations M7-10) — trill-mark, turn,
-	// delayed-turn, inverted-turn, shake, wavy-line, mordent, inverted-mordent, schleifer,
-	// tremolo, and a turn carrying <accidental-mark>s.
-	// Reading the fixture: every note is labelled with a lyric naming its ornament ("tr.",
-	// "turn", "mord.", ...), so the screenshot reads as its own spec.
-	// Expected: each ornament's glyph above the notehead, clear of the stave and of any
-	// above-stave text via CollisionDetector; a trill's optional wavy-line extends to the next
-	// note; a delayed turn sits between its note and the next; <accidental-mark> children draw
-	// small accidentals above/below the turn glyph.
-	// Current: notes and lyric labels draw, no ornament glyphs at all (verified render).
+	// Treble stave, 4/4 (lilypond_32a-Notations M7-10): <notations><ornaments> on a notation
+	// stave. Every note is the same C5 quarter, and every note is labelled with a lyric naming
+	// the ornament it should show ("tr.", "turn", "mord.", ...), so the screenshot reads as its
+	// own spec. Ornament glyphs sit above the notehead, just clear of the top staff line.
+	// - M7: trill-mark (the "tr"), turn, delayed-turn (the same turn glyph, shifted right to
+	//   sit between its note and the next — hence the gap over its own notehead), inverted-turn
+	//   (the turn with the vertical stroke through it).
+	// - M8: shake (a long trill wiggle), then three notes carrying a <wavy-line> chain — start,
+	//   stop+start, stop — drawn as two wavy trill-extension lines above the stave, end to end
+	//   over the second, third and fourth notes.
+	// - M9: mordent (the wiggle WITH the vertical stroke) and inverted-mordent (the wiggle
+	//   without it) — MusicXML names these the opposite way round from vexflow — then the
+	//   schleifer (a wiggle with a rising tail), then a single-note tremolo, its three slashes
+	//   crossing the stem below the notehead.
+	// - M10: a turn with one <accidental-mark> (a natural above it), then a turn with two (a
+	//   sharp above and a three-quarters-flat below), then a trailing quarter rest.
+	// ponytail: an ornament's <accidental-mark> placement attribute is ignored — the first mark
+	// goes over the glyph and the second under it, which is how the pair conventionally reads.
 	// See also tmp/ornaments.xml and tmp/lilypond_33f-Trill-EndingOnGraceNote.xml.
-	// testCase('ornaments.musicxml', 'ornaments.png'),
+	testCase('ornaments.musicxml', 'ornaments.png'),
 
 	// TODO(coverage): <tremolo> — the slashes through a stem (single-note tremolo) and between
 	// two notes (bowed/fingered tremolo). 6 files in tmp/ use it.
