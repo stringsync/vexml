@@ -427,9 +427,14 @@ const TEST_CASES = [
 	// the noteheads (opposite side from the stems).
 	testCase('slur_stem_up.musicxml', 'slur_stem_up.png'),
 
-	// Treble stave, 4/4: one slur over a zig-zag line C5, G4, D5, A4 straddling the
-	// middle line, so the stems alternate down-up-down-up. The slur arcs above, clear of
-	// both the noteheads and the up-stem tips.
+	// Treble stave, 4/4: above-slurs whose two ends have opposing stem directions.
+	// - M1: one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so the
+	//   stems alternate down-up-down-up. The slur arcs above, clear of both the noteheads
+	//   and the up-stem tips, ending on the A4 stem tip — level with where it started.
+	// - M2: two adjacent E4s slurred above, the first tailing a stem-down group beamed
+	//   from G5, the second heading a stem-up group beamed to A5 so its stem spans the
+	//   stave. Ending on that far stem tip would draw a near-vertical whip, so both ends
+	//   sit on the noteheads: a short shallow bow between the two heads, under the beams.
 	testCase('slur_mixed_stems.musicxml', 'slur_mixed_stems.png'),
 
 	// Treble stave, 4/4: two half notes A5 and C4 slurred across a wide downward leap —

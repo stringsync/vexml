@@ -44,5 +44,47 @@
         <notations><slur number="1" type="stop" /></notations>
       </note>
     </measure>
+    <!-- An above-slur between two neighbouring E4s whose stems disagree, the up-stem
+         beamed to A5 so it runs the height of the stave. Stems are pinned so the case
+         doesn't rest on vexflow's auto-stem choice. Anchoring one end at a notehead and
+         the other at that far stem tip would draw a near-vertical whip, so both ends
+         belong on the noteheads: a short bow across the two heads. -->
+    <measure number="2">
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <notations><slur number="1" placement="above" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <notations><slur number="1" placement="above" type="stop" /></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest />
+        <duration>4</duration>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

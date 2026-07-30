@@ -782,16 +782,41 @@ export class SpannerBuilder {
 							? false
 							: from.getStemDirection() !== 1;
 
-				// Anchor each endpoint on the bulge side of its noteheads: NEAR_TOP (stem
-				// tip) only when that note's stem points toward the bulge, else NEAR_HEAD
-				// (outer notehead). This keeps an "above" slur on stem-down notes pinned to
-				// the noteheads instead of the stem tips below them.
-				const metric = (note: StaveNote) => {
-					const stemUp = note.getStemDirection() === 1;
-					return stemUp === bulgeUp
+				// Anchor each endpoint on the bulge side of its own note: NEAR_TOP (the stem
+				// tip) when that stem points toward the bulge, else NEAR_HEAD (the outer
+				// notehead). This keeps an "above" slur on stem-down notes pinned to the
+				// noteheads instead of the stem tips below them.
+				//
+				// Applied per note that rule can pin one end to a notehead and the other to a
+				// stem tip, which is fine when the stems are short but not when they aren't: a
+				// low note beamed up out of the stave has a stem taller than the stave, so a
+				// slur joining it to its neighbour's notehead comes out as a near-vertical
+				// whip. A slur is a bow between two points at comparable heights, so choose
+				// per slur rather than per note — take the stem tips only while they leave the
+				// two ends at least as level as the noteheads would.
+				const towardBulge = (note: StaveNote) =>
+					(note.getStemDirection() === 1) === bulgeUp;
+				// vexflow's getStemExtents() names these backwards from how they read: baseY is
+				// the notehead the stem grows out of, topY its free tip (see anchorY below).
+				const stemAnchorY = (note: StaveNote) => {
+					const { topY, baseY } = note.getStemExtents();
+					return towardBulge(note) ? topY : baseY;
+				};
+				const headAnchorY = (note: StaveNote) => note.getStemExtents().baseY;
+				// Measure both candidates against their own stave. On a slur that wraps onto a
+				// later system the two ends sit a system apart, so raw Ys differ by the row gap
+				// and that would swamp the comparison; stave-relative heights are what "level"
+				// means for the two halves it splits into. Same-stave slurs are unaffected — the
+				// offsets cancel.
+				const relative = (note: StaveNote, y: number) =>
+					y - (note.getStave()?.getY() ?? 0);
+				const spread = (anchorY: (note: StaveNote) => number) =>
+					Math.abs(relative(from, anchorY(from)) - relative(to, anchorY(to)));
+				const useStemTips = spread(stemAnchorY) <= spread(headAnchorY);
+				const metric = (note: StaveNote) =>
+					useStemTips && towardBulge(note)
 						? Curve.Position.NEAR_TOP
 						: Curve.Position.NEAR_HEAD;
-				};
 
 				// Where a grace curve's ends land, per SLUR_GRACE_ANCHOR. Neither vexflow
 				// position metric works here: on a stem-down chord NEAR_HEAD is the *top*
@@ -832,18 +857,28 @@ export class SpannerBuilder {
 
 				// The control-point lift needed for a curve whose endpoints both sit at
 				// `midEnd` (the bulge-side Y) and that must clear the extreme note among
-				// `spanNotes` over the horizontal `width`.
+				// `spanNotes` over the horizontal `width`. For a full slur only the notes it
+				// passes *over* count — the endpoints are where it attaches, so their own stems
+				// must not inflate it. A note beamed up out of the stave has a stem taller than
+				// the stave itself, and clearing that from a notehead anchor turns a two-note
+				// slur into a narrow spike; with no interior notes the arc takes the floor. A
+				// grace curve measures against its own endpoint anchors (extentsOf collapses to
+				// anchorY), never a stem, so it has nothing to exclude.
+				const clearanceOf = (spanNotes: StaveNote[]) =>
+					isGrace ? spanNotes : spanNotes.filter((n) => n !== from && n !== to);
 				const cpYFor = (
 					midEnd: number,
 					spanNotes: StaveNote[],
 					width: number,
 				) => {
+					const clearing = clearanceOf(spanNotes);
 					const extreme = bulgeUp
-						? Math.min(...spanNotes.map((n) => extentsOf(n).top))
-						: Math.max(...spanNotes.map((n) => extentsOf(n).bottom));
-					const need =
-						Math.abs(midEnd - extreme) +
-						(isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN);
+						? Math.min(...clearing.map((n) => extentsOf(n).top))
+						: Math.max(...clearing.map((n) => extentsOf(n).bottom));
+					const need = clearing.length
+						? Math.abs(midEnd - extreme) +
+							(isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN)
+						: 0;
 					// A grace bow stays tight — it takes the clearance it needs and no more,
 					// where a full slur also widens with its span.
 					const floor = isGrace
