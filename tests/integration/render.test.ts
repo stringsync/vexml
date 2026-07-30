@@ -2,6 +2,23 @@ import { describe, expect, it } from 'bun:test';
 import { render } from '../testing/harness';
 import { testCase } from '../testing/test-case';
 
+/*
+ * `TODO(coverage):` blocks mark a MusicXML feature exercised by a file in tmp/ that this suite
+ * does not cover yet. Each one carries a ready-made fixture in __data__/ (sliced out of the
+ * tmp/ file it names) and a commented-out testCase(...) line.
+ *
+ * To work one: uncomment its testCase, run `vex test`, look at the render, fix src/, and only
+ * then `vex test <name> --update`. The first run WILL pass — a new screenshot is accepted as
+ * its own baseline — so treat that pass as meaningless until the image has been reviewed. Then
+ * delete the TODO block, leaving the description as the case's ordinary comment.
+ *
+ * "Current: unverified" means the fixture renders without throwing (all of them do) but nobody
+ * has looked at the image yet. "Current: <description> (verified render)" means someone has.
+ *
+ * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
+ * increasing rendering complexity, not by priority. By impact, the ones worth doing first are:
+ * <dynamics>, <wedge>, cross-staff notes, mid-score clef changes, and <part-group>.
+ */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines with start and end barlines, nothing else.
 	testCase('structure_single_stave.musicxml', 'structure_single_stave.png'),
@@ -14,6 +31,48 @@ const TEST_CASES = [
 
 	// A single-stave part above a two-stave (braced) part — mixed stave counts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
+
+	// TODO(coverage): <part-group> is not covered anywhere and src/ never reads it (grep
+	// 'part-group' in src/ -> nothing). vexml infers connectors from stave counts alone —
+	// a two-stave part gets a brace, notation+tab gets a bracket — so a score that groups
+	// SEPARATE parts into a section is drawn as unrelated staves.
+	// Fixture: structure_part_groups.musicxml (lilypond_41d-StaffGroups-Nested M1) — five
+	// single-stave parts nested three deep: an outer <part-group type="start"
+	// number="1"><group-symbol>bracket</group-symbol> around all five, an inner brace group
+	// around parts 2-3, and another inner bracket around parts 4-5.
+	// Expected: an outer bracket spanning all five staves plus the system's left line, with
+	// the two inner groups drawn as their own symbols nested to the right of it.
+	// Current: five bare, unconnected 5-line staves — no bracket, no brace, no left line
+	// (verified render).
+	// testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
+
+	// TODO(coverage): the flat (non-nested) <part-group> symbols, so each symbol type can be
+	// checked on its own before the nested case above.
+	// Fixture: structure_staff_group_brackets.musicxml (lilypond_41c-StaffGroups M1).
+	// Expected: each <group-symbol> renders its own connector — 'bracket' a square bracket,
+	// 'brace' a curly brace, 'line' a plain vertical line, 'square' a squared bracket — and a
+	// <group-barline>yes</group-barline> runs the group's barlines through the staves between
+	// its members while a 'no' leaves each member's barlines separate. <group-name> prints to
+	// the left of the group (needs showPartLabels).
+	// Current: unverified beyond the nested case — expect the same "no connectors at all".
+	// testCase('structure_staff_group_brackets.musicxml', 'structure_staff_group_brackets.png', {
+	// 	showPartLabels: true,
+	// }),
+
+	// TODO(coverage): score-level header text (title/composer/credits) is never drawn — src/
+	// has no reader for <work-title>, <movement-title>, <identification><creator>, or
+	// <credit-words> (grep: only chord-diagram 'title' hits). 93 of the files in tmp/ carry a
+	// <work-title> and 79 carry a <credit>, so nearly every real score loses its heading.
+	// Fixture: score_header.musicxml (tmp/composer_one_line.xml M1-2) — a work title plus a
+	// one-line composer credit.
+	// Expected: the title centered above the first system and the composer right-aligned under
+	// it, both drawn in the text font/color (fonts.text), with the first system pushed down to
+	// make room. A second test case should cover the multi-line composer
+	// (tmp/composer_multiple_lines.xml) and the empty-title edge case
+	// (tmp/lilypond_51d-EmptyTitle.xml), which must not reserve a blank band.
+	// Decide first whether vexml wants to own page headings at all — if the host app draws
+	// them, close this as won't-fix rather than implementing it.
+	// testCase('score_header.musicxml', 'score_header.png'),
 
 	// A guitar split across two single-stave parts — a treble notation stave (P1)
 	// above a 6-line TAB stave (P2) — joined by a bracket plus the system's left line.
@@ -137,6 +196,61 @@ const TEST_CASES = [
 		'clef_notation_and_tab_bracket.png',
 	),
 
+	// TODO(coverage): C clefs have a mapping in src (vexflowClef returns 'tenor' for line 4,
+	// 'alto' otherwise) but no test case pins it, and mid-score clef CHANGES are not drawn
+	// at all.
+	// Fixture: clef_c.musicxml (lilypond_12a-Clefs M1-6) — one whole note per measure, the
+	// clef changing every measure: G/2 treble, C/3 alto, C/4 tenor, F/4 bass, then further
+	// signs.
+	// Expected: each measure redraws its new clef glyph at its left edge, the same way
+	// key.musicxml M2 redraws a changed key signature; the whole note moves to the staff
+	// position that clef gives it.
+	// Current: only M1's treble clef is drawn. The noteheads DO move measure to measure, so
+	// the clef is being applied to pitch placement — it just never redraws the glyph, leaving
+	// a reader no way to tell why the note jumped (verified render). Fix is in the same place
+	// key/time changes are emitted (src/engraving/staves.ts + layout-planner width budget).
+	// testCase('clef_c.musicxml', 'clef_c.png'),
+
+	// TODO(coverage): a clef change in the MIDDLE of a measure, and one attached to the END of
+	// a measure (the courtesy clef before a change on the next system).
+	// Fixture: clef_mid_measure.musicxml (lilypond_46c-Midmeasure-Clef M1-3). See also
+	// tmp/in_measure_clefs.xml, tmp/clef_end_measure.xml, tmp/end_measure_clefs_staffentry_bbox.xml
+	// and tmp/lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the multi-voice variant.
+	// Expected: a small clef glyph drawn inline, between the two notes it sits between, with
+	// the measure widened to hold it; an end-of-measure clef prints after the last note and
+	// before the barline.
+	// Current: not drawn (same root cause as clef_c above).
+	// testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
+
+	// TODO(coverage): percussion staves. The percussion CLEF is mapped (vexflowClef case
+	// 'percussion') but <unpitched> notes are not — grep 'unpitched' in src/ finds nothing —
+	// so every unpitched note lands on one default staff line.
+	// Fixture: clef_percussion.musicxml (lilypond_73a-Percussion M1-2) — a bass-clef part over
+	// two percussion-clef parts whose notes are <unpitched> with <display-step>/<display-octave>.
+	// Expected: each unpitched note sits on the line/space its <display-step>+<display-octave>
+	// names (that pair is a staff POSITION, not a pitch), and its <notehead> (x, triangle,
+	// diamond, circle-x) picks the drum's glyph — so a kick, a snare and a hi-hat read as three
+	// different rows with three different heads.
+	// Current: the percussion clef draws correctly, but both percussion staves render an
+	// identical line of noteheads on the middle line — <display-step> is ignored (verified
+	// render). See also tmp/drumset.xml, tmp/percussion_display_step.xml (sliced to
+	// percussion_display_step.musicxml), tmp/tutorial_percussion.xml.
+	// testCase('clef_percussion.musicxml', 'clef_percussion.png'),
+	// testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
+
+	// TODO(coverage): <staff-details><staff-lines> — a stave with other than 5 lines on a
+	// NON-tab stave (a 1-line percussion stave, a 3-line stave), including a line count that
+	// changes mid-score. 33 files in tmp/ carry <staff-details>; src/ only reads it to detect
+	// tab tuning (see clef_tab_staff_tuning).
+	// Fixture: staff_details_lines.musicxml (lilypond_14a-StaffDetails-LineChanges M1-3).
+	// Expected: the stave draws exactly <staff-lines> lines, and notes stay on the positions
+	// that line count implies; a mid-score change redraws the stave with the new count from
+	// that measure on.
+	// Current: every stave draws 5 lines regardless (verified render). See also
+	// tmp/percussion_on_one_line.xml and tmp/drums_one_line_snare_plus_piano.xml, the realistic
+	// 1-line-snare cases.
+	// testCase('staff_details_lines.musicxml', 'staff_details_lines.png'),
+
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
 	// - M1: opens the system with a treble clef, a 3-sharp key signature (F#, C#, G#),
@@ -148,6 +262,27 @@ const TEST_CASES = [
 	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
 	testCase('key.musicxml', 'key.png'),
 
+	// TODO(coverage): <key><mode> beyond major/minor — the church modes (dorian, phrygian,
+	// lydian, mixolydian, aeolian, ionian, locrian). <mode> appears in 144 of the files in
+	// tmp/, and key.musicxml only ever exercises major and (via M4) minor.
+	// Fixture: key_modes.musicxml (lilypond_13b-KeySignatures-ChurchModes M1-4).
+	// Expected: the mode does not change the printed signature at all — <fifths> alone decides
+	// the accidentals — so all four measures should print exactly the signature their <fifths>
+	// names. This is a regression guard against a mode string leaking into the vexflow key
+	// spec, which is the failure key.musicxml M4 already documents for 'G#' vs 'G#m'.
+	// Current: unverified.
+	// testCase('key_modes.musicxml', 'key_modes.png'),
+
+	// TODO(coverage): non-traditional key signatures — <key-step>/<key-alter>/<key-accidental>
+	// instead of <fifths>, which is how microtonal and modal-jazz scores notate a signature.
+	// Fixture: key_non_traditional.musicxml (lilypond_13c-KeySignatures-NonTraditional M1-2).
+	// Expected: the accidentals listed by the <key-step>/<key-alter> pairs, drawn in the order
+	// given and at the staff position each named step occupies — NOT the circle-of-fifths
+	// order a <fifths> signature uses.
+	// Current: unverified; there is no <fifths> here, so the likely current render is no key
+	// signature at all. See also tmp/lilypond_13d-KeySignatures-Microtones.xml.
+	// testCase('key_non_traditional.musicxml', 'key_non_traditional.png'),
+
 	// One system, treble: time signatures and mid-system meter changes.
 	// - M1: opens the system with a treble clef and common time (the "C" symbol = 4/4);
 	//   four C5 quarters.
@@ -156,6 +291,36 @@ const TEST_CASES = [
 	// - M3: changes the meter to a numeric 3/4 (stacked numerals); three C5 quarters.
 	// - M4: continues in 3/4 with no time signature redrawn; three C5 quarters.
 	testCase('time.musicxml', 'time.png'),
+
+	// TODO(coverage): compound / additive time signatures — a <time> carrying more than one
+	// <beats>/<beat-type> pair (3+2/8), or several pairs printed side by side (2/4 + 3/8).
+	// ScoreReader.meterBeats reads Number(time.beats), which yields NaN for "3+2", so the
+	// meter length silently falls back to 0 and the measure loses its trailing-ghost padding.
+	// Fixture: time_compound.musicxml (lilypond_11c-TimeSignatures-CompoundSimple M1-2).
+	// Expected: the signature prints as "3+2" over "8", and meterBeats returns 5/8 * 4 = 2.5
+	// quarter beats so an underfull measure still pads correctly.
+	// Current: unverified. See also tmp/lilypond_11d-TimeSignatures-CompoundMultiple.xml and
+	// tmp/lilypond_11e-TimeSignatures-CompoundMixed.xml.
+	// testCase('time_compound.musicxml', 'time_compound.png'),
+
+	// TODO(coverage): a single-number time signature (<time symbol="single-number">), which
+	// prints just the beat count with no denominator.
+	// Fixture: time_single_number.musicxml (lilypond_11g-TimeSignatures-SingleNumber M1-2).
+	// Expected: one large numeral ("3"), not a stacked 3/4. Related: <time symbol="note"> and
+	// <time symbol="dotted-note">, and the symbol="cut"/"common" pair time.musicxml already
+	// covers.
+	// Current: unverified — likely renders the full stacked fraction.
+	// testCase('time_single_number.musicxml', 'time_single_number.png'),
+
+	// TODO(coverage): <senza-misura> (unmetered music). ScoreReader.meterBeats already returns
+	// 0 for it, so the timing half works, but nothing pins what gets DRAWN.
+	// Fixture: time_senza_misura.musicxml (lilypond_11h-TimeSignatures-SenzaMisura M1-2).
+	// Expected: no time signature glyph at all, and the measure sized from its own content
+	// rather than padded out to a meter. Also worth a case for a score with no <time> element
+	// whatsoever (tmp/lilypond_11b-TimeSignatures-NoTime.xml) — several of the tab fixtures
+	// already rely on that behavior incidentally, but nothing asserts it.
+	// Current: unverified.
+	// testCase('time_senza_misura.musicxml', 'time_senza_misura.png'),
 
 	// Treble stave, 4/4: single-note rendering — durations then stem direction.
 	// - M1: a whole note (C5).
@@ -199,9 +364,113 @@ const TEST_CASES = [
 	// - M2: half, quarter, eighth, sixteenth, then two thirty-second rests.
 	testCase('rest.musicxml', 'rest.png'),
 
+	// TODO(coverage): a <rest> with NO <type> element. MusicXML lets a rest carry only a
+	// <duration>, and a rest whose duration fills the measure is a whole-measure rest — the
+	// same thing <rest measure="yes"/> spells explicitly (9 files in tmp/ use that form).
+	// Fixture: rest_no_type.musicxml (lilypond_02e-Rests-NoType M1-2).
+	// Expected: a full-measure rest glyph centered in the bar, exactly like rest.musicxml M1.
+	// Current: drawn as a QUARTER rest hard against the left of the measure, because the
+	// missing <type> falls back to the shortest duration instead of being derived from
+	// <duration>/<divisions>. Verified incidentally in the rest_multi_measure render below,
+	// where all six bars show a left-aligned quarter rest in 4/4.
+	// testCase('rest_no_type.musicxml', 'rest_no_type.png'),
+
+	// TODO(coverage): pitched rests — a <rest> with <display-step>/<display-octave>, which
+	// pins the rest glyph to a chosen staff line instead of its default one. 26 files in tmp/
+	// carry a <display-step>. Common in multi-voice writing, where the two voices' rests are
+	// pushed apart vertically.
+	// Fixture: rest_pitched.musicxml (lilypond_02b-Rests-PitchedRests M1-2).
+	// Expected: each rest sits at the line/space its display-step+display-octave names, so a
+	// row of identical rests appears at visibly different heights.
+	// Current: unverified — expect every rest at the default centered position. See also the
+	// rest-placement corpus in tmp/rest_positioning_*.xml, which is the realistic version of
+	// this (two voices, C clef, 8th/16th rests) and deserves its own case once this lands.
+	// testCase('rest_pitched.musicxml', 'rest_pitched.png'),
+
+	// TODO(coverage): <measure-style><multiple-rest> — the consolidated multi-bar rest. 9 files
+	// in tmp/ use it; grep 'measure-style' in src/ finds nothing.
+	// Fixture: rest_multi_measure.musicxml (lilypond_02c-Rests-MultiMeasureRests M1-6) — a
+	// 3-measure multirest, then a second one.
+	// Expected: the N measures collapse into ONE wide measure holding the thick horizontal
+	// multi-rest bar with "3" centered above it, and measure numbering skips the collapsed
+	// bars the way config.gaps already does.
+	// Current: six ordinary measures drawn side by side, each with a (mis-sized, see
+	// rest_no_type above) rest — the multiple-rest element is ignored entirely (verified
+	// render). See also tmp/multiple_rest_measures.xml, tmp/auto_multirest.xml, and
+	// tmp/measure_numbers_xml_starting_at_3_with_multirest.xml for the numbering interaction.
+	// testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png'),
+
 	// Treble stave, 4/4: four C5 quarter notes at one staff position — sharp, flat,
 	// natural, then no accidental — so only the accidental glyph varies.
 	testCase('accidentals.musicxml', 'accidentals.png'),
+
+	// TODO(coverage): accidentals.musicxml stops at sharp/flat/natural. Missing entirely:
+	// double-sharp (<alter>2</alter>, the "x" glyph) and double-flat (<alter>-2</alter>), plus
+	// the natural-sharp / natural-flat courtesy forms.
+	// Add these as new measures on accidentals.musicxml (same treble/4/4/one-pitch shape as
+	// M1) rather than a new file — this is the category fixture for accidentals.
+	// Expected: M2 four C5 quarters reading double-sharp, double-flat, natural-sharp,
+	// natural-flat.
+	// Current: unverified.
+
+	// TODO(coverage): microtonal accidentals — a fractional <alter> (0.5, 1.5, -0.5, -1.5) with
+	// a quarter-tone <accidental> name.
+	// Fixture: accidentals_microtones.musicxml (lilypond_01d-Pitches-Microtones M1-2).
+	// Expected: the SMuFL quarter-tone glyphs — quarter-sharp, three-quarters-sharp,
+	// quarter-flat, three-quarters-flat — one per note.
+	// Current: unverified. vexflow has these glyphs ('+', '++', 'd', 'db' accidental codes), so
+	// this is likely just a missing entry in the accidental name map. See also
+	// tmp/quarter_accidentals.xml.
+	// testCase('accidentals_microtones.musicxml', 'accidentals_microtones.png'),
+
+	// TODO(coverage): editorial and cautionary accidentals —
+	// <accidental editorial="yes"> (drawn in square brackets) and
+	// <accidental cautionary="yes"> (drawn in round parentheses).
+	// Note this is a different axis from notehead_parentheses.musicxml, which brackets the
+	// NOTEHEAD; here it is the accidental glyph that gets wrapped.
+	// Fixture: accidentals_editorial.musicxml (lilypond_01e-Pitches-ParenthesizedAccidentals M1)
+	// — four notes at one pitch: plain flat, editorial flat, cautionary flat, then both.
+	// Expected: only the accidental is enclosed; the notehead is untouched. Both flags set
+	// should not double-wrap.
+	// Current: unverified — expect all four drawn as a plain flat. See also
+	// tmp/lilypond_01f-Pitches-ParenthesizedMicrotoneAccidentals.xml, which crosses this with
+	// the microtone case above.
+	// testCase('accidentals_editorial.musicxml', 'accidentals_editorial.png'),
+
+	// TODO(coverage): <divisions> changing mid-score. Every existing fixture declares divisions
+	// once in M1. A change resets the duration->beat scale from that point on, and getting it
+	// wrong silently misplaces every following note.
+	// Fixture: divisions_change.musicxml (lilypond_03c-Rhythm-DivisionChange M1-2) — the same
+	// rhythm written twice, at two different <divisions> values.
+	// Expected: the two measures render IDENTICALLY. That equality is the whole assertion.
+	// Current: unverified.
+	// testCase('divisions_change.musicxml', 'divisions_change.png'),
+
+	// TODO(coverage): print-object="no" — notes, rests and whole staves marked invisible. 39
+	// files in tmp/ use it; grep 'print-object' in src/ finds nothing. Exporters lean on it
+	// heavily to hide the spacer notes that hold a voice open, so ignoring it draws notes that
+	// should not be on the page at all.
+	// Fixture: invisible_notes.musicxml (tmp/invisible_notes.xml M1-4).
+	// Expected: an invisible note occupies its tick (keeping the other voices aligned, the same
+	// job the ghost tickables in src/notes.ts already do for <forward>) but draws no notehead,
+	// stem, flag, beam, accidental or dot.
+	// Current: unverified — expect every hidden note drawn in full.
+	// testCase('invisible_notes.musicxml', 'invisible_notes.png'),
+
+	// TODO(coverage): the MusicXML color attribute on individual elements (color="#RRGGBB" on
+	// a <note>, <notehead>, <stem>, <beam>, <words>, ...). This is NOT the same thing as
+	// colors.png, which tests the vexml-wide fonts.notation.color CONFIG — here the score
+	// itself asks for per-element colors, which must override the config default.
+	// Fixture: note_color.musicxml (tmp/color.xml M1-2, a colored Beethoven lied).
+	// Expected: each element takes the color its own attribute names, and elements without one
+	// stay at the configured default.
+	// Current: everything renders black — the attribute is ignored (verified render). See also
+	// tmp/auto_custom_coloring_entchen.xml.
+	// SEPARATE BUG spotted in the same render, worth its own case: on the bass stave the "Ped."
+	// glyph is drawn straight through the notehead and ledger lines of the note below it. The
+	// pedal is not routed through CollisionDetector (see docs/collision-audit.md) — pedal.png
+	// only ever exercises mid-staff B4 quarters, which never reach down into the pedal's band.
+	// testCase('note_color.musicxml', 'note_color.png'),
 
 	// Treble stave, 4/4: metronome marks from <direction><metronome>, drawn above the
 	// staff just right of the time signature ("<quarter note> = bpm").
@@ -214,6 +483,18 @@ const TEST_CASES = [
 	//   tempo on top) instead of the two printing on top of each other.
 	testCase('tempo.musicxml', 'tempo.png'),
 
+	// TODO(coverage): metronome-mark variants tempo.musicxml does not reach. ScoreReader.tempoOf
+	// already carries a `ponytail:` note saying <beat-unit-dot> is dropped; 3 files in tmp/ use
+	// one, and a dotted-quarter mark is the norm in compound meter.
+	// Fixture: tempo_beat_unit_dot.musicxml (lilypond_31c-MetronomeMarks M1-3).
+	// Expected, one measure each: a dotted beat unit ("dotted quarter = 120"); a note-equals-note
+	// mark (<beat-unit> twice, no <per-minute> — "quarter = dotted quarter", the metric-modulation
+	// form); and a parenthesized mark. tempoOf returns a {duration, bpm} pair today, so a dotted
+	// unit needs a `dots` field and the note-equals-note form needs a second unit.
+	// Current: unverified — expect the dot dropped, so a dotted-quarter mark prints as a plain
+	// quarter and states the wrong tempo.
+	// testCase('tempo_beat_unit_dot.musicxml', 'tempo_beat_unit_dot.png'),
+
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
 	// in italics above the staff at the x of the note it precedes. Four boring quarters per
 	// measure so only the directive and the first note's height vary.
@@ -225,6 +506,82 @@ const TEST_CASES = [
 	//   fingering). Each letter prints over its own note, spread across the measure on one
 	//   row; anchoring them all at the measure's first note would stack them in a column.
 	testCase('words.musicxml', 'words.png'),
+
+	// TODO(coverage): placement="below" on a <direction>. ScoreReader.wordsOf carries a
+	// `ponytail:` note saying placement is ignored and everything prints above the staff in
+	// italics. 49 files in tmp/ set placement="below" somewhere — for a piano part the whole
+	// convention is that expression marks live BELOW the treble staff.
+	// Expected: a words direction with placement="below" draws under the staff, lifted clear of
+	// the notes hanging beneath it (and of the lyrics, if any) via the same CollisionDetector
+	// path the above-staff case uses; placement="above" and no placement both keep today's
+	// behavior. Add this as new measures on words.musicxml, not a new file.
+	// Current: every direction prints above the staff.
+
+	// TODO(coverage): <dynamics> — p/f/mf/sfz and friends. THE single biggest gap in the suite:
+	// 32 of the files in tmp/ carry a <dynamics>, and grep 'dynamics' in src/ finds nothing, so
+	// every dynamic marking in every real score is silently dropped.
+	// Fixture: dynamics.musicxml (lilypond_31a-Directions M3-8) — one dynamic per note across
+	// the full vocabulary: p pp ppp pppp ppppp pppppp, f ff fff ffff fffff ffffff, mp mf sf sfp
+	// sfpp fp rf rfz sfz sffz fz, and an <other-dynamics> ("abc-ffz").
+	// Reading the fixture: each note also carries a LYRIC naming the dynamic it should show, so
+	// the expected render is legible straight off the screenshot — the syllable under each note
+	// is exactly the glyph that belongs above (or below) it.
+	// Expected: the SMuFL dynamic glyphs (bold italic p/m/f forms, not ordinary text), drawn
+	// below the staff by default per convention, honoring placement, lifted clear of notes and
+	// of each other through CollisionDetector. <other-dynamics> falls back to its literal text.
+	// Current: the staff, notes and lyrics draw; not one dynamic glyph appears (verified
+	// render). See also tmp/expressions.xml, tmp/expression_test.xml, tmp/expressions_overlap.xml.
+	// testCase('dynamics.musicxml', 'dynamics.png'),
+
+	// TODO(coverage): <wedge> — crescendo and diminuendo hairpins. 20 files in tmp/ use them;
+	// no support in src/.
+	// Fixture: wedges.musicxml (lilypond_33a-Spanners M4-5) — a crescendo wedge and a
+	// diminuendo wedge, each spanning several notes.
+	// Expected: an opening hairpin (crescendo) and a closing one (diminuendo) drawn under the
+	// staff between the start and stop directions' notes, at a consistent height with any
+	// dynamics on the same span, and split into two partial hairpins across a system break the
+	// same way slur_system_break/tie_system_break already split their curves.
+	// Current: unverified — expect nothing drawn. Follow-ups once the basic case lands:
+	// tmp/cresc_dim_simultaneous_quartet.xml (four parts hairpinning at once) and
+	// tmp/wedges_layered.xml (overlapping wedges that must stack rather than overprint).
+	// testCase('wedges.musicxml', 'wedges.png'),
+
+	// TODO(coverage): <octave-shift> — the 8va/8vb/15ma dashed brackets. 8 files in tmp/ use
+	// one. Note this is a DIFFERENT feature from <clef-octave-change>, which clef_treble_octave
+	// already covers; src's `octaveShift` symbol refers to that clef case, not this one.
+	// Fixture: octave_shift.musicxml (lilypond_33d-Spanners-OctaveShifts M1-4) — up/down shifts
+	// of 8 and 15.
+	// Expected: an "8va"/"8vb"/"15ma" label with a dashed line and an end hook spanning the
+	// shifted notes, AND the notes inside it drawn at the shifted (written) position, which is
+	// the whole point — an 8va passage is written an octave lower than it sounds.
+	// Current: no bracket at all, and the notes draw at raw written pitch, so the passage runs
+	// off on four and five ledger lines (verified render). See also
+	// tmp/octave_shift_simple_piano.xml and the malformed-size case
+	// tmp/lilypond_33e-Spanners-OctaveShifts-InvalidSize.xml.
+	// testCase('octave_shift.musicxml', 'octave_shift.png'),
+
+	// TODO(coverage): the remaining direction-type LINE spanners — <dashes> (the dashed line
+	// trailing a "cresc." or "rit.") and <bracket> (analysis/phrase brackets, with line-end
+	// hooks up/down/arrow/none and line-type solid/dashed/dotted/wavy).
+	// Fixture: direction_lines.musicxml (lilypond_33a-Spanners M10-15).
+	// Expected: each bracket drawn with the hook style and line type its attributes name, and
+	// the dashes drawn as a dashed horizontal line from its start note to its stop.
+	// Current: unverified — expect nothing drawn.
+	// testCase('direction_lines.musicxml', 'direction_lines.png'),
+
+	// TODO(coverage): navigation marks — <segno>, <coda>, and the D.C./D.S./Fine/To Coda words
+	// that drive them. 4 files in tmp/ carry a <segno> and 3 a <coda>.
+	// Fixture: navigation.musicxml (tmp/stave_repetitions_coda_etc.xml M1-5) — a real score with
+	// a segno, a coda, and the matching text directions.
+	// Expected: the segno and coda GLYPHS (not text) above the staff at their measures' left
+	// edges, in the same band rehearsal marks occupy and stacked clear of them; "D.S. al Coda" /
+	// "Fine" as right-aligned text at their measures' end.
+	// Current: unverified — expect the words to print (wordsOf handles them) but no glyphs.
+	// SCOPE NOTE: the playback side is deliberately out of scope. Per the playback-cursor
+	// design, jumps are repeats+voltas only and D.C./D.S. are deferred — so this test case is
+	// about ENGRAVING the marks, and cursor.test.ts should not grow a case for them here.
+	// See also tmp/stave_repetitions_coda_etc_positioning.xml for the placement stress version.
+	// testCase('navigation.musicxml', 'navigation.png'),
 
 	// Treble stave, 4/4: <lyric> verses printed as text under the stave, centered on their
 	// note. Boring B4 quarters throughout except M5, so only the syllables vary.
@@ -239,6 +596,37 @@ const TEST_CASES = [
 	//   C6 on ledger lines) — the syllables stay on a readable row under the stave instead
 	//   of following each notehead's height.
 	testCase('lyrics.musicxml', 'lyrics.png'),
+
+	// TODO(coverage): melismas — a <lyric> carrying an <extend>, which draws a horizontal line
+	// from the syllable across every note it is held over. 14 files in tmp/ have one.
+	// lyrics.musicxml M2 covers hyphenation but never the extender.
+	// Fixture: lyrics_melisma.musicxml (lilypond_61d-Lyrics-Melisma M1-4).
+	// Expected: the syllable prints under its first note and an extender line runs from just
+	// past it to the last note of the melisma, on the lyric row (so it does not collide with a
+	// second verse below). A melisma that crosses a system break splits into two lines, the way
+	// wrapped ties/slurs do.
+	// Current: unverified — expect the syllable with no line. See also
+	// tmp/lilypond_61k-Lyrics-SpannersExtenders.xml and
+	// tmp/lilypond_61h-Lyrics-BeamsMelismata.xml.
+	// testCase('lyrics_melisma.musicxml', 'lyrics_melisma.png'),
+
+	// TODO(coverage): <elision> — two syllables sung on one note, joined by an undertie or a
+	// space (standard in Italian and French vocal writing).
+	// Fixture: lyrics_elision.musicxml (lilypond_61j-Lyrics-Elisions M1-2).
+	// Expected: both <text> runs printed under the one note with the elision character between
+	// them, centered on the notehead as a single unit.
+	// Current: unverified — expect only one of the two texts to survive.
+	// testCase('lyrics_elision.musicxml', 'lyrics_elision.png'),
+
+	// TODO(coverage): lyrics under a stave that carries TWO voices — each voice keeps its own
+	// verse rows, so the upper voice's words sit above the lower voice's rather than the two
+	// interleaving on one row.
+	// Fixture: lyrics_two_voices.musicxml (lilypond_42a-MultiVoice-TwoVoicesOnStaff-Lyrics M1-2).
+	// Expected: two independent lyric rows under the staff, each aligned to its own voice's
+	// noteheads; where both voices strike together the two syllables stack, not overlap.
+	// Current: unverified. See also tmp/lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the
+	// two staves of a grand staff) and tmp/lilypond_61e-Lyrics-Chords.xml.
+	// testCase('lyrics_two_voices.musicxml', 'lyrics_two_voices.png'),
 
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
 	// as boxed bold text at each measure's left edge, above everything else over the staff.
@@ -270,6 +658,44 @@ const TEST_CASES = [
 	// and M2 renders as a thin double line instead of the default single line; M2 closes
 	// with the usual thin-thick end barline.
 	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
+
+	// TODO(coverage): the rest of the <bar-style> vocabulary. measures_light_light covers
+	// light-light and measures_end_barline covers the default light-heavy; everything else
+	// falls through to a plain single line.
+	// Fixture: barline_styles.musicxml (lilypond_46a-Barlines M1-8) — regular, dotted, dashed,
+	// heavy, light-light, light-heavy, heavy-light, heavy-heavy, tick, short, none.
+	// Expected: each divider drawn in its own style — dotted and dashed as broken lines, heavy
+	// as a single thick line, heavy-heavy as two thick lines, tick as a short stroke through
+	// the top line only, short as a stroke spanning the middle two spaces, none as no line at
+	// all (the measures simply abut).
+	// Current: almost every divider is a plain thin line; only one double line appears, so
+	// dotted/dashed/heavy/tick/short/none are all collapsing to the default (verified render).
+	// See also tmp/bar_lines.xml.
+	// testCase('barline_styles.musicxml', 'barline_styles.png'),
+
+	// TODO(coverage): a barline in the MIDDLE of a measure (a <barline> with a <location>
+	// other than left/right), used for a repeat or double bar that falls off the beat.
+	// Fixture: barline_mid_measure.musicxml (lilypond_46b-MidmeasureBarline M1-2).
+	// Expected: the line drawn between the two notes it sits between, with the measure widened
+	// to hold it and the measure NOT split in two for numbering purposes.
+	// Current: unverified — expect it dropped.
+	// testCase('barline_mid_measure.musicxml', 'barline_mid_measure.png'),
+
+	// TODO(coverage): pickup (anacrusis) and incomplete measures — <measure implicit="yes">.
+	// 13 files in tmp/ mark a measure implicit.
+	// Fixture: pickup_measure.musicxml (lilypond_46d-PickupMeasure-ImplicitMeasures, measures
+	// 0/1/X1/2) — a leading pickup, plus a measure split into an incomplete half and an
+	// implicit continuation.
+	// Expected: the pickup measure is sized to the music it actually holds, so it renders
+	// visibly NARROWER than the full bars after it; it takes no measure number, and numbering
+	// starts at 1 on the first full bar.
+	// Current: renders, but the pickup gets the same width as every full measure — it is being
+	// padded out to the meter (verified render). meterBeats' trailing-ghost fill is the likely
+	// culprit: an implicit measure should be exempt from it. See tmp/implicit_pickup_measure_width.xml
+	// (this exact bug, from OSMD), tmp/pickup_measure_double_rhythm.xml,
+	// tmp/lilypond_46f-IncompleteMeasures.xml and
+	// tmp/lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
+	// testCase('pickup_measure.musicxml', 'pickup_measure.png'),
 
 	// Treble stave, 4/4, one whole note per measure (M8 excepted): repeat barlines and volta
 	// brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
@@ -314,6 +740,28 @@ const TEST_CASES = [
 	//   thin-thick-thin, dots — spanning both staves. Fret 5 / A4.
 	// - M4: fret 7 / B4, closing with a backward repeat instead of the usual end barline.
 	testCase('repeats_notation_and_tab.musicxml', 'repeats_notation_and_tab.png'),
+
+	// TODO(coverage): a repeat played more than twice — <repeat direction="backward"
+	// times="3"/>, usually printed as "Play 3 times" or "x3" over the closing barline.
+	// Fixture: repeats_multiple_times.musicxml (lilypond_45c-RepeatMultipleTimes M1-5).
+	// Expected: the ordinary backward-repeat sign plus a times label above it. This one has a
+	// PLAYBACK half too, unlike most entries here: src/repeats.ts must expand the block three
+	// times, so cursor.test.ts should assert the longer measure order alongside this render.
+	// Current: unverified — expect the repeat drawn but the times count silently treated as 2.
+	// testCase('repeats_multiple_times.musicxml', 'repeats_multiple_times.png'),
+
+	// TODO(coverage): nested repeats and alternative endings — a repeat block inside another
+	// repeat block, with voltas at both levels. repeats.musicxml covers back-to-back blocks and
+	// up to three endings, but never nesting.
+	// Fixture: repeats_nested.musicxml (lilypond_45d-Repeats-Nested-Alternatives M1-8).
+	// Expected: both levels' brackets drawn, the inner ones stacked below the outer so they do
+	// not overprint, and back-to-back signs merged the way repeats.musicxml M2/M3 documents.
+	// As with repeats.musicxml, the playback order belongs in cursor.test.ts.
+	// Current: unverified. See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml, and the
+	// two malformed-input guards tmp/lilypond_45f-Repeats-InvalidEndings.xml and
+	// tmp/lilypond_45g-Repeats-NotEnded.xml — those two must not throw, which is worth pinning
+	// even if the render is imperfect.
+	// testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
@@ -439,6 +887,18 @@ const TEST_CASES = [
 		layout: { type: 'standard', referenceWidth: 360 },
 	}),
 
+	// TODO(coverage): malformed ties — a <tied type="start"> with no matching stop, and a stop
+	// with no start, INSIDE a single system (tie.musicxml M2-3 only covers the legitimate
+	// version of this, where a system break splits a real tie).
+	// Fixture: tie_not_ended.musicxml (lilypond_33i-Ties-NotEnded M1-2).
+	// Expected: whatever the chosen behavior is, it must be deliberate and must not throw —
+	// either drop the unpaired tie, or draw the same half-arc the system-break case draws.
+	// Decide which, then encode it here; today nothing pins it, so a refactor could flip it
+	// silently. buildTies (src/engraving/spanner-builder.ts) is where the pairing happens, and
+	// tie_chain.musicxml already documents one mis-pairing bug it had.
+	// Current: unverified (renders without throwing).
+	// testCase('tie_not_ended.musicxml', 'tie_not_ended.png'),
+
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
 	testCase('slur_default.musicxml', 'slur_default.png'),
@@ -491,6 +951,16 @@ const TEST_CASES = [
 	testCase('slur_system_break.musicxml', 'slur_system_break.png', {
 		layout: { type: 'standard', referenceWidth: 350 },
 	}),
+
+	// TODO(coverage): slur line types — <slur line-type="dashed"|"dotted"|"wavy"> and the
+	// bezier/orientation attributes. All nine existing slur_* fixtures draw a solid curve.
+	// Fixture: slur_line_types.musicxml (lilypond_33c-Spanners-Slurs M1-2).
+	// Expected: a dashed slur renders as a broken curve, a dotted one as a dotted curve; an
+	// unrecognized line-type falls back to solid rather than dropping the slur.
+	// Current: unverified — expect every slur solid. See also
+	// tmp/lilypond_33g-Slur-ChordedNotes.xml (a slur whose ends are chord members, which is
+	// about anchor choice rather than line style and deserves its own measure).
+	// testCase('slur_line_types.musicxml', 'slur_line_types.png'),
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
 	// under the staff spanning four B4 quarters. The pedal goes down under the first
@@ -709,6 +1179,18 @@ const TEST_CASES = [
 	// - M3: circle-x heads.
 	testCase('notehead_shapes.musicxml', 'notehead_shapes.png'),
 
+	// TODO(coverage): the rest of the <notehead> vocabulary. NOTEHEAD_SUFFIX in
+	// src/engraving/note-translator.ts maps a handful of shapes; MusicXML defines ~30.
+	// Fixture: notehead_shapes_extended.musicxml (lilypond_22a-Noteheads M1-4).
+	// Expected: each named shape draws its own glyph — square, inverted triangle, arrow-down,
+	// arrow-up, slashed, back-slashed, cross, cluster, the do/re/mi/fa/so/la/ti shape-note
+	// heads — and, importantly, <notehead>none</notehead> draws NO head while keeping the
+	// stem, flag and tick. An unmapped value must fall back to a normal head rather than
+	// producing an invalid vexflow key spec.
+	// Current: unverified. See also tmp/notehead_shapes.xml and
+	// tmp/lilypond_22b-Staff-Notestyles.xml.
+	// testCase('notehead_shapes_extended.musicxml', 'notehead_shapes_extended.png'),
+
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
 	// voice reserves the same beat as blank space (tab omits rest glyphs).
@@ -789,6 +1271,29 @@ const TEST_CASES = [
 	// this baseline and in harmony.png M14 (where the wrong side also causes a collision).
 	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
 
+	// TODO(coverage): nested tuplets — a tuplet inside another tuplet.
+	// Fixture: tuplet_nested.musicxml (lilypond_23d-Tuplets-Nested M1-2).
+	// Expected: both brackets drawn, the inner one closer to the notes and the outer one
+	// stacked beyond it, with each number beside its own bracket; the durations of the inner
+	// group compress by BOTH <time-modification> ratios.
+	// Current: unverified.
+	// NOTE: fix the tuplet-side bug documented on tuplet_triplet above (buildTuplets never
+	// passes vexflow a `location`, so every tuplet lands above the stave) BEFORE accepting a
+	// baseline here — nesting will just stack two marks on the wrong side.
+	// testCase('tuplet_nested.musicxml', 'tuplet_nested.png'),
+
+	// TODO(coverage): tuplet display attributes — <tuplet show-number="none"|"both">,
+	// <tuplet-actual>/<tuplet-normal> overriding the printed ratio (e.g. "3:2" instead of "3"),
+	// bracket="no", and placement above/below.
+	// Fixture: tuplet_display.musicxml (lilypond_23c-Tuplet-Display-NonStandard M1-4).
+	// Expected: show-number="none" draws a bare bracket with no numeral; show-number="both"
+	// draws "3:2"; bracket="no" draws the numeral alone (the form a beamed triplet normally
+	// takes); placement puts the mark on the named side, overriding the stem-side default.
+	// Current: unverified — expect a plain "3" bracket everywhere. See also
+	// tmp/lilypond_23b-Tuplets-Styles.xml, tmp/lilypond_23f-Tuplets-DurationButNoBracket.xml,
+	// and tmp/tuplet_placement.xml.
+	// testCase('tuplet_display.musicxml', 'tuplet_display.png'),
+
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
 	// (wedge) — only the articulation varies within a measure; the measure sets the
 	// stem direction.
@@ -797,6 +1302,87 @@ const TEST_CASES = [
 	// - M3: a C5+G4 beamed eighth pair — the beam forces stems up (driven by the low
 	//   G4), so the C5's staccato sits below its notehead, not above the beam.
 	testCase('articulations.musicxml', 'articulations.png'),
+
+	// TODO(coverage): the articulations ARTICULATION_CODES in
+	// src/engraving/note-translator.ts does not map. It has five entries (staccato, accent,
+	// tenuto, staccatissimo, strong-accent) and articulations.musicxml exercises four of them
+	// — strong-accent is mapped but untested, and the rest of the MusicXML vocabulary is
+	// dropped on the floor by the `if (code)` guard.
+	// Fixture: articulations_extended.musicxml (lilypond_32a-Notations M3-6) — strong-accent,
+	// detached-legato, spiccato, scoop, plop, doit, falloff, breath-mark, caesura, stress,
+	// unstress.
+	// Reading the fixture: as with dynamics.musicxml, each note carries a LYRIC naming the mark
+	// it should show, so the screenshot states its own expectations.
+	// Expected: the marcato wedge for strong-accent; a tenuto-with-dot for detached-legato; the
+	// spiccato dot; the curved scoop/plop/doit/falloff brush strokes off the notehead; a comma
+	// breath-mark and a double-slash caesura ABOVE the staff at the barline (these two are
+	// measure-position marks, not notehead-side ones, so they must not follow the stem-side
+	// rule articulationPosition applies); and the stress/unstress marks.
+	// Current: unverified — expect nothing but the notes and their labels.
+	// See also tmp/articulation_staccato_placement_above.xml and
+	// tmp/articulation_staccato_placement_below.xml: an explicit placement= on an articulation,
+	// which today's stem-derived articulationPosition ignores. Worth its own measure.
+	// testCase('articulations_extended.musicxml', 'articulations_extended.png'),
+
+	// TODO(coverage): <ornaments> on a notation stave. src/ reads <ornaments> only to find the
+	// <wavy-line> that becomes a TAB vibrato; nothing draws an ornament on a notation stave.
+	// 7 files in tmp/ carry a <trill-mark>, 4 a <turn>, 3 a <mordent>.
+	// Fixture: ornaments.musicxml (lilypond_32a-Notations M7-10) — trill-mark, turn,
+	// delayed-turn, inverted-turn, shake, wavy-line, mordent, inverted-mordent, schleifer,
+	// tremolo, and a turn carrying <accidental-mark>s.
+	// Reading the fixture: every note is labelled with a lyric naming its ornament ("tr.",
+	// "turn", "mord.", ...), so the screenshot reads as its own spec.
+	// Expected: each ornament's glyph above the notehead, clear of the stave and of any
+	// above-stave text via CollisionDetector; a trill's optional wavy-line extends to the next
+	// note; a delayed turn sits between its note and the next; <accidental-mark> children draw
+	// small accidentals above/below the turn glyph.
+	// Current: notes and lyric labels draw, no ornament glyphs at all (verified render).
+	// See also tmp/ornaments.xml and tmp/lilypond_33f-Trill-EndingOnGraceNote.xml.
+	// testCase('ornaments.musicxml', 'ornaments.png'),
+
+	// TODO(coverage): <tremolo> — the slashes through a stem (single-note tremolo) and between
+	// two notes (bowed/fingered tremolo). 6 files in tmp/ use it.
+	// Fixture: tremolo.musicxml (lilypond_23e-Tuplets-Tremolo M1-2).
+	// Expected: <tremolo type="single">N</tremolo> draws N slashes across the stem;
+	// type="start"/"stop" pairs draw the slashes BETWEEN the two noteheads and the pair is not
+	// beamed normally. A tremolo on a whole note (no stem) draws its slashes above the head.
+	// Current: unverified. See also tmp/tremelo_two_bars.xml.
+	// testCase('tremolo.musicxml', 'tremolo.png'),
+
+	// TODO(coverage): <technical> marks on a NOTATION stave. The tab side of <technical> is
+	// covered thoroughly (tab_bend, tab_hammer_pull, tab_harmonic, tab_annotation), but the
+	// notation side draws nothing: grep 'fingering' in src/ finds only comments and the
+	// unrelated chord-diagram code, and 'stringNumber' finds nothing.
+	// Fixture: technical_marks.musicxml (lilypond_32a-Notations M11-16) — up-bow, down-bow,
+	// harmonic, open-string, thumb-position, fingering, pluck, double-tongue, triple-tongue,
+	// snap-pizzicato, stopped. Each note is lyric-labelled with the mark it should show.
+	// Expected: the bowing glyphs above the staff, the fingering/pluck digits beside or above
+	// the notehead, and the string/pizzicato symbols in their conventional positions.
+	// Current: unverified — expect nothing drawn.
+	// testCase('technical_marks.musicxml', 'technical_marks.png'),
+
+	// TODO(coverage): the realistic fingering case — <technical><fingering> on CHORDS across a
+	// grand staff, where the digits must stack in chord order and stay clear of the noteheads,
+	// the stem and each other. 19 files in tmp/ carry a <fingering>.
+	// Fixture: fingering.musicxml (tmp/fingering_simple_chords_treble_bass.xml M1-2).
+	// Expected: one digit per chord member, ordered bottom-to-top matching the noteheads,
+	// placed on the side away from the stem, resolved through CollisionDetector rather than a
+	// fixed offset.
+	// Current: unverified — expect no digits. See also
+	// tmp/fingering_articulation_collision.xml (fingering vs. an articulation in the same band,
+	// the collision case), tmp/grace_note_fingerings.xml and
+	// tmp/grace_note_fingerings_and_strings.xml.
+	// testCase('fingering.musicxml', 'fingering.png'),
+
+	// TODO(coverage): <technical><string> numbers on a notation stave — the circled Roman/Arabic
+	// string indicators, which for guitar and strings sit above the staff and collide readily
+	// with slurs, fingerings and each other. 20 files in tmp/ carry a <string>.
+	// Fixture: string_numbers.musicxml (tmp/string_number_collisions.xml M1-3), chosen because
+	// collision is the whole point of it.
+	// Expected: each indicator drawn once, stacked clear of neighbouring indicators and of
+	// anything else in the above-staff band, via CollisionDetector.
+	// Current: unverified — expect nothing drawn.
+	// testCase('string_numbers.musicxml', 'string_numbers.png'),
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
 	// arc-over-dot above (or below) the note. Unlike articulations, a fermata's side is
@@ -812,6 +1398,17 @@ const TEST_CASES = [
 	// - M2: direction="up" — the wiggle with an arrowhead pointing up at the top.
 	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
 	testCase('arpeggio.musicxml', 'arpeggio.png'),
+
+	// TODO(coverage): <non-arpeggiate> — the square bracket that marks a chord to be played
+	// together, the explicit opposite of the arpeggio wiggle arpeggio.musicxml covers.
+	// Fixture: non_arpeggiate.musicxml (lilypond_32d-Arpeggio M1), which holds both the
+	// arpeggiate and non-arpeggiate forms side by side.
+	// Expected: a vertical bracket with horizontal end hooks down the left of the chord,
+	// spanning from its type="bottom" member to its type="top" member — so a non-arpeggiate
+	// covering only part of a chord brackets only that part.
+	// Current: unverified — expect nothing drawn for the non-arpeggiate chords while the
+	// arpeggiated ones draw their wiggle.
+	// testCase('non_arpeggiate.musicxml', 'non_arpeggiate.png'),
 
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
 	// note of its measure (four boring B4 quarters per measure so only the symbol
@@ -871,6 +1468,30 @@ const TEST_CASES = [
 	// margin above the system. The symbol also lifts a hair to clear the grace's stem tip.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
+
+	// TODO(coverage): the full <kind> vocabulary. HARMONY_KIND_SUFFIX in
+	// src/engraving/score-reader.ts has an entry per kind, but harmony.musicxml only ever
+	// exercises major, dominant, minor, power and a couple of text overrides — so most of that
+	// table is unpinned, and a typo in it would ship silently.
+	// Fixture: harmony_kinds.musicxml (lilypond_71f-AllChordTypes M1-4).
+	// Expected: one symbol per measure spelling the kind's conventional suffix, exercising every
+	// HARMONY_KIND_SUFFIX row (maj7, m7, dim7, +7, m7♭5, mMaj7, 6, m6, 9, 11, 13, sus2, sus4,
+	// N, It, Fr, Ger, ped, 5, Tr).
+	// Also missing and worth its own measure: <degree> alterations (add9, ♭5), which
+	// harmonyText carries a `ponytail:` note saying it ignores — a "C(add9)" currently prints
+	// as a bare "C", which is a WRONG symbol rather than a missing one.
+	// Current: unverified.
+	// testCase('harmony_kinds.musicxml', 'harmony_kinds.png'),
+
+	// TODO(coverage): <figured-bass> — the stacked figures under a continuo bass line. Only 2
+	// files in tmp/ use it and grep finds no support in src/, so this is the lowest-priority
+	// entry in this list; skip it unless a user actually brings a continuo score.
+	// Fixture: figured_bass.musicxml (lilypond_74a-FiguredBass M1-2).
+	// Expected: the <figure> numbers stacked under their note in <figure-number> order, with
+	// <prefix>/<suffix> accidentals beside them and an <extend> drawing a continuation line.
+	// Current: unverified — expect nothing drawn. See also
+	// tmp/lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
+	// testCase('figured_bass.musicxml', 'figured_bass.png'),
 
 	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
 	// drawn above the stave at its measure's first note, with the chord name as the box's
@@ -1000,6 +1621,29 @@ const TEST_CASES = [
 	//   tied, so the tab omits all three of its frets (the held beat is blank).
 	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
 
+	// TODO(coverage): a CHORD as a grace note on a notation stave. tab_grace_chord_align covers
+	// grace chords on a notation+tab pair, but only as an alignment test; nothing pins the
+	// notation-only rendering of a multi-note grace.
+	// Fixture: grace_chord.musicxml (lilypond_24b-ChordAsGraceNote M1-2).
+	// Expected: the grace's members stacked as one small chord sharing a stem, with seconds
+	// offset across the stem the way chord.musicxml does at full size, and the grace slur
+	// leaving the chord's lowest member.
+	// Current: unverified.
+	// testCase('grace_chord.musicxml', 'grace_chord.png'),
+
+	// TODO(coverage): after-grace notes — graces that follow their main note rather than
+	// preceding it (MusicXML spells this as a grace placed after the note it decorates).
+	// grace_notes.musicxml is entirely about the leading form.
+	// Fixture: grace_after.musicxml (lilypond_24d-AfterGrace, measure 25).
+	// Expected: the small notes sit to the RIGHT of their main note, before the next beat, and
+	// the measure is widened to hold them the way grace_spacing.musicxml documents for the
+	// leading case; the slur runs from the main note out to them.
+	// Current: unverified — expect them drawn on the wrong side, i.e. attached to the FOLLOWING
+	// note as if they were ordinary leading graces.
+	// See also tmp/lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
+	// measure, which has nothing to attach to) and tmp/lilypond_24e-GraceNote-StaffChange.xml.
+	// testCase('grace_after.musicxml', 'grace_after.png'),
+
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
 	// down. May wrap across systems.
@@ -1035,6 +1679,64 @@ const TEST_CASES = [
 	//   aligning vertically with the soprano/bass halves, closing on a C-major chord
 	//   (E5/C5/G4/C3).
 	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
+
+	// TODO(coverage): cross-staff notes — a voice whose notes change <staff> mid-beam, the
+	// defining gesture of piano writing. ScoreReader.staffVoices assigns a whole voice to one
+	// staff (`v.staff === staffNumber`), so a voice that straddles both staves is pinned to
+	// whichever staff it declared first.
+	// Fixture: cross_stave.musicxml (lilypond_43d-MultiStaff-StaffChange M1-2).
+	// Expected: each note draws on the staff its own <staff> element names, with the beam
+	// running BETWEEN the two staves and the stems reaching across the gap to meet it.
+	// Current: every note is drawn on the bass staff, so the run that belongs on the treble
+	// staff climbs out on four and five ledger lines while the treble staff sits empty
+	// (verified render). This is the most visually broken of all the gaps listed here.
+	// Note the fix is structural: staffVoices' per-voice predicate has to become per-note,
+	// which also affects layout-planner's stave-height budget. See also
+	// tmp/cross_stave_16ths_ghost_notes_simple.xml.
+	// testCase('cross_stave.musicxml', 'cross_stave.png'),
+
+	// TODO(coverage): a different key signature on each staff of one part — normal for
+	// transposing scores and for some contemporary piano writing.
+	// Fixture: staves_different_keys.musicxml (lilypond_43b-MultiStaff-DifferentKeys M1).
+	// Expected: each staff prints its OWN <key>, so the treble and bass staves of the same
+	// brace show different accidental counts.
+	// Current: unverified — expect both staves to take the first key read. See also
+	// tmp/lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second staff's key
+	// arrives after a <backup> and so is easy to miss.
+	// testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
+
+	// TODO(coverage): a <direction> carrying a <staff>, on a multi-staff part. ScoreReader.wordsOf
+	// already routes words by <staff> (structure_tab_parts M2 covers that), but nothing covers
+	// the same routing for the direction types that do not exist yet — dynamics between the two
+	// staves of a grand staff is the classic case, where a dynamic belonging to staff 2 must not
+	// print over staff 1.
+	// Fixture: staff_dynamics.musicxml (lilypond_43e-Multistaff-ClefDynamics M1-2).
+	// Expected: each dynamic and clef change lands on the staff its <staff> names.
+	// Current: blocked on the <dynamics> gap above — implement that first, then this.
+	// testCase('staff_dynamics.musicxml', 'staff_dynamics.png'),
+
+	// TODO(coverage): <transpose>. 17 files in tmp/ carry one and grep finds no support in
+	// src/. Lower stakes than it looks: MusicXML notes are stored at WRITTEN pitch, so the
+	// engraved page is already correct without reading <transpose> at all.
+	// Fixture: transpose.musicxml (lilypond_72a-TransposingInstruments M1-2) — three parts, one
+	// untransposed and two transposing, each with its own written key.
+	// Expected: exactly what it renders today. This case exists to LOCK that in, so a future
+	// change cannot start "helpfully" transposing written pitches.
+	// Current: renders correctly — three staves at 2 sharps, 3 sharps and none, each part's
+	// line written in its own key (verified render). Worth adding as a passing regression guard
+	// after a screenshot review, not as a bug to fix.
+	// Where <transpose> DOES matter: (a) playback pitch, which is not a render concern, and
+	// (b) a transposition that CHANGES mid-score — see transpose_change.musicxml below.
+	// testCase('transpose.musicxml', 'transpose.png'),
+
+	// TODO(coverage): a <transpose> that changes mid-score (an instrument doubling change).
+	// Fixture: transpose_change.musicxml (lilypond_72c-TransposingInstruments-Change M1-2).
+	// Expected: the key signature is redrawn at the change, since the written key moves with
+	// the transposition — the visible half of the feature, and the part that can actually be
+	// wrong on the page.
+	// Current: unverified. See also tmp/lilypond_72b-TransposingInstruments-Full.xml and
+	// tmp/concert_score_and_for_part.xml (the <for-part> concert-score form).
+	// testCase('transpose_change.musicxml', 'transpose_change.png'),
 
 	// Sixteen identical C5 whole-note measures wrapping onto two systems (nine then seven
 	// measures — each whole note floors at its minimum width) under the default layout. The
@@ -1156,6 +1858,26 @@ const TEST_CASES = [
 	testCase('aloof_measure_7.musicxml', 'aloof_measure_7.png'),
 	testCase('aloof_measure_14.musicxml', 'aloof_measure_14.png'),
 	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
+
+	// TODO(coverage): whole real-world scores. tmp/ holds ~25 of them — bach_air,
+	// bach_prelude_in_c, chopin_prelude, mozart_string_quartet, joplin_the_entertainer,
+	// dichterliebe, greens_greenery, variety.xml — and none is represented here. Every existing
+	// case is a hand-cut fixture proving one thing, which is right for diagnosis but leaves the
+	// whole-page path (multi-system wrapping, part spacing, page-scale collision resolution
+	// across hundreds of measures) untested at realistic size.
+	// Deliberately NOT given a fixture here: a full score makes a large, brittle screenshot that
+	// churns on every layout change, and it cannot say WHICH thing broke. Do this only once
+	// most of the TODOs above are closed, and then as one or two scores, not twenty — pick a
+	// piano score and a multi-part score, and expect to re-accept their baselines often.
+	// The cheap version, worth doing much sooner: a smoke test that renders every tmp/ score
+	// and asserts only that it does not throw. That catches crashes on real input without any
+	// screenshot churn, and belongs in its own test file rather than in TEST_CASES.
+
+	// TODO(coverage): malformed input. tmp/invalid_root.xml, tmp/mostly_invalid.xml and
+	// tmp/partially_invalid.xml are deliberately broken documents, and nothing pins what vexml
+	// does with them. Decide the contract — throw a typed error, or render what parses and skip
+	// the rest — then assert it. This belongs in a unit test around src/score-parser.ts, not in
+	// this screenshot suite, since the point is the error path rather than an image.
 ];
 
 describe('render', () => {
