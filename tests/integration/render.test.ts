@@ -620,6 +620,15 @@ const TEST_CASES = [
 	// - M7: sfpp, fp, rf, rfz — the compound sforzando/rinforzando forms.
 	// - M8: sfz, sffz, fz, then an <other-dynamics> ("abc-ffz") — outside the SMuFL letter
 	//   vocabulary, so it falls back to its literal text in the italic words face.
+	// - M9: mf on notes 1-3 then sfz on note 4. The level is already sounding on notes 2 and
+	//   3, so ONE mf prints, under note 1 only; the sfz is a per-note accent and prints.
+	// - M10: sfz, mf, f, mf. The sfz repeats M9's and still prints (accents never dedupe);
+	//   the mf restates the level carried over from M9 and prints nothing; f changes the
+	//   level and prints; the final mf changes it back and prints again. Three glyphs, under
+	//   notes 1, 3, and 4.
+	// - M11-12: a whole-measure rest, then a whole note carrying mf again. The restatement is
+	//   two measures past the last one, too far to read as an exporter repeating itself, so
+	//   this mf DOES print — a composer re-marking a level after a rest is a real reminder.
 	testCase('dynamics.musicxml', 'dynamics.png'),
 
 	// Treble stave, 3/4: <wedge> hairpins, one per measure, each spanning the measure's three

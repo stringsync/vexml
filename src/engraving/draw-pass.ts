@@ -409,6 +409,18 @@ type PendingStave = {
 // nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
+// A dynamic that sets a sustained LEVEL rather than accenting one note: any run of p's or
+// f's, plus mp/mf. These stay in force until the next one, so an immediate restatement of
+// the level already sounding is redundant and doesn't print. Everything else (sfz, fp, rfz,
+// fz, an <other-dynamics>) marks a single note and always prints, however often it repeats.
+const SUSTAINED_DYNAMIC = /^(p+|f+|mp|mf)$/;
+
+// How far a restatement of the sounding level can be from the last one printed and still
+// count as redundant, in measures. GuitarPro exports the level on EVERY measure, which this
+// swallows; a composer restating a dynamic further along — Schumann re-marking `p` at a new
+// stanza after the voice has rested — is a fresh reminder to the player and prints.
+const DYNAMIC_RESTATE_GAP = 1;
+
 // The SMuFL glyphs of the two navigation signs. They engrave as music, not as text — a
 // segno is a symbol a player recognizes by shape, so spelling it "Segno" would not do.
 const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
@@ -783,6 +795,13 @@ export class DrawPass {
 		anchor: StaveNote | TabNote | undefined;
 		placement: Placement;
 	}> = [];
+	// The sustained dynamic level currently sounding on each `<partIndex>:<staffNumber>`, and
+	// the measure it was last STATED in (printed or suppressed), so a restatement of it can
+	// be dropped. Runs across the whole score: the measure loop visits measures once, in order.
+	private soundingDynamic = new Map<
+		string,
+		{ text: string; measure: number }
+	>();
 	// <figured-bass> stacks, queued like the other note-anchored annotations. `figures` is the
 	// whole stack, top row first; it draws as one row per figure under the stave.
 	private figuredBassTasks: Array<{
@@ -1084,6 +1103,24 @@ export class DrawPass {
 				lead,
 				placement,
 			} of this.reader.dynamicsOf(measure)) {
+				// A marking that just restates the dynamic already sounding on this staff
+				// prints nothing — some exporters (GuitarPro) repeat the level on every
+				// measure. Only sustained LEVELS dedupe: sfz/fp/rfz and friends are per-note
+				// accents, so a repeat of one is meaningful and always prints.
+				const key = `${partIndex}:${staffNumber}`;
+				if (SUSTAINED_DYNAMIC.test(text)) {
+					const sounding = this.soundingDynamic.get(key);
+					const redundant =
+						sounding?.text === text &&
+						m - sounding.measure <= DYNAMIC_RESTATE_GAP;
+					// Stamped on every statement, printed or not: a suppressed one still
+					// keeps the run alive, so an unbroken per-measure chain stays suppressed
+					// end to end instead of resurfacing every other measure.
+					this.soundingDynamic.set(key, { text, measure: m });
+					if (redundant) {
+						continue;
+					}
+				}
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
 				if (target) {
