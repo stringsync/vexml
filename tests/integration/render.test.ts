@@ -1943,6 +1943,13 @@ const TEST_CASES = [
 	//   and the WHOLE group flips: every stem up, the beam parked above the TREBLE staff, and
 	//   the bass chords' stems running the full height of the gap to reach it (the mirror of
 	//   M2). Voice 3 keeps its own down stems below the bass staff, clear of the beam.
+	// - M4: the mirror of which staff OWNS the beam. M1-M3's voice opens in the bass, so its
+	//   beam is drawn with the bottom staff; here the voice opens in the treble (C5-A4) and
+	//   drops to the bass (A3-F3), so the beam is drawn with the TOP staff — before the bass
+	//   staff's own notes have drawn. Both bass noteheads still sit on the bass staff with
+	//   stems reaching up to the one beam under them, and the treble pair's stems run the
+	//   full height of the gap; nothing escapes above the treble staff. A half rest fills
+	//   beats 3-4.
 	// See also cross_stave_16ths_ghost_notes_simple.xml.
 	testCase('cross_stave.musicxml', 'cross_stave.png'),
 

@@ -1956,6 +1956,15 @@ export class DrawPass {
 			noteEndX = p.stave.getNoteEndX();
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.setStave(p.stave);
+				// Voice.setStave doesn't reach the tickables — Voice.draw does that, which is
+				// too late for a cross-staff beam: it draws with its owning stave's row, before
+				// the lower row's voices have drawn, so its notes a stave away still sit at the
+				// stave-less origin and their stems shoot off the top of the page. Setting each
+				// note's stave here is what Voice.draw would do anyway, just early enough for
+				// every beam to read real y's.
+				for (const note of vexVoice.getTickables()) {
+					note.setStave(p.stave);
+				}
 			}
 		}
 
