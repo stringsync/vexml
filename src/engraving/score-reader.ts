@@ -13,6 +13,7 @@ import {
 } from '@stringsync/mdom';
 import { DEFAULT_TEMPO_BPM, EPSILON } from '../constants';
 import type { ChordFrame } from './chord-diagram-glyph';
+import type { ModulationNote, TempoModulation } from './metronome-glyph';
 
 /**
  * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
@@ -30,18 +31,29 @@ export type TempoMark = {
 };
 
 /**
- * The `<direction-type><metronome>` element of a `<direction>`, or null when it carries
- * none. mdom's own `metronome` accessor flattens the element to its FIRST beat unit, which
- * loses the metric-modulation form and the `parentheses` attribute, so read the raw child.
+ * A `<sound><swing>` instruction: the on-beat:off-beat duration ratio (`first`:`second`)
+ * and `unit`, the swung note value in quarter-note beats — eighth = 0.5, 16th = 0.25. An
+ * even `first === second` is straight time.
  */
-function metronomeOf(direction: MElement): MElement | null {
+export type Swing = { first: number; second: number; unit: number };
+
+/**
+ * Every `<direction-type><metronome>` element of a `<direction>`, in document order. mdom's
+ * own `metronome` accessor flattens the element to its FIRST beat unit, which loses the
+ * metric-modulation form and the `parentheses` attribute, so read the raw children.
+ *
+ * A direction routinely carries two: the rate ("quarter = 60") in one <direction-type> and a
+ * note-group relation (the swing figure) in the next, printed side by side.
+ */
+function metronomesOf(direction: MElement): MElement[] {
+	const metronomes: MElement[] = [];
 	for (const type of direction.childrenNamed('direction-type')) {
 		const metronome = type.child('metronome');
 		if (metronome) {
-			return metronome;
+			metronomes.push(metronome);
 		}
 	}
-	return null;
+	return metronomes;
 }
 
 /**
@@ -68,6 +80,40 @@ function beatUnitsOf(
 		}
 	}
 	return units;
+}
+
+/**
+ * The `<metronome-note>` elements among `children`, as the notes one side of a metric
+ * modulation. Beams are counted rather than tracked as a run: a 'begin'/'continue' marker means
+ * that beam level carries on to the NEXT note, so counting them gives the beams to draw in the
+ * gap, while an 'end'/'backward hook' marker only says this note is beamed at all.
+ */
+function modulationNotesOf(children: MElement[]): ModulationNote[] {
+	const notes: ModulationNote[] = [];
+	for (const child of children) {
+		if (child.tag !== 'metronome-note') {
+			continue;
+		}
+		const beams = child.childrenNamed('metronome-beam');
+		const tuplet = child.child('metronome-tuplet');
+		const type = tuplet?.getAttribute('type');
+		notes.push({
+			type: child.child('metronome-type')?.text ?? 'quarter',
+			dots: child.childrenNamed('metronome-dot').length,
+			beamed: beams.length > 0,
+			beamsToNext: beams.filter(
+				(beam) => beam.text === 'begin' || beam.text === 'continue',
+			).length,
+			tuplet:
+				tuplet && (type === 'start' || type === 'stop')
+					? {
+							actual: Number(tuplet.child('actual-notes')?.text) || 3,
+							type,
+						}
+					: null,
+		});
+	}
+	return notes;
 }
 
 /*
@@ -666,29 +712,71 @@ export class ScoreReader {
 	 * A SECOND <beat-unit> is the metric-modulation form ("dotted quarter = dotted half"),
 	 * which states a relation rather than a rate and so carries no <per-minute>; bpm keeps
 	 * its fallback for the playback path, which has no way to read a relation.
-	 * ponytail: only the first <metronome> in a measure engraves, as before — vexml draws
-	 * one mark per measure, anchored over its first note, and no fixture asks for two.
+	 *
+	 * A <metronome> written in the <metronome-note> form carries no <beat-unit> at all and is
+	 * skipped here — that shape is a note-group relation, read separately by
+	 * {@link modulationOf} and drawn beside this mark.
 	 */
 	tempoOf(measure: Measure): TempoMark | null {
 		for (const direction of measure.directions) {
-			const metronome = metronomeOf(direction);
-			if (!metronome) {
-				continue;
+			for (const metronome of metronomesOf(direction)) {
+				const [first, second] = beatUnitsOf(metronome);
+				if (!first) {
+					continue;
+				}
+				const perMinute = metronome.child('per-minute')?.text;
+				const sound = direction.soundTempo;
+				return {
+					duration: first.unit,
+					dots: first.dots,
+					bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM,
+					duration2: second?.unit ?? null,
+					dots2: second?.dots ?? 0,
+					parenthesis: metronome.getAttribute('parentheses') === 'yes',
+				};
 			}
-			const [first, second] = beatUnitsOf(metronome);
-			if (!first) {
-				continue;
+		}
+		return null;
+	}
+
+	/*
+	 * A measure's metric modulation: the first <metronome> written in the <metronome-note>
+	 * form, or null when none is. This is the note-GROUP shape — "two beamed eighths = a
+	 * quarter-eighth triplet", i.e. a swing marking — which states a relation between two
+	 * rhythms rather than a rate, and which the <beat-unit> form {@link tempoOf} reads cannot
+	 * express.
+	 *
+	 * The two live side by side: an exporter routinely writes the rate in one <direction-type>
+	 * and this in the next, of the same <direction>, so a measure can have both and both print.
+	 *
+	 * It is notation only. Nothing here reaches playback — a <sound><swing> is what makes the
+	 * timing swing (see {@link swingOf}), and a score can carry this mark without one.
+	 */
+	modulationOf(measure: Measure): TempoModulation | null {
+		for (const direction of measure.directions) {
+			for (const metronome of metronomesOf(direction)) {
+				// <metronome-relation> splits the notes into the two sides of the equation. With
+				// no relation there is nothing to equate, so the mark states nothing and is skipped.
+				const children = metronome.children.filter(
+					(child): child is MElement => child instanceof MElement,
+				);
+				const split = children.findIndex(
+					(child) => child.tag === 'metronome-relation',
+				);
+				if (split === -1) {
+					continue;
+				}
+				const left = modulationNotesOf(children.slice(0, split));
+				const right = modulationNotesOf(children.slice(split + 1));
+				if (left.length === 0 || right.length === 0) {
+					continue;
+				}
+				return {
+					left,
+					right,
+					parenthesis: metronome.getAttribute('parentheses') === 'yes',
+				};
 			}
-			const perMinute = metronome.child('per-minute')?.text;
-			const sound = direction.soundTempo;
-			return {
-				duration: first.unit,
-				dots: first.dots,
-				bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM,
-				duration2: second?.unit ?? null,
-				dots2: second?.dots ?? 0,
-				parenthesis: metronome.getAttribute('parentheses') === 'yes',
-			};
 		}
 		return null;
 	}
@@ -716,6 +804,58 @@ export class ScoreReader {
 		const bpm = Number(measure.child('sound')?.getAttribute('tempo'));
 		if (bpm) {
 			return { duration: 'quarter', bpm };
+		}
+		return null;
+	}
+
+	/*
+	 * A measure's <sound> elements: one per <direction> that carries it, then the measure's
+	 * own standalone child. MusicXML allows <sound> in both positions and the meaning is the
+	 * same, so anything reading it has to look in both.
+	 */
+	private *soundsOf(measure: Measure): Generator<MElement> {
+		for (const direction of measure.directions) {
+			const sound = direction.child('sound');
+			if (sound) {
+				yield sound;
+			}
+		}
+		const own = measure.child('sound');
+		if (own) {
+			yield own;
+		}
+	}
+
+	/*
+	 * A measure's <sound><swing> performance instruction, or null when it carries none — in
+	 * which case the swing already in force carries forward, like tempo. This is the ONLY
+	 * thing that makes playback swing; a <metronome> "two eighths = triplet quarter-eighth"
+	 * mark states the same intent to a human reader but carries no timing (see
+	 * {@link modulationOf}), so a score with the mark and no <swing> plays straight.
+	 *
+	 * <straight/> is the explicit "stop swinging" form; it reads as an even 1:1 so that it
+	 * cancels a carried swing rather than being mistaken for "no instruction here".
+	 * <swing-type> names the note value the ratio divides and defaults to eighth.
+	 */
+	swingOf(measure: Measure): Swing | null {
+		for (const sound of this.soundsOf(measure)) {
+			const swing = sound.child('swing');
+			if (!swing) {
+				continue;
+			}
+			if (swing.child('straight')) {
+				return { first: 1, second: 1, unit: 0.5 };
+			}
+			const first = Number(swing.child('first')?.text);
+			const second = Number(swing.child('second')?.text);
+			if (!first || !second) {
+				continue;
+			}
+			return {
+				first,
+				second,
+				unit: swing.child('swing-type')?.text === '16th' ? 0.25 : 0.5,
+			};
 		}
 		return null;
 	}

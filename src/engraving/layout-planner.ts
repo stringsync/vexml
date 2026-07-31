@@ -229,7 +229,10 @@ export class LayoutPlanner {
 		const gaps = gapsByMeasureIndex(config.gaps);
 		const hasTopTempo = parts.some((part) => {
 			const measure = part.measures.find((_, m) => !gaps.has(m));
-			return measure && this.reader.tempoOf(measure);
+			return (
+				measure &&
+				(this.reader.tempoOf(measure) || this.reader.modulationOf(measure))
+			);
 		});
 		const y = hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP;
 		const measureCount = Math.max(

@@ -573,9 +573,18 @@ const TEST_CASES = [
 	//   no number at all; each unit keeps its own dot.
 	// - M3: <metronome parentheses="yes"> — "(dotted quarter = 77)", the whole mark wrapped
 	//   in round parens, which is how a suggested (rather than authoritative) tempo reads.
+	// - M4: the <metronome-note> form — a swing marking, "two BEAMED eighths = a quarter and
+	//   an eighth under a 3 bracket". Note GROUPS either side of the "=", which the beat-unit
+	//   form cannot state: the left pair draws as two stemmed noteheads joined by a beam (no
+	//   flags), and the right pair as a quarter plus a flagged eighth under a tuplet bracket
+	//   whose legs point down and whose "3" sits in a break in the line.
+	// - M5: both marks in one <direction>, two <direction-type>s deep — "quarter = 60" then
+	//   the same swing figure, side by side on one baseline with a wider gap between them
+	//   than within either. This is what a real exporter writes at the head of a swung tune.
 	// ponytail: playback still reads the mark's bpm as quarter-note bpm, so M1 sounds at 100
 	// quarters rather than 150. That predates the dot (a plain "half = 100" was already read
-	// this way) and belongs with the playback tempo path, not here.
+	// this way) and belongs with the playback tempo path, not here. The M4/M5 swing figure is
+	// notation only for the same reason — a <sound><swing> is what makes playback swing.
 	testCase('tempo_beat_unit_dot.musicxml', 'tempo_beat_unit_dot.png'),
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn

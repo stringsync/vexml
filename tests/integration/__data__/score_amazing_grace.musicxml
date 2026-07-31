@@ -136,7 +136,12 @@
       </metronome-note>
      </metronome>
     </direction-type>
-    <sound tempo="60" />
+    <sound tempo="60">
+     <swing>
+      <first>2</first>
+      <second>1</second>
+     </swing>
+    </sound>
    </direction>
    <note>
     <pitch>

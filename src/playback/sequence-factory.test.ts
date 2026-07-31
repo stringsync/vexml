@@ -9,7 +9,12 @@ import type {
 	SequenceInput,
 	SequenceNote,
 } from './sequence';
-import { MeasureSequenceIterator, SequenceFactory } from './sequence-factory';
+import {
+	isSwingExempt,
+	MeasureSequenceIterator,
+	SequenceFactory,
+	swingWarp,
+} from './sequence-factory';
 
 // ── MeasureSequenceIterator (ported from legacy vexml) ──
 
@@ -792,5 +797,234 @@ describe('ScoreReader.tempoOf', () => {
 		);
 		expect(plain?.parenthesis).toBe(false);
 		expect(wrapped?.parenthesis).toBe(true);
+	});
+});
+
+/*
+ * Swing. The distinction this pins down is the one the notation hides: a <metronome> "two
+ * eighths = quarter-eighth triplet" figure tells a HUMAN to swing and carries no timing at
+ * all, so only a <sound><swing> makes playback actually swing.
+ */
+describe('ScoreReader.swingOf', () => {
+	const reader = new ScoreReader();
+	const swingOf = async (inner: string) =>
+		reader.swingOf(
+			nth(await parseMeasures(`<sound><swing>${inner}</swing></sound>`), 0),
+		);
+
+	it('reads the ratio, defaulting the swung unit to eighths', async () => {
+		expect(await swingOf('<first>2</first><second>1</second>')).toEqual({
+			first: 2,
+			second: 1,
+			unit: 0.5,
+		});
+	});
+
+	it('reads a 16th <swing-type> as the finer unit', async () => {
+		expect(
+			await swingOf(
+				'<first>2</first><second>1</second><swing-type>16th</swing-type>',
+			),
+		).toEqual({ first: 2, second: 1, unit: 0.25 });
+	});
+
+	it('reads <straight/> as an even ratio, so it cancels a carried swing', async () => {
+		expect(await swingOf('<straight/>')).toMatchObject({
+			first: 1,
+			second: 1,
+		});
+	});
+
+	it('is null with no <swing>, so the swing in force carries forward', async () => {
+		const m = nth(await parseMeasures('<sound tempo="60"/>'), 0);
+		expect(reader.swingOf(m)).toBeNull();
+	});
+
+	it('finds a <swing> nested in a <direction>, not just a bare measure child', async () => {
+		const m = nth(
+			await parseMeasures(
+				'<direction><direction-type><words>Swing</words></direction-type>' +
+					'<sound><swing><first>2</first><second>1</second></swing></sound></direction>',
+			),
+			0,
+		);
+		expect(reader.swingOf(m)).toMatchObject({ first: 2, second: 1 });
+	});
+
+	it('does not swing off the <metronome> figure alone — that is notation, not timing', async () => {
+		const m = nth(
+			await parseMeasures(
+				'<direction><direction-type><metronome>' +
+					'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>' +
+					'<metronome-relation>equals</metronome-relation>' +
+					'<metronome-note><metronome-type>quarter</metronome-type></metronome-note>' +
+					'</metronome></direction-type></direction>',
+			),
+			0,
+		);
+		expect(reader.swingOf(m)).toBeNull();
+	});
+});
+
+describe('swingWarp', () => {
+	const SWUNG = { first: 2, second: 1, unit: 0.5 };
+
+	it('holds the pair boundaries fixed and pushes the off-beat late', () => {
+		const warp = swingWarp(SWUNG, 4, 4);
+		expect(warp(0)).toBeCloseTo(0);
+		expect(warp(0.5)).toBeCloseTo(2 / 3);
+		expect(warp(1)).toBeCloseTo(1);
+		expect(warp(1.5)).toBeCloseTo(5 / 3);
+		// The measure keeps its length, so tempo segments and bar starts never drift.
+		expect(warp(4)).toBeCloseTo(4);
+	});
+
+	it('phases the grid off the downbeat, so a pickup eighth plays SHORT', () => {
+		// One eighth of pickup in 3/4: that note is the OFF-beat of the pair landing on beat 1,
+		// so it is the squeezed half (1/3 of a quarter). Phased off the measure's own start
+		// instead, it would come out 2/3 — stretched, exactly backwards.
+		const warp = swingWarp(SWUNG, 0.5, 3);
+		expect(warp(0)).toBeCloseTo(0);
+		expect(warp(0.5)).toBeCloseTo(1 / 3);
+	});
+
+	it('is identity for straight time and for no swing at all', () => {
+		expect(swingWarp({ first: 1, second: 1, unit: 0.5 }, 4, 4)(0.5)).toBe(0.5);
+		expect(swingWarp(null, 4, 4)(0.5)).toBe(0.5);
+	});
+
+	it('swings 16ths on the finer grid, leaving the eighths where they are', () => {
+		const warp = swingWarp({ first: 2, second: 1, unit: 0.25 }, 4, 4);
+		expect(warp(0.25)).toBeCloseTo(1 / 3);
+		expect(warp(0.5)).toBeCloseTo(0.5);
+	});
+});
+
+/*
+ * The <metronome-note> form: note GROUPS either side of a <metronome-relation>, which the
+ * <beat-unit> form cannot state. The tempo_beat_unit_dot screenshot pins how it draws; this
+ * pins what is read out of the markup, which the picture cannot show.
+ */
+describe('ScoreReader.modulationOf', () => {
+	const reader = new ScoreReader();
+	const SWING =
+		'<metronome-note><metronome-type>eighth</metronome-type>' +
+		'<metronome-beam number="1">begin</metronome-beam></metronome-note>' +
+		'<metronome-note><metronome-type>eighth</metronome-type>' +
+		'<metronome-beam number="1">end</metronome-beam></metronome-note>' +
+		'<metronome-relation>equals</metronome-relation>' +
+		'<metronome-note><metronome-type>quarter</metronome-type>' +
+		'<metronome-tuplet bracket="yes" type="start"><actual-notes>3</actual-notes>' +
+		'<normal-notes>2</normal-notes></metronome-tuplet></metronome-note>' +
+		'<metronome-note><metronome-type>eighth</metronome-type>' +
+		'<metronome-tuplet bracket="yes" type="stop"><actual-notes>3</actual-notes>' +
+		'<normal-notes>2</normal-notes></metronome-tuplet></metronome-note>';
+	const modulationOf = async (inner: string, attrs = '') =>
+		reader.modulationOf(
+			nth(
+				await parseMeasures(
+					`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`,
+				),
+				0,
+			),
+		);
+
+	it('splits the notes at the <metronome-relation>', async () => {
+		const mark = await modulationOf(SWING);
+		expect(mark?.left.map((note) => note.type)).toEqual(['eighth', 'eighth']);
+		expect(mark?.right.map((note) => note.type)).toEqual(['quarter', 'eighth']);
+	});
+
+	it('counts only the beams that carry on to the next note', async () => {
+		// 'begin' continues the beam into the gap after it; 'end' closes it, so the second note
+		// draws beamed but stretches no beam rightward.
+		const mark = await modulationOf(SWING);
+		expect(mark?.left.map((note) => note.beamsToNext)).toEqual([1, 0]);
+		expect(mark?.left.every((note) => note.beamed)).toBe(true);
+		// The right-hand notes carry no <metronome-beam>, so they keep their own flags.
+		expect(mark?.right.some((note) => note.beamed)).toBe(false);
+	});
+
+	it('reads the tuplet span and its actual-notes', async () => {
+		const mark = await modulationOf(SWING);
+		expect(mark?.right.map((note) => note.tuplet)).toEqual([
+			{ actual: 3, type: 'start' },
+			{ actual: 3, type: 'stop' },
+		]);
+	});
+
+	it('is null for the beat-unit form, which tempoOf reads instead', async () => {
+		expect(
+			await modulationOf(
+				'<beat-unit>quarter</beat-unit><per-minute>60</per-minute>',
+			),
+		).toBeNull();
+	});
+
+	it('is null without a relation — one group equates to nothing', async () => {
+		expect(
+			await modulationOf(
+				'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>',
+			),
+		).toBeNull();
+	});
+
+	it('reads both marks of one <direction>, each through its own accessor', async () => {
+		const m = nth(
+			await parseMeasures(
+				'<direction><direction-type><metronome><beat-unit>quarter</beat-unit>' +
+					`<per-minute>60</per-minute></metronome></direction-type><direction-type><metronome>${SWING}</metronome></direction-type></direction>`,
+			),
+			0,
+		);
+		// The rate is no longer shadowed by the note-form metronome sitting next to it, and the
+		// note form is no longer lost behind the rate: the two print side by side.
+		expect(reader.tempoOf(m)).toMatchObject({ duration: 'quarter', bpm: 60 });
+		expect(reader.modulationOf(m)?.left).toHaveLength(2);
+	});
+
+	it('reads the parentheses attribute', async () => {
+		expect((await modulationOf(SWING, 'parentheses="yes"'))?.parenthesis).toBe(
+			true,
+		);
+	});
+});
+
+describe('isSwingExempt', () => {
+	const PITCH = '<pitch><step>C</step><octave>5</octave></pitch>';
+	const exemptOf = async (inner: string) =>
+		isSwingExempt(nth(nth(await parseMeasures(inner), 0).notes, 0));
+
+	it('swings an ordinary eighth', async () => {
+		expect(
+			await exemptOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type></note>`,
+			),
+		).toBe(false);
+	});
+
+	it('exempts a note under a <time-modification>', async () => {
+		// A written-out triplet already carries the swing feel. Swinging it again would put it
+		// on neither an even third of the beat nor a swung pair — this is the case that shows
+		// up in real arrangements, where a swung vocal line sits over a triplet accompaniment.
+		expect(
+			await exemptOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type>` +
+					'<time-modification><actual-notes>3</actual-notes>' +
+					'<normal-notes>2</normal-notes></time-modification></note>',
+			),
+		).toBe(true);
+	});
+
+	it('exempts a grace note, which has no written duration to stretch', async () => {
+		expect(
+			await exemptOf(`<note><grace/>${PITCH}<type>eighth</type></note>`),
+		).toBe(true);
+	});
+
+	it('exempts a note with no <type>, whose nominal duration is unknown', async () => {
+		expect(await exemptOf(`<note>${PITCH}<duration>1</duration></note>`)).toBe(
+			true,
+		);
 	});
 });

@@ -84,6 +84,7 @@ import {
 	REHEARSAL_PADDING,
 	REHEARSAL_Y_OFFSET,
 	TECHNICAL_EDGE_GAP,
+	TEMPO_MARK_GAP,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
 	TIE_APEX_RISE,
@@ -99,6 +100,7 @@ import { type MeasureEnding, measureRepeats } from '../repeats';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
+import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import {
 	ACCIDENTAL_CODES,
 	applyNoteColors,
@@ -122,6 +124,16 @@ import type {
 	WedgeMark,
 } from './score-reader';
 import { dynamicGlyphs } from './score-reader';
+
+/**
+ * One measure's metronome mark(s): the rate from a `<beat-unit>` metronome, the note-group
+ * relation from a `<metronome-note>` one, or both. At least one is non-null.
+ */
+type TempoTask = {
+	tempo: TempoMark | null;
+	modulation: TempoModulation | null;
+};
+
 import type { SpannerBuilder } from './spanner-builder';
 import {
 	barlineBreaks,
@@ -735,10 +747,7 @@ export class DrawPass {
 	// Where this column's opening repeat sign ended up once aligned, so the connector that
 	// carries it across the staves can be placed there too. Null when there is no such sign.
 	private begRepeatX: number | null = null;
-	private tempoTasks: Array<{
-		stave: Stave;
-		tempo: TempoMark;
-	}> = [];
+	private tempoTasks: Array<{ stave: Stave } & TempoTask> = [];
 	// Chord symbols, drawn after the system is formatted so each sits at its
 	// note's laid-out x.
 	private harmonyTasks: Array<{
@@ -1020,10 +1029,14 @@ export class DrawPass {
 			// A metronome mark (from a <direction><metronome>) prints on this part's top
 			// staff wherever it appears — the piece start or a mid-piece tempo change.
 			// Drawn after the system is formatted so it can clear a high first note.
+			// The rate ("quarter = 60") and a note-group relation (a swing figure) are separate
+			// <metronome> elements, routinely both in the same <direction>. They print side by
+			// side as one mark, so they travel together and are placed as one box.
 			const tempo = this.reader.tempoOf(measure);
+			const modulation = this.reader.modulationOf(measure);
 			const topStave = this.pendingStaves[0];
-			if (tempo && topStave) {
-				this.tempoTasks.push({ stave: topStave.stave, tempo });
+			if ((tempo || modulation) && topStave) {
+				this.tempoTasks.push({ stave: topStave.stave, tempo, modulation });
 			}
 
 			// Words directions (e.g. "ritardando") print on the staff their <staff> names,
@@ -2895,7 +2908,7 @@ export class DrawPass {
 		// note, so they land in the same spot; engraving convention (and MuseScore) puts the
 		// symbol nearest the staff and the tempo above it, which is what drawing last gives.
 		for (const t of this.tempoTasks) {
-			const top = this.drawTempo(t.stave, t.tempo);
+			const top = this.drawTempo(t.stave, t);
 			this.pageTop = Math.min(this.pageTop, top);
 			this.growDecorationTop(this.systemIndex, top);
 		}
@@ -3007,30 +3020,55 @@ export class DrawPass {
 	 * are within a couple of pixels of each other at this size, except a stemless whole note,
 	 * which just reserves a little more air than it needs.
 	 */
-	private tempoRect(tempo: TempoMark, x: number, baseline: number): Rect {
+	private tempoLayout(
+		task: TempoTask,
+		x: number,
+		baseline: number,
+	): { rect: Rect; markWidth: number } {
+		const tempo = task.tempo;
 		//  is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
 		const glyph = new Element('StaveTempo.glyph').setText('');
 		//  is metAugmentationDot, the dot StaveTempo trails a dotted beat unit with.
 		const dot = new Element('StaveTempo.glyph').setText('');
 		const text = new Element('StaveTempo');
-		// Walk the same pieces StaveTempo.draw lays down, each advancing by its own width
-		// plus a 3px gap: an opening paren, the beat unit and its dots, "=", then either a
-		// second dotted unit (the metric-modulation form) or the bpm, then a closing paren.
-		const advance = (el: Element) => el.getWidth() + 3;
-		let w = tempo.parenthesis ? advance(text.setText('(')) : 0;
-		w += advance(glyph) + (tempo.dots ?? 0) * advance(dot);
-		w += advance(text.setText('='));
-		w += tempo.duration2
-			? advance(glyph) + (tempo.dots2 ?? 0) * advance(dot)
-			: advance(text.setText(String(tempo.bpm)));
-		if (tempo.parenthesis) {
-			w += text.setText(')').getWidth();
-		}
-		w *= TEMPO_SCALE;
 		const ink = glyph.getTextMetrics();
-		const ascent = ink.actualBoundingBoxAscent * TEMPO_SCALE;
-		const descent = ink.actualBoundingBoxDescent * TEMPO_SCALE;
-		return new Rect(x, baseline - ascent, w, ascent + descent);
+		let w = 0;
+		let ascent = ink.actualBoundingBoxAscent;
+		let descent = ink.actualBoundingBoxDescent;
+		if (tempo) {
+			// Walk the same pieces StaveTempo.draw lays down, each advancing by its own width
+			// plus a 3px gap: an opening paren, the beat unit and its dots, "=", then either a
+			// second dotted unit (the metric-modulation form) or the bpm, then a closing paren.
+			const advance = (el: Element) => el.getWidth() + 3;
+			w += tempo.parenthesis ? advance(text.setText('(')) : 0;
+			w += advance(glyph) + (tempo.dots ?? 0) * advance(dot);
+			w += advance(text.setText('='));
+			w += tempo.duration2
+				? advance(glyph) + (tempo.dots2 ?? 0) * advance(dot)
+				: advance(text.setText(String(tempo.bpm)));
+			if (tempo.parenthesis) {
+				w += text.setText(')').getWidth();
+			}
+		}
+		// How far the bpm mark alone reaches, which is where the note-group mark starts.
+		const markWidth = w;
+		if (task.modulation) {
+			// The note-group mark follows the bpm one along the same baseline, so the box is the
+			// union of the two: widths add, and a tuplet bracket reaches higher than a beat unit.
+			const group = new MetronomeGlyph(task.modulation);
+			w += (tempo ? TEMPO_MARK_GAP : 0) + group.width;
+			ascent = Math.max(ascent, group.ascent);
+			descent = Math.max(descent, group.descent);
+		}
+		return {
+			rect: new Rect(
+				x,
+				baseline - ascent * TEMPO_SCALE,
+				w * TEMPO_SCALE,
+				(ascent + descent) * TEMPO_SCALE,
+			),
+			markWidth: markWidth + (tempo ? TEMPO_MARK_GAP : 0),
+		};
 	}
 
 	/*
@@ -3042,7 +3080,7 @@ export class DrawPass {
 	 * the mark reaches up to so the caller can grow the page crop above it. Drawn after the
 	 * notes are formatted so the anchor x and the note extents are real.
 	 */
-	private drawTempo(stave: Stave, tempo: TempoMark): number {
+	private drawTempo(stave: Stave, task: TempoTask): number {
 		const baseY = stave.getYForTopText(1);
 		// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
 		// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
@@ -3059,7 +3097,7 @@ export class DrawPass {
 		// baseY + this.yShift); solving s·(passed) = target gives the compensated inputs below.
 		const targetX = stave.getX() + shiftX + 10;
 		const band = this.rowOf(stave);
-		const natural = this.tempoRect(tempo, targetX, baseY);
+		const { rect: natural, markWidth } = this.tempoLayout(task, targetX, baseY);
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			TEMPO_NOTE_CLEARANCE,
@@ -3071,24 +3109,37 @@ export class DrawPass {
 		this.recordAnnotationSpill(stave, placed.y);
 		this.context.save();
 		this.context.scale(TEMPO_SCALE, TEMPO_SCALE);
-		new StaveTempo(
-			{
-				duration: tempo.duration,
-				dots: tempo.dots,
-				bpm: tempo.bpm,
-				// StaveTempo prints the bpm only when there is no second unit, so the
-				// metric-modulation form drops the number on its own.
-				duration2: tempo.duration2 ?? undefined,
-				dots2: tempo.dots2,
-				parenthesis: tempo.parenthesis,
-			},
-			targetX / TEMPO_SCALE - shiftX - 10,
-			(baseY + shiftY) / TEMPO_SCALE - baseY,
-		)
-			.setStave(stave)
-			.setPosition(position)
-			.setContext(this.context)
-			.draw();
+		// Everything below is drawn in the scaled space, so its coordinates are pre-divided too.
+		let cursor = targetX / TEMPO_SCALE;
+		const tempo = task.tempo;
+		if (tempo) {
+			new StaveTempo(
+				{
+					duration: tempo.duration,
+					dots: tempo.dots,
+					bpm: tempo.bpm,
+					// StaveTempo prints the bpm only when there is no second unit, so the
+					// metric-modulation form drops the number on its own.
+					duration2: tempo.duration2 ?? undefined,
+					dots2: tempo.dots2,
+					parenthesis: tempo.parenthesis,
+				},
+				cursor - shiftX - 10,
+				(baseY + shiftY) / TEMPO_SCALE - baseY,
+			)
+				.setStave(stave)
+				.setPosition(position)
+				.setContext(this.context)
+				.draw();
+			cursor += markWidth;
+		}
+		if (task.modulation) {
+			new MetronomeGlyph(task.modulation).draw(
+				this.context,
+				cursor,
+				(baseY + shiftY) / TEMPO_SCALE,
+			);
+		}
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;

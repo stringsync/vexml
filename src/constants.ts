@@ -312,6 +312,11 @@ export const TEMPO_NOTE_CLEARANCE = 10;
  * (14pt text, 25pt note glyph) render oversized, so shrink it. */
 export const TEMPO_SCALE = 0.7;
 
+/** Air between a "note = bpm" mark and a note-group metric modulation printed beside it.
+ * Wider than the 3px StaveTempo puts between its own pieces, so the two read as two
+ * statements rather than one long equation. Pre-scale, like everything else in the mark. */
+export const TEMPO_MARK_GAP = 12;
+
 /** bpm a metronome directive falls back to when it carries no number. */
 export const DEFAULT_TEMPO_BPM = 120;
 
