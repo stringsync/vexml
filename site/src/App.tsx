@@ -1,9 +1,11 @@
 import type {
-	Config,
+	ConfigInput,
 	CursorController,
 	Element,
 	HoverEvent,
 	PointerTargetEvent,
+	StandardLayout,
+	SystemOverflow,
 } from '@stringsync/vexml';
 import { Note, render, type Score, TabPosition } from '@stringsync/vexml';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -106,32 +108,56 @@ export default function App() {
 		undefined,
 	);
 	// The effect below re-renders the last input whenever config changes.
-	const [config, setConfig] = useState<Partial<Config>>({});
+	const [config, setConfig] = useState<ConfigInput>({});
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
 	const softmaxFactor = config.softmaxFactor ?? DEFAULT_SOFTMAX_FACTOR;
 	const systemSpacing = config.systemSpacing ?? DEFAULT_SYSTEM_SPACING;
 	const maxSystemFill = config.maxSystemFill ?? DEFAULT_MAX_SYSTEM_FILL;
-	const width =
-		config.layout?.type === 'standard'
-			? (config.layout.referenceWidth ?? DEFAULT_WIDTH)
-			: DEFAULT_WIDTH;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const resetKeys = [
 		'noteSpacing',
 		'softmaxFactor',
 		'systemSpacing',
 		'maxSystemFill',
-		'honorSystemBreaks',
 	] as const;
 	const reset = (key: (typeof resetKeys)[number]) =>
 		setConfig(({ [key]: _, ...rest }) => rest);
-	const canReset = resetKeys.some((k) => config[k] !== undefined);
+
+	// The layout knobs live in one nested object, so each writes through the others instead
+	// of replacing it — setting the width must not silently reset the overflow mode.
+	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
+	const width = layout?.referenceWidth ?? DEFAULT_WIDTH;
+	const layoutKeys = [
+		'referenceWidth',
+		'honorSystemBreaks',
+		'overflow',
+	] as const;
+	const setLayout = (patch: Partial<StandardLayout>) =>
+		setConfig((c) => ({
+			...c,
+			layout: {
+				...(c.layout?.type === 'standard' ? c.layout : null),
+				...patch,
+				type: 'standard',
+			},
+		}));
+	const resetLayout = (key: (typeof layoutKeys)[number]) =>
+		setConfig((c) =>
+			c.layout?.type === 'standard'
+				? { ...c, layout: (({ [key]: _, ...rest }) => rest)(c.layout) }
+				: c,
+		);
+
+	const canReset =
+		resetKeys.some((k) => config[k] !== undefined) ||
+		layoutKeys.some((k) => layout?.[k] !== undefined);
 	const resetAll = () =>
 		setConfig((c) => {
 			const next = { ...c };
 			for (const k of resetKeys) {
 				delete next[k];
 			}
+			delete next.layout;
 			return next;
 		});
 
@@ -140,7 +166,7 @@ export default function App() {
 	// every step. The loading overlay shows while waiting (shared `debouncing` flag).
 	// Seed from `config` (same reference) so the first render uses the real config, not {}.
 	// Otherwise the first setRenderMs flips renderConfig {} -> config and double-renders on mount.
-	const [renderConfig, setRenderConfig] = useState<Partial<Config>>(config);
+	const [renderConfig, setRenderConfig] = useState<ConfigInput>(config);
 	const skipConfigDebounce = useRef(true);
 	useEffect(() => {
 		if (skipConfigDebounce.current) {
@@ -176,10 +202,6 @@ export default function App() {
 		// Engrave once at the configured reference width; CSS then scales the canvas to fit
 		// its container — down when narrow, never past 100% when wide — so resizing the
 		// window re-scales instantly without re-rendering.
-		const layoutWidth =
-			renderConfig.layout?.type === 'standard'
-				? renderConfig.layout.referenceWidth
-				: undefined;
 		let cancelled = false;
 		// Turn off the lit halo and hide the tooltip; used to reset on teardown/re-render.
 		const clearHalo = () => {
@@ -195,7 +217,6 @@ export default function App() {
 		// the container itself (below), so it shows through the score's transparent pixels with no flash.
 		render(input, container, {
 			...renderConfig,
-			layout: { type: 'standard', referenceWidth: layoutWidth },
 			...(dark && {
 				fonts: {
 					notation: {
@@ -973,12 +994,9 @@ export default function App() {
 											<input
 												id="honorSystemBreaks"
 												type="checkbox"
-												checked={config.honorSystemBreaks ?? true}
+												checked={layout?.honorSystemBreaks ?? true}
 												onChange={(e) =>
-													setConfig((c) => ({
-														...c,
-														honorSystemBreaks: e.target.checked,
-													}))
+													setLayout({ honorSystemBreaks: e.target.checked })
 												}
 											/>
 											Honor system breaks
@@ -999,18 +1017,42 @@ export default function App() {
 										max={2000}
 										step={50}
 										onChange={(e) =>
-											setConfig((c) => ({
-												...c,
-												layout: {
-													type: 'standard',
-													referenceWidth: e.target.valueAsNumber,
-												},
-											}))
+											setLayout({ referenceWidth: e.target.valueAsNumber })
 										}
-										onReset={() => setConfig(({ layout: _, ...rest }) => rest)}
-										canReset={config.layout !== undefined}
+										onReset={() => resetLayout('referenceWidth')}
+										canReset={layout?.referenceWidth !== undefined}
 										description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
 									/>
+
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="overflow"
+											className="text-xs font-medium text-zinc-500"
+										>
+											Overflow
+										</label>
+										<select
+											id="overflow"
+											value={layout?.overflow ?? 'wrap'}
+											onChange={(e) =>
+												setLayout({
+													overflow: e.target.value as SystemOverflow,
+												})
+											}
+											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
+										>
+											<option value="wrap">wrap</option>
+											<option value="allow">allow</option>
+											<option value="widen">widen</option>
+										</select>
+										<p className="text-xs text-zinc-400">
+											What gives when a document's engraved line can't fit the
+											reference width: <code>wrap</code> breaks the line anyway,{' '}
+											<code>allow</code> lets it stick out past the width, and{' '}
+											<code>widen</code> grows the width until it fits. The
+											notes are never squeezed together far enough to collide.
+										</p>
+									</div>
 								</Section>
 							</div>
 						</div>

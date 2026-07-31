@@ -1,4 +1,4 @@
-import type { Config, Score } from '@stringsync/vexml';
+import type { ConfigInput, Score } from '@stringsync/vexml';
 import { withPage } from './setup';
 
 // ponytail: mirrors src DEFAULT_WIDTH — the public API doesn't expose it, so tests
@@ -28,7 +28,7 @@ type BrowserFn<A, T> = (
  */
 export async function renderTest<T = undefined, A = undefined>(
 	file: string,
-	config: Partial<Config>,
+	config: ConfigInput,
 	fn?: BrowserFn<A, T>,
 	arg?: A,
 ): Promise<{ result: T; png: Buffer }> {
@@ -41,7 +41,7 @@ export async function renderTest<T = undefined, A = undefined>(
 	// the browser resolves it synchronously instead of fetching Bravura's woff2 or Source
 	// Sans 3 from the Google Fonts CDN, so nothing races the layout. A test that sets
 	// fonts.notation or fonts.text (spread last) overrides the corresponding default.
-	const resolved: Partial<Config> = {
+	const resolved: ConfigInput = {
 		...config,
 		fonts: {
 			notation: { family: 'Bravura' },
@@ -81,7 +81,7 @@ export async function renderTest<T = undefined, A = undefined>(
 /** Render a corpus file in the browser and return its screenshot PNG. */
 export async function render(
 	file: string,
-	config: Partial<Config>,
+	config: ConfigInput,
 ): Promise<Buffer> {
 	return (await renderTest(file, config)).png;
 }

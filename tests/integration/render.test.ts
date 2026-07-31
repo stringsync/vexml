@@ -2030,13 +2030,39 @@ const TEST_CASES = [
 	// The same four measures with honorSystemBreaks off: the <print new-system="yes"/> on M3
 	// is ignored and all four measures fit on one system.
 	testCase('print_new_system.musicxml', 'ignore_new_system.png', {
-		honorSystemBreaks: false,
+		layout: { type: 'standard', honorSystemBreaks: false },
 	}),
 
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	testCase('system_break.musicxml', 'layout_panoramic.png', {
 		layout: { type: 'panoramic' },
+	}),
+
+	// An Chloe's M1-5: one line the document engraved for a page wider than vexml's reference
+	// width (<print new-system="no"/> throughout), so the document's line and the reference
+	// width can't both be honored. The three overflow modes are the three ways out, and none
+	// of them squeezes the notes together far enough to collide. The five measures have real
+	// give in them (each wants ~239px but survives down to ~128px), so the three renders come
+	// out at three different widths — the whole point of the setting.
+	//
+	// 'wrap' (the default): the page wins. The engraved line is broken across two systems,
+	// both fitting the reference width, and this is the only one of the three at the plain
+	// 900px page.
+	testCase('overflow_forced_line.musicxml', 'overflow_wrap.png'),
+
+	// 'allow': the document wins. All five measures stay on one system, squeezed to their
+	// collision-free minimum and still running past the reference width; the page grows to
+	// cover the spill rather than clipping it, so this image is wider than overflow_wrap.png.
+	testCase('overflow_forced_line.musicxml', 'overflow_allow.png', {
+		layout: { type: 'standard', overflow: 'allow' },
+	}),
+
+	// 'widen': neither loses. The reference width itself grows until the five measures fit at
+	// their ideal spacing rather than their minimum, so this is wider still than 'allow' —
+	// same one system, but with the notes spaced normally instead of pushed to the floor.
+	testCase('overflow_forced_line.musicxml', 'overflow_widen.png', {
+		layout: { type: 'standard', overflow: 'widen' },
 	}),
 
 	// The same sixteen C5 whole-note measures wrapping the same three ways (7 + 8 + 1), but
@@ -2189,16 +2215,20 @@ const TEST_CASES = [
 	// four parts.
 	testCase('score_bach_air.musicxml', 'score_bach_air.png'),
 
-	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. Four systems,
-	// one per line the document engraved (<print new-system="yes"> at measures 6, 12 and 18):
-	// 0-5, 6-11, 12-17, 18-22.
+	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. The document
+	// engraved four lines (<print new-system="yes"> at measures 6, 12 and 18) for a page wider
+	// than vexml's reference width, and every one of them needs more room than 900px gives at
+	// the collision-free minimum. Under the default overflow: 'wrap' each engraved line is
+	// therefore broken in two, so this renders eight systems rather than the document's four.
+	// Render it with overflow: 'widen' to get the four the document drew, on a wider page that
+	// scales down to compensate.
 	// - The verse hangs on one baseline per system, not stepping bar to bar with the melody.
 	// - The short slurs that hop the barline between the last 16th of one measure and the first
 	//   note of the next (piano, both staves, measures 2-3 / 9-10 / 21-22) bow just clear of
 	//   their two noteheads — they used to spike up through the voice stave.
-	// - Known gap: "jun-ge" and "Schä-" touch across the barline in system 3, the densest bar
-	//   of text in the piece. Honoring a document line wider than the page means squeezing
-	//   below the collision-free minimum somewhere; this is where it lands.
+	// - "jun-ge" and "Schä-" used to touch across a barline here, back when honoring a
+	//   too-wide engraved line meant squeezing the measures below their minimum. Nothing is
+	//   squeezed that far any more, so the lyrics stay clear.
 	testCase(
 		'score_mozart_das_veilchen.musicxml',
 		'score_mozart_das_veilchen.png',

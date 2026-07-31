@@ -1,4 +1,4 @@
-import { SYSTEM_GAP } from './constants';
+import { DEFAULT_WIDTH, SYSTEM_GAP } from './constants';
 
 export interface FontOverride {
 	family: string;
@@ -50,21 +50,57 @@ export type Gap = {
 	style?: GapStyle;
 };
 
+/** What gives when a system's music cannot fit the page at its collision-free minimum —
+ * i.e. when the document's engraved line and the reference width disagree. The notes are
+ * never squeezed into an unreadable line: one of the two has to lose, and this picks which.
+ *
+ * - `'wrap'` — the page wins: the line is broken where the document said not to, and every
+ *   system fits the reference width. See the caveat on `Layout.overflow`.
+ * - `'allow'` — the document wins: the system keeps its measures and spills past the
+ *   reference width. The page's bounding box grows to cover the spill, so the score scales
+ *   into its container instead of being clipped; systems that do fit still justify to the
+ *   reference width, leaving the over-wide line sticking out to the right.
+ * - `'widen'` — neither loses: the reference width itself grows until every system fits at
+ *   its ideal spacing. The whole score is engraved wider and therefore renders smaller in a
+ *   given container. */
+export type SystemOverflow = 'wrap' | 'allow' | 'widen';
+
+/** Wrap measures onto stacked systems (print-like). */
+export type StandardLayout = {
+	type: 'standard';
+	/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
+	 * to this width once; the result is then scaled to whatever container it's placed
+	 * in, so resizing the container never re-flows or re-spaces it. */
+	referenceWidth: number;
+	/** Whether the document's own system breaks are honored (default: true). A
+	 * `<print new-system="yes">` — or the first measure of a `new-page="yes"` — forces a break
+	 * before its measure, and an explicit `<print new-system="no">` suppresses vexml's
+	 * width-based wrap, squeezing the system to keep the measure on its engraved line (down to
+	 * the width at which its notes would start to collide, past which `overflow` decides what
+	 * happens). Silence is not a statement: a measure with no `<print>` wraps purely on width,
+	 * so a file that only sprinkles a few hand-forced breaks still reflows. When false the
+	 * breaker ignores the document's breaks entirely and wraps purely on width — useful when
+	 * the source's engraved line breaks were made for a different page size than the one being
+	 * rendered. */
+	honorSystemBreaks: boolean;
+	/** What gives when a system's music cannot fit the page at its collision-free minimum
+	 * (default: 'wrap'). See SystemOverflow.
+	 *
+	 * `'wrap'` fits every system to the page in all but one case: a *single* measure whose
+	 * minimum exceeds the usable width has nowhere to wrap to, so it spills like `'allow'`.
+	 * That needs a very small `referenceWidth` or a very large `noteSpacing` — and the measure
+	 * is still drawn at its collision-free minimum, so it reads correctly, it just runs past
+	 * the margin. */
+	overflow: SystemOverflow;
+};
+
+/** Lay every measure on one system (horizontal scroll); width is computed from the content. */
+export type PanoramicLayout = {
+	type: 'panoramic';
+};
+
 /** How measures are placed across systems. */
-export type Layout =
-	| {
-			/** Wrap measures onto stacked systems (print-like). */
-			type: 'standard';
-			/** Reference layout width in px (default: DEFAULT_WIDTH). The score is laid out
-			 * to this width once; the result is then scaled to whatever container it's placed
-			 * in, so resizing the container never re-flows or re-spaces it. */
-			referenceWidth?: number;
-	  }
-	| {
-			/** Lay every measure on one system (horizontal scroll); width is computed
-			 * from the content. */
-			type: 'panoramic';
-	  };
+export type Layout = StandardLayout | PanoramicLayout;
 
 /** Whether and where to draw stems on tablature notes. */
 export type TabStemPlacement = 'none' | 'above' | 'below';
@@ -97,7 +133,8 @@ export type Config = {
 	 * source-document index; the rendered score's measure indexes include the inserted
 	 * gaps (measure *numbers* skip them). Retrieve their timing with `Score.getGaps()`. */
 	gaps: Gap[];
-	/** How measures are placed across systems (default: standard at 8.5in / 816px). */
+	/** How measures are placed across systems (default: standard at 8.5in / 816px), and for
+	 * a standard layout, how it resolves a document line that won't fit that width. */
 	layout: Layout;
 	/** *How much space the notes get* (not how it's divided): the px a quarter note gets,
 	 * the base of a logarithmic spacing curve. A note gets a little more space per doubling
@@ -157,17 +194,6 @@ export type Config = {
 	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
 	 * whose measures already sit below this fill breaks at the same place either way. */
 	maxSystemFill: number;
-	/** Whether the document's own system breaks are honored (default: true). A
-	 * `<print new-system="yes">` — or the first measure of a `new-page="yes"` — forces a break
-	 * before its measure, and an explicit `<print new-system="no">` suppresses vexml's
-	 * width-based wrap, squeezing the system to keep the measure on its engraved line
-	 * (down to MIN_SYSTEM_SQUASH, past which vexml wraps anyway). Silence is not a
-	 * statement: a measure with no `<print>` wraps purely on width, so a file that only
-	 * sprinkles a few hand-forced breaks still reflows. When false the breaker ignores the
-	 * document's breaks entirely and wraps purely on width — useful when the source's engraved
-	 * line breaks were made for a different page size than the one being rendered. No effect
-	 * on panoramic layouts. */
-	honorSystemBreaks: boolean;
 	/** Fixed container height in px, or null for none (default: null). When set, vexml puts the score
 	 * in a vertical scroll box at exactly this height — for system-stacked (standard) layouts taller
 	 * than the space you want them to take. Prefer maxHeight to cap only when the score overflows. */
@@ -193,12 +219,32 @@ export const DEFAULT_FONT_CONFIG = {
 	text: { family: 'Source Sans 3' },
 } satisfies FontConfig;
 
-/** The defaults `render` merges a caller's `Partial<Config>` onto. */
+/** What a caller may pass as `layout`: a standard layout's knobs are all optional, and
+ * `render` fills them from DEFAULT_STANDARD_LAYOUT. */
+export type LayoutInput =
+	| (Partial<StandardLayout> & { type: 'standard' })
+	| PanoramicLayout;
+
+/** What `render` accepts: `Config` with everything optional, except that `layout` is a
+ * nested object, so it takes its own partial rather than an all-or-nothing `Layout`. */
+export type ConfigInput = Partial<Omit<Config, 'layout'>> & {
+	layout?: LayoutInput;
+};
+
+/** The defaults `render` merges a caller's partial standard `layout` onto. */
+export const DEFAULT_STANDARD_LAYOUT: StandardLayout = {
+	type: 'standard',
+	referenceWidth: DEFAULT_WIDTH,
+	honorSystemBreaks: true,
+	overflow: 'wrap',
+};
+
+/** The defaults `render` merges a caller's `ConfigInput` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
 	backgroundColor: null,
 	gaps: [],
-	layout: { type: 'standard' },
+	layout: DEFAULT_STANDARD_LAYOUT,
 	noteSpacing: 36,
 	softmaxFactor: 10,
 	systemSpacing: SYSTEM_GAP,
@@ -212,7 +258,6 @@ export const DEFAULT_CONFIG: Config = {
 	stretchSingleSystem: true,
 	minLastSystemFill: 0.75,
 	maxSystemFill: 0.9,
-	honorSystemBreaks: true,
 	height: null,
 	maxHeight: null,
 	width: null,

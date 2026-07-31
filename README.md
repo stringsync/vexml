@@ -43,6 +43,37 @@ Capping the container turns it into a scroll box instead of fitting: `width`/`ma
 horizontal scroll (pair with `layout: { type: 'panoramic' }` for a single row), `height`/`maxHeight`
 for a vertical one.
 
+## When a line won't fit
+
+A MusicXML file can engrave its own system breaks — `<print new-system="no">` says "keep this
+measure on the current line" — and those lines were laid out for whatever page the file was
+written for, not for your reference width. When one of them needs more room than you have,
+something has to give. vexml never gives up the notes: measures are squeezed toward each
+other only down to the width at which they'd start to collide, and never past it. What happens
+at that point is `layout.overflow`:
+
+```ts
+await render(musicXML, element, {
+  layout: { type: 'standard', overflow: 'widen' },
+});
+```
+
+| mode | what wins | result |
+| --- | --- | --- |
+| `'wrap'` (default) | the page | the engraved line is broken in two; every system fits the reference width |
+| `'allow'` | the document | the line keeps its measures and runs past the reference width; the page grows to cover the spill so it scales down instead of clipping |
+| `'widen'` | neither | the reference width itself grows until every system fits at its *ideal* spacing, so the whole score engraves wider and renders smaller |
+
+`'wrap'` keeps pages uniform at the cost of the source's line breaks — reasonable, since those
+breaks were made for a different page size. `'widen'` is the one to reach for when you want the
+engraving the file actually describes. Set `layout.honorSystemBreaks: false` to ignore the
+document's breaks entirely and wrap purely on width.
+
+One caveat on `'wrap'`: a *single* measure whose minimum exceeds the usable width has nowhere
+to wrap to, so it spills like `'allow'`. That takes a very small `referenceWidth` or a very
+large `noteSpacing`, and the measure still draws at its collision-free minimum — it reads
+correctly, it just runs past the margin.
+
 
 ## Listening to events
 

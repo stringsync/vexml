@@ -1,11 +1,16 @@
 export type {
 	Config,
+	ConfigInput,
 	FontConfig,
 	FontOverride,
 	Gap,
 	GapStyle,
 	Layout,
+	LayoutInput,
 	MeasureNumbering,
+	PanoramicLayout,
+	StandardLayout,
+	SystemOverflow,
 } from './config';
 export { ChordDiagram } from './elements/chord-diagram';
 export {

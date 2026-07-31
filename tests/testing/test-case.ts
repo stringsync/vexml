@@ -1,9 +1,9 @@
-import type { Config } from '@stringsync/vexml';
+import type { ConfigInput } from '@stringsync/vexml';
 
 export function testCase(
 	musicXMLFilename: string,
 	screenshotFilename: string,
-	config: Partial<Config> = {},
+	config: ConfigInput = {},
 ) {
 	if (!musicXMLFilename.endsWith('.musicxml')) {
 		throw new Error(

@@ -1,4 +1,10 @@
-import { type Config, DEFAULT_CONFIG } from './config';
+import {
+	type Config,
+	type ConfigInput,
+	DEFAULT_CONFIG,
+	DEFAULT_STANDARD_LAYOUT,
+	type Layout,
+} from './config';
 import { ElementFactory } from './elements/element-factory';
 import { DefaultFontLoader } from './engraving/fonts';
 import { LayoutPlanner } from './engraving/layout-planner';
@@ -24,9 +30,16 @@ import { ScoreRenderer } from './score-renderer';
 export function render(
 	input: string | Blob,
 	container: HTMLDivElement,
-	config?: Partial<Config>,
+	config?: ConfigInput,
 ): Promise<Score> {
-	const resolved: Config = { ...DEFAULT_CONFIG, ...config };
+	// `layout` is the one nested config object, so the top-level spread would blow away the
+	// knobs a caller left out of `{ type: 'standard' }`. Fill it from its own defaults first.
+	const layoutInput = config?.layout ?? DEFAULT_CONFIG.layout;
+	const layout: Layout =
+		layoutInput.type === 'standard'
+			? { ...DEFAULT_STANDARD_LAYOUT, ...layoutInput }
+			: layoutInput;
+	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
 	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
 	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container
 	// (never blown up past that width) and centered. A panoramic layout, or one the caller capped into
