@@ -1106,6 +1106,11 @@ export class ScoreReader {
 	 * applies to the note that follows it, resolved by Harmony.nextNote (the next
 	 * non-<chord/> note). `frame` is the chord-diagram spec when the harmony carries a
 	 * <frame>, else null. `source` is the Harmony element itself, kept for provenance.
+	 *
+	 * Deduplicated on (beat, text, frame): a <harmony> belongs to the part, but Guitar Pro
+	 * repeats an identical one after every <backup> — once per voice — and drawing each
+	 * copy stacks the same chord symbol/diagram on itself. The same chord genuinely
+	 * restruck later in the measure lands on a different beat, so it survives.
 	 */
 	harmoniesOf(measure: Measure): {
 		lead: Note;
@@ -1119,6 +1124,7 @@ export class ScoreReader {
 			frame: ChordFrame | null;
 			source: MElement;
 		}[] = [];
+		const seen = new Set<string>();
 		for (const harmony of measure.harmonies) {
 			const lead = harmony.nextNote;
 			if (!lead) {
@@ -1126,9 +1132,15 @@ export class ScoreReader {
 			}
 			const text = harmonyText(harmony);
 			const frame = frameOf(harmony);
-			if (text || frame) {
-				harmonies.push({ lead, text, frame, source: harmony });
+			if (!text && !frame) {
+				continue;
 			}
+			const key = `${lead.measureBeat ?? 0}|${text}|${JSON.stringify(frame)}`;
+			if (seen.has(key)) {
+				continue;
+			}
+			seen.add(key);
+			harmonies.push({ lead, text, frame, source: harmony });
 		}
 		return harmonies;
 	}

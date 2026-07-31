@@ -127,6 +127,7 @@ import {
 	barlineBreaks,
 	isTabStaff,
 	type PartGroup,
+	pairsTabWithNotation,
 	partGroups,
 	partSymbol,
 	stringTuning,
@@ -311,6 +312,18 @@ function partsPairTabWithNotation(
 	if (!showTabs || !showNotation || parts.length < 2) {
 		return false;
 	}
+	// A part that stacks both kinds ITSELF is not a cross-part pairing — it already brackets
+	// its own two staves via partSymbol. Without this, a score that merely CONTAINS such a
+	// part (a singer over a notation+TAB guitar) also brackets the whole system, sweeping the
+	// unrelated part into the guitar's bracket.
+	if (
+		parts.some((part) => pairsTabWithNotation(part, showTabs, showNotation))
+	) {
+		return false;
+	}
+	// ponytail: the bracket still spans the whole system, which is right for the two-part
+	// case this exists for. Track the pair's part indexes if a score ever puts an ungrouped
+	// third part alongside a split notation/TAB pair.
 	const kinds: boolean[] = [];
 	for (const part of parts) {
 		for (let staff = 1; staff <= Math.max(part.staveCount, 1); staff++) {
@@ -827,7 +840,17 @@ export class DrawPass {
 		// drawMeasureColumn returns early for them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
 		this.partGroups = partGroups(this.parts);
-		this.barlineBreaks = barlineBreaks(this.parts);
+		// A notation+TAB pair split across parts is ONE instrument that just happens to be
+		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
+		// its barline runs through the pair too — the barline run has to agree with what the
+		// connector groups, or the bracket says "one instrument" while the gap says "two".
+		this.barlineBreaks = partsPairTabWithNotation(
+			this.parts,
+			this.showTabs,
+			this.showNotation,
+		)
+			? new Set<number>()
+			: barlineBreaks(this.parts);
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.
@@ -2783,10 +2806,14 @@ export class DrawPass {
 					spaced.w,
 					CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
 				);
+				// Banded to its own stave row: without it, a lower part's diagram sees the
+				// part above's notes and lyrics in the same column and climbs over the whole
+				// part, stranding the box above music it doesn't label.
 				const lifted = this.collisionResolver.liftClear(
 					padded,
 					CHORD_DIAGRAM_GAP,
 					TEXT_CLEAR_KINDS,
+					this.rowOf(stave),
 				);
 				// Recover the real (unpadded) box; the padding only extended the probe.
 				const unclamped = new Rect(
@@ -2803,7 +2830,11 @@ export class DrawPass {
 					this.scratchViewport,
 					PAGE_MARGIN_X,
 				);
-				this.collisionResolver.add({ rect: placed, kind: 'diagram' });
+				this.collisionResolver.add({
+					rect: placed,
+					kind: 'diagram',
+					band: this.rowOf(stave),
+				});
 				const diagram = new ChordDiagramGlyph(placed.x, placed.y, {
 					...h.frame,
 					title: h.text || undefined,
@@ -2819,6 +2850,10 @@ export class DrawPass {
 				});
 				diagram.draw(this.context);
 				this.pageTop = Math.min(this.pageTop, diagram.top);
+				// Report the box (title included) so pass two opens the gap to the stave above
+				// wide enough to hold it. Without this a lower part's diagram has nowhere to go
+				// and lands on the part above's lyrics.
+				this.recordAnnotationSpill(stave, diagram.top);
 				// Unlike words/chord symbols, a chord diagram is NOT folded into the measure
 				// box (no growDecorationTop): the diagram is a tall floating fret box, and a
 				// playback cursor bar stretching all the way up to it reads as disconnected.
@@ -3470,14 +3505,10 @@ export class DrawPass {
 	}
 
 	/*
-	 * The vertical runs a measure's barline connector is drawn in — normally the single run
-	 * spanning the whole system, so this is one entry and nothing changes.
-	 *
-	 * A `<part-group>` declaring `<group-barline>no</group-barline>` asks for barlines that
-	 * stop at each of its members rather than running through the group (see barlineBreaks),
-	 * which splits the system into one run per unbroken stretch of parts. A run still spans
-	 * whole parts: a part's own staves are always joined by its barline, which is what the
-	 * brace on a grand staff means.
+	 * The vertical runs a measure's barline connector is drawn in — one per unbroken stretch of
+	 * parts (see barlineBreaks), which by default means one run per part. A run always spans
+	 * whole parts: a part's own staves are joined by its barline, which is what the brace on a
+	 * grand staff means. An ungrouped single-part system has no breaks and yields one run.
 	 */
 	private barlineRuns(): Array<{ top: Stave; bottom: Stave }> {
 		const systemTop = this.systemTop;
@@ -3888,8 +3919,6 @@ export class DrawPass {
 	 * gap to the stave above wide enough to hold it (see spacedOffsets). Banding the lift
 	 * makes this converge: the reported rise is the stack height over this stave's own
 	 * music, which doesn't depend on how far apart the staves currently sit.
-	 * ponytail: words and chord symbols only — a chord diagram over a lower stave can still
-	 * overlap the part above it. Feed its box in here too if a fixture needs it.
 	 */
 	private recordAnnotationSpill(stave: Stave, top: number): void {
 		const row = this.rowOf(stave);

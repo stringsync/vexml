@@ -1,14 +1,21 @@
 import { MElement, type Measure, type Part } from '@stringsync/mdom';
 
-/** True when `<staff-details>` gives this staff string tunings — the MusicXML signal for
- * tablature that doesn't depend on the clef. */
+/** True when `<staff-details>` gives this staff both string tunings and an explicit
+ * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
+ *
+ * Tuning alone is not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto the
+ * *notation* staff of a notation+tab part (and onto unrelated parts sharing the
+ * instrument), where they mean nothing. A real tab staff always sizes itself with
+ * `<staff-lines>`, so requiring both keeps those spurious tunings from turning notation
+ * staves into tab. */
 function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
 	for (const attributes of measure.childrenNamed('attributes')) {
 		for (const details of attributes.childrenNamed('staff-details')) {
 			const number = details.getAttribute('number') ?? '1';
 			if (
 				number === staffNumber &&
-				details.childrenNamed('staff-tuning').length > 0
+				details.childrenNamed('staff-tuning').length > 0 &&
+				details.child('staff-lines') !== null
 			) {
 				return true;
 			}
@@ -149,25 +156,28 @@ export type PartGroup = {
  * The part boundaries a measure's barlines must NOT run across: entry `i` means the barline
  * between rendered part `i` and part `i + 1` stops instead of continuing down.
  *
- * MusicXML says `<group-barline>no</group-barline>` gives a group "barlines that stop at each
- * staff", so a 'no' group breaks the line between every pair of its own members. Only an
- * explicit 'no' breaks anything: with none declared anywhere the set is empty and the system's
- * barlines run its full height exactly as they always have.
+ * A barline runs through the staves of ONE part — that is what a part's brace/bracket means —
+ * and stops at every part boundary, which is how an engraver separates one instrument from the
+ * next (MuseScore draws this score exactly so: the singer's barline stops, the guitar's runs
+ * through its notation and TAB together). A `<part-group>` is what joins parts back up, and it
+ * does so unless it declares `<group-barline>no</group-barline>` — MusicXML defines no default
+ * for an absent one, so a declared group is read as asking for common barlines.
  *
- * ponytail: a part OUTSIDE every group still joins its neighbours, where an engraver would
- * separate the sections of a score. Making "unjoined unless grouped" the default is the
- * correct rule but re-cuts every existing multi-part baseline, so this only honors what the
- * document asks for out loud. A group-barline is read off the group's own <part-group>; a
- * nested pair that disagrees resolves to "any 'no' covering the boundary breaks it", since the
- * inner group is the one closest to the staves.
+ * A nested pair that disagrees resolves to "any 'no' covering the boundary breaks it", since
+ * the inner group is the one closest to the staves — hence the two passes rather than deleting
+ * from a running set, which would let an outer 'yes' erase an inner 'no'.
  */
 export function barlineBreaks(parts: Part[]): Set<number> {
-	const breaks = new Set<number>();
+	const joined = new Set<number>();
+	const broken = new Set<number>();
 	for (const group of partGroupEntries(parts)) {
-		if (group.barline !== 'no') {
-			continue;
-		}
 		for (let at = group.fromPart; at < group.toPart; at++) {
+			(group.barline === 'no' ? broken : joined).add(at);
+		}
+	}
+	const breaks = new Set<number>();
+	for (let at = 0; at < parts.length - 1; at++) {
+		if (!joined.has(at) || broken.has(at)) {
 			breaks.add(at);
 		}
 	}

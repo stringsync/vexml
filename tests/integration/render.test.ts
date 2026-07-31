@@ -43,10 +43,14 @@ const TEST_CASES = [
 	// printed clef and meter do.
 	testCase('structure_grand_staff.musicxml', 'structure_grand_staff.png'),
 
-	// Two separate single-stave parts stacked vertically, with no connecting brace.
+	// Two separate single-stave parts stacked vertically, with no connecting brace. Ungrouped
+	// parts don't share barlines either, so the end barline is two separate segments — only
+	// the system's left line spans both staves.
 	testCase('structure_two_parts.musicxml', 'structure_two_parts.png'),
 
-	// A single-stave part above a two-stave (braced) part — mixed stave counts.
+	// A single-stave part above a two-stave (braced) part — mixed stave counts. The braced
+	// part's own two staves share an end barline (that is what the brace means); the barline
+	// still stops at the boundary between the two parts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
 
 	// The four <group-symbol> values, each on its own FLAT (non-nested) <part-group>, so a
@@ -56,19 +60,19 @@ const TEST_CASES = [
 	// the staves, and each group's <group-name> right-aligned in its own column outside those,
 	// vertically centered on the pair it spans.
 	// - "Brace" (P1-2): a curly brace, and <group-barline>yes</group-barline> — the end
-	//   barline runs through the pair, which is what vexml does by default anyway.
+	//   barline runs through the pair.
 	// - "Bracket" (P3-4): a square bracket with top and bottom curls, and
-	//   <group-barline>no</group-barline> — the end barline STOPS between P3 and P4, the one
-	//   visible break in the column of otherwise continuous barlines.
+	//   <group-barline>no</group-barline> — the end barline STOPS between P3 and P4, so this
+	//   pair reads as two separate instruments despite sharing a bracket.
 	// - "Square" (P5-6): drawn as a bracket. vexflow has no squared-bracket connector, so
-	//   'square' falls back to the nearest reading (see groupSymbol in engraving/staves.ts);
-	//   this pair should look identical to the one above it.
+	//   'square' falls back to the nearest reading (see groupSymbol in engraving/staves.ts).
+	//   It declares no <group-barline>, which reads as common barlines, so unlike the pair
+	//   above its end barline runs through — the two brackets look alike, their barlines don't.
 	// - "Line" (P7-8): a plain vertical line, no curls, and another 'no' breaking the barline
 	//   between P7 and P8.
-	// ponytail: the barlines still run across the boundaries BETWEEN the groups, where an
-	// engraver would separate the sections — vexml breaks a barline only where a group asks
-	// for it out loud, because making "separate unless grouped" the default re-cuts every
-	// existing multi-part baseline. See barlineBreaks in engraving/staves.ts.
+	// The barlines also break BETWEEN the groups: a barline joins parts only where a
+	// <part-group> asks it to, and stops at every other part boundary. See barlineBreaks in
+	// engraving/staves.ts.
 	testCase(
 		'structure_part_group_symbols.musicxml',
 		'structure_part_group_symbols.png',
@@ -84,9 +88,8 @@ const TEST_CASES = [
 	// - The inner group (number 2, <group-symbol>bracket</group-symbol>) spans parts 3-4 and
 	//   draws as a square bracket with top and bottom curls, nested to its right.
 	// - Parts 1 and 5 belong to no group, so nothing but the system line touches them.
-	// ponytail: <group-barline> and <group-name> are ignored — vexml already runs every
-	// barline across the whole system (what group-barline "yes" asks for), and a group name
-	// needs its own reserved left indent.
+	// Neither group declares a <group-barline>, which reads as common barlines, so the end
+	// barline runs through parts 2-4 and stops at the 1|2 and 4|5 boundaries.
 	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
 
 	// Score-level header text (<work-title>, <movement-title>,
@@ -208,6 +211,18 @@ const TEST_CASES = [
 	// 3-sharp key and 4/4 time: both print on the notation stave only — the TAB stave
 	// shows neither key signature nor time signature, just its stacked "TAB" glyph.
 	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
+
+	// The same notation-over-TAB pairing, but with the six <staff-tuning>s copied onto BOTH
+	// staves the way Guitar Pro exports them — on the treble notation staff they are noise,
+	// and only the TAB staff declares <staff-lines>6. Staff 1 must still render as a 5-line
+	// treble stave (G clef, 3-sharp key, 4/4 meter, E4 and A4 halves); staff 2 is the 6-line
+	// TAB showing the same two notes as frets 0 and 5 on string 1. Tuning alone must not make
+	// a staff tablature — clef_tab_staff_tuning above is the case where it legitimately does,
+	// and it declares <staff-lines> too.
+	testCase(
+		'clef_notation_and_tab_tuned.musicxml',
+		'clef_notation_and_tab_tuned.png',
+	),
 
 	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket, here
 	// stated explicitly via <part-symbol>bracket</part-symbol> (the same connector the
@@ -1745,6 +1760,15 @@ const TEST_CASES = [
 		layout: { type: 'standard', referenceWidth: 500 },
 	}),
 
+	// Two treble parts, 4/4: a Voice part singing "sing"/"this" over a Guitar part that
+	// carries a C-major fret box. The diagram belongs to the LOWER part, so it must sit in
+	// the guitar's own headroom — below the voice's lyric line and above the guitar stave —
+	// rather than climbing over the voice part the way an unbanded lift would. The system's
+	// inter-part gap opens to hold it. The <harmony> is written twice, once per voice (the
+	// guitar's voice 1 E4 halves and voice 2 G3 whole, split by a <backup>), the way Guitar
+	// Pro repeats it; both copies sit on beat 1 and identical, so exactly ONE box draws.
+	testCase('chord_diagram_lower_part.musicxml', 'chord_diagram_lower_part.png'),
+
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
 	// - M1: single notes on E5 — an open diamond for the half note, then filled diamonds for
@@ -2177,25 +2201,30 @@ const TEST_CASES = [
 	// lyrics setting the measure widths.
 	testCase('score_land_der_berge.musicxml', 'score_land_der_berge.png'),
 
-	// TODO: False positive — this baseline was created from the current render and is badly
-	// wrong. The source is a Singer treble stave over a two-stave A.Guitar part (treble
-	// notation + 6-line TAB); vexml draws THREE TAB staves, dropping the notation staves, the
-	// 3-sharp key signature, the 3/4 meter, the clefs and all 82 lyrics, and prints frets that
-	// do not match the source. It also stacks chord diagrams directly on top of the stave lines.
-	// A part whose staves are notation+TAB seems to turn the whole score into tab —
-	// score_greens_greenery below fails the same way, while structure_notation_and_tab_parts
-	// (notation and TAB in SEPARATE parts) renders correctly, which is where to start looking.
-	// Reproduced on a 2-measure slice and confirmed against `vex render --osmd`.
-	// Fix, then `vex test score_amazing_grace --update`.
 	// "Amazing Grace": 33 measures of voice over guitar notation + TAB, with lyrics and chord
-	// diagrams.
+	// diagrams. A Singer treble stave sits above a two-stave A.Guitar part (treble notation +
+	// 6-line TAB), in 3 sharps and 3/4. The bracket spans the guitar's two staves ONLY — the
+	// Singer is a separate part and nothing groups them — and the barlines match it: they stop
+	// between the Singer and the guitar, and run through the guitar's notation and TAB
+	// together. Only the system's left line spans all three staves. MuseScore draws this score
+	// the same way. The chord diagrams belong to the guitar, so
+	// they hang in the gap between the two parts — under the Singer's lyrics, over the guitar's
+	// notation stave — one box per chord change.
+	// Note: chord roots print with a natural (A♮5, D♮) because the source writes an explicit
+	// <root-alter>0</root-alter> on every harmony; see harmony.musicxml M6.
+	// TODO: the FINAL measure crowds four chord changes into one bar and its last two boxes
+	// still misplace — "A♮/C#" sits at its natural height where the tall chord's stems poke
+	// up into it (a stem is not a lift-clear obstacle, only its notehead is), and "B♮m7"/
+	// "A♮m7" overprint each other at the right edge because nudgeInsideX pulls the last box
+	// back left over the one pushRightOf had just separated it from. Both are pre-existing
+	// and independent of the notation/TAB and banding fixes; neither affects any other
+	// system. Fix in the diagram placement pass in draw-pass.ts, then re-accept this
+	// baseline.
 	testCase('score_amazing_grace.musicxml', 'score_amazing_grace.png'),
 
-	// TODO: False positive — same notation-becomes-TAB bug as score_amazing_grace above. The
-	// source is ONE Steel Guitar part of two staves (treble notation + 6-line TAB); vexml draws
-	// two TAB staves and drops the notation stave, the 2-flat key signature and the 4/4 meter.
-	// Fix with score_amazing_grace, then `vex test score_greens_greenery --update`.
-	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings.
+	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings. ONE
+	// Steel Guitar part of two staves — a treble notation stave in 2 flats and 4/4 over the
+	// 6-line TAB.
 	testCase('score_greens_greenery.musicxml', 'score_greens_greenery.png'),
 
 	// TODO: False positive — this baseline was created from the current render and shows a bug.
