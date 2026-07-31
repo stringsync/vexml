@@ -99,6 +99,10 @@ class FakeHost implements Host {
 	relayoutLayers(): void {
 		this.relayoutLayersCalls++;
 	}
+	maxHeight: number | null = null;
+	setMaxHeight(px: number | null): void {
+		this.maxHeight = px;
+	}
 	dispose(): void {
 		this.disposed = true;
 	}

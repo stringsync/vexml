@@ -88,6 +88,8 @@ export interface Host extends LayerHost, Viewport {
 	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
 	 * caller's CSS has scaled the score. */
 	relayoutLayers(): void;
+	/* Change the container's vertical cap live (px, or null to remove it). */
+	setMaxHeight(px: number | null): void;
 	dispose(): void;
 }
 
@@ -264,6 +266,16 @@ export class Stage implements Viewport, Host, ScrollHost {
 		container.appendChild(this.base);
 	}
 
+	// The cap is pure container CSS — the engraving doesn't depend on it — so this is a style write,
+	// not a re-layout. The resize observer picks up the new container box and relayouts the overlays.
+	// Once capped the container keeps overflow-y:auto; with no cap there's nothing to overflow.
+	setMaxHeight(px: number | null): void {
+		this.setStyle('max-height', px == null ? '' : `${px}px`);
+		if (px != null) {
+			this.setStyle('overflow-y', 'auto');
+		}
+	}
+
 	clientRectOf(rect: Rect): DOMRect {
 		const { left, top, sx, sy } = this.frame();
 		return new DOMRect(
@@ -423,10 +435,14 @@ export class Stage implements Viewport, Host, ScrollHost {
 
 	// Set a container style, remembering its prior value so dispose restores it (each prop set once).
 	private setStyle(prop: string, value: string): void {
-		this.restoreStyles.push([
-			prop,
-			this.container.style.getPropertyValue(prop),
-		]);
+		// Record the caller's original once per property: restoreStyles replays forward on dispose, so
+		// a second entry for the same prop would restore this Stage's own value instead of theirs.
+		if (!this.restoreStyles.some(([p]) => p === prop)) {
+			this.restoreStyles.push([
+				prop,
+				this.container.style.getPropertyValue(prop),
+			]);
+		}
 		this.container.style.setProperty(prop, value);
 	}
 

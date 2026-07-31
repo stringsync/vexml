@@ -110,6 +110,13 @@ export class Score implements Listenable<ScoreEventMap> {
 		return this.host.createLayer(kind, zIndex);
 	}
 
+	/* Change `Config.maxHeight` after the fact: cap the score at `px` (scrolling vertically past it),
+	 * or null to remove the cap. The cap only sizes the container — the engraving is independent of
+	 * it — so nothing re-renders; layers relayout and a 'resize' fires if the box actually changed. */
+	setMaxHeight(px: number | null): void {
+		this.host.setMaxHeight(px);
+	}
+
 	/* Add a playback cursor over this score's timeline. Headless by default — sync a view
 	 * (createPlayhead) and/or follow the scroller for visuals. Disposed when the score is. */
 	createCursor(): CursorController {

@@ -49,6 +49,7 @@ class FakeStage implements RenderStage {
 		return { x: 0, y: 0, width: 0, height: 0 } as DOMRect;
 	}
 	relayoutLayers(): void {}
+	setMaxHeight(_px: number | null): void {}
 	dispose(): void {
 		this.disposed = true;
 	}

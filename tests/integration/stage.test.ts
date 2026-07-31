@@ -41,6 +41,44 @@ describe('stage', () => {
 		);
 	});
 
+	// setMaxHeight is a live style write: the cap turns the container into a scroll box and removing
+	// it lets the container size to the score again, all without re-rendering (the canvas element is
+	// the same node before and after).
+	it.concurrent('caps and uncaps the container height without re-rendering', async () => {
+		const { result } = await renderTest(
+			'structure_single_stave.musicxml',
+			{},
+			async (score, container) => {
+				const canvas = container.querySelector('.vexml-canvas');
+				// Computed height, not clientHeight: max-height caps the content box, and the harness
+				// container has padding that clientHeight would fold in.
+				const natural = parseFloat(getComputedStyle(container).height);
+
+				score.setMaxHeight(100);
+				const capped = {
+					height: parseFloat(getComputedStyle(container).height),
+					scrollHeight: container.scrollHeight,
+					overflowY: getComputedStyle(container).overflowY,
+					sameCanvas: container.querySelector('.vexml-canvas') === canvas,
+				};
+
+				score.setMaxHeight(null);
+				return {
+					natural,
+					capped,
+					uncapped: parseFloat(getComputedStyle(container).height),
+				};
+			},
+		);
+
+		expect(result.natural).toBeGreaterThan(100);
+		expect(result.capped.height).toBe(100);
+		expect(result.capped.scrollHeight).toBeGreaterThan(100);
+		expect(result.capped.overflowY).toBe('auto');
+		expect(result.capped.sameCanvas).toBe(true);
+		expect(result.uncapped).toBe(result.natural);
+	});
+
 	// The managed canvas sizes itself to the score's intrinsic width by default, but a caller can
 	// scale it to their container with an ordinary `.vexml-canvas { width: 100% }` rule — no
 	// `!important`, because vexml's own default rule is wrapped in :where() (zero specificity).
