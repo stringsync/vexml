@@ -6,6 +6,7 @@ import {
 	Modifier,
 	PedalMarking,
 	type RenderContext,
+	type Stave,
 	type StaveNote,
 	StaveTie,
 	Stem,
@@ -40,6 +41,24 @@ import {
 import { NoteheadArticulation } from './note-translator';
 
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
+
+/* vexflow's default Curve renderOptions.thickness: the offset of the second bezier pass that
+ * gives a solid slur its lens shape, so the ink reaches this far past the arc's midpoint. */
+const CURVE_THICKNESS = 2;
+
+/*
+ * A built slur, with the vertical extent it will be drawn at. A slur is not movable — it's
+ * pinned to its two noteheads — so the only way it can stop printing through a neighbouring
+ * part's lyrics is for the draw pass to reserve the room its bow needs (it feeds this to
+ * recordStaveSpill).
+ */
+export type SlurCurve = {
+	curve: Curve;
+	/* The stave the bow is drawn over; absent only if an endpoint lost its stave. */
+	stave: Stave | undefined;
+	top: number;
+	bottom: number;
+};
 
 /*
  * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
@@ -960,8 +979,8 @@ export class SpannerBuilder {
 	 * endpoint on the bulge side of its own noteheads, then raise the bezier control
 	 * points so the arc clears the most extreme note it spans.
 	 */
-	buildSlurs(chords: Chord[], byLead: Map<Note, StaveNote>): Curve[] {
-		const slurs: Curve[] = [];
+	buildSlurs(chords: Chord[], byLead: Map<Note, StaveNote>): SlurCurve[] {
+		const slurs: SlurCurve[] = [];
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
@@ -1160,6 +1179,16 @@ export class SpannerBuilder {
 					const curve = isGrace
 						? new HeadCurve(curveFrom, curveTo, options, y0, y1)
 						: new Curve(curveFrom, curveTo, options);
+					// Where the bow will actually reach. vexflow shifts both endpoints by
+					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
+					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY) — the arc's far side, plus the
+					// stroke thickness it's drawn with. Reported so the draw pass can reserve the
+					// room a bow needs over its stave instead of letting it print into the part
+					// above's lyrics.
+					const endTop = Math.min(y0, y1) + dir * yShift;
+					const endBottom = Math.max(y0, y1) + dir * yShift;
+					const apex =
+						(y0 + y1) / 2 + dir * (yShift + 0.75 * cpY + CURVE_THICKNESS);
 					// A dashed/dotted slur is a single stroked bezier, not the filled lens a
 					// solid one is: vexflow's renderCurve already skips the fill and the
 					// second (thickness) pass when the element carries a lineDash. The
@@ -1168,7 +1197,12 @@ export class SpannerBuilder {
 					if (slur.dash) {
 						curve.setStyle({ lineDash: slur.dash.join(' ') });
 					}
-					slurs.push(curve);
+					slurs.push({
+						curve,
+						stave: (curveFrom ?? curveTo)?.getStave(),
+						top: Math.min(endTop, apex),
+						bottom: Math.max(endBottom, apex),
+					});
 				};
 
 				// When the stop note wraps onto a later system its stave sits lower on the

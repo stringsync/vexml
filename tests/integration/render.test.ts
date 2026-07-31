@@ -2229,6 +2229,11 @@ const TEST_CASES = [
 	// - "jun-ge" and "Schä-" used to touch across a barline here, back when honoring a
 	//   too-wide engraved line meant squeezing the measures below their minimum. Nothing is
 	//   squeezed that far any more, so the lyrics stay clear.
+	// - The piano's above-slurs (over the right hand's beamed 16ths in measures 8 and 10-11)
+	//   used to arc up through the verse — "chen auf" and "ge- bückt" were drawn straight
+	//   over. The bow is pinned to its noteheads and can't move, so the gap between the
+	//   voice and the piano now opens to hold it (see recordStaveSpill in draw-pass.ts) and
+	//   the whole score sits taller.
 	testCase(
 		'score_mozart_das_veilchen.musicxml',
 		'score_mozart_das_veilchen.png',
@@ -2240,6 +2245,9 @@ const TEST_CASES = [
 	// against slur.musicxml, which never leaves its own stave. Likely the same
 	// long/steep-slur flattening the upstream slurs_long_steep_arc_flattening_chopin.xml case
 	// covers. Fix, then `vex test score_schumann_dichterliebe --update`.
+	// The arc now costs page as well as looks: a slur reserves the room its bow needs
+	// (recordStaveSpill), so this dome is what holds the piano a stave's worth below the
+	// voice. Flattening it should give most of that height back.
 	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
 	testCase(
 		'score_schumann_dichterliebe.musicxml',

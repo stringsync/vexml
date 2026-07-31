@@ -733,6 +733,9 @@ export class DrawPass {
 	// Maxed across every measure and system, so one global set of stave offsets (which
 	// every system shares) can be sized from them. See ScoreDrawer.spacedOffsets.
 	private readonly staveSpill = new Map<number, StaveSpill>();
+	// Which row every stave built this pass sits on. `rowOf` only sees the system being
+	// built; the spanners are drawn at the end of the pass, over staves from every system.
+	private readonly rowByStave = new Map<Stave, number>();
 	private systemTop: Stave | undefined;
 	private systemBottom: Stave | undefined;
 	// Every part's staves are formatted together as one column so notes at the same
@@ -1016,6 +1019,9 @@ export class DrawPass {
 			// Defer formatting to one pass over the whole system (below) so notes align
 			// across parts, not just within this part.
 			this.systemPending.push(...this.pendingStaves);
+			for (const p of this.pendingStaves) {
+				this.rowByStave.set(p.stave, p.row);
+			}
 
 			// Chord symbols from this measure's <harmony> elements, each bound to the
 			// lead note it sits above. Resolved via byLead (the notation staff's notes),
@@ -3765,7 +3771,20 @@ export class DrawPass {
 		for (const slur of this.spanners.buildSlurs(this.allChords, this.byLead)) {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
-			slur.setContext(this.context).drawWithStyle();
+			slur.curve.setContext(this.context).drawWithStyle();
+			// A bow arcs past the notes it joins, so it can reach further off the stave than
+			// anything the note pass measured — a slur over a beamed group climbs over the
+			// beam, and in a song that lands on the singer's lyrics. Report it as spill so
+			// pass two opens the gap instead (the arc is pinned to its noteheads and has
+			// nowhere else to go).
+			const row = slur.stave && this.rowByStave.get(slur.stave);
+			if (slur.stave && row !== undefined) {
+				this.recordStaveSpill(
+					{ stave: slur.stave, row },
+					slur.top,
+					slur.bottom,
+				);
+			}
 		}
 		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
 		for (const tie of this.spanners.buildHammerPulls(
