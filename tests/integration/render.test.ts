@@ -1903,9 +1903,9 @@ const TEST_CASES = [
 	// piano writing. One braced grand staff (treble over bass), common time, everything in
 	// voice 2: each note draws on the staff its own <staff> names, not on the one the voice
 	// opened with (ScoreReader.staffVoices projects a voice onto both staves rather than
-	// pinning it to one). A cross-staff group is still ONE beam with one direction: every beam
-	// here stems DOWN and sits below the bass staff, so the treble notes' stems run the whole
-	// height of the gap to reach it.
+	// pinning it to one). A cross-staff group is still ONE beam with one direction: the beam
+	// in M1-M2 stems DOWN and sits below the bass staff, so the treble notes' stems run the
+	// whole height of the gap to reach it.
 	// - M1: two beamed groups of four eighths. The first alternates bass A3 / treble E4, so
 	//   its stems alternate short-long-short-long down to the beam. The second is treble
 	//   C5-E4 then bass A3-B4; B4 written on the BASS staff sits four ledger lines above it,
@@ -1917,6 +1917,11 @@ const TEST_CASES = [
 	//   C4 on the treble, beat 4 a lone G3 on the bass under a treble C4-E4-G4. A split chord
 	//   draws as one notehead stack per staff at a shared onset, and BOTH halves join the
 	//   beam, so neither grows a stray flag and the two stacks hang off one shared stem.
+	// - M3: M2's four chords again, but with a second voice (voice 3, four C2 quarters on two
+	//   ledger lines) underneath them on the bass staff — so the beam has nowhere to go below
+	//   and the WHOLE group flips: every stem up, the beam parked above the TREBLE staff, and
+	//   the bass chords' stems running the full height of the gap to reach it (the mirror of
+	//   M2). Voice 3 keeps its own down stems below the bass staff, clear of the beam.
 	// See also tmp/cross_stave_16ths_ghost_notes_simple.xml.
 	testCase('cross_stave.musicxml', 'cross_stave.png'),
 

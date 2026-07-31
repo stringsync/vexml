@@ -623,6 +623,13 @@ export class DrawPass {
 	// two endpoints may live in different measures. Notes are drawn measure by
 	// measure (recording into this map); the spanners are resolved once at the end.
 	private readonly byLead = new Map<Note, StaveNote>();
+	// Notes whose beam group spans two staves (see buildPartBeams). Their stems cross the
+	// gap between the staves on purpose, so the stem tip is excluded from the stave spill
+	// that sizes that gap — counting it would have the gap widen to "make room" for a stem
+	// whose whole job is to reach the other stave, pushing the staves apart by the stem's
+	// own length. The noteheads still count: a note written far outside its stave (M1's B4
+	// on the bass staff) genuinely needs the clearance.
+	private readonly crossStaveNotes = new Set<StaveNote>();
 	private readonly allChords: Chord[] = [];
 	// Pedal directions are spanners too (a start..stop pair), collected per measure
 	// and resolved over the whole score alongside ties and slurs.
@@ -1770,19 +1777,25 @@ export class DrawPass {
 					// the other and the tie-break lands arbitrarily. Down is the convention for
 					// the piano hand-crossing this shows up in, and it keeps the two hands'
 					// groups parallel instead of one beaming over the treble and one under
-					// the bass.
-					// ponytail: always down. A group that lives mostly in the treble with one
-					// low note reads better beamed above; deciding that means comparing the
-					// notes' distance from a common reference line rather than each stave's own,
-					// which no fixture needs yet.
+					// the bass. The exception is a lower voice on the group's own stave: the
+					// beam can't park below a stave another voice already occupies, so the
+					// whole group flips up and beams over the TOP stave instead. That case is
+					// already decided by `defaultStem` (voices sharing a stave stem apart, first
+					// voice up), so honoring it here is the same rule read one level out.
+					// ponytail: down unless a voice sits below. A group that lives mostly in the
+					// treble with one low note reads better beamed above even when it's alone;
+					// deciding that means comparing the notes' distance from a common reference
+					// line rather than each stave's own, which no fixture needs yet.
 					let stem = defaultStem;
 					if (new Set(notes.map((note) => rowOf.get(note))).size > 1) {
+						const direction = defaultStem === 'up' ? Stem.UP : Stem.DOWN;
 						for (const note of notes) {
-							note.setStemDirection(Stem.DOWN);
+							note.setStemDirection(direction);
+							this.crossStaveNotes.add(note);
 						}
 						// Any value here only says "don't auto-stem" — the directions just set
 						// are what the beam reads.
-						stem = 'down';
+						stem = defaultStem ?? 'down';
 					}
 					pending.beams.push(
 						...this.spanners.buildBeams(
@@ -2014,7 +2027,16 @@ export class DrawPass {
 				const box = note.getBoundingBox();
 				bottom = Math.max(bottom, box.getY() + box.getH());
 				top = Math.min(top, this.noteTop(note));
-				this.recordStaveSpill(p, this.noteTop(note), box.getY() + box.getH());
+				// The page still has to fit a cross-staff stem (hence `top`/`bottom` above
+				// reading it), but the gap between the staves does not — see crossStaveNotes.
+				const heads = this.crossStaveNotes.has(note)
+					? note.getNoteHeadBounds()
+					: null;
+				this.recordStaveSpill(
+					p,
+					heads ? heads.yTop : this.noteTop(note),
+					heads ? heads.yBottom : box.getY() + box.getH(),
+				);
 				// Register each note as a collision obstacle now that its position is final, so the
 				// above-stave annotations drawn next can be nudged clear of it (and of high ties).
 				this.collisionResolver.add({
