@@ -1042,18 +1042,34 @@ export class SpannerBuilder {
 								)
 						: [from, to];
 
+				// A cross-stave slur: the two ends sit on different staves of the same system,
+				// because the run is beamed out of one hand's stave up into the other's. A stop
+				// that WRAPS onto a later system is on another stave too, but that splits into
+				// two half-curves below and each half stays put — hence the Y test, which reads
+				// "the stop's stave is HIGHER on the page", the one thing a wrap can't be.
+				const fromStave = from.getStave();
+				const toStave = to.getStave();
+				const crossStave =
+					!!fromStave && !!toStave && toStave.getY() < fromStave.getY();
+
 				// Bulge up for placement="above", down for "below", otherwise opposite the
 				// stems (slurs sit on the notehead side). The opening direction forces the
 				// arc's sign even when the two endpoints' stems disagree. A grace-to-main
 				// slur always hugs under (under the grace, down to the main notehead),
 				// ignoring placement — grace slurs read as a consistent underneath bow.
+				// A cross-stave slur overrides placement the same way, in the other direction:
+				// its ends are a stave apart, so a "below" bow has to duck under the beam and
+				// then dive most of a stave to reach the far end, which reads as a spike rather
+				// than a slur. Above, the same span is one arc riding over the run.
 				const bulgeUp = isGrace
 					? false
-					: slur.placement === 'above'
+					: crossStave
 						? true
-						: slur.placement === 'below'
-							? false
-							: from.getStemDirection() !== 1;
+						: slur.placement === 'above'
+							? true
+							: slur.placement === 'below'
+								? false
+								: from.getStemDirection() !== 1;
 
 				// Anchor each endpoint on the bulge side of its own note: NEAR_TOP (the stem
 				// tip) when that stem points toward the bulge, else NEAR_HEAD (the outer
@@ -1182,27 +1198,33 @@ export class SpannerBuilder {
 					positionEnd: number,
 					cpY: number,
 				) => {
-					// vexflow offsets each control point from its OWN endpoint, so when the two
-					// ends sit at very different heights the far control point lands well past
-					// the near end and the curve whips into it — a sharp hook right where the
-					// bow should be settling onto the note. Put both control points at a single
-					// absolute depth instead. The midpoint is unchanged (the algebra works out
-					// to depth = midpoint + cpY, so clearance still holds) but each end is now
-					// approached on a gentle tangent. Endpoints at equal heights reduce to the
-					// old symmetric cps exactly, so only lopsided curves move.
+					// vexflow offsets each control point from its OWN endpoint by the same cps.y, so
+					// on a slur whose two ends sit at very different heights both points land the
+					// same distance above their end — which is nowhere near the line between the
+					// two. The far one ends up on the wrong side of its endpoint entirely and the
+					// curve flicks up out of the note instead of settling onto it.
+					//
+					// Offset them from the CHORD (the straight line joining the two ends) instead,
+					// each lifted `cpY` off it. vexflow puts the control points a quarter and three
+					// quarters of the way along, so the chord there is a quarter of the drop either
+					// side of the midpoint — hence the ±slant. What that draws is a parabola over
+					// the chord: symmetric bow, both ends tangent to the chord, no hook. The apex
+					// is unchanged at chord-midpoint + 0.75*cpY (the cubic's t=0.5 works out to
+					// that), so the clearance cpYFor solved for still holds. Level endpoints have
+					// no slant and reduce to the old symmetric cps exactly.
 					const dir = bulgeUp ? -1 : 1;
 					const only = (curveFrom ?? curveTo) as StaveNote;
 					const y0 = endpointY(curveFrom ?? only);
 					const y1 = endpointY(curveTo ?? only);
-					const depth = (y0 + y1) / 2 + dir * cpY;
+					const slant = (y1 - y0) / 4;
 					const options: CurveOptions = {
 						position,
 						positionEnd,
 						openingDirection: bulgeUp ? 'down' : 'up',
 						yShift,
 						cps: [
-							{ x: 0, y: dir * (depth - y0) },
-							{ x: 0, y: dir * (depth - y1) },
+							{ x: 0, y: cpY + dir * slant },
+							{ x: 0, y: cpY - dir * slant },
 						],
 					};
 					const curve = isGrace
@@ -1247,8 +1269,6 @@ export class SpannerBuilder {
 				// renders a Curve given only a `from` or only a `to` exactly so, anchoring the
 				// open end at the stave's tie edge. (Y, not X: a slur whose start note is the
 				// first in its system shares the stop note's left X but not its row.)
-				const fromStave = from.getStave();
-				const toStave = to.getStave();
 				if (toStave && fromStave && toStave.getY() > fromStave.getY()) {
 					const fromSpan = span.filter((n) => n.getStave() === fromStave);
 					const toSpan = span.filter((n) => n.getStave() === toStave);

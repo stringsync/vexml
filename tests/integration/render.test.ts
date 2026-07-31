@@ -1148,6 +1148,21 @@ const TEST_CASES = [
 	// which an exporter's absolute offsets would fight rather than improve.
 	testCase('slur_line_types.musicxml', 'slur_line_types.png'),
 
+	// Piano grand staff, 2/4, 3 sharps: a slur spanning a cross-stave figure. Each measure is
+	// one voice of four 16ths whose first three sit on the bass stave and whose fourth jumps
+	// to the treble, beamed together (the treble note's stem drops across the gap to the
+	// bass-stave beam), then a quarter rest on the treble. The slur runs the whole figure,
+	// from the first bass notehead up to the treble one, and BOTH measures bow above it — a
+	// cross-stave slur overrides <slur placement> the way a grace slur does, because a
+	// "below" bow would have to duck under the beam and then dive most of a stave to reach
+	// its far end (see crossStave in src/engraving/spanner-builder.ts).
+	// - M1: placement="above" — C#3, B3, C#4 (bass) into E#4 (treble).
+	// - M2: placement="below" — D3, B3, D4 (bass) into F#4 (treble), drawn like M1.
+	// Reduced from score_schumann_dichterliebe measures 4-5, whose piano runs this figure in
+	// nearly every bar; it used to draw as a long S-swoop sagging through the empty gap
+	// between the staves, identical for both placements.
+	testCase('slur_cross_stave.musicxml', 'slur_cross_stave.png'),
+
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
 	// under the staff spanning four B4 quarters. The pedal goes down under the first
 	// note and releases past the last.
@@ -2266,6 +2281,10 @@ const TEST_CASES = [
 	// (recordStaveSpill), so this dome is what holds the piano a stave's worth below the
 	// voice. Flattening it should give most of that height back.
 	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
+	// The piano's cross-stave 16th runs (left hand beamed up into the right, nearly every
+	// bar) carry a slur that now bows ABOVE the run instead of sagging diagonally through the
+	// gap between the two staves. slur_cross_stave.musicxml is measures 4-5 reduced to that
+	// one behaviour.
 	testCase(
 		'score_schumann_dichterliebe.musicxml',
 		'score_schumann_dichterliebe.png',
