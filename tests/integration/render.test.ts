@@ -3,17 +3,26 @@ import { render } from '../testing/harness';
 import { testCase } from '../testing/test-case';
 
 /*
- * `TODO(coverage):` blocks mark a MusicXML feature exercised by a file in tmp/ that this suite
- * does not cover yet. Each one carries a ready-made fixture in __data__/ (sliced out of the
- * tmp/ file it names) and a commented-out testCase(...) line.
+ * Every case here is a hand-cut fixture proving one thing, ordered by increasing rendering
+ * complexity. The coverage backlog that used to sit inline as TODO comments is closed: the
+ * MusicXML features it tracked (print-object="no", <octave-shift>, the per-element color attribute,
+ * percussion <unpitched>/<display-step>, after-graces, the mid-measure <barline>, <repeat
+ * times>, the segno/coda glyphs, non-traditional key signatures, the mid-measure and
+ * end-of-measure clef change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice
+ * lyric rows, nested repeat blocks, the flat <part-group> symbols, per-staff <direction>
+ * routing, <figured-bass>, cross-staff notes, the reduced percussion stave) all have cases of
+ * their own now, score-level header text is won't-fix (see below), and whole real-world
+ * scores are the score_*.musicxml block at the end.
  *
- * To work one: uncomment its testCase, run `vex test`, look at the render, fix src/, and only
- * then `vex test <name> --update`. The first run WILL pass — a new screenshot is accepted as
- * its own baseline — so treat that pass as meaningless until the image has been reviewed. Then
- * delete the TODO block, leaving the description as the case's ordinary comment.
+ * Names like `lilypond_42b-MultiVoice-MidMeasureClefChange.xml` in the comments below refer
+ * to files in the upstream corpora these fixtures were cut from — the Unofficial MusicXML
+ * Test Suite (lilypond_*) and OpenSheetMusicDisplay's test files. This repo used to vendor
+ * them under tmp/ and no longer does; the names are kept because they are findable upstream
+ * and say exactly which conformance case a comment is pointing at.
  *
- * "Current: unverified" means the fixture renders without throwing (all of them do) but nobody
- * has looked at the image yet. "Current: <description> (verified render)" means someone has.
+ * When adding a case, remember the first `vex test` run WILL pass — a new screenshot is
+ * accepted as its own baseline — so treat that pass as meaningless until the image has been
+ * reviewed, then accept it with `vex test <name> --update`.
  *
  * A stave whose part declares no <clef> is engraved as treble, and a part that declares no
  * <time> anywhere opens in 4/4 — the defaults a reader assumes when nothing is printed. Many of
@@ -22,18 +31,6 @@ import { testCase } from '../testing/test-case';
  * contradiction. An explicit <senza-misura> is the one way to get a blank meter
  * (time_senza_misura), and neither default changes measure WIDTHS — an unmetered measure is
  * still sized by its own content (see ScoreReader.meterBeats).
- *
- * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
- * increasing rendering complexity, not by priority. The two left both need a decision before
- * any code: whether vexml owns page headings at all (score header), and whether a big
- * real-world score is worth the baseline churn.
- * (print-object="no", <octave-shift>, the per-element color attribute, percussion
- * <unpitched>/<display-step>, after-graces, the mid-measure <barline>, <repeat times>, the
- * segno/coda glyphs, non-traditional key signatures, the mid-measure and end-of-measure clef
- * change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice lyric rows, nested
- * repeat blocks, the flat <part-group> symbols, per-staff <direction> routing, <figured-bass>,
- * cross-staff notes and the reduced percussion stave were the earlier picks off this list and
- * now have cases of their own.)
  */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
@@ -92,20 +89,11 @@ const TEST_CASES = [
 	// needs its own reserved left indent.
 	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
 
-	// TODO(coverage): score-level header text (title/composer/credits) is never drawn — src/
-	// has no reader for <work-title>, <movement-title>, <identification><creator>, or
-	// <credit-words> (grep: only chord-diagram 'title' hits). 93 of the files in tmp/ carry a
-	// <work-title> and 79 carry a <credit>, so nearly every real score loses its heading.
-	// Fixture: score_header.musicxml (tmp/composer_one_line.xml M1-2) — a work title plus a
-	// one-line composer credit.
-	// Expected: the title centered above the first system and the composer right-aligned under
-	// it, both drawn in the text font/color (fonts.text), with the first system pushed down to
-	// make room. A second test case should cover the multi-line composer
-	// (tmp/composer_multiple_lines.xml) and the empty-title edge case
-	// (tmp/lilypond_51d-EmptyTitle.xml), which must not reserve a blank band.
-	// Decide first whether vexml wants to own page headings at all — if the host app draws
-	// them, close this as won't-fix rather than implementing it.
-	// testCase('score_header.musicxml', 'score_header.png'),
+	// Score-level header text (<work-title>, <movement-title>,
+	// <identification><creator>, <credit-words>) is deliberately NOT drawn, and has no
+	// reader in src/. vexml engraves staff notation; the page heading belongs to the host
+	// app, which already owns the surrounding page and its typography. Closed as won't-fix,
+	// not deferred — don't add a fixture for it.
 
 	// A guitar split across two single-stave parts — a treble notation stave (P1)
 	// above a 6-line TAB stave (P2) — joined by a bracket plus the system's left line.
@@ -260,9 +248,9 @@ const TEST_CASES = [
 	// ponytail: the glyph rides on the FIRST voice only (a second copy per voice would redraw
 	// the same clef at the same x), while the change re-aims every voice's notes. A <backup>
 	// is not rewound when timing the change, the same limit midBarlinesOf documents — see
-	// tmp/lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the case that would need it.
-	// See also tmp/in_measure_clefs.xml, tmp/clef_end_measure.xml,
-	// tmp/end_measure_clefs_staffentry_bbox.xml.
+	// lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the case that would need it.
+	// See also in_measure_clefs.xml, clef_end_measure.xml,
+	// end_measure_clefs_staffentry_bbox.xml.
 	testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
 
 	// A percussion stave, 4/4: <unpitched> notes, which carry no <pitch> at all. Their
@@ -296,7 +284,7 @@ const TEST_CASES = [
 	//   line (F4 a space and a half under it, E4 two spaces) with their stems up through it.
 	//   vexml draws no ledger lines out to them: vexflow measures ledgers off a fixed
 	//   five-line frame, so a reduced stave never gets any. MuseScore does draw them here.
-	// See also tmp/drumset.xml, tmp/tutorial_percussion.xml.
+	// See also drumset.xml, tutorial_percussion.xml.
 	testCase('clef_percussion.musicxml', 'clef_percussion.png'),
 
 	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
@@ -315,7 +303,7 @@ const TEST_CASES = [
 	// and every note keeps the vertical position its pitch and clef give it on a full stave,
 	// so the notes do not move when the count changes — only the lines around them do.
 	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
-	// measure start (the same limit as the mid-measure clef TODO above), so this fixture puts
+	// measure start (the same limit clef_mid_measure works around above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
 	testCase('staff_details_lines.musicxml', 'staff_details_lines.png'),
 
@@ -362,7 +350,7 @@ const TEST_CASES = [
 	// the top line, and an unpinned custom G♯ lands on the G inside the stave instead. Nothing
 	// grows the page crop for a signature that reaches far off the stave either; M2's spread is
 	// held by the ordinary page margins.
-	// See also tmp/lilypond_13d-KeySignatures-Microtones.xml.
+	// See also lilypond_13d-KeySignatures-Microtones.xml.
 	testCase('key_non_traditional.musicxml', 'key_non_traditional.png'),
 
 	// One system, treble: time signatures and mid-system meter changes.
@@ -453,7 +441,7 @@ const TEST_CASES = [
 	// row steps to visibly different heights — E4 (bottom line), F5 (top line), A3 (below the
 	// stave) and C6 (above it). Rests take no ledger lines, so the outer two float free.
 	// Pinning a rest this way is how multi-voice writing pushes two voices' rests apart; see
-	// the rest-placement corpus in tmp/rest_positioning_*.xml for the realistic version (two
+	// the rest-placement corpus in rest_positioning_*.xml for the realistic version (two
 	// voices, C clef, 8th/16th rests), which deserves its own case.
 	testCase('rest_pitched.musicxml', 'rest_pitched.png'),
 
@@ -474,8 +462,8 @@ const TEST_CASES = [
 	// draws the same glyph a plain whole rest does. A run only collapses when EVERY part and
 	// staff declares it identically; a mixed score keeps its measures separate rather than
 	// shearing the parts' columns apart.
-	// See also tmp/multiple_rest_measures.xml, tmp/auto_multirest.xml, and
-	// tmp/measure_numbers_xml_starting_at_3_with_multirest.xml.
+	// See also multiple_rest_measures.xml, auto_multirest.xml, and
+	// measure_numbers_xml_starting_at_3_with_multirest.xml.
 	testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png', {
 		measureNumbering: 'every',
 	}),
@@ -521,7 +509,7 @@ const TEST_CASES = [
 	// ignored. No fixture reaches either yet.
 	testCase('invisible_notes.musicxml', 'invisible_notes.png'),
 
-	// A colored Beethoven lied (tmp/color.xml M1-2): a vocal treble stave over a piano grand
+	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
 	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG — here the
 	// score names the colors, and each element takes the one its own attribute gives it while
@@ -544,7 +532,7 @@ const TEST_CASES = [
 	// clef, which is why its notes sit on the stave instead of hanging off it (clef_mid_measure).
 	// ponytail: <beam color> and <lyric color> are ignored (each draws from its own element,
 	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
-	// See also tmp/auto_custom_coloring_entchen.xml.
+	// See also auto_custom_coloring_entchen.xml.
 	testCase('note_color.musicxml', 'note_color.png'),
 
 	// Treble stave, 4/4: metronome marks from <direction><metronome>, drawn above the
@@ -644,7 +632,7 @@ const TEST_CASES = [
 	// ponytail: a shift whose start has no note after it in its own measure (or whose stop has
 	// none before it) is dropped, and a span that wraps onto a later system would draw one
 	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
-	// See also tmp/octave_shift_simple_piano.xml.
+	// See also octave_shift_simple_piano.xml.
 	testCase('octave_shift.musicxml', 'octave_shift.png'),
 
 	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners —
@@ -686,7 +674,7 @@ const TEST_CASES = [
 	// ENGRAVING the marks, and cursor.test.ts has no case for them.
 	// ponytail: a sign's own placement/offset attributes are ignored — it always prints at its
 	// measure's left edge, where a player scanning for "the sign" looks.
-	// See also tmp/stave_repetitions_coda_etc_positioning.xml for the placement stress version.
+	// See also stave_repetitions_coda_etc_positioning.xml for the placement stress version.
 	testCase('navigation.musicxml', 'navigation.png'),
 
 	// Treble stave, 4/4: <lyric> verses printed as text under the stave, centered on their
@@ -741,8 +729,8 @@ const TEST_CASES = [
 	// - M3: V1 carries TWO verses ("first/second", "verse/verse") and V2 one ("low", "voice"),
 	//   so V2's row starts below BOTH of V1's — three rows, proving the offset counts rows
 	//   used, not voices.
-	// See also tmp/lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the two staves of a grand
-	// staff) and tmp/lilypond_61e-Lyrics-Chords.xml.
+	// See also lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the two staves of a grand
+	// staff) and lilypond_61e-Lyrics-Chords.xml.
 	testCase('lyrics_two_voices.musicxml', 'lyrics_two_voices.png'),
 
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
@@ -801,7 +789,7 @@ const TEST_CASES = [
 	// ponytail: on a MULTI-stave system only light-light and light-heavy change the connector
 	// that ties the barline across staves — StaveConnector has no dotted/dashed/heavy member.
 	// These styles are a single-stave idiom, so that gap is unexercised; see drawConnectors.
-	// See also tmp/bar_lines.xml.
+	// See also bar_lines.xml.
 	testCase('barline_styles.musicxml', 'barline_styles.png'),
 
 	// Treble stave, 4/4: a barline in the MIDDLE of a measure — <barline location="middle">,
@@ -839,9 +827,9 @@ const TEST_CASES = [
 	//   A4 + B4 quarters filling their measure, again unnumbered.
 	// - M2: C5 + D5 quarters and a quarter rest, 3 beats of 4 — the ordinary underfull
 	//   measure the floor exists for, closing on a light-heavy barline.
-	// See tmp/implicit_pickup_measure_width.xml (the OSMD bug report this fixes),
-	// tmp/pickup_measure_double_rhythm.xml, tmp/lilypond_46f-IncompleteMeasures.xml and
-	// tmp/lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
+	// See implicit_pickup_measure_width.xml (the OSMD bug report this fixes),
+	// pickup_measure_double_rhythm.xml, lilypond_46f-IncompleteMeasures.xml and
+	// lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
 	testCase('pickup_measure.musicxml', 'pickup_measure.png'),
 
 	// Treble stave, 4/4, one whole note per measure (M8 excepted): repeat barlines and volta
@@ -924,7 +912,7 @@ const TEST_CASES = [
 	// ending measures with no plain measure between them, so the numbering restarting at 1 on M5
 	// is the only thing that separates the two volta groups (see ScoreReader-side endingFirstPass
 	// and the pre-scan in src/playback/sequence-factory.ts).
-	// See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml.
+	// See also lilypond_45e-Repeats-Nested-Alternatives.xml.
 	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
@@ -1353,8 +1341,8 @@ const TEST_CASES = [
 	// do/re/mi/fa/so/la/ti shape-note heads, which no fixture pins yet.
 	// ponytail: 'cross' (the plus-shaped head) and 'none' (no head, stem kept) still draw an
 	// ordinary oval — vexflow codes neither, so each needs a post-build glyph override like
-	// addSlashNoteheads. See also tmp/notehead_shapes.xml and
-	// tmp/lilypond_22b-Staff-Notestyles.xml.
+	// addSlashNoteheads. See also notehead_shapes.xml and
+	// lilypond_22b-Staff-Notestyles.xml.
 	testCase('notehead_shapes_extended.musicxml', 'notehead_shapes_extended.png'),
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
@@ -1462,8 +1450,8 @@ const TEST_CASES = [
 	//   <tuplet-number>, so the printed pair falls back to the time-modification: "3:2".
 	// ponytail: show-type (the note-value glyph some publishers print beside the number, which
 	// M3-M4 also ask for) is ignored — vexflow's Tuplet text is numerals only. See also
-	// tmp/lilypond_23b-Tuplets-Styles.xml, tmp/lilypond_23f-Tuplets-DurationButNoBracket.xml,
-	// and tmp/tuplet_placement.xml.
+	// lilypond_23b-Tuplets-Styles.xml, lilypond_23f-Tuplets-DurationButNoBracket.xml,
+	// and tuplet_placement.xml.
 	testCase('tuplet_display.musicxml', 'tuplet_display.png'),
 
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
@@ -1495,8 +1483,8 @@ const TEST_CASES = [
 	//   above the staff whichever way the stem points instead of following the notehead-side
 	//   rule the others do.
 	// ponytail: an explicit placement="above|below" on an articulation is still ignored — the
-	// side always comes from the stem. See tmp/articulation_staccato_placement_above.xml and
-	// tmp/articulation_staccato_placement_below.xml; worth its own measure when it matters.
+	// side always comes from the stem. See articulation_staccato_placement_above.xml and
+	// articulation_staccato_placement_below.xml; worth its own measure when it matters.
 	testCase('articulations_extended.musicxml', 'articulations_extended.png'),
 
 	// Treble stave, 4/4 (lilypond_32a-Notations M7-10): <notations><ornaments> on a notation
@@ -1517,7 +1505,7 @@ const TEST_CASES = [
 	//   sharp above and a three-quarters-flat below), then a trailing quarter rest.
 	// ponytail: an ornament's <accidental-mark> placement attribute is ignored — the first mark
 	// goes over the glyph and the second under it, which is how the pair conventionally reads.
-	// See also tmp/ornaments.xml and tmp/lilypond_33f-Trill-EndingOnGraceNote.xml.
+	// See also ornaments.xml and lilypond_33f-Trill-EndingOnGraceNote.xml.
 	testCase('ornaments.musicxml', 'ornaments.png'),
 
 	// Treble stave, 3/4: <ornaments><tremolo> — the slashes through a stem — and the tuplets
@@ -1531,7 +1519,7 @@ const TEST_CASES = [
 	//   OSMD engraves this identically.
 	// ponytail: only the single-note form draws. The type="start"/"stop" bowed-tremolo pair
 	// (slashes BETWEEN two noteheads) needs a spanner — see the note in addOrnaments — and no
-	// fixture reaches it; see tmp/tremelo_two_bars.xml when one does.
+	// fixture reaches it; see tremelo_two_bars.xml when one does.
 	testCase('tremolo.musicxml', 'tremolo.png'),
 
 	// <notations><technical> on a NOTATION stave (the tab side of <technical> is covered by
@@ -1698,7 +1686,7 @@ const TEST_CASES = [
 	// — see FIGURE_SIGN in score-reader.ts. <extend> (the dash carrying a figure across the
 	// notes after it) is likewise unimplemented; this fixture writes none, and says so in its
 	// own <miscellaneous-field>.
-	// See also tmp/lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
+	// See also lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
 	testCase('figured_bass.musicxml', 'figured_bass.png'),
 
 	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
@@ -1859,8 +1847,8 @@ const TEST_CASES = [
 	// a run of small notes is beamed by convention, whatever the exporter wrote.
 	// ponytail: no slur is drawn from a note out to its after-graces. The fixture carries no
 	// <slur>, and vexflow's own grace slur runs the other way (host to LEADING grace).
-	// See also tmp/lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
-	// measure, which has nothing to attach to) and tmp/lilypond_24e-GraceNote-StaffChange.xml.
+	// See also lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
+	// measure, which has nothing to attach to) and lilypond_24e-GraceNote-StaffChange.xml.
 	testCase('grace_after.musicxml', 'grace_after.png'),
 
 	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
@@ -1922,7 +1910,7 @@ const TEST_CASES = [
 	//   and the WHOLE group flips: every stem up, the beam parked above the TREBLE staff, and
 	//   the bass chords' stems running the full height of the gap to reach it (the mirror of
 	//   M2). Voice 3 keeps its own down stems below the bass staff, clear of the beam.
-	// See also tmp/cross_stave_16ths_ghost_notes_simple.xml.
+	// See also cross_stave_16ths_ghost_notes_simple.xml.
 	testCase('cross_stave.musicxml', 'cross_stave.png'),
 
 	// A different key signature on each staff of one part — normal for transposing scores
@@ -1935,7 +1923,7 @@ const TEST_CASES = [
 	//   4/4s line up in one vertical column and both whole notes start at the same x — the
 	//   meter belongs to the measure, not to a stave, so the narrower opening is padded out
 	//   to the wider one (alignBegModifiers).
-	// See also tmp/lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second
+	// See also lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second
 	// staff's key arrives after a <backup> and so is easy to miss.
 	testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
 
@@ -1980,8 +1968,8 @@ const TEST_CASES = [
 	//   F#. Without the cancellation the measure would look like no change happened at all.
 	// ponytail: the <part-name-display>/<part-abbreviation-display> in M2's <print> — the
 	// half that relabels the stave "Clarinet in Bb" mid-score — is ignored; part labels are
-	// read once off the <part-list>. See also tmp/lilypond_72b-TransposingInstruments-Full.xml
-	// and tmp/concert_score_and_for_part.xml (the <for-part> concert-score form).
+	// read once off the <part-list>. See also lilypond_72b-TransposingInstruments-Full.xml
+	// and concert_score_and_for_part.xml (the <for-part> concert-score form).
 	testCase('transpose_change.musicxml', 'transpose_change.png'),
 
 	// Sixteen identical C5 whole-note measures wrapping onto three systems (seven, eight,
@@ -2105,19 +2093,124 @@ const TEST_CASES = [
 	testCase('aloof_measure_14.musicxml', 'aloof_measure_14.png'),
 	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
 
-	// TODO(coverage): whole real-world scores. tmp/ holds ~25 of them — bach_air,
-	// bach_prelude_in_c, chopin_prelude, mozart_string_quartet, joplin_the_entertainer,
-	// dichterliebe, greens_greenery, variety.xml — and none is represented here. Every existing
-	// case is a hand-cut fixture proving one thing, which is right for diagnosis but leaves the
-	// whole-page path (multi-system wrapping, part spacing, page-scale collision resolution
-	// across hundreds of measures) untested at realistic size.
-	// Deliberately NOT given a fixture here: a full score makes a large, brittle screenshot that
-	// churns on every layout change, and it cannot say WHICH thing broke. Do this only once
-	// most of the TODOs above are closed, and then as one or two scores, not twenty — pick a
-	// piano score and a multi-part score, and expect to re-accept their baselines often.
-	// The cheap version, worth doing much sooner: a smoke test that renders every tmp/ score
-	// and asserts only that it does not throw. That catches crashes on real input without any
-	// screenshot churn, and belongs in its own test file rather than in TEST_CASES.
+	// ---------------------------------------------------------------------------------------
+	// Whole real-world scores, engraved end to end at the default 900px reference width. Every
+	// case above is hand-cut to prove one thing; these prove the opposite — that the whole-page
+	// path holds up at realistic size. They are the broadest cases in the suite, so they sit
+	// last, and they are NOT diagnostic: a diff here says something moved somewhere, not what.
+	// Find the system that changed, then reproduce it in a focused fixture above before
+	// touching src/. Comments stay one line — the score is the description.
+	//
+	// Excluded: Gounod's Méditation (365 measures, 92MP) and Lee Actor's Prelude to a Tragedy
+	// (902 measures across 22 parts, 135MP). Both render, but diffing the latter needs ~1.6GB
+	// of raw buffers.
+	// ---------------------------------------------------------------------------------------
+
+	// Chopin: one measure of piano, both staves in bass clef, 3 flats.
+	testCase('score_chopin_prelude.musicxml', 'score_chopin_prelude.png'),
+
+	// Brahms: 8 measures of solo violin double stops, with fingerings and circled string
+	// numbers.
+	testCase(
+		'score_brahms_violin_concerto.musicxml',
+		'score_brahms_violin_concerto.png',
+	),
+
+	// Fauré, "Après un rêve": 4 measures of voice over braced piano, with lyrics and hairpins.
+	testCase(
+		'score_faure_apres_un_reve.musicxml',
+		'score_faure_apres_un_reve.png',
+	),
+
+	// Mozart, K. 387: 13 measures of string quartet — four parts, viola in alto C clef, pickup.
+	testCase(
+		'score_mozart_string_quartet.musicxml',
+		'score_mozart_string_quartet.png',
+	),
+
+	// Debussy, "Mandoline": 12 measures of voice over piano in 6/8 — the densest annotation
+	// stack here (lyrics, graces, arpeggios, an octave shift, hairpins, a mid-measure clef).
+	testCase('score_debussy_mandoline.musicxml', 'score_debussy_mandoline.png'),
+
+	// Beethoven, "An die ferne Geliebte": 15 measures of voice over piano, with pedal marks and
+	// a mid-measure clef change on the lower piano stave.
+	testCase(
+		'score_beethoven_an_die_ferne_geliebte.musicxml',
+		'score_beethoven_an_die_ferne_geliebte.png',
+	),
+
+	// 16 measures of solo guitar on a TAB stave with no notation stave above it.
+	testCase('score_wanna_skip_class.musicxml', 'score_wanna_skip_class.png'),
+
+	// Mozart, "An Chloe": 18 measures of voice over piano in cut common, with turn ornaments.
+	testCase('score_mozart_an_chloe.musicxml', 'score_mozart_an_chloe.png'),
+
+	// Bach, "Air": 19 measures of string quartet with repeats and numbered endings spanning all
+	// four parts.
+	testCase('score_bach_air.musicxml', 'score_bach_air.png'),
+
+	// TODO: False positive — this baseline was created from the current render and shows a bug.
+	// Mozart's grace notes slur from the piano's lower stave to its upper one, and vexml draws
+	// that cross-staff slur as a tall narrow spike that shoots up through BOTH piano staves and
+	// into the voice stave above (measure 3 of system 1, around x=670). A slur should hug its
+	// notes, not span three staves as a vertical needle. Fix the cross-staff slur geometry, then
+	// `vex test score_mozart_das_veilchen --update`.
+	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes.
+	testCase(
+		'score_mozart_das_veilchen.musicxml',
+		'score_mozart_das_veilchen.png',
+	),
+
+	// TODO: False positive — this baseline was created from the current render and shows a bug.
+	// The piano's opening slur over-arcs: instead of hugging the right-hand figure it balloons
+	// up across the empty voice stave above it (systems 1 and 2). Compare the arc height here
+	// against slur.musicxml, which never leaves its own stave. Likely the same
+	// long/steep-slur flattening the upstream slurs_long_steep_arc_flattening_chopin.xml case
+	// covers. Fix, then `vex test score_schumann_dichterliebe --update`.
+	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
+	testCase(
+		'score_schumann_dichterliebe.musicxml',
+		'score_schumann_dichterliebe.png',
+	),
+
+	// Austrian national anthem: 28 measures of voice over piano, with three stacked verses of
+	// lyrics setting the measure widths.
+	testCase('score_land_der_berge.musicxml', 'score_land_der_berge.png'),
+
+	// TODO: False positive — this baseline was created from the current render and is badly
+	// wrong. The source is a Singer treble stave over a two-stave A.Guitar part (treble
+	// notation + 6-line TAB); vexml draws THREE TAB staves, dropping the notation staves, the
+	// 3-sharp key signature, the 3/4 meter, the clefs and all 82 lyrics, and prints frets that
+	// do not match the source. It also stacks chord diagrams directly on top of the stave lines.
+	// A part whose staves are notation+TAB seems to turn the whole score into tab —
+	// score_greens_greenery below fails the same way, while structure_notation_and_tab_parts
+	// (notation and TAB in SEPARATE parts) renders correctly, which is where to start looking.
+	// Reproduced on a 2-measure slice and confirmed against `vex render --osmd`.
+	// Fix, then `vex test score_amazing_grace --update`.
+	// "Amazing Grace": 33 measures of voice over guitar notation + TAB, with lyrics and chord
+	// diagrams.
+	testCase('score_amazing_grace.musicxml', 'score_amazing_grace.png'),
+
+	// TODO: False positive — same notation-becomes-TAB bug as score_amazing_grace above. The
+	// source is ONE Steel Guitar part of two staves (treble notation + 6-line TAB); vexml draws
+	// two TAB staves and drops the notation stave, the 2-flat key signature and the 4/4 meter.
+	// Fix with score_amazing_grace, then `vex test score_greens_greenery --update`.
+	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings.
+	testCase('score_greens_greenery.musicxml', 'score_greens_greenery.png'),
+
+	// TODO: False positive — this baseline was created from the current render and shows a bug.
+	// Measure 2 holds a genuine cross-staff beam (voice 2 begins on staff 1 at C4, then
+	// continues on staff 2 for F3/G3/A3). vexml draws it as two long diagonal beams that slash
+	// across the treble stave from measure 1 into measure 2, leaves three stems standing with no
+	// noteheads shooting off the top of the image, and inflates the first system's height enough
+	// to leave a 385px blank band beneath it — every other system here gaps by ~85-130px.
+	// See the recent cross-staff beam work in engraving/. Fix, then
+	// `vex test score_joplin_elite_syncopations --update`.
+	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
+	testCase(
+		'score_joplin_elite_syncopations.musicxml',
+		'score_joplin_elite_syncopations.png',
+	),
 ];
 
 describe('render', () => {

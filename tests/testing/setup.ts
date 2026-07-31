@@ -137,6 +137,12 @@ afterAll(async () => {
 	sharedServer?.stop(true);
 });
 
+// Cairo (under node-canvas) refuses a surface taller than 32767px, and the composite stacks
+// three full-height panels — so a baseline over ~10,900px tall cannot get a diff artifact.
+// The whole-score cases hit this (score_joplin_elite_syncopations is 11,829px), and without
+// the guard the throw replaces a readable "N pixels differ" with a Cairo error.
+const MAX_CANVAS_HEIGHT = 32767;
+
 // [old][diff][new] stacked vertically, each captioned, returned as a PNG buffer.
 function composite(
 	expected: PNG,
@@ -284,6 +290,13 @@ expect.extend({
 		);
 
 		if (mismatch > 0) {
+			if (expected.height * 3 + 96 > MAX_CANVAS_HEIGHT) {
+				return {
+					pass: false,
+					message: () =>
+						`${filename}: ${mismatch} pixels differ. Too tall (${expected.height}px) to composite a diff — inspect it with \`vex render\` against the baseline in ${path.relative(ROOT, SCREENSHOTS_DIR)}.`,
+				};
+			}
 			seenDiffs.add(filename);
 			mkdirSync(DIFF_DIR, { recursive: true });
 			writeFileSync(
