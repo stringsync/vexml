@@ -310,11 +310,13 @@ const TEST_CASES = [
 	// holds one C5 whole note.
 	// - M1: opens the system with a treble clef, a 3-sharp key signature (F#, C#, G#),
 	//   and a 4/4 time signature.
-	// - M2: changes the key to 2 flats (Bb, Eb) — only the new key signature is redrawn
-	//   at the change (the clef and time signature are NOT repeated).
+	// - M2: changes the key to 2 flats (Bb, Eb) — only the key signature is redrawn at the
+	//   change (the clef and time signature are NOT repeated), and because the sharps flip
+	//   to flats all three are cancelled first: three naturals (F, C, G) then the two flats.
 	// - M3: continues in 2 flats with no key signature redrawn.
 	// - M4: changes to G# minor (5 sharps) — a minor key whose bare tonic 'G#' is not a
 	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
+	//   The flats flip back to sharps, so two naturals cancel them ahead of the five sharps.
 	testCase('key.musicxml', 'key.png'),
 
 	// Treble stave, common time: the church modes. Every <key> carries the same
@@ -606,16 +608,6 @@ const TEST_CASES = [
 	// way a tie or slur is; no fixture reaches that yet.
 	testCase('wedges.musicxml', 'wedges.png'),
 
-	// TODO: True negative, accepted with the flaw in the baseline: the "8vb" label in M1 grazes
-	// the underside of the beam over the two notes it covers — the top of its "8" touches the
-	// beam's lower edge. vexflow parks a below-stave TextBracket one text line under the staff,
-	// which is right until a stem-down beam reaches into that band. It can't go through
-	// CollisionDetector as things stand: noteRect's bottom edge is the lowest notehead, so a
-	// below-stave beam isn't an obstacle yet and dropClear has nothing to clear. Widen the note
-	// obstacle downward to the beam-extended stem tip first, then resolve the bracket through
-	// it. The "15mb" bracket in the same measure shows the clean case (its beam ends just
-	// before the label starts).
-	//
 	// Treble stave, common time (lilypond_33d-Spanners-OctaveShifts M1): <octave-shift>, the
 	// 8va/8vb/15ma/15mb ottava brackets. This is a DIFFERENT feature from <clef-octave-change>,
 	// which clef_treble_octave covers. MusicXML carries SOUNDING pitch, so the point of the
@@ -631,6 +623,11 @@ const TEST_CASES = [
 	//   onto the 2nd space.
 	// - B3 and C4 under a size-8 type="up" shift: "8vb" below them, drawn an octave higher onto
 	//   the middle line and 3rd space.
+	// Both below-stave brackets are pushed a row further down than vexflow's default one text
+	// line, because the notes they cover are beamed stem-down INTO that row: "15mb" clears the
+	// long beam sloping under the first four notes and "8vb" clears the beam over its own two,
+	// each resolved through the collision pipeline (DrawPass.clearOctaveBracket). The page's
+	// bottom crop grows with them, so neither label is clipped.
 	// ponytail: a shift whose start has no note after it in its own measure (or whose stop has
 	// none before it) is dropped, and a span that wraps onto a later system would draw one
 	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
@@ -1099,15 +1096,20 @@ const TEST_CASES = [
 		layout: { type: 'standard', referenceWidth: 350 },
 	}),
 
-	// TODO(coverage): slur line types — <slur line-type="dashed"|"dotted"|"wavy"> and the
-	// bezier/orientation attributes. All nine existing slur_* fixtures draw a solid curve.
-	// Fixture: slur_line_types.musicxml (lilypond_33c-Spanners-Slurs M1-2).
-	// Expected: a dashed slur renders as a broken curve, a dotted one as a dotted curve; an
-	// unrecognized line-type falls back to solid rather than dropping the slur.
-	// Current: unverified — expect every slur solid. See also
-	// tmp/lilypond_33g-Slur-ChordedNotes.xml (a slur whose ends are chord members, which is
-	// about anchor choice rather than line style and deserves its own measure).
-	// testCase('slur_line_types.musicxml', 'slur_line_types.png'),
+	// Treble stave, 4/4: <slur line-type>. Every measure is the same four stem-down
+	// quarters C5 D5 E5 F5 under one above-bowing slur, so only the stroke varies. A
+	// dashed or dotted slur is drawn as a single stroked bezier rather than the filled
+	// lens a solid one is, so it reads as a thinner, even-weight curve with no taper.
+	// - M1: line-type="solid" — the ordinary filled slur, thick at the middle and
+	//   tapering to points at both ends. The reference for the three below.
+	// - M2: "dashed" — the same arc broken into even dashes.
+	// - M3: "dotted" — the same arc as a run of dots.
+	// - M4: "wavy" — falls back to solid, so M4 is drawn identically to M1 rather than
+	//   the slur being dropped (see LINE_TYPE_DASH in src/engraving/score-reader.ts).
+	// ponytail: the <slur> bezier/orientation attributes (bezier-x/y, orientation) are
+	// still ignored — vexml computes its own control points to clear the spanned notes,
+	// which an exporter's absolute offsets would fight rather than improve.
+	testCase('slur_line_types.musicxml', 'slur_line_types.png'),
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
 	// under the staff spanning four B4 quarters. The pedal goes down under the first
@@ -1638,17 +1640,13 @@ const TEST_CASES = [
 	//   prints above the beat-3 note rather than being dropped or stacked on the first.
 	// - M14: a symbol over a bracketed tuplet — a C5 triplet (two beamed eighths + an eighth
 	//   rest, so the group brackets rather than riding a beam) + dotted-half rest, under a
-	//   "B♭7" symbol. The tuplet bracket is drawn above the stave, in the same band the
-	//   symbol occupies.
-	// TODO: False positive: M14's baseline was created from the current render, so it accepts
-	// a collision — "B♭7" is drawn inside the tuplet bracket's left hook, text over bracket
-	// line. buildTuplets (src/engraving/spanner-builder.ts) never passes vexflow a `location`,
-	// so every tuplet lands above the stave even when (as here) the stems and beam point down
-	// and it belongs below; and drawTuplets never registers the bracket as a collision
-	// obstacle, so drawHarmony's liftClear can't see it. Reproduced from
-	// LP-21-Jazz-I-G6-Day-1-04-Exercise-3 M3, where MuseScore draws the bracket below the
-	// beam and the symbol sits clear. Review the render, then run
-	// `vex test harmony --update` only after the image is confirmed correct.
+	//   "B♭7" symbol. The stems and beam point down, so buildTuplets places the bracket
+	//   BELOW the stave (Tuplet.LOCATION_BOTTOM, under the beam) and the symbol has the
+	//   above-stave band to itself — the two never share a band, so nothing has to be
+	//   resolved through CollisionDetector. Reproduced from
+	//   LP-21-Jazz-I-G6-Day-1-04-Exercise-3 M3, where MuseScore draws it the same way.
+	//   ponytail: an above-stave tuplet bracket still isn't a collision obstacle, so a
+	//   stem-UP tuplet under a chord symbol would overprint. No fixture reaches that.
 	testCase('harmony.musicxml', 'harmony.png'),
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
@@ -1937,19 +1935,27 @@ const TEST_CASES = [
 	// transpose_change.musicxml below.
 	testCase('transpose.musicxml', 'transpose.png'),
 
-	// TODO(coverage): a <transpose> that changes mid-score (an instrument doubling change).
-	// Fixture: transpose_change.musicxml (lilypond_72c-TransposingInstruments-Change M1-2).
-	// Expected: the key signature is redrawn at the change, since the written key moves with
-	// the transposition — the visible half of the feature, and the part that can actually be
-	// wrong on the page.
-	// Current: unverified. See also tmp/lilypond_72b-TransposingInstruments-Full.xml and
-	// tmp/concert_score_and_for_part.xml (the <for-part> concert-score form).
-	// testCase('transpose_change.musicxml', 'transpose_change.png'),
+	// A <transpose> that changes mid-score — an instrument doubling change, here a clarinet
+	// in Eb picking up a clarinet in Bb (lilypond_72c-TransposingInstruments-Change). One
+	// treble stave in common time, one C4 whole note per measure on the ledger line below.
+	// The transposition itself moves nothing (see transpose.musicxml above); what it changes
+	// is the WRITTEN key, and that is the visible half of the feature.
+	// - M1: opens at 1 sharp (F#) — clef, key signature, common-time C.
+	// - M2: the new transposition puts the part in C major, so the change has no accidentals
+	//   of its own to print. It is still drawn: a lone natural on the top line cancels the
+	//   F#. Without the cancellation the measure would look like no change happened at all.
+	// ponytail: the <part-name-display>/<part-abbreviation-display> in M2's <print> — the
+	// half that relabels the stave "Clarinet in Bb" mid-score — is ignored; part labels are
+	// read once off the <part-list>. See also tmp/lilypond_72b-TransposingInstruments-Full.xml
+	// and tmp/concert_score_and_for_part.xml (the <for-part> concert-score form).
+	testCase('transpose_change.musicxml', 'transpose_change.png'),
 
-	// Sixteen identical C5 whole-note measures wrapping onto two systems (nine then seven
-	// measures — each whole note floors at its minimum width) under the default layout. The
-	// default 'system' measure numbering prints a "1" above the top system's first measure
-	// and a "10" above the bottom system's first measure.
+	// Sixteen identical C5 whole-note measures wrapping onto three systems (seven, eight,
+	// then one — each whole note floors at its minimum width, and the first system gives up
+	// a measure's worth of room to the clef and time signature) under the default layout.
+	// The default 'system' measure numbering prints a "1", an "8" and a "16" above each
+	// system's first measure. The lone M16 stays ragged at its natural width — the last
+	// system is under minLastSystemFill, so it is not justified out to the page edge.
 	testCase('system_break.musicxml', 'system_break.png'),
 
 	// Four C5 whole-note measures, treble 4/4, that would all fit on one system — but
@@ -1971,16 +1977,14 @@ const TEST_CASES = [
 		layout: { type: 'panoramic' },
 	}),
 
-	// The same two systems (nine then seven C5 whole-note measures), but with
-	// minLastSystemFill lowered to 0 so the last system always justifies: the
-	// seven bottom measures stretch to fill the full page width (flush right edge, wider
-	// note spacing) instead of staying ragged at their natural width like in
-	// system_break.png. The top nine-measure system is unchanged.
-	// TODO: False positive: this baseline is created from the current render, so it may
-	// accept an incorrect screenshot. The render suite is currently also blocked by an
-	// unrelated in-progress `buildPedals` change from another agent. Once the tree builds,
-	// confirm the bottom system spans the full page width, then run
-	// `vex test last_system_stretch --update` only after confirming it.
+	// The same sixteen C5 whole-note measures wrapping the same three ways (7 + 8 + 1), but
+	// with minLastSystemFill lowered to 0 so the last system ALWAYS justifies. The only
+	// difference from system_break.png is the bottom system: its lone M16 is stretched out
+	// to the full page width, its whole note left against the clef and its closing barline
+	// flush with the right margin, instead of stopping at its natural width. The two full
+	// systems above are unchanged. A one-measure system blown out to a whole page line is
+	// what a 0 fill threshold asks for — the point of the case is that the threshold is
+	// honoured, not that the result is good engraving.
 	testCase('system_break.musicxml', 'last_system_stretch.png', {
 		minLastSystemFill: 0,
 	}),

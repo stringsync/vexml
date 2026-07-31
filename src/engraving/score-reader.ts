@@ -168,10 +168,11 @@ export type DirectionLineSpan = {
 	stopEnd: LineEnd;
 };
 
-/* <bracket line-type> -> the canvas dash array to stroke it with; null is a solid line.
- * ponytail: 'wavy' falls back to solid — a wavy bracket needs the SMuFL squiggle run that
+/* A `line-type` attribute (<bracket>, <slur>, …) -> the canvas dash array to stroke it
+ * with; null is a solid line.
+ * ponytail: 'wavy' falls back to solid — a wavy line needs the SMuFL squiggle run that
  * VibratoBracket draws for trills, not a dash pattern. No fixture asks for one. */
-const LINE_TYPE_DASH: Record<string, number[] | null> = {
+export const LINE_TYPE_DASH: Record<string, number[] | null> = {
 	solid: null,
 	dashed: [5, 5],
 	dotted: [1, 3],

@@ -14,6 +14,7 @@ import {
 	Bend,
 	ClefNote,
 	Element,
+	Font,
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
@@ -73,6 +74,7 @@ import {
 	MULTI_REST_PADDING,
 	NAVIGATION_FONT_SIZE,
 	NOTEHEAD_HALF_H,
+	OTTAVA_TEXT_LINE,
 	PAGE_MARGIN_X,
 	PART_GROUP_STEP,
 	PEDAL_BOTTOM_MARGIN,
@@ -1235,9 +1237,9 @@ export class DrawPass {
 		// key as M2 — no spurious redraw.
 		const prevMeasure = part.measures[m - 1];
 		const key = measure.getKey(staffNumber);
+		const prevKey = prevMeasure?.getKey(staffNumber) ?? null;
 		const keyChanged =
-			this.reader.keyIdentity(key) !==
-			this.reader.keyIdentity(prevMeasure?.getKey(staffNumber) ?? null);
+			this.reader.keyIdentity(key) !== this.reader.keyIdentity(prevKey);
 		const clefName = clef
 			? this.translator.vexflowClef(clef.sign, clef.line)
 			: 'treble';
@@ -1245,6 +1247,17 @@ export class DrawPass {
 		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key. The
 		// positions depend on the clef, so this is read per stave.
 		const customKey = key && !isTab ? customKeyAccidentals(key, clefName) : [];
+		// The key being replaced, so vexflow can print the naturals that cancel it — the
+		// only thing a change TO C major has to draw, and without it M2 of
+		// transpose_change looked like no change happened at all. vexflow applies the
+		// modern rule itself (cancel only the accidentals dropped, or all of them when
+		// sharps flip to flats), so this hands it the old spec and lets it decide.
+		// Only at a change: restating an unchanged key at a system start cancels nothing.
+		// A non-traditional key has no spec to cancel with, either side of the change.
+		const cancelKeySpec =
+			keyChanged && prevKey?.rootNote && customKey.length === 0
+				? vexflowKeySpec(prevKey)
+				: undefined;
 		const addKeySignature = () => {
 			if (customKey.length > 0) {
 				stave.addModifier(
@@ -1254,7 +1267,7 @@ export class DrawPass {
 					StaveModifierPosition.BEGIN,
 				);
 			} else if (key?.rootNote) {
-				stave.addKeySignature(vexflowKeySpec(key));
+				stave.addKeySignature(vexflowKeySpec(key), cancelKeySpec);
 			}
 		};
 		// Against the clef in effect at the END of the previous measure, not at its start: a
@@ -2121,13 +2134,18 @@ export class DrawPass {
 
 	/*
 	 * The collision obstacle for a note: a box from its top (noteTop — notehead ∪ beam-extended
-	 * stem tip ∪ above articulations) down to its bottom notehead, one notehead wide, centered on
-	 * its laid-out x. Deliberately built from noteTop/getNoteHeadBounds, NOT note.getBoundingBox()
-	 * (which unions attached modifiers and reports a bogus near-origin y for grace groups).
+	 * stem tip ∪ above articulations) down to its bottom (noteBottom — the mirror), one notehead
+	 * wide, centered on its laid-out x. Deliberately built from noteTop/noteBottom, NOT
+	 * note.getBoundingBox() (which unions attached modifiers and reports a bogus near-origin y
+	 * for grace groups).
+	 *
+	 * The bottom edge reaches the stem tip, not just the lowest notehead, so a stem-down beam is
+	 * an obstacle to the things that stack UNDER a stave — an ottava bracket, a pedal, a
+	 * below-stave words direction all sat in the band a low beam reaches into.
 	 */
 	private noteRect(note: StaveNote): Rect {
 		const top = this.noteTop(note);
-		const bottom = note.getNoteHeadBounds().yBottom;
+		const bottom = this.noteBottom(note);
 		const hw = this.translator.noteheadHalfWidth();
 		return new Rect(note.getAbsoluteX() - hw, top, 2 * hw, bottom - top);
 	}
@@ -3303,7 +3321,9 @@ export class DrawPass {
 			tie.setContext(this.context).draw();
 		}
 		for (const slur of this.spanners.buildSlurs(this.allChords, this.byLead)) {
-			slur.setContext(this.context).draw();
+			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
+			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
+			slur.setContext(this.context).drawWithStyle();
 		}
 		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
 		for (const tie of this.spanners.buildHammerPulls(
@@ -3340,7 +3360,7 @@ export class DrawPass {
 			if (!start || !stop) {
 				continue;
 			}
-			new TextBracket({
+			const bracket = new TextBracket({
 				start,
 				stop,
 				text: span.label,
@@ -3348,9 +3368,15 @@ export class DrawPass {
 				position: span.above
 					? TextBracket.Position.TOP
 					: TextBracket.Position.BOTTOM,
-			})
-				.setContext(this.context)
-				.draw();
+			});
+			this.clearOctaveBracket(
+				bracket,
+				span.notes
+					.map((note) => this.byLead.get(note))
+					.filter((note): note is StaveNote => note !== undefined),
+				span.above,
+			);
+			bracket.setContext(this.context).draw();
 		}
 		this.drawDirectionLines();
 		// Trill extension lines, resolved over the whole score like the other spanners so a
@@ -3449,6 +3475,62 @@ export class DrawPass {
 			this.pageBottom,
 			placed.bottom + PEDAL_BOTTOM_MARGIN,
 		);
+	}
+
+	/*
+	 * Move an ottava bracket's row further from the stave until its label clears the notes it
+	 * covers. vexflow parks a TextBracket one text line off the staff, which is right until a
+	 * beam reaches into that band — a stem-down beam under an "8vb", a stem-up one over an
+	 * "8va" — and then the label is drawn straight through the beam line.
+	 *
+	 * Same shape as {@link dropPedalClear}: a scoped resolver over the span's own notes (the
+	 * shared index is per-system and brackets resolve after the last one), and the resolved
+	 * shift converted back into the single `line` offset vexflow positions the whole bracket
+	 * from. The note obstacles reach the beam-extended stem tip, which is what makes the beam
+	 * visible to the probe at all (see noteRect).
+	 */
+	private clearOctaveBracket(
+		bracket: TextBracket,
+		notes: StaveNote[],
+		above: boolean,
+	): void {
+		const stave = notes[0]?.getStave();
+		if (!stave) {
+			return;
+		}
+		// The baseline vexflow would draw the label on, reproduced from TextBracket.draw.
+		// renderText draws upward from a baseline, so the label's ink band is the one font
+		// size above it.
+		// TextBracket adds Tables.TEXT_HEIGHT_OFFSET_HACK (1, and not exported) to a
+		// below-stave line, so match it here or the probe measures the wrong row.
+		const baseline = above
+			? stave.getYForTopText(OTTAVA_TEXT_LINE)
+			: stave.getYForBottomText(OTTAVA_TEXT_LINE + 1);
+		const height = Font.convertSizeToPixelValue(bracket.fontInfo.size);
+		const hw = this.translator.noteheadHalfWidth();
+		const xs = notes.map((note) => note.getAbsoluteX());
+		const left = Math.min(...xs) - hw;
+		const natural = new Rect(
+			left,
+			baseline - height,
+			Math.max(...xs) + hw - left,
+			height,
+		);
+		const scoped = new CollisionResolver(this.scratchViewport);
+		for (const note of notes) {
+			scoped.add({ rect: this.noteRect(note), kind: 'note' });
+		}
+		const placed = above
+			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
+			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+		// getYForTopText counts away from the stave upward and getYForBottomText downward, so
+		// the same "further out" shift has the opposite sign in line units.
+		const shift =
+			(above ? natural.y - placed.y : placed.y - natural.y) /
+			stave.getSpacingBetweenLines();
+		bracket.setLine(OTTAVA_TEXT_LINE + shift);
+		this.pageTop = Math.min(this.pageTop, placed.y);
+		this.pageBottom = Math.max(this.pageBottom, placed.bottom);
 	}
 
 	/*

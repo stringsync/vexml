@@ -38,7 +38,7 @@ import {
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
 import { NoteheadArticulation } from './note-translator';
-import type { PedalMark, WedgeMark } from './score-reader';
+import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
 
 /*
  * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
@@ -1135,11 +1135,18 @@ export class SpannerBuilder {
 							{ x: 0, y: dir * (depth - y1) },
 						],
 					};
-					if (isGrace) {
-						slurs.push(new HeadCurve(curveFrom, curveTo, options, y0, y1));
-					} else {
-						slurs.push(new Curve(curveFrom, curveTo, options));
+					const curve = isGrace
+						? new HeadCurve(curveFrom, curveTo, options, y0, y1)
+						: new Curve(curveFrom, curveTo, options);
+					// A dashed/dotted slur is a single stroked bezier, not the filled lens a
+					// solid one is: vexflow's renderCurve already skips the fill and the
+					// second (thickness) pass when the element carries a lineDash. The
+					// draw pass calls drawWithStyle, which puts the dash on the context.
+					// vexflow's ElementStyle spells a dash array space-separated.
+					if (slur.dash) {
+						curve.setStyle({ lineDash: slur.dash.join(' ') });
 					}
+					slurs.push(curve);
 				};
 
 				// When the stop note wraps onto a later system its stave sits lower on the
@@ -1338,6 +1345,9 @@ type SlurConnector = {
 	slurType: string;
 	partner: { note: Note } | null;
 	placement: string | null;
+	/* The canvas dash array from <slur line-type>, or null for a solid curve. A
+	 * hammer-on/pull-off has no line-type, so it is always solid. */
+	dash: number[] | null;
 };
 function slurConnectors(note: Note): SlurConnector[] {
 	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note));
@@ -1346,14 +1356,24 @@ function slurConnectors(note: Note): SlurConnector[] {
 			slurType: h.hammerOnType,
 			partner: h.partner,
 			placement: null,
+			dash: null,
 		})),
 		...note.pullOffs.map((p) => ({
 			slurType: p.pullOffType,
 			partner: p.partner,
 			placement: null,
+			dash: null,
 		})),
 	].filter((t) => !slurTargets.has(t.partner?.note));
-	return [...note.slurs, ...techniques];
+	return [
+		...note.slurs.map((s) => ({
+			slurType: s.slurType,
+			partner: s.partner,
+			placement: s.placement,
+			dash: LINE_TYPE_DASH[s.getAttribute('line-type') ?? 'solid'] ?? null,
+		})),
+		...techniques,
+	];
 }
 
 /*

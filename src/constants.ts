@@ -428,6 +428,10 @@ export const VOLTA_STAVE_GAP = 34;
  * is where the ottava brackets sit, so these take the next one out and stay clear of them. */
 export const DIRECTION_LINE_TEXT_LINE = 2;
 
+/** Where an ottava bracket (<octave-shift>) starts out, matching TextBracket's own default
+ * line. It only ever moves further out from there — see DrawPass.clearOctaveBracket. */
+export const OTTAVA_TEXT_LINE = 1;
+
 /** Length (px) of the vertical hook a <bracket>'s `line-end` terminates in. */
 export const DIRECTION_LINE_HOOK = 8;
 
