@@ -48,6 +48,14 @@ export const STAVE_CLEARANCE = 12;
 /** Absolute floor for a measure's note area. */
 export const BASE_VOICE_WIDTH = 80;
 
+/** Smallest fraction of their natural width a system's note areas may be squeezed to in
+ * order to honor a `<print new-system="no"/>`. A document that states a break decision on
+ * every measure has laid its systems out completely, so vexml keeps its lines intact and
+ * lets them compress — but only this far. Past it (a wide engraved line rendered into a
+ * narrow container) the music would be unreadable, so the breaker wraps anyway and the
+ * document's layout is abandoned for that line. */
+export const MIN_SYSTEM_SQUASH = 0.6;
+
 /** Reference note value for the logarithmic spacing curve: VexFlow ticks in a quarter
  * note (RESOLUTION / 4). A quarter note gets exactly one `noteSpacing` of width. */
 export const QUARTER_NOTE_TICKS = 4096;

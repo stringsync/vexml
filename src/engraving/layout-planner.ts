@@ -18,6 +18,7 @@ import {
 	LEAD_TIME,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
+	MIN_SYSTEM_SQUASH,
 	MULTI_REST_MIN_WIDTH,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
@@ -422,28 +423,40 @@ export class LayoutPlanner {
 		} else {
 			let row: number[] = [];
 			let rowWidth = 0;
+			let rowArea = 0;
 			for (let m = 0; m < measureCount; m++) {
 				if (multiRestHidden.has(m)) {
 					continue;
 				}
 				const area = noteAreas[m] ?? BASE_VOICE_WIDTH;
+				const print = parts.map((part) => part.measures[m]?.print);
 				// A <print new-system="yes"/> forces a break before this measure regardless of
-				// width, unless honorSystemBreaks is off; otherwise wrap once the next measure's
-				// note area would overrun the line.
+				// width, unless honorSystemBreaks is off. So does a new page: its first measure
+				// necessarily starts a system, whether or not the exporter also said so.
 				const forcedBreak =
 					config.honorSystemBreaks &&
-					parts.some((part) => part.measures[m]?.print?.newSystem);
-				if (
-					row.length > 0 &&
-					(forcedBreak ||
-						rowWidth + LEAD_BARLINE + area >
-							usableOf(systems.length) * config.maxSystemFill)
-				) {
+					print.some((p) => p?.newSystem || p?.newPage);
+				// An explicit <print new-system="no"/> is a statement, not silence: the document
+				// laid this line out and wants the measure to stay on it. Honor it by squeezing
+				// the system rather than wrapping — but only down to MIN_SYSTEM_SQUASH, past
+				// which the line is too cramped to be worth the fidelity.
+				const keepsLine =
+					config.honorSystemBreaks &&
+					print.some((p) => p?.getAttribute('new-system') === 'no');
+				const usable = usableOf(systems.length);
+				const nextWidth = rowWidth + LEAD_BARLINE + area;
+				// Otherwise wrap once the next measure's note area would overrun the line.
+				const overruns = keepsLine
+					? nextWidth - usable > (rowArea + area) * (1 - MIN_SYSTEM_SQUASH)
+					: nextWidth > usable * config.maxSystemFill;
+				if (row.length > 0 && (forcedBreak || overruns)) {
 					systems.push(row);
 					row = [];
 					rowWidth = 0;
+					rowArea = 0;
 				}
 				rowWidth += leadOf(m, row.length === 0) + area;
+				rowArea += area;
 				row.push(m);
 			}
 			if (row.length > 0) {

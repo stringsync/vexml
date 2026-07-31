@@ -157,11 +157,16 @@ export type Config = {
 	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
 	 * whose measures already sit below this fill breaks at the same place either way. */
 	maxSystemFill: number;
-	/** Whether a `<print new-system="yes">` forces a system break before its measure
-	 * (default: true). When false the breaker ignores the document's breaks entirely and
-	 * wraps purely on width — useful when the source's engraved line breaks were made for a
-	 * different page size than the one being rendered. `new-system="no"` is never honored:
-	 * vexml still wraps a line that overruns. No effect on panoramic layouts. */
+	/** Whether the document's own system breaks are honored (default: true). A
+	 * `<print new-system="yes">` — or the first measure of a `new-page="yes"` — forces a break
+	 * before its measure, and an explicit `<print new-system="no">` suppresses vexml's
+	 * width-based wrap, squeezing the system to keep the measure on its engraved line
+	 * (down to MIN_SYSTEM_SQUASH, past which vexml wraps anyway). Silence is not a
+	 * statement: a measure with no `<print>` wraps purely on width, so a file that only
+	 * sprinkles a few hand-forced breaks still reflows. When false the breaker ignores the
+	 * document's breaks entirely and wraps purely on width — useful when the source's engraved
+	 * line breaks were made for a different page size than the one being rendered. No effect
+	 * on panoramic layouts. */
 	honorSystemBreaks: boolean;
 	/** Fixed container height in px, or null for none (default: null). When set, vexml puts the score
 	 * in a vertical scroll box at exactly this height — for system-stacked (standard) layouts taller
