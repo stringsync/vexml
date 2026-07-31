@@ -137,13 +137,14 @@ afterAll(async () => {
 	sharedServer?.stop(true);
 });
 
-// Cairo (under node-canvas) refuses a surface taller than 32767px, and the composite stacks
-// three full-height panels — so a baseline over ~10,900px tall cannot get a diff artifact.
-// The whole-score cases hit this (score_joplin_elite_syncopations is 11,829px), and without
-// the guard the throw replaces a readable "N pixels differ" with a Cairo error.
-const MAX_CANVAS_HEIGHT = 32767;
-
-// [old][diff][new] stacked vertically, each captioned, returned as a PNG buffer.
+// [old][diff][new] side by side, each captioned, returned as a PNG buffer.
+//
+// Side by side, not stacked: Cairo (under node-canvas) refuses a surface over 32767px on
+// either axis, and baselines are tall and narrow — a whole score runs to ~12,000px tall but
+// no baseline is wider than the 1598px of layout_panoramic. Stacking tripled the dimension
+// that was already large and threw on the score cases; laying the panels out along the
+// short axis triples ~1600px at worst. Aligning the panels horizontally also happens to be
+// the easier read for a tall score, since the same system lands at the same y in all three.
 function composite(
 	expected: PNG,
 	diff: PNG,
@@ -152,9 +153,10 @@ function composite(
 	h: number,
 ): Buffer {
 	const header = 32;
-	const cell = h + header;
-	const canvas = createCanvas(w, cell * 3);
+	const canvas = createCanvas(w * 3, h + header);
 	const ctx = canvas.getContext('2d');
+	ctx.fillStyle = '#fff';
+	ctx.fillRect(0, 0, w * 3, header);
 	ctx.font = '24px sans-serif';
 	const panels: [string, PNG][] = [
 		['old', expected],
@@ -162,13 +164,11 @@ function composite(
 		['new', got],
 	];
 	panels.forEach(([label, png], i) => {
-		ctx.fillStyle = '#fff';
-		ctx.fillRect(0, i * cell, w, header);
 		ctx.fillStyle = '#000';
-		ctx.fillText(label, 4, i * cell + 24);
+		ctx.fillText(label, i * w + 4, 24);
 		const img = createImageData(w, h);
 		img.data.set(png.data);
-		ctx.putImageData(img, 0, i * cell + header);
+		ctx.putImageData(img, i * w, header);
 	});
 	return canvas.toBuffer('image/png');
 }
@@ -290,13 +290,6 @@ expect.extend({
 		);
 
 		if (mismatch > 0) {
-			if (expected.height * 3 + 96 > MAX_CANVAS_HEIGHT) {
-				return {
-					pass: false,
-					message: () =>
-						`${filename}: ${mismatch} pixels differ. Too tall (${expected.height}px) to composite a diff — inspect it with \`vex render\` against the baseline in ${path.relative(ROOT, SCREENSHOTS_DIR)}.`,
-				};
-			}
 			seenDiffs.add(filename);
 			mkdirSync(DIFF_DIR, { recursive: true });
 			writeFileSync(
@@ -306,7 +299,7 @@ expect.extend({
 			return {
 				pass: false,
 				message: () =>
-					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels top-to-bottom: old, diff, new)`,
+					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels left-to-right: old, diff, new)`,
 			};
 		}
 
