@@ -2189,13 +2189,16 @@ const TEST_CASES = [
 	// four parts.
 	testCase('score_bach_air.musicxml', 'score_bach_air.png'),
 
-	// TODO: False positive — this baseline was created from the current render and shows a bug.
-	// Mozart's grace notes slur from the piano's lower stave to its upper one, and vexml draws
-	// that cross-staff slur as a tall narrow spike that shoots up through BOTH piano staves and
-	// into the voice stave above (measure 3 of system 1, around x=670). A slur should hug its
-	// notes, not span three staves as a vertical needle. Fix the cross-staff slur geometry, then
-	// `vex test score_mozart_das_veilchen --update`.
-	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes.
+	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. Four systems,
+	// one per line the document engraved (<print new-system="yes"> at measures 6, 12 and 18):
+	// 0-5, 6-11, 12-17, 18-22.
+	// - The verse hangs on one baseline per system, not stepping bar to bar with the melody.
+	// - The short slurs that hop the barline between the last 16th of one measure and the first
+	//   note of the next (piano, both staves, measures 2-3 / 9-10 / 21-22) bow just clear of
+	//   their two noteheads — they used to spike up through the voice stave.
+	// - Known gap: "jun-ge" and "Schä-" touch across the barline in system 3, the densest bar
+	//   of text in the piece. Honoring a document line wider than the page means squeezing
+	//   below the collision-free minimum somewhere; this is where it lands.
 	testCase(
 		'score_mozart_das_veilchen.musicxml',
 		'score_mozart_das_veilchen.png',

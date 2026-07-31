@@ -195,6 +195,7 @@ export class ScoreDrawer {
 			activeLayout: ScoreLayout,
 			topOverflow: Map<number, number>,
 			height: number,
+			lyricDrops: Map<string, number> = new Map(),
 		) =>
 			new DrawPass(
 				this.translator,
@@ -209,6 +210,7 @@ export class ScoreDrawer {
 				topSlack,
 				height,
 				topOverflow,
+				lyricDrops,
 			).run();
 
 		let pass = runPass(layout, new Map(), scratchHeight);
@@ -219,7 +221,11 @@ export class ScoreDrawer {
 		const respace = staveOffsets.some((o, i) => o !== layout.staveOffsets[i]);
 		const needsOverflow =
 			systemCount > 1 && [...pass.observedOverflow.values()].some((v) => v > 0);
-		if (respace || needsOverflow) {
+		// A verse hangs at one height per system, but each measure column is formatted alone
+		// and can only see its own notes — so a system whose columns wanted different heights
+		// drew a stepped verse, and pass two pins the whole row to the deepest of them.
+		const needsLyricPin = pass.lyricsStepped;
+		if (respace || needsOverflow || needsLyricPin) {
 			// Re-spacing makes every system taller, so the page floor and the scratch canvas
 			// both have to grow with it before the redraw.
 			const grew =
@@ -231,6 +237,7 @@ export class ScoreDrawer {
 				{ ...layout, staveOffsets, floorHeight: activeFloorHeight },
 				pass.observedOverflow,
 				scratchHeight,
+				pass.observedLyricDrops,
 			);
 		}
 		const { pageTop, pageBottom } = pass;

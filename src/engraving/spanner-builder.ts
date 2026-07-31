@@ -975,12 +975,23 @@ export class SpannerBuilder {
 					continue;
 				}
 				const j = chords.findIndex((c) => c.lead === partner);
+				// `chords` is the whole score in document order, so the slice between two
+				// notes also sweeps up every other part, stave and voice that happens to be
+				// notated in between — the last note of a bass-stave voice and the first note
+				// of the next measure's same voice are separated by the whole treble stave.
+				// Clearing those would inflate a two-note bow into a spike reaching the stave
+				// above, so only notes sharing a stave with an endpoint count.
 				const span =
 					j > i
 						? chords
 								.slice(i, j + 1)
 								.map((c) => byLead.get(c.lead))
 								.filter((n): n is StaveNote => n !== undefined)
+								.filter(
+									(n) =>
+										n.getStave() === from.getStave() ||
+										n.getStave() === to.getStave(),
+								)
 						: [from, to];
 
 				// Bulge up for placement="above", down for "below", otherwise opposite the
@@ -1089,8 +1100,14 @@ export class SpannerBuilder {
 					const extreme = bulgeUp
 						? Math.min(...clearing.map((n) => extentsOf(n).top))
 						: Math.max(...clearing.map((n) => extentsOf(n).bottom));
+					// Only a note that pokes PAST the endpoints on the bulge side needs
+					// clearing. Measured as an absolute distance instead, a note well below an
+					// upward-bowing slur (the other voice on the stave, the next measure's
+					// lower neighbour) asks the arc to rise by however far below it sits —
+					// which turns a two-note bow across a barline into a tall narrow spike.
+					const overshoot = bulgeUp ? midEnd - extreme : extreme - midEnd;
 					const need = clearing.length
-						? Math.abs(midEnd - extreme) +
+						? Math.max(0, overshoot) +
 							(isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN)
 						: 0;
 					// A grace bow stays tight — it takes the clearance it needs and no more,

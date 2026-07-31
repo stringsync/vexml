@@ -741,6 +741,11 @@ export class DrawPass {
 	// split into separate MusicXML parts must align the same as a single two-stave
 	// part. Built per part below, then formatted and drawn once after the part loop.
 	private systemPending: PendingStave[] = [];
+	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
+	// staff line this pass hung the row's lyrics, and whether the row's measure columns
+	// disagreed (see recordLyricDrop).
+	private observedLyricDrops = new Map<string, number>();
+	private lyricsStepped = false;
 	// Every stave of the measure column being built, drawn once the whole column exists so a
 	// repeat sign can be lined up across staves that reserve different opening widths.
 	private columnStaves: Stave[] = [];
@@ -814,6 +819,7 @@ export class DrawPass {
 		topSlack: number,
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
+		private readonly lyricDrops: Map<string, number> = new Map(),
 	) {
 		const {
 			measureCount,
@@ -887,6 +893,8 @@ export class DrawPass {
 		pageBottom: number;
 		observedOverflow: Map<number, number>;
 		observedStaveSpill: Map<number, StaveSpill>;
+		observedLyricDrops: Map<string, number>;
+		lyricsStepped: boolean;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -2004,6 +2012,32 @@ export class DrawPass {
 				}
 			}
 		}
+		// One lyric baseline per stave row, shared by every measure of the system: a verse is a
+		// line of text, so its syllables all have to hang at the same height. Measured here as
+		// a DROP below the bottom staff line — how far this column's lowest note pushes the
+		// verse past LYRIC_Y_OFFSET, so a note on ledger lines below the stave doesn't print
+		// through its own syllable. The column can only see its own measure, so the drop the
+		// rest of the system needs arrives from the previous pass (see observedLyricDrops);
+		// on the first pass each column still rides its own notes and the verse steps.
+		const lyricDrops = new Map<number, number>();
+		for (const p of pending) {
+			if (p.isTab) {
+				continue;
+			}
+			const floorY = p.stave.getBottomLineY();
+			let drop = Math.max(lyricDrops.get(p.row) ?? 0, LYRIC_Y_OFFSET);
+			for (const note of p.staveNotes) {
+				// The stave reaches the notes via Voice.draw, which hasn't run yet; the note
+				// bounds need it now. Setting it early is what draw would do anyway.
+				note.setStave(p.stave);
+				drop = Math.max(
+					drop,
+					this.noteBottom(note) + LYRIC_NOTE_CLEARANCE - floorY,
+				);
+			}
+			lyricDrops.set(p.row, drop);
+			this.recordLyricDrop(p.row, drop);
+		}
 		for (const p of pending) {
 			if (p.isTab) {
 				// setStave before stretching so each note's getAbsoluteX() is in true stave
@@ -2025,7 +2059,14 @@ export class DrawPass {
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
 			this.pinTechnicals(p);
-			this.pinLyrics(p);
+			this.pinLyrics(
+				p,
+				p.stave.getBottomLineY() +
+					Math.max(
+						lyricDrops.get(p.row) ?? LYRIC_Y_OFFSET,
+						this.lyricDrops.get(this.lyricRowKey(p.row)) ?? 0,
+					),
+			);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {
 					// A mid-measure BarNote or ClefNote has no stem and no ledger lines to
@@ -2265,20 +2306,38 @@ export class DrawPass {
 	}
 
 	/*
-	 * Put every lyric syllable on one stave onto a shared baseline beneath it, one row per
-	 * verse. Left to vexflow each syllable would hang off its own note (see
-	 * LyricAnnotation), so the verse would rise and fall with the melody instead of reading
-	 * as a line of text. The baseline clears both the bottom staff line and the lowest note
-	 * drawn on the stave, so a ledger-line note below the stave pushes the whole row down
-	 * with it rather than printing through its own syllable. Called after format and before
-	 * draw, so the syllables land under where the notes actually ended up.
+	 * Put every lyric syllable on one stave onto the shared baseline `lyricBaselines`
+	 * measured for its row, one line per verse. Left to vexflow each syllable would hang off
+	 * its own note (see LyricAnnotation), so the verse would rise and fall with the melody
+	 * instead of reading as a line of text. Called after format and before draw, so the
+	 * syllables land under where the notes actually ended up.
 	 *
 	 * Each pinned syllable is also registered as a collision obstacle, so anything the draw
 	 * pass places under the stave later (a placement="below" directive, a dynamics marking)
 	 * drops clear of the verse instead of printing through it. vexflow draws lyrics itself,
 	 * so this is the only point where their boxes are known.
 	 */
-	private pinLyrics(p: PendingStave): void {
+	/** Key for one stave row of one system, the scope a verse's baseline is shared over. */
+	private lyricRowKey(row: number): string {
+		return `${this.systemIndex}:${row}`;
+	}
+
+	/*
+	 * Remember how far this measure column pushed its verse below the staff, and whether any
+	 * other column of the same row wanted a different drop. The max is what the next pass
+	 * pins every column of the row to; `lyricsStepped` is what tells the driver a second pass
+	 * is worth running (a row whose columns already agree redraws to the same pixels).
+	 */
+	private recordLyricDrop(row: number, drop: number): void {
+		const key = this.lyricRowKey(row);
+		const seen = this.observedLyricDrops.get(key);
+		if (seen !== undefined && seen !== drop) {
+			this.lyricsStepped = true;
+		}
+		this.observedLyricDrops.set(key, Math.max(seen ?? 0, drop));
+	}
+
+	private pinLyrics(p: PendingStave, baseline: number): void {
 		const lyricsOf = (note: StaveNote) =>
 			note
 				.getModifiers()
@@ -2288,16 +2347,6 @@ export class DrawPass {
 			.filter(({ lyrics }) => lyrics.length > 0);
 		if (lyricNotes.length === 0) {
 			return;
-		}
-		let baseline = p.stave.getBottomLineY() + LYRIC_Y_OFFSET;
-		for (const note of p.staveNotes) {
-			// The stave reaches the notes via Voice.draw, which hasn't run yet; the note
-			// bounds need it now. Setting it early is what draw would do anyway.
-			note.setStave(p.stave);
-			baseline = Math.max(
-				baseline,
-				this.noteBottom(note) + LYRIC_NOTE_CLEARANCE,
-			);
 		}
 		for (const { note, lyrics } of lyricNotes) {
 			for (const lyric of lyrics) {
@@ -3682,6 +3731,8 @@ export class DrawPass {
 		pageBottom: number;
 		observedOverflow: Map<number, number>;
 		observedStaveSpill: Map<number, StaveSpill>;
+		observedLyricDrops: Map<string, number>;
+		lyricsStepped: boolean;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -3825,6 +3876,8 @@ export class DrawPass {
 			pageBottom: this.pageBottom,
 			observedOverflow,
 			observedStaveSpill: this.staveSpill,
+			observedLyricDrops: this.observedLyricDrops,
+			lyricsStepped: this.lyricsStepped,
 			rawNotes: this.rawNotes,
 			rawMeasures: this.rawMeasures,
 			rawChordDiagrams: this.rawChordDiagrams,

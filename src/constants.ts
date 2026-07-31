@@ -246,14 +246,19 @@ export const HAIRPIN_HEIGHT = 10;
  * words directive keeps, so a wedge and a directive on the same side read as one band. */
 export const HAIRPIN_STAVE_GAP = 14;
 
-/** Lyric-syllable text size — matches the other typeset annotations, so a verse under the
- * stave reads at the same weight as a chord symbol or words directive above it. */
-export const LYRIC_FONT_SIZE = 13;
+/** Lyric-syllable text size. A notch under the other typeset annotations (a chord symbol or
+ * words directive is a heading and prints larger), which is also what a syllable can afford:
+ * a verse sets one syllable per note, so its text — not the notes — decides how wide a sung
+ * measure has to be, and every point of type here costs horizontal room on every line the
+ * voice sings. */
+export const LYRIC_FONT_SIZE = 11;
 
 /** Air a lyric syllable claims either side of its text, so adjacent syllables read as
  * separate words instead of running together ("lowhighledg") when a measure is formatted
- * at its minimum width. */
-export const LYRIC_PADDING = 8;
+ * at its minimum width. A word gap, not a column: this is doubled between neighbours and
+ * paid on every syllable, so it drives the minimum width of a sung line more than any
+ * notehead does. */
+export const LYRIC_PADDING = 3;
 
 /** How far a lyric row's baseline sits below the bottom staff line. */
 export const LYRIC_Y_OFFSET = 18;

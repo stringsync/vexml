@@ -125,6 +125,64 @@ export class LayoutPlanner {
 		return group ? group.getWidth() + GRACE_SPACING : 0;
 	}
 
+	/*
+	 * Even out a lopsided pair of systems the width breaker produced. Packing is greedy, so
+	 * it fills a system to the brim and drops whatever is left onto the next one: a document
+	 * line that misses fitting by a single measure comes out as one system squashed until its
+	 * lyrics collide followed by that one measure stretched across the whole page. Hand the
+	 * last measure of a system back to the next one for as long as that brings the
+	 * worse-fitting of the two closer to the line width.
+	 *
+	 * Left alone are the boundaries this isn't entitled to move: one the document forced with
+	 * <print new-system="yes">, and the score's trailing system, which is meant to be short.
+	 * A pair the breaker already balanced never improves on the first try, so it doesn't move.
+	 */
+	private evenOutSystems(
+		systems: number[][],
+		forcedStarts: Set<number>,
+		measure: (
+			measures: number[],
+			systemIndex: number,
+		) => { intrinsic: number; usable: number },
+	): void {
+		// How far a system is from filling its line, as a ratio >= 1 in either direction, so
+		// a squashed system and a stretched one are directly comparable.
+		const misfit = (measures: number[], systemIndex: number) => {
+			const { intrinsic, usable } = measure(measures, systemIndex);
+			return intrinsic > usable ? intrinsic / usable : usable / intrinsic;
+		};
+		for (let s = 0; s + 2 < systems.length; s++) {
+			const start = systems[s];
+			const follow = systems[s + 1];
+			const boundary = follow?.[0];
+			if (!start || !follow || boundary === undefined) {
+				continue;
+			}
+			if (forcedStarts.has(boundary)) {
+				continue;
+			}
+			let head: number[] = start;
+			let tail: number[] = follow;
+			let worst = Math.max(misfit(head, s), misfit(tail, s + 1));
+			while (head.length > 1) {
+				const nextHead = head.slice(0, -1);
+				const nextTail = head.slice(-1).concat(tail);
+				const candidate = Math.max(
+					misfit(nextHead, s),
+					misfit(nextTail, s + 1),
+				);
+				if (candidate >= worst) {
+					break;
+				}
+				head = nextHead;
+				tail = nextTail;
+				worst = candidate;
+			}
+			systems[s] = head;
+			systems[s + 1] = tail;
+		}
+	}
+
 	// A measure's note-area width: the sum of its notes' logarithmic widths, never below the
 	// collision-free minimum or the floor. Denser measures get more space; a long note adds
 	// only a little. Builds throwaway notes so the draw pass is untouched. The busiest staff
@@ -424,6 +482,9 @@ export class LayoutPlanner {
 			let row: number[] = [];
 			let rowWidth = 0;
 			let rowArea = 0;
+			// First measure of every system the document forced, so the evening-out pass
+			// below knows which boundaries are the document's and not the breaker's.
+			const forcedStarts = new Set<number>();
 			for (let m = 0; m < measureCount; m++) {
 				if (multiRestHidden.has(m)) {
 					continue;
@@ -450,6 +511,9 @@ export class LayoutPlanner {
 					? nextWidth - usable > (rowArea + area) * (1 - MIN_SYSTEM_SQUASH)
 					: nextWidth > usable * config.maxSystemFill;
 				if (row.length > 0 && (forcedBreak || overruns)) {
+					if (forcedBreak) {
+						forcedStarts.add(m);
+					}
 					systems.push(row);
 					row = [];
 					rowWidth = 0;
@@ -462,6 +526,14 @@ export class LayoutPlanner {
 			if (row.length > 0) {
 				systems.push(row);
 			}
+			this.evenOutSystems(systems, forcedStarts, (measures, systemIndex) => ({
+				intrinsic: measures.reduce(
+					(sum, m, i) =>
+						sum + leadOf(m, i === 0) + (noteAreas[m] ?? BASE_VOICE_WIDTH),
+					0,
+				),
+				usable: usableOf(systemIndex),
+			}));
 		}
 
 		// --- Placement ----------------------------------------------------------------
